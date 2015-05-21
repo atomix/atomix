@@ -17,7 +17,6 @@ package net.kuujo.copycat.protocol.raft.storage;
 
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.HeapBuffer;
-import net.kuujo.copycat.protocol.raft.storage.SegmentDescriptor;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.*;
@@ -36,18 +35,15 @@ public class SegmentDescriptorTest {
       .withVersion(3)
       .withIndex(1025)
       .withRange(1024)
-      .withMaxKeySize(128)
       .withMaxEntrySize(2048)
-      .withEntries(1024)
       .build();
 
     assertEquals(descriptor.id(), 2);
     assertEquals(descriptor.version(), 3);
     assertEquals(descriptor.index(), 1025);
     assertEquals(descriptor.range(), 1024);
-    assertEquals(descriptor.maxKeySize(), 128);
     assertEquals(descriptor.maxEntrySize(), 2048);
-    assertEquals(descriptor.entries(), 1024);
+    assertEquals(descriptor.maxSegmentSize(), 1024);
 
     assertEquals(descriptor.updated(), 0);
     long time = System.currentTimeMillis();
@@ -66,18 +62,15 @@ public class SegmentDescriptorTest {
       .withVersion(3)
       .withIndex(1025)
       .withRange(1024)
-      .withMaxKeySize(128)
       .withMaxEntrySize(2048)
-      .withEntries(1024)
       .build();
 
     assertEquals(descriptor.id(), 2);
     assertEquals(descriptor.version(), 3);
     assertEquals(descriptor.index(), 1025);
     assertEquals(descriptor.range(), 1024);
-    assertEquals(descriptor.maxKeySize(), 128);
     assertEquals(descriptor.maxEntrySize(), 2048);
-    assertEquals(descriptor.entries(), 1024);
+    assertEquals(descriptor.maxSegmentSize(), 1024);
 
     descriptor = new SegmentDescriptor(buffer.rewind());
 
@@ -85,9 +78,8 @@ public class SegmentDescriptorTest {
     assertEquals(descriptor.version(), 3);
     assertEquals(descriptor.index(), 1025);
     assertEquals(descriptor.range(), 1024);
-    assertEquals(descriptor.maxKeySize(), 128);
     assertEquals(descriptor.maxEntrySize(), 2048);
-    assertEquals(descriptor.entries(), 1024);
+    assertEquals(descriptor.maxSegmentSize(), 1024);
   }
 
   public void testDescriptorCopy() {
@@ -96,9 +88,7 @@ public class SegmentDescriptorTest {
       .withVersion(3)
       .withIndex(1025)
       .withRange(1024)
-      .withMaxKeySize(128)
       .withMaxEntrySize(2048)
-      .withEntries(1024)
       .build();
 
     long time = System.currentTimeMillis();
@@ -111,9 +101,8 @@ public class SegmentDescriptorTest {
     assertEquals(descriptor.version(), 3);
     assertEquals(descriptor.index(), 1025);
     assertEquals(descriptor.range(), 1024);
-    assertEquals(descriptor.maxKeySize(), 128);
     assertEquals(descriptor.maxEntrySize(), 2048);
-    assertEquals(descriptor.entries(), 1024);
+    assertEquals(descriptor.maxSegmentSize(), 1024);
     assertEquals(descriptor.updated(), time);
     assertTrue(descriptor.locked());
   }

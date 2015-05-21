@@ -16,43 +16,240 @@
 package net.kuujo.copycat.protocol.raft.storage;
 
 import net.kuujo.copycat.protocol.raft.storage.compact.CompactionStrategy;
-import net.kuujo.copycat.protocol.raft.storage.compact.RetentionPolicy;
+import net.kuujo.copycat.protocol.raft.storage.compact.Compactor;
 
 import java.io.File;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Buffered Raft storage.
+ * Efficient, self-compacting commit log.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class BufferedStorage implements RaftStorage {
 
   /**
-   * Returns a new buffered storage builder.
+   * Returns a new buffered log builder.
    *
-   * @return A new buffered storage builder.
+   * @return A new buffered log builder.
    */
   public static Builder builder() {
     return new Builder();
   }
 
   private final LogConfig config;
+  protected final Compactor compactor;
+  protected SegmentManager segments;
+  private boolean open;
 
-  private BufferedStorage(LogConfig config) {
+  protected BufferedStorage(LogConfig config) {
     this.config = config;
+    this.compactor = new Compactor(segments)
+      .withCompactionStrategy(config.getCompactionStrategy());
   }
 
   @Override
-  public RaftLog createLog(String name) {
-    return new BufferedLog(config.copy().withName(name));
+  public void open() {
+    this.segments = new SegmentManager(config);
+    compactor.schedule(config.getCompactInterval());
+    open = true;
+  }
+
+  @Override
+  public boolean isOpen() {
+    return open;
   }
 
   /**
-   * Buffered storage builder.
+   * Asserts that the log is open.
+   */
+  private void checkOpen() {
+    if (!isOpen())
+      throw new IllegalStateException("log is not open");
+  }
+
+  /**
+   * Asserts that the index is a valid index.
+   */
+  private void checkIndex(long index) {
+    if (!containsIndex(index))
+      throw new IndexOutOfBoundsException(index + " is not a valid log index");
+  }
+
+  @Override
+  public boolean isEmpty() {
+    return segments.firstSegment().isEmpty();
+  }
+
+  @Override
+  public long size() {
+    return segments.segments().stream().mapToLong(Segment::size).sum();
+  }
+
+  @Override
+  public long length() {
+    return segments.segments().stream().mapToLong(Segment::length).sum();
+  }
+
+  @Override
+  public long firstIndex() {
+    return !isEmpty() ? segments.firstSegment().descriptor().index() : 0;
+  }
+
+  @Override
+  public long lastIndex() {
+    return !isEmpty() ? segments.lastSegment().lastIndex() : 0;
+  }
+
+  /**
+   * Returns the log's current commit index.
+   *
+   * @return The log's current commit index.
+   */
+  public long commitIndex() {
+    return segments.commitIndex();
+  }
+
+  /**
+   * Checks whether we need to roll over to a new segment.
+   */
+  private void checkRoll() {
+    if (segments.currentSegment().isFull()) {
+      segments.nextSegment();
+    }
+  }
+
+  @Override
+  public <T extends RaftEntry<T>> T createEntry(Class<T> type) {
+    checkOpen();
+    checkRoll();
+    return segments.currentSegment().createEntry(type);
+  }
+
+  @Override
+  public long appendEntry(RaftEntry entry) {
+    checkOpen();
+    checkRoll();
+    return segments.currentSegment().appendEntry(entry);
+  }
+
+  @Override
+  public <T extends RaftEntry<T>> T getEntry(long index) {
+    checkOpen();
+    checkIndex(index);
+    Segment segment = segments.segment(index);
+    if (segment == null)
+      throw new IndexOutOfBoundsException("invalid index: " + index);
+    return segment.getEntry(index);
+  }
+
+  @Override
+  public boolean containsIndex(long index) {
+    return !isEmpty() && firstIndex() <= index && index <= lastIndex();
+  }
+
+  @Override
+  public boolean containsEntry(long index) {
+    if (!containsIndex(index))
+      return false;
+    Segment segment = segments.segment(index);
+    return segment != null && segment.containsEntry(index);
+  }
+
+  @Override
+  public BufferedStorage skip(long entries) {
+    checkOpen();
+    segments.currentSegment().skip(entries);
+    return this;
+  }
+
+  @Override
+  public BufferedStorage truncate(long index) {
+    checkOpen();
+    checkIndex(index);
+    if (lastIndex() == index)
+      return this;
+
+    for (Segment segment : segments.segments()) {
+      if (segment.containsIndex(index)) {
+        segment.truncate(index);
+      } else if (segment.descriptor().index() > index) {
+        segments.remove(segment);
+      }
+    }
+    return this;
+  }
+
+  @Override
+  public void commit(long index) {
+    // Immediately compact the segments if this commit results in the commission of all entries in a segment.
+    long previousCommitIndex = segments.commitIndex();
+    segments.commit(index);
+    if (segments.segment(previousCommitIndex) != segments.segment(index))
+      compact();
+  }
+
+  @Override
+  public RaftStorage filter(RaftEntryFilter filter) {
+    compactor.withEntryFilter(filter);
+    return this;
+  }
+
+  /**
+   * Compacts the log in a background thread.
+   */
+  public void compact() {
+    compactor.execute();
+  }
+
+  /**
+   * Compacts the log in the current thread.
+   */
+  void compactNow() {
+    compactor.run();
+  }
+
+  @Override
+  public void flush() {
+    segments.currentSegment().flush();
+  }
+
+  @Override
+  public void close() {
+    segments.close();
+    compactor.close();
+    open = false;
+  }
+
+  @Override
+  public boolean isClosed() {
+    return !open;
+  }
+
+  @Override
+  public void delete() {
+    segments.delete();
+  }
+
+  /**
+   * Buffered log builder.
    */
   public static class Builder implements RaftStorage.Builder {
     private final LogConfig config = new LogConfig();
+
+    /**
+     * Sets the log name, returning the builder for method chaining.
+     * <p>
+     * The name is a required component of any log and will be used to construct log file names.
+     *
+     * @param name The log name.
+     * @return The log builder.
+     * @throws NullPointerException If the {@code name} is {@code null}
+     */
+    public Builder withName(String name) {
+      config.setName(name);
+      return this;
+    }
 
     /**
      * Sets the log directory, returning the builder for method chaining.
@@ -85,23 +282,6 @@ public class BufferedStorage implements RaftStorage {
     }
 
     /**
-     * Sets the maximum key size, returning the builder for method chaining.
-     * <p>
-     * The maximum key size will be used to place an upper limit on the size of log segments. Keys are stored as unsigned
-     * 16-bit integers and thus the key size cannot be greater than {@code Short.MAX_VALUE * 2}. By default the
-     * {@code maxKeySize} is {@code 1024}.
-     *
-     * @param maxKeySize The maximum key size.
-     * @return The log builder.
-     * @throws IllegalArgumentException If the {@code maxKeySize} is not positive or is greater than
-     * {@code Short.MAX_VALUE * 2}
-     */
-    public Builder withMaxKeySize(int maxKeySize) {
-      config.setMaxKeySize(maxKeySize);
-      return this;
-    }
-
-    /**
      * Sets the maximum entry size, returning the builder for method chaining.
      * <p>
      * The maximum entry size will be used to place an upper limit on the size of log segments.
@@ -116,35 +296,14 @@ public class BufferedStorage implements RaftStorage {
     }
 
     /**
-     * Sets the number of entries per segment, returning the builder for method chaining.
-     * <p>
-     * Because of the semantics of key deduplication and compaction, the log requires that each internal segment be of a
-     * fixed number of entries. The number of entries per segment must follow the following formula:
-     * {@code entriesPerSegment * (maxKeySize + maxEntrySize + Short.BYTES) < Integer.MAX_VALUE * 2}
+     * Sets the maximum segment size, returning the builder for method chaining.
      *
-     * @param entriesPerSegment The number of entries per segment.
+     * @param maxSegmentSize The maximum segment size.
      * @return The log builder.
-     * @throws IllegalArgumentException If the number of entries per segment does not adhere to the formula
-     *         {@code entriesPerSegment * (maxKeySize + maxEntrySize + Short.BYTES) < Integer.MAX_VALUE * 2}
+     * @throws java.lang.IllegalArgumentException If the {@code maxSegmentSize} is not positive
      */
-    public Builder withEntriesPerSegment(int entriesPerSegment) {
-      config.setEntriesPerSegment(entriesPerSegment);
-      return this;
-    }
-
-    /**
-     * Sets the log retention policy, returning the builder for method chaining.
-     * <p>
-     * The retention policy dictates the amount of time for which a log segment should be retained. Each time the log
-     * is compacted, the compaction strategy will be queried to determine whether any segments should be deleted from the
-     * log. Retention policies can base their decision on time, size, or other factors.
-     *
-     * @param retentionPolicy The log retention policy.
-     * @return The log builder.
-     * @throws NullPointerException If the {@code retentionPolicy} is {@code null}
-     */
-    public Builder withRetentionPolicy(RetentionPolicy retentionPolicy) {
-      config.setRetentionPolicy(retentionPolicy);
+    public Builder withMaxSegmentSize(int maxSegmentSize) {
+      config.setMaxSegmentSize(maxSegmentSize);
       return this;
     }
 
@@ -201,7 +360,7 @@ public class BufferedStorage implements RaftStorage {
      *
      * @return A new buffered log.
      */
-    public RaftStorage build() {
+    public BufferedStorage build() {
       return new BufferedStorage(config);
     }
   }

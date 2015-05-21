@@ -13,23 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.protocol.raft.storage.compact;
+package net.kuujo.copycat.protocol.raft.storage;
 
-import net.kuujo.copycat.protocol.raft.storage.Segment;
+import net.kuujo.copycat.io.util.ReferenceManager;
 
 /**
- * Retention policy that does not retain any logs.
+ * No-op entry.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ZeroRetentionPolicy implements RetentionPolicy {
+public class NoOpEntry extends RaftEntry<NoOpEntry> {
 
-  public ZeroRetentionPolicy() {
-  }
-
-  @Override
-  public boolean retain(Segment segment) {
-    return false;
+  public NoOpEntry(ReferenceManager<RaftEntry<?>> referenceManager) {
+    super(referenceManager);
   }
 
 }

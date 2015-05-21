@@ -16,25 +16,16 @@
 package net.kuujo.copycat.protocol.raft.storage.compact;
 
 import net.kuujo.copycat.protocol.raft.storage.RaftEntryFilter;
-import net.kuujo.copycat.protocol.raft.storage.Segment;
 import net.kuujo.copycat.protocol.raft.storage.SegmentManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Performs log compaction tasks.
- * <p>
- * The log compactor is responsible for periodic and on-demand execution of log compaction tasks. The log compaction
- * process is a two stage process. When the compactor is {@link Compactor#run() run} it will first use the configured
- * {@link RetentionPolicy} to determine whether any segments can be permanently deleted from the log. Once segments
- * have been deleted, {@link CompactionStrategy#compact(RaftEntryFilter, SegmentManager)}
- * is called on the configured {@link CompactionStrategy}.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -43,7 +34,6 @@ public class Compactor implements Runnable, AutoCloseable {
   private final SegmentManager manager;
   private RaftEntryFilter filter = entry -> true;
   private CompactionStrategy compactionStrategy;
-  private RetentionPolicy retentionPolicy;
   private ScheduledExecutorService executor;
   private ScheduledFuture<?> scheduledFuture;
   private final AtomicBoolean running = new AtomicBoolean();
@@ -70,16 +60,6 @@ public class Compactor implements Runnable, AutoCloseable {
    */
   public Compactor withCompactionStrategy(CompactionStrategy compactionStrategy) {
     this.compactionStrategy = compactionStrategy;
-    return this;
-  }
-
-  /**
-   * Sets the retention policy.
-   *
-   * @param retentionPolicy The log retention policy.
-   */
-  public Compactor withRetentionPolicy(RetentionPolicy retentionPolicy) {
-    this.retentionPolicy = retentionPolicy;
     return this;
   }
 
@@ -119,31 +99,8 @@ public class Compactor implements Runnable, AutoCloseable {
   @Override
   public void run() {
     if (running.compareAndSet(false, true)) {
-      retain();
       compact();
       running.set(false);
-    }
-  }
-
-  /**
-   * Removes segments that should no longer be retained in the log.
-   */
-  private void retain() {
-    if (retentionPolicy != null) {
-      LOGGER.debug("Checking log retention...");
-
-      // Calculate the list of retained segments by iterating through existing segments and building
-      // an ordered list of segments to retain. Once a segment has been added to the list all following
-      // segments must be retained as well.
-      List<Segment> retainSegments = new ArrayList<>(manager.segments().size());
-      for (Segment segment : manager.segments()) {
-        if (!retainSegments.isEmpty() || !segment.isLocked() || retentionPolicy.retain(segment)) {
-          retainSegments.add(segment);
-        } else {
-          LOGGER.debug("Dropped segment: {}", segment.descriptor().id());
-        }
-      }
-      manager.update(retainSegments);
     }
   }
 

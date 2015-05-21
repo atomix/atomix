@@ -1,0 +1,2 @@
+id=252
+class=net.kuujo.copycat.protocol.raft.storage.SessionEntry

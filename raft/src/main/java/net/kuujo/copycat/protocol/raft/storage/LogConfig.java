@@ -15,10 +15,9 @@
  */
 package net.kuujo.copycat.protocol.raft.storage;
 
+import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.protocol.raft.storage.compact.CompactionStrategy;
-import net.kuujo.copycat.protocol.raft.storage.compact.FullRetentionPolicy;
 import net.kuujo.copycat.protocol.raft.storage.compact.LeveledCompactionStrategy;
-import net.kuujo.copycat.protocol.raft.storage.compact.RetentionPolicy;
 
 import java.io.File;
 import java.util.concurrent.TimeUnit;
@@ -34,28 +33,18 @@ import java.util.concurrent.TimeUnit;
 public class LogConfig {
   private static final String DEFAULT_NAME = "log";
   private static final String DEFAULT_DIRECTORY = System.getProperty("user.dir");
-  private static final int DEFAULT_MAX_KEY_SIZE = 1024;
   private static final int DEFAULT_MAX_ENTRY_SIZE = 1024 * 8;
-  private static final int DEFAULT_ENTRIES_PER_SEGMENT = 1024 * 1024;
-  private static final RetentionPolicy DEFAULT_RETENTION_POLICY = new FullRetentionPolicy();
+  private static final int DEFAULT_MAX_SEGMENT_SIZE = 1024 * 1024 * 32;
+  private static final int DEFAULT_MAX_ENTRIES_PER_SEGMENT = (int) (Math.pow(2, 31) - 1) / 8;
   private static final CompactionStrategy DEFAULT_COMPACTION_STRATEGY = new LeveledCompactionStrategy();
   private static final long DEFAULT_COMPACT_INTERVAL = 1000 * 60;
 
-  // The maximum allowed size of a key.
-  private static final int MAX_KEY_SIZE = Short.MAX_VALUE;
-
-  // The maximum number of entries per segment is dictated by the number of entries that can fit into a memory mapped index.
-  private static final int MAX_ENTRIES_PER_SEGMENT = Integer.MAX_VALUE / 8;
-
-  // The maximum number of bites allowed in a segment.
-  private static final long MAX_SEGMENT_SIZE = (long) Integer.MAX_VALUE * 2;
-
   private String name = DEFAULT_NAME;
+  private Serializer serializer;
   private File directory = new File(DEFAULT_DIRECTORY);
-  private int maxKeySize = DEFAULT_MAX_KEY_SIZE;
   private int maxEntrySize = DEFAULT_MAX_ENTRY_SIZE;
-  private int entriesPerSegment = DEFAULT_ENTRIES_PER_SEGMENT;
-  private RetentionPolicy retentionPolicy = DEFAULT_RETENTION_POLICY;
+  private int maxSegmentSize = DEFAULT_MAX_SEGMENT_SIZE;
+  private int maxEntriesPerSegment = DEFAULT_MAX_ENTRIES_PER_SEGMENT;
   private CompactionStrategy compactionStrategy = DEFAULT_COMPACTION_STRATEGY;
   private long compactInterval = DEFAULT_COMPACT_INTERVAL;
 
@@ -65,10 +54,7 @@ public class LogConfig {
   private LogConfig(LogConfig config) {
     name = config.name;
     directory = config.directory;
-    maxKeySize = config.maxKeySize;
     maxEntrySize = config.maxEntrySize;
-    entriesPerSegment = config.entriesPerSegment;
-    retentionPolicy = config.retentionPolicy;
     compactionStrategy = config.compactionStrategy;
     compactInterval = config.compactInterval;
   }
@@ -114,6 +100,35 @@ public class LogConfig {
    */
   public LogConfig withName(String name) {
     setName(name);
+    return this;
+  }
+
+  /**
+   * Sets the log serializer.
+   *
+   * @param serializer The log serializer.
+   */
+  public void setSerializer(Serializer serializer) {
+    this.serializer = serializer;
+  }
+
+  /**
+   * Returns the log serializer.
+   *
+   * @return The log serializer.
+   */
+  public Serializer getSerializer() {
+    return serializer;
+  }
+
+  /**
+   * Sets the log serializer, returning the configuration for method chaining.
+   *
+   * @param serializer The log serializer.
+   * @return The log configuration.
+   */
+  public LogConfig withSerializer(Serializer serializer) {
+    this.serializer = serializer;
     return this;
   }
 
@@ -187,62 +202,19 @@ public class LogConfig {
   }
 
   /**
-   * Sets the maximum key size.
-   * <p>
-   * The maximum key size will be used to place an upper limit on the size of log segments. Keys are stored as unsigned
-   * 16-bit integers and thus the key size cannot be greater than {@code Short.MAX_VALUE * 2}
-   *
-   * @param maxKeySize The maximum key size.
-   * @throws IllegalArgumentException If the {@code maxKeySize} is not positive or is greater than
-   * {@code Short.MAX_VALUE * 2}
-   */
-  public void setMaxKeySize(int maxKeySize) {
-    if (maxKeySize <= 0)
-      throw new IllegalArgumentException("maximum key size must be positive");
-    if (maxKeySize > MAX_KEY_SIZE)
-      throw new IllegalArgumentException("maximum key size cannot be greater than " + MAX_KEY_SIZE);
-    this.maxKeySize = maxKeySize;
-  }
-
-  /**
-   * Returns the maximum key size.
-   * <p>
-   * The maximum key size will be used to place an upper limit on the size of log segments.
-   *
-   * @return The maximum key size.
-   */
-  public int getMaxKeySize() {
-    return maxKeySize;
-  }
-
-  /**
-   * Sets the maximum key size, returning the configuration for method chaining.
-   * <p>
-   * The maximum key size will be used to place an upper limit on the size of log segments. Keys are stored as unsigned
-   * 16-bit integers and thus the key size cannot be greater than {@code Short.MAX_VALUE * 2}. By default the
-   * {@code maxKeySize} is {@code 1024}.
-   *
-   * @param maxKeySize The maximum key size.
-   * @return The log configuration.
-   * @throws IllegalArgumentException If the {@code maxKeySize} is not positive or is greater than
-   * {@code Short.MAX_VALUE * 2}
-   */
-  public LogConfig withMaxKeySize(int maxKeySize) {
-    setMaxKeySize(maxKeySize);
-    return this;
-  }
-
-  /**
    * Sets the maximum entry size.
    * <p>
    * The maximum entry size will be used to place an upper limit on the size of log segments.
    *
    * @param maxEntrySize The maximum key size.
-   * @throws IllegalArgumentException If the {@code maxEntrySize} is not positive
+   * @throws IllegalArgumentException If the {@code maxEntrySize} is not positive or is greater than
+   * {@link net.kuujo.copycat.protocol.raft.storage.LogConfig#getMaxSegmentSize()}
    */
   public void setMaxEntrySize(int maxEntrySize) {
     if (maxEntrySize <= 0)
       throw new IllegalArgumentException("maximum entry size must be positive");
+    if (maxEntrySize > maxSegmentSize)
+      throw new IllegalArgumentException("maximum entry size must be less than maximum segment size");
     this.maxEntrySize = maxEntrySize;
   }
 
@@ -273,97 +245,72 @@ public class LogConfig {
   }
 
   /**
-   * Sets the number of entries per log segment.
-   * <p>
-   * Because of the semantics of key deduplication and compaction, the log requires that each internal segment be of a
-   * fixed number of entries. The number of entries per segment must follow the following formula:
-   * {@code entriesPerSegment * (maxKeySize + maxEntrySize + Short.BYTES) < Integer.MAX_VALUE * 2}
-   * <p>
-   * By default, the number of entries per segment is {@code 1024 * 1024}.
+   * Sets the maximum segment size.
    *
-   * @param entriesPerSegment The number of entries per log segment.
-   * @throws IllegalArgumentException If the number of entries per segment does not adhere to the formula
-   *         {@code entriesPerSegment * (maxKeySize + maxEntrySize + Short.BYTES) < Integer.MAX_VALUE * 2}
+   * @param maxSegmentSize The maximum segment size.
+   * @throws java.lang.IllegalArgumentException If the segment size is not positive or is less than
+   * {@link net.kuujo.copycat.protocol.raft.storage.LogConfig#getMaxEntrySize()}.
    */
-  public void setEntriesPerSegment(int entriesPerSegment) {
-    if (entriesPerSegment <= 0)
-      throw new IllegalArgumentException("entries per segment must be positive");
-    if (entriesPerSegment > MAX_ENTRIES_PER_SEGMENT)
-      throw new IllegalArgumentException("entries per segment cannot be greater than " + MAX_ENTRIES_PER_SEGMENT);
-    if (entriesPerSegment * (maxKeySize + maxEntrySize + Short.BYTES) > MAX_SEGMENT_SIZE)
-      throw new IllegalArgumentException("entries per segment cannot be greater than " + (MAX_SEGMENT_SIZE / (maxKeySize + maxEntrySize + Short.BYTES)));
-    this.entriesPerSegment = entriesPerSegment;
+  public void setMaxSegmentSize(int maxSegmentSize) {
+    if (maxSegmentSize <= 0)
+      throw new IllegalArgumentException("maximum segment size must be positive");
+    if (maxSegmentSize < maxEntrySize)
+      throw new IllegalArgumentException("maximum segment size must be greater than maxEntrySize");
+    this.maxSegmentSize = maxSegmentSize;
   }
 
   /**
-   * Returns the number of entries per segment.
+   * Returns the maximum log segment size.
    *
-   * @return The number of entries per segment. Defaults to {@code 1024 * 1024}
+   * @return The maximum log segment size.
    */
-  public int getEntriesPerSegment() {
-    return entriesPerSegment;
+  public int getMaxSegmentSize() {
+    return maxSegmentSize;
   }
 
   /**
-   * Sets the number of entries per segment, returning the configuration for method chaining.
-   * <p>
-   * Because of the semantics of key deduplication and compaction, the log requires that each internal segment be of a
-   * fixed number of entries. The number of entries per segment must follow the following formula:
-   * {@code entriesPerSegment * (maxKeySize + maxEntrySize + Short.BYTES) < Integer.MAX_VALUE * 2}
+   * Sets the maximum log segment size, returning the configuration for method chaining.
    *
-   * @param entriesPerSegment The number of entries per segment.
+   * @param maxSegmentSize The maximum segment size.
    * @return The log configuration.
-   * @throws IllegalArgumentException If the number of entries per segment does not adhere to the formula
-   *         {@code entriesPerSegment * (maxKeySize + maxEntrySize + Short.BYTES) < Integer.MAX_VALUE * 2}
    */
-  public LogConfig withEntriesPerSegment(int entriesPerSegment) {
-    setEntriesPerSegment(entriesPerSegment);
+  public LogConfig withMaxSegmentSize(int maxSegmentSize) {
+    setMaxSegmentSize(maxSegmentSize);
     return this;
   }
 
   /**
-   * Sets the log retention policy.
-   * <p>
-   * The retention policy dictates the amount of time for which a log segment should be retained. Each time the log
-   * is compacted, the compaction strategy will be queried to determine whether any segments should be deleted from the
-   * log. Retention policies can base their decision on time, size, or other factors.
+   * Sets the maximum number of allowed entries per segment.
    *
-   * @param retentionPolicy The log retention policy.
-   * @throws NullPointerException If the {@code retentionPolicy} is {@code null}
+   * @param maxEntriesPerSegment The maximum number of allowed entries per segment.
+   * @throws java.lang.IllegalArgumentException If the maximum number of entries per segment is greater than
+   *         {@code (int) (Math.pow(2, 31) - 1) / 8}
    */
-  public void setRetentionPolicy(RetentionPolicy retentionPolicy) {
-    if (retentionPolicy == null)
-      retentionPolicy = DEFAULT_RETENTION_POLICY;
-    this.retentionPolicy = retentionPolicy;
+  public void setMaxEntriesPerSegment(int maxEntriesPerSegment) {
+    if (maxEntriesPerSegment > DEFAULT_MAX_ENTRIES_PER_SEGMENT)
+      throw new IllegalArgumentException("max entries per segment cannot be greater than " + DEFAULT_MAX_ENTRIES_PER_SEGMENT);
+    this.maxEntriesPerSegment = maxEntriesPerSegment;
   }
 
   /**
-   * Returns the log retention policy.
-   * <p>
-   * The retention policy dictates the amount of time for which a log segment should be retained. Each time the log
-   * is compacted, the compaction strategy will be queried to determine whether any segments should be deleted from the
-   * log. Retention policies can base their decision on time, size, or other factors.
+   * Returns the maximum number of entries per segment.
    *
-   * @return The log retention policy. Defaults to {@link FullRetentionPolicy} which
-   *         retains logs forever.
+   * @return The maximum number of entries per segment.
    */
-  public RetentionPolicy getRetentionPolicy() {
-    return retentionPolicy;
+  public int getMaxEntriesPerSegment() {
+    return maxEntriesPerSegment;
   }
 
   /**
-   * Sets the log retention policy, returning the configuration for method chaining.
-   * <p>
-   * The retention policy dictates the amount of time for which a log segment should be retained. Each time the log
-   * is compacted, the compaction strategy will be queried to determine whether any segments should be deleted from the
-   * log. Retention policies can base their decision on time, size, or other factors.
+   * Sets the maximum number of allowed entries per segment, returning the configuration for method chaining.
    *
-   * @param retentionPolicy The log retention policy.
+   * @param maxEntriesPerSegment The maximum number of allowed entries per segment.
    * @return The log configuration.
-   * @throws NullPointerException If the {@code retentionPolicy} is {@code null}
+   * @throws java.lang.IllegalArgumentException If the maximum number of entries per segment is greater than
+   *         {@code (int) (Math.pow(2, 31) - 1) / 8}
    */
-  public LogConfig withRetentionPolicy(RetentionPolicy retentionPolicy) {
-    setRetentionPolicy(retentionPolicy);
+  public LogConfig withMaxEntriesPerSegment(int maxEntriesPerSegment) {
+    setMaxEntriesPerSegment(maxEntriesPerSegment);
     return this;
   }
 

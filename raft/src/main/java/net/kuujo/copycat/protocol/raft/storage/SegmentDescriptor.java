@@ -38,7 +38,6 @@ import net.kuujo.copycat.io.HeapBuffer;
  *   When the segment is first constructed, the {@code updated} time is {@code 0}. Once all entries in the segment have
  *   been committed, the {@code updated} time should be set to the current time. Log compaction should not result in a
  *   change to {@code updated}.
- * - {@code maxKeySize} (24-bit signed integer) - The maximum length in bytes of keys allowed by the segment.
  * - {@code maxEntrySize} (32-bit signed integer) - The maximum length in bytes of entry values allowed by the segment.
  * - {@code entries} (32-bit signed integer) - The total number of expected entries in the segment. This is the final
  *   number of entries allowed within the segment both before and after compaction. This entry count is used to determine
@@ -76,12 +75,11 @@ public final class SegmentDescriptor implements AutoCloseable {
   private Buffer buffer;
   private final long id;
   private final long index;
-  private final int range;
+  private final long range;
   private final long version;
   private long updated;
-  private final int maxKeySize;
   private final int maxEntrySize;
-  private final int entries;
+  private final int maxSegmentSize;
   private boolean locked;
 
   public SegmentDescriptor(Buffer buffer) {
@@ -92,9 +90,8 @@ public final class SegmentDescriptor implements AutoCloseable {
     this.version = buffer.readLong();
     this.index = buffer.readLong();
     this.range = buffer.readInt();
-    this.maxKeySize = buffer.readMedium();
-    this.maxEntrySize = buffer.readInt();
-    this.entries = buffer.readInt();
+    this.maxEntrySize = buffer.readUnsignedMedium();
+    this.maxSegmentSize = buffer.readInt();
     this.updated = buffer.readLong();
     this.locked = buffer.readBoolean();
   }
@@ -144,27 +141,12 @@ public final class SegmentDescriptor implements AutoCloseable {
    *
    * @return The total number of possible entries in the segment.
    */
-  public int range() {
+  public long range() {
     return range;
   }
 
   /**
-   * Returns the maximum key size for the segment.
-   * <p>
-   * The maximum key size is a 24-bit integer. The sum of {@code maxKeySize} and {@link SegmentDescriptor#maxEntrySize()}
-   * dictates the maximum size of any buffer allocated for an entry.
-   *
-   * @return The maximum number of bytes for each key in the segment.
-   */
-  public int maxKeySize() {
-    return maxKeySize;
-  }
-
-  /**
    * Returns the maximum entry size for the segment.
-   * <p>
-   * The maximum entry size is a 32-bit integer. The sum of {@link SegmentDescriptor#maxKeySize()} and {@code maxEntrySize}
-   * dictates the maximum size of any buffer allocated for an entry.
    *
    * @return The maximum number of bytes for each entry in the segment.
    */
@@ -173,15 +155,12 @@ public final class SegmentDescriptor implements AutoCloseable {
   }
 
   /**
-   * Returns the total number of entries in the segment.
-   * <p>
-   * This is the final number of entries allowed within the segment both before and after compaction. This entry count
-   * is used to determine the size of internal indexing and deduplication facilities.
+   * Returns the maximum size of the segment.
    *
-   * @return The total number of entries in the segment.
+   * @return The maximum allowed size of the segment.
    */
-  public int entries() {
-    return entries;
+  public int maxSegmentSize() {
+    return maxSegmentSize;
   }
 
   /**
@@ -235,10 +214,9 @@ public final class SegmentDescriptor implements AutoCloseable {
       .writeLong(id)
       .writeLong(version)
       .writeLong(index)
-      .writeInt(range)
-      .writeMedium(maxKeySize)
-      .writeInt(maxEntrySize)
-      .writeInt(entries)
+      .writeLong(range)
+      .writeUnsignedMedium(maxEntrySize)
+      .writeInt(maxSegmentSize)
       .writeLong(updated)
       .writeBoolean(locked)
       .flush();
@@ -309,21 +287,8 @@ public final class SegmentDescriptor implements AutoCloseable {
      * @param range The segment range.
      * @return The segment descriptor builder.
      */
-    public Builder withRange(int range) {
-      buffer.writeInt(24, range);
-      return this;
-    }
-
-    /**
-     * Sets the maximum key size for the segment.
-     *
-     * @param maxKeySize The maximum key size for the segment.
-     * @return The segment descriptor builder.
-     */
-    public Builder withMaxKeySize(int maxKeySize) {
-      if (maxKeySize > Short.MAX_VALUE)
-        throw new IllegalArgumentException("maximum key size cannot be greater than " + Short.MAX_VALUE);
-      buffer.writeMedium(28, maxKeySize);
+    public Builder withRange(long range) {
+      buffer.writeLong(24, range);
       return this;
     }
 
@@ -334,7 +299,7 @@ public final class SegmentDescriptor implements AutoCloseable {
      * @return The segment descriptor builder.
      */
     public Builder withMaxEntrySize(int maxEntrySize) {
-      buffer.writeInt(31, maxEntrySize);
+      buffer.writeUnsignedMedium(32, maxEntrySize);
       return this;
     }
 
@@ -344,9 +309,7 @@ public final class SegmentDescriptor implements AutoCloseable {
      * @param entries The number of entries in the segment.
      * @return The segment descriptor builder.
      */
-    public Builder withEntries(int entries) {
-      if (entries > OffsetIndex.MAX_ENTRIES)
-        throw new IllegalArgumentException("entries cannot be greater than " + OffsetIndex.MAX_ENTRIES);
+    public Builder withMaxSegmentSize(int entries) {
       buffer.writeInt(35, entries);
       return this;
     }

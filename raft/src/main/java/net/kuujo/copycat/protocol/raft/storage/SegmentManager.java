@@ -17,6 +17,7 @@ package net.kuujo.copycat.protocol.raft.storage;
 
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.FileBuffer;
+import net.kuujo.copycat.io.serializer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +28,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 /**
  * Log segment manager.
  * <p>
- * The segment manager keeps track of segments in a given {@link BufferedLog} and provides an interface to loading, retrieving,
+ * The segment manager keeps track of segments in a given {@link BufferedStorage} and provides an interface to loading, retrieving,
  * and compacting those segments.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
@@ -35,15 +36,16 @@ import java.util.concurrent.ConcurrentSkipListMap;
 public class SegmentManager implements AutoCloseable {
   private static final Logger LOGGER = LoggerFactory.getLogger(SegmentManager.class);
   private final LogConfig config;
+  private final Serializer serializer;
   private NavigableMap<Long, Segment> segments = new ConcurrentSkipListMap<>();
   private Segment currentSegment;
   private long commitIndex;
-  private long recycleIndex;
 
   public SegmentManager(LogConfig config) {
     if (config == null)
       throw new NullPointerException("config cannot be null");
     this.config = config;
+    this.serializer = config.getSerializer() != null ? config.getSerializer() : new Serializer();
     init();
   }
 
@@ -135,17 +137,6 @@ public class SegmentManager implements AutoCloseable {
   }
 
   /**
-   * Returns all segments that follow the segment containing the given index.
-   *
-   * @param index The index after which to return segments.
-   * @return A collection of segments that follow the segment containing the given index.
-   */
-  public Collection<Segment> nextSegments(long index) {
-    Long key = segments.ceilingKey(index);
-    return key != null ? segments.tailMap(key).values() : Collections.EMPTY_LIST;
-  }
-
-  /**
    * Returns the collection of segments.
    *
    * @return An ordered collection of segments.
@@ -194,49 +185,29 @@ public class SegmentManager implements AutoCloseable {
    * @return The new segment.
    */
   public Segment createSegment(long segmentId, long segmentIndex) {
-    return createSegment(segmentId, segmentIndex, 1, config.getEntriesPerSegment(), config.getEntriesPerSegment());
+    return createSegment(segmentId, segmentIndex, 1, -1);
   }
 
   /**
    * Creates a new segment.
    */
-  public Segment createSegment(long segmentId, long segmentIndex, long segmentVersion, int entries, int range) {
-    File file = SegmentFile.createSegmentFile(config.getDirectory(), config.getName(), segmentId, segmentVersion);
+  public Segment createSegment(long segmentId, long segmentIndex, long segmentVersion, long range) {
+    File segmentFile = SegmentFile.createSegmentFile(config.getDirectory(), config.getName(), segmentId, segmentVersion);
 
-    long initialCapacity = calculateMinimumCapacity(entries);
-    long maxCapacity = calculateMaximumCapacity(entries);
-
-    Buffer buffer = FileBuffer.allocate(file, initialCapacity, maxCapacity);
+    Buffer buffer = FileBuffer.allocate(segmentFile, 1024 * 1024, config.getMaxSegmentSize() + config.getMaxEntrySize() + SegmentDescriptor.BYTES);
     try (SegmentDescriptor descriptor = SegmentDescriptor.builder(buffer.slice(SegmentDescriptor.BYTES))
       .withId(segmentId)
       .withIndex(segmentIndex)
       .withRange(range)
       .withVersion(segmentVersion)
-      .withMaxKeySize(config.getMaxKeySize())
       .withMaxEntrySize(config.getMaxEntrySize())
-      .withEntries(entries)
+      .withMaxSegmentSize(config.getMaxSegmentSize())
       .build()) {
 
-      int indexBytes = OffsetIndex.bytes(descriptor.entries());
-      OffsetIndex index = new OffsetIndex(((FileBuffer) buffer.skip(SegmentDescriptor.BYTES)).map(indexBytes), descriptor.entries());
-      Segment segment = Segment.open(buffer.position(SegmentDescriptor.BYTES + indexBytes).slice(), descriptor, index);
-      LOGGER.debug("Created segment: {} ({})", descriptor.id(), file.getName());
+      Segment segment = Segment.open(buffer.position(SegmentDescriptor.BYTES).slice(), serializer, descriptor, createIndex(segmentId, segmentVersion));
+      LOGGER.debug("Created segment: {} ({})", descriptor.id(), segmentFile.getName());
       return segment;
     }
-  }
-
-  /**
-   * Returns the minimum number of capacity in the segment for the given number of entries.
-   */
-  private long calculateMinimumCapacity(int entries) {
-    return SegmentDescriptor.BYTES + OffsetIndex.bytes(entries) + 1024;
-  }
-
-  /**
-   * Returns the maximum number of capacity in the segment for the given number of entries.
-   */
-  private long calculateMaximumCapacity(int entries) {
-    return SegmentDescriptor.BYTES + OffsetIndex.bytes(entries) + Math.min((long) entries * (1 + 8 + 2 + (long) config.getMaxKeySize() + config.getMaxEntrySize()), OffsetIndex.MAX_POSITION);
   }
 
   /**
@@ -245,18 +216,23 @@ public class SegmentManager implements AutoCloseable {
   public Segment loadSegment(long segmentId, long segmentVersion) {
     File file = SegmentFile.createSegmentFile(config.getDirectory(), config.getName(), segmentId, segmentVersion);
     try (SegmentDescriptor descriptor = new SegmentDescriptor(FileBuffer.allocate(file, SegmentDescriptor.BYTES))) {
-      long initialCapacity = calculateMinimumCapacity(descriptor.entries());
-      long maxCapacity = calculateMaximumCapacity(descriptor.entries());
-
-      Buffer buffer = FileBuffer.allocate(file, initialCapacity, maxCapacity);
-
-      int indexBytes = OffsetIndex.bytes(descriptor.entries());
-      OffsetIndex index = new OffsetIndex(((FileBuffer) buffer.skip(SegmentDescriptor.BYTES)).map(indexBytes), descriptor.entries());
-
-      buffer = buffer.position(SegmentDescriptor.BYTES + indexBytes).slice();
-      Segment segment = Segment.open(buffer, descriptor, index);
+      Buffer buffer = FileBuffer.allocate(file, 1024 * 1024, config.getMaxSegmentSize() + config.getMaxEntrySize() + SegmentDescriptor.BYTES);
+      buffer = buffer.position(SegmentDescriptor.BYTES).slice();
+      Segment segment = Segment.open(buffer, serializer, descriptor, createIndex(segmentId, segmentVersion));
       LOGGER.debug("Loaded segment: {} ({})", descriptor.id(), file.getName());
       return segment;
+    }
+  }
+
+  /**
+   * Creates a segment index.
+   */
+  private OffsetIndex createIndex(long segmentId, long segmentVersion) {
+    File file = SegmentFile.createIndexFile(config.getDirectory(), config.getName(), segmentId, segmentVersion);
+    if (segmentVersion == 1) {
+      return new OrderedOffsetIndex(FileBuffer.allocate(file, 1024 * 1024, config.getMaxEntriesPerSegment() * 4));
+    } else {
+      return new SearchableOffsetIndex(FileBuffer.allocate(file, 1024 * 1024, config.getMaxEntriesPerSegment() * 8));
     }
   }
 
@@ -367,29 +343,6 @@ public class SegmentManager implements AutoCloseable {
         segment = segment(nextIndex);
       }
       commitIndex = index;
-    }
-  }
-
-  /**
-   * Returns the recycle index.
-   */
-  public long recycleIndex() {
-    return recycleIndex;
-  }
-
-  /**
-   * Sets the log recycle index.
-   */
-  public void recycle(long index) {
-    if (index > recycleIndex) {
-      long nextIndex = index;
-      Segment segment = segment(nextIndex);
-      while (segment != null && segment.containsIndex(nextIndex) && segment.recycleIndex() < nextIndex) {
-        segment.recycle(nextIndex);
-        nextIndex = segment.firstIndex() - 1;
-        segment = segment(nextIndex);
-      }
-      recycleIndex = index;
     }
   }
 

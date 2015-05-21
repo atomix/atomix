@@ -15,29 +15,17 @@
  */
 package net.kuujo.copycat.protocol.raft.storage;
 
-import net.kuujo.copycat.io.util.ReferencePool;
+import net.kuujo.copycat.io.util.ReferenceManager;
 
 /**
- * Raft entry pool.
+ * Session entry.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class RaftEntryPool extends ReferencePool<RaftEntry> {
+public class SessionEntry extends MemberEntry<SessionEntry> {
 
-  public RaftEntryPool() {
-    super(RaftEntry::new);
-  }
-
-  /**
-   * Acquires an entry for the given index.
-   *
-   * @param index The index for which to acquire the entry.
-   * @return The acquired entry.
-   */
-  public RaftEntry acquire(long index) {
-    RaftEntry entry = super.acquire();
-    entry.init(index);
-    return entry;
+  public SessionEntry(ReferenceManager<RaftEntry<?>> referenceManager) {
+    super(referenceManager);
   }
 
 }

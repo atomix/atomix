@@ -21,10 +21,12 @@ import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.HeapBuffer;
+import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.protocol.*;
 import net.kuujo.copycat.protocol.raft.rpc.Response;
 import net.kuujo.copycat.protocol.raft.rpc.SubmitRequest;
-import net.kuujo.copycat.protocol.raft.storage.RaftLog;
+import net.kuujo.copycat.protocol.raft.storage.CommandEntry;
+import net.kuujo.copycat.protocol.raft.storage.RaftStorage;
 import net.kuujo.copycat.util.ExecutionContext;
 import net.kuujo.copycat.util.ThreadChecker;
 import org.slf4j.Logger;
@@ -45,7 +47,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class Raft implements ProtocolInstance {
+public class Raft implements Protocol {
 
   /**
    * Returns a new Raft builder.
@@ -57,12 +59,11 @@ public class Raft implements ProtocolInstance {
   }
 
   private final Logger LOGGER = LoggerFactory.getLogger(Raft.class);
-  private final Buffer KEY = HeapBuffer.allocate(1024, 1024 * 1024);
   private final Buffer ENTRY = HeapBuffer.allocate(1024, 1024 * 1024);
   private final Set<EventListener<Long>> termListeners = new CopyOnWriteArraySet<>();
   private final Set<EventListener<Member>> electionListeners = new CopyOnWriteArraySet<>();
   private final RaftConfig config;
-  private final RaftLog log;
+  private final RaftStorage log;
   private final Cluster cluster;
   private final String topic;
   private final ExecutionContext context;
@@ -70,7 +71,7 @@ public class Raft implements ProtocolInstance {
   private ProtocolHandler handler;
   private RaftState state;
   private final Map<Integer, RaftMember> members = new HashMap<>();
-  private CompletableFuture<ProtocolInstance> openFuture;
+  private CompletableFuture<Protocol> openFuture;
   private boolean recovering = true;
   private int leader;
   private long term;
@@ -78,11 +79,11 @@ public class Raft implements ProtocolInstance {
   private int lastVotedFor;
   private long firstCommitIndex = 0;
   private long commitIndex = 0;
-  private long recycleIndex = 0;
+  private long globalIndex = 0;
   private long lastApplied = 0;
   private volatile boolean open;
 
-  protected Raft(RaftLog log, RaftConfig config, Cluster cluster, String topic, ExecutionContext context) {
+  protected Raft(RaftStorage log, RaftConfig config, Cluster cluster, String topic, ExecutionContext context) {
     this.log = log;
     this.config = config;
     this.cluster = cluster;
@@ -91,29 +92,22 @@ public class Raft implements ProtocolInstance {
     this.threadChecker = new ThreadChecker(context);
   }
 
-  /**
-   * Returns the Raft cluster.
-   *
-   * @return The Raft cluster.
-   */
+  @Override
   public Cluster cluster() {
     return cluster;
   }
 
-  /**
-   * Returns the Raft topic.
-   *
-   * @return The Raft cluster topic.
-   */
+  @Override
   public String topic() {
     return topic;
   }
 
-  /**
-   * Returns the execution context.
-   *
-   * @return The Raft execution context.
-   */
+  @Override
+  public Serializer serializer() {
+    return cluster.serializer();
+  }
+
+  @Override
   public ExecutionContext context() {
     return context;
   }
@@ -165,9 +159,12 @@ public class Raft implements ProtocolInstance {
   @Override
   public Raft setFilter(ProtocolFilter filter) {
     log.filter(entry -> {
-      entry.readKey(KEY);
-      entry.readEntry(ENTRY);
-      return filter.accept(entry.index(), KEY.flip(), ENTRY.flip());
+      if (entry instanceof CommandEntry) {
+        CommandEntry command = (CommandEntry) entry;
+        return filter.accept(command.getIndex(), command.getTimestamp(), command.getCommand());
+      } else {
+        return entry.getIndex() >= globalTime();
+      }
     });
     return this;
   }
@@ -176,6 +173,16 @@ public class Raft implements ProtocolInstance {
   public Raft setHandler(ProtocolHandler handler) {
     this.handler = handler;
     return this;
+  }
+
+  @Override
+  public long localTime() {
+    return commitIndex;
+  }
+
+  @Override
+  public long globalTime() {
+    return globalIndex;
   }
 
   /**
@@ -376,16 +383,16 @@ public class Raft implements ProtocolInstance {
   /**
    * Sets the recycle index.
    *
-   * @param recycleIndex The recycle index.
+   * @param globalIndex The recycle index.
    * @return The Raft context.
    */
-  Raft setRecycleIndex(long recycleIndex) {
-    if (recycleIndex < 0)
+  Raft setGlobalIndex(long globalIndex) {
+    if (globalIndex < 0)
       throw new IllegalArgumentException("recycle index must be positive");
-    if (recycleIndex < this.recycleIndex)
+    if (globalIndex < this.globalIndex)
       throw new IllegalArgumentException("cannot decrease recycle index");
-    this.recycleIndex = recycleIndex;
-    getRaftMember(cluster.member().id()).recycleIndex(recycleIndex);
+    this.globalIndex = globalIndex;
+    getRaftMember(cluster.member().id()).recycleIndex(globalIndex);
     return this;
   }
 
@@ -394,8 +401,8 @@ public class Raft implements ProtocolInstance {
    *
    * @return The state recycle index.
    */
-  long getRecycleIndex() {
-    return recycleIndex;
+  long getGlobalIndex() {
+    return globalIndex;
   }
 
   /**
@@ -448,14 +455,16 @@ public class Raft implements ProtocolInstance {
   /**
    * Commits an entry to the context.
    *
-   * @param key The entry key.
+   * @param index The entry index.
+   * @param timestamp The entry timestamp.
    * @param entry The entry value.
    * @param result The buffer to which to write the commit result.
    * @return The result buffer.
    */
-  Buffer commit(long index, Buffer key, Buffer entry, Buffer result) {
+  Buffer commit(long index, long timestamp, Buffer entry, Buffer result) {
     if (handler != null) {
-      return handler.apply(index, key, entry, result);
+      return cluster.serializer().writeObject(handler.apply(index, timestamp, cluster.serializer()
+        .readObject(entry)), result);
     }
     return result;
   }
@@ -465,7 +474,7 @@ public class Raft implements ProtocolInstance {
    *
    * @return The state log.
    */
-  RaftLog log() {
+  RaftStorage log() {
     return log;
   }
 
@@ -477,14 +486,13 @@ public class Raft implements ProtocolInstance {
   }
 
   @Override
-  public CompletableFuture<Buffer> submit(Buffer key, Buffer entry, Persistence persistence, Consistency consistency) {
+  public <R> CompletableFuture<R> submit(Object entry, Persistence persistence, Consistency consistency) {
     if (!open)
       throw new IllegalStateException("protocol not open");
 
-    CompletableFuture<Buffer> future = new CompletableFuture<>();
+    CompletableFuture<R> future = new CompletableFuture<>();
     SubmitRequest request = SubmitRequest.builder()
-      .withKey(key)
-      .withEntry(entry)
+      .withEntry(cluster.serializer().writeObject(entry))
       .withPersistence(persistence)
       .withConsistency(consistency)
       .build();
@@ -492,7 +500,7 @@ public class Raft implements ProtocolInstance {
       state.submit(request).whenComplete((response, error) -> {
         if (error == null) {
           if (response.status() == Response.Status.OK) {
-            future.complete(response.result());
+            future.complete(cluster.serializer().readObject(response.result()));
           } else {
             future.completeExceptionally(response.error().createException());
           }
@@ -541,7 +549,7 @@ public class Raft implements ProtocolInstance {
   }
 
   @Override
-  public synchronized CompletableFuture<ProtocolInstance> open() {
+  public synchronized CompletableFuture<Protocol> open() {
     if (openFuture != null) {
       return openFuture;
     }
@@ -617,6 +625,13 @@ public class Raft implements ProtocolInstance {
   }
 
   @Override
+  public CompletableFuture<Void> delete() {
+    if (open)
+      throw new IllegalStateException("cannot delete open protocol");
+    return CompletableFuture.runAsync(log::delete, context);
+  }
+
+  @Override
   public String toString() {
     return getClass().getCanonicalName();
   }
@@ -625,7 +640,7 @@ public class Raft implements ProtocolInstance {
    * Raft builder.
    */
   public static class Builder implements net.kuujo.copycat.Builder<Raft> {
-    private RaftLog log;
+    private RaftStorage log;
     private RaftConfig config = new RaftConfig();
     private Cluster cluster;
     private String topic;
@@ -637,7 +652,7 @@ public class Raft implements ProtocolInstance {
      * @param log The Raft log.
      * @return The Raft builder.
      */
-    public Builder withLog(RaftLog log) {
+    public Builder withLog(RaftStorage log) {
       this.log = log;
       return this;
     }

@@ -79,7 +79,7 @@ public class LeveledCompactionStrategy extends AbstractCompactionStrategy {
       for (Map.Entry<Long, List<Segment>> entry : levels.entrySet()) {
         long version = entry.getKey();
         List<Segment> level = entry.getValue();
-        if (level.stream().mapToLong(Segment::size).sum() > 1024 * 1024 * (long) Math.pow(compactionFactor, version - 1)) {
+        if (level.stream().mapToLong(Segment::size).sum() > Math.pow(config.getMaxSegmentSize(), version - 1)) {
           allSegments.add(level);
         }
       }

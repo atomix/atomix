@@ -17,7 +17,6 @@ package net.kuujo.copycat.protocol.raft.storage;
 
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.HeapBuffer;
-import net.kuujo.copycat.protocol.raft.storage.OffsetIndex;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.*;
@@ -28,13 +27,13 @@ import static org.testng.Assert.*;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class OffsetIndexTest {
+public class SearchableOffsetIndexTest {
 
   /**
    * Tests indexing an offset and checking whether the index contains the offset.
    */
   public void testIndexContains() {
-    OffsetIndex index = new OffsetIndex(HeapBuffer.allocate(OffsetIndex.bytes(1024)), 1024);
+    SearchableOffsetIndex index = new SearchableOffsetIndex(HeapBuffer.allocate(1024 * 8));
     assertFalse(index.contains(10));
     index.index(10, 1234, 8);
     assertTrue(index.contains(10));
@@ -46,7 +45,7 @@ public class OffsetIndexTest {
    * Tests reading the position and length of an offset.
    */
   public void testIndexPositionAndLength() {
-    OffsetIndex index = new OffsetIndex(HeapBuffer.allocate(OffsetIndex.bytes(1024)), 1024);
+    SearchableOffsetIndex index = new SearchableOffsetIndex(HeapBuffer.allocate(1024 * 8));
     index.index(1, 0, 8);
     assertEquals(index.position(1), 0);
     assertEquals(index.length(1), 8);
@@ -65,31 +64,18 @@ public class OffsetIndexTest {
   }
 
   /**
-   * Tests deleting an offset.
-   */
-  public void testIndexDelete() {
-    OffsetIndex index = new OffsetIndex(HeapBuffer.allocate(OffsetIndex.bytes(1024)), 1024);
-    index.index(10, 1234, 8);
-    index.index(11, 2345, 8);
-    index.index(12, 3456, 8);
-    assertTrue(index.contains(11));
-    index.delete(11);
-    assertFalse(index.contains(11));
-  }
-
-  /**
    * Tests recovering the index.
    */
   public void testIndexRecover() {
-    Buffer buffer = HeapBuffer.allocate(OffsetIndex.bytes(1024));
-    OffsetIndex index = new OffsetIndex(buffer, 1024);
+    Buffer buffer = HeapBuffer.allocate(1024 * 8);
+    SearchableOffsetIndex index = new SearchableOffsetIndex(buffer);
     index.index(10, 1234, 8);
     index.index(11, 2345, 8);
     index.index(12, 3456, 8);
     assertEquals(index.size(), 3);
     assertEquals(index.lastOffset(), 12);
     buffer.rewind();
-    OffsetIndex recover = new OffsetIndex(buffer, 1024);
+    SearchableOffsetIndex recover = new SearchableOffsetIndex(buffer);
     assertEquals(recover.size(), 3);
     assertEquals(recover.lastOffset(), 12);
     assertEquals(recover.position(12), 3456);

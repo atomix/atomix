@@ -17,10 +17,10 @@ package net.kuujo.copycat.protocol.raft.rpc;
 
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.serializer.SerializationException;
+import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.util.ReferenceManager;
 import net.kuujo.copycat.protocol.raft.RaftError;
 import net.kuujo.copycat.protocol.raft.RaftMember;
-import net.kuujo.copycat.protocol.raft.RaftMemberPool;
 
 import java.util.Collection;
 import java.util.Objects;
@@ -37,10 +37,10 @@ public class SyncResponse extends AbstractResponse<SyncResponse> {
       return new Builder();
     }
   };
-  private static final ThreadLocal<RaftMemberPool> memberPool = new ThreadLocal<RaftMemberPool>() {
+  private static final ThreadLocal<Serializer> serializer = new ThreadLocal<Serializer>() {
     @Override
-    protected RaftMemberPool initialValue() {
-      return new RaftMemberPool();
+    protected Serializer initialValue() {
+      return new Serializer();
     }
   };
 
@@ -92,13 +92,11 @@ public class SyncResponse extends AbstractResponse<SyncResponse> {
       if (membersSize < 0)
         throw new SerializationException("invalid members size: " + membersSize);
 
-      RaftMemberPool pool = memberPool.get();
+      Serializer serializer = SyncResponse.serializer.get();
 
       members.clear();
       for (int i = 0; i < membersSize; i++) {
-        RaftMember member = pool.acquire();
-        member.readObject(buffer);
-        members.add(member);
+        members.add(serializer.readObject(buffer));
       }
     } else {
       error = RaftError.forId(buffer.readByte());
@@ -109,9 +107,10 @@ public class SyncResponse extends AbstractResponse<SyncResponse> {
   public void writeObject(Buffer buffer) {
     buffer.writeByte(status.id());
     if (status == Response.Status.OK) {
+      Serializer serializer = SyncResponse.serializer.get();
       buffer.writeInt(members.size());
       for (RaftMember member : members) {
-        member.writeObject(buffer);
+        serializer.writeObject(member, buffer);
       }
     } else {
       buffer.writeByte(error.id());

@@ -123,7 +123,7 @@ class FollowerState extends ActiveState {
     // Once we got the last log term, iterate through each current member
     // of the cluster and vote each member for a vote.
     LOGGER.info("{} - Polling members {}", context.cluster().member().id(), votingMembers);
-    final long lastTerm = lastEntry != null ? lastEntry.readTerm() : 0;
+    final long lastTerm = lastEntry != null ? lastEntry.getTerm() : 0;
     for (Member member : votingMembers) {
       LOGGER.debug("{} - Polling {} for next term {}", context.cluster().member().id(), member, context.getTerm() + 1);
       PollRequest request = PollRequest.builder()

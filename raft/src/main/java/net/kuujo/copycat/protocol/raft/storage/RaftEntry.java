@@ -16,7 +16,6 @@
 package net.kuujo.copycat.protocol.raft.storage;
 
 import net.kuujo.copycat.io.Buffer;
-import net.kuujo.copycat.io.HeapBuffer;
 import net.kuujo.copycat.io.serializer.Writable;
 import net.kuujo.copycat.io.util.ReferenceCounted;
 import net.kuujo.copycat.io.util.ReferenceManager;
@@ -24,137 +23,76 @@ import net.kuujo.copycat.io.util.ReferenceManager;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Raft log entry.
+ * Raft entry.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class RaftEntry implements ReferenceCounted<RaftEntry>, Writable {
-
-  /**
-   * Raft entry type.
-   */
-  public static enum Type {
-
-    /**
-     * No-op entry.
-     */
-    NOOP(0),
-
-    /**
-     * Command entry.
-     */
-    COMMAND(1);
-
-    /**
-     * Returns the entry type for the given identifier.
-     *
-     * @param id The entry type identifier.
-     * @return The entry type.
-     * @throws IllegalArgumentException If the entry type identifier is invalid.
-     */
-    public static Type forId(int id) {
-      switch (id) {
-        case 0:
-          return NOOP;
-        case 1:
-          return COMMAND;
-      }
-      throw new IllegalArgumentException("invalid entry type identifier");
-    }
-
-    private final byte id;
-
-    private Type(int id) {
-      this.id = (byte) id;
-    }
-
-    /**
-     * Returns the entry type identifier.
-     *
-     * @return The 1-byte entry type identifier.
-     */
-    public byte id() {
-      return id;
-    }
-  }
-
-  /**
-   * Raft entry mode.
-   */
-  public static enum Mode {
-
-    /**
-     * Ephemeral mode.
-     */
-    EPHEMERAL(-1),
-
-    /**
-     * Durable mode.
-     */
-    DURABLE(0),
-
-    /**
-     * Persistent mode.
-     */
-    PERSISTENT(1);
-
-    /**
-     * Returns the entry mode for the given identifier.
-     *
-     * @param id The entry mode identifier.
-     * @return The entry mode.
-     * @throws IllegalArgumentException If the entry mode identifier is invalid.
-     */
-    public static Mode forId(int id) {
-      switch (id) {
-        case -1:
-          return EPHEMERAL;
-        case 0:
-          return DURABLE;
-        case 1:
-          return PERSISTENT;
-      }
-      throw new IllegalArgumentException("invalid entry type identifier");
-    }
-
-    private final byte id;
-
-    private Mode(int id) {
-      this.id = (byte) id;
-    }
-
-    /**
-     * Returns the entry mode identifier.
-     *
-     * @return The 1-byte entry mode identifier.
-     */
-    public byte id() {
-      return id;
-    }
-  }
-
-  private final ReferenceManager<RaftEntry> referenceManager;
+public abstract class RaftEntry<T extends RaftEntry<T>> implements ReferenceCounted<RaftEntry>, Writable {
+  private final ReferenceManager<RaftEntry<?>> referenceManager;
   private final AtomicInteger references = new AtomicInteger();
-  private boolean readOnly;
-  private Type type;
-  private Mode mode;
   private long index;
   private long term;
-  private final Buffer key = HeapBuffer.allocate(1024, 1024 * 1024);
-  private final Buffer entry = HeapBuffer.allocate(1024, 1024 * 1024);
 
-  public RaftEntry(ReferenceManager<RaftEntry> referenceManager) {
+  protected RaftEntry(ReferenceManager<RaftEntry<?>> referenceManager) {
     this.referenceManager = referenceManager;
   }
 
   /**
-   * Initializes the entry.
+   * Sets the entry index.
+   *
+   * @param index The entry index.
    */
-  void init(long index) {
+  protected void setIndex(long index) {
     this.index = index;
-    this.key.clear();
-    this.entry.clear();
-    readOnly = false;
+  }
+
+  /**
+   * Returns the entry index.
+   *
+   * @return The entry index.
+   */
+  public long getIndex() {
+    return index;
+  }
+
+  /**
+   * Returns the entry term.
+   *
+   * @return The entry term.
+   */
+  public long getTerm() {
+    return term;
+  }
+
+  /**
+   * Sets the entry term.
+   *
+   * @param term The entry term.
+   * @return The entry.
+   */
+  @SuppressWarnings("unchecked")
+  public T setTerm(long term) {
+    this.term = term;
+    return (T) this;
+  }
+
+  /**
+   * Returns the entry size.
+   *
+   * @return The entry size.
+   */
+  public int size() {
+    return 8;
+  }
+
+  @Override
+  public void writeObject(Buffer buffer) {
+    buffer.writeLong(term);
+  }
+
+  @Override
+  public void readObject(Buffer buffer) {
+    term = buffer.readLong();
   }
 
   @Override
@@ -165,8 +103,12 @@ public class RaftEntry implements ReferenceCounted<RaftEntry>, Writable {
 
   @Override
   public void release() {
-    if (references.decrementAndGet() == 0)
-      close();
+    int refs = references.decrementAndGet();
+    if (refs == 0) {
+      referenceManager.release(this);
+    } else if (refs < 0) {
+      references.set(0);
+    }
   }
 
   @Override
@@ -174,239 +116,10 @@ public class RaftEntry implements ReferenceCounted<RaftEntry>, Writable {
     return references.get();
   }
 
-  /**
-   * Returns the entry size.
-   *
-   * @return The entry size.
-   */
-  public int size() {
-    return (int) (key.remaining() + entry.remaining());
-  }
-
-  /**
-   * Returns the entry index.
-   *
-   * @return The entry index.
-   */
-  public long index() {
-    return index;
-  }
-
-  /**
-   * Reads the entry type.
-   *
-   * @return The entry type.
-   */
-  public Type readType() {
-    return type;
-  }
-
-  /**
-   * Writes the entry type.
-   *
-   * @param type The entry type.
-   * @return The Raft entry.
-   */
-  public RaftEntry writeType(Type type) {
-    if (readOnly)
-      throw new IllegalStateException("entry is read-only");
-    this.type = type;
-    return this;
-  }
-
-  /**
-   * Reads the entry persistence mode.
-   *
-   * @return The entry mode.
-   */
-  public Mode readMode() {
-    return mode;
-  }
-
-  /**
-   * Writes the entry persistence mode.
-   *
-   * @param mode The entry persistence mode.
-   * @return The Raft entry.
-   */
-  public RaftEntry writeMode(Mode mode) {
-    if (readOnly)
-      throw new IllegalStateException("entry is read-only");
-    this.mode = mode;
-    return this;
-  }
-
-  /**
-   * Reads the entry term.
-   *
-   * @return The entry term.
-   */
-  public long readTerm() {
-    return term;
-  }
-
-  /**
-   * Writes the entry term.
-   *
-   * @param term The entry term.
-   * @return The Raft entry.
-   */
-  public RaftEntry writeTerm(long term) {
-    if (readOnly)
-      throw new IllegalStateException("entry is read-only");
-    this.term = term;
-    return this;
-  }
-
-  /**
-   * Reads the entry key.
-   *
-   * @param buffer The buffer into which to read the key.
-   * @return The entry.
-   */
-  public RaftEntry readKey(Buffer buffer) {
-    if (buffer != null)
-      key.mark().read(buffer).reset();
-    return this;
-  }
-
-  /**
-   * Writes the entry key.
-   *
-   * @param buffer The buffer to write to the entry key.
-   * @return The entry.
-   */
-  public RaftEntry writeKey(Buffer buffer) {
-    if (readOnly)
-      throw new IllegalStateException("entry is read-only");
-    if (buffer != null)
-      key.write(buffer);
-    return this;
-  }
-
-  /**
-   * Reads the entry value.
-   *
-   * @param buffer The buffer into which to read the value.
-   * @return The entry.
-   */
-  public RaftEntry readEntry(Buffer buffer) {
-    if (buffer != null)
-      entry.mark().read(buffer).reset();
-    return this;
-  }
-
-  /**
-   * Writes the entry value.
-   *
-   * @param buffer The buffer to write to the entry value.
-   * @return The entry.
-   */
-  public RaftEntry writeEntry(Buffer buffer) {
-    if (readOnly)
-      throw new IllegalStateException("entry is read-only");
-    if (buffer != null)
-      entry.write(buffer);
-    return this;
-  }
-
-  /**
-   * Reads the entry into the given entry.
-   *
-   * @param entry The entry into which to read the entry.
-   * @return This entry.
-   */
-  public RaftEntry read(RaftEntry entry) {
-    entry.type = type;
-    entry.mode = mode;
-    entry.term = term;
-    entry.key.write(key);
-    entry.entry.write(key);
-    return this;
-  }
-
-  /**
-   * Writes the given entry into this entry.
-   *
-   * @param entry The entry to write to this entry.
-   * @return This entry.
-   */
-  public RaftEntry write(RaftEntry entry) {
-    if (readOnly)
-      throw new IllegalStateException("entry is read-only");
-    type = entry.type;
-    mode = entry.mode;
-    term = entry.term;
-    key.write(entry.key);
-    this.entry.write(entry.entry);
-    return this;
-  }
-
-  /**
-   * Returns a boolean value indicating whether the entry is read-only.
-   *
-   * @return Indicates whether the entry is read-only.
-   */
-  public boolean isReadOnly() {
-    return readOnly;
-  }
-
-  /**
-   * Sets the entry to read-only mode.
-   *
-   * @return The read-only entry.
-   */
-  public RaftEntry asReadOnlyEntry() {
-    key.flip();
-    entry.flip();
-    readOnly = true;
-    return this;
-  }
-
-  @Override
-  public void writeObject(Buffer buffer) {
-    if (!readOnly)
-      throw new IllegalStateException("entry must be read-only");
-    buffer.writeByte(type.id)
-      .writeByte(mode.id)
-      .writeLong(term)
-      .writeInt((int) key.remaining())
-      .write(key)
-      .writeInt((int) entry.remaining())
-      .write(entry);
-  }
-
-  @Override
-  public void readObject(Buffer buffer) {
-    type = Type.forId(buffer.readByte());
-    mode = Mode.forId(buffer.readByte());
-    term = buffer.readLong();
-    int keySize = buffer.readInt();
-    buffer.read(key.limit(keySize));
-    int entrySize = buffer.readInt();
-    buffer.read(entry.limit(entrySize));
-    asReadOnlyEntry();
-  }
-
-  /**
-   * Resets the key and entry by flipping the buffers.
-   */
-  public RaftEntry reset() {
-    key.flip();
-    entry.flip();
-    return this;
-  }
-
   @Override
   public void close() {
-    key.close();
-    entry.close();
+    references.set(0);
     referenceManager.release(this);
-  }
-
-  @Override
-  public String toString() {
-    return String.format("%s[index=%d, type=%s, term=%d]", getClass().getSimpleName(), index, type, term);
   }
 
 }

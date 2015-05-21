@@ -23,6 +23,7 @@ import net.kuujo.copycat.io.HeapBufferPool;
 import net.kuujo.copycat.protocol.Consistency;
 import net.kuujo.copycat.protocol.Persistence;
 import net.kuujo.copycat.protocol.raft.rpc.*;
+import net.kuujo.copycat.protocol.raft.storage.CommandEntry;
 import net.kuujo.copycat.protocol.raft.storage.RaftEntry;
 
 import java.util.*;
@@ -45,7 +46,6 @@ class PassiveState extends RaftState {
 
   private static final int MAX_BATCH_SIZE = 1024 * 1024;
   private ScheduledFuture<?> currentTimer;
-  protected final Buffer KEY = HeapBuffer.allocate(1024, 1024 * 1024);
   protected final Buffer ENTRY = HeapBuffer.allocate(1024, 1024 * 1024);
   protected final Buffer RESULT = HeapBuffer.allocate(1024, 1024 * 1024);
 
@@ -200,27 +200,20 @@ class PassiveState extends RaftState {
     // Iterate through provided entries and append any that are missing from the log. Only committed entries are
     // replicated via gossip, so we don't have to worry about consistency checks here.
     for (RaftEntry entry : request.entries()) {
-      long index = entry.index();
+      long index = entry.getIndex();
       if (!context.log().containsIndex(index)) {
-        try (RaftEntry transfer = context.log().skip(index - 1 - context.log().lastIndex()).createEntry()) {
-          assert transfer.index() == index;
-          transfer.write(entry);
-          entry.reset();
-        }
+        context.log().skip(index - 1 - context.log().lastIndex()).appendEntry(entry);
 
-        LOGGER.debug("{} - Appended {} to log at index {}", context.cluster().member().id(), entry, entry.index());
+        LOGGER.debug("{} - Appended {} to log at index {}", context.cluster().member().id(), entry, entry.getIndex());
 
         context.log().commit(index);
         context.setCommitIndex(index);
 
-        if (entry.readType() == RaftEntry.Type.COMMAND) {
+        if (entry instanceof CommandEntry) {
           try {
-            KEY.clear();
-            ENTRY.clear();
-            RESULT.clear();
-            entry.readKey(KEY);
-            entry.readEntry(ENTRY);
-            context.commit(index, KEY.flip(), ENTRY.flip(), RESULT);
+            CommandEntry command = (CommandEntry) entry;
+            command.getCommand().read(ENTRY);
+            context.commit(command.getIndex(), command.getTimestamp(), ENTRY.flip(), RESULT.clear());
           } catch (Exception e) {
             LOGGER.warn("failed to apply command", e);
           } finally {
@@ -235,7 +228,8 @@ class PassiveState extends RaftState {
     // Update the recycle index using the highest member's recycle index.
     request.members().stream()
       .mapToLong(RaftMember::recycleIndex).max()
-      .ifPresent(recycleIndex -> context.setRecycleIndex(Math.min(Math.max(context.getRecycleIndex(), recycleIndex), context.getCommitIndex())));
+      .ifPresent(recycleIndex -> context.setGlobalIndex(Math.min(Math.max(context.getGlobalIndex(), recycleIndex), context
+        .getCommitIndex())));
 
     // Reply with the updated vector clock.
     return CompletableFuture.completedFuture(logResponse(SyncResponse.builder()
@@ -279,10 +273,10 @@ class PassiveState extends RaftState {
     context.checkThread();
     logRequest(request);
 
-    if (request.persistence() == Persistence.NONE && request.consistency() == Consistency.EVENTUAL) {
+    if (request.persistence() == Persistence.NONE && request.consistency() == Consistency.WEAK) {
       Buffer result = BUFFER_POOL.get().acquire();
       try {
-        context.commit(context.getLastApplied(), request.key(), request.entry(), result);
+        context.commit(context.getLastApplied(), System.currentTimeMillis(), request.entry(), result);
         return CompletableFuture.completedFuture(logResponse(SubmitResponse.builder()
           .withStatus(Response.Status.OK)
           .withResult(result.flip())
@@ -315,7 +309,6 @@ class PassiveState extends RaftState {
 
   @Override
   public synchronized CompletableFuture<Void> close() {
-    KEY.close();
     ENTRY.close();
     RESULT.close();
     return super.close().thenRun(this::cancelSyncTimer);

@@ -54,7 +54,6 @@ public class SubmitRequest extends AbstractRequest<SubmitRequest> {
     return builder.get().reset(request);
   }
 
-  private Buffer key;
   private Buffer entry;
   private Persistence persistence = Persistence.DEFAULT;
   private Consistency consistency = Consistency.DEFAULT;
@@ -66,15 +65,6 @@ public class SubmitRequest extends AbstractRequest<SubmitRequest> {
   @Override
   public Type type() {
     return Type.SUBMIT;
-  }
-
-  /**
-   * Returns the command key.
-   *
-   * @return The command key.
-   */
-  public Buffer key() {
-    return key;
   }
 
   /**
@@ -108,11 +98,6 @@ public class SubmitRequest extends AbstractRequest<SubmitRequest> {
   public void readObject(Buffer buffer) {
     persistence = Persistence.values()[buffer.readByte()];
     consistency = Consistency.values()[buffer.readByte()];
-    int keySize = buffer.readInt();
-    if (keySize > -1) {
-      key = buffer.slice(keySize);
-      buffer.skip(keySize);
-    }
     int entrySize = buffer.readInt();
     entry = buffer.slice(entrySize);
   }
@@ -121,18 +106,11 @@ public class SubmitRequest extends AbstractRequest<SubmitRequest> {
   public void writeObject(Buffer buffer) {
     buffer.writeByte(persistence.ordinal());
     buffer.writeByte(consistency.ordinal());
-    if (key != null) {
-      buffer.writeInt((int) key.limit()).write(key);
-    } else {
-      buffer.writeInt(-1);
-    }
     buffer.writeInt((int) entry.limit()).write(entry);
   }
 
   @Override
   public void close() {
-    if (key != null)
-      key.release();
     if (entry != null)
       entry.release();
     super.close();
@@ -140,22 +118,17 @@ public class SubmitRequest extends AbstractRequest<SubmitRequest> {
 
   @Override
   public int hashCode() {
-    return Objects.hash(key, entry, persistence, consistency);
+    return Objects.hash(entry, persistence, consistency);
   }
 
   @Override
   public boolean equals(Object object) {
-    if (object instanceof SubmitRequest) {
-      SubmitRequest request = (SubmitRequest) object;
-      return ((request.key == null && key == null) || (request.key != null && key != null && request.key.equals(key)))
-        && request.entry.equals(entry);
-    }
-    return false;
+    return object instanceof SubmitRequest && ((SubmitRequest) object).entry.equals(entry);
   }
 
   @Override
   public String toString() {
-    return String.format("%s[key=%s, entry=%s, persistence=%s, consistency=%s]", getClass().getSimpleName(), key, entry, persistence, consistency);
+    return String.format("%s[entry=%s, persistence=%s, consistency=%s]", getClass().getSimpleName(), entry, persistence, consistency);
   }
 
   /**
@@ -165,18 +138,6 @@ public class SubmitRequest extends AbstractRequest<SubmitRequest> {
 
     protected Builder() {
       super(SubmitRequest::new);
-    }
-
-    /**
-     * Sets the request key.
-     *
-     * @param key The request key.
-     * @return The request builder.
-     */
-    @SuppressWarnings("unchecked")
-    public Builder withKey(Buffer key) {
-      request.key = key;
-      return this;
     }
 
     /**
@@ -222,8 +183,6 @@ public class SubmitRequest extends AbstractRequest<SubmitRequest> {
     @Override
     public SubmitRequest build() {
       super.build();
-      if (request.key != null)
-        request.key.acquire();
       if (request.entry != null)
         request.entry.acquire();
       return request;

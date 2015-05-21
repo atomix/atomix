@@ -16,24 +16,19 @@
 package net.kuujo.copycat.protocol.raft.storage;
 
 import net.kuujo.copycat.io.Buffer;
+import net.kuujo.copycat.io.serializer.SerializationException;
+import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.io.util.ReferenceManager;
+import net.kuujo.copycat.io.util.ReferencePool;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ConcurrentModificationException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Log segment.
- * <p>
- * Each log consists of a set of segments. Each segment represents a unique portion of the log. Because of the semantics
- * of the log compaction algorithm, each segment may contain a fixed but configurable number of entries.
- * <p>
- * Entries written to the segment are indexed in a fixed sized {@link OffsetIndex}. When entries are read from the segment,
- * the offset index is searched for the relative position of the index.
- * <p>
- * Segments are designed to facilitate the immediate effective removal of duplicate entries from within the segment. To
- * achieve this, each segment maintains a light-weight in-memory {@link net.kuujo.copycat.protocol.raft.storage.compact.KeyTable}.
- * When a new entry is committed to the segment, its key is hashed and its offset stored in the lookup table. When an entry
- * is read from the segment, the lookup table is checked to determine whether the entry is the most recent entry for its key
- * in the segment. If a newer entry with the same key has already been written to the lookup table, the segment will behave
- * as if the entry no longer exists.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -41,58 +36,56 @@ public class Segment implements AutoCloseable {
   private static final int ENTRY_TYPE_SIZE = 1;
   private static final int ENTRY_MODE_SIZE = 1;
   private static final int ENTRY_TERM_SIZE = 8;
-  private static final int KEY_LENGTH_SIZE = 2;
 
   /**
    * Opens a new segment.
    *
    * @param buffer The segment buffer.
+   * @param serializer The segment entry serializer.
    * @param descriptor The segment descriptor.
    * @param index The segment index.
    * @return The opened segment.
    */
-  public static Segment open(Buffer buffer, SegmentDescriptor descriptor, OffsetIndex index) {
-    return new Segment(buffer, descriptor, index);
+  public static Segment open(Buffer buffer, Serializer serializer, SegmentDescriptor descriptor, OffsetIndex index) {
+    return new Segment(buffer, serializer, descriptor, index);
   }
 
   private final SegmentDescriptor descriptor;
+  private final Serializer serializer;
   private final Buffer source;
   private final Buffer writeBuffer;
   private final Buffer readBuffer;
   private final OffsetIndex offsetIndex;
-  private KeySet keys;
-  private final RaftEntryPool entryPool = new CommittingRaftEntryPool();
+  private final TypedEntryPool entryPool = new TypedEntryPool();
   private long commitIndex = 0;
   private long recycleIndex = 0;
-  private int firstLastOffset;
   private long skip = 0;
   private boolean open = true;
-  private boolean entryLock;
 
-  Segment(Buffer buffer, SegmentDescriptor descriptor, OffsetIndex offsetIndex) {
+  Segment(Buffer buffer, Serializer serializer, SegmentDescriptor descriptor, OffsetIndex offsetIndex) {
     if (buffer == null)
       throw new NullPointerException("buffer cannot be null");
+    if (serializer == null)
+      throw new NullPointerException("serializer cannot be null");
     if (descriptor == null)
       throw new NullPointerException("descriptor cannot be null");
     if (offsetIndex == null)
       throw new NullPointerException("index cannot be null");
 
     this.source = buffer;
+    this.serializer = serializer;
     this.writeBuffer = buffer.slice();
     this.readBuffer = writeBuffer.asReadOnlyBuffer();
     this.descriptor = descriptor;
     this.offsetIndex = offsetIndex;
     if (offsetIndex.size() > 0) {
-      firstLastOffset = offsetIndex.lastOffset();
-      writeBuffer.position(offsetIndex.position(firstLastOffset) + offsetIndex.length(firstLastOffset));
+      writeBuffer.position(offsetIndex.position(offsetIndex.lastOffset()) + offsetIndex.length(offsetIndex.lastOffset()));
     }
 
     // If the descriptor is locked then that indicates that this segment is immutable. Set the commit index to the last
     // index in the segment.
     if (descriptor.locked()) {
       commitIndex = lastIndex();
-    } else {
-      keys = new KeySet();
     }
   }
 
@@ -103,27 +96,6 @@ public class Segment implements AutoCloseable {
    */
   public SegmentDescriptor descriptor() {
     return descriptor;
-  }
-
-  /**
-   * Returns the cardinality of the keys in the segment.
-   *
-   * @return The cardinality of the keys in the segment.
-   */
-  public KeySet keys() {
-    if (keys != null) {
-      return keys;
-    } else if (!descriptor.locked()) {
-      throw new IllegalStateException("unlocked segment contains no key set");
-    }
-
-    int lastOffset = offsetIndex.lastOffset();
-    long lastPosition = offsetIndex.position(lastOffset);
-    int lastLength = offsetIndex.length(lastOffset);
-    long keysPosition = lastPosition + lastLength;
-    byte[] bytes = new byte[readBuffer.readInt(keysPosition)];
-    readBuffer.read(keysPosition + 4, bytes, 0, bytes.length);
-    return new KeySet(bytes);
   }
 
   /**
@@ -141,7 +113,7 @@ public class Segment implements AutoCloseable {
    * @return Indicates whether the segment is empty.
    */
   public boolean isEmpty() {
-    return offsetIndex.length() == 0;
+    return offsetIndex.size() == 0;
   }
 
   /**
@@ -150,7 +122,7 @@ public class Segment implements AutoCloseable {
    * @return Indicates whether the segment is full.
    */
   public boolean isFull() {
-    return offset(nextIndex()) >= descriptor.range();
+    return size() >= descriptor.maxSegmentSize();
   }
 
   /**
@@ -178,15 +150,6 @@ public class Segment implements AutoCloseable {
    */
   public long length() {
     return offsetIndex.lastOffset() + 1;
-  }
-
-  /**
-   * Returns the number of entries remaining in the segment.
-   *
-   * @return The number of entries remaining in the segment.
-   */
-  public int remaining() {
-    return !isEmpty() ? descriptor.range() - (offsetIndex.lastOffset() + (int) skip) : descriptor.range() - (int) skip;
   }
 
   /**
@@ -279,86 +242,50 @@ public class Segment implements AutoCloseable {
   }
 
   /**
-   * Returns the absolute key length position for the entry at the given position.
-   */
-  private long keyLengthPosition(long position) {
-    return position + ENTRY_TYPE_SIZE + ENTRY_MODE_SIZE + ENTRY_TERM_SIZE;
-  }
-
-  /**
-   * Returns the absolute key position for the entry at the given position.
-   */
-  private long keyPosition(long position) {
-    return position + ENTRY_TYPE_SIZE + ENTRY_MODE_SIZE + ENTRY_TERM_SIZE + KEY_LENGTH_SIZE;
-  }
-
-  /**
    * Returns the absolute entry position for the entry at the given position.
    */
-  private long entryPosition(long position, int keyLength) {
-    return position + ENTRY_TYPE_SIZE + ENTRY_MODE_SIZE + ENTRY_TERM_SIZE + KEY_LENGTH_SIZE + Math.max(keyLength, 0);
+  private long entryPosition(long position) {
+    return position + ENTRY_TYPE_SIZE + ENTRY_MODE_SIZE + ENTRY_TERM_SIZE;
   }
 
   /**
    * Creates a new entry.
    *
+   * @param type The Raft entry type.
    * @return The created entry.
    */
-  public RaftEntry createEntry() {
+  public <T extends RaftEntry<T>> T createEntry(Class<T> type) {
     if (!isOpen())
       throw new IllegalStateException("segment not open");
     if (isLocked())
       throw new IllegalStateException("segment is locked");
-    if (entryLock)
-      throw new IllegalStateException("entry outstanding");
-    RaftEntry entry = entryPool.acquire(nextIndex());
-    entryLock = true;
-    return entry;
-  }
-
-  /**
-   * Writes an absolute entry to the segment.
-   */
-  public long transferEntry(RaftEntry entry) {
-    // Record the starting position of the new entry.
-    long position = writeBuffer.position();
-
-    // Write the entry type identifier and 16-bit signed key size.
-    writeBuffer.limit(-1)
-      .writeByte(entry.readType().id())
-      .writeByte(entry.readMode().id())
-      .writeLong(entry.readTerm());
-
-    long keyLengthPosition = writeBuffer.position();
-    writeBuffer.skip(2);
-
-    entry.readKey(writeBuffer.limit(writeBuffer.position() + Math.min(writeBuffer.maxCapacity() - writeBuffer.position(), descriptor.maxKeySize())));
-
-    short keyLength = (short) (writeBuffer.position() - (keyLengthPosition + 2));
-    writeBuffer.writeShort(keyLengthPosition, keyLength);
-
-    entry.readEntry(writeBuffer.limit(writeBuffer.position() + Math.min(writeBuffer.maxCapacity() - writeBuffer.position(), descriptor.maxEntrySize())));
-
-    int totalLength = (int) (writeBuffer.position() - position);
-    offsetIndex.index(offset(entry.index()), position, totalLength);
-
-    entryLock = false;
-
-    return entry.index();
+    return entryPool.acquire(type, nextIndex());
   }
 
   /**
    * Commits an entry to the segment.
    */
-  void commitEntry(RaftEntry entry) {
+  public long appendEntry(RaftEntry entry) {
     long nextIndex = nextIndex();
-    if (entry.index() < nextIndex) {
+
+    if (entry.getIndex() < nextIndex) {
       throw new CommitModificationException("cannot modify committed entry");
     }
-    if (entry.index() > nextIndex) {
+
+    if (entry.getIndex() > nextIndex) {
       throw new ConcurrentModificationException("attempt to commit entry with non-monotonic index");
     }
-    transferEntry(entry.asReadOnlyEntry());
+
+    // Record the starting position of the new entry.
+    long position = writeBuffer.position();
+
+    // Write the entry type identifier and 16-bit signed key size.
+    serializer.writeObject(entry, writeBuffer.limit(-1));
+
+    int totalLength = (int) (writeBuffer.position() - position);
+    offsetIndex.index(offset(entry.getIndex()), position, totalLength);
+
+    return entry.getIndex();
   }
 
   /**
@@ -367,7 +294,7 @@ public class Segment implements AutoCloseable {
    * @param index The index from which to read the entry.
    * @return The entry at the given index.
    */
-  public RaftEntry getEntry(long index) {
+  public <T extends RaftEntry<T>> T getEntry(long index) {
     if (!isOpen())
       throw new IllegalStateException("segment not open");
     checkRange(index);
@@ -386,33 +313,11 @@ public class Segment implements AutoCloseable {
       // position of the next offset in the index and subtracting this position from the next position.
       int length = offsetIndex.length(offset);
 
-      // Read the entry type and mode from the buffer.
-      RaftEntry.Type type = RaftEntry.Type.forId(readBuffer.readByte(entryTypePosition(position)));
-      RaftEntry.Mode mode = RaftEntry.Mode.forId(readBuffer.readByte(entryModePosition(position)));
-
-      // If the entry is ephemeral and its offset is less than or equal to the starting last offset then pretend the
-      // entry doesn't exist. The entry should be removed during log compaction.
-      if (mode == RaftEntry.Mode.EPHEMERAL && firstLastOffset >= offset) {
-        return null;
-      }
-
-      // Acquire an entry from the entry pool. This will create an entry if all entries in the pool are currently referenced.
-      RaftEntry entry = entryPool.acquire(index);
-      entry.writeType(type);
-      entry.writeMode(mode);
-      entry.writeTerm(readBuffer.readLong(entryTermPosition(position)));
-
-      // Reset the pooled entry with a slice of the underlying buffer using the entry position and length.
-      int keySize = readBuffer.readShort(keyLengthPosition(position));
-      try (Buffer key = readBuffer.slice(keyPosition(position), keySize)) {
-        entry.writeKey(key);
-      }
-
-      long entryPosition = entryPosition(position, keySize);
+      // Deserialize the entry from a slice of the underlying buffer.
+      long entryPosition = entryPosition(position);
       try (Buffer value = readBuffer.slice(entryPosition, length - (entryPosition - position))) {
-        entry.writeEntry(value);
+        return serializer.readObject(value);
       }
-      return entry.asReadOnlyEntry();
     }
     return null;
   }
@@ -488,27 +393,9 @@ public class Segment implements AutoCloseable {
       writeBuffer.flush();
       offsetIndex.flush();
 
-      for (long i = Math.max(commitIndex + 1, descriptor.index()); i <= index; i++) {
-        int offset = offset(i);
-        long position = offsetIndex.position(offset);
-        if (position != -1) {
-          int keySize = readBuffer.readShort(keyLengthPosition(position));
-          try (Buffer key = readBuffer.slice(keyPosition(position), keySize)) {
-            keys.add(key);
-          }
-        }
-        commitIndex = index;
-      }
+      commitIndex = index;
 
       if (offset(commitIndex) == descriptor.range() - 1) {
-        try {
-          byte[] bytes = keys.getBytes();
-          writeBuffer.writeInt(bytes.length).write(bytes);
-        } finally {
-          writeBuffer.flush();
-          keys = null;
-        }
-
         descriptor.update(System.currentTimeMillis());
         descriptor.lock();
       }
@@ -560,14 +447,37 @@ public class Segment implements AutoCloseable {
   }
 
   /**
-   * Entry pool implementation that commits entries once closed.
+   * Raft entry pool.
    */
-  private class CommittingRaftEntryPool extends RaftEntryPool {
-    @Override
-    public void release(RaftEntry reference) {
-      if (!reference.isReadOnly())
-        commitEntry(reference);
-      super.release(reference);
+  private class TypedEntryPool {
+    private final Map<Class, ReferencePool<? extends RaftEntry<?>>> pools = new HashMap<>();
+
+    /**
+     * Acquires a specific entry type.
+     */
+    @SuppressWarnings("unchecked")
+    public <T extends RaftEntry<T>> T acquire(Class<T> type, long index) {
+      ReferencePool<T> pool = (ReferencePool<T>) pools.get(type);
+      if (pool == null) {
+        try {
+          Constructor<T> c = type.getConstructor(ReferenceManager.class);
+          c.setAccessible(true);
+          pool = new ReferencePool<>((r) -> {
+            try {
+              return (T) c.newInstance(r);
+            } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+              throw new StorageException(e);
+            }
+          });
+        } catch (NoSuchMethodException e) {
+          throw new SerializationException("failed to instantiate reference: must provide a single argument constructor", e);
+        }
+        pools.put(type, pool);
+      }
+
+      T entry = pool.acquire();
+      entry.setIndex(index);
+      return entry;
     }
   }
 

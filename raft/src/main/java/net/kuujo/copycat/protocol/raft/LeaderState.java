@@ -19,6 +19,8 @@ import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.protocol.Persistence;
 import net.kuujo.copycat.protocol.raft.rpc.*;
+import net.kuujo.copycat.protocol.raft.storage.CommandEntry;
+import net.kuujo.copycat.protocol.raft.storage.NoOpEntry;
 import net.kuujo.copycat.protocol.raft.storage.RaftEntry;
 
 import java.util.*;
@@ -78,9 +80,9 @@ class LeaderState extends ActiveState {
   private CompletableFuture<Void> commitEntries() {
     final long term = context.getTerm();
     final long index;
-    try (RaftEntry logEntry = context.log().createEntry()) {
-      logEntry.writeType(RaftEntry.Type.NOOP).writeMode(RaftEntry.Mode.PERSISTENT).writeTerm(term);
-      index = logEntry.index();
+    try (NoOpEntry noOpEntry = context.log().createEntry(NoOpEntry.class)) {
+      noOpEntry.setTerm(term);
+      index = noOpEntry.getIndex();
     }
 
     CompletableFuture<Void> future = new CompletableFuture<>();
@@ -182,29 +184,29 @@ class LeaderState extends ActiveState {
     logRequest(request);
 
     final long term = context.getTerm();
+    final long timestamp = System.currentTimeMillis();
 
-    final Buffer key = request.key();
     final Buffer entry = request.entry();
 
-    final long index = writeSubmitEntry(term, key, entry, request.persistence());
+    final long index = writeSubmitEntry(term, timestamp, entry, request.persistence());
 
     // If the entry was stored to the log then the index will be greater than 0. Entries stored to the log must be
     // replicated via the Raft protocol.
     if (index != 0) {
-      return replicateSubmitEntry(index, key, entry, false);
+      return replicateSubmitEntry(index, timestamp, entry, false);
     } else {
-      // Perform synchronous or asynchronous replication based on the request's consistency level. EVENTUAL(ly) consistent
+      // Perform synchronous or asynchronous replication based on the request's consistency level. WEAK(ly) consistent
       // requests are always applied directly to the state machine without performing any additional work. LEASE requests
-      // are handled in the same way as EVENTUAL requests since the leader already has a lease on its own election. Note
-      // that EVENTUAL commands executed on followers will be forwarded to the leader. STRICT consistency requests are
+      // are handled in the same way as WEAK requests since the leader already has a lease on its own election. Note
+      // that WEAK commands executed on followers will be forwarded to the leader. STRICT consistency requests are
       // handled by synchronously replicating the entry to a majority of the cluster.
       switch (request.consistency()) {
-        case EVENTUAL:
+        case WEAK:
         case LEASE:
-          return commitSubmitEntry(context.getLastApplied(), key, entry, new CompletableFuture<>());
+          return commitSubmitEntry(context.getLastApplied(), timestamp, entry, new CompletableFuture<>());
         case STRICT:
         case DEFAULT:
-          return replicateSubmitEntry(0, key, entry, true);
+          return replicateSubmitEntry(0, timestamp, entry, true);
       }
     }
 
@@ -214,46 +216,21 @@ class LeaderState extends ActiveState {
   /**
    * Writes a submit entry to the log.
    */
-  private long writeSubmitEntry(long term, Buffer key, Buffer entry, Persistence persistence) {
+  private long writeSubmitEntry(long term, long timestamp, Buffer entry, Persistence persistence) {
     // Only if the entry is persistent do we store it to the log.
     if (persistence != Persistence.NONE) {
 
       // Create a new entry and store the index. We may need the index for replication.
-      try (RaftEntry logEntry = context.log().createEntry()) {
+      try (CommandEntry commandEntry = context.log().createEntry(CommandEntry.class)) {
 
         // Write the type and term to the entry.
-        logEntry.writeType(RaftEntry.Type.COMMAND).writeTerm(term);
+        commandEntry.setTerm(term);
+        commandEntry.setTimestamp(timestamp);
 
-        // It's possible that either the entry key or value could be null, so account for that case.
-        // Also, ensure buffers are reset to their original positions.
-        if (key != null) {
-          logEntry.writeKey(key.mark());
-          key.reset();
-        }
+        commandEntry.setCommand(entry.mark());
+        entry.reset();
 
-        if (entry != null) {
-          logEntry.writeEntry(entry.mark());
-          entry.reset();
-        }
-
-        // Indicate the persistence level to the log. The log will use this information to decide which entries to
-        // evict during compaction. Entries logged in EPHEMERAL mode will not persist through a crash. Entries logged
-        // in DURABLE mode will persist until the recycleIndex is equal to or greater than the entry's index. The
-        // PERSISTENT mode will persist entries until a duplicate key is found.
-        switch (persistence) {
-          case EPHEMERAL:
-            logEntry.writeMode(RaftEntry.Mode.EPHEMERAL);
-            break;
-          case DURABLE:
-            logEntry.writeMode(RaftEntry.Mode.DURABLE);
-            break;
-          case PERSISTENT:
-          case DEFAULT:
-            logEntry.writeMode(RaftEntry.Mode.PERSISTENT);
-            break;
-        }
-
-        long index = logEntry.index();
+        long index = commandEntry.getIndex();
         LOGGER.debug("{} - Appended entry to log at index {}", context.cluster().member().id(), index);
         return index;
       }
@@ -264,13 +241,13 @@ class LeaderState extends ActiveState {
   /**
    * Replicates a submit entry.
    */
-  private CompletableFuture<SubmitResponse> replicateSubmitEntry(long index, Buffer key, Buffer entry, boolean read) {
+  private CompletableFuture<SubmitResponse> replicateSubmitEntry(long index, long timestamp, Buffer entry, boolean read) {
     LOGGER.debug("{} - Replicating logs up to index {}", context.cluster().member().id(), index);
 
     CompletableFuture<SubmitResponse> future = new CompletableFuture<>();
 
-    // Acquire references to the key and entry.
-    acquireEntry(key, entry);
+    // Acquire a reference to the entry.
+    entry.acquire();
 
     // Commit the given index. If the index is 0 then the entry will be committed as a non-persistent entry.
     replicator.commit(index).whenComplete((resultIndex, error) -> {
@@ -278,22 +255,22 @@ class LeaderState extends ActiveState {
       if (isOpen()) {
         if (error == null) {
           try {
-            commitSubmitEntry(read ? context.getLastApplied() : index, key, entry, future);
+            commitSubmitEntry(read ? context.getLastApplied() : index, timestamp, entry, future);
           } finally {
             if (index > 0) {
               context.setLastApplied(index);
             }
-            releaseEntry(key, entry);
+            entry.release();
           }
         } else {
           future.complete(logResponse(SubmitResponse.builder()
             .withStatus(Response.Status.ERROR)
             .withError(RaftError.Type.WRITE_ERROR)
             .build()));
-          releaseEntry(key, entry);
+          entry.release();
         }
       } else {
-        releaseEntry(key, entry);
+        entry.release();
       }
     });
     return future;
@@ -302,10 +279,10 @@ class LeaderState extends ActiveState {
   /**
    * Commits a submit entry to the commit handler.
    */
-  private CompletableFuture<SubmitResponse> commitSubmitEntry(long index, Buffer key, Buffer entry, CompletableFuture<SubmitResponse> future) {
+  private CompletableFuture<SubmitResponse> commitSubmitEntry(long index, long timestamp, Buffer entry, CompletableFuture<SubmitResponse> future) {
     Buffer buffer = BUFFER_POOL.get().acquire();
     try {
-      context.commit(index, key, entry, buffer);
+      context.commit(index, timestamp, entry, buffer);
       future.complete(logResponse(SubmitResponse.builder()
         .withStatus(Response.Status.OK)
         .withResult(buffer.flip())
@@ -319,26 +296,6 @@ class LeaderState extends ActiveState {
       buffer.close();
     }
     return future;
-  }
-
-  /**
-   * Acquires a reference to a key and entry.
-   */
-  private static void acquireEntry(Buffer key, Buffer entry) {
-    if (key != null)
-      key.acquire();
-    if (entry != null)
-      entry.acquire();
-  }
-
-  /**
-   * Releases a reference to a key and entry.
-   */
-  private static void releaseEntry(Buffer key, Buffer entry) {
-    if (key != null)
-      key.release();
-    if (entry != null)
-      entry.release();
   }
 
   /**
@@ -487,8 +444,7 @@ class LeaderState extends ActiveState {
       if (commitIndex > 0) {
         context.log().commit(commitIndex);
         context.setCommitIndex(commitIndex);
-        context.log().recycle(recycleIndex);
-        context.setRecycleIndex(recycleIndex);
+        context.setGlobalIndex(recycleIndex);
         SortedMap<Long, CompletableFuture<Long>> futures = commitFutures.headMap(commitIndex, true);
         for (Map.Entry<Long, CompletableFuture<Long>> entry : futures.entrySet()) {
           entry.getValue().complete(entry.getKey());
@@ -599,10 +555,10 @@ class LeaderState extends ActiveState {
           .withTerm(context.getTerm())
           .withLeader(context.cluster().member().id())
           .withLogIndex(prevIndex)
-          .withLogTerm(prevEntry != null ? prevEntry.readTerm() : 0)
+          .withLogTerm(prevEntry != null ? prevEntry.getTerm() : 0)
           .withEntries(entries)
           .withCommitIndex(context.getCommitIndex())
-          .withRecycleIndex(context.getRecycleIndex())
+          .withGlobalIndex(context.getGlobalIndex())
           .build();
 
         committing = true;

@@ -15,8 +15,6 @@
  */
 package net.kuujo.copycat.protocol.raft.storage.compact;
 
-import net.kuujo.copycat.io.Buffer;
-import net.kuujo.copycat.io.NativeBuffer;
 import net.kuujo.copycat.protocol.raft.storage.*;
 import org.slf4j.Logger;
 
@@ -78,74 +76,22 @@ public abstract class AbstractCompactionStrategy implements CompactionStrategy {
     // In order to determine the segments to compact, we iterate through each segment and build a key table of segment keys.
     // If the total number of keys in two adjacent segments are less than the total number of entries allowed in a segment
     // then we can compact the segments together, otherwise the segment will be rewritten by itself.
-    List<Segment> tempSegments = new ArrayList<>(segments.size());
-    List<KeyTable> keyTables = new ArrayList<>(segments.size());
-    for (Segment segment : segments) {
+    Segment compactSegment = createCompactSegment(manager, segments);
 
-      // Because segments are not thread safe, we need to create a temporary segment with a new file descriptor in
-      // order to read entries from the segment. There's no risk of a race condition here as long as the compaction
-      // process remains single-threaded since we're only compacting immutable segments in which all entries have been
-      // committed.
+    List<Segment> tempSegments = new ArrayList<>(segments.size());
+    for (Segment segment : segments) {
       Segment temp = manager.loadSegment(segment.descriptor().id(), segment.descriptor().version());
 
-      KeyTable keyTable = new KeyTable(temp.descriptor().entries());
-      try (Buffer key = NativeBuffer.allocate(1024, temp.descriptor().maxKeySize())) {
-        for (long i = temp.firstIndex(); i <= temp.lastIndex(); i++) {
-          try (RaftEntry entry = temp.getEntry(i)) {
-            if (entry != null && filter.accept(entry)) {
-              RaftEntry.Mode mode = entry.readMode();
-              if (mode == RaftEntry.Mode.PERSISTENT || (mode == RaftEntry.Mode.DURABLE && segment.recycleIndex() < i)) {
-                entry.readKey(key);
-                keyTable.update(key.flip(), (int) (i = temp.firstIndex()));
-              }
-            }
-          }
-        }
-      }
+      int transferCount = 0;
+      int cleanCount = 0;
 
-      tempSegments.add(temp);
-      keyTables.add(keyTable);
-
-      if (keyTables.stream().mapToLong(KeyTable::size).sum() > manager.config().getEntriesPerSegment()) {
-        compactSegments(tempSegments.subList(0, tempSegments.size() - 1), keyTables.subList(0, keyTables.size() - 1), manager);
-        tempSegments = tempSegments.subList(tempSegments.size() - 1, tempSegments.size());
-        keyTables = keyTables.subList(keyTables.size() - 1, keyTables.size());
-      }
-    }
-
-    if (!tempSegments.isEmpty()) {
-      compactSegments(tempSegments, keyTables, manager);
-    } else {
-      tempSegments.stream().forEach(Segment::close);
-      keyTables.stream().forEach(KeyTable::close);
-    }
-  }
-
-  /**
-   * Compacts a set of segments together.
-   */
-  private void compactSegments(List<Segment> segments, List<KeyTable> keyTables, SegmentManager manager) {
-    int cleanCount = 0;
-    int transferCount = 0;
-    Segment compactSegment = createCompactSegment(manager, segments, keyTables.stream().mapToInt(KeyTable::size).sum());
-    for (int i = 0; i < segments.size(); i++) {
-      Segment segment = segments.get(i);
-      KeyTable keyTable = keyTables.get(i);
-      try (Buffer key = NativeBuffer.allocate(1024, segment.descriptor().maxKeySize())) {
-        for (long index = segment.firstIndex(); index <= segment.lastIndex(); index++) {
-          try (RaftEntry entry = segment.getEntry(index)) {
-            if (entry != null) {
-              entry.readKey(key);
-              int offset = (int) (index - segment.firstIndex());
-              if (keyTable.lookup(key.flip()) == offset) {
-                compactSegment.transferEntry(entry);
-                transferCount++;
-              } else {
-                cleanCount++;
-              }
-            } else {
-              cleanCount++;
-            }
+      for (long i = temp.firstIndex(); i <= temp.lastIndex(); i++) {
+        try (RaftEntry entry = temp.getEntry(i)) {
+          if (filter.accept(entry)) {
+            compactSegment.appendEntry(entry);
+            transferCount++;
+          } else {
+            cleanCount++;
           }
         }
       }
@@ -182,7 +128,7 @@ public abstract class AbstractCompactionStrategy implements CompactionStrategy {
   /**
    * Creates a single compact segment for the given ordered list of segments.
    */
-  private Segment createCompactSegment(SegmentManager manager, List<Segment> segments, int entries) {
+  private Segment createCompactSegment(SegmentManager manager, List<Segment> segments) {
     // Sort compact segments in ascending order.
     sortSegments(segments);
 
@@ -193,8 +139,8 @@ public abstract class AbstractCompactionStrategy implements CompactionStrategy {
     long id = firstSegment.descriptor().id();
     long index = firstSegment.descriptor().index();
     long version = firstSegment.descriptor().version() + 1;
-    int range = segments.stream().mapToInt(s -> s.descriptor().range()).sum();
-    return manager.createSegment(id, index, version, entries, range);
+    long range = segments.stream().mapToLong(s -> s.descriptor().range()).sum();
+    return manager.createSegment(id, index, version, range);
   }
 
 }

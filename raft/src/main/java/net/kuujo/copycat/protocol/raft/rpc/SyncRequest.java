@@ -18,11 +18,10 @@ package net.kuujo.copycat.protocol.raft.rpc;
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.NativeBuffer;
 import net.kuujo.copycat.io.serializer.SerializationException;
+import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.util.ReferenceManager;
 import net.kuujo.copycat.protocol.raft.RaftMember;
-import net.kuujo.copycat.protocol.raft.RaftMemberPool;
 import net.kuujo.copycat.protocol.raft.storage.RaftEntry;
-import net.kuujo.copycat.protocol.raft.storage.RaftEntryPool;
 
 import java.util.*;
 
@@ -38,16 +37,10 @@ public class SyncRequest extends AbstractRequest<SyncRequest> {
       return new Builder();
     }
   };
-  private static final ThreadLocal<RaftEntryPool> entryPool = new ThreadLocal<RaftEntryPool>() {
+  private static final ThreadLocal<Serializer> serializer = new ThreadLocal<Serializer>() {
     @Override
-    protected RaftEntryPool initialValue() {
-      return new RaftEntryPool();
-    }
-  };
-  private static final ThreadLocal<RaftMemberPool> memberPool = new ThreadLocal<RaftMemberPool>() {
-    @Override
-    protected RaftMemberPool initialValue() {
-      return new RaftMemberPool();
+    protected Serializer initialValue() {
+      return new Serializer();
     }
   };
 
@@ -139,26 +132,20 @@ public class SyncRequest extends AbstractRequest<SyncRequest> {
     if (entriesSize < 0)
       throw new SerializationException("invalid entries size: " + entriesSize);
 
-    RaftEntryPool epool = entryPool.get();
+    Serializer serializer = SyncRequest.serializer.get();
 
     entries.clear();
     for (int i = 0; i < entriesSize; i++) {
-      RaftEntry entry = epool.acquire(buffer.readLong());
-      entry.readObject(buffer);
-      entries.add(entry);
+      entries.add(serializer.readObject(buffer));
     }
 
     int membersSize = buffer.readInt();
     if (membersSize < 0)
       throw new SerializationException("invalid members size: " + membersSize);
 
-    RaftMemberPool mpool = memberPool.get();
-
     members.clear();
     for (int i = 0; i < membersSize; i++) {
-      RaftMember member = mpool.acquire();
-      member.readObject(buffer);
-      members.add(member);
+      members.add(serializer.readObject(buffer));
     }
   }
 
@@ -168,14 +155,16 @@ public class SyncRequest extends AbstractRequest<SyncRequest> {
       .writeInt(leader)
       .writeLong(logIndex);
 
+    Serializer serializer = SyncRequest.serializer.get();
+
     buffer.writeInt(entries.size());
     for (RaftEntry entry : entries) {
-      entry.writeObject(buffer.writeLong(entry.index()));
+      serializer.writeObject(entry, buffer);
     }
 
     buffer.writeInt(members.size());
     for (RaftMember member : members) {
-      member.writeObject(buffer);
+      serializer.writeObject(member, buffer);
     }
   }
 

@@ -17,6 +17,7 @@ package net.kuujo.copycat.protocol.raft;
 
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.protocol.raft.rpc.*;
+import net.kuujo.copycat.protocol.raft.storage.CommandEntry;
 import net.kuujo.copycat.protocol.raft.storage.RaftEntry;
 
 import java.util.concurrent.CompletableFuture;
@@ -108,8 +109,8 @@ abstract class ActiveState extends PassiveState {
 
     // If the previous entry term doesn't match the local previous term then reject the request.
     RaftEntry entry = context.log().getEntry(request.logIndex());
-    if (entry.readTerm() != request.logTerm()) {
-      LOGGER.warn("{} - Rejected {}: Request log term does not match local log term {} for the same entry", context.cluster().member().id(), request, entry.readTerm());
+    if (entry.getTerm() != request.logTerm()) {
+      LOGGER.warn("{} - Rejected {}: Request log term does not match local log term {} for the same entry", context.cluster().member().id(), request, entry.getTerm());
       return AppendResponse.builder()
         .withStatus(Response.Status.OK)
         .withTerm(context.getTerm())
@@ -135,43 +136,34 @@ abstract class ActiveState extends PassiveState {
         // Replicated snapshot entries are *always* immediately logged and applied to the state machine
         // since snapshots are only taken of committed state machine state. This will cause all previous
         // entries to be removed from the log.
-        if (context.log().containsIndex(entry.index())) {
+        if (context.log().containsIndex(entry.getIndex())) {
           // Compare the term of the received entry with the matching entry in the log.
-          RaftEntry match = context.log().getEntry(entry.index());
+          RaftEntry match = context.log().getEntry(entry.getIndex());
           if (match != null) {
-            if (entry.readTerm() != match.readTerm()) {
+            if (entry.getTerm() != match.getTerm()) {
               // We found an invalid entry in the log. Remove the invalid entry and append the new entry.
               // If appending to the log fails, apply commits and reply false to the append request.
               LOGGER.warn("{} - Appended entry term does not match local log, removing incorrect entries", context.cluster().member().id());
-              context.log().truncate(entry.index() - 1);
-              try (RaftEntry transfer = context.log().createEntry()) {
-                assert entry.index() == transfer.index();
-                transfer.write(entry);
-              }
-              LOGGER.debug("{} - Appended {} to log at index {}", context.cluster().member().id(), entry, entry.index());
+              context.log().truncate(entry.getIndex() - 1);
+              context.log().appendEntry(entry);
+              LOGGER.debug("{} - Appended {} to log at index {}", context.cluster().member().id(), entry, entry.getIndex());
             }
           } else {
-            context.log().truncate(entry.index() - 1);
-            try (RaftEntry transfer = context.log().createEntry()) {
-              assert entry.index() == transfer.index();
-              transfer.write(entry);
-            }
-            LOGGER.debug("{} - Appended {} to log at index {}", context.cluster().member().id(), entry, entry.index());
+            context.log().truncate(entry.getIndex() - 1);
+            context.log().appendEntry(entry);
+            LOGGER.debug("{} - Appended {} to log at index {}", context.cluster().member().id(), entry, entry.getIndex());
           }
         } else {
           // If appending to the log fails, apply commits and reply false to the append request.
-          try (RaftEntry transfer = context.log().skip(entry.index() - context.log().lastIndex() - 1).createEntry()) {
-            assert entry.index() == transfer.index();
-            transfer.write(entry);
-          }
-          LOGGER.debug("{} - Appended {} to log at index {}", context.cluster().member().id(), entry, entry.index());
+          context.log().skip(entry.getIndex() - context.log().lastIndex() - 1).appendEntry(entry);
+          LOGGER.debug("{} - Appended {} to log at index {}", context.cluster().member().id(), entry, entry.getIndex());
         }
       }
     }
 
     // If we've made it this far, apply commits and send a successful response.
     doApplyCommits(request.commitIndex());
-    doRecycle(request.recycleIndex());
+    doApplyIndex(request.globalIndex());
     return AppendResponse.builder()
       .withStatus(Response.Status.OK)
       .withTerm(context.getTerm())
@@ -223,18 +215,16 @@ abstract class ActiveState extends PassiveState {
     if ((context.getLastApplied() == 0 && index == context.log().firstIndex()) || (context.getLastApplied() != 0 && context.getLastApplied() == index - 1)) {
       RaftEntry entry = context.log().getEntry(index);
       if (entry != null) {
-        if (entry.readType() == RaftEntry.Type.COMMAND) {
-          entry.readKey(KEY.clear());
-          entry.readEntry(ENTRY.clear());
+        if (entry instanceof CommandEntry) {
+          CommandEntry command = (CommandEntry) entry;
           try {
-            context.commit(index, KEY.flip(), ENTRY.flip(), RESULT.clear());
+            command.getCommand().read(ENTRY.clear());
+            context.commit(command.getIndex(), command.getTimestamp(), ENTRY.flip(), RESULT.clear());
           } catch (Exception e) {
             LOGGER.warn("failed to apply command", e);
           } finally {
             context.setLastApplied(index);
           }
-        } else {
-          context.setLastApplied(index);
         }
       }
     }
@@ -243,9 +233,9 @@ abstract class ActiveState extends PassiveState {
   /**
    * Recycles the log up to the given index.
    */
-  private void doRecycle(long compactIndex) {
-    if (compactIndex > 0) {
-      context.log().recycle(compactIndex);
+  private void doApplyIndex(long globalIndex) {
+    if (globalIndex > 0) {
+      context.setGlobalIndex(globalIndex);
     }
   }
 
@@ -371,11 +361,11 @@ abstract class ActiveState extends PassiveState {
         }
 
         if (index != 0 && index >= lastIndex) {
-          if (term >= entry.readTerm()) {
+          if (term >= entry.getTerm()) {
             LOGGER.debug("{} - Accepted {}: candidate's log is up-to-date", context.cluster().member().id(), request);
             return true;
           } else {
-            LOGGER.debug("{} - Rejected {}: candidate's last log term ({}) is in conflict with local log ({})", context.cluster().member().id(), request, term, entry.readTerm());
+            LOGGER.debug("{} - Rejected {}: candidate's last log term ({}) is in conflict with local log ({})", context.cluster().member().id(), request, term, entry.getTerm());
             return false;
           }
         } else {

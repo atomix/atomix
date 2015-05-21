@@ -17,9 +17,9 @@ package net.kuujo.copycat.protocol.raft.rpc;
 
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.NativeBuffer;
+import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.util.ReferenceManager;
 import net.kuujo.copycat.protocol.raft.storage.RaftEntry;
-import net.kuujo.copycat.protocol.raft.storage.RaftEntryPool;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,10 +38,10 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
       return new Builder();
     }
   };
-  private static final ThreadLocal<RaftEntryPool> entryPool = new ThreadLocal<RaftEntryPool>() {
+  private static final ThreadLocal<Serializer> serializer = new ThreadLocal<Serializer>() {
     @Override
-    protected RaftEntryPool initialValue() {
-      return new RaftEntryPool();
+    protected Serializer initialValue() {
+      return new Serializer();
     }
   };
 
@@ -64,13 +64,16 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
     return builder.get().reset(request);
   }
 
+  private int member;
+  private long requestId;
+  private long ackId;
   private long term;
   private int leader;
   private long logIndex;
   private long logTerm;
   private List<RaftEntry> entries = new ArrayList<>(128);
   private long commitIndex;
-  private long recycleIndex;
+  private long globalIndex;
 
   private AppendRequest(ReferenceManager<AppendRequest> referenceManager) {
     super(referenceManager);
@@ -79,6 +82,33 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
   @Override
   public Type type() {
     return Type.APPEND;
+  }
+
+  /**
+   * Returns the requesting node ID.
+   *
+   * @return The requesting node ID.
+   */
+  public int member() {
+    return member;
+  }
+
+  /**
+   * Returns the member's request ID.
+   *
+   * @return The member's request ID.
+   */
+  public long requestId() {
+    return requestId;
+  }
+
+  /**
+   * Returns the member's ack ID.
+   *
+   * @return The member's ack ID.
+   */
+  public long ackId() {
+    return ackId;
   }
 
   /**
@@ -136,12 +166,12 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
   }
 
   /**
-   * Returns the leader's recycle index.
+   * Returns the leader's global index.
    *
-   * @return The leader recycle index.
+   * @return The leader global index.
    */
-  public long recycleIndex() {
-    return recycleIndex;
+  public long globalIndex() {
+    return globalIndex;
   }
 
   @Override
@@ -150,12 +180,13 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
       .writeLong(logIndex)
       .writeLong(logTerm)
       .writeLong(commitIndex)
-      .writeLong(recycleIndex);
+      .writeLong(globalIndex);
+
+    Serializer serializer = AppendRequest.serializer.get();
 
     buffer.writeInt(entries.size());
     for (RaftEntry entry : entries) {
-      buffer.writeLong(entry.index());
-      entry.writeObject(buffer);
+      serializer.writeObject(entry, buffer);
     }
   }
 
@@ -165,16 +196,14 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
     logIndex = buffer.readLong();
     logTerm = buffer.readLong();
     commitIndex = buffer.readLong();
-    recycleIndex = buffer.readLong();
+    globalIndex = buffer.readLong();
 
-    RaftEntryPool pool = entryPool.get();
+    Serializer serializer = AppendRequest.serializer.get();
 
     entries.clear();
     int numEntries = buffer.readInt();
     for (int i = 0; i < numEntries; i++) {
-      RaftEntry entry = pool.acquire(buffer.readLong());
-      entry.readObject(buffer);
-      entries.add(entry);
+      entries.add(serializer.readObject(buffer));
     }
   }
 
@@ -186,7 +215,7 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
 
   @Override
   public int hashCode() {
-    return Objects.hash(term, leader, logIndex, logTerm, entries, commitIndex, recycleIndex);
+    return Objects.hash(term, leader, logIndex, logTerm, entries, commitIndex, globalIndex);
   }
 
   @Override
@@ -199,14 +228,14 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
         && request.logTerm == logTerm
         && request.entries.equals(entries)
         && request.commitIndex == commitIndex
-        && request.recycleIndex == recycleIndex;
+        && request.globalIndex == globalIndex;
     }
     return false;
   }
 
   @Override
   public String toString() {
-    return String.format("%s[term=%d, leader=%s, logIndex=%d, logTerm=%d, entries=[%d], commitIndex=%d, recycleIndex=%d]", getClass().getSimpleName(), term, leader, logIndex, logTerm, entries.size(), commitIndex, recycleIndex);
+    return String.format("%s[term=%d, leader=%s, logIndex=%d, logTerm=%d, entries=[%d], commitIndex=%d, globalIndex=%d]", getClass().getSimpleName(), term, leader, logIndex, logTerm, entries.size(), commitIndex, globalIndex);
   }
 
   /**
@@ -217,6 +246,45 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
 
     public Builder() {
       super(AppendRequest::new);
+    }
+
+    /**
+     * Sets the request member.
+     *
+     * @param member The request member.
+     * @return The request builder.
+     */
+    public Builder withMember(int member) {
+      if (member <= 0)
+        throw new IllegalArgumentException("member must be positive");
+      request.member = member;
+      return this;
+    }
+
+    /**
+     * Sets the request ID.
+     *
+     * @param requestId The request ID.
+     * @return The request builder.
+     */
+    public Builder withRequestId(long requestId) {
+      if (requestId <= 0)
+        throw new IllegalArgumentException("requestId must be positive");
+      request.requestId = requestId;
+      return this;
+    }
+
+    /**
+     * Sets the member's ack ID.
+     *
+     * @param ackId The member's ack ID.
+     * @return The request builder.
+     */
+    public Builder withAckId(long ackId) {
+      if (ackId <= 0)
+        throw new IllegalArgumentException("ackId must be positive");
+      request.ackId = ackId;
+      return this;
     }
 
     /**
@@ -306,21 +374,27 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
     }
 
     /**
-     * Sets the request recycle index.
+     * Sets the request global index.
      *
-     * @param index The request recycle index.
+     * @param index The global recycle index.
      * @return The append request builder.
      */
-    public Builder withRecycleIndex(long index) {
+    public Builder withGlobalIndex(long index) {
       if (index < 0)
-        throw new IllegalArgumentException("compact index must be positive");
-      request.recycleIndex = index;
+        throw new IllegalArgumentException("global index must be positive");
+      request.globalIndex = index;
       return this;
     }
 
     @Override
     public AppendRequest build() {
       super.build();
+      if (request.member <= 0)
+        throw new IllegalArgumentException("member must be positive");
+      if (request.requestId <= 0)
+        throw new IllegalArgumentException("requestId must be positive");
+      if (request.ackId <= 0)
+        throw new IllegalArgumentException("ackId must be positive");
       if (request.term <= 0)
         throw new IllegalArgumentException("term must be positive");
       if (request.logIndex < 0)
@@ -331,7 +405,7 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
         throw new NullPointerException("entries cannot be null");
       if (request.commitIndex < 0)
         throw new IllegalArgumentException("commit index must be positive");
-      if (request.recycleIndex < 0)
+      if (request.globalIndex < 0)
         throw new IllegalArgumentException("recycle index must be positive");
 
       buffer.clear();

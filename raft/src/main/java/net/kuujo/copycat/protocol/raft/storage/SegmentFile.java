@@ -29,9 +29,21 @@ class SegmentFile {
    * Returns a boolean value indicating whether the given file appears to be a parsable segment file.
    */
   static boolean isSegmentFile(File file) {
+    return isFile(file, "log");
+  }
+
+  /**
+   * Returns a boolean value indicating whether the given file appears to be a parsable index file.
+   */
+  static boolean isIndexFile(File file) {
+    return isFile(file, "index");
+  }
+
+  private static boolean isFile(File file, String extension) {
     return file.getName().indexOf('-') != -1
       && file.getName().indexOf('-', file.getName().indexOf('-') + 1) != -1
-      && file.getName().lastIndexOf('.') > file.getName().lastIndexOf('-');
+      && file.getName().lastIndexOf('.') > file.getName().lastIndexOf('-')
+      && file.getName().endsWith("." + extension);
   }
 
   /**
@@ -39,6 +51,13 @@ class SegmentFile {
    */
   static File createSegmentFile(File directory, String name, long id, long version) {
     return new File(directory, String.format("%s-%d-%d.log", name, id, version));
+  }
+
+  /**
+   * Creates an index file for the given directory, log name, segment ID, and segment version.
+   */
+  static File createIndexFile(File directory, String name, long id, long version) {
+    return new File(directory, String.format("%s-%d-%d.index", name, id, version));
   }
 
   SegmentFile(File file) {
@@ -54,6 +73,15 @@ class SegmentFile {
    */
   public File file() {
     return file;
+  }
+
+  /**
+   * Returns the segment index file.
+   *
+   * @return The segment index file.
+   */
+  public File index() {
+    return new File(file.getParentFile(), file.getName().substring(0, file.getName().lastIndexOf('.') + 1) + "index");
   }
 
   /**
