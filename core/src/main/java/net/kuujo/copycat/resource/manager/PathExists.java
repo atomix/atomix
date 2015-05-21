@@ -13,25 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat;
+package net.kuujo.copycat.resource.manager;
 
 /**
- * Resource configuration exception.
+ * Path exists command.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ConfigurationException extends CopycatException {
-
-  public ConfigurationException(String message, Object... args) {
-    super(String.format(message, args));
+public class PathExists extends PathCommand<Boolean> {
+  public PathExists(String path) {
+    super(path);
   }
 
-  public ConfigurationException(Throwable cause, String message, Object... args) {
-    super(String.format(message, args), cause);
-  }
-
-  public ConfigurationException(Throwable cause) {
-    super(cause);
+  public PathExists() {
   }
 
 }

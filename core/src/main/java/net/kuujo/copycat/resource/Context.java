@@ -13,18 +13,45 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.log;
+package net.kuujo.copycat.resource;
+
+import net.kuujo.copycat.protocol.Commit;
 
 /**
- * Partition constants.
+ * Command context.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public enum Partition {
+public class Context {
+  private Commit commit;
 
   /**
-   * Indicates that a commit should be sent to all partitions.
+   * Sets the context commit.
+   *
+   * @param commit The context commit.
+   * @return The context.
    */
-  ALL
+  Context setCommit(Commit commit) {
+    this.commit = commit;
+    return this;
+  }
+
+  /**
+   * Returns the commit index.
+   *
+   * @return The commit index.
+   */
+  public long index() {
+    return commit.index();
+  }
+
+  /**
+   * Returns the commit timestamp.
+   *
+   * @return The commit timestamp.
+   */
+  public long timestamp() {
+    return commit.timestamp();
+  }
 
 }

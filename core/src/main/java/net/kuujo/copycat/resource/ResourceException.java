@@ -13,25 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat;
+package net.kuujo.copycat.resource;
+
+import net.kuujo.copycat.CopycatException;
 
 /**
- * Resource configuration exception.
+ * Copycat resource exception.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ConfigurationException extends CopycatException {
+public class ResourceException extends CopycatException {
 
-  public ConfigurationException(String message, Object... args) {
+  public ResourceException() {
+  }
+
+  public ResourceException(String message, Object... args) {
     super(String.format(message, args));
   }
 
-  public ConfigurationException(Throwable cause, String message, Object... args) {
+  public ResourceException(Throwable cause, String message, Object... args) {
     super(String.format(message, args), cause);
   }
 
-  public ConfigurationException(Throwable cause) {
+  public ResourceException(Throwable cause) {
     super(cause);
   }
-
 }

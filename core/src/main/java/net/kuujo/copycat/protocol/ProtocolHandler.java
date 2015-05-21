@@ -15,8 +15,6 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.io.Buffer;
-
 /**
  * Protocol commit handler.
  *
@@ -27,12 +25,11 @@ public interface ProtocolHandler {
   /**
    * Applies an entry.
    *
-   * @param index The entry index.
-   * @param key The key to commit.
+   * @param version The entry index.
+   * @param timestamp The entry timestamp.
    * @param entry The entry to commit.
-   * @param result The commit result buffer.
    * @return The commit result.
    */
-  Buffer apply(long index, Buffer key, Buffer entry, Buffer result);
+  Object apply(long version, long timestamp, Object entry);
 
 }

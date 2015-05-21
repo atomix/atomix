@@ -16,22 +16,24 @@
 package net.kuujo.copycat;
 
 /**
- * Resource configuration exception.
+ * Node info.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ConfigurationException extends CopycatException {
+public interface NodeInfo {
 
-  public ConfigurationException(String message, Object... args) {
-    super(String.format(message, args));
-  }
+  /**
+   * Returns the timestamp of the last update to the node.
+   *
+   * @return The timestamp of the last update to the node.
+   */
+  long timestamp();
 
-  public ConfigurationException(Throwable cause, String message, Object... args) {
-    super(String.format(message, args), cause);
-  }
-
-  public ConfigurationException(Throwable cause) {
-    super(cause);
-  }
+  /**
+   * Returns the version of the current state of the node.
+   *
+   * @return The version of the current state of the node.
+   */
+  long version();
 
 }

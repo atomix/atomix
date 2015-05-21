@@ -15,116 +15,110 @@
  */
 package net.kuujo.copycat;
 
-import net.kuujo.copycat.io.Buffer;
-import net.kuujo.copycat.log.*;
-import net.kuujo.copycat.protocol.Consistency;
-import net.kuujo.copycat.protocol.Persistence;
-import net.kuujo.copycat.resource.Resource;
-import net.kuujo.copycat.resource.ResourceFactory;
+import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.protocol.Protocol;
+import net.kuujo.copycat.resource.*;
+import net.kuujo.copycat.resource.manager.*;
 import net.kuujo.copycat.util.Managed;
 
-import java.io.Serializable;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Proxy;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 
 /**
- * Copycat :-P
+ * Copycat.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class Copycat implements Managed<Copycat> {
-  private final String name;
-  private final CopycatCommitLog log;
-  private final Map<Integer, ResourceInfo> resourceInfo = new ConcurrentHashMap<>();
-  private final Map<String, Resource> resources = new ConcurrentHashMap<>();
-  private final Map<Integer, Resource> contexts = new ConcurrentHashMap<>();
+  static final String PATH_SEPARATOR = "/";
+  protected final CommitLog log;
+  private final Map<String, Node> nodes = new ConcurrentHashMap<>();
+  private final ResourceRegistry registry;
+  private final ResourceFactory factory = new ResourceFactory();
 
-  @SuppressWarnings("unchecked")
-  private Copycat(String name, CommitLog log) {
-    this.name = name;
-    this.log = new CopycatCommitLog(log);
-    this.log.handler(name, this::commit);
+  public Copycat(Protocol protocol, Object... resources) {
+    this(new SystemLog(new ResourceManager(), protocol), resources);
+  }
+
+  private Copycat(CommitLog log, Object... resources) {
+    this.log = log;
+    this.registry = new ResourceRegistry(resources);
   }
 
   /**
-   * Commits a resource.
-   */
-  @SuppressWarnings("unchecked")
-  private Object commit(long index, Object key, Object entry) {
-    if (key == null || entry == null)
-      return null;
-
-    String resource = key.toString();
-    int resourceId = log.calculateHash(resource);
-    ResourceInfo info = resourceInfo.get(resourceId);
-    ResourceCommit commit = (ResourceCommit) entry;
-
-    if (commit.action.equals("open")) {
-      if (info != null) {
-        info.permits++;
-      } else {
-        info = new ResourceInfo();
-        info.index = index;
-        info.permits = 1;
-        resourceInfo.put(resourceId, info);
-        try {
-          contexts.put(resourceId, (Resource) commit.factory.createResource(new ResourceCommitLog(resource, log)).open().get());
-        } catch (InterruptedException | ExecutionException e) {
-          throw new IllegalStateException("failed to open resource", e);
-        }
-      }
-    } else if (commit.action.equals("close")) {
-      if (info != null) {
-        info.permits--;
-        if (info.permits == 0) {
-          resourceInfo.remove(resourceId);
-          Resource context = contexts.remove(resourceId);
-          if (context != null) {
-            try {
-              context.close().get();
-            } catch (InterruptedException | ExecutionException e) {
-              throw new IllegalStateException("failed to close resource", e);
-            }
-          }
-        }
-      }
-    }
-    return null;
-  }
-
-  /**
-   * Returns a named resource.
+   * Returns the Copycat cluster.
    *
-   * @param name The resource name.
-   * @return The named resource.
+   * @return The Copycat cluster.
    */
-  @SuppressWarnings("unchecked")
-  public <RESOURCE extends Resource<?>> RESOURCE getResource(String name, ResourceFactory<RESOURCE> factory) {
-    return (RESOURCE) resources.computeIfAbsent(name, n -> factory.createResource(new CopycatResourceLog(name, factory, log)));
+  public Cluster cluster() {
+    return log.cluster();
   }
 
   /**
-   * Opens the given resource.
+   * Returns a reference to the node at the given getPath.
+   *
+   * @param path The getPath for which to return the node.
+   * @return A reference to the node at the given getPath.
    */
-  @SuppressWarnings("unchecked")
-  protected CompletableFuture<Void> openResource(String name, ResourceFactory factory) {
-    return log.commit(this.name, name, new ResourceCommit("open", factory), Persistence.PERSISTENT, Consistency.STRICT).thenRun(() -> {});
+  public Node node(String path) {
+    if (path == null)
+      throw new NullPointerException("path cannot be null");
+    if (!path.startsWith(PATH_SEPARATOR))
+      path = PATH_SEPARATOR + path;
+    if (path.endsWith(PATH_SEPARATOR))
+      path = path.substring(0, path.length() - 1);
+    return nodes.computeIfAbsent(path, p -> new Node(p, this));
   }
 
   /**
-   * Closes the given resource.
+   * Checks whether a getPath exists.
+   *
+   * @param path The getPath to check.
+   * @return A completable future indicating whether the given getPath exists.
    */
-  @SuppressWarnings("unchecked")
-  protected CompletableFuture<Void> closeResource(String name) {
-    return log.commit(this.name, name, new ResourceCommit("close"), Persistence.PERSISTENT, Consistency.STRICT).thenRun(() -> {});
+  public CompletableFuture<Boolean> exists(String path) {
+    return log.submit(new PathExists(path));
+  }
+
+  /**
+   * Creates a node at the given getPath.
+   *
+   * @param path The getPath for which to create the node.
+   * @return A completable future to be completed once the node has been created.
+   */
+  public CompletableFuture<Node> create(String path) {
+    return log.submit(new CreatePath(path)).thenApply(result -> node(path));
+  }
+
+  /**
+   * Creates a resource at the given getPath.
+   *
+   * @param path The getPath at which to create the resource.
+   * @param type The resource type to create.
+   * @param <T> The resource type.
+   * @return A completable future to be completed once the resource has been created.
+   */
+  public <T extends Resource<?>> CompletableFuture<T> create(String path, Class<T> type) {
+    return log.submit(new CreateResource(path, registry.lookup(type))).thenApply(id -> factory.createResource(type, id));
+  }
+
+  /**
+   * Deletes a node at the given getPath.
+   *
+   * @param path The getPath at which to delete the node.
+   * @return A completable future to be completed once the node has been deleted.
+   */
+  public CompletableFuture<Copycat> delete(String path) {
+    return log.submit(new DeletePath(path)).thenApply(result -> this);
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public CompletableFuture<Copycat> open() {
-    return log.open().thenApply(v -> this);
+    return log.open().thenApply(l -> this);
   }
 
   @Override
@@ -133,7 +127,6 @@ public class Copycat implements Managed<Copycat> {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public CompletableFuture<Void> close() {
     return log.close();
   }
@@ -144,123 +137,42 @@ public class Copycat implements Managed<Copycat> {
   }
 
   /**
-   * Copycat commit log.
+   * Resource factory.
+   *
+   * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
    */
-  private class CopycatCommitLog extends SharedCommitLog {
+  private class ResourceFactory {
+
+    /**
+     * Creates a new resource.
+     */
+    private <T extends Resource<?>> T createResource(Class<T> type, long id) {
+      if (type.isInterface()) {
+        return createResourceProxy(type, id);
+      } else {
+        return createResourceObject(type, id);
+      }
+    }
+
+    /**
+     * Creates a resource object.
+     */
     @SuppressWarnings("unchecked")
-    private CopycatCommitLog(CommitLog log) {
-      super(log);
-      filter(this::filter);
-    }
-
-    @Override
-    protected int calculateHash(String value) {
-      return super.calculateHash(value);
+    private <T extends Resource<?>> T createResourceObject(Class<T> type, long id) {
+      try {
+        Constructor constructor = type.getConstructor(CommitLog.class);
+        return (T) constructor.newInstance(new ResourceLog(id, log));
+      } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+        throw new ResourceException("failed to instantiate resource: " + type, e);
+      }
     }
 
     /**
-     * Filters entries from old resources out of the log.
+     * Creates a resource proxy.
      */
-    private boolean filter(long index, Buffer key, Buffer entry) {
-      int hash = entry.readInt();
-      ResourceInfo info = resourceInfo.get(hash);
-      return info == null || index < info.index;
-    }
-  }
-
-  /**
-   * Copycat resource log.
-   */
-  private class CopycatResourceLog extends ResourceCommitLog {
-    private final ResourceFactory factory;
-
     @SuppressWarnings("unchecked")
-    private CopycatResourceLog(String name, ResourceFactory factory, SharedCommitLog log) {
-      super(name, log);
-      this.factory = factory;
-    }
-
-    @Override
-    public CommitLog handler(CommitHandler handler) {
-      // Prevent commit handlers from being registered.
-      return this;
-    }
-
-    @Override
-    protected CommitLog handler(RawCommitHandler handler) {
-      // Prevent commit handlers from being registered.
-      return this;
-    }
-
-    @Override
-    public CompletableFuture<CommitLog> open() {
-      return openResource(name(), factory).thenCompose(v -> super.open());
-    }
-
-    @Override
-    public CompletableFuture<Void> close() {
-      return closeResource(name()).thenCompose(v -> super.close());
-    }
-  }
-
-  /**
-   * Resource commit.
-   */
-  protected static class ResourceCommit implements Serializable {
-    private final String action;
-    private final ResourceFactory factory;
-
-    public ResourceCommit(String action) {
-      this(action, null);
-    }
-
-    private ResourceCommit(String action, ResourceFactory factory) {
-      this.action = action;
-      this.factory = factory;
-    }
-  }
-
-  /**
-   * Resource info.
-   */
-  private static class ResourceInfo {
-    private long index;
-    private long permits;
-  }
-
-  /**
-   * Copycat builder.
-   */
-  public static class Builder implements net.kuujo.copycat.Builder<Copycat> {
-    private static int i;
-    private String name;
-    private CommitLog log;
-
-    /**
-     * Sets the Copycat name instance name.
-     *
-     * @param name The Copycat instance name.
-     * @return The Copycat builder.
-     */
-    public Builder withName(String name) {
-      this.name = name;
-      return this;
-    }
-
-    /**
-     * Sets the Copycat instance log.
-     *
-     * @param log The instance commit log.
-     * @return The Copycat builder.
-     */
-    public Builder withLog(CommitLog log) {
-      this.log = log;
-      return this;
-    }
-
-    @Override
-    public Copycat build() {
-      return new Copycat(name != null ? name : String.format("copycat-%d", ++i), log);
+    private <T extends Resource<?>> T createResourceProxy(Class<T> type, long id) {
+      return (T) Proxy.newProxyInstance(getClass().getClassLoader(), new Class[]{type}, new ResourceProxy(type, new ResourceLog(id, log)));
     }
   }
 

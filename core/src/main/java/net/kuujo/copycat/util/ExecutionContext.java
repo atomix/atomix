@@ -23,6 +23,7 @@ import java.util.concurrent.*;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class ExecutionContext implements Executor, AutoCloseable {
+  private final String name;
   private final ScheduledExecutorService executor;
   private Thread thread;
 
@@ -35,10 +36,11 @@ public class ExecutionContext implements Executor, AutoCloseable {
   }
 
   public ExecutionContext(String name) {
-    this(Executors.newSingleThreadScheduledExecutor(new CopycatThreadFactory(name)));
+    this(name, Executors.newSingleThreadScheduledExecutor(new CopycatThreadFactory(name)));
   }
 
-  public ExecutionContext(ScheduledExecutorService executor) {
+  public ExecutionContext(String name, ScheduledExecutorService executor) {
+    this.name = name;
     this.executor = executor;
     try {
       executor.submit(() -> {
@@ -50,6 +52,15 @@ public class ExecutionContext implements Executor, AutoCloseable {
     } catch (InterruptedException | ExecutionException e) {
       throw new IllegalStateException("failed to initialize thread state", e);
     }
+  }
+
+  /**
+   * Returns the context name.
+   *
+   * @return The context name.
+   */
+  public String name() {
+    return name;
   }
 
   /**

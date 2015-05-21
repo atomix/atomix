@@ -13,25 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat;
+package net.kuujo.copycat.resource;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * Resource configuration exception.
+ * Annotation for filtering commands for the state machine.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ConfigurationException extends CopycatException {
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Filter {
 
-  public ConfigurationException(String message, Object... args) {
-    super(String.format(message, args));
-  }
+  /**
+   * The command types to filter.
+   */
+  Class<? extends Command>[] value();
 
-  public ConfigurationException(Throwable cause, String message, Object... args) {
-    super(String.format(message, args), cause);
-  }
-
-  public ConfigurationException(Throwable cause) {
-    super(cause);
+  /**
+   * Indicates that all commands should be applied to the filter.
+   */
+  static class All extends Command {
   }
 
 }

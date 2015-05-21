@@ -23,17 +23,17 @@ package net.kuujo.copycat.protocol;
 public enum Consistency {
 
   /**
-   * Weak consistency level.
+   * Serializable consistency level.
    */
-  EVENTUAL,
+  WEAK,
 
   /**
-   * Lease consistency level.
+   * Lease-based linearizable consistency level.
    */
   LEASE,
 
   /**
-   * Strong consistency level.
+   * Strict linearizable consistency level.
    */
   STRICT,
 

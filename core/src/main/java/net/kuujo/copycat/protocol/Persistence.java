@@ -28,17 +28,12 @@ public enum Persistence {
   NONE,
 
   /**
-   * Indicates a command that will persist until a restart.
+   * Indicates a command that will persist until it has been replicated to all nodes.
    */
   EPHEMERAL,
 
   /**
-   * Indicates a command that will persist until it has been received by all nodes.
-   */
-  DURABLE,
-
-  /**
-   * Indicates a command that will persist for eternity.
+   * Indicates a command that will persist until it has been filtered out of the log.
    */
   PERSISTENT,
 

@@ -15,37 +15,100 @@
  */
 package net.kuujo.copycat.resource;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import net.kuujo.copycat.io.Buffer;
+import net.kuujo.copycat.io.serializer.Writable;
+import net.kuujo.copycat.protocol.Consistency;
+import net.kuujo.copycat.protocol.Persistence;
 
 /**
  * Resource command.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Target(ElementType.METHOD)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface Command {
+public abstract class Command<T> implements Writable {
+  private Persistence persistence = Persistence.DEFAULT;
+  private Consistency consistency = Consistency.DEFAULT;
+  private long resourceId;
 
-  /**
-   * Command type.
-   */
-  public static enum Type {
-    READ,
-    WRITE,
-    DELETE
+  protected Command() {
+  }
+
+  protected Command(long resourceId) {
+    this.resourceId = resourceId;
   }
 
   /**
-   * The command name.
+   * Sets the resource ID.
+   *
+   * @param resourceId The resource ID.
+   * @return The command.
    */
-  String value() default "";
+  Command setResource(long resourceId) {
+    this.resourceId = resourceId;
+    return this;
+  }
 
   /**
-   * The command type.
+   * Returns the resource ID.
+   *
+   * @return The resource ID.
    */
-  Type type() default Type.WRITE;
+  public long getResource() {
+    return resourceId;
+  }
+
+  /**
+   * Sets the command persistence level.
+   *
+   * @param persistence The command persistence level.
+   * @return The command.
+   */
+  public Command setPersistence(Persistence persistence) {
+    this.persistence = persistence;
+    return this;
+  }
+
+  /**
+   * Returns the command persistence level.
+   *
+   * @return The command persistence level.
+   */
+  public Persistence getPersistence() {
+    return persistence;
+  }
+
+  /**
+   * Sets the command consistency level.
+   *
+   * @param consistency The command consistency level.
+   * @return The command.
+   */
+  public Command setConsistency(Consistency consistency) {
+    this.consistency = consistency;
+    return this;
+  }
+
+  /**
+   * Returns the command consistency level.
+   *
+   * @return The command consistency level.
+   */
+  public Consistency getConsistency() {
+    return consistency;
+  }
+
+  @Override
+  public void writeObject(Buffer buffer) {
+    buffer.writeByte(getPersistence().ordinal())
+      .writeByte(getConsistency().ordinal())
+      .writeLong(resourceId);
+  }
+
+  @Override
+  public void readObject(Buffer buffer) {
+    persistence = Persistence.values()[buffer.readByte()];
+    consistency = Consistency.values()[buffer.readByte()];
+    resourceId = buffer.readLong();
+  }
 
 }

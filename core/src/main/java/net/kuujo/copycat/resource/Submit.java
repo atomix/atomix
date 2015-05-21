@@ -13,24 +13,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.log;
+package net.kuujo.copycat.resource;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * Commit log commit handler.
+ * Annotates a method as submitting a command to the state machine.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@FunctionalInterface
-public interface CommitHandler<KEY, VALUE, RESULT> {
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Submit {
 
   /**
-   * Commits an entry to the log.
-   *
-   * @param index The entry index.
-   * @param key The entry key.
-   * @param value The entry value.
-   * @return The commit result.
+   * The submit command type.
    */
-  RESULT commit(long index, KEY key, VALUE value);
+  Class<? extends Command> value();
+
+  /**
+   * Submit command argument.
+   */
+  @Target(ElementType.PARAMETER)
+  @Retention(RetentionPolicy.RUNTIME)
+  static @interface Argument {
+
+    /**
+     * The argument name.
+     */
+    String value();
+
+  }
 
 }

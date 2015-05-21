@@ -15,176 +15,23 @@
  */
 package net.kuujo.copycat.resource;
 
-import net.kuujo.copycat.log.CommitLog;
-import net.kuujo.copycat.log.ResourceCommitLog;
-import net.kuujo.copycat.log.SharedCommitLog;
-import net.kuujo.copycat.protocol.Consistency;
-import net.kuujo.copycat.protocol.Persistence;
-import net.kuujo.copycat.util.Managed;
+import net.kuujo.copycat.resource.manager.DeleteResource;
 
-import java.io.Serializable;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 /**
- * Resource.
+ * Copycat resource.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class Resource<T extends Resource<T>> implements Managed<T> {
-  private final CommitLog log;
-  private final Map<Method, String> nameCache = new ConcurrentHashMap<>();
-  private final Map<String, CommandHolder> commands = new ConcurrentHashMap<>();
-  private Consistency readConsistency = Consistency.LEASE;
-
-  @SuppressWarnings("unchecked")
-  protected Resource(String name, SharedCommitLog log) {
-    this(new ResourceCommitLog(name, log));
-  }
-
-  @SuppressWarnings("unchecked")
-  protected Resource(CommitLog log) {
-    this.log = log;
-    findCommands();
-    log.handler(this::commit);
-  }
+public interface Resource<T extends Resource<T>> {
 
   /**
-   * Sets the resource read consistency.
+   * Deletes the resource.
    *
-   * @param consistency The resource read consistency.
-   * @return The resource.
+   * @return A completable future to be completed once the resource has been deleted.
    */
-  @SuppressWarnings("unchecked")
-  public T setConsistency(Consistency consistency) {
-    if (consistency == null)
-      throw new NullPointerException("consistency cannot be null");
-    this.readConsistency = consistency;
-    return (T) this;
-  }
-
-  /**
-   * Returns the resource read consistency.
-   *
-   * @return The resource read consistency.
-   */
-  public Consistency getConsistency() {
-    return readConsistency;
-  }
-
-  /**
-   * Finds internal command methods.
-   */
-  private void findCommands() {
-    for (Method method : getClass().getMethods()) {
-      Command command = method.getAnnotation(Command.class);
-      if (command != null) {
-        String name = nameCache.computeIfAbsent(method, m -> m.getName() + "(" + String.join(",", Arrays.asList(m.getParameterTypes()).stream().map(Class::getCanonicalName).collect(Collectors
-          .toList())) + ")");
-        commands.put(name, new CommandHolder(command, method));
-      }
-    }
-  }
-
-  /**
-   * Handles a commit log commit.
-   */
-  private Object commit(long index, Object key, Object entry) {
-    Commit commit = (Commit) entry;
-    CommandHolder command = commands.get(commit.method);
-    if (command != null) {
-      Object[] keyedArgs = new Object[(commit.args != null ? commit.args.length : 0) + 1];
-      keyedArgs[0] = key;
-      if (commit.args != null)
-        System.arraycopy(commit.args, 0, keyedArgs, 0, commit.args.length);
-      return commit(index, commit.method, command.method, keyedArgs);
-    }
-    throw new UnsupportedOperationException();
-  }
-
-  /**
-   * Commits a set of arguments.
-   */
-  protected Object commit(long index, String command, Method method, Object[] args) {
-    try {
-      return method.invoke(this, args);
-    } catch (IllegalAccessException | InvocationTargetException e) {
-      throw new UnsupportedOperationException("failed to apply command", e);
-    }
-  }
-
-  /**
-   * Submits a command to the resource's commit log.
-   */
-  @SuppressWarnings("unchecked")
-  protected <RESULT> CompletableFuture<RESULT> submit(String commandName, Object key, Object... args) {
-    CommandHolder command = commands.get(commandName);
-    if (command == null)
-      throw new IllegalArgumentException("invalid command: " + commandName);
-
-    switch (command.command.type()) {
-      case WRITE:
-        return log.commit(key, new Commit(command.command.value(), args), Persistence.PERSISTENT, Consistency.STRICT);
-      case DELETE:
-        return log.commit(key, new Commit(command.command.value(), args), Persistence.DURABLE, Consistency.STRICT);
-      case READ:
-        return log.commit(key, new Commit(command.command.value(), args), Persistence.NONE, readConsistency);
-    }
-
-    throw new IllegalStateException("unknown command type");
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public CompletableFuture<T> open() {
-    return log.open().thenApply(v -> (T) this);
-  }
-
-  @Override
-  public boolean isOpen() {
-    return log.isOpen();
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public CompletableFuture<Void> close() {
-    return log.close();
-  }
-
-  @Override
-  public boolean isClosed() {
-    return log.isClosed();
-  }
-
-  /**
-   * Resource commit.
-   */
-  protected static class Commit implements Serializable {
-    private String method;
-    private Object[] args;
-
-    private Commit(String method, Object[] args) {
-      this.method = method;
-      this.args = args;
-    }
-  }
-
-  /**
-   * Command holder.
-   */
-  private static class CommandHolder {
-    private final Command command;
-    private final Method method;
-
-    private CommandHolder(Command command, Method method) {
-      this.command = command;
-      this.method = method;
-    }
-  }
+  @Submit(DeleteResource.class)
+  CompletableFuture<Void> delete();
 
 }

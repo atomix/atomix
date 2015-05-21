@@ -13,25 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat;
+package net.kuujo.copycat.resource;
 
 /**
- * Resource configuration exception.
+ * Commit factory.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ConfigurationException extends CopycatException {
+public class CommitFactory {
+  private final ThreadLocal<Commit> commit = new ThreadLocal<Commit>() {
+    @Override
+    protected Commit initialValue() {
+      return new Commit();
+    }
+  };
 
-  public ConfigurationException(String message, Object... args) {
-    super(String.format(message, args));
-  }
-
-  public ConfigurationException(Throwable cause, String message, Object... args) {
-    super(String.format(message, args), cause);
-  }
-
-  public ConfigurationException(Throwable cause) {
-    super(cause);
+  /**
+   * Creates thread local new commit.
+   *
+   * @param index The commit index.
+   * @param timestamp The commit timestamp.
+   * @param command The commit command.
+   * @return The thread local commit.
+   */
+  @SuppressWarnings("unchecked")
+  public Commit createCommit(long index, long timestamp, Command command) {
+    return commit.get().withIndex(index).withTimestamp(timestamp).withCommand(command);
   }
 
 }

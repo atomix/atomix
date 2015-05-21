@@ -13,25 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat;
+package net.kuujo.copycat.resource;
 
 /**
- * Resource configuration exception.
+ * Command type.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ConfigurationException extends CopycatException {
+public interface CommandType<T extends Command> {
 
-  public ConfigurationException(String message, Object... args) {
-    super(String.format(message, args));
-  }
+  /**
+   * Returns the command type.
+   *
+   * @return The command type.
+   */
+  Class<T> type();
 
-  public ConfigurationException(Throwable cause, String message, Object... args) {
-    super(String.format(message, args), cause);
-  }
-
-  public ConfigurationException(Throwable cause) {
-    super(cause);
-  }
+  /**
+   * Creates a new command instance.
+   *
+   * @return The new command instance.
+   */
+  T createCommand();
 
 }

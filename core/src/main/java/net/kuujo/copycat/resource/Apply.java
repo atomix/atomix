@@ -13,23 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.log;
+package net.kuujo.copycat.resource;
 
-import java.util.concurrent.atomic.AtomicLong;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * Hash based partitioner.
+ * Annotation for applying commands to the state machine.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class HashPartitioner implements Partitioner {
-  private final AtomicLong count = new AtomicLong();
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Apply {
 
-  @Override
-  public int partition(Object key, int partitions) {
-    if (key == null)
-      return (int) (count.incrementAndGet() % partitions);
-    return key.hashCode() % partitions;
+  /**
+   * The command types to apply.
+   */
+  Class<? extends Command>[] value();
+
+  /**
+   * Indicates that all commands should be applied.
+   */
+  static class All extends Command {
   }
 
 }

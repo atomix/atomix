@@ -13,27 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.log;
-
-import net.kuujo.copycat.io.Buffer;
+package net.kuujo.copycat.resource;
 
 /**
- * Raw commit handler.
+ * Command processor.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@FunctionalInterface
-public interface RawCommitHandler {
+public interface CommandProcessor<T extends Command> {
 
   /**
-   * Handles a raw commit.
+   * Processes the given command.
    *
-   * @param index The entry index.
-   * @param key The raw commit key.
-   * @param entry The raw commit entry.
-   * @param result The raw result.
-   * @return The raw result buffer.
+   * @param command The command to process.
+   * @return The processed command.
    */
-  Buffer commit(long index, Buffer key, Buffer entry, Buffer result);
+  T process(T command);
 
 }

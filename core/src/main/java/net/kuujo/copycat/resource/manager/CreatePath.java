@@ -13,22 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.log;
+package net.kuujo.copycat.resource.manager;
 
 /**
- * Resource partitioner.
+ * Create getPath command.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Partitioner {
+public class CreatePath extends PathCommand<Boolean> {
+  public CreatePath(String path) {
+    super(path);
+  }
 
-  /**
-   * Partitions the given key.
-   *
-   * @param key The key to partition.
-   * @param partitions The total number of available partitions.
-   * @return The partition number.
-   */
-  int partition(Object key, int partitions);
+  public CreatePath() {
+  }
 
 }

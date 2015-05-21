@@ -13,25 +13,41 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat;
+package net.kuujo.copycat.protocol;
 
 /**
- * Resource configuration exception.
+ * Protocol commit.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ConfigurationException extends CopycatException {
+public interface Commit<T> {
 
-  public ConfigurationException(String message, Object... args) {
-    super(String.format(message, args));
-  }
+  /**
+   * Returns the commit index.
+   *
+   * @return The commit index.
+   */
+  long index();
 
-  public ConfigurationException(Throwable cause, String message, Object... args) {
-    super(String.format(message, args), cause);
-  }
+  /**
+   * Returns the commit timestamp.
+   *
+   * @return the commit timestamp.
+   */
+  long timestamp();
 
-  public ConfigurationException(Throwable cause) {
-    super(cause);
-  }
+  /**
+   * Returns the commit type.
+   *
+   * @return The commit type.
+   */
+  Class<T> type();
+
+  /**
+   * Returns the command.
+   *
+   * @return The command.
+   */
+  T command();
 
 }

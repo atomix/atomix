@@ -13,26 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.resource;
-
-import net.kuujo.copycat.log.CommitLog;
-
-import java.io.Serializable;
+package net.kuujo.copycat.resource.manager;
 
 /**
- * Resource factory.
+ * Resource exists command.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@FunctionalInterface
-public interface ResourceFactory<RESOURCE extends Resource<?>> extends Serializable {
+public class ResourceExists extends PathCommand {
+  public ResourceExists(String path) {
+    super(path);
+  }
 
-  /**
-   * Creates an instance of the given resource.
-   *
-   * @param log The resource's commit log.
-   * @return The resource.
-   */
-  RESOURCE createResource(CommitLog log);
+  public ResourceExists() {
+  }
 
 }

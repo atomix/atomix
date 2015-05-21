@@ -15,8 +15,6 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.io.Buffer;
-
 /**
  * Protocol entry filter.
  *
@@ -27,11 +25,11 @@ public interface ProtocolFilter {
   /**
    * Returns a boolean value indicating whether to accept the given entry.
    *
-   * @param index The entry index.
-   * @param key The entry key.
+   * @param version The entry index.
+   * @param timestamp The entry timestamp.
    * @param entry The entry value.
    * @return Indicates whether to accept the given entry.
    */
-  boolean accept(long index, Buffer key, Buffer entry);
+  boolean accept(long version, long timestamp, Object entry);
 
 }
