@@ -23,11 +23,21 @@ import java.util.List;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class PathChildren extends PathCommand<List<String>> {
+
+  public PathChildren() {
+  }
+
   public PathChildren(String path) {
     super(path);
   }
 
-  public PathChildren() {
+  /**
+   * Path children builder.
+   */
+  public static class Builder extends PathCommand.Builder<Builder, PathChildren> {
+    public Builder() {
+      super(new PathChildren());
+    }
   }
 
 }

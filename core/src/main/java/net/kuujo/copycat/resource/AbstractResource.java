@@ -42,28 +42,6 @@ public abstract class AbstractResource<T extends AbstractResource<T>> implements
     return log.submit(command);
   }
 
-  /**
-   * Submits a command to the log.
-   *
-   * @param type The command type.
-   * @param processor The command processor.
-   * @return A completable future to be completed with the command result.
-   */
-  protected <T extends Command<R>, R> CompletableFuture<R> submit(CommandType<T> type, CommandProcessor<T> processor) {
-    return log.submit(type, processor);
-  }
-
-  /**
-   * Submits a command to the log.
-   *
-   * @param type The command type.
-   * @param processor The command processor.
-   * @return A completable future to be completed with the command result.
-   */
-  protected <T extends Command<R>, R> CompletableFuture<R> submit(Class<T> type, CommandProcessor<T> processor) {
-    return log.submit(type, processor);
-  }
-
   @Override
   public CompletableFuture<Void> delete() {
     return log.submit(new DeleteResource()).thenApply(v -> null);

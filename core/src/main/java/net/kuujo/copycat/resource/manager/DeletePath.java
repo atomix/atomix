@@ -21,11 +21,21 @@ package net.kuujo.copycat.resource.manager;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class DeletePath extends PathCommand<Boolean> {
+
+  public DeletePath() {
+  }
+
   public DeletePath(String path) {
     super(path);
   }
 
-  public DeletePath() {
+  /**
+   * Create path builder.
+   */
+  public static class Builder extends PathCommand.Builder<Builder, DeletePath> {
+    public Builder() {
+      super(new DeletePath());
+    }
   }
 
 }

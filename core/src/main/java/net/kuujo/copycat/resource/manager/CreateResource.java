@@ -41,19 +41,8 @@ public class CreateResource extends PathCommand<Long> {
    *
    * @return The resource class.
    */
-  public Class<? extends StateMachine> getType() {
+  public Class<? extends StateMachine> type() {
     return type;
-  }
-
-  /**
-   * Sets the resource class.
-   *
-   * @param type The resource class name.
-   * @return The command.
-   */
-  public CreateResource setType(Class<? extends StateMachine> type) {
-    this.type = type;
-    return this;
   }
 
   @Override
@@ -75,4 +64,25 @@ public class CreateResource extends PathCommand<Long> {
       throw new SerializationException(e);
     }
   }
+
+  /**
+   * Create resource builder.
+   */
+  public static class Builder extends PathCommand.Builder<Builder, CreateResource> {
+    public Builder() {
+      super(new CreateResource());
+    }
+
+    /**
+     * Sets the command type.
+     *
+     * @param type The command type.
+     * @return The command builder.
+     */
+    public Builder withType(Class<? extends StateMachine> type) {
+      command.type = type;
+      return this;
+    }
+  }
+
 }

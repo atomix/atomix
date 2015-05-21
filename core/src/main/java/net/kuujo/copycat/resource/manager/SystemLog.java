@@ -78,37 +78,7 @@ public class SystemLog implements CommitLog {
 
   @Override
   public <R> CompletableFuture<R> submit(Command<R> command) {
-    return protocol.submit(command, command.getPersistence(), command.getConsistency());
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public <T extends Command<R>, R> CompletableFuture<R> submit(CommandType<T> type, CommandProcessor<T> processor) {
-    Map<Class, Command> commands = this.commands.get();
-    Command command = commands.get(type.type());
-    if (command == null) {
-      command = type.createCommand();
-      commands.put(type.type(), command);
-    }
-    processor.process((T) command);
-    return submit(command);
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public <T extends Command<R>, R> CompletableFuture<R> submit(Class<T> type, CommandProcessor<T> processor) {
-    Map<Class, Command> commands = this.commands.get();
-    Command command = commands.get(type);
-    if (command == null) {
-      try {
-        command = type.newInstance();
-        commands.put(type, command);
-      } catch (InstantiationException | IllegalAccessException e) {
-        throw new IllegalArgumentException("failed to instantiate command: " + type, e);
-      }
-    }
-    processor.process((T) command);
-    return submit(command);
+    return protocol.submit(command, command.persistence(), command.consistency());
   }
 
   @Override

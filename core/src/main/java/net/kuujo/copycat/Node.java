@@ -15,8 +15,9 @@
  */
 package net.kuujo.copycat;
 
+import net.kuujo.copycat.protocol.Consistency;
+import net.kuujo.copycat.protocol.Persistence;
 import net.kuujo.copycat.resource.Resource;
-import net.kuujo.copycat.resource.manager.GetResource;
 import net.kuujo.copycat.resource.manager.PathChildren;
 
 import java.util.List;
@@ -67,21 +68,16 @@ public class Node {
   }
 
   /**
-   * Reads this node's info.
-   *
-   * @return A completable future to be completed with this node's info.
-   */
-  public CompletableFuture<NodeInfo> info() {
-    return copycat.log.submit(new GetResource(path));
-  }
-
-  /**
    * Reads a list of children for this node.
    *
    * @return A list of children for this node.
    */
   public CompletableFuture<List<Node>> children() {
-    return copycat.log.submit(new PathChildren(path))
+    return copycat.log.submit(PathChildren.builder(PathChildren.Builder.class)
+      .withPath(path)
+      .withPersistence(Persistence.NONE)
+      .withConsistency(Consistency.LEASE)
+      .build())
       .thenApply(children -> {
         return children.stream()
           .map(copycat::node)

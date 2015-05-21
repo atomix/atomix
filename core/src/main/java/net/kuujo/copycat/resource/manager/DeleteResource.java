@@ -27,4 +27,13 @@ public class DeleteResource extends Command<Boolean> {
   public DeleteResource() {
   }
 
+  /**
+   * Delete resource builder.
+   */
+  public static class Builder extends Command.Builder<Builder, DeleteResource> {
+    public Builder() {
+      super(new DeleteResource());
+    }
+  }
+
 }

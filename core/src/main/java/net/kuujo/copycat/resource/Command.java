@@ -21,15 +21,42 @@ import net.kuujo.copycat.io.serializer.Writable;
 import net.kuujo.copycat.protocol.Consistency;
 import net.kuujo.copycat.protocol.Persistence;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Resource command.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class Command<T> implements Writable {
-  private Persistence persistence = Persistence.DEFAULT;
-  private Consistency consistency = Consistency.DEFAULT;
-  private long resourceId;
+  private static final ThreadLocal<Map<Class<? extends Builder>, Builder>> BUILDERS = new ThreadLocal<Map<Class<? extends Builder>, Builder>>() {
+    @Override
+    protected Map<Class<? extends Builder>, Builder> initialValue() {
+      return new HashMap<>();
+    }
+  };
+
+  /**
+   * Returns a cached instance of the given builder.
+   *
+   * @param type The builder type.
+   * @return The builder.
+   */
+  @SuppressWarnings("unchecked")
+  public static <T extends Builder> T builder(Class<T> type) {
+    return (T) BUILDERS.get().computeIfAbsent(type, t -> {
+      try {
+        return type.newInstance();
+      } catch (InstantiationException | IllegalAccessException e) {
+        throw new IllegalArgumentException("failed to instantiate builder: " + type, e);
+      }
+    });
+  }
+
+  protected Persistence persistence = Persistence.DEFAULT;
+  protected Consistency consistency = Consistency.DEFAULT;
+  long resourceId;
 
   protected Command() {
   }
@@ -39,34 +66,12 @@ public abstract class Command<T> implements Writable {
   }
 
   /**
-   * Sets the resource ID.
-   *
-   * @param resourceId The resource ID.
-   * @return The command.
-   */
-  Command setResource(long resourceId) {
-    this.resourceId = resourceId;
-    return this;
-  }
-
-  /**
    * Returns the resource ID.
    *
    * @return The resource ID.
    */
-  public long getResource() {
+  public long resource() {
     return resourceId;
-  }
-
-  /**
-   * Sets the command persistence level.
-   *
-   * @param persistence The command persistence level.
-   * @return The command.
-   */
-  public Command setPersistence(Persistence persistence) {
-    this.persistence = persistence;
-    return this;
   }
 
   /**
@@ -74,19 +79,8 @@ public abstract class Command<T> implements Writable {
    *
    * @return The command persistence level.
    */
-  public Persistence getPersistence() {
+  public Persistence persistence() {
     return persistence;
-  }
-
-  /**
-   * Sets the command consistency level.
-   *
-   * @param consistency The command consistency level.
-   * @return The command.
-   */
-  public Command setConsistency(Consistency consistency) {
-    this.consistency = consistency;
-    return this;
   }
 
   /**
@@ -94,14 +88,14 @@ public abstract class Command<T> implements Writable {
    *
    * @return The command consistency level.
    */
-  public Consistency getConsistency() {
+  public Consistency consistency() {
     return consistency;
   }
 
   @Override
   public void writeObject(Buffer buffer, Serializer serializer) {
-    buffer.writeByte(getPersistence().ordinal())
-      .writeByte(getConsistency().ordinal())
+    buffer.writeByte(persistence().ordinal())
+      .writeByte(consistency().ordinal())
       .writeLong(resourceId);
   }
 
@@ -110,6 +104,46 @@ public abstract class Command<T> implements Writable {
     persistence = Persistence.values()[buffer.readByte()];
     consistency = Consistency.values()[buffer.readByte()];
     resourceId = buffer.readLong();
+  }
+
+  /**
+   * Command builder.
+   */
+  public static class Builder<T extends Builder<T, U>, U extends Command<?>> implements net.kuujo.copycat.Builder<U> {
+    protected final U command;
+
+    protected Builder(U command) {
+      this.command = command;
+    }
+
+    /**
+     * Sets the command persistence level.
+     *
+     * @param persistence The command persistence level.
+     * @return The command builder.
+     */
+    @SuppressWarnings("unchecked")
+    public T withPersistence(Persistence persistence) {
+      command.persistence = persistence;
+      return (T) this;
+    }
+
+    /**
+     * Sets the command consistency level.
+     *
+     * @param consistency The command consistency level.
+     * @return The command builder.
+     */
+    @SuppressWarnings("unchecked")
+    public T withConsistency(Consistency consistency) {
+      command.consistency = consistency;
+      return (T) this;
+    }
+
+    @Override
+    public U build() {
+      return command;
+    }
   }
 
 }

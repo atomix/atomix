@@ -16,6 +16,8 @@
 package net.kuujo.copycat;
 
 import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.protocol.Consistency;
+import net.kuujo.copycat.protocol.Persistence;
 import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.resource.*;
 import net.kuujo.copycat.resource.manager.*;
@@ -91,7 +93,12 @@ public class Copycat implements Managed<Copycat> {
    * @return A completable future to be completed once the node has been created.
    */
   public CompletableFuture<Node> create(String path) {
-    return log.submit(new CreatePath(path)).thenApply(result -> node(path));
+    return log.submit(CreatePath.builder(CreatePath.Builder.class)
+      .withPath(path)
+      .withPersistence(Persistence.PERSISTENT)
+      .withConsistency(Consistency.STRICT)
+      .build())
+      .thenApply(result -> node(path));
   }
 
   /**
@@ -103,7 +110,13 @@ public class Copycat implements Managed<Copycat> {
    * @return A completable future to be completed once the resource has been created.
    */
   public <T extends Resource<?>> CompletableFuture<T> create(String path, Class<T> type) {
-    return log.submit(new CreateResource(path, registry.lookup(type))).thenApply(id -> factory.createResource(type, id));
+    return log.submit(CreateResource.builder(CreateResource.Builder.class)
+      .withPath(path)
+      .withPersistence(Persistence.PERSISTENT)
+      .withConsistency(Consistency.STRICT)
+      .withType(registry.lookup(type))
+      .build())
+      .thenApply(id -> factory.createResource(type, id));
   }
 
   /**
@@ -113,7 +126,10 @@ public class Copycat implements Managed<Copycat> {
    * @return A completable future to be completed once the node has been deleted.
    */
   public CompletableFuture<Copycat> delete(String path) {
-    return log.submit(new DeletePath(path)).thenApply(result -> this);
+    return log.submit(DeletePath.builder(DeletePath.Builder.class)
+      .withPath(path)
+      .build())
+      .thenApply(result -> this);
   }
 
   @Override

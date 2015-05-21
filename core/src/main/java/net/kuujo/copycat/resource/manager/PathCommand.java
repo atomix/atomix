@@ -25,12 +25,12 @@ import net.kuujo.copycat.resource.Command;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class PathCommand<T> extends Command<T> {
-  private String path;
+  protected String path;
 
-  public PathCommand() {
+  protected PathCommand() {
   }
 
-  public PathCommand(String path) {
+  protected PathCommand(String path) {
     this.path = path;
   }
 
@@ -39,19 +39,8 @@ public abstract class PathCommand<T> extends Command<T> {
    *
    * @return The getPath.
    */
-  public String getPath() {
+  public String path() {
     return path;
-  }
-
-  /**
-   * Sets the command path.
-   *
-   * @param path The command path.
-   * @return The command.
-   */
-  public PathCommand setPath(String path) {
-    this.path = path;
-    return this;
   }
 
   @Override
@@ -66,6 +55,27 @@ public abstract class PathCommand<T> extends Command<T> {
     byte[] bytes = new byte[buffer.readInt()];
     buffer.read(bytes);
     path = new String(bytes);
+  }
+
+  /**
+   * Path command builder.
+   */
+  public static abstract class Builder<T extends Builder<T, U>, U extends PathCommand<?>> extends Command.Builder<T, U> {
+    protected Builder(U command) {
+      super(command);
+    }
+
+    /**
+     * Sets the command path.
+     *
+     * @param path The command path.
+     * @return The command builder.
+     */
+    @SuppressWarnings("unchecked")
+    public T withPath(String path) {
+      command.path = path;
+      return (T) this;
+    }
   }
 
 }

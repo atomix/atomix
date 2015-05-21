@@ -21,11 +21,21 @@ package net.kuujo.copycat.resource.manager;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class ResourceExists extends PathCommand {
+
+  public ResourceExists() {
+  }
+
   public ResourceExists(String path) {
     super(path);
   }
 
-  public ResourceExists() {
+  /**
+   * Resource exists builder.
+   */
+  public static class Builder extends PathCommand.Builder<Builder, ResourceExists> {
+    public Builder() {
+      super(new ResourceExists());
+    }
   }
 
 }

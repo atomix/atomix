@@ -43,22 +43,4 @@ public interface CommitLog extends Managed<CommitLog> {
    */
   <R> CompletableFuture<R> submit(Command<R> command);
 
-  /**
-   * Submits a command to the log.
-   *
-   * @param type The command type.
-   * @param processor The command processor.
-   * @return A completable future to be completed with the command result.
-   */
-  <T extends Command<R>, R> CompletableFuture<R> submit(CommandType<T> type, CommandProcessor<T> processor);
-
-  /**
-   * Submits a command to the log.
-   *
-   * @param type The command type.
-   * @param processor The command processor.
-   * @return A completable future to be completed with the command result.
-   */
-  <T extends Command<R>, R> CompletableFuture<R> submit(Class<T> type, CommandProcessor<T> processor);
-
 }
