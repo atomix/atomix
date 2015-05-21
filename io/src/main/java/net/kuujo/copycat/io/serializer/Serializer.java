@@ -15,14 +15,16 @@
  */
 package net.kuujo.copycat.io.serializer;
 
+import net.jodah.typetools.TypeResolver;
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.HeapBufferPool;
 import net.kuujo.copycat.io.util.ReferencePool;
-import net.kuujo.copycat.util.ServiceConfigurationException;
-import net.kuujo.copycat.util.ServiceInfo;
-import net.kuujo.copycat.util.ServiceLoader;
+import org.reflections.Reflections;
 
 import java.io.*;
+import java.lang.reflect.Type;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Copycat serializer.
@@ -40,42 +42,69 @@ import java.io.*;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class Serializer {
-  private static final String SERIALIZER_SERVICE = "net.kuujo.copycat.io.serializer";
+  private static final String COPYCAT_PACKAGE = "net.kuujo.copycat";
   private static final byte TYPE_NULL = -1;
   private static final byte TYPE_BUFFER = 0;
-  private static final byte TYPE_WRITABLE = 1;
-  private static final byte TYPE_SERIALIZABLE = 2;
+  private static final byte TYPE_WRITABLE_ID = 1;
+  private static final byte TYPE_WRITABLE_CLASS = 2;
+  private static final byte TYPE_SERIALIZABLE = 3;
   private final SerializerRegistry registry;
-  private final ReferencePool<Buffer> bufferPool;
-
-  public Serializer() {
-    this(new HeapBufferPool());
-  }
+  private final Map<Class, ObjectWriter> serializers = new HashMap<>();
+  private final ReferencePool<Buffer> bufferPool = new HeapBufferPool();
 
   @SuppressWarnings("unchecked")
-  public Serializer(ReferencePool<Buffer> bufferPool) {
-    this.bufferPool = bufferPool;
+  public Serializer(String... packages) {
     this.registry = new SerializerRegistry();
-    for (ServiceInfo serializerInfo : ServiceLoader.load(SERIALIZER_SERVICE)) {
-      try {
-        Class<?> serializableClass = serializerInfo.getClass("class");
-        Class<ObjectWriter> serializerClass = ((Class<ObjectWriter>) serializerInfo.getClass("serializer"));
-        if (serializerClass != null) {
-          registry.register(serializableClass, serializerInfo.getInteger("id"), serializerClass.newInstance());
-        } else if (!Writable.class.isAssignableFrom(serializableClass)) {
-          throw new ServiceConfigurationException(serializableClass + " is not writable");
-        } else {
-          registry.register((Class<? extends Writable>) serializableClass, serializerInfo.getInteger("id"));
-        }
-      } catch (InstantiationException | IllegalAccessException e) {
-        throw new ServiceConfigurationException(e);
-      }
-    }
+
+    String[] allPackages = new String[packages.length + 1];
+    System.arraycopy(packages, 0, allPackages, 0, packages.length);
+    allPackages[allPackages.length] = COPYCAT_PACKAGE;
+
+    registerSerializers(packages);
   }
 
   private Serializer(SerializerRegistry registry) {
     this.registry = registry.copy();
-    this.bufferPool = new HeapBufferPool();
+  }
+
+  /**
+   * Registers serializers from the given packages.
+   */
+  @SuppressWarnings("unchecked")
+  private void registerSerializers(String... packages) {
+    Reflections reflections = new Reflections(packages);
+
+    for (Class<? extends ObjectWriter> writer : reflections.getSubTypesOf(ObjectWriter.class)) {
+      Serialize serialize = writer.getAnnotation(Serialize.class);
+      if (serialize != null) {
+        for (Serialize.Type type : serialize.value()) {
+          if (type.id() != 0) {
+            registry.register(type.value(), type.id(), writer);
+          } else {
+            registry.register(type.value(), writer);
+          }
+        }
+      } else {
+        Class type = TypeResolver.resolveRawArgument(ObjectWriter.class, writer);
+        if (type != null) {
+          registry.register((Class) type, writer);
+        }
+      }
+    }
+
+    for (Class<? extends Writable> writable : reflections.getSubTypesOf(Writable.class)) {
+      SerializeWith serializeWith = writable.getAnnotation(SerializeWith.class);
+      if (serializeWith != null) {
+        registry.register(writable, serializeWith.id(), serializeWith.serializer());
+      } else {
+        registry.register(writable);
+      }
+    }
+
+    for (Class<?> writable : reflections.getTypesAnnotatedWith(SerializeWith.class)) {
+      SerializeWith serializeWith = writable.getAnnotation(SerializeWith.class);
+      registry.register(writable, serializeWith.id(), serializeWith.serializer());
+    }
   }
 
   /**
@@ -128,20 +157,23 @@ public class Serializer {
    * @param serializer The type serializer.
    * @return The Copycat serializer.
    */
-  public <T> Serializer register(Class<T> type, int id, ObjectWriter<T> serializer) {
+  public <T> Serializer register(Class<T> type, int id, Class<? extends ObjectWriter> serializer) {
     registry.register(type, id, serializer);
     return this;
   }
 
   /**
-   * Unregisters a serializable class.
-   *
-   * @param type The type to unregister.
-   * @return The Copycat serializer.
+   * Returns the serializer for the given type.
    */
-  public Serializer unregister(Class<?> type) {
-    registry.unregister(type);
-    return this;
+  private ObjectWriter getSerializer(Class type) {
+    return serializers.computeIfAbsent(type, name -> {
+      try {
+        Class serializerClass = registry.lookup(name);
+        return (ObjectWriter) (serializerClass != null ? serializerClass.newInstance() : null);
+      } catch (InstantiationException | IllegalAccessException e) {
+        throw new SerializationException("failed to instantiate serializer", e);
+      }
+    });
   }
 
   /**
@@ -171,7 +203,6 @@ public class Serializer {
    * @return The serialized object.
    * @throws net.kuujo.copycat.io.serializer.SerializationException If no serializer is registered for the object.
    */
-  @SuppressWarnings("unchecked")
   public <T> Buffer writeObject(T object, Buffer buffer) {
     if (object == null) {
       return writeNull(buffer);
@@ -182,15 +213,31 @@ public class Serializer {
     }
 
     Class<?> type = object.getClass();
-    int id = registry.id(type);
-    ObjectWriter serializer = registry.getSerializer(type);
-    if (serializer == null) {
-      if (object instanceof Serializable) {
-        return writeSerializable(object, buffer);
+
+    ObjectWriter serializer;
+    if (registry.ids().containsKey(type)) {
+      int typeId = registry.ids().get(type);
+
+      serializer = getSerializer(type);
+
+      if (serializer == null) {
+        if (object instanceof Serializable) {
+          return writeSerializable(object, buffer);
+        }
+        throw new SerializationException("cannot serialize unregistered type: " + type);
       }
-      throw new SerializationException("cannot serialize unregistered type: " + type);
+      return writeWritableId(typeId, object, buffer, serializer);
+    } else {
+      serializer = getSerializer(type);
+
+      if (serializer == null) {
+        if (object instanceof Serializable) {
+          return writeSerializable(object, buffer);
+        }
+        throw new SerializationException("cannot serialize unregistered type: " + type);
+      }
+      return writeWritableClass(type, object, buffer, serializer);
     }
-    return writeWritable(id, object, buffer, serializer);
   }
 
   /**
@@ -224,8 +271,23 @@ public class Serializer {
    * @return The written buffer.
    */
   @SuppressWarnings("unchecked")
-  private <T> Buffer writeWritable(int id, T writable, Buffer buffer, ObjectWriter writer) {
-    writer.write(writable, buffer.writeByte(TYPE_WRITABLE).writeUnsignedByte(id), this);
+  private <T> Buffer writeWritableId(int id, T writable, Buffer buffer, ObjectWriter writer) {
+    writer.write(writable, buffer.writeByte(TYPE_WRITABLE_ID).writeUnsignedByte(id), this);
+    return buffer;
+  }
+
+  /**
+   * Writes a writable object to the given buffer.
+   *
+   * @param type The writable class.
+   * @param writable The object to write to the buffer.
+   * @param buffer The buffer to which to write the object.
+   * @param <T> The object type.
+   * @return The written buffer.
+   */
+  @SuppressWarnings("unchecked")
+  private <T> Buffer writeWritableClass(Class<?> type, T writable, Buffer buffer, ObjectWriter writer) {
+    writer.write(writable, buffer.writeByte(TYPE_WRITABLE_CLASS).writeInt(type.getName().getBytes().length).write(type.getName().getBytes()), this);
     return buffer;
   }
 
@@ -269,8 +331,10 @@ public class Serializer {
         return null;
       case TYPE_BUFFER:
         return (T) readBuffer(buffer);
-      case TYPE_WRITABLE:
-        return readWritable(buffer);
+      case TYPE_WRITABLE_ID:
+        return readWritableId(buffer);
+      case TYPE_WRITABLE_CLASS:
+        return readWritableClass(buffer);
       case TYPE_SERIALIZABLE:
         return readSerializable(buffer);
       default:
@@ -298,14 +362,38 @@ public class Serializer {
    * @return The read object.
    */
   @SuppressWarnings("unchecked")
-  private <T> T readWritable(Buffer buffer) {
+  private <T> T readWritableId(Buffer buffer) {
     int id = buffer.readUnsignedByte();
-    Class<?> type = registry.type(id);
+    Class<?> type = registry.types().get(id);
     if (type == null)
       throw new SerializationException("cannot deserialize: unknown type");
 
-    ObjectWriter serializer = registry.getSerializer(type);
+    ObjectWriter serializer = getSerializer(type);
     return (T) serializer.read(type, buffer, this);
+  }
+
+  /**
+   * Reads a writable object.
+   *
+   * @param buffer The buffer from which to read the object.
+   * @param <T> The object type.
+   * @return The read object.
+   */
+  @SuppressWarnings("unchecked")
+  private <T> T readWritableClass(Buffer buffer) {
+    byte[] bytes = new byte[buffer.readInt()];
+    buffer.read(bytes);
+    String name = new String(bytes);
+    try {
+      Class<?> type = Class.forName(name);
+      if (type == null)
+        throw new SerializationException("cannot deserialize: unknown type");
+
+      ObjectWriter serializer = getSerializer(type);
+      return (T) serializer.read(type, buffer, this);
+    } catch (ClassNotFoundException e) {
+      throw new SerializationException("object class not found", e);
+    }
   }
 
   /**

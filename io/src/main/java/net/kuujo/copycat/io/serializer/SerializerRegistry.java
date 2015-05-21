@@ -19,142 +19,113 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Handles registration of serializable types and their {@link ObjectWriter} instances.
+ * Serializer registry.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-class SerializerRegistry {
-  private final Map<Class, Integer> ids = new HashMap<>();
-  private final Class[] types = new Class[255];
-  private final Map<Class, ObjectWriter> serializers = new HashMap<>();
+public class SerializerRegistry {
+  private final Map<Class, Class<? extends ObjectWriter>> serializers;
+  private final Map<Class, Integer> ids;
+  private final Map<Integer, Class> types;
 
   public SerializerRegistry() {
+    this(new HashMap<>(), new HashMap<>(), new HashMap<>());
   }
 
-  private SerializerRegistry(Map<Class, Integer> ids, Map<Class, ObjectWriter> serializers) {
-    this.ids.putAll(ids);
-    this.serializers.putAll(serializers);
-    for (Map.Entry<Class, Integer> entry : ids.entrySet()) {
-      types[entry.getValue()] = entry.getKey();
-    }
+  private SerializerRegistry(Map<Class, Class<? extends ObjectWriter>> serializers, Map<Class, Integer> ids, Map<Integer, Class> types) {
+    this.serializers = serializers;
+    this.ids = ids;
+    this.types = types;
   }
 
   /**
-   * Copies the serializer registry.
+   * Copies the serializer.
    */
-  protected SerializerRegistry copy() {
-    return new SerializerRegistry(ids, serializers);
+  SerializerRegistry copy() {
+    return new SerializerRegistry(new HashMap<>(serializers), new HashMap<>(ids), new HashMap<>(types));
   }
 
   /**
-   * Registers a serializable class.
+   * Registers a serializer for the given class.
    *
-   * @param type The serializable type.
+   * @param type The serializable class.
+   * @param serializer The serializer.
+   * @return The serializer registry.
    */
-  public void register(Class<? extends Writable> type) {
-    boolean registered = false;
-    for (int i = 0; i < types.length; i++) {
-      if (types[i] == null) {
-        types[i] = type;
-        registered = true;
-        break;
-      }
-    }
-
-    if (!registered)
-      throw new IllegalStateException("registry full");
-  }
-
-  /**
-   * Registers a serializable class.
-   *
-   * @param type The type to register.
-   * @param id The type identifier.
-   */
-  public void register(Class<? extends Writable> type, int id) {
-    register(type, id, new WritableObjectWriter<>());
-  }
-
-  /**
-   * Registers a serializable class.
-   *
-   * @param type The type to register.
-   * @param id The type identifier.
-   * @param serializer The type serializer.
-   */
-  public <T> void register(Class<T> type, int id, ObjectWriter<T> serializer) {
-    if (id < 0)
-      throw new IllegalArgumentException("id cannot be negative");
-    if (id > 255)
-      throw new IllegalArgumentException("id cannot be greater than 255");
-    ids.put(type, id);
-    types[id] = type;
+  public SerializerRegistry register(Class<?> type, Class<? extends ObjectWriter> serializer) {
     serializers.put(type, serializer);
+    return this;
   }
 
   /**
-   * Unregisters a serializable class.
+   * Registers the given class for serialization.
    *
-   * @param type The type to unregister.
+   * @param type The serializable class.
+   * @param id The serialization ID.
+   * @return The serializer registry.
    */
-  public void unregister(Class<?> type) {
-    ids.remove(type);
-    for (int i = 0; i < types.length; i++) {
-      if (types[i] == type) {
-        types[i] = null;
-      }
+  public SerializerRegistry register(Class<? extends Writable> type, int id) {
+    serializers.put(type, WritableObjectWriter.class);
+    ids.put(type, id);
+    types.put(id, type);
+    return this;
+  }
+
+  /**
+   * Registers the given class for serialization.
+   *
+   * @param type The serializable class.
+   * @param id The serialization ID.
+   * @param serializer The serializer.
+   * @return The serializer registry.
+   */
+  public SerializerRegistry register(Class<?> type, int id, Class<? extends ObjectWriter> serializer) {
+    serializers.put(type, serializer);
+    ids.put(type, id);
+    types.put(id, type);
+    return this;
+  }
+
+  /**
+   * Registers the given class for serialization.
+   *
+   * @param writable The serializable class.
+   * @return The serializer registry.
+   */
+  public SerializerRegistry register(Class<? extends Writable> writable) {
+    SerializeWith serializeWith = writable.getAnnotation(SerializeWith.class);
+    if (serializeWith != null) {
+      serializers.put(writable, serializeWith.serializer() != null ? serializeWith.serializer() : WritableObjectWriter.class);
+      ids.put(writable, (int) serializeWith.id());
+      types.put((int) serializeWith.id(), writable);
+    } else {
+      serializers.put(writable, WritableObjectWriter.class);
     }
-    serializers.remove(type);
+    return this;
   }
 
   /**
-   * Returns the serializer for the given type.
+   * Looks up the serializer for the given class.
    *
-   * @param type The type for which to look up the serializer.
-   * @return The serializer for the given type.
+   * @param type The serializable class.
+   * @return The serializer for the given class.
    */
-  @SuppressWarnings("unchecked")
-  protected ObjectWriter getSerializer(Class<?> type) {
-    ObjectWriter serializer = serializers.get(type);
-    if (serializer == null) {
-      int id = id(type);
-      if (id != 0) {
-        return serializers.get(types[id]);
-      }
-    }
-    return serializer;
+  public Class<? extends ObjectWriter> lookup(Class<?> type) {
+    return serializers.get(type);
   }
 
   /**
-   * Returns the identifier for the given type.
-   *
-   * @param type The type for which to look up the identifier.
-   * @return The type identifier.
+   * Returns a map of registered ids and their IDs.
    */
-  @SuppressWarnings("unchecked")
-  protected int id(Class<?> type) {
-    Integer id = ids.get(type);
-    if (id == null) {
-      for (Map.Entry<Class, Integer> entry : ids.entrySet()) {
-        if (entry.getKey().isAssignableFrom(type)) {
-          id = entry.getValue();
-          ids.put(type, id);
-          return id;
-        }
-      }
-      return 0;
-    }
-    return id;
+  Map<Class, Integer> ids() {
+    return ids;
   }
 
   /**
-   * Returns the type for the given identifier.
-   *
-   * @param id The identifier for which to look up the type.
-   * @return The identifier type.
+   * Returns a map of serialization IDs and registered ids.
    */
-  protected Class<?> type(int id) {
-    return types[id];
+  Map<Integer, Class> types() {
+    return types;
   }
 
 }

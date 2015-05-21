@@ -13,28 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.util;
+package net.kuujo.copycat.io.serializer;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * Service not found exception.
+ * An annotation indicating a serializer with which to serialize objects of this class.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ServiceNotFoundException extends RuntimeException {
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface SerializeWith {
 
-  public ServiceNotFoundException() {
-  }
+  /**
+   * The serialization ID.
+   */
+  short id();
 
-  public ServiceNotFoundException(String message) {
-    super(message);
-  }
-
-  public ServiceNotFoundException(String message, Throwable cause) {
-    super(message, cause);
-  }
-
-  public ServiceNotFoundException(Throwable cause) {
-    super(cause);
-  }
+  /**
+   * The serializer with which to serialize objects of this class.
+   */
+  Class<? extends ObjectWriter> serializer();
 
 }

@@ -1,3 +1,0 @@
-id=128
-class=java.lang.String
-serializer=net.kuujo.copycat.io.serializer.StringWriter

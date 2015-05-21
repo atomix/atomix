@@ -15,36 +15,41 @@
  */
 package net.kuujo.copycat.io.serializer;
 
-import net.kuujo.copycat.io.Buffer;
-
-import java.util.ArrayList;
-import java.util.List;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * List serializer.
+ * Annotation for indicating which classes a serializer serializes.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Serialize(@Serialize.Type(id=5, value=Boolean.class))
-public class ListWriter implements ObjectWriter<List> {
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Serialize {
 
-  @Override
-  public void write(List object, Buffer buffer, Serializer serializer) {
-    buffer.writeInt(object.size());
-    for (Object value : object) {
-      serializer.writeObject(value, buffer);
-    }
-  }
+  /**
+   * A list of classes the serializer serializes.
+   */
+  Type[] value();
 
-  @Override
-  @SuppressWarnings("unchecked")
-  public List read(Class<List> type, Buffer buffer, Serializer serializer) {
-    int size = buffer.readInt();
-    List object = new ArrayList<>(size);
-    for (int i = 0; i < size; i++) {
-      object.add(serializer.readObject(buffer));
-    }
-    return object;
+  /**
+   * Serialize type.
+   */
+  @Target(ElementType.TYPE)
+  @Retention(RetentionPolicy.RUNTIME)
+  public static @interface Type {
+
+    /**
+     * The serialization ID.
+     */
+    int id() default 0;
+
+    /**
+     * The type to serialize.
+     */
+    Class<?> value();
   }
 
 }

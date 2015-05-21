@@ -1,3 +1,0 @@
-id=133
-class=java.lang.Double
-serializer=net.kuujo.copycat.io.serializer.DoubleWriter
