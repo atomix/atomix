@@ -17,6 +17,7 @@ package net.kuujo.copycat.cluster;
 
 import net.kuujo.copycat.ConfigurationException;
 import net.kuujo.copycat.io.Buffer;
+import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.util.ExecutionContext;
 
 import java.net.InetSocketAddress;
@@ -59,16 +60,16 @@ public interface NettyMember extends ManagedMember {
     }
 
     @Override
-    public void writeObject(Buffer buffer) {
-      super.writeObject(buffer);
+    public void writeObject(Buffer buffer, Serializer serializer) {
+      super.writeObject(buffer, serializer);
       buffer.writeInt(address.getHostString().getBytes().length)
         .write(address.getHostString().getBytes())
         .writeInt(address.getPort());
     }
 
     @Override
-    public void readObject(Buffer buffer) {
-      super.readObject(buffer);
+    public void readObject(Buffer buffer, Serializer serializer) {
+      super.readObject(buffer, serializer);
       byte[] bytes = new byte[buffer.readInt()];
       buffer.read(bytes);
       address = new InetSocketAddress(new String(bytes), buffer.readInt());
