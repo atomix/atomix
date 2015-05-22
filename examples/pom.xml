@@ -74,8 +74,7 @@
   </distributionManagement>
 
   <modules>
-    <module>vertx-election</module>
-    <module>vertx-event-log</module>
+    <module>resources</module>
   </modules>
 
   <dependencies>
@@ -98,7 +97,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-source-plugin</artifactId>
-        <version>${maven.source.plugin.version}</version>
+        <version>${maven.member.plugin.version}</version>
         <executions>
           <execution>
             <id>attach-sources</id>
