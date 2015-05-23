@@ -19,6 +19,7 @@ import net.kuujo.copycat.ConfigurationException;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.raft.state.RaftContext;
+import net.kuujo.copycat.raft.state.RaftState;
 import net.kuujo.copycat.raft.storage.RaftStorage;
 import net.kuujo.copycat.util.ExecutionContext;
 import net.kuujo.copycat.util.Managed;
@@ -70,6 +71,15 @@ public class Raft implements Managed<Raft> {
   public Member leader() {
     int leader = context.getLeader();
     return leader != 0 ? context.getCluster().member(leader) : null;
+  }
+
+  /**
+   * Returns the Raft state.
+   *
+   * @return The Raft state.
+   */
+  public RaftState state() {
+    return context.getState();
   }
 
   /**

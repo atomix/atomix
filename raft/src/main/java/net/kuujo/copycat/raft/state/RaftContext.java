@@ -459,8 +459,8 @@ public class RaftContext implements Managed<RaftContext> {
    *
    * @return The current state.
    */
-  public AbstractState getState() {
-    return state;
+  public RaftState getState() {
+    return state.type();
   }
 
   /**
