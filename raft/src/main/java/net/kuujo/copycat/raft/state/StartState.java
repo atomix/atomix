@@ -41,11 +41,6 @@ class StartState extends AbstractState {
   }
 
   @Override
-  protected CompletableFuture<SyncResponse> sync(SyncRequest request) {
-    return exceptionalFuture(new IllegalStateException("inactive state"));
-  }
-
-  @Override
   protected CompletableFuture<PollResponse> poll(PollRequest request) {
     return exceptionalFuture(new IllegalStateException("inactive state"));
   }

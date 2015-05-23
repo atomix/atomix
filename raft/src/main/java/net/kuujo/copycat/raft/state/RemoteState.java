@@ -104,16 +104,6 @@ public class RemoteState extends AbstractState {
   }
 
   @Override
-  protected CompletableFuture<SyncResponse> sync(SyncRequest request) {
-    context.checkThread();
-    logRequest(request);
-    return CompletableFuture.completedFuture(logResponse(SyncResponse.builder()
-      .withStatus(Response.Status.ERROR)
-      .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
-      .build()));
-  }
-
-  @Override
   protected CompletableFuture<PollResponse> poll(PollRequest request) {
     context.checkThread();
     logRequest(request);

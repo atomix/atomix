@@ -17,6 +17,9 @@ package net.kuujo.copycat.raft.state;
 
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.raft.ApplicationException;
+import net.kuujo.copycat.raft.Operation;
+import net.kuujo.copycat.raft.Query;
+import net.kuujo.copycat.raft.RaftError;
 import net.kuujo.copycat.raft.rpc.*;
 import net.kuujo.copycat.raft.storage.CommandEntry;
 import net.kuujo.copycat.raft.storage.RaftEntry;
@@ -29,7 +32,7 @@ import java.util.stream.Collectors;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-abstract class ActiveState extends PassiveState {
+abstract class ActiveState extends AbstractState {
   protected boolean transition;
 
   protected ActiveState(RaftContext context) {
@@ -45,8 +48,6 @@ abstract class ActiveState extends PassiveState {
         return context.transition(StartState.class);
       case REMOTE:
         return context.transition(RemoteState.class);
-      case PASSIVE:
-        return context.transition(PassiveState.class);
       case FOLLOWER:
         return context.transition(FollowerState.class);
       case CANDIDATE:
@@ -367,30 +368,63 @@ abstract class ActiveState extends PassiveState {
     } else {
       // Otherwise, load the last entry in the log. The last entry should be
       // at least as up to date as the candidates entry and term.
-      if (!context.getLog().isEmpty()) {
-        long lastIndex = context.getLog().lastIndex();
-        RaftEntry entry = context.getLog().getEntry(lastIndex);
-        if (entry == null) {
-          LOGGER.debug("{} - Accepted {}: candidate's log is up-to-date", context.getCluster().member().id(), request);
-          return true;
-        }
-
-        if (index != 0 && index >= lastIndex) {
-          if (term >= entry.getTerm()) {
-            LOGGER.debug("{} - Accepted {}: candidate's log is up-to-date", context.getCluster().member().id(), request);
-            return true;
-          } else {
-            LOGGER.debug("{} - Rejected {}: candidate's last log term ({}) is in conflict with local log ({})", context.getCluster().member().id(), request, term, entry.getTerm());
-            return false;
-          }
-        } else {
-          LOGGER.debug("{} - Rejected {}: candidate's last log entry ({}) is at a lower index than the local log ({})", context.getCluster().member().id(), request, index, lastIndex);
-          return false;
-        }
-      } else {
+      long lastIndex = context.getLog().lastIndex();
+      RaftEntry entry = context.getLog().getEntry(lastIndex);
+      if (entry == null) {
         LOGGER.debug("{} - Accepted {}: candidate's log is up-to-date", context.getCluster().member().id(), request);
         return true;
       }
+
+      if (index != 0 && index >= lastIndex) {
+        if (term >= entry.getTerm()) {
+          LOGGER.debug("{} - Accepted {}: candidate's log is up-to-date", context.getCluster().member().id(), request);
+          return true;
+        } else {
+          LOGGER.debug("{} - Rejected {}: candidate's last log term ({}) is in conflict with local log ({})", context.getCluster().member().id(), request, term, entry.getTerm());
+          return false;
+        }
+      } else {
+        LOGGER.debug("{} - Rejected {}: candidate's last log entry ({}) is at a lower index than the local log ({})", context.getCluster().member().id(), request, index, lastIndex);
+        return false;
+      }
+    }
+  }
+
+  @Override
+  protected CompletableFuture<SubmitResponse> submit(SubmitRequest request) {
+    context.checkThread();
+    logRequest(request);
+
+    Operation operation = request.operation();
+
+    if (operation instanceof Query && ((Query) operation).consistency() == Query.Consistency.SERIALIZABLE) {
+      CompletableFuture<SubmitResponse> future = new CompletableFuture<>();
+      context.getStateMachine().apply(context.getCommitIndex(), System.currentTimeMillis(), (Query) operation).whenCompleteAsync((result, resultError) -> {
+        context.checkThread();
+        if (isOpen()) {
+          if (resultError == null) {
+            future.complete(logResponse(SubmitResponse.builder()
+              .withStatus(Response.Status.OK)
+              .withResult(result)
+              .build()));
+          } else if (resultError instanceof ApplicationException) {
+            future.complete(logResponse(SubmitResponse.builder()
+              .withStatus(Response.Status.ERROR)
+              .withError(RaftError.Type.APPLICATION_ERROR)
+              .build()));
+          } else {
+            future.completeExceptionally(resultError);
+          }
+        }
+      }, context.getContext());
+      return future;
+    } else if (context.getLeader() == 0) {
+      return CompletableFuture.completedFuture(logResponse(SubmitResponse.builder()
+        .withStatus(Response.Status.ERROR)
+        .withError(RaftError.Type.NO_LEADER_ERROR)
+        .build()));
+    } else {
+      return context.getCluster().member(context.getLeader()).send(context.getTopic(), request);
     }
   }
 

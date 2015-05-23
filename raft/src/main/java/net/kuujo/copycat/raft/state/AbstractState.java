@@ -90,8 +90,6 @@ abstract class AbstractState implements MessageHandler<Request, Response>, Manag
         return status((StatusRequest) request).thenApply(AbstractState::castResponse);
       case APPEND:
         return append((AppendRequest) request).thenApply(AbstractState::castResponse);
-      case SYNC:
-        return sync((SyncRequest) request).thenApply(AbstractState::castResponse);
       case POLL:
         return poll((PollRequest) request).thenApply(AbstractState::castResponse);
       case VOTE:
@@ -124,11 +122,6 @@ abstract class AbstractState implements MessageHandler<Request, Response>, Manag
    * Handles an append request.
    */
   protected abstract CompletableFuture<AppendResponse> append(AppendRequest request);
-
-  /**
-   * Handles a sync request.
-   */
-  protected abstract CompletableFuture<SyncResponse> sync(SyncRequest request);
 
   /**
    * Handles a poll request.
