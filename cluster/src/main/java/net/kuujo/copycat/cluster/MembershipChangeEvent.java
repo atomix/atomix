@@ -20,24 +20,7 @@ import net.kuujo.copycat.Event;
 import java.util.Objects;
 
 /**
- * Member join/leave event.<p>
- *
- * When a {@link net.kuujo.copycat.cluster.Member.Type#PASSIVE} member joins or leaves the cluster, a {@code MembershipEvent} will be triggered,
- * allowing the user to react to the membership change. Membership change events can be observed by adding a
- * an {@link net.kuujo.copycat.EventListener} to a member set via
- * {@link net.kuujo.copycat.cluster.Cluster#addMembershipListener(net.kuujo.copycat.EventListener)}.<p>
- *
- * <pre>
- *   {@code
- *     cluster.addMembershipListener(event -> {
- *       if (event.type() == MembershipEvent.Type.JOIN) {
- *         event.member().send("Hello!").thenAccept(reply -> {
- *           System.out.println(event.member().id() + " said " + reply);
- *         });
- *       }
- *     });
- *   }
- * </pre>
+ * Member join/leave event.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -52,15 +35,15 @@ public class MembershipChangeEvent implements Event {
   }
 
   private final Type type;
-  private final Member member;
+  private final MemberInfo info;
 
-  public MembershipChangeEvent(Type type, Member member) {
+  public MembershipChangeEvent(Type type, MemberInfo info) {
     if (type == null)
       throw new NullPointerException("type cannot be null");
-    if (member == null)
-      throw new NullPointerException("member cannot be null");
+    if (info == null)
+      throw new NullPointerException("info cannot be null");
     this.type = type;
-    this.member = member;
+    this.info = info;
   }
 
   /**
@@ -77,23 +60,23 @@ public class MembershipChangeEvent implements Event {
    *
    * @return The event member.
    */
-  public Member member() {
-    return member;
+  public MemberInfo info() {
+    return info;
   }
 
   @Override
   public boolean equals(Object object) {
-    return object instanceof MembershipChangeEvent && ((MembershipChangeEvent) object).type == type && ((MembershipChangeEvent) object).member.equals(member);
+    return object instanceof MembershipChangeEvent && ((MembershipChangeEvent) object).type == type && ((MembershipChangeEvent) object).info.equals(info);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(type, member);
+    return Objects.hash(type, info);
   }
 
   @Override
   public String toString() {
-    return String.format("%s[type=%s, member=%s]", getClass().getSimpleName(), type, member);
+    return String.format("%s[type=%s, member=%s]", getClass().getSimpleName(), type, info);
   }
 
 }

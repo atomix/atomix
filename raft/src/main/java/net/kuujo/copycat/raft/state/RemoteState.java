@@ -68,7 +68,7 @@ public class RemoteState extends AbstractState {
       if (context.getLeader() != 0) {
         member = context.getCluster().member(context.getLeader());
       } else {
-        List<Member> members = context.getCluster().members().stream().filter(m -> m.type() == Member.Type.ACTIVE).collect(Collectors.toList());
+        List<Member> members = context.getCluster().members().stream().filter(m -> m.type() == Member.Type.SEED).collect(Collectors.toList());
         member = members.get(random.nextInt(members.size()));
       }
 

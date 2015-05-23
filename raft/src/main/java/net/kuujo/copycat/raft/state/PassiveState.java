@@ -84,7 +84,7 @@ class PassiveState extends AbstractState {
     // about the serializability of the returned list.
     List<Member> passiveMembers = new ArrayList<>(context.getCluster().members().size());
     context.getCluster().members().stream()
-      .filter(m -> m.type() == Member.Type.PASSIVE && m.id() != context.getCluster().member().id())
+      .filter(m -> m.type() == Member.Type.SEED && m.id() != context.getCluster().member().id())
       .forEach(passiveMembers::add);
 
     // Create a random list of three active members.

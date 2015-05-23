@@ -94,7 +94,7 @@ class CandidateState extends ActiveState {
 
     final AtomicBoolean complete = new AtomicBoolean();
     final Set<Member> votingMembers = context.getCluster().members().stream()
-      .filter(m -> m.type() == Member.Type.ACTIVE)
+      .filter(m -> m.type() == Member.Type.SEED)
       .collect(Collectors.toSet());
 
     // Send vote requests to all nodes. The vote request that is sent

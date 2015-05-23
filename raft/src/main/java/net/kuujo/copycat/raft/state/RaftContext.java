@@ -568,14 +568,10 @@ public class RaftContext implements Managed<RaftContext> {
       try {
         open = true;
         switch (cluster.member().type()) {
-          case REMOTE:
+          case MEMBER:
             transition(RemoteState.class);
             break;
-          case PASSIVE:
-            log.open();
-            transition(PassiveState.class);
-            break;
-          case ACTIVE:
+          case SEED:
             log.open();
             transition(FollowerState.class);
             break;

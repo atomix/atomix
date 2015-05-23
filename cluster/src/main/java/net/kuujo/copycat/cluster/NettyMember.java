@@ -16,8 +16,6 @@
 package net.kuujo.copycat.cluster;
 
 import net.kuujo.copycat.ConfigurationException;
-import net.kuujo.copycat.io.Buffer;
-import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.util.ExecutionContext;
 
 import java.net.InetSocketAddress;
@@ -44,37 +42,6 @@ public interface NettyMember extends ManagedMember {
    * @return The member address.
    */
   InetSocketAddress address();
-
-  /**
-   * Netty member info.
-   */
-  static class Info extends AbstractMember.Info {
-    InetSocketAddress address;
-
-    public Info() {
-    }
-
-    public Info(int id, Type type, InetSocketAddress address) {
-      super(id, type);
-      this.address = address;
-    }
-
-    @Override
-    public void writeObject(Buffer buffer, Serializer serializer) {
-      super.writeObject(buffer, serializer);
-      buffer.writeInt(address.getHostString().getBytes().length)
-        .write(address.getHostString().getBytes())
-        .writeInt(address.getPort());
-    }
-
-    @Override
-    public void readObject(Buffer buffer, Serializer serializer) {
-      super.readObject(buffer, serializer);
-      byte[] bytes = new byte[buffer.readInt()];
-      buffer.read(bytes);
-      address = new InetSocketAddress(new String(bytes), buffer.readInt());
-    }
-  }
 
   /**
    * Netty remote member builder.
@@ -109,7 +76,7 @@ public interface NettyMember extends ManagedMember {
     public NettyRemoteMember build() {
       if (id <= 0)
         throw new ConfigurationException("member id must be greater than 0");
-      return new NettyRemoteMember(new NettyMember.Info(id, Type.ACTIVE, new InetSocketAddress(host != null ? host : "localhost", port)), new ExecutionContext(String.format("copycat-cluster-%d", id)));
+      return new NettyRemoteMember(new NettyMemberInfo(id, new InetSocketAddress(host != null ? host : "localhost", port)), Type.SEED, new ExecutionContext(String.format("copycat-cluster-%d", id)));
     }
   }
 

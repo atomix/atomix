@@ -15,17 +15,42 @@
  */
 package net.kuujo.copycat.cluster;
 
-import net.kuujo.copycat.util.ExecutionContext;
+import net.kuujo.copycat.io.Buffer;
+import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.io.serializer.Writable;
 
 /**
- * Abstract remote member.
+ * Member info.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class AbstractRemoteMember extends AbstractMember implements ManagedRemoteMember {
+public abstract class MemberInfo implements Writable {
+  private int id;
 
-  protected AbstractRemoteMember(MemberInfo info, Type type, ExecutionContext context) {
-    super(info, type, context);
+  protected MemberInfo() {
+  }
+
+  protected MemberInfo(int id) {
+    this.id = id;
+  }
+
+  /**
+   * Returns the member ID.
+   *
+   * @return The member ID.
+   */
+  public int id() {
+    return id;
+  }
+
+  @Override
+  public void writeObject(Buffer buffer, Serializer serializer) {
+    buffer.writeInt(id);
+  }
+
+  @Override
+  public void readObject(Buffer buffer, Serializer serializer) {
+    id = buffer.readInt();
   }
 
 }

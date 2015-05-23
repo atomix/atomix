@@ -24,8 +24,8 @@ import net.kuujo.copycat.util.ExecutionContext;
  */
 public abstract class AbstractLocalMember extends AbstractMember implements ManagedLocalMember {
 
-  protected AbstractLocalMember(Info info, ExecutionContext context) {
-    super(info, context);
+  protected AbstractLocalMember(MemberInfo info, Type type, ExecutionContext context) {
+    super(info, type, context);
   }
 
 }

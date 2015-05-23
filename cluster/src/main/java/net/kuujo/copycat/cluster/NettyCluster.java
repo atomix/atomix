@@ -52,8 +52,8 @@ public class NettyCluster extends AbstractCluster {
   }
 
   @Override
-  protected AbstractRemoteMember createRemoteMember(AbstractMember.Info info) {
-    return new NettyRemoteMember((NettyMember.Info) info, new ExecutionContext(String.format("copycat-cluster-%d", info.id())))
+  protected AbstractRemoteMember createRemoteMember(MemberInfo info) {
+    return new NettyRemoteMember((NettyMemberInfo) info, Member.Type.MEMBER, new ExecutionContext(String.format("copycat-cluster-%d", info.id())))
       .setSerializer(serializer.copy())
       .setEventLoopGroup(eventLoopGroup);
   }
@@ -115,16 +115,15 @@ public class NettyCluster extends AbstractCluster {
     @Override
     public ManagedCluster build() {
       NettyMember member = members.remove(memberId);
-      NettyMember.Info info;
+      NettyLocalMember localMember;
       if (member != null) {
-        info = new NettyMember.Info(memberId, Member.Type.ACTIVE, member.address());
+        localMember = new NettyLocalMember(new NettyMemberInfo(memberId, member.address()), Member.Type.SEED, new ExecutionContext(String.format("copycat-cluster-%d", memberId)));
       } else {
         if (host == null)
           throw new ConfigurationException("member host must be configured");
-        info = new NettyMember.Info(memberId, memberType != null ? memberType : Member.Type.REMOTE, new InetSocketAddress(host, port));
+        localMember = new NettyLocalMember(new NettyMemberInfo(memberId, new InetSocketAddress(host, port)), Member.Type.MEMBER, new ExecutionContext(String.format("copycat-cluster-%d", memberId)));
       }
 
-      NettyLocalMember localMember = new NettyLocalMember(info, new ExecutionContext(String.format("copycat-cluster-%d", memberId)));
       return new NettyCluster(eventLoopGroup != null ? eventLoopGroup : new NioEventLoopGroup(), localMember, members.values().stream().map(m -> (NettyRemoteMember) m).collect(Collectors.toList()), serializer != null ? serializer : new Serializer());
     }
   }

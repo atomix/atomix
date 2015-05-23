@@ -51,7 +51,7 @@ public class NettyRemoteMember extends AbstractRemoteMember implements NettyMemb
       return new ByteBufBuffer();
     }
   };
-  final NettyMember.Info info;
+  private final NettyMemberInfo info;
   private Serializer serializer;
   private EventLoopGroup eventLoopGroup;
   private boolean eventLoopInitialized;
@@ -65,9 +65,14 @@ public class NettyRemoteMember extends AbstractRemoteMember implements NettyMemb
   private CompletableFuture<Void> closeFuture;
   private ScheduledFuture<?> reconnectFuture;
 
-  NettyRemoteMember(NettyMember.Info info, ExecutionContext context) {
-    super(info, context);
+  NettyRemoteMember(NettyMemberInfo info, Type type, ExecutionContext context) {
+    super(info, type, context);
     this.info = info;
+  }
+
+  @Override
+  public NettyMemberInfo info() {
+    return info;
   }
 
   /**
@@ -89,7 +94,7 @@ public class NettyRemoteMember extends AbstractRemoteMember implements NettyMemb
 
   @Override
   public InetSocketAddress address() {
-    return info.address;
+    return info.address();
   }
 
   @Override
@@ -194,7 +199,7 @@ public class NettyRemoteMember extends AbstractRemoteMember implements NettyMemb
     bootstrap.option(ChannelOption.SO_KEEPALIVE, true);
     bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 15000);
 
-    bootstrap.connect(info.address.getHostString(), info.address.getPort()).addListener((ChannelFutureListener) channelFuture -> {
+    bootstrap.connect(info.address().getHostString(), info.address().getPort()).addListener((ChannelFutureListener) channelFuture -> {
       if (channelFuture.isSuccess()) {
         channel = channelFuture.channel();
         connected = true;

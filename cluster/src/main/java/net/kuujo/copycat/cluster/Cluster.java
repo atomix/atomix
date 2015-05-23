@@ -15,7 +15,6 @@
  */
 package net.kuujo.copycat.cluster;
 
-import net.kuujo.copycat.EventListener;
 import net.kuujo.copycat.io.serializer.Serializer;
 
 import java.util.Arrays;
@@ -79,21 +78,10 @@ public interface Cluster {
   /**
    * Adds a membership listener to the cluster.<p>
    *
-   * Membership listeners are triggered when {@link Member.Type#PASSIVE} members join or leave the cluster. Copycat uses
-   * a gossip based failure detection algorithm to detect failures, using vector clocks to version cluster
-   * configurations. In order to prevent false positives due to network partitions, Copycat's failure detection
-   * algorithm will attempt to contact a member from up to three different nodes before considering that node failed.
-   * If the membership listener is called with a {@link net.kuujo.copycat.cluster.MembershipChangeEvent.Type#LEAVE} event, that indicates that Copycat
-   * has attempted to contact the missing member multiple times.<p>
-   *
-   * {@link Member.Type#ACTIVE} members never join or leave the cluster since they are explicitly configured, active,
-   * voting members of the cluster. However, this may change at some point in the future to allow failure detection for
-   * active members as well.
-   *
    * @param listener The membership event listener to add.
    * @return The cluster.
    */
-  Cluster addMembershipListener(EventListener<MembershipChangeEvent> listener);
+  Cluster addListener(MembershipListener listener);
 
   /**
    * Removes a membership listener from the cluster.
@@ -101,7 +89,23 @@ public interface Cluster {
    * @param listener The membership event listener to remove.
    * @return The cluster.
    */
-  Cluster removeMembershipListener(EventListener<MembershipChangeEvent> listener);
+  Cluster removeListener(MembershipListener listener);
+
+  /**
+   * Adds a membership provider to the cluster.
+   *
+   * @param provider The membership provider to add.
+   * @return The cluster.
+   */
+  Cluster addProvider(MembershipProvider provider);
+
+  /**
+   * Removes a membership provider from the cluster.
+   *
+   * @param provider The membership provider to remove.
+   * @return The cluster.
+   */
+  Cluster removeProvider(MembershipProvider provider);
 
   /**
    * Cluster builder.
@@ -115,14 +119,6 @@ public interface Cluster {
      * @return The cluster builder.
      */
     BUILDER withMemberId(int id);
-
-    /**
-     * Sets the local member type.
-     *
-     * @param type The local member address.
-     * @return The cluster builder.
-     */
-    BUILDER withMemberType(Member.Type type);
 
     /**
      * Sets the cluster serializer.

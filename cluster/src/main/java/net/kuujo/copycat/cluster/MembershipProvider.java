@@ -15,17 +15,29 @@
  */
 package net.kuujo.copycat.cluster;
 
-import net.kuujo.copycat.util.ExecutionContext;
+import net.kuujo.copycat.EventListener;
 
 /**
- * Abstract remote member.
+ * Membership provider.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class AbstractRemoteMember extends AbstractMember implements ManagedRemoteMember {
+public interface MembershipProvider {
 
-  protected AbstractRemoteMember(MemberInfo info, Type type, ExecutionContext context) {
-    super(info, type, context);
-  }
+  /**
+   * Adds a membership change event listener.
+   *
+   * @param listener The event listener.
+   * @return The membership provider.
+   */
+  MembershipProvider addListener(EventListener<MembershipChangeEvent> listener);
+
+  /**
+   * Removes a membership change event listener.
+   *
+   * @param listener The event listener.
+   * @return The membership provider.
+   */
+  MembershipProvider removeListener(EventListener<MembershipChangeEvent> listener);
 
 }

@@ -54,7 +54,7 @@ public class NettyLocalMember extends AbstractLocalMember implements NettyMember
   };
   private final Map<Integer, HandlerHolder> handlers = new ConcurrentHashMap<>();
   private final Map<String, Integer> hashMap = new HashMap<>();
-  private final NettyMember.Info info;
+  private final NettyMemberInfo info;
   private Serializer serializer;
   private Channel channel;
   private ChannelGroup channelGroup;
@@ -63,8 +63,8 @@ public class NettyLocalMember extends AbstractLocalMember implements NettyMember
   private CompletableFuture<LocalMember> listenFuture;
   private CompletableFuture<Void> closeFuture;
 
-  NettyLocalMember(NettyMember.Info info, ExecutionContext context) {
-    super(info, context);
+  NettyLocalMember(NettyMemberInfo info, Type type, ExecutionContext context) {
+    super(info, type, context);
     this.info = info;
   }
 
@@ -78,7 +78,7 @@ public class NettyLocalMember extends AbstractLocalMember implements NettyMember
 
   @Override
   public InetSocketAddress address() {
-    return info.address;
+    return info.address();
   }
 
   @Override
@@ -170,7 +170,7 @@ public class NettyLocalMember extends AbstractLocalMember implements NettyMember
           bootstrap.childOption(ChannelOption.SO_KEEPALIVE, true);
 
           // Bind and start to accept incoming connections.
-          ChannelFuture bindFuture = bootstrap.bind(info.address.getHostString(), info.address.getPort());
+          ChannelFuture bindFuture = bootstrap.bind(info.address().getHostString(), info.address().getPort());
           bindFuture.addListener((ChannelFutureListener) channelFuture -> {
             channelFuture.channel().closeFuture().addListener(closeFuture -> {
               workerGroup.shutdownGracefully();

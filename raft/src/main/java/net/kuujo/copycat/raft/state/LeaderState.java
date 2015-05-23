@@ -371,7 +371,7 @@ class LeaderState extends ActiveState {
      */
     private void update() {
       Set<Member> members = context.getCluster().members().stream()
-        .filter(m -> m.id() != context.getCluster().member().id() && m.type() == Member.Type.ACTIVE)
+        .filter(m -> m.id() != context.getCluster().member().id() && m.type() == Member.Type.SEED)
         .collect(Collectors.toSet());
       Set<Integer> ids = members.stream().map(Member::id).collect(Collectors.toSet());
 

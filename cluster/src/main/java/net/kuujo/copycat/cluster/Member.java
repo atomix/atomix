@@ -27,58 +27,20 @@ import java.util.concurrent.CompletableFuture;
 public interface Member {
 
   /**
-   * Cluster member type.<p>
-   *
-   * The member type indicates how cluster members behave in terms of joining and leaving the cluster and how the
-   * members participate in log replication. {@link Type#ACTIVE} members are full voting members of the cluster that
-   * participate in Copycat's consensus protocol. {@link Type#PASSIVE} members may join and leave the cluster at will
-   * without impacting the availability of a resource and receive only committed log entries via a gossip protocol.
+   * Member type.
    */
-  public static enum Type {
+  static enum Type {
 
     /**
-     * Indicates that the member is a remote client of the cluster.
+     * Normal cluster member.
      */
-    REMOTE,
+    MEMBER,
 
     /**
-     * Indicates that the member is a passive, non-voting member of the cluster.
+     * Seed member.
      */
-    PASSIVE,
+    SEED
 
-    /**
-     * Indicates that the member is an active voting member of the cluster.
-     */
-    ACTIVE
-  }
-
-  /**
-   * Cluster member status.<p>
-   *
-   * The member status indicates how a given member is perceived by the local node. Members can be in one of three states
-   * at any given time, {@link Member.Status#ALIVE}, {@link Member.Status#SUSPICIOUS}, and {@link Member.Status#DEAD}. Member states are changed
-   * according to the local node's ability to communicate with a given member. All members begin with an
-   * {@link Member.Status#ALIVE} status upon joining the cluster. If the member appears to be unreachable, its status will be
-   * changed to {@link Member.Status#SUSPICIOUS}, indicating that it may have left the cluster or died. Once enough other nodes
-   * in the cluster agree that the suspicious member appears to be dead, the status will be changed to {@link Member.Status#DEAD}
-   * and the member will ultimately be removed from the cluster configuration.
-   */
-  public static enum Status {
-
-    /**
-     * Indicates that the member is considered to be dead.
-     */
-    DEAD,
-
-    /**
-     * Indicates that the member is suspicious and is unreachable by at least one other member.
-     */
-    SUSPICIOUS,
-
-    /**
-     * Indicates that the member is alive and reachable.
-     */
-    ALIVE
   }
 
   /**
@@ -96,11 +58,11 @@ public interface Member {
   Type type();
 
   /**
-   * Returns the member status.
+   * Returns the member info.
    *
-   * @return The member status.
+   * @return The member info.
    */
-  Status status();
+  MemberInfo info();
 
   /**
    * Sends a message to the member.<p>

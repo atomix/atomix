@@ -15,17 +15,25 @@
  */
 package net.kuujo.copycat.cluster;
 
-import net.kuujo.copycat.util.ExecutionContext;
-
 /**
- * Abstract remote member.
+ * Membership listener.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class AbstractRemoteMember extends AbstractMember implements ManagedRemoteMember {
+public interface MembershipListener {
 
-  protected AbstractRemoteMember(MemberInfo info, Type type, ExecutionContext context) {
-    super(info, type, context);
-  }
+  /**
+   * Called when a member joined the cluster.
+   *
+   * @param member The member that joined the cluster.
+   */
+  void memberJoined(Member member);
+
+  /**
+   * Called when a member left the cluster.
+   *
+   * @param memberId The member that left the cluster.
+   */
+  void memberLeft(int memberId);
 
 }

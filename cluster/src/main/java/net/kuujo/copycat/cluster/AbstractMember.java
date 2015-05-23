@@ -15,14 +15,9 @@
  */
 package net.kuujo.copycat.cluster;
 
-import net.kuujo.copycat.io.Buffer;
-import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.io.serializer.Writable;
 import net.kuujo.copycat.util.ExecutionContext;
 
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.util.Random;
 
 /**
  * Cluster member.
@@ -30,231 +25,14 @@ import java.util.Set;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class AbstractMember implements Member {
-
-  /**
-   * Member info.
-   */
-  public static class Info implements Writable {
-    private static final int FAILURE_LIMIT = 3;
-    private Type type;
-    private Status status;
-    private long changed;
-    private int id;
-    private long version = 1;
-    private Set<Integer> failures = new HashSet<>();
-
-    public Info() {
-    }
-
-    public Info(int id, Type type) {
-      this(id, type, Status.ALIVE);
-    }
-
-    public Info(int id, Type type, Status status) {
-      this(id, type, status, 1);
-    }
-
-    public Info(int id, Type type, Status status, long version) {
-      this.id = id;
-      this.type = type;
-      this.status = status;
-      this.version = version;
-    }
-
-    /**
-     * Returns the member identifier.
-     *
-     * @return The unique member identifier.
-     */
-    public int id() {
-      return id;
-    }
-
-    /**
-     * Returns the member type.
-     *
-     * @return The member type.
-     */
-    public Type type() {
-      return type;
-    }
-
-    /**
-     * Returns the member state.
-     *
-     * @return The member state.
-     */
-    public Status status() {
-      return status;
-    }
-
-    /**
-     * Returns the last time the member state changed.
-     *
-     * @return The last time the member state changed.
-     */
-    public long changed() {
-      return changed;
-    }
-
-    /**
-     * Returns the member version.
-     *
-     * @return The member version.
-     */
-    public long version() {
-      return version;
-    }
-
-    /**
-     * Sets the member version.
-     *
-     * @param version The member version.
-     * @return The member info.
-     */
-    public Info version(long version) {
-      this.version = version;
-      return this;
-    }
-
-    /**
-     * Marks a successful gossip with the member.
-     *
-     * @return The member info.
-     */
-    public Info succeed() {
-      if (type == Type.PASSIVE && status != Status.ALIVE) {
-        failures.clear();
-        status = Status.ALIVE;
-        changed = System.currentTimeMillis();
-      }
-      return this;
-    }
-
-    /**
-     * Marks a failure in the member.
-     *
-     * @param id The id recording the failure.
-     * @return The member info.
-     */
-    public Info fail(int id) {
-      // If the member is a passive member, add the failure to the failures set and change the state. If the current
-      // state is ACTIVE then change the state to SUSPICIOUS. If the current state is SUSPICIOUS and the number of
-      // failures from *unique* nodes is equal to or greater than the failure limit then change the state to DEAD.
-      if (type == Type.PASSIVE) {
-        failures.add(id);
-        if (status == Status.ALIVE) {
-          status = Status.SUSPICIOUS;
-          changed = System.currentTimeMillis();
-        } else if (status == Status.SUSPICIOUS) {
-          if (failures.size() >= FAILURE_LIMIT) {
-            status = Status.DEAD;
-            changed = System.currentTimeMillis();
-          }
-        }
-      }
-      return this;
-    }
-
-    /**
-     * Updates the member info.
-     *
-     * @param info The member info to update.
-     */
-    public void update(Info info) {
-      // If the given version is greater than the current version then update the member state.
-      if (info.version > this.version) {
-        this.version = info.version;
-
-        // Any time the version is incremented, clear failures for the previous version.
-        this.failures.clear();
-
-        // Only passive member types can experience state changes. Active members are always alive.
-        if (this.type == Type.PASSIVE) {
-          // If the state changed then update the state and set the last changed time. This can be used to clean
-          // up state related to old members after some period of time.
-          if (this.status != info.status) {
-            changed = System.currentTimeMillis();
-          }
-          this.status = info.status;
-        }
-      } else if (info.version == this.version) {
-        if (info.status == Status.SUSPICIOUS) {
-          // If the given version is the same as the current version then update failures. If the member has experienced
-          // FAILURE_LIMIT failures then transition the member's state to DEAD.
-          this.failures.addAll(info.failures);
-          if (this.failures.size() >= FAILURE_LIMIT) {
-            this.status = Status.DEAD;
-            changed = System.currentTimeMillis();
-          }
-        } else if (info.status == Status.DEAD) {
-          this.status = Status.DEAD;
-          changed = System.currentTimeMillis();
-        }
-      }
-    }
-
-    @Override
-    public void writeObject(Buffer buffer, Serializer serializer) {
-      buffer.writeByte(type.ordinal())
-        .writeByte(status.ordinal())
-        .writeInt(id)
-        .writeLong(version);
-      buffer.writeInt(failures.size());
-      failures.forEach(buffer::writeInt);
-    }
-
-    @Override
-    public void readObject(Buffer buffer, Serializer serializer) {
-      type = Type.values()[buffer.readByte()];
-      status = Status.values()[buffer.readByte()];
-      id = buffer.readInt();
-      version = buffer.readLong();
-      int numFailures = buffer.readInt();
-      failures = new HashSet<>(numFailures);
-      for (int i = 0; i < numFailures; i++) {
-        failures.add(buffer.readInt());
-      }
-    }
-
-    @Override
-    public boolean equals(Object object) {
-      if (object instanceof Info) {
-        Info member = (Info) object;
-        return member.id == id
-          && member.type == type
-          && member.status == status
-          && member.version == version;
-      }
-      return false;
-    }
-
-    @Override
-    public int hashCode() {
-      return Objects.hash(id, type, status, version);
-    }
-
-    @Override
-    public String toString() {
-      return String.format("Member.Info[id=%s, type=%s, state=%s, version=%d]", id, type, status, version);
-    }
-  }
-
-  protected final Info info;
+  protected final MemberInfo info;
+  protected final Type type;
   protected final ExecutionContext context;
 
-  protected AbstractMember(Info info, ExecutionContext context) {
+  protected AbstractMember(MemberInfo info, Type type, ExecutionContext context) {
     this.info = info;
+    this.type = type;
     this.context = context;
-  }
-
-  /**
-   * Returns the member info.
-   *
-   * @return The member info.
-   */
-  Info info() {
-    return info;
   }
 
   /**
@@ -267,22 +45,22 @@ public abstract class AbstractMember implements Member {
 
   @Override
   public int id() {
-    return info.id;
+    return info.id();
   }
 
   @Override
   public Type type() {
-    return info.type;
+    return type;
   }
 
   @Override
-  public Status status() {
-    return info.status;
+  public MemberInfo info() {
+    return info;
   }
 
   @Override
   public boolean equals(Object object) {
-    return object instanceof Member && ((Member) object).id() == info.id;
+    return object instanceof Member && ((Member) object).id() == info.id();
   }
 
   @Override
@@ -294,14 +72,14 @@ public abstract class AbstractMember implements Member {
 
   @Override
   public String toString() {
-    return String.format("%s[id=%s, type=%s, status=%s]", getClass().getSimpleName(), info.id, info.type, info.status);
+    return String.format("%s[id=%s]", getClass().getSimpleName(), info.id());
   }
 
   /**
    * Member builder.
    */
   public static abstract class Builder<T extends Builder<T, U>, U extends ManagedMember> implements Member.Builder<T, U> {
-    protected int id;
+    protected int id = new Random().nextInt();
 
     @Override
     @SuppressWarnings("unchecked")
