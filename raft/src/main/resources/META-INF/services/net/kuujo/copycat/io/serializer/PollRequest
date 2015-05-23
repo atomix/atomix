@@ -1,2 +1,0 @@
-id=201
-class=net.kuujo.copycat.protocol.raft.rpc.PollRequest
