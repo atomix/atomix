@@ -25,7 +25,7 @@ import java.util.List;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Serialize(@Serialize.Type(id=5, value=Boolean.class))
+@Serialize(@Serialize.Type(id=5, value=List.class))
 public class ListWriter implements ObjectWriter<List> {
 
   @Override

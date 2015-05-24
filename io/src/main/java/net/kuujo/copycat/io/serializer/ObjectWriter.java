@@ -33,7 +33,6 @@ import net.kuujo.copycat.io.Buffer;
  * serializer=net.kuujo.copycat.raft.protocol.AppendRequest.Serializer
  * }
  * </pre>
- * Similarly, serializers can be registered in code via {@link Serializer#register(Class, int, ObjectWriter)}.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
