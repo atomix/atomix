@@ -22,7 +22,6 @@ import net.kuujo.copycat.io.util.ReferencePool;
 import org.reflections.Reflections;
 
 import java.io.*;
-import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -79,9 +78,9 @@ public class Serializer {
       if (serialize != null) {
         for (Serialize.Type type : serialize.value()) {
           if (type.id() != 0) {
-            registry.register(type.value(), type.id(), writer);
+            registry.register(type.type(), type.id(), writer);
           } else {
-            registry.register(type.value(), writer);
+            registry.register(type.type(), writer);
           }
         }
       } else {

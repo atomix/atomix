@@ -25,7 +25,7 @@ import java.util.Set;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Serialize(@Serialize.Type(id=5, value=Set.class))
+@Serialize(@Serialize.Type(id=9, type=Set.class))
 public class SetWriter implements ObjectWriter<Set> {
 
   @Override

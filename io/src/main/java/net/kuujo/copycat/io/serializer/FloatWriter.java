@@ -22,7 +22,7 @@ import net.kuujo.copycat.io.Buffer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Serialize(@Serialize.Type(id=1, value=Float.class))
+@Serialize(@Serialize.Type(id=1, type=Float.class))
 public class FloatWriter implements ObjectWriter<Float> {
 
   @Override

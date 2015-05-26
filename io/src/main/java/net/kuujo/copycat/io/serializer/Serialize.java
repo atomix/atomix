@@ -49,7 +49,7 @@ public @interface Serialize {
     /**
      * The type to serialize.
      */
-    Class<?> value();
+    Class<?> type();
   }
 
 }

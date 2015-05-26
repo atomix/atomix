@@ -37,6 +37,6 @@ public @interface SerializeWith {
   /**
    * The serializer with which to serialize objects of this class.
    */
-  Class<? extends ObjectWriter> serializer();
+  Class<? extends ObjectWriter> serializer() default WritableObjectWriter.class;
 
 }

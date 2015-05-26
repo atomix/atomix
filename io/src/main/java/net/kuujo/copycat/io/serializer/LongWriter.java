@@ -22,7 +22,7 @@ import net.kuujo.copycat.io.Buffer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Serialize(@Serialize.Type(id=6, value=Long.class))
+@Serialize(@Serialize.Type(id=6, type=Long.class))
 public class LongWriter implements ObjectWriter<Long> {
 
   @Override
