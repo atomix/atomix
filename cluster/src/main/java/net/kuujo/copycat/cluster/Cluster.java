@@ -92,25 +92,9 @@ public interface Cluster {
   Cluster removeListener(MembershipListener listener);
 
   /**
-   * Adds a membership provider to the cluster.
-   *
-   * @param provider The membership provider to add.
-   * @return The cluster.
-   */
-  Cluster addProvider(MembershipProvider provider);
-
-  /**
-   * Removes a membership provider from the cluster.
-   *
-   * @param provider The membership provider to remove.
-   * @return The cluster.
-   */
-  Cluster removeProvider(MembershipProvider provider);
-
-  /**
    * Cluster builder.
    */
-  public static interface Builder<BUILDER extends Builder<BUILDER, MEMBER>, MEMBER extends ManagedMember> extends net.kuujo.copycat.Builder<ManagedCluster> {
+  public static interface Builder<T extends Builder<T, U, V>, U extends ManagedCluster, V extends ManagedMember> extends net.kuujo.copycat.Builder<U> {
 
     /**
      * Sets the local member ID.
@@ -118,7 +102,7 @@ public interface Cluster {
      * @param id The local member ID.
      * @return The cluster builder.
      */
-    BUILDER withMemberId(int id);
+    T withMemberId(int id);
 
     /**
      * Sets the cluster serializer.
@@ -126,29 +110,29 @@ public interface Cluster {
      * @param serializer The cluster serializer.
      * @return The cluster builder.
      */
-    BUILDER withSerializer(Serializer serializer);
+    T withSerializer(Serializer serializer);
 
     /**
      * Sets the cluster seed members.
      *
-     * @param seeds The set of cluster seed members.
+     * @param members The set of cluster seed members.
      * @return The cluster builder.
      */
     @SuppressWarnings("unchecked")
-    default BUILDER withSeeds(MEMBER... seeds) {
-      if (seeds != null) {
-        return withSeeds(Arrays.asList(seeds));
+    default T withMembers(V... members) {
+      if (members != null) {
+        return withMembers(Arrays.asList(members));
       }
-      return (BUILDER) this;
+      return (T) this;
     }
 
     /**
      * Sets the cluster seed members.
      *
-     * @param seeds The set of cluster seed members.
+     * @param members The set of cluster seed members.
      * @return The cluster builder.
      */
-    BUILDER withSeeds(Collection<MEMBER> seeds);
+    T withMembers(Collection<V> members);
 
     /**
      * Adds a cluster seed member.
@@ -156,7 +140,7 @@ public interface Cluster {
      * @param member The cluster seed member to add.
      * @return The cluster builder.
      */
-    BUILDER addSeed(MEMBER member);
+    T addMember(V member);
   }
 
 }

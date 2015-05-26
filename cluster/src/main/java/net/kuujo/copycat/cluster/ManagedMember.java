@@ -15,10 +15,90 @@
  */
 package net.kuujo.copycat.cluster;
 
+import net.kuujo.copycat.util.ExecutionContext;
+
+import java.util.Random;
+
 /**
- * Managed cluster member.
+ * Cluster member.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ManagedMember extends Member {
+public abstract class ManagedMember implements Member {
+  protected final MemberInfo info;
+  protected Type type;
+  protected Status status = Status.DEAD;
+  protected Session session;
+  protected final ExecutionContext context;
+
+  protected ManagedMember(MemberInfo info, Type type, ExecutionContext context) {
+    this.info = info;
+    this.type = type;
+    this.context = context;
+  }
+
+  /**
+   * Returns the current execution context.
+   */
+  protected ExecutionContext getContext() {
+    ExecutionContext context = ExecutionContext.currentContext();
+    return context != null ? context : this.context;
+  }
+
+  @Override
+  public int id() {
+    return info.id();
+  }
+
+  @Override
+  public Type type() {
+    return type;
+  }
+
+  @Override
+  public Status status() {
+    return status;
+  }
+
+  @Override
+  public MemberInfo info() {
+    return info;
+  }
+
+  @Override
+  public Session session() {
+    return session;
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    return object instanceof Member && ((Member) object).id() == info.id();
+  }
+
+  @Override
+  public int hashCode() {
+    int hashCode = 23;
+    hashCode = 37 * hashCode + id();
+    return hashCode;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[id=%s]", getClass().getSimpleName(), info.id());
+  }
+
+  /**
+   * Member builder.
+   */
+  public static abstract class Builder<T extends Builder<T, U>, U extends ManagedMember> implements Member.Builder<T, U> {
+    protected int id = new Random().nextInt();
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public T withId(int id) {
+      this.id = id;
+      return (T) this;
+    }
+  }
+
 }

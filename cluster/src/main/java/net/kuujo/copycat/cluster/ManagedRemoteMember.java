@@ -15,27 +15,33 @@
  */
 package net.kuujo.copycat.cluster;
 
+import net.kuujo.copycat.util.ExecutionContext;
+
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Managed remote member.
+ * Abstract remote member.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ManagedRemoteMember extends ManagedMember, RemoteMember {
+public abstract class ManagedRemoteMember extends ManagedMember implements RemoteMember {
+
+  protected ManagedRemoteMember(MemberInfo info, Type type, ExecutionContext context) {
+    super(info, type, context);
+  }
 
   /**
    * Connects the remote client.
    *
    * @return A completable future to be called once the client is connected.
    */
-  CompletableFuture<RemoteMember> connect();
+  public abstract CompletableFuture<RemoteMember> connect();
 
   /**
    * Closes the remote client.
    *
    * @return A completable future to be called once the client is closed.
    */
-  CompletableFuture<Void> close();
+  public abstract CompletableFuture<Void> close();
 
 }

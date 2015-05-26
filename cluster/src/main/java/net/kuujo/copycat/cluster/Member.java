@@ -32,14 +32,36 @@ public interface Member {
   static enum Type {
 
     /**
-     * Normal cluster member.
+     * Client member.
      */
-    MEMBER,
+    CLIENT,
 
     /**
-     * Seed member.
+     * Passive member.
      */
-    SEED
+    PASSIVE,
+
+    /**
+     * Active member.
+     */
+    ACTIVE
+
+  }
+
+  /**
+   * Member status.
+   */
+  static enum Status {
+
+    /**
+     * Indicates that the member is alive.
+     */
+    ALIVE,
+
+    /**
+     * Indicates that the member is dead.
+     */
+    DEAD
 
   }
 
@@ -58,11 +80,25 @@ public interface Member {
   Type type();
 
   /**
+   * Returns the member status.
+   *
+   * @return The member status.
+   */
+  Status status();
+
+  /**
    * Returns the member info.
    *
    * @return The member info.
    */
   MemberInfo info();
+
+  /**
+   * Returns the member session.
+   *
+   * @return The member session.
+   */
+  Session session();
 
   /**
    * Sends a message to the member.<p>
@@ -100,7 +136,7 @@ public interface Member {
   /**
    * Member builder.
    */
-  public static abstract interface Builder<BUILDER extends Builder<BUILDER, TYPE>, TYPE extends Member> extends net.kuujo.copycat.Builder<TYPE> {
+  public static abstract interface Builder<T extends Builder<T, U>, U extends Member> extends net.kuujo.copycat.Builder<U> {
 
     /**
      * Sets the member identifier.
@@ -108,7 +144,7 @@ public interface Member {
      * @param id The member identifier.
      * @return The member builder.
      */
-    BUILDER withId(int id);
+    T withId(int id);
 
   }
 

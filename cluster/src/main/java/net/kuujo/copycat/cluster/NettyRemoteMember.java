@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class NettyRemoteMember extends AbstractRemoteMember implements NettyMember {
+public class NettyRemoteMember extends ManagedRemoteMember implements NettyMember {
   private static final int RETRY_ATTEMPTS = 3;
   private static final long RECONNECT_INTERVAL = 1000;
   private static final int MESSAGE = 0;

@@ -15,27 +15,33 @@
  */
 package net.kuujo.copycat.cluster;
 
+import net.kuujo.copycat.util.ExecutionContext;
+
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Managed local member.
+ * Abstract local member.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ManagedLocalMember extends ManagedMember, LocalMember {
+public abstract class ManagedLocalMember extends ManagedMember implements LocalMember {
+
+  protected ManagedLocalMember(MemberInfo info, Type type, ExecutionContext context) {
+    super(info, type, context);
+  }
 
   /**
    * Starts the local member server.
    *
    * @return A completable future to be called once the server is started.
    */
-  CompletableFuture<LocalMember> listen();
+  public abstract CompletableFuture<LocalMember> listen();
 
   /**
    * Closes the local member server.
    *
    * @return A completable future to be called once the server is closed.
    */
-  CompletableFuture<Void> close();
+  public abstract CompletableFuture<Void> close();
 
 }

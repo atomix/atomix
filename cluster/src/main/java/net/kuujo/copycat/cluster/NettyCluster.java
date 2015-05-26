@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class NettyCluster extends AbstractCluster {
+public class NettyCluster extends ManagedCluster {
 
   /**
    * Returns a new Netty cluster builder.
@@ -52,8 +52,8 @@ public class NettyCluster extends AbstractCluster {
   }
 
   @Override
-  protected AbstractRemoteMember createRemoteMember(MemberInfo info) {
-    return new NettyRemoteMember((NettyMemberInfo) info, Member.Type.MEMBER, new ExecutionContext(String.format("copycat-cluster-%d", info.id())))
+  protected ManagedRemoteMember createMember(MemberInfo info) {
+    return new NettyRemoteMember((NettyMemberInfo) info, Member.Type.CLIENT, new ExecutionContext(String.format("copycat-cluster-%d", info.id())))
       .setSerializer(serializer.copy())
       .setEventLoopGroup(eventLoopGroup);
   }
@@ -71,7 +71,7 @@ public class NettyCluster extends AbstractCluster {
   /**
    * Netty cluster builder.
    */
-  public static class Builder extends AbstractCluster.Builder<Builder, NettyMember> {
+  public static class Builder extends ManagedCluster.Builder<Builder, NettyRemoteMember> {
     private String host;
     private int port;
     private EventLoopGroup eventLoopGroup;
@@ -117,11 +117,11 @@ public class NettyCluster extends AbstractCluster {
       NettyMember member = members.remove(memberId);
       NettyLocalMember localMember;
       if (member != null) {
-        localMember = new NettyLocalMember(new NettyMemberInfo(memberId, member.address()), Member.Type.SEED, new ExecutionContext(String.format("copycat-cluster-%d", memberId)));
+        localMember = new NettyLocalMember(new NettyMemberInfo(memberId, member.address()), Member.Type.ACTIVE, new ExecutionContext(String.format("copycat-cluster-%d", memberId)));
       } else {
         if (host == null)
           throw new ConfigurationException("member host must be configured");
-        localMember = new NettyLocalMember(new NettyMemberInfo(memberId, new InetSocketAddress(host, port)), Member.Type.MEMBER, new ExecutionContext(String.format("copycat-cluster-%d", memberId)));
+        localMember = new NettyLocalMember(new NettyMemberInfo(memberId, new InetSocketAddress(host, port)), Member.Type.CLIENT, new ExecutionContext(String.format("copycat-cluster-%d", memberId)));
       }
 
       return new NettyCluster(eventLoopGroup != null ? eventLoopGroup : new NioEventLoopGroup(), localMember, members.values().stream().map(m -> (NettyRemoteMember) m).collect(Collectors.toList()), serializer != null ? serializer : new Serializer());

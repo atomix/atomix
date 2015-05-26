@@ -15,17 +15,31 @@
  */
 package net.kuujo.copycat.cluster;
 
-import net.kuujo.copycat.util.ExecutionContext;
-
 /**
- * Abstract remote member.
- *
+ * Session listener.
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class AbstractRemoteMember extends AbstractMember implements ManagedRemoteMember {
+public interface SessionListener {
 
-  protected AbstractRemoteMember(MemberInfo info, Type type, ExecutionContext context) {
-    super(info, type, context);
-  }
+  /**
+   * Called when a session is opened.
+   *
+   * @param session The opened session.
+   */
+  void sessionOpened(Session session);
+
+  /**
+   * Called when a session is closed.
+   *
+   * @param session The closed session.
+   */
+  void sessionClosed(Session session);
+
+  /**
+   * Called when a session is expired.
+   *
+   * @param session The expired session.
+   */
+  void sessionExpired(Session session);
 
 }

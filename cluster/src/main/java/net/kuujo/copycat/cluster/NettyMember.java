@@ -25,7 +25,7 @@ import java.net.InetSocketAddress;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface NettyMember extends ManagedMember {
+public interface NettyMember extends Member {
 
   /**
    * Returns a new Netty member builder.
@@ -44,9 +44,9 @@ public interface NettyMember extends ManagedMember {
   InetSocketAddress address();
 
   /**
-   * Netty remote member builder.
+   * Netty member builder.
    */
-  public static class Builder extends AbstractMember.Builder<Builder, NettyMember> {
+  public static class Builder extends ManagedMember.Builder<Builder, NettyRemoteMember> {
     private String host;
     private int port;
 
@@ -76,7 +76,7 @@ public interface NettyMember extends ManagedMember {
     public NettyRemoteMember build() {
       if (id <= 0)
         throw new ConfigurationException("member id must be greater than 0");
-      return new NettyRemoteMember(new NettyMemberInfo(id, new InetSocketAddress(host != null ? host : "localhost", port)), Type.SEED, new ExecutionContext(String.format("copycat-cluster-%d", id)));
+      return new NettyRemoteMember(new NettyMemberInfo(id, new InetSocketAddress(host != null ? host : "localhost", port)), Type.ACTIVE, new ExecutionContext(String.format("copycat-cluster-%d", id)));
     }
   }
 
