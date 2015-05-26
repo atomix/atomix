@@ -14,7 +14,7 @@
   <dependencies>
     <dependency>
       <groupId>net.kuujo.copycat</groupId>
-      <artifactId>copycat-io</artifactId>
+      <artifactId>copycat-raft</artifactId>
       <version>${project.version}</version>
     </dependency>
   </dependencies>
