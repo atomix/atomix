@@ -15,6 +15,8 @@
  */
 package net.kuujo.copycat.raft;
 
+import net.kuujo.copycat.cluster.Session;
+
 /**
  * Protocol commit.
  *
@@ -23,10 +25,12 @@ package net.kuujo.copycat.raft;
 public class Commit<T extends Operation> {
   private final long index;
   private final long timestamp;
+  private final Session session;
   private final T operation;
 
-  public Commit(long index, long timestamp, T operation) {
+  public Commit(long index, Session session, long timestamp, T operation) {
     this.index = index;
+    this.session = session;
     this.timestamp = timestamp;
     this.operation = operation;
   }
@@ -38,6 +42,15 @@ public class Commit<T extends Operation> {
    */
   public long index() {
     return index;
+  }
+
+  /**
+   * Returns the commit session.
+   *
+   * @return The commit session.
+   */
+  public Session session() {
+    return session;
   }
 
   /**

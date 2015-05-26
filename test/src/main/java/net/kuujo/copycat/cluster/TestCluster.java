@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class TestCluster extends AbstractCluster {
+public class TestCluster extends ManagedCluster {
 
   /**
    * Returns a new builder.
@@ -46,7 +46,7 @@ public class TestCluster extends AbstractCluster {
   }
 
   @Override
-  protected AbstractRemoteMember createRemoteMember(AbstractMember.Info info) {
+  protected ManagedRemoteMember createRemoteMember(ManagedMember.Info info) {
     return new TestRemoteMember((TestMember.Info) info, new ExecutionContext(String.format("copycat-cluster-%d", info.id()))).init(((TestLocalMember) localMember).serializer, registry);
   }
 
@@ -86,7 +86,7 @@ public class TestCluster extends AbstractCluster {
   /**
    * Raft test cluster builder.
    */
-  public static class Builder extends AbstractCluster.Builder<Builder, TestMember> {
+  public static class Builder extends ManagedCluster.Builder<Builder, TestMember> {
     private TestMemberRegistry registry;
     private String address;
 

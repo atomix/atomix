@@ -113,6 +113,13 @@ public interface RaftError {
       public RaftException createException() {
         return new IllegalMemberStateException("illegal member state");
       }
+    },
+
+    UNKNOWN_SESSION_ERROR(6) {
+      @Override
+      public RaftException createException() {
+        return new UnknownSessionException("unknown member session");
+      }
     };
 
     private final byte id;

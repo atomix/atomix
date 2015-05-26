@@ -15,19 +15,20 @@
  */
 package net.kuujo.copycat.raft.rpc;
 
+import net.kuujo.copycat.cluster.TypedMemberInfo;
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.util.ReferenceManager;
 import net.kuujo.copycat.raft.RaftError;
 
-import java.util.Objects;
+import java.util.*;
 
 /**
- * Protocol poll response.
+ * Protocol keep alive response.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class PollResponse extends AbstractResponse<PollResponse> {
+public class KeepAliveResponse extends AbstractResponse<KeepAliveResponse> {
   private static final ThreadLocal<Builder> builder = new ThreadLocal<Builder>() {
     @Override
     protected Builder initialValue() {
@@ -36,34 +37,35 @@ public class PollResponse extends AbstractResponse<PollResponse> {
   };
 
   /**
-   * Returns a new poll response builder.
+   * Returns a new keep alive response builder.
    *
-   * @return A new poll response builder.
+   * @return A new keep alive response builder.
    */
   public static Builder builder() {
     return builder.get().reset();
   }
 
   /**
-   * Returns a poll response builder for an existing response.
+   * Returns a keep alive response builder for an existing response.
    *
    * @param response The response to build.
-   * @return The poll response builder.
+   * @return The keep alive response builder.
    */
-  public static Builder builder(PollResponse response) {
+  public static Builder builder(KeepAliveResponse response) {
     return builder.get().reset(response);
   }
 
   private long term;
-  private boolean accepted;
+  private int leader;
+  private Set<TypedMemberInfo> members = new HashSet<>();
 
-  public PollResponse(ReferenceManager<PollResponse> referenceManager) {
+  public KeepAliveResponse(ReferenceManager<KeepAliveResponse> referenceManager) {
     super(referenceManager);
   }
 
   @Override
   public Type type() {
-    return Type.POLL;
+    return Type.KEEP_ALIVE;
   }
 
   /**
@@ -76,21 +78,31 @@ public class PollResponse extends AbstractResponse<PollResponse> {
   }
 
   /**
-   * Returns a boolean indicating whether the poll was accepted.
+   * Returns the responding node's current leader.
    *
-   * @return Indicates whether the poll was accepted.
+   * @return The responding node's current leader.
    */
-  public boolean accepted() {
-    return accepted;
+  public int leader() {
+    return leader;
+  }
+
+  /**
+   * Returns the responding node's member set.
+   *
+   * @return The responding node's member set.
+   */
+  public Collection<TypedMemberInfo> members() {
+    return members;
   }
 
   @Override
   public void readObject(Buffer buffer, Serializer serializer) {
-    status = Response.Status.forId(buffer.readByte());
-    if (status == Response.Status.OK) {
+    status = Status.forId(buffer.readByte());
+    if (status == Status.OK) {
       error = null;
       term = buffer.readLong();
-      accepted = buffer.readBoolean();
+      leader = buffer.readInt();
+      members = serializer.readObject(buffer);
     } else {
       error = RaftError.forId(buffer.readByte());
     }
@@ -99,8 +111,9 @@ public class PollResponse extends AbstractResponse<PollResponse> {
   @Override
   public void writeObject(Buffer buffer, Serializer serializer) {
     buffer.writeByte(status.id());
-    if (status == Response.Status.OK) {
-      buffer.writeLong(term).writeBoolean(accepted);
+    if (status == Status.OK) {
+      buffer.writeLong(term).writeInt(leader);
+      serializer.writeObject(members, buffer);
     } else {
       buffer.writeByte(error.id());
     }
@@ -108,39 +121,41 @@ public class PollResponse extends AbstractResponse<PollResponse> {
 
   @Override
   public int hashCode() {
-    return Objects.hash(status, term, accepted);
+    return Objects.hash(status, term, leader);
   }
 
   @Override
   public boolean equals(Object object) {
-    if (object instanceof PollResponse) {
-      PollResponse response = (PollResponse) object;
+    if (object instanceof KeepAliveResponse) {
+      KeepAliveResponse response = (KeepAliveResponse) object;
       return response.status == status
         && response.term == term
-        && response.accepted == accepted;
+        && response.leader == leader
+        && response.members.equals(members);
     }
     return false;
   }
 
   @Override
   public String toString() {
-    return String.format("%s[term=%d, accepted=%b]", getClass().getSimpleName(), term, accepted);
+    return String.format("%s[term=%d, leader=%b, members=%s]", getClass().getSimpleName(), term, leader, members);
   }
 
   /**
-   * Poll response builder.
+   * Status response builder.
    */
-  public static class Builder extends AbstractResponse.Builder<Builder, PollResponse> {
+  public static class Builder extends AbstractResponse.Builder<Builder, KeepAliveResponse> {
 
     private Builder() {
-      super(PollResponse::new);
+      super(KeepAliveResponse::new);
     }
 
     @Override
     Builder reset() {
       super.reset();
       response.term = 0;
-      response.accepted = false;
+      response.leader = 0;
+      response.members.clear();
       return this;
     }
 
@@ -148,31 +163,56 @@ public class PollResponse extends AbstractResponse<PollResponse> {
      * Sets the response term.
      *
      * @param term The response term.
-     * @return The poll response builder.
+     * @return The keep alive response builder.
      */
     public Builder withTerm(long term) {
       if (term < 0)
-        throw new IllegalArgumentException("term must be positive");
+        throw new IllegalArgumentException("term cannot be negative");
       response.term = term;
       return this;
     }
 
     /**
-     * Sets whether the poll was granted.
+     * Sets the response leader.
      *
-     * @param accepted Whether the poll was granted.
-     * @return The poll response builder.
+     * @param leader The response leader.
+     * @return The keep alive response builder.
      */
-    public Builder withAccepted(boolean accepted) {
-      response.accepted = accepted;
+    public Builder withLeader(int leader) {
+      response.leader = leader;
+      return this;
+    }
+
+    /**
+     * Sets the response members.
+     *
+     * @param members The response members.
+     * @return The keep alive response builder.;
+     */
+    public Builder withMembers(TypedMemberInfo... members) {
+      if (members == null)
+        throw new NullPointerException("members cannot be null");
+      return withMembers(Arrays.asList(members));
+    }
+
+    /**
+     * Sets the response members.
+     *
+     * @param members The response members.
+     * @return The keep alive response builder.;
+     */
+    public Builder withMembers(Collection<TypedMemberInfo> members) {
+      response.members.addAll(members);
       return this;
     }
 
     @Override
-    public PollResponse build() {
+    public KeepAliveResponse build() {
       super.build();
       if (response.term < 0)
-        throw new IllegalArgumentException("term must be positive");
+        throw new IllegalArgumentException("term cannot be negative");
+      if (response.leader < 0)
+        throw new IllegalArgumentException("leader cannot be negative");
       return response;
     }
 

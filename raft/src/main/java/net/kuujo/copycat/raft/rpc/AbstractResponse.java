@@ -79,14 +79,14 @@ abstract class AbstractResponse<RESPONSE extends Response<RESPONSE>> implements 
   /**
    * Abstract response builder.
    *
-   * @param <BUILDER> The builder type.
-   * @param <RESPONSE> The response type.
+   * @param <T> The builder type.
+   * @param <U> The response type.
    */
-  protected static abstract class Builder<BUILDER extends Builder<BUILDER, RESPONSE>, RESPONSE extends AbstractResponse<RESPONSE>> implements Response.Builder<BUILDER, RESPONSE> {
-    protected final ReferencePool<RESPONSE> pool;
-    protected RESPONSE response;
+  protected static abstract class Builder<T extends Builder<T, U>, U extends AbstractResponse<U>> implements Response.Builder<T, U> {
+    protected final ReferencePool<U> pool;
+    protected U response;
 
-    protected Builder(Function<ReferenceManager<RESPONSE>, RESPONSE> factory) {
+    protected Builder(Function<ReferenceManager<U>, U> factory) {
       this.pool = new ReferencePool<>(factory);
     }
 
@@ -94,40 +94,40 @@ abstract class AbstractResponse<RESPONSE extends Response<RESPONSE>> implements 
      * Resets the builder, acquiring a new response from the internal reference pool.
      */
     @SuppressWarnings("unchecked")
-    BUILDER reset() {
+    T reset() {
       response = pool.acquire();
       response.status = null;
       response.error = null;
-      return (BUILDER) this;
+      return (T) this;
     }
 
     /**
      * Resets the builder with the given response.
      */
     @SuppressWarnings("unchecked")
-    BUILDER reset(RESPONSE response) {
+    T reset(U response) {
       this.response = response;
-      return (BUILDER) this;
+      return (T) this;
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public BUILDER withStatus(Status status) {
+    public T withStatus(Status status) {
       if (status == null)
         throw new NullPointerException("status cannot be null");
       response.status = status;
-      return (BUILDER) this;
+      return (T) this;
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public BUILDER withError(RaftError error) {
+    public T withError(RaftError error) {
       response.error = error;
-      return (BUILDER) this;
+      return (T) this;
     }
 
     @Override
-    public RESPONSE build() {
+    public U build() {
       if (response.status == null)
         throw new NullPointerException("status cannot be null");
       return response;

@@ -16,22 +16,22 @@
 package net.kuujo.copycat.raft.storage;
 
 import net.kuujo.copycat.cluster.MemberInfo;
-import net.kuujo.copycat.io.Buffer;
-import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.util.ReferenceManager;
 
 /**
- * Member info entry.
+ * Register client entry.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class MemberEntry<T extends MemberEntry<T>> extends RaftEntry<T> {
-  private MemberInfo member;
+@SerializeWith(id=1006)
+public class RegisterEntry extends TimestampedEntry<RegisterEntry> {
+  private MemberInfo info;
 
-  protected MemberEntry() {
+  public RegisterEntry() {
   }
 
-  protected MemberEntry(ReferenceManager<RaftEntry<?>> referenceManager) {
+  public RegisterEntry(ReferenceManager<RaftEntry<?>> referenceManager) {
     super(referenceManager);
   }
 
@@ -41,33 +41,18 @@ public abstract class MemberEntry<T extends MemberEntry<T>> extends RaftEntry<T>
    * @return The member info.
    */
   public MemberInfo getMember() {
-    return member;
+    return info;
   }
 
   /**
    * Sets the member info.
    *
-   * @param member The member info.
-   * @return The member entry.
+   * @param info The member info.
+   * @return The register entry.
    */
-  @SuppressWarnings("unchecked")
-  public T setMember(MemberInfo member) {
-    if (member == null)
-      throw new NullPointerException("member cannot be null");
-    this.member = member;
-    return (T) this;
-  }
-
-  @Override
-  public void writeObject(Buffer buffer, Serializer serializer) {
-    super.writeObject(buffer, serializer);
-    serializer.writeObject(member, buffer);
-  }
-
-  @Override
-  public void readObject(Buffer buffer, Serializer serializer) {
-    super.readObject(buffer, serializer);
-    member = serializer.readObject(buffer);
+  public RegisterEntry setMember(MemberInfo info) {
+    this.info = info;
+    return this;
   }
 
 }

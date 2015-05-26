@@ -27,6 +27,9 @@ import net.kuujo.copycat.io.util.ReferenceManager;
 public abstract class TimestampedEntry<T extends TimestampedEntry<T>> extends RaftEntry<T> {
   private long timestamp;
 
+  protected TimestampedEntry() {
+  }
+
   protected TimestampedEntry(ReferenceManager<RaftEntry<?>> referenceManager) {
     super(referenceManager);
   }

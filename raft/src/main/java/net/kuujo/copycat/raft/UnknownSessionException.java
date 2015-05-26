@@ -15,29 +15,24 @@
  */
 package net.kuujo.copycat.raft;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
 /**
- * Annotation for applying operations to the state machine.
+ * Unknown session exception.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Target(ElementType.METHOD)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface Apply {
+public class UnknownSessionException extends RaftException {
+  private static final RaftError.Type TYPE = RaftError.Type.UNKNOWN_SESSION_ERROR;
 
-  /**
-   * The operations to apply.
-   */
-  Class<? extends Operation>[] value();
+  public UnknownSessionException(String message, Object... args) {
+    super(TYPE, message, args);
+  }
 
-  /**
-   * Indicates that all commands should be applied.
-   */
-  static class All implements Operation {
+  public UnknownSessionException(Throwable cause, String message, Object... args) {
+    super(TYPE, cause, message, args);
+  }
+
+  public UnknownSessionException(Throwable cause) {
+    super(TYPE, cause);
   }
 
 }

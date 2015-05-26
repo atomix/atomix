@@ -23,11 +23,11 @@ import net.kuujo.copycat.raft.RaftError;
 import java.util.Objects;
 
 /**
- * Protocol command response.
+ * Protocol leave response.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class SubmitResponse extends AbstractResponse<SubmitResponse> {
+public class LeaveResponse extends AbstractResponse<LeaveResponse> {
   private static final ThreadLocal<Builder> builder = new ThreadLocal<Builder>() {
     @Override
     protected Builder initialValue() {
@@ -36,42 +36,52 @@ public class SubmitResponse extends AbstractResponse<SubmitResponse> {
   };
 
   /**
-   * Returns a new submit response builder.
+   * Returns a new leave response builder.
    *
-   * @return A new submit response builder.
+   * @return A new leave response builder.
    */
   public static Builder builder() {
     return builder.get().reset();
   }
 
   /**
-   * Returns a submit response builder for an existing request.
+   * Returns a leave response builder for an existing response.
    *
-   * @param request The response to build.
-   * @return The submit response builder.
+   * @param response The response to build.
+   * @return The leave response builder.
    */
-  public static Builder builder(SubmitResponse request) {
-    return builder.get().reset(request);
+  public static Builder builder(LeaveResponse response) {
+    return builder.get().reset(response);
   }
 
-  private Object result;
+  private long term;
+  private int leader;
 
-  public SubmitResponse(ReferenceManager<SubmitResponse> referenceManager) {
+  public LeaveResponse(ReferenceManager<LeaveResponse> referenceManager) {
     super(referenceManager);
   }
 
   @Override
   public Type type() {
-    return Type.SUBMIT;
+    return Type.LEAVE;
   }
 
   /**
-   * Returns the command result.
+   * Returns the responding node's current term.
    *
-   * @return The command result.
+   * @return The responding node's current term.
    */
-  public Object result() {
-    return result;
+  public long term() {
+    return term;
+  }
+
+  /**
+   * Returns the responding node's current leader.
+   *
+   * @return The responding node's current leader.
+   */
+  public int leader() {
+    return leader;
   }
 
   @Override
@@ -79,7 +89,8 @@ public class SubmitResponse extends AbstractResponse<SubmitResponse> {
     status = Status.forId(buffer.readByte());
     if (status == Status.OK) {
       error = null;
-      result = serializer.readObject(buffer);
+      term = buffer.readLong();
+      leader = buffer.readInt();
     } else {
       error = RaftError.forId(buffer.readByte());
     }
@@ -89,7 +100,7 @@ public class SubmitResponse extends AbstractResponse<SubmitResponse> {
   public void writeObject(Buffer buffer, Serializer serializer) {
     buffer.writeByte(status.id());
     if (status == Status.OK) {
-      serializer.writeObject(result, buffer);
+      buffer.writeLong(term).writeInt(leader);
     } else {
       buffer.writeByte(error.id());
     }
@@ -97,51 +108,74 @@ public class SubmitResponse extends AbstractResponse<SubmitResponse> {
 
   @Override
   public int hashCode() {
-    return Objects.hash(status, result);
+    return Objects.hash(status, term, leader);
   }
 
   @Override
   public boolean equals(Object object) {
-    if (object instanceof SubmitResponse) {
-      SubmitResponse response = (SubmitResponse) object;
+    if (object instanceof LeaveResponse) {
+      LeaveResponse response = (LeaveResponse) object;
       return response.status == status
-        && ((response.result == null && result == null)
-        || response.result != null && result != null && response.result.equals(result));
+        && response.term == term
+        && response.leader == leader;
     }
     return false;
   }
 
   @Override
   public String toString() {
-    return String.format("%s[status=%s, result=%s]", getClass().getSimpleName(), status, result);
+    return String.format("%s[term=%d, leader=%d]", getClass().getSimpleName(), term, leader);
   }
 
   /**
-   * Command response builder.
+   * Leave response builder.
    */
-  public static class Builder extends AbstractResponse.Builder<Builder, SubmitResponse> {
+  public static class Builder extends AbstractResponse.Builder<Builder, LeaveResponse> {
 
     private Builder() {
-      super(SubmitResponse::new);
+      super(LeaveResponse::new);
     }
 
     @Override
     Builder reset() {
       super.reset();
-      response.result = null;
+      response.term = 0;
+      response.leader = 0;
       return this;
     }
 
     /**
-     * Sets the command response result.
+     * Sets the response term.
      *
-     * @param result The response result.
-     * @return The response builder.
+     * @param term The response term.
+     * @return The leave response builder.
      */
-    @SuppressWarnings("unchecked")
-    public Builder withResult(Object result) {
-      response.result = result;
+    public Builder withTerm(long term) {
+      if (term < 0)
+        throw new IllegalArgumentException("term cannot be negative");
+      response.term = term;
       return this;
+    }
+
+    /**
+     * Sets the response leader.
+     *
+     * @param leader The response leader.
+     * @return The leave response builder.
+     */
+    public Builder withLeader(int leader) {
+      response.leader = leader;
+      return this;
+    }
+
+    @Override
+    public LeaveResponse build() {
+      super.build();
+      if (response.term < 0)
+        throw new IllegalArgumentException("term cannot be negative");
+      if (response.leader < 0)
+        throw new IllegalArgumentException("leader cannot be negative");
+      return response;
     }
 
     @Override

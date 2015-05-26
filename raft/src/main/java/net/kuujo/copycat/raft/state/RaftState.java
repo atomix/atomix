@@ -33,6 +33,11 @@ public enum RaftState {
   REMOTE,
 
   /**
+   * Passive state.
+   */
+  PASSIVE,
+
+  /**
    * Follower state.
    */
   FOLLOWER,

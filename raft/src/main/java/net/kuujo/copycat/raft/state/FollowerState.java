@@ -102,7 +102,7 @@ class FollowerState extends ActiveState {
     // Create a quorum that will track the number of nodes that have responded to the poll request.
     final AtomicBoolean complete = new AtomicBoolean();
     final Set<Member> votingMembers = context.getCluster().members().stream()
-      .filter(m -> m.type() == Member.Type.SEED)
+      .filter(m -> m.type() == Member.Type.ACTIVE)
       .collect(Collectors.toSet());
 
     final Quorum quorum = new Quorum((int) Math.ceil(votingMembers.size() / 2.0), (elected) -> {

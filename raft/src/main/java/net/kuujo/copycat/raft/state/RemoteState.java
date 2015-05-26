@@ -16,6 +16,7 @@
 package net.kuujo.copycat.raft.state;
 
 import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.cluster.TypedMemberInfo;
 import net.kuujo.copycat.raft.RaftError;
 import net.kuujo.copycat.raft.rpc.*;
 
@@ -33,7 +34,7 @@ import java.util.stream.Collectors;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class RemoteState extends AbstractState {
-  private final AtomicBoolean statusCheck = new AtomicBoolean();
+  private final AtomicBoolean keepAlive = new AtomicBoolean();
   private final Random random = new Random();
   private ScheduledFuture<?> currentTimer;
 
@@ -48,49 +49,125 @@ public class RemoteState extends AbstractState {
 
   @Override
   public synchronized CompletableFuture<AbstractState> open() {
-    return super.open().thenRun(this::startStatusTimer).thenApply(v -> this);
+    return super.open().thenCompose(v -> register()).thenRun(this::startKeepAliveTimer).thenApply(v -> this);
   }
 
   /**
-   * Starts the status timer.
+   * Registers the client.
    */
-  private void startStatusTimer() {
-    LOGGER.debug("{} - Setting status timer", context.getCluster().member().id());
-    currentTimer = context.getContext().scheduleAtFixedRate(this::status, 1, context.getHeartbeatInterval(), TimeUnit.MILLISECONDS);
+  private CompletableFuture<Long> register() {
+    return register(context.getCluster()
+      .members()
+      .stream()
+      .filter(m -> m.type() == Member.Type.ACTIVE)
+      .collect(Collectors.toList()), new CompletableFuture<>());
   }
 
   /**
-   * Sends a status request to a random member.
+   * Registers the client by contacting a random member.
    */
-  private void status() {
-    if (statusCheck.compareAndSet(false, true)) {
-      Member member;
-      if (context.getLeader() != 0) {
-        member = context.getCluster().member(context.getLeader());
-      } else {
-        List<Member> members = context.getCluster().members().stream().filter(m -> m.type() == Member.Type.SEED).collect(Collectors.toList());
-        member = members.get(random.nextInt(members.size()));
-      }
-
-      StatusRequest request = StatusRequest.builder()
-        .withId(context.getCluster().member().id())
-        .build();
-      member.<StatusRequest, StatusResponse>send(context.getTopic(), request).whenComplete((response, error) -> {
-        context.checkThread();
-
-        if (isOpen()) {
-          if (error == null) {
-            if (response.term() > context.getTerm()) {
-              context.setTerm(response.term());
-              context.setLeader(response.leader());
-            } else if (context.getLeader() == 0) {
-              context.setLeader(response.leader());
-            }
-          }
-        }
-        statusCheck.set(false);
-      });
+  private CompletableFuture<Long> register(List<Member> members, CompletableFuture<Long> future) {
+    if (members.isEmpty()) {
+      future.completeExceptionally(RaftError.Type.NO_LEADER_ERROR.createException());
+      return future;
     }
+
+    Member member;
+    if (context.getLeader() != 0) {
+      member = context.getCluster().member(context.getLeader());
+    } else {
+      member = members.remove(random.nextInt(members.size()));
+    }
+
+    RegisterRequest request = RegisterRequest.builder()
+      .withMember(context.getCluster().member().info())
+      .build();
+    member.<RegisterRequest, RegisterResponse>send(context.getTopic(), request).whenComplete((response, error) -> {
+      if (error == null) {
+        context.setTerm(response.term());
+        context.setLeader(response.leader());
+        context.getCluster().configure(response.members().toArray(new TypedMemberInfo[response.members().size()])).whenComplete((configureResult, configureError) -> {
+          if (configureError == null) {
+            future.complete(response.session());
+          } else {
+            future.completeExceptionally(configureError);
+          }
+        });
+      } else {
+        register(members, future);
+      }
+    });
+    return future;
+  }
+
+  /**
+   * Starts the keep alive timer.
+   */
+  private void startKeepAliveTimer() {
+    LOGGER.debug("{} - Setting keep alive timer", context.getCluster().member().id());
+    currentTimer = context.getContext().scheduleAtFixedRate(this::keepAlive, 1, context.getHeartbeatInterval(), TimeUnit.MILLISECONDS);
+  }
+
+  /**
+   * Sends a keep alive request to a random member.
+   */
+  private void keepAlive() {
+    if (keepAlive.compareAndSet(false, true)) {
+      keepAlive(context.getCluster()
+        .members()
+        .stream()
+        .filter(m -> m.type() == Member.Type.ACTIVE)
+        .collect(Collectors.toList()), new CompletableFuture<>());
+    }
+  }
+
+  /**
+   * Registers the client by contacting a random member.
+   */
+  private CompletableFuture<Void> keepAlive(List<Member> members, CompletableFuture<Void> future) {
+    if (members.isEmpty()) {
+      future.completeExceptionally(RaftError.Type.NO_LEADER_ERROR.createException());
+      keepAlive.set(false);
+      return future;
+    }
+
+    Member member;
+    if (context.getLeader() != 0) {
+      member = context.getCluster().member(context.getLeader());
+    } else {
+      member = members.remove(random.nextInt(members.size()));
+    }
+
+    KeepAliveRequest request = KeepAliveRequest.builder()
+      .withSession(context.getCluster().member().session().id())
+      .build();
+    member.<KeepAliveRequest, KeepAliveResponse>send(context.getTopic(), request).whenComplete((response, error) -> {
+      if (error == null) {
+        context.setTerm(response.term());
+        context.setLeader(response.leader());
+        context.getCluster().configure(response.members().toArray(new TypedMemberInfo[response.members().size()])).whenComplete((configureResult, configureError) -> {
+          if (configureError == null) {
+            future.complete(null);
+          } else {
+            future.completeExceptionally(configureError);
+          }
+          keepAlive.set(false);
+        });
+      } else {
+        keepAlive(members, future);
+      }
+    });
+    return future;
+  }
+
+  @Override
+  protected CompletableFuture<SyncResponse> sync(SyncRequest request) {
+    context.checkThread();
+    logRequest(request);
+    return CompletableFuture.completedFuture(logResponse(SyncResponse.builder()
+      .withStatus(Response.Status.ERROR)
+      .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
+      .build()));
   }
 
   @Override
@@ -129,6 +206,90 @@ public class RemoteState extends AbstractState {
     logRequest(request);
     if (context.getLeader() == 0) {
       return CompletableFuture.completedFuture(logResponse(SubmitResponse.builder()
+        .withStatus(Response.Status.ERROR)
+        .withError(RaftError.Type.NO_LEADER_ERROR)
+        .build()));
+    } else {
+      return context.getCluster().member(context.getLeader()).send(context.getTopic(), request);
+    }
+  }
+
+  @Override
+  protected CompletableFuture<KeepAliveResponse> keepAlive(KeepAliveRequest request) {
+    context.checkThread();
+    logRequest(request);
+    if (context.getLeader() == 0) {
+      return CompletableFuture.completedFuture(logResponse(KeepAliveResponse.builder()
+        .withStatus(Response.Status.ERROR)
+        .withError(RaftError.Type.NO_LEADER_ERROR)
+        .build()));
+    } else {
+      return context.getCluster().member(context.getLeader()).send(context.getTopic(), request);
+    }
+  }
+
+  @Override
+  protected CompletableFuture<RegisterResponse> register(RegisterRequest request) {
+    context.checkThread();
+    logRequest(request);
+    if (context.getLeader() == 0) {
+      return CompletableFuture.completedFuture(logResponse(RegisterResponse.builder()
+        .withStatus(Response.Status.ERROR)
+        .withError(RaftError.Type.NO_LEADER_ERROR)
+        .build()));
+    } else {
+      return context.getCluster().member(context.getLeader()).send(context.getTopic(), request);
+    }
+  }
+
+  @Override
+  protected CompletableFuture<LeaveResponse> leave(LeaveRequest request) {
+    context.checkThread();
+    logRequest(request);
+    if (context.getLeader() == 0) {
+      return CompletableFuture.completedFuture(logResponse(LeaveResponse.builder()
+        .withStatus(Response.Status.ERROR)
+        .withError(RaftError.Type.NO_LEADER_ERROR)
+        .build()));
+    } else {
+      return context.getCluster().member(context.getLeader()).send(context.getTopic(), request);
+    }
+  }
+
+  @Override
+  protected CompletableFuture<JoinResponse> join(JoinRequest request) {
+    context.checkThread();
+    logRequest(request);
+    if (context.getLeader() == 0) {
+      return CompletableFuture.completedFuture(logResponse(JoinResponse.builder()
+        .withStatus(Response.Status.ERROR)
+        .withError(RaftError.Type.NO_LEADER_ERROR)
+        .build()));
+    } else {
+      return context.getCluster().member(context.getLeader()).send(context.getTopic(), request);
+    }
+  }
+
+  @Override
+  protected CompletableFuture<PromoteResponse> promote(PromoteRequest request) {
+    context.checkThread();
+    logRequest(request);
+    if (context.getLeader() == 0) {
+      return CompletableFuture.completedFuture(logResponse(PromoteResponse.builder()
+        .withStatus(Response.Status.ERROR)
+        .withError(RaftError.Type.NO_LEADER_ERROR)
+        .build()));
+    } else {
+      return context.getCluster().member(context.getLeader()).send(context.getTopic(), request);
+    }
+  }
+
+  @Override
+  protected CompletableFuture<DemoteResponse> demote(DemoteRequest request) {
+    context.checkThread();
+    logRequest(request);
+    if (context.getLeader() == 0) {
+      return CompletableFuture.completedFuture(logResponse(DemoteResponse.builder()
         .withStatus(Response.Status.ERROR)
         .withError(RaftError.Type.NO_LEADER_ERROR)
         .build()));

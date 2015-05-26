@@ -16,6 +16,7 @@
 package net.kuujo.copycat.raft.rpc;
 
 import net.kuujo.copycat.io.Buffer;
+import net.kuujo.copycat.io.serializer.SerializationException;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.util.ReferenceManager;
 import net.kuujo.copycat.raft.storage.RaftEntry;
@@ -26,11 +27,11 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Protocol append request.
+ * Protocol sync request.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class AppendRequest extends AbstractRequest<AppendRequest> {
+public class SyncRequest extends AbstractRequest<SyncRequest> {
   private static final ThreadLocal<Builder> builder = new ThreadLocal<Builder>() {
     @Override
     protected Builder initialValue() {
@@ -39,49 +40,38 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
   };
 
   /**
-   * Returns a new append request builder.
+   * Returns a new sync request builder.
    *
-   * @return A new append request builder.
+   * @return A new sync request builder.
    */
   public static Builder builder() {
     return builder.get().reset();
   }
 
   /**
-   * Returns an append request builder for an existing request.
+   * Returns a sync request builder for an existing request.
    *
    * @param request The request to build.
-   * @return The append request builder.
+   * @return The sync request builder.
    */
-  public static Builder builder(AppendRequest request) {
+  public static Builder builder(SyncRequest request) {
     return builder.get().reset(request);
   }
 
-  private int member;
   private long term;
   private int leader;
   private long logIndex;
-  private long logTerm;
-  private List<RaftEntry> entries = new ArrayList<>(128);
+  private final List<RaftEntry> entries = new ArrayList<>(128);
   private long commitIndex;
   private long globalIndex;
 
-  private AppendRequest(ReferenceManager<AppendRequest> referenceManager) {
+  public SyncRequest(ReferenceManager<SyncRequest> referenceManager) {
     super(referenceManager);
   }
 
   @Override
   public Type type() {
-    return Type.APPEND;
-  }
-
-  /**
-   * Returns the requesting node ID.
-   *
-   * @return The requesting node ID.
-   */
-  public int member() {
-    return member;
+    return Type.SYNC;
   }
 
   /**
@@ -103,21 +93,12 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
   }
 
   /**
-   * Returns the index of the log entry preceding the new entry.
+   * Returns the last known log index.
    *
-   * @return The index of the log entry preceding the new entry.
+   * @return The last known log index.
    */
   public long logIndex() {
     return logIndex;
-  }
-
-  /**
-   * Returns the term of the log entry preceding the new entry.
-   *
-   * @return The index of the term preceding the new entry.
-   */
-  public long logTerm() {
-    return logTerm;
   }
 
   /**
@@ -148,31 +129,38 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
   }
 
   @Override
+  public void readObject(Buffer buffer, Serializer serializer) {
+    term = buffer.readLong();
+    leader = buffer.readInt();
+    logIndex = buffer.readLong();
+    commitIndex = buffer.readLong();
+    globalIndex = buffer.readLong();
+
+    int entriesSize = buffer.readInt();
+    if (entriesSize < 0)
+      throw new SerializationException("invalid entries size: " + entriesSize);
+
+    entries.clear();
+    for (int i = 0; i < entriesSize; i++) {
+      entries.add(serializer.readObject(buffer));
+    }
+
+    int membersSize = buffer.readInt();
+    if (membersSize < 0)
+      throw new SerializationException("invalid members size: " + membersSize);
+  }
+
+  @Override
   public void writeObject(Buffer buffer, Serializer serializer) {
     buffer.writeLong(term)
+      .writeInt(leader)
       .writeLong(logIndex)
-      .writeLong(logTerm)
       .writeLong(commitIndex)
       .writeLong(globalIndex);
 
     buffer.writeInt(entries.size());
     for (RaftEntry entry : entries) {
       serializer.writeObject(entry, buffer);
-    }
-  }
-
-  @Override
-  public void readObject(Buffer buffer, Serializer serializer) {
-    term = buffer.readLong();
-    logIndex = buffer.readLong();
-    logTerm = buffer.readLong();
-    commitIndex = buffer.readLong();
-    globalIndex = buffer.readLong();
-
-    entries.clear();
-    int numEntries = buffer.readInt();
-    for (int i = 0; i < numEntries; i++) {
-      entries.add(serializer.readObject(buffer));
     }
   }
 
@@ -184,61 +172,42 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
 
   @Override
   public int hashCode() {
-    return Objects.hash(term, leader, logIndex, logTerm, entries, commitIndex, globalIndex);
+    return Objects.hash(term, leader, entries);
   }
 
   @Override
   public boolean equals(Object object) {
-    if (object instanceof AppendRequest) {
-      AppendRequest request = (AppendRequest) object;
+    if (object instanceof SyncRequest) {
+      SyncRequest request = (SyncRequest) object;
       return request.term == term
         && request.leader == leader
         && request.logIndex == logIndex
-        && request.logTerm == logTerm
-        && request.entries.equals(entries)
         && request.commitIndex == commitIndex
-        && request.globalIndex == globalIndex;
+        && request.globalIndex == globalIndex
+        && request.entries.equals(entries);
     }
     return false;
   }
 
   @Override
   public String toString() {
-    return String.format("%s[term=%d, leader=%s, logIndex=%d, logTerm=%d, entries=[%d], commitIndex=%d, globalIndex=%d]", getClass().getSimpleName(), term, leader, logIndex, logTerm, entries.size(), commitIndex, globalIndex);
+    return String.format("%s[term=%d, leader=%s, logIndex=%s, entries=[%d], commitIndex=%d, globalIndex=%d]", getClass().getSimpleName(), term, leader, logIndex, entries.size(), commitIndex, globalIndex);
   }
 
   /**
-   * Append request builder.
+   * Sync request builder.
    */
-  public static class Builder extends AbstractRequest.Builder<Builder, AppendRequest> {
-    public Builder() {
-      super(AppendRequest::new);
+  public static class Builder extends AbstractRequest.Builder<Builder, SyncRequest> {
+    private Builder() {
+      super(SyncRequest::new);
     }
 
     @Override
     Builder reset() {
       super.reset();
-      request.member = 0;
-      request.leader = 0;
       request.term = 0;
-      request.logIndex = 0;
-      request.logTerm = 0;
+      request.leader = 0;
       request.entries.clear();
-      request.commitIndex = 0;
-      request.globalIndex = 0;
-      return this;
-    }
-
-    /**
-     * Sets the request member.
-     *
-     * @param member The request member.
-     * @return The request builder.
-     */
-    public Builder withMember(int member) {
-      if (member <= 0)
-        throw new IllegalArgumentException("member must be positive");
-      request.member = member;
       return this;
     }
 
@@ -246,7 +215,7 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
      * Sets the request term.
      *
      * @param term The request term.
-     * @return The append request builder.
+     * @return The sync request builder.
      */
     public Builder withTerm(long term) {
       if (term <= 0)
@@ -259,7 +228,7 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
      * Sets the request leader.
      *
      * @param leader The request leader.
-     * @return The append request builder.
+     * @return The sync request builder.
      */
     public Builder withLeader(int leader) {
       request.leader = leader;
@@ -267,36 +236,10 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
     }
 
     /**
-     * Sets the request last log index.
-     *
-     * @param index The request last log index.
-     * @return The append request builder.
-     */
-    public Builder withLogIndex(long index) {
-      if (index < 0)
-        throw new IllegalArgumentException("log index must be positive");
-      request.logIndex = index;
-      return this;
-    }
-
-    /**
-     * Sets the request last log term.
-     *
-     * @param term The request last log term.
-     * @return The append request builder.
-     */
-    public Builder withLogTerm(long term) {
-      if (term < 0)
-        throw new IllegalArgumentException("log term must be positive");
-      request.logTerm = term;
-      return this;
-    }
-
-    /**
      * Sets the request entries.
      *
      * @param entries The request entries.
-     * @return The append request builder.
+     * @return The sync request builder.
      */
     public Builder withEntries(RaftEntry... entries) {
       return withEntries(Arrays.asList(entries));
@@ -306,12 +249,25 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
      * Sets the request entries.
      *
      * @param entries The request entries.
-     * @return The append request builder.
+     * @return The sync request builder.
      */
     public Builder withEntries(List<RaftEntry> entries) {
       if (entries == null)
         throw new NullPointerException("entries cannot be null");
-      request.entries = entries;
+      request.entries.addAll(entries);
+      return this;
+    }
+
+    /**
+     * Sets the request log index.
+     *
+     * @param index The request log index.
+     * @return The request builder.
+     */
+    public Builder withLogIndex(long index) {
+      if (index < 0)
+        throw new IllegalArgumentException("log index must be positive");
+      request.logIndex = index;
       return this;
     }
 
@@ -342,23 +298,12 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
     }
 
     @Override
-    public AppendRequest build() {
+    public SyncRequest build() {
       super.build();
-      if (request.member <= 0)
-        throw new IllegalArgumentException("member must be positive");
       if (request.term <= 0)
         throw new IllegalArgumentException("term must be positive");
       if (request.logIndex < 0)
         throw new IllegalArgumentException("log index must be positive");
-      if (request.logTerm < 0)
-        throw new IllegalArgumentException("log term must be positive");
-      if (request.entries == null)
-        throw new NullPointerException("entries cannot be null");
-      if (request.commitIndex < 0)
-        throw new IllegalArgumentException("commit index must be positive");
-      if (request.globalIndex < 0)
-        throw new IllegalArgumentException("global index must be positive");
-
       return request;
     }
 

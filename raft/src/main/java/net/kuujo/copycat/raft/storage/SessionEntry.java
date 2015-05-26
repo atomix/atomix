@@ -15,6 +15,8 @@
  */
 package net.kuujo.copycat.raft.storage;
 
+import net.kuujo.copycat.io.Buffer;
+import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.util.ReferenceManager;
 
 /**
@@ -22,10 +24,52 @@ import net.kuujo.copycat.io.util.ReferenceManager;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class SessionEntry extends MemberEntry<SessionEntry> {
+public abstract class SessionEntry<T extends SessionEntry<T>> extends TimestampedEntry<T> {
+  private long session;
 
-  public SessionEntry(ReferenceManager<RaftEntry<?>> referenceManager) {
+  protected SessionEntry() {
+  }
+
+  protected SessionEntry(ReferenceManager<RaftEntry<?>> referenceManager) {
     super(referenceManager);
+  }
+
+  /**
+   * Sets the session ID.
+   *
+   * @param session The session ID.
+   * @return The session entry.
+   */
+  @SuppressWarnings("unchecked")
+  public T setSession(long session) {
+    this.session = session;
+    return (T) this;
+  }
+
+  /**
+   * Returns the session ID.
+   *
+   * @return The session ID.
+   */
+  public long getSession() {
+    return session;
+  }
+
+  @Override
+  public int size() {
+    return super.size() + Long.BYTES;
+  }
+
+  @Override
+  public void writeObject(Buffer buffer, Serializer serializer) {
+    super.writeObject(buffer, serializer);
+    buffer.writeLong(session);
+  }
+
+  @Override
+  public void readObject(Buffer buffer, Serializer serializer) {
+    super.readObject(buffer, serializer);
+    session = buffer.readLong();
   }
 
 }

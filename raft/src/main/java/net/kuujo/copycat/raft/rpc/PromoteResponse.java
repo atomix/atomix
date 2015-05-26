@@ -23,11 +23,11 @@ import net.kuujo.copycat.raft.RaftError;
 import java.util.Objects;
 
 /**
- * Protocol status response.
+ * Protocol promote response.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class StatusResponse extends AbstractResponse<StatusResponse> {
+public class PromoteResponse extends AbstractResponse<PromoteResponse> {
   private static final ThreadLocal<Builder> builder = new ThreadLocal<Builder>() {
     @Override
     protected Builder initialValue() {
@@ -36,34 +36,34 @@ public class StatusResponse extends AbstractResponse<StatusResponse> {
   };
 
   /**
-   * Returns a new status response builder.
+   * Returns a new promote response builder.
    *
-   * @return A new status response builder.
+   * @return A new promote response builder.
    */
   public static Builder builder() {
     return builder.get().reset();
   }
 
   /**
-   * Returns a status response builder for an existing response.
+   * Returns a promote response builder for an existing response.
    *
    * @param response The response to build.
-   * @return The status response builder.
+   * @return The promote response builder.
    */
-  public static Builder builder(StatusResponse response) {
+  public static Builder builder(PromoteResponse response) {
     return builder.get().reset(response);
   }
 
   private long term;
   private int leader;
 
-  public StatusResponse(ReferenceManager<StatusResponse> referenceManager) {
+  public PromoteResponse(ReferenceManager<PromoteResponse> referenceManager) {
     super(referenceManager);
   }
 
   @Override
   public Type type() {
-    return Type.VOTE;
+    return Type.PROMOTE;
   }
 
   /**
@@ -113,8 +113,8 @@ public class StatusResponse extends AbstractResponse<StatusResponse> {
 
   @Override
   public boolean equals(Object object) {
-    if (object instanceof StatusResponse) {
-      StatusResponse response = (StatusResponse) object;
+    if (object instanceof PromoteResponse) {
+      PromoteResponse response = (PromoteResponse) object;
       return response.status == status
         && response.term == term
         && response.leader == leader;
@@ -124,23 +124,31 @@ public class StatusResponse extends AbstractResponse<StatusResponse> {
 
   @Override
   public String toString() {
-    return String.format("%s[term=%d, leader=%b]", getClass().getSimpleName(), term, leader);
+    return String.format("%s[term=%d, leader=%d]", getClass().getSimpleName(), term, leader);
   }
 
   /**
-   * Status response builder.
+   * Promote response builder.
    */
-  public static class Builder extends AbstractResponse.Builder<Builder, StatusResponse> {
+  public static class Builder extends AbstractResponse.Builder<Builder, PromoteResponse> {
 
     private Builder() {
-      super(StatusResponse::new);
+      super(PromoteResponse::new);
+    }
+
+    @Override
+    Builder reset() {
+      super.reset();
+      response.term = 0;
+      response.leader = 0;
+      return this;
     }
 
     /**
      * Sets the response term.
      *
      * @param term The response term.
-     * @return The status response builder.
+     * @return The promote response builder.
      */
     public Builder withTerm(long term) {
       if (term < 0)
@@ -153,7 +161,7 @@ public class StatusResponse extends AbstractResponse<StatusResponse> {
      * Sets the response leader.
      *
      * @param leader The response leader.
-     * @return The vote response builder.
+     * @return The promote response builder.
      */
     public Builder withLeader(int leader) {
       response.leader = leader;
@@ -161,7 +169,7 @@ public class StatusResponse extends AbstractResponse<StatusResponse> {
     }
 
     @Override
-    public StatusResponse build() {
+    public PromoteResponse build() {
       super.build();
       if (response.term < 0)
         throw new IllegalArgumentException("term cannot be negative");

@@ -23,11 +23,11 @@ import net.kuujo.copycat.raft.RaftError;
 import java.util.Objects;
 
 /**
- * Protocol command response.
+ * Protocol sync response.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class SubmitResponse extends AbstractResponse<SubmitResponse> {
+public class SyncResponse extends AbstractResponse<SyncResponse> {
   private static final ThreadLocal<Builder> builder = new ThreadLocal<Builder>() {
     @Override
     protected Builder initialValue() {
@@ -36,50 +36,38 @@ public class SubmitResponse extends AbstractResponse<SubmitResponse> {
   };
 
   /**
-   * Returns a new submit response builder.
+   * Returns a new sync response builder.
    *
-   * @return A new submit response builder.
+   * @return A new sync response builder.
    */
   public static Builder builder() {
     return builder.get().reset();
   }
 
   /**
-   * Returns a submit response builder for an existing request.
+   * Returns a sync response builder for an existing response.
    *
-   * @param request The response to build.
-   * @return The submit response builder.
+   * @param response The response to build.
+   * @return The sync response builder.
    */
-  public static Builder builder(SubmitResponse request) {
-    return builder.get().reset(request);
+  public static Builder builder(SyncResponse response) {
+    return builder.get().reset(response);
   }
 
-  private Object result;
-
-  public SubmitResponse(ReferenceManager<SubmitResponse> referenceManager) {
+  public SyncResponse(ReferenceManager<SyncResponse> referenceManager) {
     super(referenceManager);
   }
 
   @Override
   public Type type() {
-    return Type.SUBMIT;
-  }
-
-  /**
-   * Returns the command result.
-   *
-   * @return The command result.
-   */
-  public Object result() {
-    return result;
+    return Type.SYNC;
   }
 
   @Override
   public void readObject(Buffer buffer, Serializer serializer) {
-    status = Status.forId(buffer.readByte());
-    if (status == Status.OK) {
+    status = Response.Status.forId(buffer.readByte());
+    if (status == Response.Status.OK) {
       error = null;
-      result = serializer.readObject(buffer);
     } else {
       error = RaftError.forId(buffer.readByte());
     }
@@ -88,60 +76,37 @@ public class SubmitResponse extends AbstractResponse<SubmitResponse> {
   @Override
   public void writeObject(Buffer buffer, Serializer serializer) {
     buffer.writeByte(status.id());
-    if (status == Status.OK) {
-      serializer.writeObject(result, buffer);
-    } else {
+    if (status == Status.ERROR) {
       buffer.writeByte(error.id());
     }
   }
 
   @Override
+  public void close() {
+    super.close();
+  }
+
+  @Override
   public int hashCode() {
-    return Objects.hash(status, result);
+    return Objects.hash(getClass(), status, error);
   }
 
   @Override
   public boolean equals(Object object) {
-    if (object instanceof SubmitResponse) {
-      SubmitResponse response = (SubmitResponse) object;
-      return response.status == status
-        && ((response.result == null && result == null)
-        || response.result != null && result != null && response.result.equals(result));
+    if (object instanceof SyncResponse) {
+      SyncResponse response = (SyncResponse) object;
+      return response.status == status;
     }
     return false;
   }
 
-  @Override
-  public String toString() {
-    return String.format("%s[status=%s, result=%s]", getClass().getSimpleName(), status, result);
-  }
-
   /**
-   * Command response builder.
+   * Sync response builder.
    */
-  public static class Builder extends AbstractResponse.Builder<Builder, SubmitResponse> {
+  public static class Builder extends AbstractResponse.Builder<Builder, SyncResponse> {
 
     private Builder() {
-      super(SubmitResponse::new);
-    }
-
-    @Override
-    Builder reset() {
-      super.reset();
-      response.result = null;
-      return this;
-    }
-
-    /**
-     * Sets the command response result.
-     *
-     * @param result The response result.
-     * @return The response builder.
-     */
-    @SuppressWarnings("unchecked")
-    public Builder withResult(Object result) {
-      response.result = result;
-      return this;
+      super(SyncResponse::new);
     }
 
     @Override

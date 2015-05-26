@@ -150,6 +150,16 @@ public class PollRequest extends AbstractRequest<PollRequest> {
       super(PollRequest::new);
     }
 
+    @Override
+    Builder reset() {
+      super.reset();
+      request.term = 0;
+      request.candidate = 0;
+      request.logIndex = 0;
+      request.logTerm = 0;
+      return this;
+    }
+
     /**
      * Sets the request term.
      *

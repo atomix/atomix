@@ -29,7 +29,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class TestLocalMember extends AbstractLocalMember implements TestMember {
+public class TestLocalMember extends ManagedLocalMember implements TestMember {
   final Serializer serializer;
   private final TestMember.Info info;
   private final Map<String, HandlerHolder> handlers = new HashMap<>();

@@ -15,29 +15,34 @@
  */
 package net.kuujo.copycat.raft;
 
+import net.kuujo.copycat.raft.storage.compact.Compaction;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation for applying operations to the state machine.
- *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Target(ElementType.METHOD)
+@Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Apply {
+public @interface Filter {
 
   /**
-   * The operations to apply.
+   * The command types to filter.
    */
-  Class<? extends Operation>[] value();
+  Class<? extends Command>[] value() default {};
 
   /**
-   * Indicates that all commands should be applied.
+   * The filter compaction type.
    */
-  static class All implements Operation {
+  Compaction.Type compaction() default Compaction.Type.MAJOR;
+
+  /**
+   * Indicates that all commands should be applied to the filter.
+   */
+  static class All implements Command {
   }
 
 }

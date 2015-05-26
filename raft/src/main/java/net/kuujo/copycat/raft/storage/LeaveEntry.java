@@ -13,31 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.raft;
+package net.kuujo.copycat.raft.storage;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import net.kuujo.copycat.io.serializer.SerializeWith;
+import net.kuujo.copycat.io.util.ReferenceManager;
 
 /**
- * Annotation for applying operations to the state machine.
+ * Member leave entry.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Target(ElementType.METHOD)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface Apply {
+@SerializeWith(id=1005)
+public class LeaveEntry extends MemberEntry<LeaveEntry> {
 
-  /**
-   * The operations to apply.
-   */
-  Class<? extends Operation>[] value();
+  public LeaveEntry() {
+  }
 
-  /**
-   * Indicates that all commands should be applied.
-   */
-  static class All implements Operation {
+  public LeaveEntry(ReferenceManager<RaftEntry<?>> referenceManager) {
+    super(referenceManager);
   }
 
 }

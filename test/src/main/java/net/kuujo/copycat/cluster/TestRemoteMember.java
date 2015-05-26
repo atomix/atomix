@@ -27,7 +27,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class TestRemoteMember extends AbstractRemoteMember implements TestMember {
+public class TestRemoteMember extends ManagedRemoteMember implements TestMember {
   private Serializer serializer;
   private final TestMember.Info info;
   private TestMemberRegistry registry;

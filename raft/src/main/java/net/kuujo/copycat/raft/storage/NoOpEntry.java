@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.raft.storage;
 
+import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.util.ReferenceManager;
 
 /**
@@ -22,6 +23,7 @@ import net.kuujo.copycat.io.util.ReferenceManager;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
+@SerializeWith(id=1000)
 public class NoOpEntry extends RaftEntry<NoOpEntry> {
 
   public NoOpEntry(ReferenceManager<RaftEntry<?>> referenceManager) {

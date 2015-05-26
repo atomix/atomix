@@ -54,6 +54,9 @@ public class SubmitRequest extends AbstractRequest<SubmitRequest> {
     return builder.get().reset(request);
   }
 
+  private long session;
+  private long request;
+  private long response;
   private Operation operation;
 
   public SubmitRequest(ReferenceManager<SubmitRequest> referenceManager) {
@@ -63,6 +66,33 @@ public class SubmitRequest extends AbstractRequest<SubmitRequest> {
   @Override
   public Type type() {
     return Type.SUBMIT;
+  }
+
+  /**
+   * Returns the session ID.
+   *
+   * @return The session ID.
+   */
+  public long session() {
+    return session;
+  }
+
+  /**
+   * Returns the operation request ID.
+   *
+   * @return The operation request ID.
+   */
+  public long request() {
+    return request;
+  }
+
+  /**
+   * Returns the operation response ID.
+   *
+   * @return The operation response ID.
+   */
+  public long response() {
+    return response;
   }
 
   /**
@@ -96,7 +126,7 @@ public class SubmitRequest extends AbstractRequest<SubmitRequest> {
 
   @Override
   public String toString() {
-    return String.format("%s[operation=%s]", getClass().getSimpleName(), operation);
+    return String.format("%s[session=%d, operation=%s]", getClass().getSimpleName(), session, operation);
   }
 
   /**
@@ -106,6 +136,55 @@ public class SubmitRequest extends AbstractRequest<SubmitRequest> {
 
     protected Builder() {
       super(SubmitRequest::new);
+    }
+
+    @Override
+    Builder reset() {
+      super.reset();
+      request.session = 0;
+      request.request = 0;
+      request.response = 0;
+      request.operation = null;
+      return this;
+    }
+
+    /**
+     * Sets the session ID.
+     *
+     * @param session The session ID.
+     * @return The request builder.
+     */
+    public Builder withSession(long session) {
+      if (session <= 0)
+        throw new IllegalArgumentException("session must be positive");
+      request.session = session;
+      return this;
+    }
+
+    /**
+     * Sets the request ID.
+     *
+     * @param request The request ID.
+     * @return The request builder.
+     */
+    public Builder withRequest(long request) {
+      if (request <= 0)
+        throw new IllegalArgumentException("request must be positive");
+      this.request.request = request;
+      return this;
+    }
+
+    /**
+     * Sets the response ID.
+     *
+     * @param response The response ID.
+     * @return The request builder.
+     */
+    public Builder withResponse(long response) {
+      if (response <= 0)
+        throw new IllegalArgumentException("response must be positive");
+      request.response = response;
+      return this;
     }
 
     /**
@@ -124,6 +203,12 @@ public class SubmitRequest extends AbstractRequest<SubmitRequest> {
     @Override
     public SubmitRequest build() {
       super.build();
+      if (request.session <= 0)
+        throw new IllegalArgumentException("session must be positive");
+      if (request.request <= 0)
+        throw new IllegalArgumentException("request must be positive");
+      if (request.response <= 0)
+        throw new IllegalArgumentException("response must be positive");
       if (request.operation == null)
         throw new NullPointerException("operation cannot be null");
       return request;

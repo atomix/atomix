@@ -45,7 +45,7 @@ public interface TestMember extends ManagedMember {
   /**
    * Netty member info.
    */
-  static class Info extends AbstractMember.Info {
+  static class Info extends ManagedMember.Info {
     String address;
 
     public Info() {
@@ -74,7 +74,7 @@ public interface TestMember extends ManagedMember {
   /**
    * Raft test remote member builder.
    */
-  public static class Builder extends AbstractMember.Builder<Builder, TestMember> {
+  public static class Builder extends ManagedMember.Builder<Builder, TestMember> {
     private String address;
 
     /**

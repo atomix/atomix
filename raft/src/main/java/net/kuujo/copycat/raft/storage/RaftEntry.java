@@ -34,6 +34,10 @@ public abstract class RaftEntry<T extends RaftEntry<T>> implements ReferenceCoun
   private long index;
   private long term;
 
+  protected RaftEntry() {
+    referenceManager = null;
+  }
+
   protected RaftEntry(ReferenceManager<RaftEntry<?>> referenceManager) {
     this.referenceManager = referenceManager;
   }
@@ -106,7 +110,8 @@ public abstract class RaftEntry<T extends RaftEntry<T>> implements ReferenceCoun
   public void release() {
     int refs = references.decrementAndGet();
     if (refs == 0) {
-      referenceManager.release(this);
+      if (referenceManager != null)
+        referenceManager.release(this);
     } else if (refs < 0) {
       references.set(0);
     }
@@ -120,7 +125,8 @@ public abstract class RaftEntry<T extends RaftEntry<T>> implements ReferenceCoun
   @Override
   public void close() {
     references.set(0);
-    referenceManager.release(this);
+    if (referenceManager != null)
+      referenceManager.release(this);
   }
 
 }

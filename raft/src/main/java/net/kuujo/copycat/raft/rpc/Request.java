@@ -31,6 +31,36 @@ public interface Request<REQUEST extends Request<REQUEST>> extends ReferenceCoun
   public static enum Type {
 
     /**
+     * Register client request.
+     */
+    REGISTER,
+
+    /**
+     * Keep alive request.
+     */
+    KEEP_ALIVE,
+
+    /**
+     * Join request.
+     */
+    JOIN,
+
+    /**
+     * Promote request.
+     */
+    PROMOTE,
+
+    /**
+     * Demote request.
+     */
+    DEMOTE,
+
+    /**
+     * Leave request.
+     */
+    LEAVE,
+
+    /**
      * Append request.
      */
     APPEND,
@@ -53,12 +83,7 @@ public interface Request<REQUEST extends Request<REQUEST>> extends ReferenceCoun
     /**
      * Submit request.
      */
-    SUBMIT,
-
-    /**
-     * Status request.
-     */
-    STATUS
+    SUBMIT
   }
 
   /**

@@ -32,6 +32,36 @@ public interface Response<RESPONSE extends Response<RESPONSE>> extends Reference
   public static enum Type {
 
     /**
+     * Register client response.
+     */
+    REGISTER,
+
+    /**
+     * Keep alive response.
+     */
+    KEEP_ALIVE,
+
+    /**
+     * Join response.
+     */
+    JOIN,
+
+    /**
+     * Promote response.
+     */
+    PROMOTE,
+
+    /**
+     * Demote response.
+     */
+    DEMOTE,
+
+    /**
+     * Leave response.
+     */
+    LEAVE,
+
+    /**
      * Append response.
      */
     APPEND,
@@ -54,12 +84,7 @@ public interface Response<RESPONSE extends Response<RESPONSE>> extends Reference
     /**
      * Submit response.
      */
-    SUBMIT,
-
-    /**
-     * Status response.
-     */
-    STATUS
+    SUBMIT
   }
 
   /**

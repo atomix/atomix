@@ -16,7 +16,7 @@
 package net.kuujo.copycat.raft;
 
 import net.kuujo.copycat.ConfigurationException;
-import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.cluster.ManagedCluster;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.raft.state.RaftContext;
 import net.kuujo.copycat.raft.state.RaftState;
@@ -48,7 +48,7 @@ public class Raft implements Managed<Raft> {
   private CompletableFuture<Void> closeFuture;
   private boolean open;
 
-  private Raft(RaftStorage log, RaftConfig config, StateMachine stateMachine, Cluster cluster, String topic, ExecutionContext context) {
+  private Raft(RaftStorage log, RaftConfig config, StateMachine stateMachine, ManagedCluster cluster, String topic, ExecutionContext context) {
     this.context = new RaftContext(log, stateMachine, cluster, topic, context)
       .setHeartbeatInterval(config.getHeartbeatInterval())
       .setElectionTimeout(config.getElectionTimeout());
@@ -164,7 +164,7 @@ public class Raft implements Managed<Raft> {
     private RaftStorage log;
     private RaftConfig config = new RaftConfig();
     private StateMachine stateMachine;
-    private Cluster cluster;
+    private ManagedCluster cluster;
     private String topic;
     private ExecutionContext context;
 
@@ -246,7 +246,7 @@ public class Raft implements Managed<Raft> {
      * @param cluster The Raft cluster.
      * @return The Raft builder.
      */
-    public Builder withCluster(Cluster cluster) {
+    public Builder withCluster(ManagedCluster cluster) {
       this.cluster = cluster;
       return this;
     }

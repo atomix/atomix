@@ -61,14 +61,14 @@ abstract class AbstractRequest<REQUEST extends Request<REQUEST>> implements Requ
   /**
    * Abstract request builder.
    *
-   * @param <BUILDER> The builder type.
-   * @param <REQUEST> The request type.
+   * @param <T> The builder type.
+   * @param <U> The request type.
    */
-  protected static abstract class Builder<BUILDER extends Builder<BUILDER, REQUEST>, REQUEST extends AbstractRequest<REQUEST>> implements Request.Builder<BUILDER, REQUEST> {
-    protected final ReferencePool<REQUEST> pool;
-    protected REQUEST request;
+  protected static abstract class Builder<T extends Builder<T, U>, U extends AbstractRequest<U>> implements Request.Builder<T, U> {
+    protected final ReferencePool<U> pool;
+    protected U request;
 
-    protected Builder(Function<ReferenceManager<REQUEST>, REQUEST> factory) {
+    protected Builder(Function<ReferenceManager<U>, U> factory) {
       this.pool = new ReferencePool<>(factory);
     }
 
@@ -76,22 +76,22 @@ abstract class AbstractRequest<REQUEST extends Request<REQUEST>> implements Requ
      * Resets the builder, acquiring a new request from the internal reference pool.
      */
     @SuppressWarnings("unchecked")
-    BUILDER reset() {
+    T reset() {
       request = pool.acquire();
-      return (BUILDER) this;
+      return (T) this;
     }
 
     /**
      * Resets the builder with the given request.
      */
     @SuppressWarnings("unchecked")
-    BUILDER reset(REQUEST request) {
+    T reset(U request) {
       this.request = request;
-      return (BUILDER) this;
+      return (T) this;
     }
 
     @Override
-    public REQUEST build() {
+    public U build() {
       return request;
     }
   }

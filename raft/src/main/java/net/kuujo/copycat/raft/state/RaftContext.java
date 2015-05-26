@@ -16,7 +16,7 @@
 package net.kuujo.copycat.raft.state;
 
 import net.kuujo.copycat.EventListener;
-import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.cluster.ManagedCluster;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.raft.Operation;
@@ -31,9 +31,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -50,18 +47,16 @@ public class RaftContext implements Managed<RaftContext> {
   private final Set<EventListener<Member>> electionListeners = new CopyOnWriteArraySet<>();
   private final StateMachineProxy stateMachine;
   private final RaftStorage log;
-  private final Cluster cluster;
+  private final ManagedCluster cluster;
   private final String topic;
   private final ExecutionContext context;
   private final ThreadChecker threadChecker;
   private AbstractState state;
-  private final Map<Integer, RaftMember> members = new HashMap<>();
   private CompletableFuture<RaftContext> openFuture;
   private long electionTimeout = 500;
   private long heartbeatInterval = 250;
   private int leader;
   private long term;
-  private long version;
   private int lastVotedFor;
   private volatile long firstCommitIndex = 0;
   private volatile long commitIndex = 0;
@@ -69,7 +64,7 @@ public class RaftContext implements Managed<RaftContext> {
   private volatile long lastApplied = 0;
   private volatile boolean open;
 
-  public RaftContext(RaftStorage log, StateMachine stateMachine, Cluster cluster, String topic, ExecutionContext context) {
+  public RaftContext(RaftStorage log, StateMachine stateMachine, ManagedCluster cluster, String topic, ExecutionContext context) {
     this.log = log;
     this.stateMachine = new StateMachineProxy(stateMachine, this, new ExecutionContext(context.name() + "-state"));
     this.cluster = cluster;
@@ -83,7 +78,7 @@ public class RaftContext implements Managed<RaftContext> {
    *
    * @return The Raft cluster.
    */
-  public Cluster getCluster() {
+  public ManagedCluster getCluster() {
     return cluster;
   }
 
@@ -199,48 +194,6 @@ public class RaftContext implements Managed<RaftContext> {
   }
 
   /**
-   * Returns member info for a specific member.
-   *
-   * @param id The id of the member for which to return member info.
-   * @return The Raft member.
-   */
-  RaftMember getRaftMember(int id) {
-    RaftMember member = members.get(id);
-    if (member == null) {
-      member = new RaftMember(id);
-      members.put(id, member);
-    }
-    return member;
-  }
-
-  /**
-   * Returns the full collection of Raft members.
-   *
-   * @return The full collection of Raft members.
-   */
-  Collection<RaftMember> getRaftMembers() {
-    return members.values();
-  }
-
-  /**
-   * Sets the set of members.
-   *
-   * @param members A collection of members to set.
-   * @return The Raft context.
-   */
-  RaftContext updateMembers(Collection<RaftMember> members) {
-    members.forEach(member -> {
-      RaftMember m = getRaftMember(member.id());
-      if (m != null) {
-        m.update(member);
-      } else {
-        this.members.put(member.id(), member);
-      }
-    });
-    return this;
-  }
-
-  /**
    * Sets the state leader.
    *
    * @param leader The state leader.
@@ -303,27 +256,6 @@ public class RaftContext implements Managed<RaftContext> {
   }
 
   /**
-   * Sets the state version.
-   *
-   * @param version The state version.
-   * @return The Raft context.
-   */
-  RaftContext setVersion(long version) {
-    this.version = Math.max(this.version, version);
-    getRaftMember(cluster.member().id()).version(this.version);
-    return this;
-  }
-
-  /**
-   * Returns the state version.
-   *
-   * @return The state version.
-   */
-  public long getVersion() {
-    return version;
-  }
-
-  /**
    * Sets the state last voted for candidate.
    *
    * @param candidate The candidate that was voted for.
@@ -381,7 +313,6 @@ public class RaftContext implements Managed<RaftContext> {
       }
     }
     this.commitIndex = commitIndex;
-    getRaftMember(cluster.member().id()).commitIndex(commitIndex);
     return this;
   }
 
@@ -406,7 +337,6 @@ public class RaftContext implements Managed<RaftContext> {
     if (globalIndex < this.globalIndex)
       throw new IllegalArgumentException("cannot decrease recycle index");
     this.globalIndex = globalIndex;
-    getRaftMember(cluster.member().id()).recycleIndex(globalIndex);
     return this;
   }
 
@@ -568,10 +498,14 @@ public class RaftContext implements Managed<RaftContext> {
       try {
         open = true;
         switch (cluster.member().type()) {
-          case MEMBER:
+          case CLIENT:
             transition(RemoteState.class);
             break;
-          case SEED:
+          case PASSIVE:
+            log.open();
+            transition(PassiveState.class);
+            break;
+          case ACTIVE:
             log.open();
             transition(FollowerState.class);
             break;
@@ -605,14 +539,16 @@ public class RaftContext implements Managed<RaftContext> {
       transition(StartState.class).whenComplete((result, error) -> {
         if (error == null) {
           try {
-            log.close();
+            if (log != null)
+              log.close();
             future.complete(null);
           } catch (Exception e) {
             future.completeExceptionally(e);
           }
         } else {
           try {
-            log.close();
+            if (log != null)
+              log.close();
             future.completeExceptionally(error);
           } catch (Exception e) {
             future.completeExceptionally(error);

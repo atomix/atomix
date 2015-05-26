@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.raft.rpc;
 
+import net.kuujo.copycat.cluster.MemberInfo;
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.util.ReferenceManager;
@@ -22,11 +23,11 @@ import net.kuujo.copycat.io.util.ReferenceManager;
 import java.util.Objects;
 
 /**
- * Protocol status request.
+ * Protocol demote request.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class StatusRequest extends AbstractRequest<StatusRequest> {
+public class DemoteRequest extends AbstractRequest<DemoteRequest> {
   private static final ThreadLocal<Builder> builder = new ThreadLocal<Builder>() {
     @Override
     protected Builder initialValue() {
@@ -35,100 +36,107 @@ public class StatusRequest extends AbstractRequest<StatusRequest> {
   };
 
   /**
-   * Returns a new status request builder.
+   * Returns a new demote request builder.
    *
-   * @return A new status request builder.
+   * @return A new demote request builder.
    */
   public static Builder builder() {
     return builder.get().reset();
   }
 
   /**
-   * Returns a status request builder for an existing request.
+   * Returns a demote request builder for an existing request.
    *
    * @param request The request to build.
-   * @return The status request builder.
+   * @return The demote request builder.
    */
-  public static Builder builder(StatusRequest request) {
+  public static Builder builder(DemoteRequest request) {
     return builder.get().reset(request);
   }
 
-  private int id;
+  private MemberInfo member;
 
-  public StatusRequest(ReferenceManager<StatusRequest> referenceManager) {
+  public DemoteRequest(ReferenceManager<DemoteRequest> referenceManager) {
     super(referenceManager);
   }
 
   @Override
   public Type type() {
-    return Type.STATUS;
+    return Type.DEMOTE;
   }
 
   /**
-   * Returns the requesting node's ID.
+   * Returns the requesting member's ID.
    *
-   * @return The requesting node's ID.
+   * @return The requesting member's ID.
    */
-  public int id() {
-    return id;
+  public MemberInfo member() {
+    return member;
   }
 
   @Override
   public void readObject(Buffer buffer, Serializer serializer) {
-    id = buffer.readInt();
+    member = serializer.readObject(buffer);
   }
 
   @Override
   public void writeObject(Buffer buffer, Serializer serializer) {
-    buffer.writeInt(id);
+    serializer.writeObject(member, buffer);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(id);
+    return Objects.hash(member);
   }
 
   @Override
   public boolean equals(Object object) {
-    if (object instanceof StatusRequest) {
-      StatusRequest request = (StatusRequest) object;
-      return request.id == id;
+    if (object instanceof DemoteRequest) {
+      DemoteRequest request = (DemoteRequest) object;
+      return request.member == member;
     }
     return false;
   }
 
   @Override
   public String toString() {
-    return String.format("%s[id=%d]", getClass().getSimpleName(), id);
+    return String.format("%s[member=%s]", getClass().getSimpleName(), member);
   }
 
   /**
-   * Status request builder.
+   * Demote request builder.
    */
-  public static class Builder extends AbstractRequest.Builder<Builder, StatusRequest> {
+  public static class Builder extends AbstractRequest.Builder<Builder, DemoteRequest> {
 
     private Builder() {
-      super(StatusRequest::new);
+      super(DemoteRequest::new);
+    }
+
+    @Override
+    Builder reset() {
+      super.reset();
+      request.member = null;
+      return this;
     }
 
     /**
-     * Sets the requesting node's ID.
+     * Sets the requesting node's info.
      *
-     * @param id The requesting node's ID.
-     * @return The status request builder.
+     * @param member The requesting node's info.
+     * @return The demote request builder.
      */
-    public Builder withId(int id) {
-      if (id <= 0)
-        throw new IllegalArgumentException("id must be positive");
-      request.id = id;
+    public Builder withMember(MemberInfo member) {
+      if (member == null)
+        throw new NullPointerException("member cannot be null");
+      request.member = member;
       return this;
     }
 
     @Override
-    public StatusRequest build() {
+    public DemoteRequest build() {
       super.build();
-      if (request.id <= 0)
-        throw new IllegalArgumentException("id must be positive");
+      if (request.member == null)
+        throw new NullPointerException("member cannot be null");
       return request;
     }
 
