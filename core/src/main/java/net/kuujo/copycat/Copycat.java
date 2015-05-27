@@ -24,10 +24,7 @@ import net.kuujo.copycat.resource.Resource;
 import net.kuujo.copycat.resource.ResourceException;
 import net.kuujo.copycat.resource.ResourceProtocol;
 import net.kuujo.copycat.resource.ResourceRegistry;
-import net.kuujo.copycat.resource.manager.CreatePath;
-import net.kuujo.copycat.resource.manager.CreateResource;
-import net.kuujo.copycat.resource.manager.DeletePath;
-import net.kuujo.copycat.resource.manager.PathExists;
+import net.kuujo.copycat.resource.manager.*;
 import net.kuujo.copycat.util.Managed;
 
 import java.lang.reflect.Constructor;
@@ -193,7 +190,7 @@ public class Copycat implements Managed<Copycat> {
    * Copycat builder.
    */
   public static class Builder implements net.kuujo.copycat.Builder<Copycat> {
-    private final Raft.Builder builder = Raft.builder();
+    private final Raft.Builder builder = Raft.builder().withTopic("copycat");
     private final List<String> resources = new ArrayList<>();
 
     private Builder() {
@@ -207,6 +204,17 @@ public class Copycat implements Managed<Copycat> {
      */
     public Builder withCluster(ManagedCluster cluster) {
       builder.withCluster(cluster);
+      return this;
+    }
+
+    /**
+     * Sets the Raft topic.
+     *
+     * @param topic The Raft topic.
+     * @return The Raft builder.
+     */
+    public Builder withTopic(String topic) {
+      builder.withTopic(topic);
       return this;
     }
 
@@ -336,7 +344,7 @@ public class Copycat implements Managed<Copycat> {
 
     @Override
     public Copycat build() {
-      return new Copycat(builder.build(), resources.toArray(new String[resources.size()]));
+      return new Copycat(builder.withStateMachine(new ResourceManager()).build(), resources.toArray(new String[resources.size()]));
     }
   }
 

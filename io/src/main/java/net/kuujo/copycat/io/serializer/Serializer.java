@@ -57,9 +57,9 @@ public class Serializer {
 
     String[] allPackages = new String[packages.length + 1];
     System.arraycopy(packages, 0, allPackages, 0, packages.length);
-    allPackages[allPackages.length] = COPYCAT_PACKAGE;
+    allPackages[packages.length] = COPYCAT_PACKAGE;
 
-    registerSerializers(packages);
+    registerSerializers(allPackages);
   }
 
   private Serializer(SerializerRegistry registry) {

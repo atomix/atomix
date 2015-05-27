@@ -33,8 +33,8 @@ public class ResourceRegistry {
   public ResourceRegistry(Object... resources) {
     Object[] allResources = new Object[resources.length + 1];
     System.arraycopy(resources, 0, allResources, 0, resources.length);
-    allResources[allResources.length] = COPYCAT_RESOURCES;
-    registerResources(resources);
+    allResources[resources.length] = COPYCAT_RESOURCES;
+    registerResources(allResources);
   }
 
   /**
