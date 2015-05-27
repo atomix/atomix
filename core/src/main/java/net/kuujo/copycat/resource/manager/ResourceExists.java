@@ -15,12 +15,24 @@
  */
 package net.kuujo.copycat.resource.manager;
 
+import net.kuujo.copycat.raft.Operation;
+import net.kuujo.copycat.raft.Query;
+
 /**
  * Resource exists command.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ResourceExists extends PathCommand {
+public class ResourceExists extends PathOperation<Boolean> implements Query<Boolean> {
+
+  /**
+   * Returns a new ResourceExists builder.
+   *
+   * @return A new ResourceExists command builder.
+   */
+  public static Builder builder() {
+    return Operation.builder(ResourceExists.Builder.class);
+  }
 
   public ResourceExists() {
   }
@@ -29,10 +41,15 @@ public class ResourceExists extends PathCommand {
     super(path);
   }
 
+  @Override
+  public Consistency consistency() {
+    return Consistency.LINEARIZABLE_STRICT;
+  }
+
   /**
    * Resource exists builder.
    */
-  public static class Builder extends PathCommand.Builder<Builder, ResourceExists> {
+  public static class Builder extends PathOperation.Builder<Builder, ResourceExists> {
     public Builder() {
       super(new ResourceExists());
     }

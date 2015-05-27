@@ -17,27 +17,28 @@ package net.kuujo.copycat.resource.manager;
 
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.resource.Command;
+import net.kuujo.copycat.io.serializer.Writable;
+import net.kuujo.copycat.raft.Operation;
 
 /**
- * Base getPath command.
+ * Base path operation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class PathCommand<T> extends Command<T> {
+public abstract class PathOperation<T> implements Operation<T>, Writable {
   protected String path;
 
-  protected PathCommand() {
+  protected PathOperation() {
   }
 
-  protected PathCommand(String path) {
+  protected PathOperation(String path) {
     this.path = path;
   }
 
   /**
-   * Returns the getPath.
+   * Returns the path.
    *
-   * @return The getPath.
+   * @return The path.
    */
   public String path() {
     return path;
@@ -45,13 +46,11 @@ public abstract class PathCommand<T> extends Command<T> {
 
   @Override
   public void writeObject(Buffer buffer, Serializer serializer) {
-    super.writeObject(buffer, serializer);
     buffer.writeInt(path.getBytes().length).write(path.getBytes());
   }
 
   @Override
   public void readObject(Buffer buffer, Serializer serializer) {
-    super.readObject(buffer, serializer);
     byte[] bytes = new byte[buffer.readInt()];
     buffer.read(bytes);
     path = new String(bytes);
@@ -60,9 +59,12 @@ public abstract class PathCommand<T> extends Command<T> {
   /**
    * Path command builder.
    */
-  public static abstract class Builder<T extends Builder<T, U>, U extends PathCommand<?>> extends Command.Builder<T, U> {
-    protected Builder(U command) {
-      super(command);
+  public static abstract class Builder<T extends Builder<T, U>, U extends PathOperation<?>> extends Operation.Builder<U> {
+    protected final U operation;
+
+    protected Builder(U operation) {
+      super(operation);
+      this.operation = operation;
     }
 
     /**
@@ -73,7 +75,7 @@ public abstract class PathCommand<T> extends Command<T> {
      */
     @SuppressWarnings("unchecked")
     public T withPath(String path) {
-      command.path = path;
+      operation.path = path;
       return (T) this;
     }
   }

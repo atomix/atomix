@@ -27,6 +27,7 @@ import net.kuujo.copycat.raft.storage.RaftStorage;
 import net.kuujo.copycat.util.ExecutionContext;
 import net.kuujo.copycat.util.Managed;
 import net.kuujo.copycat.util.ThreadChecker;
+import net.kuujo.copycat.util.concurrent.Futures;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -562,6 +563,19 @@ public class RaftContext implements Managed<RaftContext> {
   @Override
   public boolean isClosed() {
     return !open;
+  }
+
+  /**
+   * Deletes the context.
+   */
+  public CompletableFuture<Void> delete() {
+    if (open)
+      return Futures.exceptionalFuture(new IllegalStateException("cannot delete open context"));
+
+    return CompletableFuture.runAsync(() -> {
+      if (log != null)
+        log.delete();
+    }, context);
   }
 
   @Override

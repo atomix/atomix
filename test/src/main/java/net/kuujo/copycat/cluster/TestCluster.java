@@ -46,8 +46,8 @@ public class TestCluster extends ManagedCluster {
   }
 
   @Override
-  protected ManagedRemoteMember createRemoteMember(ManagedMember.Info info) {
-    return new TestRemoteMember((TestMember.Info) info, new ExecutionContext(String.format("copycat-cluster-%d", info.id()))).init(((TestLocalMember) localMember).serializer, registry);
+  protected ManagedRemoteMember createMember(MemberInfo info) {
+    return new TestRemoteMember((TestMember.Info) info, Member.Type.ACTIVE, new ExecutionContext(String.format("copycat-cluster-%d", info.id()))).init(((TestLocalMember) localMember).serializer, registry);
   }
 
   @Override
@@ -86,7 +86,7 @@ public class TestCluster extends ManagedCluster {
   /**
    * Raft test cluster builder.
    */
-  public static class Builder extends ManagedCluster.Builder<Builder, TestMember> {
+  public static class Builder extends ManagedCluster.Builder<Builder, TestRemoteMember> {
     private TestMemberRegistry registry;
     private String address;
 
@@ -123,12 +123,12 @@ public class TestCluster extends ManagedCluster {
       TestMember member = members.remove(memberId);
       TestMember.Info info;
       if (member != null) {
-        info = new TestMember.Info(memberId, Member.Type.ACTIVE, member.address());
+        info = new TestMember.Info(memberId, member.address());
       } else {
-        info = new TestMember.Info(memberId, memberType != null ? memberType : Member.Type.REMOTE, address);
+        info = new TestMember.Info(memberId, address);
       }
 
-      TestLocalMember localMember = new TestLocalMember(info, serializer != null ? serializer : new Serializer(), new ExecutionContext(String.format("copycat-cluster-%d", memberId)));
+      TestLocalMember localMember = new TestLocalMember(info, Member.Type.ACTIVE, serializer != null ? serializer : new Serializer(), new ExecutionContext(String.format("copycat-cluster-%d", memberId)));
       return new TestCluster(localMember, members.values().stream().map(m -> (TestRemoteMember) m).collect(Collectors.toList()), registry, serializer);
     }
   }

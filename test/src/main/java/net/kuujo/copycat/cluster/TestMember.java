@@ -17,6 +17,7 @@ package net.kuujo.copycat.cluster;
 
 import net.kuujo.copycat.ConfigurationException;
 import net.kuujo.copycat.io.Buffer;
+import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.util.ExecutionContext;
 
 /**
@@ -24,7 +25,7 @@ import net.kuujo.copycat.util.ExecutionContext;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface TestMember extends ManagedMember {
+public interface TestMember extends Member {
 
   /**
    * Returns a new test member builder.
@@ -45,26 +46,26 @@ public interface TestMember extends ManagedMember {
   /**
    * Netty member info.
    */
-  static class Info extends ManagedMember.Info {
+  static class Info extends MemberInfo {
     String address;
 
     public Info() {
     }
 
-    public Info(int id, Type type, String address) {
-      super(id, type);
+    public Info(int id, String address) {
+      super(id);
       this.address = address;
     }
 
     @Override
-    public void writeObject(Buffer buffer) {
-      super.writeObject(buffer);
+    public void writeObject(Buffer buffer, Serializer serializer) {
+      super.writeObject(buffer, serializer);
       buffer.writeInt(address.getBytes().length).write(address.getBytes());
     }
 
     @Override
-    public void readObject(Buffer buffer) {
-      super.readObject(buffer);
+    public void readObject(Buffer buffer, Serializer serializer) {
+      super.readObject(buffer, serializer);
       byte[] bytes = new byte[buffer.readInt()];
       buffer.read(bytes);
       address = new String(bytes);
@@ -74,7 +75,7 @@ public interface TestMember extends ManagedMember {
   /**
    * Raft test remote member builder.
    */
-  public static class Builder extends ManagedMember.Builder<Builder, TestMember> {
+  public static class Builder extends ManagedMember.Builder<Builder, TestRemoteMember> {
     private String address;
 
     /**
@@ -89,12 +90,12 @@ public interface TestMember extends ManagedMember {
     }
 
     @Override
-    public TestMember build() {
+    public TestRemoteMember build() {
       if (id <= 0)
         throw new ConfigurationException("member id must be greater than 0");
       if (address == null)
         throw new ConfigurationException("address cannot be null");
-      return new TestRemoteMember(new TestMember.Info(id, Type.ACTIVE, address), new ExecutionContext(String.format("copycat-cluster-%d", id)));
+      return new TestRemoteMember(new TestMember.Info(id, address), Type.ACTIVE, new ExecutionContext(String.format("copycat-cluster-%d", id)));
     }
   }
 

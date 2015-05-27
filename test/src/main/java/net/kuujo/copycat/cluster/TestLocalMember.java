@@ -35,8 +35,8 @@ public class TestLocalMember extends ManagedLocalMember implements TestMember {
   private final Map<String, HandlerHolder> handlers = new HashMap<>();
   private TestMemberRegistry registry;
 
-  TestLocalMember(TestMember.Info info, Serializer serializer, ExecutionContext context) {
-    super(info, context);
+  TestLocalMember(TestMember.Info info, Member.Type type, Serializer serializer, ExecutionContext context) {
+    super(info, type, context);
     this.serializer = serializer;
     this.info = info;
   }

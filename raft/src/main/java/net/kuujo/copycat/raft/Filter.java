@@ -25,7 +25,7 @@ import java.lang.annotation.Target;
 /**
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Target(ElementType.TYPE)
+@Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Filter {
 

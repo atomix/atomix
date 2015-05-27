@@ -16,6 +16,7 @@
 package net.kuujo.copycat.raft;
 
 import net.kuujo.copycat.ConfigurationException;
+import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ManagedCluster;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.raft.state.RaftContext;
@@ -32,7 +33,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class Raft implements Managed<Raft> {
+public class Raft implements Protocol, Managed<Raft> {
 
   /**
    * Returns a new Raft builder.
@@ -52,6 +53,15 @@ public class Raft implements Managed<Raft> {
     this.context = new RaftContext(log, stateMachine, cluster, topic, context)
       .setHeartbeatInterval(config.getHeartbeatInterval())
       .setElectionTimeout(config.getElectionTimeout());
+  }
+
+  /**
+   * Returns the Raft cluster.
+   *
+   * @return The Raft cluster.
+   */
+  public Cluster cluster() {
+    return context.getCluster();
   }
 
   /**
@@ -82,17 +92,25 @@ public class Raft implements Managed<Raft> {
     return context.getState();
   }
 
-  /**
-   * Submits an operation.
-   *
-   * @param operation The operation to submit.
-   * @param <R> The operation result type.
-   * @return A completable future to be completed with the operation result.
-   */
+  @Override
   public <R> CompletableFuture<R> submit(Operation<R> operation) {
     if (!open)
       throw new IllegalStateException("protocol not open");
     return context.submit(operation);
+  }
+
+  @Override
+  public <T> CompletableFuture<T> submit(Command<T> command) {
+    if (!open)
+      throw new IllegalStateException("protocol not open");
+    return context.submit(command);
+  }
+
+  @Override
+  public <T> CompletableFuture<T> submit(Query<T> query) {
+    if (!open)
+      throw new IllegalStateException("protocol not open");
+    return context.submit(query);
   }
 
   @Override
@@ -157,11 +175,16 @@ public class Raft implements Managed<Raft> {
     return !open;
   }
 
+  @Override
+  public CompletableFuture<Void> delete() {
+    return close().thenRun(context::delete);
+  }
+
   /**
    * Raft builder.
    */
   public static class Builder implements net.kuujo.copycat.Builder<Raft> {
-    private RaftStorage log;
+    private RaftStorage storage;
     private RaftConfig config = new RaftConfig();
     private StateMachine stateMachine;
     private ManagedCluster cluster;
@@ -171,11 +194,11 @@ public class Raft implements Managed<Raft> {
     /**
      * Sets the Raft log.
      *
-     * @param log The Raft log.
+     * @param storage The Raft log.
      * @return The Raft builder.
      */
-    public Builder withLog(RaftStorage log) {
-      this.log = log;
+    public Builder withStorage(RaftStorage storage) {
+      this.storage = storage;
       return this;
     }
 
@@ -275,7 +298,7 @@ public class Raft implements Managed<Raft> {
 
     @Override
     public Raft build() {
-      if (log == null)
+      if (storage == null)
         throw new ConfigurationException("log not configured");
       if (stateMachine == null)
         throw new ConfigurationException("state machine not configured");
@@ -283,7 +306,7 @@ public class Raft implements Managed<Raft> {
         throw new ConfigurationException("cluster not configured");
       if (topic == null)
         throw new ConfigurationException("topic not configured");
-      return new Raft(log, config, stateMachine, cluster, topic, context != null ? context : new ExecutionContext("copycat-" + topic));
+      return new Raft(storage, config, stateMachine, cluster, topic, context != null ? context : new ExecutionContext("copycat-" + topic));
     }
   }
 

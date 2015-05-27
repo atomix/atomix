@@ -15,32 +15,31 @@
  */
 package net.kuujo.copycat.collections;
 
-import net.kuujo.copycat.log.CommitLog;
-import net.kuujo.copycat.log.SharedCommitLog;
-import net.kuujo.copycat.resource.Command;
-import net.kuujo.copycat.resource.Resource;
+import net.kuujo.copycat.io.Buffer;
+import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.io.serializer.Writable;
+import net.kuujo.copycat.raft.*;
+import net.kuujo.copycat.raft.storage.compact.Compaction;
+import net.kuujo.copycat.resource.AbstractResource;
+import net.kuujo.copycat.resource.Stateful;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Asynchronous map.
  *
- * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
- *
  * @param <K> The map key type.
  * @param <V> The map entry type.
+ * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class AsyncMap<K, V> extends Resource<AsyncMap<K, V>> {
-  private final Map<K, V> map = new HashMap<>();
+@Stateful(AsyncMap.StateMachine.class)
+public class AsyncMap<K, V> extends AbstractResource {
 
-  public AsyncMap(String name, SharedCommitLog log) {
-    super(name, log);
-  }
-
-  public AsyncMap(CommitLog log) {
-    super(log);
+  public AsyncMap(Protocol protocol) {
+    super(protocol);
   }
 
   /**
@@ -50,12 +49,9 @@ public class AsyncMap<K, V> extends Resource<AsyncMap<K, V>> {
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Boolean> containsKey(Object key) {
-    return submit("containsKey", key);
-  }
-
-  @Command(value="containsKey", type=Command.Type.READ)
-  protected boolean applyContainsKey(Object key) {
-    return map.containsKey(key);
+    return submit(ContainsKey.builder()
+      .withKey(key)
+      .build());
   }
 
   /**
@@ -64,13 +60,28 @@ public class AsyncMap<K, V> extends Resource<AsyncMap<K, V>> {
    * @param key The key to get.
    * @return A completable future to be completed with the result once complete.
    */
+  @SuppressWarnings("unchecked")
   public CompletableFuture<V> get(Object key) {
-    return submit("get", key);
+    return submit(Get.builder()
+      .withKey(key)
+      .build())
+      .thenApply(result -> (V) result);
   }
 
-  @Command(value="get", type=Command.Type.READ)
-  protected V applyGet(K key) {
-    return map.get(key);
+  /**
+   * Puts a value in the map.
+   *
+   * @param key   The key to set.
+   * @param value The value to set.
+   * @return A completable future to be completed with the result once complete.
+   */
+  @SuppressWarnings("unchecked")
+  public CompletableFuture<V> put(K key, V value) {
+    return submit(Put.builder()
+      .withKey(key)
+      .withValue(value)
+      .build())
+      .thenApply(result -> (V) result);
   }
 
   /**
@@ -78,15 +89,36 @@ public class AsyncMap<K, V> extends Resource<AsyncMap<K, V>> {
    *
    * @param key The key to set.
    * @param value The value to set.
+   * @param ttl The time to live in milliseconds.
    * @return A completable future to be completed with the result once complete.
    */
-  public CompletableFuture<V> put(K key, V value) {
-    return submit("put", key, value);
+  @SuppressWarnings("unchecked")
+  public CompletableFuture<V> put(K key, V value, long ttl) {
+    return submit(Put.builder()
+      .withKey(key)
+      .withValue(value)
+      .withTtl(ttl)
+      .build())
+      .thenApply(result -> (V) result);
   }
 
-  @Command("put")
-  protected V applyPut(K key, V value) {
-    return map.put(key, value);
+  /**
+   * Puts a value in the map.
+   *
+   * @param key The key to set.
+   * @param value The value to set.
+   * @param ttl The time to live in milliseconds.
+   * @param unit The time to live unit.
+   * @return A completable future to be completed with the result once complete.
+   */
+  @SuppressWarnings("unchecked")
+  public CompletableFuture<V> put(K key, V value, long ttl, TimeUnit unit) {
+    return submit(Put.builder()
+      .withKey(key)
+      .withValue(value)
+      .withTtl(ttl, unit)
+      .build())
+      .thenApply(result -> (V) result);
   }
 
   /**
@@ -95,94 +127,596 @@ public class AsyncMap<K, V> extends Resource<AsyncMap<K, V>> {
    * @param key The key to remove.
    * @return A completable future to be completed with the result once complete.
    */
+  @SuppressWarnings("unchecked")
   public CompletableFuture<V> remove(Object key) {
-    return submit("remove", key);
-  }
-
-  @Command(value="remove", type=Command.Type.DELETE)
-  protected V applyRemove(K key) {
-    return map.remove(key);
+    return submit(Remove.builder()
+      .withKey(key)
+      .build())
+      .thenApply(result -> (V) result);
   }
 
   /**
    * Gets the value of a key or the given default value if the key does not exist.
    *
-   * @param key The key to get.
+   * @param key          The key to get.
    * @param defaultValue The default value to return if the key does not exist.
    * @return A completable future to be completed with the result once complete.
    */
+  @SuppressWarnings("unchecked")
   public CompletableFuture<V> getOrDefault(Object key, V defaultValue) {
-    return submit("getOrDefault", key, defaultValue);
-  }
-
-  @Command(value="getOrDefault", type=Command.Type.READ)
-  protected V applyGetOrDefault(Object key, V value) {
-    return map.getOrDefault(key, value);
+    return submit(GetOrDefault.builder()
+      .withKey(key)
+      .withDefaultValue(defaultValue)
+      .build())
+      .thenApply(result -> (V) result);
   }
 
   /**
    * Puts a value in the map if the given key does not exist.
    *
-   * @param key The key to set.
+   * @param key   The key to set.
    * @param value The value to set if the given key does not exist.
    * @return A completable future to be completed with the result once complete.
    */
+  @SuppressWarnings("unchecked")
   public CompletableFuture<V> putIfAbsent(K key, V value) {
-    return submit("putIfAbsent", key, value);
-  }
-
-  @Command("putIfAbsent")
-  protected V applyPutIfAbsent(K key, V value) {
-    return map.putIfAbsent(key, value);
+    return submit(PutIfAbsent.builder()
+      .withKey(key)
+      .withValue(value)
+      .build())
+      .thenApply(result -> (V) result);
   }
 
   /**
    * Removes a key and value from the map.
    *
-   * @param key The key to remove.
+   * @param key   The key to remove.
    * @param value The value to remove.
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Boolean> remove(Object key, Object value) {
-    return submit("removeKeyValue", key, value);
-  }
-
-  @Command(value="removeKeyValue", type=Command.Type.DELETE)
-  protected boolean applyRemove(K key, V value) {
-    return map.remove(key, value);
-  }
-
-  /**
-   * Replaces a key and value in the map.
-   *
-   * @param key The key to replace.
-   * @param oldValue The value to replace.
-   * @param newValue The value with which to replace the given key and value.
-   * @return A completable future to be completed with the result once complete.
-   */
-  public CompletableFuture<Boolean> replace(K key, V oldValue, V newValue) {
-    return submit("replace", key, oldValue, newValue);
-  }
-
-  @Command("replace")
-  protected boolean applyReplace(K key, V oldValue, V newValue) {
-    return map.replace(key, oldValue, newValue);
+    return submit(Remove.builder()
+      .withKey(key)
+      .withValue(value)
+      .build())
+      .thenApply(result -> (boolean) result);
   }
 
   /**
-   * Replaces a key with the given value.
+   * Removes all entries from the map.
    *
-   * @param key The key to replace.
-   * @param value The value with which to replace the given key.
-   * @return A completable future to be completed with the result once complete.
+   * @return A completable future to be completed once the operation is complete.
    */
-  public CompletableFuture<V> replace(K key, V value) {
-    return submit("replaceKeyValue", key, value);
+  public CompletableFuture<Void> clear() {
+    return submit(Clear.builder().build());
   }
 
-  @Command("replaceKeyValue")
-  protected V applyReplace(K key, V value) {
-    return map.replace(key, value);
+  /**
+   * Abstract map command.
+   */
+  public static abstract class MapCommand<V> implements Command<V>, Writable {
+
+    /**
+     * Base map command builder.
+     */
+    public static abstract class Builder<T extends Builder<T, U>, U extends MapCommand<?>> extends Command.Builder<T, U> {
+      protected Builder(U command) {
+        super(command);
+      }
+    }
+  }
+
+  /**
+   * Abstract map query.
+   */
+  public static abstract class MapQuery<V> implements Query<V>, Writable {
+
+    /**
+     * Base map query builder.
+     */
+    public static abstract class Builder<T extends Builder<T, U>, U extends MapQuery<?>> extends Query.Builder<T, U> {
+      protected Builder(U query) {
+        super(query);
+      }
+    }
+  }
+
+  /**
+   * Abstract key-based command.
+   */
+  public static abstract class KeyCommand<V> extends MapCommand<V> {
+    protected Object key;
+
+    /**
+     * Returns the key.
+     */
+    public Object key() {
+      return key;
+    }
+
+    @Override
+    public void writeObject(Buffer buffer, Serializer serializer) {
+      serializer.writeObject(key, buffer);
+    }
+
+    @Override
+    public void readObject(Buffer buffer, Serializer serializer) {
+      key = serializer.readObject(buffer);
+    }
+
+    /**
+     * Base key command builder.
+     */
+    public static abstract class Builder<T extends Builder<T, U>, U extends KeyCommand<?>> extends MapCommand.Builder<T, U> {
+      protected Builder(U command) {
+        super(command);
+      }
+
+      /**
+       * Sets the command key.
+       *
+       * @param key The command key
+       * @return The command builder.
+       */
+      @SuppressWarnings("unchecked")
+      public T withKey(Object key) {
+        command.key = key;
+        return (T) this;
+      }
+    }
+  }
+
+  /**
+   * Abstract key-based query.
+   */
+  public static abstract class KeyQuery<V> extends MapQuery<V> {
+    protected Object key;
+
+    /**
+     * Returns the key.
+     */
+    public Object key() {
+      return key;
+    }
+
+    @Override
+    public void writeObject(Buffer buffer, Serializer serializer) {
+      serializer.writeObject(key, buffer);
+    }
+
+    @Override
+    public void readObject(Buffer buffer, Serializer serializer) {
+      key = serializer.readObject(buffer);
+    }
+
+    /**
+     * Base key query builder.
+     */
+    public static abstract class Builder<T extends Builder<T, U>, U extends KeyQuery<?>> extends MapQuery.Builder<T, U> {
+      protected Builder(U query) {
+        super(query);
+      }
+
+      /**
+       * Sets the query key.
+       *
+       * @param key The query key
+       * @return The query builder.
+       */
+      @SuppressWarnings("unchecked")
+      public T withKey(Object key) {
+        query.key = key;
+        return (T) this;
+      }
+    }
+  }
+
+  /**
+   * Contains key command.
+   */
+  public static class ContainsKey extends KeyQuery<Boolean> {
+
+    /**
+     * Returns a builder for this command.
+     */
+    public static Builder builder() {
+      return Operation.builder(Builder.class);
+    }
+
+    @Override
+    public Consistency consistency() {
+      return Consistency.LINEARIZABLE_LEASE;
+    }
+
+    /**
+     * Contains key builder.
+     */
+    public static class Builder extends KeyQuery.Builder<Builder, ContainsKey> {
+      public Builder() {
+        super(new ContainsKey());
+      }
+    }
+  }
+
+  /**
+   * Key/value command.
+   */
+  public static class KeyValueCommand<V> extends KeyCommand<V> {
+    protected Object value;
+
+    /**
+     * Returns the command value.
+     */
+    public Object value() {
+      return value;
+    }
+
+    @Override
+    public void writeObject(Buffer buffer, Serializer serializer) {
+      super.writeObject(buffer, serializer);
+      serializer.writeObject(value, buffer);
+    }
+
+    @Override
+    public void readObject(Buffer buffer, Serializer serializer) {
+      super.readObject(buffer, serializer);
+      value = serializer.readObject(buffer);
+    }
+
+    /**
+     * Key/value command builder.
+     */
+    public static abstract class Builder<T extends Builder<T, U>, U extends KeyValueCommand<?>> extends KeyCommand.Builder<T, U> {
+      protected Builder(U command) {
+        super(command);
+      }
+
+      /**
+       * Sets the command value.
+       *
+       * @param value The command value.
+       * @return The command builder.
+       */
+      @SuppressWarnings("unchecked")
+      public T withValue(Object value) {
+        command.value = value;
+        return (T) this;
+      }
+    }
+  }
+
+  /**
+   * TTL command.
+   */
+  public static abstract class TtlCommand<V> extends KeyValueCommand<V> {
+    protected long ttl;
+
+    /**
+     * Returns the time to live in milliseconds.
+     *
+     * @return The time to live in milliseconds.
+     */
+    public long ttl() {
+      return ttl;
+    }
+
+    @Override
+    public void writeObject(Buffer buffer, Serializer serializer) {
+      super.writeObject(buffer, serializer);
+      buffer.writeLong(ttl);
+    }
+
+    @Override
+    public void readObject(Buffer buffer, Serializer serializer) {
+      super.readObject(buffer, serializer);
+      ttl = buffer.readLong();
+    }
+
+    /**
+     * TTL command builder.
+     */
+    public static class Builder<T extends Builder<T, U>, U extends TtlCommand<?>> extends KeyValueCommand.Builder<T, U> {
+      protected Builder(U command) {
+        super(command);
+      }
+
+      /**
+       * Sets the time to live.
+       *
+       * @param ttl The time to live in milliseconds..
+       * @return The command builder.
+       */
+      public Builder withTtl(long ttl) {
+        command.ttl = ttl;
+        return this;
+      }
+
+      /**
+       * Sets the time to live.
+       *
+       * @param ttl The time to live.
+       * @param unit The time to live unit.
+       * @return The command builder.
+       */
+      public Builder withTtl(long ttl, TimeUnit unit) {
+        command.ttl = unit.toMillis(ttl);
+        return this;
+      }
+    }
+  }
+
+  /**
+   * Put command.
+   */
+  public static class Put extends TtlCommand<Object> {
+
+    /**
+     * Returns a builder for this command.
+     */
+    public static Builder builder() {
+      return Operation.builder(Builder.class);
+    }
+
+    /**
+     * Put command builder.
+     */
+    public static class Builder extends TtlCommand.Builder<Builder, Put> {
+      public Builder() {
+        super(new Put());
+      }
+    }
+  }
+
+  /**
+   * Put if absent command.
+   */
+  public static class PutIfAbsent extends TtlCommand<Object> {
+
+    /**
+     * Returns a builder for this command.
+     */
+    public static Builder builder() {
+      return Operation.builder(Builder.class);
+    }
+
+    /**
+     * Put command builder.
+     */
+    public static class Builder extends TtlCommand.Builder<Builder, PutIfAbsent> {
+      public Builder() {
+        super(new PutIfAbsent());
+      }
+    }
+  }
+
+  /**
+   * Get query.
+   */
+  public static class Get extends KeyQuery<Object> {
+
+    /**
+     * Returns a builder for this query.
+     */
+    public static Builder builder() {
+      return Operation.builder(Builder.class);
+    }
+
+    @Override
+    public Consistency consistency() {
+      return Consistency.LINEARIZABLE_LEASE;
+    }
+
+    /**
+     * Get query builder.
+     */
+    public static class Builder extends KeyQuery.Builder<Builder, Get> {
+      public Builder() {
+        super(new Get());
+      }
+    }
+  }
+
+  /**
+   * Get or default query.
+   */
+  public static class GetOrDefault extends KeyQuery<Object> {
+
+    /**
+     * Returns a builder for this query.
+     */
+    public static Builder builder() {
+      return Operation.builder(Builder.class);
+    }
+
+    private Object defaultValue;
+
+    /**
+     * Returns the default value.
+     *
+     * @return The default value.
+     */
+    public Object defaultValue() {
+      return defaultValue;
+    }
+
+    @Override
+    public Consistency consistency() {
+      return Consistency.LINEARIZABLE_LEASE;
+    }
+
+    @Override
+    public void readObject(Buffer buffer, Serializer serializer) {
+      super.readObject(buffer, serializer);
+      defaultValue = serializer.readObject(buffer);
+    }
+
+    @Override
+    public void writeObject(Buffer buffer, Serializer serializer) {
+      super.writeObject(buffer, serializer);
+      serializer.writeObject(defaultValue, buffer);
+    }
+
+    /**
+     * Get command builder.
+     */
+    public static class Builder extends KeyQuery.Builder<Builder, GetOrDefault> {
+      public Builder() {
+        super(new GetOrDefault());
+      }
+
+      /**
+       * Sets the default value.
+       *
+       * @param defaultValue The default value.
+       * @return The query builder.
+       */
+      public Builder withDefaultValue(Object defaultValue) {
+        query.defaultValue = defaultValue;
+        return this;
+      }
+    }
+  }
+
+  /**
+   * Remove command.
+   */
+  public static class Remove extends KeyValueCommand<Object> {
+
+    /**
+     * Returns a builder for this command.
+     */
+    public static Builder builder() {
+      return Operation.builder(Builder.class);
+    }
+
+    /**
+     * Get command builder.
+     */
+    public static class Builder extends KeyValueCommand.Builder<Builder, Remove> {
+      public Builder() {
+        super(new Remove());
+      }
+    }
+  }
+
+  /**
+   * Clear command.
+   */
+  public static class Clear extends MapCommand<Void> {
+
+    /**
+     * Returns a builder for this command.
+     */
+    public static Builder builder() {
+      return Operation.builder(Builder.class);
+    }
+
+    @Override
+    public void writeObject(Buffer buffer, Serializer serializer) {
+
+    }
+
+    @Override
+    public void readObject(Buffer buffer, Serializer serializer) {
+
+    }
+
+    /**
+     * Get command builder.
+     */
+    public static class Builder extends MapCommand.Builder<Builder, Clear> {
+      public Builder() {
+        super(new Clear());
+      }
+    }
+  }
+
+  /**
+   * Map state machine.
+   */
+  public static class StateMachine extends net.kuujo.copycat.raft.StateMachine {
+    private final Map<Object, Commit<? extends TtlCommand>> map = new HashMap<>();
+
+    /**
+     * Handles a contains key commit.
+     */
+    @Apply(ContainsKey.class)
+    protected boolean containsKey(Commit<ContainsKey> commit) {
+      return map.containsKey(commit.operation().key());
+    }
+
+    /**
+     * Handles a get commit.
+     */
+    @Apply(Get.class)
+    protected Object get(Commit<Get> commit) {
+      Commit<? extends TtlCommand> command = map.get(commit.operation().key());
+      return command != null ? command.operation().value() : null;
+    }
+
+    /**
+     * Handles a get or default commit.
+     */
+    @Apply(GetOrDefault.class)
+    protected Object getOrDefault(Commit<GetOrDefault> commit) {
+      Commit<? extends TtlCommand> command = map.get(commit.operation().key());
+      return command != null ? command.operation().value() : commit.operation().defaultValue();
+    }
+
+    /**
+     * Handles a put commit.
+     */
+    @Apply(Put.class)
+    protected Object put(Commit<Put> commit) {
+      return map.put(commit.operation().key(), commit);
+    }
+
+    /**
+     * Handles a put if absent commit.
+     */
+    @Apply(PutIfAbsent.class)
+    protected Object putIfAbsent(Commit<PutIfAbsent> commit) {
+      return map.putIfAbsent(commit.operation().key(), commit);
+    }
+
+    /**
+     * Filters a put and put if absent commit.
+     */
+    @Filter({Put.class, PutIfAbsent.class})
+    protected boolean filterPut(Commit<? extends TtlCommand> commit) {
+      Commit<? extends TtlCommand> command = map.get(commit.operation().key());
+      return command != null && command.index() == commit.index() && (command.operation().ttl() == 0 || command.operation().ttl() > System.currentTimeMillis() - command.timestamp());
+    }
+
+    /**
+     * Handles a remove commit.
+     */
+    @Apply(Remove.class)
+    protected Object remove(Commit<Remove> commit) {
+      if (commit.operation().value() != null) {
+        Commit<? extends TtlCommand> command = map.get(commit.operation().key());
+        return command != null && command.operation().value().equals(commit.operation().value()) ? command.operation().value() : null;
+      } else {
+        Commit<? extends TtlCommand> command =  map.remove(commit.operation().key());
+        return command != null ? command.operation().value() : null;
+      }
+    }
+
+    /**
+     * Filters a remove commit.
+     */
+    @Filter(value={Remove.class, Clear.class}, compaction=Compaction.Type.MAJOR)
+    protected boolean filterRemove(Commit<?> commit, Compaction compaction) {
+      return commit.index() > compaction.index();
+    }
+
+    /**
+     * Handles a clear commit.
+     */
+    @Apply(Clear.class)
+    protected void clear(Commit<Clear> commit) {
+      map.clear();
+    }
   }
 
 }

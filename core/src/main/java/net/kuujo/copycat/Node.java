@@ -15,8 +15,6 @@
  */
 package net.kuujo.copycat;
 
-import net.kuujo.copycat.protocol.Consistency;
-import net.kuujo.copycat.protocol.Persistence;
 import net.kuujo.copycat.resource.Resource;
 import net.kuujo.copycat.resource.manager.PathChildren;
 
@@ -73,10 +71,8 @@ public class Node {
    * @return A list of children for this node.
    */
   public CompletableFuture<List<Node>> children() {
-    return copycat.log.submit(PathChildren.builder(PathChildren.Builder.class)
+    return copycat.raft.submit(PathChildren.builder()
       .withPath(path)
-      .withPersistence(Persistence.NONE)
-      .withConsistency(Consistency.LEASE)
       .build())
       .thenApply(children -> {
         return children.stream()
@@ -130,7 +126,7 @@ public class Node {
    * @param <T> The resource type.
    * @return A completable future to be completed with the resource instance.
    */
-  public <T extends Resource<?>> CompletableFuture<T> create(Class<T> type) {
+  public <T extends Resource> CompletableFuture<T> create(Class<T> type) {
     return copycat.create(path, type);
   }
 
@@ -141,7 +137,7 @@ public class Node {
    * @param <T> The resource type.
    * @return A completable future to be completed with the resource instance.
    */
-  public <T extends Resource<?>> CompletableFuture<T> get(Class<T> type) {
+  public <T extends Resource> CompletableFuture<T> get(Class<T> type) {
     return copycat.create(path, type);
   }
 

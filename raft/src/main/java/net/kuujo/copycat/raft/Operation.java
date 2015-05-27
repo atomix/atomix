@@ -33,7 +33,7 @@ public interface Operation<T> extends Serializable {
    * @return The builder.
    */
   @SuppressWarnings("unchecked")
-  static <T extends Builder<U>, U extends Operation<?>> T builder(Class<T> type) {
+  static <T extends Builder> T builder(Class<T> type) {
     return (T) Builder.BUILDERS.get().computeIfAbsent(type, t -> {
       try {
         return type.newInstance();

@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.resource;
 
+import net.kuujo.copycat.raft.StateMachine;
 import org.reflections.Reflections;
 
 import java.util.HashMap;
@@ -58,7 +59,7 @@ public class ResourceRegistry {
    * @return The resource registry.
    */
   @SuppressWarnings("unchecked")
-  public <T extends Resource<?>> ResourceRegistry register(Class<T> resourceType) {
+  public <T extends Resource> ResourceRegistry register(Class<T> resourceType) {
     Stateful stateful = resourceType.getAnnotation(Stateful.class);
     if (stateful != null) {
       register(resourceType, stateful.value());

@@ -33,8 +33,8 @@ public class TestRemoteMember extends ManagedRemoteMember implements TestMember 
   private TestMemberRegistry registry;
   private boolean partitioned;
 
-  TestRemoteMember(TestMember.Info info, ExecutionContext context) {
-    super(info, context);
+  TestRemoteMember(TestMember.Info info, Member.Type type, ExecutionContext context) {
+    super(info, type, context);
     this.info = info;
   }
 

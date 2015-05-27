@@ -15,12 +15,24 @@
  */
 package net.kuujo.copycat.resource.manager;
 
+import net.kuujo.copycat.raft.Command;
+import net.kuujo.copycat.raft.Operation;
+
 /**
  * Create getPath command.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class CreatePath extends PathCommand<Boolean> {
+public class CreatePath extends PathOperation<Boolean> implements Command<Boolean> {
+
+  /**
+   * Returns a new CreatePath builder.
+   *
+   * @return A new CreatePath command builder.
+   */
+  public static Builder builder() {
+    return Operation.builder(CreatePath.Builder.class);
+  }
 
   public CreatePath() {
   }
@@ -32,7 +44,7 @@ public class CreatePath extends PathCommand<Boolean> {
   /**
    * Create path builder.
    */
-  public static class Builder extends PathCommand.Builder<Builder, CreatePath> {
+  public static class Builder extends PathOperation.Builder<Builder, CreatePath> {
     public Builder() {
       super(new CreatePath());
     }

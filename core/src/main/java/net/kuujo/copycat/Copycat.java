@@ -16,19 +16,26 @@
 package net.kuujo.copycat;
 
 import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.protocol.Consistency;
-import net.kuujo.copycat.protocol.Persistence;
-import net.kuujo.copycat.protocol.Protocol;
-import net.kuujo.copycat.resource.*;
-import net.kuujo.copycat.resource.manager.*;
+import net.kuujo.copycat.cluster.ManagedCluster;
+import net.kuujo.copycat.raft.Protocol;
+import net.kuujo.copycat.raft.Raft;
+import net.kuujo.copycat.raft.storage.RaftStorage;
+import net.kuujo.copycat.resource.Resource;
+import net.kuujo.copycat.resource.ResourceException;
+import net.kuujo.copycat.resource.ResourceProtocol;
+import net.kuujo.copycat.resource.ResourceRegistry;
+import net.kuujo.copycat.resource.manager.CreatePath;
+import net.kuujo.copycat.resource.manager.CreateResource;
+import net.kuujo.copycat.resource.manager.DeletePath;
+import net.kuujo.copycat.resource.manager.PathExists;
 import net.kuujo.copycat.util.Managed;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Proxy;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Copycat.
@@ -36,18 +43,24 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class Copycat implements Managed<Copycat> {
+
+  /**
+   * Returns a new Copycat builder.
+   *
+   * @return A new Copycat builder.
+   */
+  public static Builder builder() {
+    return new Builder();
+  }
+
   static final String PATH_SEPARATOR = "/";
-  protected final CommitLog log;
+  protected final Raft raft;
   private final Map<String, Node> nodes = new ConcurrentHashMap<>();
   private final ResourceRegistry registry;
   private final ResourceFactory factory = new ResourceFactory();
 
-  public Copycat(Protocol protocol, Object... resources) {
-    this(new SystemLog(new ResourceManager(), protocol), resources);
-  }
-
-  private Copycat(CommitLog log, Object... resources) {
-    this.log = log;
+  private Copycat(Raft raft, Object... resources) {
+    this.raft = raft;
     this.registry = new ResourceRegistry(resources);
   }
 
@@ -57,7 +70,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The Copycat cluster.
    */
   public Cluster cluster() {
-    return log.cluster();
+    return raft.cluster();
   }
 
   /**
@@ -83,7 +96,7 @@ public class Copycat implements Managed<Copycat> {
    * @return A completable future indicating whether the given getPath exists.
    */
   public CompletableFuture<Boolean> exists(String path) {
-    return log.submit(new PathExists(path));
+    return raft.submit(new PathExists(path));
   }
 
   /**
@@ -93,10 +106,8 @@ public class Copycat implements Managed<Copycat> {
    * @return A completable future to be completed once the node has been created.
    */
   public CompletableFuture<Node> create(String path) {
-    return log.submit(CreatePath.builder(CreatePath.Builder.class)
+    return raft.submit(CreatePath.builder()
       .withPath(path)
-      .withPersistence(Persistence.PERSISTENT)
-      .withConsistency(Consistency.STRICT)
       .build())
       .thenApply(result -> node(path));
   }
@@ -109,11 +120,9 @@ public class Copycat implements Managed<Copycat> {
    * @param <T> The resource type.
    * @return A completable future to be completed once the resource has been created.
    */
-  public <T extends Resource<?>> CompletableFuture<T> create(String path, Class<T> type) {
-    return log.submit(CreateResource.builder(CreateResource.Builder.class)
+  public <T extends Resource> CompletableFuture<T> create(String path, Class<T> type) {
+    return raft.submit(CreateResource.builder()
       .withPath(path)
-      .withPersistence(Persistence.PERSISTENT)
-      .withConsistency(Consistency.STRICT)
       .withType(registry.lookup(type))
       .build())
       .thenApply(id -> factory.createResource(type, id));
@@ -126,7 +135,7 @@ public class Copycat implements Managed<Copycat> {
    * @return A completable future to be completed once the node has been deleted.
    */
   public CompletableFuture<Copycat> delete(String path) {
-    return log.submit(DeletePath.builder(DeletePath.Builder.class)
+    return raft.submit(DeletePath.builder()
       .withPath(path)
       .build())
       .thenApply(result -> this);
@@ -134,22 +143,22 @@ public class Copycat implements Managed<Copycat> {
 
   @Override
   public CompletableFuture<Copycat> open() {
-    return log.open().thenApply(l -> this);
+    return raft.open().thenApply(l -> this);
   }
 
   @Override
   public boolean isOpen() {
-    return log.isOpen();
+    return raft.isOpen();
   }
 
   @Override
   public CompletableFuture<Void> close() {
-    return log.close();
+    return raft.close();
   }
 
   @Override
   public boolean isClosed() {
-    return log.isClosed();
+    return raft.isClosed();
   }
 
   /**
@@ -162,33 +171,172 @@ public class Copycat implements Managed<Copycat> {
     /**
      * Creates a new resource.
      */
-    private <T extends Resource<?>> T createResource(Class<T> type, long id) {
-      if (type.isInterface()) {
-        return createResourceProxy(type, id);
-      } else {
-        return createResourceObject(type, id);
-      }
+    private <T extends Resource> T createResource(Class<T> type, long id) {
+      return createResourceObject(type, id);
     }
 
     /**
      * Creates a resource object.
      */
     @SuppressWarnings("unchecked")
-    private <T extends Resource<?>> T createResourceObject(Class<T> type, long id) {
+    private <T extends Resource> T createResourceObject(Class<T> type, long id) {
       try {
-        Constructor constructor = type.getConstructor(CommitLog.class);
-        return (T) constructor.newInstance(new ResourceLog(id, log));
+        Constructor constructor = type.getConstructor(Protocol.class);
+        return (T) constructor.newInstance(new ResourceProtocol(id, raft));
       } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
         throw new ResourceException("failed to instantiate resource: " + type, e);
       }
     }
+  }
+
+  /**
+   * Copycat builder.
+   */
+  public static class Builder implements net.kuujo.copycat.Builder<Copycat> {
+    private final Raft.Builder builder = Raft.builder();
+    private final List<String> resources = new ArrayList<>();
+
+    private Builder() {
+    }
 
     /**
-     * Creates a resource proxy.
+     * Sets the Raft cluster.
+     *
+     * @param cluster The Raft cluster.
+     * @return The Raft builder.
      */
-    @SuppressWarnings("unchecked")
-    private <T extends Resource<?>> T createResourceProxy(Class<T> type, long id) {
-      return (T) Proxy.newProxyInstance(getClass().getClassLoader(), new Class[]{type}, new ResourceProxy(type, new ResourceLog(id, log)));
+    public Builder withCluster(ManagedCluster cluster) {
+      builder.withCluster(cluster);
+      return this;
+    }
+
+    /**
+     * Sets the Raft log.
+     *
+     * @param storage The Raft log.
+     * @return The Raft builder.
+     */
+    public Builder withStorage(RaftStorage storage) {
+      builder.withStorage(storage);
+      return this;
+    }
+
+    /**
+     * Sets the Raft election timeout, returning the Raft configuration for method chaining.
+     *
+     * @param electionTimeout The Raft election timeout in milliseconds.
+     * @return The Raft configuration.
+     * @throws IllegalArgumentException If the election timeout is not positive
+     */
+    public Builder withElectionTimeout(long electionTimeout) {
+      builder.withElectionTimeout(electionTimeout);
+      return this;
+    }
+
+    /**
+     * Sets the Raft election timeout, returning the Raft configuration for method chaining.
+     *
+     * @param electionTimeout The Raft election timeout.
+     * @param unit The timeout unit.
+     * @return The Raft configuration.
+     * @throws IllegalArgumentException If the election timeout is not positive
+     */
+    public Builder withElectionTimeout(long electionTimeout, TimeUnit unit) {
+      builder.withElectionTimeout(electionTimeout, unit);
+      return this;
+    }
+
+    /**
+     * Sets the Raft heartbeat interval, returning the Raft configuration for method chaining.
+     *
+     * @param heartbeatInterval The Raft heartbeat interval in milliseconds.
+     * @return The Raft configuration.
+     * @throws IllegalArgumentException If the heartbeat interval is not positive
+     */
+    public Builder withHeartbeatInterval(long heartbeatInterval) {
+      builder.withHeartbeatInterval(heartbeatInterval);
+      return this;
+    }
+
+    /**
+     * Sets the Raft heartbeat interval, returning the Raft configuration for method chaining.
+     *
+     * @param heartbeatInterval The Raft heartbeat interval.
+     * @param unit The heartbeat interval unit.
+     * @return The Raft configuration.
+     * @throws IllegalArgumentException If the heartbeat interval is not positive
+     */
+    public Builder withHeartbeatInterval(long heartbeatInterval, TimeUnit unit) {
+      builder.withHeartbeatInterval(heartbeatInterval, unit);
+      return this;
+    }
+
+    /**
+     * Sets the Copycat resources.
+     *
+     * @param resources A collection of resources.
+     * @return The Copycat builder.
+     */
+    public Builder withResources(String... resources) {
+      this.resources.clear();
+      if (resources != null) {
+        this.resources.addAll(Arrays.asList(resources));
+      }
+      return this;
+    }
+
+    /**
+     * Sets the Copycat resources.
+     *
+     * @param resources A collection of resources.
+     * @return The Copycat builder.
+     */
+    public Builder withResources(Collection<String> resources) {
+      this.resources.clear();
+      if (resources != null) {
+        this.resources.addAll(resources);
+      }
+      return this;
+    }
+
+    /**
+     * Adds a collection of resources.
+     *
+     * @param resources A collection of resources.
+     * @return The Copycat builder.
+     */
+    public Builder addResources(String... resources) {
+      if (resources != null) {
+        return addResources(Arrays.asList(resources));
+      }
+      return this;
+    }
+
+    /**
+     * Adds a collection of resources.
+     *
+     * @param resources A collection of resources.
+     * @return The Copycat builder.
+     */
+    public Builder addResources(Collection<String> resources) {
+      this.resources.addAll(resources);
+      return this;
+    }
+
+    /**
+     * Adds a resource.
+     *
+     * @param resource The resource to add.
+     * @return The Copycat builder.
+     */
+    public Builder addResource(String resource) {
+      resources.add(resource);
+      return this;
+    }
+
+    @Override
+    public Copycat build() {
+      return new Copycat(builder.build(), resources.toArray(new String[resources.size()]));
     }
   }
 

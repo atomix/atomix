@@ -18,14 +18,26 @@ package net.kuujo.copycat.resource.manager;
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.serializer.SerializationException;
 import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.resource.StateMachine;
+import net.kuujo.copycat.raft.Command;
+import net.kuujo.copycat.raft.Operation;
+import net.kuujo.copycat.raft.StateMachine;
 
 /**
  * Create resource command.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class CreateResource extends PathCommand<Long> {
+public class CreateResource extends PathOperation<Long> implements Command<Long> {
+
+  /**
+   * Returns a new CreateResource builder.
+   *
+   * @return A new CreateResource command builder.
+   */
+  public static Builder builder() {
+    return Operation.builder(CreateResource.Builder.class);
+  }
+
   private Class<? extends StateMachine> type;
 
   public CreateResource() {
@@ -68,7 +80,7 @@ public class CreateResource extends PathCommand<Long> {
   /**
    * Create resource builder.
    */
-  public static class Builder extends PathCommand.Builder<Builder, CreateResource> {
+  public static class Builder extends PathOperation.Builder<Builder, CreateResource> {
     public Builder() {
       super(new CreateResource());
     }
@@ -80,7 +92,7 @@ public class CreateResource extends PathCommand<Long> {
      * @return The command builder.
      */
     public Builder withType(Class<? extends StateMachine> type) {
-      command.type = type;
+      operation.type = type;
       return this;
     }
   }

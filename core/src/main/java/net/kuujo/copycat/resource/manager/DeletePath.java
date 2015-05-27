@@ -15,12 +15,24 @@
  */
 package net.kuujo.copycat.resource.manager;
 
+import net.kuujo.copycat.raft.Command;
+import net.kuujo.copycat.raft.Operation;
+
 /**
  * Delete getPath command.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DeletePath extends PathCommand<Boolean> {
+public class DeletePath extends PathOperation<Boolean> implements Command<Boolean> {
+
+  /**
+   * Returns a new DeletePath builder.
+   *
+   * @return A new DeletePath command builder.
+   */
+  public static Builder builder() {
+    return Operation.builder(DeletePath.Builder.class);
+  }
 
   public DeletePath() {
   }
@@ -32,7 +44,7 @@ public class DeletePath extends PathCommand<Boolean> {
   /**
    * Create path builder.
    */
-  public static class Builder extends PathCommand.Builder<Builder, DeletePath> {
+  public static class Builder extends PathOperation.Builder<Builder, DeletePath> {
     public Builder() {
       super(new DeletePath());
     }

@@ -15,12 +15,18 @@
  */
 package net.kuujo.copycat.resource.manager;
 
-import net.kuujo.copycat.resource.*;
+import net.kuujo.copycat.cluster.Session;
+import net.kuujo.copycat.raft.Apply;
+import net.kuujo.copycat.raft.Commit;
+import net.kuujo.copycat.raft.StateMachine;
+import net.kuujo.copycat.resource.ResourceCommand;
+import net.kuujo.copycat.resource.ResourceOperation;
+import net.kuujo.copycat.resource.ResourceQuery;
 
 import java.util.*;
 
 /**
- * Resource manager state machine.
+ * Resource manager.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -28,7 +34,7 @@ public class ResourceManager extends StateMachine {
   private static final String PATH_SEPARATOR = "/";
   private NodeHolder node;
   private final Map<Long, NodeHolder> nodes = new HashMap<>();
-  private final Map<Long, StateMachineProxy> resources = new HashMap<>();
+  private final Map<Long, StateMachine> resources = new HashMap<>();
 
   /**
    * Initializes the path.
@@ -42,15 +48,16 @@ public class ResourceManager extends StateMachine {
   /**
    * Applies resource commands.
    */
-  @Apply(Apply.All.class)
-  protected Object command(Commit<Command> commit) {
-    if (commit.command().resource() != 0) {
-      StateMachineProxy resource = resources.get(commit.command().resource());
+  @SuppressWarnings("unchecked")
+  @Apply({ResourceCommand.class, ResourceQuery.class})
+  protected Object command(Commit<? extends ResourceOperation> commit) {
+    if (commit.operation().resource() != 0) {
+      StateMachine resource = resources.get(commit.operation().resource());
       if (resource != null) {
-        return resource.apply(commit);
+        return resource.apply(new Commit(commit.index(), commit.session(), commit.timestamp(), commit.operation().operation()));
       }
     }
-    throw new IllegalArgumentException("unknown resource: " + commit.command().resource());
+    throw new IllegalArgumentException("unknown resource: " + commit.operation().resource());
   }
 
   /**
@@ -58,7 +65,7 @@ public class ResourceManager extends StateMachine {
    */
   @Apply(CreatePath.class)
   protected boolean createPath(Commit<CreatePath> commit) {
-    String path = commit.command().path();
+    String path = commit.operation().path();
 
     init(commit);
 
@@ -83,7 +90,7 @@ public class ResourceManager extends StateMachine {
    */
   @Apply(PathExists.class)
   protected boolean pathExists(Commit<PathExists> commit) {
-    String path = commit.command().path();
+    String path = commit.operation().path();
 
     if (this.node == null)
       return false;
@@ -104,7 +111,7 @@ public class ResourceManager extends StateMachine {
   @SuppressWarnings("unchecked")
   @Apply(PathChildren.class)
   protected List<String> pathChildren(Commit<PathChildren> commit) {
-    String path = commit.command().path();
+    String path = commit.operation().path();
 
     if (this.node == null)
       return Collections.EMPTY_LIST;
@@ -125,7 +132,7 @@ public class ResourceManager extends StateMachine {
    */
   @Apply(DeletePath.class)
   protected boolean deletePath(Commit<DeletePath> commit) {
-    String path = commit.command().path();
+    String path = commit.operation().path();
 
     init(commit);
 
@@ -151,7 +158,7 @@ public class ResourceManager extends StateMachine {
    */
   @Apply(CreateResource.class)
   protected long createResource(Commit<CreateResource> commit) {
-    String path = commit.command().path();
+    String path = commit.operation().path();
 
     init(commit);
 
@@ -169,7 +176,7 @@ public class ResourceManager extends StateMachine {
     if (node.resource == 0) {
       node.resource = commit.index();
       try {
-        StateMachineProxy resource = new StateMachineProxy(commit.command().type().newInstance());
+        StateMachine resource = commit.operation().type().newInstance();
         nodes.put(node.resource, node);
         resources.put(node.resource, resource);
       } catch (InstantiationException | IllegalAccessException e) {
@@ -187,12 +194,33 @@ public class ResourceManager extends StateMachine {
   protected boolean deleteResource(Commit<DeleteResource> commit) {
     init(commit);
 
-    NodeHolder node = nodes.remove(commit.command().resource());
+    NodeHolder node = nodes.remove(commit.operation().resource());
     if (node != null) {
       node.resource = 0;
     }
 
-    return resources.remove(commit.command().resource()) != null;
+    return resources.remove(commit.operation().resource()) != null;
+  }
+
+  @Override
+  public void register(Session session) {
+    for (StateMachine stateMachine : resources.values()) {
+      stateMachine.register(session);
+    }
+  }
+
+  @Override
+  public void close(Session session) {
+    for (StateMachine stateMachine : resources.values()) {
+      stateMachine.close(session);
+    }
+  }
+
+  @Override
+  public void expire(Session session) {
+    for (StateMachine stateMachine : resources.values()) {
+      stateMachine.expire(session);
+    }
   }
 
   /**

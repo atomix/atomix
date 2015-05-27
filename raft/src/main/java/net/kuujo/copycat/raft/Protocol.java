@@ -13,26 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.resource;
-
-import net.kuujo.copycat.raft.Command;
-import net.kuujo.copycat.raft.Operation;
-import net.kuujo.copycat.raft.Protocol;
-import net.kuujo.copycat.raft.Query;
+package net.kuujo.copycat.raft;
 
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Copycat resource.
+ * Raft protocol.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class AbstractResource implements Resource {
-  protected final Protocol protocol;
-
-  protected AbstractResource(Protocol protocol) {
-    this.protocol = protocol;
-  }
+public interface Protocol {
 
   /**
    * Submits an operation to the Raft protocol.
@@ -41,8 +31,14 @@ public abstract class AbstractResource implements Resource {
    * @param <T> The operation result type.
    * @return A completable future to be completed with the operation result.
    */
-  protected <T> CompletableFuture<T> submit(Operation<T> operation) {
-    return protocol.submit(operation);
+  default <T> CompletableFuture<T> submit(Operation<T> operation) {
+    if (operation instanceof Command) {
+      return submit((Command<T>) operation);
+    } else if (operation instanceof Query) {
+      return submit((Query<T>) operation);
+    } else {
+      throw new IllegalArgumentException("unknown operation type");
+    }
   }
 
   /**
@@ -52,9 +48,7 @@ public abstract class AbstractResource implements Resource {
    * @param <T> The command result type.
    * @return A completable future to be completed with the command result.
    */
-  protected <T> CompletableFuture<T> submit(Command<T> command) {
-    return protocol.submit(command);
-  }
+  <T> CompletableFuture<T> submit(Command<T> command);
 
   /**
    * Submits a query to the Raft protocol.
@@ -63,13 +57,13 @@ public abstract class AbstractResource implements Resource {
    * @param <T> The query result type.
    * @return A completable future to be completed with the query result.
    */
-  protected <T> CompletableFuture<T> submit(Query<T> query) {
-    return protocol.submit(query);
-  }
+  <T> CompletableFuture<T> submit(Query<T> query);
 
-  @Override
-  public CompletableFuture<Void> delete() {
-    return protocol.delete();
-  }
+  /**
+   * Deletes the protocol.
+   *
+   * @return The deleted protocol.
+   */
+  CompletableFuture<Void> delete();
 
 }

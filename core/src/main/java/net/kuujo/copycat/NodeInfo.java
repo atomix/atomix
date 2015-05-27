@@ -23,17 +23,17 @@ package net.kuujo.copycat;
 public interface NodeInfo {
 
   /**
-   * Returns the timestamp of the last update to the node.
-   *
-   * @return The timestamp of the last update to the node.
-   */
-  long timestamp();
-
-  /**
    * Returns the version of the current state of the node.
    *
    * @return The version of the current state of the node.
    */
   long version();
+
+  /**
+   * Returns the timestamp of the last update to the node.
+   *
+   * @return The timestamp of the last update to the node.
+   */
+  long timestamp();
 
 }

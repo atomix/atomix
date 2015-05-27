@@ -15,8 +15,6 @@
  */
 package net.kuujo.copycat.resource;
 
-import net.kuujo.copycat.resource.manager.DeleteResource;
-
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -24,14 +22,13 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Resource<T extends Resource<T>> {
+public interface Resource {
 
   /**
    * Deletes the resource.
    *
    * @return A completable future to be completed once the resource has been deleted.
    */
-  @Submit(DeleteResource.class)
   CompletableFuture<Void> delete();
 
 }

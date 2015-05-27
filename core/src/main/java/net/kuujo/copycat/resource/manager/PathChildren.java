@@ -15,6 +15,9 @@
  */
 package net.kuujo.copycat.resource.manager;
 
+import net.kuujo.copycat.raft.Operation;
+import net.kuujo.copycat.raft.Query;
+
 import java.util.List;
 
 /**
@@ -22,7 +25,16 @@ import java.util.List;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class PathChildren extends PathCommand<List<String>> {
+public class PathChildren extends PathOperation<List<String>> implements Query<List<String>> {
+
+  /**
+   * Returns a new PathChildren builder.
+   *
+   * @return A new PathChildren command builder.
+   */
+  public static Builder builder() {
+    return Operation.builder(PathChildren.Builder.class);
+  }
 
   public PathChildren() {
   }
@@ -31,10 +43,15 @@ public class PathChildren extends PathCommand<List<String>> {
     super(path);
   }
 
+  @Override
+  public Consistency consistency() {
+    return Consistency.LINEARIZABLE_STRICT;
+  }
+
   /**
    * Path children builder.
    */
-  public static class Builder extends PathCommand.Builder<Builder, PathChildren> {
+  public static class Builder extends PathOperation.Builder<Builder, PathChildren> {
     public Builder() {
       super(new PathChildren());
     }
