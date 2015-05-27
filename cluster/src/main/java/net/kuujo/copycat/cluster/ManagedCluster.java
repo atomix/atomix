@@ -53,9 +53,14 @@ public abstract class ManagedCluster implements Cluster, Managed<Cluster> {
    * Configures the set of cluster members.
    */
   public CompletableFuture<Void> configure(TypedMemberInfo... membersInfo) {
+    boolean updated = false;
+
     List<CompletableFuture> futures = new ArrayList<>();
     for (TypedMemberInfo memberInfo : membersInfo) {
-      if (memberInfo.info().id() != member().id() && !remoteMembers.containsKey(memberInfo.info().id())) {
+      if (memberInfo.info().id() == member().id()) {
+        localMember.type = memberInfo.type();
+        updated = true;
+      } else if (!remoteMembers.containsKey(memberInfo.info().id())) {
         ManagedRemoteMember member = createMember(memberInfo.info());
         futures.add(member.connect().thenRun(() -> {
           member.type = memberInfo.type();
@@ -63,6 +68,10 @@ public abstract class ManagedCluster implements Cluster, Managed<Cluster> {
           remoteMembers.put(member.id(), member);
         }));
       }
+    }
+
+    if (!updated) {
+      localMember.type = Member.Type.CLIENT;
     }
 
     for (ManagedRemoteMember member : remoteMembers.values()) {
@@ -96,9 +105,14 @@ public abstract class ManagedCluster implements Cluster, Managed<Cluster> {
    * Configures the set of active cluster members.
    */
   public CompletableFuture<Void> configure(MemberInfo... membersInfo) {
+    boolean updated = false;
+
     List<CompletableFuture> futures = new ArrayList<>();
     for (MemberInfo memberInfo : membersInfo) {
-      if (memberInfo.id() != member().id() && !remoteMembers.containsKey(memberInfo.id())) {
+      if (memberInfo.id() == member().id()) {
+        localMember.type = Member.Type.ACTIVE;
+        updated = true;
+      } else if (!remoteMembers.containsKey(memberInfo.id())) {
         ManagedRemoteMember member = createMember(memberInfo);
         futures.add(member.connect().thenRun(() -> {
           member.type = Member.Type.ACTIVE;
@@ -106,6 +120,10 @@ public abstract class ManagedCluster implements Cluster, Managed<Cluster> {
           remoteMembers.put(member.id(), member);
         }));
       }
+    }
+
+    if (!updated) {
+      localMember.type = Member.Type.CLIENT;
     }
 
     for (ManagedRemoteMember member : remoteMembers.values()) {
@@ -349,6 +367,7 @@ public abstract class ManagedCluster implements Cluster, Managed<Cluster> {
    */
   public static abstract class Builder<T extends Builder<T, U>, U extends ManagedMember> implements Cluster.Builder<T, ManagedCluster, U> {
     protected int memberId;
+    protected Member.Type type = Member.Type.CLIENT;
     protected final Map<Integer, U> members = new HashMap<>();
     protected Serializer serializer;
 
@@ -358,6 +377,15 @@ public abstract class ManagedCluster implements Cluster, Managed<Cluster> {
       if (id < 0)
         throw new IllegalArgumentException("member ID cannot be negative");
       this.memberId = id;
+      return (T) this;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public T withMemberType(Member.Type type) {
+      if (type == null)
+        throw new NullPointerException("type cannot be null");
+      this.type = type;
       return (T) this;
     }
 

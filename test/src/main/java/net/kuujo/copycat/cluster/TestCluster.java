@@ -128,7 +128,7 @@ public class TestCluster extends ManagedCluster {
         info = new TestMember.Info(memberId, address);
       }
 
-      TestLocalMember localMember = new TestLocalMember(info, Member.Type.ACTIVE, serializer != null ? serializer : new Serializer(), new ExecutionContext(String.format("copycat-cluster-%d", memberId)));
+      TestLocalMember localMember = new TestLocalMember(info, type, serializer != null ? serializer : new Serializer(), new ExecutionContext(String.format("copycat-cluster-%d", memberId)));
       return new TestCluster(localMember, members.values().stream().map(m -> (TestRemoteMember) m).collect(Collectors.toList()), registry, serializer);
     }
   }
