@@ -249,15 +249,15 @@ public abstract class ManagedCluster implements Cluster, Managed<Cluster> {
   protected abstract ManagedRemoteMember createMember(MemberInfo info);
 
   @Override
-  public LocalMember member() {
+  public ManagedLocalMember member() {
     return localMember;
   }
 
   @Override
-  public Member member(int id) {
+  public ManagedMember member(int id) {
     if (localMember.id() == id)
       return localMember;
-    Member member = remoteMembers.get(id);
+    ManagedMember member = remoteMembers.get(id);
     if (member == null)
       throw new NoSuchElementException();
     return member;

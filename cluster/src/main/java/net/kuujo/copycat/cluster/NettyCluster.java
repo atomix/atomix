@@ -117,11 +117,11 @@ public class NettyCluster extends ManagedCluster {
       NettyMember member = members.remove(memberId);
       NettyLocalMember localMember;
       if (member != null) {
-        localMember = new NettyLocalMember(new NettyMemberInfo(memberId, member.address()), Member.Type.ACTIVE, new ExecutionContext(String.format("copycat-cluster-%d", memberId)));
+        localMember = new NettyLocalMember(new NettyMemberInfo(memberId, member.address()), Member.Type.ACTIVE, true, new ExecutionContext(String.format("copycat-cluster-%d", memberId)));
       } else {
         if (host == null)
           throw new ConfigurationException("member host must be configured");
-        localMember = new NettyLocalMember(new NettyMemberInfo(memberId, new InetSocketAddress(host, port)), type, new ExecutionContext(String.format("copycat-cluster-%d", memberId)));
+        localMember = new NettyLocalMember(new NettyMemberInfo(memberId, new InetSocketAddress(host, port)), type, false, new ExecutionContext(String.format("copycat-cluster-%d", memberId)));
       }
 
       return new NettyCluster(eventLoopGroup != null ? eventLoopGroup : new NioEventLoopGroup(), localMember, members.values().stream().map(m -> (NettyRemoteMember) m).collect(Collectors.toList()), serializer != null ? serializer : new Serializer());

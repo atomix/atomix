@@ -25,9 +25,20 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class ManagedLocalMember extends ManagedMember implements LocalMember {
+  private final boolean seed;
 
-  protected ManagedLocalMember(MemberInfo info, Type type, ExecutionContext context) {
+  protected ManagedLocalMember(MemberInfo info, Type type, boolean seed, ExecutionContext context) {
     super(info, type, context);
+    this.seed = seed;
+  }
+
+  /**
+   * Returns a boolean value indicating whether the member is a seed member.
+   *
+   * @return Indicates whether the member is a seed member.
+   */
+  public boolean isSeed() {
+    return seed;
   }
 
   /**

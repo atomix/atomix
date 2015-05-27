@@ -63,8 +63,8 @@ public class NettyLocalMember extends ManagedLocalMember implements NettyMember{
   private CompletableFuture<LocalMember> listenFuture;
   private CompletableFuture<Void> closeFuture;
 
-  NettyLocalMember(NettyMemberInfo info, Type type, ExecutionContext context) {
-    super(info, type, context);
+  NettyLocalMember(NettyMemberInfo info, Type type, boolean seed, ExecutionContext context) {
+    super(info, type, seed, context);
     this.info = info;
   }
 
