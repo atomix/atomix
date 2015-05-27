@@ -94,13 +94,6 @@ public interface Member {
   MemberInfo info();
 
   /**
-   * Returns the member session.
-   *
-   * @return The member session.
-   */
-  Session session();
-
-  /**
    * Sends a message to the member.<p>
    *
    * Messages are sent using a topic based messaging system over the configured cluster protocol. If no handler is

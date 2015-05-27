@@ -28,7 +28,6 @@ public abstract class ManagedMember implements Member {
   protected final MemberInfo info;
   protected Type type;
   protected Status status = Status.DEAD;
-  protected Session session;
   protected final ExecutionContext context;
 
   protected ManagedMember(MemberInfo info, Type type, ExecutionContext context) {
@@ -63,11 +62,6 @@ public abstract class ManagedMember implements Member {
   @Override
   public MemberInfo info() {
     return info;
-  }
-
-  @Override
-  public Session session() {
-    return session;
   }
 
   @Override

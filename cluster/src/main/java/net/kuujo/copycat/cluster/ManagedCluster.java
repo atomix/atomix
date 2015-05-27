@@ -157,6 +157,9 @@ public abstract class ManagedCluster implements Cluster, Managed<Cluster> {
    * Registers a member.
    */
   public CompletableFuture<Member> register(Session session) {
+    if (session.member().id() == localMember.id())
+      return CompletableFuture.completedFuture(localMember);
+
     ManagedRemoteMember member = remoteMembers.containsKey(session.member().id()) ? remoteMembers.get(session.member().id()) : createMember(session.member());
     return member.connect().thenApply(v -> {
       member.status = Member.Status.ALIVE;
@@ -254,7 +257,7 @@ public abstract class ManagedCluster implements Cluster, Managed<Cluster> {
   }
 
   @Override
-  public ManagedMember member(int id) {
+  public Member member(int id) {
     if (localMember.id() == id)
       return localMember;
     ManagedMember member = remoteMembers.get(id);

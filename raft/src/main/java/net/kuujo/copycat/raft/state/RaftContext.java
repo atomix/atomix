@@ -56,6 +56,7 @@ public class RaftContext implements Managed<RaftContext> {
   private CompletableFuture<RaftContext> openFuture;
   private long electionTimeout = 500;
   private long heartbeatInterval = 250;
+  private long session;
   private int leader;
   private long term;
   private int lastVotedFor;
@@ -192,6 +193,26 @@ public class RaftContext implements Managed<RaftContext> {
   public RaftContext removeElectionListener(EventListener<Member> listener) {
     electionListeners.remove(listener);
     return this;
+  }
+
+  /**
+   * Sets the state session.
+   *
+   * @param session The state session.
+   * @return The Raft context.
+   */
+  RaftContext setSession(long session) {
+    this.session = session;
+    return this;
+  }
+
+  /**
+   * Returns the state session.
+   *
+   * @return The state session.
+   */
+  public long getSession() {
+    return session;
   }
 
   /**

@@ -86,6 +86,7 @@ public class RemoteState extends AbstractState {
       if (error == null) {
         context.setTerm(response.term());
         context.setLeader(response.leader());
+        context.setSession(response.session());
         context.getCluster().configure(response.members().toArray(new TypedMemberInfo[response.members().size()])).whenComplete((configureResult, configureError) -> {
           if (configureError == null) {
             future.complete(response.session());
@@ -139,7 +140,7 @@ public class RemoteState extends AbstractState {
     }
 
     KeepAliveRequest request = KeepAliveRequest.builder()
-      .withSession(context.getCluster().member().session().id())
+      .withSession(context.getSession())
       .build();
     member.<KeepAliveRequest, KeepAliveResponse>send(context.getTopic(), request).whenComplete((response, error) -> {
       if (error == null) {
