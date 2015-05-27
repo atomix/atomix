@@ -21,8 +21,8 @@ import net.kuujo.copycat.raft.ApplicationException;
 import net.kuujo.copycat.raft.Command;
 import net.kuujo.copycat.raft.Query;
 import net.kuujo.copycat.raft.RaftError;
+import net.kuujo.copycat.raft.log.entry.*;
 import net.kuujo.copycat.raft.rpc.*;
-import net.kuujo.copycat.raft.storage.*;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;

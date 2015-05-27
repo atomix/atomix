@@ -21,9 +21,9 @@ import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.raft.Operation;
 import net.kuujo.copycat.raft.StateMachine;
+import net.kuujo.copycat.raft.log.RaftLog;
 import net.kuujo.copycat.raft.rpc.Response;
 import net.kuujo.copycat.raft.rpc.SubmitRequest;
-import net.kuujo.copycat.raft.storage.RaftStorage;
 import net.kuujo.copycat.util.ExecutionContext;
 import net.kuujo.copycat.util.Managed;
 import net.kuujo.copycat.util.ThreadChecker;
@@ -47,7 +47,7 @@ public class RaftContext implements Managed<RaftContext> {
   private final Set<EventListener<Long>> termListeners = new CopyOnWriteArraySet<>();
   private final Set<EventListener<Member>> electionListeners = new CopyOnWriteArraySet<>();
   private final StateMachineProxy stateMachine;
-  private final RaftStorage log;
+  private final RaftLog log;
   private final ManagedCluster cluster;
   private final String topic;
   private final ExecutionContext context;
@@ -65,7 +65,7 @@ public class RaftContext implements Managed<RaftContext> {
   private volatile long lastApplied = 0;
   private volatile boolean open;
 
-  public RaftContext(RaftStorage log, StateMachine stateMachine, ManagedCluster cluster, String topic, ExecutionContext context) {
+  public RaftContext(RaftLog log, StateMachine stateMachine, ManagedCluster cluster, String topic, ExecutionContext context) {
     this.log = log;
     this.stateMachine = new StateMachineProxy(stateMachine, this, new ExecutionContext(context.name() + "-state"));
     this.cluster = cluster;
@@ -408,7 +408,7 @@ public class RaftContext implements Managed<RaftContext> {
    *
    * @return The state log.
    */
-  public RaftStorage getLog() {
+  public RaftLog getLog() {
     return log;
   }
 

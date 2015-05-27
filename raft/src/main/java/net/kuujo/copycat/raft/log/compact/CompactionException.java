@@ -13,36 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.raft;
+package net.kuujo.copycat.raft.log.compact;
 
-import net.kuujo.copycat.raft.log.compact.Compaction;
-
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import net.kuujo.copycat.raft.log.StorageException;
 
 /**
+ * Log compaction exception.
+ *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Target(ElementType.METHOD)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface Filter {
+public class CompactionException extends StorageException {
 
-  /**
-   * The command types to filter.
-   */
-  Class<? extends Command>[] value() default {};
+  public CompactionException(String message, Object... args) {
+    super(String.format(message, args));
+  }
 
-  /**
-   * The filter compaction type.
-   */
-  Compaction.Type compaction() default Compaction.Type.MAJOR;
+  public CompactionException(Throwable cause, String message, Object... args) {
+    super(String.format(message, args), cause);
+  }
 
-  /**
-   * Indicates that all commands should be applied to the filter.
-   */
-  static class All implements Command {
+  public CompactionException(Throwable cause) {
+    super(cause);
   }
 
 }

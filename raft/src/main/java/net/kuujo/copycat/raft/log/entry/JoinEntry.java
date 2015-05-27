@@ -13,36 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.raft;
+package net.kuujo.copycat.raft.log.entry;
 
-import net.kuujo.copycat.raft.log.compact.Compaction;
-
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import net.kuujo.copycat.io.serializer.SerializeWith;
+import net.kuujo.copycat.io.util.ReferenceManager;
 
 /**
+ * Member join entry.
+ *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Target(ElementType.METHOD)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface Filter {
+@SerializeWith(id=1002)
+public class JoinEntry extends MemberEntry<JoinEntry> {
 
-  /**
-   * The command types to filter.
-   */
-  Class<? extends Command>[] value() default {};
+  public JoinEntry() {
+  }
 
-  /**
-   * The filter compaction type.
-   */
-  Compaction.Type compaction() default Compaction.Type.MAJOR;
-
-  /**
-   * Indicates that all commands should be applied to the filter.
-   */
-  static class All implements Command {
+  public JoinEntry(ReferenceManager<RaftEntry<?>> referenceManager) {
+    super(referenceManager);
   }
 
 }

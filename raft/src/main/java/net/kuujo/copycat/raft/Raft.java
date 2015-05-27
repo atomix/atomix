@@ -19,9 +19,9 @@ import net.kuujo.copycat.ConfigurationException;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ManagedCluster;
 import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.raft.log.RaftLog;
 import net.kuujo.copycat.raft.state.RaftContext;
 import net.kuujo.copycat.raft.state.RaftState;
-import net.kuujo.copycat.raft.storage.RaftStorage;
 import net.kuujo.copycat.util.ExecutionContext;
 import net.kuujo.copycat.util.Managed;
 
@@ -49,7 +49,7 @@ public class Raft implements Protocol, Managed<Raft> {
   private CompletableFuture<Void> closeFuture;
   private boolean open;
 
-  private Raft(RaftStorage log, RaftConfig config, StateMachine stateMachine, ManagedCluster cluster, String topic, ExecutionContext context) {
+  private Raft(RaftLog log, RaftConfig config, StateMachine stateMachine, ManagedCluster cluster, String topic, ExecutionContext context) {
     this.context = new RaftContext(log, stateMachine, cluster, topic, context)
       .setHeartbeatInterval(config.getHeartbeatInterval())
       .setElectionTimeout(config.getElectionTimeout());
@@ -184,7 +184,7 @@ public class Raft implements Protocol, Managed<Raft> {
    * Raft builder.
    */
   public static class Builder implements net.kuujo.copycat.Builder<Raft> {
-    private RaftStorage storage;
+    private RaftLog log;
     private RaftConfig config = new RaftConfig();
     private StateMachine stateMachine;
     private ManagedCluster cluster;
@@ -194,11 +194,11 @@ public class Raft implements Protocol, Managed<Raft> {
     /**
      * Sets the Raft log.
      *
-     * @param storage The Raft log.
+     * @param log The Raft log.
      * @return The Raft builder.
      */
-    public Builder withStorage(RaftStorage storage) {
-      this.storage = storage;
+    public Builder withLog(RaftLog log) {
+      this.log = log;
       return this;
     }
 
@@ -298,7 +298,7 @@ public class Raft implements Protocol, Managed<Raft> {
 
     @Override
     public Raft build() {
-      if (storage == null)
+      if (log == null)
         throw new ConfigurationException("log not configured");
       if (stateMachine == null)
         throw new ConfigurationException("state machine not configured");
@@ -306,7 +306,7 @@ public class Raft implements Protocol, Managed<Raft> {
         throw new ConfigurationException("cluster not configured");
       if (topic == null)
         throw new ConfigurationException("topic not configured");
-      return new Raft(storage, config, stateMachine, cluster, topic, context != null ? context : new ExecutionContext("copycat-" + topic));
+      return new Raft(log, config, stateMachine, cluster, topic, context != null ? context : new ExecutionContext("copycat-" + topic));
     }
   }
 

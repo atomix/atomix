@@ -18,8 +18,8 @@ package net.kuujo.copycat.raft.state;
 import net.kuujo.copycat.cluster.MemberInfo;
 import net.kuujo.copycat.cluster.Session;
 import net.kuujo.copycat.raft.*;
-import net.kuujo.copycat.raft.storage.*;
-import net.kuujo.copycat.raft.storage.compact.Compaction;
+import net.kuujo.copycat.raft.log.compact.Compaction;
+import net.kuujo.copycat.raft.log.entry.*;
 import net.kuujo.copycat.util.ExecutionContext;
 import net.kuujo.copycat.util.ThreadChecker;
 

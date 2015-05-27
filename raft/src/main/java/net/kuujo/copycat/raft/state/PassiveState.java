@@ -20,8 +20,8 @@ import net.kuujo.copycat.raft.Operation;
 import net.kuujo.copycat.raft.Query;
 import net.kuujo.copycat.raft.RaftError;
 import net.kuujo.copycat.raft.rpc.*;
-import net.kuujo.copycat.raft.storage.OperationEntry;
-import net.kuujo.copycat.raft.storage.RaftEntry;
+import net.kuujo.copycat.raft.log.entry.OperationEntry;
+import net.kuujo.copycat.raft.log.entry.RaftEntry;
 
 import java.util.concurrent.CompletableFuture;
 

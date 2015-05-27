@@ -17,7 +17,7 @@ package net.kuujo.copycat.raft.state;
 
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.raft.rpc.*;
-import net.kuujo.copycat.raft.storage.RaftEntry;
+import net.kuujo.copycat.raft.log.entry.RaftEntry;
 import net.kuujo.copycat.raft.util.Quorum;
 
 import java.util.Random;

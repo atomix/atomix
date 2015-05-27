@@ -13,36 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.raft;
+package net.kuujo.copycat.raft.log.compact;
 
-import net.kuujo.copycat.raft.log.compact.Compaction;
-
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import net.kuujo.copycat.raft.log.RaftEntryFilter;
+import net.kuujo.copycat.raft.log.SegmentManager;
 
 /**
+ * Log compaction strategy.
+ * <p>
+ * The compaction strategy handles the logic behind compacting logs after deduplication.
+ *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Target(ElementType.METHOD)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface Filter {
+public interface CompactionStrategy {
 
   /**
-   * The command types to filter.
+   * Compacts the given segments.
+   *
+   * @param filter The filter with which to compact segments.
+   * @param segments The segments to compact.
    */
-  Class<? extends Command>[] value() default {};
-
-  /**
-   * The filter compaction type.
-   */
-  Compaction.Type compaction() default Compaction.Type.MAJOR;
-
-  /**
-   * Indicates that all commands should be applied to the filter.
-   */
-  static class All implements Command {
-  }
+  void compact(RaftEntryFilter filter, SegmentManager segments);
 
 }

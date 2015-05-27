@@ -19,7 +19,7 @@ import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.serializer.SerializationException;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.util.ReferenceManager;
-import net.kuujo.copycat.raft.storage.RaftEntry;
+import net.kuujo.copycat.raft.log.entry.RaftEntry;
 
 import java.util.ArrayList;
 import java.util.Arrays;
