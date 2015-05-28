@@ -25,15 +25,9 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class ManagedRemoteMember extends ManagedMember implements RemoteMember {
-  protected Session session;
 
   protected ManagedRemoteMember(MemberInfo info, Type type, ExecutionContext context) {
     super(info, type, context);
-  }
-
-  @Override
-  public Session session() {
-    return session;
   }
 
   /**

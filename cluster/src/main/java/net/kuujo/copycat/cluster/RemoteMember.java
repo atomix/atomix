@@ -21,12 +21,4 @@ package net.kuujo.copycat.cluster;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface RemoteMember extends Member {
-
-  /**
-   * Returns the member session.
-   *
-   * @return The member session.
-   */
-  Session session();
-
 }
