@@ -20,6 +20,7 @@ import net.kuujo.copycat.io.util.ReferenceCounted;
 import net.kuujo.copycat.io.util.ReferenceManager;
 
 import java.nio.BufferUnderflowException;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -297,6 +298,13 @@ public class BufferReader implements BufferInput<BufferReader>, ReferenceCounted
   @Override
   public boolean readBoolean() {
     return bytes.readBoolean(checkRead(Byte.BYTES));
+  }
+
+  @Override
+  public String readUTF8() {
+    byte[] bytes = new byte[readUnsignedShort()];
+    read(bytes, 0, bytes.length);
+    return new String(bytes, StandardCharsets.UTF_8);
   }
 
   @Override

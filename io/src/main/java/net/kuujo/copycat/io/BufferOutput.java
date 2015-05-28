@@ -182,6 +182,14 @@ public interface BufferOutput<T extends BufferOutput<?>> {
   T writeBoolean(boolean b);
 
   /**
+   * Writes a UTF-8 string to the buffer.
+   *
+   * @param s The string to write.
+   * @return The written buffer.
+   */
+  T writeUTF8(String s);
+
+  /**
    * Flushes the buffer to the underlying persistence layer.
    *
    * @return The flushed buffer.

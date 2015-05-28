@@ -20,6 +20,7 @@ import net.kuujo.copycat.io.util.ReferenceCounted;
 import net.kuujo.copycat.io.util.ReferenceManager;
 
 import java.nio.BufferOverflowException;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -310,6 +311,13 @@ public class BufferWriter implements BufferOutput<BufferWriter>, ReferenceCounte
   public BufferWriter writeBoolean(boolean b) {
     bytes.writeBoolean(checkWrite(Byte.BYTES), b);
     return this;
+  }
+
+  @Override
+  public BufferWriter writeUTF8(String s) {
+    byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
+    return writeUnsignedShort(bytes.length)
+      .write(bytes, 0, bytes.length);
   }
 
   @Override

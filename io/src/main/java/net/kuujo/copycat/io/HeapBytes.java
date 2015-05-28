@@ -17,6 +17,8 @@ package net.kuujo.copycat.io;
 
 import net.kuujo.copycat.io.util.HeapMemory;
 
+import java.nio.charset.StandardCharsets;
+
 /**
  * Java heap bytes.
  *
@@ -188,6 +190,13 @@ public class HeapBytes extends AbstractBytes {
   }
 
   @Override
+  public String readUTF8(long offset) {
+    byte[] bytes = new byte[readUnsignedShort(offset)];
+    read(offset + Short.BYTES, bytes, 0, bytes.length);
+    return new String(bytes, StandardCharsets.UTF_8);
+  }
+
+  @Override
   public Bytes write(long position, Bytes bytes, long offset, long length) {
     checkWrite(position, length);
     if (bytes.size() < length)
@@ -302,6 +311,13 @@ public class HeapBytes extends AbstractBytes {
     checkWrite(offset, Byte.BYTES);
     memory.putByte(offset, b ? (byte) 1 : (byte) 0);
     return this;
+  }
+
+  @Override
+  public Bytes writeUTF8(long offset, String s) {
+    byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
+    return writeUnsignedShort(offset, bytes.length)
+      .write(offset + Short.BYTES, bytes, 0, bytes.length);
   }
 
   @Override

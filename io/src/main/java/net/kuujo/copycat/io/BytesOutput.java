@@ -188,6 +188,15 @@ public interface BytesOutput<T extends BytesOutput<T>> {
   T writeBoolean(long offset, boolean b);
 
   /**
+   * Writes a UTF-8 string to the buffer at the given offset.
+   *
+   * @param offset The offset at which to write the string.
+   * @param s The string to write.
+   * @return The written buffer.
+   */
+  T writeUTF8(long offset, String s);
+
+  /**
    * Flushes the bytes to the underlying persistence layer.
    *
    * @return The flushed buffer.

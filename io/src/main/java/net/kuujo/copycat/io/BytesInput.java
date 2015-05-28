@@ -150,4 +150,12 @@ public interface BytesInput<T extends BytesInput<T>> {
    */
   boolean readBoolean(long offset);
 
+  /**
+   * Reads a UTF-8 string from the buffer at the given offset.
+   *
+   * @param offset The offset at which to read the string.
+   * @return The read string.
+   */
+  String readUTF8(long offset);
+
 }

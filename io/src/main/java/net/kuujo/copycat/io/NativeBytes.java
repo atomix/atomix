@@ -19,6 +19,7 @@ import net.kuujo.copycat.io.util.HeapMemory;
 import net.kuujo.copycat.io.util.NativeMemory;
 
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Native bytes.
@@ -204,6 +205,13 @@ public class NativeBytes extends AbstractBytes {
   }
 
   @Override
+  public String readUTF8(long offset) {
+    byte[] bytes = new byte[readUnsignedShort(offset)];
+    read(offset + Short.BYTES, bytes, 0, bytes.length);
+    return new String(bytes, StandardCharsets.UTF_8);
+  }
+
+  @Override
   public Bytes write(long position, Bytes bytes, long offset, long length) {
     checkWrite(position, length);
     if (bytes.size() < length)
@@ -317,6 +325,13 @@ public class NativeBytes extends AbstractBytes {
   @Override
   public Bytes writeBoolean(long offset, boolean b) {
     return writeByte(offset, b ? (byte) 1 : (byte) 0);
+  }
+
+  @Override
+  public Bytes writeUTF8(long offset, String s) {
+    byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
+    return writeUnsignedShort(offset, bytes.length)
+      .write(offset + Short.BYTES, bytes, 0, bytes.length);
   }
 
   @Override

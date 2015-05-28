@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
 /**
@@ -384,6 +385,13 @@ public class FileBytes extends AbstractBytes {
   }
 
   @Override
+  public String readUTF8(long offset) {
+    byte[] bytes = new byte[readUnsignedShort(offset)];
+    read(offset + Short.BYTES, bytes, 0, bytes.length);
+    return new String(bytes, StandardCharsets.UTF_8);
+  }
+
+  @Override
   public Bytes write(long position, Bytes bytes, long offset, long length) {
     checkWrite(position, length);
     try {
@@ -558,6 +566,13 @@ public class FileBytes extends AbstractBytes {
       throw new RuntimeException(e);
     }
     return this;
+  }
+
+  @Override
+  public Bytes writeUTF8(long offset, String s) {
+    byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
+    return writeUnsignedShort(offset, bytes.length)
+      .write(offset + Short.BYTES, bytes, 0, bytes.length);
   }
 
   @Override

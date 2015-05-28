@@ -151,6 +151,11 @@ public class WrappedBytes extends AbstractBytes {
   }
 
   @Override
+  public String readUTF8(long offset) {
+    return bytes.readUTF8(offset);
+  }
+
+  @Override
   public Bytes write(long offset, Bytes src, long srcOffset, long length) {
     bytes.write(offset, src, srcOffset, length);
     return this;
@@ -237,6 +242,12 @@ public class WrappedBytes extends AbstractBytes {
   @Override
   public Bytes writeBoolean(long offset, boolean b) {
     bytes.writeBoolean(offset, b);
+    return this;
+  }
+
+  @Override
+  public Bytes writeUTF8(long offset, String s) {
+    bytes.writeUTF8(offset, s);
     return this;
   }
 

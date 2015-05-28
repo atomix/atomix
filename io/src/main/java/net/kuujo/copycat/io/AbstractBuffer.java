@@ -22,6 +22,7 @@ import java.nio.BufferOverflowException;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteOrder;
 import java.nio.InvalidMarkException;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -629,6 +630,20 @@ public abstract class AbstractBuffer implements Buffer {
   }
 
   @Override
+  public String readUTF8() {
+    byte[] bytes = new byte[readUnsignedShort(checkRead(Short.BYTES))];
+    read(checkRead(bytes.length), bytes, 0, bytes.length);
+    return new String(bytes, StandardCharsets.UTF_8);
+  }
+
+  @Override
+  public String readUTF8(long offset) {
+    byte[] bytes = new byte[readUnsignedShort(checkRead(offset, Short.BYTES))];
+    read(checkRead(offset + Short.BYTES, bytes.length), bytes, 0, bytes.length);
+    return new String(bytes, StandardCharsets.UTF_8);
+  }
+
+  @Override
   public Buffer write(Buffer buffer) {
     long length = Math.min(buffer.remaining(), remaining());
     write(buffer.bytes(), buffer.offset() + buffer.position(), length);
@@ -834,6 +849,20 @@ public abstract class AbstractBuffer implements Buffer {
   public Buffer writeBoolean(long offset, boolean b) {
     bytes.writeBoolean(checkWrite(offset, Byte.BYTES), b);
     return this;
+  }
+
+  @Override
+  public Buffer writeUTF8(String s) {
+    byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
+    return writeUnsignedShort(checkWrite(Short.BYTES), bytes.length)
+      .write(checkWrite(bytes.length), bytes, 0, bytes.length);
+  }
+
+  @Override
+  public Buffer writeUTF8(long offset, String s) {
+    byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
+    return writeUnsignedShort(checkWrite(offset, Short.BYTES), bytes.length)
+      .write(checkWrite(offset + Short.BYTES, bytes.length), bytes, 0, bytes.length);
   }
 
   @Override

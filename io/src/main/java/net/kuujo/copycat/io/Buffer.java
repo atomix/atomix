@@ -918,7 +918,7 @@ public interface Buffer extends BytesInput<Buffer>, BufferInput<Buffer>, BytesOu
   /**
    * Reads a 1 byte boolean from the buffer at the current position.
    * <p>
-   * When the short is read from the buffer, the buffer's {@code position} will be advanced by {@code 1}.
+   * When the boolean is read from the buffer, the buffer's {@code position} will be advanced by {@code 1}.
    * If there are no bytes remaining in the buffer then a {@link java.nio.BufferUnderflowException} will be thrown.
    *
    * @return The read boolean.
@@ -942,6 +942,35 @@ public interface Buffer extends BytesInput<Buffer>, BufferInput<Buffer>, BytesOu
    */
   @Override
   boolean readBoolean(long offset);
+
+  /**
+   * Reads a UTF-8 string from the buffer at the current position.
+   * <p>
+   * When the string is read from the buffer, the buffer's {@code position} will be advanced by 2 bytes plus the byte
+   * length of the string. If there are no bytes remaining in the buffer then a {@link java.nio.BufferUnderflowException}
+   * will be thrown.
+   *
+   * @return The read string.
+   * @throws java.nio.BufferUnderflowException If {@link Buffer#remaining()} is less than {@code 1}
+   * @see Buffer#readUTF8(long)
+   */
+  @Override
+  String readUTF8();
+
+  /**
+   * Reads a 1 byte boolean from the buffer at the given offset.
+   * <p>
+   * The string will be read from the given offset. If the given index is out of the bounds of the buffer then a
+   * {@link IndexOutOfBoundsException} will be thrown.
+   *
+   * @param offset The offset at which to read the boolean.
+   * @return The read boolean.
+   * @throws IndexOutOfBoundsException If the given offset is out of the bounds of the buffer. Note that
+   *         bounds are determined by the buffer's {@link Buffer#limit()} rather than capacity.
+   * @see Buffer#readUTF8()
+   */
+  @Override
+  String readUTF8(long offset);
 
   /**
    * Writes a buffer to the buffer.
@@ -1436,6 +1465,37 @@ public interface Buffer extends BytesInput<Buffer>, BufferInput<Buffer>, BytesOu
    */
   @Override
   Buffer writeBoolean(long offset, boolean b);
+
+  /**
+   * Writes a UTF-8 string to the buffer at the current position.
+   * <p>
+   * The string will be written with a two-byte unsigned byte length followed by the UTF-8 bytes. If there are not enough
+   * bytes remaining in the buffer then a {@link java.nio.BufferOverflowException} will be thrown.
+   *
+   * @param s The string to write.
+   * @return The written buffer.
+   * @throws java.nio.BufferOverflowException If the number of bytes exceeds the buffer's remaining bytes.
+   * @see Buffer#writeUTF8(long, String)
+   */
+  @Override
+  Buffer writeUTF8(String s);
+
+  /**
+   * Writes a UTF-8 string to the buffer at the given offset.
+   * <p>
+   * The string will be written with a two-byte unsigned byte length followed by the UTF-8 bytes. If there are not enough
+   * bytes remaining in the buffer then a {@link java.nio.BufferOverflowException} will be thrown.
+   *
+   * @param offset The offset at which to write the string.
+   * @param s The string to write.
+   * @return The written buffer.
+   * @throws java.nio.BufferOverflowException If {@link Buffer#remaining()} is less than {@code 1}.
+   * @throws IndexOutOfBoundsException If the given offset is out of the bounds of the buffer. Note that
+   *         bounds are determined by the buffer's {@link Buffer#limit()} rather than capacity.
+   * @see Buffer#writeUTF8(String)
+   */
+  @Override
+  Buffer writeUTF8(long offset, String s);
 
   /**
    * Closes the buffer.

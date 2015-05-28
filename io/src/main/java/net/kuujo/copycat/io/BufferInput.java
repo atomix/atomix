@@ -166,4 +166,11 @@ public interface BufferInput<T extends BufferInput<?>> {
    */
   boolean readBoolean();
 
+  /**
+   * Reads a UTF-8 string from the buffer at the current position.
+   *
+   * @return The read string.
+   */
+  String readUTF8();
+
 }
