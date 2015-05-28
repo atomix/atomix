@@ -61,6 +61,7 @@ public abstract class ManagedCluster implements Cluster, Managed<Cluster> {
           member.type = Member.Type.CLIENT;
           members.put(member.id(), member);
           remoteMembers.put(member.id(), member);
+          membershipListeners.forEach(l -> l.memberJoined(member));
         }));
       }
     }
@@ -79,6 +80,7 @@ public abstract class ManagedCluster implements Cluster, Managed<Cluster> {
           futures.add(member.close().thenRun(() -> {
             members.remove(member.id());
             remoteMembers.remove(member.id());
+            membershipListeners.forEach(l -> l.memberLeft(member.id()));
           }));
         }
       }
