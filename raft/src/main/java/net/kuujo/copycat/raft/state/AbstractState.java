@@ -86,20 +86,10 @@ abstract class AbstractState implements MessageHandler<Request, Response>, Manag
   public CompletableFuture<Response> handle(Request request) {
     context.checkThread();
     switch (request.type()) {
-      case JOIN:
-        return join((JoinRequest) request).thenApply(AbstractState::castResponse);
-      case PROMOTE:
-        return promote((PromoteRequest) request).thenApply(AbstractState::castResponse);
-      case DEMOTE:
-        return demote((DemoteRequest) request).thenApply(AbstractState::castResponse);
-      case LEAVE:
-        return leave((LeaveRequest) request).thenApply(AbstractState::castResponse);
       case REGISTER:
         return register((RegisterRequest) request).thenApply(AbstractState::castResponse);
       case KEEP_ALIVE:
         return keepAlive((KeepAliveRequest) request).thenApply(AbstractState::castResponse);
-      case SYNC:
-        return sync((SyncRequest) request).thenApply(AbstractState::castResponse);
       case APPEND:
         return append((AppendRequest) request).thenApply(AbstractState::castResponse);
       case POLL:
@@ -120,26 +110,6 @@ abstract class AbstractState implements MessageHandler<Request, Response>, Manag
   }
 
   /**
-   * Handles a join request.
-   */
-  protected abstract CompletableFuture<JoinResponse> join(JoinRequest request);
-
-  /**
-   * Handles a promote request.
-   */
-  protected abstract CompletableFuture<PromoteResponse> promote(PromoteRequest request);
-
-  /**
-   * Handles a demote request.
-   */
-  protected abstract CompletableFuture<DemoteResponse> demote(DemoteRequest request);
-
-  /**
-   * Handles a leave request.
-   */
-  protected abstract CompletableFuture<LeaveResponse> leave(LeaveRequest request);
-
-  /**
    * Handles a register request.
    */
   protected abstract CompletableFuture<RegisterResponse> register(RegisterRequest request);
@@ -153,11 +123,6 @@ abstract class AbstractState implements MessageHandler<Request, Response>, Manag
    * Handles an append request.
    */
   protected abstract CompletableFuture<AppendResponse> append(AppendRequest request);
-
-  /**
-   * Handles a sync request.
-   */
-  protected abstract CompletableFuture<SyncResponse> sync(SyncRequest request);
 
   /**
    * Handles a poll request.

@@ -34,7 +34,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-class StateMachineProxy {
+class RaftStateMachine {
   private final StateMachine stateMachine;
   private final RaftContext state;
   private final ExecutionContext context;
@@ -42,7 +42,7 @@ class StateMachineProxy {
   private final Map<Long, RaftSession> sessions = new HashMap<>();
   private long sessionTimeout = 5000;
 
-  public StateMachineProxy(StateMachine stateMachine, RaftContext state, ExecutionContext context) {
+  public RaftStateMachine(StateMachine stateMachine, RaftContext state, ExecutionContext context) {
     this.stateMachine = stateMachine;
     this.state = state;
     this.context = context;
@@ -62,64 +62,8 @@ class StateMachineProxy {
       return filter((RegisterEntry) entry, compaction);
     } else if (entry instanceof KeepAliveEntry) {
       return filter((KeepAliveEntry) entry, compaction);
-    } else if (entry instanceof JoinEntry) {
-      return filter((JoinEntry) entry, compaction);
-    } else if (entry instanceof PromoteEntry) {
-      return filter((PromoteEntry) entry, compaction);
-    } else if (entry instanceof DemoteEntry) {
-      return filter((DemoteEntry) entry, compaction);
-    } else if (entry instanceof LeaveEntry) {
-      return filter((LeaveEntry) entry, compaction);
     }
     return CompletableFuture.completedFuture(false);
-  }
-
-  /**
-   * Filters an entry.
-   *
-   * @param entry The entry to filter.
-   * @return A completable future to be completed with a boolean value indicating whether to keep the entry.
-   */
-  public CompletableFuture<Boolean> filter(JoinEntry entry, Compaction compaction) {
-    return CompletableFuture.supplyAsync(() -> {
-      return state.getCluster().member(entry.getMember().id()) != null;
-    }, context);
-  }
-
-  /**
-   * Filters an entry.
-   *
-   * @param entry The entry to filter.
-   * @return A completable future to be completed with a boolean value indicating whether to keep the entry.
-   */
-  public CompletableFuture<Boolean> filter(PromoteEntry entry, Compaction compaction) {
-    return CompletableFuture.supplyAsync(() -> {
-      return state.getCluster().member(entry.getMember().id()) != null;
-    }, context);
-  }
-
-  /**
-   * Filters an entry.
-   *
-   * @param entry The entry to filter.
-   * @return A completable future to be completed with a boolean value indicating whether to keep the entry.
-   */
-  public CompletableFuture<Boolean> filter(DemoteEntry entry, Compaction compaction) {
-    return CompletableFuture.supplyAsync(() -> {
-      return state.getCluster().member(entry.getMember().id()) != null;
-    }, context);
-  }
-
-  /**
-   * Filters an entry.
-   *
-   * @param entry The entry to filter.
-   * @return A completable future to be completed with a boolean value indicating whether to keep the entry.
-   */
-  public CompletableFuture<Boolean> filter(LeaveEntry entry, Compaction compaction) {
-    return CompletableFuture.supplyAsync(() -> {
-      return state.getCluster().member(entry.getMember().id()) != null;
-    }, context);
   }
 
   /**
@@ -186,70 +130,10 @@ class StateMachineProxy {
       return apply((RegisterEntry) entry);
     } else if (entry instanceof KeepAliveEntry) {
       return apply((KeepAliveEntry) entry);
-    } else if (entry instanceof JoinEntry) {
-      return apply((JoinEntry) entry);
-    } else if (entry instanceof PromoteEntry) {
-      return apply((PromoteEntry) entry);
-    } else if (entry instanceof DemoteEntry) {
-      return apply((DemoteEntry) entry);
-    } else if (entry instanceof LeaveEntry) {
-      return apply((LeaveEntry) entry);
-    } else if (entry instanceof ConfigurationEntry) {
-      return apply((ConfigurationEntry) entry);
     } else if (entry instanceof NoOpEntry) {
       return apply((NoOpEntry) entry);
     }
     return CompletableFuture.completedFuture(null);
-  }
-
-  /**
-   * Applies an entry to the state machine.
-   *
-   * @param entry The entry to apply.
-   * @return A completable future to be completed with the result.
-   */
-  public CompletableFuture<Void> apply(ConfigurationEntry entry) {
-    return configure(entry.getMembers(), entry.getSessionTimeout());
-  }
-
-  /**
-   * Applies an entry to the state machine.
-   *
-   * @param entry The entry to apply.
-   * @return A completable future to be completed with the result.
-   */
-  public CompletableFuture<Void> apply(JoinEntry entry) {
-    return join(entry.getMember());
-  }
-
-  /**
-   * Applies an entry to the state machine.
-   *
-   * @param entry The entry to apply.
-   * @return A completable future to be completed with the result.
-   */
-  public CompletableFuture<Void> apply(PromoteEntry entry) {
-    return promote(entry.getMember());
-  }
-
-  /**
-   * Applies an entry to the state machine.
-   *
-   * @param entry The entry to apply.
-   * @return A completable future to be completed with the result.
-   */
-  public CompletableFuture<Void> apply(DemoteEntry entry) {
-    return demote(entry.getMember());
-  }
-
-  /**
-   * Applies an entry to the state machine.
-   *
-   * @param entry The entry to apply.
-   * @return A completable future to be completed with the result.
-   */
-  public CompletableFuture<Void> apply(LeaveEntry entry) {
-    return leave(entry.getMember());
   }
 
   /**
@@ -307,54 +191,6 @@ class StateMachineProxy {
     return CompletableFuture.runAsync(() -> {
       this.sessionTimeout = sessionTimeout;
       state.getCluster().configure(members.toArray(new MemberInfo[members.size()])).join();
-    }, context);
-  }
-
-  /**
-   * Joins a member.
-   *
-   * @param member The member info.
-   * @return A completable future to be called once the member has joined.
-   */
-  private CompletableFuture<Void> join(MemberInfo member) {
-    return CompletableFuture.runAsync(() -> {
-      state.getCluster().join(member);
-    }, context);
-  }
-
-  /**
-   * Promotes a member.
-   *
-   * @param member The member info.
-   * @return A completable future to be called once the member has been promoted.
-   */
-  private CompletableFuture<Void> promote(MemberInfo member) {
-    return CompletableFuture.runAsync(() -> {
-      state.getCluster().promote(member);
-    }, context);
-  }
-
-  /**
-   * Demotes a member.
-   *
-   * @param member The member info.
-   * @return A completable future to be called once the member has been demoted.
-   */
-  private CompletableFuture<Void> demote(MemberInfo member) {
-    return CompletableFuture.runAsync(() -> {
-      state.getCluster().demote(member);
-    }, context);
-  }
-
-  /**
-   * Leaves a member.
-   *
-   * @param member The member info.
-   * @return A completable future to be called once the member has left.
-   */
-  private CompletableFuture<Void> leave(MemberInfo member) {
-    return CompletableFuture.runAsync(() -> {
-      state.getCluster().leave(member);
     }, context);
   }
 

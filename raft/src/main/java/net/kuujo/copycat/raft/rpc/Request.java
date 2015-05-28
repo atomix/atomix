@@ -41,34 +41,9 @@ public interface Request<REQUEST extends Request<REQUEST>> extends ReferenceCoun
     KEEP_ALIVE,
 
     /**
-     * Join request.
-     */
-    JOIN,
-
-    /**
-     * Promote request.
-     */
-    PROMOTE,
-
-    /**
-     * Demote request.
-     */
-    DEMOTE,
-
-    /**
-     * Leave request.
-     */
-    LEAVE,
-
-    /**
      * Append request.
      */
     APPEND,
-
-    /**
-     * Sync request.
-     */
-    SYNC,
 
     /**
      * Poll request.

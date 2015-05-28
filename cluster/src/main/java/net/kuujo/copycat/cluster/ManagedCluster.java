@@ -91,7 +91,7 @@ public abstract class ManagedCluster implements Cluster, Managed<Cluster> {
             remoteMembers.remove(member.id());
           }));
         }
-      } else if (member.type() == Member.Type.PASSIVE || member.type == Member.Type.CLIENT) {
+      } else if (member.type == Member.Type.CLIENT) {
         futures.add(member.close().thenRun(() -> {
           members.remove(member.id());
           remoteMembers.remove(member.id());
@@ -105,49 +105,34 @@ public abstract class ManagedCluster implements Cluster, Managed<Cluster> {
    * Configures the set of active cluster members.
    */
   public CompletableFuture<Void> configure(MemberInfo... membersInfo) {
-    boolean updated = false;
-
     List<CompletableFuture> futures = new ArrayList<>();
     for (MemberInfo memberInfo : membersInfo) {
-      if (memberInfo.id() == member().id()) {
-        localMember.type = Member.Type.ACTIVE;
-        updated = true;
-      } else if (!remoteMembers.containsKey(memberInfo.id())) {
+      if (memberInfo.id() != localMember.id() && !remoteMembers.containsKey(memberInfo.id())) {
         ManagedRemoteMember member = createMember(memberInfo);
         futures.add(member.connect().thenRun(() -> {
-          member.type = Member.Type.ACTIVE;
+          member.type = Member.Type.CLIENT;
           members.put(member.id(), member);
           remoteMembers.put(member.id(), member);
         }));
       }
     }
 
-    if (!updated) {
-      localMember.type = Member.Type.CLIENT;
-    }
-
     for (ManagedRemoteMember member : remoteMembers.values()) {
-      if (member.type() == Member.Type.ACTIVE) {
-        boolean isConfigured = false;
+      if (member.type() == Member.Type.CLIENT) {
+        boolean configured = false;
         for (MemberInfo memberInfo : membersInfo) {
           if (memberInfo.id() == member.id()) {
-            member.type = Member.Type.ACTIVE;
-            isConfigured = true;
+            configured = true;
             break;
           }
         }
 
-        if (!isConfigured) {
+        if (!configured) {
           futures.add(member.close().thenRun(() -> {
             members.remove(member.id());
             remoteMembers.remove(member.id());
           }));
         }
-      } else if (member.type() == Member.Type.PASSIVE || member.type == Member.Type.CLIENT) {
-        futures.add(member.close().thenRun(() -> {
-          members.remove(member.id());
-          remoteMembers.remove(member.id());
-        }));
       }
     }
     return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()]));
@@ -190,60 +175,6 @@ public abstract class ManagedCluster implements Cluster, Managed<Cluster> {
       });
       return member;
     });
-  }
-
-  /**
-   * Joins a member to the cluster.
-   */
-  public CompletableFuture<Void> join(MemberInfo info) {
-    ManagedRemoteMember member = remoteMembers.get(info.id());
-    if (member == null) {
-      member = createMember(info);
-      members.put(info.id(), member);
-      remoteMembers.put(info.id(), member);
-    }
-    member.type = Member.Type.PASSIVE;
-    member.status = Member.Status.DEAD;
-    return CompletableFuture.completedFuture(null);
-  }
-
-  /**
-   * Promotes a member.
-   */
-  public CompletableFuture<Void> promote(MemberInfo info) {
-    ManagedRemoteMember member = remoteMembers.get(info.id());
-    if (member != null) {
-      member.type = Member.Type.ACTIVE;
-    }
-    return CompletableFuture.completedFuture(null);
-  }
-
-  /**
-   * Demotes a member.
-   */
-  public CompletableFuture<Void> demote(MemberInfo info) {
-    ManagedRemoteMember member = remoteMembers.get(info.id());
-    if (member != null) {
-      member.type = Member.Type.PASSIVE;
-    }
-    return CompletableFuture.completedFuture(null);
-  }
-
-  /**
-   * Leaves a member from the cluster.
-   */
-  public CompletableFuture<Void> leave(MemberInfo info) {
-    ManagedRemoteMember member = remoteMembers.get(info.id());
-    if (member != null) {
-      if (member.session().isExpired()) {
-        members.remove(info.id());
-        remoteMembers.remove(info.id());
-        return member.close();
-      } else {
-        member.type = Member.Type.CLIENT;
-      }
-    }
-    return CompletableFuture.completedFuture(null);
   }
 
   /**

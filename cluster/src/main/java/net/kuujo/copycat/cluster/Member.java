@@ -37,11 +37,6 @@ public interface Member {
     CLIENT,
 
     /**
-     * Passive member.
-     */
-    PASSIVE,
-
-    /**
      * Active member.
      */
     ACTIVE

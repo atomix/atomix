@@ -42,34 +42,9 @@ public interface Response<RESPONSE extends Response<RESPONSE>> extends Reference
     KEEP_ALIVE,
 
     /**
-     * Join response.
-     */
-    JOIN,
-
-    /**
-     * Promote response.
-     */
-    PROMOTE,
-
-    /**
-     * Demote response.
-     */
-    DEMOTE,
-
-    /**
-     * Leave response.
-     */
-    LEAVE,
-
-    /**
      * Append response.
      */
     APPEND,
-
-    /**
-     * Sync response.
-     */
-    SYNC,
 
     /**
      * Poll response.

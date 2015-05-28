@@ -46,7 +46,7 @@ public class RaftContext implements Managed<RaftContext> {
   private final Logger LOGGER = LoggerFactory.getLogger(RaftContext.class);
   private final Set<EventListener<Long>> termListeners = new CopyOnWriteArraySet<>();
   private final Set<EventListener<Member>> electionListeners = new CopyOnWriteArraySet<>();
-  private final StateMachineProxy stateMachine;
+  private final RaftStateMachine stateMachine;
   private final RaftLog log;
   private final ManagedCluster cluster;
   private final String topic;
@@ -68,7 +68,7 @@ public class RaftContext implements Managed<RaftContext> {
 
   public RaftContext(RaftLog log, StateMachine stateMachine, ManagedCluster cluster, String topic, ExecutionContext context) {
     this.log = log;
-    this.stateMachine = new StateMachineProxy(stateMachine, this, new ExecutionContext(context.name() + "-state"));
+    this.stateMachine = new RaftStateMachine(stateMachine, this, new ExecutionContext(context.name() + "-state"));
     this.cluster = cluster;
     this.topic = topic;
     this.context = context;
@@ -420,7 +420,7 @@ public class RaftContext implements Managed<RaftContext> {
    *
    * @return The state machine proxy.
    */
-  StateMachineProxy getStateMachine() {
+  RaftStateMachine getStateMachine() {
     return stateMachine;
   }
 
@@ -518,10 +518,6 @@ public class RaftContext implements Managed<RaftContext> {
       switch (cluster.member().type()) {
         case CLIENT:
           transition(RemoteState.class);
-          break;
-        case PASSIVE:
-          log.open();
-          transition(PassiveState.class);
           break;
         case ACTIVE:
           log.open();

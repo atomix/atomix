@@ -36,37 +36,12 @@ class StartState extends AbstractState {
   }
 
   @Override
-  protected CompletableFuture<JoinResponse> join(JoinRequest request) {
-    return exceptionalFuture(new IllegalStateException("inactive state"));
-  }
-
-  @Override
-  protected CompletableFuture<PromoteResponse> promote(PromoteRequest request) {
-    return exceptionalFuture(new IllegalStateException("inactive state"));
-  }
-
-  @Override
-  protected CompletableFuture<DemoteResponse> demote(DemoteRequest request) {
-    return exceptionalFuture(new IllegalStateException("inactive state"));
-  }
-
-  @Override
-  protected CompletableFuture<LeaveResponse> leave(LeaveRequest request) {
-    return exceptionalFuture(new IllegalStateException("inactive state"));
-  }
-
-  @Override
   protected CompletableFuture<RegisterResponse> register(RegisterRequest request) {
     return exceptionalFuture(new IllegalStateException("inactive state"));
   }
 
   @Override
   protected CompletableFuture<KeepAliveResponse> keepAlive(KeepAliveRequest request) {
-    return exceptionalFuture(new IllegalStateException("inactive state"));
-  }
-
-  @Override
-  protected CompletableFuture<SyncResponse> sync(SyncRequest request) {
     return exceptionalFuture(new IllegalStateException("inactive state"));
   }
 

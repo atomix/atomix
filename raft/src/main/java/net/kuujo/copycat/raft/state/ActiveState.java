@@ -16,8 +16,13 @@
 package net.kuujo.copycat.raft.state;
 
 import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.raft.rpc.*;
+import net.kuujo.copycat.raft.ApplicationException;
+import net.kuujo.copycat.raft.Operation;
+import net.kuujo.copycat.raft.Query;
+import net.kuujo.copycat.raft.RaftError;
+import net.kuujo.copycat.raft.log.entry.OperationEntry;
 import net.kuujo.copycat.raft.log.entry.RaftEntry;
+import net.kuujo.copycat.raft.rpc.*;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -27,7 +32,7 @@ import java.util.stream.Collectors;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-abstract class ActiveState extends PassiveState {
+abstract class ActiveState extends AbstractState {
   protected boolean transition;
 
   protected ActiveState(RaftContext context) {
@@ -43,8 +48,6 @@ abstract class ActiveState extends PassiveState {
         return context.transition(StartState.class);
       case REMOTE:
         return context.transition(RemoteState.class);
-      case PASSIVE:
-        return context.transition(PassiveState.class);
       case FOLLOWER:
         return context.transition(FollowerState.class);
       case CANDIDATE:
@@ -366,6 +369,79 @@ abstract class ActiveState extends PassiveState {
         LOGGER.debug("{} - Rejected {}: candidate's last log entry ({}) is at a lower index than the local log ({})", context.getCluster().member().id(), request, index, lastIndex);
         return false;
       }
+    }
+  }
+
+  @Override
+  protected CompletableFuture<RegisterResponse> register(RegisterRequest request) {
+    context.checkThread();
+    logRequest(request);
+    if (context.getLeader() == 0) {
+      return CompletableFuture.completedFuture(logResponse(RegisterResponse.builder()
+        .withStatus(Response.Status.ERROR)
+        .withError(RaftError.Type.NO_LEADER_ERROR)
+        .build()));
+    } else {
+      return context.getCluster().member(context.getLeader()).send(context.getTopic(), request);
+    }
+  }
+
+  @Override
+  protected CompletableFuture<KeepAliveResponse> keepAlive(KeepAliveRequest request) {
+    context.checkThread();
+    logRequest(request);
+    if (context.getLeader() == 0) {
+      return CompletableFuture.completedFuture(logResponse(KeepAliveResponse.builder()
+        .withStatus(Response.Status.ERROR)
+        .withError(RaftError.Type.NO_LEADER_ERROR)
+        .build()));
+    } else {
+      return context.getCluster().member(context.getLeader()).send(context.getTopic(), request);
+    }
+  }
+
+  @Override
+  protected CompletableFuture<SubmitResponse> submit(SubmitRequest request) {
+    context.checkThread();
+    logRequest(request);
+
+    Operation operation = request.operation();
+
+    if (operation instanceof Query && ((Query) operation).consistency() == Query.Consistency.SERIALIZABLE) {
+      CompletableFuture<SubmitResponse> future = new CompletableFuture<>();
+      OperationEntry entry = new OperationEntry(context.getCommitIndex())
+        .setTerm(context.getTerm())
+        .setTimestamp(System.currentTimeMillis())
+        .setSession(request.session())
+        .setRequest(request.request())
+        .setResponse(request.response())
+        .setOperation(operation);
+      context.getStateMachine().apply(entry).whenCompleteAsync((result, resultError) -> {
+        context.checkThread();
+        if (isOpen()) {
+          if (resultError == null) {
+            future.complete(logResponse(SubmitResponse.builder()
+              .withStatus(Response.Status.OK)
+              .withResult(result)
+              .build()));
+          } else if (resultError instanceof ApplicationException) {
+            future.complete(logResponse(SubmitResponse.builder()
+              .withStatus(Response.Status.ERROR)
+              .withError(RaftError.Type.APPLICATION_ERROR)
+              .build()));
+          } else {
+            future.completeExceptionally(resultError);
+          }
+        }
+      }, context.getContext());
+      return future;
+    } else if (context.getLeader() == 0) {
+      return CompletableFuture.completedFuture(logResponse(SubmitResponse.builder()
+        .withStatus(Response.Status.ERROR)
+        .withError(RaftError.Type.NO_LEADER_ERROR)
+        .build()));
+    } else {
+      return context.getCluster().member(context.getLeader()).send(context.getTopic(), request);
     }
   }
 

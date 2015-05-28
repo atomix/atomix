@@ -162,16 +162,6 @@ public class RemoteState extends AbstractState {
   }
 
   @Override
-  protected CompletableFuture<SyncResponse> sync(SyncRequest request) {
-    context.checkThread();
-    logRequest(request);
-    return CompletableFuture.completedFuture(logResponse(SyncResponse.builder()
-      .withStatus(Response.Status.ERROR)
-      .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
-      .build()));
-  }
-
-  @Override
   protected CompletableFuture<AppendResponse> append(AppendRequest request) {
     context.checkThread();
     logRequest(request);
@@ -235,62 +225,6 @@ public class RemoteState extends AbstractState {
     logRequest(request);
     if (context.getLeader() == 0) {
       return CompletableFuture.completedFuture(logResponse(RegisterResponse.builder()
-        .withStatus(Response.Status.ERROR)
-        .withError(RaftError.Type.NO_LEADER_ERROR)
-        .build()));
-    } else {
-      return context.getCluster().member(context.getLeader()).send(context.getTopic(), request);
-    }
-  }
-
-  @Override
-  protected CompletableFuture<LeaveResponse> leave(LeaveRequest request) {
-    context.checkThread();
-    logRequest(request);
-    if (context.getLeader() == 0) {
-      return CompletableFuture.completedFuture(logResponse(LeaveResponse.builder()
-        .withStatus(Response.Status.ERROR)
-        .withError(RaftError.Type.NO_LEADER_ERROR)
-        .build()));
-    } else {
-      return context.getCluster().member(context.getLeader()).send(context.getTopic(), request);
-    }
-  }
-
-  @Override
-  protected CompletableFuture<JoinResponse> join(JoinRequest request) {
-    context.checkThread();
-    logRequest(request);
-    if (context.getLeader() == 0) {
-      return CompletableFuture.completedFuture(logResponse(JoinResponse.builder()
-        .withStatus(Response.Status.ERROR)
-        .withError(RaftError.Type.NO_LEADER_ERROR)
-        .build()));
-    } else {
-      return context.getCluster().member(context.getLeader()).send(context.getTopic(), request);
-    }
-  }
-
-  @Override
-  protected CompletableFuture<PromoteResponse> promote(PromoteRequest request) {
-    context.checkThread();
-    logRequest(request);
-    if (context.getLeader() == 0) {
-      return CompletableFuture.completedFuture(logResponse(PromoteResponse.builder()
-        .withStatus(Response.Status.ERROR)
-        .withError(RaftError.Type.NO_LEADER_ERROR)
-        .build()));
-    } else {
-      return context.getCluster().member(context.getLeader()).send(context.getTopic(), request);
-    }
-  }
-
-  @Override
-  protected CompletableFuture<DemoteResponse> demote(DemoteRequest request) {
-    context.checkThread();
-    logRequest(request);
-    if (context.getLeader() == 0) {
-      return CompletableFuture.completedFuture(logResponse(DemoteResponse.builder()
         .withStatus(Response.Status.ERROR)
         .withError(RaftError.Type.NO_LEADER_ERROR)
         .build()));
