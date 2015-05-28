@@ -631,16 +631,22 @@ public abstract class AbstractBuffer implements Buffer {
 
   @Override
   public String readUTF8() {
-    byte[] bytes = new byte[readUnsignedShort(checkRead(Short.BYTES))];
-    read(checkRead(bytes.length), bytes, 0, bytes.length);
-    return new String(bytes, StandardCharsets.UTF_8);
+    if (readByte() != 0) {
+      byte[] bytes = new byte[readUnsignedShort()];
+      read(bytes, 0, bytes.length);
+      return new String(bytes, StandardCharsets.UTF_8);
+    }
+    return null;
   }
 
   @Override
   public String readUTF8(long offset) {
-    byte[] bytes = new byte[readUnsignedShort(checkRead(offset, Short.BYTES))];
-    read(checkRead(offset + Short.BYTES, bytes.length), bytes, 0, bytes.length);
-    return new String(bytes, StandardCharsets.UTF_8);
+    if (readByte(offset) != 0) {
+      byte[] bytes = new byte[readUnsignedShort(offset + Byte.BYTES)];
+      read(offset + Byte.BYTES + Short.BYTES, bytes, 0, bytes.length);
+      return new String(bytes, StandardCharsets.UTF_8);
+    }
+    return null;
   }
 
   @Override
@@ -853,16 +859,26 @@ public abstract class AbstractBuffer implements Buffer {
 
   @Override
   public Buffer writeUTF8(String s) {
-    byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
-    return writeUnsignedShort(checkWrite(Short.BYTES), bytes.length)
-      .write(checkWrite(bytes.length), bytes, 0, bytes.length);
+    if (s == null) {
+      return writeByte(0);
+    } else {
+      writeByte(1);
+      byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
+      return writeUnsignedShort(bytes.length)
+        .write(bytes, 0, bytes.length);
+    }
   }
 
   @Override
   public Buffer writeUTF8(long offset, String s) {
-    byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
-    return writeUnsignedShort(checkWrite(offset, Short.BYTES), bytes.length)
-      .write(checkWrite(offset + Short.BYTES, bytes.length), bytes, 0, bytes.length);
+    if (s == null) {
+      return writeByte(offset, 0);
+    } else {
+      writeByte(offset, 1);
+      byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
+      return writeUnsignedShort(offset + Byte.BYTES, bytes.length)
+        .write(offset + Byte.BYTES + Short.BYTES, bytes, 0, bytes.length);
+    }
   }
 
   @Override

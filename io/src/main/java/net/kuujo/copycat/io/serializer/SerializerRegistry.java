@@ -110,8 +110,24 @@ public class SerializerRegistry {
    * @param type The serializable class.
    * @return The serializer for the given class.
    */
+  @SuppressWarnings("unchecked")
   public Class<? extends ObjectWriter> lookup(Class<?> type) {
-    return serializers.get(type);
+    Class<? extends ObjectWriter> writerClass = serializers.get(type);
+    if (writerClass == null) {
+      for (Map.Entry<Class, Class<? extends ObjectWriter>> entry : serializers.entrySet()) {
+        if (entry.getKey().isAssignableFrom(type)) {
+          writerClass = entry.getValue();
+          break;
+        }
+      }
+
+      if (writerClass != null) {
+        serializers.put(type, writerClass);
+      } else {
+        serializers.put(type, null);
+      }
+    }
+    return writerClass;
   }
 
   /**

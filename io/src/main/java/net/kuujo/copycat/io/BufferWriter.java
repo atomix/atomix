@@ -315,9 +315,14 @@ public class BufferWriter implements BufferOutput<BufferWriter>, ReferenceCounte
 
   @Override
   public BufferWriter writeUTF8(String s) {
-    byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
-    return writeUnsignedShort(bytes.length)
-      .write(bytes, 0, bytes.length);
+    if (s == null) {
+      return writeByte(0);
+    } else {
+      writeByte(1);
+      byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
+      return writeUnsignedShort(bytes.length)
+        .write(bytes, 0, bytes.length);
+    }
   }
 
   @Override

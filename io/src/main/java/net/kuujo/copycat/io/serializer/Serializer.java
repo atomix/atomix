@@ -52,14 +52,14 @@ public class Serializer {
   private final ReferencePool<Buffer> bufferPool = new HeapBufferPool();
 
   @SuppressWarnings("unchecked")
-  public Serializer(String... packages) {
+  public Serializer(Object... resources) {
     this.registry = new SerializerRegistry();
 
-    String[] allPackages = new String[packages.length + 1];
-    System.arraycopy(packages, 0, allPackages, 0, packages.length);
-    allPackages[packages.length] = COPYCAT_PACKAGE;
+    Object[] allResources = new String[resources.length + 1];
+    System.arraycopy(resources, 0, allResources, 0, resources.length);
+    allResources[resources.length] = COPYCAT_PACKAGE;
 
-    registerSerializers(allPackages);
+    registerSerializers(allResources);
   }
 
   private Serializer(SerializerRegistry registry) {
@@ -70,8 +70,8 @@ public class Serializer {
    * Registers serializers from the given packages.
    */
   @SuppressWarnings("unchecked")
-  private void registerSerializers(String... packages) {
-    Reflections reflections = new Reflections(packages);
+  private void registerSerializers(Object... resources) {
+    Reflections reflections = new Reflections(resources);
 
     for (Class<? extends ObjectWriter> writer : reflections.getSubTypesOf(ObjectWriter.class)) {
       Serialize serialize = writer.getAnnotation(Serialize.class);
@@ -86,7 +86,7 @@ public class Serializer {
       } else {
         Class type = TypeResolver.resolveRawArgument(ObjectWriter.class, writer);
         if (type != null) {
-          registry.register((Class) type, writer);
+          registry.register(type, writer);
         }
       }
     }
@@ -286,7 +286,7 @@ public class Serializer {
    */
   @SuppressWarnings("unchecked")
   private <T> Buffer writeWritableClass(Class<?> type, T writable, Buffer buffer, ObjectWriter writer) {
-    writer.write(writable, buffer.writeByte(TYPE_WRITABLE_CLASS).writeInt(type.getName().getBytes().length).write(type.getName().getBytes()), this);
+    writer.write(writable, buffer.writeByte(TYPE_WRITABLE_CLASS).writeUTF8(type.getName()), this);
     return buffer;
   }
 
@@ -380,9 +380,7 @@ public class Serializer {
    */
   @SuppressWarnings("unchecked")
   private <T> T readWritableClass(Buffer buffer) {
-    byte[] bytes = new byte[buffer.readInt()];
-    buffer.read(bytes);
-    String name = new String(bytes);
+    String name = buffer.readUTF8();
     try {
       Class<?> type = Class.forName(name);
       if (type == null)
@@ -405,6 +403,7 @@ public class Serializer {
   @SuppressWarnings("unchecked")
   private <T> T readSerializable(Buffer buffer) {
     byte[] bytes = new byte[buffer.readInt()];
+    buffer.read(bytes);
     try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(bytes))) {
       try {
         return (T) in.readObject();

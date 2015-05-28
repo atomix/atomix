@@ -958,13 +958,13 @@ public interface Buffer extends BytesInput<Buffer>, BufferInput<Buffer>, BytesOu
   String readUTF8();
 
   /**
-   * Reads a 1 byte boolean from the buffer at the given offset.
+   * Reads a UTF-8 string from the buffer at the given offset.
    * <p>
    * The string will be read from the given offset. If the given index is out of the bounds of the buffer then a
    * {@link IndexOutOfBoundsException} will be thrown.
    *
    * @param offset The offset at which to read the boolean.
-   * @return The read boolean.
+   * @return The read string.
    * @throws IndexOutOfBoundsException If the given offset is out of the bounds of the buffer. Note that
    *         bounds are determined by the buffer's {@link Buffer#limit()} rather than capacity.
    * @see Buffer#readUTF8()

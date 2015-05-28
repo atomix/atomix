@@ -25,12 +25,12 @@ import java.util.Set;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Serialize(@Serialize.Type(id=9, type=Set.class))
+@Serialize(@Serialize.Type(id=10, type=Set.class))
 public class SetWriter implements ObjectWriter<Set> {
 
   @Override
   public void write(Set object, Buffer buffer, Serializer serializer) {
-    buffer.writeInt(object.size());
+    buffer.writeUnsignedShort(object.size());
     for (Object value : object) {
       serializer.writeObject(value, buffer);
     }
@@ -39,7 +39,7 @@ public class SetWriter implements ObjectWriter<Set> {
   @Override
   @SuppressWarnings("unchecked")
   public Set read(Class<Set> type, Buffer buffer, Serializer serializer) {
-    int size = buffer.readInt();
+    int size = buffer.readUnsignedShort();
     Set object = new HashSet<>(size);
     for (int i = 0; i < size; i++) {
       object.add(serializer.readObject(buffer));

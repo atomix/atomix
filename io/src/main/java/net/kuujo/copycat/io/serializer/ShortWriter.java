@@ -22,7 +22,7 @@ import net.kuujo.copycat.io.Buffer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Serialize(@Serialize.Type(id=7, type=Short.class))
+@Serialize(@Serialize.Type(id=4, type=Short.class))
 public class ShortWriter implements ObjectWriter<Short> {
 
   @Override

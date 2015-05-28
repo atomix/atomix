@@ -16,26 +16,29 @@
 package net.kuujo.copycat.io.serializer;
 
 import net.kuujo.copycat.io.Buffer;
-import org.testng.annotations.Test;
 
-import static org.testng.Assert.*;
+import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 
 /**
- * Serializer test.
+ * Big decimal serializer.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Test
-public class ObjectWriterTest {
+@Serialize(@Serialize.Type(id=8, type=BigDecimal.class))
+public class BigDecimalWriter implements ObjectWriter<BigDecimal> {
 
-  /**
-   * Tests serializing a string.
-   */
-  public void testSerializeString() {
-    Serializer serializer = new Serializer();
-    Buffer buffer = serializer.writeObject("Hello world!").flip();
-    String result = serializer.readObject(buffer);
-    assertEquals(result, "Hello world!");
+  @Override
+  public void write(BigDecimal object, Buffer buffer, Serializer serializer) {
+    byte[] bytes = object.toPlainString().getBytes(StandardCharsets.UTF_8);
+    buffer.writeInt(bytes.length).write(bytes);
+  }
+
+  @Override
+  public BigDecimal read(Class<BigDecimal> type, Buffer buffer, Serializer serializer) {
+    byte[] bytes = new byte[buffer.readInt()];
+    buffer.read(bytes);
+    return new BigDecimal(new String(bytes, StandardCharsets.UTF_8));
   }
 
 }

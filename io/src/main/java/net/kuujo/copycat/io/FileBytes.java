@@ -386,9 +386,12 @@ public class FileBytes extends AbstractBytes {
 
   @Override
   public String readUTF8(long offset) {
-    byte[] bytes = new byte[readUnsignedShort(offset)];
-    read(offset + Short.BYTES, bytes, 0, bytes.length);
-    return new String(bytes, StandardCharsets.UTF_8);
+    if (readByte(offset) != 0) {
+      byte[] bytes = new byte[readUnsignedShort(offset + Byte.BYTES)];
+      read(offset + Byte.BYTES + Short.BYTES, bytes, 0, bytes.length);
+      return new String(bytes, StandardCharsets.UTF_8);
+    }
+    return null;
   }
 
   @Override
@@ -570,9 +573,14 @@ public class FileBytes extends AbstractBytes {
 
   @Override
   public Bytes writeUTF8(long offset, String s) {
-    byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
-    return writeUnsignedShort(offset, bytes.length)
-      .write(offset + Short.BYTES, bytes, 0, bytes.length);
+    if (s == null) {
+      return writeByte(offset, 0);
+    } else {
+      writeByte(offset, 1);
+      byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
+      return writeUnsignedShort(offset + Byte.BYTES, bytes.length)
+        .write(offset + Byte.BYTES + Short.BYTES, bytes, 0, bytes.length);
+    }
   }
 
   @Override

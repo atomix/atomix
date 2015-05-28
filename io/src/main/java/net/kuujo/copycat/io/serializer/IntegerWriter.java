@@ -22,7 +22,7 @@ import net.kuujo.copycat.io.Buffer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Serialize(@Serialize.Type(id=4, type=Integer.class))
+@Serialize(@Serialize.Type(id=5, type=Integer.class))
 public class IntegerWriter implements ObjectWriter<Integer> {
 
   @Override

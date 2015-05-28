@@ -302,9 +302,12 @@ public class BufferReader implements BufferInput<BufferReader>, ReferenceCounted
 
   @Override
   public String readUTF8() {
-    byte[] bytes = new byte[readUnsignedShort()];
-    read(bytes, 0, bytes.length);
-    return new String(bytes, StandardCharsets.UTF_8);
+    if (readByte() != 0) {
+      byte[] bytes = new byte[readUnsignedShort()];
+      read(bytes, 0, bytes.length);
+      return new String(bytes, StandardCharsets.UTF_8);
+    }
+    return null;
   }
 
   @Override

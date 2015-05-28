@@ -17,32 +17,35 @@ package net.kuujo.copycat.io.serializer;
 
 import net.kuujo.copycat.io.Buffer;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * List serializer.
+ * Map serializer.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Serialize(@Serialize.Type(id=9, type=List.class))
-public class ListWriter implements ObjectWriter<List> {
+@Serialize(@Serialize.Type(id=11, type=Map.class))
+public class MapWriter implements ObjectWriter<Map> {
 
   @Override
-  public void write(List object, Buffer buffer, Serializer serializer) {
+  public void write(Map object, Buffer buffer, Serializer serializer) {
     buffer.writeUnsignedShort(object.size());
-    for (Object value : object) {
-      serializer.writeObject(value, buffer);
+    for (Map.Entry entry : ((Map<?, ?>) object).entrySet()) {
+      serializer.writeObject(entry.getKey(), buffer);
+      serializer.writeObject(entry.getValue(), buffer);
     }
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public List read(Class<List> type, Buffer buffer, Serializer serializer) {
+  public Map read(Class<Map> type, Buffer buffer, Serializer serializer) {
     int size = buffer.readUnsignedShort();
-    List object = new ArrayList<>(size);
+    Map object = new HashMap<>(size);
     for (int i = 0; i < size; i++) {
-      object.add(serializer.readObject(buffer));
+      Object key = serializer.readObject(buffer);
+      Object value = serializer.readObject(buffer);
+      object.put(key, value);
     }
     return object;
   }

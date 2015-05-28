@@ -236,6 +236,11 @@ public class ReadOnlyBuffer extends AbstractBuffer {
   }
 
   @Override
+  public Buffer writeUTF8(String s) {
+    throw new ReadOnlyBufferException();
+  }
+
+  @Override
   public Buffer flush() {
     throw new ReadOnlyBufferException();
   }

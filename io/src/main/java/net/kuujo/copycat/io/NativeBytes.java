@@ -206,9 +206,12 @@ public class NativeBytes extends AbstractBytes {
 
   @Override
   public String readUTF8(long offset) {
-    byte[] bytes = new byte[readUnsignedShort(offset)];
-    read(offset + Short.BYTES, bytes, 0, bytes.length);
-    return new String(bytes, StandardCharsets.UTF_8);
+    if (readByte(offset) != 0) {
+      byte[] bytes = new byte[readUnsignedShort(offset + Byte.BYTES)];
+      read(offset + Byte.BYTES + Short.BYTES, bytes, 0, bytes.length);
+      return new String(bytes, StandardCharsets.UTF_8);
+    }
+    return null;
   }
 
   @Override
