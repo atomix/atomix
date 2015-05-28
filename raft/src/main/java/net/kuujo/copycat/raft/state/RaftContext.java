@@ -63,12 +63,11 @@ public class RaftContext implements Managed<RaftContext> {
   private volatile long firstCommitIndex = 0;
   private volatile long commitIndex = 0;
   private volatile long globalIndex = 0;
-  private volatile long lastApplied = 0;
   private volatile boolean open;
 
   public RaftContext(RaftLog log, StateMachine stateMachine, ManagedCluster cluster, String topic, ExecutionContext context) {
     this.log = log;
-    this.stateMachine = new RaftStateMachine(stateMachine, this, new ExecutionContext(context.name() + "-state"));
+    this.stateMachine = new RaftStateMachine(stateMachine, new ExecutionContext(context.name() + "-state"));
     this.cluster = cluster;
     this.topic = topic;
     this.context = context;
@@ -369,41 +368,6 @@ public class RaftContext implements Managed<RaftContext> {
    */
   public long getGlobalIndex() {
     return globalIndex;
-  }
-
-  /**
-   * Sets the state last applied index.
-   *
-   * @param lastApplied The state last applied index.
-   * @return The Raft context.
-   */
-  RaftContext setLastApplied(long lastApplied) {
-    if (lastApplied < 0)
-      throw new IllegalArgumentException("last applied must be positive");
-    if (lastApplied < this.lastApplied)
-      throw new IllegalArgumentException("cannot decrease last applied");
-    if (lastApplied > commitIndex)
-      throw new IllegalArgumentException("last applied cannot be greater than commit index");
-    this.lastApplied = lastApplied;
-    if (openFuture != null) {
-      synchronized (openFuture) {
-        if (openFuture != null && this.lastApplied != 0 && firstCommitIndex != 0 && this.lastApplied >= firstCommitIndex) {
-          CompletableFuture<RaftContext> future = openFuture;
-          context.execute(() -> future.complete(this));
-          openFuture = null;
-        }
-      }
-    }
-    return this;
-  }
-
-  /**
-   * Returns the state last applied index.
-   *
-   * @return The state last applied index.
-   */
-  public long getLastApplied() {
-    return lastApplied;
   }
 
   /**

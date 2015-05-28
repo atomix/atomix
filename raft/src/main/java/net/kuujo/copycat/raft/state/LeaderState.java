@@ -16,7 +16,6 @@
 package net.kuujo.copycat.raft.state;
 
 import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.cluster.TypedMemberInfo;
 import net.kuujo.copycat.raft.ApplicationException;
 import net.kuujo.copycat.raft.Command;
 import net.kuujo.copycat.raft.Query;
@@ -380,7 +379,7 @@ class LeaderState extends ActiveState {
                   .withStatus(Response.Status.OK)
                   .withLeader(context.getLeader())
                   .withTerm(context.getTerm())
-                  .withMembers(context.getCluster().members().stream().map(m -> new TypedMemberInfo(m.type(), m.info())).collect(Collectors.toList()))
+                  .withMembers(context.getCluster().members().stream().map(Member::info).collect(Collectors.toList()))
                   .build()));
               } else if (resultError instanceof ApplicationException) {
                 future.complete(logResponse(RegisterResponse.builder()
@@ -434,7 +433,7 @@ class LeaderState extends ActiveState {
                   .withStatus(Response.Status.OK)
                   .withLeader(context.getLeader())
                   .withTerm(context.getTerm())
-                  .withMembers(context.getCluster().members().stream().map(m -> new TypedMemberInfo(m.type(), m.info())).collect(Collectors.toList()))
+                  .withMembers(context.getCluster().members().stream().map(Member::info).collect(Collectors.toList()))
                   .build()));
               } else if (resultError instanceof ApplicationException) {
                 future.complete(logResponse(KeepAliveResponse.builder()

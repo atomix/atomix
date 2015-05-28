@@ -190,12 +190,6 @@ public class BufferedLog implements RaftLog {
       compact();
   }
 
-  @Override
-  public RaftLog filter(RaftEntryFilter filter) {
-    compactor.withEntryFilter(filter);
-    return this;
-  }
-
   /**
    * Compacts the log in a background thread.
    */

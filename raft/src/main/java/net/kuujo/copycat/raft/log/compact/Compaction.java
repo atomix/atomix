@@ -15,31 +15,47 @@
  */
 package net.kuujo.copycat.raft.log.compact;
 
+import net.kuujo.copycat.raft.log.SegmentManager;
+
 /**
  * Compaction.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Compaction {
+public abstract class Compaction {
+  private final long index;
+
+  protected Compaction(long index) {
+    this.index = index;
+  }
 
   /**
    * Returns the compaction type.
    *
    * @return The compaction type.
    */
-  Type type();
+  public abstract Type type();
 
   /**
    * Returns the compaction index.
    *
    * @return The compaction index.
    */
-  long index();
+  public long index() {
+    return index;
+  }
+
+  /**
+   * Compacts the given segments.
+   *
+   * @param segments The segments to compact.
+   */
+  abstract void compact(SegmentManager segments);
 
   /**
    * Compaction types.
    */
-  static enum Type {
+  public static enum Type {
 
     /**
      * Minor unordered compaction.

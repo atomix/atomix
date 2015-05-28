@@ -25,7 +25,6 @@ import net.kuujo.copycat.util.ThreadChecker;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 
@@ -36,17 +35,56 @@ import java.util.concurrent.CompletableFuture;
  */
 class RaftStateMachine {
   private final StateMachine stateMachine;
-  private final RaftContext state;
   private final ExecutionContext context;
   private final ThreadChecker threadChecker;
   private final Map<Long, RaftSession> sessions = new HashMap<>();
+  private volatile long lastApplied;
   private long sessionTimeout = 5000;
 
-  public RaftStateMachine(StateMachine stateMachine, RaftContext state, ExecutionContext context) {
+  public RaftStateMachine(StateMachine stateMachine, ExecutionContext context) {
     this.stateMachine = stateMachine;
-    this.state = state;
     this.context = context;
     this.threadChecker = new ThreadChecker(context);
+  }
+
+  /**
+   * Returns the session timeout.
+   *
+   * @return The session timeout.
+   */
+  public long getSessionTimeout() {
+    return sessionTimeout;
+  }
+
+  /**
+   * Sets the session timeout.
+   *
+   * @param sessionTimeout The session timeout.
+   * @return The Raft state machine.
+   */
+  public RaftStateMachine setSessionTimeout(long sessionTimeout) {
+    if (sessionTimeout <= 0)
+      throw new IllegalArgumentException("session timeout must be positive");
+    this.sessionTimeout = sessionTimeout;
+    return this;
+  }
+
+  /**
+   * Returns the last index applied to the state machine.
+   *
+   * @return The last index applied to the state machine.
+   */
+  public long getLastApplied() {
+    return lastApplied;
+  }
+
+  /**
+   * Sets the last index applied to the state machine.
+   *
+   * @param lastApplied The last index applied to the state machine.
+   */
+  private void setLastApplied(long lastApplied) {
+    this.lastApplied = lastApplied;
   }
 
   /**
@@ -181,20 +219,6 @@ class RaftStateMachine {
   }
 
   /**
-   * Configures the state machine.
-   *
-   * @param members The permanent set of Raft members.
-   * @param sessionTimeout The session timeout.
-   * @return A completable future to be called once the state machine is configured.
-   */
-  private CompletableFuture<Void> configure(Set<MemberInfo> members, long sessionTimeout) {
-    return CompletableFuture.runAsync(() -> {
-      this.sessionTimeout = sessionTimeout;
-      state.getCluster().configure(members.toArray(new MemberInfo[members.size()])).join();
-    }, context);
-  }
-
-  /**
    * Registers a member session.
    *
    * @param index The registration index.
@@ -206,7 +230,6 @@ class RaftStateMachine {
     return CompletableFuture.supplyAsync(() -> {
       RaftSession session = new RaftSession(index, member, timestamp);
       sessions.put(index, session);
-      state.getCluster().register(session).join();
       stateMachine.register(session);
       return session.id();
     }, context);
@@ -241,9 +264,9 @@ class RaftStateMachine {
    */
   private CompletableFuture<Long> noop(long index) {
     return CompletableFuture.supplyAsync(() -> {
-      if (index <= state.getLastApplied())
+      if (index <= getLastApplied())
         throw new IllegalStateException("improperly ordered operation");
-      state.setLastApplied(index);
+      setLastApplied(index);
       return index;
     }, context);
   }
@@ -273,12 +296,12 @@ class RaftStateMachine {
         return session.responses.get(request);
 
       // Validate that indexes are being applied in correct order.
-      if (index <= state.getLastApplied())
+      if (index <= getLastApplied())
         throw new IllegalStateException("improperly ordered operation");
 
       // Apply the command to the state machine.
       Object result = stateMachine.apply(new Commit(index, session, timestamp, command));
-      state.setLastApplied(index);
+      setLastApplied(index);
 
       // Store the command result in the session.
       session.responses.put(request, result);
@@ -317,7 +340,7 @@ class RaftStateMachine {
 
       // In order to satisfy linearizability requirements, we only need to ensure that the query is not applied at
       // a state prior to the given index.
-      if (index < state.getLastApplied())
+      if (index < getLastApplied())
         throw new IllegalStateException("improperly ordered query");
 
       // Apply the query to the state machine.

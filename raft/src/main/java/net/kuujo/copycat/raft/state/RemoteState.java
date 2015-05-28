@@ -16,7 +16,7 @@
 package net.kuujo.copycat.raft.state;
 
 import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.cluster.TypedMemberInfo;
+import net.kuujo.copycat.cluster.MemberInfo;
 import net.kuujo.copycat.raft.RaftError;
 import net.kuujo.copycat.raft.rpc.*;
 
@@ -87,13 +87,15 @@ public class RemoteState extends AbstractState {
         context.setTerm(response.term());
         context.setLeader(response.leader());
         context.setSession(response.session());
-        context.getCluster().configure(response.members().toArray(new TypedMemberInfo[response.members().size()])).whenComplete((configureResult, configureError) -> {
-          if (configureError == null) {
-            future.complete(response.session());
-          } else {
-            future.completeExceptionally(configureError);
-          }
-        });
+        context.getCluster()
+          .configure(response.members().toArray(new MemberInfo[response.members().size()]))
+          .whenComplete((configureResult, configureError) -> {
+            if (configureError == null) {
+              future.complete(response.session());
+            } else {
+              future.completeExceptionally(configureError);
+            }
+          });
       } else {
         register(members, future);
       }
@@ -146,7 +148,7 @@ public class RemoteState extends AbstractState {
       if (error == null) {
         context.setTerm(response.term());
         context.setLeader(response.leader());
-        context.getCluster().configure(response.members().toArray(new TypedMemberInfo[response.members().size()])).whenComplete((configureResult, configureError) -> {
+        context.getCluster().configure(response.members().toArray(new MemberInfo[response.members().size()])).whenComplete((configureResult, configureError) -> {
           if (configureError == null) {
             future.complete(null);
           } else {

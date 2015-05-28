@@ -50,58 +50,6 @@ public abstract class ManagedCluster implements Cluster, Managed<Cluster> {
   }
 
   /**
-   * Configures the set of cluster members.
-   */
-  public CompletableFuture<Void> configure(TypedMemberInfo... membersInfo) {
-    boolean updated = false;
-
-    List<CompletableFuture> futures = new ArrayList<>();
-    for (TypedMemberInfo memberInfo : membersInfo) {
-      if (memberInfo.info().id() == member().id()) {
-        localMember.type = memberInfo.type();
-        updated = true;
-      } else if (!remoteMembers.containsKey(memberInfo.info().id())) {
-        ManagedRemoteMember member = createMember(memberInfo.info());
-        futures.add(member.connect().thenRun(() -> {
-          member.type = memberInfo.type();
-          members.put(member.id(), member);
-          remoteMembers.put(member.id(), member);
-        }));
-      }
-    }
-
-    if (!updated) {
-      localMember.type = Member.Type.CLIENT;
-    }
-
-    for (ManagedRemoteMember member : remoteMembers.values()) {
-      if (member.type() == Member.Type.ACTIVE) {
-        boolean isConfigured = false;
-        for (TypedMemberInfo memberInfo : membersInfo) {
-          if (memberInfo.info().id() == member.id()) {
-            member.type = memberInfo.type();
-            isConfigured = true;
-            break;
-          }
-        }
-
-        if (!isConfigured) {
-          futures.add(member.close().thenRun(() -> {
-            members.remove(member.id());
-            remoteMembers.remove(member.id());
-          }));
-        }
-      } else if (member.type == Member.Type.CLIENT) {
-        futures.add(member.close().thenRun(() -> {
-          members.remove(member.id());
-          remoteMembers.remove(member.id());
-        }));
-      }
-    }
-    return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()]));
-  }
-
-  /**
    * Configures the set of active cluster members.
    */
   public CompletableFuture<Void> configure(MemberInfo... membersInfo) {
@@ -136,45 +84,6 @@ public abstract class ManagedCluster implements Cluster, Managed<Cluster> {
       }
     }
     return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()]));
-  }
-
-  /**
-   * Registers a member.
-   */
-  public CompletableFuture<Member> register(Session session) {
-    if (session.member().id() == localMember.id())
-      return CompletableFuture.completedFuture(localMember);
-
-    ManagedRemoteMember member = remoteMembers.containsKey(session.member().id()) ? remoteMembers.get(session.member().id()) : createMember(session.member());
-    return member.connect().thenApply(v -> {
-      member.status = Member.Status.ALIVE;
-      members.put(member.id(), member);
-      remoteMembers.put(member.id(), member);
-      membershipListeners.forEach(l -> l.memberJoined(member));
-      session.addListener(new SessionListener() {
-        @Override
-        public void sessionOpened(Session session) {
-
-        }
-
-        @Override
-        public void sessionClosed(Session session) {
-          member.status = Member.Status.DEAD;
-          if (member.type == Member.Type.CLIENT) {
-            member.close().whenComplete((result, error) -> {
-              members.remove(member.id());
-              remoteMembers.remove(member.id());
-            });
-          }
-        }
-
-        @Override
-        public void sessionExpired(Session session) {
-          sessionClosed(session);
-        }
-      });
-      return member;
-    });
   }
 
   /**

@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.raft.rpc;
 
-import net.kuujo.copycat.cluster.TypedMemberInfo;
+import net.kuujo.copycat.cluster.MemberInfo;
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.util.ReferenceManager;
@@ -58,7 +58,7 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
   private long term;
   private int leader;
   private long session;
-  private Set<TypedMemberInfo> members;
+  private Set<MemberInfo> members;
 
   public RegisterResponse(ReferenceManager<RegisterResponse> referenceManager) {
     super(referenceManager);
@@ -101,7 +101,7 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
    *
    * @return The responding node's member set.
    */
-  public Collection<TypedMemberInfo> members() {
+  public Collection<MemberInfo> members() {
     return members;
   }
 
@@ -213,7 +213,7 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
      * @param members The response members.
      * @return The response builder.
      */
-    public Builder withMembers(TypedMemberInfo members) {
+    public Builder withMembers(MemberInfo members) {
       if (members == null)
         throw new NullPointerException("members cannot be null");
       return withMembers(Arrays.asList(members));
@@ -225,7 +225,7 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
      * @param members The response members.
      * @return The response builder.
      */
-    public Builder withMembers(Collection<TypedMemberInfo> members) {
+    public Builder withMembers(Collection<MemberInfo> members) {
       if (members == null)
         throw new NullPointerException("members cannot be null");
       response.members = new HashSet<>(members);

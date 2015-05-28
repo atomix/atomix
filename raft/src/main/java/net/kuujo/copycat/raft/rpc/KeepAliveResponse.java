@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.raft.rpc;
 
-import net.kuujo.copycat.cluster.TypedMemberInfo;
+import net.kuujo.copycat.cluster.MemberInfo;
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.util.ReferenceManager;
@@ -57,7 +57,7 @@ public class KeepAliveResponse extends AbstractResponse<KeepAliveResponse> {
 
   private long term;
   private int leader;
-  private Set<TypedMemberInfo> members = new HashSet<>();
+  private Set<MemberInfo> members = new HashSet<>();
 
   public KeepAliveResponse(ReferenceManager<KeepAliveResponse> referenceManager) {
     super(referenceManager);
@@ -91,7 +91,7 @@ public class KeepAliveResponse extends AbstractResponse<KeepAliveResponse> {
    *
    * @return The responding node's member set.
    */
-  public Collection<TypedMemberInfo> members() {
+  public Collection<MemberInfo> members() {
     return members;
   }
 
@@ -189,7 +189,7 @@ public class KeepAliveResponse extends AbstractResponse<KeepAliveResponse> {
      * @param members The response members.
      * @return The keep alive response builder.;
      */
-    public Builder withMembers(TypedMemberInfo... members) {
+    public Builder withMembers(MemberInfo... members) {
       if (members == null)
         throw new NullPointerException("members cannot be null");
       return withMembers(Arrays.asList(members));
@@ -201,7 +201,7 @@ public class KeepAliveResponse extends AbstractResponse<KeepAliveResponse> {
      * @param members The response members.
      * @return The keep alive response builder.;
      */
-    public Builder withMembers(Collection<TypedMemberInfo> members) {
+    public Builder withMembers(Collection<MemberInfo> members) {
       response.members.addAll(members);
       return this;
     }

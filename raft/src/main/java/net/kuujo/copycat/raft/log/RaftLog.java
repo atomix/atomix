@@ -193,16 +193,6 @@ public interface RaftLog extends AutoCloseable {
   RaftLog truncate(long index);
 
   /**
-   * Sets a filter on the log.
-   * <p>
-   * During log compaction, entries can be optionally filtered out of the log by explicitly evaluating individual entries.
-   *
-   * @param filter The entry filter.
-   * @return The Raft log.
-   */
-  RaftLog filter(RaftEntryFilter filter);
-
-  /**
    * Commits entries up to the given index.
    * <p>
    * The given commit {@code index} must be greater than the previous commit index. When entries are

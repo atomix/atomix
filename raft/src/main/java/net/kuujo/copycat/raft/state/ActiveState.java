@@ -200,8 +200,8 @@ abstract class ActiveState extends AbstractState {
     // local commit index is greater than last applied. If all the state machine
     // commands have not yet been applied then we want to re-attempt to apply them.
     if (commitIndex != 0 && !context.getLog().isEmpty()) {
-      if (context.getCommitIndex() == 0 || commitIndex > context.getCommitIndex() || context.getCommitIndex() > context.getLastApplied()) {
-        LOGGER.debug("{} - Applying {} commits", context.getCluster().member().id(), commitIndex - Math.max(context.getLastApplied(), context.getLog().firstIndex()));
+      if (context.getCommitIndex() == 0 || commitIndex > context.getCommitIndex()) {
+        LOGGER.debug("{} - Applying {} commits", context.getCluster().member().id(), commitIndex - Math.max(context.getCommitIndex(), context.getLog().firstIndex()));
 
         // Update the local commit index with min(request commit, last log // index)
         long lastIndex = context.getLog().lastIndex();
