@@ -416,24 +416,19 @@ abstract class ActiveState extends AbstractState {
         .setRequest(request.request())
         .setResponse(request.response())
         .setOperation(operation);
-      context.getStateMachine().apply(entry).whenCompleteAsync((result, resultError) -> {
-        context.checkThread();
-        if (isOpen()) {
-          if (resultError == null) {
-            future.complete(logResponse(SubmitResponse.builder()
-              .withStatus(Response.Status.OK)
-              .withResult(result)
-              .build()));
-          } else if (resultError instanceof ApplicationException) {
-            future.complete(logResponse(SubmitResponse.builder()
-              .withStatus(Response.Status.ERROR)
-              .withError(RaftError.Type.APPLICATION_ERROR)
-              .build()));
-          } else {
-            future.completeExceptionally(resultError);
-          }
-        }
-      }, context.getContext());
+      try {
+        future.complete(logResponse(SubmitResponse.builder()
+          .withStatus(Response.Status.OK)
+          .withResult(context.getStateMachine().apply(entry))
+          .build()));
+      } catch (ApplicationException e) {
+        future.complete(logResponse(SubmitResponse.builder()
+          .withStatus(Response.Status.ERROR)
+          .withError(RaftError.Type.APPLICATION_ERROR)
+          .build()));
+      } catch (Exception e) {
+        future.completeExceptionally(e);
+      }
       return future;
     } else if (context.getLeader() == 0) {
       return CompletableFuture.completedFuture(logResponse(SubmitResponse.builder()

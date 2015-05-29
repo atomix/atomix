@@ -20,13 +20,10 @@ import net.kuujo.copycat.cluster.Session;
 import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.raft.log.compact.Compaction;
 import net.kuujo.copycat.raft.log.entry.*;
-import net.kuujo.copycat.util.ExecutionContext;
-import net.kuujo.copycat.util.ThreadChecker;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * Resource state machine.
@@ -35,16 +32,12 @@ import java.util.concurrent.CompletableFuture;
  */
 class RaftStateMachine {
   private final StateMachine stateMachine;
-  private final ExecutionContext context;
-  private final ThreadChecker threadChecker;
   private final Map<Long, RaftSession> sessions = new HashMap<>();
   private volatile long lastApplied;
   private long sessionTimeout = 5000;
 
-  public RaftStateMachine(StateMachine stateMachine, ExecutionContext context) {
+  public RaftStateMachine(StateMachine stateMachine) {
     this.stateMachine = stateMachine;
-    this.context = context;
-    this.threadChecker = new ThreadChecker(context);
   }
 
   /**
@@ -91,9 +84,9 @@ class RaftStateMachine {
    * Filters an entry.
    *
    * @param entry The entry to filter.
-   * @return A completable future to be completed with a boolean value indicating whether to keep the entry.
+   * @return A boolean value indicating whether to keep the entry.
    */
-  public CompletableFuture<Boolean> filter(RaftEntry entry, Compaction compaction) {
+  public boolean filter(RaftEntry entry, Compaction compaction) {
     if (entry instanceof OperationEntry) {
       return filter((OperationEntry) entry, compaction);
     } else if (entry instanceof RegisterEntry) {
@@ -101,86 +94,80 @@ class RaftStateMachine {
     } else if (entry instanceof KeepAliveEntry) {
       return filter((KeepAliveEntry) entry, compaction);
     }
-    return CompletableFuture.completedFuture(false);
+    return false;
   }
 
   /**
    * Filters an entry.
    *
    * @param entry The entry to filter.
-   * @return A completable future to be completed with a boolean value indicating whether to keep the entry.
+   * @return A boolean value indicating whether to keep the entry.
    */
-  public CompletableFuture<Boolean> filter(RegisterEntry entry, Compaction compaction) {
-    return CompletableFuture.supplyAsync(() -> {
+  public boolean filter(RegisterEntry entry, Compaction compaction) {
       return sessions.containsKey(entry.getIndex());
-    }, context);
   }
 
   /**
    * Filters an entry.
    *
    * @param entry The entry to filter.
-   * @return A completable future to be completed with a boolean value indicating whether to keep the entry.
+   * @return A boolean value indicating whether to keep the entry.
    */
-  public CompletableFuture<Boolean> filter(KeepAliveEntry entry, Compaction compaction) {
-    return CompletableFuture.supplyAsync(() -> {
+  public boolean filter(KeepAliveEntry entry, Compaction compaction) {
       return sessions.containsKey(entry.getIndex()) && sessions.get(entry.getIndex()).index == entry.getIndex();
-    }, context);
   }
 
   /**
    * Filters a no-op entry.
    *
    * @param entry The entry to filter.
-   * @return A completable future to be completed with a boolean value indicating whether to keep the entry.
+   * @return A boolean value indicating whether to keep the entry.
    */
-  public CompletableFuture<Boolean> filter(NoOpEntry entry, Compaction compaction) {
-    return CompletableFuture.completedFuture(false);
+  public boolean filter(NoOpEntry entry, Compaction compaction) {
+    return false;
   }
 
   /**
    * Filters an entry.
    *
    * @param entry The entry to filter.
-   * @return A completable future to be completed with a boolean value indicating whether to keep the entry.
+   * @return A boolean value indicating whether to keep the entry.
    */
-  public CompletableFuture<Boolean> filter(OperationEntry entry, Compaction compaction) {
-    return CompletableFuture.supplyAsync(() -> {
+  public boolean filter(OperationEntry entry, Compaction compaction) {
       RaftSession session = sessions.get(entry.getSession());
       if (session == null) {
         session = new RaftSession(entry.getSession(), null, entry.getTimestamp());
         session.expire();
       }
       return stateMachine.filter(new Commit<>(entry.getIndex(), session, entry.getTimestamp(), (Command) entry.getOperation()), compaction);
-    }, context);
   }
 
   /**
    * Applies an entry to the state machine.
    *
    * @param entry The entry to apply.
-   * @return A completable future to be completed with the result.
+   * @return The result.
    */
-  public CompletableFuture<?> apply(RaftEntry entry) {
+  public Object apply(RaftEntry entry) {
     if (entry instanceof OperationEntry) {
       return apply((OperationEntry) entry);
     } else if (entry instanceof RegisterEntry) {
       return apply((RegisterEntry) entry);
     } else if (entry instanceof KeepAliveEntry) {
-      return apply((KeepAliveEntry) entry);
+      apply((KeepAliveEntry) entry);
     } else if (entry instanceof NoOpEntry) {
       return apply((NoOpEntry) entry);
     }
-    return CompletableFuture.completedFuture(null);
+    return null;
   }
 
   /**
    * Applies an entry to the state machine.
    *
    * @param entry The entry to apply.
-   * @return A completable future to be completed with the result.
+   * @return The result.
    */
-  public CompletableFuture<Long> apply(RegisterEntry entry) {
+  public long apply(RegisterEntry entry) {
     return register(entry.getIndex(), entry.getTimestamp(), entry.getMember());
   }
 
@@ -188,19 +175,18 @@ class RaftStateMachine {
    * Applies an entry to the state machine.
    *
    * @param entry The entry to apply.
-   * @return A completable future to be completed with the result.
    */
-  public CompletableFuture<Void> apply(KeepAliveEntry entry) {
-    return keepAlive(entry.getIndex(), entry.getTimestamp(), entry.getSession());
+  public void apply(KeepAliveEntry entry) {
+    keepAlive(entry.getIndex(), entry.getTimestamp(), entry.getSession());
   }
 
   /**
    * Applies an entry to the state machine.
    *
    * @param entry The entry to apply.
-   * @return A completable future to be completed with the result.
+   * @return The result.
    */
-  public CompletableFuture<Object> apply(OperationEntry entry) {
+  public Object apply(OperationEntry entry) {
     if (entry.getOperation() instanceof Command) {
       return command(entry.getIndex(), entry.getSession(), entry.getRequest(), entry.getResponse(), entry.getTimestamp(), (Command) entry.getOperation());
     } else {
@@ -212,9 +198,9 @@ class RaftStateMachine {
    * Applies an entry to the state machine.
    *
    * @param entry The entry to apply.
-   * @return A completable future to be completed with the result.
+   * @return The result.
    */
-  public CompletableFuture<Long> apply(NoOpEntry entry) {
+  public long apply(NoOpEntry entry) {
     return noop(entry.getIndex());
   }
 
@@ -224,15 +210,13 @@ class RaftStateMachine {
    * @param index The registration index.
    * @param timestamp The registration timestamp.
    * @param member The member info.
-   * @return A completable future to be called once the member has been registered.
+   * @return The session ID.
    */
-  private CompletableFuture<Long> register(long index, long timestamp, MemberInfo member) {
-    return CompletableFuture.supplyAsync(() -> {
+  private long register(long index, long timestamp, MemberInfo member) {
       RaftSession session = new RaftSession(index, member, timestamp);
       sessions.put(index, session);
       stateMachine.register(session);
       return session.id();
-    }, context);
   }
 
   /**
@@ -241,10 +225,8 @@ class RaftStateMachine {
    * @param index The keep alive index.
    * @param timestamp The keep alive timestamp.
    * @param sessionId The session to keep alive.
-   * @return A completable future to be called once the keep alive has been applied.
    */
-  private CompletableFuture<Void> keepAlive(long index, long timestamp, long sessionId) {
-    return CompletableFuture.runAsync(() -> {
+  private void keepAlive(long index, long timestamp, long sessionId) {
       RaftSession session = sessions.get(sessionId);
       if (session == null) {
         throw new UnknownSessionException("unknown session: " + sessionId);
@@ -253,22 +235,19 @@ class RaftStateMachine {
         stateMachine.expire(session);
         throw new UnknownSessionException("session expired: " + sessionId);
       }
-    }, context);
   }
 
   /**
    * Applies a no-op to the state machine.
    *
    * @param index The no-op index.
-   * @return A completable future to be completed once the state machine has advanced to the no-op index.
+   * @return The no-op index.
    */
-  private CompletableFuture<Long> noop(long index) {
-    return CompletableFuture.supplyAsync(() -> {
+  private long noop(long index) {
       if (index <= getLastApplied())
         throw new IllegalStateException("improperly ordered operation");
       setLastApplied(index);
       return index;
-    }, context);
   }
 
   /**
@@ -280,12 +259,10 @@ class RaftStateMachine {
    * @param response The command response ID.
    * @param timestamp The command timestamp.
    * @param command The command to apply.
-   * @return A completable future to be completed once the command has been applied.
+   * @return The command result.
    */
   @SuppressWarnings("unchecked")
-  private CompletableFuture<Object> command(long index, long sessionId, long request, long response, long timestamp, Command command) {
-    return CompletableFuture.supplyAsync(() -> {
-
+  private Object command(long index, long sessionId, long request, long response, long timestamp, Command command) {
       // First check to ensure that the session exists.
       RaftSession session = sessions.get(sessionId);
       if (session == null)
@@ -311,7 +288,6 @@ class RaftStateMachine {
 
       // Return the result.
       return result;
-    }, context);
   }
 
   /**
@@ -323,12 +299,10 @@ class RaftStateMachine {
    * @param response The query response ID.
    * @param timestamp The query timestamp.
    * @param query The query to apply.
-   * @return A completable future to be completed once the query has been applied.
+   * @return The query result.
    */
   @SuppressWarnings("unchecked")
-  private CompletableFuture<Object> query(long index, long sessionId, long request, long response, long timestamp, Query query) {
-    return CompletableFuture.supplyAsync(() -> {
-
+  private Object query(long index, long sessionId, long request, long response, long timestamp, Query query) {
       // First check to ensure that the session exists.
       RaftSession session = sessions.get(sessionId);
       if (session == null)
@@ -357,7 +331,6 @@ class RaftStateMachine {
 
       // Return the result.
       return result;
-    }, context);
   }
 
   /**
