@@ -108,7 +108,7 @@ public class RemoteState extends AbstractState {
    */
   private void startKeepAliveTimer() {
     LOGGER.debug("{} - Setting keep alive timer", context.getCluster().member().id());
-    currentTimer = context.getContext().scheduleAtFixedRate(this::keepAlive, 1, context.getHeartbeatInterval(), TimeUnit.MILLISECONDS);
+    currentTimer = context.getContext().scheduleAtFixedRate(this::keepAlive, 1, context.getKeepAliveInterval(), TimeUnit.MILLISECONDS);
   }
 
   /**
@@ -116,9 +116,7 @@ public class RemoteState extends AbstractState {
    */
   private void keepAlive() {
     if (keepAlive.compareAndSet(false, true)) {
-      keepAlive(context.getCluster()
-        .members()
-        .stream()
+      keepAlive(context.getCluster().members().stream()
         .filter(m -> m.type() == Member.Type.ACTIVE)
         .collect(Collectors.toList()), new CompletableFuture<>());
     }

@@ -56,6 +56,7 @@ public class RaftContext implements Managed<RaftContext> {
   private CompletableFuture<RaftContext> openFuture;
   private long electionTimeout = 500;
   private long heartbeatInterval = 250;
+  private long keepAliveInterval = 2000;
   private long session;
   private int leader;
   private long term;
@@ -148,6 +149,37 @@ public class RaftContext implements Managed<RaftContext> {
    */
   public long getHeartbeatInterval() {
     return heartbeatInterval;
+  }
+
+  /**
+   * Sets the client keep alive interva.
+   *
+   * @param keepAliveInterval The client keep alive interval in milliseconds.
+   * @return The Raft context.
+   */
+  public RaftContext setKeepAliveInterval(long keepAliveInterval) {
+    this.keepAliveInterval = keepAliveInterval;
+    return this;
+  }
+
+  /**
+   * Returns the client keep alive interval.
+   *
+   * @return The keep alive interval in milliseconds.
+   */
+  public long getKeepAliveInterval() {
+    return keepAliveInterval;
+  }
+
+  /**
+   * Sets the session timeout.
+   *
+   * @param sessionTimeout The session timeout in milliseconds.
+   * @return The Raft context.
+   */
+  public RaftContext setSessionTimeout(long sessionTimeout) {
+    stateMachine.setSessionTimeout(sessionTimeout);
+    return this;
   }
 
   /**

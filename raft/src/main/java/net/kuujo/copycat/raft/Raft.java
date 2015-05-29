@@ -52,7 +52,9 @@ public class Raft implements Protocol, Managed<Raft> {
   private Raft(RaftLog log, RaftConfig config, StateMachine stateMachine, ManagedCluster cluster, String topic, ExecutionContext context) {
     this.context = new RaftContext(log, stateMachine, cluster, topic, context)
       .setHeartbeatInterval(config.getHeartbeatInterval())
-      .setElectionTimeout(config.getElectionTimeout());
+      .setElectionTimeout(config.getElectionTimeout())
+      .setSessionTimeout(config.getSessionTimeout())
+      .setKeepAliveInterval(config.getKeepAliveInterval());
   }
 
   /**
@@ -260,6 +262,56 @@ public class Raft implements Protocol, Managed<Raft> {
      */
     public Builder withHeartbeatInterval(long heartbeatInterval, TimeUnit unit) {
       config.setHeartbeatInterval(heartbeatInterval, unit);
+      return this;
+    }
+
+    /**
+     * Sets the Raft session timeout, returning the Raft configuration for method chaining.
+     *
+     * @param sessionTimeout The Raft session timeout in milliseconds.
+     * @return The Raft configuration.
+     * @throws IllegalArgumentException If the session timeout is not positive
+     */
+    public Builder withSessionTimeout(long sessionTimeout) {
+      config.setSessionTimeout(sessionTimeout);
+      return this;
+    }
+
+    /**
+     * Sets the Raft session timeout, returning the Raft configuration for method chaining.
+     *
+     * @param sessionTimeout The Raft session timeout.
+     * @param unit The timeout unit.
+     * @return The Raft configuration.
+     * @throws IllegalArgumentException If the session timeout is not positive
+     */
+    public Builder withSessionTimeout(long sessionTimeout, TimeUnit unit) {
+      config.setSessionTimeout(sessionTimeout, unit);
+      return this;
+    }
+
+    /**
+     * Sets the Raft keep alive interval, returning the Raft configuration for method chaining.
+     *
+     * @param keepAliveInterval The Raft keep alive interval in milliseconds.
+     * @return The Raft configuration.
+     * @throws IllegalArgumentException If the keep alive interval is not positive
+     */
+    public Builder withKeepAliveInterval(long keepAliveInterval) {
+      config.setKeepAliveInterval(keepAliveInterval);
+      return this;
+    }
+
+    /**
+     * Sets the Raft keep alive interval, returning the Raft configuration for method chaining.
+     *
+     * @param keepAliveInterval The Raft keep alive interval.
+     * @param unit The keep alive interval unit.
+     * @return The Raft configuration.
+     * @throws IllegalArgumentException If the keep alive interval is not positive
+     */
+    public Builder withKeepAliveInterval(long keepAliveInterval, TimeUnit unit) {
+      config.setKeepAliveInterval(keepAliveInterval, unit);
       return this;
     }
 
