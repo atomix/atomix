@@ -31,7 +31,7 @@ public class RegisterEntry extends TimestampedEntry<RegisterEntry> {
   public RegisterEntry() {
   }
 
-  public RegisterEntry(ReferenceManager<RaftEntry<?>> referenceManager) {
+  public RegisterEntry(ReferenceManager<Entry<?>> referenceManager) {
     super(referenceManager);
   }
 

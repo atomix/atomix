@@ -24,9 +24,9 @@ import net.kuujo.copycat.io.util.ReferenceManager;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @SerializeWith(id=1000)
-public class NoOpEntry extends RaftEntry<NoOpEntry> {
+public class NoOpEntry extends Entry<NoOpEntry> {
 
-  public NoOpEntry(ReferenceManager<RaftEntry<?>> referenceManager) {
+  public NoOpEntry(ReferenceManager<Entry<?>> referenceManager) {
     super(referenceManager);
   }
 

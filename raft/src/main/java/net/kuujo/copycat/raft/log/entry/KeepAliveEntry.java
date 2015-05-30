@@ -26,7 +26,7 @@ import net.kuujo.copycat.io.util.ReferenceManager;
 @SerializeWith(id=1007)
 public class KeepAliveEntry extends SessionEntry<KeepAliveEntry> {
 
-  public KeepAliveEntry(ReferenceManager<RaftEntry<?>> referenceManager) {
+  public KeepAliveEntry(ReferenceManager<Entry<?>> referenceManager) {
     super(referenceManager);
   }
 

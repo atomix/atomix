@@ -30,7 +30,7 @@ public abstract class SessionEntry<T extends SessionEntry<T>> extends Timestampe
   protected SessionEntry() {
   }
 
-  protected SessionEntry(ReferenceManager<RaftEntry<?>> referenceManager) {
+  protected SessionEntry(ReferenceManager<Entry<?>> referenceManager) {
     super(referenceManager);
   }
 

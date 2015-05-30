@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.raft;
 
-import net.kuujo.copycat.raft.log.compact.Compaction;
+import net.kuujo.copycat.raft.log.Compaction;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

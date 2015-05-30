@@ -20,7 +20,7 @@ import net.kuujo.copycat.raft.Apply;
 import net.kuujo.copycat.raft.Commit;
 import net.kuujo.copycat.raft.Filter;
 import net.kuujo.copycat.raft.StateMachine;
-import net.kuujo.copycat.raft.log.compact.Compaction;
+import net.kuujo.copycat.raft.log.Compaction;
 import net.kuujo.copycat.resource.ResourceCommand;
 import net.kuujo.copycat.resource.ResourceOperation;
 import net.kuujo.copycat.resource.ResourceQuery;

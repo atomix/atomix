@@ -233,7 +233,7 @@ public class SearchableOffsetIndex implements OffsetIndex {
       buffer.close();
       bits.close();
     } catch (IOException e) {
-      throw new StorageException(e);
+      throw new LogException(e);
     }
   }
 

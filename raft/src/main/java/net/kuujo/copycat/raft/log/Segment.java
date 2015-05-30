@@ -17,8 +17,10 @@ package net.kuujo.copycat.raft.log;
 
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.raft.log.entry.RaftEntry;
+import net.kuujo.copycat.raft.log.entry.Entry;
 import net.kuujo.copycat.raft.log.entry.TypedEntryPool;
+import net.kuujo.copycat.util.ExecutionContext;
+import net.kuujo.copycat.util.ThreadChecker;
 
 import java.util.ConcurrentModificationException;
 
@@ -36,51 +38,45 @@ public class Segment implements AutoCloseable {
    * Opens a new segment.
    *
    * @param buffer The segment buffer.
-   * @param serializer The segment entry serializer.
    * @param descriptor The segment descriptor.
    * @param index The segment index.
+   * @param context The segment execution context.
    * @return The opened segment.
    */
-  public static Segment open(Buffer buffer, Serializer serializer, SegmentDescriptor descriptor, OffsetIndex index) {
-    return new Segment(buffer, serializer, descriptor, index);
+  public static Segment open(Buffer buffer, SegmentDescriptor descriptor, OffsetIndex index, ExecutionContext context) {
+    return new Segment(buffer, descriptor, index, context);
   }
 
   private final SegmentDescriptor descriptor;
   private final Serializer serializer;
+  private final ThreadChecker threadChecker;
   private final Buffer source;
   private final Buffer writeBuffer;
   private final Buffer readBuffer;
   private final OffsetIndex offsetIndex;
   private final TypedEntryPool entryPool = new TypedEntryPool();
-  private long commitIndex = 0;
-  private long recycleIndex = 0;
   private long skip = 0;
   private boolean open = true;
 
-  Segment(Buffer buffer, Serializer serializer, SegmentDescriptor descriptor, OffsetIndex offsetIndex) {
+  Segment(Buffer buffer, SegmentDescriptor descriptor, OffsetIndex offsetIndex, ExecutionContext context) {
     if (buffer == null)
       throw new NullPointerException("buffer cannot be null");
-    if (serializer == null)
-      throw new NullPointerException("serializer cannot be null");
     if (descriptor == null)
       throw new NullPointerException("descriptor cannot be null");
     if (offsetIndex == null)
       throw new NullPointerException("index cannot be null");
+    if (context == null)
+      throw new NullPointerException("context cannot be null");
 
     this.source = buffer;
-    this.serializer = serializer;
+    this.serializer = context.serializer();
+    this.threadChecker = new ThreadChecker(context);
     this.writeBuffer = buffer.slice();
     this.readBuffer = writeBuffer.asReadOnlyBuffer();
     this.descriptor = descriptor;
     this.offsetIndex = offsetIndex;
     if (offsetIndex.size() > 0) {
       writeBuffer.position(offsetIndex.position(offsetIndex.lastOffset()) + offsetIndex.length(offsetIndex.lastOffset()));
-    }
-
-    // If the descriptor is locked then that indicates that this segment is immutable. Set the commit index to the last
-    // index in the segment.
-    if (descriptor.locked()) {
-      commitIndex = lastIndex();
     }
   }
 
@@ -186,24 +182,6 @@ public class Segment implements AutoCloseable {
   }
 
   /**
-   * Returns the segment's current commit index.
-   *
-   * @return The segment's current commit index or {@code 0} if no entries have been committed to the segment.
-   */
-  public long commitIndex() {
-    return commitIndex;
-  }
-
-  /**
-   * Returns the segment's current recycle index.
-   *
-   * @return The segment's current recycle index or {@code 0} if no entries in the segment have been recycled.
-   */
-  public long recycleIndex() {
-    return recycleIndex;
-  }
-
-  /**
    * Checks the range of the given index.
    */
   private void checkRange(long index) {
@@ -249,7 +227,8 @@ public class Segment implements AutoCloseable {
    * @param type The Raft entry type.
    * @return The created entry.
    */
-  public <T extends RaftEntry<T>> T createEntry(Class<T> type) {
+  public <T extends Entry<T>> T createEntry(Class<T> type) {
+    threadChecker.checkThread();
     if (!isOpen())
       throw new IllegalStateException("segment not open");
     if (isLocked())
@@ -260,7 +239,9 @@ public class Segment implements AutoCloseable {
   /**
    * Commits an entry to the segment.
    */
-  public long appendEntry(RaftEntry entry) {
+  public long appendEntry(Entry entry) {
+    threadChecker.checkThread();
+
     long nextIndex = nextIndex();
 
     if (entry.getIndex() < nextIndex) {
@@ -289,7 +270,8 @@ public class Segment implements AutoCloseable {
    * @param index The index from which to read the entry.
    * @return The entry at the given index.
    */
-  public <T extends RaftEntry<T>> T getEntry(long index) {
+  public <T extends Entry<T>> T getEntry(long index) {
+    threadChecker.checkThread();
     if (!isOpen())
       throw new IllegalStateException("segment not open");
     checkRange(index);
@@ -324,6 +306,7 @@ public class Segment implements AutoCloseable {
    * @return Indicates whether the given index is within the range of the segment.
    */
   public boolean containsIndex(long index) {
+    threadChecker.checkThread();
     if (!isOpen())
       throw new IllegalStateException("segment not open");
     return !isEmpty() && index >= descriptor.index() && index <= lastIndex();
@@ -336,6 +319,7 @@ public class Segment implements AutoCloseable {
    * @return Indicates whether the entry at the given index is active.
    */
   public boolean containsEntry(long index) {
+    threadChecker.checkThread();
     if (!isOpen())
       throw new IllegalStateException("segment not open");
     return containsIndex(index) && offsetIndex.contains(offset(index));
@@ -348,6 +332,7 @@ public class Segment implements AutoCloseable {
    * @return The segment.
    */
   public Segment skip(long entries) {
+    threadChecker.checkThread();
     if (!isOpen())
       throw new IllegalStateException("segment not open");
     this.skip += entries;
@@ -361,10 +346,9 @@ public class Segment implements AutoCloseable {
    * @return The segment.
    */
   public Segment truncate(long index) {
+    threadChecker.checkThread();
     if (!isOpen())
       throw new IllegalStateException("segment not open");
-    if (index <= commitIndex)
-      throw new CommitModificationException("cannot truncate entries prior to commit index: " + commitIndex);
     int offset = offset(index);
     if (offset < offsetIndex.lastOffset()) {
       int diff = offsetIndex.lastOffset() - offset;
@@ -372,40 +356,6 @@ public class Segment implements AutoCloseable {
       offsetIndex.truncate(offset);
       offsetIndex.flush();
     }
-    return this;
-  }
-
-  /**
-   * Commits entries to the segment.
-   *
-   * @param index The index up to which to commit entries.
-   * @return The segment.
-   */
-  public Segment commit(long index) {
-    checkRange(index);
-
-    if (!descriptor.locked() && index > commitIndex) {
-      writeBuffer.flush();
-      offsetIndex.flush();
-
-      commitIndex = index;
-
-      if (offset(commitIndex) == descriptor.range() - 1) {
-        descriptor.update(System.currentTimeMillis());
-        descriptor.lock();
-      }
-    }
-    return this;
-  }
-
-  /**
-   * Recycles entries up to the given index.
-   *
-   * @param index The index up to which to recycle entries.
-   * @return The segment.
-   */
-  public Segment recycle(long index) {
-    recycleIndex = Math.max(recycleIndex, index);
     return this;
   }
 

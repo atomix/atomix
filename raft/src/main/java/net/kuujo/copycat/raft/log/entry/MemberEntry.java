@@ -25,13 +25,13 @@ import net.kuujo.copycat.io.util.ReferenceManager;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class MemberEntry<T extends MemberEntry<T>> extends RaftEntry<T> {
+public abstract class MemberEntry<T extends MemberEntry<T>> extends Entry<T> {
   private MemberInfo member;
 
   protected MemberEntry() {
   }
 
-  protected MemberEntry(ReferenceManager<RaftEntry<?>> referenceManager) {
+  protected MemberEntry(ReferenceManager<Entry<?>> referenceManager) {
     super(referenceManager);
   }
 

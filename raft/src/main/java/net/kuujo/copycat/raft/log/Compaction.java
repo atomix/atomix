@@ -13,9 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.raft.log.compact;
-
-import net.kuujo.copycat.raft.log.SegmentManager;
+package net.kuujo.copycat.raft.log;
 
 /**
  * Compaction.
@@ -24,6 +22,7 @@ import net.kuujo.copycat.raft.log.SegmentManager;
  */
 public abstract class Compaction {
   private final long index;
+  private boolean running = true;
 
   protected Compaction(long index) {
     this.index = index;
@@ -46,11 +45,38 @@ public abstract class Compaction {
   }
 
   /**
-   * Compacts the given segments.
+   * Returns a boolean value indicating whether the compaction is running.
+   *
+   * @return Indicates whether the compaction is running.
+   */
+  public boolean isRunning() {
+    return running;
+  }
+
+  /**
+   * Sets whether the compaction is running.
+   *
+   * @param running Whether the compaction is running.
+   */
+  protected void setRunning(boolean running) {
+    this.running = running;
+  }
+
+  /**
+   * Returns a boolean value indicating whether the compaction is complete.
+   *
+   * @return Indicates whether the compaction is complete.
+   */
+  public boolean isComplete() {
+    return !running;
+  }
+
+  /**
+   * Runs the compactor against the given segments.
    *
    * @param segments The segments to compact.
    */
-  abstract void compact(SegmentManager segments);
+  abstract void run(SegmentManager segments);
 
   /**
    * Compaction types.

@@ -47,15 +47,15 @@ public class NettyCluster extends ManagedCluster {
   public NettyCluster(EventLoopGroup eventLoopGroup, NettyLocalMember localMember, Collection<NettyRemoteMember> remoteMembers, Serializer serializer) {
     super(localMember, remoteMembers, serializer);
     this.eventLoopGroup = eventLoopGroup;
-    localMember.setSerializer(serializer.copy());
-    remoteMembers.forEach(m -> m.setSerializer(serializer.copy()).setEventLoopGroup(eventLoopGroup));
+    remoteMembers.forEach(m -> m.setEventLoopGroup(eventLoopGroup));
   }
 
   @Override
   protected ManagedRemoteMember createMember(MemberInfo info) {
-    return new NettyRemoteMember((NettyMemberInfo) info, Member.Type.CLIENT, new ExecutionContext(String.format("copycat-cluster-%d", info.id())))
-      .setSerializer(serializer.copy())
+    ManagedRemoteMember remoteMember = new NettyRemoteMember((NettyMemberInfo) info, Member.Type.CLIENT)
       .setEventLoopGroup(eventLoopGroup);
+    remoteMember.setContext(new ExecutionContext(String.format("copycat-cluster-%d", info.id()), serializer));
+    return remoteMember;
   }
 
   @Override
@@ -117,11 +117,11 @@ public class NettyCluster extends ManagedCluster {
       NettyMember member = members.remove(memberId);
       NettyLocalMember localMember;
       if (member != null) {
-        localMember = new NettyLocalMember(new NettyMemberInfo(memberId, member.address()), Member.Type.ACTIVE, true, new ExecutionContext(String.format("copycat-cluster-%d", memberId)));
+        localMember = new NettyLocalMember(new NettyMemberInfo(memberId, member.address()), Member.Type.ACTIVE);
       } else {
         if (host == null)
           throw new ConfigurationException("member host must be configured");
-        localMember = new NettyLocalMember(new NettyMemberInfo(memberId, new InetSocketAddress(host, port)), type, false, new ExecutionContext(String.format("copycat-cluster-%d", memberId)));
+        localMember = new NettyLocalMember(new NettyMemberInfo(memberId, new InetSocketAddress(host, port)), type);
       }
 
       return new NettyCluster(eventLoopGroup != null ? eventLoopGroup : new NioEventLoopGroup(), localMember, members.values().stream().map(m -> (NettyRemoteMember) m).collect(Collectors.toList()), serializer != null ? serializer : new Serializer());

@@ -22,7 +22,6 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import net.kuujo.copycat.Task;
-import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.util.HashFunctions;
 import net.kuujo.copycat.util.ExecutionContext;
 
@@ -52,7 +51,6 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
     }
   };
   private final NettyMemberInfo info;
-  private Serializer serializer;
   private EventLoopGroup eventLoopGroup;
   private boolean eventLoopInitialized;
   private Channel channel;
@@ -65,22 +63,14 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
   private CompletableFuture<Void> closeFuture;
   private ScheduledFuture<?> reconnectFuture;
 
-  NettyRemoteMember(NettyMemberInfo info, Type type, ExecutionContext context) {
-    super(info, type, context);
+  NettyRemoteMember(NettyMemberInfo info, Type type) {
+    super(info, type);
     this.info = info;
   }
 
   @Override
   public NettyMemberInfo info() {
     return info;
-  }
-
-  /**
-   * Sets the remote serializer.
-   */
-  NettyRemoteMember setSerializer(Serializer serializer) {
-    this.serializer = serializer;
-    return this;
   }
 
   /**

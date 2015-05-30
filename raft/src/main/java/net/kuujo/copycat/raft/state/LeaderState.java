@@ -107,10 +107,16 @@ class LeaderState extends ActiveState {
       int count = 0;
       long lastIndex = context.getLog().lastIndex();
       for (long commitIndex = Math.max(context.getCommitIndex(), context.getLog().firstIndex()); commitIndex <= lastIndex; commitIndex++) {
-        context.setCommitIndex(commitIndex);
-        RaftEntry entry = context.getLog().getEntry(commitIndex);
-        if (entry != null) {
-          context.getStateMachine().apply(entry);
+        try (Entry entry = context.getLog().getEntry(commitIndex)) {
+          if (entry != null) {
+            try {
+              context.getStateMachine().apply(entry);
+            } catch (ApplicationException e) {
+
+            } finally {
+              context.setLastApplied(commitIndex);
+            }
+          }
         }
         count++;
       }
@@ -232,6 +238,8 @@ class LeaderState extends ActiveState {
                 .build()));
             } catch (Exception e) {
               future.completeExceptionally(e);
+            } finally {
+              context.setLastApplied(commitIndex);
             }
           }
         } else {
@@ -376,6 +384,8 @@ class LeaderState extends ActiveState {
                 .build()));
             } catch (Exception e) {
               future.completeExceptionally(e);
+            } finally {
+              context.setLastApplied(commitIndex);
             }
           }
         } else {
@@ -426,6 +436,8 @@ class LeaderState extends ActiveState {
                 .build()));
             } catch (Exception e) {
               future.completeExceptionally(e);
+            } finally {
+              context.setLastApplied(commitIndex);
             }
           }
         } else {
@@ -588,11 +600,10 @@ class LeaderState extends ActiveState {
       // Set the commit index. Once the commit index has been set we can run
       // all tasks up to the given commit.
       long commitIndex = replicas.get(quorumIndex).matchIndex;
-      long recycleIndex = replicas.get(0).matchIndex;
+      long globalIndex = replicas.get(0).matchIndex;
       if (commitIndex > 0) {
-        context.getLog().commit(commitIndex);
         context.setCommitIndex(commitIndex);
-        context.setGlobalIndex(recycleIndex);
+        context.setGlobalIndex(globalIndex);
         SortedMap<Long, CompletableFuture<Long>> futures = commitFutures.headMap(commitIndex, true);
         for (Map.Entry<Long, CompletableFuture<Long>> entry : futures.entrySet()) {
           entry.getValue().complete(entry.getKey());
@@ -643,7 +654,7 @@ class LeaderState extends ActiveState {
       /**
        * Gets the previous entry.
        */
-      private RaftEntry getPrevEntry(long prevIndex) {
+      private Entry getPrevEntry(long prevIndex) {
         if (context.getLog().containsIndex(prevIndex)) {
           return context.getLog().getEntry(prevIndex);
         }
@@ -654,7 +665,7 @@ class LeaderState extends ActiveState {
        * Gets a list of entries to send.
        */
       @SuppressWarnings("unchecked")
-      private List<RaftEntry> getEntries(long prevIndex) {
+      private List<Entry> getEntries(long prevIndex) {
         long index;
         if (context.getLog().isEmpty()) {
           return Collections.EMPTY_LIST;
@@ -664,10 +675,10 @@ class LeaderState extends ActiveState {
           index = context.getLog().firstIndex();
         }
 
-        List<RaftEntry> entries = new ArrayList<>(1024);
+        List<Entry> entries = new ArrayList<>(1024);
         int size = 0;
         while (size < MAX_BATCH_SIZE && index <= context.getLog().lastIndex()) {
-          RaftEntry entry = context.getLog().getEntry(index);
+          Entry entry = context.getLog().getEntry(index);
           size += entry.size();
           entries.add(entry);
           index++;
@@ -681,7 +692,7 @@ class LeaderState extends ActiveState {
       @SuppressWarnings("unchecked")
       private void emptyCommit() {
         long prevIndex = getPrevIndex();
-        RaftEntry prevEntry = getPrevEntry(prevIndex);
+        Entry prevEntry = getPrevEntry(prevIndex);
         commit(prevIndex, prevEntry, Collections.EMPTY_LIST);
       }
 
@@ -690,15 +701,15 @@ class LeaderState extends ActiveState {
        */
       private void entriesCommit() {
         long prevIndex = getPrevIndex();
-        RaftEntry prevEntry = getPrevEntry(prevIndex);
-        List<RaftEntry> entries = getEntries(prevIndex);
+        Entry prevEntry = getPrevEntry(prevIndex);
+        List<Entry> entries = getEntries(prevIndex);
         commit(prevIndex, prevEntry, entries);
       }
 
       /**
        * Sends a commit message.
        */
-      private void commit(long prevIndex, RaftEntry prevEntry, List<RaftEntry> entries) {
+      private void commit(long prevIndex, Entry prevEntry, List<Entry> entries) {
         AppendRequest request = AppendRequest.builder()
           .withTerm(context.getTerm())
           .withLeader(context.getCluster().member().id())

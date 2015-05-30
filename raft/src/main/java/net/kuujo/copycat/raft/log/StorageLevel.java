@@ -16,25 +16,20 @@
 package net.kuujo.copycat.raft.log;
 
 /**
- * Log exception.
+ * Raft storage level.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class StorageException extends RuntimeException {
+public enum StorageLevel {
 
-  public StorageException() {
-  }
+  /**
+   * Memory storage level.
+   */
+  MEMORY,
 
-  public StorageException(String message) {
-    super(message);
-  }
-
-  public StorageException(String message, Throwable cause) {
-    super(message, cause);
-  }
-
-  public StorageException(Throwable cause) {
-    super(cause);
-  }
+  /**
+   * Disk storage level.
+   */
+  DISK
 
 }

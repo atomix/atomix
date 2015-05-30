@@ -16,7 +16,6 @@
 package net.kuujo.copycat.cluster;
 
 import net.kuujo.copycat.ConfigurationException;
-import net.kuujo.copycat.util.ExecutionContext;
 
 import java.net.InetSocketAddress;
 
@@ -76,7 +75,7 @@ public interface NettyMember extends Member {
     public NettyRemoteMember build() {
       if (id <= 0)
         throw new ConfigurationException("member id must be greater than 0");
-      return new NettyRemoteMember(new NettyMemberInfo(id, new InetSocketAddress(host != null ? host : "localhost", port)), Type.ACTIVE, new ExecutionContext(String.format("copycat-cluster-%d", id)));
+      return new NettyRemoteMember(new NettyMemberInfo(id, new InetSocketAddress(host != null ? host : "localhost", port)), Type.ACTIVE);
     }
   }
 

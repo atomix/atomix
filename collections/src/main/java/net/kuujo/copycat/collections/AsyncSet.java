@@ -19,7 +19,7 @@ import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.Writable;
 import net.kuujo.copycat.raft.*;
-import net.kuujo.copycat.raft.log.compact.Compaction;
+import net.kuujo.copycat.raft.log.Compaction;
 import net.kuujo.copycat.resource.AbstractResource;
 import net.kuujo.copycat.resource.Stateful;
 

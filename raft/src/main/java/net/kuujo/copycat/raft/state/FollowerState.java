@@ -16,8 +16,8 @@
 package net.kuujo.copycat.raft.state;
 
 import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.raft.log.entry.Entry;
 import net.kuujo.copycat.raft.rpc.*;
-import net.kuujo.copycat.raft.log.entry.RaftEntry;
 import net.kuujo.copycat.raft.util.Quorum;
 
 import java.util.Random;
@@ -118,7 +118,7 @@ class FollowerState extends ActiveState {
     // First, load the last log entry to get its term. We load the entry
     // by its index since the index is required by the protocol.
     long lastIndex = context.getLog().lastIndex();
-    RaftEntry lastEntry = context.getLog().containsEntry(lastIndex) ? context.getLog().getEntry(lastIndex) : null;
+    Entry lastEntry = context.getLog().containsEntry(lastIndex) ? context.getLog().getEntry(lastIndex) : null;
 
     // Once we got the last log term, iterate through each current member
     // of the cluster and vote each member for a vote.

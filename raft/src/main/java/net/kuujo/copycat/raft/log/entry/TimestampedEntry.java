@@ -24,13 +24,13 @@ import net.kuujo.copycat.io.util.ReferenceManager;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class TimestampedEntry<T extends TimestampedEntry<T>> extends RaftEntry<T> {
+public abstract class TimestampedEntry<T extends TimestampedEntry<T>> extends Entry<T> {
   private long timestamp;
 
   protected TimestampedEntry() {
   }
 
-  protected TimestampedEntry(ReferenceManager<RaftEntry<?>> referenceManager) {
+  protected TimestampedEntry(ReferenceManager<Entry<?>> referenceManager) {
     super(referenceManager);
   }
 

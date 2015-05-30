@@ -15,12 +15,13 @@
  */
 package net.kuujo.copycat.raft.log;
 
+import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.util.ReferenceManager;
-import net.kuujo.copycat.raft.log.entry.RaftEntry;
+import net.kuujo.copycat.raft.log.entry.Entry;
+import net.kuujo.copycat.util.ExecutionContext;
 import org.testng.annotations.Test;
 
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 import static org.testng.Assert.*;
 
@@ -30,19 +31,19 @@ import static org.testng.Assert.*;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class BufferedStorageTest {
+public class RaftLogTest {
 
   /**
    * Creates a log with a default configuration.
    */
-  private BufferedLog createLog() {
-    return createLog(new LogConfig().withName(UUID.randomUUID().toString()));
+  private Log createLog() {
+    return createLog(new LogConfig().withDirectory(UUID.randomUUID().toString()));
   }
 
-  public static class TestEntry extends RaftEntry<TestEntry> {
+  public static class TestEntry extends Entry<TestEntry> {
     private long value;
 
-    public TestEntry(ReferenceManager<RaftEntry<?>> referenceManager) {
+    public TestEntry(ReferenceManager<Entry<?>> referenceManager) {
       super(referenceManager);
     }
 
@@ -59,16 +60,16 @@ public class BufferedStorageTest {
   /**
    * Creates a log with a custom configuration.
    */
-  private BufferedLog createLog(LogConfig config) {
-    BufferedLog log = new BufferedLog(config);
-    log.open();
+  private Log createLog(LogConfig config) {
+    Log log = new Log(new SegmentManager(config));
+    log.open(new ExecutionContext("test", new Serializer()));
     return log;
   }
 
   /**
    * Performs assertions on an empty initialized log.
    */
-  private void checkInitial(BufferedLog log) {
+  private void checkInitial(Log log) {
     assertTrue(log.isOpen());
     assertTrue(log.isEmpty());
     assertEquals(log.firstIndex(), 0);
@@ -79,7 +80,7 @@ public class BufferedStorageTest {
   /**
    * Writes a keyed test entry.
    */
-  private void writeTestEntry(BufferedLog log) {
+  private void writeTestEntry(Log log) {
     try (TestEntry writer = log.createEntry(TestEntry.class)) {
       writer.setTerm(1);
       writer.setValue(1234);
@@ -89,7 +90,7 @@ public class BufferedStorageTest {
   /**
    * Reads a keyed test entry.
    */
-  private void readUncommittedKeyedTestEntry(BufferedLog log, long index) {
+  private void readUncommittedKeyedTestEntry(Log log, long index) {
     try (TestEntry reader = log.getEntry(index)) {
       assertEquals(reader.getIndex(), index);
       assertEquals(reader.getTerm(), 1);
@@ -100,9 +101,8 @@ public class BufferedStorageTest {
   /**
    * Reads a keyed test entry.
    */
-  private void readCommittedKeyedTestEntry(BufferedLog log, long index) {
+  private void readCommittedKeyedTestEntry(Log log, long index) {
     assertTrue(log.containsIndex(index));
-    assertTrue(log.commitIndex() >= index);
     try (TestEntry reader = log.getEntry(index)) {
       assertEquals(reader.getIndex(), index);
       assertEquals(reader.getTerm(), 1);
@@ -113,7 +113,7 @@ public class BufferedStorageTest {
   /**
    * Reads a keyed entry that has been deduplicated.
    */
-  private void readDeduplicatedTestEntry(BufferedLog log, long index) {
+  private void readDeduplicatedTestEntry(Log log, long index) {
     assertTrue(log.containsIndex(index));
     assertFalse(log.containsEntry(index));
     try (TestEntry reader = log.getEntry(index)) {
@@ -124,7 +124,7 @@ public class BufferedStorageTest {
   /**
    * Checks the length of the log.
    */
-  private void checkLength(BufferedLog log, long length) {
+  private void checkLength(Log log, long length) {
     for (long i = 1; i <= length; i++)
       assertTrue(log.containsIndex(i));
     assertFalse(log.isEmpty());
@@ -137,8 +137,8 @@ public class BufferedStorageTest {
    * Tests that the log properly indicates whether it contains an index.
    */
   public void testContainsIndex() {
-    BufferedLog openLog;
-    try (BufferedLog log = createLog()) {
+    Log openLog;
+    try (Log log = createLog()) {
       openLog = log;
       assertFalse(log.containsIndex(0));
     }
@@ -150,8 +150,8 @@ public class BufferedStorageTest {
    * Tests writing to and reading from the log.
    */
   public void testWriteReadKeyedEntry() {
-    BufferedLog openLog;
-    try (BufferedLog log = createLog()) {
+    Log openLog;
+    try (Log log = createLog()) {
       openLog = log;
       checkInitial(log);
       writeTestEntry(log);
@@ -166,8 +166,8 @@ public class BufferedStorageTest {
    * Tests reading an old entry from the log.
    */
   public void testReadOldEntry() {
-    BufferedLog openLog;
-    try (BufferedLog log = createLog(new LogConfig().withName(UUID.randomUUID().toString()).withMaxEntriesPerSegment(8))) {
+    Log openLog;
+    try (Log log = createLog(new LogConfig().withDirectory(UUID.randomUUID().toString()).withMaxEntriesPerSegment(8))) {
       openLog = log;
       checkInitial(log);
       for (int i = 0; i < 12; i++) {
@@ -183,14 +183,12 @@ public class BufferedStorageTest {
    * Tests committing an entry.
    */
   public void testCommitEntry() {
-    BufferedLog openLog;
-    try (BufferedLog log = createLog()) {
+    Log openLog;
+    try (Log log = createLog()) {
       openLog = log;
       checkInitial(log);
       writeTestEntry(log);
       checkLength(log, 1);
-      log.commit(1);
-      assertEquals(log.commitIndex(), 1);
       readCommittedKeyedTestEntry(log, 1);
     }
     assertFalse(openLog.isOpen());
@@ -201,16 +199,14 @@ public class BufferedStorageTest {
    * Tests committing entries across multiple segments.
    */
   public void testCommitEntryAfterSegment() {
-    BufferedLog openLog;
-    try (BufferedLog log = createLog(new LogConfig().withName(UUID.randomUUID().toString()).withMaxEntriesPerSegment(128))) {
+    Log openLog;
+    try (Log log = createLog(new LogConfig().withDirectory(UUID.randomUUID().toString()).withMaxEntriesPerSegment(128))) {
       openLog = log;
       checkInitial(log);
       for (int i = 0; i < 150; i++) {
         writeTestEntry(log);
       }
       checkLength(log, 150);
-      log.commit(140);
-      assertEquals(log.commitIndex(), 140);
     }
     assertFalse(openLog.isOpen());
     openLog.delete();
@@ -220,8 +216,8 @@ public class BufferedStorageTest {
    * Tests that entries are not deduplicated before commitment.
    */
   public void testNoDedupeBeforeCommit() {
-    BufferedLog openLog;
-    try (BufferedLog log = createLog()) {
+    Log openLog;
+    try (Log log = createLog()) {
       openLog = log;
       checkInitial(log);
       writeTestEntry(log);
@@ -240,8 +236,8 @@ public class BufferedStorageTest {
    */
   public void testDelete() {
     LogConfig config = new LogConfig()
-      .withName("test-delete");
-    BufferedLog log = createLog(config);
+      .withDirectory("test-delete");
+    Log log = createLog(config);
     SegmentManager manager = new SegmentManager(config);
     assertFalse(manager.loadSegments().isEmpty());
     log.close();
@@ -254,19 +250,15 @@ public class BufferedStorageTest {
    */
   public void testCompact() {
     LogConfig config = new LogConfig()
-      .withName(UUID.randomUUID().toString())
-      .withCompactInterval(Long.MAX_VALUE)
+      .withDirectory(UUID.randomUUID().toString())
       .withMaxEntriesPerSegment(8);
-    BufferedLog openLog;
-    try (BufferedLog log = createLog(config)) {
+    Log openLog;
+    try (Log log = createLog(config)) {
       openLog = log;
       for (int i = 0; i < 16; i++) {
         writeTestEntry(log);
       }
       checkLength(log, 16);
-      log.commit(12);
-      assertEquals(log.commitIndex(), 12);
-      log.compactNow();
       readCommittedKeyedTestEntry(log, 8);
     }
     assertFalse(openLog.isOpen());
@@ -278,14 +270,13 @@ public class BufferedStorageTest {
    */
   public void testRecoverRead() {
     LogConfig config = new LogConfig()
-      .withName(UUID.randomUUID().toString())
-      .withCompactInterval(Long.MAX_VALUE)
+      .withDirectory(UUID.randomUUID().toString())
       .withMaxEntriesPerSegment(8);
-    BufferedLog openLog;
-    try (BufferedLog log = createLog(config)) {
+    Log openLog;
+    try (Log log = createLog(config)) {
       writeTestEntry(log);
     }
-    try (BufferedLog log = createLog(config)) {
+    try (Log log = createLog(config)) {
       openLog = log;
       readUncommittedKeyedTestEntry(log, 1);
     }
@@ -298,23 +289,19 @@ public class BufferedStorageTest {
    */
   public void testRecoverBeforeCompact() {
     LogConfig config = new LogConfig()
-      .withName(UUID.randomUUID().toString())
-      .withCompactInterval(Long.MAX_VALUE)
+      .withDirectory(UUID.randomUUID().toString())
       .withMaxEntriesPerSegment(8);
-    BufferedLog openLog;
-    try (BufferedLog log = createLog(config)) {
+    Log openLog;
+    try (Log log = createLog(config)) {
       for (int i = 0; i < 14; i++) {
         writeTestEntry(log);
       }
       readUncommittedKeyedTestEntry(log, 1);
       checkLength(log, 14);
     }
-    try (BufferedLog log = createLog(config)) {
+    try (Log log = createLog(config)) {
       openLog = log;
-      assertEquals(log.commitIndex(), 0);
       readUncommittedKeyedTestEntry(log, 1);
-      log.commit(12);
-      assertEquals(log.commitIndex(), 12);
       readCommittedKeyedTestEntry(log, 8);
     }
     assertFalse(openLog.isOpen());
@@ -326,23 +313,17 @@ public class BufferedStorageTest {
    */
   public void testRecoverAfterCompact() {
     LogConfig config = new LogConfig()
-      .withName(UUID.randomUUID().toString())
-      .withCompactInterval(Long.MAX_VALUE)
+      .withDirectory(UUID.randomUUID().toString())
       .withMaxEntriesPerSegment(8);
-    BufferedLog openLog;
-    try (BufferedLog log = createLog(config)) {
+    Log openLog;
+    try (Log log = createLog(config)) {
       for (int i = 0; i < 14; i++) {
         writeTestEntry(log);
       }
       checkLength(log, 14);
-      log.commit(12);
-      assertEquals(log.commitIndex(), 12);
     }
-    try (BufferedLog log = createLog(config)) {
+    try (Log log = createLog(config)) {
       openLog = log;
-      assertEquals(log.commitIndex(), 0);
-      log.commit(12);
-      assertEquals(log.commitIndex(), 12);
       readCommittedKeyedTestEntry(log, 8);
     }
     assertFalse(openLog.isOpen());
@@ -354,12 +335,12 @@ public class BufferedStorageTest {
    */
   public void testPersistSegmentDescriptor() {
     LogConfig config = new LogConfig()
-      .withName("test")
-      .withMaxEntriesPerSegment(1024)
-      .withCompactInterval(10, TimeUnit.SECONDS);
+      .withDirectory("test")
+      .withMaxEntriesPerSegment(1024);
+    ExecutionContext context = new ExecutionContext("test", new Serializer());
 
-    try (BufferedLog log = new BufferedLog(config)) {
-      log.open();
+    try (Log log = new Log(new SegmentManager(config))) {
+      log.open(context);
       Segment segment = log.segments.currentSegment();
       assertEquals(segment.descriptor().id(), 1);
       assertEquals(segment.descriptor().version(), 1);
@@ -367,8 +348,8 @@ public class BufferedStorageTest {
       assertEquals(segment.descriptor().maxSegmentSize(), 1024);
     }
 
-    try (BufferedLog log = new BufferedLog(config)) {
-      log.open();
+    try (Log log = new Log(new SegmentManager(config))) {
+      log.open(context);
       Segment segment = log.segments.currentSegment();
       assertEquals(segment.descriptor().id(), 1);
       assertEquals(segment.descriptor().version(), 1);

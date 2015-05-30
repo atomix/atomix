@@ -18,7 +18,7 @@ package net.kuujo.copycat.raft.rpc;
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.util.ReferenceManager;
-import net.kuujo.copycat.raft.log.entry.RaftEntry;
+import net.kuujo.copycat.raft.log.entry.Entry;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -62,7 +62,7 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
   private int leader;
   private long logIndex;
   private long logTerm;
-  private List<RaftEntry> entries = new ArrayList<>(128);
+  private List<Entry> entries = new ArrayList<>(128);
   private long commitIndex;
   private long globalIndex;
 
@@ -125,7 +125,7 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
    *
    * @return A list of log entries.
    */
-  public List<RaftEntry> entries() {
+  public List<Entry> entries() {
     return entries;
   }
 
@@ -156,7 +156,7 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
       .writeLong(globalIndex);
 
     buffer.writeInt(entries.size());
-    for (RaftEntry entry : entries) {
+    for (Entry entry : entries) {
       serializer.writeObject(entry, buffer);
     }
   }
@@ -178,7 +178,7 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
 
   @Override
   public void close() {
-    entries.forEach(RaftEntry::release);
+    entries.forEach(Entry::release);
     super.close();
   }
 
@@ -298,7 +298,7 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
      * @param entries The request entries.
      * @return The append request builder.
      */
-    public Builder withEntries(RaftEntry... entries) {
+    public Builder withEntries(Entry... entries) {
       return withEntries(Arrays.asList(entries));
     }
 
@@ -308,7 +308,7 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
      * @param entries The request entries.
      * @return The append request builder.
      */
-    public Builder withEntries(List<RaftEntry> entries) {
+    public Builder withEntries(List<Entry> entries) {
       if (entries == null)
         throw new NullPointerException("entries cannot be null");
       request.entries = entries;

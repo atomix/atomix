@@ -49,15 +49,15 @@ class SegmentFile {
   /**
    * Creates a segment file for the given directory, log name, segment ID, and segment version.
    */
-  static File createSegmentFile(File directory, String name, long id, long version) {
-    return new File(directory, String.format("%s-%d-%d.log", name, id, version));
+  static File createSegmentFile(File directory, long id, long version) {
+    return new File(directory, String.format("copycat-%d-%d.log", id, version));
   }
 
   /**
    * Creates an index file for the given directory, log name, segment ID, and segment version.
    */
-  static File createIndexFile(File directory, String name, long id, long version) {
-    return new File(directory, String.format("%s-%d-%d.index", name, id, version));
+  static File createIndexFile(File directory, long id, long version) {
+    return new File(directory, String.format("copycat-%d-%d.index", id, version));
   }
 
   SegmentFile(File file) {
@@ -82,13 +82,6 @@ class SegmentFile {
    */
   public File index() {
     return new File(file.getParentFile(), file.getName().substring(0, file.getName().lastIndexOf('.') + 1) + "index");
-  }
-
-  /**
-   * Returns the segment name.
-   */
-  public String name() {
-    return file.getName().substring(0, file.getName().lastIndexOf('-', file.getName().lastIndexOf('-') - 1));
   }
 
   /**

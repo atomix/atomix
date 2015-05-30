@@ -15,12 +15,7 @@
  */
 package net.kuujo.copycat.raft.log;
 
-import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.raft.log.compact.CompactionStrategy;
-import net.kuujo.copycat.raft.log.compact.LeveledCompactionStrategy;
-
 import java.io.File;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Copycat storage configuration.
@@ -31,32 +26,26 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class LogConfig {
-  private static final String DEFAULT_NAME = "log";
   private static final String DEFAULT_DIRECTORY = System.getProperty("user.dir");
   private static final int DEFAULT_MAX_ENTRY_SIZE = 1024 * 8;
   private static final int DEFAULT_MAX_SEGMENT_SIZE = 1024 * 1024 * 32;
   private static final int DEFAULT_MAX_ENTRIES_PER_SEGMENT = (int) (Math.pow(2, 31) - 1) / 8;
-  private static final CompactionStrategy DEFAULT_COMPACTION_STRATEGY = new LeveledCompactionStrategy();
-  private static final long DEFAULT_COMPACT_INTERVAL = 1000 * 60;
 
-  private String name = DEFAULT_NAME;
-  private Serializer serializer;
   private File directory = new File(DEFAULT_DIRECTORY);
+  private StorageLevel level = StorageLevel.DISK;
   private int maxEntrySize = DEFAULT_MAX_ENTRY_SIZE;
   private int maxSegmentSize = DEFAULT_MAX_SEGMENT_SIZE;
   private int maxEntriesPerSegment = DEFAULT_MAX_ENTRIES_PER_SEGMENT;
-  private CompactionStrategy compactionStrategy = DEFAULT_COMPACTION_STRATEGY;
-  private long compactInterval = DEFAULT_COMPACT_INTERVAL;
 
   public LogConfig() {
   }
 
   private LogConfig(LogConfig config) {
-    name = config.name;
     directory = config.directory;
+    level = config.level;
     maxEntrySize = config.maxEntrySize;
-    compactionStrategy = config.compactionStrategy;
-    compactInterval = config.compactInterval;
+    maxSegmentSize = config.maxSegmentSize;
+    maxEntriesPerSegment = config.maxEntriesPerSegment;
   }
 
   /**
@@ -64,72 +53,6 @@ public class LogConfig {
    */
   LogConfig copy() {
     return new LogConfig(this);
-  }
-
-  /**
-   * Sets the log name.
-   * <p>
-   * The name is a required component of any log configuration and will be used to construct log file names.
-   *
-   * @param name The log name.
-   * @throws NullPointerException If the {@code name} is {@code null}
-   */
-  public void setName(String name) {
-    if (name == null)
-      throw new NullPointerException("name cannot be null");
-    this.name = name;
-  }
-
-  /**
-   * Returns the log name.
-   *
-   * @return The log name. Defaults to {@code log}
-   */
-  public String getName() {
-    return name;
-  }
-
-  /**
-   * Sets the log name, returning the configuration for method chaining.
-   * <p>
-   * The name is a required component of any log configuration and will be used to construct log file names.
-   *
-   * @param name The log name.
-   * @return The log configuration.
-   * @throws NullPointerException If the {@code name} is {@code null}
-   */
-  public LogConfig withName(String name) {
-    setName(name);
-    return this;
-  }
-
-  /**
-   * Sets the log serializer.
-   *
-   * @param serializer The log serializer.
-   */
-  public void setSerializer(Serializer serializer) {
-    this.serializer = serializer;
-  }
-
-  /**
-   * Returns the log serializer.
-   *
-   * @return The log serializer.
-   */
-  public Serializer getSerializer() {
-    return serializer;
-  }
-
-  /**
-   * Sets the log serializer, returning the configuration for method chaining.
-   *
-   * @param serializer The log serializer.
-   * @return The log configuration.
-   */
-  public LogConfig withSerializer(Serializer serializer) {
-    this.serializer = serializer;
-    return this;
   }
 
   /**
@@ -198,6 +121,38 @@ public class LogConfig {
    */
   public LogConfig withDirectory(File directory) {
     setDirectory(directory);
+    return this;
+  }
+
+  /**
+   * Sets the log storage level.
+   *
+   * @param level The log storage level.
+   * @throws java.lang.NullPointerException If the {@code level} is {@code null}
+   */
+  public void setStorageLevel(StorageLevel level) {
+    if (level == null)
+      throw new NullPointerException("level cannot be null");
+    this.level = level;
+  }
+
+  /**
+   * Returns the log storage level.
+   *
+   * @return The log storage level.
+   */
+  public StorageLevel getStorageLevel() {
+    return level;
+  }
+
+  /**
+   * Sets the log storage level, returning the configuration for method chaining.
+   *
+   * @param level The log storage level.
+   * @return The log configuration.
+   */
+  public LogConfig withStorageLevel(StorageLevel level) {
+    setStorageLevel(level);
     return this;
   }
 
@@ -311,125 +266,6 @@ public class LogConfig {
    */
   public LogConfig withMaxEntriesPerSegment(int maxEntriesPerSegment) {
     setMaxEntriesPerSegment(maxEntriesPerSegment);
-    return this;
-  }
-
-  /**
-   * Sets the log compaction strategy.
-   * <p>
-   * The compaction strategy determined how segments of the log are compacted. Compaction is the process of removing
-   * duplicate keys within a single segment or across many segments and ultimately combining multiple segments together.
-   * This leads to reduced disk space usage and allows entries to be continuously appended to the log.
-   * <p>
-   * If the {@code compactionStrategy} is {@code null} then the default
-   * {@link LeveledCompactionStrategy} will be used.
-   *
-   * @param compactionStrategy The log compaction strategy.
-   */
-  public void setCompactionStrategy(CompactionStrategy compactionStrategy) {
-    if (compactionStrategy == null)
-      compactionStrategy = DEFAULT_COMPACTION_STRATEGY;
-    this.compactionStrategy = compactionStrategy;
-  }
-
-  /**
-   * Returns the log compaction strategy.
-   * <p>
-   * The compaction strategy determined how segments of the log are compacted. Compaction is the process of removing
-   * duplicate keys within a single segment or across many segments and ultimately combining multiple segments together.
-   * This leads to reduced disk space usage and allows entries to be continuously appended to the log.
-   *
-   * @return The log compaction strategy. Defaults to {@link LeveledCompactionStrategy}
-   */
-  public CompactionStrategy getCompactionStrategy() {
-    return compactionStrategy;
-  }
-
-  /**
-   * Sets the log compaction strategy, returning the configuration for method chaining.
-   * <p>
-   * The compaction strategy determined how segments of the log are compacted. Compaction is the process of removing
-   * duplicate keys within a single segment or across many segments and ultimately combining multiple segments together.
-   * This leads to reduced disk space usage and allows entries to be continuously appended to the log.
-   * <p>
-   * If the {@code compactionStrategy} is {@code null} then the default
-   * {@link LeveledCompactionStrategy} will be used.
-   *
-   * @param compactionStrategy The log compaction strategy.
-   * @return The log configuration.
-   */
-  public LogConfig withCompactionStrategy(CompactionStrategy compactionStrategy) {
-    setCompactionStrategy(compactionStrategy);
-    return this;
-  }
-
-  /**
-   * Sets the log compact interval.
-   * <p>
-   * A background thread will periodically attempt to compact the log at the specified interval using the configured
-   * {@link CompactionStrategy}
-   *
-   * @param interval The log compact interval.
-   * @param unit The interval time unit.
-   * @throws IllegalArgumentException If the {@code compactInterval} is negative
-   */
-  public void setCompactInterval(long interval, TimeUnit unit) {
-    setCompactInterval(unit.toMillis(interval));
-  }
-
-  /**
-   * Sets the log compact interval.
-   * <p>
-   * A background thread will periodically attempt to compact the log at the specified interval using the configured
-   * {@link CompactionStrategy}
-   *
-   * @param compactInterval The log compact interval in milliseconds.
-   * @throws IllegalArgumentException If the {@code compactInterval} is negative
-   */
-  public void setCompactInterval(long compactInterval) {
-    if (compactInterval <= 0)
-      throw new IllegalArgumentException("compact interval must be positive");
-    this.compactInterval = compactInterval;
-  }
-
-  /**
-   * Returns the log compact interval.
-   * <p>
-   * The compact interval defines the number of milliseconds between log compaction attempts.
-   *
-   * @return The log compact interval.
-   */
-  public long getCompactInterval() {
-    return compactInterval;
-  }
-
-  /**
-   * Sets the log compact interval, returning the configuration for method chaining.
-   * <p>
-   * A background thread will periodically attempt to compact the log at the specified interval using the configured
-   * {@link CompactionStrategy}
-   *
-   * @param interval The log compact interval.
-   * @param unit The interval time unit.
-   * @return The log configuration.
-   * @throws IllegalArgumentException If the {@code compactInterval} is negative
-   */
-  public LogConfig withCompactInterval(long interval, TimeUnit unit) {
-    return withCompactInterval(unit.toMillis(interval));
-  }
-
-  /**
-   * Sets the log compact interval, returning the configuration for method chaining.
-   * <p>
-   * A background thread will periodically attempt to compact the log at the specified interval using the configured
-   * {@link CompactionStrategy}
-   *
-   * @param compactInterval The log compact interval in milliseconds.
-   * @return The log configuration.
-   * @throws IllegalArgumentException If the {@code compactInterval} is negative
-   */
-  public LogConfig withCompactInterval(long compactInterval) {
-    setCompactInterval(compactInterval);
     return this;
   }
 

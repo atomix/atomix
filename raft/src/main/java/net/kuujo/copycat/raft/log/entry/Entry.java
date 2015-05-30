@@ -28,17 +28,17 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class RaftEntry<T extends RaftEntry<T>> implements ReferenceCounted<RaftEntry>, Writable {
-  private final ReferenceManager<RaftEntry<?>> referenceManager;
+public abstract class Entry<T extends Entry<T>> implements ReferenceCounted<Entry>, Writable {
+  private final ReferenceManager<Entry<?>> referenceManager;
   private final AtomicInteger references = new AtomicInteger();
   private long index;
   private long term;
 
-  protected RaftEntry() {
+  protected Entry() {
     referenceManager = null;
   }
 
-  protected RaftEntry(ReferenceManager<RaftEntry<?>> referenceManager) {
+  protected Entry(ReferenceManager<Entry<?>> referenceManager) {
     this.referenceManager = referenceManager;
   }
 
@@ -101,7 +101,7 @@ public abstract class RaftEntry<T extends RaftEntry<T>> implements ReferenceCoun
   }
 
   @Override
-  public RaftEntry acquire() {
+  public Entry acquire() {
     references.incrementAndGet();
     return this;
   }

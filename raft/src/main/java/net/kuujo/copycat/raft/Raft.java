@@ -19,7 +19,7 @@ import net.kuujo.copycat.ConfigurationException;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ManagedCluster;
 import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.raft.log.RaftLog;
+import net.kuujo.copycat.raft.log.Log;
 import net.kuujo.copycat.raft.state.RaftContext;
 import net.kuujo.copycat.raft.state.RaftState;
 import net.kuujo.copycat.util.ExecutionContext;
@@ -49,7 +49,7 @@ public class Raft implements Protocol, Managed<Raft> {
   private CompletableFuture<Void> closeFuture;
   private boolean open;
 
-  private Raft(RaftLog log, RaftConfig config, StateMachine stateMachine, ManagedCluster cluster, String topic, ExecutionContext context) {
+  private Raft(Log log, RaftConfig config, StateMachine stateMachine, ManagedCluster cluster, String topic, ExecutionContext context) {
     this.context = new RaftContext(log, stateMachine, cluster, topic, context)
       .setHeartbeatInterval(config.getHeartbeatInterval())
       .setElectionTimeout(config.getElectionTimeout())
@@ -186,12 +186,33 @@ public class Raft implements Protocol, Managed<Raft> {
    * Raft builder.
    */
   public static class Builder implements net.kuujo.copycat.Builder<Raft> {
-    private RaftLog log;
+    private Log log;
     private RaftConfig config = new RaftConfig();
     private StateMachine stateMachine;
     private ManagedCluster cluster;
     private String topic;
-    private ExecutionContext context;
+
+    /**
+     * Sets the Raft cluster.
+     *
+     * @param cluster The Raft cluster.
+     * @return The Raft builder.
+     */
+    public Builder withCluster(ManagedCluster cluster) {
+      this.cluster = cluster;
+      return this;
+    }
+
+    /**
+     * Sets the Raft cluster topic.
+     *
+     * @param topic The Raft cluster topic.
+     * @return The Raft builder.
+     */
+    public Builder withTopic(String topic) {
+      this.topic = topic;
+      return this;
+    }
 
     /**
      * Sets the Raft log.
@@ -199,7 +220,7 @@ public class Raft implements Protocol, Managed<Raft> {
      * @param log The Raft log.
      * @return The Raft builder.
      */
-    public Builder withLog(RaftLog log) {
+    public Builder withLog(Log log) {
       this.log = log;
       return this;
     }
@@ -315,39 +336,6 @@ public class Raft implements Protocol, Managed<Raft> {
       return this;
     }
 
-    /**
-     * Sets the Raft cluster.
-     *
-     * @param cluster The Raft cluster.
-     * @return The Raft builder.
-     */
-    public Builder withCluster(ManagedCluster cluster) {
-      this.cluster = cluster;
-      return this;
-    }
-
-    /**
-     * Sets the Raft cluster topic.
-     *
-     * @param topic The Raft cluster topic.
-     * @return The Raft builder.
-     */
-    public Builder withTopic(String topic) {
-      this.topic = topic;
-      return this;
-    }
-
-    /**
-     * Sets the Raft execution context.
-     *
-     * @param context The execution context.
-     * @return The Raft builder.
-     */
-    public Builder withContext(ExecutionContext context) {
-      this.context = context;
-      return this;
-    }
-
     @Override
     public Raft build() {
       if (log == null)
@@ -358,7 +346,7 @@ public class Raft implements Protocol, Managed<Raft> {
         throw new ConfigurationException("cluster not configured");
       if (topic == null)
         throw new ConfigurationException("topic not configured");
-      return new Raft(log, config, stateMachine, cluster, topic, context != null ? context : new ExecutionContext("copycat-" + topic));
+      return new Raft(log, config, stateMachine, cluster, topic, new ExecutionContext("copycat-state", cluster.serializer()));
     }
   }
 

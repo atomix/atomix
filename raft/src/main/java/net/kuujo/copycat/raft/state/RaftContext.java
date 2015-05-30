@@ -21,7 +21,8 @@ import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.raft.Operation;
 import net.kuujo.copycat.raft.StateMachine;
-import net.kuujo.copycat.raft.log.RaftLog;
+import net.kuujo.copycat.raft.log.Log;
+import net.kuujo.copycat.raft.log.LogCompactor;
 import net.kuujo.copycat.raft.rpc.Response;
 import net.kuujo.copycat.raft.rpc.SubmitRequest;
 import net.kuujo.copycat.util.ExecutionContext;
@@ -47,7 +48,8 @@ public class RaftContext implements Managed<RaftContext> {
   private final Set<EventListener<Long>> termListeners = new CopyOnWriteArraySet<>();
   private final Set<EventListener<Member>> electionListeners = new CopyOnWriteArraySet<>();
   private final RaftStateMachine stateMachine;
-  private final RaftLog log;
+  private final Log log;
+  private final LogCompactor compactor;
   private final ManagedCluster cluster;
   private final String topic;
   private final ExecutionContext context;
@@ -61,14 +63,16 @@ public class RaftContext implements Managed<RaftContext> {
   private int leader;
   private long term;
   private int lastVotedFor;
-  private volatile long firstCommitIndex = 0;
-  private volatile long commitIndex = 0;
-  private volatile long globalIndex = 0;
+  private volatile long firstCommitIndex;
+  private volatile long commitIndex;
+  private volatile long globalIndex;
+  private volatile long lastApplied;
   private volatile boolean open;
 
-  public RaftContext(RaftLog log, StateMachine stateMachine, ManagedCluster cluster, String topic, ExecutionContext context) {
+  public RaftContext(Log log, StateMachine stateMachine, ManagedCluster cluster, String topic, ExecutionContext context) {
     this.log = log;
     this.stateMachine = new RaftStateMachine(stateMachine);
+    this.compactor = new LogCompactor(log, this.stateMachine::filter, context);
     this.cluster = cluster;
     this.topic = topic;
     this.context = context;
@@ -390,6 +394,7 @@ public class RaftContext implements Managed<RaftContext> {
     if (globalIndex < this.globalIndex)
       throw new IllegalArgumentException("cannot decrease recycle index");
     this.globalIndex = globalIndex;
+    compactor.compact(globalIndex);
     return this;
   }
 
@@ -400,6 +405,42 @@ public class RaftContext implements Managed<RaftContext> {
    */
   public long getGlobalIndex() {
     return globalIndex;
+  }
+
+  /**
+   * Sets the state last applied index.
+   *
+   * @param lastApplied The state last applied index.
+   * @return The Raft context.
+   */
+  RaftContext setLastApplied(long lastApplied) {
+    if (lastApplied < 0)
+      throw new IllegalArgumentException("last applied must be positive");
+    if (lastApplied < this.lastApplied)
+      throw new IllegalArgumentException("cannot decrease last applied");
+    if (lastApplied > commitIndex)
+      throw new IllegalArgumentException("last applied cannot be greater than commit index");
+    this.lastApplied = lastApplied;
+    compactor.commit(lastApplied);
+    if (openFuture != null) {
+      synchronized (openFuture) {
+        if (openFuture != null && this.lastApplied != 0 && firstCommitIndex != 0 && this.lastApplied >= firstCommitIndex) {
+          CompletableFuture<RaftContext> future = openFuture;
+          context.execute(() -> future.complete(this));
+          openFuture = null;
+        }
+      }
+    }
+    return this;
+  }
+
+  /**
+   * Returns the state last applied index.
+   *
+   * @return The state last applied index.
+   */
+  public long getLastApplied() {
+    return lastApplied;
   }
 
   /**
@@ -425,8 +466,17 @@ public class RaftContext implements Managed<RaftContext> {
    *
    * @return The state log.
    */
-  public RaftLog getLog() {
+  public Log getLog() {
     return log;
+  }
+
+  /**
+   * Returns the log compactor.
+   *
+   * @return The log compactor.
+   */
+  public LogCompactor getCompactor() {
+    return compactor;
   }
 
   /**
@@ -516,7 +566,7 @@ public class RaftContext implements Managed<RaftContext> {
           transition(RemoteState.class);
           break;
         case ACTIVE:
-          log.open();
+          log.open(context);
           transition(FollowerState.class);
           break;
       }

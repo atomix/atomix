@@ -17,7 +17,7 @@ package net.kuujo.copycat.raft;
 
 import net.kuujo.copycat.ConfigurationException;
 import net.kuujo.copycat.cluster.Session;
-import net.kuujo.copycat.raft.log.compact.Compaction;
+import net.kuujo.copycat.raft.log.Compaction;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;

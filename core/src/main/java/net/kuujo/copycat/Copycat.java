@@ -19,7 +19,7 @@ import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ManagedCluster;
 import net.kuujo.copycat.raft.Protocol;
 import net.kuujo.copycat.raft.Raft;
-import net.kuujo.copycat.raft.log.RaftLog;
+import net.kuujo.copycat.raft.log.Log;
 import net.kuujo.copycat.resource.Resource;
 import net.kuujo.copycat.resource.ResourceException;
 import net.kuujo.copycat.resource.ResourceProtocol;
@@ -224,7 +224,7 @@ public class Copycat implements Managed<Copycat> {
      * @param log The Raft log.
      * @return The Raft builder.
      */
-    public Builder withLog(RaftLog log) {
+    public Builder withLog(Log log) {
       builder.withLog(log);
       return this;
     }

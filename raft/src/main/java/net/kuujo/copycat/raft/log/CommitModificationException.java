@@ -20,7 +20,7 @@ package net.kuujo.copycat.raft.log;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class CommitModificationException extends StorageException {
+public class CommitModificationException extends LogException {
 
   public CommitModificationException() {
   }

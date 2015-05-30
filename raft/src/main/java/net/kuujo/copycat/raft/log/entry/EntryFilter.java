@@ -13,24 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.raft.log;
+package net.kuujo.copycat.raft.log.entry;
 
-import net.kuujo.copycat.raft.log.entry.RaftEntry;
+import net.kuujo.copycat.raft.log.Compaction;
 
 /**
- * Raft entry filter.
+ * Raft log entry filter.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @FunctionalInterface
-public interface RaftEntryFilter {
+public interface EntryFilter {
 
   /**
-   * Returns a boolean value indicating whether to keep the given entry.
+   * Returns a boolean value indicating whether to keep the given entry in the log.
    *
-   * @param entry The entry to evaluate.
-   * @return Indicates whether to keep the given entry.
+   * @param entry The entry to check.
+   * @param compaction The compaction context.
+   * @return Indicates whether to keep the entry in the log.
    */
-  boolean accept(RaftEntry entry);
+  boolean accept(Entry entry, Compaction compaction);
 
 }

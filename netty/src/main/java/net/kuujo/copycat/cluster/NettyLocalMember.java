@@ -25,7 +25,6 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import net.kuujo.copycat.Task;
-import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.util.HashFunctions;
 import net.kuujo.copycat.util.ExecutionContext;
 import net.kuujo.copycat.util.concurrent.Futures;
@@ -55,7 +54,6 @@ public class NettyLocalMember extends ManagedLocalMember implements NettyMember{
   private final Map<Integer, HandlerHolder> handlers = new ConcurrentHashMap<>();
   private final Map<String, Integer> hashMap = new HashMap<>();
   private final NettyMemberInfo info;
-  private Serializer serializer;
   private Channel channel;
   private ChannelGroup channelGroup;
   private EventLoopGroup workerGroup;
@@ -63,17 +61,9 @@ public class NettyLocalMember extends ManagedLocalMember implements NettyMember{
   private CompletableFuture<LocalMember> listenFuture;
   private CompletableFuture<Void> closeFuture;
 
-  NettyLocalMember(NettyMemberInfo info, Type type, boolean seed, ExecutionContext context) {
-    super(info, type, seed, context);
+  NettyLocalMember(NettyMemberInfo info, Type type) {
+    super(info, type);
     this.info = info;
-  }
-
-  /**
-   * Sets the member serializer.
-   */
-  NettyLocalMember setSerializer(Serializer serializer) {
-    this.serializer = serializer;
-    return this;
   }
 
   @Override

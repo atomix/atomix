@@ -39,7 +39,7 @@ public class OperationEntry extends SessionEntry<OperationEntry> {
     setIndex(index);
   }
 
-  public OperationEntry(ReferenceManager<RaftEntry<?>> referenceManager) {
+  public OperationEntry(ReferenceManager<Entry<?>> referenceManager) {
     super(referenceManager);
   }
 

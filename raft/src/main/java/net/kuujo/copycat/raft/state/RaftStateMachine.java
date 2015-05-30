@@ -18,7 +18,7 @@ package net.kuujo.copycat.raft.state;
 import net.kuujo.copycat.cluster.MemberInfo;
 import net.kuujo.copycat.cluster.Session;
 import net.kuujo.copycat.raft.*;
-import net.kuujo.copycat.raft.log.compact.Compaction;
+import net.kuujo.copycat.raft.log.Compaction;
 import net.kuujo.copycat.raft.log.entry.*;
 
 import java.util.HashMap;
@@ -33,7 +33,6 @@ import java.util.TreeMap;
 class RaftStateMachine {
   private final StateMachine stateMachine;
   private final Map<Long, RaftSession> sessions = new HashMap<>();
-  private volatile long lastApplied;
   private long sessionTimeout = 5000;
 
   public RaftStateMachine(StateMachine stateMachine) {
@@ -63,30 +62,12 @@ class RaftStateMachine {
   }
 
   /**
-   * Returns the last index applied to the state machine.
-   *
-   * @return The last index applied to the state machine.
-   */
-  public long getLastApplied() {
-    return lastApplied;
-  }
-
-  /**
-   * Sets the last index applied to the state machine.
-   *
-   * @param lastApplied The last index applied to the state machine.
-   */
-  private void setLastApplied(long lastApplied) {
-    this.lastApplied = lastApplied;
-  }
-
-  /**
    * Filters an entry.
    *
    * @param entry The entry to filter.
    * @return A boolean value indicating whether to keep the entry.
    */
-  public boolean filter(RaftEntry entry, Compaction compaction) {
+  public boolean filter(Entry entry, Compaction compaction) {
     if (entry instanceof OperationEntry) {
       return filter((OperationEntry) entry, compaction);
     } else if (entry instanceof RegisterEntry) {
@@ -104,7 +85,7 @@ class RaftStateMachine {
    * @return A boolean value indicating whether to keep the entry.
    */
   public boolean filter(RegisterEntry entry, Compaction compaction) {
-      return sessions.containsKey(entry.getIndex());
+    return sessions.containsKey(entry.getIndex());
   }
 
   /**
@@ -114,7 +95,7 @@ class RaftStateMachine {
    * @return A boolean value indicating whether to keep the entry.
    */
   public boolean filter(KeepAliveEntry entry, Compaction compaction) {
-      return sessions.containsKey(entry.getIndex()) && sessions.get(entry.getIndex()).index == entry.getIndex();
+    return sessions.containsKey(entry.getIndex()) && sessions.get(entry.getIndex()).index == entry.getIndex();
   }
 
   /**
@@ -134,12 +115,12 @@ class RaftStateMachine {
    * @return A boolean value indicating whether to keep the entry.
    */
   public boolean filter(OperationEntry entry, Compaction compaction) {
-      RaftSession session = sessions.get(entry.getSession());
-      if (session == null) {
-        session = new RaftSession(entry.getSession(), null, entry.getTimestamp());
-        session.expire();
-      }
-      return stateMachine.filter(new Commit<>(entry.getIndex(), session, entry.getTimestamp(), (Command) entry.getOperation()), compaction);
+    RaftSession session = sessions.get(entry.getSession());
+    if (session == null) {
+      session = new RaftSession(entry.getSession(), null, entry.getTimestamp());
+      session.expire();
+    }
+    return stateMachine.filter(new Commit<>(entry.getIndex(), session, entry.getTimestamp(), (Command) entry.getOperation()), compaction);
   }
 
   /**
@@ -148,7 +129,7 @@ class RaftStateMachine {
    * @param entry The entry to apply.
    * @return The result.
    */
-  public Object apply(RaftEntry entry) {
+  public Object apply(Entry entry) {
     if (entry instanceof OperationEntry) {
       return apply((OperationEntry) entry);
     } else if (entry instanceof RegisterEntry) {
@@ -213,10 +194,10 @@ class RaftStateMachine {
    * @return The session ID.
    */
   private long register(long index, long timestamp, MemberInfo member) {
-      RaftSession session = new RaftSession(index, member, timestamp);
-      sessions.put(index, session);
-      stateMachine.register(session);
-      return session.id();
+    RaftSession session = new RaftSession(index, member, timestamp);
+    sessions.put(index, session);
+    stateMachine.register(session);
+    return session.id();
   }
 
   /**
@@ -227,14 +208,14 @@ class RaftStateMachine {
    * @param sessionId The session to keep alive.
    */
   private void keepAlive(long index, long timestamp, long sessionId) {
-      RaftSession session = sessions.get(sessionId);
-      if (session == null) {
-        throw new UnknownSessionException("unknown session: " + sessionId);
-      } else if (!session.update(index, timestamp)) {
-        sessions.remove(sessionId);
-        stateMachine.expire(session);
-        throw new UnknownSessionException("session expired: " + sessionId);
-      }
+    RaftSession session = sessions.get(sessionId);
+    if (session == null) {
+      throw new UnknownSessionException("unknown session: " + sessionId);
+    } else if (!session.update(index, timestamp)) {
+      sessions.remove(sessionId);
+      stateMachine.expire(session);
+      throw new UnknownSessionException("session expired: " + sessionId);
+    }
   }
 
   /**
@@ -244,10 +225,7 @@ class RaftStateMachine {
    * @return The no-op index.
    */
   private long noop(long index) {
-      if (index <= getLastApplied())
-        throw new IllegalStateException("improperly ordered operation");
-      setLastApplied(index);
-      return index;
+    return index;
   }
 
   /**
@@ -263,31 +241,28 @@ class RaftStateMachine {
    */
   @SuppressWarnings("unchecked")
   private Object command(long index, long sessionId, long request, long response, long timestamp, Command command) {
-      // First check to ensure that the session exists.
-      RaftSession session = sessions.get(sessionId);
-      if (session == null)
-        throw new UnknownSessionException("unknown session " + sessionId);
+    // First check to ensure that the session exists.
+    RaftSession session = sessions.get(sessionId);
+    if (session == null) {
+      throw new UnknownSessionException("unknown session " + sessionId);
+    }
 
-      // Given the session, check for an existing result for this command.
-      if (session.responses.containsKey(request))
-        return session.responses.get(request);
+    // Given the session, check for an existing result for this command.
+    if (session.responses.containsKey(request)) {
+      return session.responses.get(request);
+    }
 
-      // Validate that indexes are being applied in correct order.
-      if (index <= getLastApplied())
-        throw new IllegalStateException("improperly ordered operation");
+    // Apply the command to the state machine.
+    Object result = stateMachine.apply(new Commit(index, session, timestamp, command));
 
-      // Apply the command to the state machine.
-      Object result = stateMachine.apply(new Commit(index, session, timestamp, command));
-      setLastApplied(index);
+    // Store the command result in the session.
+    session.responses.put(request, result);
 
-      // Store the command result in the session.
-      session.responses.put(request, result);
+    // Clear any responses that have been received by the client for the session.
+    session.responses.headMap(response, true).clear();
 
-      // Clear any responses that have been received by the client for the session.
-      session.responses.headMap(response, true).clear();
-
-      // Return the result.
-      return result;
+    // Return the result.
+    return result;
   }
 
   /**
@@ -303,34 +278,31 @@ class RaftStateMachine {
    */
   @SuppressWarnings("unchecked")
   private Object query(long index, long sessionId, long request, long response, long timestamp, Query query) {
-      // First check to ensure that the session exists.
-      RaftSession session = sessions.get(sessionId);
-      if (session == null)
-        throw new UnknownSessionException("unknown session " + sessionId);
+    // First check to ensure that the session exists.
+    RaftSession session = sessions.get(sessionId);
+    if (session == null) {
+      throw new UnknownSessionException("unknown session " + sessionId);
+    }
 
-      // Given the session, check for an existing result for this query.
-      if (session.responses.containsKey(request))
-        return session.responses.get(request);
+    // Given the session, check for an existing result for this query.
+    if (session.responses.containsKey(request)) {
+      return session.responses.get(request);
+    }
 
-      // In order to satisfy linearizability requirements, we only need to ensure that the query is not applied at
-      // a state prior to the given index.
-      if (index < getLastApplied())
-        throw new IllegalStateException("improperly ordered query");
+    // Apply the query to the state machine.
+    Object result = stateMachine.apply(new Commit(index, session, timestamp, query));
 
-      // Apply the query to the state machine.
-      Object result = stateMachine.apply(new Commit(index, session, timestamp, query));
+    // Store the query result in the session.
+    session.responses.put(request, result);
 
-      // Store the query result in the session.
-      session.responses.put(request, result);
+    // Update the session's timeout.
+    session.update(index, timestamp);
 
-      // Update the session's timeout.
-      session.update(index, timestamp);
+    // Clear any responses that have been received by the client for the session.
+    session.responses.headMap(response, true).clear();
 
-      // Clear any responses that have been received by the client for the session.
-      session.responses.headMap(response, true).clear();
-
-      // Return the result.
-      return result;
+    // Return the result.
+    return result;
   }
 
   /**

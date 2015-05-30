@@ -13,26 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.raft.log.compact;
-
-import net.kuujo.copycat.raft.log.StorageException;
+package net.kuujo.copycat.raft.log;
 
 /**
- * Log compaction exception.
+ * Log exception.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class CompactionException extends StorageException {
+public class LogException extends RuntimeException {
 
-  public CompactionException(String message, Object... args) {
-    super(String.format(message, args));
+  public LogException() {
   }
 
-  public CompactionException(Throwable cause, String message, Object... args) {
-    super(String.format(message, args), cause);
+  public LogException(String message) {
+    super(message);
   }
 
-  public CompactionException(Throwable cause) {
+  public LogException(String message, Throwable cause) {
+    super(message, cause);
+  }
+
+  public LogException(Throwable cause) {
     super(cause);
   }
 

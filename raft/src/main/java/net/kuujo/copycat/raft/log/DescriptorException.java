@@ -20,7 +20,7 @@ package net.kuujo.copycat.raft.log;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DescriptorException extends StorageException {
+public class DescriptorException extends LogException {
 
   public DescriptorException(String message, Object... args) {
     super(String.format(message, args));

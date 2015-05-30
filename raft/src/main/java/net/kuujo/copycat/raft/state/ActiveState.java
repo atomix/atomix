@@ -20,8 +20,8 @@ import net.kuujo.copycat.raft.ApplicationException;
 import net.kuujo.copycat.raft.Operation;
 import net.kuujo.copycat.raft.Query;
 import net.kuujo.copycat.raft.RaftError;
+import net.kuujo.copycat.raft.log.entry.Entry;
 import net.kuujo.copycat.raft.log.entry.OperationEntry;
-import net.kuujo.copycat.raft.log.entry.RaftEntry;
 import net.kuujo.copycat.raft.rpc.*;
 
 import java.util.concurrent.CompletableFuture;
@@ -125,7 +125,7 @@ abstract class ActiveState extends AbstractState {
     }
 
     // If the previous entry term doesn't match the local previous term then reject the request.
-    RaftEntry entry = context.getLog().getEntry(request.logIndex());
+    Entry entry = context.getLog().getEntry(request.logIndex());
     if (entry.getTerm() != request.logTerm()) {
       LOGGER.warn("{} - Rejected {}: Request log term does not match local log term {} for the same entry", context.getCluster().member().id(), request, entry.getTerm());
       return AppendResponse.builder()
@@ -149,13 +149,13 @@ abstract class ActiveState extends AbstractState {
     if (!request.entries().isEmpty()) {
 
       // Iterate through request entries and append them to the log.
-      for (RaftEntry entry : request.entries()) {
+      for (Entry entry : request.entries()) {
         // Replicated snapshot entries are *always* immediately logged and applied to the state machine
         // since snapshots are only taken of committed state machine state. This will cause all previous
         // entries to be removed from the log.
         if (context.getLog().containsIndex(entry.getIndex())) {
           // Compare the term of the received entry with the matching entry in the log.
-          RaftEntry match = context.getLog().getEntry(entry.getIndex());
+          Entry match = context.getLog().getEntry(entry.getIndex());
           if (match != null) {
             if (entry.getTerm() != match.getTerm()) {
               // We found an invalid entry in the log. Remove the invalid entry and append the new entry.
@@ -215,9 +215,16 @@ abstract class ActiveState extends AbstractState {
             // Starting after the last applied entry, iterate through new entries
             // and apply them to the state machine up to the commit index.
             for (long i = Math.max(previousCommitIndex + 1, context.getLog().firstIndex()); i <= Math.min(context.getCommitIndex(), lastIndex); i++) {
-              RaftEntry entry = context.getLog().getEntry(i);
-              if (entry != null) {
-                context.getStateMachine().apply(entry);
+              try (Entry entry = context.getLog().getEntry(i)) {
+                if (entry != null) {
+                  try {
+                    context.getStateMachine().apply(entry);
+                  } catch (ApplicationException e) {
+
+                  } finally {
+                    context.setLastApplied(i);
+                  }
+                }
               }
             }
           }
@@ -351,7 +358,7 @@ abstract class ActiveState extends AbstractState {
       // Otherwise, load the last entry in the log. The last entry should be
       // at least as up to date as the candidates entry and term.
       long lastIndex = context.getLog().lastIndex();
-      RaftEntry entry = context.getLog().getEntry(lastIndex);
+      Entry entry = context.getLog().getEntry(lastIndex);
       if (entry == null) {
         LOGGER.debug("{} - Accepted {}: candidate's log is up-to-date", context.getCluster().member().id(), request);
         return true;
