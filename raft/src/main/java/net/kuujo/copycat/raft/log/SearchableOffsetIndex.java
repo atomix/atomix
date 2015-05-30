@@ -47,12 +47,13 @@ import java.io.IOException;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class SearchableOffsetIndex implements OffsetIndex {
+  private static final long MAX_POSITION = (long) Math.pow(2, 32) - 1;
+  private static final int HEADER_SIZE = 8;
   private static final int ENTRY_SIZE = 8;
-  static final int MAX_ENTRIES = (int) (Math.pow(2, 31) - 1) / ENTRY_SIZE;
-  static final long MAX_POSITION = (long) Math.pow(2, 32) - 1;
+  private static final int OFFSET_SIZE = 4;
 
-  private static final int ACTIVE = 1;
-  private static final int END = 2;
+  private static final long START = -1;
+  private static final int END = -1;
 
   private final Buffer buffer;
   private final BitArray bits;
@@ -76,24 +77,27 @@ public class SearchableOffsetIndex implements OffsetIndex {
    * Initializes the internal bit set.
    */
   private void init() {
-    buffer.mark();
-    int status = buffer.readByte();
-    while (status != 0) {
-      if (status == END) {
-        break;
-      } else {
-        int offset = buffer.readUnsignedMedium();
-        if (firstOffset == -1)
-          firstOffset = offset;
-        lastOffset = offset;
-        if (status == ACTIVE) {
-          bits.set(offset % bits.length());
-          size++;
-        }
-        buffer.skip(4).mark();
-        status = buffer.readByte();
-      }
+    if (buffer.position(0).readLong() != START) {
+      buffer.position(0).writeLong(START);
+      return;
     }
+
+    buffer.mark();
+
+    int offset = buffer.readInt();
+    while (offset != END) {
+      if (firstOffset == -1) {
+        firstOffset = offset;
+      }
+
+      lastOffset = offset;
+      bits.set(offset % bits.length());
+      size++;
+
+      buffer.skip(4).mark();
+      offset = buffer.readInt();
+    }
+
     buffer.reset();
   }
 
@@ -109,27 +113,29 @@ public class SearchableOffsetIndex implements OffsetIndex {
 
   @Override
   public void index(int offset, long position, int length) {
-    if (lastOffset > -1 && offset <= lastOffset)
+    if (lastOffset > -1 && offset <= lastOffset) {
       throw new IllegalArgumentException("offset cannot be less than or equal to the last offset in the index");
-    if (position > MAX_POSITION)
-      throw new IllegalArgumentException("position cannot be greater than " + MAX_POSITION);
+    }
 
-    // Write a status byte, offset, and position, then write the end byte and length.
-    buffer.writeByte(ACTIVE)
-      .writeUnsignedMedium(offset)
+    if (position > MAX_POSITION) {
+      throw new IllegalArgumentException("position cannot be greater than " + MAX_POSITION);
+    }
+
+    buffer.writeInt(offset)
       .writeUnsignedInt(position)
       .mark()
-      .writeByte(END)
-      .writeUnsignedMedium(length)
+      .writeInt(END)
+      .writeInt(length)
       .reset();
 
     bits.set(offset % bits.length());
 
-    if (firstOffset == -1)
+    if (firstOffset == -1) {
       firstOffset = offset;
+    }
 
-    this.size++;
-    this.lastOffset = offset;
+    size++;
+    lastOffset = offset;
 
     if (currentOffset == offset) {
       currentPosition = currentLength = currentOffset = -1;
@@ -148,21 +154,27 @@ public class SearchableOffsetIndex implements OffsetIndex {
 
   @Override
   public long position(int offset) {
-    if (currentOffset == offset)
+    if (currentOffset == offset) {
       return currentPosition;
-    if (!bits.get(offset % bits.length()))
+    }
+
+    if (!bits.get(offset % bits.length())) {
       return -1;
+    }
+
     int index = search(offset);
+
     currentOffset = offset;
     if (index == -1) {
       currentPosition = currentLength = -1;
     } else {
-      currentPosition = buffer.readUnsignedInt(index + 4);
-      int next = buffer.readByte(index + 8);
+      currentPosition = buffer.readUnsignedInt(index + OFFSET_SIZE);
+
+      int next = buffer.readInt(index + ENTRY_SIZE);
       if (next == END) {
-        currentLength = buffer.readUnsignedMedium(index + 9);
+        currentLength = buffer.readInt(index + ENTRY_SIZE + OFFSET_SIZE);
       } else {
-        currentLength = Math.max((int) (buffer.readUnsignedInt(index + 12) - currentPosition), -1);
+        currentLength = (int) (buffer.readUnsignedInt(index + ENTRY_SIZE + OFFSET_SIZE) - currentPosition);
       }
     }
     return currentPosition;
@@ -179,19 +191,22 @@ public class SearchableOffsetIndex implements OffsetIndex {
    * Performs a binary search to find the given offset in the buffer.
    */
   private int search(int offset) {
-    if (size == 0)
+    if (size == 0) {
       return -1;
+    }
 
     int lo = 0;
     int hi = size - 1;
+
     while (lo < hi) {
       int mid = lo + (hi - lo) / 2;
-      int i = buffer.readUnsignedMedium(mid * ENTRY_SIZE + 1);
+      int i = buffer.readInt(mid * ENTRY_SIZE + HEADER_SIZE);
       if (i == offset) {
-        return mid * ENTRY_SIZE;
+        return mid * ENTRY_SIZE + HEADER_SIZE;
       } else if (lo == mid) {
-        if (buffer.readUnsignedMedium(hi * ENTRY_SIZE + 1) == offset)
-          return hi * ENTRY_SIZE;
+        if (buffer.readInt(hi * ENTRY_SIZE + HEADER_SIZE) == offset) {
+          return hi * ENTRY_SIZE + HEADER_SIZE;
+        }
         return -1;
       } else if (i < offset) {
         lo = mid;
@@ -200,8 +215,9 @@ public class SearchableOffsetIndex implements OffsetIndex {
       }
     }
 
-    if (buffer.readUnsignedMedium(hi * ENTRY_SIZE + 1) == offset)
-      return hi * ENTRY_SIZE;
+    if (buffer.readInt(hi * ENTRY_SIZE + HEADER_SIZE) == offset) {
+      return hi * ENTRY_SIZE + HEADER_SIZE;
+    }
     return -1;
   }
 
@@ -210,13 +226,13 @@ public class SearchableOffsetIndex implements OffsetIndex {
     int lastOffset = lastOffset();
     int index = search(offset + 1);
     if (index != -1) {
-      long previousPosition = buffer.readUnsignedInt(index - 4);
-      long indexPosition = buffer.readUnsignedInt(index + 4);
+      long previousPosition = buffer.readUnsignedInt(index - OFFSET_SIZE);
+      long indexPosition = buffer.readUnsignedInt(index + OFFSET_SIZE);
       buffer.position(index)
         .zero(index)
         .mark()
         .writeByte(END)
-        .writeUnsignedMedium((int) (indexPosition - previousPosition))
+        .writeInt((int) (indexPosition - previousPosition))
         .reset();
       size -= lastOffset - offset;
     }
