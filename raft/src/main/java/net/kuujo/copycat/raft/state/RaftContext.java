@@ -62,6 +62,8 @@ public class RaftContext implements Managed<RaftContext> {
   private long heartbeatInterval = 250;
   private long keepAliveInterval = 2000;
   private long session;
+  private long request;
+  private long response;
   private int leader;
   private long term;
   private int lastVotedFor;
@@ -240,6 +242,8 @@ public class RaftContext implements Managed<RaftContext> {
    */
   RaftContext setSession(long session) {
     this.session = session;
+    this.request = 0;
+    this.response = 0;
     return this;
   }
 
@@ -250,6 +254,55 @@ public class RaftContext implements Managed<RaftContext> {
    */
   public long getSession() {
     return session;
+  }
+
+  /**
+   * Sets the session request number.
+   *
+   * @param request The session request number.
+   * @return The Raft context.
+   */
+  RaftContext setRequest(long request) {
+    this.request = request;
+    return this;
+  }
+
+  /**
+   * Returns the next request number.
+   *
+   * @return The next request number.
+   */
+  long nextRequest() {
+    return ++request;
+  }
+
+  /**
+   * Returns the session request number.
+   *
+   * @return The session request number.
+   */
+  public long getRequest() {
+    return request;
+  }
+
+  /**
+   * Sets the session response number.
+   *
+   * @param response The session response number.
+   * @return The Raft context.
+   */
+  RaftContext setResponse(long response) {
+    this.response = response;
+    return this;
+  }
+
+  /**
+   * Returns the session response number.
+   *
+   * @return The session response number.
+   */
+  public long getResponse() {
+    return response;
   }
 
   /**
@@ -501,10 +554,15 @@ public class RaftContext implements Managed<RaftContext> {
       throw new IllegalStateException("protocol not open");
 
     CompletableFuture<R> future = new CompletableFuture<>();
-    CommandRequest request = CommandRequest.builder()
-      .withCommand(command)
-      .build();
     context.execute(() -> {
+      // TODO: This should retry on timeouts with the same request ID.
+      long requestId = nextRequest();
+      CommandRequest request = CommandRequest.builder()
+        .withSession(getSession())
+        .withRequest(requestId)
+        .withResponse(getResponse())
+        .withCommand(command)
+        .build();
       state.command(request).whenComplete((response, error) -> {
         if (error == null) {
           if (response.status() == Response.Status.OK) {
@@ -512,6 +570,7 @@ public class RaftContext implements Managed<RaftContext> {
           } else {
             future.completeExceptionally(response.error().createException());
           }
+          setResponse(Math.max(getResponse(), requestId));
         } else {
           future.completeExceptionally(error);
         }
