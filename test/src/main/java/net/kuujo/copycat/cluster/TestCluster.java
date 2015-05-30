@@ -41,13 +41,15 @@ public class TestCluster extends ManagedCluster {
   public TestCluster(TestLocalMember localMember, Collection<? extends TestRemoteMember> remoteMembers, TestMemberRegistry registry, Serializer serializer) {
     super(localMember, remoteMembers, serializer);
     this.registry = registry;
-    localMember.init(registry);
-    remoteMembers.forEach(m -> m.init(localMember.serializer, registry));
+    localMember.setRegistry(registry);
+    remoteMembers.forEach(m -> m.setRegistry(registry));
   }
 
   @Override
   protected ManagedRemoteMember createMember(MemberInfo info) {
-    return new TestRemoteMember((TestMember.Info) info, Member.Type.ACTIVE, new ExecutionContext(String.format("copycat-cluster-%d", info.id()))).init(((TestLocalMember) localMember).serializer, registry);
+    ManagedRemoteMember remoteMember = new TestRemoteMember((TestMember.Info) info, Member.Type.ACTIVE).setRegistry(registry);
+    remoteMember.setContext(new ExecutionContext(String.format("copycat-cluster-%d", info.id()), serializer));
+    return remoteMember;
   }
 
   @Override
@@ -128,7 +130,7 @@ public class TestCluster extends ManagedCluster {
         info = new TestMember.Info(memberId, address);
       }
 
-      TestLocalMember localMember = new TestLocalMember(info, type, member != null, serializer != null ? serializer : new Serializer(), new ExecutionContext(String.format("copycat-cluster-%d", memberId)));
+      TestLocalMember localMember = new TestLocalMember(info, type);
       return new TestCluster(localMember, members.values().stream().map(m -> (TestRemoteMember) m).collect(Collectors.toList()), registry, serializer);
     }
   }

@@ -16,6 +16,7 @@
 package net.kuujo.copycat.cluster;
 
 import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.util.ExecutionContext;
 import net.kuujo.copycat.util.Managed;
 
 import java.util.*;
@@ -42,8 +43,12 @@ public abstract class ManagedCluster implements Cluster, Managed<Cluster> {
   private AtomicBoolean open = new AtomicBoolean();
 
   protected ManagedCluster(ManagedLocalMember localMember, Collection<? extends ManagedRemoteMember> remoteMembers, Serializer serializer) {
+    localMember.setContext(new ExecutionContext("copycat-cluster-" + localMember.id(), serializer));
     this.localMember = localMember;
-    remoteMembers.forEach(m -> this.remoteMembers.put(m.id(), m));
+    remoteMembers.forEach(m -> {
+      m.setContext(new ExecutionContext("copycat-cluster-" + m.id(), serializer));
+      this.remoteMembers.put(m.id(), m);
+    });
     this.members.putAll(this.remoteMembers);
     this.members.put(localMember.id(), localMember);
     this.serializer = serializer;

@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.cluster;
 
+import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.util.ExecutionContext;
 
 import java.util.Random;
@@ -28,12 +29,20 @@ public abstract class ManagedMember implements Member {
   protected final MemberInfo info;
   protected Type type;
   protected Status status = Status.DEAD;
-  protected final ExecutionContext context;
+  protected ExecutionContext context;
+  protected Serializer serializer;
 
-  protected ManagedMember(MemberInfo info, Type type, ExecutionContext context) {
+  protected ManagedMember(MemberInfo info, Type type) {
     this.info = info;
     this.type = type;
+  }
+
+  /**
+   * Sets the member context.
+   */
+  void setContext(ExecutionContext context) {
     this.context = context;
+    this.serializer = context.serializer();
   }
 
   /**

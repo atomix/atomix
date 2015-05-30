@@ -16,7 +16,6 @@
 package net.kuujo.copycat.cluster;
 
 import net.kuujo.copycat.Task;
-import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.util.ExecutionContext;
 import net.kuujo.copycat.util.concurrent.Futures;
 
@@ -30,18 +29,19 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class TestLocalMember extends ManagedLocalMember implements TestMember {
-  final Serializer serializer;
   private final TestMember.Info info;
   private final Map<String, HandlerHolder> handlers = new HashMap<>();
   private TestMemberRegistry registry;
 
-  TestLocalMember(TestMember.Info info, Member.Type type, boolean seed, Serializer serializer, ExecutionContext context) {
-    super(info, type, seed, context);
-    this.serializer = serializer;
+  TestLocalMember(TestMember.Info info, Member.Type type) {
+    super(info, type);
     this.info = info;
   }
 
-  TestLocalMember init(TestMemberRegistry registry) {
+  /**
+   * Sets the member registry.
+   */
+  TestLocalMember setRegistry(TestMemberRegistry registry) {
     this.registry = registry;
     return this;
   }

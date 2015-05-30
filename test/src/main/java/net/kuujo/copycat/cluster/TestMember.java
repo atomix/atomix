@@ -18,7 +18,6 @@ package net.kuujo.copycat.cluster;
 import net.kuujo.copycat.ConfigurationException;
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.util.ExecutionContext;
 
 /**
  * Raft test member.
@@ -95,7 +94,7 @@ public interface TestMember extends Member {
         throw new ConfigurationException("member id must be greater than 0");
       if (address == null)
         throw new ConfigurationException("address cannot be null");
-      return new TestRemoteMember(new TestMember.Info(id, address), Type.ACTIVE, new ExecutionContext(String.format("copycat-cluster-%d", id)));
+      return new TestRemoteMember(new TestMember.Info(id, address), Type.ACTIVE);
     }
   }
 

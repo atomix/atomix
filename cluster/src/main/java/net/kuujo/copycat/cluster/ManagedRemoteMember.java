@@ -15,8 +15,6 @@
  */
 package net.kuujo.copycat.cluster;
 
-import net.kuujo.copycat.util.ExecutionContext;
-
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -26,8 +24,8 @@ import java.util.concurrent.CompletableFuture;
  */
 public abstract class ManagedRemoteMember extends ManagedMember implements RemoteMember {
 
-  protected ManagedRemoteMember(MemberInfo info, Type type, ExecutionContext context) {
-    super(info, type, context);
+  protected ManagedRemoteMember(MemberInfo info, Type type) {
+    super(info, type);
   }
 
   /**

@@ -16,7 +16,6 @@
 package net.kuujo.copycat.cluster;
 
 import net.kuujo.copycat.Task;
-import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.util.ExecutionContext;
 import net.kuujo.copycat.util.concurrent.Futures;
 
@@ -28,21 +27,19 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class TestRemoteMember extends ManagedRemoteMember implements TestMember {
-  private Serializer serializer;
   private final TestMember.Info info;
   private TestMemberRegistry registry;
   private boolean partitioned;
 
-  TestRemoteMember(TestMember.Info info, Member.Type type, ExecutionContext context) {
-    super(info, type, context);
+  TestRemoteMember(TestMember.Info info, Member.Type type) {
+    super(info, type);
     this.info = info;
   }
 
   /**
-   * Initializes the member.
+   * Sets the member registry.
    */
-  TestRemoteMember init(Serializer serializer, TestMemberRegistry registry) {
-    this.serializer = serializer;
+  TestRemoteMember setRegistry(TestMemberRegistry registry) {
     this.registry = registry;
     return this;
   }

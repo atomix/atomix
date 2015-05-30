@@ -15,6 +15,8 @@
  */
 package net.kuujo.copycat.util;
 
+import net.kuujo.copycat.io.serializer.Serializer;
+
 import java.util.concurrent.*;
 
 /**
@@ -24,30 +26,28 @@ import java.util.concurrent.*;
  */
 public class ExecutionContext implements Executor, AutoCloseable {
   private final String name;
+  private final Serializer serializer;
   private final ScheduledExecutorService executor;
-  private Thread thread;
+  private CopycatThread thread;
 
   /**
    * Returns the current execution context.
    */
   public static ExecutionContext currentContext() {
     Thread thread = Thread.currentThread();
-    return thread instanceof net.kuujo.copycat.util.CopycatThread ? ((net.kuujo.copycat.util.CopycatThread) thread).getContext() : null;
+    return thread instanceof CopycatThread ? ((CopycatThread) thread).getContext() : null;
   }
 
-  public ExecutionContext(String name) {
-    this(name, Executors.newSingleThreadScheduledExecutor(new CopycatThreadFactory(name)));
-  }
-
-  public ExecutionContext(String name, ScheduledExecutorService executor) {
+  public ExecutionContext(String name, Serializer serializer) {
+    if (name == null)
+      throw new NullPointerException("name cannot be null");
     this.name = name;
-    this.executor = executor;
+    this.serializer = serializer.copy();
+    this.executor = Executors.newSingleThreadScheduledExecutor(new CopycatThreadFactory(name));
     try {
       executor.submit(() -> {
-        thread = Thread.currentThread();
-        if (thread instanceof net.kuujo.copycat.util.CopycatThread) {
-          ((net.kuujo.copycat.util.CopycatThread) thread).setContext(this);
-        }
+        thread = (CopycatThread) Thread.currentThread();
+        thread.setContext(this);
       }).get();
     } catch (InterruptedException | ExecutionException e) {
       throw new IllegalStateException("failed to initialize thread state", e);
@@ -61,6 +61,15 @@ public class ExecutionContext implements Executor, AutoCloseable {
    */
   public String name() {
     return name;
+  }
+
+  /**
+   * Returns the context serializer.
+   *
+   * @return The context serializer.
+   */
+  public Serializer serializer() {
+    return serializer;
   }
 
   /**
