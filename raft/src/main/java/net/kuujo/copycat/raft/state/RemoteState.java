@@ -192,11 +192,25 @@ public class RemoteState extends AbstractState {
   }
 
   @Override
-  public CompletableFuture<SubmitResponse> submit(SubmitRequest request) {
+  public CompletableFuture<CommandResponse> command(CommandRequest request) {
     context.checkThread();
     logRequest(request);
     if (context.getLeader() == 0) {
-      return CompletableFuture.completedFuture(logResponse(SubmitResponse.builder()
+      return CompletableFuture.completedFuture(logResponse(CommandResponse.builder()
+        .withStatus(Response.Status.ERROR)
+        .withError(RaftError.Type.NO_LEADER_ERROR)
+        .build()));
+    } else {
+      return context.getCluster().member(context.getLeader()).send(context.getTopic(), request);
+    }
+  }
+
+  @Override
+  public CompletableFuture<QueryResponse> query(QueryRequest request) {
+    context.checkThread();
+    logRequest(request);
+    if (context.getLeader() == 0) {
+      return CompletableFuture.completedFuture(logResponse(QueryResponse.builder()
         .withStatus(Response.Status.ERROR)
         .withError(RaftError.Type.NO_LEADER_ERROR)
         .build()));

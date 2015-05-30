@@ -96,8 +96,10 @@ abstract class AbstractState implements MessageHandler<Request, Response>, Manag
         return poll((PollRequest) request).thenApply(AbstractState::castResponse);
       case VOTE:
         return vote((VoteRequest) request).thenApply(AbstractState::castResponse);
-      case SUBMIT:
-        return submit((SubmitRequest) request).thenApply(AbstractState::castResponse);
+      case COMMAND:
+        return command((CommandRequest) request).thenApply(AbstractState::castResponse);
+      case QUERY:
+        return query((QueryRequest) request).thenApply(AbstractState::castResponse);
     }
     throw new IllegalArgumentException("invalid request type");
   }
@@ -135,9 +137,14 @@ abstract class AbstractState implements MessageHandler<Request, Response>, Manag
   protected abstract CompletableFuture<VoteResponse> vote(VoteRequest request);
 
   /**
-   * Handles a submit request.
+   * Handles a command request.
    */
-  protected abstract CompletableFuture<SubmitResponse> submit(SubmitRequest request);
+  protected abstract CompletableFuture<CommandResponse> command(CommandRequest request);
+
+  /**
+   * Handles a query request.
+   */
+  protected abstract CompletableFuture<QueryResponse> query(QueryRequest request);
 
   @Override
   public CompletableFuture<Void> close() {

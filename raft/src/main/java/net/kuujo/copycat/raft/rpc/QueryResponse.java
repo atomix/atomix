@@ -23,11 +23,11 @@ import net.kuujo.copycat.raft.RaftError;
 import java.util.Objects;
 
 /**
- * Protocol command response.
+ * Protocol query response.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class SubmitResponse extends AbstractResponse<SubmitResponse> {
+public class QueryResponse extends AbstractResponse<QueryResponse> {
   private static final ThreadLocal<Builder> builder = new ThreadLocal<Builder>() {
     @Override
     protected Builder initialValue() {
@@ -36,39 +36,39 @@ public class SubmitResponse extends AbstractResponse<SubmitResponse> {
   };
 
   /**
-   * Returns a new submit response builder.
+   * Returns a new query response builder.
    *
-   * @return A new submit response builder.
+   * @return A new query response builder.
    */
   public static Builder builder() {
     return builder.get().reset();
   }
 
   /**
-   * Returns a submit response builder for an existing request.
+   * Returns a query response builder for an existing request.
    *
    * @param request The response to build.
-   * @return The submit response builder.
+   * @return The query response builder.
    */
-  public static Builder builder(SubmitResponse request) {
+  public static Builder builder(QueryResponse request) {
     return builder.get().reset(request);
   }
 
   private Object result;
 
-  public SubmitResponse(ReferenceManager<SubmitResponse> referenceManager) {
+  public QueryResponse(ReferenceManager<QueryResponse> referenceManager) {
     super(referenceManager);
   }
 
   @Override
   public Type type() {
-    return Type.SUBMIT;
+    return Type.QUERY;
   }
 
   /**
-   * Returns the command result.
+   * Returns the query result.
    *
-   * @return The command result.
+   * @return The query result.
    */
   public Object result() {
     return result;
@@ -102,8 +102,8 @@ public class SubmitResponse extends AbstractResponse<SubmitResponse> {
 
   @Override
   public boolean equals(Object object) {
-    if (object instanceof SubmitResponse) {
-      SubmitResponse response = (SubmitResponse) object;
+    if (object instanceof QueryResponse) {
+      QueryResponse response = (QueryResponse) object;
       return response.status == status
         && ((response.result == null && result == null)
         || response.result != null && result != null && response.result.equals(result));
@@ -117,12 +117,12 @@ public class SubmitResponse extends AbstractResponse<SubmitResponse> {
   }
 
   /**
-   * Command response builder.
+   * Query response builder.
    */
-  public static class Builder extends AbstractResponse.Builder<Builder, SubmitResponse> {
+  public static class Builder extends AbstractResponse.Builder<Builder, QueryResponse> {
 
     private Builder() {
-      super(SubmitResponse::new);
+      super(QueryResponse::new);
     }
 
     @Override
@@ -133,7 +133,7 @@ public class SubmitResponse extends AbstractResponse<SubmitResponse> {
     }
 
     /**
-     * Sets the command response result.
+     * Sets the query response result.
      *
      * @param result The response result.
      * @return The response builder.

@@ -17,11 +17,10 @@ package net.kuujo.copycat.raft.state;
 
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.raft.ApplicationException;
-import net.kuujo.copycat.raft.Operation;
 import net.kuujo.copycat.raft.Query;
 import net.kuujo.copycat.raft.RaftError;
 import net.kuujo.copycat.raft.log.entry.Entry;
-import net.kuujo.copycat.raft.log.entry.OperationEntry;
+import net.kuujo.copycat.raft.log.entry.QueryEntry;
 import net.kuujo.copycat.raft.rpc.*;
 
 import java.util.concurrent.CompletableFuture;
@@ -408,28 +407,39 @@ abstract class ActiveState extends AbstractState {
   }
 
   @Override
-  protected CompletableFuture<SubmitResponse> submit(SubmitRequest request) {
+  protected CompletableFuture<CommandResponse> command(CommandRequest request) {
     context.checkThread();
     logRequest(request);
 
-    Operation operation = request.operation();
+    if (context.getLeader() == 0) {
+      return CompletableFuture.completedFuture(logResponse(CommandResponse.builder()
+        .withStatus(Response.Status.ERROR)
+        .withError(RaftError.Type.NO_LEADER_ERROR)
+        .build()));
+    } else {
+      return context.getCluster().member(context.getLeader()).send(context.getTopic(), request);
+    }
+  }
 
-    if (operation instanceof Query && ((Query) operation).consistency() == Query.Consistency.SERIALIZABLE) {
-      CompletableFuture<SubmitResponse> future = new CompletableFuture<>();
-      OperationEntry entry = new OperationEntry(context.getCommitIndex())
+  @Override
+  protected CompletableFuture<QueryResponse> query(QueryRequest request) {
+    context.checkThread();
+    logRequest(request);
+
+    if (request.query().consistency() == Query.Consistency.SERIALIZABLE) {
+      CompletableFuture<QueryResponse> future = new CompletableFuture<>();
+      QueryEntry entry = new QueryEntry(context.getCommitIndex())
         .setTerm(context.getTerm())
         .setTimestamp(System.currentTimeMillis())
         .setSession(request.session())
-        .setRequest(request.request())
-        .setResponse(request.response())
-        .setOperation(operation);
+        .setQuery(request.query());
       try {
-        future.complete(logResponse(SubmitResponse.builder()
+        future.complete(logResponse(QueryResponse.builder()
           .withStatus(Response.Status.OK)
           .withResult(context.getStateMachine().apply(entry))
           .build()));
       } catch (ApplicationException e) {
-        future.complete(logResponse(SubmitResponse.builder()
+        future.complete(logResponse(QueryResponse.builder()
           .withStatus(Response.Status.ERROR)
           .withError(RaftError.Type.APPLICATION_ERROR)
           .build()));
@@ -438,7 +448,7 @@ abstract class ActiveState extends AbstractState {
       }
       return future;
     } else if (context.getLeader() == 0) {
-      return CompletableFuture.completedFuture(logResponse(SubmitResponse.builder()
+      return CompletableFuture.completedFuture(logResponse(QueryResponse.builder()
         .withStatus(Response.Status.ERROR)
         .withError(RaftError.Type.NO_LEADER_ERROR)
         .build()));

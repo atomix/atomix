@@ -61,7 +61,12 @@ class StartState extends AbstractState {
   }
 
   @Override
-  protected CompletableFuture<SubmitResponse> submit(SubmitRequest request) {
+  protected CompletableFuture<CommandResponse> command(CommandRequest request) {
+    return exceptionalFuture(new IllegalStateException("inactive state"));
+  }
+
+  @Override
+  protected CompletableFuture<QueryResponse> query(QueryRequest request) {
     return exceptionalFuture(new IllegalStateException("inactive state"));
   }
 

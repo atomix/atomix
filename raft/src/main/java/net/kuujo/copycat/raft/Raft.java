@@ -95,13 +95,6 @@ public class Raft implements Protocol, Managed<Raft> {
   }
 
   @Override
-  public <R> CompletableFuture<R> submit(Operation<R> operation) {
-    if (!open)
-      throw new IllegalStateException("protocol not open");
-    return context.submit(operation);
-  }
-
-  @Override
   public <T> CompletableFuture<T> submit(Command<T> command) {
     if (!open)
       throw new IllegalStateException("protocol not open");

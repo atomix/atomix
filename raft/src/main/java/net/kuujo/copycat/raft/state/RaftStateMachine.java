@@ -114,13 +114,13 @@ class RaftStateMachine {
    * @param entry The entry to filter.
    * @return A boolean value indicating whether to keep the entry.
    */
-  public boolean filter(OperationEntry entry, Compaction compaction) {
+  public boolean filter(CommandEntry entry, Compaction compaction) {
     RaftSession session = sessions.get(entry.getSession());
     if (session == null) {
       session = new RaftSession(entry.getSession(), null, entry.getTimestamp());
       session.expire();
     }
-    return stateMachine.filter(new Commit<>(entry.getIndex(), session, entry.getTimestamp(), (Command) entry.getOperation()), compaction);
+    return stateMachine.filter(new Commit<>(entry.getIndex(), session, entry.getTimestamp(), entry.getCommand()), compaction);
   }
 
   /**
@@ -167,12 +167,18 @@ class RaftStateMachine {
    * @param entry The entry to apply.
    * @return The result.
    */
-  public Object apply(OperationEntry entry) {
-    if (entry.getOperation() instanceof Command) {
-      return command(entry.getIndex(), entry.getSession(), entry.getRequest(), entry.getResponse(), entry.getTimestamp(), (Command) entry.getOperation());
-    } else {
-      return query(entry.getIndex(), entry.getSession(), entry.getRequest(), entry.getResponse(), entry.getTimestamp(), (Query) entry.getOperation());
-    }
+  public Object apply(CommandEntry entry) {
+    return command(entry.getIndex(), entry.getSession(), entry.getRequest(), entry.getResponse(), entry.getTimestamp(), entry.getCommand());
+  }
+
+  /**
+   * Applies an entry to the state machine.
+   *
+   * @param entry The entry to apply.
+   * @return The result.
+   */
+  public Object apply(QueryEntry entry) {
+    return query(entry.getIndex(), entry.getSession(), entry.getTimestamp(), entry.getQuery());
   }
 
   /**
@@ -270,36 +276,23 @@ class RaftStateMachine {
    *
    * @param index The query index.
    * @param sessionId The query session ID.
-   * @param request The query request ID.
-   * @param response The query response ID.
    * @param timestamp The query timestamp.
    * @param query The query to apply.
    * @return The query result.
    */
   @SuppressWarnings("unchecked")
-  private Object query(long index, long sessionId, long request, long response, long timestamp, Query query) {
+  private Object query(long index, long sessionId, long timestamp, Query query) {
     // First check to ensure that the session exists.
     RaftSession session = sessions.get(sessionId);
     if (session == null) {
       throw new UnknownSessionException("unknown session " + sessionId);
     }
 
-    // Given the session, check for an existing result for this query.
-    if (session.responses.containsKey(request)) {
-      return session.responses.get(request);
-    }
-
     // Apply the query to the state machine.
     Object result = stateMachine.apply(new Commit(index, session, timestamp, query));
 
-    // Store the query result in the session.
-    session.responses.put(request, result);
-
     // Update the session's timeout.
     session.update(index, timestamp);
-
-    // Clear any responses that have been received by the client for the session.
-    session.responses.headMap(response, true).clear();
 
     // Return the result.
     return result;

@@ -56,9 +56,14 @@ public interface Request<REQUEST extends Request<REQUEST>> extends ReferenceCoun
     VOTE,
 
     /**
-     * Submit request.
+     * Command request.
      */
-    SUBMIT
+    COMMAND,
+
+    /**
+     * Query request.
+     */
+    QUERY
   }
 
   /**

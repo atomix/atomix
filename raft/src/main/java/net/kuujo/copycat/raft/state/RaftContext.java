@@ -19,12 +19,14 @@ import net.kuujo.copycat.EventListener;
 import net.kuujo.copycat.cluster.ManagedCluster;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.raft.Operation;
+import net.kuujo.copycat.raft.Command;
+import net.kuujo.copycat.raft.Query;
 import net.kuujo.copycat.raft.StateMachine;
 import net.kuujo.copycat.raft.log.Log;
 import net.kuujo.copycat.raft.log.LogCompactor;
+import net.kuujo.copycat.raft.rpc.CommandRequest;
+import net.kuujo.copycat.raft.rpc.QueryRequest;
 import net.kuujo.copycat.raft.rpc.Response;
-import net.kuujo.copycat.raft.rpc.SubmitRequest;
 import net.kuujo.copycat.util.ExecutionContext;
 import net.kuujo.copycat.util.Managed;
 import net.kuujo.copycat.util.ThreadChecker;
@@ -487,23 +489,56 @@ public class RaftContext implements Managed<RaftContext> {
   }
 
   /**
-   * Submits an operation.
+   * Submits a command.
    *
-   * @param operation The operation to submit.
-   * @param <R> The operation result type.
-   * @return A completable future to be completed with the operation result.
+   * @param command The command to submit.
+   * @param <R> The command result type.
+   * @return A completable future to be completed with the command result.
    */
   @SuppressWarnings("unchecked")
-  public <R> CompletableFuture<R> submit(Operation<R> operation) {
+  public <R> CompletableFuture<R> submit(Command<R> command) {
     if (!open)
       throw new IllegalStateException("protocol not open");
 
     CompletableFuture<R> future = new CompletableFuture<>();
-    SubmitRequest request = SubmitRequest.builder()
-      .withOperation(operation)
+    CommandRequest request = CommandRequest.builder()
+      .withCommand(command)
       .build();
     context.execute(() -> {
-      state.submit(request).whenComplete((response, error) -> {
+      state.command(request).whenComplete((response, error) -> {
+        if (error == null) {
+          if (response.status() == Response.Status.OK) {
+            future.complete((R) response.result());
+          } else {
+            future.completeExceptionally(response.error().createException());
+          }
+        } else {
+          future.completeExceptionally(error);
+        }
+        request.close();
+      });
+    });
+    return future;
+  }
+
+  /**
+   * Submits a query.
+   *
+   * @param query The query to submit.
+   * @param <R> The query result type.
+   * @return A completable future to be completed with the query result.
+   */
+  @SuppressWarnings("unchecked")
+  public <R> CompletableFuture<R> submit(Query<R> query) {
+    if (!open)
+      throw new IllegalStateException("protocol not open");
+
+    CompletableFuture<R> future = new CompletableFuture<>();
+    QueryRequest request = QueryRequest.builder()
+      .withQuery(query)
+      .build();
+    context.execute(() -> {
+      state.query(request).whenComplete((response, error) -> {
         if (error == null) {
           if (response.status() == Response.Status.OK) {
             future.complete((R) response.result());

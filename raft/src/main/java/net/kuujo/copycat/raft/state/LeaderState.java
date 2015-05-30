@@ -188,51 +188,39 @@ class LeaderState extends ActiveState {
   }
 
   @Override
-  protected CompletableFuture<SubmitResponse> submit(final SubmitRequest request) {
+  protected CompletableFuture<CommandResponse> command(final CommandRequest request) {
     context.checkThread();
     logRequest(request);
 
-    if (request.operation() instanceof Command) {
-      return submitCommand(request);
-    } else {
-      return submitQuery(request);
-    }
-  }
-
-  /**
-   * Handles a command submission.
-   */
-  private CompletableFuture<SubmitResponse> submitCommand(final SubmitRequest request) {
-    Command command = (Command) request.operation();
-
+    Command command = request.command();
     final long term = context.getTerm();
     final long timestamp = System.currentTimeMillis();
     final long index;
 
-    try (OperationEntry entry = context.getLog().createEntry(OperationEntry.class)) {
+    try (CommandEntry entry = context.getLog().createEntry(CommandEntry.class)) {
       index = entry.getIndex();
       entry.setTerm(term)
         .setSession(request.session())
         .setRequest(request.request())
         .setResponse(request.response())
         .setTimestamp(timestamp)
-        .setOperation(command);
+        .setCommand(command);
       LOGGER.debug("{} - Appended entry to log at index {}", context.getCluster().member().id(), index);
     }
 
-    CompletableFuture<SubmitResponse> future = new CompletableFuture<>();
+    CompletableFuture<CommandResponse> future = new CompletableFuture<>();
     replicator.commit(index).whenComplete((commitIndex, commitError) -> {
       context.checkThread();
       if (isOpen()) {
         if (commitError == null) {
-          try (OperationEntry entry = context.getLog().getEntry(index)) {
+          try (CommandEntry entry = context.getLog().getEntry(index)) {
             try {
-              future.complete(logResponse(SubmitResponse.builder()
+              future.complete(logResponse(CommandResponse.builder()
                 .withStatus(Response.Status.OK)
                 .withResult(context.getStateMachine().apply(entry))
                 .build()));
             } catch (ApplicationException e) {
-              future.complete(logResponse(SubmitResponse.builder()
+              future.complete(logResponse(CommandResponse.builder()
                 .withStatus(Response.Status.ERROR)
                 .withError(RaftError.Type.APPLICATION_ERROR)
                 .build()));
@@ -243,7 +231,7 @@ class LeaderState extends ActiveState {
             }
           }
         } else {
-          future.complete(logResponse(SubmitResponse.builder()
+          future.complete(logResponse(CommandResponse.builder()
             .withStatus(Response.Status.ERROR)
             .withError(RaftError.Type.COMMAND_ERROR)
             .build()));
@@ -253,23 +241,18 @@ class LeaderState extends ActiveState {
     return future;
   }
 
-  /**
-   * Handles a query submission.
-   */
-  private CompletableFuture<SubmitResponse> submitQuery(final SubmitRequest request) {
-    Query query = (Query) request.operation();
+  @Override
+  protected CompletableFuture<QueryResponse> query(final QueryRequest request) {
+    Query query = request.query();
 
     final long timestamp = System.currentTimeMillis();
     final long index = context.getCommitIndex();
-    final long session = request.session();
 
-    OperationEntry entry = new OperationEntry(index)
+    QueryEntry entry = new QueryEntry(index)
       .setTerm(context.getTerm())
       .setSession(request.session())
-      .setRequest(request.request())
-      .setResponse(request.response())
       .setTimestamp(timestamp)
-      .setOperation(query);
+      .setQuery(query);
 
     Query.Consistency consistency = query.consistency();
     if (consistency == null)
@@ -290,14 +273,14 @@ class LeaderState extends ActiveState {
   /**
    * Submits a query with serializable consistency.
    */
-  private CompletableFuture<SubmitResponse> submitQuerySerializable(OperationEntry entry) {
+  private CompletableFuture<QueryResponse> submitQuerySerializable(OperationEntry entry) {
     return applyQuery(entry, new CompletableFuture<>());
   }
 
   /**
    * Submits a query with lease based linearizable consistency.
    */
-  private CompletableFuture<SubmitResponse> submitQueryLinearizableLease(OperationEntry entry) {
+  private CompletableFuture<QueryResponse> submitQueryLinearizableLease(OperationEntry entry) {
     long commitTime = replicator.commitTime();
     if (System.currentTimeMillis() - commitTime < context.getElectionTimeout()) {
       return submitQuerySerializable(entry);
@@ -309,15 +292,15 @@ class LeaderState extends ActiveState {
   /**
    * Submits a query with strict linearizable consistency.
    */
-  private CompletableFuture<SubmitResponse> submitQueryLinearizableStrict(OperationEntry entry) {
-    CompletableFuture<SubmitResponse> future = new CompletableFuture<>();
+  private CompletableFuture<QueryResponse> submitQueryLinearizableStrict(OperationEntry entry) {
+    CompletableFuture<QueryResponse> future = new CompletableFuture<>();
     replicator.commit().whenComplete((commitIndex, commitError) -> {
       context.checkThread();
       if (isOpen()) {
         if (commitError == null) {
           applyQuery(entry, future);
         } else {
-          future.complete(logResponse(SubmitResponse.builder()
+          future.complete(logResponse(QueryResponse.builder()
             .withStatus(Response.Status.ERROR)
             .withError(RaftError.Type.COMMAND_ERROR)
             .build()));
@@ -330,14 +313,14 @@ class LeaderState extends ActiveState {
   /**
    * Applies a query to the state machine.
    */
-  private CompletableFuture<SubmitResponse> applyQuery(OperationEntry entry, CompletableFuture<SubmitResponse> future) {
+  private CompletableFuture<QueryResponse> applyQuery(OperationEntry entry, CompletableFuture<QueryResponse> future) {
     try {
-      future.complete(logResponse(SubmitResponse.builder()
+      future.complete(logResponse(QueryResponse.builder()
         .withStatus(Response.Status.OK)
         .withResult(context.getStateMachine().apply(entry))
         .build()));
     } catch (ApplicationException e) {
-      future.complete(logResponse(SubmitResponse.builder()
+      future.complete(logResponse(QueryResponse.builder()
         .withStatus(Response.Status.ERROR)
         .withError(RaftError.Type.APPLICATION_ERROR)
         .build()));

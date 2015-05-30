@@ -57,9 +57,14 @@ public interface Response<RESPONSE extends Response<RESPONSE>> extends Reference
     VOTE,
 
     /**
-     * Submit response.
+     * Command response.
      */
-    SUBMIT
+    COMMAND,
+
+    /**
+     * Query response.
+     */
+    QUERY
   }
 
   /**
