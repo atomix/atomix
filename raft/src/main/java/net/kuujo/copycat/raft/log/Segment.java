@@ -189,34 +189,33 @@ public class Segment implements AutoCloseable {
   }
 
   /**
-   * Returns the absolute entry position for the entry at the given position.
-   */
-  private long entryPosition(long position) {
-    return position + ENTRY_TYPE_SIZE + ENTRY_MODE_SIZE + ENTRY_TERM_SIZE;
-  }
-
-  /**
    * Commits an entry to the segment.
    */
   public long appendEntry(Entry entry) {
-    long nextIndex = nextIndex();
+    long index = nextIndex();
 
-    if (entry.getIndex() < nextIndex) {
+    if (entry.getIndex() < index) {
       throw new CommitModificationException("cannot modify committed entry");
     }
 
-    if (entry.getIndex() > nextIndex) {
+    if (entry.getIndex() > index) {
       throw new ConcurrentModificationException("attempt to commit entry with non-monotonic index");
     }
 
     // Record the starting position of the new entry.
     long position = writeBuffer.position();
 
-    // Write the entry type identifier and 16-bit signed key size.
+    // Calculate the offset of the entry.
+    int offset = offset(index);
+
+    // Serialize the object into the segment buffer.
     serializer.writeObject(entry, writeBuffer.limit(-1));
 
-    int totalLength = (int) (writeBuffer.position() - position);
-    offsetIndex.index(offset(entry.getIndex()), position, totalLength);
+    // Calculate the length of the serialized bytes based on the resulting buffer position and the starting position.
+    int length = (int) (writeBuffer.position() - position);
+
+    // Index the offset, position, and length.
+    offsetIndex.index(offset, position, length);
 
     return entry.getIndex();
   }
@@ -247,8 +246,7 @@ public class Segment implements AutoCloseable {
       int length = offsetIndex.length(offset);
 
       // Deserialize the entry from a slice of the underlying buffer.
-      long entryPosition = entryPosition(position);
-      try (Buffer value = readBuffer.slice(entryPosition, length - (entryPosition - position))) {
+      try (Buffer value = readBuffer.slice(position, length)) {
         return serializer.readObject(value);
       }
     }
