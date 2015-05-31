@@ -18,6 +18,8 @@ package net.kuujo.copycat.raft.log;
 import net.kuujo.copycat.raft.log.entry.Entry;
 import net.kuujo.copycat.raft.log.entry.EntryFilter;
 import net.kuujo.copycat.util.ExecutionContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -30,6 +32,7 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class MajorCompaction extends Compaction {
+  private final Logger LOGGER = LoggerFactory.getLogger(MajorCompaction.class);
   private final EntryFilter filter;
   private final ExecutionContext context;
 
@@ -45,9 +48,10 @@ public class MajorCompaction extends Compaction {
   }
 
   @Override
-  void run(SegmentManager segments) {
+  CompletableFuture<Void> run(SegmentManager segments) {
+    LOGGER.info("compacting the log");
     setRunning(true);
-    compactSegments(getActiveSegments(segments).iterator(), segments, new CompletableFuture<>());
+    return compactSegments(getActiveSegments(segments).iterator(), segments, new CompletableFuture<>()).thenRun(() -> setRunning(false));
   }
 
   /**
@@ -60,6 +64,7 @@ public class MajorCompaction extends Compaction {
         segments.add(segment);
       }
     }
+    LOGGER.debug("found {} compactable segments", segments.size());
     return segments;
   }
 
@@ -87,6 +92,7 @@ public class MajorCompaction extends Compaction {
   private CompletableFuture<Void> compactSegment(Segment segment, SegmentManager manager) {
     return shouldCompactSegment(segment, new CompletableFuture<>()).thenCompose(compact -> {
       if (compact) {
+        LOGGER.debug("compacting {}", segment);
         Segment compactSegment = manager.createSegment(segment.descriptor().id(), segment.descriptor().index(), segment.descriptor().version() + 1, segment.descriptor().range());
         return compactSegment(segment, segment.firstIndex(), compactSegment, new CompletableFuture<>()).thenAccept(manager::replace);
       } else {
@@ -102,7 +108,10 @@ public class MajorCompaction extends Compaction {
     try (Entry entry = segment.getEntry(index)) {
       if (entry != null && filter.accept(entry, this)) {
         compactSegment.appendEntry(entry);
+      } else {
+        compactSegment.skip(1);
       }
+
       if (index == segment.lastIndex()) {
         future.complete(compactSegment);
       } else {
@@ -116,6 +125,7 @@ public class MajorCompaction extends Compaction {
    * Determines whether a segment should be compacted.
    */
   private CompletableFuture<Boolean> shouldCompactSegment(Segment segment, CompletableFuture<Boolean> future) {
+    LOGGER.debug("evaluating {} for major compaction", segment);
     return shouldCompactSegment(segment, segment.firstIndex(), future);
   }
 

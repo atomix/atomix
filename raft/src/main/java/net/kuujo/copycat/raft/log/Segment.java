@@ -218,7 +218,7 @@ public class Segment implements AutoCloseable {
     // Reset skip to zero since we wrote a new entry.
     skip = 0;
 
-    return entry.getIndex();
+    return index;
   }
 
   /**
@@ -248,7 +248,8 @@ public class Segment implements AutoCloseable {
 
       // Deserialize the entry from a slice of the underlying buffer.
       try (Buffer value = readBuffer.slice(position, length)) {
-        return serializer.readObject(value);
+        T entry = serializer.readObject(value);
+        return entry.setIndex(index);
       }
     }
     return null;

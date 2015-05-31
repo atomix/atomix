@@ -43,21 +43,23 @@ public abstract class Entry<T extends Entry<T>> implements ReferenceCounted<Entr
   }
 
   /**
-   * Sets the entry index.
-   *
-   * @param index The entry index.
-   */
-  protected void setIndex(long index) {
-    this.index = index;
-  }
-
-  /**
    * Returns the entry index.
    *
    * @return The entry index.
    */
   public long getIndex() {
     return index;
+  }
+
+  /**
+   * Sets the entry index.
+   *
+   * @param index The entry index.
+   */
+  @SuppressWarnings("unchecked")
+  public T setIndex(long index) {
+    this.index = index;
+    return (T) this;
   }
 
   /**

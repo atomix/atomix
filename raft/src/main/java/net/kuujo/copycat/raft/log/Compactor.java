@@ -20,6 +20,7 @@ import net.kuujo.copycat.util.ExecutionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -28,58 +29,26 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class Compactor implements Runnable, AutoCloseable {
+public class Compactor implements AutoCloseable {
   private static final Logger LOGGER = LoggerFactory.getLogger(Compactor.class);
-  private static final int DEFAULT_COMPACTION_FACTOR = 10;
   private static final long DEFAULT_COMPACTION_INTERVAL = TimeUnit.HOURS.toMillis(1);
-  private static final long COMPACT_INTERVAL = 60 * 1000;
+  private static final long COMPACT_INTERVAL = TimeUnit.MINUTES.toMillis(1);
 
   private final Log log;
   private final EntryFilter filter;
   private final ExecutionContext context;
-  private int compactionFactor = DEFAULT_COMPACTION_FACTOR;
   private long compactionInterval = DEFAULT_COMPACTION_INTERVAL;
   private long commit;
   private long compact;
   private Compaction compaction;
-  private long previousCompaction;
-  private ScheduledFuture<?> future;
+  private long lastCompaction;
+  private CompletableFuture<Void> compactFuture;
+  private ScheduledFuture<?> scheduledFuture;
 
   public Compactor(Log log, EntryFilter filter, ExecutionContext context) {
     this.log = log;
     this.filter = filter;
     this.context = context;
-  }
-
-  /**
-   * Sets the compaction factor.
-   *
-   * @param compactionFactor The compaction factor.
-   */
-  public void setCompactionFactor(int compactionFactor) {
-    if (compactionFactor < 1)
-      throw new IllegalArgumentException("compaction factor must be positive");
-    this.compactionFactor = compactionFactor;
-  }
-
-  /**
-   * Returns the compaction factor.
-   *
-   * @return The compaction factor.
-   */
-  public int getCompactionFactor() {
-    return compactionFactor;
-  }
-
-  /**
-   * Sets the compaction factor, returning the compaction strategy for method chaining.
-   *
-   * @param compactionFactor The compaction factor.
-   * @return The log compactor.
-   */
-  public Compactor withCompactionFactor(int compactionFactor) {
-    setCompactionFactor(compactionFactor);
-    return this;
   }
 
   /**
@@ -117,7 +86,7 @@ public class Compactor implements Runnable, AutoCloseable {
    * Opens the log compactor.
    */
   public void open() {
-    future = context.scheduleAtFixedRate(this::run, COMPACT_INTERVAL, COMPACT_INTERVAL, TimeUnit.MILLISECONDS);
+    scheduledFuture = context.scheduleAtFixedRate(this::compact, COMPACT_INTERVAL, COMPACT_INTERVAL, TimeUnit.MILLISECONDS);
   }
 
   /**
@@ -125,7 +94,7 @@ public class Compactor implements Runnable, AutoCloseable {
    *
    * @param index The compactor commit index.
    */
-  public void commit(long index) {
+  public void setCommitIndex(long index) {
     this.commit = index;
   }
 
@@ -134,35 +103,52 @@ public class Compactor implements Runnable, AutoCloseable {
    *
    * @param index The compact index.
    */
-  public void compact(long index) {
+  public void setCompactIndex(long index) {
     this.compact = index;
   }
 
   /**
    * Compacts the log.
    */
-  public void compact() {
-    context.execute(this::run);
-  }
-
-  @Override
-  public void run() {
-    if (compaction == null || compaction.isComplete()) {
-      if (System.currentTimeMillis() - previousCompaction > compactionInterval) {
-        compaction = new MajorCompaction(compact, filter, context);
-        previousCompaction = System.currentTimeMillis();
-      } else {
-        compaction = new MinorCompaction(commit, filter, context);
-      }
-      compaction.run(log.segments);
+  synchronized CompletableFuture<Void> compact() {
+    if (compactFuture != null) {
+      return compactFuture;
     }
+
+    compactFuture = CompletableFuture.supplyAsync(() -> {
+      if (compaction == null) {
+        if (System.currentTimeMillis() - lastCompaction > compactionInterval) {
+          compaction = new MajorCompaction(compact, filter, context);
+          lastCompaction = System.currentTimeMillis();
+        } else {
+          compaction = new MinorCompaction(commit, filter, context);
+        }
+        return compaction;
+      }
+      return null;
+    }, context).thenComposeAsync(c -> {
+      if (compaction != null) {
+        return compaction.run(log.segments).thenRun(() -> {
+          synchronized (this) {
+            compactFuture = null;
+          }
+          compaction = null;
+        });
+      }
+      return CompletableFuture.completedFuture(null);
+    }, context);
+    return compactFuture;
   }
 
   @Override
   public void close() {
-    if (future != null) {
-      future.cancel(false);
-      future = null;
+    if (compactFuture != null) {
+      compactFuture.cancel(false);
+      compactFuture = null;
+    }
+    if (scheduledFuture != null) {
+      scheduledFuture.cancel(false);
+      scheduledFuture = null;
     }
   }
 

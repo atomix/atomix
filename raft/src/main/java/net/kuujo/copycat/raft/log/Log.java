@@ -56,6 +56,15 @@ public class Log implements AutoCloseable {
   }
 
   /**
+   * Returns the log segment manager.
+   *
+   * @return The log segment manager.
+   */
+  SegmentManager segments() {
+    return segments;
+  }
+
+  /**
    * Returns a boolean value indicating whether the log is open.
    *
    * @return Indicates whether the log is open.

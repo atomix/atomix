@@ -449,7 +449,7 @@ public class RaftContext implements Managed<RaftContext> {
     if (globalIndex < this.globalIndex)
       throw new IllegalArgumentException("cannot decrease recycle index");
     this.globalIndex = globalIndex;
-    compactor.compact(globalIndex);
+    compactor.setCompactIndex(globalIndex);
     return this;
   }
 
@@ -476,7 +476,7 @@ public class RaftContext implements Managed<RaftContext> {
     if (lastApplied > commitIndex)
       throw new IllegalArgumentException("last applied cannot be greater than commit index");
     this.lastApplied = lastApplied;
-    compactor.commit(lastApplied);
+    compactor.setCommitIndex(lastApplied);
     if (openFuture != null) {
       synchronized (openFuture) {
         if (openFuture != null && this.lastApplied != 0 && firstCommitIndex != 0 && this.lastApplied >= firstCommitIndex) {

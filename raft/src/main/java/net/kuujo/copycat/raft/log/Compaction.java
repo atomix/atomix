@@ -15,6 +15,8 @@
  */
 package net.kuujo.copycat.raft.log;
 
+import java.util.concurrent.CompletableFuture;
+
 /**
  * Compaction.
  *
@@ -75,8 +77,9 @@ public abstract class Compaction {
    * Runs the compactor against the given segments.
    *
    * @param segments The segments to compact.
+   * @return A completable future to be completed once the segments have been compacted.
    */
-  abstract void run(SegmentManager segments);
+  abstract CompletableFuture<Void> run(SegmentManager segments);
 
   /**
    * Compaction types.
