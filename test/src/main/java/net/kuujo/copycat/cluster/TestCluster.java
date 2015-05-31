@@ -131,7 +131,7 @@ public class TestCluster extends ManagedCluster {
       }
 
       TestLocalMember localMember = new TestLocalMember(info, type);
-      return new TestCluster(localMember, members.values().stream().map(m -> (TestRemoteMember) m).collect(Collectors.toList()), registry, serializer);
+      return new TestCluster(localMember, members.values().stream().map(m -> (TestRemoteMember) m).collect(Collectors.toList()), registry, new Serializer());
     }
   }
 

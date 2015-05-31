@@ -113,14 +113,6 @@ public interface Cluster {
     T withMemberType(Member.Type type);
 
     /**
-     * Sets the cluster serializer.
-     *
-     * @param serializer The cluster serializer.
-     * @return The cluster builder.
-     */
-    T withSerializer(Serializer serializer);
-
-    /**
      * Sets the cluster seed members.
      *
      * @param members The set of cluster seed members.

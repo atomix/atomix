@@ -124,7 +124,7 @@ public class NettyCluster extends ManagedCluster {
         localMember = new NettyLocalMember(new NettyMemberInfo(memberId, new InetSocketAddress(host, port)), type);
       }
 
-      return new NettyCluster(eventLoopGroup != null ? eventLoopGroup : new NioEventLoopGroup(), localMember, members.values().stream().map(m -> (NettyRemoteMember) m).collect(Collectors.toList()), serializer != null ? serializer : new Serializer());
+      return new NettyCluster(eventLoopGroup != null ? eventLoopGroup : new NioEventLoopGroup(), localMember, members.values().stream().map(m -> (NettyRemoteMember) m).collect(Collectors.toList()), new Serializer());
     }
   }
 

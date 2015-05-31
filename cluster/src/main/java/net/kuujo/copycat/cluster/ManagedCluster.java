@@ -219,7 +219,6 @@ public abstract class ManagedCluster implements Cluster, Managed<Cluster> {
     protected int memberId;
     protected Member.Type type = Member.Type.CLIENT;
     protected final Map<Integer, U> members = new HashMap<>();
-    protected Serializer serializer;
 
     @Override
     @SuppressWarnings("unchecked")
@@ -253,13 +252,6 @@ public abstract class ManagedCluster implements Cluster, Managed<Cluster> {
       if (member == null)
         throw new NullPointerException("member cannot be null");
       members.put(member.id(), member);
-      return (T) this;
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public T withSerializer(Serializer serializer) {
-      this.serializer = serializer;
       return (T) this;
     }
   }
