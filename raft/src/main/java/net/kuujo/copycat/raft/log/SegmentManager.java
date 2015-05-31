@@ -357,9 +357,7 @@ public class SegmentManager implements AutoCloseable {
             LOGGER.debug("found segment: {} ({})", descriptor.id(), segmentFile.file().getName());
             descriptors.put(descriptor.id(), descriptor);
           } else if (descriptor.version() > existingDescriptor.version() && descriptor.locked()) {
-            LOGGER.debug("replaced segment {} with newer version: {} ({})", existingDescriptor.id(), descriptor.version(), segmentFile
-              .file()
-              .getName());
+            LOGGER.debug("replaced segment {} with newer version: {} ({})", existingDescriptor.id(), descriptor.version(), segmentFile.file().getName());
             descriptors.put(descriptor.id(), descriptor);
             existingDescriptor.close();
             existingDescriptor.delete();

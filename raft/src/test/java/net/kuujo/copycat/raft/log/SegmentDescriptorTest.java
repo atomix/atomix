@@ -36,6 +36,7 @@ public class SegmentDescriptorTest {
       .withIndex(1025)
       .withRange(1024)
       .withMaxEntrySize(2048)
+      .withMaxSegmentSize(1024 * 1024)
       .build();
 
     assertEquals(descriptor.id(), 2);
@@ -43,7 +44,7 @@ public class SegmentDescriptorTest {
     assertEquals(descriptor.index(), 1025);
     assertEquals(descriptor.range(), 1024);
     assertEquals(descriptor.maxEntrySize(), 2048);
-    assertEquals(descriptor.maxSegmentSize(), 1024);
+    assertEquals(descriptor.maxSegmentSize(), 1024 * 1024);
 
     assertEquals(descriptor.updated(), 0);
     long time = System.currentTimeMillis();
@@ -63,6 +64,7 @@ public class SegmentDescriptorTest {
       .withIndex(1025)
       .withRange(1024)
       .withMaxEntrySize(2048)
+      .withMaxSegmentSize(1024 * 1024)
       .build();
 
     assertEquals(descriptor.id(), 2);
@@ -70,7 +72,7 @@ public class SegmentDescriptorTest {
     assertEquals(descriptor.index(), 1025);
     assertEquals(descriptor.range(), 1024);
     assertEquals(descriptor.maxEntrySize(), 2048);
-    assertEquals(descriptor.maxSegmentSize(), 1024);
+    assertEquals(descriptor.maxSegmentSize(), 1024 * 1024);
 
     descriptor = new SegmentDescriptor(buffer.rewind());
 
@@ -79,7 +81,7 @@ public class SegmentDescriptorTest {
     assertEquals(descriptor.index(), 1025);
     assertEquals(descriptor.range(), 1024);
     assertEquals(descriptor.maxEntrySize(), 2048);
-    assertEquals(descriptor.maxSegmentSize(), 1024);
+    assertEquals(descriptor.maxSegmentSize(), 1024 * 1024);
   }
 
   public void testDescriptorCopy() {
@@ -89,6 +91,7 @@ public class SegmentDescriptorTest {
       .withIndex(1025)
       .withRange(1024)
       .withMaxEntrySize(2048)
+      .withMaxSegmentSize(1024 * 1024)
       .build();
 
     long time = System.currentTimeMillis();
@@ -102,7 +105,7 @@ public class SegmentDescriptorTest {
     assertEquals(descriptor.index(), 1025);
     assertEquals(descriptor.range(), 1024);
     assertEquals(descriptor.maxEntrySize(), 2048);
-    assertEquals(descriptor.maxSegmentSize(), 1024);
+    assertEquals(descriptor.maxSegmentSize(), 1024 * 1024);
     assertEquals(descriptor.updated(), time);
     assertTrue(descriptor.locked());
   }

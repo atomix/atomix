@@ -89,7 +89,7 @@ public final class SegmentDescriptor implements AutoCloseable {
     this.id = buffer.readLong();
     this.version = buffer.readLong();
     this.index = buffer.readLong();
-    this.range = buffer.readInt();
+    this.range = buffer.readLong();
     this.maxEntrySize = buffer.readUnsignedMedium();
     this.maxSegmentSize = buffer.readInt();
     this.updated = buffer.readLong();
