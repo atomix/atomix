@@ -80,9 +80,9 @@ class LeaderState extends ActiveState {
   private CompletableFuture<Void> commitEntries() {
     final long term = context.getTerm();
     final long index;
-    try (NoOpEntry noOpEntry = context.getLog().createEntry(NoOpEntry.class)) {
-      noOpEntry.setTerm(term);
-      index = noOpEntry.getIndex();
+    try (NoOpEntry entry = context.getLog().createEntry(NoOpEntry.class)) {
+      entry.setTerm(term);
+      index = context.getLog().appendEntry(entry);
     }
 
     CompletableFuture<Void> future = new CompletableFuture<>();
@@ -198,13 +198,13 @@ class LeaderState extends ActiveState {
     final long index;
 
     try (CommandEntry entry = context.getLog().createEntry(CommandEntry.class)) {
-      index = entry.getIndex();
       entry.setTerm(term)
         .setSession(request.session())
         .setRequest(request.request())
         .setResponse(request.response())
         .setTimestamp(timestamp)
         .setCommand(command);
+      index = context.getLog().appendEntry(entry);
       LOGGER.debug("{} - Appended entry to log at index {}", context.getCluster().member().id(), index);
     }
 
@@ -339,10 +339,10 @@ class LeaderState extends ActiveState {
     final long index;
 
     try (RegisterEntry entry = context.getLog().createEntry(RegisterEntry.class)) {
-      index = entry.getIndex();
       entry.setTerm(context.getTerm());
       entry.setMember(request.member());
       entry.setTimestamp(timestamp);
+      index = context.getLog().appendEntry(entry);
       LOGGER.debug("{} - Appended register entry to log at index {}", context.getCluster().member().id(), index);
     }
 
@@ -391,10 +391,10 @@ class LeaderState extends ActiveState {
     final long index;
 
     try (KeepAliveEntry entry = context.getLog().createEntry(KeepAliveEntry.class)) {
-      index = entry.getIndex();
       entry.setTerm(context.getTerm());
       entry.setSession(request.session());
       entry.setTimestamp(timestamp);
+      index = context.getLog().appendEntry(entry);
       LOGGER.debug("{} - Appended session entry to log at index {}", context.getCluster().member().id(), index);
     }
 
