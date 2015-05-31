@@ -57,7 +57,6 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
     return builder.get().reset(request);
   }
 
-  private int member;
   private long term;
   private int leader;
   private long logIndex;
@@ -73,15 +72,6 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
   @Override
   public Type type() {
     return Type.APPEND;
-  }
-
-  /**
-   * Returns the requesting node ID.
-   *
-   * @return The requesting node ID.
-   */
-  public int member() {
-    return member;
   }
 
   /**
@@ -218,7 +208,6 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
     @Override
     Builder reset() {
       super.reset();
-      request.member = 0;
       request.leader = 0;
       request.term = 0;
       request.logIndex = 0;
@@ -226,19 +215,6 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
       request.entries.clear();
       request.commitIndex = 0;
       request.globalIndex = 0;
-      return this;
-    }
-
-    /**
-     * Sets the request member.
-     *
-     * @param member The request member.
-     * @return The request builder.
-     */
-    public Builder withMember(int member) {
-      if (member <= 0)
-        throw new IllegalArgumentException("member must be positive");
-      request.member = member;
       return this;
     }
 
@@ -344,8 +320,6 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
     @Override
     public AppendRequest build() {
       super.build();
-      if (request.member <= 0)
-        throw new IllegalArgumentException("member must be positive");
       if (request.term <= 0)
         throw new IllegalArgumentException("term must be positive");
       if (request.logIndex < 0)

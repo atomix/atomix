@@ -415,7 +415,8 @@ public class RaftContext implements Managed<RaftContext> {
         if (openFuture != null) {
           synchronized (openFuture) {
             if (openFuture != null) {
-              openFuture.complete(this);
+              CompletableFuture<RaftContext> future = openFuture;
+              context.execute(() -> future.complete(this));
               openFuture = null;
             }
           }
@@ -653,19 +654,24 @@ public class RaftContext implements Managed<RaftContext> {
     if (openFuture != null)
       return openFuture;
 
-    openFuture = cluster.open().thenRunAsync(() -> {
-      open = true;
-      switch (cluster.member().type()) {
-        case CLIENT:
-          transition(RemoteState.class);
-          break;
-        case ACTIVE:
-          log.open(context);
-          transition(FollowerState.class);
-          break;
+    openFuture = new CompletableFuture<>();
+    cluster.open().whenCompleteAsync((result, error) -> {
+      if (error == null) {
+        open = true;
+        switch (cluster.member().type()) {
+          case CLIENT:
+            transition(RemoteState.class);
+            break;
+          case ACTIVE:
+            log.open(context);
+            transition(FollowerState.class);
+            break;
+        }
+      } else {
+        openFuture.completeExceptionally(error);
+        openFuture = null;
       }
-    }, context)
-    .thenApply(v -> this);
+    }, context);
     return openFuture;
   }
 
