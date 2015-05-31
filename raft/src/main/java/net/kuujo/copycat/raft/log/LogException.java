@@ -15,12 +15,14 @@
  */
 package net.kuujo.copycat.raft.log;
 
+import net.kuujo.copycat.CopycatException;
+
 /**
  * Log exception.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class LogException extends RuntimeException {
+public class LogException extends CopycatException {
 
   public LogException() {
   }

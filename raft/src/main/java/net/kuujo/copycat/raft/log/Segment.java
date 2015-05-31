@@ -20,8 +20,6 @@ import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.raft.log.entry.Entry;
 import net.kuujo.copycat.util.ExecutionContext;
 
-import java.util.ConcurrentModificationException;
-
 /**
  * Log segment.
  *
@@ -108,7 +106,7 @@ public class Segment implements AutoCloseable {
    * @return Indicates whether the segment is full.
    */
   public boolean isFull() {
-    return size() >= descriptor.maxSegmentSize();
+    return size() >= descriptor.maxSegmentSize() || offsetIndex.lastOffset() == descriptor.maxEntries() - 1;
   }
 
   /**
@@ -194,19 +192,19 @@ public class Segment implements AutoCloseable {
   public long appendEntry(Entry entry) {
     long index = nextIndex();
 
-    if (entry.getIndex() < index) {
-      throw new CommitModificationException("cannot modify committed entry");
+    if (entry.getIndex() != index) {
+      throw new IndexOutOfBoundsException("inconsistent index: " + entry.getIndex());
     }
 
-    if (entry.getIndex() > index) {
-      throw new ConcurrentModificationException("attempt to commit entry with non-monotonic index");
+    // Calculate the offset of the entry.
+    int offset = offset(index);
+
+    if (offset >= descriptor.maxEntries()) {
+      throw new IndexOutOfBoundsException("max entries exceeded by index: " + entry.getIndex());
     }
 
     // Record the starting position of the new entry.
     long position = writeBuffer.position();
-
-    // Calculate the offset of the entry.
-    int offset = offset(index);
 
     // Serialize the object into the segment buffer.
     serializer.writeObject(entry, writeBuffer.limit(-1));

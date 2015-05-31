@@ -169,7 +169,7 @@ public class Log implements AutoCloseable {
    * @param entry The entry to append.
    * @return The appended entry index.
    * @throws java.lang.NullPointerException If the entry is {@code null}
-   * @throws CommitModificationException If the entry's index does not match
+   * @throws java.lang.IndexOutOfBoundsException If the entry's index does not match
    *         the expected next log index.
    */
   public long appendEntry(Entry entry) {
@@ -258,16 +258,10 @@ public class Log implements AutoCloseable {
 
   /**
    * Truncates the log up to the given index.
-   * <p>
-   * If the given {@code index} is less than or equal to the log's {@code commitIndex} then a
-   * {@link CommitModificationException} will be thrown. Otherwise, entries after the given index will be permanently
-   * removed from the log, and the log's {@link Log#lastIndex()} will become equal to {@code index}. If entries
-   * have been {@link Log#skip(long) skipped} then the skipped entries will be truncated as well.
    *
    * @param index The index at which to truncate the log.
    * @return The updated log.
    * @throws IllegalStateException If the log is not open.
-   * @throws CommitModificationException If first index after the given index has already been committed.
    * @throws IndexOutOfBoundsException If the given index is not within the bounds of the log.
    */
   public Log truncate(long index) {
