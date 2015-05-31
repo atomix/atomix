@@ -294,22 +294,14 @@ public class SegmentManager implements AutoCloseable {
    */
   private OffsetIndex createDiskIndex(long segmentId, long segmentVersion) {
     File file = SegmentFile.createIndexFile(config.getDirectory(), segmentId, segmentVersion);
-    if (segmentVersion == 1) {
-      return new OrderedOffsetIndex(FileBuffer.allocate(file, Math.min(1024 * 1024, config.getMaxEntriesPerSegment()), OrderedOffsetIndex.size(config.getMaxEntriesPerSegment())));
-    } else {
-      return new SearchableOffsetIndex(FileBuffer.allocate(file, Math.min(1024 * 1024, config.getMaxEntriesPerSegment()), SearchableOffsetIndex.size(config.getMaxEntriesPerSegment())));
-    }
+    return new SearchableOffsetIndex(FileBuffer.allocate(file, Math.min(1024 * 1024, config.getMaxEntriesPerSegment()), SearchableOffsetIndex.size(config.getMaxEntriesPerSegment())));
   }
 
   /**
    * Creates an in memory segment index.
    */
   private OffsetIndex createMemoryIndex(long segmentId, long segmentVersion) {
-    if (segmentVersion == 1) {
-      return new OrderedOffsetIndex(HeapBuffer.allocate(Math.min(1024 * 1024, config.getMaxEntriesPerSegment()), OrderedOffsetIndex.size(config.getMaxEntriesPerSegment())));
-    } else {
-      return new SearchableOffsetIndex(HeapBuffer.allocate(Math.min(1024 * 1024, config.getMaxEntriesPerSegment()), SearchableOffsetIndex.size(config.getMaxEntriesPerSegment())));
-    }
+    return new SearchableOffsetIndex(HeapBuffer.allocate(Math.min(1024 * 1024, config.getMaxEntriesPerSegment()), SearchableOffsetIndex.size(config.getMaxEntriesPerSegment())));
   }
 
   /**

@@ -211,6 +211,47 @@ public class LogTest {
   }
 
   /**
+   * Tests skipping entries on a segment rollover.
+   */
+  public void testSkipOnRollOver() {
+    try (Log log = createLog()) {
+      appendEntries(log, 1020);
+
+      log.skip(10);
+
+      assertEquals(log.length(), 1030);
+
+      long time = System.currentTimeMillis();
+
+      long index;
+      try (CommandEntry entry = log.createEntry(CommandEntry.class)) {
+        entry.setTerm(1);
+        entry.setSession(10);
+        entry.setRequest(100);
+        entry.setResponse(99);
+        entry.setTimestamp(time);
+        entry.setCommand(new TestCommand(1));
+        index = log.appendEntry(entry);
+      }
+
+      assertEquals(log.length(), 1031);
+
+      try (NoOpEntry entry = log.getEntry(1021)) {
+        assertNull(entry);
+      }
+
+      try (CommandEntry entry = log.getEntry(index)) {
+        assertEquals(entry.getTerm(), 1);
+        assertEquals(entry.getSession(), 10);
+        assertEquals(entry.getRequest(), 100);
+        assertEquals(entry.getResponse(), 99);
+        assertEquals(entry.getTimestamp(), time);
+        assertEquals(((TestCommand) entry.getCommand()).id, 1);
+      }
+    }
+  }
+
+  /**
    * Creates a test execution context.
    */
   private ExecutionContext createContext() {

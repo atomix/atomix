@@ -252,7 +252,14 @@ public class Log implements AutoCloseable {
    */
   public Log skip(long entries) {
     checkOpen();
-    segments.currentSegment().skip(entries);
+    Segment segment = segments.currentSegment();
+    while (segment.length() + entries > Integer.MAX_VALUE) {
+      int skip = Integer.MAX_VALUE - segment.length();
+      segment.skip(skip);
+      entries -= skip;
+      segment = segments.nextSegment();
+    }
+    segment.skip(entries);
     return this;
   }
 

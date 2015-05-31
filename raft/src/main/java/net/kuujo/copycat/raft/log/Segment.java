@@ -49,7 +49,7 @@ public class Segment implements AutoCloseable {
   private final Buffer writeBuffer;
   private final Buffer readBuffer;
   private final OffsetIndex offsetIndex;
-  private long skip = 0;
+  private int skip = 0;
   private boolean open = true;
 
   Segment(Buffer buffer, SegmentDescriptor descriptor, OffsetIndex offsetIndex, ExecutionContext context) {
@@ -106,7 +106,7 @@ public class Segment implements AutoCloseable {
    * @return Indicates whether the segment is full.
    */
   public boolean isFull() {
-    return size() >= descriptor.maxSegmentSize() || offsetIndex.lastOffset() == descriptor.maxEntries() - 1;
+    return size() >= descriptor.maxSegmentSize() || offsetIndex.size() >= descriptor.maxEntries() || length() == Integer.MAX_VALUE;
   }
 
   /**
@@ -132,8 +132,8 @@ public class Segment implements AutoCloseable {
    *
    * @return The current range of the segment.
    */
-  public long length() {
-    return offsetIndex.lastOffset() + 1;
+  public int length() {
+    return offsetIndex.lastOffset() + skip + 1;
   }
 
   /**
@@ -155,7 +155,7 @@ public class Segment implements AutoCloseable {
   public long lastIndex() {
     if (!isOpen())
       throw new IllegalStateException("segment not open");
-    return !isEmpty() ? offsetIndex.lastOffset() + descriptor.index() : 0;
+    return !isEmpty() ? offsetIndex.lastOffset() + descriptor.index() + skip : 0;
   }
 
   /**
@@ -164,7 +164,7 @@ public class Segment implements AutoCloseable {
    * @return The next index in the segment.
    */
   public long nextIndex() {
-    return !isEmpty() ? lastIndex() + skip + 1 : descriptor.index() + skip;
+    return !isEmpty() ? lastIndex() + 1 : descriptor.index() + skip;
   }
 
   /**
@@ -190,6 +190,10 @@ public class Segment implements AutoCloseable {
    * Commits an entry to the segment.
    */
   public long appendEntry(Entry entry) {
+    if (isFull()) {
+      throw new IllegalStateException("segment is full");
+    }
+
     long index = nextIndex();
 
     if (entry.getIndex() != index) {
@@ -198,10 +202,6 @@ public class Segment implements AutoCloseable {
 
     // Calculate the offset of the entry.
     int offset = offset(index);
-
-    if (offset >= descriptor.maxEntries()) {
-      throw new IndexOutOfBoundsException("max entries exceeded by index: " + entry.getIndex());
-    }
 
     // Record the starting position of the new entry.
     long position = writeBuffer.position();
@@ -214,6 +214,9 @@ public class Segment implements AutoCloseable {
 
     // Index the offset, position, and length.
     offsetIndex.index(offset, position, length);
+
+    // Reset skip to zero since we wrote a new entry.
+    skip = 0;
 
     return entry.getIndex();
   }
