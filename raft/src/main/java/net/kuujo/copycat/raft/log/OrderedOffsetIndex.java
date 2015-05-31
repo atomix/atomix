@@ -39,6 +39,8 @@ public class OrderedOffsetIndex implements OffsetIndex {
   private final Buffer buffer;
   private int firstOffset = -1;
   private int lastOffset = -1;
+  private int currentOffset = -1;
+  private int currentLength = 0;
   private int size;
 
   public OrderedOffsetIndex(Buffer buffer) {
@@ -87,13 +89,20 @@ public class OrderedOffsetIndex implements OffsetIndex {
     if (lastOffset > -1 && offset <= lastOffset) {
       throw new IllegalArgumentException("offset cannot be less than or equal to the last offset in the index");
     }
-    if (offset != lastOffset + 1) {
-      throw new IllegalArgumentException("offset must be monotonically increasing");
-    }
     if (position > MAX_POSITION) {
       throw new IllegalArgumentException("position cannot be greater than " + MAX_POSITION);
     }
 
+    for (int i = lastOffset + 1; i < offset; i++) {
+      writeIndex(offset, position, 0);
+    }
+    writeIndex(offset, position, length);
+  }
+
+  /**
+   * Writes the given offset to the buffer.
+   */
+  private void writeIndex(int offset, long position, int length) {
     if (offset == 0) {
       if (position != 0) {
         throw new IllegalArgumentException("offset 0 must be at position 0");
@@ -129,20 +138,27 @@ public class OrderedOffsetIndex implements OffsetIndex {
       throw new IllegalArgumentException("offset cannot be less that first offset or greater than last offset");
     }
 
-    if (offset == 0) {
-      return size >= 0 ? 0 : -1;
+    currentLength = length(offset);
+    currentOffset = offset;
+
+    if (currentLength == 0) {
+      return -1;
+    } else if (offset == 0) {
+      return 0;
     }
     return buffer.readUnsignedInt(HEADER_SIZE + offset * Integer.BYTES - Integer.BYTES);
   }
 
   @Override
   public int length(int offset) {
-    if (offset == lastOffset) {
+    if (offset == currentOffset) {
+      return currentLength;
+    } else if (offset == lastOffset) {
       return buffer.readInt(HEADER_SIZE + offset * Integer.BYTES + Integer.BYTES);
     } else if (offset == 0) {
-      return buffer.readInt(HEADER_SIZE);
+      return (int) buffer.readUnsignedInt(HEADER_SIZE);
     } else {
-      return (int) (position(offset + 1) - position(offset));
+      return (int) (buffer.readUnsignedInt(HEADER_SIZE + (offset + 1) * Integer.BYTES - Integer.BYTES) - buffer.readUnsignedInt(HEADER_SIZE + offset * Integer.BYTES - Integer.BYTES));
     }
   }
 
@@ -173,6 +189,9 @@ public class OrderedOffsetIndex implements OffsetIndex {
         lastOffset = offset;
       }
     }
+
+    currentOffset = -1;
+    currentLength = 0;
   }
 
   @Override

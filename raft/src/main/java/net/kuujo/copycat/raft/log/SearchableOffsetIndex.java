@@ -129,6 +129,11 @@ public class SearchableOffsetIndex implements OffsetIndex {
       throw new IllegalArgumentException("position cannot be greater than " + MAX_POSITION);
     }
 
+    // If the length is zero, that indicates that this is a skipped entry. We don't index skipped entries at all.
+    if (length == 0) {
+      return;
+    }
+
     buffer.writeInt(offset)
       .writeUnsignedInt(position)
       .mark()

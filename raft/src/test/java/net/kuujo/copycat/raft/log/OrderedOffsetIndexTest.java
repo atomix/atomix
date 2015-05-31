@@ -59,9 +59,17 @@ public class OrderedOffsetIndexTest {
     index.index(2, 2345, 10);
     index.index(3, 3456, 11);
     assertTrue(index.contains(0));
+    assertTrue(index.contains(1));
+    assertTrue(index.contains(2));
     assertTrue(index.contains(3));
     assertEquals(index.size(), 4);
+    assertEquals(index.position(0), 0);
+    assertEquals(index.position(1), 1234);
+    assertEquals(index.position(2), 2345);
+    assertEquals(index.position(3), 3456);
     assertEquals(index.length(0), 1234);
+    assertEquals(index.length(1), 1111);
+    assertEquals(index.length(2), 1111);
     assertEquals(index.length(3), 11);
     index.truncate(2);
     assertEquals(index.size(), 3);
