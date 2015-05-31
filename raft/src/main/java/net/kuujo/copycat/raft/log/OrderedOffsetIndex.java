@@ -118,7 +118,9 @@ public class OrderedOffsetIndex implements OffsetIndex {
       .writeInt(length)
       .reset();
 
-    size++;
+    if (length > 0) {
+      size++;
+    }
     lastOffset = offset;
   }
 
