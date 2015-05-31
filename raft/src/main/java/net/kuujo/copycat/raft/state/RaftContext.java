@@ -22,8 +22,8 @@ import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.raft.Command;
 import net.kuujo.copycat.raft.Query;
 import net.kuujo.copycat.raft.StateMachine;
+import net.kuujo.copycat.raft.log.Compactor;
 import net.kuujo.copycat.raft.log.Log;
-import net.kuujo.copycat.raft.log.LogCompactor;
 import net.kuujo.copycat.raft.rpc.CommandRequest;
 import net.kuujo.copycat.raft.rpc.QueryRequest;
 import net.kuujo.copycat.raft.rpc.Response;
@@ -51,7 +51,7 @@ public class RaftContext implements Managed<RaftContext> {
   private final Set<EventListener<Member>> electionListeners = new CopyOnWriteArraySet<>();
   private final RaftStateMachine stateMachine;
   private final Log log;
-  private final LogCompactor compactor;
+  private final Compactor compactor;
   private final ManagedCluster cluster;
   private final String topic;
   private final ExecutionContext context;
@@ -76,7 +76,7 @@ public class RaftContext implements Managed<RaftContext> {
   public RaftContext(Log log, StateMachine stateMachine, ManagedCluster cluster, String topic, ExecutionContext context) {
     this.log = log;
     this.stateMachine = new RaftStateMachine(stateMachine);
-    this.compactor = new LogCompactor(log, this.stateMachine::filter, context);
+    this.compactor = new Compactor(log, this.stateMachine::filter, context);
     this.cluster = cluster;
     this.topic = topic;
     this.context = context;
@@ -530,7 +530,7 @@ public class RaftContext implements Managed<RaftContext> {
    *
    * @return The log compactor.
    */
-  public LogCompactor getCompactor() {
+  public Compactor getCompactor() {
     return compactor;
   }
 

@@ -28,8 +28,8 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class LogCompactor implements Runnable, AutoCloseable {
-  private static final Logger LOGGER = LoggerFactory.getLogger(LogCompactor.class);
+public class Compactor implements Runnable, AutoCloseable {
+  private static final Logger LOGGER = LoggerFactory.getLogger(Compactor.class);
   private static final int DEFAULT_COMPACTION_FACTOR = 10;
   private static final long DEFAULT_COMPACTION_INTERVAL = TimeUnit.HOURS.toMillis(1);
   private static final long COMPACT_INTERVAL = 60 * 1000;
@@ -45,7 +45,7 @@ public class LogCompactor implements Runnable, AutoCloseable {
   private long previousCompaction;
   private ScheduledFuture<?> future;
 
-  public LogCompactor(Log log, EntryFilter filter, ExecutionContext context) {
+  public Compactor(Log log, EntryFilter filter, ExecutionContext context) {
     this.log = log;
     this.filter = filter;
     this.context = context;
@@ -77,7 +77,7 @@ public class LogCompactor implements Runnable, AutoCloseable {
    * @param compactionFactor The compaction factor.
    * @return The log compactor.
    */
-  public LogCompactor withCompactionFactor(int compactionFactor) {
+  public Compactor withCompactionFactor(int compactionFactor) {
     setCompactionFactor(compactionFactor);
     return this;
   }
@@ -108,7 +108,7 @@ public class LogCompactor implements Runnable, AutoCloseable {
    * @param compactionInterval The interval at which major compaction is run.
    * @return The log compactor.
    */
-  public LogCompactor withCompactionInterval(long compactionInterval) {
+  public Compactor withCompactionInterval(long compactionInterval) {
     setCompactionInterval(compactionInterval);
     return this;
   }
