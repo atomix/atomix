@@ -133,7 +133,7 @@ public class Serializer {
   /**
    * Registers a serializable class with an explicit identifier.
    * <p>
-   * During serialization, the provided identifier will be written to the {@link net.kuujo.copycat.io.Buffer} as an unsigned 8-bit integer.
+   * During serialization, the provided identifier will be written to the {@link net.kuujo.copycat.io.Buffer} as an unsigned 16-bit integer.
    * It is important that the class be registered on any {@link Serializer} instance with the same {@code id}.
    *
    * @param type The type to register.
@@ -148,7 +148,7 @@ public class Serializer {
   /**
    * Registers a serializable class.
    * <p>
-   * During serialization, the provided identifier will be written to the {@link net.kuujo.copycat.io.Buffer} as an unsigned 8-bit integer.
+   * During serialization, the provided identifier will be written to the {@link net.kuujo.copycat.io.Buffer} as an unsigned 16-bit integer.
    * It is important that the class be registered on any {@link Serializer} instance with the same {@code id}.
    *
    * @param type The type to register.
@@ -271,7 +271,7 @@ public class Serializer {
    */
   @SuppressWarnings("unchecked")
   private <T> Buffer writeWritableId(int id, T writable, Buffer buffer, ObjectWriter writer) {
-    writer.write(writable, buffer.writeByte(TYPE_WRITABLE_ID).writeUnsignedByte(id), this);
+    writer.write(writable, buffer.writeByte(TYPE_WRITABLE_ID).writeUnsignedShort(id), this);
     return buffer;
   }
 
@@ -362,7 +362,7 @@ public class Serializer {
    */
   @SuppressWarnings("unchecked")
   private <T> T readWritableId(Buffer buffer) {
-    int id = buffer.readUnsignedByte();
+    int id = buffer.readUnsignedShort();
     Class<?> type = registry.types().get(id);
     if (type == null)
       throw new SerializationException("cannot deserialize: unknown type");
