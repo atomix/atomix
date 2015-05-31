@@ -20,7 +20,6 @@ import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.raft.log.entry.Entry;
 import net.kuujo.copycat.raft.log.entry.TypedEntryPool;
 import net.kuujo.copycat.util.ExecutionContext;
-import net.kuujo.copycat.util.ThreadChecker;
 
 import java.util.ConcurrentModificationException;
 
@@ -49,7 +48,6 @@ public class Segment implements AutoCloseable {
 
   private final SegmentDescriptor descriptor;
   private final Serializer serializer;
-  private final ThreadChecker threadChecker;
   private final Buffer source;
   private final Buffer writeBuffer;
   private final Buffer readBuffer;
@@ -70,7 +68,6 @@ public class Segment implements AutoCloseable {
 
     this.source = buffer;
     this.serializer = context.serializer();
-    this.threadChecker = new ThreadChecker(context);
     this.writeBuffer = buffer.slice();
     this.readBuffer = writeBuffer.asReadOnlyBuffer();
     this.descriptor = descriptor;
@@ -228,7 +225,6 @@ public class Segment implements AutoCloseable {
    * @return The created entry.
    */
   public <T extends Entry<T>> T createEntry(Class<T> type) {
-    threadChecker.checkThread();
     if (!isOpen())
       throw new IllegalStateException("segment not open");
     if (isLocked())
@@ -240,8 +236,6 @@ public class Segment implements AutoCloseable {
    * Commits an entry to the segment.
    */
   public long appendEntry(Entry entry) {
-    threadChecker.checkThread();
-
     long nextIndex = nextIndex();
 
     if (entry.getIndex() < nextIndex) {
@@ -271,7 +265,6 @@ public class Segment implements AutoCloseable {
    * @return The entry at the given index.
    */
   public <T extends Entry<T>> T getEntry(long index) {
-    threadChecker.checkThread();
     if (!isOpen())
       throw new IllegalStateException("segment not open");
     checkRange(index);
@@ -306,7 +299,6 @@ public class Segment implements AutoCloseable {
    * @return Indicates whether the given index is within the range of the segment.
    */
   public boolean containsIndex(long index) {
-    threadChecker.checkThread();
     if (!isOpen())
       throw new IllegalStateException("segment not open");
     return !isEmpty() && index >= descriptor.index() && index <= lastIndex();
@@ -319,7 +311,6 @@ public class Segment implements AutoCloseable {
    * @return Indicates whether the entry at the given index is active.
    */
   public boolean containsEntry(long index) {
-    threadChecker.checkThread();
     if (!isOpen())
       throw new IllegalStateException("segment not open");
     return containsIndex(index) && offsetIndex.contains(offset(index));
@@ -332,7 +323,6 @@ public class Segment implements AutoCloseable {
    * @return The segment.
    */
   public Segment skip(long entries) {
-    threadChecker.checkThread();
     if (!isOpen())
       throw new IllegalStateException("segment not open");
     this.skip += entries;
@@ -346,7 +336,6 @@ public class Segment implements AutoCloseable {
    * @return The segment.
    */
   public Segment truncate(long index) {
-    threadChecker.checkThread();
     if (!isOpen())
       throw new IllegalStateException("segment not open");
     int offset = offset(index);

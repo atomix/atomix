@@ -20,7 +20,6 @@ import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.FileBuffer;
 import net.kuujo.copycat.io.HeapBuffer;
 import net.kuujo.copycat.util.ExecutionContext;
-import net.kuujo.copycat.util.ThreadChecker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +40,6 @@ public class SegmentManager implements AutoCloseable {
   protected final LogConfig config;
   private NavigableMap<Long, Segment> segments = new ConcurrentSkipListMap<>();
   private ExecutionContext context;
-  protected ThreadChecker threadChecker;
   private Segment currentSegment;
 
   public SegmentManager(LogConfig config) {
@@ -57,7 +55,6 @@ public class SegmentManager implements AutoCloseable {
    */
   public void open(ExecutionContext context) {
     this.context = context;
-    this.threadChecker = new ThreadChecker(context);
 
     // Load existing log segments from disk.
     for (Segment segment : loadSegments()) {
@@ -79,13 +76,6 @@ public class SegmentManager implements AutoCloseable {
   private void checkOpen() {
     if (currentSegment == null)
       throw new IllegalStateException("segment manager not open");
-  }
-
-  /**
-   * Checks that the manager is being called in the context thread.
-   */
-  private void checkThread() {
-    threadChecker.checkThread();
   }
 
   /**
