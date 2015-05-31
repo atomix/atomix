@@ -18,6 +18,7 @@ package net.kuujo.copycat.raft;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  * State machine operation.
@@ -34,11 +35,15 @@ public interface Operation<T> extends Serializable {
    */
   @SuppressWarnings("unchecked")
   static <T extends Builder> T builder(Class<T> type) {
-    return (T) Builder.BUILDERS.get().computeIfAbsent(type, t -> {
-      try {
-        return type.newInstance();
-      } catch (InstantiationException | IllegalAccessException e) {
-        throw new IllegalArgumentException("failed to instantiate builder: " + type, e);
+    // We run into strange reflection issues when using a lambda here, so just use an old style closure instead.
+    return (T) Builder.BUILDERS.get().computeIfAbsent(type, new Function<Class<? extends Builder>, Builder>() {
+      @Override
+      public Builder apply(Class<? extends Builder> type) {
+        try {
+          return type.newInstance();
+        } catch (InstantiationException | IllegalAccessException e) {
+          throw new IllegalArgumentException("failed to instantiate builder: " + type, e);
+        }
       }
     });
   }
@@ -47,7 +52,7 @@ public interface Operation<T> extends Serializable {
    * Operation builder.
    */
   static abstract class Builder<T extends Operation<?>> implements net.kuujo.copycat.Builder<T> {
-    private static final ThreadLocal<Map<Class<? extends Builder>, Builder>> BUILDERS = new ThreadLocal<Map<Class<? extends Builder>, Builder>>() {
+    static final ThreadLocal<Map<Class<? extends Builder>, Builder>> BUILDERS = new ThreadLocal<Map<Class<? extends Builder>, Builder>>() {
       @Override
       protected Map<Class<? extends Builder>, Builder> initialValue() {
         return new HashMap<>();

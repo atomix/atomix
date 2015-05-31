@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-abstract class ActiveState extends AbstractState {
+abstract class ActiveState extends RemoteState {
   protected boolean transition;
 
   protected ActiveState(RaftContext context) {

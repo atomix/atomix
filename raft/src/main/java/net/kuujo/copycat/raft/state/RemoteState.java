@@ -17,6 +17,7 @@ package net.kuujo.copycat.raft.state;
 
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.cluster.MemberInfo;
+import net.kuujo.copycat.raft.NoLeaderException;
 import net.kuujo.copycat.raft.RaftError;
 import net.kuujo.copycat.raft.rpc.*;
 
@@ -37,6 +38,7 @@ public class RemoteState extends AbstractState {
   private final AtomicBoolean keepAlive = new AtomicBoolean();
   private final Random random = new Random();
   private ScheduledFuture<?> currentTimer;
+  private ScheduledFuture<?> registerTimer;
 
   public RemoteState(RaftContext context) {
     super(context);
@@ -49,18 +51,29 @@ public class RemoteState extends AbstractState {
 
   @Override
   public synchronized CompletableFuture<AbstractState> open() {
-    return super.open().thenCompose(v -> register()).thenRun(this::startKeepAliveTimer).thenApply(v -> this);
+    context.getContext().execute(() -> {
+      register(new CompletableFuture<Void>()).thenRun(this::startKeepAliveTimer);
+    });
+    return super.open().thenApply(v -> this);
   }
 
   /**
    * Registers the client.
    */
-  private CompletableFuture<Long> register() {
-    return register(context.getCluster()
+  private CompletableFuture<Void> register(CompletableFuture<Void> future) {
+    register(context.getCluster()
       .members()
       .stream()
       .filter(m -> m.type() == Member.Type.ACTIVE)
-      .collect(Collectors.toList()), new CompletableFuture<>());
+      .collect(Collectors.toList()), new CompletableFuture<>()).whenComplete((result, error) -> {
+      if (error == null) {
+        future.complete(null);
+      } else {
+        registerTimer = context.getContext()
+          .schedule(() -> register(future), context.getHeartbeatInterval(), TimeUnit.SECONDS);
+      }
+    });
+    return future;
   }
 
   /**
@@ -68,7 +81,7 @@ public class RemoteState extends AbstractState {
    */
   private CompletableFuture<Long> register(List<Member> members, CompletableFuture<Long> future) {
     if (members.isEmpty()) {
-      future.completeExceptionally(RaftError.Type.NO_LEADER_ERROR.createException());
+      future.completeExceptionally(new NoLeaderException("no leader found"));
       return future;
     }
 
@@ -83,21 +96,22 @@ public class RemoteState extends AbstractState {
       .withMember(context.getCluster().member().info())
       .build();
     member.<RegisterRequest, RegisterResponse>send(context.getTopic(), request).whenComplete((response, error) -> {
-      if (error == null) {
-        context.setTerm(response.term());
-        context.setLeader(response.leader());
-        context.setSession(response.session());
-        context.getCluster()
-          .configure(response.members().toArray(new MemberInfo[response.members().size()]))
-          .whenComplete((configureResult, configureError) -> {
+      context.checkThread();
+      if (isOpen()) {
+        if (error == null && response.status() == Response.Status.OK) {
+          context.setTerm(response.term());
+          context.setLeader(response.leader());
+          context.setSession(response.session());
+          context.getCluster().configure(response.members().toArray(new MemberInfo[response.members().size()])).whenComplete((configureResult, configureError) -> {
             if (configureError == null) {
               future.complete(response.session());
             } else {
               future.completeExceptionally(configureError);
             }
           });
-      } else {
-        register(members, future);
+        } else {
+          register(members, future);
+        }
       }
     });
     return future;
@@ -143,19 +157,22 @@ public class RemoteState extends AbstractState {
       .withSession(context.getSession())
       .build();
     member.<KeepAliveRequest, KeepAliveResponse>send(context.getTopic(), request).whenComplete((response, error) -> {
-      if (error == null) {
-        context.setTerm(response.term());
-        context.setLeader(response.leader());
-        context.getCluster().configure(response.members().toArray(new MemberInfo[response.members().size()])).whenComplete((configureResult, configureError) -> {
-          if (configureError == null) {
-            future.complete(null);
-          } else {
-            future.completeExceptionally(configureError);
-          }
-          keepAlive.set(false);
-        });
-      } else {
-        keepAlive(members, future);
+      context.checkThread();
+      if (isOpen()) {
+        if (error == null && response.status() == Response.Status.OK) {
+          context.setTerm(response.term());
+          context.setLeader(response.leader());
+          context.getCluster().configure(response.members().toArray(new MemberInfo[response.members().size()])).whenComplete((configureResult, configureError) -> {
+            if (configureError == null) {
+              future.complete(null);
+            } else {
+              future.completeExceptionally(configureError);
+            }
+            keepAlive.set(false);
+          });
+        } else {
+          keepAlive(members, future);
+        }
       }
     });
     return future;
@@ -192,7 +209,7 @@ public class RemoteState extends AbstractState {
   }
 
   @Override
-  public CompletableFuture<CommandResponse> command(CommandRequest request) {
+  protected CompletableFuture<CommandResponse> command(CommandRequest request) {
     context.checkThread();
     logRequest(request);
     if (context.getLeader() == 0) {
@@ -206,7 +223,7 @@ public class RemoteState extends AbstractState {
   }
 
   @Override
-  public CompletableFuture<QueryResponse> query(QueryRequest request) {
+  protected CompletableFuture<QueryResponse> query(QueryRequest request) {
     context.checkThread();
     logRequest(request);
     if (context.getLeader() == 0) {
@@ -248,18 +265,28 @@ public class RemoteState extends AbstractState {
   }
 
   /**
-   * Cancels the status timer.
+   * Cancels the register timer.
    */
-  private void cancelStatusTimer() {
+  private void cancelRegisterTimer() {
+    if (registerTimer != null) {
+      LOGGER.debug("{} - cancelling register timer", context.getCluster().member().id());
+      registerTimer.cancel(false);
+    }
+  }
+
+  /**
+   * Cancels the keep alive timer.
+   */
+  private void cancelKeepAliveTimer() {
     if (currentTimer != null) {
-      LOGGER.debug("{} - Cancelling status timer", context.getCluster().member().id());
+      LOGGER.debug("{} - cancelling keep alive timer", context.getCluster().member().id());
       currentTimer.cancel(false);
     }
   }
 
   @Override
   public synchronized CompletableFuture<Void> close() {
-    return super.close().thenRun(this::cancelStatusTimer);
+    return super.close().thenRun(this::cancelRegisterTimer).thenRun(this::cancelKeepAliveTimer);
   }
 
 }

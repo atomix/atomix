@@ -67,7 +67,6 @@ public class RaftContext implements Managed<RaftContext> {
   private int leader;
   private long term;
   private int lastVotedFor;
-  private volatile long firstCommitIndex;
   private volatile long commitIndex;
   private volatile long globalIndex;
   private volatile long lastApplied;
@@ -244,6 +243,15 @@ public class RaftContext implements Managed<RaftContext> {
     this.session = session;
     this.request = 0;
     this.response = 0;
+    if (session != 0 && openFuture != null) {
+      synchronized (openFuture) {
+        if (openFuture != null) {
+          CompletableFuture<RaftContext> future = openFuture;
+          context.execute(() -> future.complete(this));
+          openFuture = null;
+        }
+      }
+    }
     return this;
   }
 
@@ -410,21 +418,6 @@ public class RaftContext implements Managed<RaftContext> {
       throw new IllegalArgumentException("commit index must be positive");
     if (commitIndex < this.commitIndex)
       throw new IllegalArgumentException("cannot decrease commit index");
-    if (firstCommitIndex == 0) {
-      if (commitIndex == 0) {
-        if (openFuture != null) {
-          synchronized (openFuture) {
-            if (openFuture != null) {
-              CompletableFuture<RaftContext> future = openFuture;
-              context.execute(() -> future.complete(this));
-              openFuture = null;
-            }
-          }
-        }
-      } else {
-        firstCommitIndex = commitIndex;
-      }
-    }
     this.commitIndex = commitIndex;
     return this;
   }
@@ -478,15 +471,6 @@ public class RaftContext implements Managed<RaftContext> {
       throw new IllegalArgumentException("last applied cannot be greater than commit index");
     this.lastApplied = lastApplied;
     compactor.setCommitIndex(lastApplied);
-    if (openFuture != null) {
-      synchronized (openFuture) {
-        if (openFuture != null && this.lastApplied != 0 && firstCommitIndex != 0 && this.lastApplied >= firstCommitIndex) {
-          CompletableFuture<RaftContext> future = openFuture;
-          context.execute(() -> future.complete(this));
-          openFuture = null;
-        }
-      }
-    }
     return this;
   }
 
