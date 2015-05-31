@@ -29,6 +29,9 @@ import static org.testng.Assert.*;
 @Test
 public class SegmentDescriptorTest {
 
+  /**
+   * Tests the segment descriptor builder.
+   */
   public void testDescriptorBuilder() {
     SegmentDescriptor descriptor = SegmentDescriptor.builder()
       .withId(2)
@@ -37,6 +40,7 @@ public class SegmentDescriptorTest {
       .withRange(1024)
       .withMaxEntrySize(2048)
       .withMaxSegmentSize(1024 * 1024)
+      .withMaxEntries(2048)
       .build();
 
     assertEquals(descriptor.id(), 2);
@@ -45,6 +49,7 @@ public class SegmentDescriptorTest {
     assertEquals(descriptor.range(), 1024);
     assertEquals(descriptor.maxEntrySize(), 2048);
     assertEquals(descriptor.maxSegmentSize(), 1024 * 1024);
+    assertEquals(descriptor.maxEntries(), 2048);
 
     assertEquals(descriptor.updated(), 0);
     long time = System.currentTimeMillis();
@@ -56,6 +61,9 @@ public class SegmentDescriptorTest {
     assertTrue(descriptor.locked());
   }
 
+  /**
+   * Tests persisting the segment descriptor.
+   */
   public void testDescriptorPersist() {
     Buffer buffer = HeapBuffer.allocate(SegmentDescriptor.BYTES);
     SegmentDescriptor descriptor = SegmentDescriptor.builder(buffer)
@@ -65,6 +73,7 @@ public class SegmentDescriptorTest {
       .withRange(1024)
       .withMaxEntrySize(2048)
       .withMaxSegmentSize(1024 * 1024)
+      .withMaxEntries(2048)
       .build();
 
     assertEquals(descriptor.id(), 2);
@@ -73,6 +82,7 @@ public class SegmentDescriptorTest {
     assertEquals(descriptor.range(), 1024);
     assertEquals(descriptor.maxEntrySize(), 2048);
     assertEquals(descriptor.maxSegmentSize(), 1024 * 1024);
+    assertEquals(descriptor.maxEntries(), 2048);
 
     descriptor = new SegmentDescriptor(buffer.rewind());
 
@@ -84,6 +94,9 @@ public class SegmentDescriptorTest {
     assertEquals(descriptor.maxSegmentSize(), 1024 * 1024);
   }
 
+  /**
+   * Tests copying the segment descriptor.
+   */
   public void testDescriptorCopy() {
     SegmentDescriptor descriptor = SegmentDescriptor.builder()
       .withId(2)
@@ -92,6 +105,7 @@ public class SegmentDescriptorTest {
       .withRange(1024)
       .withMaxEntrySize(2048)
       .withMaxSegmentSize(1024 * 1024)
+      .withMaxEntries(2048)
       .build();
 
     long time = System.currentTimeMillis();
@@ -106,6 +120,7 @@ public class SegmentDescriptorTest {
     assertEquals(descriptor.range(), 1024);
     assertEquals(descriptor.maxEntrySize(), 2048);
     assertEquals(descriptor.maxSegmentSize(), 1024 * 1024);
+    assertEquals(descriptor.maxEntries(), 2048);
     assertEquals(descriptor.updated(), time);
     assertTrue(descriptor.locked());
   }

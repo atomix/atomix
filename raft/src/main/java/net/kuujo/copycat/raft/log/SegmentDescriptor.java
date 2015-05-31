@@ -49,7 +49,7 @@ import net.kuujo.copycat.io.HeapBuffer;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public final class SegmentDescriptor implements AutoCloseable {
-  public static final int BYTES = 48;
+  public static final int BYTES = 52;
 
   /**
    * Returns a descriptor builder.
@@ -79,7 +79,8 @@ public final class SegmentDescriptor implements AutoCloseable {
   private final long version;
   private long updated;
   private final int maxEntrySize;
-  private final int maxSegmentSize;
+  private final long maxSegmentSize;
+  private final int maxEntries;
   private boolean locked;
 
   public SegmentDescriptor(Buffer buffer) {
@@ -91,7 +92,8 @@ public final class SegmentDescriptor implements AutoCloseable {
     this.index = buffer.readLong();
     this.range = buffer.readLong();
     this.maxEntrySize = buffer.readUnsignedMedium();
-    this.maxSegmentSize = buffer.readInt();
+    this.maxSegmentSize = buffer.readUnsignedInt();
+    this.maxEntries = buffer.readInt();
     this.updated = buffer.readLong();
     this.locked = buffer.readBoolean();
   }
@@ -159,8 +161,17 @@ public final class SegmentDescriptor implements AutoCloseable {
    *
    * @return The maximum allowed size of the segment.
    */
-  public int maxSegmentSize() {
+  public long maxSegmentSize() {
     return maxSegmentSize;
+  }
+
+  /**
+   * Returns the maximum number of entries allowed in the segment.
+   *
+   * @return The maximum number of entries allowed in the segment.
+   */
+  public int maxEntries() {
+    return maxEntries;
   }
 
   /**
@@ -181,7 +192,7 @@ public final class SegmentDescriptor implements AutoCloseable {
    */
   void update(long timestamp) {
     if (!locked) {
-      buffer.writeLong(39, timestamp);
+      buffer.writeLong(43, timestamp);
       this.updated = timestamp;
     }
   }
@@ -202,7 +213,7 @@ public final class SegmentDescriptor implements AutoCloseable {
    * Locks the segment.
    */
   void lock() {
-    buffer.writeBoolean(47, true).flush();
+    buffer.writeBoolean(51, true).flush();
     locked = true;
   }
 
@@ -216,7 +227,8 @@ public final class SegmentDescriptor implements AutoCloseable {
       .writeLong(index)
       .writeLong(range)
       .writeUnsignedMedium(maxEntrySize)
-      .writeInt(maxSegmentSize)
+      .writeUnsignedInt(maxSegmentSize)
+      .writeInt(maxEntries)
       .writeLong(updated)
       .writeBoolean(locked)
       .flush();
@@ -304,13 +316,24 @@ public final class SegmentDescriptor implements AutoCloseable {
     }
 
     /**
-     * Sets the number of entries in the segment.
+     * Sets maximum size of the segment.
      *
-     * @param entries The number of entries in the segment.
+     * @param maxSegmentSize The maximum size of the segment.
      * @return The segment descriptor builder.
      */
-    public Builder withMaxSegmentSize(int entries) {
-      buffer.writeInt(35, entries);
+    public Builder withMaxSegmentSize(long maxSegmentSize) {
+      buffer.writeUnsignedInt(35, maxSegmentSize);
+      return this;
+    }
+
+    /**
+     * Sets the maximum number of entries in the segment.
+     *
+     * @param maxEntries The maximum number of entries in the segment.
+     * @return The segment descriptor builder.
+     */
+    public Builder withMaxEntries(int maxEntries) {
+      buffer.writeInt(39, maxEntries);
       return this;
     }
 
@@ -320,7 +343,7 @@ public final class SegmentDescriptor implements AutoCloseable {
      * @return The built segment descriptor.
      */
     public SegmentDescriptor build() {
-      return new SegmentDescriptor(buffer.writeLong(39, 0).rewind());
+      return new SegmentDescriptor(buffer.writeLong(43, 0).rewind());
     }
 
   }

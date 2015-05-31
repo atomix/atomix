@@ -210,6 +210,7 @@ public class SegmentManager implements AutoCloseable {
       .withVersion(segmentVersion)
       .withMaxEntrySize(config.getMaxEntrySize())
       .withMaxSegmentSize(config.getMaxSegmentSize())
+      .withMaxEntries(config.getMaxEntriesPerSegment())
       .build()) {
 
       Segment segment = Segment.open(buffer.position(SegmentDescriptor.BYTES).slice(), descriptor, createIndex(segmentId, segmentVersion), context);
@@ -230,6 +231,7 @@ public class SegmentManager implements AutoCloseable {
       .withVersion(segmentVersion)
       .withMaxEntrySize(config.getMaxEntrySize())
       .withMaxSegmentSize(config.getMaxSegmentSize())
+      .withMaxEntries(config.getMaxEntriesPerSegment())
       .build()) {
 
       Segment segment = Segment.open(buffer.position(SegmentDescriptor.BYTES).slice(), descriptor, createIndex(segmentId, segmentVersion), context);
