@@ -24,8 +24,7 @@ import org.testng.annotations.Test;
 
 import java.io.Serializable;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.*;
 
 /**
  * Log test.
@@ -40,6 +39,9 @@ public class LogTest {
    */
   public void testCreateReadFirstEntry() {
     try (Log log = createLog()) {
+      assertTrue(log.isEmpty());
+      assertEquals(log.length(), 0);
+
       long time = System.currentTimeMillis();
 
       long index;
@@ -52,6 +54,9 @@ public class LogTest {
         entry.setCommand(new TestCommand(1));
         index = log.appendEntry(entry);
       }
+
+      assertEquals(log.length(), 1);
+      assertFalse(log.isEmpty());
 
       try (CommandEntry entry = log.getEntry(index)) {
         assertEquals(entry.getTerm(), 1);
@@ -70,6 +75,7 @@ public class LogTest {
   public void testCreateReadLastEntry() {
     try (Log log = createLog()) {
       appendEntries(log, 100);
+      assertEquals(log.length(), 100);
 
       long time = System.currentTimeMillis();
 
@@ -83,6 +89,8 @@ public class LogTest {
         entry.setCommand(new TestCommand(1));
         index = log.appendEntry(entry);
       }
+
+      assertEquals(log.length(), 101);
 
       try (CommandEntry entry = log.getEntry(index)) {
         assertEquals(entry.getTerm(), 1);
@@ -101,6 +109,7 @@ public class LogTest {
   public void testCreateReadMiddleEntry() {
     try (Log log = createLog()) {
       appendEntries(log, 100);
+      assertEquals(log.length(), 100);
 
       long time = System.currentTimeMillis();
 
@@ -116,6 +125,7 @@ public class LogTest {
       }
 
       appendEntries(log, 100);
+      assertEquals(log.length(), 201);
 
       try (CommandEntry entry = log.getEntry(index)) {
         assertEquals(entry.getTerm(), 1);
@@ -166,7 +176,37 @@ public class LogTest {
    */
   public void testSkip() throws Throwable {
     try (Log log = createLog()) {
+      appendEntries(log, 100);
 
+      log.skip(10);
+
+      long time = System.currentTimeMillis();
+
+      long index;
+      try (CommandEntry entry = log.createEntry(CommandEntry.class)) {
+        entry.setTerm(1);
+        entry.setSession(10);
+        entry.setRequest(100);
+        entry.setResponse(99);
+        entry.setTimestamp(time);
+        entry.setCommand(new TestCommand(1));
+        index = log.appendEntry(entry);
+      }
+
+      assertEquals(log.length(), 111);
+
+      try (NoOpEntry entry = log.getEntry(101)) {
+        assertNull(entry);
+      }
+
+      try (CommandEntry entry = log.getEntry(index)) {
+        assertEquals(entry.getTerm(), 1);
+        assertEquals(entry.getSession(), 10);
+        assertEquals(entry.getRequest(), 100);
+        assertEquals(entry.getResponse(), 99);
+        assertEquals(entry.getTimestamp(), time);
+        assertEquals(((TestCommand) entry.getCommand()).id, 1);
+      }
     }
   }
 
