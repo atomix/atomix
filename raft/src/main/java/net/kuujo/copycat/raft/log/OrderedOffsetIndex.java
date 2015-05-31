@@ -23,6 +23,14 @@ import net.kuujo.copycat.io.Buffer;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class OrderedOffsetIndex implements OffsetIndex {
+
+  /**
+   * Returns the size of the index for the given number of entries.
+   */
+  public static long size(int maxEntries) {
+    return (long) maxEntries * 4l + 12l;
+  }
+
   private static final long MAX_POSITION = (long) Math.pow(2, 32) - 1;
   private static final int HEADER_SIZE = 8;
   private static final long START = -1;
