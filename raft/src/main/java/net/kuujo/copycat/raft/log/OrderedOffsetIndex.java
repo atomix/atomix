@@ -23,13 +23,14 @@ import net.kuujo.copycat.io.Buffer;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class OrderedOffsetIndex implements OffsetIndex {
-  static final long MAX_POSITION = (long) Math.pow(2, 32) - 1;
-
-  private static final long END = -1;
+  private static final long MAX_POSITION = (long) Math.pow(2, 32) - 1;
+  private static final int HEADER_SIZE = 8;
+  private static final long START = -1;
+  private static final long END = 0;
 
   private final Buffer buffer;
-  private int firstOffset;
-  private int lastOffset;
+  private int firstOffset = -1;
+  private int lastOffset = -1;
   private int size;
 
   public OrderedOffsetIndex(Buffer buffer) {
@@ -43,22 +44,24 @@ public class OrderedOffsetIndex implements OffsetIndex {
    * Initializes the index.
    */
   private void init() {
-    buffer.mark();
-    long position = buffer.readUnsignedInt();
+    // If no entries have been written to the index then the START flag will not exist.
+    if (buffer.position(0).readLong() != START) {
+      return;
+    }
 
-    while (position != END) {
-      if (firstOffset == -1) {
-        firstOffset = 0;
-      }
+    // We assume that the first entry in the index is always at position 0. If the START flag is written, then entry
+    // 0 exists in the index.
+    firstOffset = lastOffset = 0;
+    size = 1;
+
+    long position = buffer.readUnsignedInt();
+    while (position != 0) {
       lastOffset++;
+      size++;
       position = buffer.mark().readUnsignedInt();
     }
 
     buffer.reset();
-
-    if (size == 0) {
-      buffer.position(0).writeUnsignedInt(END);
-    }
   }
 
   @Override
@@ -73,26 +76,33 @@ public class OrderedOffsetIndex implements OffsetIndex {
 
   @Override
   public void index(int offset, long position, int length) {
-    if (lastOffset > -1 && offset <= lastOffset)
+    if (lastOffset > -1 && offset <= lastOffset) {
       throw new IllegalArgumentException("offset cannot be less than or equal to the last offset in the index");
-    if (offset != lastOffset + 1)
+    }
+    if (offset != lastOffset + 1) {
       throw new IllegalArgumentException("offset must be monotonically increasing");
-    if (position > MAX_POSITION)
+    }
+    if (position > MAX_POSITION) {
       throw new IllegalArgumentException("position cannot be greater than " + MAX_POSITION);
+    }
 
-    // Write a status byte, offset, and position, then write the end byte and length.
-    buffer.writeUnsignedInt(position)
-      .mark()
+    if (offset == 0) {
+      if (position != 0) {
+        throw new IllegalArgumentException("offset 0 must be at position 0");
+      }
+      buffer.rewind().writeLong(START);
+      firstOffset = 0;
+    } else {
+      buffer.writeUnsignedInt(position);
+    }
+
+    buffer.mark()
       .writeUnsignedInt(END)
       .writeInt(length)
       .reset();
 
-    if (firstOffset == -1) {
-      firstOffset = offset;
-    }
-
-    this.size++;
-    this.lastOffset = offset;
+    size++;
+    lastOffset = offset;
   }
 
   @Override
@@ -102,36 +112,58 @@ public class OrderedOffsetIndex implements OffsetIndex {
 
   @Override
   public boolean contains(int offset) {
-    return lastOffset <= offset;
+    return lastOffset >= offset;
   }
 
   @Override
   public long position(int offset) {
-    if (offset < firstOffset || offset > lastOffset)
+    if (offset < firstOffset || offset > lastOffset) {
       throw new IllegalArgumentException("offset cannot be less that first offset or greater than last offset");
-    return buffer.readUnsignedInt(offset * 4);
+    }
+
+    if (offset == 0) {
+      return size >= 0 ? 0 : -1;
+    }
+    return buffer.readUnsignedInt(HEADER_SIZE + offset * Integer.BYTES - Integer.BYTES);
   }
 
   @Override
   public int length(int offset) {
     if (offset == lastOffset) {
-      return buffer.readInt(offset * 4 + 4);
+      return buffer.readInt(HEADER_SIZE + offset * Integer.BYTES + Integer.BYTES);
+    } else if (offset == 0) {
+      return buffer.readInt(HEADER_SIZE);
     } else {
-      return (int) (buffer.readUnsignedInt(offset * 4 + 4) - buffer.readUnsignedInt(offset * 4));
+      return (int) (position(offset + 1) - position(offset));
     }
   }
 
   @Override
   public void truncate(int offset) {
-    if (offset >= firstOffset && offset < lastOffset) {
+    if (offset == -1) {
+      buffer.zero();
+    } else if (offset >= firstOffset && offset < lastOffset) {
       int length = length(offset);
-      buffer.position(offset * 4 + 4)
-        .zero(offset * 4 + 4)
-        .mark()
-        .writeUnsignedInt(END)
-        .writeInt(length)
-        .reset();
-      size -= lastOffset - offset;
+      if (offset == 0) {
+        buffer.rewind()
+          .writeLong(START)
+          .mark()
+          .writeUnsignedInt(END)
+          .writeInt(length)
+          .reset();
+        size = 1;
+        lastOffset = 0;
+      } else {
+        buffer.position(HEADER_SIZE + offset * Integer.BYTES)
+          .zero(HEADER_SIZE + offset * Integer.BYTES + Integer.BYTES)
+          .mark()
+          .writeUnsignedInt(END)
+          .writeInt(length)
+          .reset();
+
+        size -= lastOffset - offset;
+        lastOffset = offset;
+      }
     }
   }
 
