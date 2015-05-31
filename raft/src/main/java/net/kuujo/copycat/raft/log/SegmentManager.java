@@ -49,6 +49,15 @@ public class SegmentManager implements AutoCloseable {
   }
 
   /**
+   * Returns the log configuration.
+   *
+   * @return The log configuration.
+   */
+  LogConfig config() {
+    return config;
+  }
+
+  /**
    * Opens the segments.
    *
    * @param context The context in which to open the segments.
@@ -65,7 +74,16 @@ public class SegmentManager implements AutoCloseable {
     if (!segments.isEmpty()) {
       currentSegment = segments.lastEntry().getValue();
     } else {
-      currentSegment = createSegment(1, 1);
+      try (SegmentDescriptor descriptor = SegmentDescriptor.builder()
+        .withId(1)
+        .withVersion(1)
+        .withIndex(1)
+        .withMaxEntrySize(config.getMaxEntrySize())
+        .withMaxSegmentSize(config.getMaxSegmentSize())
+        .withMaxEntries(config.getMaxEntriesPerSegment())
+        .build()) {
+        currentSegment = createSegment(descriptor);
+      }
       segments.put(1l, currentSegment);
     }
   }
@@ -95,7 +113,17 @@ public class SegmentManager implements AutoCloseable {
     if (lastSegment != null) {
       currentSegment = lastSegment;
     } else {
-      currentSegment = createSegment(1, 1);
+      try (SegmentDescriptor descriptor = SegmentDescriptor.builder()
+        .withId(1)
+        .withVersion(1)
+        .withIndex(1)
+        .withMaxEntrySize(config.getMaxEntrySize())
+        .withMaxSegmentSize(config.getMaxSegmentSize())
+        .withMaxEntries(config.getMaxEntriesPerSegment())
+        .build()) {
+        currentSegment = createSegment(descriptor);
+      }
+      segments.put(1L, currentSegment);
     }
   }
 
@@ -125,8 +153,17 @@ public class SegmentManager implements AutoCloseable {
   public Segment nextSegment() {
     checkOpen();
     Segment lastSegment = lastSegment();
-    currentSegment = createSegment(lastSegment != null ? lastSegment.descriptor().id() + 1 : 1, currentSegment.lastIndex() + 1);
-    segments.put(currentSegment.descriptor().index(), currentSegment);
+    try (SegmentDescriptor descriptor = SegmentDescriptor.builder()
+      .withId(lastSegment != null ? lastSegment.descriptor().id() + 1 : 1)
+      .withVersion(1)
+      .withIndex(currentSegment.lastIndex() + 1)
+      .withMaxEntrySize(config.getMaxEntrySize())
+      .withMaxSegmentSize(config.getMaxSegmentSize())
+      .withMaxEntries(config.getMaxEntriesPerSegment())
+      .build()) {
+      currentSegment = createSegment(descriptor);
+      segments.put(descriptor.index(), currentSegment);
+    }
     return currentSegment;
   }
 
@@ -173,24 +210,13 @@ public class SegmentManager implements AutoCloseable {
 
   /**
    * Creates a new segment.
-   *
-   * @param segmentId The segment ID.
-   * @param segmentIndex The segment's effective first index.
-   * @return The new segment.
    */
-  public Segment createSegment(long segmentId, long segmentIndex) {
-    return createSegment(segmentId, segmentIndex, 1, -1);
-  }
-
-  /**
-   * Creates a new segment.
-   */
-  public Segment createSegment(long segmentId, long segmentIndex, long segmentVersion, long range) {
+  public Segment createSegment(SegmentDescriptor descriptor) {
     switch (config.getStorageLevel()) {
       case DISK:
-        return createDiskSegment(segmentId, segmentIndex, segmentVersion, range);
+        return createDiskSegment(descriptor);
       case MEMORY:
-        return createMemorySegment(segmentId, segmentIndex, segmentVersion, range);
+        return createMemorySegment(descriptor);
       default:
         throw new ConfigurationException("unknown storage level: " + config.getStorageLevel());
     }
@@ -199,45 +225,22 @@ public class SegmentManager implements AutoCloseable {
   /**
    * Create an on-disk segment.
    */
-  private Segment createDiskSegment(long segmentId, long segmentIndex, long segmentVersion, long range) {
-    File segmentFile = SegmentFile.createSegmentFile(config.getDirectory(), segmentId, segmentVersion);
-
-    Buffer buffer = FileBuffer.allocate(segmentFile, 1024 * 1024, config.getMaxSegmentSize() + config.getMaxEntrySize() + SegmentDescriptor.BYTES);
-    try (SegmentDescriptor descriptor = SegmentDescriptor.builder(buffer.slice(SegmentDescriptor.BYTES))
-      .withId(segmentId)
-      .withIndex(segmentIndex)
-      .withRange(range)
-      .withVersion(segmentVersion)
-      .withMaxEntrySize(config.getMaxEntrySize())
-      .withMaxSegmentSize(config.getMaxSegmentSize())
-      .withMaxEntries(config.getMaxEntriesPerSegment())
-      .build()) {
-
-      Segment segment = Segment.open(buffer.position(SegmentDescriptor.BYTES).slice(), descriptor, createIndex(segmentId, segmentVersion), context);
-      LOGGER.debug("created segment: {} ({})", descriptor.id(), segmentFile.getName());
-      return segment;
-    }
+  private Segment createDiskSegment(SegmentDescriptor descriptor) {
+    File segmentFile = SegmentFile.createSegmentFile(config.getDirectory(), descriptor.id(), descriptor.version());
+    Buffer buffer = FileBuffer.allocate(segmentFile, 1024 * 1024, descriptor.maxSegmentSize() + SegmentDescriptor.BYTES);
+    Segment segment = Segment.open(buffer.position(SegmentDescriptor.BYTES).slice(), descriptor, createIndex(descriptor), context);
+    LOGGER.debug("created segment: {}", segment);
+    return segment;
   }
 
   /**
    * Creates an in memory segment.
    */
-  private Segment createMemorySegment(long segmentId, long segmentIndex, long segmentVersion, long range) {
+  private Segment createMemorySegment(SegmentDescriptor descriptor) {
     Buffer buffer = HeapBuffer.allocate(Math.min(1024 * 1024, config.getMaxSegmentSize() + config.getMaxEntrySize() + SegmentDescriptor.BYTES), config.getMaxSegmentSize() + config.getMaxEntrySize() + SegmentDescriptor.BYTES);
-    try (SegmentDescriptor descriptor = SegmentDescriptor.builder(buffer.slice(SegmentDescriptor.BYTES))
-      .withId(segmentId)
-      .withIndex(segmentIndex)
-      .withRange(range)
-      .withVersion(segmentVersion)
-      .withMaxEntrySize(config.getMaxEntrySize())
-      .withMaxSegmentSize(config.getMaxSegmentSize())
-      .withMaxEntries(config.getMaxEntriesPerSegment())
-      .build()) {
-
-      Segment segment = Segment.open(buffer.position(SegmentDescriptor.BYTES).slice(), descriptor, createIndex(segmentId, segmentVersion), context);
-      LOGGER.debug("created segment: {}", descriptor.id());
-      return segment;
-    }
+    Segment segment = Segment.open(buffer.position(SegmentDescriptor.BYTES).slice(), descriptor, createIndex(descriptor), context);
+    LOGGER.debug("created segment: {}", segment);
+    return segment;
   }
 
   /**
@@ -262,7 +265,7 @@ public class SegmentManager implements AutoCloseable {
     try (SegmentDescriptor descriptor = new SegmentDescriptor(FileBuffer.allocate(file, SegmentDescriptor.BYTES))) {
       Buffer buffer = FileBuffer.allocate(file, Math.min(1024 * 1024, config.getMaxSegmentSize() + config.getMaxEntrySize() + SegmentDescriptor.BYTES), config.getMaxSegmentSize() + config.getMaxEntrySize() + SegmentDescriptor.BYTES);
       buffer = buffer.position(SegmentDescriptor.BYTES).slice();
-      Segment segment = Segment.open(buffer, descriptor, createIndex(segmentId, segmentVersion), context);
+      Segment segment = Segment.open(buffer, descriptor, createIndex(descriptor), context);
       LOGGER.debug("loaded segment: {} ({})", descriptor.id(), file.getName());
       return segment;
     }
@@ -278,12 +281,12 @@ public class SegmentManager implements AutoCloseable {
   /**
    * Creates a segment index.
    */
-  private OffsetIndex createIndex(long segmentId, long segmentVersion) {
+  private OffsetIndex createIndex(SegmentDescriptor descriptor) {
     switch (config.getStorageLevel()) {
       case DISK:
-        return createDiskIndex(segmentId, segmentVersion);
+        return createDiskIndex(descriptor);
       case MEMORY:
-        return createMemoryIndex(segmentId, segmentVersion);
+        return createMemoryIndex(descriptor);
       default:
         throw new ConfigurationException("unknown storage level: " + config.getStorageLevel());
     }
@@ -292,16 +295,16 @@ public class SegmentManager implements AutoCloseable {
   /**
    * Creates an on disk segment index.
    */
-  private OffsetIndex createDiskIndex(long segmentId, long segmentVersion) {
-    File file = SegmentFile.createIndexFile(config.getDirectory(), segmentId, segmentVersion);
-    return new SearchableOffsetIndex(FileBuffer.allocate(file, Math.min(1024 * 1024, config.getMaxEntriesPerSegment()), SearchableOffsetIndex.size(config.getMaxEntriesPerSegment())));
+  private OffsetIndex createDiskIndex(SegmentDescriptor descriptor) {
+    File file = SegmentFile.createIndexFile(config.getDirectory(), descriptor.id(), descriptor.version());
+    return new SearchableOffsetIndex(FileBuffer.allocate(file, Math.min(1024 * 1024, descriptor.maxEntries()), SearchableOffsetIndex.size(descriptor.maxEntries())));
   }
 
   /**
    * Creates an in memory segment index.
    */
-  private OffsetIndex createMemoryIndex(long segmentId, long segmentVersion) {
-    return new SearchableOffsetIndex(HeapBuffer.allocate(Math.min(1024 * 1024, config.getMaxEntriesPerSegment()), SearchableOffsetIndex.size(config.getMaxEntriesPerSegment())));
+  private OffsetIndex createMemoryIndex(SegmentDescriptor descriptor) {
+    return new SearchableOffsetIndex(HeapBuffer.allocate(Math.min(1024 * 1024, descriptor.maxEntries()), SearchableOffsetIndex.size(descriptor.maxEntries())));
   }
 
   /**

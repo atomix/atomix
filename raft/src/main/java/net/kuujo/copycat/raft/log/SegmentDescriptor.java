@@ -75,7 +75,6 @@ public final class SegmentDescriptor implements AutoCloseable {
   private Buffer buffer;
   private final long id;
   private final long index;
-  private final long range;
   private final long version;
   private long updated;
   private final int maxEntrySize;
@@ -90,7 +89,6 @@ public final class SegmentDescriptor implements AutoCloseable {
     this.id = buffer.readLong();
     this.version = buffer.readLong();
     this.index = buffer.readLong();
-    this.range = buffer.readLong();
     this.maxEntrySize = buffer.readUnsignedMedium();
     this.maxSegmentSize = buffer.readUnsignedInt();
     this.maxEntries = buffer.readInt();
@@ -132,19 +130,6 @@ public final class SegmentDescriptor implements AutoCloseable {
    */
   public long index() {
     return index;
-  }
-
-  /**
-   * Returns the total number of possible entries in the segment.
-   * <p>
-   * Regardless of the actual number of {@code entries} in the segment, the range indicates the total number of allowed
-   * entries within each segment. If a segment's index is {@code 1} and its range is {@code 10} then the next segment
-   * should start at index {@code 11}.
-   *
-   * @return The total number of possible entries in the segment.
-   */
-  public long range() {
-    return range;
   }
 
   /**
@@ -192,7 +177,7 @@ public final class SegmentDescriptor implements AutoCloseable {
    */
   void update(long timestamp) {
     if (!locked) {
-      buffer.writeLong(43, timestamp);
+      buffer.writeLong(35, timestamp);
       this.updated = timestamp;
     }
   }
@@ -213,7 +198,7 @@ public final class SegmentDescriptor implements AutoCloseable {
    * Locks the segment.
    */
   void lock() {
-    buffer.writeBoolean(51, true).flush();
+    buffer.writeBoolean(43, true).flush();
     locked = true;
   }
 
@@ -225,7 +210,6 @@ public final class SegmentDescriptor implements AutoCloseable {
       .writeLong(id)
       .writeLong(version)
       .writeLong(index)
-      .writeLong(range)
       .writeUnsignedMedium(maxEntrySize)
       .writeUnsignedInt(maxSegmentSize)
       .writeInt(maxEntries)
@@ -294,24 +278,13 @@ public final class SegmentDescriptor implements AutoCloseable {
     }
 
     /**
-     * Sets the segment range.
-     *
-     * @param range The segment range.
-     * @return The segment descriptor builder.
-     */
-    public Builder withRange(long range) {
-      buffer.writeLong(24, range);
-      return this;
-    }
-
-    /**
      * Sets the maximum entry size for the segment.
      *
      * @param maxEntrySize The maximum entry size for the segment.
      * @return The segment descriptor builder.
      */
     public Builder withMaxEntrySize(int maxEntrySize) {
-      buffer.writeUnsignedMedium(32, maxEntrySize);
+      buffer.writeUnsignedMedium(24, maxEntrySize);
       return this;
     }
 
@@ -322,7 +295,7 @@ public final class SegmentDescriptor implements AutoCloseable {
      * @return The segment descriptor builder.
      */
     public Builder withMaxSegmentSize(long maxSegmentSize) {
-      buffer.writeUnsignedInt(35, maxSegmentSize);
+      buffer.writeUnsignedInt(27, maxSegmentSize);
       return this;
     }
 
@@ -333,7 +306,7 @@ public final class SegmentDescriptor implements AutoCloseable {
      * @return The segment descriptor builder.
      */
     public Builder withMaxEntries(int maxEntries) {
-      buffer.writeInt(39, maxEntries);
+      buffer.writeInt(31, maxEntries);
       return this;
     }
 

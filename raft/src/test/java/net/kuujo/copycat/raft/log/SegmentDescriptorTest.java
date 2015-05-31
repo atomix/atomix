@@ -37,7 +37,6 @@ public class SegmentDescriptorTest {
       .withId(2)
       .withVersion(3)
       .withIndex(1025)
-      .withRange(1024)
       .withMaxEntrySize(2048)
       .withMaxSegmentSize(1024 * 1024)
       .withMaxEntries(2048)
@@ -46,7 +45,6 @@ public class SegmentDescriptorTest {
     assertEquals(descriptor.id(), 2);
     assertEquals(descriptor.version(), 3);
     assertEquals(descriptor.index(), 1025);
-    assertEquals(descriptor.range(), 1024);
     assertEquals(descriptor.maxEntrySize(), 2048);
     assertEquals(descriptor.maxSegmentSize(), 1024 * 1024);
     assertEquals(descriptor.maxEntries(), 2048);
@@ -70,7 +68,6 @@ public class SegmentDescriptorTest {
       .withId(2)
       .withVersion(3)
       .withIndex(1025)
-      .withRange(1024)
       .withMaxEntrySize(2048)
       .withMaxSegmentSize(1024 * 1024)
       .withMaxEntries(2048)
@@ -79,7 +76,6 @@ public class SegmentDescriptorTest {
     assertEquals(descriptor.id(), 2);
     assertEquals(descriptor.version(), 3);
     assertEquals(descriptor.index(), 1025);
-    assertEquals(descriptor.range(), 1024);
     assertEquals(descriptor.maxEntrySize(), 2048);
     assertEquals(descriptor.maxSegmentSize(), 1024 * 1024);
     assertEquals(descriptor.maxEntries(), 2048);
@@ -89,7 +85,6 @@ public class SegmentDescriptorTest {
     assertEquals(descriptor.id(), 2);
     assertEquals(descriptor.version(), 3);
     assertEquals(descriptor.index(), 1025);
-    assertEquals(descriptor.range(), 1024);
     assertEquals(descriptor.maxEntrySize(), 2048);
     assertEquals(descriptor.maxSegmentSize(), 1024 * 1024);
   }
@@ -102,7 +97,6 @@ public class SegmentDescriptorTest {
       .withId(2)
       .withVersion(3)
       .withIndex(1025)
-      .withRange(1024)
       .withMaxEntrySize(2048)
       .withMaxSegmentSize(1024 * 1024)
       .withMaxEntries(2048)
@@ -117,7 +111,6 @@ public class SegmentDescriptorTest {
     assertEquals(descriptor.id(), 2);
     assertEquals(descriptor.version(), 3);
     assertEquals(descriptor.index(), 1025);
-    assertEquals(descriptor.range(), 1024);
     assertEquals(descriptor.maxEntrySize(), 2048);
     assertEquals(descriptor.maxSegmentSize(), 1024 * 1024);
     assertEquals(descriptor.maxEntries(), 2048);

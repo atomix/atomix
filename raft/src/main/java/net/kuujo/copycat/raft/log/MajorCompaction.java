@@ -93,7 +93,17 @@ public class MajorCompaction extends Compaction {
     return shouldCompactSegment(segment, new CompletableFuture<>()).thenCompose(compact -> {
       if (compact) {
         LOGGER.debug("compacting {}", segment);
-        Segment compactSegment = manager.createSegment(segment.descriptor().id(), segment.descriptor().index(), segment.descriptor().version() + 1, segment.descriptor().range());
+        Segment compactSegment;
+        try (SegmentDescriptor descriptor = SegmentDescriptor.builder()
+          .withId(segment.descriptor().id())
+          .withVersion(segment.descriptor().version() + 1)
+          .withIndex(segment.descriptor().index())
+          .withMaxEntrySize(segment.descriptor().maxEntrySize())
+          .withMaxSegmentSize(segment.descriptor().maxSegmentSize())
+          .withMaxEntries(segment.descriptor().maxEntries())
+          .build()) {
+          compactSegment = manager.createSegment(descriptor);
+        }
         return compactSegment(segment, segment.firstIndex(), compactSegment, new CompletableFuture<>()).thenAccept(manager::replace);
       } else {
         return CompletableFuture.completedFuture(null);
