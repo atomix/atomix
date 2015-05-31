@@ -18,7 +18,6 @@ package net.kuujo.copycat.raft.log;
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.raft.log.entry.Entry;
-import net.kuujo.copycat.raft.log.entry.TypedEntryPool;
 import net.kuujo.copycat.util.ExecutionContext;
 
 import java.util.ConcurrentModificationException;
@@ -52,7 +51,6 @@ public class Segment implements AutoCloseable {
   private final Buffer writeBuffer;
   private final Buffer readBuffer;
   private final OffsetIndex offsetIndex;
-  private final TypedEntryPool entryPool = new TypedEntryPool();
   private long skip = 0;
   private boolean open = true;
 
@@ -191,45 +189,10 @@ public class Segment implements AutoCloseable {
   }
 
   /**
-   * Returns the absolute entry type position for the entry at the given position.
-   */
-  private long entryTypePosition(long position) {
-    return position;
-  }
-
-  /**
-   * Returns the absolute entry mode position for the entry at the given position.
-   */
-  private long entryModePosition(long position) {
-    return position + ENTRY_TYPE_SIZE;
-  }
-
-  /**
-   * Returns the absolute entry term position for the entry at the given position.
-   */
-  private long entryTermPosition(long position) {
-    return position + ENTRY_TYPE_SIZE + ENTRY_MODE_SIZE;
-  }
-
-  /**
    * Returns the absolute entry position for the entry at the given position.
    */
   private long entryPosition(long position) {
     return position + ENTRY_TYPE_SIZE + ENTRY_MODE_SIZE + ENTRY_TERM_SIZE;
-  }
-
-  /**
-   * Creates a new entry.
-   *
-   * @param type The Raft entry type.
-   * @return The created entry.
-   */
-  public <T extends Entry<T>> T createEntry(Class<T> type) {
-    if (!isOpen())
-      throw new IllegalStateException("segment not open");
-    if (isLocked())
-      throw new IllegalStateException("segment is locked");
-    return entryPool.acquire(type, nextIndex());
   }
 
   /**

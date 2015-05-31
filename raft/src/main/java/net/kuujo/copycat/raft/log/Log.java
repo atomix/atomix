@@ -16,6 +16,7 @@
 package net.kuujo.copycat.raft.log;
 
 import net.kuujo.copycat.raft.log.entry.Entry;
+import net.kuujo.copycat.raft.log.entry.TypedEntryPool;
 import net.kuujo.copycat.util.ExecutionContext;
 
 import java.io.File;
@@ -37,6 +38,7 @@ public class Log implements AutoCloseable {
   }
 
   protected final SegmentManager segments;
+  protected final TypedEntryPool entryPool = new TypedEntryPool();
   private boolean open;
 
   protected Log(SegmentManager segments) {
@@ -158,7 +160,7 @@ public class Log implements AutoCloseable {
   public <T extends Entry<T>> T createEntry(Class<T> type) {
     checkOpen();
     checkRoll();
-    return segments.currentSegment().createEntry(type);
+    return entryPool.acquire(type, segments.currentSegment().nextIndex());
   }
 
   /**
