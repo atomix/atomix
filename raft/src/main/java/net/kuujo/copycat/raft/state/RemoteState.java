@@ -52,7 +52,7 @@ public class RemoteState extends AbstractState {
   @Override
   public synchronized CompletableFuture<AbstractState> open() {
     context.getContext().execute(() -> {
-      register(new CompletableFuture<Void>()).thenRun(this::startKeepAliveTimer);
+      register(new CompletableFuture<>()).thenRun(this::startKeepAliveTimer);
     });
     return super.open().thenApply(v -> this);
   }
@@ -69,7 +69,7 @@ public class RemoteState extends AbstractState {
       if (error == null) {
         future.complete(null);
       } else {
-        registerTimer = context.getContext().schedule(() -> register(future), context.getHeartbeatInterval(), TimeUnit.SECONDS);
+        registerTimer = context.getContext().schedule(() -> register(future), context.getHeartbeatInterval(), TimeUnit.MILLISECONDS);
       }
     });
     return future;
@@ -91,6 +91,7 @@ public class RemoteState extends AbstractState {
       member = members.remove(random.nextInt(members.size()));
     }
 
+    LOGGER.debug("{} - Registering session via {}", context.getCluster().member().id(), member.id());
     RegisterRequest request = RegisterRequest.builder()
       .withMember(context.getCluster().member().info())
       .build();
@@ -108,7 +109,9 @@ public class RemoteState extends AbstractState {
               future.completeExceptionally(configureError);
             }
           });
+          LOGGER.debug("{} - Registered new session: {}", context.getCluster().member().id(), context.getSession());
         } else {
+          LOGGER.debug("{} - Session registration failed, retrying", context.getCluster().member().id());
           register(members, future);
         }
       }
@@ -120,7 +123,7 @@ public class RemoteState extends AbstractState {
    * Starts the keep alive timer.
    */
   private void startKeepAliveTimer() {
-    LOGGER.debug("{} - Setting keep alive timer", context.getCluster().member().id());
+    LOGGER.debug("{} - Starting keep alive timer", context.getCluster().member().id());
     currentTimer = context.getContext().scheduleAtFixedRate(this::keepAlive, 1, context.getKeepAliveInterval(), TimeUnit.MILLISECONDS);
   }
 
@@ -129,6 +132,7 @@ public class RemoteState extends AbstractState {
    */
   private void keepAlive() {
     if (keepAlive.compareAndSet(false, true)) {
+      LOGGER.debug("{} - Sending keep alive request", context.getCluster().member().id());
       keepAlive(context.getCluster().members().stream()
         .filter(m -> m.type() == Member.Type.ACTIVE)
         .collect(Collectors.toList()), new CompletableFuture<>());
