@@ -43,33 +43,105 @@ public abstract class StateMachine {
    * Initializes the state machine.
    */
   private void init() {
-    for (Method method : getClass().getMethods()) {
-      Filter filter = method.getAnnotation(Filter.class);
-      if (filter != null) {
-        if (method.getReturnType() != Boolean.class && method.getReturnType() != boolean.class) {
-          throw new ConfigurationException("filter method " + method + " must return boolean");
-        }
+    init(getClass());
 
-        for (Class<? extends Command> command : filter.value()) {
-          if (command == Filter.All.class) {
-            allFilter = method;
-          } else {
-            filters.put(command, method);
-          }
-        }
+    for (Method method : getClass().getMethods()) {
+      declareFilters(method);
+      declareOperations(method);
+    }
+  }
+
+  /**
+   * Initializes the state machine.
+   */
+  private void init(Class<?> clazz) {
+    while (clazz != Object.class) {
+      for (Method method : clazz.getDeclaredMethods()) {
+        declareFilters(method);
+        declareOperations(method);
       }
 
-      Apply apply = method.getAnnotation(Apply.class);
-      if (apply != null) {
-        for (Class<? extends Operation> command : apply.value()) {
-          if (command == Apply.All.class) {
-            allOperation = method;
-          } else {
-            operations.put(command, method);
-          }
+      for (Class<?> iface : clazz.getInterfaces()) {
+        init(iface);
+      }
+      clazz = clazz.getSuperclass();
+    }
+  }
+
+  /**
+   * Declares any filters defined by the given method.
+   */
+  private void declareFilters(Method method) {
+    Filter filter = method.getAnnotation(Filter.class);
+    if (filter != null) {
+      if (method.getReturnType() != Boolean.class && method.getReturnType() != boolean.class) {
+        throw new ConfigurationException("filter method " + method + " must return boolean");
+      }
+
+      method.setAccessible(true);
+      for (Class<? extends Command> command : filter.value()) {
+        if (command == Filter.All.class) {
+          allFilter = method;
+        } else if (!filters.containsKey(command)) {
+          filters.put(command, method);
         }
       }
     }
+  }
+
+  /**
+   * Finds the filter method for the given command.
+   */
+  private Method findFilter(Class<? extends Command> type) {
+    Method method = filters.computeIfAbsent(type, t -> {
+      for (Map.Entry<Class<? extends Command>, Method> entry : filters.entrySet()) {
+        if (entry.getKey().isAssignableFrom(type)) {
+          return entry.getValue();
+        }
+      }
+      return allFilter;
+    });
+
+    if (method == null) {
+      throw new IllegalArgumentException("unknown command type: " + type);
+    }
+    return method;
+  }
+
+  /**
+   * Declares any operations defined by the given method.
+   */
+  private void declareOperations(Method method) {
+    Apply apply = method.getAnnotation(Apply.class);
+    if (apply != null) {
+      method.setAccessible(true);
+      for (Class<? extends Operation> operation : apply.value()) {
+        if (operation == Apply.All.class) {
+          allOperation = method;
+        } else if (!operations.containsKey(operation)) {
+          operations.put(operation, method);
+        }
+      }
+    }
+  }
+
+  /**
+   * Finds the operation method for the given operation.
+   */
+  private Method findOperation(Class<? extends Operation> type) {
+    Method method = operations.computeIfAbsent(type, t -> {
+      for (Map.Entry<Class<? extends Operation>, Method> entry : operations.entrySet()) {
+        if (entry.getKey().isAssignableFrom(type)) {
+          return entry.getValue();
+        }
+      }
+      return allOperation;
+    });
+
+    if (method == null) {
+      throw new IllegalArgumentException("unknown operation type: " + type);
+    }
+    return method;
   }
 
   /**
@@ -89,16 +161,8 @@ public abstract class StateMachine {
    * @return Whether to keep the commit.
    */
   public boolean filter(Commit<? extends Command> commit, Compaction compaction) {
-    Method method = filters.get(commit.type());
-    if (method == null) {
-      method = allFilter;
-      if (method == null) {
-        throw new IllegalArgumentException("unknown command type: " + commit.type());
-      }
-    }
-
     try {
-      return (boolean) method.invoke(this, commit);
+      return (boolean) findFilter(commit.type()).invoke(this, commit);
     } catch (IllegalAccessException | InvocationTargetException e) {
       throw new ApplicationException("failed to filter command", e);
     }
@@ -111,16 +175,8 @@ public abstract class StateMachine {
    * @return The operation result.
    */
   public Object apply(Commit<? extends Operation> commit) {
-    Method method = operations.get(commit.type());
-    if (method == null) {
-      method = allOperation;
-      if (method == null) {
-        throw new IllegalArgumentException("unknown operation type:" + commit.type());
-      }
-    }
-
     try {
-      return method.invoke(this, commit);
+      return findOperation(commit.type()).invoke(this, commit);
     } catch (IllegalAccessException | InvocationTargetException e) {
       return new ApplicationException("failed to invoke operation", e);
     }
