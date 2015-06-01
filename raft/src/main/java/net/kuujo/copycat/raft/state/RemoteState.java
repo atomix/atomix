@@ -69,8 +69,7 @@ public class RemoteState extends AbstractState {
       if (error == null) {
         future.complete(null);
       } else {
-        registerTimer = context.getContext()
-          .schedule(() -> register(future), context.getHeartbeatInterval(), TimeUnit.SECONDS);
+        registerTimer = context.getContext().schedule(() -> register(future), context.getHeartbeatInterval(), TimeUnit.SECONDS);
       }
     });
     return future;

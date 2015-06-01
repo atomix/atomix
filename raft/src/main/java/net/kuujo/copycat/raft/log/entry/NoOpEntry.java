@@ -32,7 +32,7 @@ public class NoOpEntry extends Entry<NoOpEntry> {
 
   @Override
   public String toString() {
-    return String.format("KeepAliveEntry[index=%d, term=%d]", getIndex(), getTerm());
+    return String.format("%s[index=%d, term=%d]", getClass().getSimpleName(), getIndex(), getTerm());
   }
 
 }

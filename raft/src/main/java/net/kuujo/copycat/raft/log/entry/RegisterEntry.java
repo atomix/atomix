@@ -57,7 +57,7 @@ public class RegisterEntry extends TimestampedEntry<RegisterEntry> {
 
   @Override
   public String toString() {
-    return String.format("RegisterEntry[index=%d, member=%s, timestamp=%d]", getIndex(), member, getTimestamp());
+    return String.format("%s[index=%d, member=%s, timestamp=%d]", getClass().getSimpleName(), getIndex(), member, getTimestamp());
   }
 
 }
