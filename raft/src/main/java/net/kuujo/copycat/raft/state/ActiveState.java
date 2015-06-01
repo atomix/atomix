@@ -131,7 +131,7 @@ abstract class ActiveState extends RemoteState {
         .withStatus(Response.Status.OK)
         .withTerm(context.getTerm())
         .withSucceeded(false)
-        .withLogIndex(context.getLog().lastIndex())
+        .withLogIndex(request.logIndex() <= context.getLog().lastIndex() ? request.logIndex() - 1 : context.getLog().lastIndex())
         .build();
     } else {
       return doAppendEntries(request);
