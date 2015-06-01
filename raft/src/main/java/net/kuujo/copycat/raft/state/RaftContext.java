@@ -578,10 +578,11 @@ public class RaftContext implements Managed<RaftContext> {
       throw new IllegalStateException("protocol not open");
 
     CompletableFuture<R> future = new CompletableFuture<>();
-    QueryRequest request = QueryRequest.builder()
-      .withQuery(query)
-      .build();
     context.execute(() -> {
+      QueryRequest request = QueryRequest.builder()
+        .withSession(getSession())
+        .withQuery(query)
+        .build();
       state.query(request).whenComplete((response, error) -> {
         if (error == null) {
           if (response.status() == Response.Status.OK) {
