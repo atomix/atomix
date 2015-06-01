@@ -18,6 +18,8 @@ package net.kuujo.copycat.raft;
 import net.kuujo.copycat.ConfigurationException;
 import net.kuujo.copycat.cluster.Session;
 import net.kuujo.copycat.raft.log.Compaction;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -30,6 +32,7 @@ import java.util.Map;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class StateMachine {
+  private final Logger LOGGER = LoggerFactory.getLogger(getClass());
   private final Map<Class<? extends Command>, Method> filters = new HashMap<>();
   private Method allFilter;
   private final Map<Class<? extends Operation>, Method> operations = new HashMap<>();
@@ -44,11 +47,6 @@ public abstract class StateMachine {
    */
   private void init() {
     init(getClass());
-
-    for (Method method : getClass().getMethods()) {
-      declareFilters(method);
-      declareOperations(method);
-    }
   }
 
   /**
@@ -161,6 +159,7 @@ public abstract class StateMachine {
    * @return Whether to keep the commit.
    */
   public boolean filter(Commit<? extends Command> commit, Compaction compaction) {
+    LOGGER.debug("filter {}", commit);
     try {
       return (boolean) findFilter(commit.type()).invoke(this, commit);
     } catch (IllegalAccessException | InvocationTargetException e) {
@@ -175,6 +174,7 @@ public abstract class StateMachine {
    * @return The operation result.
    */
   public Object apply(Commit<? extends Operation> commit) {
+    LOGGER.debug("apply {}", commit);
     try {
       return findOperation(commit.type()).invoke(this, commit);
     } catch (IllegalAccessException | InvocationTargetException e) {

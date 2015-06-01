@@ -81,4 +81,9 @@ public class Commit<T extends Operation> {
     return operation;
   }
 
+  @Override
+  public String toString() {
+    return String.format("Commit[index=%d, timestamp=%d, session=%s, operation=%s]", index, timestamp, session, operation);
+  }
+
 }

@@ -119,4 +119,9 @@ public class Session {
     return this;
   }
 
+  @Override
+  public String toString() {
+    return String.format("Session[id=%d, member=%s]", id, member);
+  }
+
 }
