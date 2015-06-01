@@ -16,7 +16,9 @@
 package net.kuujo.copycat.raft.log.entry;
 
 import net.kuujo.copycat.cluster.MemberInfo;
+import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.serializer.SerializeWith;
+import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.util.ReferenceManager;
 
 /**
@@ -47,12 +49,24 @@ public class RegisterEntry extends TimestampedEntry<RegisterEntry> {
   /**
    * Sets the member info.
    *
-   * @param info The member info.
+   * @param member The member info.
    * @return The register entry.
    */
-  public RegisterEntry setMember(MemberInfo info) {
-    this.member = info;
+  public RegisterEntry setMember(MemberInfo member) {
+    this.member = member;
     return this;
+  }
+
+  @Override
+  public void writeObject(Buffer buffer, Serializer serializer) {
+    super.writeObject(buffer, serializer);
+    serializer.writeObject(member, buffer);
+  }
+
+  @Override
+  public void readObject(Buffer buffer, Serializer serializer) {
+    super.readObject(buffer, serializer);
+    member = serializer.readObject(buffer);
   }
 
   @Override
