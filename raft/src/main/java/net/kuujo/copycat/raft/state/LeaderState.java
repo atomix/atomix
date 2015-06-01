@@ -56,7 +56,6 @@ class LeaderState extends ActiveState {
     context.getContext().execute(() -> {
       commitEntries().whenComplete((result, error) -> {
         if (error == null) {
-          applyEntries();
           startHeartbeatTimer();
         }
       });
@@ -90,6 +89,7 @@ class LeaderState extends ActiveState {
       context.checkThread();
       if (isOpen()) {
         if (error == null) {
+          applyEntries(resultIndex);
           future.complete(null);
         } else {
           transition(RaftState.FOLLOWER);
@@ -102,25 +102,24 @@ class LeaderState extends ActiveState {
   /**
    * Applies all unapplied entries to the log.
    */
-  private void applyEntries() {
+  private void applyEntries(long index) {
     if (!context.getLog().isEmpty()) {
       int count = 0;
-      long lastIndex = context.getLog().lastIndex();
-      for (long commitIndex = Math.max(context.getCommitIndex(), context.getLog().firstIndex()); commitIndex <= lastIndex; commitIndex++) {
-        try (Entry entry = context.getLog().getEntry(commitIndex)) {
+      for (long lastApplied = Math.max(context.getLastApplied(), context.getLog().firstIndex()); lastApplied <= index; lastApplied++) {
+        try (Entry entry = context.getLog().getEntry(lastApplied)) {
           if (entry != null) {
             try {
               context.getStateMachine().apply(entry);
             } catch (ApplicationException e) {
-
+              LOGGER.info("{} - an application error occurred: {}", context.getCluster().member().id(), e);
             } finally {
-              context.setLastApplied(commitIndex);
+              context.setLastApplied(lastApplied);
             }
           }
         }
         count++;
       }
-      LOGGER.debug("{} - Applied {} entries to log", context.getCluster().member().id(), count);
+      LOGGER.debug("{} - applied {} entries to log", context.getCluster().member().id(), count);
     }
   }
 

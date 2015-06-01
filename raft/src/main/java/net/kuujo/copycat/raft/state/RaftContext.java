@@ -439,9 +439,9 @@ public class RaftContext implements Managed<RaftContext> {
    */
   RaftContext setGlobalIndex(long globalIndex) {
     if (globalIndex < 0)
-      throw new IllegalArgumentException("recycle index must be positive");
+      throw new IllegalArgumentException("global index must be positive");
     if (globalIndex < this.globalIndex)
-      throw new IllegalArgumentException("cannot decrease recycle index");
+      throw new IllegalArgumentException("cannot decrease global index");
     this.globalIndex = globalIndex;
     compactor.setCompactIndex(globalIndex);
     return this;
