@@ -207,7 +207,7 @@ public class CommandRequest extends AbstractRequest<CommandRequest> {
         throw new IllegalArgumentException("session must be positive");
       if (request.request <= 0)
         throw new IllegalArgumentException("request must be positive");
-      if (request.response <= 0)
+      if (request.response < 0)
         throw new IllegalArgumentException("response must be positive");
       if (request.command == null)
         throw new NullPointerException("command cannot be null");
