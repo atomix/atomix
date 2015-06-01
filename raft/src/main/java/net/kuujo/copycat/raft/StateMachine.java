@@ -33,8 +33,8 @@ import java.util.Map;
  */
 public abstract class StateMachine {
   private final Logger LOGGER = LoggerFactory.getLogger(getClass());
-  private final Map<Class<? extends Command>, Method> filters = new HashMap<>();
-  private Method allFilter;
+  private final Map<Compaction.Type, Map<Class<? extends Command>, Method>> filters = new HashMap<>();
+  private Map<Compaction.Type, Method> allFilters = new HashMap<>();
   private final Map<Class<? extends Operation>, Method> operations = new HashMap<>();
   private Method allOperation;
 
@@ -79,9 +79,18 @@ public abstract class StateMachine {
       method.setAccessible(true);
       for (Class<? extends Command> command : filter.value()) {
         if (command == Filter.All.class) {
-          allFilter = method;
-        } else if (!filters.containsKey(command)) {
-          filters.put(command, method);
+          if (!allFilters.containsKey(filter.compaction())) {
+            allFilters.put(filter.compaction(), method);
+          }
+        } else {
+          Map<Class<? extends Command>, Method> filters = this.filters.get(filter.compaction());
+          if (filters == null) {
+            filters = new HashMap<>();
+            this.filters.put(filter.compaction(), filters);
+          }
+          if (!filters.containsKey(command)) {
+            filters.put(command, method);
+          }
         }
       }
     }
@@ -90,14 +99,19 @@ public abstract class StateMachine {
   /**
    * Finds the filter method for the given command.
    */
-  private Method findFilter(Class<? extends Command> type) {
+  private Method findFilter(Class<? extends Command> type, Compaction.Type compaction) {
+    Map<Class<? extends Command>, Method> filters = this.filters.get(compaction);
+    if (filters == null) {
+      return allFilters.get(compaction);
+    }
+
     Method method = filters.computeIfAbsent(type, t -> {
       for (Map.Entry<Class<? extends Command>, Method> entry : filters.entrySet()) {
         if (entry.getKey().isAssignableFrom(type)) {
           return entry.getValue();
         }
       }
-      return allFilter;
+      return allFilters.get(compaction);
     });
 
     if (method == null) {
@@ -161,7 +175,7 @@ public abstract class StateMachine {
   public boolean filter(Commit<? extends Command> commit, Compaction compaction) {
     LOGGER.debug("filter {}", commit);
     try {
-      return (boolean) findFilter(commit.type()).invoke(this, commit);
+      return (boolean) findFilter(commit.type(), compaction.type()).invoke(this, commit);
     } catch (IllegalAccessException | InvocationTargetException e) {
       throw new ApplicationException("failed to filter command", e);
     }
