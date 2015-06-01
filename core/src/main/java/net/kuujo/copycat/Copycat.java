@@ -28,6 +28,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -51,6 +52,7 @@ public class Copycat implements Managed<Copycat> {
   private final Map<String, Node> nodes = new ConcurrentHashMap<>();
   private final ResourceRegistry registry;
   private final ResourceFactory factory = new ResourceFactory();
+  private final Map<String, Set<EventListener>> listeners = new ConcurrentHashMap<>();
 
   private Copycat(Raft raft, Object... resources) {
     this.raft = raft;
@@ -64,6 +66,17 @@ public class Copycat implements Managed<Copycat> {
    */
   public Cluster cluster() {
     return raft.cluster();
+  }
+
+  /**
+   * Handles an event.
+   */
+  private CompletableFuture<Boolean> handleEvent(Event event) {
+    Set<EventListener> listeners = this.listeners.get(event.path());
+    if (listeners != null) {
+      listeners.forEach(l -> l.accept(event));
+    }
+    return CompletableFuture.completedFuture(true);
   }
 
   /**
@@ -134,9 +147,53 @@ public class Copycat implements Managed<Copycat> {
       .thenApply(result -> this);
   }
 
+  /**
+   * Listens for state changes at the given path.
+   *
+   * @param path The path to which to listen for changes.
+   * @param listener The change listener.
+   * @return A completable future to be called once the listener has been registered.
+   */
+  public CompletableFuture<Copycat> listen(String path, EventListener listener) {
+    return raft.submit(AddListener.builder()
+      .withPath(path)
+      .build())
+      .thenApply(result -> {
+        Set<EventListener> listeners = this.listeners.computeIfAbsent(path, p -> new ConcurrentSkipListSet<>());
+        listeners.add(listener);
+        return this;
+      });
+  }
+
+  /**
+   * Unlistens for state changes at the given path.
+   *
+   * @param path The path from which to stop listening for changes.
+   * @param listener The change listener.
+   * @return A completable future to be called once the listener has been unregistered.
+   */
+  public CompletableFuture<Copycat> unlisten(String path, EventListener listener) {
+    return raft.submit(RemoveListener.builder()
+      .withPath(path)
+      .build())
+      .thenApply(result -> {
+        Set<EventListener> listeners = this.listeners.get(path);
+        if (listeners != null) {
+          listeners.remove(listener);
+          if (listeners.isEmpty()) {
+            this.listeners.remove(path);
+          }
+        }
+        return this;
+      });
+  }
+
   @Override
   public CompletableFuture<Copycat> open() {
-    return raft.open().thenApply(l -> this);
+    return raft.open().thenApply(l -> {
+      raft.cluster().member().registerHandler(Event.TOPIC, this::handleEvent);
+      return this;
+    });
   }
 
   @Override
@@ -146,6 +203,7 @@ public class Copycat implements Managed<Copycat> {
 
   @Override
   public CompletableFuture<Void> close() {
+    raft.cluster().member().unregisterHandler(Event.TOPIC);
     return raft.close();
   }
 
@@ -187,6 +245,7 @@ public class Copycat implements Managed<Copycat> {
    */
   public static class Builder implements net.kuujo.copycat.Builder<Copycat> {
     private final Raft.Builder builder = Raft.builder().withTopic("copycat");
+    private Cluster cluster;
     private final List<String> resources = new ArrayList<>();
 
     private Builder() {
@@ -199,6 +258,7 @@ public class Copycat implements Managed<Copycat> {
      * @return The Raft builder.
      */
     public Builder withCluster(ManagedCluster cluster) {
+      this.cluster = cluster;
       builder.withCluster(cluster);
       return this;
     }
@@ -340,7 +400,7 @@ public class Copycat implements Managed<Copycat> {
 
     @Override
     public Copycat build() {
-      return new Copycat(builder.withStateMachine(new ResourceManager()).build(), resources.toArray(new String[resources.size()]));
+      return new Copycat(builder.withStateMachine(new ResourceManager(cluster)).build(), resources.toArray(new String[resources.size()]));
     }
   }
 
