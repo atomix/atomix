@@ -181,7 +181,7 @@ public class CommandRequest extends AbstractRequest<CommandRequest> {
      * @return The request builder.
      */
     public Builder withResponse(long response) {
-      if (response <= 0)
+      if (response < 0)
         throw new IllegalArgumentException("response must be positive");
       request.response = response;
       return this;
