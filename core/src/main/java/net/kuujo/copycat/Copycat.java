@@ -113,7 +113,7 @@ public class Copycat implements Managed<Copycat> {
    * @param <T> The resource type.
    * @return A completable future to be completed once the resource has been created.
    */
-  public <T extends Resource> CompletableFuture<T> create(String path, Class<T> type) {
+  public <T extends Resource> CompletableFuture<T> create(String path, Class<? super T> type) {
     return raft.submit(CreateResource.builder()
       .withPath(path)
       .withType(registry.lookup(type))
@@ -164,7 +164,7 @@ public class Copycat implements Managed<Copycat> {
     /**
      * Creates a new resource.
      */
-    private <T extends Resource> T createResource(Class<T> type, long id) {
+    private <T extends Resource> T createResource(Class<? super T> type, long id) {
       return createResourceObject(type, id);
     }
 
@@ -172,7 +172,7 @@ public class Copycat implements Managed<Copycat> {
      * Creates a resource object.
      */
     @SuppressWarnings("unchecked")
-    private <T extends Resource> T createResourceObject(Class<T> type, long id) {
+    private <T extends Resource> T createResourceObject(Class<? super T> type, long id) {
       try {
         Constructor constructor = type.getConstructor(Protocol.class);
         return (T) constructor.newInstance(new ResourceProtocol(id, raft));

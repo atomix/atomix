@@ -125,7 +125,7 @@ public class Node {
    * @param <T> The resource type.
    * @return A completable future to be completed with the resource instance.
    */
-  public <T extends Resource> CompletableFuture<T> create(Class<T> type) {
+  public <T extends Resource> CompletableFuture<T> create(Class<? super T> type) {
     return copycat.create(path, type);
   }
 

@@ -59,7 +59,7 @@ public class ResourceRegistry {
    * @return The resource registry.
    */
   @SuppressWarnings("unchecked")
-  public <T extends Resource> ResourceRegistry register(Class<T> resourceType) {
+  public <T extends Resource> ResourceRegistry register(Class<? extends Resource> resourceType) {
     Stateful stateful = resourceType.getAnnotation(Stateful.class);
     if (stateful != null) {
       register(resourceType, stateful.value());
@@ -102,7 +102,8 @@ public class ResourceRegistry {
    * @param resource The resource class.
    * @return The resource state machine class.
    */
-  public Class<? extends StateMachine> lookup(Class<? extends Resource> resource) {
+  @SuppressWarnings("unchecked")
+  public Class<? extends StateMachine> lookup(Class<?> resource) {
     return resources.get(resource);
   }
 
