@@ -23,6 +23,7 @@ import net.kuujo.copycat.io.Bytes;
 
 import java.nio.ByteOrder;
 import java.nio.InvalidMarkException;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Netty ByteBuf buffer.
@@ -394,6 +395,20 @@ class ByteBufBuffer implements Buffer {
   }
 
   @Override
+  public String readUTF8() {
+    byte[] bytes = new byte[buffer.readUnsignedShort()];
+    buffer.readBytes(bytes);
+    return new String(bytes, StandardCharsets.UTF_8);
+  }
+
+  @Override
+  public String readUTF8(long offset) {
+    byte[] bytes = new byte[buffer.getUnsignedShort((int) offset)];
+    buffer.getBytes((int) offset + Short.BYTES, bytes);
+    return new String(bytes, StandardCharsets.UTF_8);
+  }
+
+  @Override
   public Buffer write(Buffer buffer) {
     throw new UnsupportedOperationException();
   }
@@ -589,6 +604,20 @@ class ByteBufBuffer implements Buffer {
   @Override
   public Buffer writeBoolean(long offset, boolean b) {
     buffer.setBoolean((int) offset, b);
+    return this;
+  }
+
+  @Override
+  public Buffer writeUTF8(String s) {
+    byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
+    buffer.writeShort(bytes.length).writeBytes(bytes);
+    return this;
+  }
+
+  @Override
+  public Buffer writeUTF8(long offset, String s) {
+    byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
+    buffer.setShort((int) offset, bytes.length).setBytes((int) offset + Short.BYTES, bytes);
     return this;
   }
 
