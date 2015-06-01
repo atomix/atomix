@@ -40,8 +40,8 @@ public class ResourceCommand<T extends Command<U>, U> extends ResourceOperation<
    */
   public static class Builder<T extends Command<U>, U> extends Command.Builder<Builder<T, U>, ResourceCommand<T, U>> {
 
-    public Builder(ResourceCommand<T, U> operation) {
-      super(operation);
+    public Builder() {
+      super(new ResourceCommand<T, U>());
     }
 
     /**
