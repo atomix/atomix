@@ -26,7 +26,7 @@ import net.kuujo.copycat.io.util.ReferenceManager;
  */
 @SerializeWith(id=1006)
 public class RegisterEntry extends TimestampedEntry<RegisterEntry> {
-  private MemberInfo info;
+  private MemberInfo member;
 
   public RegisterEntry() {
   }
@@ -41,7 +41,7 @@ public class RegisterEntry extends TimestampedEntry<RegisterEntry> {
    * @return The member info.
    */
   public MemberInfo getMember() {
-    return info;
+    return member;
   }
 
   /**
@@ -51,8 +51,13 @@ public class RegisterEntry extends TimestampedEntry<RegisterEntry> {
    * @return The register entry.
    */
   public RegisterEntry setMember(MemberInfo info) {
-    this.info = info;
+    this.member = info;
     return this;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("RegisterEntry[index=%d, member=%s, timestamp=%d]", getIndex(), member, getTimestamp());
   }
 
 }

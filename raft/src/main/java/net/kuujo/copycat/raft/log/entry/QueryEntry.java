@@ -71,4 +71,9 @@ public class QueryEntry extends OperationEntry<QueryEntry> {
     query = serializer.readObject(buffer);
   }
 
+  @Override
+  public String toString() {
+    return String.format("CommandEntry[index=%d, term=%d, session=%d, timestamp=%d, query=%s]", getIndex(), getTerm(), getSession(), getTimestamp(), query);
+  }
+
 }

@@ -111,4 +111,9 @@ public class CommandEntry extends OperationEntry<CommandEntry> {
     command = serializer.readObject(buffer);
   }
 
+  @Override
+  public String toString() {
+    return String.format("CommandEntry[index=%d, term=%d, session=%d, request=%d, response=%d, timestamp=%d, command=%s]", getIndex(), getTerm(), getSession(), request, response, getTimestamp(), command);
+  }
+
 }

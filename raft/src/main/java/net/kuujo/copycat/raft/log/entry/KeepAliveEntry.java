@@ -30,4 +30,9 @@ public class KeepAliveEntry extends SessionEntry<KeepAliveEntry> {
     super(referenceManager);
   }
 
+  @Override
+  public String toString() {
+    return String.format("RegisterEntry[index=%d, session=%d, timestamp=%d]", getIndex(), getSession(), getTimestamp());
+  }
+
 }

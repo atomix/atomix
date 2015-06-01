@@ -30,4 +30,9 @@ public class NoOpEntry extends Entry<NoOpEntry> {
     super(referenceManager);
   }
 
+  @Override
+  public String toString() {
+    return String.format("KeepAliveEntry[index=%d, term=%d]", getIndex(), getTerm());
+  }
+
 }
