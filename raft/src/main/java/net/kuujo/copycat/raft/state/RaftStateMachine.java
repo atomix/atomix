@@ -130,8 +130,10 @@ class RaftStateMachine {
    * @return The result.
    */
   public Object apply(Entry entry) {
-    if (entry instanceof OperationEntry) {
-      return apply((OperationEntry) entry);
+    if (entry instanceof CommandEntry) {
+      return apply((CommandEntry) entry);
+    } else if (entry instanceof QueryEntry) {
+      return apply((QueryEntry) entry);
     } else if (entry instanceof RegisterEntry) {
       return apply((RegisterEntry) entry);
     } else if (entry instanceof KeepAliveEntry) {
