@@ -582,7 +582,7 @@ class LeaderState extends ActiveState {
       // Set the commit index. Once the commit index has been set we can run
       // all tasks up to the given commit.
       long commitIndex = replicas.get(quorumIndex).matchIndex;
-      long globalIndex = replicas.get(0).matchIndex;
+      long globalIndex = replicas.get(replicas.size() - 1).matchIndex;
       if (commitIndex > 0) {
         context.setCommitIndex(commitIndex);
         context.setGlobalIndex(globalIndex);
