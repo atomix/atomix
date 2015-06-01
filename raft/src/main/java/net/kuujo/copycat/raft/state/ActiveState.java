@@ -125,7 +125,7 @@ abstract class ActiveState extends RemoteState {
 
     // If the previous entry term doesn't match the local previous term then reject the request.
     Entry entry = context.getLog().getEntry(request.logIndex());
-    if (entry.getTerm() != request.logTerm()) {
+    if (entry == null || entry.getTerm() != request.logTerm()) {
       LOGGER.warn("{} - Rejected {}: Request log term does not match local log term {} for the same entry", context.getCluster().member().id(), request, entry.getTerm());
       return AppendResponse.builder()
         .withStatus(Response.Status.OK)
