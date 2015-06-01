@@ -69,6 +69,11 @@ public interface TestMember extends Member {
       buffer.read(bytes);
       address = new String(bytes);
     }
+
+    @Override
+    public String toString() {
+      return String.format("%s[id=%d, address=%s]", getClass().getSimpleName(), id(), address);
+    }
   }
 
   /**

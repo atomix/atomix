@@ -342,7 +342,7 @@ class LeaderState extends ActiveState {
       entry.setMember(request.member());
       entry.setTimestamp(timestamp);
       index = context.getLog().appendEntry(entry);
-      LOGGER.debug("{} - Appended register entry to log at index {}", context.getCluster().member().id(), index);
+      LOGGER.debug("{} - Appended {}", context.getCluster().member().id(), entry);
     }
 
     CompletableFuture<RegisterResponse> future = new CompletableFuture<>();

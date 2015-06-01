@@ -138,7 +138,7 @@ public class KeepAliveResponse extends AbstractResponse<KeepAliveResponse> {
 
   @Override
   public String toString() {
-    return String.format("%s[term=%d, leader=%b, members=%s]", getClass().getSimpleName(), term, leader, members);
+    return String.format("%s[term=%d, leader=%d, members=%s]", getClass().getSimpleName(), term, leader, members);
   }
 
   /**
