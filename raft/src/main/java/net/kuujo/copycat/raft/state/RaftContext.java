@@ -15,9 +15,7 @@
  */
 package net.kuujo.copycat.raft.state;
 
-import net.kuujo.copycat.EventListener;
 import net.kuujo.copycat.cluster.ManagedCluster;
-import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.raft.Command;
 import net.kuujo.copycat.raft.Query;
@@ -35,9 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -47,8 +43,6 @@ import java.util.concurrent.ExecutionException;
  */
 public class RaftContext implements Managed<RaftContext> {
   private final Logger LOGGER = LoggerFactory.getLogger(RaftContext.class);
-  private final Set<EventListener<Long>> termListeners = new CopyOnWriteArraySet<>();
-  private final Set<EventListener<Member>> electionListeners = new CopyOnWriteArraySet<>();
   private final RaftStateMachine stateMachine;
   private final Log log;
   private final Compactor compactor;
@@ -190,50 +184,6 @@ public class RaftContext implements Managed<RaftContext> {
   }
 
   /**
-   * Adds a term change listener.
-   *
-   * @param listener The term change listener.
-   * @return The Raft protocol.
-   */
-  public RaftContext addTermListener(EventListener<Long> listener) {
-    termListeners.add(listener);
-    return this;
-  }
-
-  /**
-   * Removes a term change listener.
-   *
-   * @param listener The term change listener.
-   * @return The Raft protocol.
-   */
-  public RaftContext removeTermListener(EventListener<Long> listener) {
-    termListeners.remove(listener);
-    return this;
-  }
-
-  /**
-   * Adds an election listener.
-   *
-   * @param listener The election listener.
-   * @return The Raft protocol.
-   */
-  public RaftContext addElectionListener(EventListener<Member> listener) {
-    electionListeners.add(listener);
-    return this;
-  }
-
-  /**
-   * Removes an election listener.
-   *
-   * @param listener The election listener.
-   * @return The Raft protocol.
-   */
-  public RaftContext removeElectionListener(EventListener<Member> listener) {
-    electionListeners.remove(listener);
-    return this;
-  }
-
-  /**
    * Sets the state session.
    *
    * @param session The state session.
@@ -325,14 +275,12 @@ public class RaftContext implements Managed<RaftContext> {
         this.leader = leader;
         this.lastVotedFor = 0;
         LOGGER.debug("{} - Found leader {}", cluster.member().id(), leader);
-        electionListeners.forEach(l -> l.accept(cluster.member(this.leader)));
       }
     } else if (leader != 0) {
       if (this.leader != leader) {
         this.leader = leader;
         this.lastVotedFor = 0;
         LOGGER.debug("{} - Found leader {}", cluster.member().id(), leader);
-        electionListeners.forEach(l -> l.accept(cluster.member(this.leader)));
       }
     } else {
       this.leader = 0;
@@ -361,7 +309,6 @@ public class RaftContext implements Managed<RaftContext> {
       this.leader = 0;
       this.lastVotedFor = 0;
       LOGGER.debug("{} - Incremented term {}", cluster.member().id(), term);
-      termListeners.forEach(l -> l.accept(this.term));
     }
     return this;
   }
