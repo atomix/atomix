@@ -13,41 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.resource.manager;
+package net.kuujo.copycat;
 
-import net.kuujo.copycat.raft.Command;
-import net.kuujo.copycat.raft.Operation;
+import net.kuujo.copycat.CopycatException;
 
 /**
- * Create getPath command.
+ * Copycat resource exception.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class CreatePath extends PathOperation<Boolean> implements Command<Boolean> {
+public class ResourceException extends CopycatException {
 
-  /**
-   * Returns a new CreatePath builder.
-   *
-   * @return A new CreatePath command builder.
-   */
-  public static Builder builder() {
-    return Operation.builder(CreatePath.Builder.class);
+  public ResourceException() {
   }
 
-  public CreatePath() {
+  public ResourceException(String message, Object... args) {
+    super(String.format(message, args));
   }
 
-  public CreatePath(String path) {
-    super(path);
+  public ResourceException(Throwable cause, String message, Object... args) {
+    super(String.format(message, args), cause);
   }
 
-  /**
-   * Create path builder.
-   */
-  public static class Builder extends PathOperation.Builder<Builder, CreatePath> {
-    public Builder() {
-      super(new CreatePath());
-    }
+  public ResourceException(Throwable cause) {
+    super(cause);
   }
-
 }

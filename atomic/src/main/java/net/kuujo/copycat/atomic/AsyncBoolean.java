@@ -20,8 +20,8 @@ import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.Writable;
 import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.raft.log.Compaction;
-import net.kuujo.copycat.resource.AbstractResource;
-import net.kuujo.copycat.resource.Stateful;
+import net.kuujo.copycat.AbstractResource;
+import net.kuujo.copycat.Stateful;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;

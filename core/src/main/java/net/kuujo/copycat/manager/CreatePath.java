@@ -13,27 +13,41 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.resource;
+package net.kuujo.copycat.manager;
 
-import net.kuujo.copycat.raft.StateMachine;
-
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import net.kuujo.copycat.raft.Command;
+import net.kuujo.copycat.raft.Operation;
 
 /**
- * Interface to be implemented by resources to indicate the associated state machine.
+ * Create getPath command.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface Stateful {
+public class CreatePath extends PathOperation<Boolean> implements Command<Boolean> {
 
   /**
-   * The state machine for this resource.
+   * Returns a new CreatePath builder.
+   *
+   * @return A new CreatePath command builder.
    */
-  Class<? extends StateMachine> value();
+  public static Builder builder() {
+    return Operation.builder(CreatePath.Builder.class);
+  }
+
+  public CreatePath() {
+  }
+
+  public CreatePath(String path) {
+    super(path);
+  }
+
+  /**
+   * Create path builder.
+   */
+  public static class Builder extends PathOperation.Builder<Builder, CreatePath> {
+    public Builder() {
+      super(new CreatePath());
+    }
+  }
 
 }

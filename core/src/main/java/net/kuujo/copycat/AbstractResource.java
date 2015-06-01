@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.resource;
+package net.kuujo.copycat;
 
 import net.kuujo.copycat.raft.Command;
 import net.kuujo.copycat.raft.Operation;

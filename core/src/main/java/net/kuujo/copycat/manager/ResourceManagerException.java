@@ -13,22 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.resource;
+package net.kuujo.copycat.manager;
 
-import java.util.concurrent.CompletableFuture;
+import net.kuujo.copycat.CopycatException;
 
 /**
- * Copycat resource.
+ * Copycat resource manager exception.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Resource {
+public class ResourceManagerException extends CopycatException {
 
-  /**
-   * Deletes the resource.
-   *
-   * @return A completable future to be completed once the resource has been deleted.
-   */
-  CompletableFuture<Void> delete();
+  public ResourceManagerException() {
+  }
 
+  public ResourceManagerException(String message, Object... args) {
+    super(String.format(message, args));
+  }
+
+  public ResourceManagerException(Throwable cause, String message, Object... args) {
+    super(String.format(message, args), cause);
+  }
+
+  public ResourceManagerException(Throwable cause) {
+    super(cause);
+  }
 }

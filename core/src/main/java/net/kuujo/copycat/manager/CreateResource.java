@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.resource.manager;
+package net.kuujo.copycat.manager;
 
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.serializer.SerializationException;

@@ -13,47 +13,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.resource.manager;
+package net.kuujo.copycat.manager;
 
+import net.kuujo.copycat.raft.Command;
 import net.kuujo.copycat.raft.Operation;
-import net.kuujo.copycat.raft.Query;
-
-import java.util.List;
 
 /**
- * Path children command.
+ * Delete getPath command.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class PathChildren extends PathOperation<List<String>> implements Query<List<String>> {
+public class DeletePath extends PathOperation<Boolean> implements Command<Boolean> {
 
   /**
-   * Returns a new PathChildren builder.
+   * Returns a new DeletePath builder.
    *
-   * @return A new PathChildren command builder.
+   * @return A new DeletePath command builder.
    */
   public static Builder builder() {
-    return Operation.builder(PathChildren.Builder.class);
+    return Operation.builder(DeletePath.Builder.class);
   }
 
-  public PathChildren() {
+  public DeletePath() {
   }
 
-  public PathChildren(String path) {
+  public DeletePath(String path) {
     super(path);
   }
 
-  @Override
-  public Consistency consistency() {
-    return Consistency.LINEARIZABLE_STRICT;
-  }
-
   /**
-   * Path children builder.
+   * Create path builder.
    */
-  public static class Builder extends PathOperation.Builder<Builder, PathChildren> {
+  public static class Builder extends PathOperation.Builder<Builder, DeletePath> {
     public Builder() {
-      super(new PathChildren());
+      super(new DeletePath());
     }
   }
 

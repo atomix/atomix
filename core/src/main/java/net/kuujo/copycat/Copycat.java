@@ -17,14 +17,10 @@ package net.kuujo.copycat;
 
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ManagedCluster;
+import net.kuujo.copycat.manager.*;
 import net.kuujo.copycat.raft.Protocol;
 import net.kuujo.copycat.raft.Raft;
 import net.kuujo.copycat.raft.log.Log;
-import net.kuujo.copycat.resource.Resource;
-import net.kuujo.copycat.resource.ResourceException;
-import net.kuujo.copycat.resource.ResourceProtocol;
-import net.kuujo.copycat.resource.ResourceRegistry;
-import net.kuujo.copycat.resource.manager.*;
 import net.kuujo.copycat.util.Managed;
 
 import java.lang.reflect.Constructor;

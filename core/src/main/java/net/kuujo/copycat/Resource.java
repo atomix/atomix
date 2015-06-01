@@ -13,29 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.resource;
+package net.kuujo.copycat;
 
-import net.kuujo.copycat.CopycatException;
+import java.util.concurrent.CompletableFuture;
 
 /**
- * Copycat resource exception.
+ * Copycat resource.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ResourceException extends CopycatException {
+public interface Resource {
 
-  public ResourceException() {
-  }
+  /**
+   * Deletes the resource.
+   *
+   * @return A completable future to be completed once the resource has been deleted.
+   */
+  CompletableFuture<Void> delete();
 
-  public ResourceException(String message, Object... args) {
-    super(String.format(message, args));
-  }
-
-  public ResourceException(Throwable cause, String message, Object... args) {
-    super(String.format(message, args), cause);
-  }
-
-  public ResourceException(Throwable cause) {
-    super(cause);
-  }
 }

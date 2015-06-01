@@ -15,8 +15,7 @@
  */
 package net.kuujo.copycat;
 
-import net.kuujo.copycat.resource.Resource;
-import net.kuujo.copycat.resource.manager.PathChildren;
+import net.kuujo.copycat.manager.PathChildren;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;

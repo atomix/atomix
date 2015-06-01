@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.resource;
+package net.kuujo.copycat;
 
 import net.kuujo.copycat.raft.Command;
 import net.kuujo.copycat.raft.Protocol;
 import net.kuujo.copycat.raft.Query;
 import net.kuujo.copycat.raft.Raft;
-import net.kuujo.copycat.resource.manager.DeleteResource;
+import net.kuujo.copycat.manager.DeleteResource;
 
 import java.util.concurrent.CompletableFuture;
 

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.resource.manager;
+package net.kuujo.copycat.manager;
 
 import net.kuujo.copycat.cluster.Session;
 import net.kuujo.copycat.raft.Apply;
@@ -21,9 +21,9 @@ import net.kuujo.copycat.raft.Commit;
 import net.kuujo.copycat.raft.Filter;
 import net.kuujo.copycat.raft.StateMachine;
 import net.kuujo.copycat.raft.log.Compaction;
-import net.kuujo.copycat.resource.ResourceCommand;
-import net.kuujo.copycat.resource.ResourceOperation;
-import net.kuujo.copycat.resource.ResourceQuery;
+import net.kuujo.copycat.ResourceCommand;
+import net.kuujo.copycat.ResourceOperation;
+import net.kuujo.copycat.ResourceQuery;
 
 import java.util.*;
 

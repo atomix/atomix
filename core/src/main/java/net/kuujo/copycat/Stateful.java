@@ -13,29 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.resource.manager;
+package net.kuujo.copycat;
 
-import net.kuujo.copycat.CopycatException;
+import net.kuujo.copycat.raft.StateMachine;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * Copycat resource manager exception.
+ * Interface to be implemented by resources to indicate the associated state machine.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ResourceManagerException extends CopycatException {
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Stateful {
 
-  public ResourceManagerException() {
-  }
+  /**
+   * The state machine for this resource.
+   */
+  Class<? extends StateMachine> value();
 
-  public ResourceManagerException(String message, Object... args) {
-    super(String.format(message, args));
-  }
-
-  public ResourceManagerException(Throwable cause, String message, Object... args) {
-    super(String.format(message, args), cause);
-  }
-
-  public ResourceManagerException(Throwable cause) {
-    super(cause);
-  }
 }

@@ -13,31 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.resource.manager;
+package net.kuujo.copycat.manager;
 
 import net.kuujo.copycat.raft.Operation;
 import net.kuujo.copycat.raft.Query;
 
 /**
- * Path exists command.
+ * Resource exists command.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class PathExists extends PathOperation<Boolean> implements Query<Boolean> {
+public class ResourceExists extends PathOperation<Boolean> implements Query<Boolean> {
 
   /**
-   * Returns a new PathExists builder.
+   * Returns a new ResourceExists builder.
    *
-   * @return A new PathExists command builder.
+   * @return A new ResourceExists command builder.
    */
   public static Builder builder() {
-    return Operation.builder(PathExists.Builder.class);
+    return Operation.builder(ResourceExists.Builder.class);
   }
 
-  public PathExists() {
+  public ResourceExists() {
   }
 
-  public PathExists(String path) {
+  public ResourceExists(String path) {
     super(path);
   }
 
@@ -47,11 +47,11 @@ public class PathExists extends PathOperation<Boolean> implements Query<Boolean>
   }
 
   /**
-   * Path exists builder.
+   * Resource exists builder.
    */
-  public static class Builder extends PathOperation.Builder<Builder, PathExists> {
+  public static class Builder extends PathOperation.Builder<Builder, ResourceExists> {
     public Builder() {
-      super(new PathExists());
+      super(new ResourceExists());
     }
   }
 

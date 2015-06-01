@@ -13,21 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.resource;
+package net.kuujo.copycat.manager;
 
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.Writable;
+import net.kuujo.copycat.raft.Command;
 import net.kuujo.copycat.raft.Operation;
 
 /**
- * Resource operation.
+ * Delete resource command.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class ResourceOperation<T extends Operation<U>, U> implements Operation<U>, Writable {
-  protected long resource;
-  protected T operation;
+public class DeleteResource implements Command<Boolean>, Writable {
+
+  /**
+   * Returns a new DeleteResource builder.
+   *
+   * @return A new DeleteResource command builder.
+   */
+  public static Builder builder() {
+    return Operation.builder(DeleteResource.Builder.class);
+  }
+
+  private long resource;
+
+  public DeleteResource() {
+  }
 
   /**
    * Returns the resource ID.
@@ -38,25 +51,34 @@ public abstract class ResourceOperation<T extends Operation<U>, U> implements Op
     return resource;
   }
 
-  /**
-   * Returns the resource operation.
-   *
-   * @return The resource operation.
-   */
-  public T operation() {
-    return operation;
-  }
-
   @Override
   public void writeObject(Buffer buffer, Serializer serializer) {
     buffer.writeLong(resource);
-    serializer.writeObject(operation, buffer);
   }
 
   @Override
   public void readObject(Buffer buffer, Serializer serializer) {
     resource = buffer.readLong();
-    operation = serializer.readObject(buffer);
+  }
+
+  /**
+   * Delete resource builder.
+   */
+  public static class Builder extends Command.Builder<Builder, DeleteResource> {
+    public Builder() {
+      super(new DeleteResource());
+    }
+
+    /**
+     * Sets the delete resource ID.
+     *
+     * @param resource The resource ID.
+     * @return The command builder.
+     */
+    public Builder withResource(long resource) {
+      command.resource = resource;
+      return this;
+    }
   }
 
 }

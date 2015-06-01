@@ -13,40 +13,45 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.resource.manager;
+package net.kuujo.copycat.manager;
 
-import net.kuujo.copycat.raft.Command;
 import net.kuujo.copycat.raft.Operation;
+import net.kuujo.copycat.raft.Query;
 
 /**
- * Delete getPath command.
+ * Path exists command.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DeletePath extends PathOperation<Boolean> implements Command<Boolean> {
+public class PathExists extends PathOperation<Boolean> implements Query<Boolean> {
 
   /**
-   * Returns a new DeletePath builder.
+   * Returns a new PathExists builder.
    *
-   * @return A new DeletePath command builder.
+   * @return A new PathExists command builder.
    */
   public static Builder builder() {
-    return Operation.builder(DeletePath.Builder.class);
+    return Operation.builder(PathExists.Builder.class);
   }
 
-  public DeletePath() {
+  public PathExists() {
   }
 
-  public DeletePath(String path) {
+  public PathExists(String path) {
     super(path);
   }
 
+  @Override
+  public Consistency consistency() {
+    return Consistency.LINEARIZABLE_STRICT;
+  }
+
   /**
-   * Create path builder.
+   * Path exists builder.
    */
-  public static class Builder extends PathOperation.Builder<Builder, DeletePath> {
+  public static class Builder extends PathOperation.Builder<Builder, PathExists> {
     public Builder() {
-      super(new DeletePath());
+      super(new PathExists());
     }
   }
 
