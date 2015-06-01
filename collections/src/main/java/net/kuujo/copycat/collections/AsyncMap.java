@@ -15,13 +15,13 @@
  */
 package net.kuujo.copycat.collections;
 
+import net.kuujo.copycat.AbstractResource;
+import net.kuujo.copycat.Stateful;
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.Writable;
 import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.raft.log.Compaction;
-import net.kuujo.copycat.AbstractResource;
-import net.kuujo.copycat.Stateful;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -40,6 +40,24 @@ public class AsyncMap<K, V> extends AbstractResource {
 
   public AsyncMap(Protocol protocol) {
     super(protocol);
+  }
+
+  /**
+   * Checks whether the map is empty.
+   *
+   * @return A completable future to be completed with a boolean value indicating whether the map is empty.
+   */
+  public CompletableFuture<Boolean> isEmpty() {
+    return submit(IsEmpty.builder().build());
+  }
+
+  /**
+   * Gets the size of the map.
+   *
+   * @return A completable future to be completed with the number of entries in the map.
+   */
+  public CompletableFuture<Integer> size() {
+    return submit(Size.builder().build());
   }
 
   /**
@@ -600,6 +618,80 @@ public class AsyncMap<K, V> extends AbstractResource {
   }
 
   /**
+   * Is empty query.
+   */
+  public static class IsEmpty extends MapQuery<Boolean> {
+
+    /**
+     * Returns a builder for this command.
+     */
+    public static Builder builder() {
+      return Operation.builder(Builder.class);
+    }
+
+    @Override
+    public Consistency consistency() {
+      return Consistency.LINEARIZABLE_LEASE;
+    }
+
+    @Override
+    public void writeObject(Buffer buffer, Serializer serializer) {
+
+    }
+
+    @Override
+    public void readObject(Buffer buffer, Serializer serializer) {
+
+    }
+
+    /**
+     * Is empty command builder.
+     */
+    public static class Builder extends MapQuery.Builder<Builder, IsEmpty> {
+      public Builder() {
+        super(new IsEmpty());
+      }
+    }
+  }
+
+  /**
+   * Size query.
+   */
+  public static class Size extends MapQuery<Integer> {
+
+    /**
+     * Returns a builder for this command.
+     */
+    public static Builder builder() {
+      return Operation.builder(Builder.class);
+    }
+
+    @Override
+    public Consistency consistency() {
+      return Consistency.LINEARIZABLE_LEASE;
+    }
+
+    @Override
+    public void writeObject(Buffer buffer, Serializer serializer) {
+
+    }
+
+    @Override
+    public void readObject(Buffer buffer, Serializer serializer) {
+
+    }
+
+    /**
+     * Is empty command builder.
+     */
+    public static class Builder extends MapQuery.Builder<Builder, Size> {
+      public Builder() {
+        super(new Size());
+      }
+    }
+  }
+
+  /**
    * Clear command.
    */
   public static class Clear extends MapCommand<Void> {
@@ -636,13 +728,30 @@ public class AsyncMap<K, V> extends AbstractResource {
    */
   public static class StateMachine extends net.kuujo.copycat.raft.StateMachine {
     private final Map<Object, Commit<? extends TtlCommand>> map = new HashMap<>();
+    private long time;
+
+    /**
+     * Updates the wall clock time.
+     */
+    private void updateTime(Commit<?> commit) {
+      time = Math.max(time, commit.timestamp());
+    }
 
     /**
      * Handles a contains key commit.
      */
     @Apply(ContainsKey.class)
     protected boolean containsKey(Commit<ContainsKey> commit) {
-      return map.containsKey(commit.operation().key());
+      updateTime(commit);
+      Commit<? extends TtlCommand> command = map.get(commit.operation().key());
+      if (command == null) {
+        return false;
+      } else if (command.operation().ttl() == 0 || command.operation().ttl() > time - command.timestamp()) {
+        return true;
+      } else {
+        map.remove(commit.operation().key());
+      }
+      return false;
     }
 
     /**
@@ -650,8 +759,16 @@ public class AsyncMap<K, V> extends AbstractResource {
      */
     @Apply(Get.class)
     protected Object get(Commit<Get> commit) {
+      updateTime(commit);
       Commit<? extends TtlCommand> command = map.get(commit.operation().key());
-      return command != null ? command.operation().value() : null;
+      if (command != null) {
+        if (command.operation().ttl() == 0 || command.operation().ttl() > time - command.timestamp()) {
+          return command.operation().value();
+        } else {
+          map.remove(commit.operation().key());
+        }
+      }
+      return null;
     }
 
     /**
@@ -659,8 +776,16 @@ public class AsyncMap<K, V> extends AbstractResource {
      */
     @Apply(GetOrDefault.class)
     protected Object getOrDefault(Commit<GetOrDefault> commit) {
+      updateTime(commit);
       Commit<? extends TtlCommand> command = map.get(commit.operation().key());
-      return command != null ? command.operation().value() : commit.operation().defaultValue();
+      if (command == null) {
+        return commit.operation().defaultValue();
+      } else if (command.operation().ttl() == 0 || command.operation().ttl() > time - command.timestamp()) {
+        return command.operation().value();
+      } else {
+        map.remove(commit.operation().key());
+        return commit.operation().defaultValue();
+      }
     }
 
     /**
@@ -668,6 +793,7 @@ public class AsyncMap<K, V> extends AbstractResource {
      */
     @Apply(Put.class)
     protected Object put(Commit<Put> commit) {
+      updateTime(commit);
       return map.put(commit.operation().key(), commit);
     }
 
@@ -676,6 +802,7 @@ public class AsyncMap<K, V> extends AbstractResource {
      */
     @Apply(PutIfAbsent.class)
     protected Object putIfAbsent(Commit<PutIfAbsent> commit) {
+      updateTime(commit);
       return map.putIfAbsent(commit.operation().key(), commit);
     }
 
@@ -685,7 +812,7 @@ public class AsyncMap<K, V> extends AbstractResource {
     @Filter({Put.class, PutIfAbsent.class})
     protected boolean filterPut(Commit<? extends TtlCommand> commit) {
       Commit<? extends TtlCommand> command = map.get(commit.operation().key());
-      return command != null && command.index() == commit.index() && (command.operation().ttl() == 0 || command.operation().ttl() > System.currentTimeMillis() - command.timestamp());
+      return command != null && command.index() == commit.index() && (command.operation().ttl() == 0 || command.operation().ttl() > time - command.timestamp());
     }
 
     /**
@@ -693,12 +820,23 @@ public class AsyncMap<K, V> extends AbstractResource {
      */
     @Apply(Remove.class)
     protected Object remove(Commit<Remove> commit) {
+      updateTime(commit);
       if (commit.operation().value() != null) {
         Commit<? extends TtlCommand> command = map.get(commit.operation().key());
-        return command != null && command.operation().value().equals(commit.operation().value()) ? command.operation().value() : null;
+        if (command == null) {
+          return false;
+        } else if (command.operation().ttl() == 0 || command.operation().ttl() > time - command.timestamp()) {
+          return true;
+        }
+        return false;
       } else {
         Commit<? extends TtlCommand> command =  map.remove(commit.operation().key());
-        return command != null ? command.operation().value() : null;
+        if (command == null) {
+          return null;
+        } else if (command.operation().ttl() == 0 || command.operation().ttl() > time - command.timestamp()) {
+          return command.operation().value();
+        }
+        return null;
       }
     }
 
@@ -711,10 +849,29 @@ public class AsyncMap<K, V> extends AbstractResource {
     }
 
     /**
+     * Handles a size commit.
+     */
+    @Apply(Size.class)
+    protected int size(Commit<Size> commit) {
+      updateTime(commit);
+      return map.size();
+    }
+
+    /**
+     * Handles an is empty commit.
+     */
+    @Apply(IsEmpty.class)
+    protected boolean isEmpty(Commit<IsEmpty> commit) {
+      updateTime(commit);
+      return map.isEmpty();
+    }
+
+    /**
      * Handles a clear commit.
      */
     @Apply(Clear.class)
     protected void clear(Commit<Clear> commit) {
+      updateTime(commit);
       map.clear();
     }
   }
