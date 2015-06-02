@@ -917,18 +917,27 @@ public class AsyncMap<K, V> extends AbstractResource {
     }
 
     /**
+     * Returns a boolean value indicating whether the given commit is active.
+     */
+    private boolean isActive(Commit<? extends TtlCommand> commit) {
+      if (commit == null) {
+        return false;
+      } else if (commit.operation().mode() == Mode.EPHEMERAL && !sessions.contains(commit.session().id())) {
+        return false;
+      } else if (commit.operation().ttl() != 0 && commit.operation().ttl() < time - commit.timestamp()) {
+        return false;
+      }
+      return true;
+    }
+
+    /**
      * Handles a contains key commit.
      */
     @Apply(ContainsKey.class)
     protected boolean containsKey(Commit<ContainsKey> commit) {
       updateTime(commit);
       Commit<? extends TtlCommand> command = map.get(commit.operation().key());
-      if (command == null) {
-        return false;
-      } else if (command.operation().mode() == Mode.EPHEMERAL && !sessions.contains(command.session().id())) {
-        map.remove(commit.operation().key());
-        return false;
-      } else if (command.operation().ttl() != 0 && command.operation().ttl() < time - command.timestamp()) {
+      if (!isActive(command)) {
         map.remove(commit.operation().key());
         return false;
       }
@@ -943,9 +952,7 @@ public class AsyncMap<K, V> extends AbstractResource {
       updateTime(commit);
       Commit<? extends TtlCommand> command = map.get(commit.operation().key());
       if (command != null) {
-        if (command.operation().mode() == Mode.EPHEMERAL && !sessions.contains(command.session().id())) {
-          map.remove(commit.operation().key());
-        } else if (command.operation().ttl() != 0 && command.operation().ttl() < time - command.timestamp()) {
+        if (!isActive(command)) {
           map.remove(commit.operation().key());
         } else {
           return command.operation().value();
@@ -963,9 +970,7 @@ public class AsyncMap<K, V> extends AbstractResource {
       Commit<? extends TtlCommand> command = map.get(commit.operation().key());
       if (command == null) {
         return commit.operation().defaultValue();
-      } else if (command.operation().mode() == Mode.EPHEMERAL && !sessions.contains(command.session().id())) {
-        map.remove(commit.operation().key());
-      } else if (command.operation().ttl() != 0 && command.operation().ttl() < time - command.timestamp()) {
+      } else if (!isActive(command)) {
         map.remove(commit.operation().key());
       } else {
         return command.operation().value();
@@ -997,9 +1002,7 @@ public class AsyncMap<K, V> extends AbstractResource {
     @Filter({Put.class, PutIfAbsent.class})
     protected boolean filterPut(Commit<? extends TtlCommand> commit) {
       Commit<? extends TtlCommand> command = map.get(commit.operation().key());
-      return command != null && command.index() == commit.index()
-        && (command.operation().mode() == Mode.PERSISTENT || sessions.contains(command.session().id()))
-        && (command.operation().ttl() == 0 || command.operation().ttl() > time - command.timestamp());
+      return command != null && command.index() == commit.index() && isActive(command);
     }
 
     /**
@@ -1010,11 +1013,7 @@ public class AsyncMap<K, V> extends AbstractResource {
       updateTime(commit);
       if (commit.operation().value() != null) {
         Commit<? extends TtlCommand> command = map.get(commit.operation().key());
-        if (command == null) {
-          return false;
-        } else if (command.operation().mode() == Mode.EPHEMERAL && !sessions.contains(command.session().id())) {
-          map.remove(commit.operation().key());
-        } else if (command.operation().ttl() != 0 && command.operation().ttl() < time - command.timestamp()) {
+        if (!isActive(command)) {
           map.remove(commit.operation().key());
         } else {
           Object value = command.operation().value();
@@ -1027,14 +1026,7 @@ public class AsyncMap<K, V> extends AbstractResource {
         return false;
       } else {
         Commit<? extends TtlCommand> command =  map.remove(commit.operation().key());
-        if (command == null) {
-          return null;
-        } else if (command.operation().mode() == Mode.EPHEMERAL && !sessions.contains(command.session().id())) {
-          return null;
-        } else if (command.operation().ttl() != 0 && command.operation().ttl() < time - command.timestamp()) {
-          return null;
-        }
-        return command.operation().value();
+        return isActive(command) ? command.operation().value() : null;
       }
     }
 
