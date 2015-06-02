@@ -16,7 +16,9 @@
 package net.kuujo.copycat.collections;
 
 import net.kuujo.copycat.AbstractResource;
+import net.kuujo.copycat.Mode;
 import net.kuujo.copycat.Stateful;
+import net.kuujo.copycat.cluster.Session;
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.Writable;
@@ -24,7 +26,9 @@ import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.raft.log.Compaction;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -107,6 +111,24 @@ public class AsyncMap<K, V> extends AbstractResource {
    *
    * @param key The key to set.
    * @param value The value to set.
+   * @param mode The mode in which to set the key.
+   * @return A completable future to be completed with the result once complete.
+   */
+  @SuppressWarnings("unchecked")
+  public CompletableFuture<V> put(K key, V value, Mode mode) {
+    return submit(Put.builder()
+      .withKey(key)
+      .withValue(value)
+      .withMode(mode)
+      .build())
+      .thenApply(result -> (V) result);
+  }
+
+  /**
+   * Puts a value in the map.
+   *
+   * @param key The key to set.
+   * @param value The value to set.
    * @param ttl The time to live in milliseconds.
    * @return A completable future to be completed with the result once complete.
    */
@@ -126,6 +148,26 @@ public class AsyncMap<K, V> extends AbstractResource {
    * @param key The key to set.
    * @param value The value to set.
    * @param ttl The time to live in milliseconds.
+   * @param mode The mode in which to set the key.
+   * @return A completable future to be completed with the result once complete.
+   */
+  @SuppressWarnings("unchecked")
+  public CompletableFuture<V> put(K key, V value, long ttl, Mode mode) {
+    return submit(Put.builder()
+      .withKey(key)
+      .withValue(value)
+      .withTtl(ttl)
+      .withMode(mode)
+      .build())
+      .thenApply(result -> (V) result);
+  }
+
+  /**
+   * Puts a value in the map.
+   *
+   * @param key The key to set.
+   * @param value The value to set.
+   * @param ttl The time to live in milliseconds.
    * @param unit The time to live unit.
    * @return A completable future to be completed with the result once complete.
    */
@@ -135,6 +177,27 @@ public class AsyncMap<K, V> extends AbstractResource {
       .withKey(key)
       .withValue(value)
       .withTtl(ttl, unit)
+      .build())
+      .thenApply(result -> (V) result);
+  }
+
+  /**
+   * Puts a value in the map.
+   *
+   * @param key The key to set.
+   * @param value The value to set.
+   * @param ttl The time to live in milliseconds.
+   * @param unit The time to live unit.
+   * @param mode The mode in which to set the key.
+   * @return A completable future to be completed with the result once complete.
+   */
+  @SuppressWarnings("unchecked")
+  public CompletableFuture<V> put(K key, V value, long ttl, TimeUnit unit, Mode mode) {
+    return submit(Put.builder()
+      .withKey(key)
+      .withValue(value)
+      .withTtl(ttl, unit)
+      .withMode(mode)
       .build())
       .thenApply(result -> (V) result);
   }
@@ -181,6 +244,84 @@ public class AsyncMap<K, V> extends AbstractResource {
     return submit(PutIfAbsent.builder()
       .withKey(key)
       .withValue(value)
+      .build())
+      .thenApply(result -> (V) result);
+  }
+
+  /**
+   * Puts a value in the map if the given key does not exist.
+   *
+   * @param key   The key to set.
+   * @param value The value to set if the given key does not exist.
+   * @param ttl The time to live in milliseconds.
+   * @return A completable future to be completed with the result once complete.
+   */
+  @SuppressWarnings("unchecked")
+  public CompletableFuture<V> putIfAbsent(K key, V value, long ttl) {
+    return submit(PutIfAbsent.builder()
+      .withKey(key)
+      .withValue(value)
+      .withTtl(ttl)
+      .build())
+      .thenApply(result -> (V) result);
+  }
+
+  /**
+   * Puts a value in the map if the given key does not exist.
+   *
+   * @param key   The key to set.
+   * @param value The value to set if the given key does not exist.
+   * @param ttl The time to live in milliseconds.
+   * @param mode The mode in which to set the key.
+   * @return A completable future to be completed with the result once complete.
+   */
+  @SuppressWarnings("unchecked")
+  public CompletableFuture<V> putIfAbsent(K key, V value, long ttl, Mode mode) {
+    return submit(PutIfAbsent.builder()
+      .withKey(key)
+      .withValue(value)
+      .withTtl(ttl)
+      .withMode(mode)
+      .build())
+      .thenApply(result -> (V) result);
+  }
+
+  /**
+   * Puts a value in the map if the given key does not exist.
+   *
+   * @param key   The key to set.
+   * @param value The value to set if the given key does not exist.
+   * @param ttl The time to live.
+   * @param unit The time to live unit.
+   * @return A completable future to be completed with the result once complete.
+   */
+  @SuppressWarnings("unchecked")
+  public CompletableFuture<V> putIfAbsent(K key, V value, long ttl, TimeUnit unit) {
+    return submit(PutIfAbsent.builder()
+      .withKey(key)
+      .withValue(value)
+      .withTtl(ttl, unit)
+      .build())
+      .thenApply(result -> (V) result);
+  }
+
+  /**
+   * Puts a value in the map if the given key does not exist.
+   *
+   * @param key   The key to set.
+   * @param value The value to set if the given key does not exist.
+   * @param ttl The time to live.
+   * @param unit The time to live unit.
+   * @param mode The mode in which to set the key.
+   * @return A completable future to be completed with the result once complete.
+   */
+  @SuppressWarnings("unchecked")
+  public CompletableFuture<V> putIfAbsent(K key, V value, long ttl, TimeUnit unit, Mode mode) {
+    return submit(PutIfAbsent.builder()
+      .withKey(key)
+      .withValue(value)
+      .withTtl(ttl, unit)
+      .withMode(mode)
       .build())
       .thenApply(result -> (V) result);
   }
@@ -407,7 +548,17 @@ public class AsyncMap<K, V> extends AbstractResource {
    * TTL command.
    */
   public static abstract class TtlCommand<V> extends KeyValueCommand<V> {
+    protected Mode mode = Mode.PERSISTENT;
     protected long ttl;
+
+    /**
+     * Returns the persistence mode.
+     *
+     * @return The persistence mode.
+     */
+    public Mode mode() {
+      return mode;
+    }
 
     /**
      * Returns the time to live in milliseconds.
@@ -421,12 +572,13 @@ public class AsyncMap<K, V> extends AbstractResource {
     @Override
     public void writeObject(Buffer buffer, Serializer serializer) {
       super.writeObject(buffer, serializer);
-      buffer.writeLong(ttl);
+      buffer.writeByte(mode.ordinal()).writeLong(ttl);
     }
 
     @Override
     public void readObject(Buffer buffer, Serializer serializer) {
       super.readObject(buffer, serializer);
+      mode = Mode.values()[buffer.readByte()];
       ttl = buffer.readLong();
     }
 
@@ -436,6 +588,17 @@ public class AsyncMap<K, V> extends AbstractResource {
     public static class Builder<T extends Builder<T, U>, U extends TtlCommand<?>> extends KeyValueCommand.Builder<T, U> {
       protected Builder(U command) {
         super(command);
+      }
+
+      /**
+       * Sets the persistence mode.
+       *
+       * @param mode The persistence mode.
+       * @return The command builder.
+       */
+      public Builder withMode(Mode mode) {
+        command.mode = mode;
+        return this;
       }
 
       /**
@@ -728,6 +891,7 @@ public class AsyncMap<K, V> extends AbstractResource {
    */
   public static class StateMachine extends net.kuujo.copycat.raft.StateMachine {
     private final Map<Object, Commit<? extends TtlCommand>> map = new HashMap<>();
+    private final Set<Long> sessions = new HashSet<>();
     private long time;
 
     /**
@@ -735,6 +899,21 @@ public class AsyncMap<K, V> extends AbstractResource {
      */
     private void updateTime(Commit<?> commit) {
       time = Math.max(time, commit.timestamp());
+    }
+
+    @Override
+    public void register(Session session) {
+      sessions.add(session.id());
+    }
+
+    @Override
+    public void expire(Session session) {
+      sessions.remove(session.id());
+    }
+
+    @Override
+    public void close(Session session) {
+      sessions.remove(session.id());
     }
 
     /**
@@ -746,12 +925,14 @@ public class AsyncMap<K, V> extends AbstractResource {
       Commit<? extends TtlCommand> command = map.get(commit.operation().key());
       if (command == null) {
         return false;
-      } else if (command.operation().ttl() == 0 || command.operation().ttl() > time - command.timestamp()) {
-        return true;
-      } else {
+      } else if (command.operation().mode() == Mode.EPHEMERAL && !sessions.contains(command.session().id())) {
         map.remove(commit.operation().key());
+        return false;
+      } else if (command.operation().ttl() != 0 && command.operation().ttl() < time - command.timestamp()) {
+        map.remove(commit.operation().key());
+        return false;
       }
-      return false;
+      return true;
     }
 
     /**
@@ -762,10 +943,12 @@ public class AsyncMap<K, V> extends AbstractResource {
       updateTime(commit);
       Commit<? extends TtlCommand> command = map.get(commit.operation().key());
       if (command != null) {
-        if (command.operation().ttl() == 0 || command.operation().ttl() > time - command.timestamp()) {
-          return command.operation().value();
-        } else {
+        if (command.operation().mode() == Mode.EPHEMERAL && !sessions.contains(command.session().id())) {
           map.remove(commit.operation().key());
+        } else if (command.operation().ttl() != 0 && command.operation().ttl() < time - command.timestamp()) {
+          map.remove(commit.operation().key());
+        } else {
+          return command.operation().value();
         }
       }
       return null;
@@ -780,12 +963,14 @@ public class AsyncMap<K, V> extends AbstractResource {
       Commit<? extends TtlCommand> command = map.get(commit.operation().key());
       if (command == null) {
         return commit.operation().defaultValue();
-      } else if (command.operation().ttl() == 0 || command.operation().ttl() > time - command.timestamp()) {
-        return command.operation().value();
-      } else {
+      } else if (command.operation().mode() == Mode.EPHEMERAL && !sessions.contains(command.session().id())) {
         map.remove(commit.operation().key());
-        return commit.operation().defaultValue();
+      } else if (command.operation().ttl() != 0 && command.operation().ttl() < time - command.timestamp()) {
+        map.remove(commit.operation().key());
+      } else {
+        return command.operation().value();
       }
+      return commit.operation().defaultValue();
     }
 
     /**
@@ -812,7 +997,9 @@ public class AsyncMap<K, V> extends AbstractResource {
     @Filter({Put.class, PutIfAbsent.class})
     protected boolean filterPut(Commit<? extends TtlCommand> commit) {
       Commit<? extends TtlCommand> command = map.get(commit.operation().key());
-      return command != null && command.index() == commit.index() && (command.operation().ttl() == 0 || command.operation().ttl() > time - command.timestamp());
+      return command != null && command.index() == commit.index()
+        && (command.operation().mode() == Mode.PERSISTENT || sessions.contains(command.session().id()))
+        && (command.operation().ttl() == 0 || command.operation().ttl() > time - command.timestamp());
     }
 
     /**
@@ -825,18 +1012,29 @@ public class AsyncMap<K, V> extends AbstractResource {
         Commit<? extends TtlCommand> command = map.get(commit.operation().key());
         if (command == null) {
           return false;
-        } else if (command.operation().ttl() == 0 || command.operation().ttl() > time - command.timestamp()) {
-          return true;
+        } else if (command.operation().mode() == Mode.EPHEMERAL && !sessions.contains(command.session().id())) {
+          map.remove(commit.operation().key());
+        } else if (command.operation().ttl() != 0 && command.operation().ttl() < time - command.timestamp()) {
+          map.remove(commit.operation().key());
+        } else {
+          Object value = command.operation().value();
+          if ((value == null && commit.operation().value() == null) || (value != null && commit.operation().value() != null && value.equals(commit.operation().value()))) {
+            map.remove(commit.operation().key());
+            return true;
+          }
+          return false;
         }
         return false;
       } else {
         Commit<? extends TtlCommand> command =  map.remove(commit.operation().key());
         if (command == null) {
           return null;
-        } else if (command.operation().ttl() == 0 || command.operation().ttl() > time - command.timestamp()) {
-          return command.operation().value();
+        } else if (command.operation().mode() == Mode.EPHEMERAL && !sessions.contains(command.session().id())) {
+          return null;
+        } else if (command.operation().ttl() != 0 && command.operation().ttl() < time - command.timestamp()) {
+          return null;
         }
-        return null;
+        return command.operation().value();
       }
     }
 
