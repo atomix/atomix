@@ -16,7 +16,9 @@
 package net.kuujo.copycat.collections;
 
 import net.kuujo.copycat.AbstractResource;
+import net.kuujo.copycat.Mode;
 import net.kuujo.copycat.Stateful;
+import net.kuujo.copycat.cluster.Session;
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.Writable;
@@ -24,7 +26,9 @@ import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.raft.log.Compaction;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -49,7 +53,7 @@ public class AsyncSet<T> extends AbstractResource {
    */
   public CompletableFuture<Boolean> add(T value) {
     return submit(Add.builder()
-      .withValue(value)
+      .withValue(value.hashCode())
       .build());
   }
 
@@ -63,7 +67,7 @@ public class AsyncSet<T> extends AbstractResource {
   @SuppressWarnings("unchecked")
   public CompletableFuture<Boolean> add(T value, long ttl) {
     return submit(Add.builder()
-      .withValue(value)
+      .withValue(value.hashCode())
       .withTtl(ttl)
       .build());
   }
@@ -79,8 +83,43 @@ public class AsyncSet<T> extends AbstractResource {
   @SuppressWarnings("unchecked")
   public CompletableFuture<Boolean> add(T value, long ttl, TimeUnit unit) {
     return submit(Add.builder()
-      .withValue(value)
+      .withValue(value.hashCode())
       .withTtl(ttl, unit)
+      .build());
+  }
+
+  /**
+   * Adds a value to the set with a TTL.
+   *
+   * @param value The value to add.
+   * @param ttl The time to live in milliseconds.
+   * @param mode The persistence mode.
+   * @return A completable future to be completed with the result once complete.
+   */
+  @SuppressWarnings("unchecked")
+  public CompletableFuture<Boolean> add(T value, long ttl, Mode mode) {
+    return submit(Add.builder()
+      .withValue(value.hashCode())
+      .withTtl(ttl)
+      .withMode(mode)
+      .build());
+  }
+
+  /**
+   * Adds a value to the set with a TTL.
+   *
+   * @param value The value to add.
+   * @param ttl The time to live.
+   * @param unit The time to live unit.
+   * @param mode The persistence mode.
+   * @return A completable future to be completed with the result once complete.
+   */
+  @SuppressWarnings("unchecked")
+  public CompletableFuture<Boolean> add(T value, long ttl, TimeUnit unit, Mode mode) {
+    return submit(Add.builder()
+      .withValue(value.hashCode())
+      .withTtl(ttl, unit)
+      .withMode(mode)
       .build());
   }
 
@@ -92,7 +131,7 @@ public class AsyncSet<T> extends AbstractResource {
    */
   public CompletableFuture<Boolean> remove(T value) {
     return submit(Remove.builder()
-      .withValue(value)
+      .withValue(value.hashCode())
       .build());
   }
 
@@ -104,7 +143,7 @@ public class AsyncSet<T> extends AbstractResource {
    */
   public CompletableFuture<Boolean> contains(Object value) {
     return submit(Contains.builder()
-      .withValue(value)
+      .withValue(value.hashCode())
       .build());
   }
 
@@ -169,12 +208,12 @@ public class AsyncSet<T> extends AbstractResource {
    * Abstract value command.
    */
   public static abstract class ValueCommand<V> extends SetCommand<V> {
-    protected Object value;
+    protected int value;
 
     /**
      * Returns the value.
      */
-    public Object value() {
+    public int value() {
       return value;
     }
 
@@ -203,7 +242,7 @@ public class AsyncSet<T> extends AbstractResource {
        * @return The command builder.
        */
       @SuppressWarnings("unchecked")
-      public T withValue(Object value) {
+      public T withValue(int value) {
         command.value = value;
         return (T) this;
       }
@@ -214,12 +253,12 @@ public class AsyncSet<T> extends AbstractResource {
    * Abstract value query.
    */
   public static abstract class ValueQuery<V> extends SetQuery<V> {
-    protected Object value;
+    protected int value;
 
     /**
      * Returns the value.
      */
-    public Object value() {
+    public int value() {
       return value;
     }
 
@@ -248,7 +287,7 @@ public class AsyncSet<T> extends AbstractResource {
        * @return The query builder.
        */
       @SuppressWarnings("unchecked")
-      public T withValue(Object value) {
+      public T withValue(int value) {
         query.value = value;
         return (T) this;
       }
@@ -287,6 +326,7 @@ public class AsyncSet<T> extends AbstractResource {
    */
   public static abstract class TtlCommand<V> extends ValueCommand<V> {
     protected long ttl;
+    protected Mode mode = Mode.PERSISTENT;
 
     /**
      * Returns the time to live in milliseconds.
@@ -297,15 +337,25 @@ public class AsyncSet<T> extends AbstractResource {
       return ttl;
     }
 
+    /**
+     * Returns the persistence mode.
+     *
+     * @return The persistence mode.
+     */
+    public Mode mode() {
+      return mode;
+    }
+
     @Override
     public void writeObject(Buffer buffer, Serializer serializer) {
       super.writeObject(buffer, serializer);
-      buffer.writeLong(ttl);
+      buffer.writeByte(mode.ordinal()).writeLong(ttl);
     }
 
     @Override
     public void readObject(Buffer buffer, Serializer serializer) {
       super.readObject(buffer, serializer);
+      mode = Mode.values()[buffer.readByte()];
       ttl = buffer.readLong();
     }
 
@@ -337,6 +387,17 @@ public class AsyncSet<T> extends AbstractResource {
        */
       public Builder withTtl(long ttl, TimeUnit unit) {
         command.ttl = unit.toMillis(ttl);
+        return this;
+      }
+
+      /**
+       * Sets the persistence mode.
+       *
+       * @param mode The persistence mode.
+       * @return The command builder.
+       */
+      public Builder withMode(Mode mode) {
+        command.mode = mode;
         return this;
       }
     }
@@ -497,6 +558,7 @@ public class AsyncSet<T> extends AbstractResource {
    */
   public static class StateMachine extends net.kuujo.copycat.raft.StateMachine {
     private final Map<Integer, Commit<? extends TtlCommand>> map = new HashMap<>();
+    private final Set<Long> sessions = new HashSet<>();
     private long time;
 
     /**
@@ -506,13 +568,47 @@ public class AsyncSet<T> extends AbstractResource {
       time = Math.max(time, commit.timestamp());
     }
 
+    @Override
+    public void register(Session session) {
+      sessions.add(session.id());
+    }
+
+    @Override
+    public void expire(Session session) {
+      sessions.remove(session.id());
+    }
+
+    @Override
+    public void close(Session session) {
+      sessions.remove(session.id());
+    }
+
+    /**
+     * Returns a boolean value indicating whether the given commit is active.
+     */
+    private boolean isActive(Commit<? extends TtlCommand> commit) {
+      if (commit == null) {
+        return false;
+      } else if (commit.operation().mode() == Mode.EPHEMERAL && !sessions.contains(commit.session().id())) {
+        return false;
+      } else if (commit.operation().ttl() != 0 && commit.operation().ttl() < time - commit.timestamp()) {
+        return false;
+      }
+      return true;
+    }
+
     /**
      * Handles a contains commit.
      */
     @Apply(Contains.class)
-    protected boolean containsKey(Commit<Contains> commit) {
+    protected boolean contains(Commit<Contains> commit) {
       updateTime(commit);
-      return map.containsKey(commit.operation().value().hashCode());
+      Commit<? extends TtlCommand> command = map.get(commit.operation().value());
+      if (!isActive(command)) {
+        map.remove(commit.operation().value());
+        return false;
+      }
+      return true;
     }
 
     /**
@@ -521,9 +617,9 @@ public class AsyncSet<T> extends AbstractResource {
     @Apply(Add.class)
     protected boolean put(Commit<Add> commit) {
       updateTime(commit);
-      int hash = commit.operation().value().hashCode();
-      if (!map.containsKey(hash)) {
-        map.put(hash, commit);
+      Commit<? extends TtlCommand> command = map.get(commit.operation().value());
+      if (!isActive(command)) {
+        map.put(commit.operation().value(), commit);
         return true;
       }
       return false;
@@ -534,8 +630,8 @@ public class AsyncSet<T> extends AbstractResource {
      */
     @Filter({Add.class})
     protected boolean filterPut(Commit<Add> commit) {
-      Commit<? extends TtlCommand> command = map.get(commit.operation().value().hashCode());
-      return command != null && command.index() == commit.index() && (command.operation().ttl() == 0 || command.operation().ttl() > time - command.timestamp());
+      Commit<? extends TtlCommand> command = map.get(commit.operation().value());
+      return command != null && command.index() == commit.index() && isActive(command);
     }
 
     /**
@@ -544,8 +640,8 @@ public class AsyncSet<T> extends AbstractResource {
     @Apply(Remove.class)
     protected boolean remove(Commit<Remove> commit) {
       updateTime(commit);
-      Commit<? extends TtlCommand> command = map.remove(commit.operation().value.hashCode());
-      return command != null && (command.operation().ttl() == 0 || command.operation().ttl() > time - command.timestamp());
+      Commit<? extends TtlCommand> command = map.remove(commit.operation().value());
+      return isActive(command);
     }
 
     /**
