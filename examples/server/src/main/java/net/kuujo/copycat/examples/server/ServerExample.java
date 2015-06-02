@@ -34,16 +34,20 @@ public class ServerExample {
    */
   public static void main(String[] args) throws Exception {
     if (args.length < 2)
-      throw new IllegalArgumentException("must supply a server ID and at least one ID:host:port triple");
+      throw new IllegalArgumentException("must supply a serverId:port and at least one remoteId:host:port triple");
 
-    int serverId = Integer.valueOf(args[0]);
+    String[] parts = args[0].split(":");
+    int serverId = Integer.valueOf(parts[0]);
+    int port = Integer.valueOf(parts[1]);
 
     NettyCluster.Builder builder = NettyCluster.builder()
       .withMemberId(serverId)
-      .withMemberType(Member.Type.ACTIVE);
+      .withMemberType(Member.Type.ACTIVE)
+      .withHost("localhost")
+      .withPort(port);
 
     for (int i = 1; i < args.length; i++) {
-      String[] parts = args[i].split(":");
+      parts = args[i].split(":");
       builder.addMember(NettyMember.builder()
         .withId(Integer.valueOf(parts[0]))
         .withHost(parts[1])

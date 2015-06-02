@@ -32,6 +32,8 @@
   <inceptionYear>2013</inceptionYear>
 
   <properties>
+    <logback.version>1.1.2</logback.version>
+    
     <maven.source.plugin.version>2.2.1</maven.source.plugin.version>
     <maven.compiler.plugin.version>3.0</maven.compiler.plugin.version>
     <maven.failsafe.plugin.version>2.14</maven.failsafe.plugin.version>
@@ -82,6 +84,11 @@
       <groupId>net.kuujo.copycat</groupId>
       <artifactId>copycat</artifactId>
       <version>${project.version}</version>
+    </dependency>
+      <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <version>${logback.version}</version>
     </dependency>
   </dependencies>
 
