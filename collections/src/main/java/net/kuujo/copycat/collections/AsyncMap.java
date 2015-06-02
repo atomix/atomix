@@ -56,12 +56,30 @@ public class AsyncMap<K, V> extends AbstractResource {
   }
 
   /**
+   * Checks whether the map is empty.
+   *
+   * @return A completable future to be completed with a boolean value indicating whether the map is empty.
+   */
+  public CompletableFuture<Boolean> isEmpty(Query.Consistency consistency) {
+    return submit(IsEmpty.builder().withConsistency(consistency).build());
+  }
+
+  /**
    * Gets the size of the map.
    *
    * @return A completable future to be completed with the number of entries in the map.
    */
   public CompletableFuture<Integer> size() {
     return submit(Size.builder().build());
+  }
+
+  /**
+   * Gets the size of the map.
+   *
+   * @return A completable future to be completed with the number of entries in the map.
+   */
+  public CompletableFuture<Integer> size(Query.Consistency consistency) {
+    return submit(Size.builder().withConsistency(consistency).build());
   }
 
   /**
@@ -77,6 +95,19 @@ public class AsyncMap<K, V> extends AbstractResource {
   }
 
   /**
+   * Checks whether the map contains a key.
+   *
+   * @param key The key to check.
+   * @return A completable future to be completed with the result once complete.
+   */
+  public CompletableFuture<Boolean> containsKey(Object key, Query.Consistency consistency) {
+    return submit(ContainsKey.builder()
+      .withKey(key)
+      .withConsistency(consistency)
+      .build());
+  }
+
+  /**
    * Gets a value from the map.
    *
    * @param key The key to get.
@@ -86,6 +117,21 @@ public class AsyncMap<K, V> extends AbstractResource {
   public CompletableFuture<V> get(Object key) {
     return submit(Get.builder()
       .withKey(key)
+      .build())
+      .thenApply(result -> (V) result);
+  }
+
+  /**
+   * Gets a value from the map.
+   *
+   * @param key The key to get.
+   * @return A completable future to be completed with the result once complete.
+   */
+  @SuppressWarnings("unchecked")
+  public CompletableFuture<V> get(Object key, Query.Consistency consistency) {
+    return submit(Get.builder()
+      .withKey(key)
+      .withConsistency(consistency)
       .build())
       .thenApply(result -> (V) result);
   }
@@ -233,6 +279,23 @@ public class AsyncMap<K, V> extends AbstractResource {
   }
 
   /**
+   * Gets the value of a key or the given default value if the key does not exist.
+   *
+   * @param key          The key to get.
+   * @param defaultValue The default value to return if the key does not exist.
+   * @return A completable future to be completed with the result once complete.
+   */
+  @SuppressWarnings("unchecked")
+  public CompletableFuture<V> getOrDefault(Object key, V defaultValue, Query.Consistency consistency) {
+    return submit(GetOrDefault.builder()
+      .withKey(key)
+      .withDefaultValue(defaultValue)
+      .withConsistency(consistency)
+      .build())
+      .thenApply(result -> (V) result);
+  }
+
+  /**
    * Puts a value in the map if the given key does not exist.
    *
    * @param key   The key to set.
@@ -369,6 +432,22 @@ public class AsyncMap<K, V> extends AbstractResource {
    * Abstract map query.
    */
   public static abstract class MapQuery<V> implements Query<V>, Writable {
+    protected Consistency consistency = Consistency.LINEARIZABLE_LEASE;
+
+    @Override
+    public Consistency consistency() {
+      return consistency;
+    }
+
+    @Override
+    public void writeObject(Buffer buffer, Serializer serializer) {
+      buffer.writeByte(consistency.ordinal());
+    }
+
+    @Override
+    public void readObject(Buffer buffer, Serializer serializer) {
+      consistency = Consistency.values()[buffer.readByte()];
+    }
 
     /**
      * Base map query builder.
@@ -377,6 +456,21 @@ public class AsyncMap<K, V> extends AbstractResource {
       protected Builder(U query) {
         super(query);
       }
+
+      /**
+       * Sets the query consistency level.
+       *
+       * @param consistency The query consistency level.
+       * @return The query builder.
+       */
+      @SuppressWarnings("unchecked")
+      public T withConsistency(Consistency consistency) {
+        if (consistency == null)
+          throw new NullPointerException("consistency cannot be null");
+        query.consistency = consistency;
+        return (T) this;
+      }
+
     }
   }
 
@@ -440,11 +534,13 @@ public class AsyncMap<K, V> extends AbstractResource {
 
     @Override
     public void writeObject(Buffer buffer, Serializer serializer) {
+      super.writeObject(buffer, serializer);
       serializer.writeObject(key, buffer);
     }
 
     @Override
     public void readObject(Buffer buffer, Serializer serializer) {
+      super.readObject(buffer, serializer);
       key = serializer.readObject(buffer);
     }
 
@@ -480,11 +576,6 @@ public class AsyncMap<K, V> extends AbstractResource {
      */
     public static Builder builder() {
       return Operation.builder(Builder.class);
-    }
-
-    @Override
-    public Consistency consistency() {
-      return Consistency.LINEARIZABLE_LEASE;
     }
 
     /**
@@ -682,11 +773,6 @@ public class AsyncMap<K, V> extends AbstractResource {
       return Operation.builder(Builder.class);
     }
 
-    @Override
-    public Consistency consistency() {
-      return Consistency.LINEARIZABLE_LEASE;
-    }
-
     /**
      * Get query builder.
      */
@@ -718,11 +804,6 @@ public class AsyncMap<K, V> extends AbstractResource {
      */
     public Object defaultValue() {
       return defaultValue;
-    }
-
-    @Override
-    public Consistency consistency() {
-      return Consistency.LINEARIZABLE_LEASE;
     }
 
     @Override
@@ -792,21 +873,6 @@ public class AsyncMap<K, V> extends AbstractResource {
       return Operation.builder(Builder.class);
     }
 
-    @Override
-    public Consistency consistency() {
-      return Consistency.LINEARIZABLE_LEASE;
-    }
-
-    @Override
-    public void writeObject(Buffer buffer, Serializer serializer) {
-
-    }
-
-    @Override
-    public void readObject(Buffer buffer, Serializer serializer) {
-
-    }
-
     /**
      * Is empty command builder.
      */
@@ -827,21 +893,6 @@ public class AsyncMap<K, V> extends AbstractResource {
      */
     public static Builder builder() {
       return Operation.builder(Builder.class);
-    }
-
-    @Override
-    public Consistency consistency() {
-      return Consistency.LINEARIZABLE_LEASE;
-    }
-
-    @Override
-    public void writeObject(Buffer buffer, Serializer serializer) {
-
-    }
-
-    @Override
-    public void readObject(Buffer buffer, Serializer serializer) {
-
     }
 
     /**
