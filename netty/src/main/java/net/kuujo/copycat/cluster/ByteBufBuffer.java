@@ -223,17 +223,26 @@ class ByteBufBuffer implements Buffer {
 
   @Override
   public Buffer read(Buffer buffer) {
-    throw new UnsupportedOperationException();
+    byte[] bytes = new byte[this.buffer.readableBytes()];
+    this.buffer.readBytes(bytes);
+    buffer.write(bytes);
+    return this;
   }
 
   @Override
   public Buffer read(BufferWriter writer) {
-    throw new UnsupportedOperationException();
+    byte[] bytes = new byte[Math.min((int) writer.remaining(), buffer.readableBytes())];
+    buffer.readBytes(bytes);
+    writer.write(bytes);
+    return this;
   }
 
   @Override
   public Buffer read(Bytes bytes) {
-    throw new UnsupportedOperationException();
+    byte[] b = new byte[Math.min((int) bytes.size(), buffer.readableBytes())];
+    buffer.readBytes(b);
+    bytes.write(0, b, 0, b.length);
+    return this;
   }
 
   @Override
@@ -244,12 +253,18 @@ class ByteBufBuffer implements Buffer {
 
   @Override
   public Buffer read(Bytes bytes, long dstOffset, long length) {
-    throw new UnsupportedOperationException();
+    byte[] b = new byte[Math.min((int) length, buffer.readableBytes())];
+    buffer.readBytes(b);
+    bytes.write(dstOffset, b, 0, b.length);
+    return this;
   }
 
   @Override
   public Buffer read(long srcOffset, Bytes bytes, long dstOffset, long length) {
-    throw new UnsupportedOperationException();
+    byte[] b = new byte[Math.min((int) length, buffer.writerIndex() - (int) srcOffset)];
+    buffer.getBytes((int) srcOffset, b);
+    bytes.write(dstOffset, b, 0, b.length);
+    return this;
   }
 
   @Override
@@ -410,17 +425,26 @@ class ByteBufBuffer implements Buffer {
 
   @Override
   public Buffer write(Buffer buffer) {
-    throw new UnsupportedOperationException();
+    byte[] bytes = new byte[Math.min((int) buffer.remaining(), this.buffer.writableBytes())];
+    buffer.read(bytes);
+    this.buffer.writeBytes(bytes);
+    return this;
   }
 
   @Override
   public Buffer write(BufferReader reader) {
-    throw new UnsupportedOperationException();
+    byte[] bytes = new byte[Math.min((int) reader.remaining(), buffer.writableBytes())];
+    reader.read(bytes);
+    buffer.writeBytes(bytes);
+    return this;
   }
 
   @Override
   public Buffer write(Bytes bytes) {
-    throw new UnsupportedOperationException();
+    byte[] b = new byte[Math.min((int) bytes.size(), buffer.writableBytes())];
+    bytes.read(0, b, 0, b.length);
+    buffer.writeBytes(b);
+    return this;
   }
 
   @Override
@@ -431,12 +455,18 @@ class ByteBufBuffer implements Buffer {
 
   @Override
   public Buffer write(Bytes bytes, long offset, long length) {
-    throw new UnsupportedOperationException();
+    byte[] b = new byte[Math.min((int) bytes.size(), (int) length)];
+    bytes.read(offset, b, 0, b.length);
+    buffer.writeBytes(b);
+    return this;
   }
 
   @Override
-  public Buffer write(long offset, Bytes src, long srcOffset, long length) {
-    throw new UnsupportedOperationException();
+  public Buffer write(long offset, Bytes bytes, long srcOffset, long length) {
+    byte[] b = new byte[Math.min((int) bytes.size(), (int) length)];
+    bytes.read(offset, b, 0, b.length);
+    buffer.setBytes((int) offset, b);
+    return this;
   }
 
   @Override
