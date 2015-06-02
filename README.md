@@ -1,15 +1,38 @@
 Copycat
 =======
 
-### I <3 Logs Too!
-
 [![Build Status](https://travis-ci.org/kuujo/copycat.png)](https://travis-ci.org/kuujo/copycat)
 
-Copycat is an extensible log-based distributed coordination framework for Java 8 built on the
+Copycat is an extensible distributed coordination framework for Java 8 built on the
 [Raft consensus protocol](https://raftconsensus.github.io/).
 
-#### [User Manual](#user-manual)
-#### [Architecture](#architecture)
+**Over the past couple months, Copycat has undergone significant development in preparation for an initial release.
+That release is tentatively planned for June 21st!**
+
+The first release of Copycat will feature:
+* High-level path-based resource API
+* A well-tested standalone Raft implementation
+* Support for distributed events, messaging, and remote task execution
+* Essential distributed collections, e.g. map, set, list
+* Essential distributed atomic variables, e.g. atomic boolean, long, and reference
+* Essential distributed coordination utilities, e.g. locks and leader elections
+* Support for time and session based features, including expiring or ephemeral keys
+* Support for arbitrary custom resources
+
+The first release of Copycat will also include a number of essential improvements:
+* Friendly builder API for `Cluster` and `Raft`
+* Support for client-only nodes
+* Linearizable Raft clients via sessions
+* Significant improvements to internal log with efficient compaction algorithm
+* Low-level buffer abstraction for off-heap memory and disk I/O
+* An efficient custom serialization framework
+
+The current development branch is `0.6.0`. We expect these changes to be merged into the `master` branch and pushed to
+Maven central in the coming days and weeks.
+
+**Note that due to the impending changes, much of the existing documentation is obsolete. Check back soon for new documentation!**
+
+## Deprecated
 
 Copycat is a CP (consistent/partition-tolerant) oriented exercise in distributed coordination built on a consistent
 replicated log. The core of Copycat is an extensible asynchronous framework that uses a mixture of
@@ -22,15 +45,6 @@ to provide a set of high level APIs that solve a variety of distributed systems 
 * [Distributed collections](#collections)
 * [Failure detection](#failure-detection)
 * [Remote execution](#remote-execution)
-
-Copycat also provides integration with asynchronous networking frameworks like [Netty](http://netty.io) and
-[Vert.x](http://vertx.io).
-
-**Copycat is still undergoing heavy development. The `master` branch is the current development branch and is
-largely untested and thus not recommended for production.** We need contributions!
-
-**Copycat snapshots are now being published! An official beta release of Copycat *will* be published to Maven Central
-once it is feature complete and well tested.** Follow the project for updates!
 
 *Copycat requires Java 8*
 
