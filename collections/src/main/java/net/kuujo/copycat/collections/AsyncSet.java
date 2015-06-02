@@ -15,13 +15,13 @@
  */
 package net.kuujo.copycat.collections;
 
+import net.kuujo.copycat.AbstractResource;
+import net.kuujo.copycat.Stateful;
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.Writable;
 import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.raft.log.Compaction;
-import net.kuujo.copycat.AbstractResource;
-import net.kuujo.copycat.Stateful;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -106,6 +106,24 @@ public class AsyncSet<T> extends AbstractResource {
     return submit(Contains.builder()
       .withValue(value)
       .build());
+  }
+
+  /**
+   * Gets the set size.
+   *
+   * @return A completable future to be completed with the set size.
+   */
+  public CompletableFuture<Integer> size() {
+    return submit(Size.builder().build());
+  }
+
+  /**
+   * Checks whether the set is empty.
+   *
+   * @return A completable future to be completed with a boolean value indicating whether the set is empty.
+   */
+  public CompletableFuture<Boolean> isEmpty() {
+    return submit(IsEmpty.builder().build());
   }
 
   /**
@@ -369,6 +387,80 @@ public class AsyncSet<T> extends AbstractResource {
   }
 
   /**
+   * Size query.
+   */
+  public static class Size extends SetQuery<Integer> {
+
+    /**
+     * Returns a builder for this query.
+     */
+    public static Builder builder() {
+      return Operation.builder(Builder.class);
+    }
+
+    @Override
+    public Consistency consistency() {
+      return Consistency.LINEARIZABLE_LEASE;
+    }
+
+    @Override
+    public void writeObject(Buffer buffer, Serializer serializer) {
+
+    }
+
+    @Override
+    public void readObject(Buffer buffer, Serializer serializer) {
+
+    }
+
+    /**
+     * Size query builder.
+     */
+    public static class Builder extends SetQuery.Builder<Builder, Size> {
+      public Builder() {
+        super(new Size());
+      }
+    }
+  }
+
+  /**
+   * Is empty query.
+   */
+  public static class IsEmpty extends SetQuery<Boolean> {
+
+    /**
+     * Returns a builder for this query.
+     */
+    public static Builder builder() {
+      return Operation.builder(Builder.class);
+    }
+
+    @Override
+    public Consistency consistency() {
+      return Consistency.LINEARIZABLE_LEASE;
+    }
+
+    @Override
+    public void writeObject(Buffer buffer, Serializer serializer) {
+
+    }
+
+    @Override
+    public void readObject(Buffer buffer, Serializer serializer) {
+
+    }
+
+    /**
+     * Is empty query builder.
+     */
+    public static class Builder extends SetQuery.Builder<Builder, IsEmpty> {
+      public Builder() {
+        super(new IsEmpty());
+      }
+    }
+  }
+
+  /**
    * Clear command.
    */
   public static class Clear extends SetCommand<Void> {
@@ -405,12 +497,21 @@ public class AsyncSet<T> extends AbstractResource {
    */
   public static class StateMachine extends net.kuujo.copycat.raft.StateMachine {
     private final Map<Integer, Commit<? extends TtlCommand>> map = new HashMap<>();
+    private long time;
+
+    /**
+     * Updates the wall clock time.
+     */
+    private void updateTime(Commit<?> commit) {
+      time = Math.max(time, commit.timestamp());
+    }
 
     /**
      * Handles a contains commit.
      */
     @Apply(Contains.class)
     protected boolean containsKey(Commit<Contains> commit) {
+      updateTime(commit);
       return map.containsKey(commit.operation().value().hashCode());
     }
 
@@ -419,6 +520,7 @@ public class AsyncSet<T> extends AbstractResource {
      */
     @Apply(Add.class)
     protected boolean put(Commit<Add> commit) {
+      updateTime(commit);
       int hash = commit.operation().value().hashCode();
       if (!map.containsKey(hash)) {
         map.put(hash, commit);
@@ -433,7 +535,7 @@ public class AsyncSet<T> extends AbstractResource {
     @Filter({Add.class})
     protected boolean filterPut(Commit<Add> commit) {
       Commit<? extends TtlCommand> command = map.get(commit.operation().value().hashCode());
-      return command != null && command.index() == commit.index() && (command.operation().ttl() == 0 || command.operation().ttl() > System.currentTimeMillis() - command.timestamp());
+      return command != null && command.index() == commit.index() && (command.operation().ttl() == 0 || command.operation().ttl() > time - command.timestamp());
     }
 
     /**
@@ -441,8 +543,9 @@ public class AsyncSet<T> extends AbstractResource {
      */
     @Apply(Remove.class)
     protected boolean remove(Commit<Remove> commit) {
+      updateTime(commit);
       Commit<? extends TtlCommand> command = map.remove(commit.operation().value.hashCode());
-      return command != null;
+      return command != null && (command.operation().ttl() == 0 || command.operation().ttl() > time - command.timestamp());
     }
 
     /**
@@ -454,10 +557,29 @@ public class AsyncSet<T> extends AbstractResource {
     }
 
     /**
+     * Handles a size commit.
+     */
+    @Apply(Size.class)
+    protected int size(Commit<Size> commit) {
+      updateTime(commit);
+      return map.size();
+    }
+
+    /**
+     * Handles an is empty commit.
+     */
+    @Apply(IsEmpty.class)
+    protected boolean isEmpty(Commit<IsEmpty> commit) {
+      updateTime(commit);
+      return map.isEmpty();
+    }
+
+    /**
      * Handles a clear commit.
      */
     @Apply(Clear.class)
     protected void clear(Commit<Clear> commit) {
+      updateTime(commit);
       map.clear();
     }
   }
