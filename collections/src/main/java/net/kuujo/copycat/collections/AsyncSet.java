@@ -148,6 +148,20 @@ public class AsyncSet<T> extends AbstractResource {
   }
 
   /**
+   * Checks whether the set contains a value.
+   *
+   * @param value The value to check.
+   * @param consistency The query consistency level.
+   * @return A completable future to be completed with the result once complete.
+   */
+  public CompletableFuture<Boolean> contains(Object value, Query.Consistency consistency) {
+    return submit(Contains.builder()
+      .withValue(value.hashCode())
+      .withConsistency(consistency)
+      .build());
+  }
+
+  /**
    * Gets the set size.
    *
    * @return A completable future to be completed with the set size.
@@ -157,12 +171,32 @@ public class AsyncSet<T> extends AbstractResource {
   }
 
   /**
+   * Gets the set size.
+   *
+   * @param consistency The query consistency level.
+   * @return A completable future to be completed with the set size.
+   */
+  public CompletableFuture<Integer> size(Query.Consistency consistency) {
+    return submit(Size.builder().withConsistency(consistency).build());
+  }
+
+  /**
    * Checks whether the set is empty.
    *
    * @return A completable future to be completed with a boolean value indicating whether the set is empty.
    */
   public CompletableFuture<Boolean> isEmpty() {
     return submit(IsEmpty.builder().build());
+  }
+
+  /**
+   * Checks whether the set is empty.
+   *
+   * @param consistency The query consistency level.
+   * @return A completable future to be completed with a boolean value indicating whether the set is empty.
+   */
+  public CompletableFuture<Boolean> isEmpty(Query.Consistency consistency) {
+    return submit(IsEmpty.builder().withConsistency(consistency).build());
   }
 
   /**
@@ -193,6 +227,22 @@ public class AsyncSet<T> extends AbstractResource {
    * Abstract set query.
    */
   public static abstract class SetQuery<V> implements Query<V>, Writable {
+    protected Consistency consistency = Consistency.LINEARIZABLE_LEASE;
+
+    @Override
+    public Consistency consistency() {
+      return consistency;
+    }
+
+    @Override
+    public void writeObject(Buffer buffer, Serializer serializer) {
+      buffer.writeByte(consistency.ordinal());
+    }
+
+    @Override
+    public void readObject(Buffer buffer, Serializer serializer) {
+      consistency = Consistency.values()[buffer.readByte()];
+    }
 
     /**
      * Base set query builder.
@@ -200,6 +250,18 @@ public class AsyncSet<T> extends AbstractResource {
     public static abstract class Builder<T extends Builder<T, U>, U extends SetQuery<?>> extends Query.Builder<T, U> {
       protected Builder(U query) {
         super(query);
+      }
+
+      /**
+       * Sets the query consistency level.
+       *
+       * @param consistency The query consistency level.
+       * @return The query builder.
+       */
+      @SuppressWarnings("unchecked")
+      public T withConsistency(Consistency consistency) {
+        query.consistency = consistency;
+        return (T) this;
       }
     }
   }
@@ -264,11 +326,13 @@ public class AsyncSet<T> extends AbstractResource {
 
     @Override
     public void writeObject(Buffer buffer, Serializer serializer) {
+      super.writeObject(buffer, serializer);
       serializer.writeObject(value, buffer);
     }
 
     @Override
     public void readObject(Buffer buffer, Serializer serializer) {
+      super.readObject(buffer, serializer);
       value = serializer.readObject(buffer);
     }
 
@@ -304,11 +368,6 @@ public class AsyncSet<T> extends AbstractResource {
      */
     public static Builder builder() {
       return Operation.builder(Builder.class);
-    }
-
-    @Override
-    public Consistency consistency() {
-      return Consistency.LINEARIZABLE_LEASE;
     }
 
     /**
@@ -459,21 +518,6 @@ public class AsyncSet<T> extends AbstractResource {
       return Operation.builder(Builder.class);
     }
 
-    @Override
-    public Consistency consistency() {
-      return Consistency.LINEARIZABLE_LEASE;
-    }
-
-    @Override
-    public void writeObject(Buffer buffer, Serializer serializer) {
-
-    }
-
-    @Override
-    public void readObject(Buffer buffer, Serializer serializer) {
-
-    }
-
     /**
      * Size query builder.
      */
@@ -494,21 +538,6 @@ public class AsyncSet<T> extends AbstractResource {
      */
     public static Builder builder() {
       return Operation.builder(Builder.class);
-    }
-
-    @Override
-    public Consistency consistency() {
-      return Consistency.LINEARIZABLE_LEASE;
-    }
-
-    @Override
-    public void writeObject(Buffer buffer, Serializer serializer) {
-
-    }
-
-    @Override
-    public void readObject(Buffer buffer, Serializer serializer) {
-
     }
 
     /**

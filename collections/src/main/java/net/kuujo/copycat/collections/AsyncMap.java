@@ -58,6 +58,7 @@ public class AsyncMap<K, V> extends AbstractResource {
   /**
    * Checks whether the map is empty.
    *
+   * @param consistency The query consistency level.
    * @return A completable future to be completed with a boolean value indicating whether the map is empty.
    */
   public CompletableFuture<Boolean> isEmpty(Query.Consistency consistency) {
@@ -76,6 +77,7 @@ public class AsyncMap<K, V> extends AbstractResource {
   /**
    * Gets the size of the map.
    *
+   * @param consistency The query consistency level.
    * @return A completable future to be completed with the number of entries in the map.
    */
   public CompletableFuture<Integer> size(Query.Consistency consistency) {
@@ -98,6 +100,7 @@ public class AsyncMap<K, V> extends AbstractResource {
    * Checks whether the map contains a key.
    *
    * @param key The key to check.
+   * @param consistency The query consistency level.
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Boolean> containsKey(Object key, Query.Consistency consistency) {
@@ -125,6 +128,7 @@ public class AsyncMap<K, V> extends AbstractResource {
    * Gets a value from the map.
    *
    * @param key The key to get.
+   * @param consistency The query consistency level.
    * @return A completable future to be completed with the result once complete.
    */
   @SuppressWarnings("unchecked")
@@ -283,6 +287,7 @@ public class AsyncMap<K, V> extends AbstractResource {
    *
    * @param key          The key to get.
    * @param defaultValue The default value to return if the key does not exist.
+   * @param consistency The query consistency level.
    * @return A completable future to be completed with the result once complete.
    */
   @SuppressWarnings("unchecked")
