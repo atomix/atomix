@@ -42,7 +42,7 @@ public class TestCluster extends ManagedCluster {
     super(localMember, remoteMembers, serializer);
     this.registry = registry;
     localMember.setRegistry(registry);
-    remoteMembers.forEach(m -> m.setRegistry(registry));
+    remoteMembers.forEach(m -> ((TestRemoteMember) m).setRegistry(registry));
   }
 
   @Override

@@ -46,7 +46,7 @@ public abstract class ManagedCluster implements Cluster, Managed<Cluster> {
     localMember.setContext(new ExecutionContext("copycat-cluster-" + localMember.id(), serializer));
     this.localMember = localMember;
     remoteMembers.forEach(m -> {
-      m.setContext(new ExecutionContext("copycat-cluster-" + m.id(), serializer));
+      ((ManagedMember)m).setContext(new ExecutionContext("copycat-cluster-" + m.id(), serializer));
       this.remoteMembers.put(m.id(), m);
     });
     this.members.putAll(this.remoteMembers);
@@ -58,7 +58,7 @@ public abstract class ManagedCluster implements Cluster, Managed<Cluster> {
    * Configures the set of active cluster members.
    */
   public CompletableFuture<Void> configure(MemberInfo... membersInfo) {
-    List<CompletableFuture> futures = new ArrayList<>();
+    List<CompletableFuture<?>> futures = new ArrayList<>();
     for (MemberInfo memberInfo : membersInfo) {
       if (memberInfo.id() != localMember.id() && !remoteMembers.containsKey(memberInfo.id())) {
         ManagedRemoteMember member = createMember(memberInfo);
