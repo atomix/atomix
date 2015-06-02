@@ -28,11 +28,6 @@
   <dependencies>
     <dependency>
       <groupId>net.kuujo.copycat</groupId>
-      <artifactId>copycat</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>net.kuujo.copycat</groupId>
       <artifactId>copycat-netty</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -55,7 +50,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-source-plugin</artifactId>
-        <version>${maven.member.plugin.version}</version>
+        <version>${maven.source.plugin.version}</version>
         <executions>
           <execution>
             <id>attach-sources</id>

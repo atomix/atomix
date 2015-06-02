@@ -39,7 +39,7 @@
     <maven.resources.plugin.version>2.6</maven.resources.plugin.version>
     <maven.dependency.plugin.version>2.7</maven.dependency.plugin.version>
     <maven.assembly.plugin.version>2.4</maven.assembly.plugin.version>
-    <maven.javadoc.plugin.version>2.8.1</maven.javadoc.plugin.version>
+    <maven.javadoc.plugin.version>2.10.3</maven.javadoc.plugin.version>
   </properties>
 
   <licenses>
@@ -74,7 +74,7 @@
   </distributionManagement>
 
   <modules>
-    <module>resources</module>
+    <module>server</module>
   </modules>
 
   <dependencies>
@@ -97,7 +97,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-source-plugin</artifactId>
-        <version>${maven.member.plugin.version}</version>
+        <version>${maven.source.plugin.version}</version>
         <executions>
           <execution>
             <id>attach-sources</id>
