@@ -556,7 +556,7 @@ public class RaftContext implements Managed<RaftContext> {
       return CompletableFuture.completedFuture(this.state.type());
     }
 
-    LOGGER.info("{} - Transitioning to {}", cluster.member().id(), state);
+    LOGGER.info("{} - Transitioning to {}", cluster.member().id(), state.getSimpleName());
 
     // Force state transitions to occur synchronously in order to prevent race conditions.
     if (this.state != null) {
