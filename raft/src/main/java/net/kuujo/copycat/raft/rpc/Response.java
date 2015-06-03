@@ -24,7 +24,7 @@ import net.kuujo.copycat.raft.RaftError;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Response<RESPONSE extends Response<RESPONSE>> extends ReferenceCounted<RESPONSE>, Writable {
+public interface Response<T extends Response<T>> extends ReferenceCounted<T>, Writable {
 
   /**
    * Response type.
@@ -138,10 +138,10 @@ public interface Response<RESPONSE extends Response<RESPONSE>> extends Reference
   /**
    * Response builder.
    *
-   * @param <BUILDER> The builder type.
-   * @param <RESPONSE> The response type.
+   * @param <T> The builder type.
+   * @param <U> The response type.
    */
-  static interface Builder<BUILDER extends Builder<BUILDER, RESPONSE>, RESPONSE extends Response> {
+  static interface Builder<T extends Builder<T, U>, U extends Response> extends net.kuujo.copycat.Builder<U> {
 
     /**
      * Sets the response status.
@@ -149,7 +149,7 @@ public interface Response<RESPONSE extends Response<RESPONSE>> extends Reference
      * @param status The response status.
      * @return The response builder.
      */
-    BUILDER withStatus(Status status);
+    T withStatus(Status status);
 
     /**
      * Sets the response error.
@@ -157,14 +157,7 @@ public interface Response<RESPONSE extends Response<RESPONSE>> extends Reference
      * @param error The response error.
      * @return The response builder.
      */
-    BUILDER withError(RaftError error);
-
-    /**
-     * Builds the response.
-     *
-     * @return The built response.
-     */
-    RESPONSE build();
+    T withError(RaftError error);
 
   }
 

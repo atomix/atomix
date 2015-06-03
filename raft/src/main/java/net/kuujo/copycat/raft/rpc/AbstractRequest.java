@@ -26,19 +26,19 @@ import java.util.function.Function;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-abstract class AbstractRequest<REQUEST extends Request<REQUEST>> implements Request<REQUEST> {
+abstract class AbstractRequest<T extends Request<T>> implements Request<T> {
   private final AtomicInteger references = new AtomicInteger();
-  private ReferenceManager<REQUEST> referenceManager;
+  private ReferenceManager<T> referenceManager;
 
-  protected AbstractRequest(ReferenceManager<REQUEST> referenceManager) {
+  protected AbstractRequest(ReferenceManager<T> referenceManager) {
     this.referenceManager = referenceManager;
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public REQUEST acquire() {
+  public T acquire() {
     references.incrementAndGet();
-    return (REQUEST) this;
+    return (T) this;
   }
 
   @Override
@@ -55,7 +55,7 @@ abstract class AbstractRequest<REQUEST extends Request<REQUEST>> implements Requ
   @Override
   @SuppressWarnings("unchecked")
   public void close() {
-    referenceManager.release((REQUEST) this);
+    referenceManager.release((T) this);
   }
 
   /**

@@ -23,7 +23,7 @@ import net.kuujo.copycat.io.util.ReferenceCounted;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Request<REQUEST extends Request<REQUEST>> extends ReferenceCounted<REQUEST>, Writable {
+public interface Request<T extends Request<T>> extends ReferenceCounted<T>, Writable {
 
   /**
    * Request type.
@@ -76,18 +76,9 @@ public interface Request<REQUEST extends Request<REQUEST>> extends ReferenceCoun
   /**
    * Request builder.
    *
-   * @param <BUILDER> The builder type.
-   * @param <REQUEST> The request type.
+   * @param <T> The builder type.
    */
-  static interface Builder<BUILDER extends Builder<BUILDER, REQUEST>, REQUEST extends Request> {
-
-    /**
-     * Builds the request.
-     *
-     * @return The built request.
-     */
-    REQUEST build();
-
+  static interface Builder<T extends Builder<T, U>, U extends Request> extends net.kuujo.copycat.Builder<U> {
   }
 
 }

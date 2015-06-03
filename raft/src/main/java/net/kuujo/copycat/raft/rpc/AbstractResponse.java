@@ -27,13 +27,13 @@ import java.util.function.Function;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-abstract class AbstractResponse<RESPONSE extends Response<RESPONSE>> implements Response<RESPONSE> {
+abstract class AbstractResponse<T extends Response<T>> implements Response<T> {
   private final AtomicInteger references = new AtomicInteger();
-  private final ReferenceManager<RESPONSE> referenceManager;
+  private final ReferenceManager<T> referenceManager;
   protected Status status = Status.OK;
   protected RaftError error;
 
-  protected AbstractResponse(ReferenceManager<RESPONSE> referenceManager) {
+  protected AbstractResponse(ReferenceManager<T> referenceManager) {
     this.referenceManager = referenceManager;
   }
 
@@ -49,9 +49,9 @@ abstract class AbstractResponse<RESPONSE extends Response<RESPONSE>> implements 
 
   @Override
   @SuppressWarnings("unchecked")
-  public RESPONSE acquire() {
+  public T acquire() {
     references.incrementAndGet();
-    return (RESPONSE) this;
+    return (T) this;
   }
 
   @Override
@@ -68,7 +68,7 @@ abstract class AbstractResponse<RESPONSE extends Response<RESPONSE>> implements 
   @Override
   @SuppressWarnings("unchecked")
   public void close() {
-    referenceManager.release((RESPONSE) this);
+    referenceManager.release((T) this);
   }
 
   @Override
