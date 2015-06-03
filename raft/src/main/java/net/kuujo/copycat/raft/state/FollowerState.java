@@ -105,7 +105,7 @@ class FollowerState extends ActiveState {
       .filter(m -> m.type() == Member.Type.ACTIVE)
       .collect(Collectors.toSet());
 
-    final Quorum quorum = new Quorum((int) Math.ceil(votingMembers.size() / 2.0), (elected) -> {
+    final Quorum quorum = new Quorum((int) Math.floor(votingMembers.size() / 2.0) + 1, (elected) -> {
       // If a majority of the cluster indicated they would vote for us then transition to candidate.
       complete.set(true);
       if (elected) {
