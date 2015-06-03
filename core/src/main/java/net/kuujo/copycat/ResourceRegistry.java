@@ -15,9 +15,12 @@
  */
 package net.kuujo.copycat;
 
+import net.kuujo.copycat.io.util.ClassPath;
 import net.kuujo.copycat.raft.StateMachine;
-import org.reflections.Reflections;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,27 +30,40 @@ import java.util.Map;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class ResourceRegistry {
-  private static final String COPYCAT_RESOURCES = "net.kuujo.copycat";
+  private static final Logger LOGGER = LoggerFactory.getLogger(ResourceRegistry.class);
   private final Map<Class<? extends Resource>, Class<? extends StateMachine>> resources = new HashMap<>();
 
-  public ResourceRegistry(Object... resources) {
-    Object[] allResources = new Object[resources.length + 1];
-    System.arraycopy(resources, 0, allResources, 0, resources.length);
-    allResources[resources.length] = COPYCAT_RESOURCES;
-    registerResources(allResources);
+  public ResourceRegistry() {
+    this(Thread.currentThread().getContextClassLoader());
+  }
+
+  public ResourceRegistry(ClassLoader classLoader) {
+    try {
+      registerResources(classLoader);
+    } catch (IOException e) {
+      throw new ConfigurationException("failed to initialize resource registry", e);
+    }
   }
 
   /**
    * Registers all resources from the classpath.
    */
   @SuppressWarnings("unchecked")
-  private void registerResources(Object... resources) {
-    Reflections reflections = new Reflections(resources);
+  private void registerResources(ClassLoader classLoader) throws IOException {
+    ClassPath classPath = ClassPath.from(classLoader);
+    for (ClassPath.ClassInfo info : classPath.getAllClasses()) {
+      Class<?> type;
+      try {
+        type = info.load();
+      } catch (LinkageError e) {
+        continue;
+      }
 
-    for (Class<? extends Resource> resource : reflections.getSubTypesOf(Resource.class)) {
-      Stateful stateful = resource.getAnnotation(Stateful.class);
-      if (stateful != null) {
-        register(resource, stateful.value());
+      if (Resource.class.isAssignableFrom(type)) {
+        Stateful stateful = type.getAnnotation(Stateful.class);
+        if (stateful != null) {
+          register((Class<? extends Resource>) type, stateful.value());
+        }
       }
     }
   }
@@ -78,6 +94,7 @@ public class ResourceRegistry {
    */
   public ResourceRegistry register(Class<? extends Resource> resourceType, Class<? extends StateMachine> stateMachineType) {
     resources.put(resourceType, stateMachineType);
+    LOGGER.info("Registered resource {} with state machine: {}", resourceType, stateMachineType);
     return this;
   }
 

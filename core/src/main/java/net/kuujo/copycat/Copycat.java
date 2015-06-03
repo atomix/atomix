@@ -25,7 +25,8 @@ import net.kuujo.copycat.util.Managed;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -54,9 +55,9 @@ public class Copycat implements Managed<Copycat> {
   private final ResourceFactory factory = new ResourceFactory();
   private final Map<String, Set<EventListener>> listeners = new ConcurrentHashMap<>();
 
-  private Copycat(Raft raft, Object... resources) {
+  private Copycat(Raft raft, ClassLoader classLoader) {
     this.raft = raft;
-    this.registry = new ResourceRegistry(resources);
+    this.registry = new ResourceRegistry(classLoader);
   }
 
   /**
@@ -246,7 +247,7 @@ public class Copycat implements Managed<Copycat> {
   public static class Builder implements net.kuujo.copycat.Builder<Copycat> {
     private final Raft.Builder builder = Raft.builder().withTopic("copycat");
     private Cluster cluster;
-    private final List<String> resources = new ArrayList<>();
+    private ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 
     private Builder() {
     }
@@ -336,71 +337,19 @@ public class Copycat implements Managed<Copycat> {
     }
 
     /**
-     * Sets the Copycat resources.
+     * Sets the Copycat class loader.
      *
-     * @param resources A collection of resources.
+     * @param classLoader The Copycat class loader.
      * @return The Copycat builder.
      */
-    public Builder withResources(String... resources) {
-      this.resources.clear();
-      if (resources != null) {
-        this.resources.addAll(Arrays.asList(resources));
-      }
-      return this;
-    }
-
-    /**
-     * Sets the Copycat resources.
-     *
-     * @param resources A collection of resources.
-     * @return The Copycat builder.
-     */
-    public Builder withResources(Collection<String> resources) {
-      this.resources.clear();
-      if (resources != null) {
-        this.resources.addAll(resources);
-      }
-      return this;
-    }
-
-    /**
-     * Adds a collection of resources.
-     *
-     * @param resources A collection of resources.
-     * @return The Copycat builder.
-     */
-    public Builder addResources(String... resources) {
-      if (resources != null) {
-        return addResources(Arrays.asList(resources));
-      }
-      return this;
-    }
-
-    /**
-     * Adds a collection of resources.
-     *
-     * @param resources A collection of resources.
-     * @return The Copycat builder.
-     */
-    public Builder addResources(Collection<String> resources) {
-      this.resources.addAll(resources);
-      return this;
-    }
-
-    /**
-     * Adds a resource.
-     *
-     * @param resource The resource to add.
-     * @return The Copycat builder.
-     */
-    public Builder addResource(String resource) {
-      resources.add(resource);
+    public Builder withClassLoader(ClassLoader classLoader) {
+      this.classLoader = classLoader;
       return this;
     }
 
     @Override
     public Copycat build() {
-      return new Copycat(builder.withStateMachine(new ResourceManager(cluster)).build(), resources.toArray(new String[resources.size()]));
+      return new Copycat(builder.withStateMachine(new ResourceManager(cluster)).build(), classLoader);
     }
   }
 

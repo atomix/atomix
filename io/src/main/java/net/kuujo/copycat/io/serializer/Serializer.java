@@ -18,8 +18,8 @@ package net.kuujo.copycat.io.serializer;
 import net.jodah.typetools.TypeResolver;
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.HeapBufferPool;
+import net.kuujo.copycat.io.util.ClassPath;
 import net.kuujo.copycat.io.util.ReferencePool;
-import org.reflections.Reflections;
 
 import java.io.*;
 import java.util.HashMap;
@@ -41,7 +41,6 @@ import java.util.Map;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class Serializer {
-  private static final String COPYCAT_PACKAGE = "net.kuujo.copycat";
   private static final byte TYPE_NULL = -1;
   private static final byte TYPE_BUFFER = 0;
   private static final byte TYPE_WRITABLE_ID = 1;
@@ -51,15 +50,18 @@ public class Serializer {
   private final Map<Class, ObjectWriter> serializers = new HashMap<>();
   private final ReferencePool<Buffer> bufferPool = new HeapBufferPool();
 
+  public Serializer() {
+    this(Thread.currentThread().getContextClassLoader());
+  }
+
   @SuppressWarnings("unchecked")
-  public Serializer(Object... resources) {
+  public Serializer(ClassLoader classLoader) {
     this.registry = new SerializerRegistry();
-
-    Object[] allResources = new String[resources.length + 1];
-    System.arraycopy(resources, 0, allResources, 0, resources.length);
-    allResources[resources.length] = COPYCAT_PACKAGE;
-
-    registerSerializers(allResources);
+    try {
+      registerSerializers(classLoader);
+    } catch (IOException e) {
+      throw new SerializationException("failed to initialize serializer", e);
+    }
   }
 
   private Serializer(SerializerRegistry registry) {
@@ -70,39 +72,47 @@ public class Serializer {
    * Registers serializers from the given packages.
    */
   @SuppressWarnings("unchecked")
-  private void registerSerializers(Object... resources) {
-    Reflections reflections = new Reflections(resources);
+  private void registerSerializers(ClassLoader classLoader) throws IOException {
+    ClassPath cp = ClassPath.from(classLoader);
+    for (ClassPath.ClassInfo info : cp.getAllClasses()) {
+      Class<?> type;
+      try {
+        type = info.load();
+      } catch (LinkageError e) {
+        continue;
+      }
 
-    for (Class<? extends ObjectWriter> writer : reflections.getSubTypesOf(ObjectWriter.class)) {
-      Serialize serialize = writer.getAnnotation(Serialize.class);
-      if (serialize != null) {
-        for (Serialize.Type type : serialize.value()) {
-          if (type.id() != 0) {
-            registry.register(type.type(), type.id(), writer);
-          } else {
-            registry.register(type.type(), writer);
+      if (ObjectWriter.class.isAssignableFrom(type)) {
+        Serialize serialize = type.getAnnotation(Serialize.class);
+        if (serialize != null) {
+          for (Serialize.Type serializeType : serialize.value()) {
+            if (serializeType.id() != 0) {
+              registry.register(serializeType.type(), serializeType.id(), (Class<? extends ObjectWriter>) type);
+            } else {
+              registry.register(serializeType.type(), (Class<? extends ObjectWriter>) type);
+            }
+          }
+        } else {
+          Class serializeType = TypeResolver.resolveRawArgument(ObjectWriter.class, type);
+          if (serializeType != null) {
+            registry.register(serializeType, (Class<? extends ObjectWriter>) type);
           }
         }
-      } else {
-        Class type = TypeResolver.resolveRawArgument(ObjectWriter.class, writer);
-        if (type != null) {
-          registry.register(type, writer);
+      }
+
+      if (Writable.class.isAssignableFrom(type)) {
+        SerializeWith serializeWith = type.getAnnotation(SerializeWith.class);
+        if (serializeWith != null) {
+          registry.register(type, serializeWith.id(), serializeWith.serializer());
+        } else {
+          registry.register((Class<? extends Writable>) type);
         }
       }
-    }
 
-    for (Class<? extends Writable> writable : reflections.getSubTypesOf(Writable.class)) {
-      SerializeWith serializeWith = writable.getAnnotation(SerializeWith.class);
+      SerializeWith serializeWith = type.getAnnotation(SerializeWith.class);
       if (serializeWith != null) {
-        registry.register(writable, serializeWith.id(), serializeWith.serializer());
-      } else {
-        registry.register(writable);
+        registry.register(type, serializeWith.id(), serializeWith.serializer());
       }
-    }
-
-    for (Class<?> writable : reflections.getTypesAnnotatedWith(SerializeWith.class)) {
-      SerializeWith serializeWith = writable.getAnnotation(SerializeWith.class);
-      registry.register(writable, serializeWith.id(), serializeWith.serializer());
     }
   }
 

@@ -15,6 +15,9 @@
  */
 package net.kuujo.copycat.io.serializer;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -24,6 +27,7 @@ import java.util.Map;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class SerializerRegistry {
+  private static final Logger LOGGER = LoggerFactory.getLogger(SerializerRegistry.class);
   private final Map<Class, Class<? extends ObjectWriter>> serializers;
   private final Map<Class, Integer> ids;
   private final Map<Integer, Class> types;
@@ -54,6 +58,7 @@ public class SerializerRegistry {
    */
   public SerializerRegistry register(Class<?> type, Class<? extends ObjectWriter> serializer) {
     serializers.put(type, serializer);
+    LOGGER.warn("Registered unidentifiable type {}", type);
     return this;
   }
 
@@ -68,6 +73,7 @@ public class SerializerRegistry {
     serializers.put(type, WritableObjectWriter.class);
     ids.put(type, id);
     types.put(id, type);
+    LOGGER.info("Registered identifiable type {}: {}", type, id);
     return this;
   }
 
@@ -83,6 +89,7 @@ public class SerializerRegistry {
     serializers.put(type, serializer);
     ids.put(type, id);
     types.put(id, type);
+    LOGGER.info("Registered identifiable type {}: {}", type, id);
     return this;
   }
 
@@ -101,6 +108,7 @@ public class SerializerRegistry {
     } else {
       serializers.put(writable, WritableObjectWriter.class);
     }
+    LOGGER.warn("Registered unidentifiable type {}", writable);
     return this;
   }
 
