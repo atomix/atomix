@@ -16,6 +16,7 @@
 package net.kuujo.copycat.cluster;
 
 import net.kuujo.copycat.Task;
+import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.util.ExecutionContext;
 import net.kuujo.copycat.util.concurrent.Futures;
 
@@ -77,6 +78,28 @@ public class TestLocalMember extends ManagedLocalMember implements TestMember {
             future.completeExceptionally(new ClusterException(error));
           }
         });
+      });
+      return future;
+    }
+    return Futures.exceptionalFuture(new UnknownTopicException(topic));
+  }
+
+  /**
+   * Receives a message.
+   */
+  protected CompletableFuture<Buffer> receive(String topic, Buffer buffer) {
+    HandlerHolder handler = handlers.get(topic);
+    if (handler != null) {
+      CompletableFuture<Buffer> future = new CompletableFuture<>();
+      Object message = serializer.readObject(buffer);
+      handler.context.execute(() -> {
+        handler.handler.handle(message).whenCompleteAsync((result, error) -> {
+          if (error == null) {
+            future.complete(serializer.writeObject(result).flip());
+          } else {
+            future.completeExceptionally(new ClusterException(error));
+          }
+        }, context);
       });
       return future;
     }
