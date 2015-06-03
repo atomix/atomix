@@ -83,13 +83,13 @@ class CandidateState extends ActiveState {
     currentTimer = context.getContext().schedule(() -> {
       // When the election times out, clear the previous majority vote
       // check and restart the election.
-      LOGGER.info("{} - Election timed out", context.getCluster().member().id());
+      LOGGER.debug("{} - Election timed out", context.getCluster().member().id());
       if (quorum != null) {
         quorum.cancel();
         quorum = null;
       }
       sendVoteRequests();
-      LOGGER.info("{} - Restarted election", context.getCluster().member().id());
+      LOGGER.debug("{} - Restarted election", context.getCluster().member().id());
     }, delay, TimeUnit.MILLISECONDS);
 
     final AtomicBoolean complete = new AtomicBoolean();
@@ -115,7 +115,7 @@ class CandidateState extends ActiveState {
 
     // Once we got the last log term, iterate through each current member
     // of the cluster and vote each member for a vote.
-    LOGGER.info("{} - Requesting votes from {}", context.getCluster().member().id(), votingMembers);
+    LOGGER.debug("{} - Requesting votes from {}", context.getCluster().member().id(), votingMembers);
     final long lastTerm = lastEntry != null ? lastEntry.getTerm() : 0;
     for (Member member : votingMembers) {
       LOGGER.debug("{} - Requesting vote from {} for term {}", context.getCluster().member().id(), member, context.getTerm());
@@ -137,13 +137,13 @@ class CandidateState extends ActiveState {
             complete.set(true);
             transition(RaftState.FOLLOWER);
           } else if (!response.voted()) {
-            LOGGER.info("{} - Received rejected vote from {}", context.getCluster().member().id(), member);
+            LOGGER.debug("{} - Received rejected vote from {}", context.getCluster().member().id(), member);
             quorum.fail();
           } else if (response.term() != context.getTerm()) {
-            LOGGER.info("{} - Received successful vote for a different term from {}", context.getCluster().member().id(), member);
+            LOGGER.debug("{} - Received successful vote for a different term from {}", context.getCluster().member().id(), member);
             quorum.fail();
           } else {
-            LOGGER.info("{} - Received successful vote from {}", context.getCluster().member().id(), member);
+            LOGGER.debug("{} - Received successful vote from {}", context.getCluster().member().id(), member);
             quorum.succeed();
           }
         }

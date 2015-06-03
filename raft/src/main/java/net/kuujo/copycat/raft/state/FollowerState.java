@@ -79,7 +79,7 @@ class FollowerState extends ActiveState {
       currentTimer = null;
       if (isOpen()) {
         if (context.getLastVotedFor() == 0) {
-          LOGGER.info("{} - Heartbeat timed out in {} milliseconds", context.getCluster().member().id(), delay);
+          LOGGER.debug("{} - Heartbeat timed out in {} milliseconds", context.getCluster().member().id(), delay);
           sendPollRequests();
         } else {
           // If the node voted for a candidate then reset the election timer.
@@ -122,7 +122,7 @@ class FollowerState extends ActiveState {
 
     // Once we got the last log term, iterate through each current member
     // of the cluster and vote each member for a vote.
-    LOGGER.info("{} - Polling members {}", context.getCluster().member().id(), votingMembers);
+    LOGGER.debug("{} - Polling members {}", context.getCluster().member().id(), votingMembers);
     final long lastTerm = lastEntry != null ? lastEntry.getTerm() : 0;
     for (Member member : votingMembers) {
       LOGGER.debug("{} - Polling {} for next term {}", context.getCluster().member().id(), member, context.getTerm() + 1);
@@ -143,13 +143,13 @@ class FollowerState extends ActiveState {
               context.setTerm(response.term());
             }
             if (!response.accepted()) {
-              LOGGER.info("{} - Received rejected poll from {}", context.getCluster().member().id(), member);
+              LOGGER.debug("{} - Received rejected poll from {}", context.getCluster().member().id(), member);
               quorum.fail();
             } else if (response.term() != context.getTerm()) {
-              LOGGER.info("{} - Received accepted poll for a different term from {}", context.getCluster().member().id(), member);
+              LOGGER.debug("{} - Received accepted poll for a different term from {}", context.getCluster().member().id(), member);
               quorum.fail();
             } else {
-              LOGGER.info("{} - Received accepted poll from {}", context.getCluster().member().id(), member);
+              LOGGER.debug("{} - Received accepted poll from {}", context.getCluster().member().id(), member);
               quorum.succeed();
             }
           }

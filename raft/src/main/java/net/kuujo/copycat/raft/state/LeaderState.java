@@ -111,7 +111,7 @@ class LeaderState extends ActiveState {
             try {
               context.getStateMachine().apply(entry);
             } catch (ApplicationException e) {
-              LOGGER.info("{} - an application error occurred: {}", context.getCluster().member().id(), e);
+              LOGGER.info("{} - An application error occurred: {}", context.getCluster().member().id(), e);
             } finally {
               context.setLastApplied(lastApplied);
             }
@@ -119,7 +119,7 @@ class LeaderState extends ActiveState {
         }
         count++;
       }
-      LOGGER.debug("{} - applied {} entries to log", context.getCluster().member().id(), count);
+      LOGGER.debug("{} - Applied {} entries to log", context.getCluster().member().id(), count);
     }
   }
 
