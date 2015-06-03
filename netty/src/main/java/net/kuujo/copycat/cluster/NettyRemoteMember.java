@@ -21,6 +21,7 @@ import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.LengthFieldPrepender;
 import net.kuujo.copycat.Task;
 import net.kuujo.copycat.io.util.HashFunctions;
 import net.kuujo.copycat.util.ExecutionContext;
@@ -181,6 +182,7 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
         @Override
         protected void initChannel(SocketChannel channel) throws Exception {
           ChannelPipeline pipeline = channel.pipeline();
+          pipeline.addLast(new LengthFieldPrepender(2));
           pipeline.addLast(new ClientHandler());
         }
       });

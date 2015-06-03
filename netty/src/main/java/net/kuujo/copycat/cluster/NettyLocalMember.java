@@ -23,6 +23,9 @@ import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+import io.netty.handler.logging.LogLevel;
+import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import net.kuujo.copycat.Task;
 import net.kuujo.copycat.io.util.HashFunctions;
@@ -144,10 +147,12 @@ public class NettyLocalMember extends ManagedLocalMember implements NettyMember{
           final ServerBootstrap bootstrap = new ServerBootstrap();
           bootstrap.group(workerGroup)
             .channel(NioServerSocketChannel.class)
+            .handler(new LoggingHandler(LogLevel.DEBUG))
             .childHandler(new ChannelInitializer<SocketChannel>() {
               @Override
               public void initChannel(SocketChannel channel) throws Exception {
                 ChannelPipeline pipeline = channel.pipeline();
+                pipeline.addLast(new LengthFieldBasedFrameDecoder(8192, 0, 2, 0, 2));
                 pipeline.addLast(new ServerHandlerAdapter());
               }
             })
