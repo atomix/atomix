@@ -147,6 +147,7 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
 
     buffer.writeInt(entries.size());
     for (Entry entry : entries) {
+      buffer.writeLong(entry.getIndex());
       serializer.writeObject(entry, buffer);
     }
   }
@@ -162,7 +163,10 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
     entries.clear();
     int numEntries = buffer.readInt();
     for (int i = 0; i < numEntries; i++) {
-      entries.add(serializer.readObject(buffer));
+      long index = buffer.readLong();
+      Entry entry = serializer.readObject(buffer);
+      entry.setIndex(index);
+      entries.add(entry);
     }
   }
 
