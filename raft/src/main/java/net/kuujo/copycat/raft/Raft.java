@@ -331,8 +331,6 @@ public class Raft implements Protocol, Managed<Raft> {
 
     @Override
     public Raft build() {
-      if (log == null)
-        throw new ConfigurationException("log not configured");
       if (stateMachine == null)
         throw new ConfigurationException("state machine not configured");
       if (cluster == null)
