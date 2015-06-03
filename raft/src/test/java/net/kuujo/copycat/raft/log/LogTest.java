@@ -172,6 +172,20 @@ public class LogTest {
   }
 
   /**
+   * Tests truncating entries in the log.
+   */
+  public void testTruncate() throws Throwable {
+    try (Log log = createLog()) {
+      appendEntries(log, 100);
+      assertEquals(log.lastIndex(), 100);
+      log.truncate(10);
+      assertEquals(log.lastIndex(), 10);
+      appendEntries(log, 10);
+      assertEquals(log.lastIndex(), 20);
+    }
+  }
+
+  /**
    * Tests skipping entries in the log.
    */
   public void testSkip() throws Throwable {

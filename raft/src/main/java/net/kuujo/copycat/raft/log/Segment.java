@@ -26,9 +26,6 @@ import net.kuujo.copycat.util.ExecutionContext;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class Segment implements AutoCloseable {
-  private static final int ENTRY_TYPE_SIZE = 1;
-  private static final int ENTRY_MODE_SIZE = 1;
-  private static final int ENTRY_TERM_SIZE = 8;
 
   /**
    * Opens a new segment.

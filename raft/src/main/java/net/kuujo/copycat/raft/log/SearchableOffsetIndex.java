@@ -239,15 +239,24 @@ public class SearchableOffsetIndex implements OffsetIndex {
     int lastOffset = lastOffset();
     int index = search(offset + 1);
     if (index != -1) {
+      for (int i = lastOffset; i > offset; i--) {
+        if (position(i) != -1) {
+          size--;
+        }
+      }
+
       long previousPosition = buffer.readUnsignedInt(index - OFFSET_SIZE);
       long indexPosition = buffer.readUnsignedInt(index + OFFSET_SIZE);
+
       buffer.position(index)
         .zero(index)
         .mark()
         .writeByte(END)
         .writeInt((int) (indexPosition - previousPosition))
         .reset();
-      size -= lastOffset - offset;
+      this.lastOffset = offset;
+
+      currentPosition = currentOffset = currentLength = -1;
     }
   }
 
