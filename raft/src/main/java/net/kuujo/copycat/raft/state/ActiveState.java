@@ -379,49 +379,6 @@ abstract class ActiveState extends RemoteState {
   }
 
   @Override
-  protected CompletableFuture<RegisterResponse> register(RegisterRequest request) {
-    context.checkThread();
-    logRequest(request);
-    if (context.getLeader() == 0) {
-      return CompletableFuture.completedFuture(logResponse(RegisterResponse.builder()
-        .withStatus(Response.Status.ERROR)
-        .withError(RaftError.Type.NO_LEADER_ERROR)
-        .build()));
-    } else {
-      return context.getCluster().member(context.getLeader()).send(context.getTopic(), request);
-    }
-  }
-
-  @Override
-  protected CompletableFuture<KeepAliveResponse> keepAlive(KeepAliveRequest request) {
-    context.checkThread();
-    logRequest(request);
-    if (context.getLeader() == 0) {
-      return CompletableFuture.completedFuture(logResponse(KeepAliveResponse.builder()
-        .withStatus(Response.Status.ERROR)
-        .withError(RaftError.Type.NO_LEADER_ERROR)
-        .build()));
-    } else {
-      return context.getCluster().member(context.getLeader()).send(context.getTopic(), request);
-    }
-  }
-
-  @Override
-  protected CompletableFuture<CommandResponse> command(CommandRequest request) {
-    context.checkThread();
-    logRequest(request);
-
-    if (context.getLeader() == 0) {
-      return CompletableFuture.completedFuture(logResponse(CommandResponse.builder()
-        .withStatus(Response.Status.ERROR)
-        .withError(RaftError.Type.NO_LEADER_ERROR)
-        .build()));
-    } else {
-      return context.getCluster().member(context.getLeader()).send(context.getTopic(), request);
-    }
-  }
-
-  @Override
   protected CompletableFuture<QueryResponse> query(QueryRequest request) {
     context.checkThread();
     logRequest(request);

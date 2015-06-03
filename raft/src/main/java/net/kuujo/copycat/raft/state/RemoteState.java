@@ -262,6 +262,12 @@ public class RemoteState extends AbstractState {
         .withStatus(Response.Status.ERROR)
         .withError(RaftError.Type.NO_LEADER_ERROR)
         .build()));
+    } else if (request.member().id() == context.getLeader()) {
+      context.setLeader(0);
+      return CompletableFuture.completedFuture(logResponse(RegisterResponse.builder()
+        .withStatus(Response.Status.ERROR)
+        .withError(RaftError.Type.NO_LEADER_ERROR)
+        .build()));
     } else {
       return context.getCluster().member(context.getLeader()).send(context.getTopic(), request);
     }
