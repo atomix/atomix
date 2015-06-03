@@ -253,6 +253,10 @@ class RaftStateMachine {
     RaftSession session = sessions.get(sessionId);
     if (session == null) {
       throw new UnknownSessionException("unknown session " + sessionId);
+    } else if (!session.update(index, timestamp)) {
+      sessions.remove(sessionId);
+      stateMachine.expire(session);
+      throw new UnknownSessionException("unknown session " + sessionId);
     }
 
     // Given the session, check for an existing result for this command.
@@ -285,19 +289,20 @@ class RaftStateMachine {
   @SuppressWarnings("unchecked")
   private Object query(long index, long sessionId, long timestamp, Query query) {
     // First check to ensure that the session exists.
-    RaftSession session = sessions.get(sessionId);
-    if (session == null) {
-      throw new UnknownSessionException("unknown session " + sessionId);
+    RaftSession session = null;
+    if (sessionId != 0) {
+      session = sessions.get(sessionId);
+      if (session == null) {
+        throw new UnknownSessionException("unknown session " + sessionId);
+      } else if (!session.expire(index, timestamp)) {
+        sessions.remove(sessionId);
+        stateMachine.expire(session);
+        throw new UnknownSessionException("unknown session " + sessionId);
+      }
     }
 
     // Apply the query to the state machine.
-    Object result = stateMachine.apply(new Commit(index, session, timestamp, query));
-
-    // Update the session's timeout.
-    session.update(index, timestamp);
-
-    // Return the result.
-    return result;
+    return stateMachine.apply(new Commit(index, session, timestamp, query));
   }
 
   /**
@@ -334,8 +339,22 @@ class RaftStateMachine {
      *
      * @param timestamp The session.
      */
-    public boolean update(long index, long timestamp) {
-      if (System.currentTimeMillis() - sessionTimeout > this.timestamp) {
+    private boolean expire(long index, long timestamp) {
+      if (timestamp - sessionTimeout > this.timestamp) {
+        expire();
+        return false;
+      }
+      this.timestamp = timestamp;
+      return true;
+    }
+
+    /**
+     * Updates the session.
+     *
+     * @param timestamp The session.
+     */
+    private boolean update(long index, long timestamp) {
+      if (timestamp - sessionTimeout > this.timestamp) {
         expire();
         return false;
       }
