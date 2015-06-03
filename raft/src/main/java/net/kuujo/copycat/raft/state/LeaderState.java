@@ -130,7 +130,7 @@ class LeaderState extends ActiveState {
     // Set a timer that will be used to periodically synchronize with other nodes
     // in the cluster. This timer acts as a heartbeat to ensure this node remains
     // the leader.
-    LOGGER.debug("{} - Setting heartbeat timer", context.getCluster().member().id());
+    LOGGER.debug("{} - Starting heartbeat timer", context.getCluster().member().id());
     currentTimer = context.getContext().scheduleAtFixedRate(this::heartbeatMembers, 0, context.getHeartbeatInterval(), TimeUnit.MILLISECONDS);
   }
 
@@ -438,7 +438,7 @@ class LeaderState extends ActiveState {
    */
   private void cancelPingTimer() {
     if (currentTimer != null) {
-      LOGGER.debug("{} - Cancelling ping timer", context.getCluster().member().id());
+      LOGGER.debug("{} - Cancelling heartbeat timer", context.getCluster().member().id());
       currentTimer.cancel(false);
     }
   }
@@ -553,7 +553,7 @@ class LeaderState extends ActiveState {
       // was contacted. If the current commitFuture's time is less than the commit time then trigger the
       // commit future and reset it to the next commit future.
       long commitTime = commitTime();
-      if (commitFuture != null && this.commitTime >= commitTime) {
+      if (commitFuture != null && this.commitTime <= commitTime) {
         commitFuture.complete(null);
         commitFuture = nextCommitFuture;
         nextCommitFuture = null;
@@ -746,9 +746,7 @@ class LeaderState extends ActiveState {
                 LOGGER.debug("{} - Received higher term from {}", context.getCluster().member().id(), member);
                 transition(RaftState.FOLLOWER);
               } else {
-                LOGGER.warn("{} - {}", context.getCluster()
-                  .member()
-                  .id(), response.error() != null ? response.error() : "");
+                LOGGER.warn("{} - {}", context.getCluster().member().id(), response.error() != null ? response.error() : "");
               }
             } else {
               LOGGER.warn("{} - {}", context.getCluster().member().id(), error.getMessage());
