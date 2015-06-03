@@ -68,7 +68,7 @@ class WritableObjectWriter<T extends Writable> implements ObjectWriter<T> {
     if (pool == null) {
       Constructor constructor = constructorMap.computeIfAbsent(type, t -> {
         try {
-          Constructor c = type.getConstructor(ReferenceManager.class);
+          Constructor c = type.getDeclaredConstructor(ReferenceManager.class);
           c.setAccessible(true);
           return c;
         } catch (NoSuchMethodException e) {
