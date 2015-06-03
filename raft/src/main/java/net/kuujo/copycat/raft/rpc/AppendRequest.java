@@ -140,6 +140,7 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
   @Override
   public void writeObject(Buffer buffer, Serializer serializer) {
     buffer.writeLong(term)
+      .writeInt(leader)
       .writeLong(logIndex)
       .writeLong(logTerm)
       .writeLong(commitIndex)
@@ -155,6 +156,7 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
   @Override
   public void readObject(Buffer buffer, Serializer serializer) {
     term = buffer.readLong();
+    leader = buffer.readInt();
     logIndex = buffer.readLong();
     logTerm = buffer.readLong();
     commitIndex = buffer.readLong();

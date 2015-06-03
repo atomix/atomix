@@ -86,11 +86,13 @@ public class QueryRequest extends AbstractRequest<QueryRequest> {
 
   @Override
   public void readObject(Buffer buffer, Serializer serializer) {
+    session = buffer.readLong();
     query = serializer.readObject(buffer);
   }
 
   @Override
   public void writeObject(Buffer buffer, Serializer serializer) {
+    buffer.writeLong(session);
     serializer.writeObject(query, buffer);
   }
 

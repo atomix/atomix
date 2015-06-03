@@ -106,11 +106,15 @@ public class CommandRequest extends AbstractRequest<CommandRequest> {
 
   @Override
   public void readObject(Buffer buffer, Serializer serializer) {
+    session = buffer.readLong();
+    request = buffer.readLong();
+    response = buffer.readLong();
     command = serializer.readObject(buffer);
   }
 
   @Override
   public void writeObject(Buffer buffer, Serializer serializer) {
+    buffer.writeLong(session).writeLong(request).writeLong(response);
     serializer.writeObject(command, buffer);
   }
 
