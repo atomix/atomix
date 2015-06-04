@@ -74,6 +74,7 @@ public class Serializer {
   @SuppressWarnings("unchecked")
   private void registerSerializers(ClassLoader classLoader) throws IOException {
     ClassPath cp = ClassPath.from(classLoader);
+    outer:
     for (ClassPath.ClassInfo info : cp.getAllClasses()) {
       Class<?> type;
       try {
@@ -91,12 +92,14 @@ public class Serializer {
             } else {
               registry.register(serializeType.type(), (Class<? extends ObjectWriter>) type);
             }
+            continue outer;
           }
         } else {
           Class serializeType = TypeResolver.resolveRawArgument(ObjectWriter.class, type);
           if (serializeType != null) {
             registry.register(serializeType, (Class<? extends ObjectWriter>) type);
           }
+          continue outer;
         }
       }
 
@@ -107,11 +110,13 @@ public class Serializer {
         } else {
           registry.register((Class<? extends Writable>) type);
         }
+        continue outer;
       }
 
       SerializeWith serializeWith = type.getAnnotation(SerializeWith.class);
       if (serializeWith != null) {
         registry.register(type, serializeWith.id(), serializeWith.serializer());
+        continue outer;
       }
     }
   }
