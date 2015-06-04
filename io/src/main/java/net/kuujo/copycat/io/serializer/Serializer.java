@@ -130,52 +130,6 @@ public class Serializer {
   }
 
   /**
-   * Registers a serializable class.
-   * <p>
-   * The registration will be automatically assigned a unique 8-bit identifier. In order for the object to be properly
-   * deserialized by other {@link Serializer} instances, the class must have been registered in the same order
-   * on both instances.
-   *
-   * @param type The type to register.
-   * @return The Copycat serializer.
-   */
-  public Serializer register(Class<? extends Writable> type) {
-    registry.register(type);
-    return this;
-  }
-
-  /**
-   * Registers a serializable class with an explicit identifier.
-   * <p>
-   * During serialization, the provided identifier will be written to the {@link net.kuujo.copycat.io.Buffer} as an unsigned 16-bit integer.
-   * It is important that the class be registered on any {@link Serializer} instance with the same {@code id}.
-   *
-   * @param type The type to register.
-   * @param id The type identifier. Must be between {@code 0} and {@code 255}.
-   * @return The Copycat serializer.
-   */
-  public Serializer register(Class<? extends Writable> type, int id) {
-    registry.register(type, id);
-    return this;
-  }
-
-  /**
-   * Registers a serializable class.
-   * <p>
-   * During serialization, the provided identifier will be written to the {@link net.kuujo.copycat.io.Buffer} as an unsigned 16-bit integer.
-   * It is important that the class be registered on any {@link Serializer} instance with the same {@code id}.
-   *
-   * @param type The type to register.
-   * @param id The type identifier. Must be between {@code 0} and {@code 255}.
-   * @param serializer The type serializer.
-   * @return The Copycat serializer.
-   */
-  public <T> Serializer register(Class<T> type, int id, Class<? extends ObjectWriter> serializer) {
-    registry.register(type, id, serializer);
-    return this;
-  }
-
-  /**
    * Returns the serializer for the given type.
    */
   private ObjectWriter getSerializer(Class type) {
