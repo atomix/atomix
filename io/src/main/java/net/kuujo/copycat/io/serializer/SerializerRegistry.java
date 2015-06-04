@@ -58,7 +58,8 @@ public class SerializerRegistry {
    */
   public SerializerRegistry register(Class<?> type, Class<? extends ObjectWriter> serializer) {
     serializers.put(type, serializer);
-    LOGGER.warn("Registered unidentifiable type {}", type);
+    LOGGER.info("Registered {}", type);
+    LOGGER.warn("Type {} registered without a type ID!", serializer);
     return this;
   }
 
@@ -73,7 +74,7 @@ public class SerializerRegistry {
     serializers.put(type, WritableObjectWriter.class);
     ids.put(type, id);
     types.put(id, type);
-    LOGGER.info("Registered identifiable type {}: {}", type, id);
+    LOGGER.info("Registered {}", type);
     return this;
   }
 
@@ -89,7 +90,7 @@ public class SerializerRegistry {
     serializers.put(type, serializer);
     ids.put(type, id);
     types.put(id, type);
-    LOGGER.info("Registered identifiable type {}: {}", type, id);
+    LOGGER.info("Registered {}", type);
     return this;
   }
 
@@ -105,10 +106,12 @@ public class SerializerRegistry {
       serializers.put(writable, serializeWith.serializer() != null ? serializeWith.serializer() : WritableObjectWriter.class);
       ids.put(writable, (int) serializeWith.id());
       types.put((int) serializeWith.id(), writable);
+      LOGGER.info("Registered {}", writable);
+      LOGGER.warn("Type {} registered without a type ID!", writable);
     } else {
       serializers.put(writable, WritableObjectWriter.class);
+      LOGGER.info("Registered {}", writable);
     }
-    LOGGER.warn("Registered unidentifiable type {}", writable);
     return this;
   }
 

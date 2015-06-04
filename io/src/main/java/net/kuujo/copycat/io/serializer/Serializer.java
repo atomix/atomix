@@ -99,7 +99,6 @@ public class Serializer {
           if (serializeType != null) {
             registry.register(serializeType, (Class<? extends ObjectWriter>) type);
           }
-          continue outer;
         }
       }
 
