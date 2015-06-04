@@ -16,29 +16,25 @@
 package net.kuujo.copycat.raft;
 
 /**
- * Query operation.
+ * Query consistency level.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Query<T> extends Operation<T> {
+public enum ConsistencyLevel {
 
   /**
-   * Returns the query consistency.
-   *
-   * @return The query consistency.
+   * Provides serializable consistency.
    */
-  ConsistencyLevel consistency();
+  SERIALIZABLE,
 
   /**
-   * Query builder.
+   * Provides linearizable consistency based on a leader lease.
    */
-  static class Builder<T extends Builder<T, U>, U extends Query<?>> extends Operation.Builder<U> {
-    protected final U query;
+  LINEARIZABLE_LEASE,
 
-    public Builder(U query) {
-      super(query);
-      this.query = query;
-    }
-  }
+  /**
+   * Provides strict linearizable consistency.
+   */
+  LINEARIZABLE_STRICT
 
 }

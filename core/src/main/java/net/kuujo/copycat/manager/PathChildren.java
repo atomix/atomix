@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.manager;
 
+import net.kuujo.copycat.raft.ConsistencyLevel;
 import net.kuujo.copycat.raft.Operation;
 import net.kuujo.copycat.raft.Query;
 
@@ -44,8 +45,8 @@ public class PathChildren extends PathOperation<List<String>> implements Query<L
   }
 
   @Override
-  public Consistency consistency() {
-    return Consistency.LINEARIZABLE_STRICT;
+  public ConsistencyLevel consistency() {
+    return ConsistencyLevel.LINEARIZABLE_STRICT;
   }
 
   /**

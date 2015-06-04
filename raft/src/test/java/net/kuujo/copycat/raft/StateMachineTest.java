@@ -49,8 +49,8 @@ public class StateMachineTest {
    */
   public static class TestQuery implements Query<String> {
     @Override
-    public Consistency consistency() {
-      return Consistency.LINEARIZABLE_STRICT;
+    public ConsistencyLevel consistency() {
+      return ConsistencyLevel.LINEARIZABLE_STRICT;
     }
   }
 

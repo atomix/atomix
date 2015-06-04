@@ -109,8 +109,8 @@ public class AsyncBoolean extends AbstractResource {
   public static abstract class BooleanQuery<V> implements Query<V>, Writable {
 
     @Override
-    public Consistency consistency() {
-      return Consistency.LINEARIZABLE_STRICT;
+    public ConsistencyLevel consistency() {
+      return ConsistencyLevel.LINEARIZABLE_STRICT;
     }
 
     @Override

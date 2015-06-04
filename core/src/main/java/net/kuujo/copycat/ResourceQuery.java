@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat;
 
+import net.kuujo.copycat.raft.ConsistencyLevel;
 import net.kuujo.copycat.raft.Operation;
 import net.kuujo.copycat.raft.Query;
 
@@ -36,7 +37,7 @@ public class ResourceQuery<T extends Query<U>, U> extends ResourceOperation<T, U
   }
 
   @Override
-  public Consistency consistency() {
+  public ConsistencyLevel consistency() {
     return operation.consistency();
   }
 

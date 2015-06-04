@@ -136,7 +136,7 @@ class FollowerState extends ActiveState {
         context.checkThread();
         if (isOpen() && !complete.get()) {
           if (error != null) {
-            LOGGER.warn(error.getMessage());
+            LOGGER.warn("{} - {}", context.getCluster().member().id(), error.getMessage());
             quorum.fail();
           } else {
             if (response.term() > context.getTerm()) {

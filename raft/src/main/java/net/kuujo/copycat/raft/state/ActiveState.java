@@ -17,7 +17,7 @@ package net.kuujo.copycat.raft.state;
 
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.raft.ApplicationException;
-import net.kuujo.copycat.raft.Query;
+import net.kuujo.copycat.raft.ConsistencyLevel;
 import net.kuujo.copycat.raft.RaftError;
 import net.kuujo.copycat.raft.log.entry.Entry;
 import net.kuujo.copycat.raft.log.entry.QueryEntry;
@@ -383,7 +383,7 @@ abstract class ActiveState extends RemoteState {
     context.checkThread();
     logRequest(request);
 
-    if (request.query().consistency() == Query.Consistency.SERIALIZABLE) {
+    if (request.query().consistency() == ConsistencyLevel.SERIALIZABLE) {
       CompletableFuture<QueryResponse> future = new CompletableFuture<>();
       QueryEntry entry = new QueryEntry(context.getCommitIndex())
         .setTerm(context.getTerm())
