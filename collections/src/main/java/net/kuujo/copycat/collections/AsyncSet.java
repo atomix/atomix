@@ -154,7 +154,7 @@ public class AsyncSet<T> extends AbstractResource {
    * @param consistency The query consistency level.
    * @return A completable future to be completed with the result once complete.
    */
-  public CompletableFuture<Boolean> contains(Object value, Query.Consistency consistency) {
+  public CompletableFuture<Boolean> contains(Object value, ConsistencyLevel consistency) {
     return submit(Contains.builder()
       .withValue(value.hashCode())
       .withConsistency(consistency)
@@ -176,7 +176,7 @@ public class AsyncSet<T> extends AbstractResource {
    * @param consistency The query consistency level.
    * @return A completable future to be completed with the set size.
    */
-  public CompletableFuture<Integer> size(Query.Consistency consistency) {
+  public CompletableFuture<Integer> size(ConsistencyLevel consistency) {
     return submit(Size.builder().withConsistency(consistency).build());
   }
 
@@ -195,7 +195,7 @@ public class AsyncSet<T> extends AbstractResource {
    * @param consistency The query consistency level.
    * @return A completable future to be completed with a boolean value indicating whether the set is empty.
    */
-  public CompletableFuture<Boolean> isEmpty(Query.Consistency consistency) {
+  public CompletableFuture<Boolean> isEmpty(ConsistencyLevel consistency) {
     return submit(IsEmpty.builder().withConsistency(consistency).build());
   }
 
@@ -227,10 +227,10 @@ public class AsyncSet<T> extends AbstractResource {
    * Abstract set query.
    */
   public static abstract class SetQuery<V> implements Query<V>, Writable {
-    protected Consistency consistency = Consistency.LINEARIZABLE_LEASE;
+    protected ConsistencyLevel consistency = ConsistencyLevel.LINEARIZABLE_LEASE;
 
     @Override
-    public Consistency consistency() {
+    public ConsistencyLevel consistency() {
       return consistency;
     }
 
@@ -241,7 +241,7 @@ public class AsyncSet<T> extends AbstractResource {
 
     @Override
     public void readObject(Buffer buffer, Serializer serializer) {
-      consistency = Consistency.values()[buffer.readByte()];
+      consistency = ConsistencyLevel.values()[buffer.readByte()];
     }
 
     /**
@@ -259,7 +259,7 @@ public class AsyncSet<T> extends AbstractResource {
        * @return The query builder.
        */
       @SuppressWarnings("unchecked")
-      public T withConsistency(Consistency consistency) {
+      public T withConsistency(ConsistencyLevel consistency) {
         query.consistency = consistency;
         return (T) this;
       }

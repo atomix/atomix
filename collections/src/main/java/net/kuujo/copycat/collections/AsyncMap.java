@@ -61,7 +61,7 @@ public class AsyncMap<K, V> extends AbstractResource {
    * @param consistency The query consistency level.
    * @return A completable future to be completed with a boolean value indicating whether the map is empty.
    */
-  public CompletableFuture<Boolean> isEmpty(Query.Consistency consistency) {
+  public CompletableFuture<Boolean> isEmpty(ConsistencyLevel consistency) {
     return submit(IsEmpty.builder().withConsistency(consistency).build());
   }
 
@@ -80,7 +80,7 @@ public class AsyncMap<K, V> extends AbstractResource {
    * @param consistency The query consistency level.
    * @return A completable future to be completed with the number of entries in the map.
    */
-  public CompletableFuture<Integer> size(Query.Consistency consistency) {
+  public CompletableFuture<Integer> size(ConsistencyLevel consistency) {
     return submit(Size.builder().withConsistency(consistency).build());
   }
 
@@ -103,7 +103,7 @@ public class AsyncMap<K, V> extends AbstractResource {
    * @param consistency The query consistency level.
    * @return A completable future to be completed with the result once complete.
    */
-  public CompletableFuture<Boolean> containsKey(Object key, Query.Consistency consistency) {
+  public CompletableFuture<Boolean> containsKey(Object key, ConsistencyLevel consistency) {
     return submit(ContainsKey.builder()
       .withKey(key)
       .withConsistency(consistency)
@@ -132,7 +132,7 @@ public class AsyncMap<K, V> extends AbstractResource {
    * @return A completable future to be completed with the result once complete.
    */
   @SuppressWarnings("unchecked")
-  public CompletableFuture<V> get(Object key, Query.Consistency consistency) {
+  public CompletableFuture<V> get(Object key, ConsistencyLevel consistency) {
     return submit(Get.builder()
       .withKey(key)
       .withConsistency(consistency)
@@ -291,7 +291,7 @@ public class AsyncMap<K, V> extends AbstractResource {
    * @return A completable future to be completed with the result once complete.
    */
   @SuppressWarnings("unchecked")
-  public CompletableFuture<V> getOrDefault(Object key, V defaultValue, Query.Consistency consistency) {
+  public CompletableFuture<V> getOrDefault(Object key, V defaultValue, ConsistencyLevel consistency) {
     return submit(GetOrDefault.builder()
       .withKey(key)
       .withDefaultValue(defaultValue)
@@ -437,10 +437,10 @@ public class AsyncMap<K, V> extends AbstractResource {
    * Abstract map query.
    */
   public static abstract class MapQuery<V> implements Query<V>, Writable {
-    protected Consistency consistency = Consistency.LINEARIZABLE_LEASE;
+    protected ConsistencyLevel consistency = ConsistencyLevel.LINEARIZABLE_LEASE;
 
     @Override
-    public Consistency consistency() {
+    public ConsistencyLevel consistency() {
       return consistency;
     }
 
@@ -451,7 +451,7 @@ public class AsyncMap<K, V> extends AbstractResource {
 
     @Override
     public void readObject(Buffer buffer, Serializer serializer) {
-      consistency = Consistency.values()[buffer.readByte()];
+      consistency = ConsistencyLevel.values()[buffer.readByte()];
     }
 
     /**
@@ -469,7 +469,7 @@ public class AsyncMap<K, V> extends AbstractResource {
        * @return The query builder.
        */
       @SuppressWarnings("unchecked")
-      public T withConsistency(Consistency consistency) {
+      public T withConsistency(ConsistencyLevel consistency) {
         if (consistency == null)
           throw new NullPointerException("consistency cannot be null");
         query.consistency = consistency;
