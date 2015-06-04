@@ -503,6 +503,7 @@ class LeaderState extends ActiveState {
     private CompletableFuture<Long> commit() {
       if (replicas.isEmpty())
         return CompletableFuture.completedFuture(null);
+
       if (commitFuture == null) {
         commitFuture = new CompletableFuture<>();
         commitTime = System.currentTimeMillis();
@@ -525,10 +526,12 @@ class LeaderState extends ActiveState {
     private CompletableFuture<Long> commit(long index) {
       if (index == 0)
         return commit();
+
       if (replicas.isEmpty()) {
         context.setCommitIndex(index);
         return CompletableFuture.completedFuture(index);
       }
+
       return commitFutures.computeIfAbsent(index, i -> {
         replicas.forEach(Replica::commit);
         return new CompletableFuture<>();
@@ -539,7 +542,7 @@ class LeaderState extends ActiveState {
      * Returns the last time a majority of the cluster was contacted.
      */
     private long commitTime() {
-      Collections.sort(commitTimes);
+      Collections.sort(commitTimes, Collections.reverseOrder());
       return commitTimes.get(quorumIndex);
     }
 
@@ -557,7 +560,7 @@ class LeaderState extends ActiveState {
         commitFuture.complete(null);
         commitFuture = nextCommitFuture;
         nextCommitFuture = null;
-        if (this.commitFuture != null) {
+        if (commitFuture != null) {
           this.commitTime = System.currentTimeMillis();
           replicas.forEach(Replica::commit);
         }
