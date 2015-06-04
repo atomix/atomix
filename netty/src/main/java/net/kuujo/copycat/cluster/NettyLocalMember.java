@@ -17,6 +17,8 @@ package net.kuujo.copycat.cluster;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
@@ -48,12 +50,14 @@ public class NettyLocalMember extends ManagedLocalMember implements NettyMember{
   private static final int TASK = 1;
   private static final int STATUS_FAILURE = 0;
   private static final int STATUS_SUCCESS = 1;
+  private static final ByteBufAllocator ALLOCATOR = new PooledByteBufAllocator(true);
   private static final ThreadLocal<ByteBufBuffer> BUFFER = new ThreadLocal<ByteBufBuffer>() {
     @Override
     protected ByteBufBuffer initialValue() {
       return new ByteBufBuffer();
     }
   };
+
   private final Map<Integer, HandlerHolder> handlers = new ConcurrentHashMap<>();
   private final Map<String, Integer> hashMap = new HashMap<>();
   private final NettyMemberInfo info;
@@ -161,6 +165,7 @@ public class NettyLocalMember extends ManagedLocalMember implements NettyMember{
           bootstrap.option(ChannelOption.TCP_NODELAY, true);
           bootstrap.option(ChannelOption.SO_REUSEADDR, true);
           bootstrap.option(ChannelOption.SO_KEEPALIVE, true);
+          bootstrap.option(ChannelOption.ALLOCATOR, ALLOCATOR);
 
           bootstrap.childOption(ChannelOption.SO_KEEPALIVE, true);
 

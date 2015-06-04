@@ -17,14 +17,17 @@ package net.kuujo.copycat.cluster;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.*;
-import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.LengthFieldPrepender;
 import net.kuujo.copycat.Task;
 import net.kuujo.copycat.io.util.HashFunctions;
 import net.kuujo.copycat.util.ExecutionContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.util.HashMap;
@@ -32,6 +35,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Netty remote member.
@@ -39,18 +43,21 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class NettyRemoteMember extends ManagedRemoteMember implements NettyMember {
-  private static final int RETRY_ATTEMPTS = 3;
-  private static final long RECONNECT_INTERVAL = 1000;
+  private static final Logger LOGGER = LoggerFactory.getLogger(NettyRemoteMember.class);
+  private static final long MAX_RECONNECT_INTERVAL = 60000;
+  private static final long INITIAL_RECONNECT_INTERVAL = 100;
   private static final int MESSAGE = 0;
   private static final int TASK = 1;
   private static final int STATUS_FAILURE = 0;
   private static final int STATUS_SUCCESS = 1;
-  private static ThreadLocal<ByteBufBuffer> BUFFER = new ThreadLocal<ByteBufBuffer>() {
+  private static final ByteBufAllocator ALLOCATOR = new PooledByteBufAllocator(true);
+  private static final ThreadLocal<ByteBufBuffer> BUFFER = new ThreadLocal<ByteBufBuffer>() {
     @Override
     protected ByteBufBuffer initialValue() {
       return new ByteBufBuffer();
     }
   };
+
   private final NettyMemberInfo info;
   private EventLoopGroup eventLoopGroup;
   private boolean eventLoopInitialized;
@@ -58,11 +65,11 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
   private ChannelHandlerContext context;
   private final Map<String, Integer> hashMap = new HashMap<>();
   private final Map<Object, ContextualFuture> responseFutures = new HashMap<>(1024);
-  private boolean connected;
+  private final AtomicBoolean connecting = new AtomicBoolean();
+  private final AtomicBoolean connected = new AtomicBoolean();
   private long requestId;
-  private CompletableFuture<RemoteMember> connectFuture;
   private CompletableFuture<Void> closeFuture;
-  private ScheduledFuture<?> reconnectFuture;
+  private ScheduledFuture<?> connectFuture;
 
   NettyRemoteMember(NettyMemberInfo info, Type type) {
     super(info, type);
@@ -153,28 +160,32 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
   }
 
   @Override
-  public CompletableFuture<RemoteMember> connect() {
-    if (connected)
-      return CompletableFuture.completedFuture(this);
-
-    if (connectFuture == null) {
-      synchronized (this) {
-        if (connectFuture == null) {
-          connectFuture = new CompletableFuture<>();
-          if (eventLoopGroup == null) {
-            eventLoopGroup = new NioEventLoopGroup(1);
-          }
-          connect(RETRY_ATTEMPTS, RECONNECT_INTERVAL);
-        }
-      }
-    }
-    return connectFuture;
+  public synchronized CompletableFuture<RemoteMember> connect() {
+    if (connecting.compareAndSet(false, true))
+      connect(INITIAL_RECONNECT_INTERVAL);
+    return CompletableFuture.completedFuture(this);
   }
 
   /**
-   * Attempts to connect for the given number of attempts.
+   * Attempts to connect to the server.
    */
-  private void connect(int attempts, long timeout) {
+  private synchronized void connect(long timeout) {
+    LOGGER.info("Connecting to {}...", info.address);
+    doConnect(timeout, () -> connect(Math.min(timeout * 2, MAX_RECONNECT_INTERVAL)));
+  }
+
+  /**
+   * Attempts to reconnect to the server.
+   */
+  private void reconnect(long timeout) {
+    LOGGER.info("Reconnecting to {}...", info.address);
+    doConnect(timeout, () -> reconnect(Math.min(timeout * 2, MAX_RECONNECT_INTERVAL)));
+  }
+
+  /**
+   * Attempts to connect to the server.
+   */
+  private void doConnect(long timeout, Runnable reschedule) {
     Bootstrap bootstrap = new Bootstrap();
     bootstrap.group(eventLoopGroup)
       .channel(NioSocketChannel.class)
@@ -189,30 +200,28 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
 
     bootstrap.option(ChannelOption.TCP_NODELAY, true);
     bootstrap.option(ChannelOption.SO_KEEPALIVE, true);
-    bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 15000);
+    bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000);
+    bootstrap.option(ChannelOption.ALLOCATOR, ALLOCATOR);
 
     bootstrap.connect(info.address().getHostString(), info.address().getPort()).addListener((ChannelFutureListener) channelFuture -> {
       if (channelFuture.isSuccess()) {
         channel = channelFuture.channel();
-        connected = true;
-        connectFuture.complete(this);
-      } else if (attempts > 0) {
-        reconnectFuture = eventLoopGroup.schedule(() -> connect(attempts - 1, timeout * 2), timeout, TimeUnit.MILLISECONDS);
-      } else  {
-        connectFuture.completeExceptionally(channelFuture.cause());
+        connecting.set(false);
+        connected.set(true);
+      } else {
+        connectFuture = eventLoopGroup.schedule(reschedule, timeout, TimeUnit.MILLISECONDS);
       }
     });
   }
 
   @Override
   public CompletableFuture<Void> close() {
-    if (reconnectFuture != null) {
-      reconnectFuture.cancel(false);
-      reconnectFuture = null;
+    if (connectFuture != null) {
+      connectFuture.cancel(false);
+      connectFuture = null;
     }
 
-    if (!connected)
-      return CompletableFuture.completedFuture(null);
+    connecting.set(false);
 
     if (closeFuture == null) {
       synchronized (this) {
@@ -221,7 +230,7 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
           if (channel != null) {
             channel.close().addListener((ChannelFutureListener) channelFuture -> {
               channel = null;
-              connected = false;
+              connected.set(false);
               if (!eventLoopInitialized && eventLoopGroup != null) {
                 eventLoopGroup.shutdownGracefully();
                 eventLoopGroup = null;
@@ -233,7 +242,7 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
               }
             });
           } else {
-            connected = false;
+            connected.set(false);
             if (!eventLoopInitialized && eventLoopGroup != null) {
               eventLoopGroup.shutdownGracefully();
               eventLoopGroup = null;
@@ -286,6 +295,17 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
         });
       }
       response.release();
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext context, Throwable cause) throws Exception {
+      context.close();
+      connected.set(false);
+      channel = null;
+      NettyRemoteMember.this.context = null;
+      if (connecting.compareAndSet(false, true)) {
+        reconnect(INITIAL_RECONNECT_INTERVAL);
+      }
     }
   }
 
