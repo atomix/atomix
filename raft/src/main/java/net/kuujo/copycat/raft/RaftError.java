@@ -41,6 +41,10 @@ public interface RaftError {
         return Type.APPLICATION_ERROR;
       case 5:
         return Type.ILLEGAL_MEMBER_STATE_ERROR;
+      case 6:
+        return Type.UNKNOWN_SESSION_ERROR;
+      case 7:
+        return Type.INTERNAL_ERROR;
       default:
         throw new IllegalArgumentException("invalid error identifier: " + id);
     }
@@ -115,10 +119,23 @@ public interface RaftError {
       }
     },
 
+    /**
+     * Unknown session error.
+     */
     UNKNOWN_SESSION_ERROR(6) {
       @Override
       public RaftException createException() {
         return new UnknownSessionException("unknown member session");
+      }
+    },
+
+    /**
+     * Internal exception.
+     */
+    INTERNAL_ERROR(7) {
+      @Override
+      public RaftException createException() {
+        return new InternalException("internal Raft error");
       }
     };
 

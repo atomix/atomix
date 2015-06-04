@@ -102,16 +102,15 @@ class LeaderState extends ActiveState {
   private void applyEntries(long index) {
     if (!context.getLog().isEmpty()) {
       int count = 0;
-      for (long lastApplied = Math.max(context.getLastApplied(), context.getLog().firstIndex()); lastApplied <= index; lastApplied++) {
+      for (long lastApplied = Math.max(context.getStateMachine().getLastApplied(), context.getLog().firstIndex()); lastApplied <= index; lastApplied++) {
         try (Entry entry = context.getLog().getEntry(lastApplied)) {
           if (entry != null) {
-            try {
-              context.getStateMachine().apply(entry);
-            } catch (ApplicationException e) {
-              LOGGER.info("{} - An application error occurred: {}", context.getCluster().member().id(), e);
-            } finally {
-              context.setLastApplied(lastApplied);
-            }
+            context.getStateMachine().apply(entry).whenCompleteAsync((result, error) -> {
+              if (isOpen() && error != null) {
+                LOGGER.info("{} - An application error occurred: {}", context.getCluster().member().id(), error);
+              }
+              entry.close();
+            }, context.getContext());
           }
         }
         count++;
@@ -209,22 +208,34 @@ class LeaderState extends ActiveState {
       context.checkThread();
       if (isOpen()) {
         if (commitError == null) {
-          try (CommandEntry entry = context.getLog().getEntry(index)) {
-            try {
-              future.complete(logResponse(CommandResponse.builder()
-                .withStatus(Response.Status.OK)
-                .withResult(context.getStateMachine().apply(entry))
-                .build()));
-            } catch (ApplicationException e) {
-              future.complete(logResponse(CommandResponse.builder()
-                .withStatus(Response.Status.ERROR)
-                .withError(RaftError.Type.APPLICATION_ERROR)
-                .build()));
-            } catch (Exception e) {
-              future.completeExceptionally(e);
-            } finally {
-              context.setLastApplied(commitIndex);
-            }
+          CommandEntry entry = context.getLog().getEntry(index);
+          if (entry != null) {
+            context.getStateMachine().apply(entry).whenCompleteAsync((result, error) -> {
+              if (isOpen()) {
+                if (error == null) {
+                  future.complete(logResponse(CommandResponse.builder()
+                    .withStatus(Response.Status.OK)
+                    .withResult(result)
+                    .build()));
+                } else if (error instanceof ApplicationException) {
+                  future.complete(logResponse(CommandResponse.builder()
+                    .withStatus(Response.Status.ERROR)
+                    .withError(RaftError.Type.APPLICATION_ERROR)
+                    .build()));
+                } else {
+                  future.complete(logResponse(CommandResponse.builder()
+                    .withStatus(Response.Status.ERROR)
+                    .withError(RaftError.Type.INTERNAL_ERROR)
+                    .build()));
+                }
+              }
+              entry.close();
+            }, context.getContext());
+          } else {
+            future.complete(logResponse(CommandResponse.builder()
+              .withStatus(Response.Status.OK)
+              .withResult(null)
+              .build()));
           }
         } else {
           future.complete(logResponse(CommandResponse.builder()
@@ -269,14 +280,14 @@ class LeaderState extends ActiveState {
   /**
    * Submits a query with serializable consistency.
    */
-  private CompletableFuture<QueryResponse> submitQuerySerializable(OperationEntry entry) {
+  private CompletableFuture<QueryResponse> submitQuerySerializable(QueryEntry entry) {
     return applyQuery(entry, new CompletableFuture<>());
   }
 
   /**
    * Submits a query with lease based linearizable consistency.
    */
-  private CompletableFuture<QueryResponse> submitQueryLinearizableLease(OperationEntry entry) {
+  private CompletableFuture<QueryResponse> submitQueryLinearizableLease(QueryEntry entry) {
     long commitTime = replicator.commitTime();
     if (System.currentTimeMillis() - commitTime < context.getElectionTimeout()) {
       return submitQuerySerializable(entry);
@@ -288,7 +299,7 @@ class LeaderState extends ActiveState {
   /**
    * Submits a query with strict linearizable consistency.
    */
-  private CompletableFuture<QueryResponse> submitQueryLinearizableStrict(OperationEntry entry) {
+  private CompletableFuture<QueryResponse> submitQueryLinearizableStrict(QueryEntry entry) {
     CompletableFuture<QueryResponse> future = new CompletableFuture<>();
     replicator.commit().whenComplete((commitIndex, commitError) -> {
       context.checkThread();
@@ -309,20 +320,27 @@ class LeaderState extends ActiveState {
   /**
    * Applies a query to the state machine.
    */
-  private CompletableFuture<QueryResponse> applyQuery(OperationEntry entry, CompletableFuture<QueryResponse> future) {
-    try {
-      future.complete(logResponse(QueryResponse.builder()
-        .withStatus(Response.Status.OK)
-        .withResult(context.getStateMachine().apply(entry))
-        .build()));
-    } catch (ApplicationException e) {
-      future.complete(logResponse(QueryResponse.builder()
-        .withStatus(Response.Status.ERROR)
-        .withError(RaftError.Type.APPLICATION_ERROR)
-        .build()));
-    } catch (Exception e) {
-      future.completeExceptionally(e);
-    }
+  private CompletableFuture<QueryResponse> applyQuery(QueryEntry entry, CompletableFuture<QueryResponse> future) {
+    context.getStateMachine().apply(entry).whenCompleteAsync((result, error) -> {
+      if (isOpen()) {
+        if (error == null) {
+          future.complete(logResponse(QueryResponse.builder()
+            .withStatus(Response.Status.OK)
+            .withResult(result)
+            .build()));
+        } else if (error instanceof ApplicationException) {
+          future.complete(logResponse(QueryResponse.builder()
+            .withStatus(Response.Status.ERROR)
+            .withError(RaftError.Type.APPLICATION_ERROR)
+            .build()));
+        } else {
+          future.complete(logResponse(QueryResponse.builder()
+            .withStatus(Response.Status.ERROR)
+            .withError(RaftError.Type.INTERNAL_ERROR)
+            .build()));
+        }
+      }
+    }, context.getContext());
     return future;
   }
 
@@ -347,26 +365,31 @@ class LeaderState extends ActiveState {
       context.checkThread();
       if (isOpen()) {
         if (commitError == null) {
-          try (RegisterEntry entry = context.getLog().getEntry(index)) {
-            try {
-              future.complete(logResponse(RegisterResponse.builder()
-                .withStatus(Response.Status.OK)
-                .withLeader(context.getLeader())
-                .withTerm(context.getTerm())
-                .withSession(context.getStateMachine().apply(entry))
-                .withMembers(context.getCluster().members().stream().map(Member::info).collect(Collectors.toList()))
-                .build()));
-            } catch (ApplicationException e) {
-              future.complete(logResponse(RegisterResponse.builder()
-                .withStatus(Response.Status.ERROR)
-                .withError(RaftError.Type.APPLICATION_ERROR)
-                .build()));
-            } catch (Exception e) {
-              future.completeExceptionally(e);
-            } finally {
-              context.setLastApplied(commitIndex);
+          RegisterEntry entry = context.getLog().getEntry(index);
+          context.getStateMachine().apply(entry).whenCompleteAsync((sessionId, sessionError) -> {
+            if (isOpen()) {
+              if (sessionError == null) {
+                future.complete(logResponse(RegisterResponse.builder()
+                  .withStatus(Response.Status.OK)
+                  .withLeader(context.getLeader())
+                  .withTerm(context.getTerm())
+                  .withSession(sessionId)
+                  .withMembers(context.getCluster().members().stream().map(Member::info).collect(Collectors.toList()))
+                  .build()));
+              } else if (sessionError instanceof ApplicationException) {
+                future.complete(logResponse(RegisterResponse.builder()
+                  .withStatus(Response.Status.ERROR)
+                  .withError(RaftError.Type.APPLICATION_ERROR)
+                  .build()));
+              } else {
+                future.complete(logResponse(RegisterResponse.builder()
+                  .withStatus(Response.Status.ERROR)
+                  .withError(RaftError.Type.INTERNAL_ERROR)
+                  .build()));
+              }
             }
-          }
+            entry.close();
+          }, context.getContext());
         } else {
           future.complete(logResponse(RegisterResponse.builder()
             .withStatus(Response.Status.ERROR)
@@ -399,26 +422,30 @@ class LeaderState extends ActiveState {
       context.checkThread();
       if (isOpen()) {
         if (commitError == null) {
-          try (KeepAliveEntry entry = context.getLog().getEntry(index)) {
-            try {
-              context.getStateMachine().apply(entry);
-              future.complete(logResponse(KeepAliveResponse.builder()
-                .withStatus(Response.Status.OK)
-                .withLeader(context.getLeader())
-                .withTerm(context.getTerm())
-                .withMembers(context.getCluster().members().stream().map(Member::info).collect(Collectors.toList()))
-                .build()));
-            } catch (ApplicationException e) {
-              future.complete(logResponse(KeepAliveResponse.builder()
-                .withStatus(Response.Status.ERROR)
-                .withError(RaftError.Type.APPLICATION_ERROR)
-                .build()));
-            } catch (Exception e) {
-              future.completeExceptionally(e);
-            } finally {
-              context.setLastApplied(commitIndex);
+          KeepAliveEntry entry = context.getLog().getEntry(index);
+          context.getStateMachine().apply(entry).whenCompleteAsync((sessionResult, sessionError) -> {
+            if (isOpen()) {
+              if (sessionError == null) {
+                future.complete(logResponse(KeepAliveResponse.builder()
+                  .withStatus(Response.Status.OK)
+                  .withLeader(context.getLeader())
+                  .withTerm(context.getTerm())
+                  .withMembers(context.getCluster().members().stream().map(Member::info).collect(Collectors.toList()))
+                  .build()));
+              } else if (sessionError instanceof ApplicationException) {
+                future.complete(logResponse(KeepAliveResponse.builder()
+                  .withStatus(Response.Status.ERROR)
+                  .withError(RaftError.Type.APPLICATION_ERROR)
+                  .build()));
+              } else {
+                future.complete(logResponse(KeepAliveResponse.builder()
+                  .withStatus(Response.Status.ERROR)
+                  .withError(RaftError.Type.INTERNAL_ERROR)
+                  .build()));
+              }
             }
-          }
+            entry.close();
+          }, context.getContext());
         } else {
           future.complete(logResponse(KeepAliveResponse.builder()
             .withStatus(Response.Status.ERROR)

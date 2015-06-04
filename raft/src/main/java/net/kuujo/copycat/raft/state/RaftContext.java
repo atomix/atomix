@@ -68,7 +68,7 @@ public class RaftContext implements Managed<RaftContext> {
 
   public RaftContext(Log log, StateMachine stateMachine, ManagedCluster cluster, String topic, ExecutionContext context) {
     this.log = log;
-    this.stateMachine = new RaftStateMachine(stateMachine);
+    this.stateMachine = new RaftStateMachine(stateMachine, new ExecutionContext(String.format("%s-%s", context.name(), "-state"), context.serializer().copy()));
     this.compactor = new Compactor(log, this.stateMachine::filter, context);
     this.cluster = cluster;
     this.topic = topic;

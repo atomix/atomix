@@ -13,27 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.raft.log.entry;
-
-import net.kuujo.copycat.raft.log.Compaction;
-
-import java.util.concurrent.CompletableFuture;
+package net.kuujo.copycat.raft;
 
 /**
- * Raft log entry filter.
+ * Internal exception.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@FunctionalInterface
-public interface EntryFilter {
+public class InternalException extends RaftException {
+  private static final RaftError.Type TYPE = RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR;
 
-  /**
-   * Returns a boolean value indicating whether to keep the given entry in the log.
-   *
-   * @param entry The entry to check.
-   * @param compaction The compaction context.
-   * @return Indicates whether to keep the entry in the log.
-   */
-  CompletableFuture<Boolean> accept(Entry entry, Compaction compaction);
+  public InternalException(String message, Object... args) {
+    super(TYPE, message, args);
+  }
+
+  public InternalException(Throwable cause, String message, Object... args) {
+    super(TYPE, cause, message, args);
+  }
+
+  public InternalException(Throwable cause) {
+    super(TYPE, cause);
+  }
 
 }

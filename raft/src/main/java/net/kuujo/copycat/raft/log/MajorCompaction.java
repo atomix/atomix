@@ -115,12 +115,26 @@ public class MajorCompaction extends Compaction {
    * Compacts a single active segment recursively.
    */
   private CompletableFuture<Segment> compactSegment(Segment segment, long index, Segment compactSegment, CompletableFuture<Segment> future) {
-    try (Entry entry = segment.getEntry(index)) {
-      if (entry != null && filter.accept(entry, this)) {
-        compactSegment.appendEntry(entry);
-      } else {
-        compactSegment.skip(1);
-      }
+    Entry entry = segment.getEntry(index);
+    if (entry != null) {
+      filter.accept(entry, this).whenCompleteAsync((accept, error) -> {
+        if (error == null) {
+          if (accept) {
+            compactSegment.appendEntry(entry);
+          } else {
+            compactSegment.skip(1);
+          }
+
+          if (index == segment.lastIndex()) {
+            future.complete(compactSegment);
+          } else {
+            compactSegment(segment, index + 1, compactSegment, future);
+          }
+        }
+        entry.close();
+      }, context);
+    } else {
+      compactSegment.skip(1);
 
       if (index == segment.lastIndex()) {
         future.complete(compactSegment);
@@ -143,14 +157,26 @@ public class MajorCompaction extends Compaction {
    * Determines whether a segment should be compacted.
    */
   private CompletableFuture<Boolean> shouldCompactSegment(Segment segment, long index, CompletableFuture<Boolean> future) {
-    try (Entry entry = segment.getEntry(index)) {
-      if (entry != null && !filter.accept(entry, this)) {
-        future.complete(true);
-      } else if (index == segment.lastIndex()) {
-        future.complete(false);
-      } else {
-        context.execute(() -> shouldCompactSegment(segment, index + 1, future));
-      }
+    Entry entry = segment.getEntry(index);
+    if (entry != null) {
+      filter.accept(entry, this).whenCompleteAsync((accept, error) -> {
+        entry.close();
+        if (error == null) {
+          if (!accept) {
+            future.complete(true);
+          } else if (index == segment.lastIndex()) {
+            future.complete(false);
+          } else {
+            shouldCompactSegment(segment, index + 1, future);
+          }
+        } else {
+          future.complete(true);
+        }
+      }, context);
+    } else if (index == segment.lastIndex()) {
+      future.complete(false);
+    } else {
+      context.execute(() -> shouldCompactSegment(segment, index + 1, future));
     }
     return future;
   }

@@ -337,7 +337,7 @@ public class Raft implements Protocol, Managed<Raft> {
         throw new ConfigurationException("cluster not configured");
       if (topic == null)
         throw new ConfigurationException("topic not configured");
-      return new Raft(log, config, stateMachine, cluster, topic, new ExecutionContext("copycat-state", cluster.serializer()));
+      return new Raft(log, config, stateMachine, cluster, topic, new ExecutionContext(cluster.member().id() != 0 ? String.format("copycat-%d", cluster.member().id()) : "copycat", cluster.serializer()));
     }
   }
 

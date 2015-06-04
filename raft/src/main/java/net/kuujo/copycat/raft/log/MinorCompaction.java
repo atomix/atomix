@@ -157,24 +157,31 @@ public class MinorCompaction extends Compaction {
   private CompletableFuture<List<Segment>> compactSegments(Segment segment, long index, Segment compactSegment, List<Segment> segments, List<Segment> compactSegments, SegmentManager manager, CompletableFuture<List<Segment>> future) {
     // Read the entry from the segment. If the entry is null or filtered out of the log, skip the entry, otherwise
     // append it to the compact segment.
-    try (Entry entry = segment.getEntry(index)) {
-      if (entry != null && filter.accept(entry, this)) {
-        compactSegment.appendEntry(entry);
-      } else {
-        compactSegment.skip(1);
-      }
-    }
+    Entry entry = segment.getEntry(index);
+    if (entry != null) {
+      filter.accept(entry, this).whenCompleteAsync((accept, error) -> {
+        if (error == null) {
+          if (accept) {
+            compactSegment.appendEntry(entry);
+          } else {
+            compactSegment.skip(1);
+          }
 
-    // If this entry was the last entry in the segment, roll over to a new segment.
-    if (index == segment.lastIndex()) {
-      if (segments.isEmpty()) {
-        future.complete(compactSegments);
-      } else {
-        Segment nextSegment = segments.remove(0);
-        context.execute(() -> compactSegments(nextSegment, nextSegment.firstIndex(), nextCompactSegment(nextSegment.firstIndex(), nextSegment, compactSegment, compactSegments, manager), segments, compactSegments, manager, future));
-      }
+          if (index == segment.lastIndex()) {
+            if (segments.isEmpty()) {
+              future.complete(compactSegments);
+            } else {
+              Segment nextSegment = segments.remove(0);
+              compactSegments(nextSegment, nextSegment.firstIndex(), nextCompactSegment(nextSegment.firstIndex(), nextSegment, compactSegment, compactSegments, manager), segments, compactSegments, manager, future);
+            }
+          } else {
+            compactSegments(segment, index + 1, nextCompactSegment(index + 1, segment, compactSegment, compactSegments, manager), segments, compactSegments, manager, future);
+          }
+        }
+        entry.close();
+      }, context);
     } else {
-      compactSegments(segment, index + 1, nextCompactSegment(index + 1, segment, compactSegment, compactSegments, manager), segments, compactSegments, manager, future);
+      compactSegment.skip(1);
     }
     return future;
   }

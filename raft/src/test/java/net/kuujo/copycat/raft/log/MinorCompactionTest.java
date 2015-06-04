@@ -22,6 +22,8 @@ import net.kuujo.copycat.raft.log.entry.NoOpEntry;
 import net.kuujo.copycat.util.ExecutionContext;
 import org.testng.annotations.Test;
 
+import java.util.concurrent.CompletableFuture;
+
 /**
  * Minor compaction test.
  *
@@ -55,7 +57,7 @@ public class MinorCompactionTest extends ConcurrentTestCase {
 
     threadAssertEquals(log.length(), 1101L);
 
-    MinorCompaction compaction = new MinorCompaction(1024, (e, c) -> !(e instanceof NoOpEntry), context);
+    MinorCompaction compaction = new MinorCompaction(1024, (e, c) -> CompletableFuture.completedFuture(!(e instanceof NoOpEntry)), context);
 
     expectResume();
     compaction.run(log.segments()).thenRun(this::resume);

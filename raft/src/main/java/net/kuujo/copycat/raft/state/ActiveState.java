@@ -214,16 +214,14 @@ abstract class ActiveState extends RemoteState {
             // Starting after the last applied entry, iterate through new entries
             // and apply them to the state machine up to the commit index.
             for (long i = Math.max(previousCommitIndex + 1, context.getLog().firstIndex()); i <= Math.min(context.getCommitIndex(), lastIndex); i++) {
-              try (Entry entry = context.getLog().getEntry(i)) {
-                if (entry != null) {
-                  try {
-                    context.getStateMachine().apply(entry);
-                  } catch (ApplicationException e) {
-
-                  } finally {
-                    context.setLastApplied(i);
+              Entry entry = context.getLog().getEntry(i);
+              if (entry != null) {
+                context.getStateMachine().apply(entry).whenCompleteAsync((result, error) -> {
+                  if (isOpen() && error != null) {
+                    LOGGER.info("{} - An application error occurred: {}", context.getCluster().member().id(), error);
                   }
-                }
+                  entry.close();
+                }, context.getContext());
               }
             }
           }
@@ -385,24 +383,28 @@ abstract class ActiveState extends RemoteState {
 
     if (request.query().consistency() == ConsistencyLevel.SERIALIZABLE) {
       CompletableFuture<QueryResponse> future = new CompletableFuture<>();
-      QueryEntry entry = new QueryEntry(context.getCommitIndex())
+      QueryEntry entry = context.getLog().createEntry(QueryEntry.class)
+        .setIndex(context.getCommitIndex())
         .setTerm(context.getTerm())
         .setTimestamp(System.currentTimeMillis())
         .setSession(request.session())
         .setQuery(request.query());
-      try {
-        future.complete(logResponse(QueryResponse.builder()
-          .withStatus(Response.Status.OK)
-          .withResult(context.getStateMachine().apply(entry))
-          .build()));
-      } catch (ApplicationException e) {
-        future.complete(logResponse(QueryResponse.builder()
-          .withStatus(Response.Status.ERROR)
-          .withError(RaftError.Type.APPLICATION_ERROR)
-          .build()));
-      } catch (Exception e) {
-        future.completeExceptionally(e);
-      }
+      context.getStateMachine().apply(entry).whenComplete((result, error) -> {
+        if (isOpen()) {
+          if (error == null) {
+            future.complete(logResponse(QueryResponse.builder()
+              .withStatus(Response.Status.OK)
+              .withResult(result)
+              .build()));
+          } else {
+            future.complete(logResponse(QueryResponse.builder()
+              .withStatus(Response.Status.ERROR)
+              .withError(RaftError.Type.APPLICATION_ERROR)
+              .build()));
+          }
+        }
+        entry.close();
+      });
       return future;
     } else if (context.getLeader() == 0) {
       return CompletableFuture.completedFuture(logResponse(QueryResponse.builder()
