@@ -13,33 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.raft;
+package net.kuujo.copycat.raft.rpc;
+
+import net.kuujo.copycat.io.util.ReferenceManager;
+
+import java.util.function.Function;
 
 /**
- * Query consistency level.
+ * Client request.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public enum ConsistencyLevel {
+public abstract class ClientRequest<T extends ClientRequest<T>> extends AbstractRequest<T> {
+
+  public ClientRequest(ReferenceManager<T> referenceManager) {
+    super(referenceManager);
+  }
 
   /**
-   * Provides serializable consistency.
+   * Client request builder.
    */
-  SERIALIZABLE,
-
-  /**
-   * Provides sequential consistency.
-   */
-  SEQUENTIAL,
-
-  /**
-   * Provides linearizable consistency based on a leader lease.
-   */
-  LINEARIZABLE_LEASE,
-
-  /**
-   * Provides strict linearizable consistency.
-   */
-  LINEARIZABLE_STRICT
+  public static abstract class Builder<T extends Builder<T, U>, U extends ClientRequest<U>> extends AbstractRequest.Builder<T, U> {
+    protected Builder(Function<ReferenceManager<U>, U> factory) {
+      super(factory);
+    }
+  }
 
 }

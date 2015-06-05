@@ -208,7 +208,7 @@ class RaftStateMachine {
    * @return The result.
    */
   public CompletableFuture<Object> apply(QueryEntry entry) {
-    return query(entry.getIndex(), entry.getSession(), entry.getTimestamp(), entry.getQuery());
+    return query(entry.getIndex(), entry.getSession(), entry.getVersion(), entry.getTimestamp(), entry.getQuery());
   }
 
   /**
@@ -232,11 +232,16 @@ class RaftStateMachine {
   private CompletableFuture<Long> register(long index, long timestamp, MemberInfo member) {
     RaftSession session = new RaftSession(index, member, timestamp);
     sessions.put(index, session);
-    setLastApplied(index);
-    return CompletableFuture.supplyAsync(() -> {
+
+    // We need to ensure that the command is applied to the state machine before queries are run.
+    // Set last applied only after the operation has been submitted to the state machine executor.
+    CompletableFuture<Long> future = CompletableFuture.supplyAsync(() -> {
       stateMachine.register(session);
       return session.id();
     }, context);
+
+    setLastApplied(index);
+    return future;
   }
 
   /**
@@ -248,15 +253,22 @@ class RaftStateMachine {
    */
   private CompletableFuture<Void> keepAlive(long index, long timestamp, long sessionId) {
     RaftSession session = sessions.get(sessionId);
-    setLastApplied(index);
+
+    // We need to ensure that the command is applied to the state machine before queries are run.
+    // Set last applied only after the operation has been submitted to the state machine executor.
+    CompletableFuture<Void> future;
     if (session == null) {
-      return Futures.exceptionalFuture(new UnknownSessionException("unknown session: " + sessionId));
+      future = Futures.exceptionalFuture(new UnknownSessionException("unknown session: " + sessionId));
     } else if (!session.update(index, timestamp)) {
       sessions.remove(sessionId);
       context.execute(() -> stateMachine.expire(session));
-      return Futures.exceptionalFuture(new UnknownSessionException("session expired: " + sessionId));
+      future = Futures.exceptionalFuture(new UnknownSessionException("session expired: " + sessionId));
+    } else {
+      future = CompletableFuture.runAsync(() -> {}, context);
     }
-    return CompletableFuture.runAsync(() -> {}, context);
+
+    setLastApplied(index);
+    return future;
   }
 
   /**
@@ -266,8 +278,11 @@ class RaftStateMachine {
    * @return The no-op index.
    */
   private CompletableFuture<Long> noop(long index) {
+    // We need to ensure that the command is applied to the state machine before queries are run.
+    // Set last applied only after the operation has been submitted to the state machine executor.
+    CompletableFuture<Long> future = CompletableFuture.supplyAsync(() -> index, context);
     setLastApplied(index);
-    return CompletableFuture.supplyAsync(() -> index, context);
+    return future;
   }
 
   /**
@@ -283,32 +298,35 @@ class RaftStateMachine {
    */
   @SuppressWarnings("unchecked")
   private CompletableFuture<Object> command(long index, long sessionId, long request, long response, long timestamp, Command command) {
+    CompletableFuture<Object> future;
+
     // First check to ensure that the session exists.
     RaftSession session = sessions.get(sessionId);
     if (session == null) {
-      return Futures.exceptionalFuture(new UnknownSessionException("unknown session " + sessionId));
+      future = Futures.exceptionalFuture(new UnknownSessionException("unknown session " + sessionId));
     } else if (!session.update(index, timestamp)) {
       sessions.remove(sessionId);
       context.execute(() -> stateMachine.expire(session));
-      return Futures.exceptionalFuture(new UnknownSessionException("unknown session " + sessionId));
+      future = Futures.exceptionalFuture(new UnknownSessionException("unknown session " + sessionId));
+    } else if (session.responses.containsKey(request)) {
+        future = CompletableFuture.completedFuture(session.responses.get(request));
+    } else {
+      // Apply the command to the state machine.
+      future = CompletableFuture.supplyAsync(() -> stateMachine.apply(new Commit(index, session, timestamp, command)), context)
+        .thenApply(result -> {
+          // Store the command result in the session.
+          session.responses.put(request, result);
+
+          // Clear any responses that have been received by the client for the session.
+          session.responses.headMap(response, true).clear();
+          return result;
+        });
     }
 
-    // Given the session, check for an existing result for this command.
-    if (session.responses.containsKey(request)) {
-      return CompletableFuture.completedFuture(session.responses.get(request));
-    }
-
-    // Apply the command to the state machine.
+    // We need to ensure that the command is applied to the state machine before queries are run.
+    // Set last applied only after the operation has been submitted to the state machine executor.
     setLastApplied(index);
-    return CompletableFuture.supplyAsync(() -> stateMachine.apply(new Commit(index, session, timestamp, command)), context)
-      .thenApply(result -> {
-        // Store the command result in the session.
-        session.responses.put(request, result);
-
-        // Clear any responses that have been received by the client for the session.
-        session.responses.headMap(response, true).clear();
-        return result;
-      });
+    return future;
   }
 
   /**
@@ -316,15 +334,18 @@ class RaftStateMachine {
    *
    * @param index The query index.
    * @param sessionId The query session ID.
+   * @param version The request version.
    * @param timestamp The query timestamp.
    * @param query The query to apply.
    * @return The query result.
    */
   @SuppressWarnings("unchecked")
-  private CompletableFuture<Object> query(long index, long sessionId, long timestamp, Query query) {
-    if (sessionId > lastApplied) {
+  private CompletableFuture<Object> query(long index, long sessionId, long version, long timestamp, Query query) {
+    // If the session has not yet been opened or if the client provided a version greater than the last applied index
+    // then wait until the up-to-date index is applied to the state machine.
+    if (sessionId > lastApplied || version > lastApplied) {
       CompletableFuture<Object> future = new CompletableFuture<>();
-      List<Runnable> queries = this.queries.computeIfAbsent(sessionId, id -> new ArrayList<>());
+      List<Runnable> queries = this.queries.computeIfAbsent(Math.max(sessionId, version), id -> new ArrayList<>());
       queries.add(() -> CompletableFuture.supplyAsync(() -> stateMachine.apply(new Commit(index, sessions.get(sessionId), timestamp, query)), context).whenComplete((result, error) -> {
         if (error == null) {
           future.complete(result);
@@ -334,6 +355,7 @@ class RaftStateMachine {
       }));
       return future;
     } else {
+      // Verify that the client's session is still alive.
       RaftSession session = sessions.get(sessionId);
       if (session == null) {
         return Futures.exceptionalFuture(new UnknownSessionException("unknown session: " + sessionId));

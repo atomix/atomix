@@ -56,6 +56,7 @@ public class RaftContext implements Managed<RaftContext> {
   private long heartbeatInterval = 250;
   private long keepAliveInterval = 2000;
   private long session;
+  private long version;
   private long request;
   private long response;
   private int leader;
@@ -212,6 +213,27 @@ public class RaftContext implements Managed<RaftContext> {
    */
   public long getSession() {
     return session;
+  }
+
+  /**
+   * Sets the version.
+   *
+   * @param version The version.
+   * @return The Raft context.
+   */
+  RaftContext setVersion(long version) {
+    if (version > this.version)
+      this.version = version;
+    return this;
+  }
+
+  /**
+   * Returns the version.
+   *
+   * @return The version.
+   */
+  public long getVersion() {
+    return version;
   }
 
   /**

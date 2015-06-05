@@ -255,9 +255,11 @@ class LeaderState extends ActiveState {
     final long timestamp = System.currentTimeMillis();
     final long index = context.getCommitIndex();
 
-    QueryEntry entry = new QueryEntry(index)
+    QueryEntry entry = context.getLog().createEntry(QueryEntry.class)
+      .setIndex(index)
       .setTerm(context.getTerm())
       .setSession(request.session())
+      .setVersion(request.version())
       .setTimestamp(timestamp)
       .setQuery(query);
 
@@ -313,6 +315,7 @@ class LeaderState extends ActiveState {
             .build()));
         }
       }
+      entry.close();
     });
     return future;
   }
@@ -321,11 +324,13 @@ class LeaderState extends ActiveState {
    * Applies a query to the state machine.
    */
   private CompletableFuture<QueryResponse> applyQuery(QueryEntry entry, CompletableFuture<QueryResponse> future) {
+    long version = context.getStateMachine().getLastApplied();
     context.getStateMachine().apply(entry).whenCompleteAsync((result, error) -> {
       if (isOpen()) {
         if (error == null) {
           future.complete(logResponse(QueryResponse.builder()
             .withStatus(Response.Status.OK)
+            .withVersion(version)
             .withResult(result)
             .build()));
         } else if (error instanceof ApplicationException) {
@@ -340,6 +345,7 @@ class LeaderState extends ActiveState {
             .build()));
         }
       }
+      entry.close();
     }, context.getContext());
     return future;
   }
@@ -423,6 +429,7 @@ class LeaderState extends ActiveState {
       if (isOpen()) {
         if (commitError == null) {
           KeepAliveEntry entry = context.getLog().getEntry(index);
+          long version = context.getStateMachine().getLastApplied();
           context.getStateMachine().apply(entry).whenCompleteAsync((sessionResult, sessionError) -> {
             if (isOpen()) {
               if (sessionError == null) {
@@ -430,6 +437,7 @@ class LeaderState extends ActiveState {
                   .withStatus(Response.Status.OK)
                   .withLeader(context.getLeader())
                   .withTerm(context.getTerm())
+                  .withVersion(version)
                   .withMembers(context.getCluster().members().stream().map(Member::info).collect(Collectors.toList()))
                   .build()));
               } else if (sessionError instanceof ApplicationException) {

@@ -27,7 +27,7 @@ import java.util.Objects;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class CommandRequest extends AbstractRequest<CommandRequest> {
+public class CommandRequest extends SessionRequest<CommandRequest> {
   private static final ThreadLocal<Builder> builder = new ThreadLocal<Builder>() {
     @Override
     protected Builder initialValue() {
@@ -54,7 +54,6 @@ public class CommandRequest extends AbstractRequest<CommandRequest> {
     return builder.get().reset(request);
   }
 
-  private long session;
   private long request;
   private long response;
   private Command command;
@@ -66,15 +65,6 @@ public class CommandRequest extends AbstractRequest<CommandRequest> {
   @Override
   public Type type() {
     return Type.COMMAND;
-  }
-
-  /**
-   * Returns the session ID.
-   *
-   * @return The session ID.
-   */
-  public long session() {
-    return session;
   }
 
   /**
@@ -106,7 +96,7 @@ public class CommandRequest extends AbstractRequest<CommandRequest> {
 
   @Override
   public void readObject(Buffer buffer, Serializer serializer) {
-    session = buffer.readLong();
+    super.readObject(buffer, serializer);
     request = buffer.readLong();
     response = buffer.readLong();
     command = serializer.readObject(buffer);
@@ -114,7 +104,8 @@ public class CommandRequest extends AbstractRequest<CommandRequest> {
 
   @Override
   public void writeObject(Buffer buffer, Serializer serializer) {
-    buffer.writeLong(session).writeLong(request).writeLong(response);
+    super.writeObject(buffer, serializer);
+    buffer.writeLong(request).writeLong(response);
     serializer.writeObject(command, buffer);
   }
 
@@ -136,7 +127,7 @@ public class CommandRequest extends AbstractRequest<CommandRequest> {
   /**
    * Write request builder.
    */
-  public static class Builder extends AbstractRequest.Builder<Builder, CommandRequest> {
+  public static class Builder extends SessionRequest.Builder<Builder, CommandRequest> {
 
     protected Builder() {
       super(CommandRequest::new);
@@ -145,23 +136,9 @@ public class CommandRequest extends AbstractRequest<CommandRequest> {
     @Override
     Builder reset() {
       super.reset();
-      request.session = 0;
       request.request = 0;
       request.response = 0;
       request.command = null;
-      return this;
-    }
-
-    /**
-     * Sets the session ID.
-     *
-     * @param session The session ID.
-     * @return The request builder.
-     */
-    public Builder withSession(long session) {
-      if (session <= 0)
-        throw new IllegalArgumentException("session must be positive");
-      request.session = session;
       return this;
     }
 

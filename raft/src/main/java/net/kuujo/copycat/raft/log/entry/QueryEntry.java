@@ -28,15 +28,31 @@ import net.kuujo.copycat.raft.Query;
  */
 @SerializeWith(id=1009)
 public class QueryEntry extends OperationEntry<QueryEntry> {
+  private long version;
   private Query query;
-
-  public QueryEntry(long index) {
-    super(null);
-    setIndex(index);
-  }
 
   public QueryEntry(ReferenceManager<Entry<?>> referenceManager) {
     super(referenceManager);
+  }
+
+  /**
+   * Returns the query version.
+   *
+   * @return The query version.
+   */
+  public long getVersion() {
+    return version;
+  }
+
+  /**
+   * Sets the query version.
+   *
+   * @param version The query version.
+   * @return The query entry.
+   */
+  public QueryEntry setVersion(long version) {
+    this.version = version;
+    return this;
   }
 
   /**

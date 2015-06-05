@@ -27,7 +27,7 @@ import java.util.Objects;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class QueryRequest extends AbstractRequest<QueryRequest> {
+public class QueryRequest extends SessionRequest<QueryRequest> {
   private static final ThreadLocal<Builder> builder = new ThreadLocal<Builder>() {
     @Override
     protected Builder initialValue() {
@@ -54,7 +54,7 @@ public class QueryRequest extends AbstractRequest<QueryRequest> {
     return builder.get().reset(request);
   }
 
-  private long session;
+  private long version;
   private Query query;
 
   public QueryRequest(ReferenceManager<QueryRequest> referenceManager) {
@@ -67,12 +67,12 @@ public class QueryRequest extends AbstractRequest<QueryRequest> {
   }
 
   /**
-   * Returns the session ID.
+   * Returns the request version.
    *
-   * @return The session ID.
+   * @return The request version.
    */
-  public long session() {
-    return session;
+  public long version() {
+    return version;
   }
 
   /**
@@ -86,13 +86,15 @@ public class QueryRequest extends AbstractRequest<QueryRequest> {
 
   @Override
   public void readObject(Buffer buffer, Serializer serializer) {
-    session = buffer.readLong();
+    super.readObject(buffer, serializer);
+    version = buffer.readLong();
     query = serializer.readObject(buffer);
   }
 
   @Override
   public void writeObject(Buffer buffer, Serializer serializer) {
-    buffer.writeLong(session);
+    super.writeObject(buffer, serializer);
+    buffer.writeLong(version);
     serializer.writeObject(query, buffer);
   }
 
@@ -108,13 +110,13 @@ public class QueryRequest extends AbstractRequest<QueryRequest> {
 
   @Override
   public String toString() {
-    return String.format("%s[session=%d, query=%s]", getClass().getSimpleName(), session, query);
+    return String.format("%s[session=%d, version=%d, query=%s]", getClass().getSimpleName(), session, version, query);
   }
 
   /**
    * Query request builder.
    */
-  public static class Builder extends AbstractRequest.Builder<Builder, QueryRequest> {
+  public static class Builder extends SessionRequest.Builder<Builder, QueryRequest> {
 
     protected Builder() {
       super(QueryRequest::new);
@@ -123,21 +125,21 @@ public class QueryRequest extends AbstractRequest<QueryRequest> {
     @Override
     Builder reset() {
       super.reset();
-      request.session = 0;
+      request.version = 0;
       request.query = null;
       return this;
     }
 
     /**
-     * Sets the session ID.
+     * Sets the request version.
      *
-     * @param session The session ID.
+     * @param version The request version.
      * @return The request builder.
      */
-    public Builder withSession(long session) {
-      if (session <= 0)
-        throw new IllegalArgumentException("session must be positive");
-      request.session = session;
+    public Builder withVersion(long version) {
+      if (version < 0)
+        throw new IllegalArgumentException("version must be positive");
+      request.version = version;
       return this;
     }
 
@@ -157,8 +159,8 @@ public class QueryRequest extends AbstractRequest<QueryRequest> {
     @Override
     public QueryRequest build() {
       super.build();
-      if (request.session <= 0)
-        throw new IllegalArgumentException("session must be positive");
+      if (request.version < 0)
+        throw new IllegalArgumentException("version must be positive");
       if (request.query == null)
         throw new NullPointerException("query cannot be null");
       return request;

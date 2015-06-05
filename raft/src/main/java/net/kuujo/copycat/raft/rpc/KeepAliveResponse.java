@@ -28,7 +28,7 @@ import java.util.*;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class KeepAliveResponse extends AbstractResponse<KeepAliveResponse> {
+public class KeepAliveResponse extends ClientResponse<KeepAliveResponse> {
   private static final ThreadLocal<Builder> builder = new ThreadLocal<Builder>() {
     @Override
     protected Builder initialValue() {
@@ -102,6 +102,7 @@ public class KeepAliveResponse extends AbstractResponse<KeepAliveResponse> {
       error = null;
       term = buffer.readLong();
       leader = buffer.readInt();
+      version = buffer.readLong();
       members = serializer.readObject(buffer);
     } else {
       error = RaftError.forId(buffer.readByte());
@@ -112,7 +113,7 @@ public class KeepAliveResponse extends AbstractResponse<KeepAliveResponse> {
   public void writeObject(Buffer buffer, Serializer serializer) {
     buffer.writeByte(status.id());
     if (status == Status.OK) {
-      buffer.writeLong(term).writeInt(leader);
+      buffer.writeLong(term).writeInt(leader).writeLong(version);
       serializer.writeObject(members, buffer);
     } else {
       buffer.writeByte(error.id());
@@ -144,7 +145,7 @@ public class KeepAliveResponse extends AbstractResponse<KeepAliveResponse> {
   /**
    * Status response builder.
    */
-  public static class Builder extends AbstractResponse.Builder<Builder, KeepAliveResponse> {
+  public static class Builder extends ClientResponse.Builder<Builder, KeepAliveResponse> {
 
     private Builder() {
       super(KeepAliveResponse::new);

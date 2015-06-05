@@ -166,6 +166,7 @@ public class RemoteState extends AbstractState {
         if (error == null && response.status() == Response.Status.OK) {
           context.setTerm(response.term());
           context.setLeader(response.leader());
+          context.setVersion(response.version());
           context.getCluster().configure(response.members().toArray(new MemberInfo[response.members().size()])).whenComplete((configureResult, configureError) -> {
             if (configureError == null) {
               future.complete(null);

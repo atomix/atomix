@@ -27,7 +27,7 @@ import java.util.Objects;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class CommandResponse extends AbstractResponse<CommandResponse> {
+public class CommandResponse extends ClientResponse<CommandResponse> {
   private static final ThreadLocal<Builder> builder = new ThreadLocal<Builder>() {
     @Override
     protected Builder initialValue() {
@@ -79,6 +79,7 @@ public class CommandResponse extends AbstractResponse<CommandResponse> {
     status = Status.forId(buffer.readByte());
     if (status == Status.OK) {
       error = null;
+      version = buffer.readLong();
       result = serializer.readObject(buffer);
     } else {
       error = RaftError.forId(buffer.readByte());
@@ -89,6 +90,7 @@ public class CommandResponse extends AbstractResponse<CommandResponse> {
   public void writeObject(Buffer buffer, Serializer serializer) {
     buffer.writeByte(status.id());
     if (status == Status.OK) {
+      buffer.writeLong(version);
       serializer.writeObject(result, buffer);
     } else {
       buffer.writeByte(error.id());
@@ -113,13 +115,13 @@ public class CommandResponse extends AbstractResponse<CommandResponse> {
 
   @Override
   public String toString() {
-    return String.format("%s[status=%s, result=%s]", getClass().getSimpleName(), status, result);
+    return String.format("%s[status=%s, version=%d, result=%s]", getClass().getSimpleName(), status, version, result);
   }
 
   /**
    * Command response builder.
    */
-  public static class Builder extends AbstractResponse.Builder<Builder, CommandResponse> {
+  public static class Builder extends ClientResponse.Builder<Builder, CommandResponse> {
 
     private Builder() {
       super(CommandResponse::new);

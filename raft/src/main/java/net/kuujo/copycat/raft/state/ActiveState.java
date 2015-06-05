@@ -16,7 +16,6 @@
 package net.kuujo.copycat.raft.state;
 
 import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.raft.ApplicationException;
 import net.kuujo.copycat.raft.ConsistencyLevel;
 import net.kuujo.copycat.raft.RaftError;
 import net.kuujo.copycat.raft.log.entry.Entry;
@@ -381,19 +380,23 @@ abstract class ActiveState extends RemoteState {
     context.checkThread();
     logRequest(request);
 
-    if (request.query().consistency() == ConsistencyLevel.SERIALIZABLE) {
+    if (request.query().consistency() == ConsistencyLevel.SEQUENTIAL) {
       CompletableFuture<QueryResponse> future = new CompletableFuture<>();
       QueryEntry entry = context.getLog().createEntry(QueryEntry.class)
         .setIndex(context.getCommitIndex())
         .setTerm(context.getTerm())
         .setTimestamp(System.currentTimeMillis())
+        .setVersion(request.version())
         .setSession(request.session())
         .setQuery(request.query());
-      context.getStateMachine().apply(entry).whenComplete((result, error) -> {
+
+      long version = Math.max(context.getStateMachine().getLastApplied(), request.version());
+      context.getStateMachine().apply(entry).whenCompleteAsync((result, error) -> {
         if (isOpen()) {
           if (error == null) {
             future.complete(logResponse(QueryResponse.builder()
               .withStatus(Response.Status.OK)
+              .withVersion(version)
               .withResult(result)
               .build()));
           } else {
@@ -404,7 +407,36 @@ abstract class ActiveState extends RemoteState {
           }
         }
         entry.close();
-      });
+      }, context.getContext());
+      return future;
+    } else if (request.query().consistency() == ConsistencyLevel.SERIALIZABLE) {
+      CompletableFuture<QueryResponse> future = new CompletableFuture<>();
+      QueryEntry entry = context.getLog().createEntry(QueryEntry.class)
+        .setIndex(context.getCommitIndex())
+        .setTerm(context.getTerm())
+        .setTimestamp(System.currentTimeMillis())
+        .setVersion(0)
+        .setSession(request.session())
+        .setQuery(request.query());
+
+      long version = context.getStateMachine().getLastApplied();
+      context.getStateMachine().apply(entry).whenCompleteAsync((result, error) -> {
+        if (isOpen()) {
+          if (error == null) {
+            future.complete(logResponse(QueryResponse.builder()
+              .withStatus(Response.Status.OK)
+              .withVersion(version)
+              .withResult(result)
+              .build()));
+          } else {
+            future.complete(logResponse(QueryResponse.builder()
+              .withStatus(Response.Status.ERROR)
+              .withError(RaftError.Type.APPLICATION_ERROR)
+              .build()));
+          }
+        }
+        entry.close();
+      }, context.getContext());
       return future;
     } else if (context.getLeader() == 0) {
       return CompletableFuture.completedFuture(logResponse(QueryResponse.builder()

@@ -27,7 +27,7 @@ import java.util.Objects;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class RegisterRequest extends AbstractRequest<RegisterRequest> {
+public class RegisterRequest extends ClientRequest<RegisterRequest> {
   private static final ThreadLocal<Builder> builder = new ThreadLocal<Builder>() {
     @Override
     protected Builder initialValue() {
@@ -106,7 +106,7 @@ public class RegisterRequest extends AbstractRequest<RegisterRequest> {
   /**
    * Register client request builder.
    */
-  public static class Builder extends AbstractRequest.Builder<Builder, RegisterRequest> {
+  public static class Builder extends ClientRequest.Builder<Builder, RegisterRequest> {
 
     private Builder() {
       super(RegisterRequest::new);

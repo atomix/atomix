@@ -27,7 +27,7 @@ import java.util.Objects;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class QueryResponse extends AbstractResponse<QueryResponse> {
+public class QueryResponse extends ClientResponse<QueryResponse> {
   private static final ThreadLocal<Builder> builder = new ThreadLocal<Builder>() {
     @Override
     protected Builder initialValue() {
@@ -79,6 +79,7 @@ public class QueryResponse extends AbstractResponse<QueryResponse> {
     status = Status.forId(buffer.readByte());
     if (status == Status.OK) {
       error = null;
+      version = buffer.readLong();
       result = serializer.readObject(buffer);
     } else {
       error = RaftError.forId(buffer.readByte());
@@ -89,6 +90,7 @@ public class QueryResponse extends AbstractResponse<QueryResponse> {
   public void writeObject(Buffer buffer, Serializer serializer) {
     buffer.writeByte(status.id());
     if (status == Status.OK) {
+      buffer.writeLong(version);
       serializer.writeObject(result, buffer);
     } else {
       buffer.writeByte(error.id());
@@ -105,6 +107,7 @@ public class QueryResponse extends AbstractResponse<QueryResponse> {
     if (object instanceof QueryResponse) {
       QueryResponse response = (QueryResponse) object;
       return response.status == status
+        && response.version == version
         && ((response.result == null && result == null)
         || response.result != null && result != null && response.result.equals(result));
     }
@@ -113,13 +116,13 @@ public class QueryResponse extends AbstractResponse<QueryResponse> {
 
   @Override
   public String toString() {
-    return String.format("%s[status=%s, result=%s]", getClass().getSimpleName(), status, result);
+    return String.format("%s[status=%s, version=%d, result=%s]", getClass().getSimpleName(), status, version, result);
   }
 
   /**
    * Query response builder.
    */
-  public static class Builder extends AbstractResponse.Builder<Builder, QueryResponse> {
+  public static class Builder extends ClientResponse.Builder<Builder, QueryResponse> {
 
     private Builder() {
       super(QueryResponse::new);

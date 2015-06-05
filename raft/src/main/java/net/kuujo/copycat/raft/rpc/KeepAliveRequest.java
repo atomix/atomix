@@ -15,8 +15,6 @@
  */
 package net.kuujo.copycat.raft.rpc;
 
-import net.kuujo.copycat.io.Buffer;
-import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.util.ReferenceManager;
 
 import java.util.Objects;
@@ -26,7 +24,7 @@ import java.util.Objects;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class KeepAliveRequest extends AbstractRequest<KeepAliveRequest> {
+public class KeepAliveRequest extends SessionRequest<KeepAliveRequest> {
   private static final ThreadLocal<Builder> builder = new ThreadLocal<Builder>() {
     @Override
     protected Builder initialValue() {
@@ -53,8 +51,6 @@ public class KeepAliveRequest extends AbstractRequest<KeepAliveRequest> {
     return builder.get().reset(request);
   }
 
-  private long session;
-
   public KeepAliveRequest(ReferenceManager<KeepAliveRequest> referenceManager) {
     super(referenceManager);
   }
@@ -62,25 +58,6 @@ public class KeepAliveRequest extends AbstractRequest<KeepAliveRequest> {
   @Override
   public Type type() {
     return Type.KEEP_ALIVE;
-  }
-
-  /**
-   * Returns the session ID.
-   *
-   * @return The session ID.
-   */
-  public long session() {
-    return session;
-  }
-
-  @Override
-  public void readObject(Buffer buffer, Serializer serializer) {
-    session = buffer.readLong();
-  }
-
-  @Override
-  public void writeObject(Buffer buffer, Serializer serializer) {
-    buffer.writeLong(session);
   }
 
   @Override
@@ -105,30 +82,10 @@ public class KeepAliveRequest extends AbstractRequest<KeepAliveRequest> {
   /**
    * Keep alive request builder.
    */
-  public static class Builder extends AbstractRequest.Builder<Builder, KeepAliveRequest> {
+  public static class Builder extends SessionRequest.Builder<Builder, KeepAliveRequest> {
 
     private Builder() {
       super(KeepAliveRequest::new);
-    }
-
-    @Override
-    Builder reset() {
-      super.reset();
-      request.session = 0;
-      return this;
-    }
-
-    /**
-     * Sets the session ID.
-     *
-     * @param session The session ID.
-     * @return The keep alive request builder.
-     */
-    public Builder withSession(long session) {
-      if (session <= 0)
-        throw new IllegalArgumentException("session must be positive");
-      request.session = session;
-      return this;
     }
 
     @Override
