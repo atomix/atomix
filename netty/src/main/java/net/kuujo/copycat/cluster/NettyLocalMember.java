@@ -160,14 +160,11 @@ public class NettyLocalMember extends ManagedLocalMember implements NettyMember{
                 pipeline.addLast(new ServerHandlerAdapter());
               }
             })
-            .option(ChannelOption.SO_BACKLOG, 128);
-
-          bootstrap.option(ChannelOption.TCP_NODELAY, true);
-          bootstrap.option(ChannelOption.SO_REUSEADDR, true);
-          bootstrap.option(ChannelOption.SO_KEEPALIVE, true);
-          bootstrap.option(ChannelOption.ALLOCATOR, ALLOCATOR);
-
-          bootstrap.childOption(ChannelOption.SO_KEEPALIVE, true);
+            .option(ChannelOption.SO_BACKLOG, 128)
+            .option(ChannelOption.TCP_NODELAY, true)
+            .option(ChannelOption.SO_REUSEADDR, true)
+            .childOption(ChannelOption.ALLOCATOR, ALLOCATOR)
+            .childOption(ChannelOption.SO_KEEPALIVE, true);
 
           // Bind and start to accept incoming connections.
           ChannelFuture bindFuture = bootstrap.bind(info.address().getHostString(), info.address().getPort());
