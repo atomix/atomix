@@ -15,6 +15,8 @@
  */
 package net.kuujo.copycat.examples.server;
 
+import java.net.InetAddress;
+
 import net.kuujo.copycat.Copycat;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.cluster.NettyCluster;
@@ -43,23 +45,22 @@ public class ServerExample {
     NettyCluster.Builder builder = NettyCluster.builder()
       .withMemberId(serverId)
       .withMemberType(Member.Type.ACTIVE)
-      .withHost("localhost")
+      .withHost(InetAddress.getLocalHost().getHostName())
       .withPort(port);
 
     for (int i = 1; i < args.length; i++) {
       parts = args[i].split(":");
       builder.addMember(NettyMember.builder()
+        .withId(1)
         .withId(Integer.valueOf(parts[0]))
-        .withHost(parts[1])
+        .withHost(InetAddress.getByName(parts[1]).getHostName())
         .withPort(Integer.valueOf(parts[2]))
         .build());
     }
 
     Copycat copycat = Copycat.builder()
       .withCluster(builder.build())
-      .withLog(Log.builder()
-        .withStorageLevel(StorageLevel.MEMORY)
-        .build())
+      .withLog(Log.builder().withStorageLevel(StorageLevel.MEMORY).build())
       .build();
 
     copycat.open().join();
