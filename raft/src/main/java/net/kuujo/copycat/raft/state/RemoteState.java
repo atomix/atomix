@@ -112,6 +112,7 @@ public class RemoteState extends AbstractState {
           LOGGER.debug("{} - Registered new session: {}", context.getCluster().member().id(), context.getSession());
         } else {
           LOGGER.debug("{} - Session registration failed, retrying", context.getCluster().member().id());
+          context.setLeader(0);
           register(members, future);
         }
       }
