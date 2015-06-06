@@ -381,71 +381,107 @@ abstract class ActiveState extends RemoteState {
     logRequest(request);
 
     if (request.query().consistency() == ConsistencyLevel.SEQUENTIAL) {
-      CompletableFuture<QueryResponse> future = new CompletableFuture<>();
-      QueryEntry entry = context.getLog().createEntry(QueryEntry.class)
-        .setIndex(context.getCommitIndex())
-        .setTerm(context.getTerm())
-        .setTimestamp(System.currentTimeMillis())
-        .setVersion(request.version())
-        .setSession(request.session())
-        .setQuery(request.query());
-
-      long version = Math.max(context.getStateMachine().getLastApplied(), request.version());
-      context.getStateMachine().apply(entry).whenCompleteAsync((result, error) -> {
-        if (isOpen()) {
-          if (error == null) {
-            future.complete(logResponse(QueryResponse.builder()
-              .withStatus(Response.Status.OK)
-              .withVersion(version)
-              .withResult(result)
-              .build()));
-          } else {
-            future.complete(logResponse(QueryResponse.builder()
-              .withStatus(Response.Status.ERROR)
-              .withError(RaftError.Type.APPLICATION_ERROR)
-              .build()));
-          }
-        }
-        entry.close();
-      }, context.getContext());
-      return future;
+      return querySequential(request);
     } else if (request.query().consistency() == ConsistencyLevel.SERIALIZABLE) {
-      CompletableFuture<QueryResponse> future = new CompletableFuture<>();
-      QueryEntry entry = context.getLog().createEntry(QueryEntry.class)
-        .setIndex(context.getCommitIndex())
-        .setTerm(context.getTerm())
-        .setTimestamp(System.currentTimeMillis())
-        .setVersion(0)
-        .setSession(request.session())
-        .setQuery(request.query());
+      return querySerializable(request);
+    } else {
+      return queryForward(request);
+    }
+  }
 
-      long version = context.getStateMachine().getLastApplied();
-      context.getStateMachine().apply(entry).whenCompleteAsync((result, error) -> {
-        if (isOpen()) {
-          if (error == null) {
-            future.complete(logResponse(QueryResponse.builder()
-              .withStatus(Response.Status.OK)
-              .withVersion(version)
-              .withResult(result)
-              .build()));
-          } else {
-            future.complete(logResponse(QueryResponse.builder()
-              .withStatus(Response.Status.ERROR)
-              .withError(RaftError.Type.APPLICATION_ERROR)
-              .build()));
-          }
-        }
-        entry.close();
-      }, context.getContext());
-      return future;
-    } else if (context.getLeader() == 0) {
+  /**
+   * Forwards the query to the leader.
+   */
+  private CompletableFuture<QueryResponse> queryForward(QueryRequest request) {
+    if (context.getLeader() == 0) {
       return CompletableFuture.completedFuture(logResponse(QueryResponse.builder()
         .withStatus(Response.Status.ERROR)
         .withError(RaftError.Type.NO_LEADER_ERROR)
         .build()));
-    } else {
-      return context.getCluster().member(context.getLeader()).send(context.getTopic(), request);
     }
+    return context.getCluster().member(context.getLeader()).send(context.getTopic(), request);
+  }
+
+  /**
+   * Performs a sequential query.
+   */
+  private CompletableFuture<QueryResponse> querySequential(QueryRequest request) {
+    // If the commit index is not in the log then we've fallen too far behind the leader to perform a query.
+    // Forward the request to the leader.
+    if (context.getLog().lastIndex() < context.getCommitIndex()) {
+      LOGGER.debug("{} - State appears to be out of sync, forwarding query to leader");
+      return queryForward(request);
+    }
+
+    CompletableFuture<QueryResponse> future = new CompletableFuture<>();
+    QueryEntry entry = context.getLog().createEntry(QueryEntry.class)
+      .setIndex(context.getCommitIndex())
+      .setTerm(context.getTerm())
+      .setTimestamp(System.currentTimeMillis())
+      .setVersion(request.version())
+      .setSession(request.session())
+      .setQuery(request.query());
+
+    long version = Math.max(context.getStateMachine().getLastApplied(), request.version());
+    context.getStateMachine().apply(entry).whenCompleteAsync((result, error) -> {
+      if (isOpen()) {
+        if (error == null) {
+          future.complete(logResponse(QueryResponse.builder()
+            .withStatus(Response.Status.OK)
+            .withVersion(version)
+            .withResult(result)
+            .build()));
+        } else {
+          future.complete(logResponse(QueryResponse.builder()
+            .withStatus(Response.Status.ERROR)
+            .withError(RaftError.Type.APPLICATION_ERROR)
+            .build()));
+        }
+      }
+      entry.close();
+    }, context.getContext());
+    return future;
+  }
+
+  /**
+   * Performs a serializable query.
+   */
+  private CompletableFuture<QueryResponse> querySerializable(QueryRequest request) {
+    // If the commit index is not in the log then we've fallen too far behind the leader to perform a query.
+    // Forward the request to the leader.
+    if (context.getLog().lastIndex() < context.getCommitIndex()) {
+      LOGGER.debug("{} - State appears to be out of sync, forwarding query to leader");
+      return queryForward(request);
+    }
+
+    CompletableFuture<QueryResponse> future = new CompletableFuture<>();
+    QueryEntry entry = context.getLog().createEntry(QueryEntry.class)
+      .setIndex(context.getCommitIndex())
+      .setTerm(context.getTerm())
+      .setTimestamp(System.currentTimeMillis())
+      .setVersion(0)
+      .setSession(request.session())
+      .setQuery(request.query());
+
+    long version = context.getStateMachine().getLastApplied();
+    context.getStateMachine().apply(entry).whenCompleteAsync((result, error) -> {
+      if (isOpen()) {
+        if (error == null) {
+          future.complete(logResponse(QueryResponse.builder()
+            .withStatus(Response.Status.OK)
+            .withVersion(version)
+            .withResult(result)
+            .build()));
+        } else {
+          future.complete(logResponse(QueryResponse.builder()
+            .withStatus(Response.Status.ERROR)
+            .withError(RaftError.Type.APPLICATION_ERROR)
+            .build()));
+        }
+      }
+      entry.close();
+    }, context.getContext());
+    return future;
   }
 
 }
