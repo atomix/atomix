@@ -96,6 +96,16 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
   }
 
   @Override
+  public <T, U> CompletableFuture<U> send(T message) {
+    return send(message.getClass().getName(), message);
+  }
+
+  @Override
+  public <T, U> CompletableFuture<U> send(Class<? super T> type, T message) {
+    return send(type.getName(), message);
+  }
+
+  @Override
   public <T, U> CompletableFuture<U> send(String topic, T message) {
     final ContextualFuture<U> future = new ContextualFuture<>(getContext());
     if (channel != null) {

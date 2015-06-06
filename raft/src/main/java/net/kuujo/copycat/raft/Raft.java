@@ -49,8 +49,8 @@ public class Raft implements Protocol, Managed<Raft> {
   private CompletableFuture<Void> closeFuture;
   private boolean open;
 
-  private Raft(Log log, RaftConfig config, StateMachine stateMachine, ManagedCluster cluster, String topic, ExecutionContext context) {
-    this.context = new RaftContext(log, stateMachine, cluster, topic, context)
+  private Raft(Log log, RaftConfig config, StateMachine stateMachine, ManagedCluster cluster, ExecutionContext context) {
+    this.context = new RaftContext(log, stateMachine, cluster, context)
       .setHeartbeatInterval(config.getHeartbeatInterval())
       .setElectionTimeout(config.getElectionTimeout())
       .setSessionTimeout(config.getSessionTimeout())
@@ -197,17 +197,6 @@ public class Raft implements Protocol, Managed<Raft> {
     }
 
     /**
-     * Sets the Raft cluster topic.
-     *
-     * @param topic The Raft cluster topic.
-     * @return The Raft builder.
-     */
-    public Builder withTopic(String topic) {
-      this.topic = topic;
-      return this;
-    }
-
-    /**
      * Sets the Raft log.
      *
      * @param log The Raft log.
@@ -335,9 +324,7 @@ public class Raft implements Protocol, Managed<Raft> {
         throw new ConfigurationException("state machine not configured");
       if (cluster == null)
         throw new ConfigurationException("cluster not configured");
-      if (topic == null)
-        throw new ConfigurationException("topic not configured");
-      return new Raft(log, config, stateMachine, cluster, topic, new ExecutionContext(cluster.member().id() != 0 ? String.format("copycat-%d", cluster.member().id()) : "copycat", cluster.serializer()));
+      return new Raft(log, config, stateMachine, cluster, new ExecutionContext(cluster.member().id() != 0 ? String.format("copycat-%d", cluster.member().id()) : "copycat", cluster.serializer()));
     }
   }
 

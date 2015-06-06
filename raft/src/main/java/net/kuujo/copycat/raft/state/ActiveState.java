@@ -399,7 +399,7 @@ abstract class ActiveState extends RemoteState {
         .withError(RaftError.Type.NO_LEADER_ERROR)
         .build()));
     }
-    return context.getCluster().member(context.getLeader()).send(context.getTopic(), request);
+    return context.getCluster().member(context.getLeader()).send(request);
   }
 
   /**

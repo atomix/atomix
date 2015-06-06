@@ -125,6 +125,26 @@ public abstract class ManagedCluster implements Cluster, Managed<Cluster> {
   }
 
   @Override
+  public <T> Cluster broadcast(T message) {
+    if (!isOpen())
+      throw new IllegalStateException("cluster not open");
+    remoteMembers.values().forEach(m -> {
+      m.send(message);
+    });
+    return this;
+  }
+
+  @Override
+  public <T> Cluster broadcast(Class<? super T> type, T message) {
+    if (!isOpen())
+      throw new IllegalStateException("cluster not open");
+    remoteMembers.values().forEach(m -> {
+      m.send(type, message);
+    });
+    return this;
+  }
+
+  @Override
   public <T> Cluster broadcast(String topic, T message) {
     if (!isOpen())
       throw new IllegalStateException("cluster not open");

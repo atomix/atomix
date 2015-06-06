@@ -132,7 +132,7 @@ class FollowerState extends ActiveState {
         .withLogIndex(lastIndex)
         .withLogTerm(lastTerm)
         .build();
-      member.<PollRequest, PollResponse>send(context.getTopic(), request).whenCompleteAsync((response, error) -> {
+      member.<PollRequest, PollResponse>send(request).whenCompleteAsync((response, error) -> {
         context.checkThread();
         if (isOpen() && !complete.get()) {
           if (error != null) {

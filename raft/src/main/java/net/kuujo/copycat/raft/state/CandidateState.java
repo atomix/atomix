@@ -125,7 +125,7 @@ class CandidateState extends ActiveState {
         .withLogIndex(lastIndex)
         .withLogTerm(lastTerm)
         .build();
-      member.<VoteRequest, VoteResponse>send(context.getTopic(), request).whenCompleteAsync((response, error) -> {
+      member.<VoteRequest, VoteResponse>send(request).whenCompleteAsync((response, error) -> {
         context.checkThread();
         if (isOpen() && !complete.get()) {
           if (error != null) {

@@ -15,7 +15,6 @@
  */
 package net.kuujo.copycat.raft.state;
 
-import net.kuujo.copycat.cluster.MessageHandler;
 import net.kuujo.copycat.raft.rpc.*;
 import net.kuujo.copycat.util.Managed;
 import org.slf4j.Logger;
@@ -28,22 +27,13 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-abstract class AbstractState implements MessageHandler<Request, Response>, Managed<AbstractState> {
+abstract class AbstractState implements Managed<AbstractState> {
   protected final Logger LOGGER = LoggerFactory.getLogger(getClass());
   protected final RaftContext context;
   private volatile boolean open;
 
   protected AbstractState(RaftContext context) {
     this.context = context;
-  }
-
-  /**
-   * Returns an exceptional future with the given exception.
-   */
-  protected <T> CompletableFuture<T> exceptionalFuture(Throwable t) {
-    CompletableFuture<T> future = new CompletableFuture<>();
-    future.completeExceptionally(t);
-    return future;
   }
 
   /**
@@ -72,7 +62,7 @@ abstract class AbstractState implements MessageHandler<Request, Response>, Manag
   @Override
   public CompletableFuture<AbstractState> open() {
     context.checkThread();
-    context.getCluster().member().registerHandler(context.getTopic(), this);
+    registerHandlers();
     open = true;
     return CompletableFuture.completedFuture(null);
   }
@@ -82,33 +72,32 @@ abstract class AbstractState implements MessageHandler<Request, Response>, Manag
     return open;
   }
 
-  @Override
-  public CompletableFuture<Response> handle(Request request) {
+  /**
+   * Registers all message handlers.
+   */
+  private void registerHandlers() {
     context.checkThread();
-    switch (request.type()) {
-      case REGISTER:
-        return register((RegisterRequest) request).thenApply(AbstractState::castResponse);
-      case KEEP_ALIVE:
-        return keepAlive((KeepAliveRequest) request).thenApply(AbstractState::castResponse);
-      case APPEND:
-        return append((AppendRequest) request).thenApply(AbstractState::castResponse);
-      case POLL:
-        return poll((PollRequest) request).thenApply(AbstractState::castResponse);
-      case VOTE:
-        return vote((VoteRequest) request).thenApply(AbstractState::castResponse);
-      case COMMAND:
-        return command((CommandRequest) request).thenApply(AbstractState::castResponse);
-      case QUERY:
-        return query((QueryRequest) request).thenApply(AbstractState::castResponse);
-    }
-    throw new IllegalArgumentException("invalid request type");
+    context.getCluster().member().<RegisterRequest, RegisterResponse>registerHandler(RegisterRequest.class, this::register);
+    context.getCluster().member().<KeepAliveRequest, KeepAliveResponse>registerHandler(KeepAliveRequest.class, this::keepAlive);
+    context.getCluster().member().<AppendRequest, AppendResponse>registerHandler(AppendRequest.class, this::append);
+    context.getCluster().member().<PollRequest, PollResponse>registerHandler(PollRequest.class, this::poll);
+    context.getCluster().member().<VoteRequest, VoteResponse>registerHandler(VoteRequest.class, this::vote);
+    context.getCluster().member().<CommandRequest, CommandResponse>registerHandler(CommandRequest.class, this::command);
+    context.getCluster().member().<QueryRequest, QueryResponse>registerHandler(QueryRequest.class, this::query);
   }
 
   /**
-   * Utility method for casting a response.
+   * Unregisters all message handlers.
    */
-  private static <T extends Response> T castResponse(T response) {
-    return response;
+  private void unregisterHandlers() {
+    context.checkThread();
+    context.getCluster().member().unregisterHandler(RegisterRequest.class);
+    context.getCluster().member().unregisterHandler(KeepAliveRequest.class);
+    context.getCluster().member().unregisterHandler(AppendRequest.class);
+    context.getCluster().member().unregisterHandler(PollRequest.class);
+    context.getCluster().member().unregisterHandler(VoteRequest.class);
+    context.getCluster().member().unregisterHandler(CommandRequest.class);
+    context.getCluster().member().unregisterHandler(QueryRequest.class);
   }
 
   /**
@@ -149,7 +138,7 @@ abstract class AbstractState implements MessageHandler<Request, Response>, Manag
   @Override
   public CompletableFuture<Void> close() {
     context.checkThread();
-    context.getCluster().member().unregisterHandler(context.getTopic());
+    unregisterHandlers();
     open = false;
     return CompletableFuture.completedFuture(null);
   }

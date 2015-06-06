@@ -66,6 +66,37 @@ public interface Cluster {
    * To send messages with replies to all members of the cluster, iterate over the collection of
    * {@link net.kuujo.copycat.cluster.Cluster#members()} in the cluster.
    *
+   * @param message The message to broadcast. This will be serialized using the serializer configured in the resource
+   *                configuration.
+   * @param <T> The message type.
+   * @return The cluster.
+   */
+  <T> Cluster broadcast(T message);
+
+  /**
+   * Broadcasts a message to the cluster.<p>
+   *
+   * Message broadcasting to the Copycat cluster should not be considered reliable. Copycat sends broadcast messages to
+   * all currently known members of the cluster in a fire-and-forget manner. Broadcast messages do not support replies.
+   * To send messages with replies to all members of the cluster, iterate over the collection of
+   * {@link net.kuujo.copycat.cluster.Cluster#members()} in the cluster.
+   *
+   * @param type The message type to broadcast.
+   * @param message The message to broadcast. This will be serialized using the serializer configured in the resource
+   *                configuration.
+   * @param <T> The message type.
+   * @return The cluster.
+   */
+  <T> Cluster broadcast(Class<? super T> type, T message);
+
+  /**
+   * Broadcasts a message to the cluster.<p>
+   *
+   * Message broadcasting to the Copycat cluster should not be considered reliable. Copycat sends broadcast messages to
+   * all currently known members of the cluster in a fire-and-forget manner. Broadcast messages do not support replies.
+   * To send messages with replies to all members of the cluster, iterate over the collection of
+   * {@link net.kuujo.copycat.cluster.Cluster#members()} in the cluster.
+   *
    * @param topic The topic to which to broadcast the message. Members with broadcast listeners registered for this
    *              topic will receive the broadcast message.
    * @param message The message to broadcast. This will be serialized using the serializer configured in the resource

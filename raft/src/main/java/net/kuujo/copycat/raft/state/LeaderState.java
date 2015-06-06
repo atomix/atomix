@@ -741,7 +741,7 @@ class LeaderState extends ActiveState {
 
         committing = true;
         LOGGER.debug("{} - Sent {} to {}", context.getCluster().member().id(), request, member);
-        member.<AppendRequest, AppendResponse>send(context.getTopic(), request).whenCompleteAsync((response, error) -> {
+        member.<AppendRequest, AppendResponse>send(request).whenCompleteAsync((response, error) -> {
           committing = false;
           context.checkThread();
 

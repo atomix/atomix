@@ -96,6 +96,39 @@ public interface Member {
    * will be failed. If the member successfully receives the message and responds, the returned
    * {@link java.util.concurrent.CompletableFuture} will be completed with the member's response.
    *
+   * @param message The message to send. The message type will be used for the topic. Messages will be serialized using
+   *                the configured resource serializer.
+   * @param <T> The message type.
+   * @param <U> The response type.
+   * @return A completable future to be completed with the message response.
+   */
+  <T, U> CompletableFuture<U> send(T message);
+
+  /**
+   * Sends a message to the member.<p>
+   *
+   * Messages are sent using a topic based messaging system over the configured cluster protocol. If no handler is
+   * registered for the given topic on the given member, the returned {@link java.util.concurrent.CompletableFuture}
+   * will be failed. If the member successfully receives the message and responds, the returned
+   * {@link java.util.concurrent.CompletableFuture} will be completed with the member's response.
+   *
+   * @param type The message type.
+   * @param message The message to send. The message type will be used for the topic. Messages will be serialized using
+   *                the configured resource serializer.
+   * @param <T> The message type.
+   * @param <U> The response type.
+   * @return A completable future to be completed with the message response.
+   */
+  <T, U> CompletableFuture<U> send(Class<? super T> type, T message);
+
+  /**
+   * Sends a message to the member.<p>
+   *
+   * Messages are sent using a topic based messaging system over the configured cluster protocol. If no handler is
+   * registered for the given topic on the given member, the returned {@link java.util.concurrent.CompletableFuture}
+   * will be failed. If the member successfully receives the message and responds, the returned
+   * {@link java.util.concurrent.CompletableFuture} will be completed with the member's response.
+   *
    * @param topic The topic on which to send the message.
    * @param message The message to send. Messages will be serialized using the configured resource serializer.
    * @param <T> The message type.

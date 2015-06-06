@@ -16,6 +16,7 @@
 package net.kuujo.copycat.raft.state;
 
 import net.kuujo.copycat.raft.rpc.*;
+import net.kuujo.copycat.util.concurrent.Futures;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -37,42 +38,37 @@ class StartState extends AbstractState {
 
   @Override
   protected CompletableFuture<RegisterResponse> register(RegisterRequest request) {
-    return exceptionalFuture(new IllegalStateException("inactive state"));
+    return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
   }
 
   @Override
   protected CompletableFuture<KeepAliveResponse> keepAlive(KeepAliveRequest request) {
-    return exceptionalFuture(new IllegalStateException("inactive state"));
+    return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
   }
 
   @Override
   protected CompletableFuture<AppendResponse> append(AppendRequest request) {
-    return exceptionalFuture(new IllegalStateException("inactive state"));
+    return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
   }
 
   @Override
   protected CompletableFuture<PollResponse> poll(PollRequest request) {
-    return exceptionalFuture(new IllegalStateException("inactive state"));
+    return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
   }
 
   @Override
   protected CompletableFuture<VoteResponse> vote(VoteRequest request) {
-    return exceptionalFuture(new IllegalStateException("inactive state"));
+    return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
   }
 
   @Override
   protected CompletableFuture<CommandResponse> command(CommandRequest request) {
-    return exceptionalFuture(new IllegalStateException("inactive state"));
+    return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
   }
 
   @Override
   protected CompletableFuture<QueryResponse> query(QueryRequest request) {
-    return exceptionalFuture(new IllegalStateException("inactive state"));
-  }
-
-  @Override
-  public CompletableFuture<Response> handle(Request request) {
-    return exceptionalFuture(new IllegalStateException("inactive state"));
+    return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
   }
 
 }

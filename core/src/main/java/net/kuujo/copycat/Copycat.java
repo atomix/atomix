@@ -245,7 +245,7 @@ public class Copycat implements Managed<Copycat> {
    * Copycat builder.
    */
   public static class Builder implements net.kuujo.copycat.Builder<Copycat> {
-    private final Raft.Builder builder = Raft.builder().withTopic("copycat");
+    private final Raft.Builder builder = Raft.builder();
     private Cluster cluster;
     private ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 
@@ -261,17 +261,6 @@ public class Copycat implements Managed<Copycat> {
     public Builder withCluster(ManagedCluster cluster) {
       this.cluster = cluster;
       builder.withCluster(cluster);
-      return this;
-    }
-
-    /**
-     * Sets the Raft topic.
-     *
-     * @param topic The Raft topic.
-     * @return The Raft builder.
-     */
-    public Builder withTopic(String topic) {
-      builder.withTopic(topic);
       return this;
     }
 

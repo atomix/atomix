@@ -15,19 +15,10 @@
  */
 package net.kuujo.copycat.raft.state;
 
-import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.cluster.MemberInfo;
-import net.kuujo.copycat.raft.NoLeaderException;
 import net.kuujo.copycat.raft.RaftError;
 import net.kuujo.copycat.raft.rpc.*;
 
-import java.util.List;
-import java.util.Random;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 
 /**
  * Remote state.
@@ -35,10 +26,6 @@ import java.util.stream.Collectors;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class RemoteState extends AbstractState {
-  private final AtomicBoolean keepAlive = new AtomicBoolean();
-  private final Random random = new Random();
-  private ScheduledFuture<?> currentTimer;
-  private ScheduledFuture<?> registerTimer;
 
   public RemoteState(RaftContext context) {
     super(context);
@@ -47,140 +34,6 @@ public class RemoteState extends AbstractState {
   @Override
   public RaftState type() {
     return RaftState.REMOTE;
-  }
-
-  @Override
-  public synchronized CompletableFuture<AbstractState> open() {
-    context.getContext().execute(() -> {
-      register(new CompletableFuture<>()).thenRun(this::startKeepAliveTimer);
-    });
-    return super.open().thenApply(v -> this);
-  }
-
-  /**
-   * Registers the client.
-   */
-  private CompletableFuture<Void> register(CompletableFuture<Void> future) {
-    register(context.getCluster()
-      .members()
-      .stream()
-      .filter(m -> m.type() == Member.Type.ACTIVE)
-      .collect(Collectors.toList()), new CompletableFuture<>()).whenComplete((result, error) -> {
-      if (error == null) {
-        future.complete(null);
-      } else {
-        registerTimer = context.getContext().schedule(() -> register(future), context.getHeartbeatInterval(), TimeUnit.MILLISECONDS);
-      }
-    });
-    return future;
-  }
-
-  /**
-   * Registers the client by contacting a random member.
-   */
-  private CompletableFuture<Long> register(List<Member> members, CompletableFuture<Long> future) {
-    if (members.isEmpty()) {
-      future.completeExceptionally(new NoLeaderException("no leader found"));
-      return future;
-    }
-
-    Member member;
-    if (context.getLeader() != 0) {
-      member = context.getCluster().member(context.getLeader());
-    } else {
-      member = members.remove(random.nextInt(members.size()));
-    }
-
-    LOGGER.debug("{} - Registering session via {}", context.getCluster().member().id(), member.id());
-    RegisterRequest request = RegisterRequest.builder()
-      .withMember(context.getCluster().member().info())
-      .build();
-    member.<RegisterRequest, RegisterResponse>send(context.getTopic(), request).whenComplete((response, error) -> {
-      context.checkThread();
-      if (isOpen()) {
-        if (error == null && response.status() == Response.Status.OK) {
-          context.setTerm(response.term());
-          context.setLeader(response.leader());
-          context.setSession(response.session());
-          context.getCluster().configure(response.members().toArray(new MemberInfo[response.members().size()])).whenComplete((configureResult, configureError) -> {
-            if (configureError == null) {
-              future.complete(response.session());
-            } else {
-              future.completeExceptionally(configureError);
-            }
-          });
-          LOGGER.debug("{} - Registered new session: {}", context.getCluster().member().id(), context.getSession());
-        } else {
-          LOGGER.debug("{} - Session registration failed, retrying", context.getCluster().member().id());
-          context.setLeader(0);
-          register(members, future);
-        }
-      }
-    });
-    return future;
-  }
-
-  /**
-   * Starts the keep alive timer.
-   */
-  private void startKeepAliveTimer() {
-    LOGGER.debug("{} - Starting keep alive timer", context.getCluster().member().id());
-    currentTimer = context.getContext().scheduleAtFixedRate(this::keepAlive, 1, context.getKeepAliveInterval(), TimeUnit.MILLISECONDS);
-  }
-
-  /**
-   * Sends a keep alive request to a random member.
-   */
-  private void keepAlive() {
-    if (keepAlive.compareAndSet(false, true)) {
-      LOGGER.debug("{} - Sending keep alive request", context.getCluster().member().id());
-      keepAlive(context.getCluster().members().stream()
-        .filter(m -> m.type() == Member.Type.ACTIVE)
-        .collect(Collectors.toList()), new CompletableFuture<>());
-    }
-  }
-
-  /**
-   * Registers the client by contacting a random member.
-   */
-  private CompletableFuture<Void> keepAlive(List<Member> members, CompletableFuture<Void> future) {
-    if (members.isEmpty()) {
-      future.completeExceptionally(RaftError.Type.NO_LEADER_ERROR.createException());
-      keepAlive.set(false);
-      return future;
-    }
-
-    Member member;
-    if (context.getLeader() != 0) {
-      member = context.getCluster().member(context.getLeader());
-    } else {
-      member = members.remove(random.nextInt(members.size()));
-    }
-
-    KeepAliveRequest request = KeepAliveRequest.builder()
-      .withSession(context.getSession())
-      .build();
-    member.<KeepAliveRequest, KeepAliveResponse>send(context.getTopic(), request).whenComplete((response, error) -> {
-      context.checkThread();
-      if (isOpen()) {
-        if (error == null && response.status() == Response.Status.OK) {
-          context.setTerm(response.term());
-          context.setLeader(response.leader());
-          context.setVersion(response.version());
-          context.getCluster().configure(response.members().toArray(new MemberInfo[response.members().size()])).whenComplete((configureResult, configureError) -> {
-            if (configureError == null) {
-              future.complete(null);
-            } else {
-              future.completeExceptionally(configureError);
-            }
-            keepAlive.set(false);
-          });
-        } else {
-          keepAlive(members, future);
-        }
-      }
-    });
-    return future;
   }
 
   @Override
@@ -223,7 +76,7 @@ public class RemoteState extends AbstractState {
         .withError(RaftError.Type.NO_LEADER_ERROR)
         .build()));
     } else {
-      return context.getCluster().member(context.getLeader()).send(context.getTopic(), request);
+      return context.getCluster().member(context.getLeader()).send(request);
     }
   }
 
@@ -237,7 +90,7 @@ public class RemoteState extends AbstractState {
         .withError(RaftError.Type.NO_LEADER_ERROR)
         .build()));
     } else {
-      return context.getCluster().member(context.getLeader()).send(context.getTopic(), request);
+      return context.getCluster().member(context.getLeader()).send(request);
     }
   }
 
@@ -251,7 +104,7 @@ public class RemoteState extends AbstractState {
         .withError(RaftError.Type.NO_LEADER_ERROR)
         .build()));
     } else {
-      return context.getCluster().member(context.getLeader()).send(context.getTopic(), request);
+      return context.getCluster().member(context.getLeader()).send(request);
     }
   }
 
@@ -271,33 +124,8 @@ public class RemoteState extends AbstractState {
         .withError(RaftError.Type.NO_LEADER_ERROR)
         .build()));
     } else {
-      return context.getCluster().member(context.getLeader()).send(context.getTopic(), request);
+      return context.getCluster().member(context.getLeader()).send(request);
     }
-  }
-
-  /**
-   * Cancels the register timer.
-   */
-  private void cancelRegisterTimer() {
-    if (registerTimer != null) {
-      LOGGER.debug("{} - cancelling register timer", context.getCluster().member().id());
-      registerTimer.cancel(false);
-    }
-  }
-
-  /**
-   * Cancels the keep alive timer.
-   */
-  private void cancelKeepAliveTimer() {
-    if (currentTimer != null) {
-      LOGGER.debug("{} - cancelling keep alive timer", context.getCluster().member().id());
-      currentTimer.cancel(false);
-    }
-  }
-
-  @Override
-  public synchronized CompletableFuture<Void> close() {
-    return super.close().thenRun(this::cancelRegisterTimer).thenRun(this::cancelKeepAliveTimer);
   }
 
 }

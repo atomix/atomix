@@ -22,9 +22,6 @@ import net.kuujo.copycat.raft.Query;
 import net.kuujo.copycat.raft.StateMachine;
 import net.kuujo.copycat.raft.log.Compactor;
 import net.kuujo.copycat.raft.log.Log;
-import net.kuujo.copycat.raft.rpc.CommandRequest;
-import net.kuujo.copycat.raft.rpc.QueryRequest;
-import net.kuujo.copycat.raft.rpc.Response;
 import net.kuujo.copycat.util.ExecutionContext;
 import net.kuujo.copycat.util.Managed;
 import net.kuujo.copycat.util.ThreadChecker;
@@ -47,18 +44,13 @@ public class RaftContext implements Managed<RaftContext> {
   private final Log log;
   private final Compactor compactor;
   private final ManagedCluster cluster;
-  private final String topic;
+  private final RaftClient client;
   private final ExecutionContext context;
   private final ThreadChecker threadChecker;
   private AbstractState state;
   private CompletableFuture<RaftContext> openFuture;
   private long electionTimeout = 500;
   private long heartbeatInterval = 250;
-  private long keepAliveInterval = 2000;
-  private long session;
-  private long version;
-  private long request;
-  private long response;
   private int leader;
   private long term;
   private int lastVotedFor;
@@ -67,14 +59,16 @@ public class RaftContext implements Managed<RaftContext> {
   private volatile long lastApplied;
   private volatile boolean open;
 
-  public RaftContext(Log log, StateMachine stateMachine, ManagedCluster cluster, String topic, ExecutionContext context) {
+  public RaftContext(Log log, StateMachine stateMachine, ManagedCluster cluster, ExecutionContext context) {
     this.log = log;
     this.stateMachine = new RaftStateMachine(stateMachine, new ExecutionContext(String.format("%s-%s", context.name(), "-state"), context.serializer().copy()));
     this.compactor = new Compactor(log, this.stateMachine::filter, context);
     this.cluster = cluster;
-    this.topic = topic;
     this.context = context;
     this.threadChecker = new ThreadChecker(context);
+    this.client = new RaftClient(cluster, context)
+      .setReconnectInterval(heartbeatInterval)
+      .setKeepAliveInterval(heartbeatInterval);
   }
 
   /**
@@ -84,15 +78,6 @@ public class RaftContext implements Managed<RaftContext> {
    */
   public ManagedCluster getCluster() {
     return cluster;
-  }
-
-  /**
-   * Returns the topic on which the Raft instance communicates.
-   *
-   * @return The topic on which the Raft instance communicates.
-   */
-  public String getTopic() {
-    return topic;
   }
 
   /**
@@ -141,6 +126,7 @@ public class RaftContext implements Managed<RaftContext> {
    */
   public RaftContext setHeartbeatInterval(long heartbeatInterval) {
     this.heartbeatInterval = heartbeatInterval;
+    client.setReconnectInterval(heartbeatInterval);
     return this;
   }
 
@@ -154,13 +140,13 @@ public class RaftContext implements Managed<RaftContext> {
   }
 
   /**
-   * Sets the client keep alive interva.
+   * Sets the client keep alive interval.
    *
    * @param keepAliveInterval The client keep alive interval in milliseconds.
    * @return The Raft context.
    */
   public RaftContext setKeepAliveInterval(long keepAliveInterval) {
-    this.keepAliveInterval = keepAliveInterval;
+    client.setKeepAliveInterval(keepAliveInterval);
     return this;
   }
 
@@ -170,7 +156,7 @@ public class RaftContext implements Managed<RaftContext> {
    * @return The keep alive interval in milliseconds.
    */
   public long getKeepAliveInterval() {
-    return keepAliveInterval;
+    return client.getKeepAliveInterval();
   }
 
   /**
@@ -182,107 +168,6 @@ public class RaftContext implements Managed<RaftContext> {
   public RaftContext setSessionTimeout(long sessionTimeout) {
     stateMachine.setSessionTimeout(sessionTimeout);
     return this;
-  }
-
-  /**
-   * Sets the state session.
-   *
-   * @param session The state session.
-   * @return The Raft context.
-   */
-  RaftContext setSession(long session) {
-    this.session = session;
-    this.request = 0;
-    this.response = 0;
-    if (session != 0 && openFuture != null) {
-      synchronized (openFuture) {
-        if (openFuture != null) {
-          CompletableFuture<RaftContext> future = openFuture;
-          context.execute(() -> future.complete(this));
-          openFuture = null;
-        }
-      }
-    }
-    return this;
-  }
-
-  /**
-   * Returns the state session.
-   *
-   * @return The state session.
-   */
-  public long getSession() {
-    return session;
-  }
-
-  /**
-   * Sets the version.
-   *
-   * @param version The version.
-   * @return The Raft context.
-   */
-  RaftContext setVersion(long version) {
-    if (version > this.version)
-      this.version = version;
-    return this;
-  }
-
-  /**
-   * Returns the version.
-   *
-   * @return The version.
-   */
-  public long getVersion() {
-    return version;
-  }
-
-  /**
-   * Sets the session request number.
-   *
-   * @param request The session request number.
-   * @return The Raft context.
-   */
-  RaftContext setRequest(long request) {
-    this.request = request;
-    return this;
-  }
-
-  /**
-   * Returns the next request number.
-   *
-   * @return The next request number.
-   */
-  long nextRequest() {
-    return ++request;
-  }
-
-  /**
-   * Returns the session request number.
-   *
-   * @return The session request number.
-   */
-  public long getRequest() {
-    return request;
-  }
-
-  /**
-   * Sets the session response number.
-   *
-   * @param response The session response number.
-   * @return The Raft context.
-   */
-  RaftContext setResponse(long response) {
-    this.response = response;
-    return this;
-  }
-
-  /**
-   * Returns the session response number.
-   *
-   * @return The session response number.
-   */
-  public long getResponse() {
-    return response;
   }
 
   /**
@@ -504,32 +389,7 @@ public class RaftContext implements Managed<RaftContext> {
   public <R> CompletableFuture<R> submit(Command<R> command) {
     if (!open)
       throw new IllegalStateException("protocol not open");
-
-    CompletableFuture<R> future = new CompletableFuture<>();
-    context.execute(() -> {
-      // TODO: This should retry on timeouts with the same request ID.
-      long requestId = nextRequest();
-      CommandRequest request = CommandRequest.builder()
-        .withSession(getSession())
-        .withRequest(requestId)
-        .withResponse(getResponse())
-        .withCommand(command)
-        .build();
-      state.command(request).whenComplete((response, error) -> {
-        if (error == null) {
-          if (response.status() == Response.Status.OK) {
-            future.complete((R) response.result());
-          } else {
-            future.completeExceptionally(response.error().createException());
-          }
-          setResponse(Math.max(getResponse(), requestId));
-        } else {
-          future.completeExceptionally(error);
-        }
-        request.close();
-      });
-    });
-    return future;
+    return client.submit(command);
   }
 
   /**
@@ -543,27 +403,7 @@ public class RaftContext implements Managed<RaftContext> {
   public <R> CompletableFuture<R> submit(Query<R> query) {
     if (!open)
       throw new IllegalStateException("protocol not open");
-
-    CompletableFuture<R> future = new CompletableFuture<>();
-    context.execute(() -> {
-      QueryRequest request = QueryRequest.builder()
-        .withSession(getSession())
-        .withQuery(query)
-        .build();
-      state.query(request).whenComplete((response, error) -> {
-        if (error == null) {
-          if (response.status() == Response.Status.OK) {
-            future.complete((R) response.result());
-          } else {
-            future.completeExceptionally(response.error().createException());
-          }
-        } else {
-          future.completeExceptionally(error);
-        }
-        request.close();
-      });
-    });
-    return future;
+    return client.submit(query);
   }
 
   /**
@@ -603,28 +443,20 @@ public class RaftContext implements Managed<RaftContext> {
 
   @Override
   public synchronized CompletableFuture<RaftContext> open() {
-    if (openFuture != null)
-      return openFuture;
-
-    openFuture = new CompletableFuture<>();
-    cluster.open().whenCompleteAsync((result, error) -> {
-      if (error == null) {
-        open = true;
-        switch (cluster.member().type()) {
-          case CLIENT:
-            transition(RemoteState.class);
-            break;
-          case ACTIVE:
-            log.open(context);
-            transition(FollowerState.class);
-            break;
-        }
-      } else {
-        openFuture.completeExceptionally(error);
-        openFuture = null;
+    return cluster.open().thenRunAsync(() -> {
+      open = true;
+      switch (cluster.member().type()) {
+        case CLIENT:
+          transition(RemoteState.class);
+          break;
+        case ACTIVE:
+          log.open(context);
+          transition(FollowerState.class);
+          break;
       }
-    }, context);
-    return openFuture;
+    }, context)
+      .thenComposeAsync(v -> client.open())
+      .thenApply(v -> this);
   }
 
   @Override
@@ -634,36 +466,28 @@ public class RaftContext implements Managed<RaftContext> {
 
   @Override
   public synchronized CompletableFuture<Void> close() {
-    if (openFuture != null) {
-      openFuture.cancel(false);
-      openFuture = null;
-    } else if (!open) {
-      CompletableFuture<Void> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException("Context not open"));
-      return future;
-    }
+    if (!open)
+      return Futures.exceptionalFuture(new IllegalStateException("context not open"));
 
     CompletableFuture<Void> future = new CompletableFuture<>();
     context.execute(() -> {
-      transition(StartState.class).thenCompose(v -> cluster.close()).whenComplete((result, error) -> {
-        if (error == null) {
+      transition(StartState.class)
+        .thenCompose(v -> client.close())
+        .thenCompose(v -> cluster.close())
+        .whenCompleteAsync((result, error) -> {
           try {
-            if (log != null)
+            if (log != null) {
               log.close();
+            }
+          } catch (Exception e) {
+          }
+
+          if (error == null) {
             future.complete(null);
-          } catch (Exception e) {
-            future.completeExceptionally(e);
-          }
-        } else {
-          try {
-            if (log != null)
-              log.close();
-            future.completeExceptionally(error);
-          } catch (Exception e) {
+          } else {
             future.completeExceptionally(error);
           }
-        }
-      });
+        }, context);
     });
     return future;
   }
