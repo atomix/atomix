@@ -33,6 +33,8 @@ import net.kuujo.copycat.Task;
 import net.kuujo.copycat.io.util.HashFunctions;
 import net.kuujo.copycat.util.ExecutionContext;
 import net.kuujo.copycat.util.concurrent.Futures;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.util.HashMap;
@@ -46,6 +48,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class NettyLocalMember extends ManagedLocalMember implements NettyMember{
+  private static final Logger LOGGER = LoggerFactory.getLogger(NettyLocalMember.class);
   private static final int MESSAGE = 0;
   private static final int TASK = 1;
   private static final int STATUS_FAILURE = 0;
@@ -167,7 +170,8 @@ public class NettyLocalMember extends ManagedLocalMember implements NettyMember{
             .childOption(ChannelOption.SO_KEEPALIVE, true);
 
           // Bind and start to accept incoming connections.
-          ChannelFuture bindFuture = bootstrap.bind(info.address().getHostString(), info.address().getPort());
+          LOGGER.info("Binding to {}", info.address);
+          ChannelFuture bindFuture = bootstrap.bind(info.address.getHostString(), info.address.getPort());
           bindFuture.addListener((ChannelFutureListener) channelFuture -> {
             channelFuture.channel().closeFuture().addListener(closeFuture -> {
               workerGroup.shutdownGracefully();
@@ -177,9 +181,10 @@ public class NettyLocalMember extends ManagedLocalMember implements NettyMember{
               channel = channelFuture.channel();
               listening = true;
               info.address = (InetSocketAddress) channel.localAddress();
-              listenFuture.complete(null);
+              LOGGER.info("Listening at {}", info.address);
+              context.execute(() -> listenFuture.complete(null));
             } else {
-              listenFuture.completeExceptionally(channelFuture.cause());
+              context.execute(() -> listenFuture.completeExceptionally(channelFuture.cause()));
             }
           });
           channelGroup.add(bindFuture.channel());

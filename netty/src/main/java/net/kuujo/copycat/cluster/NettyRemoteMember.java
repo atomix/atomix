@@ -205,6 +205,7 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
 
     bootstrap.connect(info.address().getHostString(), info.address().getPort()).addListener((ChannelFutureListener) channelFuture -> {
       if (channelFuture.isSuccess()) {
+        LOGGER.info("Connected to {}", info.address);
         channel = channelFuture.channel();
         connecting.set(false);
         connected.set(true);
@@ -228,6 +229,7 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
         if (closeFuture == null) {
           closeFuture = new CompletableFuture<>();
           if (channel != null) {
+            LOGGER.info("Disconnecting from {}", info.address);
             channel.close().addListener((ChannelFutureListener) channelFuture -> {
               channel = null;
               connected.set(false);
@@ -299,6 +301,7 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
 
     @Override
     public void exceptionCaught(ChannelHandlerContext context, Throwable cause) throws Exception {
+      LOGGER.info("Lost connection to {}: {}", info.address, cause != null ? cause.getMessage() : "unknown");
       context.close();
       connected.set(false);
       channel = null;
