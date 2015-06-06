@@ -53,15 +53,35 @@ public class TestLocalMember extends ManagedLocalMember implements TestMember {
   }
 
   @Override
+  public <T, U> LocalMember registerHandler(Class<? super T> type, MessageHandler<T, U> handler) {
+    return registerHandler(type.getName(), handler);
+  }
+
+  @Override
   public <T, U> LocalMember registerHandler(String topic, MessageHandler<T, U> handler) {
     handlers.put(topic, new HandlerHolder(handler, getContext()));
     return this;
   }
 
   @Override
+  public LocalMember unregisterHandler(Class<?> type) {
+    return unregisterHandler(type.getName());
+  }
+
+  @Override
   public LocalMember unregisterHandler(String topic) {
     handlers.remove(topic);
     return this;
+  }
+
+  @Override
+  public <T, U> CompletableFuture<U> send(T message) {
+    return send(message.getClass().getName(), message);
+  }
+
+  @Override
+  public <T, U> CompletableFuture<U> send(Class<? super T> type, T message) {
+    return send(type.getName(), message);
   }
 
   @Override

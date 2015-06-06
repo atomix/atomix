@@ -65,6 +65,16 @@ public class TestRemoteMember extends ManagedRemoteMember implements TestMember 
   }
 
   @Override
+  public <T, U> CompletableFuture<U> send(T message) {
+    return send(message.getClass().getName(), message);
+  }
+
+  @Override
+  public <T, U> CompletableFuture<U> send(Class<? super T> type, T message) {
+    return send(type.getName(), message);
+  }
+
+  @Override
   public <T, U> CompletableFuture<U> send(String topic, T message) {
     if (partitioned)
       return Futures.exceptionalFuture(new ClusterException("failed to communicate"));
