@@ -32,9 +32,9 @@ public interface Member {
   static enum Type {
 
     /**
-     * Client member.
+     * Passive member.
      */
-    CLIENT,
+    PASSIVE,
 
     /**
      * Active member.

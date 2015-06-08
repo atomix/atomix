@@ -98,13 +98,6 @@ public interface Cluster extends Members {
      */
     T withMemberId(int id);
 
-    /**
-     * Sets the local member type.
-     *
-     * @param type The local member type.
-     * @return The cluster builder.
-     */
-    T withMemberType(Member.Type type);
   }
 
 }

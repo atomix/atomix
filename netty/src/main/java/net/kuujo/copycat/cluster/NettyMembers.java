@@ -50,7 +50,7 @@ public class NettyMembers extends ManagedMembers {
 
   @Override
   protected ManagedRemoteMember createMember(MemberInfo info) {
-    ManagedRemoteMember remoteMember = new NettyRemoteMember((NettyMemberInfo) info, Member.Type.CLIENT)
+    ManagedRemoteMember remoteMember = new NettyRemoteMember((NettyMemberInfo) info, Member.Type.PASSIVE)
       .setEventLoopGroup(eventLoopGroup);
     remoteMember.setContext(new ExecutionContext(String.format("copycat-cluster-%d", info.id()), serializer));
     return remoteMember;

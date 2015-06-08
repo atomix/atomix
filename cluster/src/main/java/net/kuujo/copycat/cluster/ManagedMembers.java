@@ -60,7 +60,7 @@ public abstract class ManagedMembers implements Members, Managed<Members> {
       if (!members.containsKey(memberInfo.id())) {
         ManagedRemoteMember member = createMember(memberInfo);
         futures.add(member.open().thenRun(() -> {
-          member.type = Member.Type.CLIENT;
+          member.type = Member.Type.PASSIVE;
           members.put(member.id(), member);
           membershipListeners.forEach(l -> l.memberJoined(member));
         }));
@@ -68,7 +68,7 @@ public abstract class ManagedMembers implements Members, Managed<Members> {
     }
 
     for (ManagedMember member : members.values()) {
-      if (member.type() == Member.Type.CLIENT) {
+      if (member.type() == Member.Type.PASSIVE) {
         boolean configured = false;
         for (MemberInfo memberInfo : membersInfo) {
           if (memberInfo.id() == member.id()) {
@@ -195,8 +195,6 @@ public abstract class ManagedMembers implements Members, Managed<Members> {
    * Cluster builder.
    */
   public static abstract class Builder<T extends Builder<T, U>, U extends ManagedMember> implements Members.Builder<T, ManagedMembers, U> {
-    protected int memberId;
-    protected Member.Type type = Member.Type.CLIENT;
     protected final Map<Integer, U> members = new HashMap<>();
 
     @Override

@@ -95,7 +95,6 @@ public abstract class ManagedCluster extends ManagedMembers implements Cluster {
    */
   public static abstract class Builder<T extends Builder<T, U>, U extends ManagedMember> implements Cluster.Builder<T, ManagedCluster, U> {
     protected int memberId;
-    protected Member.Type type = Member.Type.CLIENT;
     protected final Map<Integer, U> members = new HashMap<>();
 
     @Override
@@ -104,15 +103,6 @@ public abstract class ManagedCluster extends ManagedMembers implements Cluster {
       if (id < 0)
         throw new IllegalArgumentException("member ID cannot be negative");
       this.memberId = id;
-      return (T) this;
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public T withMemberType(Member.Type type) {
-      if (type == null)
-        throw new NullPointerException("type cannot be null");
-      this.type = type;
       return (T) this;
     }
 

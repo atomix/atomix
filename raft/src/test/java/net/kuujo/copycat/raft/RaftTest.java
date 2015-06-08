@@ -16,7 +16,6 @@
 package net.kuujo.copycat.raft;
 
 import net.jodah.concurrentunit.ConcurrentTestCase;
-import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.cluster.NettyCluster;
 import net.kuujo.copycat.cluster.NettyMember;
 import net.kuujo.copycat.raft.log.Log;
@@ -39,7 +38,6 @@ public class RaftTest extends ConcurrentTestCase {
     Raft raft1 = Raft.builder()
       .withCluster(NettyCluster.builder()
         .withMemberId(1)
-        .withMemberType(Member.Type.ACTIVE)
         .withHost("localhost")
         .withPort(5001)
         .addMember(NettyMember.builder()
@@ -62,7 +60,6 @@ public class RaftTest extends ConcurrentTestCase {
     Raft raft2 = Raft.builder()
       .withCluster(NettyCluster.builder()
         .withMemberId(2)
-        .withMemberType(Member.Type.ACTIVE)
         .withHost("localhost")
         .withPort(5002)
         .addMember(NettyMember.builder()
@@ -85,7 +82,6 @@ public class RaftTest extends ConcurrentTestCase {
     Raft raft3 = Raft.builder()
       .withCluster(NettyCluster.builder()
         .withMemberId(3)
-        .withMemberType(Member.Type.ACTIVE)
         .withHost("localhost")
         .withPort(5003)
         .addMember(NettyMember.builder()
@@ -133,7 +129,6 @@ public class RaftTest extends ConcurrentTestCase {
     Raft raft1 = Raft.builder()
       .withCluster(NettyCluster.builder()
         .withMemberId(1)
-        .withMemberType(Member.Type.ACTIVE)
         .withHost("localhost")
         .withPort(5001)
         .addMember(NettyMember.builder()
@@ -156,7 +151,6 @@ public class RaftTest extends ConcurrentTestCase {
     Raft raft2 = Raft.builder()
       .withCluster(NettyCluster.builder()
         .withMemberId(2)
-        .withMemberType(Member.Type.ACTIVE)
         .withHost("localhost")
         .withPort(5002)
         .addMember(NettyMember.builder()
@@ -179,7 +173,6 @@ public class RaftTest extends ConcurrentTestCase {
     Raft raft3 = Raft.builder()
       .withCluster(NettyCluster.builder()
         .withMemberId(3)
-        .withMemberType(Member.Type.ACTIVE)
         .withHost("localhost")
         .withPort(5003)
         .addMember(NettyMember.builder()
@@ -208,7 +201,6 @@ public class RaftTest extends ConcurrentTestCase {
     Raft client = Raft.builder()
       .withCluster(NettyCluster.builder()
         .withMemberId(4)
-        .withMemberType(Member.Type.CLIENT)
         .withHost("localhost")
         .withPort(5004)
         .addMember(NettyMember.builder()

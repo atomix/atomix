@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-abstract class ActiveState extends RemoteState {
+abstract class ActiveState extends PassiveState {
   protected boolean transition;
 
   protected ActiveState(RaftStateContext context) {
@@ -44,8 +44,8 @@ abstract class ActiveState extends RemoteState {
     switch (state) {
       case START:
         return context.transition(StartState.class);
-      case REMOTE:
-        return context.transition(RemoteState.class);
+      case PASSIVE:
+        return context.transition(PassiveState.class);
       case FOLLOWER:
         return context.transition(FollowerState.class);
       case CANDIDATE:

@@ -52,7 +52,7 @@ public class NettyCluster extends ManagedCluster {
 
   @Override
   protected ManagedRemoteMember createMember(MemberInfo info) {
-    ManagedRemoteMember remoteMember = new NettyRemoteMember((NettyMemberInfo) info, Member.Type.CLIENT)
+    ManagedRemoteMember remoteMember = new NettyRemoteMember((NettyMemberInfo) info, Member.Type.PASSIVE)
       .setEventLoopGroup(eventLoopGroup);
     remoteMember.setContext(new ExecutionContext(String.format("copycat-cluster-%d", info.id()), serializer));
     return remoteMember;
@@ -121,7 +121,7 @@ public class NettyCluster extends ManagedCluster {
       } else {
         if (host == null)
           throw new ConfigurationException("member host must be configured");
-        localMember = new NettyLocalMember(new NettyMemberInfo(memberId, new InetSocketAddress(host, port)), type);
+        localMember = new NettyLocalMember(new NettyMemberInfo(memberId, new InetSocketAddress(host, port)), Member.Type.PASSIVE);
       }
 
       return new NettyCluster(eventLoopGroup != null ? eventLoopGroup : new NioEventLoopGroup(), localMember, members.values().stream().map(m -> (NettyRemoteMember) m).collect(Collectors.toList()), new Serializer());

@@ -132,13 +132,12 @@ public class TestCluster extends ManagedCluster {
 
       TestMember member = members.remove(memberId);
       TestMember.Info info;
+      TestLocalMember localMember;
       if (member != null) {
-        info = new TestMember.Info(memberId, member.address());
+        localMember = new TestLocalMember(new TestMember.Info(memberId, member.address()), Member.Type.ACTIVE);
       } else {
-        info = new TestMember.Info(memberId, address);
+        localMember = new TestLocalMember(new TestMember.Info(memberId, address), Member.Type.PASSIVE);
       }
-
-      TestLocalMember localMember = new TestLocalMember(info, type);
       return new TestCluster(localMember, members.values().stream().map(m -> (TestRemoteMember) m).collect(Collectors.toList()), registry, new Serializer());
     }
   }

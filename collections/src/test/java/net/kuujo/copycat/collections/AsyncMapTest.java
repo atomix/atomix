@@ -19,7 +19,6 @@ import net.jodah.concurrentunit.ConcurrentTestCase;
 import net.kuujo.copycat.Copycat;
 import net.kuujo.copycat.CopycatServer;
 import net.kuujo.copycat.Node;
-import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.cluster.TestCluster;
 import net.kuujo.copycat.cluster.TestMember;
 import net.kuujo.copycat.cluster.TestMemberRegistry;
@@ -170,7 +169,6 @@ public class AsyncMapTest extends ConcurrentTestCase {
     for (int i = 1; i <= nodes; i++) {
       TestCluster.Builder builder = TestCluster.builder()
         .withMemberId(i)
-        .withMemberType(Member.Type.ACTIVE)
         .withRegistry(registry);
 
       for (int j = 1; j <= nodes; j++) {

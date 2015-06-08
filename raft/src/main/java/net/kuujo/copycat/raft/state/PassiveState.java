@@ -21,19 +21,19 @@ import net.kuujo.copycat.raft.rpc.*;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Remote state.
+ * Passive state.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class RemoteState extends AbstractState {
+public class PassiveState extends AbstractState {
 
-  public RemoteState(RaftStateContext context) {
+  public PassiveState(RaftStateContext context) {
     super(context);
   }
 
   @Override
   public RaftState type() {
-    return RaftState.REMOTE;
+    return RaftState.PASSIVE;
   }
 
   @Override

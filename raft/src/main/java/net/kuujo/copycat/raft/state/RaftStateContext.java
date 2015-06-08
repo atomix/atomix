@@ -404,9 +404,6 @@ public class RaftStateContext extends RaftStateClient {
     return cluster.open().thenRunAsync(() -> {
       open = true;
       switch (cluster.member().type()) {
-        case CLIENT:
-          transition(RemoteState.class);
-          break;
         case ACTIVE:
           log.open(context);
           transition(FollowerState.class);
