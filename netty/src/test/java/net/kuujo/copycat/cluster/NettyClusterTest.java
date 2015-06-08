@@ -46,7 +46,7 @@ public class NettyClusterTest extends ConcurrentTestCase {
     localMember.setContext(new ExecutionContext("test-server", new Serializer()));
 
     expectResume();
-    localMember.listen().thenRun(this::resume);
+    localMember.open().thenRun(this::resume);
     await();
 
     EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
@@ -55,7 +55,7 @@ public class NettyClusterTest extends ConcurrentTestCase {
     remoteMember.setEventLoopGroup(eventLoopGroup);
 
     expectResume();
-    remoteMember.connect().thenRun(this::resume);
+    remoteMember.open().thenRun(this::resume);
     await();
 
     expectResumes(2);
@@ -78,12 +78,12 @@ public class NettyClusterTest extends ConcurrentTestCase {
     remoteMember.setEventLoopGroup(eventLoopGroup);
 
     expectResumes(2);
-    remoteMember.connect().thenRun(this::resume);
+    remoteMember.open().thenRun(this::resume);
 
     NettyLocalMember localMember = new NettyLocalMember(new NettyMemberInfo(1, new InetSocketAddress("localhost", 8081)), Member.Type.ACTIVE);
     localMember.setContext(new ExecutionContext("test-server", new Serializer()));
 
-    localMember.listen().thenRun(this::resume);
+    localMember.open().thenRun(this::resume);
     await();
 
     expectResumes(2);
@@ -104,7 +104,7 @@ public class NettyClusterTest extends ConcurrentTestCase {
     localMember.setContext(new ExecutionContext("test-server", new Serializer()));
 
     expectResume();
-    localMember.listen().thenRun(this::resume);
+    localMember.open().thenRun(this::resume);
     await();
 
     EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
@@ -113,7 +113,7 @@ public class NettyClusterTest extends ConcurrentTestCase {
     remoteMember.setEventLoopGroup(eventLoopGroup);
 
     expectResume();
-    remoteMember.connect().thenRun(this::resume);
+    remoteMember.open().thenRun(this::resume);
     await();
 
     expectResume();
@@ -143,7 +143,7 @@ public class NettyClusterTest extends ConcurrentTestCase {
     localMember.setContext(new ExecutionContext("test-server", new Serializer()));
 
     expectResume();
-    localMember.listen().thenRun(this::resume);
+    localMember.open().thenRun(this::resume);
     await();
 
     EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
@@ -152,7 +152,7 @@ public class NettyClusterTest extends ConcurrentTestCase {
     remoteMember.setEventLoopGroup(eventLoopGroup);
 
     expectResume();
-    remoteMember.connect().thenRun(this::resume);
+    remoteMember.open().thenRun(this::resume);
     await();
 
     expectResume();

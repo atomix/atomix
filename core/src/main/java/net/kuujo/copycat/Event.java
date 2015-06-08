@@ -27,7 +27,6 @@ import net.kuujo.copycat.io.serializer.Writable;
  */
 @SerializeWith(id=2000)
 public class Event implements Writable {
-  public static final String TOPIC = "event";
 
   private Type type;
   private String path;

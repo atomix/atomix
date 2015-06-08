@@ -170,10 +170,15 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
   }
 
   @Override
-  public synchronized CompletableFuture<RemoteMember> connect() {
+  public synchronized CompletableFuture<Member> open() {
     if (connecting.compareAndSet(false, true))
       connect(INITIAL_RECONNECT_INTERVAL);
     return CompletableFuture.completedFuture(this);
+  }
+
+  @Override
+  public boolean isOpen() {
+    return connected.get();
   }
 
   /**
@@ -265,6 +270,11 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
       }
     }
     return closeFuture;
+  }
+
+  @Override
+  public boolean isClosed() {
+    return !connected.get();
   }
 
   /**

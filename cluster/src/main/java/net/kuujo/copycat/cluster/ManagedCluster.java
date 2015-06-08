@@ -16,87 +16,28 @@
 package net.kuujo.copycat.cluster;
 
 import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.util.ExecutionContext;
-import net.kuujo.copycat.util.Managed;
 
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 /**
  * Managed cluster.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class ManagedCluster implements Cluster, Managed<Cluster> {
+public abstract class ManagedCluster extends ManagedMembers implements Cluster {
   protected final ManagedLocalMember localMember;
-  protected final Map<Integer, ManagedRemoteMember> remoteMembers = new ConcurrentHashMap<>();
-  protected final Map<Integer, ManagedMember> members = new ConcurrentHashMap<>();
   protected final Set<MembershipListener> membershipListeners = new CopyOnWriteArraySet<>();
-  protected final Serializer serializer;
-  private final AtomicInteger permits = new AtomicInteger();
-  private CompletableFuture<Cluster> openFuture;
-  private CompletableFuture<Void> closeFuture;
-  private AtomicBoolean open = new AtomicBoolean();
 
   protected ManagedCluster(ManagedLocalMember localMember, Collection<? extends ManagedRemoteMember> remoteMembers, Serializer serializer) {
-    localMember.setContext(new ExecutionContext("copycat-cluster-" + localMember.id(), serializer));
+    super(((Supplier<Collection<ManagedMember>>) () -> {
+      Collection<ManagedMember> members = new ArrayList<>(remoteMembers);
+      members.add(localMember);
+      return members;
+    }).get(), serializer);
     this.localMember = localMember;
-    remoteMembers.forEach(m -> {
-      ((ManagedMember)m).setContext(new ExecutionContext("copycat-cluster-" + m.id(), serializer));
-      this.remoteMembers.put(m.id(), m);
-    });
-    this.members.putAll(this.remoteMembers);
-    this.members.put(localMember.id(), localMember);
-    this.serializer = serializer;
   }
-
-  /**
-   * Configures the set of active cluster members.
-   */
-  public CompletableFuture<Void> configure(MemberInfo... membersInfo) {
-    List<CompletableFuture<?>> futures = new ArrayList<>();
-    for (MemberInfo memberInfo : membersInfo) {
-      if (memberInfo.id() != localMember.id() && !remoteMembers.containsKey(memberInfo.id())) {
-        ManagedRemoteMember member = createMember(memberInfo);
-        futures.add(member.connect().thenRun(() -> {
-          member.type = Member.Type.CLIENT;
-          members.put(member.id(), member);
-          remoteMembers.put(member.id(), member);
-          membershipListeners.forEach(l -> l.memberJoined(member));
-        }));
-      }
-    }
-
-    for (ManagedRemoteMember member : remoteMembers.values()) {
-      if (member.type() == Member.Type.CLIENT) {
-        boolean configured = false;
-        for (MemberInfo memberInfo : membersInfo) {
-          if (memberInfo.id() == member.id()) {
-            configured = true;
-            break;
-          }
-        }
-
-        if (!configured) {
-          futures.add(member.close().thenRun(() -> {
-            members.remove(member.id());
-            remoteMembers.remove(member.id());
-            membershipListeners.forEach(l -> l.memberLeft(member.id()));
-          }));
-        }
-      }
-    }
-    return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()]));
-  }
-
-  /**
-   * Creates a new remote member.
-   */
-  protected abstract ManagedRemoteMember createMember(MemberInfo info);
 
   @Override
   public ManagedLocalMember member() {
@@ -104,31 +45,10 @@ public abstract class ManagedCluster implements Cluster, Managed<Cluster> {
   }
 
   @Override
-  public Member member(int id) {
-    if (localMember.id() == id)
-      return localMember;
-    ManagedMember member = remoteMembers.get(id);
-    if (member == null)
-      throw new NoSuchElementException();
-    return member;
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public Collection<Member> members() {
-    return (Collection) members.values();
-  }
-
-  @Override
-  public Serializer serializer() {
-    return serializer;
-  }
-
-  @Override
   public <T> Cluster broadcast(T message) {
     if (!isOpen())
       throw new IllegalStateException("cluster not open");
-    remoteMembers.values().forEach(m -> {
+    members.values().forEach(m -> {
       m.send(message);
     });
     return this;
@@ -138,7 +58,7 @@ public abstract class ManagedCluster implements Cluster, Managed<Cluster> {
   public <T> Cluster broadcast(Class<? super T> type, T message) {
     if (!isOpen())
       throw new IllegalStateException("cluster not open");
-    remoteMembers.values().forEach(m -> {
+    members.values().forEach(m -> {
       m.send(type, message);
     });
     return this;
@@ -148,7 +68,7 @@ public abstract class ManagedCluster implements Cluster, Managed<Cluster> {
   public <T> Cluster broadcast(String topic, T message) {
     if (!isOpen())
       throw new IllegalStateException("cluster not open");
-    remoteMembers.values().forEach(m -> {
+    members.values().forEach(m -> {
       m.send(topic, message);
     });
     return this;
@@ -168,68 +88,6 @@ public abstract class ManagedCluster implements Cluster, Managed<Cluster> {
       throw new NullPointerException("listener cannot be null");
     membershipListeners.remove(listener);
     return this;
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public CompletableFuture<Cluster> open() {
-    if (permits.incrementAndGet() == 1) {
-      synchronized (this) {
-        if (openFuture == null) {
-          openFuture = localMember.listen().thenCompose(v -> {
-            int i = 0;
-            CompletableFuture<? extends Member>[] futures = new CompletableFuture[members.size() - 1];
-            for (ManagedRemoteMember member : remoteMembers.values()) {
-              futures[i++] = member.connect();
-            }
-            return CompletableFuture.allOf(futures);
-          }).thenApply(v -> {
-            openFuture = null;
-            if (permits.get() > 0) {
-              open.set(true);
-            }
-            return this;
-          });
-        }
-      }
-      return openFuture;
-    }
-    return CompletableFuture.completedFuture(this);
-  }
-
-  @Override
-  public boolean isOpen() {
-    return permits.get() > 0 && open.get();
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public CompletableFuture<Void> close() {
-    if (permits.decrementAndGet() == 0) {
-      synchronized (this) {
-        if (closeFuture == null) {
-          int i = 0;
-          CompletableFuture<? extends Member>[] futures = new CompletableFuture[members.size()-1];
-          for (ManagedRemoteMember member : remoteMembers.values()) {
-            futures[i++] = member.connect();
-          }
-          closeFuture = CompletableFuture.allOf(futures)
-            .thenCompose(v -> localMember.close())
-            .thenRun(() -> {
-              closeFuture = null;
-              if (permits.get() == 0) {
-                open.set(false);
-              }
-            });
-        }
-      }
-    }
-    return closeFuture;
-  }
-
-  @Override
-  public boolean isClosed() {
-    return !isOpen();
   }
 
   /**

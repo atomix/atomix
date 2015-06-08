@@ -27,7 +27,7 @@ import java.util.concurrent.CompletableFuture;
  */
 public class RemoteState extends AbstractState {
 
-  public RemoteState(RaftContext context) {
+  public RemoteState(RaftStateContext context) {
     super(context);
   }
 

@@ -15,76 +15,42 @@
  */
 package net.kuujo.copycat;
 
-import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.cluster.ManagedCluster;
-import net.kuujo.copycat.manager.*;
+import net.kuujo.copycat.manager.CreatePath;
+import net.kuujo.copycat.manager.CreateResource;
+import net.kuujo.copycat.manager.DeletePath;
+import net.kuujo.copycat.manager.PathExists;
+import net.kuujo.copycat.raft.ManagedProtocol;
 import net.kuujo.copycat.raft.Protocol;
-import net.kuujo.copycat.raft.Raft;
-import net.kuujo.copycat.raft.log.Log;
 import net.kuujo.copycat.util.Managed;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Copycat.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class Copycat implements Managed<Copycat> {
-
-  /**
-   * Returns a new Copycat builder.
-   *
-   * @return A new Copycat builder.
-   */
-  public static Builder builder() {
-    return new Builder();
-  }
-
+public abstract class Copycat implements Managed<Copycat> {
   static final String PATH_SEPARATOR = "/";
-  protected final Raft raft;
+  protected final ManagedProtocol protocol;
   private final Map<String, Node> nodes = new ConcurrentHashMap<>();
   private final ResourceRegistry registry;
   private final ResourceFactory factory = new ResourceFactory();
-  private final Map<String, Set<EventListener>> listeners = new ConcurrentHashMap<>();
 
-  private Copycat(Raft raft, ClassLoader classLoader) {
-    this.raft = raft;
+  protected Copycat(ManagedProtocol protocol, ClassLoader classLoader) {
+    this.protocol = protocol;
     this.registry = new ResourceRegistry(classLoader);
   }
 
   /**
-   * Returns the Copycat cluster.
+   * Returns a reference to the node at the given path.
    *
-   * @return The Copycat cluster.
-   */
-  public Cluster cluster() {
-    return raft.cluster();
-  }
-
-  /**
-   * Handles an event.
-   */
-  private CompletableFuture<Boolean> handleEvent(Event event) {
-    Set<EventListener> listeners = this.listeners.get(event.path());
-    if (listeners != null) {
-      listeners.forEach(l -> l.accept(event));
-    }
-    return CompletableFuture.completedFuture(true);
-  }
-
-  /**
-   * Returns a reference to the node at the given getPath.
-   *
-   * @param path The getPath for which to return the node.
-   * @return A reference to the node at the given getPath.
+   * @param path The path for which to return the node.
+   * @return A reference to the node at the given path.
    */
   public Node node(String path) {
     if (path == null)
@@ -97,38 +63,38 @@ public class Copycat implements Managed<Copycat> {
   }
 
   /**
-   * Checks whether a getPath exists.
+   * Checks whether a path exists.
    *
-   * @param path The getPath to check.
-   * @return A completable future indicating whether the given getPath exists.
+   * @param path The path to check.
+   * @return A completable future indicating whether the given path exists.
    */
   public CompletableFuture<Boolean> exists(String path) {
-    return raft.submit(new PathExists(path));
+    return protocol.submit(new PathExists(path));
   }
 
   /**
-   * Creates a node at the given getPath.
+   * Creates a node at the given path.
    *
-   * @param path The getPath for which to create the node.
+   * @param path The path for which to create the node.
    * @return A completable future to be completed once the node has been created.
    */
   public CompletableFuture<Node> create(String path) {
-    return raft.submit(CreatePath.builder()
+    return protocol.submit(CreatePath.builder()
       .withPath(path)
       .build())
       .thenApply(result -> node(path));
   }
 
   /**
-   * Creates a resource at the given getPath.
+   * Creates a resource at the given path.
    *
-   * @param path The getPath at which to create the resource.
+   * @param path The path at which to create the resource.
    * @param type The resource type to create.
    * @param <T> The resource type.
    * @return A completable future to be completed once the resource has been created.
    */
   public <T extends Resource> CompletableFuture<T> create(String path, Class<? super T> type) {
-    return raft.submit(CreateResource.builder()
+    return protocol.submit(CreateResource.builder()
       .withPath(path)
       .withType(registry.lookup(type))
       .build())
@@ -136,81 +102,36 @@ public class Copycat implements Managed<Copycat> {
   }
 
   /**
-   * Deletes a node at the given getPath.
+   * Deletes a node at the given path.
    *
-   * @param path The getPath at which to delete the node.
+   * @param path The path at which to delete the node.
    * @return A completable future to be completed once the node has been deleted.
    */
   public CompletableFuture<Copycat> delete(String path) {
-    return raft.submit(DeletePath.builder()
+    return protocol.submit(DeletePath.builder()
       .withPath(path)
       .build())
       .thenApply(result -> this);
   }
 
-  /**
-   * Listens for state changes at the given path.
-   *
-   * @param path The path to which to listen for changes.
-   * @param listener The change listener.
-   * @return A completable future to be called once the listener has been registered.
-   */
-  public CompletableFuture<Copycat> listen(String path, EventListener listener) {
-    return raft.submit(AddListener.builder()
-      .withPath(path)
-      .build())
-      .thenApply(result -> {
-        Set<EventListener> listeners = this.listeners.computeIfAbsent(path, p -> new ConcurrentSkipListSet<>());
-        listeners.add(listener);
-        return this;
-      });
-  }
-
-  /**
-   * Unlistens for state changes at the given path.
-   *
-   * @param path The path from which to stop listening for changes.
-   * @param listener The change listener.
-   * @return A completable future to be called once the listener has been unregistered.
-   */
-  public CompletableFuture<Copycat> unlisten(String path, EventListener listener) {
-    return raft.submit(RemoveListener.builder()
-      .withPath(path)
-      .build())
-      .thenApply(result -> {
-        Set<EventListener> listeners = this.listeners.get(path);
-        if (listeners != null) {
-          listeners.remove(listener);
-          if (listeners.isEmpty()) {
-            this.listeners.remove(path);
-          }
-        }
-        return this;
-      });
-  }
-
   @Override
   public CompletableFuture<Copycat> open() {
-    return raft.open().thenApply(l -> {
-      raft.cluster().member().registerHandler(Event.TOPIC, this::handleEvent);
-      return this;
-    });
+    return protocol.open().thenApply(v -> this);
   }
 
   @Override
   public boolean isOpen() {
-    return raft.isOpen();
+    return protocol.isOpen();
   }
 
   @Override
   public CompletableFuture<Void> close() {
-    raft.cluster().member().unregisterHandler(Event.TOPIC);
-    return raft.close();
+    return protocol.close();
   }
 
   @Override
   public boolean isClosed() {
-    return raft.isClosed();
+    return protocol.isClosed();
   }
 
   /**
@@ -234,7 +155,7 @@ public class Copycat implements Managed<Copycat> {
     private <T extends Resource> T createResourceObject(Class<? super T> type, long id) {
       try {
         Constructor constructor = type.getConstructor(Protocol.class);
-        return (T) constructor.newInstance(new ResourceProtocol(id, raft));
+        return (T) constructor.newInstance(new ResourceProtocol(id, protocol));
       } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
         throw new ResourceException("failed to instantiate resource: " + type, e);
       }
@@ -244,102 +165,7 @@ public class Copycat implements Managed<Copycat> {
   /**
    * Copycat builder.
    */
-  public static class Builder implements net.kuujo.copycat.Builder<Copycat> {
-    private final Raft.Builder builder = Raft.builder();
-    private Cluster cluster;
-    private ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-
-    private Builder() {
-    }
-
-    /**
-     * Sets the Raft cluster.
-     *
-     * @param cluster The Raft cluster.
-     * @return The Raft builder.
-     */
-    public Builder withCluster(ManagedCluster cluster) {
-      this.cluster = cluster;
-      builder.withCluster(cluster);
-      return this;
-    }
-
-    /**
-     * Sets the Raft log.
-     *
-     * @param log The Raft log.
-     * @return The Raft builder.
-     */
-    public Builder withLog(Log log) {
-      builder.withLog(log);
-      return this;
-    }
-
-    /**
-     * Sets the Raft election timeout, returning the Raft configuration for method chaining.
-     *
-     * @param electionTimeout The Raft election timeout in milliseconds.
-     * @return The Raft configuration.
-     * @throws IllegalArgumentException If the election timeout is not positive
-     */
-    public Builder withElectionTimeout(long electionTimeout) {
-      builder.withElectionTimeout(electionTimeout);
-      return this;
-    }
-
-    /**
-     * Sets the Raft election timeout, returning the Raft configuration for method chaining.
-     *
-     * @param electionTimeout The Raft election timeout.
-     * @param unit The timeout unit.
-     * @return The Raft configuration.
-     * @throws IllegalArgumentException If the election timeout is not positive
-     */
-    public Builder withElectionTimeout(long electionTimeout, TimeUnit unit) {
-      builder.withElectionTimeout(electionTimeout, unit);
-      return this;
-    }
-
-    /**
-     * Sets the Raft heartbeat interval, returning the Raft configuration for method chaining.
-     *
-     * @param heartbeatInterval The Raft heartbeat interval in milliseconds.
-     * @return The Raft configuration.
-     * @throws IllegalArgumentException If the heartbeat interval is not positive
-     */
-    public Builder withHeartbeatInterval(long heartbeatInterval) {
-      builder.withHeartbeatInterval(heartbeatInterval);
-      return this;
-    }
-
-    /**
-     * Sets the Raft heartbeat interval, returning the Raft configuration for method chaining.
-     *
-     * @param heartbeatInterval The Raft heartbeat interval.
-     * @param unit The heartbeat interval unit.
-     * @return The Raft configuration.
-     * @throws IllegalArgumentException If the heartbeat interval is not positive
-     */
-    public Builder withHeartbeatInterval(long heartbeatInterval, TimeUnit unit) {
-      builder.withHeartbeatInterval(heartbeatInterval, unit);
-      return this;
-    }
-
-    /**
-     * Sets the Copycat class loader.
-     *
-     * @param classLoader The Copycat class loader.
-     * @return The Copycat builder.
-     */
-    public Builder withClassLoader(ClassLoader classLoader) {
-      this.classLoader = classLoader;
-      return this;
-    }
-
-    @Override
-    public Copycat build() {
-      return new Copycat(builder.withStateMachine(new ResourceManager(cluster)).build(), classLoader);
-    }
+  public static interface Builder<T extends Copycat> extends net.kuujo.copycat.Builder<T> {
   }
 
 }

@@ -33,6 +33,7 @@ public class TestLocalMember extends ManagedLocalMember implements TestMember {
   private final TestMember.Info info;
   private final Map<String, HandlerHolder> handlers = new HashMap<>();
   private TestMemberRegistry registry;
+  private volatile boolean open;
 
   TestLocalMember(TestMember.Info info, Member.Type type) {
     super(info, type);
@@ -87,15 +88,17 @@ public class TestLocalMember extends ManagedLocalMember implements TestMember {
   @Override
   @SuppressWarnings("unchecked")
   public <T, U> CompletableFuture<U> send(String topic, T message) {
+    ExecutionContext context = getContext();
+
     HandlerHolder handler = handlers.get(topic);
     if (handler != null) {
       CompletableFuture<U> future = new CompletableFuture<>();
       handler.context.execute(() -> {
         handler.handler.handle(message).whenComplete((result, error) -> {
           if (error == null) {
-            future.complete((U) result);
+            context.execute(() -> future.complete((U) result));
           } else {
-            future.completeExceptionally(new ClusterException(error));
+            context.execute(() -> future.completeExceptionally(new ClusterException(error)));
           }
         });
       });
@@ -145,15 +148,27 @@ public class TestLocalMember extends ManagedLocalMember implements TestMember {
   }
 
   @Override
-  public CompletableFuture<LocalMember> listen() {
+  public CompletableFuture<Member> open() {
     registry.register(address(), this);
+    open = true;
     return CompletableFuture.completedFuture(this);
+  }
+
+  @Override
+  public boolean isOpen() {
+    return open;
   }
 
   @Override
   public CompletableFuture<Void> close() {
     registry.unregister(address());
+    open = false;
     return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
+  public boolean isClosed() {
+    return !open;
   }
 
   @Override

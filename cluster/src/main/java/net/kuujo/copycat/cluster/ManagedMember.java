@@ -17,6 +17,7 @@ package net.kuujo.copycat.cluster;
 
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.util.ExecutionContext;
+import net.kuujo.copycat.util.Managed;
 
 import java.util.Random;
 
@@ -25,7 +26,7 @@ import java.util.Random;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class ManagedMember implements Member {
+public abstract class ManagedMember implements Member, Managed<Member> {
   protected final MemberInfo info;
   protected Type type;
   protected Status status = Status.DEAD;

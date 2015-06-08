@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 abstract class ActiveState extends RemoteState {
   protected boolean transition;
 
-  protected ActiveState(RaftContext context) {
+  protected ActiveState(RaftStateContext context) {
     super(context);
   }
 

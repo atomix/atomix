@@ -15,11 +15,10 @@
  */
 package net.kuujo.copycat;
 
+import net.kuujo.copycat.manager.DeleteResource;
 import net.kuujo.copycat.raft.Command;
 import net.kuujo.copycat.raft.Protocol;
 import net.kuujo.copycat.raft.Query;
-import net.kuujo.copycat.raft.Raft;
-import net.kuujo.copycat.manager.DeleteResource;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -30,17 +29,17 @@ import java.util.concurrent.CompletableFuture;
  */
 public class ResourceProtocol implements Protocol {
   private final long resource;
-  private final Raft raft;
+  private final Protocol protocol;
 
-  public ResourceProtocol(long resource, Raft raft) {
+  public ResourceProtocol(long resource, Protocol protocol) {
     this.resource = resource;
-    this.raft = raft;
+    this.protocol = protocol;
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public <T> CompletableFuture<T> submit(Command<T> command) {
-    return raft.submit(ResourceCommand.builder()
+    return protocol.submit(ResourceCommand.builder()
       .withResource(resource)
       .withCommand(command)
       .build());
@@ -49,7 +48,7 @@ public class ResourceProtocol implements Protocol {
   @Override
   @SuppressWarnings("unchecked")
   public <T> CompletableFuture<T> submit(Query<T> query) {
-    return raft.submit(ResourceQuery.builder()
+    return protocol.submit(ResourceQuery.builder()
       .withResource(resource)
       .withQuery(query)
       .build());
@@ -57,7 +56,7 @@ public class ResourceProtocol implements Protocol {
 
   @Override
   public CompletableFuture<Void> delete() {
-    return raft.submit(DeleteResource.builder()
+    return protocol.submit(DeleteResource.builder()
       .withResource(resource)
       .build())
       .thenApply(deleted -> null);

@@ -66,4 +66,10 @@ public interface Protocol {
    */
   CompletableFuture<Void> delete();
 
+  /**
+   * Protocol builder.
+   */
+  static interface Builder<T extends Protocol> extends net.kuujo.copycat.Builder<T> {
+  }
+
 }

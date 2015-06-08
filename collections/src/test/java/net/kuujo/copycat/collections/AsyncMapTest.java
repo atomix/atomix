@@ -17,6 +17,7 @@ package net.kuujo.copycat.collections;
 
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import net.kuujo.copycat.Copycat;
+import net.kuujo.copycat.CopycatServer;
 import net.kuujo.copycat.Node;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.cluster.TestCluster;
@@ -179,7 +180,7 @@ public class AsyncMapTest extends ConcurrentTestCase {
           .build());
       }
 
-      Copycat copycat = Copycat.builder()
+      Copycat copycat = CopycatServer.builder()
         .withCluster(builder.build())
         .withLog(Log.builder()
           .withStorageLevel(StorageLevel.MEMORY)

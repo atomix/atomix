@@ -30,7 +30,8 @@ import java.util.concurrent.CompletableFuture;
 public class TestRemoteMember extends ManagedRemoteMember implements TestMember {
   private final TestMember.Info info;
   private TestMemberRegistry registry;
-  private boolean partitioned;
+  private volatile boolean open;
+  private volatile boolean partitioned;
 
   TestRemoteMember(TestMember.Info info, Member.Type type) {
     super(info, type);
@@ -84,6 +85,7 @@ public class TestRemoteMember extends ManagedRemoteMember implements TestMember 
       return Futures.exceptionalFuture(new ClusterException("invalid member"));
 
     ExecutionContext context = getContext();
+
     CompletableFuture<U> future = new CompletableFuture<>();
     this.context.execute(() -> {
       Buffer buffer = serializer.writeObject(message).flip();
@@ -127,15 +129,27 @@ public class TestRemoteMember extends ManagedRemoteMember implements TestMember 
   }
 
   @Override
-  public CompletableFuture<RemoteMember> connect() {
+  public CompletableFuture<Member> open() {
     if (partitioned)
       return Futures.exceptionalFuture(new ClusterException("failed to communicate"));
+    open = true;
     return CompletableFuture.completedFuture(this);
   }
 
   @Override
+  public boolean isOpen() {
+    return open;
+  }
+
+  @Override
   public CompletableFuture<Void> close() {
+    open = false;
     return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
+  public boolean isClosed() {
+    return !open;
   }
 
   @Override

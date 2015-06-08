@@ -34,7 +34,7 @@
     </dependency>
     <dependency>
       <groupId>net.kuujo.copycat</groupId>
-      <artifactId>copycat</artifactId>
+      <artifactId>copycat-netty</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -44,7 +44,17 @@
     </dependency>
     <dependency>
       <groupId>net.kuujo.copycat</groupId>
-      <artifactId>copycat-netty</artifactId>
+      <artifactId>copycat</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>net.kuujo.copycat</groupId>
+      <artifactId>copycat-server</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>net.kuujo.copycat</groupId>
+      <artifactId>copycat-client</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

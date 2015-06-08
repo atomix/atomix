@@ -68,7 +68,7 @@ public class NettyLocalMember extends ManagedLocalMember implements NettyMember{
   private ChannelGroup channelGroup;
   private EventLoopGroup workerGroup;
   private boolean listening;
-  private CompletableFuture<LocalMember> listenFuture;
+  private CompletableFuture<Member> listenFuture;
   private CompletableFuture<Void> closeFuture;
 
   NettyLocalMember(NettyMemberInfo info, Type type) {
@@ -119,20 +119,22 @@ public class NettyLocalMember extends ManagedLocalMember implements NettyMember{
     if (!listening)
       return Futures.exceptionalFuture(new IllegalStateException("member not open"));
 
+    ExecutionContext context = getContext();
+
     CompletableFuture<U> future = new CompletableFuture<>();
     HandlerHolder handler = handlers.get(hashMap.computeIfAbsent(topic, t -> HashFunctions.CITYHASH.hash32(t.getBytes())));
     if (handler != null) {
       handler.context.execute(() -> {
         handler.handler.handle(message).whenComplete((result, error) -> {
           if (error == null) {
-            future.complete((U) result);
+            context.execute(() -> future.complete((U) result));
           } else {
-            future.completeExceptionally(new ClusterException(error));
+            context.execute(() -> future.completeExceptionally(new ClusterException(error)));
           }
         });
       });
     } else {
-      future.completeExceptionally(new UnknownTopicException("no handler for the given topic"));
+      context.execute(() -> future.completeExceptionally(new UnknownTopicException("no handler for the given topic")));
     }
     return future;
   }
@@ -159,7 +161,7 @@ public class NettyLocalMember extends ManagedLocalMember implements NettyMember{
   }
 
   @Override
-  public CompletableFuture<LocalMember> listen() {
+  public CompletableFuture<Member> open() {
     if (listening)
       return CompletableFuture.completedFuture(this);
 
@@ -215,6 +217,11 @@ public class NettyLocalMember extends ManagedLocalMember implements NettyMember{
   }
 
   @Override
+  public boolean isOpen() {
+    return listening;
+  }
+
+  @Override
   public CompletableFuture<Void> close() {
     if (!listening)
       return CompletableFuture.completedFuture(null);
@@ -247,6 +254,11 @@ public class NettyLocalMember extends ManagedLocalMember implements NettyMember{
       }
     }
     return closeFuture;
+  }
+
+  @Override
+  public boolean isClosed() {
+    return !listening;
   }
 
   /**

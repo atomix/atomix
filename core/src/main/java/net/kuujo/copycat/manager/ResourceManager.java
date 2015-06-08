@@ -15,12 +15,10 @@
  */
 package net.kuujo.copycat.manager;
 
-import net.kuujo.copycat.Event;
 import net.kuujo.copycat.ResourceCommand;
 import net.kuujo.copycat.ResourceOperation;
 import net.kuujo.copycat.ResourceQuery;
 import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.cluster.Session;
 import net.kuujo.copycat.raft.Apply;
 import net.kuujo.copycat.raft.Commit;
@@ -65,12 +63,7 @@ public class ResourceManager extends StateMachine {
   protected Object commandResource(Commit<? extends ResourceOperation> commit) {
     StateMachine resource = resources.get(commit.operation().resource());
     if (resource != null) {
-      Object result = resource.apply(new Commit(commit.index(), commit.session(), commit.timestamp(), commit.operation().operation()));
-      NodeHolder node = nodes.get(commit.operation().resource());
-      if (node != null) {
-        triggerEvent(node, new Event(Event.Type.STATE_CHANGE, node.path));
-      }
-      return result;
+      return resource.apply(new Commit(commit.index(), commit.session(), commit.timestamp(), commit.operation().operation()));
     }
     throw new IllegalArgumentException("unknown resource: " + commit.operation().resource());
   }
@@ -105,7 +98,6 @@ public class ResourceManager extends StateMachine {
         if (child == null) {
           child = new NodeHolder(name, currentPath.toString(), commit.index(), commit.timestamp());
           node.children.put(child.name, child);
-          triggerEvent(child, new Event(Event.Type.CREATE_PATH, child.path));
           created = true;
         }
         node = child;
@@ -206,7 +198,6 @@ public class ResourceManager extends StateMachine {
 
     if (parent != null) {
       parent.children.remove(node.name);
-      triggerEvent(node, new Event(Event.Type.DELETE_PATH, node.path));
       return true;
     }
     return false;
@@ -239,7 +230,6 @@ public class ResourceManager extends StateMachine {
         if (child == null) {
           child = new NodeHolder(name, currentPath.toString(), commit.index(), commit.timestamp());
           node.children.put(child.name, child);
-          triggerEvent(child, new Event(Event.Type.CREATE_PATH, child.path));
         }
         node = child;
       }
@@ -251,7 +241,6 @@ public class ResourceManager extends StateMachine {
         StateMachine resource = commit.operation().type().newInstance();
         nodes.put(node.resource, node);
         resources.put(node.resource, resource);
-        triggerEvent(node, new Event(Event.Type.CREATE_RESOURCE, node.path));
       } catch (InstantiationException | IllegalAccessException e) {
         throw new ResourceManagerException("failed to instantiate state machine", e);
       }
@@ -278,7 +267,6 @@ public class ResourceManager extends StateMachine {
     NodeHolder node = nodes.remove(commit.operation().resource());
     if (node != null) {
       node.resource = 0;
-      triggerEvent(node, new Event(Event.Type.DELETE_RESOURCE, node.path));
     }
 
     return resources.remove(commit.operation().resource()) != null;
@@ -347,21 +335,6 @@ public class ResourceManager extends StateMachine {
       }
     }
     return true;
-  }
-
-  /**
-   * Triggers an event on the given node.
-   */
-  protected void triggerEvent(NodeHolder node, Event event) {
-    for (long id : node.listeners.keySet()) {
-      Session session = sessions.get(id);
-      if (session != null) {
-        Member member = cluster.member(session.member().id());
-        if (member != null) {
-          member.send(Event.TOPIC, event);
-        }
-      }
-    }
   }
 
   /**

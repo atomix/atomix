@@ -127,6 +127,118 @@ public class RaftTest extends ConcurrentTestCase {
   }
 
   /**
+   * Tests putting and getting a value with a Netty cluster.
+   */
+  public void testNettyClient() throws Throwable {
+    Raft raft1 = Raft.builder()
+      .withCluster(NettyCluster.builder()
+        .withMemberId(1)
+        .withMemberType(Member.Type.ACTIVE)
+        .withHost("localhost")
+        .withPort(5001)
+        .addMember(NettyMember.builder()
+          .withId(2)
+          .withHost("localhost")
+          .withPort(5002)
+          .build())
+        .addMember(NettyMember.builder()
+          .withId(3)
+          .withHost("localhost")
+          .withPort(5003)
+          .build())
+        .build())
+      .withStateMachine(new TestStateMachine())
+      .withLog(Log.builder()
+        .withStorageLevel(StorageLevel.MEMORY)
+        .build())
+      .build();
+
+    Raft raft2 = Raft.builder()
+      .withCluster(NettyCluster.builder()
+        .withMemberId(2)
+        .withMemberType(Member.Type.ACTIVE)
+        .withHost("localhost")
+        .withPort(5002)
+        .addMember(NettyMember.builder()
+          .withId(1)
+          .withHost("localhost")
+          .withPort(5001)
+          .build())
+        .addMember(NettyMember.builder()
+          .withId(3)
+          .withHost("localhost")
+          .withPort(5003)
+          .build())
+        .build())
+      .withStateMachine(new TestStateMachine())
+      .withLog(Log.builder()
+        .withStorageLevel(StorageLevel.MEMORY)
+        .build())
+      .build();
+
+    Raft raft3 = Raft.builder()
+      .withCluster(NettyCluster.builder()
+        .withMemberId(3)
+        .withMemberType(Member.Type.ACTIVE)
+        .withHost("localhost")
+        .withPort(5003)
+        .addMember(NettyMember.builder()
+          .withId(1)
+          .withHost("localhost")
+          .withPort(5001)
+          .build())
+        .addMember(NettyMember.builder()
+          .withId(2)
+          .withHost("localhost")
+          .withPort(5002)
+          .build())
+        .build())
+      .withStateMachine(new TestStateMachine())
+      .withLog(Log.builder()
+        .withStorageLevel(StorageLevel.MEMORY)
+        .build())
+      .build();
+
+    expectResumes(3);
+    raft1.open().thenRun(this::resume);
+    raft2.open().thenRun(this::resume);
+    raft3.open().thenRun(this::resume);
+    await();
+
+    Raft client = Raft.builder()
+      .withCluster(NettyCluster.builder()
+        .withMemberId(4)
+        .withMemberType(Member.Type.CLIENT)
+        .withHost("localhost")
+        .withPort(5004)
+        .addMember(NettyMember.builder()
+          .withId(1)
+          .withHost("localhost")
+          .withPort(5001)
+          .build())
+        .addMember(NettyMember.builder()
+          .withId(2)
+          .withHost("localhost")
+          .withPort(5002)
+          .build())
+        .addMember(NettyMember.builder()
+          .withId(3)
+          .withHost("localhost")
+          .withPort(5003)
+          .build())
+        .build())
+      .withStateMachine(new TestStateMachine())
+      .withLog(Log.builder()
+        .withStorageLevel(StorageLevel.MEMORY)
+        .build())
+      .build();
+
+    client.open().join();
+
+    while (true);
+  }
+
+  /**
    * Test state machine.
    */
   public static class TestStateMachine extends StateMachine {

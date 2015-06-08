@@ -13,17 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.cluster;
+package net.kuujo.copycat.raft;
+
+import net.kuujo.copycat.util.Managed;
 
 /**
- * Abstract remote member.
+ * Managed protocol.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class ManagedRemoteMember extends ManagedMember implements RemoteMember {
-
-  protected ManagedRemoteMember(MemberInfo info, Type type) {
-    super(info, type);
-  }
-
+public interface ManagedProtocol extends Protocol, Managed<Protocol> {
 }

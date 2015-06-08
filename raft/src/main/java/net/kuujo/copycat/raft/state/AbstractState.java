@@ -29,10 +29,10 @@ import java.util.concurrent.CompletableFuture;
  */
 abstract class AbstractState implements Managed<AbstractState> {
   protected final Logger LOGGER = LoggerFactory.getLogger(getClass());
-  protected final RaftContext context;
+  protected final RaftStateContext context;
   private volatile boolean open;
 
-  protected AbstractState(RaftContext context) {
+  protected AbstractState(RaftStateContext context) {
     this.context = context;
   }
 

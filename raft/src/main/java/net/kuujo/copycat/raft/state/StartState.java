@@ -27,7 +27,7 @@ import java.util.concurrent.CompletableFuture;
  */
 class StartState extends AbstractState {
 
-  public StartState(RaftContext context) {
+  public StartState(RaftStateContext context) {
     super(context);
   }
 

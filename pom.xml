@@ -71,8 +71,8 @@
     <module>io</module>
     <module>cluster</module>
     <module>netty</module>
-    <module>core</module>
     <module>raft</module>
+    <module>core</module>
     <module>collections</module>
     <module>atomic</module>
     <module>all</module>

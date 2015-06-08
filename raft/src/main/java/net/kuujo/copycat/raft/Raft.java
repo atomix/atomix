@@ -20,10 +20,9 @@ import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ManagedCluster;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.raft.log.Log;
-import net.kuujo.copycat.raft.state.RaftContext;
 import net.kuujo.copycat.raft.state.RaftState;
+import net.kuujo.copycat.raft.state.RaftStateContext;
 import net.kuujo.copycat.util.ExecutionContext;
-import net.kuujo.copycat.util.Managed;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -33,7 +32,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class Raft implements Protocol, Managed<Raft> {
+public class Raft implements ManagedProtocol {
 
   /**
    * Returns a new Raft builder.
@@ -44,17 +43,13 @@ public class Raft implements Protocol, Managed<Raft> {
     return new Builder();
   }
 
-  private final RaftContext context;
-  private CompletableFuture<Raft> openFuture;
+  private final RaftStateContext context;
+  private CompletableFuture<Protocol> openFuture;
   private CompletableFuture<Void> closeFuture;
   private boolean open;
 
-  private Raft(Log log, RaftConfig config, StateMachine stateMachine, ManagedCluster cluster, ExecutionContext context) {
-    this.context = new RaftContext(log, stateMachine, cluster, context)
-      .setHeartbeatInterval(config.getHeartbeatInterval())
-      .setElectionTimeout(config.getElectionTimeout())
-      .setSessionTimeout(config.getSessionTimeout())
-      .setKeepAliveInterval(config.getKeepAliveInterval());
+  private Raft(RaftStateContext context) {
+    this.context = context;
   }
 
   /**
@@ -109,7 +104,7 @@ public class Raft implements Protocol, Managed<Raft> {
   }
 
   @Override
-  public CompletableFuture<Raft> open() {
+  public CompletableFuture<Protocol> open() {
     if (open)
       return CompletableFuture.completedFuture(this);
 
@@ -178,12 +173,11 @@ public class Raft implements Protocol, Managed<Raft> {
   /**
    * Raft builder.
    */
-  public static class Builder implements net.kuujo.copycat.Builder<Raft> {
+  public static class Builder implements Protocol.Builder<Raft> {
     private Log log;
     private RaftConfig config = new RaftConfig();
     private StateMachine stateMachine;
     private ManagedCluster cluster;
-    private String topic;
 
     /**
      * Sets the Raft cluster.
@@ -324,7 +318,12 @@ public class Raft implements Protocol, Managed<Raft> {
         throw new ConfigurationException("state machine not configured");
       if (cluster == null)
         throw new ConfigurationException("cluster not configured");
-      return new Raft(log, config, stateMachine, cluster, new ExecutionContext(cluster.member().id() != 0 ? String.format("copycat-%d", cluster.member().id()) : "copycat", cluster.serializer()));
+      RaftStateContext context = (RaftStateContext) new RaftStateContext(log, stateMachine, cluster, new ExecutionContext(cluster.member().id() != 0 ? String.format("copycat-%d", cluster.member().id()) : "copycat", cluster.serializer()))
+        .setHeartbeatInterval(config.getHeartbeatInterval())
+        .setElectionTimeout(config.getElectionTimeout())
+        .setSessionTimeout(config.getSessionTimeout())
+        .setKeepAliveInterval(config.getKeepAliveInterval());
+      return new Raft(context);
     }
   }
 

@@ -62,9 +62,13 @@ public class TestCluster extends ManagedCluster {
    */
   public void partition(int id) {
     if (localMember.id() == id) {
-      remoteMembers.values().forEach(m -> ((TestRemoteMember) m).partition());
+      members.values().forEach(m -> {
+        if (m.id() != id) {
+          ((TestRemoteMember) m).partition();
+        }
+      });
     } else {
-      TestRemoteMember member = (TestRemoteMember) remoteMembers.get(id);
+      TestRemoteMember member = (TestRemoteMember) members.get(id);
       if (member != null) {
         member.partition();
       }
@@ -76,9 +80,13 @@ public class TestCluster extends ManagedCluster {
    */
   public void heal(int id) {
     if (localMember.id() == id) {
-      remoteMembers.values().forEach(m -> ((TestRemoteMember) m).heal());
+      members.values().forEach(m -> {
+        if (m.id() != id) {
+          ((TestRemoteMember) m).heal();
+        }
+      });
     } else {
-      TestRemoteMember member = (TestRemoteMember) remoteMembers.get(id);
+      TestRemoteMember member = (TestRemoteMember) members.get(id);
       if (member != null) {
         member.heal();
       }

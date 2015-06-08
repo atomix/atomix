@@ -70,13 +70,13 @@ public class Node {
    * @return A list of children for this node.
    */
   public CompletableFuture<List<Node>> children() {
-    return copycat.raft.submit(PathChildren.builder()
+    return copycat.protocol.submit(PathChildren.builder()
       .withPath(path)
       .build())
       .thenApply(children -> {
         return children.stream()
           .map(copycat::node)
-          .collect(Collectors.toList());
+          .collect (Collectors.toList());
       });
   }
 
@@ -157,48 +157,6 @@ public class Node {
    */
   public CompletableFuture<Void> delete(String path) {
     return copycat.delete(String.format("%s%s%s", this.path, Copycat.PATH_SEPARATOR, path)).thenApply(result -> null);
-  }
-
-  /**
-   * Listens for state changes at this path.
-   *
-   * @param listener The change listener.
-   * @return A completable future to be called once the listener has been registered.
-   */
-  public CompletableFuture<Node> listen(EventListener listener) {
-    return copycat.listen(path, listener).thenApply(result -> this);
-  }
-
-  /**
-   * Listens for state changes at the given path.
-   *
-   * @param path The path to which to listen for changes.
-   * @param listener The change listener.
-   * @return A completable future to be called once the listener has been registered.
-   */
-  public CompletableFuture<Node> listen(String path, EventListener listener) {
-    return copycat.listen(String.format("%s%s%s", this.path, Copycat.PATH_SEPARATOR, path), listener).thenApply(result -> this);
-  }
-
-  /**
-   * Unlistens for state changes at this path.
-   *
-   * @param listener The change listener.
-   * @return A completable future to be called once the listener has been unregistered.
-   */
-  public CompletableFuture<Node> unlisten(EventListener listener) {
-    return copycat.unlisten(path, listener).thenApply(result -> this);
-  }
-
-  /**
-   * Unlistens for state changes at the given path.
-   *
-   * @param path The path from which to stop listening for changes.
-   * @param listener The change listener.
-   * @return A completable future to be called once the listener has been unregistered.
-   */
-  public CompletableFuture<Node> unlisten(String path, EventListener listener) {
-    return copycat.unlisten(String.format("%s%s%s", this.path, Copycat.PATH_SEPARATOR, path), listener).thenApply(result -> this);
   }
 
 }
