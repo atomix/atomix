@@ -13,26 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.cluster;
+package net.kuujo.copycat.raft;
 
 import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Cluster member session.
+ * Raft session.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class Session {
   private final long id;
-  private final MemberInfo member;
   private boolean expired;
   private boolean closed;
   private final Set<SessionListener> listeners = new HashSet<>();
 
-  public Session(long id, MemberInfo member) {
+  public Session(long id) {
     this.id = id;
-    this.member = member;
   }
 
   /**
@@ -42,15 +40,6 @@ public class Session {
    */
   public long id() {
     return id;
-  }
-
-  /**
-   * Returns the member info.
-   *
-   * @return The member info.
-   */
-  public MemberInfo member() {
-    return member;
   }
 
   /**
@@ -121,7 +110,7 @@ public class Session {
 
   @Override
   public String toString() {
-    return String.format("Session[id=%d, member=%s]", id, member);
+    return String.format("Session[id=%d]", id);
   }
 
 }

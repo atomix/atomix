@@ -406,9 +406,7 @@ public class RaftStateClient implements Managed<Void> {
     }
 
     LOGGER.debug("{} - Registering session via {}", member.id(), member.id());
-    RegisterRequest request = RegisterRequest.builder()
-      .withMember(member.info())
-      .build();
+    RegisterRequest request = RegisterRequest.builder().build();
     member.<RegisterRequest, RegisterResponse>send(request).whenComplete((response, error) -> {
       threadChecker.checkThread();
       synchronized (openFuture) {

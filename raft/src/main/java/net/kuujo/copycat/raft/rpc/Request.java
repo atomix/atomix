@@ -31,6 +31,16 @@ public interface Request<T extends Request<T>> extends ReferenceCounted<T>, Writ
   public static enum Type {
 
     /**
+     * Join request.
+     */
+    JOIN,
+
+    /**
+     * Leave request.
+     */
+    LEAVE,
+
+    /**
      * Register client request.
      */
     REGISTER,

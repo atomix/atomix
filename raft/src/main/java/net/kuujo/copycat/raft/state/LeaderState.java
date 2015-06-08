@@ -360,7 +360,6 @@ class LeaderState extends ActiveState {
 
     try (RegisterEntry entry = context.getLog().createEntry(RegisterEntry.class)) {
       entry.setTerm(context.getTerm());
-      entry.setMember(request.member());
       entry.setTimestamp(timestamp);
       index = context.getLog().appendEntry(entry);
       LOGGER.debug("{} - Appended {}", context.getCluster().member().id(), entry);

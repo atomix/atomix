@@ -95,11 +95,11 @@ public class PassiveState extends AbstractState {
   }
 
   @Override
-  protected CompletableFuture<KeepAliveResponse> keepAlive(KeepAliveRequest request) {
+  protected CompletableFuture<RegisterResponse> register(RegisterRequest request) {
     context.checkThread();
     logRequest(request);
     if (context.getLeader() == 0) {
-      return CompletableFuture.completedFuture(logResponse(KeepAliveResponse.builder()
+      return CompletableFuture.completedFuture(logResponse(RegisterResponse.builder()
         .withStatus(Response.Status.ERROR)
         .withError(RaftError.Type.NO_LEADER_ERROR)
         .build()));
@@ -109,17 +109,11 @@ public class PassiveState extends AbstractState {
   }
 
   @Override
-  protected CompletableFuture<RegisterResponse> register(RegisterRequest request) {
+  protected CompletableFuture<KeepAliveResponse> keepAlive(KeepAliveRequest request) {
     context.checkThread();
     logRequest(request);
     if (context.getLeader() == 0) {
-      return CompletableFuture.completedFuture(logResponse(RegisterResponse.builder()
-        .withStatus(Response.Status.ERROR)
-        .withError(RaftError.Type.NO_LEADER_ERROR)
-        .build()));
-    } else if (request.member().id() == context.getLeader()) {
-      context.setLeader(0);
-      return CompletableFuture.completedFuture(logResponse(RegisterResponse.builder()
+      return CompletableFuture.completedFuture(logResponse(KeepAliveResponse.builder()
         .withStatus(Response.Status.ERROR)
         .withError(RaftError.Type.NO_LEADER_ERROR)
         .build()));

@@ -15,7 +15,6 @@
  */
 package net.kuujo.copycat.raft.rpc;
 
-import net.kuujo.copycat.cluster.MemberInfo;
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.util.ReferenceManager;
@@ -54,8 +53,6 @@ public class RegisterRequest extends ClientRequest<RegisterRequest> {
     return builder.get().reset(request);
   }
 
-  private MemberInfo member;
-
   public RegisterRequest(ReferenceManager<RegisterRequest> referenceManager) {
     super(referenceManager);
   }
@@ -65,42 +62,14 @@ public class RegisterRequest extends ClientRequest<RegisterRequest> {
     return Type.REGISTER;
   }
 
-  /**
-   * Returns the requesting member's ID.
-   *
-   * @return The requesting member's ID.
-   */
-  public MemberInfo member() {
-    return member;
+  @Override
+  public void writeObject(Buffer buffer, Serializer serializer) {
+
   }
 
   @Override
   public void readObject(Buffer buffer, Serializer serializer) {
-    member = serializer.readObject(buffer);
-  }
 
-  @Override
-  public void writeObject(Buffer buffer, Serializer serializer) {
-    serializer.writeObject(member, buffer);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(member);
-  }
-
-  @Override
-  public boolean equals(Object object) {
-    if (object instanceof RegisterRequest) {
-      RegisterRequest request = (RegisterRequest) object;
-      return request.member == member;
-    }
-    return false;
-  }
-
-  @Override
-  public String toString() {
-    return String.format("%s[member=%s]", getClass().getSimpleName(), member);
   }
 
   /**
@@ -110,34 +79,6 @@ public class RegisterRequest extends ClientRequest<RegisterRequest> {
 
     private Builder() {
       super(RegisterRequest::new);
-    }
-
-    @Override
-    Builder reset() {
-      super.reset();
-      request.member = null;
-      return this;
-    }
-
-    /**
-     * Sets the requesting node's ID.
-     *
-     * @param member The requesting node's ID.
-     * @return The register request builder.
-     */
-    public Builder withMember(MemberInfo member) {
-      if (member == null)
-        throw new NullPointerException("member cannot be null");
-      request.member = member;
-      return this;
-    }
-
-    @Override
-    public RegisterRequest build() {
-      super.build();
-      if (request.member == null)
-        throw new NullPointerException("member cannot be null");
-      return request;
     }
 
     @Override

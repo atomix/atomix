@@ -16,7 +16,6 @@
 package net.kuujo.copycat.raft;
 
 import net.kuujo.copycat.ConfigurationException;
-import net.kuujo.copycat.cluster.Session;
 import net.kuujo.copycat.raft.log.Compaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

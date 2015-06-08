@@ -15,8 +15,6 @@
  */
 package net.kuujo.copycat.raft.state;
 
-import net.kuujo.copycat.cluster.MemberInfo;
-import net.kuujo.copycat.cluster.Session;
 import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.raft.log.Compaction;
 import net.kuujo.copycat.raft.log.entry.*;
@@ -122,7 +120,8 @@ class RaftStateMachine {
    * @return A boolean value indicating whether to keep the entry.
    */
   public CompletableFuture<Boolean> filter(KeepAliveEntry entry, Compaction compaction) {
-    return CompletableFuture.completedFuture(sessions.containsKey(entry.getIndex()) && sessions.get(entry.getIndex()).index == entry.getIndex());
+    return CompletableFuture.completedFuture(sessions.containsKey(entry.getIndex()) && sessions.get(entry.getIndex()).index == entry
+      .getIndex());
   }
 
   /**
@@ -144,7 +143,7 @@ class RaftStateMachine {
   public CompletableFuture<Boolean> filter(CommandEntry entry, Compaction compaction) {
     RaftSession session = sessions.get(entry.getSession());
     if (session == null) {
-      session = new RaftSession(entry.getSession(), null, entry.getTimestamp());
+      session = new RaftSession(entry.getSession(), entry.getTimestamp());
       session.expire();
     }
     Commit<? extends Command> commit = new Commit<>(entry.getIndex(), session, entry.getTimestamp(), entry.getCommand());
@@ -179,7 +178,7 @@ class RaftStateMachine {
    * @return The result.
    */
   public CompletableFuture<Long> apply(RegisterEntry entry) {
-    return register(entry.getIndex(), entry.getTimestamp(), entry.getMember());
+    return register(entry.getIndex(), entry.getTimestamp());
   }
 
   /**
@@ -198,7 +197,8 @@ class RaftStateMachine {
    * @return The result.
    */
   public CompletableFuture<Object> apply(CommandEntry entry) {
-    return command(entry.getIndex(), entry.getSession(), entry.getRequest(), entry.getResponse(), entry.getTimestamp(), entry.getCommand());
+    return command(entry.getIndex(), entry.getSession(), entry.getRequest(), entry.getResponse(), entry.getTimestamp(), entry
+      .getCommand());
   }
 
   /**
@@ -226,11 +226,10 @@ class RaftStateMachine {
    *
    * @param index The registration index.
    * @param timestamp The registration timestamp.
-   * @param member The member info.
    * @return The session ID.
    */
-  private CompletableFuture<Long> register(long index, long timestamp, MemberInfo member) {
-    RaftSession session = new RaftSession(index, member, timestamp);
+  private CompletableFuture<Long> register(long index, long timestamp) {
+    RaftSession session = new RaftSession(index, timestamp);
     sessions.put(index, session);
 
     // We need to ensure that the command is applied to the state machine before queries are run.
@@ -376,8 +375,8 @@ class RaftStateMachine {
     private long timestamp;
     private final TreeMap<Long, Object> responses = new TreeMap<>();
 
-    private RaftSession(long id, MemberInfo member, long timestamp) {
-      super(id, member);
+    private RaftSession(long id, long timestamp) {
+      super(id);
       this.timestamp = timestamp;
     }
 

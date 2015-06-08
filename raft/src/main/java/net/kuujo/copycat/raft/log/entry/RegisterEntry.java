@@ -37,26 +37,6 @@ public class RegisterEntry extends TimestampedEntry<RegisterEntry> {
     super(referenceManager);
   }
 
-  /**
-   * Returns the member info.
-   *
-   * @return The member info.
-   */
-  public MemberInfo getMember() {
-    return member;
-  }
-
-  /**
-   * Sets the member info.
-   *
-   * @param member The member info.
-   * @return The register entry.
-   */
-  public RegisterEntry setMember(MemberInfo member) {
-    this.member = member;
-    return this;
-  }
-
   @Override
   public void writeObject(Buffer buffer, Serializer serializer) {
     super.writeObject(buffer, serializer);

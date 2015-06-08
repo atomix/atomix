@@ -32,6 +32,16 @@ public interface Response<T extends Response<T>> extends ReferenceCounted<T>, Wr
   public static enum Type {
 
     /**
+     * Join response.
+     */
+    JOIN,
+
+    /**
+     * Leave response.
+     */
+    LEAVE,
+
+    /**
      * Register client response.
      */
     REGISTER,

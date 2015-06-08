@@ -15,8 +15,6 @@
  */
 package net.kuujo.copycat.raft;
 
-import net.kuujo.copycat.cluster.MemberInfo;
-import net.kuujo.copycat.cluster.Session;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
@@ -34,8 +32,8 @@ public class StateMachineTest {
    */
   public void testStateMachine() {
     StateMachine stateMachine = new TestStateMachine();
-    assertEquals(stateMachine.apply(new Commit<>(1, new Session(2, new MemberInfo(3) {}), System.currentTimeMillis(), new TestCommand())), "write");
-    assertEquals(stateMachine.apply(new Commit<>(1, new Session(2, new MemberInfo(3) {}), System.currentTimeMillis(), new TestQuery())), "read");
+    assertEquals(stateMachine.apply(new Commit<>(1, new Session(2), System.currentTimeMillis(), new TestCommand())), "write");
+    assertEquals(stateMachine.apply(new Commit<>(1, new Session(2), System.currentTimeMillis(), new TestQuery())), "read");
   }
 
   /**

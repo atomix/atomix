@@ -15,8 +15,6 @@
  */
 package net.kuujo.copycat.raft;
 
-import net.kuujo.copycat.cluster.Session;
-
 /**
  * Protocol commit.
  *

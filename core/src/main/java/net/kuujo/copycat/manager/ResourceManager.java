@@ -19,11 +19,7 @@ import net.kuujo.copycat.ResourceCommand;
 import net.kuujo.copycat.ResourceOperation;
 import net.kuujo.copycat.ResourceQuery;
 import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.cluster.Session;
-import net.kuujo.copycat.raft.Apply;
-import net.kuujo.copycat.raft.Commit;
-import net.kuujo.copycat.raft.Filter;
-import net.kuujo.copycat.raft.StateMachine;
+import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.raft.log.Compaction;
 
 import java.util.*;
