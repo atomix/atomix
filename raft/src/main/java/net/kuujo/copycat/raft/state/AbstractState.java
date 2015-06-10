@@ -77,6 +77,9 @@ abstract class AbstractState implements Managed<AbstractState> {
    */
   private void registerHandlers() {
     context.checkThread();
+    context.getCluster().member().<JoinRequest, JoinResponse>registerHandler(JoinRequest.class, this::join);
+    context.getCluster().member().<LeaveRequest, LeaveResponse>registerHandler(LeaveRequest.class, this::leave);
+    context.getCluster().member().<HeartbeatRequest, HeartbeatResponse>registerHandler(HeartbeatRequest.class, this::heartbeat);
     context.getCluster().member().<RegisterRequest, RegisterResponse>registerHandler(RegisterRequest.class, this::register);
     context.getCluster().member().<KeepAliveRequest, KeepAliveResponse>registerHandler(KeepAliveRequest.class, this::keepAlive);
     context.getCluster().member().<AppendRequest, AppendResponse>registerHandler(AppendRequest.class, this::append);
@@ -91,6 +94,9 @@ abstract class AbstractState implements Managed<AbstractState> {
    */
   private void unregisterHandlers() {
     context.checkThread();
+    context.getCluster().member().unregisterHandler(JoinRequest.class);
+    context.getCluster().member().unregisterHandler(LeaveRequest.class);
+    context.getCluster().member().unregisterHandler(HeartbeatRequest.class);
     context.getCluster().member().unregisterHandler(RegisterRequest.class);
     context.getCluster().member().unregisterHandler(KeepAliveRequest.class);
     context.getCluster().member().unregisterHandler(AppendRequest.class);
@@ -99,6 +105,21 @@ abstract class AbstractState implements Managed<AbstractState> {
     context.getCluster().member().unregisterHandler(CommandRequest.class);
     context.getCluster().member().unregisterHandler(QueryRequest.class);
   }
+
+  /**
+   * Handles a join request.
+   */
+  protected abstract CompletableFuture<JoinResponse> join(JoinRequest request);
+
+  /**
+   * Handles a leave request.
+   */
+  protected abstract CompletableFuture<LeaveResponse> leave(LeaveRequest request);
+
+  /**
+   * Handles a heartbeat request.
+   */
+  protected abstract CompletableFuture<HeartbeatResponse> heartbeat(HeartbeatRequest request);
 
   /**
    * Handles a register request.

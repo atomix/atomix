@@ -18,10 +18,13 @@ package net.kuujo.copycat.raft.state;
 import net.kuujo.copycat.cluster.ManagedCluster;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.raft.NoLeaderException;
 import net.kuujo.copycat.raft.Query;
+import net.kuujo.copycat.raft.RaftError;
 import net.kuujo.copycat.raft.StateMachine;
 import net.kuujo.copycat.raft.log.Compactor;
 import net.kuujo.copycat.raft.log.Log;
+import net.kuujo.copycat.raft.rpc.*;
 import net.kuujo.copycat.util.ExecutionContext;
 import net.kuujo.copycat.util.ThreadChecker;
 import net.kuujo.copycat.util.concurrent.Futures;
@@ -29,9 +32,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 /**
  * Raft state context.
@@ -47,6 +56,10 @@ public class RaftStateContext extends RaftStateClient {
   private final ExecutionContext context;
   private final ThreadChecker threadChecker;
   private AbstractState state;
+  private ScheduledFuture<?> joinTimer;
+  private ScheduledFuture<?> heartbeatTimer;
+  private final AtomicBoolean heartbeat = new AtomicBoolean();
+  private final Random random = new Random();
   private long electionTimeout = 500;
   private long heartbeatInterval = 250;
   private int lastVotedFor;
@@ -58,7 +71,7 @@ public class RaftStateContext extends RaftStateClient {
   public RaftStateContext(Log log, StateMachine stateMachine, ManagedCluster cluster, ExecutionContext context) {
     super(cluster, new ExecutionContext(String.format("%s-client", context.name()), context.serializer().copy()));
     this.log = log;
-    this.stateMachine = new RaftStateMachine(stateMachine, new ExecutionContext(String.format("%s-state", context.name()), context.serializer().copy()));
+    this.stateMachine = new RaftStateMachine(stateMachine, cluster, new ExecutionContext(String.format("%s-state", context.name()), context.serializer().copy()));
     this.compactor = new Compactor(log, this.stateMachine::filter, context);
     this.cluster = cluster;
     this.context = context;
@@ -399,18 +412,224 @@ public class RaftStateContext extends RaftStateClient {
     return CompletableFuture.completedFuture(null);
   }
 
+  /**
+   * Joins the cluster.
+   */
+  private CompletableFuture<Void> join() {
+    return join(100, new CompletableFuture<>());
+  }
+
+  /**
+   * Joins the cluster.
+   */
+  private CompletableFuture<Void> join(long interval, CompletableFuture<Void> future) {
+    join(new ArrayList<>(cluster.members()), new CompletableFuture<>()).whenComplete((result, error) -> {
+      if (error == null) {
+        future.complete(null);
+      } else {
+        long nextInterval = Math.min(interval * 2, 5000);
+        joinTimer = context.schedule(() -> join(nextInterval, future), nextInterval, TimeUnit.MILLISECONDS);
+      }
+    });
+    return future;
+  }
+
+  /**
+   * Joins the cluster by contacting a random member.
+   */
+  private CompletableFuture<Void> join(List<Member> members, CompletableFuture<Void> future) {
+    if (members.isEmpty()) {
+      future.completeExceptionally(new NoLeaderException("no leader found"));
+      return future;
+    }
+    return join(selectMember(members), members, future);
+  }
+
+  /**
+   * Sends a join request to a specific member.
+   */
+  private CompletableFuture<Void> join(Member member, List<Member> members, CompletableFuture<Void> future) {
+    LOGGER.debug("{} - Joining cluster via {}", cluster.member().id(), member.id());
+    JoinRequest request = JoinRequest.builder()
+      .withMember(cluster.member().info())
+      .build();
+    member.<JoinRequest, JoinResponse>send(request).whenComplete((response, error) -> {
+      threadChecker.checkThread();
+      if (error == null && response.status() == Response.Status.OK) {
+        setLeader(response.leader());
+        setTerm(response.term());
+        future.complete(null);
+        LOGGER.info("{} - Joined cluster", cluster.member().id());
+      } else {
+        if (member.id() == getLeader()) {
+          setLeader(0);
+        }
+        LOGGER.debug("Cluster join failed, retrying");
+        setLeader(0);
+        join(members, future);
+      }
+    });
+    return future;
+  }
+
+  /**
+   * Starts the heartbeat timer.
+   */
+  private void startHeartbeatTimer() {
+    LOGGER.debug("Starting keep alive timer");
+    heartbeatTimer = context.scheduleAtFixedRate(this::heartbeat, 1, heartbeatInterval, TimeUnit.MILLISECONDS);
+  }
+
+  /**
+   * Sends a heartbeat to the leader.
+   */
+  private void heartbeat() {
+    if (heartbeat.compareAndSet(false, true)) {
+      LOGGER.debug("{} - Sending heartbeat request", cluster.member().id());
+      heartbeat(cluster.members().stream()
+        .filter(m -> m.type() == Member.Type.ACTIVE)
+        .collect(Collectors.toList()), new CompletableFuture<>()).thenRun(() -> heartbeat.set(false));
+    }
+  }
+
+  /**
+   * Sends a heartbeat to a random member.
+   */
+  private CompletableFuture<Void> heartbeat(List<Member> members, CompletableFuture<Void> future) {
+    if (members.isEmpty()) {
+      future.completeExceptionally(RaftError.Type.NO_LEADER_ERROR.createException());
+      heartbeat.set(false);
+      return future;
+    }
+    return heartbeat(selectMember(members), members, future);
+  }
+
+  /**
+   * Sends a heartbeat to a specific member.
+   */
+  private CompletableFuture<Void> heartbeat(Member member, List<Member> members, CompletableFuture<Void> future) {
+    KeepAliveRequest request = KeepAliveRequest.builder()
+      .withSession(getSession())
+      .build();
+    member.<KeepAliveRequest, KeepAliveResponse>send(request).whenComplete((response, error) -> {
+      threadChecker.checkThread();
+      if (isOpen()) {
+        if (error == null && response.status() == Response.Status.OK) {
+          setLeader(response.leader());
+          setTerm(response.term());
+          future.complete(null);
+        } else {
+          if (member.id() == getLeader()) {
+            setLeader(0);
+          }
+          heartbeat(members, future);
+        }
+      }
+    });
+    return future;
+  }
+
+  /**
+   * Leaves the cluster.
+   */
+  private CompletableFuture<Void> leave() {
+    return leave(cluster.members().stream()
+      .filter(m -> m.type() == Member.Type.ACTIVE)
+      .collect(Collectors.toList()), new CompletableFuture<>());
+  }
+
+  /**
+   * Leaves the cluster by contacting a random member.
+   */
+  private CompletableFuture<Void> leave(List<Member> members, CompletableFuture<Void> future) {
+    if (members.isEmpty()) {
+      future.completeExceptionally(new NoLeaderException("no leader found"));
+      return future;
+    }
+    return leave(selectMember(members), members, future);
+  }
+
+  /**
+   * Sends a leave request to a specific member.
+   */
+  private CompletableFuture<Void> leave(Member member, List<Member> members, CompletableFuture<Void> future) {
+    LOGGER.debug("{} - Leaving cluster via {}", cluster.member().id(), member.id());
+    LeaveRequest request = LeaveRequest.builder()
+      .withMember(cluster.member().info())
+      .build();
+    member.<LeaveRequest, LeaveResponse>send(request).whenComplete((response, error) -> {
+      threadChecker.checkThread();
+      if (error == null && response.status() == Response.Status.OK) {
+        future.complete(null);
+        LOGGER.info("{} - Left cluster", cluster.member().id());
+      } else {
+        if (member.id() == getLeader()) {
+          setLeader(0);
+        }
+        LOGGER.debug("Cluster leave failed, retrying");
+        setLeader(0);
+        leave(members, future);
+      }
+    });
+    return future;
+  }
+
+  /**
+   * Cancels the join timer.
+   */
+  private void cancelJoinTimer() {
+    if (joinTimer != null) {
+      LOGGER.debug("cancelling join timer");
+      joinTimer.cancel(false);
+    }
+  }
+
+  /**
+   * Cancels the heartbeat timer.
+   */
+  private void cancelHeartbeatTimer() {
+    if (heartbeatTimer != null) {
+      LOGGER.debug("cancelling heartbeat timer");
+      heartbeatTimer.cancel(false);
+    }
+  }
+
+  /**
+   * Selects a random(ish) member from a members list.
+   */
+  private Member selectMember(List<Member> members) {
+    Member member;
+    if (leader != 0) {
+      member = cluster.member(leader);
+      if (member == null) {
+        setLeader(0);
+        return members.remove(random.nextInt(members.size()));
+      }
+      return member;
+    } else {
+      return members.remove(random.nextInt(members.size()));
+    }
+  }
+
   @Override
   public synchronized CompletableFuture<Void> open() {
-    return cluster.open().thenRunAsync(() -> {
-      open = true;
-      switch (cluster.member().type()) {
-        case ACTIVE:
-          log.open(context);
-          transition(FollowerState.class);
-          break;
-      }
-    }, context)
-      .thenCompose(v -> super.open());
+    if (cluster.member().type() == Member.Type.PASSIVE) {
+      return cluster.open().thenRunAsync(() -> {
+        log.open(context);
+        transition(PassiveState.class);
+      }, context)
+        .thenComposeAsync(v -> join(), context)
+        .thenRun(() -> {
+          startHeartbeatTimer();
+          open = true;
+        });
+    } else {
+      return cluster.open().thenRunAsync(() -> {
+        log.open(context);
+        transition(FollowerState.class);
+        open = true;
+      });
+    }
   }
 
   @Override
@@ -425,9 +644,13 @@ public class RaftStateContext extends RaftStateClient {
 
     CompletableFuture<Void> future = new CompletableFuture<>();
     context.execute(() -> {
+      cancelJoinTimer();
+      cancelHeartbeatTimer();
+      open = false;
       transition(StartState.class)
-        .thenCompose(v -> super.close())
-        .thenCompose(v -> cluster.close())
+        .thenComposeAsync(v -> super.close(), context)
+        .thenComposeAsync(v -> leave(), context)
+        .thenComposeAsync(v -> cluster.close(), context)
         .whenCompleteAsync((result, error) -> {
           try {
             if (log != null) {

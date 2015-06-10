@@ -93,12 +93,62 @@ public abstract class ManagedMembers implements Members, Managed<Members> {
   }
 
   /**
+   * Adds a member to the cluster.
+   */
+  public synchronized CompletableFuture<Void> addMember(MemberInfo memberInfo) {
+    if (!members.containsKey(memberInfo.id())) {
+      ManagedRemoteMember member = createMember(memberInfo);
+      return member.open().thenRun(() -> {
+        member.type = Member.Type.PASSIVE;
+        members.put(member.id(), member);
+        membershipListeners.forEach(l -> l.memberJoined(member));
+      });
+    }
+    return CompletableFuture.completedFuture(null);
+  }
+
+  /**
+   * Removes a member from the cluster.
+   */
+  public synchronized CompletableFuture<Void> removeMember(int memberId) {
+    if (members.containsKey(memberId)) {
+      ManagedMember member = members.remove(memberId);
+      return member.close().whenComplete((result, error) -> {
+        membershipListeners.forEach(l -> l.memberLeft(memberId));
+      });
+    }
+    return CompletableFuture.completedFuture(null);
+  }
+
+  /**
+   * Configures the type of a member.
+   */
+  public synchronized CompletableFuture<Void> configureMember(int memberId, Member.Type type) {
+    ManagedMember member = members.get(memberId);
+    if (member != null) {
+      member.type = type;
+    }
+    return CompletableFuture.completedFuture(null);
+  }
+
+  /**
+   * Configures the status of a member.
+   */
+  public synchronized CompletableFuture<Void> configureMember(int memberId, Member.Status status) {
+    ManagedMember member = members.get(memberId);
+    if (member != null) {
+      member.status = status;
+    }
+    return CompletableFuture.completedFuture(null);
+  }
+
+  /**
    * Creates a new remote member.
    */
   protected abstract ManagedRemoteMember createMember(MemberInfo info);
 
   @Override
-  public Member member(int id) {
+  public ManagedMember member(int id) {
     ManagedMember member = members.get(id);
     if (member == null)
       throw new NoSuchElementException();

@@ -19,20 +19,18 @@ import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.util.ReferenceManager;
 
 /**
- * Keep alive entry.
+ * Member leave entry.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=1002)
-public class KeepAliveEntry extends SessionEntry<KeepAliveEntry> {
+@SerializeWith(id=1006)
+public class LeaveEntry extends MemberEntry<LeaveEntry> {
 
-  public KeepAliveEntry(ReferenceManager<Entry<?>> referenceManager) {
-    super(referenceManager);
+  public LeaveEntry() {
   }
 
-  @Override
-  public String toString() {
-    return String.format("%s[index=%d, term=%d, session=%d, timestamp=%d]", getClass().getSimpleName(), getIndex(), getTerm(), getSession(), getTimestamp());
+  public LeaveEntry(ReferenceManager<Entry<?>> referenceManager) {
+    super(referenceManager);
   }
 
 }

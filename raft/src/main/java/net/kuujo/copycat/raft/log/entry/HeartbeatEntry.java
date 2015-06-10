@@ -15,64 +15,59 @@
  */
 package net.kuujo.copycat.raft.log.entry;
 
-import net.kuujo.copycat.cluster.MemberInfo;
 import net.kuujo.copycat.io.Buffer;
+import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.util.ReferenceManager;
 
 /**
- * Member info entry.
+ * Heart beat entry.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class MemberEntry<T extends MemberEntry<T>> extends Entry<T> {
-  private MemberInfo member;
+@SerializeWith(id=1007)
+public class HeartbeatEntry extends TimestampedEntry<HeartbeatEntry> {
+  private int memberId;
 
-  protected MemberEntry() {
-  }
-
-  protected MemberEntry(ReferenceManager<Entry<?>> referenceManager) {
+  public HeartbeatEntry(ReferenceManager<Entry<?>> referenceManager) {
     super(referenceManager);
   }
 
   /**
-   * Returns the member info.
+   * Sets the heartbeat member ID.
    *
-   * @return The member info.
+   * @param memberId The member ID.
+   * @return The heartbeat entry.
    */
-  public MemberInfo getMember() {
-    return member;
+  public HeartbeatEntry setMemberId(int memberId) {
+    this.memberId = memberId;
+    return this;
   }
 
   /**
-   * Sets the member info.
+   * Returns the member ID.
    *
-   * @param member The member info.
-   * @return The member entry.
+   * @return The member ID.
    */
-  @SuppressWarnings("unchecked")
-  public T setMember(MemberInfo member) {
-    if (member == null)
-      throw new NullPointerException("member cannot be null");
-    this.member = member;
-    return (T) this;
+  public int getMemberId() {
+    return memberId;
   }
 
   @Override
   public void writeObject(Buffer buffer, Serializer serializer) {
     super.writeObject(buffer, serializer);
-    serializer.writeObject(member, buffer);
+    buffer.writeInt(memberId);
   }
 
   @Override
   public void readObject(Buffer buffer, Serializer serializer) {
     super.readObject(buffer, serializer);
-    member = serializer.readObject(buffer);
+    memberId = buffer.readInt();
   }
 
   @Override
   public String toString() {
-    return String.format("%s[index=%d, term=%d, member=%s]", getClass().getSimpleName(), getIndex(), getTerm(), member);
+    return String.format("%s[index=%d, term=%d, member=%d, timestamp=%d]", getClass().getSimpleName(), getIndex(), getTerm(), memberId, getTimestamp());
   }
 
 }

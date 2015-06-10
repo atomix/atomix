@@ -15,6 +15,10 @@
  */
 package net.kuujo.copycat.raft.state;
 
+import net.kuujo.copycat.cluster.ManagedCluster;
+import net.kuujo.copycat.cluster.ManagedMember;
+import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.cluster.MemberInfo;
 import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.raft.log.Compaction;
 import net.kuujo.copycat.raft.log.entry.*;
@@ -31,14 +35,17 @@ import java.util.concurrent.CompletableFuture;
  */
 class RaftStateMachine {
   private final StateMachine stateMachine;
+  private final ManagedCluster cluster;
   private final ExecutionContext context;
+  private final Map<Integer, RaftMember> members = new HashMap<>();
   private final Map<Long, RaftSession> sessions = new HashMap<>();
   private final Map<Long, List<Runnable>> queries = new HashMap<>();
   private long sessionTimeout = 5000;
   private long lastApplied;
 
-  public RaftStateMachine(StateMachine stateMachine, ExecutionContext context) {
+  public RaftStateMachine(StateMachine stateMachine, ManagedCluster cluster, ExecutionContext context) {
     this.stateMachine = stateMachine;
+    this.cluster = cluster;
     this.context = context;
   }
 
@@ -167,6 +174,12 @@ class RaftStateMachine {
       return apply((KeepAliveEntry) entry);
     } else if (entry instanceof NoOpEntry) {
       return apply((NoOpEntry) entry);
+    } else if (entry instanceof JoinEntry) {
+      return apply((JoinEntry) entry);
+    } else if (entry instanceof LeaveEntry) {
+      return apply((LeaveEntry) entry);
+    } else if (entry instanceof HeartbeatEntry) {
+      return apply((HeartbeatEntry) entry);
     }
     return Futures.exceptionalFuture(new InternalException("unknown state machine operation"));
   }
@@ -219,6 +232,36 @@ class RaftStateMachine {
    */
   public CompletableFuture<Long> apply(NoOpEntry entry) {
     return noop(entry.getIndex());
+  }
+
+  /**
+   * Applies an entry to the state machine.
+   *
+   * @param entry The entry to apply.
+   * @return The result.
+   */
+  public CompletableFuture<Long> apply(JoinEntry entry) {
+    return join(entry.getIndex(), entry.getMember());
+  }
+
+  /**
+   * Applies an entry to the state machine.
+   *
+   * @param entry The entry to apply.
+   * @return The result.
+   */
+  public CompletableFuture<Void> apply(LeaveEntry entry) {
+    return leave(entry.getIndex(), entry.getMember());
+  }
+
+  /**
+   * Applies an entry to the state machine.
+   *
+   * @param entry The entry to apply.
+   * @return The result.
+   */
+  public CompletableFuture<Void> apply(HeartbeatEntry entry) {
+    return heartbeat(entry.getIndex(), entry.getMemberId(), entry.getTimestamp());
   }
 
   /**
@@ -364,6 +407,89 @@ class RaftStateMachine {
       } else {
         return CompletableFuture.supplyAsync(() -> stateMachine.apply(new Commit(index, session, timestamp, query)), context);
       }
+    }
+  }
+
+  /**
+   * Applies a join to the state machine.
+   *
+   * @param index The join index.
+   * @param member The joining member.
+   * @return A completable future to be completed with the join index.
+   */
+  private CompletableFuture<Long> join(long index, MemberInfo member) {
+    return cluster.addMember(member).thenApplyAsync(v -> index, context);
+  }
+
+  /**
+   * Applies a leave to the state machine.
+   *
+   * @param index The leave index.
+   * @param member The leaving member.
+   * @return A completable future to be completed once the member has been removed.
+   */
+  private CompletableFuture<Void> leave(long index, MemberInfo member) {
+    return cluster.removeMember(member.id());
+  }
+
+  /**
+   * Applies a heartbeat to the state machine.
+   *
+   * @param index The heartbeat index.
+   * @param memberId The member ID.
+   * @param timestamp The heartbeat timestamp.
+   * @return A completable future to be completed once the heartbeat has been applied.
+   */
+  private CompletableFuture<Void> heartbeat(long index, int memberId, long timestamp) {
+    CompletableFuture<Void> future = new CompletableFuture<>();
+    ManagedMember clusterMember = cluster.member(memberId);
+    if (clusterMember == null) {
+      future.completeExceptionally(new IllegalStateException("unknown cluster member: " + memberId));
+    } else {
+      RaftMember member = members.get(memberId);
+      if (member == null) {
+        member = new RaftMember(memberId, timestamp);
+        members.put(memberId, member);
+        cluster.configureMember(memberId, Member.Status.ALIVE);
+      } else {
+        member.update(timestamp);
+      }
+      future.complete(null);
+    }
+
+    Iterator<Map.Entry<Integer, RaftMember>> iterator = members.entrySet().iterator();
+    while (iterator.hasNext()) {
+      Map.Entry<Integer, RaftMember> entry = iterator.next();
+      if (!entry.getValue().update(timestamp)) {
+        iterator.remove();
+        cluster.configureMember(entry.getKey(), Member.Status.DEAD);
+      }
+    }
+    return future;
+  }
+
+  /**
+   * Raft cluster member.
+   */
+  private class RaftMember {
+    private int memberId;
+    private long timestamp;
+
+    private RaftMember(int memberId, long timestamp) {
+      this.memberId = memberId;
+      this.timestamp = timestamp;
+    }
+
+    /**
+     * Updates the member.
+     */
+    public boolean update(long timestamp) {
+      if (timestamp - sessionTimeout > this.timestamp) {
+        members.remove(memberId);
+        return false;
+      }
+      this.timestamp = timestamp;
+      return true;
     }
   }
 

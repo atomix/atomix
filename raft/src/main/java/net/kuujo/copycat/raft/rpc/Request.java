@@ -41,6 +41,11 @@ public interface Request<T extends Request<T>> extends ReferenceCounted<T>, Writ
     LEAVE,
 
     /**
+     * Heartbeat request.
+     */
+    HEARTBEAT,
+
+    /**
      * Register client request.
      */
     REGISTER,

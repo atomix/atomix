@@ -13,26 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.raft.log.entry;
-
-import net.kuujo.copycat.io.serializer.SerializeWith;
-import net.kuujo.copycat.io.util.ReferenceManager;
+package net.kuujo.copycat.raft;
 
 /**
- * Keep alive entry.
+ * Protocol exception.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=1002)
-public class KeepAliveEntry extends SessionEntry<KeepAliveEntry> {
+public class ProtocolException extends RaftException {
+  private static final RaftError.Type TYPE = RaftError.Type.APPLICATION_ERROR;
 
-  public KeepAliveEntry(ReferenceManager<Entry<?>> referenceManager) {
-    super(referenceManager);
+  public ProtocolException(String message, Object... args) {
+    super(TYPE, message, args);
   }
 
-  @Override
-  public String toString() {
-    return String.format("%s[index=%d, term=%d, session=%d, timestamp=%d]", getClass().getSimpleName(), getIndex(), getTerm(), getSession(), getTimestamp());
+  public ProtocolException(Throwable cause, String message, Object... args) {
+    super(TYPE, cause, message, args);
+  }
+
+  public ProtocolException(Throwable cause) {
+    super(TYPE, cause);
   }
 
 }

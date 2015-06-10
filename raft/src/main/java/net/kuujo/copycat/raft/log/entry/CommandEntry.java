@@ -26,7 +26,7 @@ import net.kuujo.copycat.raft.Command;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=1008)
+@SerializeWith(id=1003)
 public class CommandEntry extends OperationEntry<CommandEntry> {
   private long request;
   private long response;

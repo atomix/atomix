@@ -26,7 +26,7 @@ import net.kuujo.copycat.raft.Query;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=1009)
+@SerializeWith(id=1004)
 public class QueryEntry extends OperationEntry<QueryEntry> {
   private long version;
   private Query query;

@@ -45,6 +45,8 @@ public interface RaftError {
         return Type.UNKNOWN_SESSION_ERROR;
       case 7:
         return Type.INTERNAL_ERROR;
+      case 8:
+        return Type.PROTOCOL_ERROR;
       default:
         throw new IllegalArgumentException("invalid error identifier: " + id);
     }
@@ -130,12 +132,22 @@ public interface RaftError {
     },
 
     /**
-     * Internal exception.
+     * Internal error.
      */
     INTERNAL_ERROR(7) {
       @Override
       public RaftException createException() {
         return new InternalException("internal Raft error");
+      }
+    },
+
+    /**
+     * Raft protocol error.
+     */
+    PROTOCOL_ERROR(8) {
+      @Override
+      public RaftException createException() {
+        return new ProtocolException("Raft protocol error");
       }
     };
 

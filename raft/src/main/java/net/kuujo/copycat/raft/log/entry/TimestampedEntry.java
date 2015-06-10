@@ -72,4 +72,9 @@ public abstract class TimestampedEntry<T extends TimestampedEntry<T>> extends En
     timestamp = buffer.readLong();
   }
 
+  @Override
+  public String toString() {
+    return String.format("%s[index=%d, term=%d, timestamp=%d]", getClass().getSimpleName(), getIndex(), getTerm(), timestamp);
+  }
+
 }

@@ -240,7 +240,7 @@ class LeaderState extends ActiveState {
         } else {
           future.complete(logResponse(CommandResponse.builder()
             .withStatus(Response.Status.ERROR)
-            .withError(RaftError.Type.COMMAND_ERROR)
+            .withError(RaftError.Type.PROTOCOL_ERROR)
             .build()));
         }
       }
@@ -398,7 +398,7 @@ class LeaderState extends ActiveState {
         } else {
           future.complete(logResponse(RegisterResponse.builder()
             .withStatus(Response.Status.ERROR)
-            .withError(RaftError.Type.COMMAND_ERROR)
+            .withError(RaftError.Type.PROTOCOL_ERROR)
             .build()));
         }
       }
@@ -456,7 +456,151 @@ class LeaderState extends ActiveState {
         } else {
           future.complete(logResponse(KeepAliveResponse.builder()
             .withStatus(Response.Status.ERROR)
-            .withError(RaftError.Type.COMMAND_ERROR)
+            .withError(RaftError.Type.PROTOCOL_ERROR)
+            .build()));
+        }
+      }
+    });
+    return future;
+  }
+
+  @Override
+  protected CompletableFuture<JoinResponse> join(JoinRequest request) {
+    context.checkThread();
+    logRequest(request);
+
+    final long index;
+
+    try (JoinEntry entry = context.getLog().createEntry(JoinEntry.class)) {
+      entry.setTerm(context.getTerm());
+      entry.setMember(request.member());
+      index = context.getLog().appendEntry(entry);
+      LOGGER.debug("{} - Appended {}", context.getCluster().member().id(), entry);
+    }
+
+    CompletableFuture<JoinResponse> future = new CompletableFuture<>();
+    replicator.commit(index).whenComplete((commitIndex, commitError) -> {
+      context.checkThread();
+      if (isOpen()) {
+        if (commitError == null) {
+          JoinEntry entry = context.getLog().getEntry(index);
+          context.getStateMachine().apply(entry).whenCompleteAsync((sessionId, sessionError) -> {
+            if (isOpen()) {
+              if (sessionError == null) {
+                future.complete(logResponse(JoinResponse.builder()
+                  .withStatus(Response.Status.OK)
+                  .withLeader(context.getLeader())
+                  .withTerm(context.getTerm())
+                  .build()));
+              } else {
+                future.complete(logResponse(JoinResponse.builder()
+                  .withStatus(Response.Status.ERROR)
+                  .withError(RaftError.Type.INTERNAL_ERROR)
+                  .build()));
+              }
+            }
+            entry.close();
+          }, context.getContext());
+        } else {
+          future.complete(logResponse(JoinResponse.builder()
+            .withStatus(Response.Status.ERROR)
+            .withError(RaftError.Type.PROTOCOL_ERROR)
+            .build()));
+        }
+      }
+    });
+    return future;
+  }
+
+  @Override
+  protected CompletableFuture<LeaveResponse> leave(LeaveRequest request) {
+    context.checkThread();
+    logRequest(request);
+
+    final long index;
+
+    try (LeaveEntry entry = context.getLog().createEntry(LeaveEntry.class)) {
+      entry.setTerm(context.getTerm());
+      entry.setMember(request.member());
+      index = context.getLog().appendEntry(entry);
+      LOGGER.debug("{} - Appended {}", context.getCluster().member().id(), entry);
+    }
+
+    CompletableFuture<LeaveResponse> future = new CompletableFuture<>();
+    replicator.commit(index).whenComplete((commitIndex, commitError) -> {
+      context.checkThread();
+      if (isOpen()) {
+        if (commitError == null) {
+          LeaveEntry entry = context.getLog().getEntry(index);
+          context.getStateMachine().apply(entry).whenCompleteAsync((sessionId, sessionError) -> {
+            if (isOpen()) {
+              if (sessionError == null) {
+                future.complete(logResponse(LeaveResponse.builder()
+                  .withStatus(Response.Status.OK)
+                  .build()));
+              } else {
+                future.complete(logResponse(LeaveResponse.builder()
+                  .withStatus(Response.Status.ERROR)
+                  .withError(RaftError.Type.INTERNAL_ERROR)
+                  .build()));
+              }
+            }
+            entry.close();
+          }, context.getContext());
+        } else {
+          future.complete(logResponse(LeaveResponse.builder()
+            .withStatus(Response.Status.ERROR)
+            .withError(RaftError.Type.PROTOCOL_ERROR)
+            .build()));
+        }
+      }
+    });
+    return future;
+  }
+
+  @Override
+  protected CompletableFuture<HeartbeatResponse> heartbeat(HeartbeatRequest request) {
+    context.checkThread();
+    logRequest(request);
+
+    final long index;
+    final long timestamp = System.currentTimeMillis();
+
+    try (HeartbeatEntry entry = context.getLog().createEntry(HeartbeatEntry.class)) {
+      entry.setTerm(context.getTerm());
+      entry.setTimestamp(timestamp);
+      entry.setMemberId(request.member());
+      index = context.getLog().appendEntry(entry);
+      LOGGER.debug("{} - Appended {}", context.getCluster().member().id(), entry);
+    }
+
+    CompletableFuture<HeartbeatResponse> future = new CompletableFuture<>();
+    replicator.commit(index).whenComplete((commitIndex, commitError) -> {
+      context.checkThread();
+      if (isOpen()) {
+        if (commitError == null) {
+          HeartbeatEntry entry = context.getLog().getEntry(index);
+          context.getStateMachine().apply(entry).whenCompleteAsync((sessionId, sessionError) -> {
+            if (isOpen()) {
+              if (sessionError == null) {
+                future.complete(logResponse(HeartbeatResponse.builder()
+                  .withStatus(Response.Status.OK)
+                  .withLeader(context.getLeader())
+                  .withTerm(context.getTerm())
+                  .build()));
+              } else {
+                future.complete(logResponse(HeartbeatResponse.builder()
+                  .withStatus(Response.Status.ERROR)
+                  .withError(RaftError.Type.INTERNAL_ERROR)
+                  .build()));
+              }
+            }
+            entry.close();
+          }, context.getContext());
+        } else {
+          future.complete(logResponse(HeartbeatResponse.builder()
+            .withStatus(Response.Status.ERROR)
+            .withError(RaftError.Type.PROTOCOL_ERROR)
             .build()));
         }
       }

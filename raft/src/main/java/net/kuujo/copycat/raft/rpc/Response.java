@@ -42,6 +42,11 @@ public interface Response<T extends Response<T>> extends ReferenceCounted<T>, Wr
     LEAVE,
 
     /**
+     * Heartbeat response.
+     */
+    HEARTBEAT,
+
+    /**
      * Register client response.
      */
     REGISTER,

@@ -122,4 +122,46 @@ public class PassiveState extends AbstractState {
     }
   }
 
+  @Override
+  protected CompletableFuture<JoinResponse> join(JoinRequest request) {
+    context.checkThread();
+    logRequest(request);
+    if (context.getLeader() == 0) {
+      return CompletableFuture.completedFuture(logResponse(JoinResponse.builder()
+        .withStatus(Response.Status.ERROR)
+        .withError(RaftError.Type.NO_LEADER_ERROR)
+        .build()));
+    } else {
+      return context.getCluster().member(context.getLeader()).send(request);
+    }
+  }
+
+  @Override
+  protected CompletableFuture<LeaveResponse> leave(LeaveRequest request) {
+    context.checkThread();
+    logRequest(request);
+    if (context.getLeader() == 0) {
+      return CompletableFuture.completedFuture(logResponse(LeaveResponse.builder()
+        .withStatus(Response.Status.ERROR)
+        .withError(RaftError.Type.NO_LEADER_ERROR)
+        .build()));
+    } else {
+      return context.getCluster().member(context.getLeader()).send(request);
+    }
+  }
+
+  @Override
+  protected CompletableFuture<HeartbeatResponse> heartbeat(HeartbeatRequest request) {
+    context.checkThread();
+    logRequest(request);
+    if (context.getLeader() == 0) {
+      return CompletableFuture.completedFuture(logResponse(HeartbeatResponse.builder()
+        .withStatus(Response.Status.ERROR)
+        .withError(RaftError.Type.NO_LEADER_ERROR)
+        .build()));
+    } else {
+      return context.getCluster().member(context.getLeader()).send(request);
+    }
+  }
+
 }

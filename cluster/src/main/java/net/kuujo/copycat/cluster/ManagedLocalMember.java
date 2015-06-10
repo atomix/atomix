@@ -24,6 +24,7 @@ public abstract class ManagedLocalMember extends ManagedMember implements LocalM
 
   protected ManagedLocalMember(MemberInfo info, Type type) {
     super(info, type);
+    status = Status.ALIVE;
   }
 
 }
