@@ -177,8 +177,12 @@ abstract class ActiveState extends PassiveState {
     }
 
     // If we've made it this far, apply commits and send a successful response.
-    doApplyCommits(request.commitIndex());
-    doApplyIndex(request.globalIndex());
+    context.getContext().execute(() -> {
+      applyCommits(request.commitIndex())
+        .thenRun(() -> applyIndex(request.globalIndex()))
+        .thenRun(request::close);
+    });
+
     return AppendResponse.builder()
       .withStatus(Response.Status.OK)
       .withTerm(context.getTerm())
@@ -190,7 +194,8 @@ abstract class ActiveState extends PassiveState {
   /**
    * Applies commits to the local state machine.
    */
-  private void doApplyCommits(long commitIndex) {
+  @SuppressWarnings("unchecked")
+  private CompletableFuture<Void> applyCommits(long commitIndex) {
     // If the synced commit index is greater than the local commit index then
     // apply commits to the local state machine.
     // Also, it's possible that one of the previous write applications failed
@@ -199,10 +204,12 @@ abstract class ActiveState extends PassiveState {
     // commands have not yet been applied then we want to re-attempt to apply them.
     if (commitIndex != 0 && !context.getLog().isEmpty()) {
       if (context.getCommitIndex() == 0 || commitIndex > context.getCommitIndex()) {
-        LOGGER.debug("{} - Applying {} commits", context.getCluster().member().id(), commitIndex - Math.max(context.getCommitIndex(), context.getLog().firstIndex()));
+        long lastIndex = context.getLog().lastIndex();
+        int commits = (int) (Math.min(commitIndex, lastIndex) - Math.max(context.getCommitIndex(), context.getLog().firstIndex()));
+
+        LOGGER.debug("{} - Applying {} commits", context.getCluster().member().id(), commits);
 
         // Update the local commit index with min(request commit, last log // index)
-        long lastIndex = context.getLog().lastIndex();
         long previousCommitIndex = context.getCommitIndex();
         if (lastIndex != 0) {
           context.setCommitIndex(Math.min(Math.max(commitIndex, previousCommitIndex != 0 ? previousCommitIndex : commitIndex), lastIndex));
@@ -212,10 +219,12 @@ abstract class ActiveState extends PassiveState {
           if (context.getCommitIndex() > previousCommitIndex) {
             // Starting after the last applied entry, iterate through new entries
             // and apply them to the state machine up to the commit index.
+            CompletableFuture<?>[] futures = new CompletableFuture[commits];
+            int j = 0;
             for (long i = Math.max(previousCommitIndex + 1, context.getLog().firstIndex()); i <= Math.min(context.getCommitIndex(), lastIndex); i++) {
               Entry entry = context.getLog().getEntry(i);
               if (entry != null) {
-                context.getStateMachine().apply(entry).whenCompleteAsync((result, error) -> {
+                futures[j++] = context.getStateMachine().apply(entry).whenCompleteAsync((result, error) -> {
                   if (isOpen() && error != null) {
                     LOGGER.info("{} - An application error occurred: {}", context.getCluster().member().id(), error);
                   }
@@ -223,18 +232,20 @@ abstract class ActiveState extends PassiveState {
                 }, context.getContext());
               }
             }
+            return CompletableFuture.allOf(futures);
           }
         }
       }
     } else {
       context.setCommitIndex(commitIndex);
     }
+    return CompletableFuture.completedFuture(null);
   }
 
   /**
    * Recycles the log up to the given index.
    */
-  private void doApplyIndex(long globalIndex) {
+  private void applyIndex(long globalIndex) {
     if (globalIndex > 0) {
       context.setGlobalIndex(globalIndex);
     }
