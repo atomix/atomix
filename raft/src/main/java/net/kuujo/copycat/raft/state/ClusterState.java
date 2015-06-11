@@ -37,6 +37,11 @@ class ClusterState implements Iterable<MemberState> {
    */
   ClusterState addMember(MemberState member) {
     members.put(member.getId(), member);
+    if (member.getType() == Member.Type.ACTIVE) {
+      addActiveMember(member);
+    } else {
+      addPassiveMember(member);
+    }
     return this;
   }
 
@@ -45,7 +50,7 @@ class ClusterState implements Iterable<MemberState> {
    */
   private void addActiveMember(MemberState member) {
     activeMembers.add(member);
-    Collections.sort(activeMembers, (m1, m2) -> m1.getId() - m2.getId());
+    sortActiveMembers();
   }
 
   /**
@@ -53,7 +58,7 @@ class ClusterState implements Iterable<MemberState> {
    */
   private void addPassiveMember(MemberState member) {
     passiveMembers.add(member);
-    Collections.sort(passiveMembers, (m1, m2) -> m1.getId() - m2.getId());
+    sortPassiveMembers();
   }
 
   /**
@@ -102,6 +107,7 @@ class ClusterState implements Iterable<MemberState> {
         iterator.remove();
       }
     }
+    sortActiveMembers();
   }
 
   /**
@@ -114,6 +120,7 @@ class ClusterState implements Iterable<MemberState> {
         iterator.remove();
       }
     }
+    sortPassiveMembers();
   }
 
   /**
