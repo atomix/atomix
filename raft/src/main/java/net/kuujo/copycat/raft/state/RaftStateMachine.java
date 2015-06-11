@@ -413,11 +413,16 @@ class RaftStateMachine {
    * Applies a join to the state machine.
    *
    * @param index The join index.
-   * @param member The joining member.
+   * @param info The joining member.
    * @return A completable future to be completed with the join index.
    */
-  private CompletableFuture<Long> join(long index, MemberInfo member) {
-    CompletableFuture<Long> future = cluster.addMember(member).thenApplyAsync(v -> index, context);
+  private CompletableFuture<Long> join(long index, MemberInfo info) {
+    CompletableFuture<Long> future = cluster.addMember(info).thenApplyAsync(v -> index, context);
+    MemberState member = members.getMember(info.id());
+    if (member == null) {
+      member = new MemberState(info.id(), Member.Type.PASSIVE, System.currentTimeMillis()).setVersion(index);
+      members.addMember(member);
+    }
     setLastApplied(index);
     return future;
   }
@@ -426,11 +431,15 @@ class RaftStateMachine {
    * Applies a leave to the state machine.
    *
    * @param index The leave index.
-   * @param member The leaving member.
+   * @param info The leaving member.
    * @return A completable future to be completed once the member has been removed.
    */
-  private CompletableFuture<Void> leave(long index, MemberInfo member) {
-    CompletableFuture<Void> future = cluster.removeMember(member.id());
+  private CompletableFuture<Void> leave(long index, MemberInfo info) {
+    CompletableFuture<Void> future = cluster.removeMember(info.id());
+    MemberState member = members.getMember(info.id());
+    if (member != null) {
+      members.removeMember(member);
+    }
     setLastApplied(index);
     return future;
   }
@@ -450,20 +459,15 @@ class RaftStateMachine {
       future.completeExceptionally(new IllegalStateException("unknown cluster member: " + memberId));
     } else {
       MemberState member = members.getMember(memberId);
-      if (member == null) {
-        members.addMember(new MemberState(memberId, clusterMember.type(), timestamp).setVersion(index));
-        cluster.configureMember(memberId, Member.Status.ALIVE);
-      } else {
+      if (member != null) {
         member.update(timestamp, sessionTimeout);
+        cluster.configureMember(memberId, Member.Status.ALIVE);
       }
       future.complete(null);
     }
 
-    Iterator<MemberState> iterator = members.iterator();
-    while (iterator.hasNext()) {
-      MemberState member = iterator.next();
-      if (!member.update(timestamp, sessionTimeout) && member.getType() != Member.Type.ACTIVE) {
-        iterator.remove();
+    for (MemberState member : members) {
+      if (!member.update(timestamp, sessionTimeout)) {
         cluster.configureMember(member.getId(), Member.Status.DEAD);
       }
     }

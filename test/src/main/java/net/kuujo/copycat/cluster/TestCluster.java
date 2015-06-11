@@ -131,7 +131,6 @@ public class TestCluster extends ManagedCluster {
         throw new ConfigurationException("member registry must be provided");
 
       TestMember member = members.remove(memberId);
-      TestMember.Info info;
       TestLocalMember localMember;
       if (member != null) {
         localMember = new TestLocalMember(new TestMember.Info(memberId, member.address()), Member.Type.ACTIVE);

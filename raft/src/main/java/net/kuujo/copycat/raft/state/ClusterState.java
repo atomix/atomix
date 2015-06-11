@@ -59,6 +59,14 @@ class ClusterState implements Iterable<MemberState> {
   private void addPassiveMember(MemberState member) {
     passiveMembers.add(member);
     sortPassiveMembers();
+    resetPassiveMembers();
+  }
+
+  /**
+   * Resets passive member indexes upon reconfiguration.
+   */
+  private void resetPassiveMembers() {
+    passiveMembers.forEach(m -> m.setNextIndex(0));
   }
 
   /**
@@ -121,6 +129,7 @@ class ClusterState implements Iterable<MemberState> {
       }
     }
     sortPassiveMembers();
+    resetPassiveMembers();
   }
 
   /**

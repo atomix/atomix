@@ -213,6 +213,9 @@ class FollowerState extends ActiveState {
     if (member.getMatchIndex() == context.getCommitIndex())
       return;
 
+    if (member.getNextIndex() == 0)
+      member.setNextIndex(context.getLog().lastIndex());
+
     if (!committing.contains(member.getId())) {
       long prevIndex = getPrevIndex(member);
       Entry prevEntry = getPrevEntry(prevIndex);
