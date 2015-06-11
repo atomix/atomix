@@ -34,7 +34,6 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledFuture;
@@ -60,7 +59,6 @@ public class RaftStateContext extends RaftStateClient {
   private ScheduledFuture<?> joinTimer;
   private ScheduledFuture<?> heartbeatTimer;
   private final AtomicBoolean heartbeat = new AtomicBoolean();
-  private final Random random = new Random();
   private long electionTimeout = 500;
   private long heartbeatInterval = 250;
   private int lastVotedFor;
@@ -77,6 +75,10 @@ public class RaftStateContext extends RaftStateClient {
     this.cluster = cluster;
     this.context = context;
     this.threadChecker = new ThreadChecker(context);
+
+    for (Member member : cluster.members()) {
+      members.addMember(new MemberState(member.id(), member.type(), System.currentTimeMillis()));
+    }
   }
 
   /**

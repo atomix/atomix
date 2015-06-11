@@ -25,10 +25,12 @@ import net.kuujo.copycat.cluster.Member;
 class MemberState {
   private final int id;
   private final Member.Type type;
+  private long timestamp;
+  private long version;
+  private int index;
+  private Member.Status status = Member.Status.ALIVE;
   private long matchIndex;
   private long nextIndex;
-  private long timestamp;
-  private long commitTime;
 
   public MemberState(int id, Member.Type type, long timestamp) {
     this.id = id;
@@ -52,6 +54,54 @@ class MemberState {
    */
   Member.Type getType() {
     return type;
+  }
+
+  /**
+   * Returns the member status.
+   *
+   * @return The member status.
+   */
+  Member.Status getStatus() {
+    return status;
+  }
+
+  /**
+   * Returns the member version.
+   *
+   * @return The member version.
+   */
+  public long getVersion() {
+    return version;
+  }
+
+  /**
+   * Sets the member version.
+   *
+   * @param version The member version.
+   * @return The member state.
+   */
+  MemberState setVersion(long version) {
+    this.version = version;
+    return this;
+  }
+
+  /**
+   * Returns the member index.
+   *
+   * @return The member index.
+   */
+  public int getIndex() {
+    return index;
+  }
+
+  /**
+   * Sets the member index.
+   *
+   * @param index The member index.
+   * @return The member state.
+   */
+  MemberState setIndex(int index) {
+    return this;
   }
 
   /**
@@ -95,35 +145,18 @@ class MemberState {
   }
 
   /**
-   * Returns the commit time.
-   *
-   * @return The commit time.
-   */
-  long getCommitTime() {
-    return commitTime;
-  }
-
-  /**
-   * Sets the commit time.
-   *
-   * @param commitTime The commit time.
-   * @return The member state.
-   */
-  MemberState setCommitTime(long commitTime) {
-    this.commitTime = commitTime;
-    return this;
-  }
-
-  /**
    * Updates the member.
    */
   public boolean update(long timestamp, long timeout) {
     if (timestamp - timeout > this.timestamp) {
       this.timestamp = timestamp;
+      status = Member.Status.DEAD;
       return false;
+    } else {
+      this.timestamp = timestamp;
+      status = Member.Status.ALIVE;
+      return true;
     }
-    this.timestamp = timestamp;
-    return true;
   }
 
 }

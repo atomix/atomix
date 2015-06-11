@@ -763,12 +763,8 @@ class LeaderState extends ActiveState {
       private Replica(int id, Member member) {
         this.id = id;
         this.member = member;
-        MemberState state = context.getMembers().getMember(member.id());
-        if (state == null) {
-          state = new MemberState(member.id(), Member.Type.ACTIVE, System.currentTimeMillis());
-          state.setNextIndex(Math.max(context.getLog().lastIndex(), 1));
-        }
-        this.state = state;
+        state = context.getMembers().getMember(member.id());
+        state.setNextIndex(Math.max(state.getMatchIndex(), Math.max(context.getLog().lastIndex(), 1)));
       }
 
       /**

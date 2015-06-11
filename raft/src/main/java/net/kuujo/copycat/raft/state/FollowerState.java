@@ -17,6 +17,7 @@ package net.kuujo.copycat.raft.state;
 
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.raft.log.entry.Entry;
+import net.kuujo.copycat.raft.log.entry.HeartbeatEntry;
 import net.kuujo.copycat.raft.rpc.*;
 import net.kuujo.copycat.raft.util.Quorum;
 
@@ -37,7 +38,6 @@ class FollowerState extends ActiveState {
   private final Set<Integer> committing = new HashSet<>();
   private final Random random = new Random();
   private ScheduledFuture<?> heartbeatTimer;
-  private ScheduledFuture<?> replicateTimer;
 
   public FollowerState(RaftStateContext context) {
     super(context);
@@ -50,7 +50,7 @@ class FollowerState extends ActiveState {
 
   @Override
   public synchronized CompletableFuture<AbstractState> open() {
-    return super.open().thenRun(this::startHeartbeatTimeout).thenRun(this::startReplicateTimer).thenApply(v -> this);
+    return super.open().thenRun(this::startHeartbeatTimeout).thenApply(v -> this);
   }
 
   /**
@@ -59,14 +59,6 @@ class FollowerState extends ActiveState {
   private void startHeartbeatTimeout() {
     LOGGER.debug("{} - Starting heartbeat timer", context.getCluster().member().id());
     resetHeartbeatTimeout();
-  }
-
-  /**
-   * Starts the replicate timer.
-   */
-  private void startReplicateTimer() {
-    LOGGER.debug("{} - Starting replicate timer", context.getCluster().member().id());
-    replicateTimer = context.getContext().scheduleAtFixedRate(this::replicateCommits, 0, context.getHeartbeatInterval(), TimeUnit.MILLISECONDS);
   }
 
   /**
@@ -176,68 +168,57 @@ class FollowerState extends ActiveState {
     return response;
   }
 
-  /**
-   * Returns the list of members to which to replicate data.
-   */
-  @SuppressWarnings("unchecked")
-  protected List<MemberState> getReplicas() {
-    List<MemberState> members = context.getMembers().getMembers();
-    List<MemberState> activeMembers = members.stream().filter(m -> m.getType() == Member.Type.ACTIVE).collect(Collectors.toList());
-    List<MemberState> passiveMembers = members.stream().filter(m -> m.getType() == Member.Type.PASSIVE).collect(Collectors.toList());
-
-    if (!passiveMembers.isEmpty()) {
-      int memberPosition = -1;
-      for (int i = 0; i < activeMembers.size(); i++) {
-        if (activeMembers.get(i).getId() == context.getCluster().member().id()) {
-          memberPosition = i;
-          break;
-        }
-      }
-
-      if (memberPosition != -1) {
-        List<MemberState> replicas = new ArrayList<>((int) Math.ceil(passiveMembers.size() / (double) activeMembers.size()));
-        while (passiveMembers.size() > memberPosition) {
-          replicas.add(passiveMembers.get(memberPosition % passiveMembers.size()));
-          memberPosition += activeMembers.size();
-        }
-        return replicas;
-      }
+  @Override
+  protected CompletableFuture<?> applyEntry(Entry entry) {
+    if (entry instanceof HeartbeatEntry) {
+      return super.applyEntry(entry).thenRun(() -> replicateCommits(((HeartbeatEntry) entry).getMemberId()));
+    } else {
+      return super.applyEntry(entry);
     }
-    return Collections.EMPTY_LIST;
   }
 
   /**
-   * Commits all entries to all replicas.
+   * Replicates commits to the given member.
    */
-  @SuppressWarnings("unchecked")
-  private CompletableFuture<Void> replicateCommits() {
-    List<MemberState> replicas = getReplicas();
-    if (replicas.isEmpty())
-      return CompletableFuture.completedFuture(null);
-
-    CompletableFuture<Void>[] futures = new CompletableFuture[replicas.size()];
-    for (int i = 0; i < replicas.size(); i++) {
-      futures[i] = commit(replicas.get(i), new CompletableFuture<>());
+  private void replicateCommits(int memberId) {
+    MemberState member = context.getMembers().getMember(memberId);
+    if (isActiveReplica(member)) {
+      commit(member);
     }
-    return CompletableFuture.allOf(futures);
+  }
+
+  /**
+   * Returns a boolean value indicating whether the given member is a replica of this follower.
+   */
+  private boolean isActiveReplica(MemberState member) {
+    if (member != null && member.getType() == Member.Type.PASSIVE && member.getStatus() == Member.Status.ALIVE) {
+      MemberState thisMember = context.getMembers().getMember(context.getCluster().member().id());
+      int index = thisMember.getIndex();
+      int activeMembers = context.getMembers().getActiveMembers().size();
+      int passiveMembers = context.getMembers().getPassiveMembers().size();
+      while (passiveMembers > index) {
+        if (index % passiveMembers == member.getIndex()) {
+          return true;
+        }
+        index += activeMembers;
+      }
+    }
+    return false;
   }
 
   /**
    * Commits entries to the given member.
    */
-  private CompletableFuture<Void> commit(MemberState member, CompletableFuture<Void> future) {
+  private void commit(MemberState member) {
     if (member.getMatchIndex() == context.getCommitIndex())
-      return CompletableFuture.completedFuture(null);
+      return;
 
     if (!committing.contains(member.getId())) {
       long prevIndex = getPrevIndex(member);
       Entry prevEntry = getPrevEntry(prevIndex);
       List<Entry> entries = getEntries(prevIndex);
-      commit(member, prevIndex, prevEntry, entries, future);
-    } else {
-      future.complete(null);
+      commit(member, prevIndex, prevEntry, entries);
     }
-    return future;
   }
 
   /**
@@ -287,7 +268,7 @@ class FollowerState extends ActiveState {
   /**
    * Sends a commit message.
    */
-  private void commit(MemberState member, long prevIndex, Entry prevEntry, List<Entry> entries, CompletableFuture<Void> future) {
+  private void commit(MemberState member, long prevIndex, Entry prevEntry, List<Entry> entries) {
     AppendRequest request = AppendRequest.builder()
       .withTerm(context.getTerm())
       .withLeader(context.getCluster().member().id())
@@ -315,9 +296,7 @@ class FollowerState extends ActiveState {
 
               // If there are more entries to send then attempt to send another commit.
               if (hasMoreEntries(member)) {
-                commit(member, future);
-              } else {
-                future.complete(null);
+                commit(member);
               }
             } else {
               resetMatchIndex(member, response);
@@ -325,18 +304,14 @@ class FollowerState extends ActiveState {
 
               // If there are more entries to send then attempt to send another commit.
               if (hasMoreEntries(member)) {
-                commit(member, future);
-              } else {
-                future.complete(null);
+                commit(member);
               }
             }
           } else {
             LOGGER.warn("{} - {}", context.getCluster().member().id(), response.error() != null ? response.error() : "");
-            future.complete(null);
           }
         } else {
           LOGGER.warn("{} - {}", context.getCluster().member().id(), error.getMessage());
-          future.complete(null);
         }
       }
       request.release();
@@ -413,19 +388,9 @@ class FollowerState extends ActiveState {
     }
   }
 
-  /**
-   * Cancels the replicate timer.
-   */
-  private void cancelReplicateTimer() {
-    if (replicateTimer != null) {
-      LOGGER.debug("{} - Cancelling replicate timer", context.getCluster().member().id());
-      replicateTimer.cancel(false);
-    }
-  }
-
   @Override
   public synchronized CompletableFuture<Void> close() {
-    return super.close().thenRun(this::cancelHeartbeatTimeout).thenRun(this::cancelReplicateTimer);
+    return super.close().thenRun(this::cancelHeartbeatTimeout);
   }
 
 }

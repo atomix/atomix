@@ -212,7 +212,7 @@ public class PassiveState extends AbstractState {
             for (long i = Math.max(previousCommitIndex + 1, context.getLog().firstIndex()); i <= Math.min(context.getCommitIndex(), lastIndex); i++) {
               Entry entry = context.getLog().getEntry(i);
               if (entry != null) {
-                futures[j++] = context.getStateMachine().apply(entry).whenCompleteAsync((result, error) -> {
+                futures[j++] = applyEntry(entry).whenCompleteAsync((result, error) -> {
                   if (isOpen() && error != null) {
                     LOGGER.info("{} - An application error occurred: {}", context.getCluster().member().id(), error);
                   }
@@ -228,6 +228,13 @@ public class PassiveState extends AbstractState {
       context.setCommitIndex(commitIndex);
     }
     return CompletableFuture.completedFuture(null);
+  }
+
+  /**
+   * Applies an entry to the state machine.
+   */
+  protected CompletableFuture<?> applyEntry(Entry entry) {
+    return context.getStateMachine().apply(entry);
   }
 
   /**

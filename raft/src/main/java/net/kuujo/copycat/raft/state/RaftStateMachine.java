@@ -128,8 +128,7 @@ class RaftStateMachine {
    * @return A boolean value indicating whether to keep the entry.
    */
   public CompletableFuture<Boolean> filter(KeepAliveEntry entry, Compaction compaction) {
-    return CompletableFuture.completedFuture(sessions.containsKey(entry.getIndex()) && sessions.get(entry.getIndex()).index == entry
-      .getIndex());
+    return CompletableFuture.completedFuture(sessions.containsKey(entry.getIndex()) && sessions.get(entry.getIndex()).index == entry.getIndex());
   }
 
   /**
@@ -211,8 +210,7 @@ class RaftStateMachine {
    * @return The result.
    */
   public CompletableFuture<Object> apply(CommandEntry entry) {
-    return command(entry.getIndex(), entry.getSession(), entry.getRequest(), entry.getResponse(), entry.getTimestamp(), entry
-      .getCommand());
+    return command(entry.getIndex(), entry.getSession(), entry.getRequest(), entry.getResponse(), entry.getTimestamp(), entry.getCommand());
   }
 
   /**
@@ -352,7 +350,7 @@ class RaftStateMachine {
       context.execute(() -> stateMachine.expire(session));
       future = Futures.exceptionalFuture(new UnknownSessionException("unknown session " + sessionId));
     } else if (session.responses.containsKey(request)) {
-        future = CompletableFuture.completedFuture(session.responses.get(request));
+      future = CompletableFuture.completedFuture(session.responses.get(request));
     } else {
       // Apply the command to the state machine.
       future = CompletableFuture.supplyAsync(() -> stateMachine.apply(new Commit(index, session, timestamp, command)), context)
@@ -419,7 +417,9 @@ class RaftStateMachine {
    * @return A completable future to be completed with the join index.
    */
   private CompletableFuture<Long> join(long index, MemberInfo member) {
-    return cluster.addMember(member).thenApplyAsync(v -> index, context);
+    CompletableFuture<Long> future = cluster.addMember(member).thenApplyAsync(v -> index, context);
+    setLastApplied(index);
+    return future;
   }
 
   /**
@@ -430,7 +430,9 @@ class RaftStateMachine {
    * @return A completable future to be completed once the member has been removed.
    */
   private CompletableFuture<Void> leave(long index, MemberInfo member) {
-    return cluster.removeMember(member.id());
+    CompletableFuture<Void> future = cluster.removeMember(member.id());
+    setLastApplied(index);
+    return future;
   }
 
   /**
@@ -449,7 +451,7 @@ class RaftStateMachine {
     } else {
       MemberState member = members.getMember(memberId);
       if (member == null) {
-        members.addMember(new MemberState(memberId, clusterMember.type(), timestamp));
+        members.addMember(new MemberState(memberId, clusterMember.type(), timestamp).setVersion(index));
         cluster.configureMember(memberId, Member.Status.ALIVE);
       } else {
         member.update(timestamp, sessionTimeout);
@@ -465,6 +467,8 @@ class RaftStateMachine {
         cluster.configureMember(member.getId(), Member.Status.DEAD);
       }
     }
+
+    setLastApplied(index);
     return future;
   }
 
