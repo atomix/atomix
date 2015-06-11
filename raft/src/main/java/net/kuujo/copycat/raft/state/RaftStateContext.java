@@ -522,10 +522,10 @@ public class RaftStateContext extends RaftStateClient {
    * Sends a heartbeat to a specific member.
    */
   private CompletableFuture<Void> heartbeat(Member member, List<Member> members, CompletableFuture<Void> future) {
-    KeepAliveRequest request = KeepAliveRequest.builder()
-      .withSession(getSession())
+    HeartbeatRequest request = HeartbeatRequest.builder()
+      .withMember(cluster.member().id())
       .build();
-    member.<KeepAliveRequest, KeepAliveResponse>send(request).whenComplete((response, error) -> {
+    member.<HeartbeatRequest, HeartbeatResponse>send(request).whenComplete((response, error) -> {
       threadChecker.checkThread();
       if (isOpen()) {
         if (error == null && response.status() == Response.Status.OK) {
