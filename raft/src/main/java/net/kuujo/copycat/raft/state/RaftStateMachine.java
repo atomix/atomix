@@ -460,7 +460,7 @@ class RaftStateMachine {
     Iterator<MemberState> iterator = members.iterator();
     while (iterator.hasNext()) {
       MemberState member = iterator.next();
-      if (!member.update(timestamp, sessionTimeout)) {
+      if (!member.update(timestamp, sessionTimeout) && member.getType() != Member.Type.ACTIVE) {
         iterator.remove();
         cluster.configureMember(member.getId(), Member.Status.DEAD);
       }

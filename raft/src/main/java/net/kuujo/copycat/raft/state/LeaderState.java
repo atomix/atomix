@@ -773,15 +773,18 @@ class LeaderState extends ActiveState {
       private void commit() {
         if (!committing && isOpen()) {
           MemberState member = context.getMembers().getMember(this.member.id());
-          if (member != null) {
-            // If the log is empty then send an empty commit.
-            // If the next index hasn't yet been set then we send an empty commit first.
-            // If the next index is greater than the last index then send an empty commit.
-            if (context.getLog().isEmpty() || nextIndex > context.getLog().lastIndex()) {
-              emptyCommit(member);
-            } else {
-              entriesCommit(member);
-            }
+          if (member == null) {
+            member = new MemberState(this.member.id(), Member.Type.ACTIVE, System.currentTimeMillis());
+            context.getMembers().addMember(member);
+          }
+
+          // If the log is empty then send an empty commit.
+          // If the next index hasn't yet been set then we send an empty commit first.
+          // If the next index is greater than the last index then send an empty commit.
+          if (context.getLog().isEmpty() || nextIndex > context.getLog().lastIndex()) {
+            emptyCommit(member);
+          } else {
+            entriesCommit(member);
           }
         }
       }
@@ -951,7 +954,9 @@ class LeaderState extends ActiveState {
         } else if (response.logIndex() != 0) {
           member.setMatchIndex(Math.max(member.getMatchIndex(), response.logIndex()));
         }
-        LOGGER.debug("{} - Reset match index for {} to {}", context.getCluster().member().id(), member, member.getMatchIndex());
+        LOGGER.debug("{} - Reset match index for {} to {}", context.getCluster()
+          .member()
+          .id(), member, member.getMatchIndex());
       }
 
       /**
@@ -963,7 +968,9 @@ class LeaderState extends ActiveState {
         } else {
           member.setNextIndex(context.getLog().firstIndex());
         }
-        LOGGER.debug("{} - Reset next index for {} to {}", context.getCluster().member().id(), member, member.getNextIndex());
+        LOGGER.debug("{} - Reset next index for {} to {}", context.getCluster()
+          .member()
+          .id(), member, member.getNextIndex());
       }
 
     }
