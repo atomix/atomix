@@ -627,8 +627,8 @@ public class RaftStateContext extends RaftStateClient {
         transition(FollowerState.class);
         open = true;
       }, context)
-        .thenCompose(v -> join())
-        .thenCompose(v -> super.open());
+        .thenCompose(v -> super.open())
+        .thenRunAsync(this::startHeartbeatTimer, context);
     }
   }
 
