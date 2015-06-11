@@ -53,8 +53,8 @@ public class TestCluster extends ManagedCluster {
   }
 
   @Override
-  public TestMember member(int id) {
-    return (TestMember) super.member(id);
+  public ManagedMember member(int id) {
+    return super.member(id);
   }
 
   /**

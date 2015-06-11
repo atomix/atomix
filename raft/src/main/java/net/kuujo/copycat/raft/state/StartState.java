@@ -37,6 +37,21 @@ class StartState extends AbstractState {
   }
 
   @Override
+  protected CompletableFuture<JoinResponse> join(JoinRequest request) {
+    return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
+  }
+
+  @Override
+  protected CompletableFuture<LeaveResponse> leave(LeaveRequest request) {
+    return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
+  }
+
+  @Override
+  protected CompletableFuture<HeartbeatResponse> heartbeat(HeartbeatRequest request) {
+    return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
+  }
+
+  @Override
   protected CompletableFuture<RegisterResponse> register(RegisterRequest request) {
     return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
   }

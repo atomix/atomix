@@ -36,16 +36,17 @@ import java.util.concurrent.CompletableFuture;
 class RaftStateMachine {
   private final StateMachine stateMachine;
   private final ManagedCluster cluster;
+  private final ClusterState members;
   private final ExecutionContext context;
-  private final Map<Integer, RaftMember> members = new HashMap<>();
   private final Map<Long, RaftSession> sessions = new HashMap<>();
   private final Map<Long, List<Runnable>> queries = new HashMap<>();
   private long sessionTimeout = 5000;
   private long lastApplied;
 
-  public RaftStateMachine(StateMachine stateMachine, ManagedCluster cluster, ExecutionContext context) {
+  public RaftStateMachine(StateMachine stateMachine, ManagedCluster cluster, ClusterState members, ExecutionContext context) {
     this.stateMachine = stateMachine;
     this.cluster = cluster;
+    this.members = members;
     this.context = context;
   }
 
@@ -446,51 +447,25 @@ class RaftStateMachine {
     if (clusterMember == null) {
       future.completeExceptionally(new IllegalStateException("unknown cluster member: " + memberId));
     } else {
-      RaftMember member = members.get(memberId);
+      MemberState member = members.getMember(memberId);
       if (member == null) {
-        member = new RaftMember(memberId, timestamp);
-        members.put(memberId, member);
+        members.addMember(new MemberState(memberId, clusterMember.type(), timestamp));
         cluster.configureMember(memberId, Member.Status.ALIVE);
       } else {
-        member.update(timestamp);
+        member.update(timestamp, sessionTimeout);
       }
       future.complete(null);
     }
 
-    Iterator<Map.Entry<Integer, RaftMember>> iterator = members.entrySet().iterator();
+    Iterator<MemberState> iterator = members.iterator();
     while (iterator.hasNext()) {
-      Map.Entry<Integer, RaftMember> entry = iterator.next();
-      if (!entry.getValue().update(timestamp)) {
+      MemberState member = iterator.next();
+      if (!member.update(timestamp, sessionTimeout)) {
         iterator.remove();
-        cluster.configureMember(entry.getKey(), Member.Status.DEAD);
+        cluster.configureMember(member.getId(), Member.Status.DEAD);
       }
     }
     return future;
-  }
-
-  /**
-   * Raft cluster member.
-   */
-  private class RaftMember {
-    private int memberId;
-    private long timestamp;
-
-    private RaftMember(int memberId, long timestamp) {
-      this.memberId = memberId;
-      this.timestamp = timestamp;
-    }
-
-    /**
-     * Updates the member.
-     */
-    public boolean update(long timestamp) {
-      if (timestamp - sessionTimeout > this.timestamp) {
-        members.remove(memberId);
-        return false;
-      }
-      this.timestamp = timestamp;
-      return true;
-    }
   }
 
   /**

@@ -183,7 +183,7 @@ public class PassiveState extends AbstractState {
    * Applies commits to the local state machine.
    */
   @SuppressWarnings("unchecked")
-  private CompletableFuture<Void> applyCommits(long commitIndex) {
+  protected CompletableFuture<Void> applyCommits(long commitIndex) {
     // If the synced commit index is greater than the local commit index then
     // apply commits to the local state machine.
     // Also, it's possible that one of the previous write applications failed
@@ -233,7 +233,7 @@ public class PassiveState extends AbstractState {
   /**
    * Recycles the log up to the given index.
    */
-  private void applyIndex(long globalIndex) {
+  protected void applyIndex(long globalIndex) {
     if (globalIndex > 0) {
       context.setGlobalIndex(globalIndex);
     }

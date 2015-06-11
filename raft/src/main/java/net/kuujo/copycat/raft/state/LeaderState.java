@@ -637,33 +637,12 @@ class LeaderState extends ActiveState {
     private int quorumIndex;
 
     private Replicator() {
-      update();
-    }
-
-    /**
-     * Updates the replicator's cluster configuration.
-     */
-    private void update() {
       Set<Member> members = context.getCluster().members().stream()
         .filter(m -> m.id() != context.getCluster().member().id() && m.type() == Member.Type.ACTIVE)
         .collect(Collectors.toSet());
-      Set<Integer> ids = members.stream().map(Member::id).collect(Collectors.toSet());
-
-      Iterator<Replica> iterator = replicas.iterator();
-      while (iterator.hasNext()) {
-        Replica replica = iterator.next();
-        if (!ids.contains(replica.member.id())) {
-          iterator.remove();
-          commitTimes.remove(replica.id);
-        }
-      }
-
-      Set<Integer> replicas = this.replicas.stream().map(r -> r.member.id()).collect(Collectors.toSet());
       for (Member member : members) {
-        if (!replicas.contains(member.id())) {
-          this.replicas.add(new Replica(this.replicas.size(), member));
-          this.commitTimes.add(System.currentTimeMillis());
-        }
+        this.replicas.add(new Replica(this.replicas.size(), member));
+        this.commitTimes.add(System.currentTimeMillis());
       }
 
       this.quorum = (int) Math.floor((this.replicas.size() + 1) / 2.0);
@@ -793,13 +772,16 @@ class LeaderState extends ActiveState {
        */
       private void commit() {
         if (!committing && isOpen()) {
-          // If the log is empty then send an empty commit.
-          // If the next index hasn't yet been set then we send an empty commit first.
-          // If the next index is greater than the last index then send an empty commit.
-          if (context.getLog().isEmpty() || nextIndex > context.getLog().lastIndex()) {
-            emptyCommit();
-          } else {
-            entriesCommit();
+          MemberState member = context.getMembers().getMember(this.member.id());
+          if (member != null) {
+            // If the log is empty then send an empty commit.
+            // If the next index hasn't yet been set then we send an empty commit first.
+            // If the next index is greater than the last index then send an empty commit.
+            if (context.getLog().isEmpty() || nextIndex > context.getLog().lastIndex()) {
+              emptyCommit(member);
+            } else {
+              entriesCommit(member);
+            }
           }
         }
       }
@@ -852,26 +834,26 @@ class LeaderState extends ActiveState {
        * Performs an empty commit.
        */
       @SuppressWarnings("unchecked")
-      private void emptyCommit() {
+      private void emptyCommit(MemberState member) {
         long prevIndex = getPrevIndex();
         Entry prevEntry = getPrevEntry(prevIndex);
-        commit(prevIndex, prevEntry, Collections.EMPTY_LIST);
+        commit(member, prevIndex, prevEntry, Collections.EMPTY_LIST);
       }
 
       /**
        * Performs a commit with entries.
        */
-      private void entriesCommit() {
+      private void entriesCommit(MemberState member) {
         long prevIndex = getPrevIndex();
         Entry prevEntry = getPrevEntry(prevIndex);
         List<Entry> entries = getEntries(prevIndex);
-        commit(prevIndex, prevEntry, entries);
+        commit(member, prevIndex, prevEntry, entries);
       }
 
       /**
        * Sends a commit message.
        */
-      private void commit(long prevIndex, Entry prevEntry, List<Entry> entries) {
+      private void commit(MemberState member, long prevIndex, Entry prevEntry, List<Entry> entries) {
         AppendRequest request = AppendRequest.builder()
           .withTerm(context.getTerm())
           .withLeader(context.getCluster().member().id())
@@ -884,7 +866,7 @@ class LeaderState extends ActiveState {
 
         committing = true;
         LOGGER.debug("{} - Sent {} to {}", context.getCluster().member().id(), request, member);
-        member.<AppendRequest, AppendResponse>send(request).whenCompleteAsync((response, error) -> {
+        this.member.<AppendRequest, AppendResponse>send(request).whenCompleteAsync((response, error) -> {
           committing = false;
           context.checkThread();
 
@@ -897,8 +879,8 @@ class LeaderState extends ActiveState {
 
                 // If replication succeeded then trigger commit futures.
                 if (response.succeeded()) {
-                  updateMatchIndex(response);
-                  updateNextIndex();
+                  updateMatchIndex(member, response);
+                  updateNextIndex(member);
 
                   // If entries were committed to the replica then check commit indexes.
                   if (!entries.isEmpty()) {
@@ -906,17 +888,17 @@ class LeaderState extends ActiveState {
                   }
 
                   // If there are more entries to send then attempt to send another commit.
-                  if (hasMoreEntries()) {
+                  if (hasMoreEntries(member)) {
                     commit();
                   }
                 } else if (response.term() > context.getTerm()) {
                   transition(RaftState.FOLLOWER);
                 } else {
-                  resetMatchIndex(response);
-                  resetNextIndex();
+                  resetMatchIndex(member, response);
+                  resetNextIndex(member);
 
                   // If there are more entries to send then attempt to send another commit.
-                  if (hasMoreEntries()) {
+                  if (hasMoreEntries(member)) {
                     commit();
                   }
                 }
@@ -937,51 +919,51 @@ class LeaderState extends ActiveState {
       /**
        * Returns a boolean value indicating whether there are more entries to send.
        */
-      private boolean hasMoreEntries() {
-        return nextIndex < context.getLog().lastIndex();
+      private boolean hasMoreEntries(MemberState member) {
+        return member.getNextIndex() < context.getLog().lastIndex();
       }
 
       /**
        * Updates the match index when a response is received.
        */
-      private void updateMatchIndex(AppendResponse response) {
+      private void updateMatchIndex(MemberState member, AppendResponse response) {
         // If the replica returned a valid match index then update the existing match index. Because the
         // replicator pipelines replication, we perform a MAX(matchIndex, logIndex) to get the true match index.
-        matchIndex = Math.max(matchIndex, response.logIndex());
+        member.setMatchIndex(Math.max(member.getMatchIndex(), response.logIndex()));
       }
 
       /**
        * Updates the next index when the match index is updated.
        */
-      private void updateNextIndex() {
+      private void updateNextIndex(MemberState member) {
         // If the match index was set, update the next index to be greater than the match index if necessary.
         // Note that because of pipelining append requests, the next index can potentially be much larger than
         // the match index. We rely on the algorithm to reject invalid append requests.
-        nextIndex = Math.max(nextIndex, Math.max(matchIndex + 1, 1));
+        member.setNextIndex(Math.max(member.getNextIndex(), Math.max(member.getMatchIndex() + 1, 1)));
       }
 
       /**
        * Resets the match index when a response fails.
        */
-      private void resetMatchIndex(AppendResponse response) {
-        if (matchIndex == 0) {
-          matchIndex = response.logIndex();
+      private void resetMatchIndex(MemberState member, AppendResponse response) {
+        if (member.getMatchIndex() == 0) {
+          member.setMatchIndex(response.logIndex());
         } else if (response.logIndex() != 0) {
-          matchIndex = Math.max(matchIndex, response.logIndex());
+          member.setMatchIndex(Math.max(member.getMatchIndex(), response.logIndex()));
         }
-        LOGGER.debug("{} - Reset match index for {} to {}", context.getCluster().member().id(), member, matchIndex);
+        LOGGER.debug("{} - Reset match index for {} to {}", context.getCluster().member().id(), member, member.getMatchIndex());
       }
 
       /**
        * Resets the next index when a response fails.
        */
-      private void resetNextIndex() {
-        if (matchIndex != 0) {
-          nextIndex = matchIndex + 1;
+      private void resetNextIndex(MemberState member) {
+        if (member.getMatchIndex() != 0) {
+          member.setNextIndex(member.getMatchIndex() + 1);
         } else {
-          nextIndex = context.getLog().firstIndex();
+          member.setNextIndex(context.getLog().firstIndex());
         }
-        LOGGER.debug("{} - Reset next index for {} to {}", context.getCluster().member().id(), member, nextIndex);
+        LOGGER.debug("{} - Reset next index for {} to {}", context.getCluster().member().id(), member, member.getNextIndex());
       }
 
     }

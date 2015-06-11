@@ -53,6 +53,7 @@ public class RaftStateContext extends RaftStateClient {
   private final Log log;
   private final Compactor compactor;
   private final ManagedCluster cluster;
+  private final ClusterState members = new ClusterState();
   private final ExecutionContext context;
   private final ThreadChecker threadChecker;
   private AbstractState state;
@@ -71,7 +72,7 @@ public class RaftStateContext extends RaftStateClient {
   public RaftStateContext(Log log, StateMachine stateMachine, ManagedCluster cluster, ExecutionContext context) {
     super(cluster, new ExecutionContext(String.format("%s-client", context.name()), context.serializer().copy()));
     this.log = log;
-    this.stateMachine = new RaftStateMachine(stateMachine, cluster, new ExecutionContext(String.format("%s-state", context.name()), context.serializer().copy()));
+    this.stateMachine = new RaftStateMachine(stateMachine, cluster, members, new ExecutionContext(String.format("%s-state", context.name()), context.serializer().copy()));
     this.compactor = new Compactor(log, this.stateMachine::filter, context);
     this.cluster = cluster;
     this.context = context;
@@ -179,6 +180,15 @@ public class RaftStateContext extends RaftStateClient {
       this.leader = 0;
     }
     return this;
+  }
+
+  /**
+   * Returns the cluster state.
+   *
+   * @return The cluster state.
+   */
+  ClusterState getMembers() {
+    return members;
   }
 
   /**
@@ -619,6 +629,7 @@ public class RaftStateContext extends RaftStateClient {
         transition(PassiveState.class);
       }, context)
         .thenComposeAsync(v -> join(), context)
+        .thenCompose(v -> super.open())
         .thenRun(() -> {
           startHeartbeatTimer();
           open = true;
@@ -628,7 +639,8 @@ public class RaftStateContext extends RaftStateClient {
         log.open(context);
         transition(FollowerState.class);
         open = true;
-      });
+      }, context)
+        .thenCompose(v -> super.open());
     }
   }
 
