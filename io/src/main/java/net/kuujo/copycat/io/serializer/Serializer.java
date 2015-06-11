@@ -76,10 +76,6 @@ public class Serializer {
     ClassPath cp = ClassPath.from(classLoader);
     outer:
     for (ClassPath.ClassInfo info : cp.getAllClasses()) {
-      if (!info.getName().startsWith("net.kuujo.copycat")) {
-        continue;
-      }
-
       Class<?> type;
       try {
         type = info.load();
