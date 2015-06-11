@@ -394,16 +394,7 @@ public class RaftStateClient implements Managed<Void> {
       return future;
     }
 
-    Member member;
-    if (leader != 0) {
-      member = members.get(leader);
-      if (member == null) {
-        setLeader(0);
-        member = members.remove(random.nextInt(members.size()));
-      }
-    } else {
-      member = members.remove(random.nextInt(members.size()));
-    }
+    Member member = selectMember(members);
 
     LOGGER.debug("{} - Registering session via {}", member.id(), member.id());
     RegisterRequest request = RegisterRequest.builder().build();
@@ -467,16 +458,7 @@ public class RaftStateClient implements Managed<Void> {
       return future;
     }
 
-    Member member;
-    if (leader != 0) {
-      member = members.get(leader);
-      if (member == null) {
-        setLeader(0);
-        member = members.remove(random.nextInt(members.size()));
-      }
-    } else {
-      member = members.remove(random.nextInt(members.size()));
-    }
+    Member member = selectMember(members);
 
     KeepAliveRequest request = KeepAliveRequest.builder()
       .withSession(getSession())
@@ -492,6 +474,23 @@ public class RaftStateClient implements Managed<Void> {
       }
     });
     return future;
+  }
+
+  /**
+   * Selects a random member from the given members list.
+   */
+  protected Member selectMember(List<Member> members) {
+    if (leader != 0) {
+      for (int i = 0; i < members.size(); i++) {
+        if (members.get(i).id() == leader) {
+          return members.remove(i);
+        }
+      }
+      setLeader(0);
+      return members.remove(random.nextInt(members.size()));
+    } else {
+      return members.remove(random.nextInt(members.size()));
+    }
   }
 
   /**

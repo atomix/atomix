@@ -604,23 +604,6 @@ public class RaftStateContext extends RaftStateClient {
     }
   }
 
-  /**
-   * Selects a random(ish) member from a members list.
-   */
-  private Member selectMember(List<Member> members) {
-    Member member;
-    if (leader != 0) {
-      member = cluster.member(leader);
-      if (member == null) {
-        setLeader(0);
-        return members.remove(random.nextInt(members.size()));
-      }
-      return member;
-    } else {
-      return members.remove(random.nextInt(members.size()));
-    }
-  }
-
   @Override
   public synchronized CompletableFuture<Void> open() {
     if (cluster.member().type() == Member.Type.PASSIVE) {
