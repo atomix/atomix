@@ -48,9 +48,15 @@ public class MinorCompaction extends Compaction {
 
   @Override
   CompletableFuture<Void> run(SegmentManager segments) {
-    LOGGER.info("compacting the log");
-    setRunning(true);
-    return compactLevels(getCompactSegments(segments).iterator(), segments, new CompletableFuture<>()).thenRun(() -> setRunning(false));
+    CompletableFuture<Void> future = new CompletableFuture<>();
+    context.execute(() -> {
+      LOGGER.info("Compacting the log");
+      setRunning(true);
+      compactLevels(getCompactSegments(segments).iterator(), segments, future).whenComplete((result, error) -> {
+        setRunning(false);
+      });
+    });
+    return future;
   }
 
   /**

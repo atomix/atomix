@@ -362,14 +362,15 @@ public class RaftStateClient implements Managed<Void> {
    * Registers the client.
    */
   private CompletableFuture<Void> register(long interval, CompletableFuture<Void> future) {
-    register(new ArrayList<>(members.members())).whenComplete((result, error) -> {
+    register(new ArrayList<>(members.members())).whenCompleteAsync((result, error) -> {
+      threadChecker.checkThread();
       if (error == null) {
         future.complete(null);
       } else {
         long nextInterval = Math.min(interval * 2, 5000);
         registerTimer = context.schedule(() -> register(nextInterval, future), nextInterval, TimeUnit.MILLISECONDS);
       }
-    });
+    }, context);
     return future;
   }
 
@@ -517,9 +518,8 @@ public class RaftStateClient implements Managed<Void> {
   public CompletableFuture<Void> open() {
     openFuture = new CompletableFuture<>();
     context.execute(() -> {
-      register().thenRun(this::startKeepAliveTimer).thenApply(v -> {
+      register().thenRun(this::startKeepAliveTimer).thenRun(() -> {
         open = true;
-        return this;
       });
     });
     return openFuture;

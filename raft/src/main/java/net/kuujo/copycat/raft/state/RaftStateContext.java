@@ -426,7 +426,11 @@ public class RaftStateContext extends RaftStateClient {
    * Joins the cluster.
    */
   private CompletableFuture<Void> join() {
-    return join(100, new CompletableFuture<>());
+    CompletableFuture<Void> future = new CompletableFuture<>();
+    context.execute(() -> {
+      join(100, future);
+    });
+    return future;
   }
 
   /**
@@ -611,18 +615,19 @@ public class RaftStateContext extends RaftStateClient {
         log.open(context);
         transition(PassiveState.class);
       }, context)
-        .thenComposeAsync(v -> join(), context)
+        .thenCompose(v -> join())
         .thenCompose(v -> super.open())
-        .thenRun(() -> {
+        .thenRunAsync(() -> {
           startHeartbeatTimer();
           open = true;
-        });
+        }, context);
     } else {
       return cluster.open().thenRunAsync(() -> {
         log.open(context);
         transition(FollowerState.class);
         open = true;
       }, context)
+        .thenCompose(v -> join())
         .thenCompose(v -> super.open());
     }
   }
@@ -642,24 +647,30 @@ public class RaftStateContext extends RaftStateClient {
       cancelJoinTimer();
       cancelHeartbeatTimer();
       open = false;
-      transition(StartState.class)
-        .thenComposeAsync(v -> super.close(), context)
-        .thenComposeAsync(v -> leave(), context)
-        .thenComposeAsync(v -> cluster.close(), context)
-        .whenCompleteAsync((result, error) -> {
-          try {
-            if (log != null) {
-              log.close();
-            }
-          } catch (Exception e) {
-          }
+      transition(StartState.class);
 
-          if (error == null) {
-            future.complete(null);
-          } else {
-            future.completeExceptionally(error);
-          }
-        }, context);
+      super.close().whenCompleteAsync((r1, e1) -> {
+        leave().whenComplete((r2, e2) -> {
+          cluster.close().whenCompleteAsync((r3, e3) -> {
+            try {
+              if (log != null) {
+                log.close();
+              }
+            } catch (Exception e) {
+            }
+
+            if (e1 != null) {
+              future.completeExceptionally(e1);
+            } else if (e2 != null) {
+              future.completeExceptionally(e2);
+            } else if (e3 != null) {
+              future.completeExceptionally(e3);
+            } else {
+              future.complete(null);
+            }
+          }, context);
+        });
+      }, context);
     });
     return future;
   }

@@ -126,7 +126,7 @@ public class Compactor implements AutoCloseable {
         return compaction;
       }
       return null;
-    }, context).thenComposeAsync(c -> {
+    }, context).thenCompose(c -> {
       if (compaction != null) {
         return compaction.run(log.segments).thenRun(() -> {
           synchronized (this) {
@@ -136,7 +136,7 @@ public class Compactor implements AutoCloseable {
         });
       }
       return CompletableFuture.completedFuture(null);
-    }, context);
+    });
     return compactFuture;
   }
 
