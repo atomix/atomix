@@ -43,7 +43,7 @@ public abstract class ManagedMembers implements Members, Managed<Members> {
 
   protected ManagedMembers(Collection<? extends ManagedMember> remoteMembers, Serializer serializer) {
     remoteMembers.forEach(m -> {
-      m.setContext(new ExecutionContext("copycat-cluster-" + m.id(), serializer));
+      ((ManagedMember)m).setContext(new ExecutionContext("copycat-cluster-" + m.id(), serializer));
       this.members.put(m.id(), m);
       this.sortedMembers.add(m);
     });
