@@ -16,6 +16,7 @@
 package net.kuujo.copycat.raft.state;
 
 import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.raft.Raft;
 import net.kuujo.copycat.raft.log.entry.Entry;
 import net.kuujo.copycat.raft.log.entry.HeartbeatEntry;
 import net.kuujo.copycat.raft.rpc.*;
@@ -44,8 +45,8 @@ class FollowerState extends ActiveState {
   }
 
   @Override
-  public RaftState type() {
-    return RaftState.FOLLOWER;
+  public Raft.State type() {
+    return Raft.State.FOLLOWER;
   }
 
   @Override
@@ -111,7 +112,7 @@ class FollowerState extends ActiveState {
       // If a majority of the cluster indicated they would vote for us then transition to candidate.
       complete.set(true);
       if (elected) {
-        transition(RaftState.CANDIDATE);
+        transition(Raft.State.CANDIDATE);
       } else {
         resetHeartbeatTimeout();
       }

@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.raft.state;
 
+import net.kuujo.copycat.raft.Raft;
 import net.kuujo.copycat.raft.rpc.*;
 import net.kuujo.copycat.util.concurrent.Futures;
 
@@ -32,8 +33,8 @@ class StartState extends AbstractState {
   }
 
   @Override
-  public RaftState type() {
-    return RaftState.START;
+  public Raft.State type() {
+    return Raft.State.START;
   }
 
   @Override

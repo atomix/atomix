@@ -16,6 +16,7 @@
 package net.kuujo.copycat.raft.state;
 
 import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.raft.Raft;
 import net.kuujo.copycat.raft.log.entry.Entry;
 import net.kuujo.copycat.raft.rpc.*;
 import net.kuujo.copycat.raft.util.Quorum;
@@ -43,8 +44,8 @@ class CandidateState extends ActiveState {
   }
 
   @Override
-  public RaftState type() {
-    return RaftState.CANDIDATE;
+  public Raft.State type() {
+    return Raft.State.CANDIDATE;
   }
 
   @Override
@@ -104,7 +105,7 @@ class CandidateState extends ActiveState {
     final Quorum quorum = new Quorum((int) Math.floor(votingMembers.size() / 2.0) + 1, (elected) -> {
       complete.set(true);
       if (elected) {
-        transition(RaftState.LEADER);
+        transition(Raft.State.LEADER);
       }
     });
 
@@ -135,7 +136,7 @@ class CandidateState extends ActiveState {
             LOGGER.debug("{} - Received greater term from {}", context.getCluster().member().id(), member);
             context.setTerm(response.term());
             complete.set(true);
-            transition(RaftState.FOLLOWER);
+            transition(Raft.State.FOLLOWER);
           } else if (!response.voted()) {
             LOGGER.debug("{} - Received rejected vote from {}", context.getCluster().member().id(), member);
             quorum.fail();
@@ -159,7 +160,7 @@ class CandidateState extends ActiveState {
     // assign that term and leader to the current context and step down as a candidate.
     if (request.term() >= context.getTerm()) {
       context.setTerm(request.term());
-      transition(RaftState.FOLLOWER);
+      transition(Raft.State.FOLLOWER);
     }
     return super.append(request);
   }
@@ -172,7 +173,7 @@ class CandidateState extends ActiveState {
     // assign that term and leader to the current context and step down as a candidate.
     if (request.term() > context.getTerm()) {
       context.setTerm(request.term());
-      transition(RaftState.FOLLOWER);
+      transition(Raft.State.FOLLOWER);
       return super.vote(request);
     }
 

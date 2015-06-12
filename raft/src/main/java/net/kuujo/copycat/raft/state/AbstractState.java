@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.raft.state;
 
+import net.kuujo.copycat.raft.Raft;
 import net.kuujo.copycat.raft.rpc.*;
 import net.kuujo.copycat.util.Managed;
 import org.slf4j.Logger;
@@ -41,7 +42,7 @@ abstract class AbstractState implements Managed<AbstractState> {
    *
    * @return The Copycat state represented by this state.
    */
-  public abstract RaftState type();
+  public abstract Raft.State type();
 
   /**
    * Logs a request.

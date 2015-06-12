@@ -18,10 +18,7 @@ package net.kuujo.copycat.raft.state;
 import net.kuujo.copycat.cluster.ManagedCluster;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.raft.NoLeaderException;
-import net.kuujo.copycat.raft.Query;
-import net.kuujo.copycat.raft.RaftError;
-import net.kuujo.copycat.raft.StateMachine;
+import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.raft.log.Compactor;
 import net.kuujo.copycat.raft.log.Log;
 import net.kuujo.copycat.raft.rpc.*;
@@ -338,7 +335,7 @@ public class RaftStateContext extends RaftStateClient {
    *
    * @return The current state.
    */
-  public RaftState getState() {
+  public Raft.State getState() {
     return state.type();
   }
 
@@ -392,7 +389,7 @@ public class RaftStateContext extends RaftStateClient {
   /**
    * Transition handler.
    */
-  CompletableFuture<RaftState> transition(Class<? extends AbstractState> state) {
+  CompletableFuture<Raft.State> transition(Class<? extends AbstractState> state) {
     checkThread();
 
     if (this.state != null && state == this.state.getClass()) {

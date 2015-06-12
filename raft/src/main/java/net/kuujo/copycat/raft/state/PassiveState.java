@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.raft.state;
 
+import net.kuujo.copycat.raft.Raft;
 import net.kuujo.copycat.raft.RaftError;
 import net.kuujo.copycat.raft.log.entry.Entry;
 import net.kuujo.copycat.raft.rpc.*;
@@ -35,14 +36,14 @@ public class PassiveState extends AbstractState {
   }
 
   @Override
-  public RaftState type() {
-    return RaftState.PASSIVE;
+  public Raft.State type() {
+    return Raft.State.PASSIVE;
   }
 
   /**
    * Transitions to a new state.
    */
-  protected void transition(RaftState state) {
+  protected void transition(Raft.State state) {
     // Do not allow the PASSIVE state to transition.
   }
 
@@ -53,7 +54,7 @@ public class PassiveState extends AbstractState {
     // If a transition is required then transition back to the follower state.
     // If the node is already a follower then the transition will be ignored.
     if (transition) {
-      transition(RaftState.FOLLOWER);
+      transition(Raft.State.FOLLOWER);
       transition = false;
     }
     return future;

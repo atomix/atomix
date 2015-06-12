@@ -20,7 +20,6 @@ import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ManagedCluster;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.raft.log.Log;
-import net.kuujo.copycat.raft.state.RaftState;
 import net.kuujo.copycat.raft.state.RaftStateContext;
 import net.kuujo.copycat.util.ExecutionContext;
 
@@ -33,6 +32,40 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class Raft implements ManagedProtocol {
+
+  /**
+   * Raft state types.
+   *
+   * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
+   */
+  public enum State {
+
+    /**
+     * Start state.
+     */
+    START,
+
+    /**
+     * Passive state.
+     */
+    PASSIVE,
+
+    /**
+     * Follower state.
+     */
+    FOLLOWER,
+
+    /**
+     * Candidate state.
+     */
+    CANDIDATE,
+
+    /**
+     * Leader state.
+     */
+    LEADER
+
+  }
 
   /**
    * Returns a new Raft builder.
@@ -85,7 +118,7 @@ public class Raft implements ManagedProtocol {
    *
    * @return The Raft state.
    */
-  public RaftState state() {
+  public State state() {
     return context.getState();
   }
 

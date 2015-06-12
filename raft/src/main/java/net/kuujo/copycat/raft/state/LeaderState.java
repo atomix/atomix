@@ -41,8 +41,8 @@ class LeaderState extends ActiveState {
   }
 
   @Override
-  public RaftState type() {
-    return RaftState.LEADER;
+  public Raft.State type() {
+    return Raft.State.LEADER;
   }
 
   @Override
@@ -89,7 +89,7 @@ class LeaderState extends ActiveState {
           applyEntries(resultIndex);
           future.complete(null);
         } else {
-          transition(RaftState.FOLLOWER);
+          transition(Raft.State.FOLLOWER);
         }
       }
     });
@@ -153,7 +153,7 @@ class LeaderState extends ActiveState {
   public CompletableFuture<VoteResponse> vote(final VoteRequest request) {
     if (request.term() > context.getTerm()) {
       LOGGER.debug("{} - Received greater term", context.getCluster().member().id());
-      transition(RaftState.FOLLOWER);
+      transition(Raft.State.FOLLOWER);
       return super.vote(request);
     } else {
       return CompletableFuture.completedFuture(logResponse(VoteResponse.builder()
@@ -177,7 +177,7 @@ class LeaderState extends ActiveState {
         .withLogIndex(context.getLog().lastIndex())
         .build()));
     } else {
-      transition(RaftState.FOLLOWER);
+      transition(Raft.State.FOLLOWER);
       return super.append(request);
     }
   }
@@ -889,7 +889,7 @@ class LeaderState extends ActiveState {
                     commit();
                   }
                 } else if (response.term() > context.getTerm()) {
-                  transition(RaftState.FOLLOWER);
+                  transition(Raft.State.FOLLOWER);
                 } else {
                   resetMatchIndex(response);
                   resetNextIndex();
@@ -901,7 +901,7 @@ class LeaderState extends ActiveState {
                 }
               } else if (response.term() > context.getTerm()) {
                 LOGGER.debug("{} - Received higher term from {}", context.getCluster().member().id(), this.member);
-                transition(RaftState.FOLLOWER);
+                transition(Raft.State.FOLLOWER);
               } else {
                 LOGGER.warn("{} - {}", context.getCluster().member().id(), response.error() != null ? response.error() : "");
               }

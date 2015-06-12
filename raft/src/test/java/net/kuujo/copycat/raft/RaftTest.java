@@ -20,7 +20,6 @@ import net.kuujo.copycat.cluster.NettyCluster;
 import net.kuujo.copycat.cluster.NettyMember;
 import net.kuujo.copycat.raft.log.Log;
 import net.kuujo.copycat.raft.log.StorageLevel;
-import net.kuujo.copycat.raft.state.RaftState;
 import org.testng.annotations.Test;
 
 /**
@@ -109,13 +108,13 @@ public class RaftTest extends ConcurrentTestCase {
 
     Thread.sleep(1000);
 
-    if (raft1.state() == RaftState.LEADER) {
+    if (raft1.state() == Raft.State.LEADER) {
       raft1.close().join();
     }
-    if (raft2.state() == RaftState.LEADER) {
+    if (raft2.state() == Raft.State.LEADER) {
       raft2.close().join();
     }
-    if (raft3.state() == RaftState.LEADER) {
+    if (raft3.state() == Raft.State.LEADER) {
       raft3.close().join();
     }
 

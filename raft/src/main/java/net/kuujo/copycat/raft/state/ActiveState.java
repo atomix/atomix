@@ -17,6 +17,7 @@ package net.kuujo.copycat.raft.state;
 
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.raft.ConsistencyLevel;
+import net.kuujo.copycat.raft.Raft;
 import net.kuujo.copycat.raft.RaftError;
 import net.kuujo.copycat.raft.log.entry.Entry;
 import net.kuujo.copycat.raft.log.entry.QueryEntry;
@@ -37,7 +38,7 @@ abstract class ActiveState extends PassiveState {
   }
 
   @Override
-  protected void transition(RaftState state) {
+  protected void transition(Raft.State state) {
     switch (state) {
       case START:
         context.transition(StartState.class);
