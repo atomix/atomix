@@ -20,6 +20,7 @@ import net.kuujo.copycat.raft.log.entry.Entry;
 import net.kuujo.copycat.raft.rpc.*;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Passive state.
@@ -183,49 +184,39 @@ public class PassiveState extends AbstractState {
    * Applies commits to the local state machine.
    */
   @SuppressWarnings("unchecked")
-  protected CompletableFuture<Void> applyCommits(long commitIndex) {
-    // If the synced commit index is greater than the local commit index then
-    // apply commits to the local state machine.
-    // Also, it's possible that one of the previous write applications failed
-    // due to asynchronous communication errors, so alternatively check if the
-    // local commit index is greater than last applied. If all the state machine
-    // commands have not yet been applied then we want to re-attempt to apply them.
-    if (commitIndex != 0 && !context.getLog().isEmpty()) {
-      if (context.getCommitIndex() == 0 || commitIndex > context.getCommitIndex()) {
-        long lastIndex = context.getLog().lastIndex();
-        int commits = (int) (Math.min(commitIndex, lastIndex) - Math.max(context.getCommitIndex(), context.getLog().firstIndex()));
+  private CompletableFuture<Void> applyCommits(long commitIndex) {
+    // Set the commit index, ensuring that the index cannot be decreased.
+    context.setCommitIndex(Math.max(context.getCommitIndex(), commitIndex));
 
-        LOGGER.debug("{} - Applying {} commits", context.getCluster().member().id(), commits);
+    // The entries to be applied to the state machine are the difference between min(lastIndex, commitIndex) and lastApplied.
+    long lastIndex = context.getLog().lastIndex();
+    long lastApplied = context.getStateMachine().getLastApplied();
 
-        // Update the local commit index with min(request commit, last log // index)
-        long previousCommitIndex = context.getCommitIndex();
-        if (lastIndex != 0) {
-          context.setCommitIndex(Math.min(Math.max(commitIndex, previousCommitIndex != 0 ? previousCommitIndex : commitIndex), lastIndex));
+    long effectiveIndex = Math.min(lastIndex, context.getCommitIndex());
 
-          // If the updated commit index indicates that commits remain to be
-          // applied to the state machine, iterate entries and apply them.
-          if (context.getCommitIndex() > previousCommitIndex) {
-            // Starting after the last applied entry, iterate through new entries
-            // and apply them to the state machine up to the commit index.
-            CompletableFuture<?>[] futures = new CompletableFuture[commits];
-            int j = 0;
-            for (long i = Math.max(previousCommitIndex + 1, context.getLog().firstIndex()); i <= Math.min(context.getCommitIndex(), lastIndex); i++) {
-              Entry entry = context.getLog().getEntry(i);
-              if (entry != null) {
-                futures[j++] = applyEntry(entry).whenCompleteAsync((result, error) -> {
-                  if (isOpen() && error != null) {
-                    LOGGER.info("{} - An application error occurred: {}", context.getCluster().member().id(), error);
-                  }
-                  entry.close();
-                }, context.getContext());
-              }
+    // If the effective commit index is greater than the last index applied to the state machine then apply remaining entries.
+    if (effectiveIndex > lastApplied) {
+      long entriesToApply = effectiveIndex - lastApplied;
+      LOGGER.debug("{} - Applying {} commits", context.getCluster().member().id(), entriesToApply);
+
+      // Rather than composing all futures into a single future, use a counter to count completions in order to preserve memory.
+      AtomicLong counter = new AtomicLong();
+      CompletableFuture<Void> future = new CompletableFuture<>();
+
+      for (long i = lastApplied + 1; i <= effectiveIndex; i++) {
+        Entry entry = context.getLog().getEntry(i);
+        if (entry != null) {
+          applyEntry(entry).whenCompleteAsync((result, error) -> {
+            entry.close();
+            if (isOpen() && error != null) {
+              LOGGER.info("{} - An application error occurred: {}", context.getCluster().member().id(), error);
             }
-            return CompletableFuture.allOf(futures);
-          }
+            if (counter.incrementAndGet() == entriesToApply) {
+              future.complete(null);
+            }
+          }, context.getContext());
         }
       }
-    } else {
-      context.setCommitIndex(commitIndex);
     }
     return CompletableFuture.completedFuture(null);
   }

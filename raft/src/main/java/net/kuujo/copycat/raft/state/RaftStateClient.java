@@ -499,7 +499,7 @@ public class RaftStateClient implements Managed<Void> {
    */
   private void cancelRegisterTimer() {
     if (registerTimer != null) {
-      LOGGER.debug("cancelling register timer");
+      LOGGER.debug("Cancelling register timer");
       registerTimer.cancel(false);
     }
   }
@@ -509,7 +509,7 @@ public class RaftStateClient implements Managed<Void> {
    */
   private void cancelKeepAliveTimer() {
     if (currentTimer != null) {
-      LOGGER.debug("cancelling keep alive timer");
+      LOGGER.debug("Cancelling keep alive timer");
       currentTimer.cancel(false);
     }
   }
