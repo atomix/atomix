@@ -128,6 +128,7 @@ public class MajorCompaction extends Compaction {
           if (accept) {
             compactSegment.appendEntry(entry);
           } else {
+            LOGGER.debug("Filtered {} from segment {}", entry, segment.descriptor().id());
             compactSegment.skip(1);
           }
 
