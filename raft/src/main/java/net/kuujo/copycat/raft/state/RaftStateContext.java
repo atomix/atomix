@@ -655,9 +655,8 @@ public class RaftStateContext extends RaftStateClient {
         leave().whenComplete((r2, e2) -> {
           cluster.close().whenCompleteAsync((r3, e3) -> {
             try {
-              if (log != null) {
-                log.close();
-              }
+              log.close();
+              compactor.close();
             } catch (Exception e) {
             }
 
