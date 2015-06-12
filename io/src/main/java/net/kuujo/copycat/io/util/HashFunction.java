@@ -36,13 +36,13 @@ public interface HashFunction {
   /**
    * Converts a 64-bit hash value into a 32-bit hash.
    * <p>
-   * The hash is converted from 64-bit to 32-bit using {@code (int) (hash - (hash >> 32)) & (2^32 - 1)}.
+   * The hash is converted from 64-bit to 32-bit using {@code (int) (hash ^ (hash >> 32))}.
    *
    * @param hash The hash value to convert.
    * @return The converted hash value.
    */
   static int asInt(long hash) {
-    return (int) (hash - (hash >> 32)) & (2^32 - 1);
+    return (int) (hash ^ (hash >> 32));
   }
 
   /**
