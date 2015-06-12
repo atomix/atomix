@@ -32,6 +32,7 @@ import io.netty.util.concurrent.GlobalEventExecutor;
 import net.kuujo.copycat.Task;
 import net.kuujo.copycat.io.util.HashFunction;
 import net.kuujo.copycat.io.util.Murmur3HashFunction;
+import net.kuujo.copycat.io.util.ReferenceCounted;
 import net.kuujo.copycat.util.ExecutionContext;
 import net.kuujo.copycat.util.concurrent.Futures;
 import org.slf4j.Logger;
@@ -292,31 +293,35 @@ public class NettyLocalMember extends ManagedLocalMember implements NettyMember{
         requestBuffer.setByteBuf(request);
         Object deserializedRequest = serializer.readObject(requestBuffer);
         handler.context.execute(() -> {
-          handler.handler.handle(deserializedRequest).whenComplete((result, error) -> {
-            if (error == null) {
-              context.channel().eventLoop().execute(() -> {
-                ByteBuf response = context.alloc().buffer(10, 1024 * 8);
-                response.writeLong(requestId);
-                response.writeByte(STATUS_SUCCESS);
-                ByteBufBuffer responseBuffer = BUFFER.get();
-                responseBuffer.setByteBuf(response);
-                serializer.writeObject(result, responseBuffer);
-                context.writeAndFlush(response);
-                request.release();
-              });
-            } else {
-              context.channel().eventLoop().execute(() -> {
-                ByteBuf response = context.alloc().buffer(10, 1024 * 8);
-                response.writeLong(requestId);
-                response.writeByte(STATUS_FAILURE);
-                ByteBufBuffer responseBuffer = BUFFER.get();
-                responseBuffer.setByteBuf(response);
-                serializer.writeObject(error, responseBuffer);
-                context.writeAndFlush(response);
-                request.release();
-              });
+          handler.handler.handle(deserializedRequest).whenCompleteAsync((result, error) -> {
+            if (deserializedRequest instanceof ReferenceCounted) {
+              ((ReferenceCounted) deserializedRequest).close();
             }
-          });
+
+            if (error == null) {
+              ByteBuf response = context.alloc().buffer(10, 1024 * 8);
+              response.writeLong(requestId);
+              response.writeByte(STATUS_SUCCESS);
+              ByteBufBuffer responseBuffer = BUFFER.get();
+              responseBuffer.setByteBuf(response);
+              serializer.writeObject(result, responseBuffer);
+              context.writeAndFlush(response);
+              request.release();
+            } else {
+              ByteBuf response = context.alloc().buffer(10, 1024 * 8);
+              response.writeLong(requestId);
+              response.writeByte(STATUS_FAILURE);
+              ByteBufBuffer responseBuffer = BUFFER.get();
+              responseBuffer.setByteBuf(response);
+              serializer.writeObject(error, responseBuffer);
+              context.writeAndFlush(response);
+              request.release();
+            }
+
+            if (result instanceof ReferenceCounted) {
+              ((ReferenceCounted) result).release();
+            }
+          }, context.channel().eventLoop());
         });
       }
     }

@@ -15,7 +15,6 @@
  */
 package net.kuujo.copycat.raft.state;
 
-import net.kuujo.copycat.cluster.MessageHandler;
 import net.kuujo.copycat.raft.rpc.*;
 import net.kuujo.copycat.util.Managed;
 import org.slf4j.Logger;
@@ -78,16 +77,16 @@ abstract class AbstractState implements Managed<AbstractState> {
    */
   private void registerHandlers() {
     context.checkThread();
-    context.getCluster().member().registerHandler(JoinRequest.class, wrapRequestHandler(this::join));
-    context.getCluster().member().registerHandler(LeaveRequest.class, wrapRequestHandler(this::leave));
-    context.getCluster().member().registerHandler(HeartbeatRequest.class, wrapRequestHandler(this::heartbeat));
-    context.getCluster().member().registerHandler(RegisterRequest.class, wrapRequestHandler(this::register));
-    context.getCluster().member().registerHandler(KeepAliveRequest.class, wrapRequestHandler(this::keepAlive));
-    context.getCluster().member().registerHandler(AppendRequest.class, wrapRequestHandler(this::append));
-    context.getCluster().member().registerHandler(PollRequest.class, wrapRequestHandler(this::poll));
-    context.getCluster().member().registerHandler(VoteRequest.class, wrapRequestHandler(this::vote));
-    context.getCluster().member().registerHandler(CommandRequest.class, wrapRequestHandler(this::command));
-    context.getCluster().member().registerHandler(QueryRequest.class, wrapRequestHandler(this::query));
+    context.getCluster().member().<JoinRequest, JoinResponse>registerHandler(JoinRequest.class, this::join);
+    context.getCluster().member().<LeaveRequest, LeaveResponse>registerHandler(LeaveRequest.class, this::leave);
+    context.getCluster().member().<HeartbeatRequest, HeartbeatResponse>registerHandler(HeartbeatRequest.class, this::heartbeat);
+    context.getCluster().member().<RegisterRequest, RegisterResponse>registerHandler(RegisterRequest.class, this::register);
+    context.getCluster().member().<KeepAliveRequest, KeepAliveResponse>registerHandler(KeepAliveRequest.class, this::keepAlive);
+    context.getCluster().member().<AppendRequest, AppendResponse>registerHandler(AppendRequest.class, this::append);
+    context.getCluster().member().<PollRequest, PollResponse>registerHandler(PollRequest.class, this::poll);
+    context.getCluster().member().<VoteRequest, VoteResponse>registerHandler(VoteRequest.class, this::vote);
+    context.getCluster().member().<CommandRequest, CommandResponse>registerHandler(CommandRequest.class, this::command);
+    context.getCluster().member().<QueryRequest, QueryResponse>registerHandler(QueryRequest.class, this::query);
   }
 
   /**
@@ -105,13 +104,6 @@ abstract class AbstractState implements Managed<AbstractState> {
     context.getCluster().member().unregisterHandler(VoteRequest.class);
     context.getCluster().member().unregisterHandler(CommandRequest.class);
     context.getCluster().member().unregisterHandler(QueryRequest.class);
-  }
-
-  /**
-   * Wraps a request handler.
-   */
-  private <T extends Request, U extends Response> MessageHandler<T, U> wrapRequestHandler(MessageHandler<T, U> handler) {
-    return request -> handler.handle(request).whenComplete((result, error) -> request.close());
   }
 
   /**
