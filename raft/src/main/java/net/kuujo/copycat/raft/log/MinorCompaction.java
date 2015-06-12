@@ -120,7 +120,7 @@ public class MinorCompaction extends Compaction {
    * Compacts a level.
    */
   private CompletableFuture<Void> compactLevel(List<Segment> segments, SegmentManager manager, CompletableFuture<Void> future) {
-    LOGGER.debug("compacting {}", segments);
+    LOGGER.debug("Compacting {}", segments);
 
     // Copy the list of segments. We'll be removing segments as they're compacted, but we need to remember the full
     // list of segments for finalizing the compaction as well.

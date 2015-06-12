@@ -61,7 +61,6 @@ public class RaftStateContext extends RaftStateClient {
   private int lastVotedFor;
   private long commitIndex;
   private long globalIndex;
-  private long lastApplied;
   private volatile boolean open;
 
   public RaftStateContext(Log log, StateMachine stateMachine, ManagedCluster cluster, ExecutionContext context) {
@@ -268,6 +267,7 @@ public class RaftStateContext extends RaftStateClient {
     if (commitIndex < this.commitIndex)
       throw new IllegalArgumentException("cannot decrease commit index");
     this.commitIndex = commitIndex;
+    compactor.setCommitIndex(commitIndex);
     return this;
   }
 
@@ -301,33 +301,6 @@ public class RaftStateContext extends RaftStateClient {
    */
   public long getGlobalIndex() {
     return globalIndex;
-  }
-
-  /**
-   * Sets the state last applied index.
-   *
-   * @param lastApplied The state last applied index.
-   * @return The Raft context.
-   */
-  RaftStateContext setLastApplied(long lastApplied) {
-    if (lastApplied < 0)
-      throw new IllegalArgumentException("last applied must be positive");
-    if (lastApplied < this.lastApplied)
-      throw new IllegalArgumentException("cannot decrease last applied");
-    if (lastApplied > commitIndex)
-      throw new IllegalArgumentException("last applied cannot be greater than commit index");
-    this.lastApplied = lastApplied;
-    compactor.setCommitIndex(lastApplied);
-    return this;
-  }
-
-  /**
-   * Returns the state last applied index.
-   *
-   * @return The state last applied index.
-   */
-  public long getLastApplied() {
-    return lastApplied;
   }
 
   /**

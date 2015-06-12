@@ -70,7 +70,7 @@ public class MajorCompaction extends Compaction {
         segments.add(segment);
       }
     }
-    LOGGER.debug("found {} compactable segments", segments.size());
+    LOGGER.debug("Found {} compactable segments", segments.size());
     return segments;
   }
 
@@ -98,7 +98,7 @@ public class MajorCompaction extends Compaction {
   private CompletableFuture<Void> compactSegment(Segment segment, SegmentManager manager) {
     return shouldCompactSegment(segment, new CompletableFuture<>()).thenCompose(compact -> {
       if (compact) {
-        LOGGER.debug("compacting {}", segment);
+        LOGGER.debug("Compacting {}", segment);
         Segment compactSegment;
         try (SegmentDescriptor descriptor = SegmentDescriptor.builder()
           .withId(segment.descriptor().id())
@@ -137,6 +137,9 @@ public class MajorCompaction extends Compaction {
           } else {
             compactSegment(segment, index + 1, compactSegment, future);
           }
+        } else {
+          LOGGER.warn("An error occurred during compaction: {}", error);
+          future.completeExceptionally(error);
         }
         entry.close();
       }, context);
@@ -156,7 +159,7 @@ public class MajorCompaction extends Compaction {
    * Determines whether a segment should be compacted.
    */
   private CompletableFuture<Boolean> shouldCompactSegment(Segment segment, CompletableFuture<Boolean> future) {
-    LOGGER.debug("evaluating {} for major compaction", segment);
+    LOGGER.debug("Evaluating {} for major compaction", segment);
     return shouldCompactSegment(segment, segment.firstIndex(), future);
   }
 

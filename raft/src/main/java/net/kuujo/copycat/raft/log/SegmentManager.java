@@ -229,7 +229,7 @@ public class SegmentManager implements AutoCloseable {
     File segmentFile = SegmentFile.createSegmentFile(config.getDirectory(), descriptor.id(), descriptor.version());
     Buffer buffer = FileBuffer.allocate(segmentFile, 1024 * 1024, descriptor.maxSegmentSize() + SegmentDescriptor.BYTES);
     Segment segment = Segment.open(buffer.position(SegmentDescriptor.BYTES).slice(), descriptor, createIndex(descriptor), context);
-    LOGGER.debug("created segment: {}", segment);
+    LOGGER.debug("Created persistent segment: {}", segment);
     return segment;
   }
 
@@ -239,7 +239,7 @@ public class SegmentManager implements AutoCloseable {
   private Segment createMemorySegment(SegmentDescriptor descriptor) {
     Buffer buffer = HeapBuffer.allocate(Math.min(1024 * 1024, config.getMaxSegmentSize() + config.getMaxEntrySize() + SegmentDescriptor.BYTES), config.getMaxSegmentSize() + config.getMaxEntrySize() + SegmentDescriptor.BYTES);
     Segment segment = Segment.open(buffer.position(SegmentDescriptor.BYTES).slice(), descriptor, createIndex(descriptor), context);
-    LOGGER.debug("created segment: {}", segment);
+    LOGGER.debug("Created ephemeral segment: {}", segment);
     return segment;
   }
 
@@ -266,7 +266,7 @@ public class SegmentManager implements AutoCloseable {
       Buffer buffer = FileBuffer.allocate(file, Math.min(1024 * 1024, config.getMaxSegmentSize() + config.getMaxEntrySize() + SegmentDescriptor.BYTES), config.getMaxSegmentSize() + config.getMaxEntrySize() + SegmentDescriptor.BYTES);
       buffer = buffer.position(SegmentDescriptor.BYTES).slice();
       Segment segment = Segment.open(buffer, descriptor, createIndex(descriptor), context);
-      LOGGER.debug("loaded segment: {} ({})", descriptor.id(), file.getName());
+      LOGGER.debug("Loaded segment: {} ({})", descriptor.id(), file.getName());
       return segment;
     }
   }
@@ -341,10 +341,10 @@ public class SegmentManager implements AutoCloseable {
           // If this segment's version is greater than the existing segment's version and the segment is locked then
           // overwrite it. The segment will be locked if all entries have been committed, e.g. after compaction.
           if (existingDescriptor == null) {
-            LOGGER.debug("found segment: {} ({})", descriptor.id(), segmentFile.file().getName());
+            LOGGER.debug("Found segment: {} ({})", descriptor.id(), segmentFile.file().getName());
             descriptors.put(descriptor.id(), descriptor);
           } else if (descriptor.version() > existingDescriptor.version() && descriptor.locked()) {
-            LOGGER.debug("replaced segment {} with newer version: {} ({})", existingDescriptor.id(), descriptor.version(), segmentFile.file().getName());
+            LOGGER.debug("Replaced segment {} with newer version: {} ({})", existingDescriptor.id(), descriptor.version(), segmentFile.file().getName());
             descriptors.put(descriptor.id(), descriptor);
             existingDescriptor.close();
             existingDescriptor.delete();
@@ -370,9 +370,10 @@ public class SegmentManager implements AutoCloseable {
    * Replaces the existing segment with the given ID with the given segment.
    */
   public void replace(Segment segment) {
+    LOGGER.debug("Replacing segment: {}", segment.descriptor().id());
     Segment oldSegment = segments.put(segment.descriptor().index(), segment);
     if (oldSegment != null) {
-      LOGGER.debug("deleting segment: {}-{}", oldSegment.descriptor().id(), oldSegment.descriptor().version());
+      LOGGER.debug("Deleting segment: {}-{}", oldSegment.descriptor().id(), oldSegment.descriptor().version());
       oldSegment.close();
       oldSegment.delete();
     }
@@ -394,7 +395,7 @@ public class SegmentManager implements AutoCloseable {
     for (Segment oldSegment : oldSegments.values()) {
       Segment segment = this.segments.get(oldSegment.descriptor().index());
       if (segment == null || segment.descriptor().id() != oldSegment.descriptor().id() || segment.descriptor().version() > oldSegment.descriptor().version()) {
-        LOGGER.debug("deleting segment: {}-{}", oldSegment.descriptor().id(), oldSegment.descriptor().version());
+        LOGGER.debug("Deleting segment: {}-{}", oldSegment.descriptor().id(), oldSegment.descriptor().version());
         oldSegment.close();
         oldSegment.delete();
       }
@@ -404,7 +405,7 @@ public class SegmentManager implements AutoCloseable {
   @Override
   public void close() {
     segments.values().forEach(s -> {
-      LOGGER.debug("closing segment: {}", s.descriptor().id());
+      LOGGER.debug("Closing segment: {}", s.descriptor().id());
       s.close();
     });
     segments.clear();
@@ -416,7 +417,7 @@ public class SegmentManager implements AutoCloseable {
    */
   public void delete() {
     loadSegments().forEach(s -> {
-      LOGGER.debug("deleting segment: {}", s.descriptor().id());
+      LOGGER.debug("Deleting segment: {}", s.descriptor().id());
       s.delete();
     });
   }
