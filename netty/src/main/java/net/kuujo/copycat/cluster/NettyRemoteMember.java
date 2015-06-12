@@ -108,30 +108,32 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
   @Override
   public <T, U> CompletableFuture<U> send(String topic, T message) {
     final ContextualFuture<U> future = new ContextualFuture<>(getContext());
-    if (channel != null) {
-      long requestId = ++this.requestId;
-      ByteBufBuffer buffer = BUFFER.get();
-      ByteBuf byteBuf = context.alloc().buffer(13, 1024 * 8);
-      byteBuf.writerIndex(13);
-      buffer.setByteBuf(byteBuf);
-      serializer.writeObject(message, buffer);
-      byteBuf.setLong(0, requestId);
-      byteBuf.setByte(8, MESSAGE);
-      byteBuf.setInt(9, hashMap.computeIfAbsent(topic, t -> HashFunctions.CITYHASH.hash32(t.getBytes())));
-      channel.writeAndFlush(byteBuf).addListener((channelFuture) -> {
-        if (channelFuture.isSuccess()) {
-          responseFutures.put(requestId, future);
-        } else {
-          future.context.execute(() -> {
-            future.completeExceptionally(new ClusterException(channelFuture.cause()));
-          });
-        }
-      });
-    } else {
-      future.context.execute(() -> {
-        future.completeExceptionally(new ClusterException("Client not connected"));
-      });
-    }
+    super.context.execute(() -> {
+      if (channel != null) {
+        long requestId = ++this.requestId;
+        ByteBufBuffer buffer = BUFFER.get();
+        ByteBuf byteBuf = context.alloc().buffer(13, 1024 * 8);
+        byteBuf.writerIndex(13);
+        buffer.setByteBuf(byteBuf);
+        serializer.writeObject(message, buffer);
+        byteBuf.setLong(0, requestId);
+        byteBuf.setByte(8, MESSAGE);
+        byteBuf.setInt(9, hashMap.computeIfAbsent(topic, t -> HashFunctions.CITYHASH.hash32(t.getBytes())));
+        channel.writeAndFlush(byteBuf).addListener((channelFuture) -> {
+          if (channelFuture.isSuccess()) {
+            responseFutures.put(requestId, future);
+          } else {
+            future.context.execute(() -> {
+              future.completeExceptionally(new ClusterException(channelFuture.cause()));
+            });
+          }
+        });
+      } else {
+        future.context.execute(() -> {
+          future.completeExceptionally(new ClusterException("Client not connected"));
+        });
+      }
+    });
     return future;
   }
 
@@ -143,36 +145,39 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
   @Override
   public <T> CompletableFuture<T> submit(Task<T> task) {
     final ContextualFuture<T> future = new ContextualFuture<>(getContext());
-    if (channel != null) {
-      long requestId = ++this.requestId;
-      ByteBufBuffer buffer = BUFFER.get();
-      ByteBuf byteBuf = context.alloc().buffer(9, 1024 * 8);
-      byteBuf.writerIndex(9);
-      buffer.setByteBuf(byteBuf);
-      serializer.writeObject(task, buffer);
-      byteBuf.setLong(0, requestId);
-      byteBuf.setByte(8, TASK);
-      channel.writeAndFlush(byteBuf).addListener((channelFuture) -> {
-        if (channelFuture.isSuccess()) {
-          responseFutures.put(requestId, future);
-        } else {
-          future.context.execute(() -> {
-            future.completeExceptionally(new ClusterException(channelFuture.cause()));
-          });
-        }
-      });
-    } else {
-      future.context.execute(() -> {
-        future.completeExceptionally(new ClusterException("Client not connected"));
-      });
-    }
+    super.context.execute(() -> {
+      if (channel != null) {
+        long requestId = ++this.requestId;
+        ByteBufBuffer buffer = BUFFER.get();
+        ByteBuf byteBuf = context.alloc().buffer(9, 1024 * 8);
+        byteBuf.writerIndex(9);
+        buffer.setByteBuf(byteBuf);
+        serializer.writeObject(task, buffer);
+        byteBuf.setLong(0, requestId);
+        byteBuf.setByte(8, TASK);
+        channel.writeAndFlush(byteBuf).addListener((channelFuture) -> {
+          if (channelFuture.isSuccess()) {
+            responseFutures.put(requestId, future);
+          } else {
+            future.context.execute(() -> {
+              future.completeExceptionally(new ClusterException(channelFuture.cause()));
+            });
+          }
+        });
+      } else {
+        future.context.execute(() -> {
+          future.completeExceptionally(new ClusterException("Client not connected"));
+        });
+      }
+    });
     return future;
   }
 
   @Override
   public synchronized CompletableFuture<Member> open() {
-    if (connecting.compareAndSet(false, true))
-      connect(INITIAL_RECONNECT_INTERVAL);
+    if (connecting.compareAndSet(false, true)) {
+      super.context.execute(() -> connect(INITIAL_RECONNECT_INTERVAL));
+    }
     return CompletableFuture.completedFuture(this);
   }
 
@@ -220,7 +225,7 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
 
     bootstrap.connect(info.address().getHostString(), info.address().getPort()).addListener((ChannelFutureListener) channelFuture -> {
       if (channelFuture.isSuccess()) {
-        LOGGER.info("Connected to {}", info.address);
+        super.context.execute(() -> LOGGER.info("Connected to {}", info.address));
         channel = channelFuture.channel();
         connecting.set(false);
         connected.set(true);
@@ -239,13 +244,15 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
 
     connecting.set(false);
 
-    if (closeFuture == null) {
-      synchronized (this) {
-        if (closeFuture == null) {
-          closeFuture = new CompletableFuture<>();
+    ExecutionContext context = getContext();
+
+    synchronized (this) {
+      if (closeFuture == null) {
+        closeFuture = new CompletableFuture<>();
+        super.context.execute(() -> {
           if (channel != null) {
             LOGGER.info("Disconnecting from {}", info.address);
-            channel.close().addListener((ChannelFutureListener) channelFuture -> {
+            channel.close().addListener(channelFuture -> {
               channel = null;
               connected.set(false);
               if (!eventLoopInitialized && eventLoopGroup != null) {
@@ -253,9 +260,9 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
                 eventLoopGroup = null;
               }
               if (channelFuture.isSuccess()) {
-                closeFuture.complete(null);
+                context.execute(() -> closeFuture.complete(null));
               } else {
-                closeFuture.completeExceptionally(channelFuture.cause());
+                context.execute(() -> closeFuture.completeExceptionally(channelFuture.cause()));
               }
             });
           } else {
@@ -264,9 +271,9 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
               eventLoopGroup.shutdownGracefully();
               eventLoopGroup = null;
             }
-            closeFuture.complete(null);
+            context.execute(() -> closeFuture.complete(null));
           }
-        }
+        });
       }
     }
     return closeFuture;

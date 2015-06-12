@@ -165,11 +165,10 @@ public class NettyLocalMember extends ManagedLocalMember implements NettyMember{
     if (listening)
       return CompletableFuture.completedFuture(this);
 
-    if (listenFuture == null) {
-      synchronized (this) {
-        if (listenFuture == null) {
-          listenFuture = new CompletableFuture<>();
-
+    synchronized (this) {
+      if (listenFuture == null) {
+        listenFuture = new CompletableFuture<>();
+        context.execute(() -> {
           channelGroup = new DefaultChannelGroup("copycat-acceptor-channels", GlobalEventExecutor.INSTANCE);
           workerGroup = new NioEventLoopGroup(Runtime.getRuntime().availableProcessors());
 
@@ -203,14 +202,16 @@ public class NettyLocalMember extends ManagedLocalMember implements NettyMember{
               channel = channelFuture.channel();
               listening = true;
               info.address = (InetSocketAddress) channel.localAddress();
-              LOGGER.info("Listening at {}", info.address);
-              context.execute(() -> listenFuture.complete(null));
+              context.execute(() -> {
+                LOGGER.info("Listening at {}", info.address);
+                listenFuture.complete(null);
+              });
             } else {
               context.execute(() -> listenFuture.completeExceptionally(channelFuture.cause()));
             }
           });
           channelGroup.add(bindFuture.channel());
-        }
+        });
       }
     }
     return listenFuture;
@@ -226,10 +227,10 @@ public class NettyLocalMember extends ManagedLocalMember implements NettyMember{
     if (!listening)
       return CompletableFuture.completedFuture(null);
 
-    if (closeFuture == null) {
-      synchronized (this) {
-        if (closeFuture == null) {
-          closeFuture = new CompletableFuture<>();
+    synchronized (this) {
+      if (closeFuture == null) {
+        closeFuture = new CompletableFuture<>();
+        context.execute(() -> {
           if (channel != null) {
             channel.close().addListener(channelFuture -> {
               listening = false;
@@ -250,7 +251,7 @@ public class NettyLocalMember extends ManagedLocalMember implements NettyMember{
             workerGroup.shutdownGracefully();
             closeFuture.complete(null);
           }
-        }
+        });
       }
     }
     return closeFuture;
