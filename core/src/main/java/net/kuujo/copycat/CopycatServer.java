@@ -140,6 +140,31 @@ public class CopycatServer extends Copycat {
     }
 
     /**
+     * Sets the Raft keep alive interval, returning the Raft configuration for method chaining.
+     *
+     * @param keepAliveInterval The Raft keep alive interval in milliseconds.
+     * @return The Raft configuration.
+     * @throws IllegalArgumentException If the keep alive interval is not positive
+     */
+    public Builder withKeepAliveInterval(long keepAliveInterval) {
+      builder.withKeepAliveInterval(keepAliveInterval);
+      return this;
+    }
+
+    /**
+     * Sets the Raft keep alive interval, returning the Raft configuration for method chaining.
+     *
+     * @param keepAliveInterval The Raft keep alive interval.
+     * @param unit The keep alive interval unit.
+     * @return The Raft configuration.
+     * @throws IllegalArgumentException If the keep alive interval is not positive
+     */
+    public Builder withKeepAliveInterval(long keepAliveInterval, TimeUnit unit) {
+      builder.withKeepAliveInterval(keepAliveInterval, unit);
+      return this;
+    }
+
+    /**
      * Sets the Copycat class loader.
      *
      * @param classLoader The Copycat class loader.
