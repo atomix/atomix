@@ -517,11 +517,11 @@ public class RaftStateClient implements Managed<Void> {
   @Override
   public CompletableFuture<Void> open() {
     openFuture = new CompletableFuture<>();
-    context.execute(() -> {
+    members.open().thenRunAsync(() -> {
       register().thenRun(this::startKeepAliveTimer).thenRun(() -> {
         open = true;
       });
-    });
+    }, context);
     return openFuture;
   }
 
@@ -532,11 +532,20 @@ public class RaftStateClient implements Managed<Void> {
 
   @Override
   public CompletableFuture<Void> close() {
-    return CompletableFuture.runAsync(() -> {
+    CompletableFuture<Void> future = new CompletableFuture<>();
+    context.execute(() -> {
       cancelRegisterTimer();
       cancelKeepAliveTimer();
       open = false;
-    }, context);
+      members.close().whenCompleteAsync((result, error) -> {
+        if (error == null) {
+          future.complete(null);
+        } else {
+          future.completeExceptionally(error);
+        }
+      }, context);
+    });
+    return future;
   }
 
   @Override

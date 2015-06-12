@@ -618,19 +618,17 @@ public class RaftStateContext extends RaftStateClient {
         transition(PassiveState.class);
       }, context)
         .thenCompose(v -> join())
+        .thenRunAsync(this::startHeartbeatTimer, context)
         .thenCompose(v -> super.open())
-        .thenRunAsync(() -> {
-          startHeartbeatTimer();
-          open = true;
-        }, context);
+        .thenRun(() -> open = true);
     } else {
       return cluster.open().thenRunAsync(() -> {
         log.open(context);
         transition(FollowerState.class);
         open = true;
       }, context)
-        .thenCompose(v -> super.open())
-        .thenRunAsync(this::startHeartbeatTimer, context);
+        .thenRunAsync(this::startHeartbeatTimer, context)
+        .thenCompose(v -> super.open());
     }
   }
 
