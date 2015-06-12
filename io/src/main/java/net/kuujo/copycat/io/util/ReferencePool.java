@@ -15,8 +15,8 @@
  */
 package net.kuujo.copycat.io.util;
 
-import java.util.ArrayDeque;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Function;
 
 /**
@@ -26,7 +26,7 @@ import java.util.function.Function;
  */
 public class ReferencePool<T extends ReferenceCounted<?>> implements ReferenceManager<T>, AutoCloseable {
   private final Function<ReferenceManager<T>, T> factory;
-  private final Queue<T> pool = new ArrayDeque<>(1024);
+  private final Queue<T> pool = new ConcurrentLinkedQueue<>();
 
   public ReferencePool(Function<ReferenceManager<T>, T> factory) {
     if (factory == null)
@@ -40,14 +40,12 @@ public class ReferencePool<T extends ReferenceCounted<?>> implements ReferenceMa
    * @return The acquired reference.
    */
   public T acquire() {
-    synchronized (pool) {
-      T reference = pool.poll();
-      if (reference == null) {
-        reference = factory.apply(this);
-      }
-      reference.acquire();
-      return reference;
+    T reference = pool.poll();
+    if (reference == null) {
+      reference = factory.apply(this);
     }
+    reference.acquire();
+    return reference;
   }
 
   @Override
@@ -57,10 +55,8 @@ public class ReferencePool<T extends ReferenceCounted<?>> implements ReferenceMa
 
   @Override
   public void close() {
-    synchronized (pool) {
-      for (T reference : pool) {
-        reference.close();
-      }
+    for (T reference : pool) {
+      reference.close();
     }
   }
 
