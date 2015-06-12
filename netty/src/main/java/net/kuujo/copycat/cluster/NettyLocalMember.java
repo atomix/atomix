@@ -31,7 +31,6 @@ import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import net.kuujo.copycat.Task;
 import net.kuujo.copycat.io.util.HashFunction;
-import net.kuujo.copycat.io.util.HashFunctions;
 import net.kuujo.copycat.io.util.Murmur3HashFunction;
 import net.kuujo.copycat.util.ExecutionContext;
 import net.kuujo.copycat.util.concurrent.Futures;
@@ -91,7 +90,7 @@ public class NettyLocalMember extends ManagedLocalMember implements NettyMember{
 
   @Override
   public <T, U> LocalMember registerHandler(String topic, MessageHandler<T, U> handler) {
-    handlers.put(hashMap.computeIfAbsent(topic, t -> HashFunctions.CITYHASH.hash32(t.getBytes())), new HandlerHolder(handler, getContext()));
+    handlers.put(hashMap.computeIfAbsent(topic, t -> hash.hash32(t.getBytes())), new HandlerHolder(handler, getContext()));
     return this;
   }
 
@@ -102,7 +101,7 @@ public class NettyLocalMember extends ManagedLocalMember implements NettyMember{
 
   @Override
   public LocalMember unregisterHandler(String topic) {
-    handlers.remove(hashMap.computeIfAbsent(topic, t -> HashFunctions.CITYHASH.hash32(t.getBytes())));
+    handlers.remove(hashMap.computeIfAbsent(topic, t -> hash.hash32(t.getBytes())));
     return this;
   }
 
