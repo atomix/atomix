@@ -909,7 +909,7 @@ class LeaderState extends ActiveState {
               LOGGER.warn("{} - {}", context.getCluster().member().id(), error.getMessage());
             }
           }
-          request.release();
+          request.close();
         }, context.getContext());
       }
 

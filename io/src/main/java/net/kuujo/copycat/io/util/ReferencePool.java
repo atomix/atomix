@@ -40,17 +40,14 @@ public class ReferencePool<T extends ReferenceCounted<?>> implements ReferenceMa
    * @return The acquired reference.
    */
   public T acquire() {
-    T reference = pool.poll();
-    if (reference == null) {
-      synchronized (pool) {
-        reference = pool.poll();
-        if (reference == null) {
-          reference = factory.apply(this);
-        }
+    synchronized (pool) {
+      T reference = pool.poll();
+      if (reference == null) {
+        reference = factory.apply(this);
       }
+      reference.acquire();
+      return reference;
     }
-    reference.acquire();
-    return reference;
   }
 
   @Override
