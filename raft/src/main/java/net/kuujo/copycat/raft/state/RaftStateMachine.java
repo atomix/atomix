@@ -101,12 +101,20 @@ class RaftStateMachine {
    * @return A boolean value indicating whether to keep the entry.
    */
   public CompletableFuture<Boolean> filter(Entry entry, Compaction compaction) {
-    if (entry instanceof OperationEntry) {
-      return filter((OperationEntry) entry, compaction);
-    } else if (entry instanceof RegisterEntry) {
-      return filter((RegisterEntry) entry, compaction);
+    if (entry instanceof CommandEntry) {
+      return filter((CommandEntry) entry, compaction);
     } else if (entry instanceof KeepAliveEntry) {
       return filter((KeepAliveEntry) entry, compaction);
+    } else if (entry instanceof HeartbeatEntry) {
+      return filter((HeartbeatEntry) entry, compaction);
+    } else if (entry instanceof RegisterEntry) {
+      return filter((RegisterEntry) entry, compaction);
+    } else if (entry instanceof NoOpEntry) {
+      return filter((NoOpEntry) entry, compaction);
+    } else if (entry instanceof JoinEntry) {
+      return filter((JoinEntry) entry, compaction);
+    } else if (entry instanceof LeaveEntry) {
+      return filter((LeaveEntry) entry, compaction);
     }
     return CompletableFuture.completedFuture(false);
   }
@@ -155,6 +163,37 @@ class RaftStateMachine {
     }
     Commit<? extends Command> commit = new Commit<>(entry.getIndex(), session, entry.getTimestamp(), entry.getCommand());
     return CompletableFuture.supplyAsync(() -> stateMachine.filter(commit, compaction), context);
+  }
+
+  /**
+   * Filters an entry.
+   *
+   * @param entry The entry to filter.
+   * @return A boolean value indicating whether to keep the entry.
+   */
+  public CompletableFuture<Boolean> filter(JoinEntry entry, Compaction compaction) {
+    MemberState member = members.getMember(entry.getMember().id());
+    return CompletableFuture.completedFuture(member != null && member.getVersion() == entry.getIndex());
+  }
+
+  /**
+   * Filters an entry.
+   *
+   * @param entry The entry to filter.
+   * @return A boolean value indicating whether to keep the entry.
+   */
+  public CompletableFuture<Boolean> filter(LeaveEntry entry, Compaction compaction) {
+    return CompletableFuture.completedFuture(!compaction.type().isOrdered());
+  }
+
+  /**
+   * Filters an entry.
+   *
+   * @param entry The entry to filter.
+   * @return A boolean value indicating whether to keep the entry.
+   */
+  public CompletableFuture<Boolean> filter(HeartbeatEntry entry, Compaction compaction) {
+    return CompletableFuture.completedFuture(false);
   }
 
   /**
