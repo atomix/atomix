@@ -30,7 +30,9 @@ import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import net.kuujo.copycat.Task;
+import net.kuujo.copycat.io.util.HashFunction;
 import net.kuujo.copycat.io.util.HashFunctions;
+import net.kuujo.copycat.io.util.Murmur3HashFunction;
 import net.kuujo.copycat.util.ExecutionContext;
 import net.kuujo.copycat.util.concurrent.Futures;
 import org.slf4j.Logger;
@@ -63,6 +65,7 @@ public class NettyLocalMember extends ManagedLocalMember implements NettyMember{
 
   private final Map<Integer, HandlerHolder> handlers = new ConcurrentHashMap<>();
   private final Map<String, Integer> hashMap = new HashMap<>();
+  private final HashFunction hash = new Murmur3HashFunction();
   private final NettyMemberInfo info;
   private Channel channel;
   private ChannelGroup channelGroup;
@@ -122,7 +125,7 @@ public class NettyLocalMember extends ManagedLocalMember implements NettyMember{
     ExecutionContext context = getContext();
 
     CompletableFuture<U> future = new CompletableFuture<>();
-    HandlerHolder handler = handlers.get(hashMap.computeIfAbsent(topic, t -> HashFunctions.CITYHASH.hash32(t.getBytes())));
+    HandlerHolder handler = handlers.get(hashMap.computeIfAbsent(topic, t -> hash.hash32(t.getBytes())));
     if (handler != null) {
       handler.context.execute(() -> {
         handler.handler.handle(message).whenComplete((result, error) -> {

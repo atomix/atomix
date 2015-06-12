@@ -24,7 +24,8 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.LengthFieldPrepender;
 import net.kuujo.copycat.Task;
-import net.kuujo.copycat.io.util.HashFunctions;
+import net.kuujo.copycat.io.util.HashFunction;
+import net.kuujo.copycat.io.util.Murmur3HashFunction;
 import net.kuujo.copycat.util.ExecutionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,6 +65,7 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
   private Channel channel;
   private ChannelHandlerContext context;
   private final Map<String, Integer> hashMap = new HashMap<>();
+  private final HashFunction hash = new Murmur3HashFunction();
   private final Map<Object, ContextualFuture> responseFutures = new HashMap<>(1024);
   private final AtomicBoolean connecting = new AtomicBoolean();
   private final AtomicBoolean connected = new AtomicBoolean();
@@ -118,7 +120,7 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
         serializer.writeObject(message, buffer);
         byteBuf.setLong(0, requestId);
         byteBuf.setByte(8, MESSAGE);
-        byteBuf.setInt(9, hashMap.computeIfAbsent(topic, t -> HashFunctions.CITYHASH.hash32(t.getBytes())));
+        byteBuf.setInt(9, hashMap.computeIfAbsent(topic, t -> hash.hash32(t.getBytes())));
         channel.writeAndFlush(byteBuf).addListener((channelFuture) -> {
           if (channelFuture.isSuccess()) {
             responseFutures.put(requestId, future);
