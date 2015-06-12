@@ -236,28 +236,33 @@ public class SearchableOffsetIndex implements OffsetIndex {
 
   @Override
   public void truncate(int offset) {
-    int lastOffset = lastOffset();
+    if (offset == lastOffset)
+      return;
+
     int index = search(offset + 1);
-    if (index != -1) {
-      for (int i = lastOffset; i > offset; i--) {
-        if (position(i) != -1) {
-          size--;
-        }
+
+    if (index == -1)
+      throw new IllegalStateException("unknown offset: " + offset);
+
+    int lastOffset = lastOffset();
+    for (int i = lastOffset; i > offset; i--) {
+      if (position(i) != -1) {
+        size--;
       }
-
-      long previousPosition = buffer.readUnsignedInt(index - OFFSET_SIZE);
-      long indexPosition = buffer.readUnsignedInt(index + OFFSET_SIZE);
-
-      buffer.position(index)
-        .zero(index)
-        .mark()
-        .writeByte(END)
-        .writeInt((int) (indexPosition - previousPosition))
-        .reset();
-      this.lastOffset = offset;
-
-      currentPosition = currentOffset = currentLength = -1;
     }
+
+    long previousPosition = buffer.readUnsignedInt(index - OFFSET_SIZE);
+    long indexPosition = buffer.readUnsignedInt(index + OFFSET_SIZE);
+
+    buffer.position(index)
+      .zero(index)
+      .mark()
+      .writeByte(END)
+      .writeInt((int) (indexPosition - previousPosition))
+      .reset();
+    this.lastOffset = offset;
+
+    currentPosition = currentOffset = currentLength = -1;
   }
 
   @Override

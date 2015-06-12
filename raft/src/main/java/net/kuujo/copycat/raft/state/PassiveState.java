@@ -137,10 +137,11 @@ public class PassiveState extends AbstractState {
 
       // Iterate through request entries and append them to the log.
       for (Entry entry : request.entries()) {
-        // Replicated snapshot entries are *always* immediately logged and applied to the state machine
-        // since snapshots are only taken of committed state machine state. This will cause all previous
-        // entries to be removed from the log.
-        if (context.getLog().containsIndex(entry.getIndex())) {
+        // If the entry index is greater than the last log index, skip missing entries.
+        if (!context.getLog().containsIndex(entry.getIndex())) {
+          context.getLog().skip(entry.getIndex() - context.getLog().lastIndex() - 1).appendEntry(entry);
+          LOGGER.debug("{} - Appended {} to log at index {}", context.getCluster().member().id(), entry, entry.getIndex());
+        } else {
           // Compare the term of the received entry with the matching entry in the log.
           Entry match = context.getLog().getEntry(entry.getIndex());
           if (match != null) {
@@ -153,14 +154,9 @@ public class PassiveState extends AbstractState {
               LOGGER.debug("{} - Appended {} to log at index {}", context.getCluster().member().id(), entry, entry.getIndex());
             }
           } else {
-            context.getLog().truncate(entry.getIndex() - 1);
-            context.getLog().appendEntry(entry);
+            context.getLog().truncate(entry.getIndex() - 1).appendEntry(entry);
             LOGGER.debug("{} - Appended {} to log at index {}", context.getCluster().member().id(), entry, entry.getIndex());
           }
-        } else {
-          // If appending to the log fails, apply commits and reply false to the append request.
-          context.getLog().skip(entry.getIndex() - context.getLog().lastIndex() - 1).appendEntry(entry);
-          LOGGER.debug("{} - Appended {} to log at index {}", context.getCluster().member().id(), entry, entry.getIndex());
         }
       }
     }
@@ -168,8 +164,7 @@ public class PassiveState extends AbstractState {
     // If we've made it this far, apply commits and send a successful response.
     context.getContext().execute(() -> {
       applyCommits(request.commitIndex())
-        .thenRun(() -> applyIndex(request.globalIndex()))
-        .thenRun(request::close);
+        .thenRun(() -> applyIndex(request.globalIndex()));
     });
 
     return AppendResponse.builder()

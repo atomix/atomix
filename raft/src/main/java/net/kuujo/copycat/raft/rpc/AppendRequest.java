@@ -162,8 +162,8 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
     commitIndex = buffer.readLong();
     globalIndex = buffer.readLong();
 
-    entries.clear();
     int numEntries = buffer.readInt();
+    entries.clear();
     for (int i = 0; i < numEntries; i++) {
       long index = buffer.readLong();
       Entry entry = serializer.readObject(buffer);
