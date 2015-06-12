@@ -15,8 +15,11 @@
  */
 package net.kuujo.copycat;
 
+import net.kuujo.copycat.cluster.ManagedMembers;
 import net.kuujo.copycat.raft.ManagedProtocol;
 import net.kuujo.copycat.raft.RaftClient;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * Copycat client.
@@ -46,6 +49,40 @@ public class CopycatClient extends Copycat {
     private ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 
     private Builder() {
+    }
+
+    /**
+     * Sets the interval at which to send keep alive requests.
+     *
+     * @param keepAliveInterval The interval at which to send keep alive requests.
+     * @return The client builder.
+     */
+    public Builder withKeepAliveInterval(long keepAliveInterval) {
+      builder.withKeepAliveInterval(keepAliveInterval);
+      return this;
+    }
+
+    /**
+     * Sets the interval at which to send keep alive requests.
+     *
+     * @param keepAliveInterval The interval at which to send keep alive requests.
+     * @param unit The keep alive interval time unit.
+     * @return The client builder.
+     */
+    public Builder withKeepAliveInterval(long keepAliveInterval, TimeUnit unit) {
+      builder.withKeepAliveInterval(keepAliveInterval, unit);
+      return this;
+    }
+
+    /**
+     * Sets the client seed members.
+     *
+     * @param members The client seed members.
+     * @return The client builder.
+     */
+    public Builder withMembers(ManagedMembers members) {
+      builder.withMembers(members);
+      return this;
     }
 
     /**
