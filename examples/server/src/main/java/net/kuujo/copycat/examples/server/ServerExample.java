@@ -15,14 +15,14 @@
  */
 package net.kuujo.copycat.examples.server;
 
-import java.net.InetAddress;
-
 import net.kuujo.copycat.Copycat;
 import net.kuujo.copycat.CopycatServer;
 import net.kuujo.copycat.cluster.NettyCluster;
 import net.kuujo.copycat.cluster.NettyMember;
 import net.kuujo.copycat.raft.log.Log;
 import net.kuujo.copycat.raft.log.StorageLevel;
+
+import java.net.InetAddress;
 
 /**
  * Server example.
@@ -44,13 +44,15 @@ public class ServerExample {
 
     NettyCluster.Builder builder = NettyCluster.builder()
       .withMemberId(serverId)
-      .withHost(InetAddress.getLocalHost().getHostName())
-      .withPort(port);
+      .addMember(NettyMember.builder()
+        .withId(serverId)
+        .withHost(InetAddress.getLocalHost().getHostName())
+        .withPort(port)
+        .build());
 
     for (int i = 1; i < args.length; i++) {
       parts = args[i].split(":");
       builder.addMember(NettyMember.builder()
-        .withId(1)
         .withId(Integer.valueOf(parts[0]))
         .withHost(InetAddress.getByName(parts[1]).getHostName())
         .withPort(Integer.valueOf(parts[2]))
