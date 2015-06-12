@@ -33,7 +33,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-class RaftStateMachine {
+class RaftState {
   private final StateMachine stateMachine;
   private final ManagedCluster cluster;
   private final ClusterState members;
@@ -43,7 +43,7 @@ class RaftStateMachine {
   private long sessionTimeout = 5000;
   private long lastApplied;
 
-  public RaftStateMachine(StateMachine stateMachine, ManagedCluster cluster, ClusterState members, ExecutionContext context) {
+  public RaftState(StateMachine stateMachine, ManagedCluster cluster, ClusterState members, ExecutionContext context) {
     this.stateMachine = stateMachine;
     this.cluster = cluster;
     this.members = members;
@@ -65,7 +65,7 @@ class RaftStateMachine {
    * @param sessionTimeout The session timeout.
    * @return The Raft state machine.
    */
-  public RaftStateMachine setSessionTimeout(long sessionTimeout) {
+  public RaftState setSessionTimeout(long sessionTimeout) {
     if (sessionTimeout <= 0)
       throw new IllegalArgumentException("session timeout must be positive");
     this.sessionTimeout = sessionTimeout;

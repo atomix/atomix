@@ -45,7 +45,7 @@ import java.util.stream.Collectors;
  */
 public class RaftStateContext extends RaftStateClient {
   private final Logger LOGGER = LoggerFactory.getLogger(RaftStateContext.class);
-  private final RaftStateMachine stateMachine;
+  private final RaftState stateMachine;
   private final Log log;
   private final Compactor compactor;
   private final ManagedCluster cluster;
@@ -67,7 +67,7 @@ public class RaftStateContext extends RaftStateClient {
   public RaftStateContext(Log log, StateMachine stateMachine, ManagedCluster cluster, ExecutionContext context) {
     super(cluster, new ExecutionContext(String.format("%s-client", context.name()), context.serializer().copy()));
     this.log = log;
-    this.stateMachine = new RaftStateMachine(stateMachine, cluster, members, new ExecutionContext(String.format("%s-state", context.name()), context.serializer().copy()));
+    this.stateMachine = new RaftState(stateMachine, cluster, members, new ExecutionContext(String.format("%s-state", context.name()), context.serializer().copy()));
     this.compactor = new Compactor(log, this.stateMachine::filter, context);
     this.cluster = cluster;
     this.context = context;
@@ -344,7 +344,7 @@ public class RaftStateContext extends RaftStateClient {
    *
    * @return The state machine proxy.
    */
-  RaftStateMachine getStateMachine() {
+  RaftState getStateMachine() {
     return stateMachine;
   }
 
