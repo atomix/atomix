@@ -615,6 +615,7 @@ public class RaftStateContext extends RaftStateClient {
     if (cluster.member().type() == Member.Type.PASSIVE) {
       return cluster.open().thenRunAsync(() -> {
         log.open(context);
+        compactor.open();
         transition(PassiveState.class);
       }, context)
         .thenCompose(v -> join())
@@ -624,6 +625,7 @@ public class RaftStateContext extends RaftStateClient {
     } else {
       return cluster.open().thenRunAsync(() -> {
         log.open(context);
+        compactor.open();
         transition(FollowerState.class);
         open = true;
       }, context)
