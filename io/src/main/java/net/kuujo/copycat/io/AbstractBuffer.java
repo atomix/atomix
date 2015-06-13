@@ -182,7 +182,7 @@ public abstract class AbstractBuffer implements Buffer {
   @Override
   public Buffer slice() {
     long maxCapacity = this.maxCapacity - position;
-    long capacity = Math.min(initialCapacity, bytes.size() - offset(position));
+    long capacity = Math.min(Math.min(initialCapacity, maxCapacity), bytes.size() - offset(position));
     if (limit != -1)
       capacity = maxCapacity = limit - position;
     return ((AbstractBuffer) bufferPool.acquire()).view(offset(position), capacity, maxCapacity);
