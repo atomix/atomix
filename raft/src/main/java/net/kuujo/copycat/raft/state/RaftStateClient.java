@@ -26,12 +26,11 @@ import net.kuujo.copycat.util.ThreadChecker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -42,6 +41,7 @@ import java.util.stream.Collectors;
  */
 public class RaftStateClient implements Managed<Void> {
   private static final Logger LOGGER = LoggerFactory.getLogger(RaftStateClient.class);
+  private static final long REQUEST_TIMEOUT = TimeUnit.SECONDS.toMillis(10);
   private final ManagedMembers members;
   private final ExecutionContext context;
   private final ThreadChecker threadChecker;
@@ -58,6 +58,7 @@ public class RaftStateClient implements Managed<Void> {
   private volatile long request;
   private volatile long response;
   private volatile long version;
+  private final Map<Long, ScheduledFuture<?>> responseFutures = new HashMap<>();
 
   public RaftStateClient(ManagedMembers members, ExecutionContext context) {
     if (members == null)
@@ -236,45 +237,87 @@ public class RaftStateClient implements Managed<Void> {
 
     CompletableFuture<R> future = new CompletableFuture<>();
     context.execute(() -> {
-      if (session == 0)
+      if (session == 0) {
         future.completeExceptionally(new IllegalStateException("session not open"));
-
-      Member member;
-      try {
-        member = selectMember(command);
-      } catch (IllegalStateException e) {
-        future.completeExceptionally(e);
         return;
       }
 
-      if (member == null) {
-        setLeader(0);
-        future.completeExceptionally(new IllegalStateException("unknown leader"));
-      } else {
-        // TODO: This should retry on timeouts with the same request ID.
-        long requestId = ++request;
-        CommandRequest request = CommandRequest.builder()
-          .withSession(getSession())
-          .withRequest(requestId)
-          .withResponse(getResponse())
-          .withCommand(command)
-          .build();
+      long requestId = ++request;
+      CommandRequest request = CommandRequest.builder()
+        .withSession(getSession())
+        .withRequest(requestId)
+        .withResponse(getResponse())
+        .withCommand(command)
+        .build();
 
-        member.<CommandRequest, CommandResponse>send(request).whenComplete((response, error) -> {
-          if (error == null) {
-            if (response.status() == Response.Status.OK) {
-              future.complete((R) response.result());
-            } else {
-              future.completeExceptionally(response.error().createException());
-            }
-            setResponse(Math.max(getResponse(), requestId));
-          } else {
-            future.completeExceptionally(error);
-          }
-          request.close();
-        });
+      this.<R>submit(request, future).whenComplete((result, error) -> {
+        if (error == null) {
+          future.complete(result);
+        } else {
+          future.completeExceptionally(error);
+        }
+      });
+    });
+    return future;
+  }
+
+  /**
+   * Recursively submits the command to the cluster.
+   *
+   * @param request The request to submit.
+   * @return The completion future.
+   */
+  private <T> CompletableFuture<T> submit(CommandRequest request) {
+    return submit(request, new CompletableFuture<>());
+  }
+
+  /**
+   * Recursively submits the command to the cluster.
+   *
+   * @param request The request to submit.
+   * @param future The future to complete once the command has succeeded.
+   * @return The completion future.
+   */
+  private <T> CompletableFuture<T> submit(CommandRequest request, CompletableFuture<T> future) {
+    this.<T>submit(request, selectMember(request.command())).whenComplete((result, error) -> {
+      if (error == null) {
+        future.complete(result);
+      } else if (error instanceof TimeoutException) {
+        submit(request, future);
+      } else {
+        future.completeExceptionally(error);
       }
     });
+    return future;
+  }
+
+  /**
+   * Attempts to submit the request to the given member.
+   *
+   * @param request The request to submit.
+   * @param member The member to which to submit the request.
+   * @return A completable future to be completed with the result.
+   */
+  @SuppressWarnings("unchecked")
+  private <T> CompletableFuture<T> submit(CommandRequest request, Member member) {
+    CompletableFuture<T> future = new CompletableFuture<>();
+    ScheduledFuture<?> timeoutFuture = context.schedule(() -> future.completeExceptionally(new TimeoutException("request timed out")), REQUEST_TIMEOUT, TimeUnit.MILLISECONDS);
+
+    member.<CommandRequest, CommandResponse>send(request).whenComplete((response, error) -> {
+      timeoutFuture.cancel(false);
+      if (error == null) {
+        if (response.status() == Response.Status.OK) {
+          future.complete((T) response.result());
+        } else {
+          future.completeExceptionally(response.error().createException());
+        }
+        setResponse(Math.max(getResponse(), request.request()));
+      } else {
+        future.completeExceptionally(error);
+      }
+      request.close();
+    });
+
     return future;
   }
 
@@ -282,9 +325,8 @@ public class RaftStateClient implements Managed<Void> {
    * Selects the member to which to send the given command.
    */
   protected Member selectMember(Command<?> command) {
-    if (leader == 0)
-      throw new IllegalStateException("unknown leader");
-    return members.member(leader);
+    int leader = getLeader();
+    return leader == 0 ? members.member(random.nextInt(members.members().size())) : members.member(leader);
   }
 
   /**
@@ -306,36 +348,78 @@ public class RaftStateClient implements Managed<Void> {
       if (session == 0)
         future.completeExceptionally(new IllegalStateException("session not open"));
 
-      Member member;
-      try {
-        member = selectMember(query);
-      } catch (IllegalStateException e) {
-        future.completeExceptionally(e);
-        return;
-      }
+      QueryRequest request = QueryRequest.builder()
+        .withSession(getSession())
+        .withQuery(query)
+        .build();
 
-      if (member == null) {
-        setLeader(0);
-        future.completeExceptionally(new IllegalStateException("unknown leader"));
+      this.<R>submit(request).whenComplete((result, error) -> {
+        if (error == null) {
+          future.complete(result);
+        } else {
+          future.completeExceptionally(error);
+        }
+      });
+    });
+    return future;
+  }
+
+  /**
+   * Recursively submits the command to the cluster.
+   *
+   * @param request The request to submit.
+   * @return The completion future.
+   */
+  private <T> CompletableFuture<T> submit(QueryRequest request) {
+    return submit(request, new CompletableFuture<>());
+  }
+
+  /**
+   * Recursively submits the command to the cluster.
+   *
+   * @param request The request to submit.
+   * @param future The future to complete once the command has succeeded.
+   * @return The completion future.
+   */
+  private <T> CompletableFuture<T> submit(QueryRequest request, CompletableFuture<T> future) {
+    this.<T>submit(request, selectMember(request.query())).whenComplete((result, error) -> {
+      if (error == null) {
+        future.complete(result);
+      } else if (error instanceof TimeoutException) {
+        submit(request, future);
       } else {
-        QueryRequest request = QueryRequest.builder()
-          .withSession(getSession())
-          .withQuery(query)
-          .build();
-        member.<QueryRequest, QueryResponse>send(request).whenComplete((response, error) -> {
-          if (error == null) {
-            if (response.status() == Response.Status.OK) {
-              future.complete((R) response.result());
-            } else {
-              future.completeExceptionally(response.error().createException());
-            }
-          } else {
-            future.completeExceptionally(error);
-          }
-          request.close();
-        });
+        future.completeExceptionally(error);
       }
     });
+    return future;
+  }
+
+  /**
+   * Attempts to submit the request to the given member.
+   *
+   * @param request The request to submit.
+   * @param member The member to which to submit the request.
+   * @return A completable future to be completed with the result.
+   */
+  @SuppressWarnings("unchecked")
+  private <T> CompletableFuture<T> submit(QueryRequest request, Member member) {
+    CompletableFuture<T> future = new CompletableFuture<>();
+    ScheduledFuture<?> timeoutFuture = context.schedule(() -> future.completeExceptionally(new TimeoutException("request timed out")), REQUEST_TIMEOUT, TimeUnit.MILLISECONDS);
+
+    member.<QueryRequest, QueryResponse>send(request).whenComplete((response, error) -> {
+      timeoutFuture.cancel(false);
+      if (error == null) {
+        if (response.status() == Response.Status.OK) {
+          future.complete((T) response.result());
+        } else {
+          future.completeExceptionally(response.error().createException());
+        }
+      } else {
+        future.completeExceptionally(error);
+      }
+      request.close();
+    });
+
     return future;
   }
 
@@ -345,7 +429,8 @@ public class RaftStateClient implements Managed<Void> {
   protected Member selectMember(Query<?> query) {
     ConsistencyLevel level = query.consistency();
     if (level.isLeaderRequired()) {
-      return members.member(getLeader());
+      int leader = getLeader();
+      return leader == 0 ? members.member(random.nextInt(members.members().size())) : members.member(leader);
     } else {
       return members.members().get(random.nextInt(members.members().size()));
     }
