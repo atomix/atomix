@@ -291,39 +291,42 @@ public class NettyLocalMember extends ManagedLocalMember implements NettyMember{
       int address = request.readInt();
       HandlerHolder handler = handlers.get(address);
       if (handler != null) {
-        ByteBufBuffer requestBuffer = BUFFER.get();
-        requestBuffer.setByteBuf(request);
-        Object deserializedRequest = serializer.readObject(requestBuffer);
-        handler.context.execute(() -> {
-          handler.handler.handle(deserializedRequest).whenCompleteAsync((result, error) -> {
-            if (deserializedRequest instanceof ReferenceCounted) {
-              ((ReferenceCounted) deserializedRequest).close();
-            }
+        NettyLocalMember.this.context.execute(() -> {
+          ByteBufBuffer requestBuffer = BUFFER.get();
+          requestBuffer.setByteBuf(request);
+          Object deserializedRequest = serializer.readObject(requestBuffer);
 
-            if (error == null) {
-              ByteBuf response = context.alloc().buffer(10, 1024 * 8);
-              response.writeLong(requestId);
-              response.writeByte(STATUS_SUCCESS);
-              ByteBufBuffer responseBuffer = BUFFER.get();
-              responseBuffer.setByteBuf(response);
-              serializer.writeObject(result, responseBuffer);
-              context.writeAndFlush(response);
-              request.release();
-            } else {
-              ByteBuf response = context.alloc().buffer(10, 1024 * 8);
-              response.writeLong(requestId);
-              response.writeByte(STATUS_FAILURE);
-              ByteBufBuffer responseBuffer = BUFFER.get();
-              responseBuffer.setByteBuf(response);
-              serializer.writeObject(error, responseBuffer);
-              context.writeAndFlush(response);
-              request.release();
-            }
+          handler.context.execute(() -> {
+            handler.handler.handle(deserializedRequest).whenCompleteAsync((result, error) -> {
+              if (deserializedRequest instanceof ReferenceCounted) {
+                ((ReferenceCounted) deserializedRequest).close();
+              }
 
-            if (result instanceof ReferenceCounted) {
-              ((ReferenceCounted) result).release();
-            }
-          }, context.channel().eventLoop());
+              if (error == null) {
+                ByteBuf response = context.alloc().buffer(10, 1024 * 8);
+                response.writeLong(requestId);
+                response.writeByte(STATUS_SUCCESS);
+                ByteBufBuffer responseBuffer = BUFFER.get();
+                responseBuffer.setByteBuf(response);
+                serializer.writeObject(result, responseBuffer);
+                context.writeAndFlush(response);
+                request.release();
+              } else {
+                ByteBuf response = context.alloc().buffer(10, 1024 * 8);
+                response.writeLong(requestId);
+                response.writeByte(STATUS_FAILURE);
+                ByteBufBuffer responseBuffer = BUFFER.get();
+                responseBuffer.setByteBuf(response);
+                serializer.writeObject(error, responseBuffer);
+                context.writeAndFlush(response);
+                request.release();
+              }
+
+              if (result instanceof ReferenceCounted) {
+                ((ReferenceCounted) result).release();
+              }
+            }, NettyLocalMember.super.context);
+          });
         });
       }
     }
@@ -332,21 +335,19 @@ public class NettyLocalMember extends ManagedLocalMember implements NettyMember{
      * Handles a task request.
      */
     private void handleTask(long requestId, ByteBuf request, ChannelHandlerContext context) {
-      ByteBufBuffer requestBuffer = BUFFER.get();
-      requestBuffer.setByteBuf(request);
-      Task task = serializer.readObject(requestBuffer);
       getContext().execute(() -> {
+        ByteBufBuffer requestBuffer = BUFFER.get();
+        requestBuffer.setByteBuf(request);
+        Task task = serializer.readObject(requestBuffer);
         try {
           Object result = task.execute();
-          context.channel().eventLoop().execute(() -> {
-            ByteBuf response = context.alloc().buffer(9, 1024 * 8);
-            response.writeLong(requestId);
-            ByteBufBuffer responseBuffer = BUFFER.get();
-            responseBuffer.setByteBuf(response);
-            serializer.writeObject(result, responseBuffer);
-            context.writeAndFlush(response);
-            request.release();
-          });
+          ByteBuf response = context.alloc().buffer(9, 1024 * 8);
+          ByteBufBuffer responseBuffer = BUFFER.get();
+          responseBuffer.setByteBuf(response);
+          serializer.writeObject(result, responseBuffer);
+          response.writeLong(requestId);
+          context.writeAndFlush(response);
+          request.release();
         } catch (Exception e) {
 
         }
