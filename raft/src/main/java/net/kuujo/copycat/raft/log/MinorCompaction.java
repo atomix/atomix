@@ -86,7 +86,7 @@ public class MinorCompaction extends Compaction {
     // the nature of this compaction strategy, segments of the same level should always be next to one another.
     TreeMap<Long, List<Segment>> levels = new TreeMap<>();
     for (Segment segment : segments.segments()) {
-      if (segment.lastIndex() <= index()) {
+      if (segment.isFull() && segment.lastIndex() <= index()) {
         List<Segment> level = levels.get(segment.descriptor().version());
         if (level == null) {
           level = new ArrayList<>();

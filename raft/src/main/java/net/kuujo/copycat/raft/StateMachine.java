@@ -101,7 +101,11 @@ public abstract class StateMachine {
   private Method findFilter(Class<? extends Command> type, Compaction.Type compaction) {
     Map<Class<? extends Command>, Method> filters = this.filters.get(compaction);
     if (filters == null) {
-      return allFilters.get(compaction);
+      Method method = allFilters.get(compaction);
+      if (method == null) {
+        throw new IllegalArgumentException("unknown command type: " + type);
+      }
+      return method;
     }
 
     Method method = filters.computeIfAbsent(type, t -> {
@@ -174,7 +178,7 @@ public abstract class StateMachine {
   public boolean filter(Commit<? extends Command> commit, Compaction compaction) {
     LOGGER.debug("filter {}", commit);
     try {
-      return (boolean) findFilter(commit.type(), compaction.type()).invoke(this, commit);
+      return (boolean) findFilter(commit.type(), compaction.type()).invoke(this, commit, compaction);
     } catch (IllegalAccessException | InvocationTargetException e) {
       throw new ApplicationException("failed to filter command", e);
     }

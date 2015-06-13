@@ -19,7 +19,6 @@ import net.kuujo.copycat.cluster.ManagedCluster;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.raft.*;
-import net.kuujo.copycat.raft.log.Compactor;
 import net.kuujo.copycat.raft.log.Log;
 import net.kuujo.copycat.raft.rpc.*;
 import net.kuujo.copycat.util.ExecutionContext;
@@ -47,7 +46,6 @@ public class RaftStateContext extends RaftStateClient {
   private final Logger LOGGER = LoggerFactory.getLogger(RaftStateContext.class);
   private final RaftState stateMachine;
   private final Log log;
-  private final Compactor compactor;
   private final ManagedCluster cluster;
   private final ClusterState members = new ClusterState();
   private final ExecutionContext context;
@@ -67,10 +65,11 @@ public class RaftStateContext extends RaftStateClient {
     super(cluster, new ExecutionContext(String.format("%s-client", context.name()), context.serializer().copy()));
     this.log = log;
     this.stateMachine = new RaftState(stateMachine, cluster, members, new ExecutionContext(String.format("%s-state", context.name()), context.serializer().copy()));
-    this.compactor = new Compactor(log, this.stateMachine::filter, context);
     this.cluster = cluster;
     this.context = context;
     this.threadChecker = new ThreadChecker(context);
+
+    log.compactor().filter(this.stateMachine::filter);
 
     for (Member member : cluster.members()) {
       members.addMember(new MemberState(member.id(), member.type(), System.currentTimeMillis()));
@@ -267,7 +266,7 @@ public class RaftStateContext extends RaftStateClient {
     if (commitIndex < this.commitIndex)
       throw new IllegalArgumentException("cannot decrease commit index");
     this.commitIndex = commitIndex;
-    compactor.setCommitIndex(commitIndex);
+    log.compactor().setCommitIndex(commitIndex);
     return this;
   }
 
@@ -290,7 +289,7 @@ public class RaftStateContext extends RaftStateClient {
     if (globalIndex < 0)
       throw new IllegalArgumentException("global index must be positive");
     this.globalIndex = Math.max(this.globalIndex, globalIndex);
-    compactor.setCompactIndex(globalIndex);
+    log.compactor().setCompactIndex(globalIndex);
     return this;
   }
 
@@ -585,7 +584,6 @@ public class RaftStateContext extends RaftStateClient {
     if (cluster.member().type() == Member.Type.PASSIVE) {
       return cluster.open().thenRunAsync(() -> {
         log.open(context);
-        compactor.open();
         transition(PassiveState.class);
       }, context)
         .thenCompose(v -> join())
@@ -595,7 +593,6 @@ public class RaftStateContext extends RaftStateClient {
     } else {
       return cluster.open().thenRunAsync(() -> {
         log.open(context);
-        compactor.open();
         transition(FollowerState.class);
         open = true;
       }, context)
@@ -626,7 +623,6 @@ public class RaftStateContext extends RaftStateClient {
           cluster.close().whenCompleteAsync((r3, e3) -> {
             try {
               log.close();
-              compactor.close();
             } catch (Exception e) {
             }
 

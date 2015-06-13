@@ -31,13 +31,14 @@ import java.util.concurrent.TimeUnit;
  */
 public class Compactor implements AutoCloseable {
   private static final Logger LOGGER = LoggerFactory.getLogger(Compactor.class);
-  private static final long DEFAULT_COMPACTION_INTERVAL = TimeUnit.HOURS.toMillis(1);
-  private static final long COMPACT_INTERVAL = TimeUnit.MINUTES.toMillis(1);
+  private static final long DEFAULT_MINOR_COMPACTION_INTERVAL = TimeUnit.MINUTES.toMillis(1);
+  private static final long DEFAULT_MAJOR_COMPACTION_INTERVAL = TimeUnit.HOURS.toMillis(1);
 
   private final Log log;
-  private final EntryFilter filter;
-  private final ExecutionContext context;
-  private long compactionInterval = DEFAULT_COMPACTION_INTERVAL;
+  private EntryFilter filter;
+  private ExecutionContext context;
+  private long minorCompactionInterval = DEFAULT_MINOR_COMPACTION_INTERVAL;
+  private long majorCompactionInterval = DEFAULT_MAJOR_COMPACTION_INTERVAL;
   private long commit;
   private long compact;
   private Compaction compaction;
@@ -45,10 +46,21 @@ public class Compactor implements AutoCloseable {
   private CompletableFuture<Void> compactFuture;
   private ScheduledFuture<?> scheduledFuture;
 
-  public Compactor(Log log, EntryFilter filter, ExecutionContext context) {
+  public Compactor(Log log) {
     this.log = log;
+  }
+
+  /**
+   * Sets the compactor entry filter.
+   *
+   * @param filter The compactor entry filter.
+   * @return The log compactor.
+   */
+  public Compactor filter(EntryFilter filter) {
+    if (filter == null)
+      filter = (entry, compaction) -> CompletableFuture.completedFuture(true);
     this.filter = filter;
-    this.context = context;
+    return this;
   }
 
   /**
@@ -56,10 +68,10 @@ public class Compactor implements AutoCloseable {
    *
    * @param compactionInterval The interval at which major compaction is run.
    */
-  public void setCompactionInterval(long compactionInterval) {
+  public void setMinorCompactionInterval(long compactionInterval) {
     if (compactionInterval < 1)
       throw new IllegalArgumentException("compaction interval must be positive");
-    this.compactionInterval = compactionInterval;
+    this.minorCompactionInterval = compactionInterval;
   }
 
   /**
@@ -67,8 +79,8 @@ public class Compactor implements AutoCloseable {
    *
    * @return The interval at which major compaction is run.
    */
-  public long getCompactionInterval() {
-    return compactionInterval;
+  public long getMinorCompactionInterval() {
+    return minorCompactionInterval;
   }
 
   /**
@@ -77,16 +89,47 @@ public class Compactor implements AutoCloseable {
    * @param compactionInterval The interval at which major compaction is run.
    * @return The log compactor.
    */
-  public Compactor withCompactionInterval(long compactionInterval) {
-    setCompactionInterval(compactionInterval);
+  public Compactor withMinorCompactionInterval(long compactionInterval) {
+    setMinorCompactionInterval(compactionInterval);
+    return this;
+  }
+
+  /**
+   * Sets the interval at which major compaction is run.
+   *
+   * @param compactionInterval The interval at which major compaction is run.
+   */
+  public void setMajorCompactionInterval(long compactionInterval) {
+    if (compactionInterval < 1)
+      throw new IllegalArgumentException("compaction interval must be positive");
+    this.majorCompactionInterval = compactionInterval;
+  }
+
+  /**
+   * Returns the compaction interval.
+   *
+   * @return The interval at which major compaction is run.
+   */
+  public long getMajorCompactionInterval() {
+    return majorCompactionInterval;
+  }
+
+  /**
+   * Sets the interval at which major compaction is run.
+   *
+   * @param compactionInterval The interval at which major compaction is run.
+   * @return The log compactor.
+   */
+  public Compactor withMajorCompactionInterval(long compactionInterval) {
+    setMajorCompactionInterval(compactionInterval);
     return this;
   }
 
   /**
    * Opens the log compactor.
    */
-  public void open() {
-    scheduledFuture = context.scheduleAtFixedRate(this::compact, COMPACT_INTERVAL, COMPACT_INTERVAL, TimeUnit.MILLISECONDS);
+  public void open(ExecutionContext context) {
+    scheduledFuture = context.scheduleAtFixedRate(() -> compact(context), minorCompactionInterval, minorCompactionInterval, TimeUnit.MILLISECONDS);
   }
 
   /**
@@ -110,14 +153,14 @@ public class Compactor implements AutoCloseable {
   /**
    * Compacts the log.
    */
-  synchronized CompletableFuture<Void> compact() {
+  synchronized CompletableFuture<Void> compact(ExecutionContext context) {
     if (compactFuture != null) {
       return compactFuture;
     }
 
     compactFuture = CompletableFuture.supplyAsync(() -> {
       if (compaction == null) {
-        if (System.currentTimeMillis() - lastCompaction > compactionInterval) {
+        if (System.currentTimeMillis() - lastCompaction > majorCompactionInterval) {
           compaction = new MajorCompaction(compact, filter, context);
           lastCompaction = System.currentTimeMillis();
         } else {

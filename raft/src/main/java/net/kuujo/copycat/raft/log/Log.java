@@ -20,6 +20,7 @@ import net.kuujo.copycat.raft.log.entry.TypedEntryPool;
 import net.kuujo.copycat.util.ExecutionContext;
 
 import java.io.File;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Raft log.
@@ -38,6 +39,7 @@ public class Log implements AutoCloseable {
   }
 
   protected final SegmentManager segments;
+  protected Compactor compactor;
   protected final TypedEntryPool entryPool = new TypedEntryPool();
   private boolean open;
 
@@ -52,7 +54,17 @@ public class Log implements AutoCloseable {
    */
   public void open(ExecutionContext context) {
     segments.open(context);
+    compactor.open(context);
     open = true;
+  }
+
+  /**
+   * Returns the log compactor.
+   *
+   * @return The log compactor.
+   */
+  public Compactor compactor() {
+    return compactor;
   }
 
   /**
@@ -311,6 +323,7 @@ public class Log implements AutoCloseable {
   @Override
   public void close() {
     segments.close();
+    compactor.close();
     open = false;
   }
 
@@ -420,12 +433,66 @@ public class Log implements AutoCloseable {
     }
 
     /**
+     * Sets the minor compaction interval.
+     *
+     * @param compactionInterval The minor compaction interval in milliseconds.
+     * @return The log builder.
+     * @throws java.lang.IllegalArgumentException If the compaction interval is not positive
+     */
+    public Builder withMinorCompactionInterval(long compactionInterval) {
+      config.setMinorCompactionInterval(compactionInterval);
+      return this;
+    }
+
+    /**
+     * Sets the minor compaction interval.
+     *
+     * @param compactionInterval The minor compaction interval.
+     * @param unit The interval time unit.
+     * @return The log builder.
+     * @throws java.lang.IllegalArgumentException If the compaction interval is not positive
+     */
+    public Builder withMinorCompactionInterval(long compactionInterval, TimeUnit unit) {
+      config.setMinorCompactionInterval(compactionInterval, unit);
+      return this;
+    }
+
+    /**
+     * Sets the major compaction interval.
+     *
+     * @param compactionInterval The major compaction interval in milliseconds.
+     * @return The log builder.
+     * @throws java.lang.IllegalArgumentException If the compaction interval is not positive
+     */
+    public Builder withMajorCompactionInterval(long compactionInterval) {
+      config.setMajorCompactionInterval(compactionInterval);
+      return this;
+    }
+
+    /**
+     * Sets the major compaction interval.
+     *
+     * @param compactionInterval The major compaction interval.
+     * @param unit The interval time unit.
+     * @return The log builder.
+     * @throws java.lang.IllegalArgumentException If the compaction interval is not positive
+     */
+    public Builder withMajorCompactionInterval(long compactionInterval, TimeUnit unit) {
+      config.setMajorCompactionInterval(compactionInterval, unit);
+      return this;
+    }
+
+    /**
      * Builds the log.
      *
      * @return A new buffered log.
      */
     public Log build() {
-      return new Log(new SegmentManager(config));
+      Log log = new Log(new SegmentManager(config));
+      log.compactor = new Compactor(log)
+        .withMinorCompactionInterval(config.getMinorCompactionInterval())
+        .withMajorCompactionInterval(config.getMajorCompactionInterval());
+      return log;
     }
   }
 

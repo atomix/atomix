@@ -66,7 +66,7 @@ public class MajorCompaction extends Compaction {
   private List<Segment> getActiveSegments(SegmentManager manager) {
     List<Segment> segments = new ArrayList<>();
     for (Segment segment : manager.segments()) {
-      if (!segment.isEmpty() && segment.lastIndex() <= index()) {
+      if (segment.isFull() && segment.lastIndex() <= index()) {
         segments.add(segment);
       }
     }

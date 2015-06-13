@@ -16,6 +16,7 @@
 package net.kuujo.copycat.raft.log;
 
 import java.io.File;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Copycat storage configuration.
@@ -30,12 +31,16 @@ public class LogConfig {
   private static final int DEFAULT_MAX_ENTRY_SIZE = 1024 * 8;
   private static final int DEFAULT_MAX_SEGMENT_SIZE = 1024 * 1024 * 32;
   private static final int DEFAULT_MAX_ENTRIES_PER_SEGMENT = (int) (Math.pow(2, 31) - 1) / 8 - 16;
+  private static final long DEFAULT_MINOR_COMPACTION_INTERVAL = TimeUnit.MINUTES.toMillis(1);
+  private static final long DEFAULT_MAJOR_COMPACTION_INTERVAL = TimeUnit.HOURS.toMillis(1);
 
   private File directory = new File(DEFAULT_DIRECTORY);
   private StorageLevel level = StorageLevel.DISK;
   private int maxEntrySize = DEFAULT_MAX_ENTRY_SIZE;
   private int maxSegmentSize = DEFAULT_MAX_SEGMENT_SIZE;
   private int maxEntriesPerSegment = DEFAULT_MAX_ENTRIES_PER_SEGMENT;
+  private long minorCompactionInterval = DEFAULT_MINOR_COMPACTION_INTERVAL;
+  private long majorCompactionInterval = DEFAULT_MAJOR_COMPACTION_INTERVAL;
 
   public LogConfig() {
   }
@@ -267,6 +272,34 @@ public class LogConfig {
   public LogConfig withMaxEntriesPerSegment(int maxEntriesPerSegment) {
     setMaxEntriesPerSegment(maxEntriesPerSegment);
     return this;
+  }
+
+  public void setMinorCompactionInterval(long compactionInterval) {
+    if (compactionInterval <= 0)
+      throw new IllegalArgumentException("compaction interval must be positive");
+    this.minorCompactionInterval = compactionInterval;
+  }
+
+  public void setMinorCompactionInterval(long compactionInterval, TimeUnit unit) {
+    setMinorCompactionInterval(unit.toMillis(compactionInterval));
+  }
+
+  public long getMinorCompactionInterval() {
+    return minorCompactionInterval;
+  }
+
+  public void setMajorCompactionInterval(long compactionInterval) {
+    if (compactionInterval <= 0)
+      throw new IllegalArgumentException("compaction interval must be positive");
+    this.majorCompactionInterval = compactionInterval;
+  }
+
+  public void setMajorCompactionInterval(long compactionInterval, TimeUnit unit) {
+    setMajorCompactionInterval(unit.toMillis(compactionInterval));
+  }
+
+  public long getMajorCompactionInterval() {
+    return majorCompactionInterval;
   }
 
 }

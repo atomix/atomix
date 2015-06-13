@@ -24,6 +24,8 @@ import net.kuujo.copycat.raft.log.Compaction;
 import net.kuujo.copycat.raft.log.entry.*;
 import net.kuujo.copycat.util.ExecutionContext;
 import net.kuujo.copycat.util.concurrent.Futures;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -34,6 +36,7 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 class RaftState {
+  private static final Logger LOGGER = LoggerFactory.getLogger(RaftState.class);
   private final StateMachine stateMachine;
   private final ManagedCluster cluster;
   private final ClusterState members;
@@ -161,8 +164,16 @@ class RaftState {
       session = new RaftSession(entry.getSession(), entry.getTimestamp());
       session.expire();
     }
+
     Commit<? extends Command> commit = new Commit<>(entry.getIndex(), session, entry.getTimestamp(), entry.getCommand());
-    return CompletableFuture.supplyAsync(() -> stateMachine.filter(commit, compaction), context);
+    return CompletableFuture.supplyAsync(() -> {
+      try {
+        return stateMachine.filter(commit, compaction);
+      } catch (Exception e) {
+        LOGGER.warn("Failed to filter command {} at index {}: {}", entry.getCommand(), entry.getIndex(), e);
+        return true;
+      }
+    }, context);
   }
 
   /**
