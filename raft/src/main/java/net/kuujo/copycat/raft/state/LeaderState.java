@@ -907,6 +907,14 @@ class LeaderState extends ActiveState {
               }
             } else {
               LOGGER.warn("{} - {}", context.getCluster().member().id(), error.getMessage());
+
+              // Verify that the leader has contacted a majority of the cluster within the last two election timeouts.
+              // If the leader is not able to contact a majority of the cluster within two election timeouts, assume
+              // that a partition occurred and transition back to the FOLLOWER state.
+              if (System.currentTimeMillis() - commitTime() > context.getElectionTimeout() * 2) {
+                LOGGER.warn("{} - Suspected network partition. Stepping down", context.getCluster().member().id());
+                transition(Raft.State.FOLLOWER);
+              }
             }
           }
           request.close();
