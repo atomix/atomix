@@ -100,6 +100,10 @@ public abstract class Copycat implements Managed<Copycat> {
       return stateful != null ? stateful.value() : null;
     });
 
+    if (stateMachine == null) {
+      throw new IllegalArgumentException("invalid resource class: " + type);
+    }
+
     return protocol.submit(CreateResource.builder()
       .withPath(path)
       .withType(stateMachine)
