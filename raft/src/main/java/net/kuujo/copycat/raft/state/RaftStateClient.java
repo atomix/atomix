@@ -289,6 +289,8 @@ public class RaftStateClient implements Managed<Void> {
         future.complete(result);
       } else if (error instanceof TimeoutException) {
         submit(request, future);
+      } else if (error instanceof NoLeaderException) {
+        submit(request, future);
       } else if (error instanceof ClusterException) {
         LOGGER.warn("Failed to communicate with {}: {}", member, error);
         submit(request, future);
@@ -391,10 +393,16 @@ public class RaftStateClient implements Managed<Void> {
    * @return The completion future.
    */
   private <T> CompletableFuture<T> submit(QueryRequest request, CompletableFuture<T> future) {
-    this.<T>submit(request, selectMember(request.query())).whenComplete((result, error) -> {
+    Member member = selectMember(request.query());
+    this.<T>submit(request, member).whenComplete((result, error) -> {
       if (error == null) {
         future.complete(result);
       } else if (error instanceof TimeoutException) {
+        submit(request, future);
+      } else if (error instanceof NoLeaderException) {
+        submit(request, future);
+      } else if (error instanceof ClusterException) {
+        LOGGER.warn("Failed to communicate with {}: {}", member, error);
         submit(request, future);
       } else {
         future.completeExceptionally(error);
