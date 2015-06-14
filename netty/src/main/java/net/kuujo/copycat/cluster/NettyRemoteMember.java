@@ -33,10 +33,13 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -48,6 +51,7 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
   private static final Logger LOGGER = LoggerFactory.getLogger(NettyRemoteMember.class);
   private static final long MAX_RECONNECT_INTERVAL = 60000;
   private static final long INITIAL_RECONNECT_INTERVAL = 100;
+  private static final long TIMEOUT = 5000;
   private static final int MESSAGE = 0;
   private static final int TASK = 1;
   private static final int STATUS_FAILURE = 0;
@@ -66,12 +70,13 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
   private ChannelHandlerContext context;
   private final Map<String, Integer> hashMap = new HashMap<>();
   private final HashFunction hash = new Murmur3HashFunction();
-  private final Map<Object, ContextualFuture> responseFutures = new HashMap<>(1024);
+  private final Map<Long, ContextualFuture> responseFutures = new LinkedHashMap<>(1024);
   private final AtomicBoolean connecting = new AtomicBoolean();
   private final AtomicBoolean connected = new AtomicBoolean();
   private long requestId;
   private CompletableFuture<Void> closeFuture;
   private ScheduledFuture<?> connectFuture;
+  private ScheduledFuture<?> timeoutFuture;
 
   NettyRemoteMember(NettyMemberInfo info, Type type) {
     super(info, type);
@@ -108,18 +113,15 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
 
   @Override
   public <T, U> CompletableFuture<U> send(String topic, T message) {
-    final ContextualFuture<U> future = new ContextualFuture<>(getContext());
+    final ContextualFuture<U> future = new ContextualFuture<>(getContext(), System.currentTimeMillis() + TIMEOUT);
     super.context.execute(() -> {
       if (channel != null) {
         long requestId = ++this.requestId;
         ByteBufBuffer buffer = BUFFER.get();
         ByteBuf byteBuf = context.alloc().buffer(13, 1024 * 8);
-        byteBuf.writerIndex(13);
         buffer.setByteBuf(byteBuf);
+        buffer.writeLong(requestId).writeByte(MESSAGE).writeInt(hashMap.computeIfAbsent(topic, t -> hash.hash32(t.getBytes())));
         serializer.writeObject(message, buffer);
-        byteBuf.setLong(0, requestId);
-        byteBuf.setByte(8, MESSAGE);
-        byteBuf.setInt(9, hashMap.computeIfAbsent(topic, t -> hash.hash32(t.getBytes())));
         channel.writeAndFlush(byteBuf).addListener((channelFuture) -> {
           if (channelFuture.isSuccess()) {
             responseFutures.put(requestId, future);
@@ -146,17 +148,15 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
 
   @Override
   public <T> CompletableFuture<T> submit(Task<T> task) {
-    final ContextualFuture<T> future = new ContextualFuture<>(getContext());
+    final ContextualFuture<T> future = new ContextualFuture<>(getContext(), System.currentTimeMillis() + TIMEOUT);
     super.context.execute(() -> {
       if (channel != null) {
         long requestId = ++this.requestId;
         ByteBufBuffer buffer = BUFFER.get();
         ByteBuf byteBuf = context.alloc().buffer(9, 1024 * 8);
-        byteBuf.writerIndex(9);
         buffer.setByteBuf(byteBuf);
+        buffer.writeLong(requestId).writeByte(TASK);
         serializer.writeObject(task, buffer);
-        byteBuf.setLong(0, requestId);
-        byteBuf.setByte(8, TASK);
         channel.writeAndFlush(byteBuf).addListener((channelFuture) -> {
           if (channelFuture.isSuccess()) {
             responseFutures.put(requestId, future);
@@ -176,9 +176,25 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
     return future;
   }
 
+  /**
+   * Times out futures.
+   */
+  private void timeout() {
+    long time = System.currentTimeMillis();
+    Iterator<Map.Entry<Long, ContextualFuture>> iterator = responseFutures.entrySet().iterator();
+    while (iterator.hasNext()) {
+      ContextualFuture future = iterator.next().getValue();
+      if (future.timeout <= time) {
+        iterator.remove();
+        future.context.execute(() -> future.completeExceptionally(new TimeoutException("request timed out")));
+      }
+    }
+  }
+
   @Override
   public synchronized CompletableFuture<Member> open() {
     if (connecting.compareAndSet(false, true)) {
+      timeoutFuture = super.context.scheduleAtFixedRate(this::timeout, 1, 1, TimeUnit.SECONDS);
       super.context.execute(() -> connect(INITIAL_RECONNECT_INTERVAL));
     }
     return CompletableFuture.completedFuture(this);
@@ -254,6 +270,14 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
       if (closeFuture == null) {
         closeFuture = new CompletableFuture<>();
         super.context.execute(() -> {
+          if (timeoutFuture != null) {
+            for (ContextualFuture future : responseFutures.values()) {
+              future.completeExceptionally(new IllegalStateException("member closed"));
+            }
+            responseFutures.clear();
+            timeoutFuture.cancel(false);
+          }
+
           if (channel != null) {
             LOGGER.info("Disconnecting from {}", info.address);
             channel.close().addListener(channelFuture -> {
@@ -285,9 +309,11 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
    */
   private static class ContextualFuture<T> extends CompletableFuture<T> {
     private final ExecutionContext context;
+    private final long timeout;
 
-    private ContextualFuture(ExecutionContext context) {
+    private ContextualFuture(ExecutionContext context, long timeout) {
       this.context = context;
+      this.timeout = timeout;
     }
   }
 
