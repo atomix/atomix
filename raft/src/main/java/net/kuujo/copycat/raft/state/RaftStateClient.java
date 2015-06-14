@@ -354,10 +354,10 @@ public class RaftStateClient implements Managed<Void> {
 
     CompletableFuture<R> future = new CompletableFuture<>();
     context.execute(() -> {
-      if (leader == 0)
-        future.completeExceptionally(new IllegalStateException("unknown leader"));
-      if (session == 0)
+      if (session == 0) {
         future.completeExceptionally(new IllegalStateException("session not open"));
+        return;
+      }
 
       QueryRequest request = QueryRequest.builder()
         .withSession(getSession())
