@@ -59,4 +59,8 @@ public abstract class ResourceOperation<T extends Operation<U>, U> implements Op
     operation = serializer.readObject(buffer);
   }
 
+  @Override
+  public String toString() {
+    return String.format("ResourceOperation[resource=%s, operation=%s]", resource, operation.getClass().getSimpleName());
+  }
 }
