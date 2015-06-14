@@ -57,7 +57,7 @@ public abstract class TimestampedEntry<T extends TimestampedEntry<T>> extends En
 
   @Override
   public int size() {
-    return super.size() + 8;
+    return super.size() + Long.BYTES;
   }
 
   @Override

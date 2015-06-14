@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 class LeaderState extends ActiveState {
-  private static final int MAX_BATCH_SIZE = 1024 * 1024;
+  private static final int MAX_BATCH_SIZE = 1024 * 32;
   private ScheduledFuture<?> currentTimer;
   private final Replicator replicator = new Replicator();
 

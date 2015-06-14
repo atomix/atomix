@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 class FollowerState extends ActiveState {
-  private static final int MAX_BATCH_SIZE = 1024 * 1024;
+  private static final int MAX_BATCH_SIZE = 1024 * 32;
   private final Set<Integer> committing = new HashSet<>();
   private final Random random = new Random();
   private ScheduledFuture<?> heartbeatTimer;

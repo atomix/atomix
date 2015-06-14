@@ -118,7 +118,7 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
       if (channel != null) {
         long requestId = ++this.requestId;
         ByteBufBuffer buffer = BUFFER.get();
-        ByteBuf byteBuf = context.alloc().buffer(13, 1024 * 8);
+        ByteBuf byteBuf = context.alloc().buffer(13, 1024 * 32);
         buffer.setByteBuf(byteBuf);
         buffer.writeLong(requestId).writeByte(MESSAGE).writeInt(hashMap.computeIfAbsent(topic, t -> hash.hash32(t.getBytes())));
         serializer.writeObject(message, buffer);
@@ -153,7 +153,7 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
       if (channel != null) {
         long requestId = ++this.requestId;
         ByteBufBuffer buffer = BUFFER.get();
-        ByteBuf byteBuf = context.alloc().buffer(9, 1024 * 8);
+        ByteBuf byteBuf = context.alloc().buffer(9, 1024 * 32);
         buffer.setByteBuf(byteBuf);
         buffer.writeLong(requestId).writeByte(TASK);
         serializer.writeObject(task, buffer);

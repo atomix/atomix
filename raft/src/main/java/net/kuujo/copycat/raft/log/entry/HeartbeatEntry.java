@@ -54,6 +54,11 @@ public class HeartbeatEntry extends TimestampedEntry<HeartbeatEntry> {
   }
 
   @Override
+  public int size() {
+    return super.size() + Integer.BYTES;
+  }
+
+  @Override
   public void writeObject(Buffer buffer, Serializer serializer) {
     super.writeObject(buffer, serializer);
     buffer.writeInt(memberId);

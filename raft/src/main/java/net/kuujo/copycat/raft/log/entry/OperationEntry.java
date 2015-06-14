@@ -28,4 +28,9 @@ public abstract class OperationEntry<T extends OperationEntry<T>> extends Sessio
     super(referenceManager);
   }
 
+  @Override
+  public int size() {
+    return super.size() + 8 + 1024;
+  }
+
 }

@@ -59,6 +59,11 @@ public abstract class MemberEntry<T extends MemberEntry<T>> extends Entry<T> {
   }
 
   @Override
+  public int size() {
+    return super.size() + Integer.BYTES;
+  }
+
+  @Override
   public void writeObject(Buffer buffer, Serializer serializer) {
     super.writeObject(buffer, serializer);
     serializer.writeObject(member, buffer);
