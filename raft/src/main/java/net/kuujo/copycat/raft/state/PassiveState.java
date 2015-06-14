@@ -205,7 +205,7 @@ public class PassiveState extends AbstractState {
           applyEntry(entry).whenCompleteAsync((result, error) -> {
             entry.close();
             if (isOpen() && error != null) {
-              LOGGER.info("{} - An application error occurred: {}", context.getCluster().member().id(), error);
+              LOGGER.info("{} - An application error occurred: {}", context.getCluster().member().id(), error.getMessage());
             }
             if (counter.incrementAndGet() == entriesToApply) {
               future.complete(null);
