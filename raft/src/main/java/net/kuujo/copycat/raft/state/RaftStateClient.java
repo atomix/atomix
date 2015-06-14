@@ -27,7 +27,9 @@ import net.kuujo.copycat.util.ThreadChecker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -59,7 +61,6 @@ public class RaftStateClient implements Managed<Void> {
   private volatile long request;
   private volatile long response;
   private volatile long version;
-  private final Map<Long, ScheduledFuture<?>> responseFutures = new HashMap<>();
 
   public RaftStateClient(ManagedMembers members, ExecutionContext context) {
     if (members == null)
