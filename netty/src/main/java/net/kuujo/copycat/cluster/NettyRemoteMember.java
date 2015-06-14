@@ -62,8 +62,7 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
 
   private final NettyMemberInfo info;
   private EventLoopGroup eventLoopGroup;
-  private boolean eventLoopInitialized;
-  private Channel channel;
+  private volatile Channel channel;
   private ChannelHandlerContext context;
   private final Map<String, Integer> hashMap = new HashMap<>();
   private final HashFunction hash = new Murmur3HashFunction();
@@ -89,7 +88,6 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
    */
   NettyRemoteMember setEventLoopGroup(EventLoopGroup eventLoopGroup) {
     this.eventLoopGroup = eventLoopGroup;
-    eventLoopInitialized = true;
     return this;
   }
 
@@ -259,10 +257,6 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
             channel.close().addListener(channelFuture -> {
               channel = null;
               connected.set(false);
-              if (!eventLoopInitialized && eventLoopGroup != null) {
-                eventLoopGroup.shutdownGracefully();
-                eventLoopGroup = null;
-              }
               if (channelFuture.isSuccess()) {
                 context.execute(() -> closeFuture.complete(null));
               } else {
@@ -271,10 +265,6 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
             });
           } else {
             connected.set(false);
-            if (!eventLoopInitialized && eventLoopGroup != null) {
-              eventLoopGroup.shutdownGracefully();
-              eventLoopGroup = null;
-            }
             context.execute(() -> closeFuture.complete(null));
           }
         });
