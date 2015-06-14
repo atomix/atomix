@@ -153,6 +153,7 @@ class LeaderState extends ActiveState {
   public CompletableFuture<VoteResponse> vote(final VoteRequest request) {
     if (request.term() > context.getTerm()) {
       LOGGER.debug("{} - Received greater term", context.getCluster().member().id());
+      context.setLeader(0);
       transition(Raft.State.FOLLOWER);
       return super.vote(request);
     } else {
@@ -177,6 +178,7 @@ class LeaderState extends ActiveState {
         .withLogIndex(context.getLog().lastIndex())
         .build()));
     } else {
+      context.setLeader(request.leader());
       transition(Raft.State.FOLLOWER);
       return super.append(request);
     }
@@ -889,6 +891,7 @@ class LeaderState extends ActiveState {
                     commit();
                   }
                 } else if (response.term() > context.getTerm()) {
+                  context.setLeader(0);
                   transition(Raft.State.FOLLOWER);
                 } else {
                   resetMatchIndex(response);
@@ -901,6 +904,7 @@ class LeaderState extends ActiveState {
                 }
               } else if (response.term() > context.getTerm()) {
                 LOGGER.debug("{} - Received higher term from {}", context.getCluster().member().id(), this.member);
+                context.setLeader(0);
                 transition(Raft.State.FOLLOWER);
               } else {
                 LOGGER.warn("{} - {}", context.getCluster().member().id(), response.error() != null ? response.error() : "");
@@ -913,6 +917,7 @@ class LeaderState extends ActiveState {
               // that a partition occurred and transition back to the FOLLOWER state.
               if (System.currentTimeMillis() - commitTime() > context.getElectionTimeout() * 2) {
                 LOGGER.warn("{} - Suspected network partition. Stepping down", context.getCluster().member().id());
+                context.setLeader(0);
                 transition(Raft.State.FOLLOWER);
               }
             }
