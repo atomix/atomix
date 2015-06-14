@@ -303,6 +303,7 @@ public class RaftStateClient implements Managed<Void> {
     CompletableFuture<T> future = new CompletableFuture<>();
     ScheduledFuture<?> timeoutFuture = context.schedule(() -> future.completeExceptionally(new TimeoutException("request timed out")), REQUEST_TIMEOUT, TimeUnit.MILLISECONDS);
 
+    LOGGER.debug("Submitting {} to {}", request, member);
     member.<CommandRequest, CommandResponse>send(request).whenComplete((response, error) -> {
       timeoutFuture.cancel(false);
       if (error == null) {
@@ -406,6 +407,7 @@ public class RaftStateClient implements Managed<Void> {
     CompletableFuture<T> future = new CompletableFuture<>();
     ScheduledFuture<?> timeoutFuture = context.schedule(() -> future.completeExceptionally(new TimeoutException("request timed out")), REQUEST_TIMEOUT, TimeUnit.MILLISECONDS);
 
+    LOGGER.debug("Submitting {} to {}", request, member);
     member.<QueryRequest, QueryResponse>send(request).whenComplete((response, error) -> {
       timeoutFuture.cancel(false);
       if (error == null) {
