@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.raft.state;
 
+import net.kuujo.copycat.cluster.ClusterException;
 import net.kuujo.copycat.cluster.ManagedMembers;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.cluster.MemberInfo;
@@ -282,10 +283,14 @@ public class RaftStateClient implements Managed<Void> {
    * @return The completion future.
    */
   private <T> CompletableFuture<T> submit(CommandRequest request, CompletableFuture<T> future) {
-    this.<T>submit(request, selectMember(request.command())).whenComplete((result, error) -> {
+    Member member = selectMember(request.command());
+    this.<T>submit(request, member).whenComplete((result, error) -> {
       if (error == null) {
         future.complete(result);
       } else if (error instanceof TimeoutException) {
+        submit(request, future);
+      } else if (error instanceof ClusterException) {
+        LOGGER.warn("Failed to communicate with {}: {}", member, error);
         submit(request, future);
       } else {
         future.completeExceptionally(error);
@@ -330,7 +335,7 @@ public class RaftStateClient implements Managed<Void> {
    */
   protected Member selectMember(Command<?> command) {
     int leader = getLeader();
-    return leader == 0 ? members.member(random.nextInt(members.members().size())) : members.member(leader);
+    return leader == 0 ? members.member(random.nextInt(members.members().size() - 1)) : members.member(leader);
   }
 
   /**
@@ -435,9 +440,9 @@ public class RaftStateClient implements Managed<Void> {
     ConsistencyLevel level = query.consistency();
     if (level.isLeaderRequired()) {
       int leader = getLeader();
-      return leader == 0 ? members.member(random.nextInt(members.members().size())) : members.member(leader);
+      return leader == 0 ? members.member(random.nextInt(members.members().size() - 1)) : members.member(leader);
     } else {
-      return members.members().get(random.nextInt(members.members().size()));
+      return members.members().get(random.nextInt(members.members().size() - 1));
     }
   }
 
