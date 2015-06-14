@@ -335,7 +335,7 @@ public class RaftStateClient implements Managed<Void> {
    */
   protected Member selectMember(Command<?> command) {
     int leader = getLeader();
-    return leader == 0 ? members.member(random.nextInt(members.members().size() - 1)) : members.member(leader);
+    return leader == 0 ? members.members().get(random.nextInt(members.members().size())) : members.member(leader);
   }
 
   /**
@@ -440,9 +440,9 @@ public class RaftStateClient implements Managed<Void> {
     ConsistencyLevel level = query.consistency();
     if (level.isLeaderRequired()) {
       int leader = getLeader();
-      return leader == 0 ? members.member(random.nextInt(members.members().size() - 1)) : members.member(leader);
+      return leader == 0 ? members.members().get(random.nextInt(members.members().size())) : members.member(leader);
     } else {
-      return members.members().get(random.nextInt(members.members().size() - 1));
+      return members.members().get(random.nextInt(members.members().size()));
     }
   }
 
