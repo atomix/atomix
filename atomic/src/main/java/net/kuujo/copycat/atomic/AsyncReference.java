@@ -15,13 +15,13 @@
  */
 package net.kuujo.copycat.atomic;
 
+import net.kuujo.copycat.AbstractResource;
+import net.kuujo.copycat.Stateful;
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.Writable;
 import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.raft.log.Compaction;
-import net.kuujo.copycat.AbstractResource;
-import net.kuujo.copycat.Stateful;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
@@ -152,8 +152,8 @@ public class AsyncReference<T> extends AbstractResource {
      * Get query builder.
      */
     public static class Builder<T> extends ReferenceQuery.Builder<Builder<T>, Get<T>> {
-      public Builder(Get<T> query) {
-        super(query);
+      public Builder() {
+        super(new Get<>());
       }
     }
   }
@@ -197,8 +197,8 @@ public class AsyncReference<T> extends AbstractResource {
      * Put command builder.
      */
     public static class Builder extends ReferenceCommand.Builder<Builder, Set> {
-      public Builder(Set command) {
-        super(command);
+      public Builder() {
+        super(new Set());
       }
 
       /**
@@ -265,8 +265,8 @@ public class AsyncReference<T> extends AbstractResource {
      * Compare and set command builder.
      */
     public static class Builder extends ReferenceCommand.Builder<Builder, CompareAndSet> {
-      public Builder(CompareAndSet command) {
-        super(command);
+      public Builder() {
+        super(new CompareAndSet());
       }
 
       /**
@@ -333,8 +333,8 @@ public class AsyncReference<T> extends AbstractResource {
      * Put command builder.
      */
     public static class Builder<T> extends ReferenceCommand.Builder<Builder<T>, GetAndSet<T>> {
-      public Builder(GetAndSet<T> command) {
-        super(command);
+      public Builder() {
+        super(new GetAndSet<T>());
       }
 
       /**
