@@ -41,8 +41,8 @@ public class CopycatServer extends Copycat {
 
   private final Cluster cluster;
 
-  public CopycatServer(Raft protocol, ClassLoader classLoader) {
-    super(protocol, classLoader);
+  public CopycatServer(Raft protocol) {
+    super(protocol);
     this.cluster = protocol.cluster();
   }
 
@@ -61,7 +61,6 @@ public class CopycatServer extends Copycat {
   public static class Builder implements Copycat.Builder<CopycatServer> {
     private final Raft.Builder builder = Raft.builder();
     private Cluster cluster;
-    private ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 
     private Builder() {
     }
@@ -164,20 +163,9 @@ public class CopycatServer extends Copycat {
       return this;
     }
 
-    /**
-     * Sets the Copycat class loader.
-     *
-     * @param classLoader The Copycat class loader.
-     * @return The Copycat builder.
-     */
-    public Builder withClassLoader(ClassLoader classLoader) {
-      this.classLoader = classLoader;
-      return this;
-    }
-
     @Override
     public CopycatServer build() {
-      return new CopycatServer(builder.withStateMachine(new ResourceManager(cluster)).build(), classLoader);
+      return new CopycatServer(builder.withStateMachine(new ResourceManager(cluster)).build());
     }
   }
 

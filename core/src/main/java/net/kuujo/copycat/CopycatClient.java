@@ -37,8 +37,8 @@ public class CopycatClient extends Copycat {
     return new Builder();
   }
 
-  public CopycatClient(ManagedProtocol protocol, ClassLoader classLoader) {
-    super(protocol, classLoader);
+  public CopycatClient(ManagedProtocol protocol) {
+    super(protocol);
   }
 
   /**
@@ -46,7 +46,6 @@ public class CopycatClient extends Copycat {
    */
   public static class Builder implements Copycat.Builder<CopycatClient> {
     private final RaftClient.Builder builder = RaftClient.builder();
-    private ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 
     private Builder() {
     }
@@ -85,20 +84,9 @@ public class CopycatClient extends Copycat {
       return this;
     }
 
-    /**
-     * Sets the Copycat class loader.
-     *
-     * @param classLoader The Copycat class loader.
-     * @return The Copycat builder.
-     */
-    public Builder withClassLoader(ClassLoader classLoader) {
-      this.classLoader = classLoader;
-      return this;
-    }
-
     @Override
     public CopycatClient build() {
-      return new CopycatClient(builder.build(), classLoader);
+      return new CopycatClient(builder.build());
     }
   }
 

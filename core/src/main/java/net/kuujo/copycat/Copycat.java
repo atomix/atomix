@@ -38,13 +38,12 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class Copycat implements Managed<Copycat> {
   static final String PATH_SEPARATOR = "/";
   protected final ManagedProtocol protocol;
+  private final Map<Class<? extends Resource>, Class<? extends StateMachine>> typeCache = new ConcurrentHashMap<>();
   private final Map<String, Node> nodes = new ConcurrentHashMap<>();
-  private final ResourceRegistry registry;
   private final ResourceFactory factory = new ResourceFactory();
 
-  protected Copycat(ManagedProtocol protocol, ClassLoader classLoader) {
+  protected Copycat(ManagedProtocol protocol) {
     this.protocol = protocol;
-    this.registry = new ResourceRegistry(classLoader);
   }
 
   /**
@@ -94,10 +93,12 @@ public abstract class Copycat implements Managed<Copycat> {
    * @param <T> The resource type.
    * @return A completable future to be completed once the resource has been created.
    */
+  @SuppressWarnings("unchecked")
   public <T extends Resource> CompletableFuture<T> create(String path, Class<? super T> type) {
-    Class<? extends StateMachine> stateMachine = registry.lookup(type);
-    if (stateMachine == null)
-      throw new IllegalArgumentException("unknown resource type: " + type);
+    Class<? extends StateMachine> stateMachine = typeCache.computeIfAbsent((Class<? extends Resource>) type, t -> {
+      Stateful stateful = t.getAnnotation(Stateful.class);
+      return stateful != null ? stateful.value() : null;
+    });
 
     return protocol.submit(CreateResource.builder()
       .withPath(path)
