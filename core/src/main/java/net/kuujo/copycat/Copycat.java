@@ -21,6 +21,7 @@ import net.kuujo.copycat.manager.DeletePath;
 import net.kuujo.copycat.manager.PathExists;
 import net.kuujo.copycat.raft.ManagedProtocol;
 import net.kuujo.copycat.raft.Protocol;
+import net.kuujo.copycat.raft.StateMachine;
 import net.kuujo.copycat.util.Managed;
 
 import java.lang.reflect.Constructor;
@@ -94,9 +95,13 @@ public abstract class Copycat implements Managed<Copycat> {
    * @return A completable future to be completed once the resource has been created.
    */
   public <T extends Resource> CompletableFuture<T> create(String path, Class<? super T> type) {
+    Class<? extends StateMachine> stateMachine = registry.lookup(type);
+    if (stateMachine == null)
+      throw new IllegalArgumentException("unknown resource type: " + type);
+
     return protocol.submit(CreateResource.builder()
       .withPath(path)
-      .withType(registry.lookup(type))
+      .withType(stateMachine)
       .build())
       .thenApply(id -> factory.createResource(type, id));
   }
