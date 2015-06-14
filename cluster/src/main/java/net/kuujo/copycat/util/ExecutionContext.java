@@ -16,6 +16,8 @@
 package net.kuujo.copycat.util;
 
 import net.kuujo.copycat.io.serializer.Serializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.*;
 
@@ -25,6 +27,7 @@ import java.util.concurrent.*;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class ExecutionContext implements Executor, AutoCloseable {
+  private static final Logger LOGGER = LoggerFactory.getLogger(ExecutionContext.class);
   private final String name;
   private final Serializer serializer;
   private final ScheduledExecutorService executor;
@@ -78,7 +81,7 @@ public class ExecutionContext implements Executor, AutoCloseable {
    * @param runnable The runnable to execute.
    */
   public void execute(Runnable runnable) {
-    executor.execute(runnable);
+    executor.execute(wrapRunnable(runnable));
   }
 
   /**
@@ -89,7 +92,7 @@ public class ExecutionContext implements Executor, AutoCloseable {
    * @param unit The time unit.
    */
   public ScheduledFuture<?> schedule(Runnable runnable, long delay, TimeUnit unit) {
-    return executor.schedule(runnable, delay, unit);
+    return executor.schedule(wrapRunnable(runnable), delay, unit);
   }
 
   /**
@@ -100,7 +103,21 @@ public class ExecutionContext implements Executor, AutoCloseable {
    * @param unit The time unit.
    */
   public ScheduledFuture<?> scheduleAtFixedRate(Runnable runnable, long delay, long rate, TimeUnit unit) {
-    return executor.scheduleAtFixedRate(runnable, delay, rate, unit);
+    return executor.scheduleAtFixedRate(wrapRunnable(runnable), delay, rate, unit);
+  }
+
+  /**
+   * Wraps a runnable in an uncaught exception handler.
+   */
+  private Runnable wrapRunnable(Runnable runnable) {
+    return () -> {
+      try {
+        runnable.run();
+      } catch (RuntimeException e) {
+        LOGGER.error("An uncaught exception occurred: {}", e);
+        e.printStackTrace();
+      }
+    };
   }
 
   @Override
