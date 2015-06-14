@@ -50,7 +50,7 @@ public class RaftStateClient implements Managed<Void> {
   private ScheduledFuture<?> currentTimer;
   private ScheduledFuture<?> registerTimer;
   private long keepAliveInterval = 1000;
-  private boolean open;
+  private volatile boolean open;
   private CompletableFuture<Void> openFuture;
   protected volatile int leader;
   protected volatile long term;
@@ -132,7 +132,10 @@ public class RaftStateClient implements Managed<Void> {
       synchronized (openFuture) {
         if (openFuture != null) {
           CompletableFuture<Void> future = openFuture;
-          context.execute(() -> future.complete(null));
+          context.execute(() -> {
+            open = true;
+            future.complete(null);
+          });
           openFuture = null;
         }
       }
@@ -605,9 +608,7 @@ public class RaftStateClient implements Managed<Void> {
   public CompletableFuture<Void> open() {
     openFuture = new CompletableFuture<>();
     members.open().thenRunAsync(() -> {
-      register().thenRun(this::startKeepAliveTimer).thenRun(() -> {
-        open = true;
-      });
+      register().thenRun(this::startKeepAliveTimer);
     }, context);
     return openFuture;
   }
