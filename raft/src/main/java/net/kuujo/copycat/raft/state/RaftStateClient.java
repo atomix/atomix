@@ -503,8 +503,8 @@ public class RaftStateClient implements Managed<Void> {
 
     Member member = selectMember(members);
 
-    LOGGER.debug("{} - Registering session via {}", member.id(), member.id());
     RegisterRequest request = RegisterRequest.builder().build();
+    LOGGER.debug("Sending {} to {}", request, member);
     member.<RegisterRequest, RegisterResponse>send(request).whenComplete((response, error) -> {
       threadChecker.checkThread();
       synchronized (openFuture) {
@@ -536,7 +536,6 @@ public class RaftStateClient implements Managed<Void> {
    */
   private void keepAlive() {
     if (keepAlive.compareAndSet(false, true)) {
-      LOGGER.debug("Sending keep alive request");
       keepAlive(members.members().stream()
         .filter(m -> m.type() == Member.Type.ACTIVE)
         .collect(Collectors.toList())).thenRun(() -> keepAlive.set(false));
@@ -570,6 +569,7 @@ public class RaftStateClient implements Managed<Void> {
     KeepAliveRequest request = KeepAliveRequest.builder()
       .withSession(getSession())
       .build();
+    LOGGER.debug("Sending {} to {}", request, member);
     member.<KeepAliveRequest, KeepAliveResponse>send(request).whenComplete((response, error) -> {
       threadChecker.checkThread();
       if (isOpen()) {

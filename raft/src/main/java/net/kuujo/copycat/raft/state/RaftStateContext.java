@@ -434,10 +434,10 @@ public class RaftStateContext extends RaftStateClient {
    * Sends a join request to a specific member.
    */
   private CompletableFuture<Void> join(Member member, List<Member> members, CompletableFuture<Void> future) {
-    LOGGER.debug("{} - Joining cluster via {}", cluster.member().id(), member.id());
     JoinRequest request = JoinRequest.builder()
       .withMember(cluster.member().info())
       .build();
+    LOGGER.debug("Sending {} to {}", request, member);
     member.<JoinRequest, JoinResponse>send(request).whenComplete((response, error) -> {
       threadChecker.checkThread();
       if (error == null && response.status() == Response.Status.OK) {
@@ -496,6 +496,7 @@ public class RaftStateContext extends RaftStateClient {
     HeartbeatRequest request = HeartbeatRequest.builder()
       .withMember(cluster.member().id())
       .build();
+    LOGGER.debug("Sending {} to {}", request, member);
     member.<HeartbeatRequest, HeartbeatResponse>send(request).whenComplete((response, error) -> {
       threadChecker.checkThread();
       if (isOpen()) {
@@ -538,10 +539,10 @@ public class RaftStateContext extends RaftStateClient {
    * Sends a leave request to a specific member.
    */
   private CompletableFuture<Void> leave(Member member, List<Member> members, CompletableFuture<Void> future) {
-    LOGGER.debug("{} - Leaving cluster via {}", cluster.member().id(), member.id());
     LeaveRequest request = LeaveRequest.builder()
       .withMember(cluster.member().info())
       .build();
+    LOGGER.debug("Sending {} to {}", request, member);
     member.<LeaveRequest, LeaveResponse>send(request).whenComplete((response, error) -> {
       threadChecker.checkThread();
       if (error == null && response.status() == Response.Status.OK) {
