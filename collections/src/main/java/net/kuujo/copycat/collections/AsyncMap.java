@@ -1039,7 +1039,8 @@ public class AsyncMap<K, V> extends AbstractResource {
     @Apply(Put.class)
     protected Object put(Commit<Put> commit) {
       updateTime(commit);
-      return map.put(commit.operation().key(), commit);
+      Commit<? extends TtlCommand> command = map.put(commit.operation().key(), commit);
+      return isActive(command) ? command.operation().value : null;
     }
 
     /**
@@ -1048,7 +1049,8 @@ public class AsyncMap<K, V> extends AbstractResource {
     @Apply(PutIfAbsent.class)
     protected Object putIfAbsent(Commit<PutIfAbsent> commit) {
       updateTime(commit);
-      return map.putIfAbsent(commit.operation().key(), commit);
+      Commit<? extends TtlCommand> command = map.putIfAbsent(commit.operation().key(), commit);
+      return isActive(command) ? command.operation().value : null;
     }
 
     /**
@@ -1057,7 +1059,7 @@ public class AsyncMap<K, V> extends AbstractResource {
     @Filter({Put.class, PutIfAbsent.class})
     protected boolean filterPut(Commit<? extends TtlCommand> commit) {
       Commit<? extends TtlCommand> command = map.get(commit.operation().key());
-      return command != null && command.index() == commit.index() && isActive(command);
+      return isActive(command) && command.index() == commit.index();
     }
 
     /**
