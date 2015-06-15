@@ -591,7 +591,7 @@ public class RaftStateContext extends RaftStateClient {
         .thenRunAsync(this::startHeartbeatTimer, context)
         .thenCompose(v -> super.open())
         .thenRun(() -> open = true);
-    } else {
+    } else if (cluster.member().type() == Member.Type.ACTIVE) {
       return cluster.open().thenRunAsync(() -> {
         log.open(context);
         transition(FollowerState.class);
@@ -599,6 +599,8 @@ public class RaftStateContext extends RaftStateClient {
       }, context)
         .thenRunAsync(this::startHeartbeatTimer, context)
         .thenCompose(v -> super.open());
+    } else {
+      throw new IllegalStateException("unknown member type: " + cluster.member().type());
     }
   }
 
@@ -654,11 +656,7 @@ public class RaftStateContext extends RaftStateClient {
   public CompletableFuture<Void> delete() {
     if (open)
       return Futures.exceptionalFuture(new IllegalStateException("cannot delete open context"));
-
-    return CompletableFuture.runAsync(() -> {
-      if (log != null)
-        log.delete();
-    }, context);
+    return CompletableFuture.runAsync(log::delete, context);
   }
 
   @Override

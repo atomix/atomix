@@ -538,17 +538,13 @@ public class RaftStateClient implements Managed<Void> {
     LOGGER.debug("Sending {} to {}", request, member);
     member.<RegisterRequest, RegisterResponse>send(request).whenComplete((response, error) -> {
       threadChecker.checkThread();
-      synchronized (this) {
-        if (registerFuture != null) {
-          if (error == null && response.status() == Response.Status.OK) {
-            future.complete(response);
-            LOGGER.debug("Registered new session: {}", getSession());
-          } else {
-            LOGGER.debug("Session registration failed, retrying");
-            setLeader(0);
-            register(members, future);
-          }
-        }
+      if (error == null && response.status() == Response.Status.OK) {
+        future.complete(response);
+        LOGGER.debug("Registered new session: {}", getSession());
+      } else {
+        LOGGER.debug("Session registration failed, retrying");
+        setLeader(0);
+        register(members, future);
       }
     });
     return future;
