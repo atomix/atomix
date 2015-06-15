@@ -222,6 +222,7 @@ public class PassiveState extends AbstractState {
    * Applies an entry to the state machine.
    */
   protected CompletableFuture<?> applyEntry(Entry entry) {
+    LOGGER.debug("{} - Applying {}", context.getCluster().member().id(), entry);
     return context.getStateMachine().apply(entry);
   }
 

@@ -212,7 +212,7 @@ class LeaderState extends ActiveState {
         if (commitError == null) {
           CommandEntry entry = context.getLog().getEntry(index);
           if (entry != null) {
-            context.getStateMachine().apply(entry).whenCompleteAsync((result, error) -> {
+            applyEntry(entry).whenCompleteAsync((result, error) -> {
               if (isOpen()) {
                 if (error == null) {
                   future.complete(logResponse(CommandResponse.builder()
@@ -373,14 +373,14 @@ class LeaderState extends ActiveState {
       if (isOpen()) {
         if (commitError == null) {
           RegisterEntry entry = context.getLog().getEntry(index);
-          context.getStateMachine().apply(entry).whenCompleteAsync((sessionId, sessionError) -> {
+          applyEntry(entry).whenCompleteAsync((sessionId, sessionError) -> {
             if (isOpen()) {
               if (sessionError == null) {
                 future.complete(logResponse(RegisterResponse.builder()
                   .withStatus(Response.Status.OK)
                   .withLeader(context.getLeader())
                   .withTerm(context.getTerm())
-                  .withSession(sessionId)
+                  .withSession((Long) sessionId)
                   .withMembers(context.getCluster().members().stream().map(Member::info).collect(Collectors.toList()))
                   .build()));
               } else if (sessionError instanceof RaftException) {
@@ -421,7 +421,7 @@ class LeaderState extends ActiveState {
       entry.setSession(request.session());
       entry.setTimestamp(timestamp);
       index = context.getLog().appendEntry(entry);
-      LOGGER.debug("{} - Appended session entry to log at index {}", context.getCluster().member().id(), index);
+      LOGGER.debug("{} - Appended {}", context.getCluster().member().id(), entry);
     }
 
     CompletableFuture<KeepAliveResponse> future = new CompletableFuture<>();
@@ -431,7 +431,7 @@ class LeaderState extends ActiveState {
         if (commitError == null) {
           KeepAliveEntry entry = context.getLog().getEntry(index);
           long version = context.getStateMachine().getLastApplied();
-          context.getStateMachine().apply(entry).whenCompleteAsync((sessionResult, sessionError) -> {
+          applyEntry(entry).whenCompleteAsync((sessionResult, sessionError) -> {
             if (isOpen()) {
               if (sessionError == null) {
                 future.complete(logResponse(KeepAliveResponse.builder()
@@ -486,7 +486,7 @@ class LeaderState extends ActiveState {
       if (isOpen()) {
         if (commitError == null) {
           JoinEntry entry = context.getLog().getEntry(index);
-          context.getStateMachine().apply(entry).whenCompleteAsync((sessionId, sessionError) -> {
+          applyEntry(entry).whenCompleteAsync((sessionId, sessionError) -> {
             if (isOpen()) {
               if (sessionError == null) {
                 future.complete(logResponse(JoinResponse.builder()
@@ -534,7 +534,7 @@ class LeaderState extends ActiveState {
       if (isOpen()) {
         if (commitError == null) {
           LeaveEntry entry = context.getLog().getEntry(index);
-          context.getStateMachine().apply(entry).whenCompleteAsync((sessionId, sessionError) -> {
+          applyEntry(entry).whenCompleteAsync((sessionId, sessionError) -> {
             if (isOpen()) {
               if (sessionError == null) {
                 future.complete(logResponse(LeaveResponse.builder()
@@ -582,7 +582,7 @@ class LeaderState extends ActiveState {
       if (isOpen()) {
         if (commitError == null) {
           HeartbeatEntry entry = context.getLog().getEntry(index);
-          context.getStateMachine().apply(entry).whenCompleteAsync((sessionId, sessionError) -> {
+          applyEntry(entry).whenCompleteAsync((sessionId, sessionError) -> {
             if (isOpen()) {
               if (sessionError == null) {
                 future.complete(logResponse(HeartbeatResponse.builder()

@@ -310,7 +310,6 @@ public class NettyLocalMember extends ManagedLocalMember implements NettyMember{
                 responseBuffer.setByteBuf(response);
                 serializer.writeObject(result, responseBuffer);
                 context.writeAndFlush(response);
-                request.release();
               } else {
                 ByteBuf response = context.alloc().buffer(10, 1024 * 8);
                 response.writeLong(requestId);
@@ -319,9 +318,9 @@ public class NettyLocalMember extends ManagedLocalMember implements NettyMember{
                 responseBuffer.setByteBuf(response);
                 serializer.writeObject(error, responseBuffer);
                 context.writeAndFlush(response);
-                request.release();
               }
 
+              request.release();
               if (result instanceof ReferenceCounted) {
                 ((ReferenceCounted) result).release();
               }
