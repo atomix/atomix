@@ -36,7 +36,6 @@ public class Compactor implements AutoCloseable {
 
   private final Log log;
   private EntryFilter filter;
-  private ExecutionContext context;
   private long minorCompactionInterval = DEFAULT_MINOR_COMPACTION_INTERVAL;
   private long majorCompactionInterval = DEFAULT_MAJOR_COMPACTION_INTERVAL;
   private long commit;
@@ -179,6 +178,8 @@ public class Compactor implements AutoCloseable {
         });
       }
       return CompletableFuture.completedFuture(null);
+    }).whenComplete((result, error) -> {
+      compactFuture = null;
     });
     return compactFuture;
   }
