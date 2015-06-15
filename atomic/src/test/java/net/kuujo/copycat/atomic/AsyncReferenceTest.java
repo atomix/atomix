@@ -62,6 +62,37 @@ public class AsyncReferenceTest extends ConcurrentTestCase {
   }
 
   /**
+   * Tests compare-and-set.
+   */
+  public void testCompareAndSet() throws Throwable {
+    List<Copycat> copycats = createCopycats(3);
+
+    Node node1 = copycats.get(0).create("/test").get();
+    AsyncReference<Integer> reference1 = node1.create(AsyncReference.class).get();
+
+    expectResume();
+    reference1.set(1).thenRun(this::resume);
+    await();
+
+    Node node2 = copycats.get(0).create("/test").get();
+    AsyncReference<Integer> reference2 = node2.create(AsyncReference.class).get();
+
+    expectResume();
+    reference2.compareAndSet(1, 2).thenAccept(result -> {
+      threadAssertTrue(result);
+      resume();
+    });
+    await();
+
+    expectResume();
+    reference2.compareAndSet(1, 3).thenAccept(result -> {
+      threadAssertFalse(result);
+      resume();
+    });
+    await();
+  }
+
+  /**
    * Creates a Copycat instance.
    */
   private List<Copycat> createCopycats(int nodes) throws Throwable {

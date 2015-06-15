@@ -762,6 +762,7 @@ public class AsyncReference<T> extends AbstractResource {
       if (command != null && (command.operation().ttl() == 0 || command.timestamp() + command.operation().ttl() < timestamp)) {
         if (value.compareAndSet(commit.operation().expect(), commit.operation().update())) {
           command = commit;
+          return true;
         }
         return false;
       } else if (commit.operation().expect() == null) {
