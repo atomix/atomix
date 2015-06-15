@@ -129,7 +129,6 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
             future.context.execute(() -> {
               future.completeExceptionally(new ClusterException(channelFuture.cause()));
             });
-            byteBuf.release();
           }
         });
       } else {
@@ -164,7 +163,6 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
             future.context.execute(() -> {
               future.completeExceptionally(new ClusterException(channelFuture.cause()));
             });
-            byteBuf.release();
           }
         });
       } else {
