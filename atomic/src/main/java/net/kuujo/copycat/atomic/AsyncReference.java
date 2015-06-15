@@ -16,6 +16,7 @@
 package net.kuujo.copycat.atomic;
 
 import net.kuujo.copycat.AbstractResource;
+import net.kuujo.copycat.Mode;
 import net.kuujo.copycat.Stateful;
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.serializer.Serializer;
@@ -24,6 +25,7 @@ import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.raft.log.Compaction;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -33,9 +35,43 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 @Stateful(AsyncReference.StateMachine.class)
 public class AsyncReference<T> extends AbstractResource {
+  private ConsistencyLevel defaultConsistency = ConsistencyLevel.LINEARIZABLE_LEASE;
 
   public AsyncReference(Protocol protocol) {
     super(protocol);
+  }
+
+  /**
+   * Sets the default read consistency level.
+   *
+   * @param consistency The default read consistency level.
+   * @throws java.lang.NullPointerException If the consistency level is {@code null}
+   */
+  public void setDefaultConsistencyLevel(ConsistencyLevel consistency) {
+    if (consistency == null)
+      throw new NullPointerException("consistency cannot be null");
+    this.defaultConsistency = consistency;
+  }
+
+  /**
+   * Sets the default consistency level, returning the resource for method chaining.
+   *
+   * @param consistency The default read consistency level.
+   * @return The reference.
+   * @throws java.lang.NullPointerException If the consistency level is {@code null}
+   */
+  public AsyncReference<T> withDefaultConsistencyLevel(ConsistencyLevel consistency) {
+    setDefaultConsistencyLevel(consistency);
+    return this;
+  }
+
+  /**
+   * Returns the default consistency level.
+   *
+   * @return The default consistency level.
+   */
+  public ConsistencyLevel getDefaultConsistencyLevel() {
+    return defaultConsistency;
   }
 
   /**
@@ -44,7 +80,19 @@ public class AsyncReference<T> extends AbstractResource {
    * @return A completable future to be completed with the current value.
    */
   public CompletableFuture<T> get() {
-    return submit(Get.<T>builder().build());
+    return get(defaultConsistency);
+  }
+
+  /**
+   * Gets the current value.
+   *
+   * @param consistency The read consistency level.
+   * @return A completable future to be completed with the current value.
+   */
+  public CompletableFuture<T> get(ConsistencyLevel consistency) {
+    return submit(Get.<T>builder()
+      .withConsistency(consistency)
+      .build());
   }
 
   /**
@@ -54,7 +102,85 @@ public class AsyncReference<T> extends AbstractResource {
    * @return A completable future to be completed once the value has been set.
    */
   public CompletableFuture<Void> set(T value) {
-    return submit(Set.builder().withValue(value).build());
+    return submit(Set.builder()
+      .withValue(value)
+      .build());
+  }
+
+  /**
+   * Sets the value with a TTL.
+   *
+   * @param value The value to set.
+   * @param ttl The time after which to expire the value.
+   * @return A completable future to be completed once the value has been set.
+   */
+  public CompletableFuture<Void> set(T value, long ttl) {
+    return submit(Set.builder()
+      .withValue(value)
+      .withTtl(ttl)
+      .build());
+  }
+
+  /**
+   * Sets the value with a TTL.
+   *
+   * @param value The value to set.
+   * @param ttl The time after which to expire the value.
+   * @param unit The expiration time unit.
+   * @return A completable future to be completed once the value has been set.
+   */
+  public CompletableFuture<Void> set(T value, long ttl, TimeUnit unit) {
+    return submit(Set.builder()
+      .withValue(value)
+      .withTtl(ttl, unit)
+      .build());
+  }
+
+  /**
+   * Sets the value with a write mode.
+   *
+   * @param value The value to set.
+   * @param mode The write mode.
+   * @return A completable future to be completed once the value has been set.
+   */
+  public CompletableFuture<Void> set(T value, Mode mode) {
+    return submit(Set.builder()
+      .withValue(value)
+      .withMode(mode)
+      .build());
+  }
+
+  /**
+   * Sets the value with a write mode.
+   *
+   * @param value The value to set.
+   * @param ttl The time after which to expire the value.
+   * @param mode The write mode.
+   * @return A completable future to be completed once the value has been set.
+   */
+  public CompletableFuture<Void> set(T value, long ttl, Mode mode) {
+    return submit(Set.builder()
+      .withValue(value)
+      .withTtl(ttl)
+      .withMode(mode)
+      .build());
+  }
+
+  /**
+   * Sets the value with a write mode.
+   *
+   * @param value The value to set.
+   * @param ttl The time after which to expire the value.
+   * @param unit The expiration time unit.
+   * @param mode The write mode.
+   * @return A completable future to be completed once the value has been set.
+   */
+  public CompletableFuture<Void> set(T value, long ttl, TimeUnit unit, Mode mode) {
+    return submit(Set.builder()
+      .withValue(value)
+      .withTtl(ttl, unit)
+      .withMode(mode)
+      .build());
   }
 
   /**
@@ -64,7 +190,85 @@ public class AsyncReference<T> extends AbstractResource {
    * @return A completable future to be completed with the previous value.
    */
   public CompletableFuture<T> getAndSet(T value) {
-    return submit(GetAndSet.<T>builder().withValue(value).build());
+    return submit(GetAndSet.<T>builder()
+      .withValue(value)
+      .build());
+  }
+
+  /**
+   * Gets the current value and updates it.
+   *
+   * @param value The updated value.
+   * @param ttl The time after which to expire the value.
+   * @return A completable future to be completed with the previous value.
+   */
+  public CompletableFuture<T> getAndSet(T value, long ttl) {
+    return submit(GetAndSet.<T>builder()
+      .withValue(value)
+      .withTtl(ttl)
+      .build());
+  }
+
+  /**
+   * Gets the current value and updates it.
+   *
+   * @param value The updated value.
+   * @param ttl The time after which to expire the value.
+   * @param unit The expiration time unit.
+   * @return A completable future to be completed with the previous value.
+   */
+  public CompletableFuture<T> getAndSet(T value, long ttl, TimeUnit unit) {
+    return submit(GetAndSet.<T>builder()
+      .withValue(value)
+      .withTtl(ttl, unit)
+      .build());
+  }
+
+  /**
+   * Gets the current value and updates it.
+   *
+   * @param value The updated value.
+   * @param mode The write mode.
+   * @return A completable future to be completed with the previous value.
+   */
+  public CompletableFuture<T> getAndSet(T value, Mode mode) {
+    return submit(GetAndSet.<T>builder()
+      .withValue(value)
+      .withMode(mode)
+      .build());
+  }
+
+  /**
+   * Gets the current value and updates it.
+   *
+   * @param value The updated value.
+   * @param ttl The time after which to expire the value.
+   * @param mode The write mode.
+   * @return A completable future to be completed with the previous value.
+   */
+  public CompletableFuture<T> getAndSet(T value, long ttl, Mode mode) {
+    return submit(GetAndSet.<T>builder()
+      .withValue(value)
+      .withTtl(ttl)
+      .withMode(mode)
+      .build());
+  }
+
+  /**
+   * Gets the current value and updates it.
+   *
+   * @param value The updated value.
+   * @param ttl The time after which to expire the value.
+   * @param unit The expiration time unit.
+   * @param mode The write mode.
+   * @return A completable future to be completed with the previous value.
+   */
+  public CompletableFuture<T> getAndSet(T value, long ttl, TimeUnit unit, Mode mode) {
+    return submit(GetAndSet.<T>builder()
+      .withValue(value)
+      .withTtl(ttl, unit)
+      .withMode(mode)
+      .build());
   }
 
   /**
@@ -75,28 +279,178 @@ public class AsyncReference<T> extends AbstractResource {
    * @return A completable future to be completed with a boolean value indicating whether the value was updated.
    */
   public CompletableFuture<Boolean> compareAndSet(T expect, T update) {
-    return submit(CompareAndSet.builder().withExpect(expect).withUpdate(update).build());
+    return submit(CompareAndSet.builder()
+      .withExpect(expect)
+      .withUpdate(update)
+      .build());
+  }
+
+  /**
+   * Compares the current value and updated it if expected value == the current value.
+   *
+   * @param expect The expected value.
+   * @param update The updated value.
+   * @param ttl The time after which to expire the value.
+   * @return A completable future to be completed with a boolean value indicating whether the value was updated.
+   */
+  public CompletableFuture<Boolean> compareAndSet(T expect, T update, long ttl) {
+    return submit(CompareAndSet.builder()
+      .withExpect(expect)
+      .withUpdate(update)
+      .withTtl(ttl)
+      .build());
+  }
+
+  /**
+   * Compares the current value and updated it if expected value == the current value.
+   *
+   * @param expect The expected value.
+   * @param update The updated value.
+   * @param ttl The time after which to expire the value.
+   * @param unit The expiration time unit.
+   * @return A completable future to be completed with a boolean value indicating whether the value was updated.
+   */
+  public CompletableFuture<Boolean> compareAndSet(T expect, T update, long ttl, TimeUnit unit) {
+    return submit(CompareAndSet.builder()
+      .withExpect(expect)
+      .withUpdate(update)
+      .withTtl(ttl, unit)
+      .build());
+  }
+
+  /**
+   * Compares the current value and updated it if expected value == the current value.
+   *
+   * @param expect The expected value.
+   * @param update The updated value.
+   * @param mode The write mode.
+   * @return A completable future to be completed with a boolean value indicating whether the value was updated.
+   */
+  public CompletableFuture<Boolean> compareAndSet(T expect, T update, Mode mode) {
+    return submit(CompareAndSet.builder()
+      .withExpect(expect)
+      .withUpdate(update)
+      .withMode(mode)
+      .build());
+  }
+
+  /**
+   * Compares the current value and updated it if expected value == the current value.
+   *
+   * @param expect The expected value.
+   * @param update The updated value.
+   * @param ttl The time after which to expire the value.
+   * @param mode The write mode.
+   * @return A completable future to be completed with a boolean value indicating whether the value was updated.
+   */
+  public CompletableFuture<Boolean> compareAndSet(T expect, T update, long ttl, Mode mode) {
+    return submit(CompareAndSet.builder()
+      .withExpect(expect)
+      .withUpdate(update)
+      .withTtl(ttl)
+      .withMode(mode)
+      .build());
+  }
+
+  /**
+   * Compares the current value and updated it if expected value == the current value.
+   *
+   * @param expect The expected value.
+   * @param update The updated value.
+   * @param ttl The time after which to expire the value.
+   * @param unit The expiration time unit.
+   * @param mode The write mode.
+   * @return A completable future to be completed with a boolean value indicating whether the value was updated.
+   */
+  public CompletableFuture<Boolean> compareAndSet(T expect, T update, long ttl, TimeUnit unit, Mode mode) {
+    return submit(CompareAndSet.builder()
+      .withExpect(expect)
+      .withUpdate(update)
+      .withTtl(ttl, unit)
+      .withMode(mode)
+      .build());
   }
 
   /**
    * Abstract reference command.
    */
   public static abstract class ReferenceCommand<V> implements Command<V>, Writable {
+    protected Mode mode = Mode.PERSISTENT;
+    protected long ttl;
+
+    /**
+     * Returns the persistence mode.
+     *
+     * @return The persistence mode.
+     */
+    public Mode mode() {
+      return mode;
+    }
+
+    /**
+     * Returns the time to live in milliseconds.
+     *
+     * @return The time to live in milliseconds.
+     */
+    public long ttl() {
+      return ttl;
+    }
 
     @Override
     public void writeObject(Buffer buffer, Serializer serializer) {
-
+      buffer.writeByte(mode.ordinal())
+        .writeLong(ttl);
     }
 
     @Override
     public void readObject(Buffer buffer, Serializer serializer) {
-
+      mode = Mode.values()[buffer.readByte()];
+      ttl = buffer.readLong();
     }
 
     /**
      * Base reference command builder.
      */
     public static abstract class Builder<T extends Builder<T, U>, U extends ReferenceCommand<?>> extends Command.Builder<T, U> {
+
+      /**
+       * Sets the persistence mode.
+       *
+       * @param mode The persistence mode.
+       * @return The command builder.
+       */
+      @SuppressWarnings("unchecked")
+      public T withMode(Mode mode) {
+        if (mode == null)
+          throw new NullPointerException("mode cannot be null");
+        command.mode = mode;
+        return (T) this;
+      }
+
+      /**
+       * Sets the time to live.
+       *
+       * @param ttl The time to live in milliseconds..
+       * @return The command builder.
+       */
+      @SuppressWarnings("unchecked")
+      public T withTtl(long ttl) {
+        command.ttl = ttl;
+        return (T) this;
+      }
+
+      /**
+       * Sets the time to live.
+       *
+       * @param ttl The time to live.
+       * @param unit The time to live unit.
+       * @return The command builder.
+       */
+      @SuppressWarnings("unchecked")
+      public T withTtl(long ttl, TimeUnit unit) {
+        command.ttl = unit.toMillis(ttl);
+        return (T) this;
+      }
     }
   }
 
@@ -104,26 +458,41 @@ public class AsyncReference<T> extends AbstractResource {
    * Abstract reference query.
    */
   public static abstract class ReferenceQuery<V> implements Query<V>, Writable {
+    protected ConsistencyLevel consistency = ConsistencyLevel.LINEARIZABLE_LEASE;
 
     @Override
     public ConsistencyLevel consistency() {
-      return ConsistencyLevel.LINEARIZABLE_STRICT;
+      return consistency;
     }
 
     @Override
     public void writeObject(Buffer buffer, Serializer serializer) {
-
+      buffer.writeByte(consistency.ordinal());
     }
 
     @Override
     public void readObject(Buffer buffer, Serializer serializer) {
-
+      consistency = ConsistencyLevel.values()[buffer.readByte()];
     }
 
     /**
      * Base reference query builder.
      */
     public static abstract class Builder<T extends Builder<T, U>, U extends ReferenceQuery<?>> extends Query.Builder<T, U> {
+
+      /**
+       * Sets the query consistency level.
+       *
+       * @param consistency The query consistency level.
+       * @return The query builder.
+       */
+      @SuppressWarnings("unchecked")
+      public T withConsistency(ConsistencyLevel consistency) {
+        if (consistency == null)
+          throw new NullPointerException("consistency cannot be null");
+        query.consistency = consistency;
+        return (T) this;
+      }
     }
   }
 
@@ -353,13 +722,23 @@ public class AsyncReference<T> extends AbstractResource {
    */
   public static class StateMachine extends net.kuujo.copycat.raft.StateMachine {
     private final AtomicReference<Object> value = new AtomicReference<>();
+    private Commit<? extends ReferenceCommand> command;
     private long version;
+    private long timestamp;
+
+    /**
+     * Updates the state machine timestamp.
+     */
+    private void updateTimestamp(Commit commit) {
+      this.timestamp = commit.timestamp();
+    }
 
     /**
      * Handles a get commit.
      */
     @Apply(Get.class)
     protected Object get(Commit<Get> commit) {
+      updateTimestamp(commit);
       return value.get();
     }
 
@@ -368,7 +747,9 @@ public class AsyncReference<T> extends AbstractResource {
      */
     @Apply(Set.class)
     protected void set(Commit<Set> commit) {
+      updateTimestamp(commit);
       value.set(commit.operation().value());
+      command = commit;
       version = commit.index();
     }
 
@@ -377,7 +758,20 @@ public class AsyncReference<T> extends AbstractResource {
      */
     @Apply(CompareAndSet.class)
     protected boolean compareAndSet(Commit<CompareAndSet> commit) {
-      return value.compareAndSet(commit.operation().expect(), commit.operation().update());
+      updateTimestamp(commit);
+      if (command != null && (command.operation().ttl() == 0 || command.timestamp() + command.operation().ttl() > System.currentTimeMillis())) {
+        if (value.compareAndSet(commit.operation().expect(), commit.operation().update())) {
+          command = commit;
+        }
+        return false;
+      } else if (commit.operation().expect() == null) {
+        value.set(null);
+        command = commit;
+        version = commit.index();
+        return true;
+      } else {
+        return false;
+      }
     }
 
     /**
@@ -385,7 +779,9 @@ public class AsyncReference<T> extends AbstractResource {
      */
     @Apply(GetAndSet.class)
     protected Object getAndSet(Commit<GetAndSet> commit) {
+      updateTimestamp(commit);
       Object result = value.getAndSet(commit.operation().value());
+      command = commit;
       version = commit.index();
       return result;
     }
@@ -395,7 +791,7 @@ public class AsyncReference<T> extends AbstractResource {
      */
     @Filter(Filter.All.class)
     protected boolean filterAll(Commit<? extends ReferenceCommand<?>> commit, Compaction compaction) {
-      return commit.index() >= version;
+      return commit.index() >= version && (commit.operation().ttl() == 0 || commit.operation().ttl() + commit.timestamp() > timestamp);
     }
   }
 
