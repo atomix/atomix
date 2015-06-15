@@ -132,7 +132,7 @@ public class RaftStateClient implements Managed<Void> {
     this.response = 0;
     this.version = 0;
     if (session != 0 && openFuture != null) {
-      synchronized (openFuture) {
+      synchronized (this) {
         if (openFuture != null) {
           CompletableFuture<Void> future = openFuture;
           context.execute(() -> {
@@ -538,7 +538,7 @@ public class RaftStateClient implements Managed<Void> {
     LOGGER.debug("Sending {} to {}", request, member);
     member.<RegisterRequest, RegisterResponse>send(request).whenComplete((response, error) -> {
       threadChecker.checkThread();
-      synchronized (registerFuture) {
+      synchronized (this) {
         if (registerFuture != null) {
           if (error == null && response.status() == Response.Status.OK) {
             future.complete(response);
