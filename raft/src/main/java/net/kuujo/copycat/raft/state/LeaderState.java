@@ -956,11 +956,7 @@ class LeaderState extends ActiveState {
        * Resets the match index when a response fails.
        */
       private void resetMatchIndex(AppendResponse response) {
-        if (state.getMatchIndex() == 0) {
-          state.setMatchIndex(response.logIndex());
-        } else if (response.logIndex() != 0) {
-          state.setMatchIndex(Math.max(state.getMatchIndex(), response.logIndex()));
-        }
+        state.setMatchIndex(response.logIndex());
         LOGGER.debug("{} - Reset match index for {} to {}", context.getCluster().member().id(), member, state.getMatchIndex());
       }
 
