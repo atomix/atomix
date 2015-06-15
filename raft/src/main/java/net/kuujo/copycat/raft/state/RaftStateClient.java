@@ -287,6 +287,7 @@ public class RaftStateClient implements Managed<Void> {
     Member member = selectMember(request.command());
     this.<T>submit(request, member).whenComplete((result, error) -> {
       if (error == null) {
+        request.close();
         future.complete(result);
       } else if (error instanceof TimeoutException) {
         submit(request, future);
@@ -296,6 +297,7 @@ public class RaftStateClient implements Managed<Void> {
         LOGGER.warn("Failed to communicate with {}: {}", member, error);
         submit(request, future);
       } else {
+        request.close();
         future.completeExceptionally(error);
       }
     });
@@ -327,7 +329,6 @@ public class RaftStateClient implements Managed<Void> {
       } else {
         future.completeExceptionally(error);
       }
-      request.close();
     });
 
     return future;
@@ -397,6 +398,7 @@ public class RaftStateClient implements Managed<Void> {
     Member member = selectMember(request.query());
     this.<T>submit(request, member).whenComplete((result, error) -> {
       if (error == null) {
+        request.close();
         future.complete(result);
       } else if (error instanceof TimeoutException) {
         submit(request, future);
@@ -406,6 +408,7 @@ public class RaftStateClient implements Managed<Void> {
         LOGGER.warn("Failed to communicate with {}: {}", member, error);
         submit(request, future);
       } else {
+        request.close();
         future.completeExceptionally(error);
       }
     });
@@ -436,7 +439,6 @@ public class RaftStateClient implements Managed<Void> {
       } else {
         future.completeExceptionally(error);
       }
-      request.close();
     });
 
     return future;
