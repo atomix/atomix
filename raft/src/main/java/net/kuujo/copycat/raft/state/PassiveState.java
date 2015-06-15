@@ -213,6 +213,7 @@ public class PassiveState extends AbstractState {
           }, context.getContext());
         }
       }
+      return future;
     }
     return CompletableFuture.completedFuture(null);
   }
