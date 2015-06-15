@@ -759,7 +759,7 @@ public class AsyncReference<T> extends AbstractResource {
     @Apply(CompareAndSet.class)
     protected boolean compareAndSet(Commit<CompareAndSet> commit) {
       updateTimestamp(commit);
-      if (command != null && (command.operation().ttl() == 0 || command.timestamp() + command.operation().ttl() > System.currentTimeMillis())) {
+      if (command != null && (command.operation().ttl() == 0 || command.timestamp() + command.operation().ttl() < timestamp)) {
         if (value.compareAndSet(commit.operation().expect(), commit.operation().update())) {
           command = commit;
         }
