@@ -349,9 +349,11 @@ class RaftState {
     // Set last applied only after the operation has been submitted to the state machine executor.
     CompletableFuture<Void> future;
     if (session == null) {
+      LOGGER.warn("Unknown session: " + sessionId);
       future = Futures.exceptionalFuture(new UnknownSessionException("unknown session: " + sessionId));
     } else if (!session.update(index, timestamp)) {
       sessions.remove(sessionId);
+      LOGGER.warn("Expired session: " + sessionId);
       context.execute(() -> stateMachine.expire(session));
       future = Futures.exceptionalFuture(new UnknownSessionException("session expired: " + sessionId));
     } else {
@@ -394,10 +396,12 @@ class RaftState {
     // First check to ensure that the session exists.
     RaftSession session = sessions.get(sessionId);
     if (session == null) {
+      LOGGER.warn("Unknown session: " + sessionId);
       future = Futures.exceptionalFuture(new UnknownSessionException("unknown session " + sessionId));
     } else if (!session.update(index, timestamp)) {
       sessions.remove(sessionId);
       context.execute(() -> stateMachine.expire(session));
+      LOGGER.warn("Expired session: " + sessionId);
       future = Futures.exceptionalFuture(new UnknownSessionException("unknown session " + sessionId));
     } else if (session.responses.containsKey(request)) {
       future = CompletableFuture.completedFuture(session.responses.get(request));
@@ -449,8 +453,10 @@ class RaftState {
       // Verify that the client's session is still alive.
       RaftSession session = sessions.get(sessionId);
       if (session == null) {
+        LOGGER.warn("Unknown session: " + sessionId);
         return Futures.exceptionalFuture(new UnknownSessionException("unknown session: " + sessionId));
       } else if (!session.expire(timestamp)) {
+        LOGGER.warn("Expired session: " + sessionId);
         context.execute(() -> stateMachine.expire(session));
         return Futures.exceptionalFuture(new UnknownSessionException("unknown session: " + sessionId));
       } else {

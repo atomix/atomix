@@ -865,7 +865,7 @@ class LeaderState extends ActiveState {
 
         committing = true;
         LOGGER.debug("{} - Sent {} to {}", context.getCluster().member().id(), request, this.member);
-        this.member.<AppendRequest, AppendResponse>send(request).whenCompleteAsync((response, error) -> {
+        this.member.<AppendRequest, AppendResponse>send(request).whenComplete((response, error) -> {
           committing = false;
           context.checkThread();
 
@@ -923,7 +923,7 @@ class LeaderState extends ActiveState {
             }
           }
           request.close();
-        }, context.getContext());
+        });
       }
 
       /**
