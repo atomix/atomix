@@ -39,9 +39,9 @@ public class ResourceCommand<T extends Command<U>, U> extends ResourceOperation<
    * Resource command builder.
    */
   public static class Builder<T extends Command<U>, U> extends Command.Builder<Builder<T, U>, ResourceCommand<T, U>> {
-
-    public Builder() {
-      super(new ResourceCommand<T, U>());
+    @Override
+    protected ResourceCommand<T, U> create() {
+      return new ResourceCommand<>();
     }
 
     /**

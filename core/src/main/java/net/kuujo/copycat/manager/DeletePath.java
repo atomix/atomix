@@ -45,8 +45,9 @@ public class DeletePath extends PathOperation<Boolean> implements Command<Boolea
    * Create path builder.
    */
   public static class Builder extends PathOperation.Builder<Builder, DeletePath> {
-    public Builder() {
-      super(new DeletePath());
+    @Override
+    protected DeletePath create() {
+      return new DeletePath();
     }
   }
 

@@ -97,9 +97,6 @@ public class AsyncReference<T> extends AbstractResource {
      * Base reference command builder.
      */
     public static abstract class Builder<T extends Builder<T, U>, U extends ReferenceCommand<?>> extends Command.Builder<T, U> {
-      protected Builder(U command) {
-        super(command);
-      }
     }
   }
 
@@ -127,9 +124,6 @@ public class AsyncReference<T> extends AbstractResource {
      * Base reference query builder.
      */
     public static abstract class Builder<T extends Builder<T, U>, U extends ReferenceQuery<?>> extends Query.Builder<T, U> {
-      protected Builder(U query) {
-        super(query);
-      }
     }
   }
 
@@ -152,8 +146,9 @@ public class AsyncReference<T> extends AbstractResource {
      * Get query builder.
      */
     public static class Builder<T> extends ReferenceQuery.Builder<Builder<T>, Get<T>> {
-      public Builder() {
-        super(new Get<>());
+      @Override
+      protected Get<T> create() {
+        return new Get<>();
       }
     }
   }
@@ -197,8 +192,9 @@ public class AsyncReference<T> extends AbstractResource {
      * Put command builder.
      */
     public static class Builder extends ReferenceCommand.Builder<Builder, Set> {
-      public Builder() {
-        super(new Set());
+      @Override
+      protected Set create() {
+        return new Set();
       }
 
       /**
@@ -265,8 +261,9 @@ public class AsyncReference<T> extends AbstractResource {
      * Compare and set command builder.
      */
     public static class Builder extends ReferenceCommand.Builder<Builder, CompareAndSet> {
-      public Builder() {
-        super(new CompareAndSet());
+      @Override
+      protected CompareAndSet create() {
+        return new CompareAndSet();
       }
 
       /**
@@ -333,8 +330,9 @@ public class AsyncReference<T> extends AbstractResource {
      * Put command builder.
      */
     public static class Builder<T> extends ReferenceCommand.Builder<Builder<T>, GetAndSet<T>> {
-      public Builder() {
-        super(new GetAndSet<T>());
+      @Override
+      protected GetAndSet<T> create() {
+        return new GetAndSet<>();
       }
 
       /**

@@ -45,8 +45,9 @@ public class AddListener extends PathOperation<Boolean> implements Command<Boole
    * Create path builder.
    */
   public static class Builder extends PathOperation.Builder<Builder, AddListener> {
-    public Builder() {
-      super(new AddListener());
+    @Override
+    protected AddListener create() {
+      return new AddListener();
     }
   }
 

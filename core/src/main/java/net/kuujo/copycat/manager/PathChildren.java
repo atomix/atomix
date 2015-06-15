@@ -53,8 +53,9 @@ public class PathChildren extends PathOperation<List<String>> implements Query<L
    * Path children builder.
    */
   public static class Builder extends PathOperation.Builder<Builder, PathChildren> {
-    public Builder() {
-      super(new PathChildren());
+    @Override
+    protected PathChildren create() {
+      return new PathChildren();
     }
   }
 

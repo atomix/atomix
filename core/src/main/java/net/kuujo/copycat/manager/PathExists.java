@@ -51,8 +51,9 @@ public class PathExists extends PathOperation<Boolean> implements Query<Boolean>
    * Path exists builder.
    */
   public static class Builder extends PathOperation.Builder<Builder, PathExists> {
-    public Builder() {
-      super(new PathExists());
+    @Override
+    protected PathExists create() {
+      return new PathExists();
     }
   }
 

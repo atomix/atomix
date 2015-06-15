@@ -51,8 +51,9 @@ public class ResourceExists extends PathOperation<Boolean> implements Query<Bool
    * Resource exists builder.
    */
   public static class Builder extends PathOperation.Builder<Builder, ResourceExists> {
-    public Builder() {
-      super(new ResourceExists());
+    @Override
+    protected ResourceExists create() {
+      return new ResourceExists();
     }
   }
 

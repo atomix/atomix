@@ -32,12 +32,18 @@ public interface Query<T> extends Operation<T> {
   /**
    * Query builder.
    */
-  static class Builder<T extends Builder<T, U>, U extends Query<?>> extends Operation.Builder<U> {
-    protected final U query;
+  static abstract class Builder<T extends Builder<T, U>, U extends Query<?>> extends Operation.Builder<U> {
+    protected U query;
 
-    public Builder(U query) {
-      super(query);
+    @Override
+    protected void init(U query) {
+      super.init(query);
       this.query = query;
+    }
+
+    @Override
+    public U build() {
+      return query;
     }
   }
 

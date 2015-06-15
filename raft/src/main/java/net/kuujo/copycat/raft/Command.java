@@ -25,12 +25,18 @@ public interface Command<T> extends Operation<T> {
   /**
    * Command builder.
    */
-  static class Builder<T extends Builder<T, U>, U extends Command<?>> extends Operation.Builder<U> {
-    protected final U command;
+  static abstract class Builder<T extends Builder<T, U>, U extends Command<?>> extends Operation.Builder<U> {
+    protected U command;
 
-    public Builder(U command) {
-      super(command);
+    @Override
+    protected void init(U command) {
+      super.init(command);
       this.command = command;
+    }
+
+    @Override
+    public U build() {
+      return command;
     }
   }
 

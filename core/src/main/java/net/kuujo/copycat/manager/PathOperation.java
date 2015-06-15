@@ -60,12 +60,6 @@ public abstract class PathOperation<T> implements Operation<T>, Writable {
    * Path command builder.
    */
   public static abstract class Builder<T extends Builder<T, U>, U extends PathOperation<?>> extends Operation.Builder<U> {
-    protected final U operation;
-
-    protected Builder(U operation) {
-      super(operation);
-      this.operation = operation;
-    }
 
     /**
      * Sets the command path.

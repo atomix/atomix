@@ -81,8 +81,9 @@ public class CreateResource extends PathOperation<Long> implements Command<Long>
    * Create resource builder.
    */
   public static class Builder extends PathOperation.Builder<Builder, CreateResource> {
-    public Builder() {
-      super(new CreateResource());
+    @Override
+    protected CreateResource create() {
+      return new CreateResource();
     }
 
     /**

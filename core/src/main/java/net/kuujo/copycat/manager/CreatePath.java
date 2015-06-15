@@ -45,8 +45,9 @@ public class CreatePath extends PathOperation<Boolean> implements Command<Boolea
    * Create path builder.
    */
   public static class Builder extends PathOperation.Builder<Builder, CreatePath> {
-    public Builder() {
-      super(new CreatePath());
+    @Override
+    protected CreatePath create() {
+      return new CreatePath();
     }
   }
 

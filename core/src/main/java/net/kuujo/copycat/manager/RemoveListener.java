@@ -45,8 +45,9 @@ public class RemoveListener extends PathOperation<Boolean> implements Command<Bo
    * Create path builder.
    */
   public static class Builder extends PathOperation.Builder<Builder, RemoveListener> {
-    public Builder() {
-      super(new RemoveListener());
+    @Override
+    protected RemoveListener create() {
+      return new RemoveListener();
     }
   }
 

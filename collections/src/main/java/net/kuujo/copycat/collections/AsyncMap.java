@@ -426,9 +426,6 @@ public class AsyncMap<K, V> extends AbstractResource {
      * Base map command builder.
      */
     public static abstract class Builder<T extends Builder<T, U>, U extends MapCommand<?>> extends Command.Builder<T, U> {
-      protected Builder(U command) {
-        super(command);
-      }
     }
   }
 
@@ -457,9 +454,6 @@ public class AsyncMap<K, V> extends AbstractResource {
      * Base map query builder.
      */
     public static abstract class Builder<T extends Builder<T, U>, U extends MapQuery<?>> extends Query.Builder<T, U> {
-      protected Builder(U query) {
-        super(query);
-      }
 
       /**
        * Sets the query consistency level.
@@ -505,9 +499,6 @@ public class AsyncMap<K, V> extends AbstractResource {
      * Base key command builder.
      */
     public static abstract class Builder<T extends Builder<T, U>, U extends KeyCommand<?>> extends MapCommand.Builder<T, U> {
-      protected Builder(U command) {
-        super(command);
-      }
 
       /**
        * Sets the command key.
@@ -552,9 +543,6 @@ public class AsyncMap<K, V> extends AbstractResource {
      * Base key query builder.
      */
     public static abstract class Builder<T extends Builder<T, U>, U extends KeyQuery<?>> extends MapQuery.Builder<T, U> {
-      protected Builder(U query) {
-        super(query);
-      }
 
       /**
        * Sets the query key.
@@ -586,8 +574,9 @@ public class AsyncMap<K, V> extends AbstractResource {
      * Contains key builder.
      */
     public static class Builder extends KeyQuery.Builder<Builder, ContainsKey> {
-      public Builder() {
-        super(new ContainsKey());
+      @Override
+      protected ContainsKey create() {
+        return new ContainsKey();
       }
     }
   }
@@ -621,9 +610,6 @@ public class AsyncMap<K, V> extends AbstractResource {
      * Key/value command builder.
      */
     public static abstract class Builder<T extends Builder<T, U>, U extends KeyValueCommand<?>> extends KeyCommand.Builder<T, U> {
-      protected Builder(U command) {
-        super(command);
-      }
 
       /**
        * Sets the command value.
@@ -680,10 +666,7 @@ public class AsyncMap<K, V> extends AbstractResource {
     /**
      * TTL command builder.
      */
-    public static class Builder<T extends Builder<T, U>, U extends TtlCommand<?>> extends KeyValueCommand.Builder<T, U> {
-      protected Builder(U command) {
-        super(command);
-      }
+    public static abstract class Builder<T extends Builder<T, U>, U extends TtlCommand<?>> extends KeyValueCommand.Builder<T, U> {
 
       /**
        * Sets the persistence mode.
@@ -737,8 +720,9 @@ public class AsyncMap<K, V> extends AbstractResource {
      * Put command builder.
      */
     public static class Builder extends TtlCommand.Builder<Builder, Put> {
-      public Builder() {
-        super(new Put());
+      @Override
+      protected Put create() {
+        return new Put();
       }
     }
   }
@@ -759,8 +743,9 @@ public class AsyncMap<K, V> extends AbstractResource {
      * Put command builder.
      */
     public static class Builder extends TtlCommand.Builder<Builder, PutIfAbsent> {
-      public Builder() {
-        super(new PutIfAbsent());
+      @Override
+      protected PutIfAbsent create() {
+        return new PutIfAbsent();
       }
     }
   }
@@ -781,8 +766,9 @@ public class AsyncMap<K, V> extends AbstractResource {
      * Get query builder.
      */
     public static class Builder extends KeyQuery.Builder<Builder, Get> {
-      public Builder() {
-        super(new Get());
+      @Override
+      protected Get create() {
+        return new Get();
       }
     }
   }
@@ -826,8 +812,9 @@ public class AsyncMap<K, V> extends AbstractResource {
      * Get command builder.
      */
     public static class Builder extends KeyQuery.Builder<Builder, GetOrDefault> {
-      public Builder() {
-        super(new GetOrDefault());
+      @Override
+      protected GetOrDefault create() {
+        return new GetOrDefault();
       }
 
       /**
@@ -859,8 +846,9 @@ public class AsyncMap<K, V> extends AbstractResource {
      * Get command builder.
      */
     public static class Builder extends KeyValueCommand.Builder<Builder, Remove> {
-      public Builder() {
-        super(new Remove());
+      @Override
+      protected Remove create() {
+        return new Remove();
       }
     }
   }
@@ -881,8 +869,9 @@ public class AsyncMap<K, V> extends AbstractResource {
      * Is empty command builder.
      */
     public static class Builder extends MapQuery.Builder<Builder, IsEmpty> {
-      public Builder() {
-        super(new IsEmpty());
+      @Override
+      protected IsEmpty create() {
+        return new IsEmpty();
       }
     }
   }
@@ -903,8 +892,9 @@ public class AsyncMap<K, V> extends AbstractResource {
      * Is empty command builder.
      */
     public static class Builder extends MapQuery.Builder<Builder, Size> {
-      public Builder() {
-        super(new Size());
+      @Override
+      protected Size create() {
+        return new Size();
       }
     }
   }
@@ -935,8 +925,9 @@ public class AsyncMap<K, V> extends AbstractResource {
      * Get command builder.
      */
     public static class Builder extends MapCommand.Builder<Builder, Clear> {
-      public Builder() {
-        super(new Clear());
+      @Override
+      protected Clear create() {
+        return new Clear();
       }
     }
   }

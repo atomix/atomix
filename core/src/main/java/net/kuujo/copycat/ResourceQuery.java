@@ -45,9 +45,9 @@ public class ResourceQuery<T extends Query<U>, U> extends ResourceOperation<T, U
    * Resource command builder.
    */
   public static class Builder<T extends Query<U>, U> extends Query.Builder<Builder<T, U>, ResourceQuery<T, U>> {
-
-    public Builder() {
-      super(new ResourceQuery<T, U>());
+    @Override
+    protected ResourceQuery<T, U> create() {
+      return new ResourceQuery<>();
     }
 
     /**

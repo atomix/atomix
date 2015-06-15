@@ -65,8 +65,9 @@ public class DeleteResource implements Command<Boolean>, Writable {
    * Delete resource builder.
    */
   public static class Builder extends Command.Builder<Builder, DeleteResource> {
-    public Builder() {
-      super(new DeleteResource());
+    @Override
+    protected DeleteResource create() {
+      return new DeleteResource();
     }
 
     /**

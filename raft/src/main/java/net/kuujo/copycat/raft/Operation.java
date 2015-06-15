@@ -36,7 +36,7 @@ public interface Operation<T> extends Serializable {
   @SuppressWarnings("unchecked")
   static <T extends Builder> T builder(Class<T> type) {
     // We run into strange reflection issues when using a lambda here, so just use an old style closure instead.
-    return (T) Builder.BUILDERS.get().computeIfAbsent(type, new Function<Class<? extends Builder>, Builder>() {
+    T builder = (T) Builder.BUILDERS.get().computeIfAbsent(type, new Function<Class<? extends Builder>, Builder>() {
       @Override
       public Builder apply(Class<? extends Builder> type) {
         try {
@@ -46,6 +46,8 @@ public interface Operation<T> extends Serializable {
         }
       }
     });
+    builder.init(builder.create());
+    return builder;
   }
 
   /**
@@ -59,9 +61,21 @@ public interface Operation<T> extends Serializable {
       }
     };
 
-    private final T operation;
+    protected T operation;
 
-    protected Builder(T operation) {
+    /**
+     * Creates a new operation instance.
+     *
+     * @return A new operation instance.
+     */
+    protected abstract T create();
+
+    /**
+     * Initializes the operation builder.
+     *
+     * @param operation The operation instance.
+     */
+    protected void init(T operation) {
       this.operation = operation;
     }
 

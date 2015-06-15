@@ -97,9 +97,6 @@ public class AsyncBoolean extends AbstractResource {
      * Base boolean command builder.
      */
     public static abstract class Builder<T extends Builder<T, U>, U extends BooleanCommand<?>> extends Command.Builder<T, U> {
-      protected Builder(U command) {
-        super(command);
-      }
     }
   }
 
@@ -127,9 +124,6 @@ public class AsyncBoolean extends AbstractResource {
      * Base boolean query builder.
      */
     public static abstract class Builder<T extends Builder<T, U>, U extends BooleanQuery<?>> extends Query.Builder<T, U> {
-      protected Builder(U query) {
-        super(query);
-      }
     }
   }
 
@@ -151,8 +145,9 @@ public class AsyncBoolean extends AbstractResource {
      * Get query builder.
      */
     public static class Builder extends BooleanQuery.Builder<Builder, Get> {
-      public Builder() {
-        super(new Get());
+      @Override
+      protected Get create() {
+        return new Get();
       }
     }
   }
@@ -196,8 +191,9 @@ public class AsyncBoolean extends AbstractResource {
      * Put command builder.
      */
     public static class Builder extends BooleanCommand.Builder<Builder, Set> {
-      public Builder() {
-        super(new Set());
+      @Override
+      protected Set create() {
+        return new Set();
       }
 
       /**
@@ -264,8 +260,9 @@ public class AsyncBoolean extends AbstractResource {
      * Compare and set command builder.
      */
     public static class Builder extends BooleanCommand.Builder<Builder, CompareAndSet> {
-      public Builder() {
-        super(new CompareAndSet());
+      @Override
+      protected CompareAndSet create() {
+        return new CompareAndSet();
       }
 
       /**
@@ -331,8 +328,9 @@ public class AsyncBoolean extends AbstractResource {
      * Put command builder.
      */
     public static class Builder extends BooleanCommand.Builder<Builder, GetAndSet> {
-      public Builder() {
-        super(new GetAndSet());
+      @Override
+      protected GetAndSet create() {
+        return new GetAndSet();
       }
 
       /**

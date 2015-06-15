@@ -216,9 +216,6 @@ public class AsyncSet<T> extends AbstractResource {
      * Base set command builder.
      */
     public static abstract class Builder<T extends Builder<T, U>, U extends SetCommand<?>> extends Command.Builder<T, U> {
-      protected Builder(U command) {
-        super(command);
-      }
     }
   }
 
@@ -247,9 +244,6 @@ public class AsyncSet<T> extends AbstractResource {
      * Base set query builder.
      */
     public static abstract class Builder<T extends Builder<T, U>, U extends SetQuery<?>> extends Query.Builder<T, U> {
-      protected Builder(U query) {
-        super(query);
-      }
 
       /**
        * Sets the query consistency level.
@@ -292,9 +286,6 @@ public class AsyncSet<T> extends AbstractResource {
      * Base key command builder.
      */
     public static abstract class Builder<T extends Builder<T, U>, U extends ValueCommand<?>> extends SetCommand.Builder<T, U> {
-      protected Builder(U command) {
-        super(command);
-      }
 
       /**
        * Sets the command value.
@@ -339,9 +330,6 @@ public class AsyncSet<T> extends AbstractResource {
      * Base value query builder.
      */
     public static abstract class Builder<T extends Builder<T, U>, U extends ValueQuery<?>> extends SetQuery.Builder<T, U> {
-      protected Builder(U query) {
-        super(query);
-      }
 
       /**
        * Sets the query value.
@@ -373,8 +361,9 @@ public class AsyncSet<T> extends AbstractResource {
      * Contains key builder.
      */
     public static class Builder extends ValueQuery.Builder<Builder, Contains> {
-      public Builder() {
-        super(new Contains());
+      @Override
+      protected Contains create() {
+        return new Contains();
       }
     }
   }
@@ -420,10 +409,7 @@ public class AsyncSet<T> extends AbstractResource {
     /**
      * TTL command builder.
      */
-    public static class Builder<T extends Builder<T, U>, U extends TtlCommand<?>> extends ValueCommand.Builder<T, U> {
-      protected Builder(U command) {
-        super(command);
-      }
+    public static abstract class Builder<T extends Builder<T, U>, U extends TtlCommand<?>> extends ValueCommand.Builder<T, U> {
 
       /**
        * Sets the time to live.
@@ -477,8 +463,9 @@ public class AsyncSet<T> extends AbstractResource {
      * Add command builder.
      */
     public static class Builder extends TtlCommand.Builder<Builder, Add> {
-      public Builder() {
-        super(new Add());
+      @Override
+      protected Add create() {
+        return new Add();
       }
     }
   }
@@ -499,8 +486,9 @@ public class AsyncSet<T> extends AbstractResource {
      * Remove command builder.
      */
     public static class Builder extends ValueCommand.Builder<Builder, Remove> {
-      public Builder() {
-        super(new Remove());
+      @Override
+      protected Remove create() {
+        return new Remove();
       }
     }
   }
@@ -521,8 +509,9 @@ public class AsyncSet<T> extends AbstractResource {
      * Size query builder.
      */
     public static class Builder extends SetQuery.Builder<Builder, Size> {
-      public Builder() {
-        super(new Size());
+      @Override
+      protected Size create() {
+        return new Size();
       }
     }
   }
@@ -543,8 +532,9 @@ public class AsyncSet<T> extends AbstractResource {
      * Is empty query builder.
      */
     public static class Builder extends SetQuery.Builder<Builder, IsEmpty> {
-      public Builder() {
-        super(new IsEmpty());
+      @Override
+      protected IsEmpty create() {
+        return new IsEmpty();
       }
     }
   }
@@ -575,8 +565,9 @@ public class AsyncSet<T> extends AbstractResource {
      * Get command builder.
      */
     public static class Builder extends SetCommand.Builder<Builder, Clear> {
-      public Builder() {
-        super(new Clear());
+      @Override
+      protected Clear create() {
+        return new Clear();
       }
     }
   }
