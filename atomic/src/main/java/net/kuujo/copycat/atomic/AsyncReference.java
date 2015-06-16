@@ -24,6 +24,7 @@ import net.kuujo.copycat.io.serializer.Writable;
 import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.raft.log.Compaction;
 
+import java.util.HashSet;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -721,16 +722,46 @@ public class AsyncReference<T> extends AbstractResource {
    * Async reference state machine.
    */
   public static class StateMachine extends net.kuujo.copycat.raft.StateMachine {
+    private final java.util.Set<Long> sessions = new HashSet<>();
     private final AtomicReference<Object> value = new AtomicReference<>();
     private Commit<? extends ReferenceCommand> command;
     private long version;
-    private long timestamp;
+    private long time;
 
     /**
      * Updates the state machine timestamp.
      */
-    private void updateTimestamp(Commit commit) {
-      this.timestamp = commit.timestamp();
+    private void updateTime(Commit commit) {
+      this.time = Math.max(time, commit.timestamp());
+    }
+
+    @Override
+    public void register(Session session) {
+      sessions.add(session.id());
+    }
+
+    @Override
+    public void expire(Session session) {
+      sessions.remove(session.id());
+    }
+
+    @Override
+    public void close(Session session) {
+      sessions.remove(session.id());
+    }
+
+    /**
+     * Returns a boolean value indicating whether the given commit is active.
+     */
+    private boolean isActive(Commit<? extends ReferenceCommand> commit) {
+      if (commit == null) {
+        return false;
+      } else if (commit.operation().mode() == Mode.EPHEMERAL && !sessions.contains(commit.session().id())) {
+        return false;
+      } else if (commit.operation().ttl() != 0 && commit.operation().ttl() < time - commit.timestamp()) {
+        return false;
+      }
+      return true;
     }
 
     /**
@@ -738,7 +769,7 @@ public class AsyncReference<T> extends AbstractResource {
      */
     @Apply(Get.class)
     protected Object get(Commit<Get> commit) {
-      updateTimestamp(commit);
+      updateTime(commit);
       return value.get();
     }
 
@@ -747,7 +778,7 @@ public class AsyncReference<T> extends AbstractResource {
      */
     @Apply(Set.class)
     protected void set(Commit<Set> commit) {
-      updateTimestamp(commit);
+      updateTime(commit);
       value.set(commit.operation().value());
       command = commit;
       version = commit.index();
@@ -758,8 +789,8 @@ public class AsyncReference<T> extends AbstractResource {
      */
     @Apply(CompareAndSet.class)
     protected boolean compareAndSet(Commit<CompareAndSet> commit) {
-      updateTimestamp(commit);
-      if (command != null && (command.operation().ttl() == 0 || command.timestamp() + command.operation().ttl() < timestamp)) {
+      updateTime(commit);
+      if (isActive(command)) {
         if (value.compareAndSet(commit.operation().expect(), commit.operation().update())) {
           command = commit;
           return true;
@@ -780,11 +811,18 @@ public class AsyncReference<T> extends AbstractResource {
      */
     @Apply(GetAndSet.class)
     protected Object getAndSet(Commit<GetAndSet> commit) {
-      updateTimestamp(commit);
-      Object result = value.getAndSet(commit.operation().value());
-      command = commit;
-      version = commit.index();
-      return result;
+      updateTime(commit);
+      if (isActive(command)) {
+        Object result = value.getAndSet(commit.operation().value());
+        command = commit;
+        version = commit.index();
+        return result;
+      } else {
+        value.set(commit.operation().value());
+        command = commit;
+        version = commit.index();
+        return null;
+      }
     }
 
     /**
@@ -792,7 +830,7 @@ public class AsyncReference<T> extends AbstractResource {
      */
     @Filter(Filter.All.class)
     protected boolean filterAll(Commit<? extends ReferenceCommand<?>> commit, Compaction compaction) {
-      return commit.index() >= version && (commit.operation().ttl() == 0 || commit.operation().ttl() + commit.timestamp() > timestamp);
+      return commit.index() >= version && isActive(commit);
     }
   }
 
