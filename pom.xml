@@ -9,7 +9,7 @@
 
   <groupId>net.kuujo.copycat</groupId>
   <artifactId>copycat-parent</artifactId>
-  <version>0.5.0-SNAPSHOT</version>
+  <version>0.6.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Copycat</name>
   <description>Replicated state machine framework based on the Raft consensus algorithm.</description>
@@ -68,18 +68,15 @@
   </distributionManagement>
 
   <modules>
-    <module>core</module>
-    <module>api</module>
-    <module>event-log</module>
-    <module>state-log</module>
-    <module>state-machine</module>
-    <module>leader-election</module>
-    <module>collections</module>
+    <module>io</module>
+    <module>cluster</module>
     <module>netty</module>
-    <module>vertx</module>
-    <module>vertx3</module>
-    <module>chronicle</module>
-    <module>test-tools</module>
+    <module>raft</module>
+    <module>core</module>
+    <module>collections</module>
+    <module>atomic</module>
+    <module>all</module>
+    <module>test</module>
   </modules>
 
   <dependencies>
@@ -97,7 +94,7 @@
     <dependency>
       <groupId>net.jodah</groupId>
       <artifactId>concurrentunit</artifactId>
-      <version>0.3.2</version>
+      <version>0.3.3</version>
       <scope>test</scope>
     </dependency>
     <dependency>

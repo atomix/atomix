@@ -24,7 +24,7 @@
 
   <groupId>net.kuujo.copycat</groupId>
   <artifactId>copycat-examples-parent</artifactId>
-  <version>0.5.0-SNAPSHOT</version>
+  <version>0.6.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Copycat Examples</name>
   <description>Example projects for Copycat.</description>
@@ -32,6 +32,8 @@
   <inceptionYear>2013</inceptionYear>
 
   <properties>
+    <logback.version>1.1.2</logback.version>
+    
     <maven.source.plugin.version>2.2.1</maven.source.plugin.version>
     <maven.compiler.plugin.version>3.0</maven.compiler.plugin.version>
     <maven.failsafe.plugin.version>2.14</maven.failsafe.plugin.version>
@@ -39,7 +41,7 @@
     <maven.resources.plugin.version>2.6</maven.resources.plugin.version>
     <maven.dependency.plugin.version>2.7</maven.dependency.plugin.version>
     <maven.assembly.plugin.version>2.4</maven.assembly.plugin.version>
-    <maven.javadoc.plugin.version>2.8.1</maven.javadoc.plugin.version>
+    <maven.javadoc.plugin.version>2.10.3</maven.javadoc.plugin.version>
   </properties>
 
   <licenses>
@@ -74,8 +76,7 @@
   </distributionManagement>
 
   <modules>
-    <module>vertx-election</module>
-    <module>vertx-event-log</module>
+    <module>server</module>
   </modules>
 
   <dependencies>
@@ -83,6 +84,11 @@
       <groupId>net.kuujo.copycat</groupId>
       <artifactId>copycat</artifactId>
       <version>${project.version}</version>
+    </dependency>
+      <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <version>${logback.version}</version>
     </dependency>
   </dependencies>
 

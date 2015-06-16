@@ -5,27 +5,23 @@
   <parent>
     <groupId>net.kuujo.copycat</groupId>
     <artifactId>copycat-parent</artifactId>
-    <version>0.5.0-SNAPSHOT</version>
+    <version>0.6.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>copycat-core</artifactId>
-  <name>Copycat Core</name>
-
-  <properties>
-    <kryo.version>3.0.0</kryo.version>
-    <config.version>1.2.1</config.version>
-  </properties>
+  <artifactId>copycat</artifactId>
+  <name>Copycat</name>
 
   <dependencies>
     <dependency>
-      <groupId>com.esotericsoftware</groupId>
-      <artifactId>kryo</artifactId>
-      <version>${kryo.version}</version>
+      <groupId>net.kuujo.copycat</groupId>
+      <artifactId>copycat-raft</artifactId>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.typesafe</groupId>
-      <artifactId>config</artifactId>
-      <version>${config.version}</version>
+      <groupId>net.kuujo.copycat</groupId>
+      <artifactId>copycat-test</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 

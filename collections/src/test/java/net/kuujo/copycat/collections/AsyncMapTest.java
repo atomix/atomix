@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 the original author or authors.
+ * Copyright 2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,19 @@
 package net.kuujo.copycat.collections;
 
 import net.jodah.concurrentunit.ConcurrentTestCase;
-import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.log.BufferedLog;
-import net.kuujo.copycat.protocol.Consistency;
-import net.kuujo.copycat.protocol.LocalProtocol;
-import net.kuujo.copycat.test.TestCluster;
+import net.kuujo.copycat.Copycat;
+import net.kuujo.copycat.CopycatServer;
+import net.kuujo.copycat.Node;
+import net.kuujo.copycat.cluster.TestCluster;
+import net.kuujo.copycat.cluster.TestMember;
+import net.kuujo.copycat.cluster.TestMemberRegistry;
+import net.kuujo.copycat.raft.log.Log;
+import net.kuujo.copycat.raft.log.StorageLevel;
 import org.testng.annotations.Test;
 
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Asynchronous map test.
@@ -35,140 +39,160 @@ import java.util.concurrent.CompletableFuture;
 public class AsyncMapTest extends ConcurrentTestCase {
 
   /**
-   * Tests putting a value in an asynchronous map and then reading the value.
+   * Tests putting and getting a value.
    */
-  public void testAsyncMapPutGet() throws Throwable {
-    TestCluster<AsyncMap<String, String>> cluster = TestCluster.<AsyncMap<String, String>>builder()
-      .withActiveMembers(3)
-      .withPassiveMembers(2)
-      .withUriFactory(id -> String.format("local://test%d", id))
-      .withClusterFactory(members -> new ClusterConfig().withProtocol(new LocalProtocol()).withMembers(members))
-      .withResourceFactory(config -> AsyncMap.create("test", config, new AsyncMapConfig().withLog(new BufferedLog())))
-      .build();
+  public void testPutGetRemove() throws Throwable {
+    List<Copycat> copycats = createCopycats(3);
+
+    Copycat copycat = copycats.get(0);
+
+    Node node = copycat.create("/test").get();
+    AsyncMap<String, String> map = node.create(AsyncMap.class).get();
+
     expectResume();
-    cluster.open().thenRun(this::resume);
-    await(5000);
-    
-    AsyncMap<String, String> map = cluster.activeResources().iterator().next();
+    map.put("foo", "Hello world!").thenRun(this::resume);
+    await();
+
     expectResume();
-    map.put("foo", "Hello world!").thenRun(() -> {
-      map.get("foo").thenAccept(result -> {
-        threadAssertEquals(result, "Hello world!");
-        resume();
-      });
+    map.get("foo").thenAccept(result -> {
+      threadAssertEquals(result, "Hello world!");
+      resume();
     });
-    await(5000);
+    await();
+
+    expectResume();
+    map.remove("foo").thenAccept(result -> {
+      threadAssertEquals(result, "Hello world!");
+      resume();
+    });
+    await();
+
+    expectResume();
+    map.get("foo").thenAccept(result -> {
+      threadAssertNull(result);
+      resume();
+    });
+    await();
   }
 
   /**
-   * Tests putting a value in an asynchronous map and then removing it.
+   * Tests the map size.
    */
-  public void testAsyncMapPutRemove() throws Throwable {
-    TestCluster<AsyncMap<String, String>> cluster = TestCluster.<AsyncMap<String, String>>builder()
-      .withActiveMembers(3)
-      .withPassiveMembers(2)
-      .withUriFactory(id -> String.format("local://test%d", id))
-      .withClusterFactory(members -> new ClusterConfig().withProtocol(new LocalProtocol()).withMembers(members))
-      .withResourceFactory(config -> AsyncMap.create("test", config, new AsyncMapConfig().withLog(new BufferedLog())))
-      .build();
+  public void testMapSize() throws Throwable {
+    List<Copycat> copycats = createCopycats(3);
+
+    Copycat copycat = copycats.get(0);
+
+    Node node = copycat.create("/test").get();
+    AsyncMap<String, String> map = node.create(AsyncMap.class).get();
+
     expectResume();
-    cluster.open().thenRun(this::resume);
-    await(5000);
-    
-    AsyncMap<String, String> map = cluster.activeResources().iterator().next();
-    expectResume();
-    map.put("foo", "Hello world!").thenRun(() -> {
-      map.get("foo").thenAccept(r1 -> {
-        threadAssertEquals(r1, "Hello world!");
-        map.remove("foo").thenRun(() -> {
-          map.get("foo").thenAccept(r2 -> {
-            threadAssertNull(r2);
-            resume();
-          });
-        });
-      });
+    map.size().thenAccept(size -> {
+      threadAssertEquals(size, 0);
+      resume();
     });
-    await(5000);
+    await();
+
+    expectResume();
+    map.put("foo", "Hello world!").thenRun(this::resume);
+    await();
+
+    expectResume();
+    map.size().thenAccept(size -> {
+      threadAssertEquals(size, 1);
+      resume();
+    });
+    await();
+
+    expectResume();
+    map.put("bar", "Hello world again!").thenRun(this::resume);
+    await();
+
+    expectResume();
+    map.size().thenAccept(size -> {
+      threadAssertEquals(size, 2);
+      resume();
+    });
+    await();
   }
 
   /**
-   * Tests getting a value from a passive member of the cluster.
+   * Tests TTL.
    */
-  public void testAsyncMapGetFromPassiveMember() throws Throwable {
-    TestCluster<AsyncMap<String, String>> cluster = TestCluster.<AsyncMap<String, String>>builder()
-      .withActiveMembers(3)
-      .withPassiveMembers(2)
-      .withUriFactory(id -> String.format("local://test%d", id))
-      .withClusterFactory(members -> new ClusterConfig().withProtocol(new LocalProtocol()).withMembers(members))
-      .withResourceFactory(config -> AsyncMap.create("test", config, new AsyncMapConfig().withConsistency(Consistency.WEAK).withLog(new BufferedLog())))
-      .build();
-    
+  public void testMapTtl() throws Throwable {
+    List<Copycat> copycats = createCopycats(3);
+
+    Copycat copycat = copycats.get(0);
+
+    Node node = copycat.create("/test").get();
+    AsyncMap<String, String> map = node.create(AsyncMap.class).get();
+
     expectResume();
-    cluster.open().thenRun(this::resume);
-    await(5000);
-    
-    AsyncMap<String, String> activeMap = cluster.activeResources().iterator().next();
-    AsyncMap<String, String> passiveMap = cluster.passiveResources().iterator().next();
+    map.put("foo", "Hello world!", 1, TimeUnit.SECONDS).thenRun(this::resume);
+    await();
+
     expectResume();
-    activeMap.put("foo", "Hello world!").thenRun(() -> {
-      try {
-        Thread.sleep(1000);
-      } catch (InterruptedException e) {
+    map.get("foo").thenAccept(result -> {
+      threadAssertEquals(result, "Hello world!");
+      resume();
+    });
+    await();
+
+    long startTime = System.currentTimeMillis();
+    while (System.currentTimeMillis() < startTime + 1000);
+
+    expectResume();
+    map.get("foo").thenAccept(result -> {
+      threadAssertNull(result);
+      resume();
+    });
+    await();
+
+    expectResume();
+    map.size().thenAccept(size -> {
+      threadAssertEquals(size, 0);
+      resume();
+    });
+    await();
+  }
+
+  /**
+   * Creates a Copycat instance.
+   */
+  private List<Copycat> createCopycats(int nodes) throws Throwable {
+    TestMemberRegistry registry = new TestMemberRegistry();
+
+    List<Copycat> copycats = new ArrayList<>();
+
+    expectResumes(nodes);
+
+    for (int i = 1; i <= nodes; i++) {
+      TestCluster.Builder builder = TestCluster.builder()
+        .withMemberId(i)
+        .withRegistry(registry);
+
+      for (int j = 1; j <= nodes; j++) {
+        builder.addMember(TestMember.builder()
+          .withId(j)
+          .withAddress(String.format("test-%d", j))
+          .build());
       }
-      passiveMap.get("foo").thenAccept(r1 -> {
-        threadAssertEquals(r1, "Hello world!");
-        resume();
-      });
-    });
-    await(5000);
-  }
 
-  /**
-   * Tests putting enough entries in the map's log to roll over the log to a new segment.
-   */
-  public void testAsyncMapPutMany() throws Throwable {
-    TestCluster<AsyncMap<String, String>> cluster = TestCluster.<AsyncMap<String, String>>builder()
-      .withActiveMembers(3)
-      .withPassiveMembers(2)
-      .withUriFactory(id -> String.format("local://test%d", id))
-      .withClusterFactory(members -> new ClusterConfig().withProtocol(new LocalProtocol()).withMembers(members))
-      .withResourceFactory(config -> AsyncMap.create("test", config, new AsyncMapConfig().withConsistency(Consistency.WEAK).withLog(new BufferedLog().withSegmentInterval(1024).withFlushOnWrite(true))))
-      .build();
+      Copycat copycat = CopycatServer.builder()
+        .withCluster(builder.build())
+        .withLog(Log.builder()
+          .withStorageLevel(StorageLevel.MEMORY)
+          .build())
+        .build();
 
-    expectResume();
-    cluster.open().thenRun(this::resume);
-    await(5000);
-    
-    AsyncMap<String, String> map = cluster.activeResources().iterator().next();
-    expectResume();
-    putMany(map).thenRun(this::resume);
-    await(5000);
-  }
+      copycat.open().thenRun(this::resume);
 
-  /**
-   * Puts many entries in the map.
-   */
-  private CompletableFuture<Void> putMany(AsyncMap<String, String> map) {
-    CompletableFuture<Void> future = new CompletableFuture<>();
-    putMany(0, 10, map, future);
-    return future;
-  }
-
-  /**
-   * Puts many entries in the map recursively.
-   */
-  private void putMany(int count, int total, AsyncMap<String, String> map, CompletableFuture<Void> future) {
-    if (count < total) {
-      map.put(UUID.randomUUID().toString(), "Hello world!").whenComplete((result, error) -> {
-        if (error == null) {
-          putMany(count + 1, total, map, future);
-        } else {
-          future.completeExceptionally(error);
-        }
-      });
-    } else {
-      future.complete(null);
+      copycats.add(copycat);
     }
+
+    await();
+
+    return copycats;
   }
 
 }

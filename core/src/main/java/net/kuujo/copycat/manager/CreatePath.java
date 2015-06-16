@@ -1,0 +1,54 @@
+/*
+ * Copyright 2015 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package net.kuujo.copycat.manager;
+
+import net.kuujo.copycat.raft.Command;
+import net.kuujo.copycat.raft.Operation;
+
+/**
+ * Create getPath command.
+ *
+ * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
+ */
+public class CreatePath extends PathOperation<Boolean> implements Command<Boolean> {
+
+  /**
+   * Returns a new CreatePath builder.
+   *
+   * @return A new CreatePath command builder.
+   */
+  public static Builder builder() {
+    return Operation.builder(CreatePath.Builder.class);
+  }
+
+  public CreatePath() {
+  }
+
+  public CreatePath(String path) {
+    super(path);
+  }
+
+  /**
+   * Create path builder.
+   */
+  public static class Builder extends PathOperation.Builder<Builder, CreatePath> {
+    @Override
+    protected CreatePath create() {
+      return new CreatePath();
+    }
+  }
+
+}
