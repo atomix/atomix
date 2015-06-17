@@ -274,7 +274,7 @@ class LeaderState extends ActiveState {
         return submitQuerySerializable(entry);
       case LINEARIZABLE_LEASE:
         return submitQueryLinearizableLease(entry);
-      case LINEARIZABLE_STRICT:
+      case LINEARIZABLE:
         return submitQueryLinearizableStrict(entry);
       default:
         throw new IllegalStateException("unknown consistency level");

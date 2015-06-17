@@ -46,7 +46,7 @@ public class PathChildren extends PathOperation<List<String>> implements Query<L
 
   @Override
   public ConsistencyLevel consistency() {
-    return ConsistencyLevel.LINEARIZABLE_STRICT;
+    return ConsistencyLevel.LINEARIZABLE;
   }
 
   /**

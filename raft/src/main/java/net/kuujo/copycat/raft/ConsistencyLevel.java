@@ -55,7 +55,7 @@ public enum ConsistencyLevel {
   /**
    * Provides strict linearizable consistency.
    */
-  LINEARIZABLE_STRICT {
+  LINEARIZABLE {
     @Override
     public boolean isLeaderRequired() {
       return true;

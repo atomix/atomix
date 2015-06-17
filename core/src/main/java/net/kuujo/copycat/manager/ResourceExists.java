@@ -44,7 +44,7 @@ public class ResourceExists extends PathOperation<Boolean> implements Query<Bool
 
   @Override
   public ConsistencyLevel consistency() {
-    return ConsistencyLevel.LINEARIZABLE_STRICT;
+    return ConsistencyLevel.LINEARIZABLE;
   }
 
   /**
