@@ -47,6 +47,18 @@ a release, so check back for more! If you would like to request specific documen
       * [Read consistency](#read-consistency)
       * [Expiring keys and values](#expiring-keys-and-values)
       * [Ephemeral keys and values](#ephemeral-keys-and-values)
+1. [Custom resources](#custom-resources)
+   * [State machines](#state-machines)
+   * [Operations](#operations)
+      * [Commands](#commands)
+      * [Queries](#queries)
+   * [Filtering](#filtering)
+1. [Serialization](#serialization)
+   * [Registering serializers](#registering-serializers)
+   * [Buffers](#buffers)
+   * [ObjectWriter](#objectwriter)
+   * [Writable](#writable)
+   * [Reference counting](#reference-counting)
 
 ## Getting started
 
@@ -295,7 +307,7 @@ map.put("foo", "Hello world!").get();
 ### Working with clients
 
 Clients work similarly to servers in that they take a set of Raft members with which to communicate via a builder.
-In contract to servers, though, clients do not require a unique member ID or a `Log` as they do not store state. This
+In contrast to servers, though, clients do not require a unique member ID or a `Log` as they do not store state. This
 means that all operations submitted by a client node will be executed remotely.
 
 When constructing a client, the user must provide a set of `Members` to which to connect the client. `Members` is a parent
@@ -351,8 +363,10 @@ map.put("foo", "Hello world!").get();
 ### Working with resources
 
 The high level `Copycat` API provides a path oriented interface that allows users to define arbitrary named resources.
-Resources are implementations of the `Resource` interface which submit a replicated state machine to a Copycat cluster
-and manage operations on that state machine.
+Resources are server-side state machines that are replicated via the Raft consensus protocol. A resource instance provides
+a class for submitting operations to the Copycat cluster and an associated state machine for managing the server-side
+state of a resource. For instance, the `AsyncMap` resource submits operations to a replicated `AsyncMap.StateMachine`
+state machine implementation. The `AsyncMap.StateMachine` holds the map state in memory on each Copycat server.
 
 Copycat allows resources to be associated with hierarchical paths via the `Copycat` interface. To define a path, create
 a `Node` instance via `Copycat.create`
@@ -483,5 +497,388 @@ copycat.close().get();
 
 In the example above, once the Copycat instance is closed and the client has disconnected from the other servers, the
 client's session will expire and the `foo` key will be evicted from the map.
+
+## Custom resources
+
+The Copycat API is designed to facilitate operating on arbitrary user-defined resources. When a custom resource is created
+via `Copycat.create`, an associated state machine will be created on each Copycat server, and operations submitted by the
+resource instance will be applied to the replicated state machine. In that sense, we can think of a `Resource` instance
+as a client-side object and a `StateMachine` instance as the server-side representation of that object.
+
+To define a new resource, simply extend `AbstractResource`:
+
+```java
+public class Value extends AbstractResource {
+
+}
+```
+
+### State machines
+
+Each resource *must be associated with a state machine* implementation. When a resource is created, Copycat will instantiate
+an instance of the resource's `StateMachine` on each node in the Copycat cluster. When methods are called on the client-side
+resource instance, operations will be submitted to the Copycat cluster, replicated via the Raft consensus algorithm, and
+applied to the resource's state machine on each node in the cluster.
+
+To define a state machine, extend the base `StateMachine` class:
+
+```java
+public class ValueStateMachine extends StateMachine {
+
+}
+```
+
+Once a state machine has been created, it must be associated with a resource type by annotating the resource with the
+`@Stateful` annotation:
+
+```java
+@Stateful(ValueStateMachine.class)
+public class Value<T> extends AbstractResource {
+
+}
+```
+
+Any attempt to create a `Resource` without the `@Stateful` annotation will result in an exception.
+
+### Operations
+
+Resources are represented in terms of ` client side `Resource` instance and a set of server-side `StateMachine` instances.
+In order to alter the state of a resource - e.g. to set the value of our `Value` resource - an operation must be submitted
+to the cluster. Operations come in two forms [commands](#commands) and [queries](#queries).
+
+All operations extend the base `Operation` interface which implements `Serializable`. This means that Copycat can natively
+serialize all operations. However, for the best performance users should implement [Writable](#writable) or create an
+[ObjectWriter](#objectwriter) for operations.
+
+#### Commands
+
+Commands are operations that modify the state of a resource. When a command operation is submitted to the Copycat cluster,
+the command is logged to disk or memory (depending on the `Log` configuration) and replicated via the Raft consensus
+protocol. Once the command has been stored on a majority of `ACTIVE` cluster members, it will be applied to the resource's
+server-side `StateMachine` and the output will be returned to the client.
+
+Commands are defined by implementing the `Command` interface:
+
+```java
+public class Set<T> implements Command<T> {
+  private final String value;
+
+  public Set(String value) {
+    this.value = value;
+  }
+}
+```
+
+When implementing a command for a resource, the resource's `StateMachine` must have a mechanism for handling the command.
+Commands are handled by simply annotating a `public` or `protected` state machine method with the `@Apply` annotation.
+The base `StateMachine` class will apply operations to internal methods given the `@Apply` annotation:
+
+```java
+public class ValueStateMachine extends StateMachine {
+  private Object value;
+
+  /**
+   * Set a new value and return the old value.
+   */
+  @Apply(Set.class)
+  public Object set(Object value) {
+    Object oldValue = this.value;
+    this.value = value;
+    return oldValue;
+  }
+
+}
+```
+
+Once the server-side state machine has been modified to handle the application of a command, we must alter the `Resource`
+implementation to handle submitting the command to the Copycat cluster. This is done by simply calling the protected
+`submit` method.
+
+```java
+@Stateful(ValueStateMachine.class)
+public class Value<T> extends AbstractResource {
+
+  /**
+   * Sets the value of the resource.
+   */
+  public CompletableFuture<T> set(T value) {
+    return submit(new Set<>(value));
+  }
+}
+```
+
+When the `submit` method is called, the parent `AbstractResource` will submit the command to the Raft cluster where it
+will be persisted and replicated to a majority of the cluster before being applied to the leader's state machine. The
+state machine's return value will be returned to the client.
+
+The `submit` method always returns a `CompletableFuture`, however there is no requirement that resources be asynchronous.
+Users can implement synchronous resources by simply blocking on `submit` calls:
+
+```java
+@Stateful(ValueStateMachine.class)
+public class Value<T> extends AbstractResource {
+
+   /**
+    * Sets the value of the resource.
+    */
+   public T set(T value) {
+     try {
+       return submit(new Set<>(value)).get();
+     } catch (InterruptedException e) {
+       throw new RuntimeException(e);
+     }
+   }
+ }
+```
+
+#### Queries
+
+In contrast to commands which perform state change operations, queries are read-only operations which do not modify the
+server-side state machine's state. Because read operations do not modify the state machine state, Copycat can optimize
+queries according to read from certain nodes according to the configuration and may not require contacting a majority
+of the cluster in order to maintain consistency. This means queries can be an order of magnitude faster, so it is strongly
+recommended that all read-only operations be implemented as queries.
+
+To create a query, simply implement the `Query` interface:
+
+```java
+public class Get<T> implements Query {
+
+}
+```
+
+As with `Command`, `Query` extends the base `Operation` interface which is `Serializable`. However, for the best performance
+users should implement [Writable](#writable) or register an [ObjectWriter](#objectwriter).
+
+Queries are applied to the server-side state machine in the same manner as commands, using the `@Apply` annotation:
+
+```java
+public class ValueStateMachine extends StateMachine {
+  private Object value;
+
+  /**
+   * Returns the value.
+   */
+  @Query(Get.class)
+  public Object get() {
+    return value;
+  }
+}
+```
+
+Once the server-side state machine has been modified to handle the application of a query, again, the `Resource` implementation
+must be modified to handle submitting the query to the Copycat cluster:
+
+```java
+@Stateful(ValueStateMachine.class)
+public class Value<T> extends AbstractResource {
+
+  /**
+   * Gets the value of the resource.
+   */
+  public CompletableFuture<T> get() {
+    return submit(new Get<>(value));
+  }
+}
+```
+
+### Filtering
+
+TODO
+
+## Serialization
+
+Copycat provides an efficient custom serialization framework that's designed to operate on both disk and memory via a
+common [Buffer](#buffers) abstraction. Users can use the serialization framework to heavily optimize the transport of
+user-defined objects over the wire and reduce the use of disk space and memory in Copycat's logs.
+
+Copycat's serializer can be used by simply instantiating a `Serializer` instance:
+
+```java
+Serializer serializer = new Serializer();
+
+Person person = new Person(1234, "Jordan", "Halterman");
+
+Buffer buffer = serializer.writeObject(person).flip();
+
+Person result = serializer.readObject(buffer);
+```
+
+The `Serializer` class supports serialization and deserialization of `Writable` types, types that have an associated
+`ObjectWriter`, and native Java `Serializable` types, with `Serializable` being the most inefficient method of
+serialization.
+
+### Registering serializers
+
+Serializers are registered with the Copycat `Serializer` via annotations. When a Copycat client or server is started,
+Copycat scans the classpath for classes that implement [ObjectWriter](#objectwriter) or [Writable](#writable). At some
+startup cost, this allows serializers (`ObjectWriter` implementations) to be associated with the types they serialize
+via generic types and annotations rather than storing metadata in separate files.
+
+### Buffers
+
+At the core of Copycat's serialization framework and log is the `Buffer`. One might wonder why we need another buffer
+abstraction when we have `ByteBuffer` and Netty's `ByteBuf`. Copycat's buffer abstraction was designed to operate both
+on disk and in memory. This allows Copycat to serialize and deserialize objects directly to and from disk rather than
+loading raw bytes into an intermediate buffer during deserialization. The buffer abstraction also allows Copycat to
+easily alter the persistence level for its underlying logs without affecting the higher level log implementation.
+
+### ObjectWriter
+
+At the core of the serialization framework is the `ObjectWriter`. The `ObjectWriter` is a simple interface that exposes
+two methods for serializing and deserializing objects of a specific type respectively. That is, object writers are responsible
+for serializing objects of other types, and not themselves. Copycat provides this separate serialization class in order
+to allow users to create custom serializers for types that couldn't otherwise be serialized by Copycat's `Serializer`.
+
+The `ObjectWriter` interface consists of two methods:
+
+```java
+public class FooWriter implements ObjectWriter<Foo> {
+
+  @Override
+  public void write(Foo foo, Buffer buffer, Serializer serializer) {
+    buffer.writeInt(foo.getBar());
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public Foo read(Class<Foo> type, Buffer buffer, Serializer serializer) {
+    Foo foo = new Foo();
+    foo.setBar(buffer.readInt());
+  }
+}
+```
+
+To serialize and deserialize an object, we simply write to and read from the passed in `Buffer` instance. In addition to
+the `Buffer`, the `Serializer` that is serializing or deserializing the instance is also passed in. This allows the
+serializer to serialize or deserialize subtypes as well:
+
+```java
+public class FooWriter implements ObjectWriter<Foo> {
+
+  @Override
+  public void write(Foo foo, Buffer buffer, Serializer serializer) {
+    buffer.writeInt(foo.getBar());
+    Baz baz = foo.getBaz();
+    serializer.writeObject(baz, buffer);
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public Foo read(Class<Foo> type, Buffer buffer, Serializer serializer) {
+    Foo foo = new Foo();
+    foo.setBar(buffer.readInt());
+    foo.setBaz(serializer.readObject(buffer));
+  }
+}
+```
+
+Copycat comes with a number of native `ObjectWriter` implementations, for instance `ListWriter`:
+
+```java
+@Serialize(@Serialize.Type(id=9, type=List.class))
+public class ListWriter implements ObjectWriter<List> {
+
+  @Override
+  public void write(List object, Buffer buffer, Serializer serializer) {
+    buffer.writeUnsignedShort(object.size());
+    for (Object value : object) {
+      serializer.writeObject(value, buffer);
+    }
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public List read(Class<List> type, Buffer buffer, Serializer serializer) {
+    int size = buffer.readUnsignedShort();
+    List object = new ArrayList<>(size);
+    for (int i = 0; i < size; i++) {
+      object.add(serializer.readObject(buffer));
+    }
+    return object;
+  }
+
+}
+```
+
+Note that the `ListWriter` class is also annotated with the `@Serialize` annotation. This annotation specifies the type
+that the writer serializes. The `@Serialize` annotation is, however, optional, as Copycat can determine the serializable
+type by the generic type as well.
+
+But there is another very important function that the `@Serialize` annotation provides: a serializable type `id`. For types
+that define a type `id`, Copycat will serialize objects of that type along with the type `id` rather than the class name.
+This significantly reduces the size of a serialized object by passing around a 16-bit unsigned integer rather than an
+arbitrary string. For types that don't define a type `id`, Copycat will serialize the fully qualified class name for
+reference during deserialization.
+
+Alternatively, serializable types can indicate the `ObjectWriter` with which to serialize the type:
+
+```java
+@SerializeWith(id=100, serializer=FooWriter.class)
+public class Foo {
+  ...
+}
+```
+
+### Writable
+
+Instead of writing a custom `ObjectWriter`, serializable types can also implement the `Writable` interface. The `Writable`
+interface is synonymous with Java's native `Serializable` interface. As with the `ObjectWriter` interface, `Writable`
+exposes two methods which receive both a `Buffer` and a `Serializer`:
+
+```java
+public class Foo implements Writable {
+  private int bar;
+  private Baz baz;
+
+  public Foo() {
+  }
+
+  public Foo(int bar, Baz baz) {
+    this.bar = bar;
+    this.baz = baz;
+  }
+
+  @Override
+  public void writeObject(Buffer buffer, Serializer serializer) {
+    buffer.writeInt(bar);
+    serializer.writeObject(baz);
+  }
+
+  @Override
+  public void readObject(Buffer buffer, Serializer serializer) {
+    bar = buffer.readInt();
+    baz = serializer.readObject(buffer);
+  }
+}
+```
+
+For the most efficient serialization, it is essential that you associate a serializable type `id` with all serializable
+types. Type IDs can be provided for types that implement `Writable` via the `@SerializeWith` annotation:
+
+```java
+@SerializeWith(id=100)
+public class Foo implements Writable {
+  ...
+
+  @Override
+  public void writeObject(Buffer buffer, Serializer serializer) {
+    buffer.writeInt(bar);
+    serializer.writeObject(baz);
+  }
+
+  @Override
+  public void readObject(Buffer buffer, Serializer serializer) {
+    bar = buffer.readInt();
+    baz = serializer.readObject(buffer);
+  }
+}
+```
+
+The serializable type `id` can be any number between `0` and `65535`.
+
+### Reference counting
+
+TODO
 
 ### [User Manual](#user-manual)
