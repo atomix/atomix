@@ -590,7 +590,7 @@ public class ValueStateMachine extends StateMachine {
   @Apply(Set.class)
   public Object set(Commit<Set> commit) {
     Object oldValue = value;
-    value = commit.value();
+    value = commit.operation().value();
     return oldValue;
   }
 
