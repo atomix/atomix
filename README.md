@@ -542,7 +542,7 @@ Any attempt to create a `Resource` without the `@Stateful` annotation will resul
 
 ### Operations
 
-Resources are represented in terms of ` client side `Resource` instance and a set of server-side `StateMachine` instances.
+Resources are represented in terms of client side `Resource` instance and a set of server-side `StateMachine` instances.
 In order to alter the state of a resource - e.g. to set the value of our `Value` resource - an operation must be submitted
 to the cluster. Operations come in two forms [commands](#commands) and [queries](#queries).
 
@@ -566,6 +566,13 @@ public class Set<T> implements Command<T> {
   public Set(String value) {
     this.value = value;
   }
+
+  /**
+   * The value to set.
+   */
+  public String value() {
+    return value;
+  }
 }
 ```
 
@@ -581,9 +588,9 @@ public class ValueStateMachine extends StateMachine {
    * Set a new value and return the old value.
    */
   @Apply(Set.class)
-  public Object set(Object value) {
-    Object oldValue = this.value;
-    this.value = value;
+  public Object set(Commit<Set> commit) {
+    Object oldValue = value;
+    value = commit.value();
     return oldValue;
   }
 
@@ -660,7 +667,7 @@ public class ValueStateMachine extends StateMachine {
    * Returns the value.
    */
   @Query(Get.class)
-  public Object get() {
+  public Object get(Commit<Get> commit) {
     return value;
   }
 }
