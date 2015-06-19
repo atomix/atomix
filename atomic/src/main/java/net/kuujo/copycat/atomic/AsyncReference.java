@@ -558,6 +558,11 @@ public class AsyncReference<T> extends AbstractResource {
       value = serializer.readObject(buffer);
     }
 
+    @Override
+    public String toString() {
+      return String.format("%s[value=%s]", getClass().getSimpleName(), value);
+    }
+
     /**
      * Put command builder.
      */
@@ -627,6 +632,11 @@ public class AsyncReference<T> extends AbstractResource {
       update = serializer.readObject(buffer);
     }
 
+    @Override
+    public String toString() {
+      return String.format("%s[expect=%s, update=%s]", getClass().getSimpleName(), expect, update);
+    }
+
     /**
      * Compare and set command builder.
      */
@@ -694,6 +704,11 @@ public class AsyncReference<T> extends AbstractResource {
     @Override
     public void readObject(Buffer buffer, Serializer serializer) {
       value = serializer.readObject(buffer);
+    }
+
+    @Override
+    public String toString() {
+      return String.format("%s[value=%s]", getClass().getSimpleName(), value);
     }
 
     /**
