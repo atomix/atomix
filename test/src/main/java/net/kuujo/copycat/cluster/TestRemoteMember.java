@@ -15,8 +15,8 @@
  */
 package net.kuujo.copycat.cluster;
 
+import net.kuujo.alleycat.io.Buffer;
 import net.kuujo.copycat.Task;
-import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.util.ExecutionContext;
 import net.kuujo.copycat.util.concurrent.Futures;
 
@@ -88,10 +88,10 @@ public class TestRemoteMember extends ManagedRemoteMember implements TestMember 
 
     CompletableFuture<U> future = new CompletableFuture<>();
     this.context.execute(() -> {
-      Buffer buffer = serializer.writeObject(message).flip();
+      Buffer buffer = alleycat.writeObject(message).flip();
       member.receive(topic, buffer).whenCompleteAsync((result, error) -> {
         if (error == null) {
-          context.execute(() -> future.complete(serializer.readObject(result)));
+          context.execute(() -> future.complete(alleycat.readObject(result)));
         } else {
           context.execute(() -> future.completeExceptionally(error));
         }

@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.raft.log.entry;
 
-import net.kuujo.copycat.io.util.ReferenceManager;
+import net.kuujo.alleycat.util.ReferenceManager;
 
 /**
  * Operation entry.

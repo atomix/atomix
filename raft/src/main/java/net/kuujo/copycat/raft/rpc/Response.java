@@ -15,8 +15,8 @@
  */
 package net.kuujo.copycat.raft.rpc;
 
-import net.kuujo.copycat.io.serializer.Writable;
-import net.kuujo.copycat.io.util.ReferenceCounted;
+import net.kuujo.alleycat.AlleycatSerializable;
+import net.kuujo.alleycat.util.ReferenceCounted;
 import net.kuujo.copycat.raft.RaftError;
 
 /**
@@ -24,7 +24,7 @@ import net.kuujo.copycat.raft.RaftError;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Response<T extends Response<T>> extends ReferenceCounted<T>, Writable {
+public interface Response<T extends Response<T>> extends ReferenceCounted<T>, AlleycatSerializable {
 
   /**
    * Response type.

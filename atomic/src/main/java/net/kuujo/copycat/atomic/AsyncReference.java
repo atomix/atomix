@@ -15,12 +15,13 @@
  */
 package net.kuujo.copycat.atomic;
 
+import net.kuujo.alleycat.Alleycat;
+import net.kuujo.alleycat.AlleycatSerializable;
+import net.kuujo.alleycat.SerializeWith;
+import net.kuujo.alleycat.io.Buffer;
 import net.kuujo.copycat.AbstractResource;
 import net.kuujo.copycat.Mode;
 import net.kuujo.copycat.Stateful;
-import net.kuujo.copycat.io.Buffer;
-import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.io.serializer.Writable;
 import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.raft.log.Compaction;
 
@@ -375,7 +376,7 @@ public class AsyncReference<T> extends AbstractResource {
   /**
    * Abstract reference command.
    */
-  public static abstract class ReferenceCommand<V> implements Command<V>, Writable {
+  public static abstract class ReferenceCommand<V> implements Command<V>, AlleycatSerializable {
     protected Mode mode = Mode.PERSISTENT;
     protected long ttl;
 
@@ -398,13 +399,13 @@ public class AsyncReference<T> extends AbstractResource {
     }
 
     @Override
-    public void writeObject(Buffer buffer, Serializer serializer) {
+    public void writeObject(Buffer buffer, Alleycat alleycat) {
       buffer.writeByte(mode.ordinal())
         .writeLong(ttl);
     }
 
     @Override
-    public void readObject(Buffer buffer, Serializer serializer) {
+    public void readObject(Buffer buffer, Alleycat alleycat) {
       mode = Mode.values()[buffer.readByte()];
       ttl = buffer.readLong();
     }
@@ -458,7 +459,7 @@ public class AsyncReference<T> extends AbstractResource {
   /**
    * Abstract reference query.
    */
-  public static abstract class ReferenceQuery<V> implements Query<V>, Writable {
+  public static abstract class ReferenceQuery<V> implements Query<V>, AlleycatSerializable {
     protected ConsistencyLevel consistency = ConsistencyLevel.LINEARIZABLE_LEASE;
 
     @Override
@@ -467,12 +468,12 @@ public class AsyncReference<T> extends AbstractResource {
     }
 
     @Override
-    public void writeObject(Buffer buffer, Serializer serializer) {
+    public void writeObject(Buffer buffer, Alleycat alleycat) {
       buffer.writeByte(consistency.ordinal());
     }
 
     @Override
-    public void readObject(Buffer buffer, Serializer serializer) {
+    public void readObject(Buffer buffer, Alleycat alleycat) {
       consistency = ConsistencyLevel.values()[buffer.readByte()];
     }
 
@@ -500,6 +501,7 @@ public class AsyncReference<T> extends AbstractResource {
   /**
    * Get query.
    */
+  @SerializeWith(id=460)
   public static class Get<T> extends ReferenceQuery<T> {
 
     /**
@@ -526,6 +528,7 @@ public class AsyncReference<T> extends AbstractResource {
   /**
    * Set command.
    */
+  @SerializeWith(id=461)
   public static class Set extends ReferenceCommand<Void> {
 
     /**
@@ -549,13 +552,13 @@ public class AsyncReference<T> extends AbstractResource {
     }
 
     @Override
-    public void writeObject(Buffer buffer, Serializer serializer) {
-      serializer.writeObject(value, buffer);
+    public void writeObject(Buffer buffer, Alleycat alleycat) {
+      alleycat.writeObject(value, buffer);
     }
 
     @Override
-    public void readObject(Buffer buffer, Serializer serializer) {
-      value = serializer.readObject(buffer);
+    public void readObject(Buffer buffer, Alleycat alleycat) {
+      value = alleycat.readObject(buffer);
     }
 
     @Override
@@ -588,6 +591,7 @@ public class AsyncReference<T> extends AbstractResource {
   /**
    * Compare and set command.
    */
+  @SerializeWith(id=462)
   public static class CompareAndSet extends ReferenceCommand<Boolean> {
 
     /**
@@ -621,15 +625,15 @@ public class AsyncReference<T> extends AbstractResource {
     }
 
     @Override
-    public void writeObject(Buffer buffer, Serializer serializer) {
-      serializer.writeObject(expect, buffer);
-      serializer.writeObject(update, buffer);
+    public void writeObject(Buffer buffer, Alleycat alleycat) {
+      alleycat.writeObject(expect, buffer);
+      alleycat.writeObject(update, buffer);
     }
 
     @Override
-    public void readObject(Buffer buffer, Serializer serializer) {
-      expect = serializer.readObject(buffer);
-      update = serializer.readObject(buffer);
+    public void readObject(Buffer buffer, Alleycat alleycat) {
+      expect = alleycat.readObject(buffer);
+      update = alleycat.readObject(buffer);
     }
 
     @Override
@@ -673,6 +677,7 @@ public class AsyncReference<T> extends AbstractResource {
   /**
    * Get and set command.
    */
+  @SerializeWith(id=463)
   public static class GetAndSet<T> extends ReferenceCommand<T> {
 
     /**
@@ -697,13 +702,13 @@ public class AsyncReference<T> extends AbstractResource {
     }
 
     @Override
-    public void writeObject(Buffer buffer, Serializer serializer) {
-      serializer.writeObject(value, buffer);
+    public void writeObject(Buffer buffer, Alleycat alleycat) {
+      alleycat.writeObject(value, buffer);
     }
 
     @Override
-    public void readObject(Buffer buffer, Serializer serializer) {
-      value = serializer.readObject(buffer);
+    public void readObject(Buffer buffer, Alleycat alleycat) {
+      value = alleycat.readObject(buffer);
     }
 
     @Override

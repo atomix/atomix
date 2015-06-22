@@ -15,9 +15,9 @@
  */
 package net.kuujo.copycat.raft.log.entry;
 
-import net.kuujo.copycat.io.serializer.SerializationException;
-import net.kuujo.copycat.io.util.ReferenceManager;
-import net.kuujo.copycat.io.util.ReferencePool;
+import net.kuujo.alleycat.SerializationException;
+import net.kuujo.alleycat.util.ReferenceManager;
+import net.kuujo.alleycat.util.ReferencePool;
 import net.kuujo.copycat.raft.log.LogException;
 
 import java.lang.reflect.Constructor;

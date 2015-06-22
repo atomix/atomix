@@ -15,9 +15,9 @@
  */
 package net.kuujo.copycat.manager;
 
-import net.kuujo.copycat.io.Buffer;
-import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.io.serializer.Writable;
+import net.kuujo.alleycat.Alleycat;
+import net.kuujo.alleycat.AlleycatSerializable;
+import net.kuujo.alleycat.io.Buffer;
 import net.kuujo.copycat.raft.Operation;
 
 /**
@@ -25,7 +25,7 @@ import net.kuujo.copycat.raft.Operation;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class PathOperation<T> implements Operation<T>, Writable {
+public abstract class PathOperation<T> implements Operation<T>, AlleycatSerializable {
   protected String path;
 
   protected PathOperation() {
@@ -45,12 +45,12 @@ public abstract class PathOperation<T> implements Operation<T>, Writable {
   }
 
   @Override
-  public void writeObject(Buffer buffer, Serializer serializer) {
+  public void writeObject(Buffer buffer, Alleycat alleycat) {
     buffer.writeInt(path.getBytes().length).write(path.getBytes());
   }
 
   @Override
-  public void readObject(Buffer buffer, Serializer serializer) {
+  public void readObject(Buffer buffer, Alleycat alleycat) {
     byte[] bytes = new byte[buffer.readInt()];
     buffer.read(bytes);
     path = new String(bytes);

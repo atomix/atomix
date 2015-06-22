@@ -16,10 +16,8 @@
 package net.kuujo.copycat.cluster;
 
 import io.netty.buffer.ByteBuf;
-import net.kuujo.copycat.io.Buffer;
-import net.kuujo.copycat.io.BufferReader;
-import net.kuujo.copycat.io.BufferWriter;
-import net.kuujo.copycat.io.Bytes;
+import net.kuujo.alleycat.io.Buffer;
+import net.kuujo.alleycat.io.Bytes;
 
 import java.nio.ByteOrder;
 import java.nio.InvalidMarkException;
@@ -47,6 +45,21 @@ class ByteBufBuffer implements Buffer {
   void setByteBuf(ByteBuf buffer) {
     this.buffer = buffer;
     offset = 0;
+  }
+
+  @Override
+  public boolean isDirect() {
+    return buffer.isDirect();
+  }
+
+  @Override
+  public boolean isReadOnly() {
+    return false;
+  }
+
+  @Override
+  public boolean isFile() {
+    return false;
   }
 
   @Override
@@ -177,36 +190,6 @@ class ByteBufBuffer implements Buffer {
   }
 
   @Override
-  public BufferReader reader() {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public BufferReader reader(long offset) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public BufferReader reader(long offset, long length) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public BufferWriter writer() {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public BufferWriter writer(long offset) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public BufferWriter writer(long offset, long length) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
   public Buffer slice() {
     return new ByteBufBuffer(buffer.slice());
   }
@@ -226,14 +209,6 @@ class ByteBufBuffer implements Buffer {
     byte[] bytes = new byte[this.buffer.readableBytes()];
     this.buffer.readBytes(bytes);
     buffer.write(bytes);
-    return this;
-  }
-
-  @Override
-  public Buffer read(BufferWriter writer) {
-    byte[] bytes = new byte[Math.min((int) writer.remaining(), buffer.readableBytes())];
-    buffer.readBytes(bytes);
-    writer.write(bytes);
     return this;
   }
 
@@ -428,14 +403,6 @@ class ByteBufBuffer implements Buffer {
     byte[] bytes = new byte[Math.min((int) buffer.remaining(), this.buffer.writableBytes())];
     buffer.read(bytes);
     this.buffer.writeBytes(bytes);
-    return this;
-  }
-
-  @Override
-  public Buffer write(BufferReader reader) {
-    byte[] bytes = new byte[Math.min((int) reader.remaining(), buffer.writableBytes())];
-    reader.read(bytes);
-    buffer.writeBytes(bytes);
     return this;
   }
 

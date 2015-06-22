@@ -15,9 +15,9 @@
  */
 package net.kuujo.copycat.cluster;
 
+import net.kuujo.alleycat.Alleycat;
+import net.kuujo.alleycat.io.Buffer;
 import net.kuujo.copycat.ConfigurationException;
-import net.kuujo.copycat.io.Buffer;
-import net.kuujo.copycat.io.serializer.Serializer;
 
 /**
  * Raft test member.
@@ -43,7 +43,7 @@ public interface TestMember extends Member {
   String address();
 
   /**
-   * Netty member info.
+   * Test member info.
    */
   static class Info extends MemberInfo {
     String address;
@@ -57,14 +57,14 @@ public interface TestMember extends Member {
     }
 
     @Override
-    public void writeObject(Buffer buffer, Serializer serializer) {
-      super.writeObject(buffer, serializer);
+    public void writeObject(Buffer buffer, Alleycat alleycat) {
+      super.writeObject(buffer, alleycat);
       buffer.writeInt(address.getBytes().length).write(address.getBytes());
     }
 
     @Override
-    public void readObject(Buffer buffer, Serializer serializer) {
-      super.readObject(buffer, serializer);
+    public void readObject(Buffer buffer, Alleycat alleycat) {
+      super.readObject(buffer, alleycat);
       byte[] bytes = new byte[buffer.readInt()];
       buffer.read(bytes);
       address = new String(bytes);

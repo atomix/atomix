@@ -175,7 +175,7 @@ public class RaftClient implements ManagedProtocol {
 
     @Override
     public RaftClient build() {
-      return new RaftClient(new RaftStateClient(members, new ExecutionContext("copycat-client-%d", members.serializer().copy())).setKeepAliveInterval(keepAliveInterval));
+      return new RaftClient(new RaftStateClient(members, new ExecutionContext("copycat-client-%d", members.alleycat().clone())).setKeepAliveInterval(keepAliveInterval));
     }
   }
 

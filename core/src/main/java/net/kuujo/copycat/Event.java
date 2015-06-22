@@ -15,18 +15,18 @@
  */
 package net.kuujo.copycat;
 
-import net.kuujo.copycat.io.Buffer;
-import net.kuujo.copycat.io.serializer.SerializeWith;
-import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.io.serializer.Writable;
+import net.kuujo.alleycat.Alleycat;
+import net.kuujo.alleycat.AlleycatSerializable;
+import net.kuujo.alleycat.SerializeWith;
+import net.kuujo.alleycat.io.Buffer;
 
 /**
  * Copycat event.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=2000)
-public class Event implements Writable {
+@SerializeWith(id=399)
+public class Event implements AlleycatSerializable {
 
   private Type type;
   private String path;
@@ -58,12 +58,12 @@ public class Event implements Writable {
   }
 
   @Override
-  public void writeObject(Buffer buffer, Serializer serializer) {
+  public void writeObject(Buffer buffer, Alleycat alleycat) {
     buffer.writeByte(type.ordinal()).writeUTF8(path);
   }
 
   @Override
-  public void readObject(Buffer buffer, Serializer serializer) {
+  public void readObject(Buffer buffer, Alleycat alleycat) {
     type = Type.values()[buffer.readByte()];
     path = buffer.readUTF8();
   }

@@ -30,12 +30,11 @@ import io.netty.handler.codec.LengthFieldPrepender;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.concurrent.GlobalEventExecutor;
+import net.kuujo.alleycat.util.ReferenceCounted;
 import net.kuujo.copycat.Task;
-import net.kuujo.copycat.io.util.HashFunction;
-import net.kuujo.copycat.io.util.Murmur3HashFunction;
-import net.kuujo.copycat.io.util.ReferenceCounted;
 import net.kuujo.copycat.util.ExecutionContext;
 import net.kuujo.copycat.util.concurrent.Futures;
+import net.openhft.hashing.LongHashFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,7 +65,7 @@ public class NettyLocalMember extends ManagedLocalMember implements NettyMember{
 
   private final Map<Integer, HandlerHolder> handlers = new ConcurrentHashMap<>();
   private final Map<String, Integer> hashMap = new HashMap<>();
-  private final HashFunction hash = new Murmur3HashFunction();
+  private final LongHashFunction hash = LongHashFunction.city_1_1();
   private final NettyMemberInfo info;
   private Channel channel;
   private ChannelGroup channelGroup;
@@ -85,6 +84,14 @@ public class NettyLocalMember extends ManagedLocalMember implements NettyMember{
     return info.address();
   }
 
+  /**
+   * Hashes the given string to a 32-bit hash.
+   */
+  private int hash32(String address) {
+    long hash = this.hash.hashChars(address);
+    return (int)(hash ^ (hash >>> 32));
+  }
+
   @Override
   public <T, U> LocalMember registerHandler(Class<? super T> type, MessageHandler<T, U> handler) {
     return registerHandler(type.getName(), handler);
@@ -92,7 +99,7 @@ public class NettyLocalMember extends ManagedLocalMember implements NettyMember{
 
   @Override
   public <T, U> LocalMember registerHandler(String topic, MessageHandler<T, U> handler) {
-    handlers.put(hashMap.computeIfAbsent(topic, t -> hash.hash32(t.getBytes())), new HandlerHolder(handler, getContext()));
+    handlers.put(hashMap.computeIfAbsent(topic, this::hash32), new HandlerHolder(handler, getContext()));
     return this;
   }
 
@@ -103,7 +110,7 @@ public class NettyLocalMember extends ManagedLocalMember implements NettyMember{
 
   @Override
   public LocalMember unregisterHandler(String topic) {
-    handlers.remove(hashMap.computeIfAbsent(topic, t -> hash.hash32(t.getBytes())));
+    handlers.remove(hashMap.computeIfAbsent(topic, this::hash32));
     return this;
   }
 
@@ -126,7 +133,7 @@ public class NettyLocalMember extends ManagedLocalMember implements NettyMember{
     ExecutionContext context = getContext();
 
     CompletableFuture<U> future = new CompletableFuture<>();
-    HandlerHolder handler = handlers.get(hashMap.computeIfAbsent(topic, t -> hash.hash32(t.getBytes())));
+    HandlerHolder handler = handlers.get(hashMap.computeIfAbsent(topic, this::hash32));
     if (handler != null) {
       handler.context.execute(() -> {
         handler.handler.handle(message).whenComplete((result, error) -> {
@@ -294,7 +301,7 @@ public class NettyLocalMember extends ManagedLocalMember implements NettyMember{
         NettyLocalMember.this.context.execute(() -> {
           ByteBufBuffer requestBuffer = BUFFER.get();
           requestBuffer.setByteBuf(request);
-          Object deserializedRequest = serializer.readObject(requestBuffer);
+          Object deserializedRequest = alleycat.readObject(requestBuffer);
 
           handler.context.execute(() -> {
             handler.handler.handle(deserializedRequest).whenCompleteAsync((result, error) -> {
@@ -308,7 +315,7 @@ public class NettyLocalMember extends ManagedLocalMember implements NettyMember{
                 response.writeByte(STATUS_SUCCESS);
                 ByteBufBuffer responseBuffer = BUFFER.get();
                 responseBuffer.setByteBuf(response);
-                serializer.writeObject(result, responseBuffer);
+                alleycat.writeObject(result, responseBuffer);
                 context.writeAndFlush(response);
               } else {
                 ByteBuf response = context.alloc().buffer(10, 1024 * 8);
@@ -316,7 +323,7 @@ public class NettyLocalMember extends ManagedLocalMember implements NettyMember{
                 response.writeByte(STATUS_FAILURE);
                 ByteBufBuffer responseBuffer = BUFFER.get();
                 responseBuffer.setByteBuf(response);
-                serializer.writeObject(error, responseBuffer);
+                alleycat.writeObject(error, responseBuffer);
                 context.writeAndFlush(response);
               }
 
@@ -337,13 +344,13 @@ public class NettyLocalMember extends ManagedLocalMember implements NettyMember{
       getContext().execute(() -> {
         ByteBufBuffer requestBuffer = BUFFER.get();
         requestBuffer.setByteBuf(request);
-        Task task = serializer.readObject(requestBuffer);
+        Task task = alleycat.readObject(requestBuffer);
         try {
           Object result = task.execute();
           ByteBuf response = context.alloc().buffer(9, 1024 * 8);
           ByteBufBuffer responseBuffer = BUFFER.get();
           responseBuffer.setByteBuf(response);
-          serializer.writeObject(result, responseBuffer);
+          alleycat.writeObject(result, responseBuffer);
           response.writeLong(requestId);
           context.writeAndFlush(response);
           request.release();

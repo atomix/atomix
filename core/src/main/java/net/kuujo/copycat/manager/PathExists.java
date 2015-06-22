@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.manager;
 
+import net.kuujo.alleycat.SerializeWith;
 import net.kuujo.copycat.raft.ConsistencyLevel;
 import net.kuujo.copycat.raft.Operation;
 import net.kuujo.copycat.raft.Query;
@@ -24,6 +25,7 @@ import net.kuujo.copycat.raft.Query;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
+@SerializeWith(id=412)
 public class PathExists extends PathOperation<Boolean> implements Query<Boolean> {
 
   /**

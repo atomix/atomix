@@ -15,9 +15,9 @@
  */
 package net.kuujo.copycat.raft.log;
 
-import net.kuujo.copycat.io.Buffer;
-import net.kuujo.copycat.io.FileBuffer;
-import net.kuujo.copycat.io.HeapBuffer;
+import net.kuujo.alleycat.io.Buffer;
+import net.kuujo.alleycat.io.FileBuffer;
+import net.kuujo.alleycat.io.HeapBuffer;
 
 /**
  * Segment descriptor.

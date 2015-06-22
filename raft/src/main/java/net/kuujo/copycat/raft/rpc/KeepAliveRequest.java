@@ -15,7 +15,8 @@
  */
 package net.kuujo.copycat.raft.rpc;
 
-import net.kuujo.copycat.io.util.ReferenceManager;
+import net.kuujo.alleycat.SerializeWith;
+import net.kuujo.alleycat.util.ReferenceManager;
 
 import java.util.Objects;
 
@@ -24,6 +25,7 @@ import java.util.Objects;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
+@SerializeWith(id=264)
 public class KeepAliveRequest extends SessionRequest<KeepAliveRequest> {
   private static final ThreadLocal<Builder> builder = new ThreadLocal<Builder>() {
     @Override

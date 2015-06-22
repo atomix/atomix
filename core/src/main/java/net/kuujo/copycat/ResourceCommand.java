@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat;
 
+import net.kuujo.alleycat.SerializeWith;
 import net.kuujo.copycat.raft.Command;
 import net.kuujo.copycat.raft.Operation;
 
@@ -23,6 +24,7 @@ import net.kuujo.copycat.raft.Operation;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
+@SerializeWith(id=400)
 public class ResourceCommand<T extends Command<U>, U> extends ResourceOperation<T, U> implements Command<U> {
 
   /**

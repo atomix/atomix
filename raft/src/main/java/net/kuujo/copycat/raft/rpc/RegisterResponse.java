@@ -15,10 +15,11 @@
  */
 package net.kuujo.copycat.raft.rpc;
 
+import net.kuujo.alleycat.Alleycat;
+import net.kuujo.alleycat.SerializeWith;
+import net.kuujo.alleycat.io.Buffer;
+import net.kuujo.alleycat.util.ReferenceManager;
 import net.kuujo.copycat.cluster.MemberInfo;
-import net.kuujo.copycat.io.Buffer;
-import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.io.util.ReferenceManager;
 import net.kuujo.copycat.raft.RaftError;
 
 import java.util.*;
@@ -28,6 +29,7 @@ import java.util.*;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
+@SerializeWith(id=273)
 public class RegisterResponse extends AbstractResponse<RegisterResponse> {
   private static final ThreadLocal<Builder> builder = new ThreadLocal<Builder>() {
     @Override
@@ -106,25 +108,25 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
   }
 
   @Override
-  public void readObject(Buffer buffer, Serializer serializer) {
+  public void readObject(Buffer buffer, Alleycat alleycat) {
     status = Status.forId(buffer.readByte());
     if (status == Status.OK) {
       error = null;
       term = buffer.readLong();
       leader = buffer.readInt();
       session = buffer.readLong();
-      members = serializer.readObject(buffer);
+      members = alleycat.readObject(buffer);
     } else {
       error = RaftError.forId(buffer.readByte());
     }
   }
 
   @Override
-  public void writeObject(Buffer buffer, Serializer serializer) {
+  public void writeObject(Buffer buffer, Alleycat alleycat) {
     buffer.writeByte(status.id());
     if (status == Status.OK) {
       buffer.writeLong(term).writeInt(leader).writeLong(session);
-      serializer.writeObject(members, buffer);
+      alleycat.writeObject(members, buffer);
     } else {
       buffer.writeByte(error.id());
     }

@@ -15,11 +15,10 @@
  */
 package net.kuujo.copycat.raft.rpc;
 
-import net.kuujo.copycat.io.Buffer;
-import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.io.util.ReferenceManager;
-
-import java.util.function.Function;
+import net.kuujo.alleycat.Alleycat;
+import net.kuujo.alleycat.io.Buffer;
+import net.kuujo.alleycat.util.ReferenceFactory;
+import net.kuujo.alleycat.util.ReferenceManager;
 
 /**
  * Session request.
@@ -43,12 +42,12 @@ public abstract class SessionRequest<T extends SessionRequest<T>> extends Client
   }
 
   @Override
-  public void readObject(Buffer buffer, Serializer serializer) {
+  public void readObject(Buffer buffer, Alleycat alleycat) {
     session = buffer.readLong();
   }
 
   @Override
-  public void writeObject(Buffer buffer, Serializer serializer) {
+  public void writeObject(Buffer buffer, Alleycat alleycat) {
     buffer.writeLong(session);
   }
 
@@ -56,7 +55,7 @@ public abstract class SessionRequest<T extends SessionRequest<T>> extends Client
    * Client request builder.
    */
   public static abstract class Builder<T extends Builder<T, U>, U extends SessionRequest<U>> extends ClientRequest.Builder<T, U> {
-    protected Builder(Function<ReferenceManager<U>, U> factory) {
+    protected Builder(ReferenceFactory<U> factory) {
       super(factory);
     }
 

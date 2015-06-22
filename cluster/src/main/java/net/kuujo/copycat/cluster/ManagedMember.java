@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.cluster;
 
-import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.alleycat.Alleycat;
 import net.kuujo.copycat.util.ExecutionContext;
 import net.kuujo.copycat.util.Managed;
 
@@ -31,7 +31,7 @@ public abstract class ManagedMember implements Member, Managed<Member> {
   protected Type type;
   protected Status status = Status.DEAD;
   protected ExecutionContext context;
-  protected Serializer serializer;
+  protected Alleycat alleycat;
 
   protected ManagedMember(MemberInfo info, Type type) {
     this.info = info;
@@ -43,7 +43,7 @@ public abstract class ManagedMember implements Member, Managed<Member> {
    */
   void setContext(ExecutionContext context) {
     this.context = context;
-    this.serializer = context.serializer();
+    this.alleycat = context.alleycat();
   }
 
   /**

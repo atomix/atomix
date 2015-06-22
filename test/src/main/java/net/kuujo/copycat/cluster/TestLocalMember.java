@@ -15,8 +15,8 @@
  */
 package net.kuujo.copycat.cluster;
 
+import net.kuujo.alleycat.io.Buffer;
 import net.kuujo.copycat.Task;
-import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.util.ExecutionContext;
 import net.kuujo.copycat.util.concurrent.Futures;
 
@@ -114,11 +114,11 @@ public class TestLocalMember extends ManagedLocalMember implements TestMember {
     HandlerHolder handler = handlers.get(topic);
     if (handler != null) {
       CompletableFuture<Buffer> future = new CompletableFuture<>();
-      Object message = serializer.readObject(buffer);
+      Object message = alleycat.readObject(buffer);
       handler.context.execute(() -> {
         handler.handler.handle(message).whenCompleteAsync((result, error) -> {
           if (error == null) {
-            future.complete(serializer.writeObject(result).flip());
+            future.complete(alleycat.writeObject(result).flip());
           } else {
             future.completeExceptionally(new ClusterException(error));
           }

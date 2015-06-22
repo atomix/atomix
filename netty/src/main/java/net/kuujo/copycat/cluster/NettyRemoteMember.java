@@ -25,9 +25,8 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
 import net.kuujo.copycat.Task;
-import net.kuujo.copycat.io.util.HashFunction;
-import net.kuujo.copycat.io.util.Murmur3HashFunction;
 import net.kuujo.copycat.util.ExecutionContext;
+import net.openhft.hashing.LongHashFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,7 +68,7 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
   private volatile Channel channel;
   private ChannelHandlerContext context;
   private final Map<String, Integer> hashMap = new HashMap<>();
-  private final HashFunction hash = new Murmur3HashFunction();
+  private final LongHashFunction hash = LongHashFunction.city_1_1();
   private final Map<Long, ContextualFuture> responseFutures = new LinkedHashMap<>(1024);
   private final AtomicBoolean connecting = new AtomicBoolean();
   private final AtomicBoolean connected = new AtomicBoolean();
@@ -101,6 +100,14 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
     return info.address();
   }
 
+  /**
+   * Hashes the given string to a 32-bit hash.
+   */
+  private int hash32(String address) {
+    long hash = this.hash.hashChars(address);
+    return (int)(hash ^ (hash >>> 32));
+  }
+
   @Override
   public <T, U> CompletableFuture<U> send(T message) {
     return send(message.getClass().getName(), message);
@@ -120,8 +127,8 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
         ByteBufBuffer buffer = BUFFER.get();
         ByteBuf byteBuf = context.alloc().buffer(13, 1024 * 32);
         buffer.setByteBuf(byteBuf);
-        buffer.writeLong(requestId).writeByte(MESSAGE).writeInt(hashMap.computeIfAbsent(topic, t -> hash.hash32(t.getBytes())));
-        serializer.writeObject(message, buffer);
+        buffer.writeLong(requestId).writeByte(MESSAGE).writeInt(hashMap.computeIfAbsent(topic, this::hash32));
+        alleycat.writeObject(message, buffer);
         channel.writeAndFlush(byteBuf).addListener((channelFuture) -> {
           if (channelFuture.isSuccess()) {
             responseFutures.put(requestId, future);
@@ -155,7 +162,7 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
         ByteBuf byteBuf = context.alloc().buffer(9, 1024 * 32);
         buffer.setByteBuf(byteBuf);
         buffer.writeLong(requestId).writeByte(TASK);
-        serializer.writeObject(task, buffer);
+        alleycat.writeObject(task, buffer);
         channel.writeAndFlush(byteBuf).addListener((channelFuture) -> {
           if (channelFuture.isSuccess()) {
             responseFutures.put(requestId, future);
@@ -334,7 +341,7 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
         int status = response.readByte();
         ByteBufBuffer buffer = BUFFER.get();
         buffer.setByteBuf(response.slice());
-        Object result = serializer.readObject(buffer);
+        Object result = alleycat.readObject(buffer);
         responseFuture.context.execute(() -> {
           if (status == STATUS_FAILURE) {
             responseFuture.completeExceptionally((Exception) result);

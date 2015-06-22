@@ -15,9 +15,9 @@
  */
 package net.kuujo.copycat.raft.log.entry;
 
-import net.kuujo.copycat.io.Buffer;
-import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.io.util.ReferenceManager;
+import net.kuujo.alleycat.Alleycat;
+import net.kuujo.alleycat.io.Buffer;
+import net.kuujo.alleycat.util.ReferenceManager;
 
 /**
  * Timestamped entry.
@@ -61,14 +61,14 @@ public abstract class TimestampedEntry<T extends TimestampedEntry<T>> extends En
   }
 
   @Override
-  public void writeObject(Buffer buffer, Serializer serializer) {
-    super.writeObject(buffer, serializer);
+  public void writeObject(Buffer buffer, Alleycat alleycat) {
+    super.writeObject(buffer, alleycat);
     buffer.writeLong(timestamp);
   }
 
   @Override
-  public void readObject(Buffer buffer, Serializer serializer) {
-    super.readObject(buffer, serializer);
+  public void readObject(Buffer buffer, Alleycat alleycat) {
+    super.readObject(buffer, alleycat);
     timestamp = buffer.readLong();
   }
 

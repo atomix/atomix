@@ -15,15 +15,15 @@
  */
 package net.kuujo.copycat.raft.log.entry;
 
-import net.kuujo.copycat.io.serializer.SerializeWith;
-import net.kuujo.copycat.io.util.ReferenceManager;
+import net.kuujo.alleycat.SerializeWith;
+import net.kuujo.alleycat.util.ReferenceManager;
 
 /**
  * Register client entry.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=1001)
+@SerializeWith(id=303)
 public class RegisterEntry extends TimestampedEntry<RegisterEntry> {
 
   public RegisterEntry() {

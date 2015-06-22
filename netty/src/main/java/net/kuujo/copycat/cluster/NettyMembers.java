@@ -17,7 +17,8 @@ package net.kuujo.copycat.cluster;
 
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
-import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.alleycat.Alleycat;
+import net.kuujo.alleycat.ServiceLoaderResolver;
 import net.kuujo.copycat.util.ExecutionContext;
 
 import java.util.Collection;
@@ -42,8 +43,8 @@ public class NettyMembers extends ManagedMembers {
 
   private final EventLoopGroup eventLoopGroup;
 
-  public NettyMembers(EventLoopGroup eventLoopGroup, Collection<NettyRemoteMember> remoteMembers, Serializer serializer) {
-    super(remoteMembers, serializer);
+  public NettyMembers(EventLoopGroup eventLoopGroup, Collection<NettyRemoteMember> remoteMembers, Alleycat alleycat) {
+    super(remoteMembers, alleycat);
     this.eventLoopGroup = eventLoopGroup;
     remoteMembers.forEach(m -> m.setEventLoopGroup(eventLoopGroup));
   }
@@ -52,7 +53,7 @@ public class NettyMembers extends ManagedMembers {
   protected ManagedRemoteMember createMember(MemberInfo info) {
     ManagedRemoteMember remoteMember = new NettyRemoteMember((NettyMemberInfo) info, Member.Type.PASSIVE)
       .setEventLoopGroup(eventLoopGroup);
-    remoteMember.setContext(new ExecutionContext(String.format("copycat-cluster-%d", info.id()), serializer));
+    remoteMember.setContext(new ExecutionContext(String.format("copycat-cluster-%d", info.id()), alleycat));
     return remoteMember;
   }
 
@@ -88,7 +89,7 @@ public class NettyMembers extends ManagedMembers {
 
     @Override
     public ManagedMembers build() {
-      return new NettyMembers(eventLoopGroup != null ? eventLoopGroup : new NioEventLoopGroup(), members.values().stream().map(m -> (NettyRemoteMember) m).collect(Collectors.toList()), new Serializer());
+      return new NettyMembers(eventLoopGroup != null ? eventLoopGroup : new NioEventLoopGroup(), members.values().stream().map(m -> (NettyRemoteMember) m).collect(Collectors.toList()), new Alleycat(new ServiceLoaderResolver()));
     }
   }
 

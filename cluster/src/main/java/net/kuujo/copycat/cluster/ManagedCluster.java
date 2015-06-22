@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.cluster;
 
-import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.alleycat.Alleycat;
 
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -30,12 +30,12 @@ public abstract class ManagedCluster extends ManagedMembers implements Cluster {
   protected final ManagedLocalMember localMember;
   protected final Set<MembershipListener> membershipListeners = new CopyOnWriteArraySet<>();
 
-  protected ManagedCluster(ManagedLocalMember localMember, Collection<? extends ManagedRemoteMember> remoteMembers, Serializer serializer) {
+  protected ManagedCluster(ManagedLocalMember localMember, Collection<? extends ManagedRemoteMember> remoteMembers, Alleycat alleycat) {
     super(((Supplier<Collection<ManagedMember>>) () -> {
       Collection<ManagedMember> members = new ArrayList<>(remoteMembers);
       members.add(localMember);
       return members;
-    }).get(), serializer);
+    }).get(), alleycat);
     this.localMember = localMember;
   }
 

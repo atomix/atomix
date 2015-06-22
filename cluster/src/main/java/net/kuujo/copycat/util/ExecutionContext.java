@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.util;
 
-import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.alleycat.Alleycat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +29,7 @@ import java.util.concurrent.*;
 public class ExecutionContext implements Executor, AutoCloseable {
   private static final Logger LOGGER = LoggerFactory.getLogger(ExecutionContext.class);
   private final String name;
-  private final Serializer serializer;
+  private final Alleycat alleycat;
   private final ScheduledExecutorService executor;
   private CopycatThread thread;
 
@@ -41,11 +41,11 @@ public class ExecutionContext implements Executor, AutoCloseable {
     return thread instanceof CopycatThread ? ((CopycatThread) thread).getContext() : null;
   }
 
-  public ExecutionContext(String name, Serializer serializer) {
+  public ExecutionContext(String name, Alleycat alleycat) {
     if (name == null)
       throw new NullPointerException("name cannot be null");
     this.name = name;
-    this.serializer = serializer.copy();
+    this.alleycat = alleycat.clone();
     this.executor = Executors.newSingleThreadScheduledExecutor(new CopycatThreadFactory(name));
     try {
       executor.submit(() -> {
@@ -71,8 +71,8 @@ public class ExecutionContext implements Executor, AutoCloseable {
    *
    * @return The context serializer.
    */
-  public Serializer serializer() {
-    return serializer;
+  public Alleycat alleycat() {
+    return alleycat;
   }
 
   /**

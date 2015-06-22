@@ -76,7 +76,7 @@ public class Node {
       .thenApply(children -> {
         return children.stream()
           .map(copycat::node)
-          .collect (Collectors.toList());
+          .collect(Collectors.toList());
       });
   }
 

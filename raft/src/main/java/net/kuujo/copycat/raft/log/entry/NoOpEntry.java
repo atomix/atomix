@@ -15,15 +15,15 @@
  */
 package net.kuujo.copycat.raft.log.entry;
 
-import net.kuujo.copycat.io.serializer.SerializeWith;
-import net.kuujo.copycat.io.util.ReferenceManager;
+import net.kuujo.alleycat.SerializeWith;
+import net.kuujo.alleycat.util.ReferenceManager;
 
 /**
  * No-op entry.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=1000)
+@SerializeWith(id=300)
 public class NoOpEntry extends Entry<NoOpEntry> {
 
   public NoOpEntry(ReferenceManager<Entry<?>> referenceManager) {

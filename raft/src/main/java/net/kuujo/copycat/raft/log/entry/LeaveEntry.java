@@ -15,15 +15,15 @@
  */
 package net.kuujo.copycat.raft.log.entry;
 
-import net.kuujo.copycat.io.serializer.SerializeWith;
-import net.kuujo.copycat.io.util.ReferenceManager;
+import net.kuujo.alleycat.SerializeWith;
+import net.kuujo.alleycat.util.ReferenceManager;
 
 /**
  * Member leave entry.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=1006)
+@SerializeWith(id=302)
 public class LeaveEntry extends MemberEntry<LeaveEntry> {
 
   public LeaveEntry() {

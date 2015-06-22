@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat;
 
+import net.kuujo.alleycat.SerializeWith;
 import net.kuujo.copycat.raft.ConsistencyLevel;
 import net.kuujo.copycat.raft.Operation;
 import net.kuujo.copycat.raft.Query;
@@ -24,6 +25,7 @@ import net.kuujo.copycat.raft.Query;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
+@SerializeWith(id=401)
 public class ResourceQuery<T extends Query<U>, U> extends ResourceOperation<T, U> implements Query<U> {
 
   /**

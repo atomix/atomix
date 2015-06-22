@@ -15,12 +15,12 @@
  */
 package net.kuujo.copycat.raft.rpc;
 
-import net.kuujo.copycat.io.util.ReferenceManager;
-import net.kuujo.copycat.io.util.ReferencePool;
+import net.kuujo.alleycat.util.ReferenceFactory;
+import net.kuujo.alleycat.util.ReferenceManager;
+import net.kuujo.alleycat.util.ReferencePool;
 import net.kuujo.copycat.raft.RaftError;
 
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
 
 /**
  * Abstract response implementation.
@@ -86,7 +86,7 @@ abstract class AbstractResponse<T extends Response<T>> implements Response<T> {
     protected final ReferencePool<U> pool;
     protected U response;
 
-    protected Builder(Function<ReferenceManager<U>, U> factory) {
+    protected Builder(ReferenceFactory<U> factory) {
       this.pool = new ReferencePool<>(factory);
     }
 

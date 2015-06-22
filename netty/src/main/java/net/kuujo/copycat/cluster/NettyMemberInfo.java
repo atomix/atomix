@@ -15,8 +15,9 @@
  */
 package net.kuujo.copycat.cluster;
 
-import net.kuujo.copycat.io.Buffer;
-import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.alleycat.Alleycat;
+import net.kuujo.alleycat.SerializeWith;
+import net.kuujo.alleycat.io.Buffer;
 
 import java.net.InetSocketAddress;
 
@@ -25,6 +26,7 @@ import java.net.InetSocketAddress;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
+@SerializeWith(id=330)
 public class NettyMemberInfo extends MemberInfo {
   InetSocketAddress address;
 
@@ -46,16 +48,16 @@ public class NettyMemberInfo extends MemberInfo {
   }
 
   @Override
-  public void writeObject(Buffer buffer, Serializer serializer) {
-    super.writeObject(buffer, serializer);
+  public void writeObject(Buffer buffer, Alleycat alleycat) {
+    super.writeObject(buffer, alleycat);
     buffer.writeInt(address.getHostString().getBytes().length)
       .write(address.getHostString().getBytes())
       .writeInt(address.getPort());
   }
 
   @Override
-  public void readObject(Buffer buffer, Serializer serializer) {
-    super.readObject(buffer, serializer);
+  public void readObject(Buffer buffer, Alleycat alleycat) {
+    super.readObject(buffer, alleycat);
     byte[] bytes = new byte[buffer.readInt()];
     buffer.read(bytes);
     address = new InetSocketAddress(new String(bytes), buffer.readInt());

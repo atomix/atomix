@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.cluster;
 
-import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.alleycat.Alleycat;
 import net.kuujo.copycat.util.ExecutionContext;
 import net.kuujo.copycat.util.Managed;
 
@@ -35,20 +35,20 @@ public abstract class ManagedMembers implements Members, Managed<Members> {
   protected final Map<Integer, ManagedMember> members = new ConcurrentHashMap<>();
   private List<Member> sortedMembers = new ArrayList<>();
   protected final Set<MembershipListener> membershipListeners = new CopyOnWriteArraySet<>();
-  protected final Serializer serializer;
+  protected final Alleycat alleycat;
   private final AtomicInteger permits = new AtomicInteger();
   private CompletableFuture<Members> openFuture;
   private CompletableFuture<Void> closeFuture;
   private AtomicBoolean open = new AtomicBoolean();
 
-  protected ManagedMembers(Collection<? extends ManagedMember> remoteMembers, Serializer serializer) {
+  protected ManagedMembers(Collection<? extends ManagedMember> remoteMembers, Alleycat alleycat) {
     remoteMembers.forEach(m -> {
-      ((ManagedMember)m).setContext(new ExecutionContext("copycat-cluster-" + m.id(), serializer));
+      ((ManagedMember)m).setContext(new ExecutionContext("copycat-cluster-" + m.id(), alleycat));
       this.members.put(m.id(), m);
       this.sortedMembers.add(m);
     });
     Collections.sort(sortedMembers, (m1, m2) -> m1.id() - m2.id());
-    this.serializer = serializer;
+    this.alleycat = alleycat;
   }
 
   /**
@@ -162,8 +162,8 @@ public abstract class ManagedMembers implements Members, Managed<Members> {
   }
 
   @Override
-  public Serializer serializer() {
-    return serializer;
+  public Alleycat alleycat() {
+    return alleycat;
   }
 
   @Override

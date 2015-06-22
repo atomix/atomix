@@ -15,15 +15,15 @@
  */
 package net.kuujo.copycat.raft.rpc;
 
-import net.kuujo.copycat.io.serializer.Writable;
-import net.kuujo.copycat.io.util.ReferenceCounted;
+import net.kuujo.alleycat.AlleycatSerializable;
+import net.kuujo.alleycat.util.ReferenceCounted;
 
 /**
  * Protocol request.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Request<T extends Request<T>> extends ReferenceCounted<T>, Writable {
+public interface Request<T extends Request<T>> extends ReferenceCounted<T>, AlleycatSerializable {
 
   /**
    * Request type.

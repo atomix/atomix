@@ -54,11 +54,6 @@ a release, so check back for more! If you would like to request specific documen
       * [Queries](#queries)
    * [Filtering](#filtering)
 1. [Serialization](#serialization)
-   * [Registering serializers](#registering-serializers)
-   * [Buffers](#buffers)
-   * [ObjectWriter](#objectwriter)
-   * [Writable](#writable)
-   * [Reference counting](#reference-counting)
 
 ## Getting started
 
@@ -695,197 +690,34 @@ TODO
 
 ## Serialization
 
-Copycat provides an efficient custom serialization framework that's designed to operate on both disk and memory via a
-common [Buffer](#buffers) abstraction. Users can use the serialization framework to heavily optimize the transport of
-user-defined objects over the wire and reduce the use of disk space and memory in Copycat's logs.
+Copycat uses [Alleycat](http://github.com/kuujo/alleycat) for I/O and serialization.
 
-Copycat's serializer can be used by simply instantiating a `Serializer` instance:
+All `Alleycat` instance constructed by Copycat use Alleycat's `ServiceLoaderResolver`. Copycat registers internal
+`AlleycatSerializable` types via `META-INf/services/net.kuujo.alleycat.AlleycatSerializable`. To register additional
+serializable types, create an additional `META-INF/services/net.kuujo.alleycat.AlleycatSerializable` file and list
+serializable types in that file.
 
-```java
-Serializer serializer = new Serializer();
+`META-INF/services/net.kuujo.alleycat.AlleycatSerializable`
 
-Person person = new Person(1234, "Jordan", "Halterman");
-
-Buffer buffer = serializer.writeObject(person).flip();
-
-Person result = serializer.readObject(buffer);
+```
+com.mycompany.SerializableType1
+com.mycompany.SerializableType2
 ```
 
-The `Serializer` class supports serialization and deserialization of `Writable` types, types that have an associated
-`ObjectWriter`, and native Java `Serializable` types, with `Serializable` being the most inefficient method of
-serialization.
-
-### Registering serializers
-
-Serializers are registered with the Copycat `Serializer` via annotations. When a Copycat client or server is started,
-Copycat scans the classpath for classes that implement [ObjectWriter](#objectwriter) or [Writable](#writable). At some
-startup cost, this allows serializers (`ObjectWriter` implementations) to be associated with the types they serialize
-via generic types and annotations rather than storing metadata in separate files.
-
-### Buffers
-
-At the core of Copycat's serialization framework and log is the `Buffer`. One might wonder why we need another buffer
-abstraction when we have `ByteBuffer` and Netty's `ByteBuf`. Copycat's buffer abstraction was designed to operate both
-on disk and in memory. This allows Copycat to serialize and deserialize objects directly to and from disk rather than
-loading raw bytes into an intermediate buffer during deserialization. The buffer abstraction also allows Copycat to
-easily alter the persistence level for its underlying logs without affecting the higher level log implementation.
-
-### ObjectWriter
-
-At the core of the serialization framework is the `ObjectWriter`. The `ObjectWriter` is a simple interface that exposes
-two methods for serializing and deserializing objects of a specific type respectively. That is, object writers are responsible
-for serializing objects of other types, and not themselves. Copycat provides this separate serialization class in order
-to allow users to create custom serializers for types that couldn't otherwise be serialized by Copycat's `Serializer`.
-
-The `ObjectWriter` interface consists of two methods:
+Alternatively, users can register serializable types directly via the cluster's `Alleycat` instance:
 
 ```java
-public class FooWriter implements ObjectWriter<Foo> {
+Cluster cluster = NettyCluster.builder()
+  .withMemberId(...)
+  .withMembers(...)
+  .build();
 
-  @Override
-  public void write(Foo foo, Buffer buffer, Serializer serializer) {
-    buffer.writeInt(foo.getBar());
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public Foo read(Class<Foo> type, Buffer buffer, Serializer serializer) {
-    Foo foo = new Foo();
-    foo.setBar(buffer.readInt());
-  }
-}
+cluster.alleycat().register(MySerializableType.class, 1);
+cluster.alleycat().register(OtherSerializableType.class, OtherSerializer.class, 2);
 ```
 
-To serialize and deserialize an object, we simply write to and read from the passed in `Buffer` instance. In addition to
-the `Buffer`, the `Serializer` that is serializing or deserializing the instance is also passed in. This allows the
-serializer to serialize or deserialize subtypes as well:
-
-```java
-public class FooWriter implements ObjectWriter<Foo> {
-
-  @Override
-  public void write(Foo foo, Buffer buffer, Serializer serializer) {
-    buffer.writeInt(foo.getBar());
-    Baz baz = foo.getBaz();
-    serializer.writeObject(baz, buffer);
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public Foo read(Class<Foo> type, Buffer buffer, Serializer serializer) {
-    Foo foo = new Foo();
-    foo.setBar(buffer.readInt());
-    foo.setBaz(serializer.readObject(buffer));
-  }
-}
-```
-
-Copycat comes with a number of native `ObjectWriter` implementations, for instance `ListWriter`:
-
-```java
-@Serialize(@Serialize.Type(id=9, type=List.class))
-public class ListWriter implements ObjectWriter<List> {
-
-  @Override
-  public void write(List object, Buffer buffer, Serializer serializer) {
-    buffer.writeUnsignedShort(object.size());
-    for (Object value : object) {
-      serializer.writeObject(value, buffer);
-    }
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public List read(Class<List> type, Buffer buffer, Serializer serializer) {
-    int size = buffer.readUnsignedShort();
-    List object = new ArrayList<>(size);
-    for (int i = 0; i < size; i++) {
-      object.add(serializer.readObject(buffer));
-    }
-    return object;
-  }
-
-}
-```
-
-Note that the `ListWriter` class is also annotated with the `@Serialize` annotation. This annotation specifies the type
-that the writer serializes. The `@Serialize` annotation is, however, optional, as Copycat can determine the serializable
-type by the generic type as well.
-
-But there is another very important function that the `@Serialize` annotation provides: a serializable type `id`. For types
-that define a type `id`, Copycat will serialize objects of that type along with the type `id` rather than the class name.
-This significantly reduces the size of a serialized object by passing around a 16-bit unsigned integer rather than an
-arbitrary string. For types that don't define a type `id`, Copycat will serialize the fully qualified class name for
-reference during deserialization.
-
-Alternatively, serializable types can indicate the `ObjectWriter` with which to serialize the type:
-
-```java
-@SerializeWith(id=100, serializer=FooWriter.class)
-public class Foo {
-  ...
-}
-```
-
-### Writable
-
-Instead of writing a custom `ObjectWriter`, serializable types can also implement the `Writable` interface. The `Writable`
-interface is synonymous with Java's native `Serializable` interface. As with the `ObjectWriter` interface, `Writable`
-exposes two methods which receive both a `Buffer` and a `Serializer`:
-
-```java
-public class Foo implements Writable {
-  private int bar;
-  private Baz baz;
-
-  public Foo() {
-  }
-
-  public Foo(int bar, Baz baz) {
-    this.bar = bar;
-    this.baz = baz;
-  }
-
-  @Override
-  public void writeObject(Buffer buffer, Serializer serializer) {
-    buffer.writeInt(bar);
-    serializer.writeObject(baz);
-  }
-
-  @Override
-  public void readObject(Buffer buffer, Serializer serializer) {
-    bar = buffer.readInt();
-    baz = serializer.readObject(buffer);
-  }
-}
-```
-
-For the most efficient serialization, it is essential that you associate a serializable type `id` with all serializable
-types. Type IDs can be provided for types that implement `Writable` via the `@SerializeWith` annotation:
-
-```java
-@SerializeWith(id=100)
-public class Foo implements Writable {
-  ...
-
-  @Override
-  public void writeObject(Buffer buffer, Serializer serializer) {
-    buffer.writeInt(bar);
-    serializer.writeObject(baz);
-  }
-
-  @Override
-  public void readObject(Buffer buffer, Serializer serializer) {
-    bar = buffer.readInt();
-    baz = serializer.readObject(buffer);
-  }
-}
-```
-
-The serializable type `id` can be any number between `0` and `65535`.
-
-### Reference counting
-
-TODO
+Users should annotate all `AlleycatSerializable` types with the `@SerializeWith` annotation and provide a serialization
+ID for efficient serialization. Alley cat reserves serializable type IDs `128` through `255` and Copycat reserves
+`256` through `512`. See the [Alleycat documentation](http://github.com/kuujo/alleycat) for more information.
 
 ### [User Manual](#user-manual)

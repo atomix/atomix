@@ -17,8 +17,9 @@ package net.kuujo.copycat.cluster;
 
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
+import net.kuujo.alleycat.Alleycat;
+import net.kuujo.alleycat.ServiceLoaderResolver;
 import net.kuujo.copycat.ConfigurationException;
-import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.util.ExecutionContext;
 
 import java.net.InetSocketAddress;
@@ -44,8 +45,8 @@ public class NettyCluster extends ManagedCluster {
 
   private final EventLoopGroup eventLoopGroup;
 
-  public NettyCluster(EventLoopGroup eventLoopGroup, NettyLocalMember localMember, Collection<NettyRemoteMember> remoteMembers, Serializer serializer) {
-    super(localMember, remoteMembers, serializer);
+  public NettyCluster(EventLoopGroup eventLoopGroup, NettyLocalMember localMember, Collection<NettyRemoteMember> remoteMembers, Alleycat alleycat) {
+    super(localMember, remoteMembers, alleycat);
     this.eventLoopGroup = eventLoopGroup;
     remoteMembers.forEach(m -> m.setEventLoopGroup(eventLoopGroup));
   }
@@ -54,7 +55,7 @@ public class NettyCluster extends ManagedCluster {
   protected ManagedRemoteMember createMember(MemberInfo info) {
     ManagedRemoteMember remoteMember = new NettyRemoteMember((NettyMemberInfo) info, Member.Type.PASSIVE)
       .setEventLoopGroup(eventLoopGroup);
-    remoteMember.setContext(new ExecutionContext(String.format("copycat-cluster-%d", info.id()), serializer));
+    remoteMember.setContext(new ExecutionContext(String.format("copycat-cluster-%d", info.id()), alleycat));
     return remoteMember;
   }
 
@@ -124,7 +125,7 @@ public class NettyCluster extends ManagedCluster {
         localMember = new NettyLocalMember(new NettyMemberInfo(memberId, new InetSocketAddress(host, port)), Member.Type.PASSIVE);
       }
 
-      return new NettyCluster(eventLoopGroup != null ? eventLoopGroup : new NioEventLoopGroup(), localMember, members.values().stream().map(m -> (NettyRemoteMember) m).collect(Collectors.toList()), new Serializer());
+      return new NettyCluster(eventLoopGroup != null ? eventLoopGroup : new NioEventLoopGroup(), localMember, members.values().stream().map(m -> (NettyRemoteMember) m).collect(Collectors.toList()), new Alleycat(new ServiceLoaderResolver()));
     }
   }
 

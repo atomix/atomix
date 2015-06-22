@@ -15,8 +15,9 @@
  */
 package net.kuujo.copycat.cluster;
 
+import net.kuujo.alleycat.Alleycat;
+import net.kuujo.alleycat.ServiceLoaderResolver;
 import net.kuujo.copycat.ConfigurationException;
-import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.util.ExecutionContext;
 
 import java.util.Collection;
@@ -38,8 +39,8 @@ public class TestCluster extends ManagedCluster {
 
   private final TestMemberRegistry registry;
 
-  public TestCluster(TestLocalMember localMember, Collection<? extends TestRemoteMember> remoteMembers, TestMemberRegistry registry, Serializer serializer) {
-    super(localMember, remoteMembers, serializer);
+  public TestCluster(TestLocalMember localMember, Collection<? extends TestRemoteMember> remoteMembers, TestMemberRegistry registry, Alleycat alleycat) {
+    super(localMember, remoteMembers, alleycat);
     this.registry = registry;
     localMember.setRegistry(registry);
     remoteMembers.forEach(m -> ((TestRemoteMember) m).setRegistry(registry));
@@ -48,7 +49,7 @@ public class TestCluster extends ManagedCluster {
   @Override
   protected ManagedRemoteMember createMember(MemberInfo info) {
     ManagedRemoteMember remoteMember = new TestRemoteMember((TestMember.Info) info, Member.Type.ACTIVE).setRegistry(registry);
-    remoteMember.setContext(new ExecutionContext(String.format("copycat-cluster-%d", info.id()), serializer));
+    remoteMember.setContext(new ExecutionContext(String.format("copycat-cluster-%d", info.id()), alleycat));
     return remoteMember;
   }
 
@@ -137,7 +138,7 @@ public class TestCluster extends ManagedCluster {
       } else {
         localMember = new TestLocalMember(new TestMember.Info(memberId, address), Member.Type.PASSIVE);
       }
-      return new TestCluster(localMember, members.values().stream().map(m -> (TestRemoteMember) m).collect(Collectors.toList()), registry, new Serializer());
+      return new TestCluster(localMember, members.values().stream().map(m -> (TestRemoteMember) m).collect(Collectors.toList()), registry, new Alleycat(new ServiceLoaderResolver()));
     }
   }
 

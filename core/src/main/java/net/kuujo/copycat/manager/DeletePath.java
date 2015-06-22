@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.manager;
 
+import net.kuujo.alleycat.SerializeWith;
 import net.kuujo.copycat.raft.Command;
 import net.kuujo.copycat.raft.Operation;
 
@@ -23,6 +24,7 @@ import net.kuujo.copycat.raft.Operation;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
+@SerializeWith(id=411)
 public class DeletePath extends PathOperation<Boolean> implements Command<Boolean> {
 
   /**

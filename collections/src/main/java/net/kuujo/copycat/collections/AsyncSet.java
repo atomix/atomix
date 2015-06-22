@@ -15,12 +15,13 @@
  */
 package net.kuujo.copycat.collections;
 
+import net.kuujo.alleycat.Alleycat;
+import net.kuujo.alleycat.AlleycatSerializable;
+import net.kuujo.alleycat.SerializeWith;
+import net.kuujo.alleycat.io.Buffer;
 import net.kuujo.copycat.AbstractResource;
 import net.kuujo.copycat.Mode;
 import net.kuujo.copycat.Stateful;
-import net.kuujo.copycat.io.Buffer;
-import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.io.serializer.Writable;
 import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.raft.log.Compaction;
 
@@ -210,7 +211,7 @@ public class AsyncSet<T> extends AbstractResource {
   /**
    * Abstract set command.
    */
-  public static abstract class SetCommand<V> implements Command<V>, Writable {
+  public static abstract class SetCommand<V> implements Command<V>, AlleycatSerializable {
 
     /**
      * Base set command builder.
@@ -222,7 +223,7 @@ public class AsyncSet<T> extends AbstractResource {
   /**
    * Abstract set query.
    */
-  public static abstract class SetQuery<V> implements Query<V>, Writable {
+  public static abstract class SetQuery<V> implements Query<V>, AlleycatSerializable {
     protected ConsistencyLevel consistency = ConsistencyLevel.LINEARIZABLE_LEASE;
 
     @Override
@@ -231,12 +232,12 @@ public class AsyncSet<T> extends AbstractResource {
     }
 
     @Override
-    public void writeObject(Buffer buffer, Serializer serializer) {
+    public void writeObject(Buffer buffer, Alleycat alleycat) {
       buffer.writeByte(consistency.ordinal());
     }
 
     @Override
-    public void readObject(Buffer buffer, Serializer serializer) {
+    public void readObject(Buffer buffer, Alleycat alleycat) {
       consistency = ConsistencyLevel.values()[buffer.readByte()];
     }
 
@@ -273,13 +274,13 @@ public class AsyncSet<T> extends AbstractResource {
     }
 
     @Override
-    public void writeObject(Buffer buffer, Serializer serializer) {
-      serializer.writeObject(value, buffer);
+    public void writeObject(Buffer buffer, Alleycat alleycat) {
+      alleycat.writeObject(value, buffer);
     }
 
     @Override
-    public void readObject(Buffer buffer, Serializer serializer) {
-      value = serializer.readObject(buffer);
+    public void readObject(Buffer buffer, Alleycat alleycat) {
+      value = alleycat.readObject(buffer);
     }
 
     /**
@@ -315,15 +316,15 @@ public class AsyncSet<T> extends AbstractResource {
     }
 
     @Override
-    public void writeObject(Buffer buffer, Serializer serializer) {
-      super.writeObject(buffer, serializer);
-      serializer.writeObject(value, buffer);
+    public void writeObject(Buffer buffer, Alleycat alleycat) {
+      super.writeObject(buffer, alleycat);
+      alleycat.writeObject(value, buffer);
     }
 
     @Override
-    public void readObject(Buffer buffer, Serializer serializer) {
-      super.readObject(buffer, serializer);
-      value = serializer.readObject(buffer);
+    public void readObject(Buffer buffer, Alleycat alleycat) {
+      super.readObject(buffer, alleycat);
+      value = alleycat.readObject(buffer);
     }
 
     /**
@@ -348,6 +349,7 @@ public class AsyncSet<T> extends AbstractResource {
   /**
    * Contains value command.
    */
+  @SerializeWith(id=450)
   public static class Contains extends ValueQuery<Boolean> {
 
     /**
@@ -394,14 +396,14 @@ public class AsyncSet<T> extends AbstractResource {
     }
 
     @Override
-    public void writeObject(Buffer buffer, Serializer serializer) {
-      super.writeObject(buffer, serializer);
+    public void writeObject(Buffer buffer, Alleycat alleycat) {
+      super.writeObject(buffer, alleycat);
       buffer.writeByte(mode.ordinal()).writeLong(ttl);
     }
 
     @Override
-    public void readObject(Buffer buffer, Serializer serializer) {
-      super.readObject(buffer, serializer);
+    public void readObject(Buffer buffer, Alleycat alleycat) {
+      super.readObject(buffer, alleycat);
       mode = Mode.values()[buffer.readByte()];
       ttl = buffer.readLong();
     }
@@ -450,6 +452,7 @@ public class AsyncSet<T> extends AbstractResource {
   /**
    * Add command.
    */
+  @SerializeWith(id=451)
   public static class Add extends TtlCommand<Boolean> {
 
     /**
@@ -473,6 +476,7 @@ public class AsyncSet<T> extends AbstractResource {
   /**
    * Remove command.
    */
+  @SerializeWith(id=452)
   public static class Remove extends ValueCommand<Boolean> {
 
     /**
@@ -496,6 +500,7 @@ public class AsyncSet<T> extends AbstractResource {
   /**
    * Size query.
    */
+  @SerializeWith(id=453)
   public static class Size extends SetQuery<Integer> {
 
     /**
@@ -519,6 +524,7 @@ public class AsyncSet<T> extends AbstractResource {
   /**
    * Is empty query.
    */
+  @SerializeWith(id=454)
   public static class IsEmpty extends SetQuery<Boolean> {
 
     /**
@@ -542,6 +548,7 @@ public class AsyncSet<T> extends AbstractResource {
   /**
    * Clear command.
    */
+  @SerializeWith(id=455)
   public static class Clear extends SetCommand<Void> {
 
     /**
@@ -552,12 +559,12 @@ public class AsyncSet<T> extends AbstractResource {
     }
 
     @Override
-    public void writeObject(Buffer buffer, Serializer serializer) {
+    public void writeObject(Buffer buffer, Alleycat alleycat) {
 
     }
 
     @Override
-    public void readObject(Buffer buffer, Serializer serializer) {
+    public void readObject(Buffer buffer, Alleycat alleycat) {
 
     }
 

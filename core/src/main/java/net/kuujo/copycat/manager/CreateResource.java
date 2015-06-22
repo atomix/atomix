@@ -15,9 +15,10 @@
  */
 package net.kuujo.copycat.manager;
 
-import net.kuujo.copycat.io.Buffer;
-import net.kuujo.copycat.io.serializer.SerializationException;
-import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.alleycat.Alleycat;
+import net.kuujo.alleycat.SerializationException;
+import net.kuujo.alleycat.SerializeWith;
+import net.kuujo.alleycat.io.Buffer;
 import net.kuujo.copycat.raft.Command;
 import net.kuujo.copycat.raft.Operation;
 import net.kuujo.copycat.raft.StateMachine;
@@ -27,6 +28,7 @@ import net.kuujo.copycat.raft.StateMachine;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
+@SerializeWith(id=414)
 public class CreateResource extends PathOperation<Long> implements Command<Long> {
 
   /**
@@ -58,15 +60,15 @@ public class CreateResource extends PathOperation<Long> implements Command<Long>
   }
 
   @Override
-  public void writeObject(Buffer buffer, Serializer serializer) {
-    super.writeObject(buffer, serializer);
+  public void writeObject(Buffer buffer, Alleycat alleycat) {
+    super.writeObject(buffer, alleycat);
     buffer.writeInt(type.getName().getBytes().length).write(type.getName().getBytes());
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public void readObject(Buffer buffer, Serializer serializer) {
-    super.readObject(buffer, serializer);
+  public void readObject(Buffer buffer, Alleycat alleycat) {
+    super.readObject(buffer, alleycat);
     byte[] bytes = new byte[buffer.readInt()];
     buffer.read(bytes);
     String typeName = new String(bytes);

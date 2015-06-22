@@ -15,11 +15,11 @@
  */
 package net.kuujo.copycat.raft.log.entry;
 
-import net.kuujo.copycat.io.Buffer;
-import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.io.serializer.Writable;
-import net.kuujo.copycat.io.util.ReferenceCounted;
-import net.kuujo.copycat.io.util.ReferenceManager;
+import net.kuujo.alleycat.Alleycat;
+import net.kuujo.alleycat.AlleycatSerializable;
+import net.kuujo.alleycat.io.Buffer;
+import net.kuujo.alleycat.util.ReferenceCounted;
+import net.kuujo.alleycat.util.ReferenceManager;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class Entry<T extends Entry<T>> implements ReferenceCounted<Entry>, Writable {
+public abstract class Entry<T extends Entry<T>> implements ReferenceCounted<Entry>, AlleycatSerializable {
   private final ReferenceManager<Entry<?>> referenceManager;
   private final AtomicInteger references = new AtomicInteger();
   private long index;
@@ -93,12 +93,12 @@ public abstract class Entry<T extends Entry<T>> implements ReferenceCounted<Entr
   }
 
   @Override
-  public void writeObject(Buffer buffer, Serializer serializer) {
+  public void writeObject(Buffer buffer, Alleycat alleycat) {
     buffer.writeLong(term);
   }
 
   @Override
-  public void readObject(Buffer buffer, Serializer serializer) {
+  public void readObject(Buffer buffer, Alleycat alleycat) {
     term = buffer.readLong();
   }
 

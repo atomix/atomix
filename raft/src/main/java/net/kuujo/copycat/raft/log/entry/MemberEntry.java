@@ -15,10 +15,10 @@
  */
 package net.kuujo.copycat.raft.log.entry;
 
+import net.kuujo.alleycat.Alleycat;
+import net.kuujo.alleycat.io.Buffer;
+import net.kuujo.alleycat.util.ReferenceManager;
 import net.kuujo.copycat.cluster.MemberInfo;
-import net.kuujo.copycat.io.Buffer;
-import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.io.util.ReferenceManager;
 
 /**
  * Member info entry.
@@ -64,15 +64,15 @@ public abstract class MemberEntry<T extends MemberEntry<T>> extends Entry<T> {
   }
 
   @Override
-  public void writeObject(Buffer buffer, Serializer serializer) {
-    super.writeObject(buffer, serializer);
-    serializer.writeObject(member, buffer);
+  public void writeObject(Buffer buffer, Alleycat alleycat) {
+    super.writeObject(buffer, alleycat);
+    alleycat.writeObject(member, buffer);
   }
 
   @Override
-  public void readObject(Buffer buffer, Serializer serializer) {
-    super.readObject(buffer, serializer);
-    member = serializer.readObject(buffer);
+  public void readObject(Buffer buffer, Alleycat alleycat) {
+    super.readObject(buffer, alleycat);
+    member = alleycat.readObject(buffer);
   }
 
   @Override

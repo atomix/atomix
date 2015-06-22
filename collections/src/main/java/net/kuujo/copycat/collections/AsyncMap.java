@@ -15,12 +15,13 @@
  */
 package net.kuujo.copycat.collections;
 
+import net.kuujo.alleycat.Alleycat;
+import net.kuujo.alleycat.AlleycatSerializable;
+import net.kuujo.alleycat.SerializeWith;
+import net.kuujo.alleycat.io.Buffer;
 import net.kuujo.copycat.AbstractResource;
 import net.kuujo.copycat.Mode;
 import net.kuujo.copycat.Stateful;
-import net.kuujo.copycat.io.Buffer;
-import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.io.serializer.Writable;
 import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.raft.log.Compaction;
 
@@ -420,7 +421,7 @@ public class AsyncMap<K, V> extends AbstractResource {
   /**
    * Abstract map command.
    */
-  public static abstract class MapCommand<V> implements Command<V>, Writable {
+  public static abstract class MapCommand<V> implements Command<V>, AlleycatSerializable {
 
     /**
      * Base map command builder.
@@ -432,7 +433,7 @@ public class AsyncMap<K, V> extends AbstractResource {
   /**
    * Abstract map query.
    */
-  public static abstract class MapQuery<V> implements Query<V>, Writable {
+  public static abstract class MapQuery<V> implements Query<V>, AlleycatSerializable {
     protected ConsistencyLevel consistency = ConsistencyLevel.LINEARIZABLE_LEASE;
 
     @Override
@@ -441,12 +442,12 @@ public class AsyncMap<K, V> extends AbstractResource {
     }
 
     @Override
-    public void writeObject(Buffer buffer, Serializer serializer) {
+    public void writeObject(Buffer buffer, Alleycat alleycat) {
       buffer.writeByte(consistency.ordinal());
     }
 
     @Override
-    public void readObject(Buffer buffer, Serializer serializer) {
+    public void readObject(Buffer buffer, Alleycat alleycat) {
       consistency = ConsistencyLevel.values()[buffer.readByte()];
     }
 
@@ -486,13 +487,13 @@ public class AsyncMap<K, V> extends AbstractResource {
     }
 
     @Override
-    public void writeObject(Buffer buffer, Serializer serializer) {
-      serializer.writeObject(key, buffer);
+    public void writeObject(Buffer buffer, Alleycat alleycat) {
+      alleycat.writeObject(key, buffer);
     }
 
     @Override
-    public void readObject(Buffer buffer, Serializer serializer) {
-      key = serializer.readObject(buffer);
+    public void readObject(Buffer buffer, Alleycat alleycat) {
+      key = alleycat.readObject(buffer);
     }
 
     /**
@@ -528,15 +529,15 @@ public class AsyncMap<K, V> extends AbstractResource {
     }
 
     @Override
-    public void writeObject(Buffer buffer, Serializer serializer) {
-      super.writeObject(buffer, serializer);
-      serializer.writeObject(key, buffer);
+    public void writeObject(Buffer buffer, Alleycat alleycat) {
+      super.writeObject(buffer, alleycat);
+      alleycat.writeObject(key, buffer);
     }
 
     @Override
-    public void readObject(Buffer buffer, Serializer serializer) {
-      super.readObject(buffer, serializer);
-      key = serializer.readObject(buffer);
+    public void readObject(Buffer buffer, Alleycat alleycat) {
+      super.readObject(buffer, alleycat);
+      key = alleycat.readObject(buffer);
     }
 
     /**
@@ -561,6 +562,7 @@ public class AsyncMap<K, V> extends AbstractResource {
   /**
    * Contains key command.
    */
+  @SerializeWith(id=440)
   public static class ContainsKey extends KeyQuery<Boolean> {
 
     /**
@@ -584,7 +586,7 @@ public class AsyncMap<K, V> extends AbstractResource {
   /**
    * Key/value command.
    */
-  public static class KeyValueCommand<V> extends KeyCommand<V> {
+  public static abstract class KeyValueCommand<V> extends KeyCommand<V> {
     protected Object value;
 
     /**
@@ -595,15 +597,15 @@ public class AsyncMap<K, V> extends AbstractResource {
     }
 
     @Override
-    public void writeObject(Buffer buffer, Serializer serializer) {
-      super.writeObject(buffer, serializer);
-      serializer.writeObject(value, buffer);
+    public void writeObject(Buffer buffer, Alleycat alleycat) {
+      super.writeObject(buffer, alleycat);
+      alleycat.writeObject(value, buffer);
     }
 
     @Override
-    public void readObject(Buffer buffer, Serializer serializer) {
-      super.readObject(buffer, serializer);
-      value = serializer.readObject(buffer);
+    public void readObject(Buffer buffer, Alleycat alleycat) {
+      super.readObject(buffer, alleycat);
+      value = alleycat.readObject(buffer);
     }
 
     /**
@@ -651,14 +653,14 @@ public class AsyncMap<K, V> extends AbstractResource {
     }
 
     @Override
-    public void writeObject(Buffer buffer, Serializer serializer) {
-      super.writeObject(buffer, serializer);
+    public void writeObject(Buffer buffer, Alleycat alleycat) {
+      super.writeObject(buffer, alleycat);
       buffer.writeByte(mode.ordinal()).writeLong(ttl);
     }
 
     @Override
-    public void readObject(Buffer buffer, Serializer serializer) {
-      super.readObject(buffer, serializer);
+    public void readObject(Buffer buffer, Alleycat alleycat) {
+      super.readObject(buffer, alleycat);
       mode = Mode.values()[buffer.readByte()];
       ttl = buffer.readLong();
     }
@@ -707,6 +709,7 @@ public class AsyncMap<K, V> extends AbstractResource {
   /**
    * Put command.
    */
+  @SerializeWith(id=441)
   public static class Put extends TtlCommand<Object> {
 
     /**
@@ -730,6 +733,7 @@ public class AsyncMap<K, V> extends AbstractResource {
   /**
    * Put if absent command.
    */
+  @SerializeWith(id=442)
   public static class PutIfAbsent extends TtlCommand<Object> {
 
     /**
@@ -753,6 +757,7 @@ public class AsyncMap<K, V> extends AbstractResource {
   /**
    * Get query.
    */
+  @SerializeWith(id=443)
   public static class Get extends KeyQuery<Object> {
 
     /**
@@ -776,6 +781,7 @@ public class AsyncMap<K, V> extends AbstractResource {
   /**
    * Get or default query.
    */
+  @SerializeWith(id=444)
   public static class GetOrDefault extends KeyQuery<Object> {
 
     /**
@@ -797,15 +803,15 @@ public class AsyncMap<K, V> extends AbstractResource {
     }
 
     @Override
-    public void readObject(Buffer buffer, Serializer serializer) {
-      super.readObject(buffer, serializer);
-      defaultValue = serializer.readObject(buffer);
+    public void readObject(Buffer buffer, Alleycat alleycat) {
+      super.readObject(buffer, alleycat);
+      defaultValue = alleycat.readObject(buffer);
     }
 
     @Override
-    public void writeObject(Buffer buffer, Serializer serializer) {
-      super.writeObject(buffer, serializer);
-      serializer.writeObject(defaultValue, buffer);
+    public void writeObject(Buffer buffer, Alleycat alleycat) {
+      super.writeObject(buffer, alleycat);
+      alleycat.writeObject(defaultValue, buffer);
     }
 
     /**
@@ -833,6 +839,7 @@ public class AsyncMap<K, V> extends AbstractResource {
   /**
    * Remove command.
    */
+  @SerializeWith(id=445)
   public static class Remove extends KeyValueCommand<Object> {
 
     /**
@@ -856,6 +863,7 @@ public class AsyncMap<K, V> extends AbstractResource {
   /**
    * Is empty query.
    */
+  @SerializeWith(id=446)
   public static class IsEmpty extends MapQuery<Boolean> {
 
     /**
@@ -879,6 +887,7 @@ public class AsyncMap<K, V> extends AbstractResource {
   /**
    * Size query.
    */
+  @SerializeWith(id=447)
   public static class Size extends MapQuery<Integer> {
 
     /**
@@ -902,6 +911,7 @@ public class AsyncMap<K, V> extends AbstractResource {
   /**
    * Clear command.
    */
+  @SerializeWith(id=448)
   public static class Clear extends MapCommand<Void> {
 
     /**
@@ -912,12 +922,12 @@ public class AsyncMap<K, V> extends AbstractResource {
     }
 
     @Override
-    public void writeObject(Buffer buffer, Serializer serializer) {
+    public void writeObject(Buffer buffer, Alleycat alleycat) {
 
     }
 
     @Override
-    public void readObject(Buffer buffer, Serializer serializer) {
+    public void readObject(Buffer buffer, Alleycat alleycat) {
 
     }
 

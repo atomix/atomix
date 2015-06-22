@@ -15,10 +15,10 @@
  */
 package net.kuujo.copycat.raft.log.entry;
 
-import net.kuujo.copycat.io.Buffer;
-import net.kuujo.copycat.io.serializer.SerializeWith;
-import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.io.util.ReferenceManager;
+import net.kuujo.alleycat.Alleycat;
+import net.kuujo.alleycat.SerializeWith;
+import net.kuujo.alleycat.io.Buffer;
+import net.kuujo.alleycat.util.ReferenceManager;
 import net.kuujo.copycat.raft.Command;
 
 /**
@@ -26,7 +26,7 @@ import net.kuujo.copycat.raft.Command;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=1003)
+@SerializeWith(id=306)
 public class CommandEntry extends OperationEntry<CommandEntry> {
   private long request;
   private long response;
@@ -97,18 +97,18 @@ public class CommandEntry extends OperationEntry<CommandEntry> {
   }
 
   @Override
-  public void writeObject(Buffer buffer, Serializer serializer) {
-    super.writeObject(buffer, serializer);
+  public void writeObject(Buffer buffer, Alleycat alleycat) {
+    super.writeObject(buffer, alleycat);
     buffer.writeLong(request).writeLong(response);
-    serializer.writeObject(command, buffer);
+    alleycat.writeObject(command, buffer);
   }
 
   @Override
-  public void readObject(Buffer buffer, Serializer serializer) {
-    super.readObject(buffer, serializer);
+  public void readObject(Buffer buffer, Alleycat alleycat) {
+    super.readObject(buffer, alleycat);
     request = buffer.readLong();
     response = buffer.readLong();
-    command = serializer.readObject(buffer);
+    command = alleycat.readObject(buffer);
   }
 
   @Override

@@ -15,9 +15,9 @@
  */
 package net.kuujo.copycat.raft.state;
 
+import net.kuujo.alleycat.Alleycat;
 import net.kuujo.copycat.cluster.ManagedCluster;
 import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.raft.log.Log;
 import net.kuujo.copycat.raft.rpc.*;
@@ -62,9 +62,9 @@ public class RaftStateContext extends RaftStateClient {
   private volatile boolean open;
 
   public RaftStateContext(Log log, StateMachine stateMachine, ManagedCluster cluster, ExecutionContext context) {
-    super(cluster, new ExecutionContext(String.format("%s-client", context.name()), context.serializer().copy()));
+    super(cluster, new ExecutionContext(String.format("%s-client", context.name()), context.alleycat().clone()));
     this.log = log;
-    this.stateMachine = new RaftState(stateMachine, cluster, members, new ExecutionContext(String.format("%s-state", context.name()), context.serializer().copy()));
+    this.stateMachine = new RaftState(stateMachine, cluster, members, new ExecutionContext(String.format("%s-state", context.name()), context.alleycat().clone()));
     this.cluster = cluster;
     this.context = context;
     this.threadChecker = new ThreadChecker(context);
@@ -90,8 +90,8 @@ public class RaftStateContext extends RaftStateClient {
    *
    * @return The command serializer.
    */
-  public Serializer getSerializer() {
-    return cluster.serializer();
+  public Alleycat getSerializer() {
+    return cluster.alleycat();
   }
 
   /**

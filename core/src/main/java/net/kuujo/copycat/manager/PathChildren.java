@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.manager;
 
+import net.kuujo.alleycat.SerializeWith;
 import net.kuujo.copycat.raft.ConsistencyLevel;
 import net.kuujo.copycat.raft.Operation;
 import net.kuujo.copycat.raft.Query;
@@ -26,6 +27,7 @@ import java.util.List;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
+@SerializeWith(id=413)
 public class PathChildren extends PathOperation<List<String>> implements Query<List<String>> {
 
   /**

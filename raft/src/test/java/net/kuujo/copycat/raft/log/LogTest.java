@@ -15,7 +15,8 @@
  */
 package net.kuujo.copycat.raft.log;
 
-import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.alleycat.Alleycat;
+import net.kuujo.alleycat.ServiceLoaderResolver;
 import net.kuujo.copycat.raft.Command;
 import net.kuujo.copycat.raft.log.entry.CommandEntry;
 import net.kuujo.copycat.raft.log.entry.NoOpEntry;
@@ -269,7 +270,7 @@ public class LogTest {
    * Creates a test execution context.
    */
   private ExecutionContext createContext() {
-    return new ExecutionContext("test", new Serializer());
+    return new ExecutionContext("test", new Alleycat(new ServiceLoaderResolver()));
   }
 
   /**

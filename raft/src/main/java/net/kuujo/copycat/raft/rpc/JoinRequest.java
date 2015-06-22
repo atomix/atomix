@@ -15,10 +15,11 @@
  */
 package net.kuujo.copycat.raft.rpc;
 
+import net.kuujo.alleycat.Alleycat;
+import net.kuujo.alleycat.SerializeWith;
+import net.kuujo.alleycat.io.Buffer;
+import net.kuujo.alleycat.util.ReferenceManager;
 import net.kuujo.copycat.cluster.MemberInfo;
-import net.kuujo.copycat.io.Buffer;
-import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.io.util.ReferenceManager;
 
 import java.util.Objects;
 
@@ -27,6 +28,7 @@ import java.util.Objects;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
+@SerializeWith(id=262)
 public class JoinRequest extends AbstractRequest<JoinRequest> {
   private static final ThreadLocal<Builder> builder = new ThreadLocal<Builder>() {
     @Override
@@ -75,13 +77,13 @@ public class JoinRequest extends AbstractRequest<JoinRequest> {
   }
 
   @Override
-  public void readObject(Buffer buffer, Serializer serializer) {
-    member = serializer.readObject(buffer);
+  public void readObject(Buffer buffer, Alleycat alleycat) {
+    member = alleycat.readObject(buffer);
   }
 
   @Override
-  public void writeObject(Buffer buffer, Serializer serializer) {
-    serializer.writeObject(member, buffer);
+  public void writeObject(Buffer buffer, Alleycat alleycat) {
+    alleycat.writeObject(member, buffer);
   }
 
   @Override

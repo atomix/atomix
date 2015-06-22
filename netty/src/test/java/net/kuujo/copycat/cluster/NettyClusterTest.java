@@ -18,10 +18,11 @@ package net.kuujo.copycat.cluster;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import net.jodah.concurrentunit.ConcurrentTestCase;
+import net.kuujo.alleycat.Alleycat;
+import net.kuujo.alleycat.AlleycatSerializable;
+import net.kuujo.alleycat.ServiceLoaderResolver;
+import net.kuujo.alleycat.io.Buffer;
 import net.kuujo.copycat.Task;
-import net.kuujo.copycat.io.Buffer;
-import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.io.serializer.Writable;
 import net.kuujo.copycat.util.ExecutionContext;
 import org.testng.annotations.Test;
 
@@ -43,7 +44,7 @@ public class NettyClusterTest extends ConcurrentTestCase {
    */
   public void testConnectRemoteToLocal() throws Throwable {
     NettyLocalMember localMember = new NettyLocalMember(new NettyMemberInfo(1, new InetSocketAddress("localhost", 8080)), Member.Type.ACTIVE);
-    localMember.setContext(new ExecutionContext("test-server", new Serializer()));
+    localMember.setContext(new ExecutionContext("test-server", new Alleycat(new ServiceLoaderResolver())));
 
     expectResume();
     localMember.open().thenRun(this::resume);
@@ -51,7 +52,7 @@ public class NettyClusterTest extends ConcurrentTestCase {
 
     EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
     NettyRemoteMember remoteMember = new NettyRemoteMember(new NettyMemberInfo(1, new InetSocketAddress("localhost", 8080)), Member.Type.ACTIVE);
-    remoteMember.setContext(new ExecutionContext("test-client", new Serializer()));
+    remoteMember.setContext(new ExecutionContext("test-client", new Alleycat(new ServiceLoaderResolver())));
     remoteMember.setEventLoopGroup(eventLoopGroup);
 
     expectResume();
@@ -74,14 +75,14 @@ public class NettyClusterTest extends ConcurrentTestCase {
   public void testConnectRemoteBeforeLocal() throws Throwable {
     EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
     NettyRemoteMember remoteMember = new NettyRemoteMember(new NettyMemberInfo(1, new InetSocketAddress("localhost", 8081)), Member.Type.ACTIVE);
-    remoteMember.setContext(new ExecutionContext("test-client", new Serializer()));
+    remoteMember.setContext(new ExecutionContext("test-client", new Alleycat(new ServiceLoaderResolver())));
     remoteMember.setEventLoopGroup(eventLoopGroup);
 
     expectResumes(2);
     remoteMember.open().thenRun(this::resume);
 
     NettyLocalMember localMember = new NettyLocalMember(new NettyMemberInfo(1, new InetSocketAddress("localhost", 8081)), Member.Type.ACTIVE);
-    localMember.setContext(new ExecutionContext("test-server", new Serializer()));
+    localMember.setContext(new ExecutionContext("test-server", new Alleycat(new ServiceLoaderResolver())));
 
     localMember.open().thenRun(this::resume);
     await();
@@ -101,7 +102,7 @@ public class NettyClusterTest extends ConcurrentTestCase {
    */
   public void testMessageRemoteToLocal() throws Throwable {
     NettyLocalMember localMember = new NettyLocalMember(new NettyMemberInfo(1, new InetSocketAddress("localhost", 8082)), Member.Type.ACTIVE);
-    localMember.setContext(new ExecutionContext("test-server", new Serializer()));
+    localMember.setContext(new ExecutionContext("test-server", new Alleycat(new ServiceLoaderResolver())));
 
     expectResume();
     localMember.open().thenRun(this::resume);
@@ -109,7 +110,7 @@ public class NettyClusterTest extends ConcurrentTestCase {
 
     EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
     NettyRemoteMember remoteMember = new NettyRemoteMember(new NettyMemberInfo(1, new InetSocketAddress("localhost", 8082)), Member.Type.ACTIVE);
-    remoteMember.setContext(new ExecutionContext("test-client", new Serializer()));
+    remoteMember.setContext(new ExecutionContext("test-client", new Alleycat(new ServiceLoaderResolver())));
     remoteMember.setEventLoopGroup(eventLoopGroup);
 
     expectResume();
@@ -140,7 +141,7 @@ public class NettyClusterTest extends ConcurrentTestCase {
    */
   public void testTaskRemoteToLocal() throws Throwable {
     NettyLocalMember localMember = new NettyLocalMember(new NettyMemberInfo(1, new InetSocketAddress("localhost", 8083)), Member.Type.ACTIVE);
-    localMember.setContext(new ExecutionContext("test-server", new Serializer()));
+    localMember.setContext(new ExecutionContext("test-server", new Alleycat(new ServiceLoaderResolver())));
 
     expectResume();
     localMember.open().thenRun(this::resume);
@@ -148,7 +149,7 @@ public class NettyClusterTest extends ConcurrentTestCase {
 
     EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
     NettyRemoteMember remoteMember = new NettyRemoteMember(new NettyMemberInfo(1, new InetSocketAddress("localhost", 8083)), Member.Type.ACTIVE);
-    remoteMember.setContext(new ExecutionContext("test-client", new Serializer()));
+    remoteMember.setContext(new ExecutionContext("test-client", new Alleycat(new ServiceLoaderResolver())));
     remoteMember.setEventLoopGroup(eventLoopGroup);
 
     expectResume();
@@ -240,7 +241,7 @@ public class NettyClusterTest extends ConcurrentTestCase {
   /**
    * Test task.
    */
-  public static class TestTask implements Task<String>, Writable {
+  public static class TestTask implements Task<String>, AlleycatSerializable {
     private String arg;
 
     public TestTask() {
@@ -256,13 +257,13 @@ public class NettyClusterTest extends ConcurrentTestCase {
     }
 
     @Override
-    public void writeObject(Buffer buffer, Serializer serializer) {
+    public void writeObject(Buffer buffer, Alleycat alleycat) {
       byte[] bytes = arg.getBytes();
       buffer.writeInt(bytes.length).write(bytes);
     }
 
     @Override
-    public void readObject(Buffer buffer, Serializer serializer) {
+    public void readObject(Buffer buffer, Alleycat alleycat) {
       byte[] bytes = new byte[buffer.readInt()];
       buffer.read(bytes);
       this.arg = new String(bytes);

@@ -15,15 +15,15 @@
  */
 package net.kuujo.copycat.raft.log.entry;
 
-import net.kuujo.copycat.io.serializer.SerializeWith;
-import net.kuujo.copycat.io.util.ReferenceManager;
+import net.kuujo.alleycat.SerializeWith;
+import net.kuujo.alleycat.util.ReferenceManager;
 
 /**
  * Keep alive entry.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=1002)
+@SerializeWith(id=304)
 public class KeepAliveEntry extends SessionEntry<KeepAliveEntry> {
 
   public KeepAliveEntry(ReferenceManager<Entry<?>> referenceManager) {

@@ -354,7 +354,7 @@ public class Raft implements ManagedProtocol {
       if (log == null)
         throw new NullPointerException("log cannot be null");
 
-      RaftStateContext context = (RaftStateContext) new RaftStateContext(log, stateMachine, cluster, new ExecutionContext(cluster.member().id() != 0 ? String.format("copycat-%d", cluster.member().id()) : "copycat", cluster.serializer()))
+      RaftStateContext context = (RaftStateContext) new RaftStateContext(log, stateMachine, cluster, new ExecutionContext(cluster.member().id() != 0 ? String.format("copycat-%d", cluster.member().id()) : "copycat", cluster.alleycat().clone()))
         .setHeartbeatInterval(config.getHeartbeatInterval())
         .setElectionTimeout(config.getElectionTimeout())
         .setSessionTimeout(config.getSessionTimeout())

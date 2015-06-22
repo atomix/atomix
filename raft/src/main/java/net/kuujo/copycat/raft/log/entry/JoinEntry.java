@@ -15,15 +15,15 @@
  */
 package net.kuujo.copycat.raft.log.entry;
 
-import net.kuujo.copycat.io.serializer.SerializeWith;
-import net.kuujo.copycat.io.util.ReferenceManager;
+import net.kuujo.alleycat.SerializeWith;
+import net.kuujo.alleycat.util.ReferenceManager;
 
 /**
  * Member join entry.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=1005)
+@SerializeWith(id=301)
 public class JoinEntry extends MemberEntry<JoinEntry> {
 
   public JoinEntry() {

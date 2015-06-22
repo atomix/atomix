@@ -15,9 +15,8 @@
  */
 package net.kuujo.copycat.raft.rpc;
 
-import net.kuujo.copycat.io.util.ReferenceManager;
-
-import java.util.function.Function;
+import net.kuujo.alleycat.util.ReferenceFactory;
+import net.kuujo.alleycat.util.ReferenceManager;
 
 /**
  * Client response.
@@ -44,7 +43,7 @@ public abstract class ClientResponse<T extends ClientResponse<T>> extends Abstra
    * Client response builder.
    */
   public static abstract class Builder<T extends Builder<T, U>, U extends ClientResponse<U>> extends AbstractResponse.Builder<T, U> {
-    protected Builder(Function<ReferenceManager<U>, U> factory) {
+    protected Builder(ReferenceFactory<U> factory) {
       super(factory);
     }
 

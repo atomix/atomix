@@ -15,16 +15,16 @@
  */
 package net.kuujo.copycat.cluster;
 
-import net.kuujo.copycat.io.Buffer;
-import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.io.serializer.Writable;
+import net.kuujo.alleycat.Alleycat;
+import net.kuujo.alleycat.AlleycatSerializable;
+import net.kuujo.alleycat.io.Buffer;
 
 /**
  * Member info.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class MemberInfo implements Writable {
+public abstract class MemberInfo implements AlleycatSerializable {
   private int id;
 
   protected MemberInfo() {
@@ -44,12 +44,12 @@ public abstract class MemberInfo implements Writable {
   }
 
   @Override
-  public void writeObject(Buffer buffer, Serializer serializer) {
+  public void writeObject(Buffer buffer, Alleycat alleycat) {
     buffer.writeInt(id);
   }
 
   @Override
-  public void readObject(Buffer buffer, Serializer serializer) {
+  public void readObject(Buffer buffer, Alleycat alleycat) {
     id = buffer.readInt();
   }
 

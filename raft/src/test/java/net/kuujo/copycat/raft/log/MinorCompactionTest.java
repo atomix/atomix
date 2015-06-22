@@ -16,7 +16,8 @@
 package net.kuujo.copycat.raft.log;
 
 import net.jodah.concurrentunit.ConcurrentTestCase;
-import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.alleycat.Alleycat;
+import net.kuujo.alleycat.ServiceLoaderResolver;
 import net.kuujo.copycat.raft.log.entry.KeepAliveEntry;
 import net.kuujo.copycat.raft.log.entry.NoOpEntry;
 import net.kuujo.copycat.util.ExecutionContext;
@@ -41,7 +42,7 @@ public class MinorCompactionTest extends ConcurrentTestCase {
       .withMaxEntriesPerSegment(128)
       .build();
 
-    ExecutionContext context = new ExecutionContext("test", new Serializer());
+    ExecutionContext context = new ExecutionContext("test", new Alleycat(new ServiceLoaderResolver()));
 
     log.open(context);
 

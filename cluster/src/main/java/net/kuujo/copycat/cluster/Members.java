@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.cluster;
 
-import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.alleycat.Alleycat;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -48,7 +48,7 @@ public interface Members {
    *
    * @return The cluster serializer.
    */
-  Serializer serializer();
+  Alleycat alleycat();
 
   /**
    * Adds a membership listener to the cluster.<p>
