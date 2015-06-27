@@ -67,7 +67,7 @@ For fault-tolerance, it is recommended that each Copycat cluster have 3 or 5 ser
 always be odd in order to achieve the greatest level of fault-tolerance.
 
 All network driven interfaces in Copycat are asynchronous and make heavy use of Java 8's `CompletableFuture`.
-At the core of Copycat is the `Copycat` API, which is exposed by both servers and clients.
+At the core of Copycat is the [Copycat API][Copycat], which is exposed by both servers and clients.
 
 *Synchronous use*
 ```java
@@ -107,7 +107,7 @@ More on [working with resources](#working-with-resources) below.
 
 ### Working with servers
 
-The `CopycatServer` class provides a `Copycat` implementation that participates in Raft-based replication of state.
+The [CopycatServer][CopycatServer] class provides a `Copycat` implementation that participates in Raft-based replication of state.
 As with [clients](#working-with-clients), servers operate as normal members of the Copycat cluster, allowing users
 to create and use resources.
 
@@ -119,7 +119,7 @@ CopycatServer.Builder builder = CopycatServer.builder();
 
 #### Configuring the cluster
 
-Each `CopycatServer` instance requires a `Cluster`. To set up the `Cluster`, use a `Cluster.Builder`.
+Each `CopycatServer` instance requires a [Cluster][Cluster]. To set up the `Cluster`, use a [Cluster.Builder][ClusterBuilder].
 
 ```java
 Cluster.Builder clusterBuilder = NettyCluster.builder();
@@ -721,3 +721,14 @@ ID for efficient serialization. Alley cat reserves serializable type IDs `128` t
 `256` through `512`. See the [Alleycat documentation](http://github.com/kuujo/alleycat) for more information.
 
 ### [User Manual](#user-manual)
+
+## Javadoc
+
+Javadocs are available [here][Javadoc].
+
+[Javadoc]: http://kuujo.github.io/copycat/java/
+[Copycat]: http://kuujo.github.io/copycat/java/net/kuujo/copycat/Copycat.html
+[CopycatServer]: http://kuujo.github.io/copycat/java/net/kuujo/copycat/CopycatServer.html
+[CopycatClient]: http://kuujo.github.io/copycat/java/net/kuujo/copycat/CopycatClient.html
+[Cluster]: http://kuujo.github.io/copycat/java/net/kuujo/copycat/cluster/Cluster.html
+[ClusterBuilder]: http://kuujo.github.io/copycat/java/net/kuujo/copycat/cluster/Cluster.Builder.html

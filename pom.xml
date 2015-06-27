@@ -216,7 +216,9 @@
             <configuration>
               <show>public</show>
               <excludePackageNames>*.internal.*</excludePackageNames>
-              <reportOutputDirectory>docs</reportOutputDirectory>
+              <reportOutputDirectory>target/docs</reportOutputDirectory>
+              <additionalparam>-Xdoclint:none</additionalparam>
+              <aggregate>true</aggregate>
               <destDir>java</destDir>
             </configuration>
             <executions>
