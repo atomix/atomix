@@ -29,11 +29,6 @@
   <dependencies>
     <dependency>
       <groupId>net.kuujo.copycat</groupId>
-      <artifactId>copycat-io</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>net.kuujo.copycat</groupId>
       <artifactId>copycat-netty</artifactId>
       <version>${project.version}</version>
     </dependency>

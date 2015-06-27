@@ -26,11 +26,15 @@
   <artifactId>copycat-cluster</artifactId>
   <name>Copycat Cluster</name>
 
+  <properties>
+    <alleycat.version>0.3</alleycat.version>
+  </properties>
+
   <dependencies>
     <dependency>
-      <groupId>net.kuujo.copycat</groupId>
-      <artifactId>copycat-io</artifactId>
-      <version>${project.version}</version>
+      <groupId>net.kuujo.alleycat</groupId>
+      <artifactId>alleycat</artifactId>
+      <version>${alleycat.version}</version>
     </dependency>
   </dependencies>
 
