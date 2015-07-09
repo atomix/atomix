@@ -21,8 +21,7 @@ import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.raft.log.Log;
 import net.kuujo.copycat.raft.rpc.*;
-import net.kuujo.copycat.util.ExecutionContext;
-import net.kuujo.copycat.util.ThreadChecker;
+import net.kuujo.copycat.util.Context;
 import net.kuujo.copycat.util.concurrent.Futures;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,8 +47,7 @@ public class RaftStateContext extends RaftStateClient {
   private final Log log;
   private final ManagedCluster cluster;
   private final ClusterState members = new ClusterState();
-  private final ExecutionContext context;
-  private final ThreadChecker threadChecker;
+  private final Context context;
   private AbstractState state;
   private ScheduledFuture<?> joinTimer;
   private ScheduledFuture<?> heartbeatTimer;
@@ -61,13 +59,12 @@ public class RaftStateContext extends RaftStateClient {
   private long globalIndex;
   private volatile boolean open;
 
-  public RaftStateContext(Log log, StateMachine stateMachine, ManagedCluster cluster, ExecutionContext context) {
-    super(cluster, new ExecutionContext(String.format("%s-client", context.name()), context.alleycat().clone()));
+  public RaftStateContext(Log log, StateMachine stateMachine, ManagedCluster cluster, Context context) {
+    super(cluster, Context.createContext(String.format("%s-client", context.name()), context.serializer().clone()));
     this.log = log;
-    this.stateMachine = new RaftState(stateMachine, cluster, members, new ExecutionContext(String.format("%s-state", context.name()), context.alleycat().clone()));
+    this.stateMachine = new RaftState(stateMachine, cluster, members, Context.createContext(String.format("%s-state", context.name()), context.serializer().clone()));
     this.cluster = cluster;
     this.context = context;
-    this.threadChecker = new ThreadChecker(context);
 
     log.compactor().filter(this.stateMachine::filter);
 
@@ -99,7 +96,7 @@ public class RaftStateContext extends RaftStateClient {
    *
    * @return The execution context.
    */
-  public ExecutionContext getContext() {
+  public Context getContext() {
     return context;
   }
 
@@ -333,7 +330,7 @@ public class RaftStateContext extends RaftStateClient {
    * Checks that the current thread is the state context thread.
    */
   void checkThread() {
-    threadChecker.checkThread();
+    context.checkThread();
   }
 
   @Override
@@ -439,7 +436,7 @@ public class RaftStateContext extends RaftStateClient {
       .build();
     LOGGER.debug("Sending {} to {}", request, member);
     member.<JoinRequest, JoinResponse>send(request).whenComplete((response, error) -> {
-      threadChecker.checkThread();
+      context.checkThread();
       if (error == null && response.status() == Response.Status.OK) {
         setLeader(response.leader());
         setTerm(response.term());
@@ -498,7 +495,7 @@ public class RaftStateContext extends RaftStateClient {
       .build();
     LOGGER.debug("Sending {} to {}", request, member);
     member.<HeartbeatRequest, HeartbeatResponse>send(request).whenComplete((response, error) -> {
-      threadChecker.checkThread();
+      context.checkThread();
       if (isOpen()) {
         if (error == null && response.status() == Response.Status.OK) {
           setLeader(response.leader());
@@ -544,7 +541,7 @@ public class RaftStateContext extends RaftStateClient {
       .build();
     LOGGER.debug("Sending {} to {}", request, member);
     member.<LeaveRequest, LeaveResponse>send(request).whenComplete((response, error) -> {
-      threadChecker.checkThread();
+      context.checkThread();
       if (error == null && response.status() == Response.Status.OK) {
         future.complete(null);
         LOGGER.info("{} - Left cluster", cluster.member().id());

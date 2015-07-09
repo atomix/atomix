@@ -25,7 +25,7 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
 import net.kuujo.copycat.Task;
-import net.kuujo.copycat.util.ExecutionContext;
+import net.kuujo.copycat.util.Context;
 import net.openhft.hashing.LongHashFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -128,7 +128,7 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
         ByteBuf byteBuf = context.alloc().buffer(13, 1024 * 32);
         buffer.setByteBuf(byteBuf);
         buffer.writeLong(requestId).writeByte(MESSAGE).writeInt(hashMap.computeIfAbsent(topic, this::hash32));
-        alleycat.writeObject(message, buffer);
+        serializer.writeObject(message, buffer);
         channel.writeAndFlush(byteBuf).addListener((channelFuture) -> {
           if (channelFuture.isSuccess()) {
             responseFutures.put(requestId, future);
@@ -162,7 +162,7 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
         ByteBuf byteBuf = context.alloc().buffer(9, 1024 * 32);
         buffer.setByteBuf(byteBuf);
         buffer.writeLong(requestId).writeByte(TASK);
-        alleycat.writeObject(task, buffer);
+        serializer.writeObject(task, buffer);
         channel.writeAndFlush(byteBuf).addListener((channelFuture) -> {
           if (channelFuture.isSuccess()) {
             responseFutures.put(requestId, future);
@@ -269,7 +269,7 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
 
     connecting.set(false);
 
-    ExecutionContext context = getContext();
+    Context context = getContext();
 
     synchronized (this) {
       if (closeFuture == null) {
@@ -313,10 +313,10 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
    * Contextual future.
    */
   private static class ContextualFuture<T> extends CompletableFuture<T> {
-    private final ExecutionContext context;
+    private final Context context;
     private final long timeout;
 
-    private ContextualFuture(ExecutionContext context, long timeout) {
+    private ContextualFuture(Context context, long timeout) {
       this.context = context;
       this.timeout = timeout;
     }
@@ -341,7 +341,7 @@ public class NettyRemoteMember extends ManagedRemoteMember implements NettyMembe
         int status = response.readByte();
         ByteBufBuffer buffer = BUFFER.get();
         buffer.setByteBuf(response.slice());
-        Object result = alleycat.readObject(buffer);
+        Object result = serializer.readObject(buffer);
         responseFuture.context.execute(() -> {
           if (status == STATUS_FAILURE) {
             responseFuture.completeExceptionally((Exception) result);

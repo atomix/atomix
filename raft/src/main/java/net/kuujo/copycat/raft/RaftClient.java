@@ -17,7 +17,7 @@ package net.kuujo.copycat.raft;
 
 import net.kuujo.copycat.cluster.ManagedMembers;
 import net.kuujo.copycat.raft.state.RaftStateClient;
-import net.kuujo.copycat.util.ExecutionContext;
+import net.kuujo.copycat.util.Context;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -175,7 +175,7 @@ public class RaftClient implements ManagedProtocol {
 
     @Override
     public RaftClient build() {
-      return new RaftClient(new RaftStateClient(members, new ExecutionContext("copycat-client-%d", members.alleycat().clone())).setKeepAliveInterval(keepAliveInterval));
+      return new RaftClient(new RaftStateClient(members, Context.createContext("copycat-client-%d", members.alleycat().clone())).setKeepAliveInterval(keepAliveInterval));
     }
   }
 

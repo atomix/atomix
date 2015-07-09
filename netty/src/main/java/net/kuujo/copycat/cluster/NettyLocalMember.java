@@ -32,7 +32,7 @@ import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import net.kuujo.alleycat.util.ReferenceCounted;
 import net.kuujo.copycat.Task;
-import net.kuujo.copycat.util.ExecutionContext;
+import net.kuujo.copycat.util.Context;
 import net.kuujo.copycat.util.concurrent.Futures;
 import net.openhft.hashing.LongHashFunction;
 import org.slf4j.Logger;
@@ -130,7 +130,7 @@ public class NettyLocalMember extends ManagedLocalMember implements NettyMember{
     if (!listening)
       return Futures.exceptionalFuture(new IllegalStateException("member not open"));
 
-    ExecutionContext context = getContext();
+    Context context = getContext();
 
     CompletableFuture<U> future = new CompletableFuture<>();
     HandlerHolder handler = handlers.get(hashMap.computeIfAbsent(topic, this::hash32));
@@ -301,7 +301,7 @@ public class NettyLocalMember extends ManagedLocalMember implements NettyMember{
         NettyLocalMember.this.context.execute(() -> {
           ByteBufBuffer requestBuffer = BUFFER.get();
           requestBuffer.setByteBuf(request);
-          Object deserializedRequest = alleycat.readObject(requestBuffer);
+          Object deserializedRequest = serializer.readObject(requestBuffer);
 
           handler.context.execute(() -> {
             handler.handler.handle(deserializedRequest).whenCompleteAsync((result, error) -> {
@@ -315,7 +315,7 @@ public class NettyLocalMember extends ManagedLocalMember implements NettyMember{
                 response.writeByte(STATUS_SUCCESS);
                 ByteBufBuffer responseBuffer = BUFFER.get();
                 responseBuffer.setByteBuf(response);
-                alleycat.writeObject(result, responseBuffer);
+                serializer.writeObject(result, responseBuffer);
                 context.writeAndFlush(response);
               } else {
                 ByteBuf response = context.alloc().buffer(10, 1024 * 8);
@@ -323,7 +323,7 @@ public class NettyLocalMember extends ManagedLocalMember implements NettyMember{
                 response.writeByte(STATUS_FAILURE);
                 ByteBufBuffer responseBuffer = BUFFER.get();
                 responseBuffer.setByteBuf(response);
-                alleycat.writeObject(error, responseBuffer);
+                serializer.writeObject(error, responseBuffer);
                 context.writeAndFlush(response);
               }
 
@@ -344,13 +344,13 @@ public class NettyLocalMember extends ManagedLocalMember implements NettyMember{
       getContext().execute(() -> {
         ByteBufBuffer requestBuffer = BUFFER.get();
         requestBuffer.setByteBuf(request);
-        Task task = alleycat.readObject(requestBuffer);
+        Task task = serializer.readObject(requestBuffer);
         try {
           Object result = task.execute();
           ByteBuf response = context.alloc().buffer(9, 1024 * 8);
           ByteBufBuffer responseBuffer = BUFFER.get();
           responseBuffer.setByteBuf(response);
-          alleycat.writeObject(result, responseBuffer);
+          serializer.writeObject(result, responseBuffer);
           response.writeLong(requestId);
           context.writeAndFlush(response);
           request.release();
@@ -371,9 +371,9 @@ public class NettyLocalMember extends ManagedLocalMember implements NettyMember{
    */
   protected static class HandlerHolder {
     private final MessageHandler<Object, Object> handler;
-    private final ExecutionContext context;
+    private final Context context;
 
-    private HandlerHolder(MessageHandler handler, ExecutionContext context) {
+    private HandlerHolder(MessageHandler handler, Context context) {
       this.handler = handler;
       this.context = context;
     }

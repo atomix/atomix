@@ -16,7 +16,7 @@
 package net.kuujo.copycat.raft.log;
 
 import net.kuujo.copycat.raft.log.entry.EntryFilter;
-import net.kuujo.copycat.util.ExecutionContext;
+import net.kuujo.copycat.util.Context;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -127,7 +127,7 @@ public class Compactor implements AutoCloseable {
   /**
    * Opens the log compactor.
    */
-  public void open(ExecutionContext context) {
+  public void open(Context context) {
     scheduledFuture = context.scheduleAtFixedRate(() -> compact(context), minorCompactionInterval, minorCompactionInterval, TimeUnit.MILLISECONDS);
   }
 
@@ -152,7 +152,7 @@ public class Compactor implements AutoCloseable {
   /**
    * Compacts the log.
    */
-  synchronized CompletableFuture<Void> compact(ExecutionContext context) {
+  synchronized CompletableFuture<Void> compact(Context context) {
     if (compactFuture != null) {
       return compactFuture;
     }

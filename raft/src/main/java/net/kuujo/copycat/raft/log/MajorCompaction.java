@@ -17,7 +17,7 @@ package net.kuujo.copycat.raft.log;
 
 import net.kuujo.copycat.raft.log.entry.Entry;
 import net.kuujo.copycat.raft.log.entry.EntryFilter;
-import net.kuujo.copycat.util.ExecutionContext;
+import net.kuujo.copycat.util.Context;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,9 +34,9 @@ import java.util.concurrent.CompletableFuture;
 public class MajorCompaction extends Compaction {
   private final Logger LOGGER = LoggerFactory.getLogger(MajorCompaction.class);
   private final EntryFilter filter;
-  private final ExecutionContext context;
+  private final Context context;
 
-  public MajorCompaction(long index, EntryFilter filter, ExecutionContext context) {
+  public MajorCompaction(long index, EntryFilter filter, Context context) {
     super(index);
     this.filter = filter;
     this.context = context;

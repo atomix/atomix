@@ -16,7 +16,7 @@
 package net.kuujo.copycat.cluster;
 
 import net.kuujo.alleycat.Alleycat;
-import net.kuujo.copycat.util.ExecutionContext;
+import net.kuujo.copycat.util.Context;
 import net.kuujo.copycat.util.Managed;
 
 import java.util.*;
@@ -43,7 +43,7 @@ public abstract class ManagedMembers implements Members, Managed<Members> {
 
   protected ManagedMembers(Collection<? extends ManagedMember> remoteMembers, Alleycat alleycat) {
     remoteMembers.forEach(m -> {
-      ((ManagedMember)m).setContext(new ExecutionContext("copycat-cluster-" + m.id(), alleycat));
+      ((ManagedMember)m).setContext(Context.createContext("copycat-cluster-%d", alleycat));
       this.members.put(m.id(), m);
       this.sortedMembers.add(m);
     });

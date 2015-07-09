@@ -17,7 +17,7 @@ package net.kuujo.copycat.raft.log;
 
 import net.kuujo.copycat.raft.log.entry.Entry;
 import net.kuujo.copycat.raft.log.entry.TypedEntryPool;
-import net.kuujo.copycat.util.ExecutionContext;
+import net.kuujo.copycat.util.Context;
 
 import java.io.File;
 import java.util.concurrent.TimeUnit;
@@ -52,7 +52,7 @@ public class Log implements AutoCloseable {
    *
    * @param context The context in which to open the log.
    */
-  public void open(ExecutionContext context) {
+  public void open(Context context) {
     segments.open(context);
     compactor.open(context);
     open = true;

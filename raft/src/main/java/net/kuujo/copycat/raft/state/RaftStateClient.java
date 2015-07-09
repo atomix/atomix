@@ -21,9 +21,8 @@ import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.cluster.MemberInfo;
 import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.raft.rpc.*;
-import net.kuujo.copycat.util.ExecutionContext;
+import net.kuujo.copycat.util.Context;
 import net.kuujo.copycat.util.Managed;
-import net.kuujo.copycat.util.ThreadChecker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,8 +45,7 @@ public class RaftStateClient implements Managed<Void> {
   private static final Logger LOGGER = LoggerFactory.getLogger(RaftStateClient.class);
   private static final long REQUEST_TIMEOUT = TimeUnit.SECONDS.toMillis(10);
   private final ManagedMembers members;
-  private final ExecutionContext context;
-  private final ThreadChecker threadChecker;
+  private final Context context;
   private CompletableFuture<Void> registerFuture;
   private final AtomicBoolean keepAlive = new AtomicBoolean();
   private final Random random = new Random();
@@ -63,12 +61,11 @@ public class RaftStateClient implements Managed<Void> {
   private volatile long response;
   private volatile long version;
 
-  public RaftStateClient(ManagedMembers members, ExecutionContext context) {
+  public RaftStateClient(ManagedMembers members, Context context) {
     if (members == null)
       throw new NullPointerException("members cannot be null");
     this.members = members;
     this.context = context;
-    this.threadChecker = new ThreadChecker(context);
   }
 
   /**
@@ -488,7 +485,7 @@ public class RaftStateClient implements Managed<Void> {
    * Registers the client.
    */
   private CompletableFuture<Void> register() {
-    threadChecker.checkThread();
+    context.checkThread();
     if (registerFuture == null) {
       registerFuture = register(100, new CompletableFuture<>()).whenComplete((result, error) -> registerFuture = null);
     }
@@ -500,7 +497,7 @@ public class RaftStateClient implements Managed<Void> {
    */
   private CompletableFuture<Void> register(long interval, CompletableFuture<Void> future) {
     register(new ArrayList<>(members.members())).whenCompleteAsync((result, error) -> {
-      threadChecker.checkThread();
+      context.checkThread();
       if (error == null) {
         future.complete(null);
       } else {
@@ -537,7 +534,7 @@ public class RaftStateClient implements Managed<Void> {
     RegisterRequest request = RegisterRequest.builder().build();
     LOGGER.debug("Sending {} to {}", request, member);
     member.<RegisterRequest, RegisterResponse>send(request).whenComplete((response, error) -> {
-      threadChecker.checkThread();
+      context.checkThread();
       if (error == null && response.status() == Response.Status.OK) {
         future.complete(response);
         LOGGER.debug("Registered new session: {}", getSession());
@@ -598,7 +595,7 @@ public class RaftStateClient implements Managed<Void> {
       .build();
     LOGGER.debug("Sending {} to {}", request, member);
     member.<KeepAliveRequest, KeepAliveResponse>send(request).whenComplete((response, error) -> {
-      threadChecker.checkThread();
+      context.checkThread();
       if (isOpen()) {
         if (error == null && response.status() == Response.Status.OK) {
           future.complete(response);

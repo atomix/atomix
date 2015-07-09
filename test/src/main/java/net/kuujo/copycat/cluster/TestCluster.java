@@ -18,7 +18,7 @@ package net.kuujo.copycat.cluster;
 import net.kuujo.alleycat.Alleycat;
 import net.kuujo.alleycat.ServiceLoaderResolver;
 import net.kuujo.copycat.ConfigurationException;
-import net.kuujo.copycat.util.ExecutionContext;
+import net.kuujo.copycat.util.Context;
 
 import java.util.Collection;
 import java.util.stream.Collectors;
@@ -49,7 +49,7 @@ public class TestCluster extends ManagedCluster {
   @Override
   protected ManagedRemoteMember createMember(MemberInfo info) {
     ManagedRemoteMember remoteMember = new TestRemoteMember((TestMember.Info) info, Member.Type.ACTIVE).setRegistry(registry);
-    remoteMember.setContext(new ExecutionContext(String.format("copycat-cluster-%d", info.id()), alleycat));
+    remoteMember.setContext(Context.createContext("copycat-cluster-%d", alleycat));
     return remoteMember;
   }
 

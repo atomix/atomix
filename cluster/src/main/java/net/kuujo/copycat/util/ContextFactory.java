@@ -15,26 +15,22 @@
  */
 package net.kuujo.copycat.util;
 
+import net.kuujo.alleycat.Alleycat;
+
 /**
- * Context thread checker.
+ * Context factory.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ThreadChecker {
-  private final ExecutionContext context;
-
-  public ThreadChecker(ExecutionContext context) {
-    this.context = context;
-  }
+public interface ContextFactory {
 
   /**
-   * Checks that the current thread is the correct context thread.
+   * Creates a new execution context.
+   *
+   * @param name The context name.
+   * @param serializer The Alleycat serializer.
+   * @return The execution context.
    */
-  public void checkThread() {
-    Thread thread = Thread.currentThread();
-    if (!(thread instanceof net.kuujo.copycat.util.CopycatThread && ((net.kuujo.copycat.util.CopycatThread) thread).getContext() == context)) {
-      throw new IllegalStateException("not running on the correct thread");
-    }
-  }
+  Context createContext(String name, Alleycat serializer);
 
 }

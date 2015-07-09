@@ -16,7 +16,7 @@
 package net.kuujo.copycat.cluster;
 
 import net.kuujo.alleycat.Alleycat;
-import net.kuujo.copycat.util.ExecutionContext;
+import net.kuujo.copycat.util.Context;
 import net.kuujo.copycat.util.Managed;
 
 import java.util.Random;
@@ -30,8 +30,8 @@ public abstract class ManagedMember implements Member, Managed<Member> {
   protected final MemberInfo info;
   protected Type type;
   protected Status status = Status.DEAD;
-  protected ExecutionContext context;
-  protected Alleycat alleycat;
+  protected Context context;
+  protected Alleycat serializer;
 
   protected ManagedMember(MemberInfo info, Type type) {
     this.info = info;
@@ -41,16 +41,16 @@ public abstract class ManagedMember implements Member, Managed<Member> {
   /**
    * Sets the member context.
    */
-  void setContext(ExecutionContext context) {
+  void setContext(Context context) {
     this.context = context;
-    this.alleycat = context.alleycat();
+    this.serializer = context.serializer();
   }
 
   /**
    * Returns the current execution context.
    */
-  protected ExecutionContext getContext() {
-    ExecutionContext context = ExecutionContext.currentContext();
+  protected Context getContext() {
+    Context context = Context.currentContext();
     return context != null ? context : this.context;
   }
 

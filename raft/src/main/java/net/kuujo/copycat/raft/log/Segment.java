@@ -18,7 +18,7 @@ package net.kuujo.copycat.raft.log;
 import net.kuujo.alleycat.Alleycat;
 import net.kuujo.alleycat.io.Buffer;
 import net.kuujo.copycat.raft.log.entry.Entry;
-import net.kuujo.copycat.util.ExecutionContext;
+import net.kuujo.copycat.util.Context;
 
 /**
  * Log segment.
@@ -36,7 +36,7 @@ public class Segment implements AutoCloseable {
    * @param context The segment execution context.
    * @return The opened segment.
    */
-  public static Segment open(Buffer buffer, SegmentDescriptor descriptor, OffsetIndex index, ExecutionContext context) {
+  public static Segment open(Buffer buffer, SegmentDescriptor descriptor, OffsetIndex index, Context context) {
     return new Segment(buffer, descriptor, index, context);
   }
 
@@ -49,7 +49,7 @@ public class Segment implements AutoCloseable {
   private int skip = 0;
   private boolean open = true;
 
-  Segment(Buffer buffer, SegmentDescriptor descriptor, OffsetIndex offsetIndex, ExecutionContext context) {
+  Segment(Buffer buffer, SegmentDescriptor descriptor, OffsetIndex offsetIndex, Context context) {
     if (buffer == null)
       throw new NullPointerException("buffer cannot be null");
     if (descriptor == null)
@@ -60,7 +60,7 @@ public class Segment implements AutoCloseable {
       throw new NullPointerException("context cannot be null");
 
     this.source = buffer;
-    this.alleycat = context.alleycat();
+    this.alleycat = context.serializer();
     this.writeBuffer = buffer.slice();
     this.readBuffer = writeBuffer.asReadOnlyBuffer();
     this.descriptor = descriptor;

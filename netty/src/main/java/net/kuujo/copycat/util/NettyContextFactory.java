@@ -15,32 +15,21 @@
  */
 package net.kuujo.copycat.util;
 
-import java.lang.ref.WeakReference;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import net.kuujo.alleycat.Alleycat;
 
 /**
- * Copycat thread.
+ * Netty context factory.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class CopycatThread extends Thread {
-  private WeakReference<Context> context;
+public class NettyContextFactory implements ContextFactory {
+  private final EventLoopGroup group = new NioEventLoopGroup(Runtime.getRuntime().availableProcessors() * 2, new CopycatThreadFactory("copycat-thread-%d"));
 
-  public CopycatThread(Runnable target, String name) {
-    super(target, name);
-  }
-
-  /**
-   * Sets the thread context.
-   */
-  public void setContext(Context context) {
-    this.context = new WeakReference<>(context);
-  }
-
-  /**
-   * Returns the thread context.
-   */
-  public Context getContext() {
-    return context.get();
+  @Override
+  public Context createContext(String name, Alleycat serializer) {
+    return new NettyContext(name, group.next(), serializer);
   }
 
 }

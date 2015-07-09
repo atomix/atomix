@@ -22,7 +22,7 @@ import net.kuujo.copycat.cluster.MemberInfo;
 import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.raft.log.Compaction;
 import net.kuujo.copycat.raft.log.entry.*;
-import net.kuujo.copycat.util.ExecutionContext;
+import net.kuujo.copycat.util.Context;
 import net.kuujo.copycat.util.concurrent.Futures;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,13 +40,13 @@ class RaftState {
   private final StateMachine stateMachine;
   private final ManagedCluster cluster;
   private final ClusterState members;
-  private final ExecutionContext context;
+  private final Context context;
   private final Map<Long, RaftSession> sessions = new HashMap<>();
   private final Map<Long, List<Runnable>> queries = new HashMap<>();
   private long sessionTimeout = 5000;
   private long lastApplied;
 
-  public RaftState(StateMachine stateMachine, ManagedCluster cluster, ClusterState members, ExecutionContext context) {
+  public RaftState(StateMachine stateMachine, ManagedCluster cluster, ClusterState members, Context context) {
     this.stateMachine = stateMachine;
     this.cluster = cluster;
     this.members = members;

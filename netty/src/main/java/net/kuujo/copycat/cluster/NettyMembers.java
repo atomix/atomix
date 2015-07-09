@@ -19,7 +19,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import net.kuujo.alleycat.Alleycat;
 import net.kuujo.alleycat.ServiceLoaderResolver;
-import net.kuujo.copycat.util.ExecutionContext;
+import net.kuujo.copycat.util.Context;
 
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
@@ -53,7 +53,7 @@ public class NettyMembers extends ManagedMembers {
   protected ManagedRemoteMember createMember(MemberInfo info) {
     ManagedRemoteMember remoteMember = new NettyRemoteMember((NettyMemberInfo) info, Member.Type.PASSIVE)
       .setEventLoopGroup(eventLoopGroup);
-    remoteMember.setContext(new ExecutionContext(String.format("copycat-cluster-%d", info.id()), alleycat));
+    remoteMember.setContext(Context.createContext(String.format("copycat-cluster-%d", info.id()), alleycat));
     return remoteMember;
   }
 

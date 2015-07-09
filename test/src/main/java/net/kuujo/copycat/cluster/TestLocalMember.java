@@ -17,7 +17,7 @@ package net.kuujo.copycat.cluster;
 
 import net.kuujo.alleycat.io.Buffer;
 import net.kuujo.copycat.Task;
-import net.kuujo.copycat.util.ExecutionContext;
+import net.kuujo.copycat.util.Context;
 import net.kuujo.copycat.util.concurrent.Futures;
 
 import java.util.HashMap;
@@ -88,7 +88,7 @@ public class TestLocalMember extends ManagedLocalMember implements TestMember {
   @Override
   @SuppressWarnings("unchecked")
   public <T, U> CompletableFuture<U> send(String topic, T message) {
-    ExecutionContext context = getContext();
+    Context context = getContext();
 
     HandlerHolder handler = handlers.get(topic);
     if (handler != null) {
@@ -114,11 +114,11 @@ public class TestLocalMember extends ManagedLocalMember implements TestMember {
     HandlerHolder handler = handlers.get(topic);
     if (handler != null) {
       CompletableFuture<Buffer> future = new CompletableFuture<>();
-      Object message = alleycat.readObject(buffer);
+      Object message = serializer.readObject(buffer);
       handler.context.execute(() -> {
         handler.handler.handle(message).whenCompleteAsync((result, error) -> {
           if (error == null) {
-            future.complete(alleycat.writeObject(result).flip());
+            future.complete(serializer.writeObject(result).flip());
           } else {
             future.completeExceptionally(new ClusterException(error));
           }
@@ -181,9 +181,9 @@ public class TestLocalMember extends ManagedLocalMember implements TestMember {
    */
   protected static class HandlerHolder {
     private final MessageHandler<Object, Object> handler;
-    private final ExecutionContext context;
+    private final Context context;
 
-    private HandlerHolder(MessageHandler handler, ExecutionContext context) {
+    private HandlerHolder(MessageHandler handler, Context context) {
       this.handler = handler;
       this.context = context;
     }

@@ -17,7 +17,7 @@ package net.kuujo.copycat.cluster;
 
 import net.kuujo.alleycat.io.Buffer;
 import net.kuujo.copycat.Task;
-import net.kuujo.copycat.util.ExecutionContext;
+import net.kuujo.copycat.util.Context;
 import net.kuujo.copycat.util.concurrent.Futures;
 
 import java.util.concurrent.CompletableFuture;
@@ -84,14 +84,14 @@ public class TestRemoteMember extends ManagedRemoteMember implements TestMember 
     if (member == null)
       return Futures.exceptionalFuture(new ClusterException("invalid member"));
 
-    ExecutionContext context = getContext();
+    Context context = getContext();
 
     CompletableFuture<U> future = new CompletableFuture<>();
     this.context.execute(() -> {
-      Buffer buffer = alleycat.writeObject(message).flip();
+      Buffer buffer = serializer.writeObject(message).flip();
       member.receive(topic, buffer).whenCompleteAsync((result, error) -> {
         if (error == null) {
-          context.execute(() -> future.complete(alleycat.readObject(result)));
+          context.execute(() -> future.complete(serializer.readObject(result)));
         } else {
           context.execute(() -> future.completeExceptionally(error));
         }
@@ -114,7 +114,7 @@ public class TestRemoteMember extends ManagedRemoteMember implements TestMember 
     if (member == null)
       return Futures.exceptionalFuture(new ClusterException("invalid member"));
 
-    ExecutionContext context = getContext();
+    Context context = getContext();
     CompletableFuture<T> future = new CompletableFuture<>();
     member.submit(task).whenComplete((result, error) -> {
       context.execute(() -> {

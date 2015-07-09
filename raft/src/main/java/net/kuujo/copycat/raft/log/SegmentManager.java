@@ -19,7 +19,7 @@ import net.kuujo.alleycat.io.Buffer;
 import net.kuujo.alleycat.io.FileBuffer;
 import net.kuujo.alleycat.io.HeapBuffer;
 import net.kuujo.copycat.ConfigurationException;
-import net.kuujo.copycat.util.ExecutionContext;
+import net.kuujo.copycat.util.Context;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,7 +39,7 @@ public class SegmentManager implements AutoCloseable {
   private static final Logger LOGGER = LoggerFactory.getLogger(SegmentManager.class);
   protected final LogConfig config;
   private NavigableMap<Long, Segment> segments = new ConcurrentSkipListMap<>();
-  private ExecutionContext context;
+  private Context context;
   private Segment currentSegment;
 
   public SegmentManager(LogConfig config) {
@@ -62,7 +62,7 @@ public class SegmentManager implements AutoCloseable {
    *
    * @param context The context in which to open the segments.
    */
-  public void open(ExecutionContext context) {
+  public void open(Context context) {
     this.context = context;
 
     // Load existing log segments from disk.

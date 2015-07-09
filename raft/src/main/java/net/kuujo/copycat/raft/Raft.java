@@ -21,7 +21,7 @@ import net.kuujo.copycat.cluster.ManagedCluster;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.raft.log.Log;
 import net.kuujo.copycat.raft.state.RaftStateContext;
-import net.kuujo.copycat.util.ExecutionContext;
+import net.kuujo.copycat.util.Context;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -354,7 +354,7 @@ public class Raft implements ManagedProtocol {
       if (log == null)
         throw new NullPointerException("log cannot be null");
 
-      RaftStateContext context = (RaftStateContext) new RaftStateContext(log, stateMachine, cluster, new ExecutionContext(cluster.member().id() != 0 ? String.format("copycat-%d", cluster.member().id()) : "copycat", cluster.alleycat().clone()))
+      RaftStateContext context = (RaftStateContext) new RaftStateContext(log, stateMachine, cluster, Context.createContext(cluster.member().id() != 0 ? String.format("copycat-%d", cluster.member().id()) : "copycat", cluster.alleycat().clone()))
         .setHeartbeatInterval(config.getHeartbeatInterval())
         .setElectionTimeout(config.getElectionTimeout())
         .setSessionTimeout(config.getSessionTimeout())

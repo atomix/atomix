@@ -20,7 +20,7 @@ import net.kuujo.alleycat.Alleycat;
 import net.kuujo.alleycat.ServiceLoaderResolver;
 import net.kuujo.copycat.raft.log.entry.KeepAliveEntry;
 import net.kuujo.copycat.raft.log.entry.NoOpEntry;
-import net.kuujo.copycat.util.ExecutionContext;
+import net.kuujo.copycat.util.Context;
 import org.testng.annotations.Test;
 
 import java.util.concurrent.CompletableFuture;
@@ -42,7 +42,7 @@ public class MajorCompactionTest extends ConcurrentTestCase {
       .withMaxEntriesPerSegment(128)
       .build();
 
-    ExecutionContext context = new ExecutionContext("test", new Alleycat(new ServiceLoaderResolver()));
+    Context context = Context.createContext("test", new Alleycat(new ServiceLoaderResolver()));
 
     log.open(context);
 

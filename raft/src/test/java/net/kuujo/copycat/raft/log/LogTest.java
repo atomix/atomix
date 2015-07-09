@@ -20,7 +20,7 @@ import net.kuujo.alleycat.ServiceLoaderResolver;
 import net.kuujo.copycat.raft.Command;
 import net.kuujo.copycat.raft.log.entry.CommandEntry;
 import net.kuujo.copycat.raft.log.entry.NoOpEntry;
-import net.kuujo.copycat.util.ExecutionContext;
+import net.kuujo.copycat.util.Context;
 import org.testng.annotations.Test;
 
 import java.io.Serializable;
@@ -269,8 +269,8 @@ public class LogTest {
   /**
    * Creates a test execution context.
    */
-  private ExecutionContext createContext() {
-    return new ExecutionContext("test", new Alleycat(new ServiceLoaderResolver()));
+  private Context createContext() {
+    return Context.createContext("test", new Alleycat(new ServiceLoaderResolver()));
   }
 
   /**
