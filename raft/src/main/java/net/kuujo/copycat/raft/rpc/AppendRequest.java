@@ -17,7 +17,8 @@ package net.kuujo.copycat.raft.rpc;
 
 import net.kuujo.alleycat.Alleycat;
 import net.kuujo.alleycat.SerializeWith;
-import net.kuujo.alleycat.io.Buffer;
+import net.kuujo.alleycat.io.BufferInput;
+import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.alleycat.util.ReferenceManager;
 import net.kuujo.copycat.raft.log.entry.Entry;
 
@@ -140,7 +141,7 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
   }
 
   @Override
-  public void writeObject(Buffer buffer, Alleycat alleycat) {
+  public void writeObject(BufferOutput buffer, Alleycat alleycat) {
     buffer.writeLong(term)
       .writeInt(leader)
       .writeLong(logIndex)
@@ -156,7 +157,7 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
   }
 
   @Override
-  public void readObject(Buffer buffer, Alleycat alleycat) {
+  public void readObject(BufferInput buffer, Alleycat alleycat) {
     term = buffer.readLong();
     leader = buffer.readInt();
     logIndex = buffer.readLong();

@@ -18,7 +18,8 @@ package net.kuujo.copycat.collections;
 import net.kuujo.alleycat.Alleycat;
 import net.kuujo.alleycat.AlleycatSerializable;
 import net.kuujo.alleycat.SerializeWith;
-import net.kuujo.alleycat.io.Buffer;
+import net.kuujo.alleycat.io.BufferInput;
+import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.copycat.AbstractResource;
 import net.kuujo.copycat.Mode;
 import net.kuujo.copycat.Stateful;
@@ -232,12 +233,12 @@ public class AsyncSet<T> extends AbstractResource {
     }
 
     @Override
-    public void writeObject(Buffer buffer, Alleycat alleycat) {
+    public void writeObject(BufferOutput buffer, Alleycat alleycat) {
       buffer.writeByte(consistency.ordinal());
     }
 
     @Override
-    public void readObject(Buffer buffer, Alleycat alleycat) {
+    public void readObject(BufferInput buffer, Alleycat alleycat) {
       consistency = ConsistencyLevel.values()[buffer.readByte()];
     }
 
@@ -274,12 +275,12 @@ public class AsyncSet<T> extends AbstractResource {
     }
 
     @Override
-    public void writeObject(Buffer buffer, Alleycat alleycat) {
+    public void writeObject(BufferOutput buffer, Alleycat alleycat) {
       alleycat.writeObject(value, buffer);
     }
 
     @Override
-    public void readObject(Buffer buffer, Alleycat alleycat) {
+    public void readObject(BufferInput buffer, Alleycat alleycat) {
       value = alleycat.readObject(buffer);
     }
 
@@ -316,13 +317,13 @@ public class AsyncSet<T> extends AbstractResource {
     }
 
     @Override
-    public void writeObject(Buffer buffer, Alleycat alleycat) {
+    public void writeObject(BufferOutput buffer, Alleycat alleycat) {
       super.writeObject(buffer, alleycat);
       alleycat.writeObject(value, buffer);
     }
 
     @Override
-    public void readObject(Buffer buffer, Alleycat alleycat) {
+    public void readObject(BufferInput buffer, Alleycat alleycat) {
       super.readObject(buffer, alleycat);
       value = alleycat.readObject(buffer);
     }
@@ -396,13 +397,13 @@ public class AsyncSet<T> extends AbstractResource {
     }
 
     @Override
-    public void writeObject(Buffer buffer, Alleycat alleycat) {
+    public void writeObject(BufferOutput buffer, Alleycat alleycat) {
       super.writeObject(buffer, alleycat);
       buffer.writeByte(mode.ordinal()).writeLong(ttl);
     }
 
     @Override
-    public void readObject(Buffer buffer, Alleycat alleycat) {
+    public void readObject(BufferInput buffer, Alleycat alleycat) {
       super.readObject(buffer, alleycat);
       mode = Mode.values()[buffer.readByte()];
       ttl = buffer.readLong();
@@ -559,12 +560,12 @@ public class AsyncSet<T> extends AbstractResource {
     }
 
     @Override
-    public void writeObject(Buffer buffer, Alleycat alleycat) {
+    public void writeObject(BufferOutput buffer, Alleycat alleycat) {
 
     }
 
     @Override
-    public void readObject(Buffer buffer, Alleycat alleycat) {
+    public void readObject(BufferInput buffer, Alleycat alleycat) {
 
     }
 

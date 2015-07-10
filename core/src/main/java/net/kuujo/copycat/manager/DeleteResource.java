@@ -18,7 +18,8 @@ package net.kuujo.copycat.manager;
 import net.kuujo.alleycat.Alleycat;
 import net.kuujo.alleycat.AlleycatSerializable;
 import net.kuujo.alleycat.SerializeWith;
-import net.kuujo.alleycat.io.Buffer;
+import net.kuujo.alleycat.io.BufferInput;
+import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.copycat.raft.Command;
 import net.kuujo.copycat.raft.Operation;
 
@@ -54,12 +55,12 @@ public class DeleteResource implements Command<Boolean>, AlleycatSerializable {
   }
 
   @Override
-  public void writeObject(Buffer buffer, Alleycat alleycat) {
+  public void writeObject(BufferOutput buffer, Alleycat alleycat) {
     buffer.writeLong(resource);
   }
 
   @Override
-  public void readObject(Buffer buffer, Alleycat alleycat) {
+  public void readObject(BufferInput buffer, Alleycat alleycat) {
     resource = buffer.readLong();
   }
 

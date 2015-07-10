@@ -17,7 +17,8 @@ package net.kuujo.copycat.raft.rpc;
 
 import net.kuujo.alleycat.Alleycat;
 import net.kuujo.alleycat.SerializeWith;
-import net.kuujo.alleycat.io.Buffer;
+import net.kuujo.alleycat.io.BufferInput;
+import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.alleycat.util.ReferenceManager;
 import net.kuujo.copycat.cluster.MemberInfo;
 
@@ -77,12 +78,12 @@ public class JoinRequest extends AbstractRequest<JoinRequest> {
   }
 
   @Override
-  public void readObject(Buffer buffer, Alleycat alleycat) {
+  public void readObject(BufferInput buffer, Alleycat alleycat) {
     member = alleycat.readObject(buffer);
   }
 
   @Override
-  public void writeObject(Buffer buffer, Alleycat alleycat) {
+  public void writeObject(BufferOutput buffer, Alleycat alleycat) {
     alleycat.writeObject(member, buffer);
   }
 

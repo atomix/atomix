@@ -18,7 +18,8 @@ package net.kuujo.copycat.manager;
 import net.kuujo.alleycat.Alleycat;
 import net.kuujo.alleycat.SerializationException;
 import net.kuujo.alleycat.SerializeWith;
-import net.kuujo.alleycat.io.Buffer;
+import net.kuujo.alleycat.io.BufferInput;
+import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.copycat.raft.Command;
 import net.kuujo.copycat.raft.Operation;
 import net.kuujo.copycat.raft.StateMachine;
@@ -60,14 +61,14 @@ public class CreateResource extends PathOperation<Long> implements Command<Long>
   }
 
   @Override
-  public void writeObject(Buffer buffer, Alleycat alleycat) {
+  public void writeObject(BufferOutput buffer, Alleycat alleycat) {
     super.writeObject(buffer, alleycat);
     buffer.writeInt(type.getName().getBytes().length).write(type.getName().getBytes());
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public void readObject(Buffer buffer, Alleycat alleycat) {
+  public void readObject(BufferInput buffer, Alleycat alleycat) {
     super.readObject(buffer, alleycat);
     byte[] bytes = new byte[buffer.readInt()];
     buffer.read(bytes);

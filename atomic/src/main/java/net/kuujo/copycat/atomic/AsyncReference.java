@@ -18,7 +18,8 @@ package net.kuujo.copycat.atomic;
 import net.kuujo.alleycat.Alleycat;
 import net.kuujo.alleycat.AlleycatSerializable;
 import net.kuujo.alleycat.SerializeWith;
-import net.kuujo.alleycat.io.Buffer;
+import net.kuujo.alleycat.io.BufferInput;
+import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.copycat.AbstractResource;
 import net.kuujo.copycat.Mode;
 import net.kuujo.copycat.Stateful;
@@ -399,13 +400,13 @@ public class AsyncReference<T> extends AbstractResource {
     }
 
     @Override
-    public void writeObject(Buffer buffer, Alleycat alleycat) {
+    public void writeObject(BufferOutput buffer, Alleycat alleycat) {
       buffer.writeByte(mode.ordinal())
         .writeLong(ttl);
     }
 
     @Override
-    public void readObject(Buffer buffer, Alleycat alleycat) {
+    public void readObject(BufferInput buffer, Alleycat alleycat) {
       mode = Mode.values()[buffer.readByte()];
       ttl = buffer.readLong();
     }
@@ -468,12 +469,12 @@ public class AsyncReference<T> extends AbstractResource {
     }
 
     @Override
-    public void writeObject(Buffer buffer, Alleycat alleycat) {
+    public void writeObject(BufferOutput buffer, Alleycat alleycat) {
       buffer.writeByte(consistency.ordinal());
     }
 
     @Override
-    public void readObject(Buffer buffer, Alleycat alleycat) {
+    public void readObject(BufferInput buffer, Alleycat alleycat) {
       consistency = ConsistencyLevel.values()[buffer.readByte()];
     }
 
@@ -552,12 +553,12 @@ public class AsyncReference<T> extends AbstractResource {
     }
 
     @Override
-    public void writeObject(Buffer buffer, Alleycat alleycat) {
+    public void writeObject(BufferOutput buffer, Alleycat alleycat) {
       alleycat.writeObject(value, buffer);
     }
 
     @Override
-    public void readObject(Buffer buffer, Alleycat alleycat) {
+    public void readObject(BufferInput buffer, Alleycat alleycat) {
       value = alleycat.readObject(buffer);
     }
 
@@ -625,13 +626,13 @@ public class AsyncReference<T> extends AbstractResource {
     }
 
     @Override
-    public void writeObject(Buffer buffer, Alleycat alleycat) {
+    public void writeObject(BufferOutput buffer, Alleycat alleycat) {
       alleycat.writeObject(expect, buffer);
       alleycat.writeObject(update, buffer);
     }
 
     @Override
-    public void readObject(Buffer buffer, Alleycat alleycat) {
+    public void readObject(BufferInput buffer, Alleycat alleycat) {
       expect = alleycat.readObject(buffer);
       update = alleycat.readObject(buffer);
     }
@@ -702,12 +703,12 @@ public class AsyncReference<T> extends AbstractResource {
     }
 
     @Override
-    public void writeObject(Buffer buffer, Alleycat alleycat) {
+    public void writeObject(BufferOutput buffer, Alleycat alleycat) {
       alleycat.writeObject(value, buffer);
     }
 
     @Override
-    public void readObject(Buffer buffer, Alleycat alleycat) {
+    public void readObject(BufferInput buffer, Alleycat alleycat) {
       value = alleycat.readObject(buffer);
     }
 
