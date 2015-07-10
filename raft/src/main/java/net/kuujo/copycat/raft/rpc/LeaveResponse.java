@@ -18,7 +18,8 @@ package net.kuujo.copycat.raft.rpc;
 
 import net.kuujo.alleycat.Alleycat;
 import net.kuujo.alleycat.SerializeWith;
-import net.kuujo.alleycat.io.Buffer;
+import net.kuujo.alleycat.io.BufferInput;
+import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.alleycat.util.ReferenceManager;
 import net.kuujo.copycat.raft.RaftError;
 
@@ -67,7 +68,7 @@ public class LeaveResponse extends AbstractResponse<LeaveResponse> {
   }
 
   @Override
-  public void readObject(Buffer buffer, Alleycat alleycat) {
+  public void readObject(BufferInput buffer, Alleycat alleycat) {
     status = Status.forId(buffer.readByte());
     if (status == Status.OK) {
       error = null;
@@ -77,7 +78,7 @@ public class LeaveResponse extends AbstractResponse<LeaveResponse> {
   }
 
   @Override
-  public void writeObject(Buffer buffer, Alleycat alleycat) {
+  public void writeObject(BufferOutput buffer, Alleycat alleycat) {
     buffer.writeByte(status.id());
     if (status == Status.ERROR) {
       buffer.writeByte(error.id());

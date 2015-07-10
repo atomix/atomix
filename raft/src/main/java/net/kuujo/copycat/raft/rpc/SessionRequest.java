@@ -16,7 +16,8 @@
 package net.kuujo.copycat.raft.rpc;
 
 import net.kuujo.alleycat.Alleycat;
-import net.kuujo.alleycat.io.Buffer;
+import net.kuujo.alleycat.io.BufferInput;
+import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.alleycat.util.ReferenceFactory;
 import net.kuujo.alleycat.util.ReferenceManager;
 
@@ -42,12 +43,12 @@ public abstract class SessionRequest<T extends SessionRequest<T>> extends Client
   }
 
   @Override
-  public void readObject(Buffer buffer, Alleycat alleycat) {
+  public void readObject(BufferInput buffer, Alleycat alleycat) {
     session = buffer.readLong();
   }
 
   @Override
-  public void writeObject(Buffer buffer, Alleycat alleycat) {
+  public void writeObject(BufferOutput buffer, Alleycat alleycat) {
     buffer.writeLong(session);
   }
 

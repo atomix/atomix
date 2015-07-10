@@ -17,7 +17,8 @@ package net.kuujo.copycat.raft.rpc;
 
 import net.kuujo.alleycat.Alleycat;
 import net.kuujo.alleycat.SerializeWith;
-import net.kuujo.alleycat.io.Buffer;
+import net.kuujo.alleycat.io.BufferInput;
+import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.alleycat.util.ReferenceManager;
 
 import java.util.Objects;
@@ -65,12 +66,12 @@ public class RegisterRequest extends ClientRequest<RegisterRequest> {
   }
 
   @Override
-  public void writeObject(Buffer buffer, Alleycat alleycat) {
+  public void writeObject(BufferOutput buffer, Alleycat alleycat) {
 
   }
 
   @Override
-  public void readObject(Buffer buffer, Alleycat alleycat) {
+  public void readObject(BufferInput buffer, Alleycat alleycat) {
 
   }
 

@@ -99,6 +99,12 @@ class ByteBufBuffer implements Buffer {
   }
 
   @Override
+  public Buffer compact() {
+    buffer = buffer.slice();
+    return this;
+  }
+
+  @Override
   public long position() {
     return position;
   }
@@ -385,6 +391,16 @@ class ByteBufBuffer implements Buffer {
   }
 
   @Override
+  public String readString() {
+    return readUTF8();
+  }
+
+  @Override
+  public String readString(long offset) {
+    return readUTF8(offset);
+  }
+
+  @Override
   public String readUTF8() {
     byte[] bytes = new byte[buffer.readUnsignedShort()];
     buffer.readBytes(bytes);
@@ -602,6 +618,16 @@ class ByteBufBuffer implements Buffer {
   public Buffer writeBoolean(long offset, boolean b) {
     buffer.setBoolean((int) offset, b);
     return this;
+  }
+
+  @Override
+  public Buffer writeString(String s) {
+    return writeUTF8(s);
+  }
+
+  @Override
+  public Buffer writeString(long offset, String s) {
+    return writeUTF8(offset, s);
   }
 
   @Override

@@ -17,7 +17,8 @@ package net.kuujo.copycat.cluster;
 
 import net.kuujo.alleycat.Alleycat;
 import net.kuujo.alleycat.SerializeWith;
-import net.kuujo.alleycat.io.Buffer;
+import net.kuujo.alleycat.io.BufferInput;
+import net.kuujo.alleycat.io.BufferOutput;
 
 import java.net.InetSocketAddress;
 
@@ -48,7 +49,7 @@ public class NettyMemberInfo extends MemberInfo {
   }
 
   @Override
-  public void writeObject(Buffer buffer, Alleycat alleycat) {
+  public void writeObject(BufferOutput buffer, Alleycat alleycat) {
     super.writeObject(buffer, alleycat);
     buffer.writeInt(address.getHostString().getBytes().length)
       .write(address.getHostString().getBytes())
@@ -56,7 +57,7 @@ public class NettyMemberInfo extends MemberInfo {
   }
 
   @Override
-  public void readObject(Buffer buffer, Alleycat alleycat) {
+  public void readObject(BufferInput buffer, Alleycat alleycat) {
     super.readObject(buffer, alleycat);
     byte[] bytes = new byte[buffer.readInt()];
     buffer.read(bytes);

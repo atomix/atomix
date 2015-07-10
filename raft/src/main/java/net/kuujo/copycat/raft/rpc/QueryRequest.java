@@ -17,7 +17,8 @@ package net.kuujo.copycat.raft.rpc;
 
 import net.kuujo.alleycat.Alleycat;
 import net.kuujo.alleycat.SerializeWith;
-import net.kuujo.alleycat.io.Buffer;
+import net.kuujo.alleycat.io.BufferInput;
+import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.alleycat.util.ReferenceManager;
 import net.kuujo.copycat.raft.Query;
 
@@ -87,14 +88,14 @@ public class QueryRequest extends SessionRequest<QueryRequest> {
   }
 
   @Override
-  public void readObject(Buffer buffer, Alleycat alleycat) {
+  public void readObject(BufferInput buffer, Alleycat alleycat) {
     super.readObject(buffer, alleycat);
     version = buffer.readLong();
     query = alleycat.readObject(buffer);
   }
 
   @Override
-  public void writeObject(Buffer buffer, Alleycat alleycat) {
+  public void writeObject(BufferOutput buffer, Alleycat alleycat) {
     super.writeObject(buffer, alleycat);
     buffer.writeLong(version);
     alleycat.writeObject(query, buffer);

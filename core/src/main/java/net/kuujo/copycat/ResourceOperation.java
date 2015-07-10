@@ -17,7 +17,8 @@ package net.kuujo.copycat;
 
 import net.kuujo.alleycat.Alleycat;
 import net.kuujo.alleycat.AlleycatSerializable;
-import net.kuujo.alleycat.io.Buffer;
+import net.kuujo.alleycat.io.BufferInput;
+import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.copycat.raft.Operation;
 
 /**
@@ -48,13 +49,13 @@ public abstract class ResourceOperation<T extends Operation<U>, U> implements Op
   }
 
   @Override
-  public void writeObject(Buffer buffer, Alleycat alleycat) {
+  public void writeObject(BufferOutput buffer, Alleycat alleycat) {
     buffer.writeLong(resource);
     alleycat.writeObject(operation, buffer);
   }
 
   @Override
-  public void readObject(Buffer buffer, Alleycat alleycat) {
+  public void readObject(BufferInput buffer, Alleycat alleycat) {
     resource = buffer.readLong();
     operation = alleycat.readObject(buffer);
   }

@@ -21,7 +21,8 @@ import net.jodah.concurrentunit.ConcurrentTestCase;
 import net.kuujo.alleycat.Alleycat;
 import net.kuujo.alleycat.AlleycatSerializable;
 import net.kuujo.alleycat.ServiceLoaderResolver;
-import net.kuujo.alleycat.io.Buffer;
+import net.kuujo.alleycat.io.BufferInput;
+import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.copycat.Task;
 import net.kuujo.copycat.util.ExecutionContext;
 import org.testng.annotations.Test;
@@ -257,13 +258,13 @@ public class NettyClusterTest extends ConcurrentTestCase {
     }
 
     @Override
-    public void writeObject(Buffer buffer, Alleycat alleycat) {
+    public void writeObject(BufferOutput buffer, Alleycat alleycat) {
       byte[] bytes = arg.getBytes();
       buffer.writeInt(bytes.length).write(bytes);
     }
 
     @Override
-    public void readObject(Buffer buffer, Alleycat alleycat) {
+    public void readObject(BufferInput buffer, Alleycat alleycat) {
       byte[] bytes = new byte[buffer.readInt()];
       buffer.read(bytes);
       this.arg = new String(bytes);

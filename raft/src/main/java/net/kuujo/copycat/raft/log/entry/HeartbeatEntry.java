@@ -17,7 +17,8 @@ package net.kuujo.copycat.raft.log.entry;
 
 import net.kuujo.alleycat.Alleycat;
 import net.kuujo.alleycat.SerializeWith;
-import net.kuujo.alleycat.io.Buffer;
+import net.kuujo.alleycat.io.BufferInput;
+import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.alleycat.util.ReferenceManager;
 
 /**
@@ -59,13 +60,13 @@ public class HeartbeatEntry extends TimestampedEntry<HeartbeatEntry> {
   }
 
   @Override
-  public void writeObject(Buffer buffer, Alleycat alleycat) {
+  public void writeObject(BufferOutput buffer, Alleycat alleycat) {
     super.writeObject(buffer, alleycat);
     buffer.writeInt(memberId);
   }
 
   @Override
-  public void readObject(Buffer buffer, Alleycat alleycat) {
+  public void readObject(BufferInput buffer, Alleycat alleycat) {
     super.readObject(buffer, alleycat);
     memberId = buffer.readInt();
   }

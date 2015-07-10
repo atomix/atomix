@@ -17,7 +17,8 @@ package net.kuujo.copycat.raft.log.entry;
 
 import net.kuujo.alleycat.Alleycat;
 import net.kuujo.alleycat.AlleycatSerializable;
-import net.kuujo.alleycat.io.Buffer;
+import net.kuujo.alleycat.io.BufferInput;
+import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.alleycat.util.ReferenceCounted;
 import net.kuujo.alleycat.util.ReferenceManager;
 
@@ -93,12 +94,12 @@ public abstract class Entry<T extends Entry<T>> implements ReferenceCounted<Entr
   }
 
   @Override
-  public void writeObject(Buffer buffer, Alleycat alleycat) {
+  public void writeObject(BufferOutput buffer, Alleycat alleycat) {
     buffer.writeLong(term);
   }
 
   @Override
-  public void readObject(Buffer buffer, Alleycat alleycat) {
+  public void readObject(BufferInput buffer, Alleycat alleycat) {
     term = buffer.readLong();
   }
 
