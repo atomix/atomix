@@ -20,10 +20,10 @@ import net.kuujo.alleycat.SerializeWith;
 import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.alleycat.util.ReferenceManager;
-import net.kuujo.copycat.cluster.MemberInfo;
+import net.kuujo.copycat.raft.Members;
 import net.kuujo.copycat.raft.RaftError;
 
-import java.util.*;
+import java.util.Objects;
 
 /**
  * Protocol register client response.
@@ -61,7 +61,7 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
   private long term;
   private int leader;
   private long session;
-  private Set<MemberInfo> members;
+  private Members members;
 
   public RegisterResponse(ReferenceManager<RegisterResponse> referenceManager) {
     super(referenceManager);
@@ -104,7 +104,7 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
    *
    * @return The responding node's member set.
    */
-  public Collection<MemberInfo> members() {
+  public Members members() {
     return members;
   }
 
@@ -216,22 +216,10 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
      * @param members The response members.
      * @return The response builder.
      */
-    public Builder withMembers(MemberInfo members) {
+    public Builder withMembers(Members members) {
       if (members == null)
         throw new NullPointerException("members cannot be null");
-      return withMembers(Arrays.asList(members));
-    }
-
-    /**
-     * Sets the response members.
-     *
-     * @param members The response members.
-     * @return The response builder.
-     */
-    public Builder withMembers(Collection<MemberInfo> members) {
-      if (members == null)
-        throw new NullPointerException("members cannot be null");
-      response.members = new HashSet<>(members);
+      response.members = members;
       return this;
     }
 

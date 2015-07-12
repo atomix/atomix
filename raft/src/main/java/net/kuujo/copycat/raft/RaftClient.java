@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.raft;
 
-import net.kuujo.copycat.cluster.ManagedMembers;
+import net.kuujo.alleycat.Alleycat;
 import net.kuujo.copycat.raft.state.RaftStateClient;
 import net.kuujo.copycat.util.Context;
 
@@ -45,6 +45,15 @@ public class RaftClient implements ManagedProtocol {
 
   private RaftClient(RaftStateClient client) {
     this.client = client;
+  }
+
+  /**
+   * Returns the current session.
+   *
+   * @return The current session.
+   */
+  public Session session() {
+    return client.getSession();
   }
 
   @Override
@@ -132,10 +141,22 @@ public class RaftClient implements ManagedProtocol {
    * Raft client builder.
    */
   public static class Builder implements Protocol.Builder<RaftClient> {
+    private Alleycat alleycat;
     private long keepAliveInterval = 1000;
-    private ManagedMembers members;
+    private Members members;
 
     private Builder() {
+    }
+
+    /**
+     * Sets the client serializer.
+     *
+     * @param alleycat The client serializer.
+     * @return The client builder.
+     */
+    public Builder withSerializer(Alleycat alleycat) {
+      this.alleycat = alleycat;
+      return this;
     }
 
     /**
@@ -168,14 +189,14 @@ public class RaftClient implements ManagedProtocol {
      * @param members The client seed members.
      * @return The client builder.
      */
-    public Builder withMembers(ManagedMembers members) {
+    public Builder withMembers(Members members) {
       this.members = members;
       return this;
     }
 
     @Override
     public RaftClient build() {
-      return new RaftClient(new RaftStateClient(members, Context.createContext("copycat-client-%d", members.alleycat().clone())).setKeepAliveInterval(keepAliveInterval));
+      return new RaftClient(new RaftStateClient(members, Context.createContext("copycat-client-%d", alleycat  .clone())).setKeepAliveInterval(keepAliveInterval));
     }
   }
 

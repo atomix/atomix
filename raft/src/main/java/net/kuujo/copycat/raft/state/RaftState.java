@@ -15,10 +15,6 @@
  */
 package net.kuujo.copycat.raft.state;
 
-import net.kuujo.copycat.cluster.ManagedCluster;
-import net.kuujo.copycat.cluster.ManagedMember;
-import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.cluster.MemberInfo;
 import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.raft.log.Compaction;
 import net.kuujo.copycat.raft.log.entry.*;
@@ -38,18 +34,18 @@ import java.util.concurrent.CompletableFuture;
 class RaftState {
   private static final Logger LOGGER = LoggerFactory.getLogger(RaftState.class);
   private final StateMachine stateMachine;
-  private final ManagedCluster cluster;
   private final ClusterState members;
   private final Context context;
-  private final Map<Long, RaftSession> sessions = new HashMap<>();
+  private final SessionManager sessions;
+  private final Map<Long, SessionContext> contexts = new HashMap<>();
   private final Map<Long, List<Runnable>> queries = new HashMap<>();
   private long sessionTimeout = 5000;
   private long lastApplied;
 
-  public RaftState(StateMachine stateMachine, ManagedCluster cluster, ClusterState members, Context context) {
+  public RaftState(StateMachine stateMachine, ClusterState members, SessionManager sessions, Context context) {
     this.stateMachine = stateMachine;
-    this.cluster = cluster;
     this.members = members;
+    this.sessions = sessions;
     this.context = context;
   }
 
@@ -129,7 +125,7 @@ class RaftState {
    * @return A boolean value indicating whether to keep the entry.
    */
   public CompletableFuture<Boolean> filter(RegisterEntry entry, Compaction compaction) {
-    return CompletableFuture.completedFuture(sessions.containsKey(entry.getIndex()));
+    return CompletableFuture.completedFuture(contexts.containsKey(entry.getIndex()));
   }
 
   /**
@@ -139,7 +135,7 @@ class RaftState {
    * @return A boolean value indicating whether to keep the entry.
    */
   public CompletableFuture<Boolean> filter(KeepAliveEntry entry, Compaction compaction) {
-    return CompletableFuture.completedFuture(sessions.containsKey(entry.getIndex()) && sessions.get(entry.getIndex()).index == entry.getIndex());
+    return CompletableFuture.completedFuture(contexts.containsKey(entry.getIndex()) && contexts.get(entry.getIndex()).index == entry.getIndex());
   }
 
   /**
@@ -159,13 +155,7 @@ class RaftState {
    * @return A boolean value indicating whether to keep the entry.
    */
   public CompletableFuture<Boolean> filter(CommandEntry entry, Compaction compaction) {
-    RaftSession session = sessions.get(entry.getSession());
-    if (session == null) {
-      session = new RaftSession(entry.getSession(), entry.getTimestamp());
-      session.expire();
-    }
-
-    Commit<? extends Command> commit = new Commit<>(entry.getIndex(), session, entry.getTimestamp(), entry.getCommand());
+    Commit<? extends Command> commit = new Commit<>(entry.getIndex(), null, entry.getTimestamp(), entry.getCommand());
     return CompletableFuture.supplyAsync(() -> {
       try {
         return stateMachine.filter(commit, compaction);
@@ -173,7 +163,7 @@ class RaftState {
         LOGGER.warn("Failed to filter command {} at index {}: {}", entry.getCommand(), entry.getIndex(), e);
         return true;
       }
-    }, context);
+    }, this.context);
   }
 
   /**
@@ -241,7 +231,7 @@ class RaftState {
    * @return The result.
    */
   public CompletableFuture<Long> apply(RegisterEntry entry) {
-    return register(entry.getIndex(), entry.getTimestamp());
+    return register(entry.getIndex(), entry.getClient(), entry.getTimestamp());
   }
 
   /**
@@ -317,19 +307,23 @@ class RaftState {
    * Registers a member session.
    *
    * @param index The registration index.
+   * @param clientId The session client ID.
    * @param timestamp The registration timestamp.
    * @return The session ID.
    */
-  private CompletableFuture<Long> register(long index, long timestamp) {
-    RaftSession session = new RaftSession(index, timestamp);
-    sessions.put(index, session);
+  private CompletableFuture<Long> register(long index, int clientId, long timestamp) {
+    ServerSession session = new ServerSession(index, clientId);
+    sessions.registerSession(session);
+
+    SessionContext context = new SessionContext(timestamp);
+    contexts.put(index, context);
 
     // We need to ensure that the command is applied to the state machine before queries are run.
     // Set last applied only after the operation has been submitted to the state machine executor.
     CompletableFuture<Long> future = CompletableFuture.supplyAsync(() -> {
       stateMachine.register(session);
       return session.id();
-    }, context);
+    }, this.context);
 
     setLastApplied(index);
     return future;
@@ -343,21 +337,24 @@ class RaftState {
    * @param sessionId The session to keep alive.
    */
   private CompletableFuture<Void> keepAlive(long index, long timestamp, long sessionId) {
-    RaftSession session = sessions.get(sessionId);
+    SessionContext context = contexts.get(sessionId);
 
     // We need to ensure that the command is applied to the state machine before queries are run.
     // Set last applied only after the operation has been submitted to the state machine executor.
     CompletableFuture<Void> future;
-    if (session == null) {
+    if (context == null) {
       LOGGER.warn("Unknown session: " + sessionId);
       future = Futures.exceptionalFuture(new UnknownSessionException("unknown session: " + sessionId));
-    } else if (!session.update(index, timestamp)) {
-      sessions.remove(sessionId);
+    } else if (!context.update(index, timestamp)) {
+      contexts.remove(sessionId);
       LOGGER.warn("Expired session: " + sessionId);
-      context.execute(() -> stateMachine.expire(session));
+      ServerSession session = sessions.getSession(sessionId);
+      if (session != null) {
+        this.context.execute(() -> stateMachine.expire(session));
+      }
       future = Futures.exceptionalFuture(new UnknownSessionException("session expired: " + sessionId));
     } else {
-      future = CompletableFuture.runAsync(() -> {}, context);
+      future = CompletableFuture.runAsync(() -> {}, this.context);
     }
 
     setLastApplied(index);
@@ -394,26 +391,30 @@ class RaftState {
     CompletableFuture<Object> future;
 
     // First check to ensure that the session exists.
-    RaftSession session = sessions.get(sessionId);
-    if (session == null) {
+    SessionContext context = contexts.get(sessionId);
+    if (context == null) {
       LOGGER.warn("Unknown session: " + sessionId);
       future = Futures.exceptionalFuture(new UnknownSessionException("unknown session " + sessionId));
-    } else if (!session.update(index, timestamp)) {
-      sessions.remove(sessionId);
-      context.execute(() -> stateMachine.expire(session));
+    } else if (!context.update(index, timestamp)) {
+      contexts.remove(sessionId);
+      ServerSession session = sessions.getSession(sessionId);
+      if (session != null) {
+        this.context.execute(() -> stateMachine.expire(session));
+      }
       LOGGER.warn("Expired session: " + sessionId);
       future = Futures.exceptionalFuture(new UnknownSessionException("unknown session " + sessionId));
-    } else if (session.responses.containsKey(request)) {
-      future = CompletableFuture.completedFuture(session.responses.get(request));
+    } else if (context.responses.containsKey(request)) {
+      future = CompletableFuture.completedFuture(context.responses.get(request));
     } else {
       // Apply the command to the state machine.
-      future = CompletableFuture.supplyAsync(() -> stateMachine.apply(new Commit(index, session, timestamp, command)), context)
+      ServerSession session = sessions.getSession(sessionId);
+      future = CompletableFuture.supplyAsync(() -> stateMachine.apply(new Commit(index, session, timestamp, command)), this.context)
         .thenApply(result -> {
           // Store the command result in the session.
-          session.responses.put(request, result);
+          context.responses.put(request, result);
 
           // Clear any responses that have been received by the client for the session.
-          session.responses.headMap(response, true).clear();
+          context.responses.headMap(response, true).clear();
           return result;
         });
     }
@@ -441,7 +442,8 @@ class RaftState {
     if (sessionId > lastApplied || version > lastApplied) {
       CompletableFuture<Object> future = new CompletableFuture<>();
       List<Runnable> queries = this.queries.computeIfAbsent(Math.max(sessionId, version), id -> new ArrayList<>());
-      queries.add(() -> CompletableFuture.supplyAsync(() -> stateMachine.apply(new Commit(index, sessions.get(sessionId), timestamp, query)), context).whenComplete((result, error) -> {
+      ServerSession session = sessions.getSession(sessionId);
+      queries.add(() -> CompletableFuture.supplyAsync(() -> stateMachine.apply(new Commit(index, session, timestamp, query)), context).whenComplete((result, error) -> {
         if (error == null) {
           future.complete(result);
         } else {
@@ -451,16 +453,18 @@ class RaftState {
       return future;
     } else {
       // Verify that the client's session is still alive.
-      RaftSession session = sessions.get(sessionId);
-      if (session == null) {
+      SessionContext context = contexts.get(sessionId);
+      if (context == null) {
         LOGGER.warn("Unknown session: " + sessionId);
         return Futures.exceptionalFuture(new UnknownSessionException("unknown session: " + sessionId));
-      } else if (!session.expire(timestamp)) {
+      } else if (!context.expire(timestamp)) {
         LOGGER.warn("Expired session: " + sessionId);
-        context.execute(() -> stateMachine.expire(session));
+        ServerSession session = sessions.getSession(sessionId);
+        this.context.execute(() -> stateMachine.expire(session));
         return Futures.exceptionalFuture(new UnknownSessionException("unknown session: " + sessionId));
       } else {
-        return CompletableFuture.supplyAsync(() -> stateMachine.apply(new Commit(index, session, timestamp, query)), context);
+        ServerSession session = sessions.getSession(sessionId);
+        return CompletableFuture.supplyAsync(() -> stateMachine.apply(new Commit(index, session, timestamp, query)), this.context);
       }
     }
   }
@@ -469,35 +473,33 @@ class RaftState {
    * Applies a join to the state machine.
    *
    * @param index The join index.
-   * @param info The joining member.
+   * @param member The joining member.
    * @return A completable future to be completed with the join index.
    */
-  private CompletableFuture<Long> join(long index, MemberInfo info) {
-    CompletableFuture<Long> future = cluster.addMember(info).thenApplyAsync(v -> index, context);
-    MemberState member = members.getMember(info.id());
-    if (member == null) {
-      member = new MemberState(info.id(), Member.Type.PASSIVE, System.currentTimeMillis()).setVersion(index);
-      members.addMember(member);
+  private CompletableFuture<Long> join(long index, Member member) {
+    MemberState state = members.getMember(member.id());
+    if (state == null) {
+      state = new MemberState(member.id(), Member.Type.PASSIVE, System.currentTimeMillis()).setVersion(index);
+      members.addMember(state);
     }
     setLastApplied(index);
-    return future;
+    return CompletableFuture.supplyAsync(() -> index, context);
   }
 
   /**
    * Applies a leave to the state machine.
    *
    * @param index The leave index.
-   * @param info The leaving member.
+   * @param member The leaving member.
    * @return A completable future to be completed once the member has been removed.
    */
-  private CompletableFuture<Void> leave(long index, MemberInfo info) {
-    CompletableFuture<Void> future = cluster.removeMember(info.id());
-    MemberState member = members.getMember(info.id());
-    if (member != null) {
-      members.removeMember(member);
+  private CompletableFuture<Void> leave(long index, Member member) {
+    MemberState state = members.getMember(member.id());
+    if (state != null) {
+      members.removeMember(state);
     }
     setLastApplied(index);
-    return future;
+    return CompletableFuture.completedFuture(null);
   }
 
   /**
@@ -510,21 +512,17 @@ class RaftState {
    */
   private CompletableFuture<Void> heartbeat(long index, int memberId, long timestamp) {
     CompletableFuture<Void> future = new CompletableFuture<>();
-    ManagedMember clusterMember = cluster.member(memberId);
-    if (clusterMember == null) {
-      future.completeExceptionally(new IllegalStateException("unknown cluster member: " + memberId));
-    } else {
-      MemberState member = members.getMember(memberId);
-      if (member != null) {
-        member.update(timestamp, sessionTimeout);
-        cluster.configureMember(memberId, Member.Status.ALIVE);
-      }
-      future.complete(null);
+
+    MemberState member = members.getMember(memberId);
+    if (member != null) {
+      member.update(timestamp, sessionTimeout);
     }
 
-    for (MemberState member : members) {
-      if (!member.update(timestamp, sessionTimeout)) {
-        cluster.configureMember(member.getId(), Member.Status.DEAD);
+    future.complete(null);
+
+    for (MemberState state : members) {
+      if (!state.update(timestamp, sessionTimeout)) {
+        state.setSession(0);
       }
     }
 
@@ -533,23 +531,15 @@ class RaftState {
   }
 
   /**
-   * Cluster session.
+   * Session context.
    */
-  private class RaftSession extends Session {
+  private class SessionContext {
     private long index;
     private long timestamp;
     private final TreeMap<Long, Object> responses = new TreeMap<>();
 
-    private RaftSession(long id, long timestamp) {
-      super(id);
+    private SessionContext(long timestamp) {
       this.timestamp = timestamp;
-    }
-
-    /**
-     * Expires the session.
-     */
-    public void expire() {
-      super.expire();
     }
 
     /**
@@ -568,7 +558,6 @@ class RaftState {
      */
     private boolean expire(long timestamp) {
       if (timestamp - sessionTimeout > this.timestamp) {
-        expire();
         return false;
       }
       this.timestamp = timestamp;
@@ -582,14 +571,12 @@ class RaftState {
      */
     private boolean update(long index, long timestamp) {
       if (timestamp - sessionTimeout > this.timestamp) {
-        expire();
         return false;
       }
       this.index = index;
       this.timestamp = timestamp;
       return true;
     }
-
   }
 
 }

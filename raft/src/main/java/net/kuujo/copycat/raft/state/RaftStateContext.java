@@ -16,8 +16,6 @@
 package net.kuujo.copycat.raft.state;
 
 import net.kuujo.alleycat.Alleycat;
-import net.kuujo.copycat.cluster.ManagedCluster;
-import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.raft.log.Log;
 import net.kuujo.copycat.raft.rpc.*;
@@ -44,9 +42,13 @@ import java.util.stream.Collectors;
 public class RaftStateContext extends RaftStateClient {
   private final Logger LOGGER = LoggerFactory.getLogger(RaftStateContext.class);
   private final RaftState stateMachine;
+  private final int memberId;
   private final Log log;
-  private final ManagedCluster cluster;
-  private final ClusterState members = new ClusterState();
+  private final ClusterState cluster = new ClusterState();
+  private final Members members;
+  private final Server server;
+  private final ConnectionManager connections;
+  private final SessionManager sessions = new SessionManager();
   private final Context context;
   private AbstractState state;
   private ScheduledFuture<?> joinTimer;
@@ -59,27 +61,41 @@ public class RaftStateContext extends RaftStateClient {
   private long globalIndex;
   private volatile boolean open;
 
-  public RaftStateContext(Log log, StateMachine stateMachine, ManagedCluster cluster, Context context) {
-    super(cluster, Context.createContext(String.format("%s-client", context.name()), context.serializer().clone()));
+  public RaftStateContext(int memberId, Log log, StateMachine stateMachine, Members members, Context context) {
+    super(members, Context.createContext(String.format("%s-client", context.name()), context.serializer().clone()));
+
+    for (Member member : members.members()) {
+      cluster.addMember(new MemberState(member.id(), member.type(), System.currentTimeMillis()));
+    }
+
+    this.memberId = memberId;
     this.log = log;
-    this.stateMachine = new RaftState(stateMachine, cluster, members, Context.createContext(String.format("%s-state", context.name()), context.serializer().clone()));
-    this.cluster = cluster;
+    this.stateMachine = new RaftState(stateMachine, cluster, sessions, Context.createContext(String.format("%s-state", context.name()), context.serializer().clone()));
+    this.members = members;
     this.context = context;
 
-    log.compactor().filter(this.stateMachine::filter);
+    this.server = ServerFactory.factory.createServer(memberId);
+    this.connections = new ConnectionManager(ClientFactory.factory.createClient(memberId));
 
-    for (Member member : cluster.members()) {
-      members.addMember(new MemberState(member.id(), member.type(), System.currentTimeMillis()));
-    }
+    log.compactor().filter(this.stateMachine::filter);
   }
 
   /**
-   * Returns the Raft cluster.
+   * Returns the member ID.
    *
-   * @return The Raft cluster.
+   * @return The member ID.
    */
-  public ManagedCluster getCluster() {
-    return cluster;
+  public int getMemberId() {
+    return memberId;
+  }
+
+  /**
+   * Returns the cluster members.
+   *
+   * @return The cluster members.
+   */
+  public Members getMembers() {
+    return members;
   }
 
   /**
@@ -88,7 +104,7 @@ public class RaftStateContext extends RaftStateClient {
    * @return The command serializer.
    */
   public Alleycat getSerializer() {
-    return cluster.alleycat();
+    return context.serializer();
   }
 
   /**
@@ -98,6 +114,15 @@ public class RaftStateContext extends RaftStateClient {
    */
   public Context getContext() {
     return context;
+  }
+
+  /**
+   * Returns the context connection manager.
+   *
+   * @return The context connection manager.
+   */
+  ConnectionManager getConnections() {
+    return connections;
   }
 
   /**
@@ -162,13 +187,13 @@ public class RaftStateContext extends RaftStateClient {
       if (leader != 0) {
         this.leader = leader;
         this.lastVotedFor = 0;
-        LOGGER.debug("{} - Found leader {}", cluster.member().id(), leader);
+        LOGGER.debug("{} - Found leader {}", memberId, leader);
       }
     } else if (leader != 0) {
       if (this.leader != leader) {
         this.leader = leader;
         this.lastVotedFor = 0;
-        LOGGER.debug("{} - Found leader {}", cluster.member().id(), leader);
+        LOGGER.debug("{} - Found leader {}", memberId, leader);
       }
     } else {
       this.leader = 0;
@@ -181,8 +206,8 @@ public class RaftStateContext extends RaftStateClient {
    *
    * @return The cluster state.
    */
-  ClusterState getMembers() {
-    return members;
+  ClusterState getCluster() {
+    return cluster;
   }
 
   /**
@@ -205,7 +230,7 @@ public class RaftStateContext extends RaftStateClient {
       this.term = term;
       this.leader = 0;
       this.lastVotedFor = 0;
-      LOGGER.debug("{} - Incremented term {}", cluster.member().id(), term);
+      LOGGER.debug("{} - Incremented term {}", memberId, term);
     }
     return this;
   }
@@ -235,9 +260,9 @@ public class RaftStateContext extends RaftStateClient {
     }
     this.lastVotedFor = candidate;
     if (candidate != 0) {
-      LOGGER.debug("{} - Voted for {}", cluster.member().id(), candidate);
+      LOGGER.debug("{} - Voted for {}", memberId, candidate);
     } else {
-      LOGGER.debug("{} - Reset last voted for", cluster.member().id());
+      LOGGER.debug("{} - Reset last voted for", memberId);
     }
     return this;
   }
@@ -336,7 +361,7 @@ public class RaftStateContext extends RaftStateClient {
   @Override
   protected Member selectMember(Query<?> query) {
     if (!query.consistency().isLeaderRequired()) {
-      return cluster.member();
+      return members.member(memberId);
     }
     return super.selectMember(query);
   }
@@ -344,7 +369,7 @@ public class RaftStateContext extends RaftStateClient {
   @Override
   protected CompletableFuture<Void> register(List<Member> members) {
     return register(members, new CompletableFuture<>()).thenAccept(response -> {
-      setSession(response.session());
+      setSessionId(response.session());
     });
   }
 
@@ -365,7 +390,7 @@ public class RaftStateContext extends RaftStateClient {
       return CompletableFuture.completedFuture(this.state.type());
     }
 
-    LOGGER.info("{} - Transitioning to {}", cluster.member().id(), state.getSimpleName());
+    LOGGER.info("{} - Transitioning to {}", memberId, state.getSimpleName());
 
     // Force state transitions to occur synchronously in order to prevent race conditions.
     if (this.state != null) {
@@ -405,7 +430,7 @@ public class RaftStateContext extends RaftStateClient {
    * Joins the cluster.
    */
   private CompletableFuture<Void> join(long interval, CompletableFuture<Void> future) {
-    join(new ArrayList<>(cluster.members()), new CompletableFuture<>()).whenComplete((result, error) -> {
+    join(new ArrayList<>(members.members()), new CompletableFuture<>()).whenComplete((result, error) -> {
       if (error == null) {
         future.complete(null);
       } else {
@@ -432,24 +457,26 @@ public class RaftStateContext extends RaftStateClient {
    */
   private CompletableFuture<Void> join(Member member, List<Member> members, CompletableFuture<Void> future) {
     JoinRequest request = JoinRequest.builder()
-      .withMember(cluster.member().info())
+      .withMember(this.members.member(memberId))
       .build();
     LOGGER.debug("Sending {} to {}", request, member);
-    member.<JoinRequest, JoinResponse>send(request).whenComplete((response, error) -> {
-      context.checkThread();
-      if (error == null && response.status() == Response.Status.OK) {
-        setLeader(response.leader());
-        setTerm(response.term());
-        future.complete(null);
-        LOGGER.info("{} - Joined cluster", cluster.member().id());
-      } else {
-        if (member.id() == getLeader()) {
+    connections.getConnection(member).thenAccept(connection -> {
+      connection.<JoinRequest, JoinResponse>send(request).whenComplete((response, error) -> {
+        context.checkThread();
+        if (error == null && response.status() == Response.Status.OK) {
+          setLeader(response.leader());
+          setTerm(response.term());
+          future.complete(null);
+          LOGGER.info("{} - Joined cluster", memberId);
+        } else {
+          if (member.id() == getLeader()) {
+            setLeader(0);
+          }
+          LOGGER.debug("Cluster join failed, retrying");
           setLeader(0);
+          join(members, future);
         }
-        LOGGER.debug("Cluster join failed, retrying");
-        setLeader(0);
-        join(members, future);
-      }
+      });
     });
     return future;
   }
@@ -467,8 +494,8 @@ public class RaftStateContext extends RaftStateClient {
    */
   private void heartbeat() {
     if (heartbeat.compareAndSet(false, true)) {
-      LOGGER.debug("{} - Sending heartbeat request", cluster.member().id());
-      heartbeat(cluster.members().stream()
+      LOGGER.debug("{} - Sending heartbeat request", memberId);
+      heartbeat(members.members().stream()
         .filter(m -> m.type() == Member.Type.ACTIVE)
         .collect(Collectors.toList()), new CompletableFuture<>()).thenRun(() -> heartbeat.set(false));
     }
@@ -491,23 +518,25 @@ public class RaftStateContext extends RaftStateClient {
    */
   private CompletableFuture<Void> heartbeat(Member member, List<Member> members, CompletableFuture<Void> future) {
     HeartbeatRequest request = HeartbeatRequest.builder()
-      .withMember(cluster.member().id())
+      .withMember(memberId)
       .build();
     LOGGER.debug("Sending {} to {}", request, member);
-    member.<HeartbeatRequest, HeartbeatResponse>send(request).whenComplete((response, error) -> {
-      context.checkThread();
-      if (isOpen()) {
-        if (error == null && response.status() == Response.Status.OK) {
-          setLeader(response.leader());
-          setTerm(response.term());
-          future.complete(null);
-        } else {
-          if (member.id() == getLeader()) {
-            setLeader(0);
+    connections.getConnection(member).thenAccept(connection -> {
+      connection.<HeartbeatRequest, HeartbeatResponse>send(request).whenComplete((response, error) -> {
+        context.checkThread();
+        if (isOpen()) {
+          if (error == null && response.status() == Response.Status.OK) {
+            setLeader(response.leader());
+            setTerm(response.term());
+            future.complete(null);
+          } else {
+            if (member.id() == getLeader()) {
+              setLeader(0);
+            }
+            heartbeat(members, future);
           }
-          heartbeat(members, future);
         }
-      }
+      });
     });
     return future;
   }
@@ -516,7 +545,7 @@ public class RaftStateContext extends RaftStateClient {
    * Leaves the cluster.
    */
   private CompletableFuture<Void> leave() {
-    return leave(cluster.members().stream()
+    return leave(members.members().stream()
       .filter(m -> m.type() == Member.Type.ACTIVE)
       .collect(Collectors.toList()), new CompletableFuture<>());
   }
@@ -537,22 +566,24 @@ public class RaftStateContext extends RaftStateClient {
    */
   private CompletableFuture<Void> leave(Member member, List<Member> members, CompletableFuture<Void> future) {
     LeaveRequest request = LeaveRequest.builder()
-      .withMember(cluster.member().info())
+      .withMember(this.members.member(memberId))
       .build();
     LOGGER.debug("Sending {} to {}", request, member);
-    member.<LeaveRequest, LeaveResponse>send(request).whenComplete((response, error) -> {
-      context.checkThread();
-      if (error == null && response.status() == Response.Status.OK) {
-        future.complete(null);
-        LOGGER.info("{} - Left cluster", cluster.member().id());
-      } else {
-        if (member.id() == getLeader()) {
+    connections.getConnection(member).thenAccept(connection -> {
+      connection.<LeaveRequest, LeaveResponse>send(request).whenComplete((response, error) -> {
+        context.checkThread();
+        if (error == null && response.status() == Response.Status.OK) {
+          future.complete(null);
+          LOGGER.info("{} - Left cluster", memberId);
+        } else {
+          if (member.id() == getLeader()) {
+            setLeader(0);
+          }
+          LOGGER.debug("Cluster leave failed, retrying");
           setLeader(0);
+          leave(members, future);
         }
-        LOGGER.debug("Cluster leave failed, retrying");
-        setLeader(0);
-        leave(members, future);
-      }
+      });
     });
     return future;
   }
@@ -577,10 +608,38 @@ public class RaftStateContext extends RaftStateClient {
     }
   }
 
+  /**
+   * Handles a connection.
+   */
+  private void handleConnect(Connection connection) {
+    registerHandlers(connection);
+  }
+
+  /**
+   * Registers all message handlers.
+   */
+  private void registerHandlers(Connection connection) {
+    context.checkThread();
+    sessions.registerConnection(connection);
+
+    connection.handler(JoinRequest.class, state::join);
+    connection.handler(LeaveRequest.class, state::leave);
+    connection.handler(HeartbeatRequest.class, state::heartbeat);
+    connection.handler(RegisterRequest.class, state::register);
+    connection.handler(KeepAliveRequest.class, state::keepAlive);
+    connection.handler(AppendRequest.class, state::append);
+    connection.handler(PollRequest.class, state::poll);
+    connection.handler(VoteRequest.class, state::vote);
+    connection.handler(CommandRequest.class, state::command);
+    connection.handler(QueryRequest.class, state::query);
+
+    connection.closeListener(sessions::unregisterConnection);
+  }
+
   @Override
   public synchronized CompletableFuture<Void> open() {
-    if (cluster.member().type() == Member.Type.PASSIVE) {
-      return cluster.open().thenRunAsync(() -> {
+    if (members.member(memberId).type() == Member.Type.PASSIVE) {
+      return server.listen(members.member(memberId), this::handleConnect).thenRunAsync(() -> {
         log.open(context);
         transition(PassiveState.class);
       }, context)
@@ -588,8 +647,8 @@ public class RaftStateContext extends RaftStateClient {
         .thenRunAsync(this::startHeartbeatTimer, context)
         .thenCompose(v -> super.open())
         .thenRun(() -> open = true);
-    } else if (cluster.member().type() == Member.Type.ACTIVE) {
-      return cluster.open().thenRunAsync(() -> {
+    } else if (members.member(memberId).type() == Member.Type.ACTIVE) {
+      return CompletableFuture.runAsync(() -> {
         log.open(context);
         transition(FollowerState.class);
         open = true;
@@ -597,7 +656,7 @@ public class RaftStateContext extends RaftStateClient {
         .thenRunAsync(this::startHeartbeatTimer, context)
         .thenCompose(v -> super.open());
     } else {
-      throw new IllegalStateException("unknown member type: " + cluster.member().type());
+      throw new IllegalStateException("unknown member type: " + members.member(memberId).type());
     }
   }
 
@@ -618,9 +677,9 @@ public class RaftStateContext extends RaftStateClient {
       open = false;
       transition(StartState.class);
 
-      super.close().whenCompleteAsync((r1, e1) -> {
-        leave().whenComplete((r2, e2) -> {
-          cluster.close().whenCompleteAsync((r3, e3) -> {
+      leave().whenCompleteAsync((r1, e1) -> {
+        super.close().whenComplete((r2, e2) -> {
+          server.close().whenCompleteAsync((r3, e3) -> {
             try {
               log.close();
             } catch (Exception e) {

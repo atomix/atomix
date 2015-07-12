@@ -48,7 +48,7 @@ abstract class AbstractState implements Managed<AbstractState> {
    * Logs a request.
    */
   protected final <R extends Request> R logRequest(R request) {
-    LOGGER.debug("{} - Received {}", context.getCluster().member().id(), request);
+    LOGGER.debug("{} - Received {}", context.getMemberId(), request);
     return request;
   }
 
@@ -56,14 +56,13 @@ abstract class AbstractState implements Managed<AbstractState> {
    * Logs a response.
    */
   protected final <R extends Response> R logResponse(R response) {
-    LOGGER.debug("{} - Sent {}", context.getCluster().member().id(), response);
+    LOGGER.debug("{} - Sent {}", context.getMemberId(), response);
     return response;
   }
 
   @Override
   public CompletableFuture<AbstractState> open() {
     context.checkThread();
-    registerHandlers();
     open = true;
     return CompletableFuture.completedFuture(null);
   }
@@ -71,40 +70,6 @@ abstract class AbstractState implements Managed<AbstractState> {
   @Override
   public boolean isOpen() {
     return open;
-  }
-
-  /**
-   * Registers all message handlers.
-   */
-  private void registerHandlers() {
-    context.checkThread();
-    context.getCluster().member().<JoinRequest, JoinResponse>registerHandler(JoinRequest.class, this::join);
-    context.getCluster().member().<LeaveRequest, LeaveResponse>registerHandler(LeaveRequest.class, this::leave);
-    context.getCluster().member().<HeartbeatRequest, HeartbeatResponse>registerHandler(HeartbeatRequest.class, this::heartbeat);
-    context.getCluster().member().<RegisterRequest, RegisterResponse>registerHandler(RegisterRequest.class, this::register);
-    context.getCluster().member().<KeepAliveRequest, KeepAliveResponse>registerHandler(KeepAliveRequest.class, this::keepAlive);
-    context.getCluster().member().<AppendRequest, AppendResponse>registerHandler(AppendRequest.class, this::append);
-    context.getCluster().member().<PollRequest, PollResponse>registerHandler(PollRequest.class, this::poll);
-    context.getCluster().member().<VoteRequest, VoteResponse>registerHandler(VoteRequest.class, this::vote);
-    context.getCluster().member().<CommandRequest, CommandResponse>registerHandler(CommandRequest.class, this::command);
-    context.getCluster().member().<QueryRequest, QueryResponse>registerHandler(QueryRequest.class, this::query);
-  }
-
-  /**
-   * Unregisters all message handlers.
-   */
-  private void unregisterHandlers() {
-    context.checkThread();
-    context.getCluster().member().unregisterHandler(JoinRequest.class);
-    context.getCluster().member().unregisterHandler(LeaveRequest.class);
-    context.getCluster().member().unregisterHandler(HeartbeatRequest.class);
-    context.getCluster().member().unregisterHandler(RegisterRequest.class);
-    context.getCluster().member().unregisterHandler(KeepAliveRequest.class);
-    context.getCluster().member().unregisterHandler(AppendRequest.class);
-    context.getCluster().member().unregisterHandler(PollRequest.class);
-    context.getCluster().member().unregisterHandler(VoteRequest.class);
-    context.getCluster().member().unregisterHandler(CommandRequest.class);
-    context.getCluster().member().unregisterHandler(QueryRequest.class);
   }
 
   /**
@@ -160,7 +125,6 @@ abstract class AbstractState implements Managed<AbstractState> {
   @Override
   public CompletableFuture<Void> close() {
     context.checkThread();
-    unregisterHandlers();
     open = false;
     return CompletableFuture.completedFuture(null);
   }

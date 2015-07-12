@@ -79,8 +79,14 @@ public interface Response<T extends Response<T>> extends ReferenceCounted<T>, Al
     /**
      * Query response.
      */
-    QUERY
-  }
+    QUERY,
+
+    /**
+     * Publish response.
+     */
+    PUBLISH
+
+    }
 
   /**
    * Response status.

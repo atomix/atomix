@@ -34,7 +34,7 @@
   <dependencies>
     <dependency>
       <groupId>net.kuujo.copycat</groupId>
-      <artifactId>copycat-cluster</artifactId>
+      <artifactId>copycat-raft</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

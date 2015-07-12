@@ -20,10 +20,10 @@ import net.kuujo.alleycat.SerializeWith;
 import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.alleycat.util.ReferenceManager;
-import net.kuujo.copycat.cluster.MemberInfo;
+import net.kuujo.copycat.raft.Members;
 import net.kuujo.copycat.raft.RaftError;
 
-import java.util.*;
+import java.util.Objects;
 
 /**
  * Protocol keep alive response.
@@ -60,7 +60,7 @@ public class KeepAliveResponse extends ClientResponse<KeepAliveResponse> {
 
   private long term;
   private int leader;
-  private Set<MemberInfo> members = new HashSet<>();
+  private Members members;
 
   public KeepAliveResponse(ReferenceManager<KeepAliveResponse> referenceManager) {
     super(referenceManager);
@@ -94,7 +94,7 @@ public class KeepAliveResponse extends ClientResponse<KeepAliveResponse> {
    *
    * @return The responding node's member set.
    */
-  public Collection<MemberInfo> members() {
+  public Members members() {
     return members;
   }
 
@@ -159,7 +159,7 @@ public class KeepAliveResponse extends ClientResponse<KeepAliveResponse> {
       super.reset();
       response.term = 0;
       response.leader = 0;
-      response.members.clear();
+      response.members = null;
       return this;
     }
 
@@ -193,20 +193,8 @@ public class KeepAliveResponse extends ClientResponse<KeepAliveResponse> {
      * @param members The response members.
      * @return The keep alive response builder.;
      */
-    public Builder withMembers(MemberInfo... members) {
-      if (members == null)
-        throw new NullPointerException("members cannot be null");
-      return withMembers(Arrays.asList(members));
-    }
-
-    /**
-     * Sets the response members.
-     *
-     * @param members The response members.
-     * @return The keep alive response builder.;
-     */
-    public Builder withMembers(Collection<MemberInfo> members) {
-      response.members.addAll(members);
+    public Builder withMembers(Members members) {
+      response.members = members;
       return this;
     }
 

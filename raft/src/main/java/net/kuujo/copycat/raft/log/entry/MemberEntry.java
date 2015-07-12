@@ -19,7 +19,7 @@ import net.kuujo.alleycat.Alleycat;
 import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.alleycat.util.ReferenceManager;
-import net.kuujo.copycat.cluster.MemberInfo;
+import net.kuujo.copycat.raft.Member;
 
 /**
  * Member info entry.
@@ -27,7 +27,7 @@ import net.kuujo.copycat.cluster.MemberInfo;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class MemberEntry<T extends MemberEntry<T>> extends Entry<T> {
-  private MemberInfo member;
+  private Member member;
 
   protected MemberEntry() {
   }
@@ -41,7 +41,7 @@ public abstract class MemberEntry<T extends MemberEntry<T>> extends Entry<T> {
    *
    * @return The member info.
    */
-  public MemberInfo getMember() {
+  public Member getMember() {
     return member;
   }
 
@@ -52,7 +52,7 @@ public abstract class MemberEntry<T extends MemberEntry<T>> extends Entry<T> {
    * @return The member entry.
    */
   @SuppressWarnings("unchecked")
-  public T setMember(MemberInfo member) {
+  public T setMember(Member member) {
     if (member == null)
       throw new NullPointerException("member cannot be null");
     this.member = member;

@@ -22,24 +22,10 @@ package net.kuujo.copycat.raft;
 public interface SessionListener {
 
   /**
-   * Called when a session is opened.
+   * Called when a session message is received.
    *
-   * @param session The opened session.
+   * @param message The message that was received.
    */
-  void sessionOpened(Session session);
-
-  /**
-   * Called when a session is closed.
-   *
-   * @param session The closed session.
-   */
-  void sessionClosed(Session session);
-
-  /**
-   * Called when a session is expired.
-   *
-   * @param session The expired session.
-   */
-  void sessionExpired(Session session);
+  void messageReceived(Object message);
 
 }

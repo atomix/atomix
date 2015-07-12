@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.raft.state;
 
-import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.raft.Member;
 
 /**
  * Cluster member state.
@@ -28,7 +28,7 @@ class MemberState {
   private long timestamp;
   private long version;
   private int index;
-  private Member.Status status = Member.Status.ALIVE;
+  private long session;
   private long matchIndex;
   private long nextIndex;
 
@@ -57,12 +57,23 @@ class MemberState {
   }
 
   /**
-   * Returns the member status.
+   * Returns the member session.
    *
-   * @return The member status.
+   * @return The member session.
    */
-  Member.Status getStatus() {
-    return status;
+  public long getSession() {
+    return session;
+  }
+
+  /**
+   * Sets the member session.
+   *
+   * @param session The member session.
+   * @return The member state.
+   */
+  MemberState setSession(long session) {
+    this.session = session;
+    return this;
   }
 
   /**
@@ -150,11 +161,9 @@ class MemberState {
   public boolean update(long timestamp, long timeout) {
     if (timestamp - timeout > this.timestamp) {
       this.timestamp = timestamp;
-      status = Member.Status.DEAD;
       return false;
     } else {
       this.timestamp = timestamp;
-      status = Member.Status.ALIVE;
       return true;
     }
   }

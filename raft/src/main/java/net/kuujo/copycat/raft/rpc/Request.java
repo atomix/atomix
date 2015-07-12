@@ -78,7 +78,13 @@ public interface Request<T extends Request<T>> extends ReferenceCounted<T>, Alle
     /**
      * Query request.
      */
-    QUERY
+    QUERY,
+
+    /**
+     * Publish request.
+     */
+    PUBLISH
+
   }
 
   /**

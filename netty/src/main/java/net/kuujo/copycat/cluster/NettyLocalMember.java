@@ -49,7 +49,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class NettyLocalMember extends ManagedLocalMember implements NettyMember{
+public class NettyLocalMember extends ManagedLocalMember implements NettyMember {
   private static final Logger LOGGER = LoggerFactory.getLogger(NettyLocalMember.class);
   private static final int MESSAGE = 0;
   private static final int TASK = 1;

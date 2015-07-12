@@ -15,21 +15,19 @@
  */
 package net.kuujo.copycat.raft;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Raft session.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class Session {
+public abstract class Session {
   private final long id;
   private boolean expired;
   private boolean closed;
-  private final Set<SessionListener> listeners = new HashSet<>();
 
-  public Session(long id) {
+  protected Session(long id) {
     this.id = id;
   }
 
@@ -43,6 +41,13 @@ public class Session {
   }
 
   /**
+   * Opens the session.
+   */
+  protected void open() {
+    closed = false;
+  }
+
+  /**
    * Returns a boolean value indicating whether the session is open.
    *
    * @return Indicates whether the session is open.
@@ -52,11 +57,18 @@ public class Session {
   }
 
   /**
+   * Publishes a message to the session.
+   *
+   * @param message The message to publish.
+   * @return A completable future to be called once the message has been published.
+   */
+  public abstract CompletableFuture<Void> publish(Object message);
+
+  /**
    * Closes the session.
    */
   protected void close() {
     closed = true;
-    listeners.forEach(l -> l.sessionClosed(this));
   }
 
   /**
@@ -73,7 +85,6 @@ public class Session {
    */
   protected void expire() {
     expired = true;
-    listeners.forEach(l -> l.sessionExpired(this));
     close();
   }
 
@@ -92,10 +103,7 @@ public class Session {
    * @param listener The session listener.
    * @return The session.
    */
-  public Session addListener(SessionListener listener) {
-    listeners.add(listener);
-    return this;
-  }
+  public abstract Session addListener(SessionListener listener);
 
   /**
    * Removes a listener from the session.
@@ -103,10 +111,7 @@ public class Session {
    * @param listener The session listener.
    * @return The session.
    */
-  public Session removeListener(SessionListener listener) {
-    listeners.remove(listener);
-    return this;
-  }
+  public abstract Session removeListener(SessionListener listener);
 
   @Override
   public String toString() {

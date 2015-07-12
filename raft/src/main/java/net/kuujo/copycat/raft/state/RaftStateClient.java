@@ -15,20 +15,15 @@
  */
 package net.kuujo.copycat.raft.state;
 
-import net.kuujo.copycat.cluster.ClusterException;
-import net.kuujo.copycat.cluster.ManagedMembers;
-import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.cluster.MemberInfo;
 import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.raft.rpc.*;
 import net.kuujo.copycat.util.Context;
 import net.kuujo.copycat.util.Managed;
+import net.kuujo.copycat.util.concurrent.ComposableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -43,8 +38,11 @@ import java.util.stream.Collectors;
  */
 public class RaftStateClient implements Managed<Void> {
   private static final Logger LOGGER = LoggerFactory.getLogger(RaftStateClient.class);
+  private static final Random RANDOM = new Random();
   private static final long REQUEST_TIMEOUT = TimeUnit.SECONDS.toMillis(10);
-  private final ManagedMembers members;
+  private final Members members;
+  private final Client client;
+  private Connection connection;
   private final Context context;
   private CompletableFuture<Void> registerFuture;
   private final AtomicBoolean keepAlive = new AtomicBoolean();
@@ -56,16 +54,30 @@ public class RaftStateClient implements Managed<Void> {
   private CompletableFuture<Void> openFuture;
   protected volatile int leader;
   protected volatile long term;
-  protected volatile long session;
+  private final ClientSession session;
+  protected volatile long sessionId;
   private volatile long request;
   private volatile long response;
   private volatile long version;
 
-  public RaftStateClient(ManagedMembers members, Context context) {
+  public RaftStateClient(Members members, Context context) {
     if (members == null)
       throw new NullPointerException("members cannot be null");
+
     this.members = members;
+    this.client = ClientFactory.factory.createClient(nextClientId());
     this.context = context;
+    this.session = new ClientSession(client.id());
+    this.session.close();
+  }
+
+  /**
+   * Returns a random client ID.
+   *
+   * @return A random client ID.
+   */
+  private static int nextClientId() {
+    return RANDOM.nextInt(Integer.MAX_VALUE - 1023) + 1024;
   }
 
   /**
@@ -113,22 +125,31 @@ public class RaftStateClient implements Managed<Void> {
    *
    * @return The client session.
    */
-  public long getSession() {
+  public Session getSession() {
     return session;
+  }
+
+  /**
+   * Returns the client session.
+   *
+   * @return The client session.
+   */
+  public long getSessionId() {
+    return sessionId;
   }
 
   /**
    * Sets the client session.
    *
-   * @param session The client session.
+   * @param sessionId The client session.
    * @return The Raft client.
    */
-  RaftStateClient setSession(long session) {
-    this.session = session;
+  RaftStateClient setSessionId(long sessionId) {
+    this.sessionId = sessionId;
     this.request = 0;
     this.response = 0;
     this.version = 0;
-    if (session != 0 && openFuture != null) {
+    if (sessionId != 0 && openFuture != null) {
       synchronized (this) {
         if (openFuture != null) {
           CompletableFuture<Void> future = openFuture;
@@ -227,6 +248,38 @@ public class RaftStateClient implements Managed<Void> {
   }
 
   /**
+   * Returns a connection to the given member.
+   *
+   * @param member The member to which to return the connection.
+   * @return The connection to the given member.
+   */
+  private CompletableFuture<Connection> getConnection(Member member) {
+    if (connection != null && connection.id() == member.id()) {
+      return CompletableFuture.completedFuture(connection);
+    }
+
+    if (connection != null) {
+      CompletableFuture<Connection> future = new ComposableFuture<>();
+      connection.close().whenComplete((result, error) -> {
+        client.connect(member).whenComplete((connection, connectError) -> {
+          if (connectError == null) {
+            this.connection = connection;
+            future.complete(connection);
+          } else {
+            future.completeExceptionally(connectError);
+          }
+        });
+      });
+      return future;
+    }
+
+    return client.connect(member).thenApply(connection -> {
+      this.connection = connection;
+      return connection;
+    });
+  }
+
+  /**
    * Submits a command.
    *
    * @param command The command to submit.
@@ -242,13 +295,13 @@ public class RaftStateClient implements Managed<Void> {
     context.execute(() -> {
       long requestId = ++request;
       CommandRequest request = CommandRequest.builder()
-        .withSession(getSession())
+        .withSession(getSessionId())
         .withRequest(requestId)
         .withResponse(getResponse())
         .withCommand(command)
         .build();
 
-      if (session == 0) {
+      if (sessionId == 0) {
         register().thenRun(() -> this.<R>submit(request).whenComplete((result, error) -> {
           if (error == null) {
             future.complete(result);
@@ -296,15 +349,15 @@ public class RaftStateClient implements Managed<Void> {
         submit(request, future);
       } else if (error instanceof NoLeaderException) {
         submit(request, future);
-      } else if (error instanceof ClusterException) {
+      } else if (error instanceof RpcException) {
         LOGGER.warn("Failed to communicate with {}: {}", member, error);
         submit(request, future);
       } else if (error instanceof UnknownSessionException) {
-        LOGGER.warn("Lost session: {}", getSession());
-        setSession(0);
+        LOGGER.warn("Lost session: {}", getSessionId());
+        setSessionId(0);
         register().thenRun(() -> {
           submit(CommandRequest.builder(request)
-            .withSession(getSession())
+            .withSession(getSessionId())
             .build(), future);
         });
       } else {
@@ -328,18 +381,20 @@ public class RaftStateClient implements Managed<Void> {
     ScheduledFuture<?> timeoutFuture = context.schedule(() -> future.completeExceptionally(new TimeoutException("request timed out")), REQUEST_TIMEOUT, TimeUnit.MILLISECONDS);
 
     LOGGER.debug("Submitting {} to {}", request, member);
-    member.<CommandRequest, CommandResponse>send(request).whenComplete((response, error) -> {
-      timeoutFuture.cancel(false);
-      if (error == null) {
-        if (response.status() == Response.Status.OK) {
-          future.complete((T) response.result());
+    getConnection(member).thenAccept(connection -> {
+      connection.<CommandRequest, CommandResponse>send(request).whenComplete((response, error) -> {
+        timeoutFuture.cancel(false);
+        if (error == null) {
+          if (response.status() == Response.Status.OK) {
+            future.complete((T) response.result());
+          } else {
+            future.completeExceptionally(response.error().createException());
+          }
+          setResponse(Math.max(getResponse(), request.request()));
         } else {
-          future.completeExceptionally(response.error().createException());
+          future.completeExceptionally(error);
         }
-        setResponse(Math.max(getResponse(), request.request()));
-      } else {
-        future.completeExceptionally(error);
-      }
+      });
     });
 
     return future;
@@ -368,11 +423,11 @@ public class RaftStateClient implements Managed<Void> {
     CompletableFuture<R> future = new CompletableFuture<>();
     context.execute(() -> {
       QueryRequest request = QueryRequest.builder()
-        .withSession(getSession())
+        .withSession(getSessionId())
         .withQuery(query)
         .build();
 
-      if (session == 0) {
+      if (sessionId == 0) {
         register().thenRun(() -> this.<R>submit(request).whenComplete((result, error) -> {
           if (error == null) {
             future.complete(result);
@@ -420,15 +475,15 @@ public class RaftStateClient implements Managed<Void> {
         submit(request, future);
       } else if (error instanceof NoLeaderException) {
         submit(request, future);
-      } else if (error instanceof ClusterException) {
+      } else if (error instanceof RpcException) {
         LOGGER.warn("Failed to communicate with {}: {}", member, error);
         submit(request, future);
       } else if (error instanceof UnknownSessionException) {
-        LOGGER.warn("Lost session: {}", getSession());
-        setSession(0);
+        LOGGER.warn("Lost session: {}", getSessionId());
+        setSessionId(0);
         register().thenRun(() -> {
           submit(QueryRequest.builder(request)
-            .withSession(getSession())
+            .withSession(getSessionId())
             .build(), future);
         });
       } else {
@@ -452,17 +507,19 @@ public class RaftStateClient implements Managed<Void> {
     ScheduledFuture<?> timeoutFuture = context.schedule(() -> future.completeExceptionally(new TimeoutException("request timed out")), REQUEST_TIMEOUT, TimeUnit.MILLISECONDS);
 
     LOGGER.debug("Submitting {} to {}", request, member);
-    member.<QueryRequest, QueryResponse>send(request).whenComplete((response, error) -> {
-      timeoutFuture.cancel(false);
-      if (error == null) {
-        if (response.status() == Response.Status.OK) {
-          future.complete((T) response.result());
+    getConnection(member).thenAccept(connection -> {
+      connection.<QueryRequest, QueryResponse>send(request).whenComplete((response, error) -> {
+        timeoutFuture.cancel(false);
+        if (error == null) {
+          if (response.status() == Response.Status.OK) {
+            future.complete((T) response.result());
+          } else {
+            future.completeExceptionally(response.error().createException());
+          }
         } else {
-          future.completeExceptionally(response.error().createException());
+          future.completeExceptionally(error);
         }
-      } else {
-        future.completeExceptionally(error);
-      }
+      });
     });
 
     return future;
@@ -487,7 +544,10 @@ public class RaftStateClient implements Managed<Void> {
   private CompletableFuture<Void> register() {
     context.checkThread();
     if (registerFuture == null) {
-      registerFuture = register(100, new CompletableFuture<>()).whenComplete((result, error) -> registerFuture = null);
+      registerFuture = register(100, new CompletableFuture<>()).whenComplete((result, error) -> {
+        registerFuture = null;
+        session.open();
+      });
     }
     return registerFuture;
   }
@@ -512,11 +572,11 @@ public class RaftStateClient implements Managed<Void> {
    * Registers the client.
    */
   protected CompletableFuture<Void> register(List<Member> members) {
-    return register(members, new CompletableFuture<>()).thenCompose(response -> {
+    return register(members, new CompletableFuture<>()).thenAccept(response -> {
       setTerm(response.term());
       setLeader(response.leader());
-      setSession(response.session());
-      return this.members.configure(response.members().toArray(new MemberInfo[response.members().size()]));
+      setSessionId(response.session());
+      this.members.configure(response.members());
     });
   }
 
@@ -533,16 +593,19 @@ public class RaftStateClient implements Managed<Void> {
 
     RegisterRequest request = RegisterRequest.builder().build();
     LOGGER.debug("Sending {} to {}", request, member);
-    member.<RegisterRequest, RegisterResponse>send(request).whenComplete((response, error) -> {
+    getConnection(member).thenAccept(connection -> {
       context.checkThread();
-      if (error == null && response.status() == Response.Status.OK) {
-        future.complete(response);
-        LOGGER.debug("Registered new session: {}", getSession());
-      } else {
-        LOGGER.debug("Session registration failed, retrying");
-        setLeader(0);
-        register(members, future);
-      }
+      connection.<RegisterRequest, RegisterResponse>send(request).whenComplete((response, error) -> {
+        context.checkThread();
+        if (error == null && response.status() == Response.Status.OK) {
+          future.complete(response);
+          LOGGER.debug("Registered new session: {}", getSessionId());
+        } else {
+          LOGGER.debug("Session registration failed, retrying");
+          setLeader(0);
+          register(members, future);
+        }
+      });
     });
     return future;
   }
@@ -559,7 +622,7 @@ public class RaftStateClient implements Managed<Void> {
    * Sends a keep alive request to a random member.
    */
   private void keepAlive() {
-    if (keepAlive.compareAndSet(false, true) && getSession() != 0) {
+    if (keepAlive.compareAndSet(false, true) && getSessionId() != 0) {
       keepAlive(members.members().stream()
         .filter(m -> m.type() == Member.Type.ACTIVE)
         .collect(Collectors.toList())).whenComplete((result, error) -> keepAlive.set(false));
@@ -570,11 +633,11 @@ public class RaftStateClient implements Managed<Void> {
    * Sends a keep alive request.
    */
   protected CompletableFuture<Void> keepAlive(List<Member> members) {
-    return keepAlive(members, new CompletableFuture<>()).thenCompose(response -> {
+    return keepAlive(members, new CompletableFuture<>()).thenAccept(response -> {
       setTerm(response.term());
       setLeader(response.leader());
       setVersion(response.version());
-      return this.members.configure(response.members().toArray(new MemberInfo[response.members().size()]));
+      this.members.configure(response.members());
     });
   }
 
@@ -591,17 +654,21 @@ public class RaftStateClient implements Managed<Void> {
     Member member = selectMember(members);
 
     KeepAliveRequest request = KeepAliveRequest.builder()
-      .withSession(getSession())
+      .withSession(getSessionId())
       .build();
     LOGGER.debug("Sending {} to {}", request, member);
-    member.<KeepAliveRequest, KeepAliveResponse>send(request).whenComplete((response, error) -> {
+    getConnection(member).thenAccept(connection -> {
       context.checkThread();
       if (isOpen()) {
-        if (error == null && response.status() == Response.Status.OK) {
-          future.complete(response);
-        } else {
-          keepAlive(members, future);
-        }
+        connection.<KeepAliveRequest, KeepAliveResponse>send(request).whenComplete((response, error) -> {
+          if (isOpen()) {
+            if (error == null && response.status() == Response.Status.OK) {
+              future.complete(response);
+            } else {
+              future.completeExceptionally(error);
+            }
+          }
+        });
       }
     });
     return future;
@@ -648,9 +715,7 @@ public class RaftStateClient implements Managed<Void> {
   @Override
   public CompletableFuture<Void> open() {
     openFuture = new CompletableFuture<>();
-    members.open().thenRunAsync(() -> {
-      register().thenRun(this::startKeepAliveTimer);
-    }, context);
+    register().thenRun(this::startKeepAliveTimer);
     return openFuture;
   }
 
@@ -666,7 +731,7 @@ public class RaftStateClient implements Managed<Void> {
       cancelRegisterTimer();
       cancelKeepAliveTimer();
       open = false;
-      members.close().whenCompleteAsync((result, error) -> {
+      close().whenCompleteAsync((result, error) -> {
         if (error == null) {
           future.complete(null);
         } else {
@@ -680,6 +745,76 @@ public class RaftStateClient implements Managed<Void> {
   @Override
   public boolean isClosed() {
     return !open;
+  }
+
+  /**
+   * Client session.
+   */
+  private class ClientSession extends Session {
+    private final Set<SessionListener> listeners = new HashSet<>();
+
+    ClientSession(long id) {
+      super(id);
+    }
+
+    @Override
+    protected void open() {
+      super.open();
+    }
+
+    @Override
+    protected void expire() {
+      super.expire();
+    }
+
+    @Override
+    protected void close() {
+      super.close();
+    }
+
+    @Override
+    public CompletableFuture<Void> publish(Object message) {
+      if (connection == null)
+        return CompletableFuture.completedFuture(null);
+
+      return connection.send(PublishRequest.builder()
+        .withSession(id())
+        .withMessage(message)
+        .build())
+        .thenApply(v -> null);
+    }
+
+    /**
+     * Handles a publish request.
+     *
+     * @param request The publish request to handle.
+     * @return A completable future to be completed with the publish response.
+     */
+    protected CompletableFuture<PublishResponse> handlePublish(PublishRequest request) {
+      for (SessionListener listener : listeners) {
+        listener.messageReceived(request.message());
+      }
+
+      return CompletableFuture.completedFuture(PublishResponse.builder()
+        .withStatus(Response.Status.OK)
+        .build());
+    }
+
+    @Override
+    public Session addListener(SessionListener listener) {
+      if (listener == null)
+        throw new NullPointerException("listener cannot be null");
+      listeners.add(listener);
+      return this;
+    }
+
+    @Override
+    public Session removeListener(SessionListener listener) {
+      if (listener == null)
+        throw new NullPointerException("listener cannot be null");
+      listeners.remove(listener);
+      return this;
+    }
   }
 
 }

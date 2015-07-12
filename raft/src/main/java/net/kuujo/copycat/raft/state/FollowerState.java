@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.raft.state;
 
-import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.raft.Member;
 import net.kuujo.copycat.raft.Raft;
 import net.kuujo.copycat.raft.log.entry.Entry;
 import net.kuujo.copycat.raft.log.entry.HeartbeatEntry;
@@ -58,7 +58,7 @@ class FollowerState extends ActiveState {
    * Starts the heartbeat timer.
    */
   private void startHeartbeatTimeout() {
-    LOGGER.debug("{} - Starting heartbeat timer", context.getCluster().member().id());
+    LOGGER.debug("{} - Starting heartbeat timer", context.getMemberId());
     resetHeartbeatTimeout();
   }
 
@@ -71,7 +71,7 @@ class FollowerState extends ActiveState {
 
     // If a timer is already set, cancel the timer.
     if (heartbeatTimer != null) {
-      LOGGER.debug("{} - Reset heartbeat timeout", context.getCluster().member().id());
+      LOGGER.debug("{} - Reset heartbeat timeout", context.getMemberId());
       heartbeatTimer.cancel(false);
     }
 
@@ -82,7 +82,7 @@ class FollowerState extends ActiveState {
       heartbeatTimer = null;
       if (isOpen()) {
         if (context.getLastVotedFor() == 0) {
-          LOGGER.debug("{} - Heartbeat timed out in {} milliseconds", context.getCluster().member().id(), delay);
+          LOGGER.debug("{} - Heartbeat timed out in {} milliseconds", context.getMemberId(), delay);
           sendPollRequests();
         } else {
           // If the node voted for a candidate then reset the election timer.
@@ -98,13 +98,13 @@ class FollowerState extends ActiveState {
   private void sendPollRequests() {
     // Set a new timer within which other nodes must respond in order for this node to transition to candidate.
     heartbeatTimer = context.getContext().schedule(() -> {
-      LOGGER.debug("{} - Failed to poll a majority of the cluster in {} milliseconds", context.getCluster().member().id(), context.getElectionTimeout());
+      LOGGER.debug("{} - Failed to poll a majority of the cluster in {} milliseconds", context.getMemberId(), context.getElectionTimeout());
       resetHeartbeatTimeout();
     }, context.getElectionTimeout(), TimeUnit.MILLISECONDS);
 
     // Create a quorum that will track the number of nodes that have responded to the poll request.
     final AtomicBoolean complete = new AtomicBoolean();
-    final Set<Member> votingMembers = context.getCluster().members().stream()
+    final Set<Member> votingMembers = context.getMembers().members().stream()
       .filter(m -> m.type() == Member.Type.ACTIVE)
       .collect(Collectors.toSet());
 
@@ -125,39 +125,41 @@ class FollowerState extends ActiveState {
 
     // Once we got the last log term, iterate through each current member
     // of the cluster and vote each member for a vote.
-    LOGGER.debug("{} - Polling members {}", context.getCluster().member().id(), votingMembers);
+    LOGGER.debug("{} - Polling members {}", context.getMemberId(), votingMembers);
     final long lastTerm = lastEntry != null ? lastEntry.getTerm() : 0;
     for (Member member : votingMembers) {
-      LOGGER.debug("{} - Polling {} for next term {}", context.getCluster().member().id(), member, context.getTerm() + 1);
+      LOGGER.debug("{} - Polling {} for next term {}", context.getMemberId(), member, context.getTerm() + 1);
       PollRequest request = PollRequest.builder()
         .withTerm(context.getTerm())
-        .withCandidate(context.getCluster().member().id())
+        .withCandidate(context.getMemberId())
         .withLogIndex(lastIndex)
         .withLogTerm(lastTerm)
         .build();
-      member.<PollRequest, PollResponse>send(request).whenCompleteAsync((response, error) -> {
-        context.checkThread();
-        if (isOpen() && !complete.get()) {
-          if (error != null) {
-            LOGGER.warn("{} - {}", context.getCluster().member().id(), error.getMessage());
-            quorum.fail();
-          } else {
-            if (response.term() > context.getTerm()) {
-              context.setTerm(response.term());
-            }
-            if (!response.accepted()) {
-              LOGGER.debug("{} - Received rejected poll from {}", context.getCluster().member().id(), member);
-              quorum.fail();
-            } else if (response.term() != context.getTerm()) {
-              LOGGER.debug("{} - Received accepted poll for a different term from {}", context.getCluster().member().id(), member);
+      context.getConnections().getConnection(member).thenAccept(connection -> {
+        connection.<PollRequest, PollResponse>send(request).whenCompleteAsync((response, error) -> {
+          context.checkThread();
+          if (isOpen() && !complete.get()) {
+            if (error != null) {
+              LOGGER.warn("{} - {}", context.getMemberId(), error.getMessage());
               quorum.fail();
             } else {
-              LOGGER.debug("{} - Received accepted poll from {}", context.getCluster().member().id(), member);
-              quorum.succeed();
+              if (response.term() > context.getTerm()) {
+                context.setTerm(response.term());
+              }
+              if (!response.accepted()) {
+                LOGGER.debug("{} - Received rejected poll from {}", context.getMemberId(), member);
+                quorum.fail();
+              } else if (response.term() != context.getTerm()) {
+                LOGGER.debug("{} - Received accepted poll for a different term from {}", context.getMemberId(), member);
+                quorum.fail();
+              } else {
+                LOGGER.debug("{} - Received accepted poll from {}", context.getMemberId(), member);
+                quorum.succeed();
+              }
             }
           }
-        }
-      }, context.getContext());
+        }, context.getContext());
+      });
     }
   }
 
@@ -182,7 +184,7 @@ class FollowerState extends ActiveState {
    * Replicates commits to the given member.
    */
   private void replicateCommits(int memberId) {
-    MemberState member = context.getMembers().getMember(memberId);
+    MemberState member = context.getCluster().getMember(memberId);
     if (isActiveReplica(member)) {
       commit(member);
     }
@@ -192,11 +194,11 @@ class FollowerState extends ActiveState {
    * Returns a boolean value indicating whether the given member is a replica of this follower.
    */
   private boolean isActiveReplica(MemberState member) {
-    if (member != null && member.getType() == Member.Type.PASSIVE && member.getStatus() == Member.Status.ALIVE) {
-      MemberState thisMember = context.getMembers().getMember(context.getCluster().member().id());
+    if (member != null && member.getType() == Member.Type.PASSIVE && member.getSession() != 0) {
+      MemberState thisMember = context.getCluster().getMember(context.getMemberId());
       int index = thisMember.getIndex();
-      int activeMembers = context.getMembers().getActiveMembers().size();
-      int passiveMembers = context.getMembers().getPassiveMembers().size();
+      int activeMembers = context.getCluster().getActiveMembers().size();
+      int passiveMembers = context.getCluster().getPassiveMembers().size();
       while (passiveMembers > index) {
         if (index % passiveMembers == member.getIndex()) {
           return true;
@@ -275,7 +277,7 @@ class FollowerState extends ActiveState {
   private void commit(MemberState member, long prevIndex, Entry prevEntry, List<Entry> entries) {
     AppendRequest request = AppendRequest.builder()
       .withTerm(context.getTerm())
-      .withLeader(context.getCluster().member().id())
+      .withLeader(context.getMemberId())
       .withLogIndex(prevIndex)
       .withLogTerm(prevEntry != null ? prevEntry.getTerm() : 0)
       .withEntries(entries)
@@ -284,42 +286,44 @@ class FollowerState extends ActiveState {
       .build();
 
     committing.add(member.getId());
-    LOGGER.debug("{} - Sent {} to {}", context.getCluster().member().id(), request, member);
-    context.getCluster().member(member.getId()).<AppendRequest, AppendResponse>send(request).whenCompleteAsync((response, error) -> {
-      committing.remove(member.getId());
-      context.checkThread();
+    LOGGER.debug("{} - Sent {} to {}", context.getMemberId(), request, member);
+    context.getConnections().getConnection(context.getMembers().member(member.getId())).thenAccept(connection -> {
+      connection.<AppendRequest, AppendResponse>send(request).whenCompleteAsync((response, error) -> {
+        committing.remove(member.getId());
+        context.checkThread();
 
-      if (isOpen()) {
-        if (error == null) {
-          LOGGER.debug("{} - Received {} from {}", context.getCluster().member().id(), response, member);
-          if (response.status() == Response.Status.OK) {
-            // If replication succeeded then trigger commit futures.
-            if (response.succeeded()) {
-              updateMatchIndex(member, response);
-              updateNextIndex(member);
+        if (isOpen()) {
+          if (error == null) {
+            LOGGER.debug("{} - Received {} from {}", context.getMemberId(), response, member);
+            if (response.status() == Response.Status.OK) {
+              // If replication succeeded then trigger commit futures.
+              if (response.succeeded()) {
+                updateMatchIndex(member, response);
+                updateNextIndex(member);
 
-              // If there are more entries to send then attempt to send another commit.
-              if (hasMoreEntries(member)) {
-                commit(member);
+                // If there are more entries to send then attempt to send another commit.
+                if (hasMoreEntries(member)) {
+                  commit(member);
+                }
+              } else {
+                resetMatchIndex(member, response);
+                resetNextIndex(member);
+
+                // If there are more entries to send then attempt to send another commit.
+                if (hasMoreEntries(member)) {
+                  commit(member);
+                }
               }
             } else {
-              resetMatchIndex(member, response);
-              resetNextIndex(member);
-
-              // If there are more entries to send then attempt to send another commit.
-              if (hasMoreEntries(member)) {
-                commit(member);
-              }
+              LOGGER.warn("{} - {}", context.getMemberId(), response.error() != null ? response.error() : "");
             }
           } else {
-            LOGGER.warn("{} - {}", context.getCluster().member().id(), response.error() != null ? response.error() : "");
+            LOGGER.warn("{} - {}", context.getMemberId(), error.getMessage());
           }
-        } else {
-          LOGGER.warn("{} - {}", context.getCluster().member().id(), error.getMessage());
         }
-      }
-      request.close();
-    }, context.getContext());
+        request.close();
+      }, context.getContext());
+    });
   }
 
   /**
@@ -357,7 +361,7 @@ class FollowerState extends ActiveState {
     } else if (response.logIndex() != 0) {
       member.setMatchIndex(Math.max(member.getMatchIndex(), response.logIndex()));
     }
-    LOGGER.debug("{} - Reset match index for {} to {}", context.getCluster().member().id(), member, member.getMatchIndex());
+    LOGGER.debug("{} - Reset match index for {} to {}", context.getMemberId(), member, member.getMatchIndex());
   }
 
   /**
@@ -369,7 +373,7 @@ class FollowerState extends ActiveState {
     } else {
       member.setNextIndex(context.getLog().firstIndex());
     }
-    LOGGER.debug("{} - Reset next index for {} to {}", context.getCluster().member().id(), member, member.getNextIndex());
+    LOGGER.debug("{} - Reset next index for {} to {}", context.getMemberId(), member, member.getNextIndex());
   }
 
   @Override
@@ -387,7 +391,7 @@ class FollowerState extends ActiveState {
    */
   private void cancelHeartbeatTimeout() {
     if (heartbeatTimer != null) {
-      LOGGER.debug("{} - Cancelling heartbeat timer", context.getCluster().member().id());
+      LOGGER.debug("{} - Cancelling heartbeat timer", context.getMemberId());
       heartbeatTimer.cancel(false);
     }
   }

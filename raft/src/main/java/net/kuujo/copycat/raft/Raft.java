@@ -15,10 +15,8 @@
  */
 package net.kuujo.copycat.raft;
 
+import net.kuujo.alleycat.Alleycat;
 import net.kuujo.copycat.ConfigurationException;
-import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.cluster.ManagedCluster;
-import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.raft.log.Log;
 import net.kuujo.copycat.raft.state.RaftStateContext;
 import net.kuujo.copycat.util.Context;
@@ -86,15 +84,6 @@ public class Raft implements ManagedProtocol {
   }
 
   /**
-   * Returns the Raft cluster.
-   *
-   * @return The Raft cluster.
-   */
-  public Cluster cluster() {
-    return context.getCluster();
-  }
-
-  /**
    * Returns the current Raft term.
    *
    * @return The current Raft term.
@@ -110,7 +99,16 @@ public class Raft implements ManagedProtocol {
    */
   public Member leader() {
     int leader = context.getLeader();
-    return leader != 0 ? context.getCluster().member(leader) : null;
+    return leader != 0 ? context.getMembers().member(leader) : null;
+  }
+
+  /**
+   * Returns the current session.
+   *
+   * @return The current session.
+   */
+  public Session session() {
+    return context.getSession();
   }
 
   /**
@@ -208,18 +206,42 @@ public class Raft implements ManagedProtocol {
    */
   public static class Builder implements Protocol.Builder<Raft> {
     private Log log;
+    private Alleycat serializer;
     private RaftConfig config = new RaftConfig();
     private StateMachine stateMachine;
-    private ManagedCluster cluster;
+    private int memberId;
+    private Members members;
 
     /**
-     * Sets the Raft cluster.
+     * Sets the server member ID.
      *
-     * @param cluster The Raft cluster.
+     * @param memberId The server member ID.
      * @return The Raft builder.
      */
-    public Builder withCluster(ManagedCluster cluster) {
-      this.cluster = cluster;
+    public Builder withMemberId(int memberId) {
+      this.memberId = memberId;
+      return this;
+    }
+
+    /**
+     * Sets the voting Raft members.
+     *
+     * @param members The voting Raft members.
+     * @return The Raft builder.
+     */
+    public Builder withMembers(Members members) {
+      this.members = members;
+      return this;
+    }
+
+    /**
+     * Sets the Raft serializer.
+     *
+     * @param alleycat The Raft serializer.
+     * @return The Raf tbuilder.
+     */
+    public Builder withSerializer(Alleycat alleycat) {
+      this.serializer = alleycat;
       return this;
     }
 
@@ -349,12 +371,12 @@ public class Raft implements ManagedProtocol {
     public Raft build() {
       if (stateMachine == null)
         throw new ConfigurationException("state machine not configured");
-      if (cluster == null)
-        throw new ConfigurationException("cluster not configured");
+      if (members == null)
+        throw new ConfigurationException("members not configured");
       if (log == null)
         throw new NullPointerException("log cannot be null");
 
-      RaftStateContext context = (RaftStateContext) new RaftStateContext(log, stateMachine, cluster, Context.createContext(cluster.member().id() != 0 ? String.format("copycat-%d", cluster.member().id()) : "copycat", cluster.alleycat().clone()))
+      RaftStateContext context = (RaftStateContext) new RaftStateContext(memberId, log, stateMachine, members, Context.createContext(String.format("copycat-%d", memberId), serializer.clone()))
         .setHeartbeatInterval(config.getHeartbeatInterval())
         .setElectionTimeout(config.getElectionTimeout())
         .setSessionTimeout(config.getSessionTimeout())

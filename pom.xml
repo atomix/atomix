@@ -69,7 +69,6 @@
   </distributionManagement>
 
   <modules>
-    <module>cluster</module>
     <module>netty</module>
     <module>raft</module>
     <module>core</module>

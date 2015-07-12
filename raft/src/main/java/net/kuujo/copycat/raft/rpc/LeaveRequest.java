@@ -20,7 +20,7 @@ import net.kuujo.alleycat.SerializeWith;
 import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.alleycat.util.ReferenceManager;
-import net.kuujo.copycat.cluster.MemberInfo;
+import net.kuujo.copycat.raft.Member;
 
 import java.util.Objects;
 
@@ -57,7 +57,7 @@ public class LeaveRequest extends AbstractRequest<LeaveRequest> {
     return builder.get().reset(request);
   }
 
-  private MemberInfo member;
+  private Member member;
 
   public LeaveRequest(ReferenceManager<LeaveRequest> referenceManager) {
     super(referenceManager);
@@ -73,7 +73,7 @@ public class LeaveRequest extends AbstractRequest<LeaveRequest> {
    *
    * @return The requesting member's ID.
    */
-  public MemberInfo member() {
+  public Member member() {
     return member;
   }
 
@@ -128,7 +128,7 @@ public class LeaveRequest extends AbstractRequest<LeaveRequest> {
      * @param member The requesting node's info.
      * @return The leave request builder.
      */
-    public Builder withMember(MemberInfo member) {
+    public Builder withMember(Member member) {
       if (member == null)
         throw new NullPointerException("member cannot be null");
       request.member = member;

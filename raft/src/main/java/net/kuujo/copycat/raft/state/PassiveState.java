@@ -76,7 +76,7 @@ public class PassiveState extends AbstractState {
     // reply false and return our current term. The leader will receive
     // the updated term and step down.
     if (request.term() < context.getTerm()) {
-      LOGGER.warn("{} - Rejected {}: request term is less than the current term ({})", context.getCluster().member().id(), request, context.getTerm());
+      LOGGER.warn("{} - Rejected {}: request term is less than the current term ({})", context.getMemberId(), request, context.getTerm());
       return AppendResponse.builder()
         .withStatus(Response.Status.OK)
         .withTerm(context.getTerm())
@@ -95,7 +95,7 @@ public class PassiveState extends AbstractState {
    */
   private AppendResponse doCheckPreviousEntry(AppendRequest request) {
     if (request.logIndex() != 0 && context.getLog().isEmpty()) {
-      LOGGER.warn("{} - Rejected {}: Previous index ({}) is greater than the local log's last index ({})", context.getCluster().member().id(), request, request.logIndex(), context.getLog().lastIndex());
+      LOGGER.warn("{} - Rejected {}: Previous index ({}) is greater than the local log's last index ({})", context.getMemberId(), request, request.logIndex(), context.getLog().lastIndex());
       return AppendResponse.builder()
         .withStatus(Response.Status.OK)
         .withTerm(context.getTerm())
@@ -103,7 +103,7 @@ public class PassiveState extends AbstractState {
         .withLogIndex(context.getLog().lastIndex())
         .build();
     } else if (request.logIndex() != 0 && context.getLog().lastIndex() != 0 && request.logIndex() > context.getLog().lastIndex()) {
-      LOGGER.warn("{} - Rejected {}: Previous index ({}) is greater than the local log's last index ({})", context.getCluster().member().id(), request, request.logIndex(), context.getLog().lastIndex());
+      LOGGER.warn("{} - Rejected {}: Previous index ({}) is greater than the local log's last index ({})", context.getMemberId(), request, request.logIndex(), context.getLog().lastIndex());
       return AppendResponse.builder()
         .withStatus(Response.Status.OK)
         .withTerm(context.getTerm())
@@ -115,7 +115,7 @@ public class PassiveState extends AbstractState {
     // If the previous entry term doesn't match the local previous term then reject the request.
     Entry entry = context.getLog().getEntry(request.logIndex());
     if (entry == null || entry.getTerm() != request.logTerm()) {
-      LOGGER.warn("{} - Rejected {}: Request log term does not match local log term {} for the same entry", context.getCluster().member().id(), request, entry.getTerm());
+      LOGGER.warn("{} - Rejected {}: Request log term does not match local log term {} for the same entry", context.getMemberId(), request, entry.getTerm());
       return AppendResponse.builder()
         .withStatus(Response.Status.OK)
         .withTerm(context.getTerm())
@@ -141,7 +141,7 @@ public class PassiveState extends AbstractState {
         // If the entry index is greater than the last log index, skip missing entries.
         if (!context.getLog().containsIndex(entry.getIndex())) {
           context.getLog().skip(entry.getIndex() - context.getLog().lastIndex() - 1).appendEntry(entry);
-          LOGGER.debug("{} - Appended {} to log at index {}", context.getCluster().member().id(), entry, entry.getIndex());
+          LOGGER.debug("{} - Appended {} to log at index {}", context.getMemberId(), entry, entry.getIndex());
         } else {
           // Compare the term of the received entry with the matching entry in the log.
           Entry match = context.getLog().getEntry(entry.getIndex());
@@ -149,14 +149,14 @@ public class PassiveState extends AbstractState {
             if (entry.getTerm() != match.getTerm()) {
               // We found an invalid entry in the log. Remove the invalid entry and append the new entry.
               // If appending to the log fails, apply commits and reply false to the append request.
-              LOGGER.warn("{} - Appended entry term does not match local log, removing incorrect entries", context.getCluster().member().id());
+              LOGGER.warn("{} - Appended entry term does not match local log, removing incorrect entries", context.getMemberId());
               context.getLog().truncate(entry.getIndex() - 1);
               context.getLog().appendEntry(entry);
-              LOGGER.debug("{} - Appended {} to log at index {}", context.getCluster().member().id(), entry, entry.getIndex());
+              LOGGER.debug("{} - Appended {} to log at index {}", context.getMemberId(), entry, entry.getIndex());
             }
           } else {
             context.getLog().truncate(entry.getIndex() - 1).appendEntry(entry);
-            LOGGER.debug("{} - Appended {} to log at index {}", context.getCluster().member().id(), entry, entry.getIndex());
+            LOGGER.debug("{} - Appended {} to log at index {}", context.getMemberId(), entry, entry.getIndex());
           }
         }
       }
@@ -193,7 +193,7 @@ public class PassiveState extends AbstractState {
     // If the effective commit index is greater than the last index applied to the state machine then apply remaining entries.
     if (effectiveIndex > lastApplied) {
       long entriesToApply = effectiveIndex - lastApplied;
-      LOGGER.debug("{} - Applying {} commits", context.getCluster().member().id(), entriesToApply);
+      LOGGER.debug("{} - Applying {} commits", context.getMemberId(), entriesToApply);
 
       // Rather than composing all futures into a single future, use a counter to count completions in order to preserve memory.
       AtomicLong counter = new AtomicLong();
@@ -205,7 +205,7 @@ public class PassiveState extends AbstractState {
           applyEntry(entry).whenCompleteAsync((result, error) -> {
             entry.close();
             if (isOpen() && error != null) {
-              LOGGER.info("{} - An application error occurred: {}", context.getCluster().member().id(), error.getMessage());
+              LOGGER.info("{} - An application error occurred: {}", context.getMemberId(), error.getMessage());
             }
             if (counter.incrementAndGet() == entriesToApply) {
               future.complete(null);
@@ -222,7 +222,7 @@ public class PassiveState extends AbstractState {
    * Applies an entry to the state machine.
    */
   protected CompletableFuture<?> applyEntry(Entry entry) {
-    LOGGER.debug("{} - Applying {}", context.getCluster().member().id(), entry);
+    LOGGER.debug("{} - Applying {}", context.getMemberId(), entry);
     return context.getStateMachine().apply(entry);
   }
 
@@ -265,7 +265,8 @@ public class PassiveState extends AbstractState {
         .withError(RaftError.Type.NO_LEADER_ERROR)
         .build()));
     } else {
-      return context.getCluster().member(context.getLeader()).send(request);
+      return context.getConnections().getConnection(context.getMembers().member(context.getLeader()))
+        .thenCompose(connection -> connection.send(request));
     }
   }
 
@@ -279,7 +280,8 @@ public class PassiveState extends AbstractState {
         .withError(RaftError.Type.NO_LEADER_ERROR)
         .build()));
     } else {
-      return context.getCluster().member(context.getLeader()).send(request);
+      return context.getConnections().getConnection(context.getMembers().member(context.getLeader()))
+        .thenCompose(connection -> connection.send(request));
     }
   }
 
@@ -293,7 +295,8 @@ public class PassiveState extends AbstractState {
         .withError(RaftError.Type.NO_LEADER_ERROR)
         .build()));
     } else {
-      return context.getCluster().member(context.getLeader()).send(request);
+      return context.getConnections().getConnection(context.getMembers().member(context.getLeader()))
+        .thenCompose(connection -> connection.send(request));
     }
   }
 
@@ -307,7 +310,8 @@ public class PassiveState extends AbstractState {
         .withError(RaftError.Type.NO_LEADER_ERROR)
         .build()));
     } else {
-      return context.getCluster().member(context.getLeader()).send(request);
+      return context.getConnections().getConnection(context.getMembers().member(context.getLeader()))
+        .thenCompose(connection -> connection.send(request));
     }
   }
 
@@ -321,7 +325,8 @@ public class PassiveState extends AbstractState {
         .withError(RaftError.Type.NO_LEADER_ERROR)
         .build()));
     } else {
-      return context.getCluster().member(context.getLeader()).send(request);
+      return context.getConnections().getConnection(context.getMembers().member(context.getLeader()))
+        .thenCompose(connection -> connection.send(request));
     }
   }
 
@@ -335,7 +340,8 @@ public class PassiveState extends AbstractState {
         .withError(RaftError.Type.NO_LEADER_ERROR)
         .build()));
     } else {
-      return context.getCluster().member(context.getLeader()).send(request);
+      return context.getConnections().getConnection(context.getMembers().member(context.getLeader()))
+        .thenCompose(connection -> connection.send(request));
     }
   }
 
@@ -349,7 +355,8 @@ public class PassiveState extends AbstractState {
         .withError(RaftError.Type.NO_LEADER_ERROR)
         .build()));
     } else {
-      return context.getCluster().member(context.getLeader()).send(request);
+      return context.getConnections().getConnection(context.getMembers().member(context.getLeader()))
+        .thenCompose(connection -> connection.send(request));
     }
   }
 

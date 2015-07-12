@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.raft.state;
 
-import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.raft.Member;
 import net.kuujo.copycat.raft.Raft;
 import net.kuujo.copycat.raft.log.entry.Entry;
 import net.kuujo.copycat.raft.rpc.*;
@@ -57,7 +57,7 @@ class CandidateState extends ActiveState {
    * Starts the election.
    */
   private void startElection() {
-    LOGGER.info("{} - Starting election", context.getCluster().member().id());
+    LOGGER.info("{} - Starting election", context.getMemberId());
     sendVoteRequests();
   }
 
@@ -84,17 +84,17 @@ class CandidateState extends ActiveState {
     currentTimer = context.getContext().schedule(() -> {
       // When the election times out, clear the previous majority vote
       // check and restart the election.
-      LOGGER.debug("{} - Election timed out", context.getCluster().member().id());
+      LOGGER.debug("{} - Election timed out", context.getMemberId());
       if (quorum != null) {
         quorum.cancel();
         quorum = null;
       }
       sendVoteRequests();
-      LOGGER.debug("{} - Restarted election", context.getCluster().member().id());
+      LOGGER.debug("{} - Restarted election", context.getMemberId());
     }, delay, TimeUnit.MILLISECONDS);
 
     final AtomicBoolean complete = new AtomicBoolean();
-    final Set<Member> votingMembers = context.getCluster().members().stream()
+    final Set<Member> votingMembers = context.getMembers().members().stream()
       .filter(m -> m.type() == Member.Type.ACTIVE)
       .collect(Collectors.toSet());
 
@@ -116,39 +116,42 @@ class CandidateState extends ActiveState {
 
     // Once we got the last log term, iterate through each current member
     // of the cluster and vote each member for a vote.
-    LOGGER.debug("{} - Requesting votes from {}", context.getCluster().member().id(), votingMembers);
+    LOGGER.debug("{} - Requesting votes from {}", context.getMemberId(), votingMembers);
     final long lastTerm = lastEntry != null ? lastEntry.getTerm() : 0;
     for (Member member : votingMembers) {
-      LOGGER.debug("{} - Requesting vote from {} for term {}", context.getCluster().member().id(), member, context.getTerm());
+      LOGGER.debug("{} - Requesting vote from {} for term {}", context.getMemberId(), member, context.getTerm());
       VoteRequest request = VoteRequest.builder()
         .withTerm(context.getTerm())
-        .withCandidate(context.getCluster().member().id())
+        .withCandidate(context.getMemberId())
         .withLogIndex(lastIndex)
         .withLogTerm(lastTerm)
         .build();
-      member.<VoteRequest, VoteResponse>send(request).whenCompleteAsync((response, error) -> {
-        context.checkThread();
-        if (isOpen() && !complete.get()) {
-          if (error != null) {
-            LOGGER.warn(error.getMessage());
-            quorum.fail();
-          } else if (response.term() > context.getTerm()) {
-            LOGGER.debug("{} - Received greater term from {}", context.getCluster().member().id(), member);
-            context.setTerm(response.term());
-            complete.set(true);
-            transition(Raft.State.FOLLOWER);
-          } else if (!response.voted()) {
-            LOGGER.debug("{} - Received rejected vote from {}", context.getCluster().member().id(), member);
-            quorum.fail();
-          } else if (response.term() != context.getTerm()) {
-            LOGGER.debug("{} - Received successful vote for a different term from {}", context.getCluster().member().id(), member);
-            quorum.fail();
-          } else {
-            LOGGER.debug("{} - Received successful vote from {}", context.getCluster().member().id(), member);
-            quorum.succeed();
+
+      context.getConnections().getConnection(member).thenAccept(connection -> {
+        connection.<VoteRequest, VoteResponse>send(request).whenCompleteAsync((response, error) -> {
+          context.checkThread();
+          if (isOpen() && !complete.get()) {
+            if (error != null) {
+              LOGGER.warn(error.getMessage());
+              quorum.fail();
+            } else if (response.term() > context.getTerm()) {
+              LOGGER.debug("{} - Received greater term from {}", context.getMemberId(), member);
+              context.setTerm(response.term());
+              complete.set(true);
+              transition(Raft.State.FOLLOWER);
+            } else if (!response.voted()) {
+              LOGGER.debug("{} - Received rejected vote from {}", context.getMemberId(), member);
+              quorum.fail();
+            } else if (response.term() != context.getTerm()) {
+              LOGGER.debug("{} - Received successful vote for a different term from {}", context.getMemberId(), member);
+              quorum.fail();
+            } else {
+              LOGGER.debug("{} - Received successful vote from {}", context.getMemberId(), member);
+              quorum.succeed();
+            }
           }
-        }
-      }, context.getContext());
+        }, context.getContext());
+      });
     }
   }
 
@@ -178,7 +181,7 @@ class CandidateState extends ActiveState {
     }
 
     // If the vote request is not for this candidate then reject the vote.
-    if (request.candidate() == context.getCluster().member().id()) {
+    if (request.candidate() == context.getMemberId()) {
       return CompletableFuture.completedFuture(logResponse(VoteResponse.builder()
         .withStatus(Response.Status.OK)
         .withTerm(context.getTerm())
@@ -199,7 +202,7 @@ class CandidateState extends ActiveState {
   private void cancelElection() {
     context.checkThread();
     if (currentTimer != null) {
-      LOGGER.debug("{} - Cancelling election", context.getCluster().member().id());
+      LOGGER.debug("{} - Cancelling election", context.getMemberId());
       currentTimer.cancel(false);
     }
     if (quorum != null) {

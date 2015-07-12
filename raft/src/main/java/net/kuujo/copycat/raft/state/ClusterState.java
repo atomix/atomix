@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.raft.state;
 
-import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.raft.Member;
 
 import java.util.*;
 
