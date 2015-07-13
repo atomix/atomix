@@ -186,6 +186,11 @@ public class NettyServer implements Server {
       }
     }
 
+    @Override
+    public void channelReadComplete(ChannelHandlerContext context) throws Exception {
+      context.flush();
+    }
+
     /**
      * Handles a connection identification request.
      */

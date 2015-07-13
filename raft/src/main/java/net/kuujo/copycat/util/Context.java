@@ -28,38 +28,19 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class Context implements Executor, AutoCloseable {
-  private static final ContextFactory factory = ServiceLoader.load(ContextFactory.class).iterator().next();
 
   /**
-   * Creates a new context.
+   * Returns a new context factory.
    *
-   * @param name The context name.
-   * @param serializer The Alleycat serializer.
-   * @return A new context.
+   * @return The context factory.
    */
-  public static Context createContext(String name, Alleycat serializer) {
-    return factory.createContext(name, serializer);
+  public static ContextFactory factory() {
+    return ServiceLoader.load(ContextFactory.class).iterator().next();
   }
 
-  /**
-   * Returns the current context.
-   *
-   * @return The current context.
-   */
-  public static Context currentContext() {
-    Thread thread = Thread.currentThread();
-    return thread instanceof CopycatThread ? ((CopycatThread) thread).getContext() : null;
-  }
-
-  private final String name;
   private final Alleycat serializer;
 
-  protected Context(String name, CopycatThread thread, Alleycat serializer) {
-    if (thread == null)
-      throw new NullPointerException("thread cannot be null");
-    thread.setName(name);
-    thread.setContext(this);
-    this.name = name;
+  protected Context(Alleycat serializer) {
     this.serializer = serializer;
   }
 
@@ -71,15 +52,6 @@ public abstract class Context implements Executor, AutoCloseable {
     if (!(thread instanceof CopycatThread && ((CopycatThread) thread).getContext() == this)) {
       throw new IllegalStateException("not running on the correct thread");
     }
-  }
-
-  /**
-   * Returns the context name.
-   *
-   * @return The context name.
-   */
-  public String name() {
-    return name;
   }
 
   /**

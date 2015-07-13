@@ -52,6 +52,14 @@ public interface Connection {
   <T extends Request<T>, U extends Response<U>> Connection handler(Class<T> type, RequestHandler<T, U> handler);
 
   /**
+   * Sets an exception listener on the connection.
+   *
+   * @param listener The exception listener.
+   * @return The connection.
+   */
+  Connection exceptionListener(ExceptionListener listener);
+
+  /**
    * Sets a close listener on the connection.
    *
    * @param listener The close listener.

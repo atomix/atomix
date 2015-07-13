@@ -35,13 +35,18 @@ public class NettyContext extends Context {
   private final EventLoop eventLoop;
 
   public NettyContext(String name, EventLoop eventLoop, Alleycat serializer) {
-    super(name, getThread(eventLoop), serializer);
+    super(serializer);
+    Thread thread = getThread(eventLoop);
+    thread.setName(name);
     this.eventLoop = eventLoop;
   }
 
   private static CopycatThread getThread(EventLoop eventLoop) {
     final AtomicReference<CopycatThread> thread = new AtomicReference<>();
     try {
+      eventLoop.submit(() -> {
+        thread.set((CopycatThread) Thread.currentThread());
+      }).get();
       eventLoop.submit(new Runnable() {
         @Override
         public void run() {

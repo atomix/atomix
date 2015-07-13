@@ -17,10 +17,11 @@ package net.kuujo.copycat.raft.rpc;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import net.kuujo.copycat.util.Context;
 import net.openhft.hashing.LongHashFunction;
 
-import java.nio.Buffer;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -55,6 +56,7 @@ public class NettyConnection implements Connection {
   private CloseListener closeListener;
   private long requestId;
   private final Map<Long, ContextualFuture> responseFutures = new LinkedHashMap<>(1024);
+  private ChannelFuture writeFuture;
 
   public NettyConnection(int id, Channel channel, Context context) {
     this.id = id;
@@ -104,86 +106,111 @@ public class NettyConnection implements Connection {
   private void handleRequest(long requestId, Request request, HandlerHolder handler) {
     @SuppressWarnings("unchecked")
     CompletableFuture<Response> responseFuture = handler.handler.handle(request);
-    responseFuture.whenComplete((response, error) -> {
+    responseFuture.whenCompleteAsync((response, error) -> {
       if (error == null) {
-        handleRequestSuccess(requestId, response, handler.context);
+        handleRequestSuccess(requestId, response);
       } else {
-        handleRequestFailure(requestId, error, handler.context);
+        handleRequestFailure(requestId, error);
       }
       request.release();
-    });
+    }, channel.eventLoop());
   }
 
   /**
    * Handles a request response.
    */
-  private void handleRequestSuccess(long requestId, Response response, Context context) {
-    ByteBuf responseByteBuf = channel.alloc().buffer(10, 1024 * 8);
-    responseByteBuf.writeLong(requestId);
-    responseByteBuf.writeByte(SUCCESS);
-    ByteBufBuffer responseBuffer = BUFFER.get();
-    responseBuffer.setByteBuf(responseByteBuf);
-    context.serializer().writeObject(response, responseBuffer);
-    channel.writeAndFlush(response);
+  private void handleRequestSuccess(long requestId, Response response) {
+    ByteBuf buffer = channel.alloc().buffer(9, 1024 * 8);
+    buffer.writeLong(requestId);
+    buffer.writeByte(SUCCESS);
+    writeFuture = channel.write(writeResponse(buffer, response), channel.voidPromise());
     response.release();
   }
 
   /**
    * Handles a request failure.
    */
-  private void handleRequestFailure(long requestId, Throwable error, Context context) {
-    ByteBuf response = channel.alloc().buffer(10, 1024 * 8);
-    response.writeLong(requestId);
-    response.writeByte(FAILURE);
-    ByteBufBuffer responseBuffer = BUFFER.get();
-    responseBuffer.setByteBuf(response);
-    context.serializer().writeObject(error, responseBuffer);
-    channel.writeAndFlush(response);
+  private void handleRequestFailure(long requestId, Throwable error) {
+    ByteBuf buffer = channel.alloc().buffer(9, 1024 * 8);
+    buffer.writeLong(requestId);
+    buffer.writeByte(FAILURE);
+    writeFuture = channel.write(writeError(buffer, error), channel.voidPromise());
   }
 
   /**
    * Handles response.
    */
   void handleResponse(ByteBuf response) {
-    Context context = getContext();
     long requestId = response.readLong();
     byte status = response.readByte();
     switch (status) {
       case SUCCESS:
-        handleResponseSuccess(requestId, readResponse(response), context);
+        handleResponseSuccess(requestId, readResponse(response));
         break;
       case FAILURE:
-        handleResponseFailure(requestId, readError(response), context);
+        handleResponseFailure(requestId, readError(response));
         break;
     }
+    response.release();
   }
 
   /**
    * Handles a successful response.
    */
-  private void handleResponseSuccess(long requestId, Response response, Context context) {
-
+  @SuppressWarnings("unchecked")
+  private void handleResponseSuccess(long requestId, Response response) {
+    ContextualFuture future = responseFutures.get(requestId);
+    if (future != null) {
+      future.context.execute(() -> {
+        future.complete(response);
+        response.release();
+      });
+    }
   }
 
   /**
    * Handles a failure response.
    */
-  private void handleResponseFailure(long requestId, Throwable t, Context context) {
-
+  private void handleResponseFailure(long requestId, Throwable t) {
+    ContextualFuture future = responseFutures.get(requestId);
+    if (future != null) {
+      future.context.execute(() -> {
+        future.completeExceptionally(t);
+      });
+    }
   }
 
   /**
    * Writes a request to the given buffer.
    */
-  private Buffer writeRequest(ByteBuf buffer, Request request, Context context) {
+  private ByteBuf writeRequest(ByteBuf buffer, Request request) {
+    Context context = getContext();
+    ByteBufBuffer requestBuffer = BUFFER.get();
+    requestBuffer.setByteBuf(buffer);
+    context.serializer().writeObject(request, requestBuffer);
+    return buffer;
+  }
 
+  /**
+   * Writes a response to the given buffer.
+   */
+  private ByteBuf writeResponse(ByteBuf buffer, Response request) {
+    Context context = getContext();
+    ByteBufBuffer responseBuffer = BUFFER.get();
+    responseBuffer.setByteBuf(buffer);
+    context.serializer().writeObject(request, responseBuffer);
+    return buffer;
   }
 
   /**
    * Writes an error to the given buffer.
    */
-  private Buffer writeError(ByteBuf buffer, Throwable t, Context context) {
-
+  private ByteBuf writeError(ByteBuf buffer, Throwable t) {
+    Context context = getContext();
+    ByteBufBuffer requestBuffer = BUFFER.get();
+    requestBuffer.setByteBuf(buffer);
+    context.serializer().writeObject(t, requestBuffer);
+    return buffer;
   }
 
   /**
@@ -241,13 +268,12 @@ public class NettyConnection implements Connection {
 
     long requestId = ++this.requestId;
 
-    ByteBufBuffer buffer = BUFFER.get();
-    ByteBuf byteBuf = this.channel.alloc().buffer(13, 1024 * 32);
-    buffer.setByteBuf(byteBuf);
-    buffer.writeLong(requestId).writeByte(REQUEST).writeInt(hashMap.computeIfAbsent(request.getClass(), this::hash32));
+    ByteBuf buffer = this.channel.alloc().buffer(13, 1024 * 32);
+    buffer.writeLong(requestId)
+      .writeByte(REQUEST)
+      .writeInt(hashMap.computeIfAbsent(request.getClass(), this::hash32));
 
-    context.serializer().writeObject(request, buffer);
-    channel.writeAndFlush(byteBuf).addListener((channelFuture) -> {
+    writeFuture = channel.writeAndFlush(writeRequest(buffer, request)).addListener((channelFuture) -> {
       if (channelFuture.isSuccess()) {
         responseFutures.put(requestId, future);
       } else {
@@ -266,6 +292,12 @@ public class NettyConnection implements Connection {
   }
 
   @Override
+  public Connection exceptionListener(ExceptionListener listener) {
+    exceptionListener = listener;
+    return this;
+  }
+
+  @Override
   public Connection closeListener(CloseListener listener) {
     closeListener = listener;
     return this;
@@ -273,6 +305,11 @@ public class NettyConnection implements Connection {
 
   @Override
   public CompletableFuture<Void> close() {
+    if (writeFuture != null) {
+      writeFuture.addListener(ChannelFutureListener.CLOSE);
+    } else {
+      channel.close();
+    }
     return null;
   }
 
