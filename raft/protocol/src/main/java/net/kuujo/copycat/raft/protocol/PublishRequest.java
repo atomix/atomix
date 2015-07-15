@@ -56,6 +56,8 @@ public class PublishRequest extends SessionRequest<PublishRequest> {
     return builder.get().reset(request);
   }
 
+  private int source;
+  private int destination;
   private Object message;
 
   public PublishRequest(ReferenceManager<PublishRequest> referenceManager) {
@@ -65,6 +67,24 @@ public class PublishRequest extends SessionRequest<PublishRequest> {
   @Override
   public Type type() {
     return Type.PUBLISH;
+  }
+
+  /**
+   * Returns the message source.
+   *
+   * @return The message source.
+   */
+  public int source() {
+    return source;
+  }
+
+  /**
+   * Returns the message destination.
+   *
+   * @return The message destination.
+   */
+  public int destination() {
+    return destination;
   }
 
   /**
@@ -117,7 +137,31 @@ public class PublishRequest extends SessionRequest<PublishRequest> {
     @Override
     Builder reset() {
       super.reset();
+      request.source = 0;
+      request.destination = 0;
       request.message = null;
+      return this;
+    }
+
+    /**
+     * Sets the message source.
+     *
+     * @param source The message source.
+     * @return The publish request builder.
+     */
+    public Builder withSource(int source) {
+      request.source = source;
+      return this;
+    }
+
+    /**
+     * Sets the message destination.
+     *
+     * @param destination The message destination.
+     * @return The publish request builder.
+     */
+    public Builder withDestination(int destination) {
+      request.destination = destination;
       return this;
     }
 
@@ -137,6 +181,10 @@ public class PublishRequest extends SessionRequest<PublishRequest> {
     @Override
     public PublishRequest build() {
       super.build();
+      if (request.source <= 0)
+        throw new IllegalArgumentException("source must be positive");
+      if (request.destination <= 0)
+        throw new IllegalArgumentException("destination must be positive");
       if (request.message == null)
         throw new NullPointerException("message cannot be null");
       return request;

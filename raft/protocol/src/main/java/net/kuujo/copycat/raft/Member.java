@@ -60,6 +60,7 @@ public class Member implements AlleycatSerializable {
 
   private int id;
   private Type type = Type.ACTIVE;
+  private long session;
   private String host;
   private int port;
 
@@ -89,6 +90,15 @@ public class Member implements AlleycatSerializable {
   }
 
   /**
+   * Returns the member session ID.
+   *
+   * @return The member session ID.
+   */
+  public long session() {
+    return session;
+  }
+
+  /**
    * Returns the member host.
    *
    * @return The member host.
@@ -108,14 +118,20 @@ public class Member implements AlleycatSerializable {
 
   @Override
   public void writeObject(BufferOutput buffer, Alleycat alleycat) {
-    buffer.writeInt(id).writeString(host).writeInt(port);
+    buffer.writeInt(id)
+      .writeByte(type.ordinal())
+      .writeString(host)
+      .writeInt(port)
+      .writeLong(session);
   }
 
   @Override
   public void readObject(BufferInput buffer, Alleycat alleycat) {
     id = buffer.readInt();
+    type = Type.values()[buffer.readByte()];
     host = buffer.readString();
     port = buffer.readInt();
+    session = buffer.readLong();
   }
 
   /**
@@ -125,7 +141,8 @@ public class Member implements AlleycatSerializable {
    * @param port The member port.
    */
   public void configure(String host, int port) {
-
+    this.host = host;
+    this.port = port;
   }
 
   /**

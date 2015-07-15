@@ -16,6 +16,8 @@
 package net.kuujo.copycat.raft;
 
 import net.kuujo.copycat.Listener;
+import net.kuujo.copycat.ListenerContext;
+import net.kuujo.copycat.Listeners;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -26,20 +28,33 @@ import java.util.concurrent.CompletableFuture;
  */
 public abstract class Session {
   private final long id;
+  private final int member;
   private boolean expired;
   private boolean closed;
+  private final Listeners<Session> openListeners = new Listeners<>();
+  private Listeners<Session> closeListeners = new Listeners<>();
 
-  protected Session(long id) {
+  protected Session(long id, int member) {
     this.id = id;
+    this.member = member;
   }
 
   /**
-   * Returns the member session ID.
+   * Returns the session ID.
    *
-   * @return The member session ID.
+   * @return The session ID.
    */
   public long id() {
     return id;
+  }
+
+  /**
+   * Returns the session member ID.
+   *
+   * @return The session member ID.
+   */
+  public int member() {
+    return member;
   }
 
   /**
@@ -59,20 +74,14 @@ public abstract class Session {
   }
 
   /**
-   * Adds a listener to the session.
+   * Sets an open listener on the session.
    *
-   * @param listener The session listener.
-   * @return The session.
+   * @param listener The session open listener.
+   * @return The listener context.
    */
-  public abstract Session addListener(Listener<?> listener);
-
-  /**
-   * Removes a listener from the session.
-   *
-   * @param listener The session listener.
-   * @return The session.
-   */
-  public abstract Session removeListener(Listener<?> listener);
+  public ListenerContext<Session> onOpen(Listener<Session> listener) {
+    return openListeners.add(listener);
+  }
 
   /**
    * Publishes a message to the session.
@@ -83,10 +92,35 @@ public abstract class Session {
   public abstract CompletableFuture<Void> publish(Object message);
 
   /**
+   * Sets a session receive listener.
+   *
+   * @param listener The session receive listener.
+   * @return The listener context.
+   */
+  public abstract ListenerContext<?> onReceive(Listener<?> listener);
+
+  /**
    * Closes the session.
    */
   protected void close() {
     closed = true;
+    for (ListenerContext<Session> listener : closeListeners) {
+      listener.accept(this);
+    }
+  }
+
+  /**
+   * Sets a session close listener.
+   *
+   * @param listener The session close listener.
+   * @return The session.
+   */
+  public ListenerContext<Session> onClose(Listener<Session> listener) {
+    ListenerContext<Session> context = closeListeners.add(listener);
+    if (closed) {
+      context.accept(this);
+    }
+    return context;
   }
 
   /**
@@ -113,6 +147,26 @@ public abstract class Session {
    */
   public boolean isExpired() {
     return expired;
+  }
+
+  /**
+   * Creates a listener.
+   */
+  private ListenerContext<Session> createListener(Listener<Session> listener, Runnable closer) {
+    if (listener == null)
+      throw new NullPointerException("listener cannot be null");
+
+    return new ListenerContext<Session>() {
+      @Override
+      public void accept(Session session) {
+        listener.accept(session);
+      }
+
+      @Override
+      public void close() {
+        closer.run();
+      }
+    };
   }
 
   @Override

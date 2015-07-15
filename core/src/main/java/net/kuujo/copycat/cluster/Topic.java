@@ -15,21 +15,34 @@
  */
 package net.kuujo.copycat.cluster;
 
+import net.kuujo.copycat.Listener;
+import net.kuujo.copycat.ListenerContext;
+
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Cluster topic.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Topic<T> {
+public abstract class Topic<T> {
+  protected final String name;
+  protected final List<ListenerContext<Message<T>>> listeners = new CopyOnWriteArrayList<>();
+
+  public Topic(String name) {
+    this.name = name;
+  }
 
   /**
    * Returns the topic name.
    *
    * @return The topic name.
    */
-  String name();
+  public String name() {
+    return name;
+  }
 
   /**
    * Publishes a message to the topic.
@@ -37,14 +50,35 @@ public interface Topic<T> {
    * @param message The message to publish.
    * @return A completable future to be completed once the message has been published.
    */
-  CompletableFuture<Void> publish(T message);
+  public abstract CompletableFuture<Void> publish(T message);
 
   /**
-   * Registers a topic listener.
+   * Sets a message listener on the topic.
    *
-   * @param listener The topic listener.
+   * @param listener The message listener.
    * @return The topic.
    */
-  Topic<T> listen(TopicListener<T> listener);
+  public ListenerContext<Message<T>> onMessage(Listener<Message<T>> listener) {
+    ListenerContext<Message<T>> context = new ListenerContext<Message<T>>() {
+      @Override
+      public void accept(Message<T> message) {
+        listener.accept(message);
+      }
+
+      @Override
+      public void close() {
+        if (listeners.remove(this) && listeners.isEmpty()) {
+          close();
+        }
+      }
+    };
+    listeners.add(context);
+    return context;
+  }
+
+  /**
+   * Closes the topic.
+   */
+  protected abstract void close();
 
 }

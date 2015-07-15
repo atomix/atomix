@@ -13,20 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.cluster;
+package net.kuujo.copycat;
 
 /**
- * Topic listener.
+ * Registered listener.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface TopicListener<T> {
+public interface ListenerContext<T> extends Listener<T>, AutoCloseable {
 
   /**
-   * Called when a message is received.
-   *
-   * @param message The message that was received.
+   * Closes the listener.
    */
-  void messageReceived(Message<T> message);
+  @Override
+  void close();
 
 }

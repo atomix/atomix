@@ -15,13 +15,19 @@
  */
 package net.kuujo.copycat;
 
-import java.util.function.Consumer;
-
 /**
  * Event listener.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @FunctionalInterface
-public interface Listener<T> extends Consumer<T> {
+public interface Listener<T> {
+
+  /**
+   * Calls the listener.
+   *
+   * @param event The event that occurred.
+   */
+  void accept(T event);
+
 }

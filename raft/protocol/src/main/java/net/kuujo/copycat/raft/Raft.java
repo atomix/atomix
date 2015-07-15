@@ -25,6 +25,20 @@ import java.util.concurrent.CompletableFuture;
 public interface Raft {
 
   /**
+   * Returns the Raft sessions.
+   *
+   * @return The Raft sessions.
+   */
+  Sessions sessions();
+
+  /**
+   * Returns the local session.
+   *
+   * @return The local session.
+   */
+  Session session();
+
+  /**
    * Submits an operation to the Raft protocol.
    *
    * @param operation The operation to submit.

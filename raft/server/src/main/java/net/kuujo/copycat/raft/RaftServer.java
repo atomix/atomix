@@ -19,7 +19,6 @@ import net.kuujo.alleycat.Alleycat;
 import net.kuujo.copycat.ConfigurationException;
 import net.kuujo.copycat.raft.log.Log;
 import net.kuujo.copycat.raft.state.RaftServerState;
-import net.kuujo.copycat.util.concurrent.SingleThreadContext;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -102,11 +101,12 @@ public class RaftServer implements ManagedRaft {
     return leader != 0 ? context.getMembers().member(leader) : null;
   }
 
-  /**
-   * Returns the current session.
-   *
-   * @return The current session.
-   */
+  @Override
+  public Sessions sessions() {
+    return context.getSessions();
+  }
+
+  @Override
   public Session session() {
     return context.getSession();
   }

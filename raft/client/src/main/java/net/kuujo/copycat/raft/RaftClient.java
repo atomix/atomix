@@ -46,11 +46,12 @@ public class RaftClient implements ManagedRaft {
     this.client = client;
   }
 
-  /**
-   * Returns the current session.
-   *
-   * @return The current session.
-   */
+  @Override
+  public Sessions sessions() {
+    return client.getSessions();
+  }
+
+  @Override
   public Session session() {
     return client.getSession();
   }

@@ -17,6 +17,8 @@ package net.kuujo.copycat.raft.state;
 
 import net.kuujo.alleycat.Alleycat;
 import net.kuujo.copycat.Listener;
+import net.kuujo.copycat.ListenerContext;
+import net.kuujo.copycat.Listeners;
 import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.raft.protocol.*;
 import net.kuujo.copycat.raft.protocol.ProtocolException;
@@ -27,7 +29,9 @@ import net.kuujo.copycat.util.concurrent.SingleThreadContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -58,6 +62,7 @@ public class RaftClientState implements Managed<Void> {
   private CompletableFuture<Void> openFuture;
   protected volatile int leader;
   protected volatile long term;
+  private final ManagedSessions sessions = new ManagedSessions();
   private final ClientSession session;
   protected volatile long sessionId;
   private volatile long request;
@@ -123,6 +128,15 @@ public class RaftClientState implements Managed<Void> {
   RaftClientState setTerm(long term) {
     this.term = term;
     return this;
+  }
+
+  /**
+   * Returns the client sessions.
+   *
+   * @return The client sessions.
+   */
+  public Sessions getSessions() {
+    return sessions;
   }
 
   /**
@@ -753,13 +767,28 @@ public class RaftClientState implements Managed<Void> {
   }
 
   /**
+   * Managed sessions.
+   */
+  private class ManagedSessions extends Sessions {
+    @Override
+    protected void addSession(Session session) {
+      super.addSession(session);
+    }
+
+    @Override
+    protected void removeSession(Session session) {
+      super.removeSession(session);
+    }
+  }
+
+  /**
    * Client session.
    */
   private class ClientSession extends Session {
-    private final Set<Listener> listeners = new HashSet<>();
+    private final Listeners<Object> listeners = new Listeners<>();
 
     ClientSession(long id) {
-      super(id);
+      super(id, client.id());
     }
 
     @Override
@@ -778,12 +807,20 @@ public class RaftClientState implements Managed<Void> {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
+    public ListenerContext<?> onReceive(Listener listener) {
+      return listeners.add(listener);
+    }
+
+    @Override
     public CompletableFuture<Void> publish(Object message) {
       if (connection == null)
         return CompletableFuture.completedFuture(null);
 
       return connection.send(PublishRequest.builder()
         .withSession(id())
+        .withSource(client.id())
+        .withDestination(connection.id())
         .withMessage(message)
         .build())
         .thenApply(v -> null);
@@ -805,21 +842,68 @@ public class RaftClientState implements Managed<Void> {
         .withStatus(Response.Status.OK)
         .build());
     }
+  }
 
-    @Override
-    public Session addListener(Listener<?> listener) {
-      if (listener == null)
-        throw new NullPointerException("listener cannot be null");
-      listeners.add(listener);
-      return this;
+  /**
+   * Remote session.
+   */
+  private class RemoteSession extends Session {
+    private final Listeners<Object> listeners = new Listeners<>();
+
+    RemoteSession(long id, int member) {
+      super(id, member);
     }
 
     @Override
-    public Session removeListener(Listener<?> listener) {
-      if (listener == null)
-        throw new NullPointerException("listener cannot be null");
-      listeners.remove(listener);
-      return this;
+    protected void open() {
+      super.open();
+    }
+
+    @Override
+    protected void expire() {
+      super.expire();
+    }
+
+    @Override
+    protected void close() {
+      super.close();
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public ListenerContext<?> onReceive(Listener listener) {
+      return listeners.add(listener);
+    }
+
+    @Override
+    public CompletableFuture<Void> publish(Object message) {
+      if (connection == null)
+        return CompletableFuture.completedFuture(null);
+
+      return connection.send(PublishRequest.builder()
+        .withSession(id())
+        .withSource(client.id())
+        .withDestination(member())
+        .withMessage(message)
+        .build())
+        .thenApply(v -> null);
+    }
+
+    /**
+     * Handles a publish request.
+     *
+     * @param request The publish request to handle.
+     * @return A completable future to be completed with the publish response.
+     */
+    @SuppressWarnings("unchecked")
+    protected CompletableFuture<PublishResponse> handlePublish(PublishRequest request) {
+      for (Listener listener : listeners) {
+        listener.accept(request.message());
+      }
+
+      return CompletableFuture.completedFuture(PublishResponse.builder()
+        .withStatus(Response.Status.OK)
+        .build());
     }
   }
 

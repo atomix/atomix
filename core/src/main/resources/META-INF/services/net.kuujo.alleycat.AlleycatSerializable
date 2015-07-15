@@ -14,6 +14,7 @@
 # limitations under the License.
 #
 net.kuujo.copycat.Event
+net.kuujo.copycat.cluster.Message
 
 net.kuujo.copycat.ResourceCommand
 net.kuujo.copycat.ResourceQuery

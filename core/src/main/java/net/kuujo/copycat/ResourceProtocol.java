@@ -16,9 +16,7 @@
 package net.kuujo.copycat;
 
 import net.kuujo.copycat.manager.DeleteResource;
-import net.kuujo.copycat.raft.Command;
-import net.kuujo.copycat.raft.Query;
-import net.kuujo.copycat.raft.Raft;
+import net.kuujo.copycat.raft.*;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -34,6 +32,16 @@ public class ResourceProtocol implements Raft {
   public ResourceProtocol(long resource, Raft protocol) {
     this.resource = resource;
     this.protocol = protocol;
+  }
+
+  @Override
+  public Sessions sessions() {
+    return protocol.sessions();
+  }
+
+  @Override
+  public Session session() {
+    return protocol.session();
   }
 
   @Override

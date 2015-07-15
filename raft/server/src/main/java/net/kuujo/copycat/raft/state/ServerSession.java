@@ -16,14 +16,14 @@
 package net.kuujo.copycat.raft.state;
 
 import net.kuujo.copycat.Listener;
+import net.kuujo.copycat.ListenerContext;
+import net.kuujo.copycat.Listeners;
 import net.kuujo.copycat.raft.Session;
 import net.kuujo.copycat.raft.protocol.Connection;
 import net.kuujo.copycat.raft.protocol.PublishRequest;
 import net.kuujo.copycat.raft.protocol.PublishResponse;
 import net.kuujo.copycat.raft.protocol.Response;
 
-import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -32,22 +32,11 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 class ServerSession extends Session {
-  private final int client;
   private Connection connection;
-  private final Set<Listener> listeners = new HashSet<>();
+  private final Listeners<Object> listeners = new Listeners<>();
 
   ServerSession(long id, int client) {
-    super(id);
-    this.client = client;
-  }
-
-  /**
-   * Returns the session client ID.
-   *
-   * @return The session's client ID.
-   */
-  int client() {
-    return client;
+    super(id, client);
   }
 
   /**
@@ -64,6 +53,12 @@ class ServerSession extends Session {
     this.connection = connection;
     connection.handler(PublishRequest.class, this::handlePublish);
     return this;
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public ListenerContext<?> onReceive(Listener listener) {
+    return listeners.add(listener);
   }
 
   @Override
@@ -86,29 +81,12 @@ class ServerSession extends Session {
    */
   @SuppressWarnings("unchecked")
   protected CompletableFuture<PublishResponse> handlePublish(PublishRequest request) {
-    for (Listener listener : listeners) {
+    for (ListenerContext listener : listeners) {
       listener.accept(request.message());
     }
-
     return CompletableFuture.completedFuture(PublishResponse.builder()
       .withStatus(Response.Status.OK)
       .build());
-  }
-
-  @Override
-  public Session addListener(Listener<?> listener) {
-    if (listener == null)
-      throw new NullPointerException("listener cannot be null");
-    listeners.add(listener);
-    return this;
-  }
-
-  @Override
-  public Session removeListener(Listener<?> listener) {
-    if (listener == null)
-      throw new NullPointerException("listener cannot be null");
-    listeners.remove(listener);
-    return this;
   }
 
 }
