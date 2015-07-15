@@ -1,0 +1,46 @@
+#
+# Copyright 2015 the original author or authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+net.kuujo.copycat.raft.log.CommandEntry
+net.kuujo.copycat.raft.log.HeartbeatEntry
+net.kuujo.copycat.raft.log.JoinEntry
+net.kuujo.copycat.raft.log.KeepAliveEntry
+net.kuujo.copycat.raft.log.LeaveEntry
+net.kuujo.copycat.raft.log.NoOpEntry
+net.kuujo.copycat.raft.log.QueryEntry
+net.kuujo.copycat.raft.log.RegisterEntry
+
+net.kuujo.copycat.raft.rpc.AppendRequest
+net.kuujo.copycat.raft.rpc.AppendResponse
+net.kuujo.copycat.raft.rpc.CommandRequest
+net.kuujo.copycat.raft.rpc.CommandResponse
+net.kuujo.copycat.raft.rpc.HeartbeatRequest
+net.kuujo.copycat.raft.rpc.HeartbeatResponse
+net.kuujo.copycat.raft.rpc.JoinRequest
+net.kuujo.copycat.raft.rpc.JoinResponse
+net.kuujo.copycat.raft.rpc.KeepAliveRequest
+net.kuujo.copycat.raft.rpc.KeepAliveResponse
+net.kuujo.copycat.raft.rpc.LeaveRequest
+net.kuujo.copycat.raft.rpc.LeaveResponse
+net.kuujo.copycat.raft.rpc.PollRequest
+net.kuujo.copycat.raft.rpc.PollResponse
+net.kuujo.copycat.raft.rpc.PublishRequest
+net.kuujo.copycat.raft.rpc.PublishResponse
+net.kuujo.copycat.raft.rpc.QueryRequest
+net.kuujo.copycat.raft.rpc.QueryResponse
+net.kuujo.copycat.raft.rpc.RegisterRequest
+net.kuujo.copycat.raft.rpc.RegisterResponse
+net.kuujo.copycat.raft.rpc.VoteRequest
+net.kuujo.copycat.raft.rpc.VoteResponse

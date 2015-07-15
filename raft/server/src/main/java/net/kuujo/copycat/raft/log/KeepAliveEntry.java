@@ -13,26 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.util;
+package net.kuujo.copycat.raft.log;
 
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
-import net.kuujo.alleycat.Alleycat;
-import net.kuujo.copycat.util.concurrent.Context;
-import net.kuujo.copycat.util.concurrent.ContextFactory;
-import net.kuujo.copycat.util.concurrent.CopycatThreadFactory;
+import net.kuujo.alleycat.SerializeWith;
+import net.kuujo.alleycat.util.ReferenceManager;
+import net.kuujo.copycat.raft.log.Entry;
 
 /**
- * Netty context factory.
+ * Keep alive entry.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class NettyContextFactory implements ContextFactory {
-  private final EventLoopGroup group = new NioEventLoopGroup(Runtime.getRuntime().availableProcessors() * 2, new CopycatThreadFactory("copycat-thread-%d"));
+@SerializeWith(id=304)
+public class KeepAliveEntry extends SessionEntry<KeepAliveEntry> {
+
+  public KeepAliveEntry(ReferenceManager<Entry<?>> referenceManager) {
+    super(referenceManager);
+  }
 
   @Override
-  public Context createContext(String name, Alleycat serializer) {
-    return new NettyContext(name, group.next(), serializer);
+  public String toString() {
+    return String.format("%s[index=%d, term=%d, session=%d, timestamp=%d]", getClass().getSimpleName(), getIndex(), getTerm(), getSession(), getTimestamp());
   }
 
 }

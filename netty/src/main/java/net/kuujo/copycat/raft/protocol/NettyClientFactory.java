@@ -13,26 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.util;
-
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
-import net.kuujo.alleycat.Alleycat;
-import net.kuujo.copycat.util.concurrent.Context;
-import net.kuujo.copycat.util.concurrent.ContextFactory;
-import net.kuujo.copycat.util.concurrent.CopycatThreadFactory;
+package net.kuujo.copycat.raft.protocol;
 
 /**
- * Netty context factory.
+ * Netty client factory.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class NettyContextFactory implements ContextFactory {
-  private final EventLoopGroup group = new NioEventLoopGroup(Runtime.getRuntime().availableProcessors() * 2, new CopycatThreadFactory("copycat-thread-%d"));
+public class NettyClientFactory implements ClientFactory {
 
   @Override
-  public Context createContext(String name, Alleycat serializer) {
-    return new NettyContext(name, group.next(), serializer);
+  public Client createClient(int clientId) {
+    return new NettyClient(clientId);
   }
 
 }

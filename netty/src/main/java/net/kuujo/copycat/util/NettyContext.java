@@ -17,6 +17,8 @@ package net.kuujo.copycat.util;
 
 import io.netty.channel.EventLoop;
 import net.kuujo.alleycat.Alleycat;
+import net.kuujo.copycat.util.concurrent.Context;
+import net.kuujo.copycat.util.concurrent.CopycatThread;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
