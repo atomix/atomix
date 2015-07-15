@@ -32,6 +32,9 @@ import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import net.kuujo.copycat.raft.Member;
 import net.kuujo.copycat.util.concurrent.Context;
+import net.kuujo.copycat.util.concurrent.CopycatThread;
+import net.kuujo.copycat.util.concurrent.CopycatThreadFactory;
+import net.kuujo.copycat.util.concurrent.SingleThreadContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,17 +54,15 @@ public class NettyServer implements Server {
   private static final ByteBufAllocator ALLOCATOR = new PooledByteBufAllocator(true);
 
   private final int id;
-  private final Context context;
   private final Map<Channel, NettyConnection> connections = new ConcurrentHashMap<>();
   private ChannelGroup channelGroup;
   private EventLoopGroup workerGroup;
-  private ConnectionListener listener;
+  private ListenerHolder listener;
   private volatile boolean listening;
   private CompletableFuture<Void> listenFuture;
 
-  public NettyServer(int id, Context context) {
+  public NettyServer(int id) {
     this.id = id;
-    this.context = context;
   }
 
   @Override
@@ -74,7 +75,10 @@ public class NettyServer implements Server {
    */
   private Context getContext() {
     Context context = Context.currentContext();
-    return context != null ? context : this.context;
+    if (context == null) {
+      throw new IllegalStateException("not on a Copycat thread");
+    }
+    return context;
   }
 
   @Override
@@ -82,13 +86,12 @@ public class NettyServer implements Server {
     if (listening)
       return CompletableFuture.completedFuture(null);
 
+    Context context = getContext();
     synchronized (this) {
       if (listenFuture == null) {
-        this.listener = listener;
+        this.listener = new ListenerHolder(listener, context);
         listenFuture = new CompletableFuture<>();
-
-        Context context = getContext();
-        this.context.execute(() -> listen(member, context));
+        listen(member, context);
       }
     }
     return listenFuture;
@@ -99,7 +102,7 @@ public class NettyServer implements Server {
    */
   private void listen(Member member, Context context) {
     channelGroup = new DefaultChannelGroup("copycat-acceptor-channels", GlobalEventExecutor.INSTANCE);
-    workerGroup = new NioEventLoopGroup(Runtime.getRuntime().availableProcessors());
+    workerGroup = new NioEventLoopGroup(Runtime.getRuntime().availableProcessors(), new CopycatThreadFactory("copycat-event-loop-thread-%d"));
 
     final ServerBootstrap bootstrap = new ServerBootstrap();
     bootstrap.group(workerGroup)
@@ -169,6 +172,25 @@ public class NettyServer implements Server {
       return connections.remove(channel);
     }
 
+    /**
+     * Returns the current execution context or creates one.
+     */
+    private Context getOrCreateContext(Channel channel) {
+      Context context = Context.currentContext();
+      if (context != null) {
+        return context;
+      }
+
+      Thread thread = Thread.currentThread();
+      if (!(thread instanceof CopycatThread)) {
+        throw new IllegalStateException("illegal thread state");
+      }
+
+      context = new SingleThreadContext(channel.eventLoop(), listener.context.serializer().clone());
+      ((CopycatThread) thread).setContext(context);
+      return context;
+    }
+
     @Override
     public void channelRead(final ChannelHandlerContext context, Object message) {
       ByteBuf buffer = (ByteBuf) message;
@@ -196,9 +218,9 @@ public class NettyServer implements Server {
      */
     private void handleConnect(ByteBuf request, ChannelHandlerContext context) {
       Channel channel = context.channel();
-      NettyConnection connection = new NettyConnection(request.readInt(), channel, NettyServer.this.context);
+      NettyConnection connection = new NettyConnection(request.readInt(), channel, getOrCreateContext(channel));
       connections.put(channel, connection);
-      NettyServer.this.context.execute(() -> listener.connected(connection));
+      listener.context.execute(() -> listener.listener.connected(connection));
     }
 
     /**
@@ -219,6 +241,19 @@ public class NettyServer implements Server {
       if (connection != null) {
         connection.handleResponse(response);
       }
+    }
+  }
+
+  /**
+   * Holds a listener and context.
+   */
+  private static class ListenerHolder {
+    private final ConnectionListener listener;
+    private final Context context;
+
+    private ListenerHolder(ConnectionListener listener, Context context) {
+      this.listener = listener;
+      this.context = context;
     }
   }
 

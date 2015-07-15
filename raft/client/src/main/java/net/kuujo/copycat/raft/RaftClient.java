@@ -17,7 +17,6 @@ package net.kuujo.copycat.raft;
 
 import net.kuujo.alleycat.Alleycat;
 import net.kuujo.copycat.raft.state.RaftClientState;
-import net.kuujo.copycat.util.concurrent.Context;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -196,7 +195,7 @@ public class RaftClient implements ManagedRaft {
 
     @Override
     public RaftClient build() {
-      return new RaftClient(new RaftClientState(members, Context.createContext("copycat-client-%d", alleycat  .clone())).setKeepAliveInterval(keepAliveInterval));
+      return new RaftClient(new RaftClientState(members, alleycat).setKeepAliveInterval(keepAliveInterval));
     }
   }
 

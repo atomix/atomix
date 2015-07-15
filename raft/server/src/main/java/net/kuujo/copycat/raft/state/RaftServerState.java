@@ -19,18 +19,14 @@ import net.kuujo.alleycat.Alleycat;
 import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.raft.log.Log;
 import net.kuujo.copycat.raft.protocol.*;
-import net.kuujo.copycat.util.concurrent.Context;
-import net.kuujo.copycat.util.concurrent.Futures;
+import net.kuujo.copycat.util.concurrent.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -61,18 +57,22 @@ public class RaftServerState extends RaftClientState {
   private long globalIndex;
   private volatile boolean open;
 
-  public RaftServerState(int memberId, Log log, StateMachine stateMachine, Members members, Context context) {
-    super(members, Context.createContext(String.format("%s-client", context.name()), context.serializer().clone()));
+  public RaftServerState(int memberId, Log log, StateMachine stateMachine, Members members, Alleycat serializer) {
+    super(members, serializer);
 
     for (Member member : members.members()) {
       cluster.addMember(new MemberState(member.id(), member.type(), System.currentTimeMillis()));
     }
 
     this.memberId = memberId;
+    this.context = new SingleThreadContext("copycat-server-" + memberId, serializer);
     this.log = log;
-    this.stateMachine = new RaftState(stateMachine, cluster, sessions, Context.createContext(String.format("%s-state", context.name()), context.serializer().clone()));
     this.members = members;
-    this.context = context;
+
+    this.stateMachine = new RaftState(stateMachine, cluster, sessions,
+      new ThreadPoolContext("copycat-server-" + memberId + "-state-thread-%d",
+        new OrderedExecutor(Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())),
+        context.serializer().clone()));
 
     this.server = ServerFactory.factory.createServer(memberId);
     this.connections = new ConnectionManager(ClientFactory.factory.createClient(memberId));

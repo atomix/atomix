@@ -19,6 +19,7 @@ import net.jodah.concurrentunit.ConcurrentTestCase;
 import net.kuujo.alleycat.Alleycat;
 import net.kuujo.alleycat.ServiceLoaderResolver;
 import net.kuujo.copycat.util.concurrent.Context;
+import net.kuujo.copycat.util.concurrent.SingleThreadContext;
 import org.testng.annotations.Test;
 
 import java.util.concurrent.CompletableFuture;
@@ -40,7 +41,7 @@ public class MinorCompactionTest extends ConcurrentTestCase {
       .withMaxEntriesPerSegment(128)
       .build();
 
-    Context context = Context.createContext("test", new Alleycat(new ServiceLoaderResolver()));
+    Context context = new SingleThreadContext("test", new Alleycat(new ServiceLoaderResolver()));
 
     log.open(context);
 

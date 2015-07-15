@@ -15,12 +15,14 @@
  */
 package net.kuujo.copycat.raft.state;
 
+import net.kuujo.alleycat.Alleycat;
 import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.raft.protocol.*;
 import net.kuujo.copycat.raft.protocol.ProtocolException;
 import net.kuujo.copycat.util.Managed;
 import net.kuujo.copycat.util.concurrent.ComposableFuture;
 import net.kuujo.copycat.util.concurrent.Context;
+import net.kuujo.copycat.util.concurrent.SingleThreadContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,13 +63,14 @@ public class RaftClientState implements Managed<Void> {
   private volatile long response;
   private volatile long version;
 
-  public RaftClientState(Members members, Context context) {
+  public RaftClientState(Members members, Alleycat serializer) {
     if (members == null)
       throw new NullPointerException("members cannot be null");
 
+    int clientId = nextClientId();
+    this.context = new SingleThreadContext("copycat-client-" + clientId, serializer.clone());
     this.members = members;
-    this.client = ClientFactory.factory.createClient(nextClientId());
-    this.context = context;
+    this.client = ClientFactory.factory.createClient(clientId);
     this.session = new ClientSession(client.id());
     this.session.close();
   }

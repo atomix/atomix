@@ -48,13 +48,13 @@ public class NettyConnection implements Connection {
 
   private final int id;
   private final Channel channel;
-  protected final Context context;
+  private final Context context;
   private final Map<Integer, HandlerHolder> handlers = new ConcurrentHashMap<>();
   private final Map<Class, Integer> hashMap = new HashMap<>();
   private final LongHashFunction hash = LongHashFunction.city_1_1();
   private ExceptionListener exceptionListener;
   private CloseListener closeListener;
-  private long requestId;
+  private volatile long requestId;
   private final Map<Long, ContextualFuture> responseFutures = new LinkedHashMap<>(1024);
   private ChannelFuture writeFuture;
 
@@ -69,7 +69,10 @@ public class NettyConnection implements Connection {
    */
   private Context getContext() {
     Context context = Context.currentContext();
-    return context != null ? context : this.context;
+    if (context == null) {
+      throw new IllegalStateException("not on a Copycat thread");
+    }
+    return context;
   }
 
   @Override
@@ -88,13 +91,14 @@ public class NettyConnection implements Connection {
   /**
    * Handles a request.
    */
-  void handleRequest(ByteBuf request) {
-    long requestId = request.readLong();
-    int address = request.readInt();
+  void handleRequest(ByteBuf buffer) {
+    long requestId = buffer.readLong();
+    int address = buffer.readInt();
     HandlerHolder handler = handlers.get(address);
     if (handler != null) {
+      Request request = readRequest(buffer);
       handler.context.execute(() -> {
-        handleRequest(requestId, readRequest(request), handler);
+        handleRequest(requestId, request, handler);
         request.release();
       });
     }
@@ -113,16 +117,17 @@ public class NettyConnection implements Connection {
         handleRequestFailure(requestId, error);
       }
       request.release();
-    }, channel.eventLoop());
+    }, context);
   }
 
   /**
    * Handles a request response.
    */
   private void handleRequestSuccess(long requestId, Response response) {
-    ByteBuf buffer = channel.alloc().buffer(9, 1024 * 8);
-    buffer.writeLong(requestId);
-    buffer.writeByte(SUCCESS);
+    ByteBuf buffer = channel.alloc().buffer(10)
+      .writeByte(RESPONSE)
+      .writeLong(requestId)
+      .writeByte(SUCCESS);
     writeFuture = channel.write(writeResponse(buffer, response), channel.voidPromise());
     response.release();
   }
@@ -131,9 +136,10 @@ public class NettyConnection implements Connection {
    * Handles a request failure.
    */
   private void handleRequestFailure(long requestId, Throwable error) {
-    ByteBuf buffer = channel.alloc().buffer(9, 1024 * 8);
-    buffer.writeLong(requestId);
-    buffer.writeByte(FAILURE);
+    ByteBuf buffer = channel.alloc().buffer(10)
+      .writeByte(RESPONSE)
+      .writeLong(requestId)
+      .writeByte(FAILURE);
     writeFuture = channel.write(writeError(buffer, error), channel.voidPromise());
   }
 
@@ -184,7 +190,6 @@ public class NettyConnection implements Connection {
    * Writes a request to the given buffer.
    */
   private ByteBuf writeRequest(ByteBuf buffer, Request request) {
-    Context context = getContext();
     ByteBufBuffer requestBuffer = BUFFER.get();
     requestBuffer.setByteBuf(buffer);
     context.serializer().writeObject(request, requestBuffer);
@@ -195,7 +200,6 @@ public class NettyConnection implements Connection {
    * Writes a response to the given buffer.
    */
   private ByteBuf writeResponse(ByteBuf buffer, Response request) {
-    Context context = getContext();
     ByteBufBuffer responseBuffer = BUFFER.get();
     responseBuffer.setByteBuf(buffer);
     context.serializer().writeObject(request, responseBuffer);
@@ -206,7 +210,6 @@ public class NettyConnection implements Connection {
    * Writes an error to the given buffer.
    */
   private ByteBuf writeError(ByteBuf buffer, Throwable t) {
-    Context context = getContext();
     ByteBufBuffer requestBuffer = BUFFER.get();
     requestBuffer.setByteBuf(buffer);
     context.serializer().writeObject(t, requestBuffer);
@@ -217,7 +220,6 @@ public class NettyConnection implements Connection {
    * Reads a request from the given buffer.
    */
   private Request readRequest(ByteBuf buffer) {
-    Context context = getContext();
     ByteBufBuffer requestBuffer = BUFFER.get();
     requestBuffer.setByteBuf(buffer);
     return context.serializer().readObject(requestBuffer);
@@ -268,19 +270,21 @@ public class NettyConnection implements Connection {
 
     long requestId = ++this.requestId;
 
-    ByteBuf buffer = this.channel.alloc().buffer(13, 1024 * 32);
-    buffer.writeLong(requestId)
-      .writeByte(REQUEST)
-      .writeInt(hashMap.computeIfAbsent(request.getClass(), this::hash32));
+    context.execute(() -> {
+      ByteBuf buffer = this.channel.alloc().buffer(13, 1024 * 32);
+      buffer.writeByte(REQUEST)
+        .writeLong(requestId)
+        .writeInt(hashMap.computeIfAbsent(request.getClass(), this::hash32));
 
-    writeFuture = channel.writeAndFlush(writeRequest(buffer, request)).addListener((channelFuture) -> {
-      if (channelFuture.isSuccess()) {
-        responseFutures.put(requestId, future);
-      } else {
-        future.context.execute(() -> {
-          future.completeExceptionally(new ProtocolException(channelFuture.cause()));
-        });
-      }
+      writeFuture = channel.writeAndFlush(writeRequest(buffer, request)).addListener((channelFuture) -> {
+        if (channelFuture.isSuccess()) {
+          responseFutures.put(requestId, future);
+        } else {
+          future.context.execute(() -> {
+            future.completeExceptionally(new ProtocolException(channelFuture.cause()));
+          });
+        }
+      });
     });
     return future;
   }

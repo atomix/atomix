@@ -1,10 +1,12 @@
-package net.kuujo.copycat.util;
+package net.kuujo.copycat.util.concurrent;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.LinkedList;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Ordered context.
@@ -14,14 +16,15 @@ import java.util.concurrent.Executor;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class OrderedExecutor implements Executor {
+public class OrderedExecutor implements Executor, AutoCloseable {
   private static final Logger LOGGER = LoggerFactory.getLogger(OrderedExecutor.class);
-  private final Executor parent;
+  private final ExecutorService parent;
   private final Runnable runner;
   private final LinkedList<Runnable> tasks = new LinkedList<>();
+  final AtomicInteger references = new AtomicInteger();
   private boolean running;
 
-  public OrderedExecutor(Executor parent) {
+  public OrderedExecutor(ExecutorService parent) {
     this.parent = parent;
 
     runner = () -> {
@@ -53,6 +56,11 @@ public class OrderedExecutor implements Executor {
         parent.execute(runner);
       }
     }
+  }
+
+  @Override
+  public void close() {
+    parent.shutdown();
   }
 
 }

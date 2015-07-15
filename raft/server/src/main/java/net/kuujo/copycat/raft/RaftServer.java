@@ -19,7 +19,7 @@ import net.kuujo.alleycat.Alleycat;
 import net.kuujo.copycat.ConfigurationException;
 import net.kuujo.copycat.raft.log.Log;
 import net.kuujo.copycat.raft.state.RaftServerState;
-import net.kuujo.copycat.util.concurrent.Context;
+import net.kuujo.copycat.util.concurrent.SingleThreadContext;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -376,7 +376,7 @@ public class RaftServer implements ManagedRaft {
       if (log == null)
         throw new NullPointerException("log cannot be null");
 
-      RaftServerState context = (RaftServerState) new RaftServerState(memberId, log, stateMachine, members, Context.createContext(String.format("copycat-%d", memberId), serializer.clone()))
+      RaftServerState context = (RaftServerState) new RaftServerState(memberId, log, stateMachine, members, serializer)
         .setHeartbeatInterval(config.getHeartbeatInterval())
         .setElectionTimeout(config.getElectionTimeout())
         .setSessionTimeout(config.getSessionTimeout())

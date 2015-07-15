@@ -17,7 +17,6 @@ package net.kuujo.copycat.util.concurrent;
 
 import net.kuujo.alleycat.Alleycat;
 
-import java.util.ServiceLoader;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -30,12 +29,13 @@ import java.util.concurrent.TimeUnit;
 public abstract class Context implements Executor, AutoCloseable {
 
   /**
-   * Returns a new context factory.
+   * Returns the current thread context.
    *
-   * @return The context factory.
+   * @return The current thread context or {@code null} if no context exists.
    */
-  public static ContextFactory factory() {
-    return ServiceLoader.load(ContextFactory.class).iterator().next();
+  public static Context currentContext() {
+    Thread thread = Thread.currentThread();
+    return thread instanceof CopycatThread ? ((CopycatThread) thread).getContext() : null;
   }
 
   private final Alleycat serializer;

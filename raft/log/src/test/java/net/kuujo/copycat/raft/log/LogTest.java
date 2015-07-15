@@ -18,6 +18,7 @@ package net.kuujo.copycat.raft.log;
 import net.kuujo.alleycat.Alleycat;
 import net.kuujo.alleycat.ServiceLoaderResolver;
 import net.kuujo.copycat.util.concurrent.Context;
+import net.kuujo.copycat.util.concurrent.SingleThreadContext;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -228,7 +229,7 @@ public class LogTest {
    * Creates a test execution context.
    */
   private Context createContext() {
-    return Context.createContext("test", new Alleycat(new ServiceLoaderResolver()));
+    return new SingleThreadContext("test", new Alleycat(new ServiceLoaderResolver()));
   }
 
   /**
