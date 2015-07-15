@@ -238,7 +238,7 @@ public class RaftServer implements ManagedRaft {
      * Sets the Raft serializer.
      *
      * @param alleycat The Raft serializer.
-     * @return The Raf tbuilder.
+     * @return The Raft builder.
      */
     public Builder withSerializer(Alleycat alleycat) {
       this.serializer = alleycat;

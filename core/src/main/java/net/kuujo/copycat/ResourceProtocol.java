@@ -17,8 +17,8 @@ package net.kuujo.copycat;
 
 import net.kuujo.copycat.manager.DeleteResource;
 import net.kuujo.copycat.raft.Command;
-import net.kuujo.copycat.raft.Protocol;
 import net.kuujo.copycat.raft.Query;
+import net.kuujo.copycat.raft.Raft;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -27,11 +27,11 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ResourceProtocol implements Protocol {
+public class ResourceProtocol implements Raft {
   private final long resource;
-  private final Protocol protocol;
+  private final Raft protocol;
 
-  public ResourceProtocol(long resource, Protocol protocol) {
+  public ResourceProtocol(long resource, Raft protocol) {
     this.resource = resource;
     this.protocol = protocol;
   }

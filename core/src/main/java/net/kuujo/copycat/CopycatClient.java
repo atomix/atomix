@@ -15,8 +15,8 @@
  */
 package net.kuujo.copycat;
 
-import net.kuujo.copycat.cluster.ManagedMembers;
-import net.kuujo.copycat.raft.ManagedProtocol;
+import net.kuujo.alleycat.Alleycat;
+import net.kuujo.copycat.raft.Members;
 import net.kuujo.copycat.raft.RaftClient;
 
 import java.util.concurrent.TimeUnit;
@@ -37,7 +37,7 @@ public class CopycatClient extends Copycat {
     return new Builder();
   }
 
-  public CopycatClient(ManagedProtocol protocol) {
+  public CopycatClient(RaftClient protocol) {
     super(protocol);
   }
 
@@ -48,6 +48,17 @@ public class CopycatClient extends Copycat {
     private final RaftClient.Builder builder = RaftClient.builder();
 
     private Builder() {
+    }
+
+    /**
+     * Sets the client serializer.
+     *
+     * @param serializer The client serializer.
+     * @return The client builder.
+     */
+    public Builder withSerializer(Alleycat serializer) {
+      builder.withSerializer(serializer);
+      return this;
     }
 
     /**
@@ -79,7 +90,7 @@ public class CopycatClient extends Copycat {
      * @param members The client seed members.
      * @return The client builder.
      */
-    public Builder withMembers(ManagedMembers members) {
+    public Builder withMembers(Members members) {
       builder.withMembers(members);
       return this;
     }

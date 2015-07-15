@@ -18,7 +18,6 @@ package net.kuujo.copycat.manager;
 import net.kuujo.copycat.ResourceCommand;
 import net.kuujo.copycat.ResourceOperation;
 import net.kuujo.copycat.ResourceQuery;
-import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.raft.log.Compaction;
 
@@ -31,16 +30,10 @@ import java.util.*;
  */
 public class ResourceManager extends StateMachine {
   private static final String PATH_SEPARATOR = "/";
-  private final Cluster cluster;
   private NodeHolder node;
   private final Map<Long, NodeHolder> nodes = new HashMap<>();
   private final Map<Long, StateMachine> resources = new HashMap<>();
   private final Map<Long, Session> sessions = new HashMap<>();
-
-  public ResourceManager(Cluster cluster) {
-    super();
-    this.cluster = cluster;
-  }
 
   /**
    * Initializes the path.

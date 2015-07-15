@@ -33,8 +33,8 @@ public class StateMachineTest {
    */
   public void testStateMachine() {
     StateMachine stateMachine = new TestStateMachine();
-    Assert.assertEquals(stateMachine.apply(new Commit<>(1, new Session(2), System.currentTimeMillis(), new TestCommand())), "write");
-    Assert.assertEquals(stateMachine.apply(new Commit<>(1, new Session(2), System.currentTimeMillis(), new TestQuery())), "read");
+    Assert.assertEquals(stateMachine.apply(new Commit<>(1, null, System.currentTimeMillis(), new TestCommand())), "write");
+    Assert.assertEquals(stateMachine.apply(new Commit<>(1, null, System.currentTimeMillis(), new TestQuery())), "read");
   }
 
   /**

@@ -140,7 +140,7 @@ public class RaftClient implements ManagedRaft {
    * Raft client builder.
    */
   public static class Builder implements Raft.Builder<RaftClient> {
-    private Alleycat alleycat;
+    private Alleycat serializer;
     private long keepAliveInterval = 1000;
     private Members members;
 
@@ -150,11 +150,11 @@ public class RaftClient implements ManagedRaft {
     /**
      * Sets the client serializer.
      *
-     * @param alleycat The client serializer.
+     * @param serializer The client serializer.
      * @return The client builder.
      */
-    public Builder withSerializer(Alleycat alleycat) {
-      this.alleycat = alleycat;
+    public Builder withSerializer(Alleycat serializer) {
+      this.serializer = serializer;
       return this;
     }
 
@@ -195,7 +195,7 @@ public class RaftClient implements ManagedRaft {
 
     @Override
     public RaftClient build() {
-      return new RaftClient(new RaftClientState(members, alleycat).setKeepAliveInterval(keepAliveInterval));
+      return new RaftClient(new RaftClientState(members, serializer).setKeepAliveInterval(keepAliveInterval));
     }
   }
 

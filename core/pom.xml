@@ -14,7 +14,12 @@
   <dependencies>
     <dependency>
       <groupId>net.kuujo.copycat</groupId>
-      <artifactId>copycat-raft</artifactId>
+      <artifactId>copycat-raft-client</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>net.kuujo.copycat</groupId>
+      <artifactId>copycat-raft-server</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

@@ -19,8 +19,8 @@ import net.kuujo.copycat.manager.CreatePath;
 import net.kuujo.copycat.manager.CreateResource;
 import net.kuujo.copycat.manager.DeletePath;
 import net.kuujo.copycat.manager.PathExists;
-import net.kuujo.copycat.raft.ManagedProtocol;
-import net.kuujo.copycat.raft.Protocol;
+import net.kuujo.copycat.raft.ManagedRaft;
+import net.kuujo.copycat.raft.Raft;
 import net.kuujo.copycat.raft.StateMachine;
 import net.kuujo.copycat.util.Managed;
 
@@ -37,12 +37,12 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public abstract class Copycat implements Managed<Copycat> {
   static final String PATH_SEPARATOR = "/";
-  protected final ManagedProtocol protocol;
+  protected final ManagedRaft protocol;
   private final Map<Class<? extends Resource>, Class<? extends StateMachine>> typeCache = new ConcurrentHashMap<>();
   private final Map<String, Node> nodes = new ConcurrentHashMap<>();
   private final ResourceFactory factory = new ResourceFactory();
 
-  protected Copycat(ManagedProtocol protocol) {
+  protected Copycat(ManagedRaft protocol) {
     this.protocol = protocol;
   }
 
@@ -164,7 +164,7 @@ public abstract class Copycat implements Managed<Copycat> {
     @SuppressWarnings("unchecked")
     private <T extends Resource> T createResourceObject(Class<? super T> type, long id) {
       try {
-        Constructor constructor = type.getConstructor(Protocol.class);
+        Constructor constructor = type.getConstructor(Raft.class);
         return (T) constructor.newInstance(new ResourceProtocol(id, protocol));
       } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
         throw new ResourceException("failed to instantiate resource: " + type, e);

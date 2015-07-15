@@ -15,10 +15,10 @@
  */
 package net.kuujo.copycat;
 
-import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.cluster.ManagedCluster;
+import net.kuujo.alleycat.Alleycat;
 import net.kuujo.copycat.manager.ResourceManager;
-import net.kuujo.copycat.raft.Raft;
+import net.kuujo.copycat.raft.Members;
+import net.kuujo.copycat.raft.RaftServer;
 import net.kuujo.copycat.raft.log.Log;
 
 import java.util.concurrent.TimeUnit;
@@ -39,41 +39,49 @@ public class CopycatServer extends Copycat {
     return new Builder();
   }
 
-  private final Cluster cluster;
-
-  public CopycatServer(Raft protocol) {
+  public CopycatServer(RaftServer protocol) {
     super(protocol);
-    this.cluster = protocol.cluster();
-  }
-
-  /**
-   * Returns the Copycat cluster.
-   *
-   * @return The Copycat cluster.
-   */
-  public Cluster cluster() {
-    return cluster;
   }
 
   /**
    * Copycat builder.
    */
   public static class Builder implements Copycat.Builder<CopycatServer> {
-    private final Raft.Builder builder = Raft.builder();
-    private Cluster cluster;
+    private final RaftServer.Builder builder = RaftServer.builder();
 
     private Builder() {
     }
 
     /**
-     * Sets the Raft cluster.
+     * Sets the server member ID.
      *
-     * @param cluster The Raft cluster.
+     * @param memberId The server member ID.
      * @return The Raft builder.
      */
-    public Builder withCluster(ManagedCluster cluster) {
-      this.cluster = cluster;
-      builder.withCluster(cluster);
+    public Builder withMemberId(int memberId) {
+      builder.withMemberId(memberId);
+      return this;
+    }
+
+    /**
+     * Sets the voting Raft members.
+     *
+     * @param members The voting Raft members.
+     * @return The Raft builder.
+     */
+    public Builder withMembers(Members members) {
+      builder.withMembers(members);
+      return this;
+    }
+
+    /**
+     * Sets the Raft serializer.
+     *
+     * @param serializer The Raft serializer.
+     * @return The Raft builder.
+     */
+    public Builder withSerializer(Alleycat serializer) {
+      builder.withSerializer(serializer);
       return this;
     }
 
@@ -139,6 +147,31 @@ public class CopycatServer extends Copycat {
     }
 
     /**
+     * Sets the Raft session timeout, returning the Raft configuration for method chaining.
+     *
+     * @param sessionTimeout The Raft session timeout in milliseconds.
+     * @return The Raft configuration.
+     * @throws IllegalArgumentException If the session timeout is not positive
+     */
+    public Builder withSessionTimeout(long sessionTimeout) {
+      builder.withSessionTimeout(sessionTimeout);
+      return this;
+    }
+
+    /**
+     * Sets the Raft session timeout, returning the Raft configuration for method chaining.
+     *
+     * @param sessionTimeout The Raft session timeout.
+     * @param unit The timeout unit.
+     * @return The Raft configuration.
+     * @throws IllegalArgumentException If the session timeout is not positive
+     */
+    public Builder withSessionTimeout(long sessionTimeout, TimeUnit unit) {
+      builder.withSessionTimeout(sessionTimeout, unit);
+      return this;
+    }
+
+    /**
      * Sets the Raft keep alive interval, returning the Raft configuration for method chaining.
      *
      * @param keepAliveInterval The Raft keep alive interval in milliseconds.
@@ -165,7 +198,7 @@ public class CopycatServer extends Copycat {
 
     @Override
     public CopycatServer build() {
-      return new CopycatServer(builder.withStateMachine(new ResourceManager(cluster)).build());
+      return new CopycatServer(builder.withStateMachine(new ResourceManager()).build());
     }
   }
 
