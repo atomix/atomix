@@ -42,7 +42,7 @@ import java.util.concurrent.TimeUnit;
 @Stateful(AsyncSet.StateMachine.class)
 public class AsyncSet<T> extends AbstractResource {
 
-  public AsyncSet(Protocol protocol) {
+  public AsyncSet(Raft protocol) {
     super(protocol);
   }
 

@@ -40,7 +40,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class AsyncReference<T> extends AbstractResource {
   private ConsistencyLevel defaultConsistency = ConsistencyLevel.LINEARIZABLE_LEASE;
 
-  public AsyncReference(Protocol protocol) {
+  public AsyncReference(Raft protocol) {
     super(protocol);
   }
 

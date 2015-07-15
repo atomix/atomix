@@ -43,7 +43,7 @@ import java.util.concurrent.TimeUnit;
 @Stateful(AsyncMap.StateMachine.class)
 public class AsyncMap<K, V> extends AbstractResource {
 
-  public AsyncMap(Protocol protocol) {
+  public AsyncMap(Raft protocol) {
     super(protocol);
   }
 
