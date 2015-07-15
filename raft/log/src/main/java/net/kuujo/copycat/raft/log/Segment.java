@@ -223,7 +223,7 @@ public class Segment implements AutoCloseable {
    * @param index The index from which to read the entry.
    * @return The entry at the given index.
    */
-  public <T extends Entry<T>> T getEntry(long index) {
+  public <T extends Entry<?>> T getEntry(long index) {
     if (!isOpen())
       throw new IllegalStateException("segment not open");
     checkRange(index);
@@ -245,7 +245,8 @@ public class Segment implements AutoCloseable {
       // Deserialize the entry from a slice of the underlying buffer.
       try (Buffer value = readBuffer.slice(position, length)) {
         T entry = alleycat.readObject(value);
-        return entry.setIndex(index);
+        entry.setIndex(index);
+        return entry;
       }
     }
     return null;

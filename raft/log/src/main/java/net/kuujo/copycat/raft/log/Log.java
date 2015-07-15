@@ -203,7 +203,7 @@ public class Log implements AutoCloseable {
    * If the given index is outside of the bounds of the log then a {@link IndexOutOfBoundsException} will be
    * thrown. If the entry at the given index has been compacted from the then the returned entry will be {@code null}.
    * <p>
-   * Entries returned by this method are pooled and {@link net.kuujo.alleycat.io.util.ReferenceCounted}. In order to ensure
+   * Entries returned by this method are pooled and {@link net.kuujo.alleycat.util.ReferenceCounted}. In order to ensure
    * the entry is released back to the internal entry pool call {@link Entry#close()} or load the entry in a
    * try-with-resources statement.
    * <pre>
@@ -219,7 +219,7 @@ public class Log implements AutoCloseable {
    * @throws IllegalStateException If the log is not open.
    * @throws IndexOutOfBoundsException If the given index is not within the bounds of the log.
    */
-  public <T extends Entry<T>> T getEntry(long index) {
+  public <T extends Entry<?>> T getEntry(long index) {
     checkOpen();
     checkIndex(index);
     Segment segment = segments.segment(index);
