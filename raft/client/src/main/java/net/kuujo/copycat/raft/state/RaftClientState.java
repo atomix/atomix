@@ -16,6 +16,7 @@
 package net.kuujo.copycat.raft.state;
 
 import net.kuujo.alleycat.Alleycat;
+import net.kuujo.copycat.Listener;
 import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.raft.protocol.*;
 import net.kuujo.copycat.raft.protocol.ProtocolException;
@@ -755,7 +756,7 @@ public class RaftClientState implements Managed<Void> {
    * Client session.
    */
   private class ClientSession extends Session {
-    private final Set<SessionListener> listeners = new HashSet<>();
+    private final Set<Listener> listeners = new HashSet<>();
 
     ClientSession(long id) {
       super(id);
@@ -794,9 +795,10 @@ public class RaftClientState implements Managed<Void> {
      * @param request The publish request to handle.
      * @return A completable future to be completed with the publish response.
      */
+    @SuppressWarnings("unchecked")
     protected CompletableFuture<PublishResponse> handlePublish(PublishRequest request) {
-      for (SessionListener listener : listeners) {
-        listener.messageReceived(request.message());
+      for (Listener listener : listeners) {
+        listener.accept(request.message());
       }
 
       return CompletableFuture.completedFuture(PublishResponse.builder()
@@ -805,7 +807,7 @@ public class RaftClientState implements Managed<Void> {
     }
 
     @Override
-    public Session addListener(SessionListener listener) {
+    public Session addListener(Listener<?> listener) {
       if (listener == null)
         throw new NullPointerException("listener cannot be null");
       listeners.add(listener);
@@ -813,7 +815,7 @@ public class RaftClientState implements Managed<Void> {
     }
 
     @Override
-    public Session removeListener(SessionListener listener) {
+    public Session removeListener(Listener<?> listener) {
       if (listener == null)
         throw new NullPointerException("listener cannot be null");
       listeners.remove(listener);

@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.raft.protocol;
 
+import net.kuujo.copycat.Listener;
 import net.kuujo.copycat.raft.Member;
 
 import java.util.concurrent.CompletableFuture;
@@ -39,7 +40,7 @@ public interface Server {
    * @param listener The connection listener.
    * @return A completable future to be called once the server has started listening for connections.
    */
-  CompletableFuture<Void> listen(Member member, ConnectionListener listener);
+  CompletableFuture<Void> listen(Member member, Listener<Connection> listener);
 
   /**
    * Closes the server.

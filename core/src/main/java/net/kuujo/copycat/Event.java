@@ -28,7 +28,6 @@ import net.kuujo.alleycat.io.BufferOutput;
  */
 @SerializeWith(id=399)
 public class Event implements AlleycatSerializable {
-
   private Type type;
   private String path;
 

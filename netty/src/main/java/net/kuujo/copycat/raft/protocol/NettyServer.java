@@ -30,6 +30,7 @@ import io.netty.handler.codec.LengthFieldPrepender;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.concurrent.GlobalEventExecutor;
+import net.kuujo.copycat.Listener;
 import net.kuujo.copycat.raft.Member;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.CopycatThread;
@@ -82,7 +83,7 @@ public class NettyServer implements Server {
   }
 
   @Override
-  public CompletableFuture<Void> listen(Member member, ConnectionListener listener) {
+  public CompletableFuture<Void> listen(Member member, Listener<Connection> listener) {
     if (listening)
       return CompletableFuture.completedFuture(null);
 
@@ -220,7 +221,7 @@ public class NettyServer implements Server {
       Channel channel = context.channel();
       NettyConnection connection = new NettyConnection(request.readInt(), channel, getOrCreateContext(channel));
       connections.put(channel, connection);
-      listener.context.execute(() -> listener.listener.connected(connection));
+      listener.context.execute(() -> listener.listener.accept(connection));
     }
 
     /**
@@ -248,10 +249,10 @@ public class NettyServer implements Server {
    * Holds a listener and context.
    */
   private static class ListenerHolder {
-    private final ConnectionListener listener;
+    private final Listener<Connection> listener;
     private final Context context;
 
-    private ListenerHolder(ConnectionListener listener, Context context) {
+    private ListenerHolder(Listener<Connection> listener, Context context) {
       this.listener = listener;
       this.context = context;
     }

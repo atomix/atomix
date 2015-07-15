@@ -15,8 +15,8 @@
  */
 package net.kuujo.copycat.raft.state;
 
+import net.kuujo.copycat.Listener;
 import net.kuujo.copycat.raft.Session;
-import net.kuujo.copycat.raft.SessionListener;
 import net.kuujo.copycat.raft.protocol.Connection;
 import net.kuujo.copycat.raft.protocol.PublishRequest;
 import net.kuujo.copycat.raft.protocol.PublishResponse;
@@ -34,7 +34,7 @@ import java.util.concurrent.CompletableFuture;
 class ServerSession extends Session {
   private final int client;
   private Connection connection;
-  private final Set<SessionListener> listeners = new HashSet<>();
+  private final Set<Listener> listeners = new HashSet<>();
 
   ServerSession(long id, int client) {
     super(id);
@@ -84,9 +84,10 @@ class ServerSession extends Session {
    * @param request The publish request to handle.
    * @return A completable future to be completed with the publish response.
    */
+  @SuppressWarnings("unchecked")
   protected CompletableFuture<PublishResponse> handlePublish(PublishRequest request) {
-    for (SessionListener listener : listeners) {
-      listener.messageReceived(request.message());
+    for (Listener listener : listeners) {
+      listener.accept(request.message());
     }
 
     return CompletableFuture.completedFuture(PublishResponse.builder()
@@ -95,7 +96,7 @@ class ServerSession extends Session {
   }
 
   @Override
-  public Session addListener(SessionListener listener) {
+  public Session addListener(Listener<?> listener) {
     if (listener == null)
       throw new NullPointerException("listener cannot be null");
     listeners.add(listener);
@@ -103,7 +104,7 @@ class ServerSession extends Session {
   }
 
   @Override
-  public Session removeListener(SessionListener listener) {
+  public Session removeListener(Listener<?> listener) {
     if (listener == null)
       throw new NullPointerException("listener cannot be null");
     listeners.remove(listener);

@@ -15,8 +15,6 @@
  */
 package net.kuujo.copycat.cluster;
 
-import java.util.concurrent.CompletableFuture;
-
 /**
  * Cluster member.
  *
@@ -32,13 +30,11 @@ public interface Member {
   int id();
 
   /**
-   * Sends a direct message to the member.
+   * Returns a topic for the member.
    *
-   * @param message The message to send.
-   * @param <T> The message type.
-   * @param <U> The response type.
-   * @return A completable future to be completed with the response.
+   * @param name The topic name.
+   * @return The topic.
    */
-  <T, U> CompletableFuture<U> send(T message);
+  <T> Topic<T> topic(String name);
 
 }

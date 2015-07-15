@@ -23,6 +23,13 @@ package net.kuujo.copycat.cluster;
 public interface Message<T> {
 
   /**
+   * Returns the member from which the message was sent.
+   *
+   * @return The member from which the message was sent.
+   */
+  Member member();
+
+  /**
    * Returns the message body.
    *
    * @return The message body.

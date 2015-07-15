@@ -15,6 +15,8 @@
  */
 package net.kuujo.copycat.raft;
 
+import net.kuujo.copycat.Listener;
+
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -57,6 +59,22 @@ public abstract class Session {
   }
 
   /**
+   * Adds a listener to the session.
+   *
+   * @param listener The session listener.
+   * @return The session.
+   */
+  public abstract Session addListener(Listener<?> listener);
+
+  /**
+   * Removes a listener from the session.
+   *
+   * @param listener The session listener.
+   * @return The session.
+   */
+  public abstract Session removeListener(Listener<?> listener);
+
+  /**
    * Publishes a message to the session.
    *
    * @param message The message to publish.
@@ -96,22 +114,6 @@ public abstract class Session {
   public boolean isExpired() {
     return expired;
   }
-
-  /**
-   * Adds a listener to the session.
-   *
-   * @param listener The session listener.
-   * @return The session.
-   */
-  public abstract Session addListener(SessionListener listener);
-
-  /**
-   * Removes a listener from the session.
-   *
-   * @param listener The session listener.
-   * @return The session.
-   */
-  public abstract Session removeListener(SessionListener listener);
 
   @Override
   public String toString() {

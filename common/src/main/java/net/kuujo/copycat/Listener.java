@@ -13,20 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.raft.protocol;
+package net.kuujo.copycat;
+
+import java.util.function.Consumer;
 
 /**
- * Connection listener.
+ * Event listener.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ConnectionListener {
-
-  /**
-   * Called when a connection has been connected.
-   *
-   * @param connection The connection that was connected.
-   */
-  void connected(Connection connection);
-
+@FunctionalInterface
+public interface Listener<T> extends Consumer<T> {
 }
