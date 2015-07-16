@@ -24,7 +24,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.BiPredicate;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
@@ -32,12 +33,12 @@ import java.util.function.Function;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class StateMachine {
+public abstract class StateMachine implements AutoCloseable {
   private final Logger LOGGER = LoggerFactory.getLogger(getClass());
-  private final Map<Compaction.Type, Map<Class<? extends Command>, BiPredicate<Commit<?>, Compaction>>> filters = new HashMap<>();
-  private Map<Compaction.Type, BiPredicate<Commit<?>, Compaction>> allFilters = new HashMap<>();
-  private final Map<Class<? extends Operation>, Function<Commit<?>, ?>> operations = new HashMap<>();
-  private Function<Commit<?>, ?> allOperation;
+  private final Map<Compaction.Type, Map<Class<? extends Command>, FilterExecutor>> filters = new HashMap<>();
+  private Map<Compaction.Type, FilterExecutor> allFilters = new HashMap<>();
+  private final Map<Class<? extends Operation>, OperationExecutor> operations = new HashMap<>();
+  private OperationExecutor allOperation;
 
   protected StateMachine() {
     init();
@@ -82,63 +83,38 @@ public abstract class StateMachine {
         if (command == Filter.All.class) {
           if (!allFilters.containsKey(filter.compaction())) {
             if (method.getParameterCount() == 1) {
-              allFilters.put(filter.compaction(), wrapFilter(method));
+              allFilters.put(filter.compaction(), new FilterExecutor(method));
             }
           }
         } else {
-          Map<Class<? extends Command>, BiPredicate<Commit<?>, Compaction>> filters = this.filters.get(filter.compaction());
+          Map<Class<? extends Command>, FilterExecutor> filters = this.filters.get(filter.compaction());
           if (filters == null) {
             filters = new HashMap<>();
             this.filters.put(filter.compaction(), filters);
           }
           if (!filters.containsKey(command)) {
-            filters.put(command, wrapFilter(method));
+            filters.put(command, new FilterExecutor(method));
           }
         }
       }
-    }
-  }
-
-  /**
-   * Wraps a filter method.
-   */
-  private BiPredicate<Commit<?>, Compaction> wrapFilter(Method method) {
-    if (method.getParameterCount() == 1) {
-      return (commit, compaction) -> {
-        try {
-          return (boolean) method.invoke(this, commit);
-        } catch (IllegalAccessException | InvocationTargetException e) {
-          throw new ApplicationException("failed to filter command", e);
-        }
-      };
-    } else if (method.getParameterCount() == 2) {
-      return (commit, compaction) -> {
-        try {
-          return (boolean) method.invoke(this, commit, compaction);
-        } catch (IllegalAccessException | InvocationTargetException e) {
-          throw new ApplicationException("failed to filter command", e);
-        }
-      };
-    } else {
-      throw new IllegalStateException("invalid filter method: too many parameters");
     }
   }
 
   /**
    * Finds the filter method for the given command.
    */
-  private BiPredicate<Commit<?>, Compaction> findFilter(Class<? extends Command> type, Compaction.Type compaction) {
-    Map<Class<? extends Command>, BiPredicate<Commit<?>, Compaction>> filters = this.filters.get(compaction);
+  private BiFunction<Commit<?>, Compaction, CompletableFuture<Boolean>> findFilter(Class<? extends Command> type, Compaction.Type compaction) {
+    Map<Class<? extends Command>, FilterExecutor> filters = this.filters.get(compaction);
     if (filters == null) {
-      BiPredicate<Commit<?>, Compaction> filter = allFilters.get(compaction);
+      BiFunction<Commit<?>, Compaction, CompletableFuture<Boolean>> filter = allFilters.get(compaction);
       if (filter == null) {
         throw new IllegalArgumentException("unknown command type: " + type);
       }
       return filter;
     }
 
-    BiPredicate<Commit<?>, Compaction> filter = filters.computeIfAbsent(type, t -> {
-      for (Map.Entry<Class<? extends Command>, BiPredicate<Commit<?>, Compaction>> entry : filters.entrySet()) {
+    BiFunction<Commit<?>, Compaction, CompletableFuture<Boolean>> filter = filters.computeIfAbsent(type, t -> {
+      for (Map.Entry<Class<? extends Command>, FilterExecutor> entry : filters.entrySet()) {
         if (entry.getKey().isAssignableFrom(type)) {
           return entry.getValue();
         }
@@ -161,9 +137,9 @@ public abstract class StateMachine {
       method.setAccessible(true);
       for (Class<? extends Operation> operation : apply.value()) {
         if (operation == Apply.All.class) {
-          allOperation = wrapOperation(method);
+          allOperation = new OperationExecutor(method);
         } else if (!operations.containsKey(operation)) {
-          operations.put(operation, wrapOperation(method));
+          operations.put(operation, new OperationExecutor(method));
         }
       }
     }
@@ -172,7 +148,8 @@ public abstract class StateMachine {
   /**
    * Wraps an operation method.
    */
-  private Function<Commit<?>, ?> wrapOperation(Method method) {
+  @SuppressWarnings("unchecked")
+  private Function<Commit<?>, CompletableFuture<Object>> wrapOperation(Method method) {
     if (method.getParameterCount() < 1) {
       throw new IllegalStateException("invalid operation method: not enough arguments");
     } else if (method.getParameterCount() > 1) {
@@ -180,9 +157,9 @@ public abstract class StateMachine {
     } else {
       return commit -> {
         try {
-          return method.invoke(this, commit);
+          return (CompletableFuture<Object>) method.invoke(this, commit);
         } catch (IllegalAccessException | InvocationTargetException e) {
-          return new ApplicationException("failed to invoke operation", e);
+          throw new ApplicationException("failed to invoke operation", e);
         }
       };
     }
@@ -191,9 +168,9 @@ public abstract class StateMachine {
   /**
    * Finds the operation method for the given operation.
    */
-  private Function<Commit<?>, ?> findOperation(Class<? extends Operation> type) {
-    Function<Commit<?>, ?> operation = operations.computeIfAbsent(type, t -> {
-      for (Map.Entry<Class<? extends Operation>, Function<Commit<?>, ?>> entry : operations.entrySet()) {
+  private OperationExecutor findOperation(Class<? extends Operation> type) {
+    OperationExecutor operation = operations.computeIfAbsent(type, t -> {
+      for (Map.Entry<Class<? extends Operation>, OperationExecutor> entry : operations.entrySet()) {
         if (entry.getKey().isAssignableFrom(type)) {
           return entry.getValue();
         }
@@ -205,6 +182,63 @@ public abstract class StateMachine {
       throw new IllegalArgumentException("unknown operation type: " + type);
     }
     return operation;
+  }
+
+  /**
+   * Filter executor.
+   */
+  private class FilterExecutor implements BiFunction<Commit<?>, Compaction, CompletableFuture<Boolean>> {
+    private final Method method;
+    private final boolean async;
+    private final boolean singleArg;
+
+    private FilterExecutor(Method method) {
+      this.method = method;
+      async = method.getReturnType() == CompletableFuture.class;
+      singleArg = method.getParameterCount() == 1;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public CompletableFuture<Boolean> apply(Commit<?> commit, Compaction compaction) {
+      if (singleArg) {
+        try {
+          return async ? (CompletableFuture<Boolean>) method.invoke(StateMachine.this, commit) : CompletableFuture.completedFuture((boolean) method.invoke(StateMachine.this, commit));
+        } catch (IllegalAccessException | InvocationTargetException e) {
+          throw new ApplicationException("failed to invoke operation", e);
+        }
+      } else {
+        try {
+          return async ? (CompletableFuture<Boolean>) method.invoke(StateMachine.this, commit, compaction) : CompletableFuture.completedFuture((boolean) method
+            .invoke(StateMachine.this, commit, compaction));
+        } catch (IllegalAccessException | InvocationTargetException e) {
+          throw new ApplicationException("failed to invoke operation", e);
+        }
+      }
+    }
+  }
+
+  /**
+   * Operation executor.
+   */
+  private class OperationExecutor implements Function<Commit<?>, CompletableFuture<Object>> {
+    private final Method method;
+    private final boolean async;
+
+    private OperationExecutor(Method method) {
+      this.method = method;
+      async = method.getReturnType() == CompletableFuture.class;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public CompletableFuture<Object> apply(Commit<?> commit) {
+      try {
+        return async ? (CompletableFuture<Object>) method.invoke(StateMachine.this, commit) : CompletableFuture.completedFuture(method.invoke(StateMachine.this, commit));
+      } catch (IllegalAccessException | InvocationTargetException e) {
+        throw new ApplicationException("failed to invoke operation", e);
+      }
+    }
   }
 
   /**
@@ -223,9 +257,9 @@ public abstract class StateMachine {
    * @param compaction The compaction context.
    * @return Whether to keep the commit.
    */
-  public boolean filter(Commit<? extends Command> commit, Compaction compaction) {
+  public CompletableFuture<Boolean> filter(Commit<? extends Command> commit, Compaction compaction) {
     LOGGER.debug("Filtering {}", commit);
-    return findFilter(commit.type(), compaction.type()).test(commit, compaction);
+    return findFilter(commit.type(), compaction.type()).apply(commit, compaction);
   }
 
   /**
@@ -234,7 +268,7 @@ public abstract class StateMachine {
    * @param commit The commit to apply.
    * @return The operation result.
    */
-  public Object apply(Commit<? extends Operation> commit) {
+  public CompletableFuture<Object> apply(Commit<? extends Operation> commit) {
     LOGGER.debug("Applying {}", commit);
     return findOperation(commit.type()).apply(commit);
   }
@@ -254,6 +288,14 @@ public abstract class StateMachine {
    * @param session The session that was closed.
    */
   public void close(Session session) {
+
+  }
+
+  /**
+   * Closes the state machine.
+   */
+  @Override
+  public void close() {
 
   }
 

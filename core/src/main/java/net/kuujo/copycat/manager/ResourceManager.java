@@ -20,8 +20,13 @@ import net.kuujo.copycat.ResourceOperation;
 import net.kuujo.copycat.ResourceQuery;
 import net.kuujo.copycat.log.Compaction;
 import net.kuujo.copycat.raft.*;
+import net.kuujo.copycat.util.concurrent.ComposableFuture;
+import net.kuujo.copycat.util.concurrent.Context;
+import net.kuujo.copycat.util.concurrent.ThreadPoolContext;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ScheduledExecutorService;
 
 /**
  * Resource manager.
@@ -30,10 +35,17 @@ import java.util.*;
  */
 public class ResourceManager extends StateMachine {
   private static final String PATH_SEPARATOR = "/";
+  private final ScheduledExecutorService executor;
   private NodeHolder node;
   private final Map<Long, NodeHolder> nodes = new HashMap<>();
-  private final Map<Long, StateMachine> resources = new HashMap<>();
+  private final Map<Long, ResourceHolder> resources = new HashMap<>();
   private final Map<Long, Session> sessions = new HashMap<>();
+
+  public ResourceManager(ScheduledExecutorService executor) {
+    if (executor == null)
+      throw new NullPointerException("executor cannot be null");
+    this.executor = executor;
+  }
 
   /**
    * Initializes the path.
@@ -49,10 +61,21 @@ public class ResourceManager extends StateMachine {
    */
   @SuppressWarnings("unchecked")
   @Apply({ResourceCommand.class, ResourceQuery.class})
-  protected Object commandResource(Commit<? extends ResourceOperation> commit) {
-    StateMachine resource = resources.get(commit.operation().resource());
+  protected CompletableFuture<Object> commandResource(Commit<? extends ResourceOperation> commit) {
+    ResourceHolder resource = resources.get(commit.operation().resource());
     if (resource != null) {
-      return resource.apply(new Commit(commit.index(), commit.session(), commit.timestamp(), commit.operation().operation()));
+      CompletableFuture<Object> future = new ComposableFuture<>();
+      resource.context.execute(() -> {
+        CompletableFuture<Object> resultFuture = resource.stateMachine.apply(new Commit(commit.index(), commit.session(), commit.timestamp(), commit.operation().operation()));
+        resultFuture.whenComplete((result, error) -> {
+          if (error == null) {
+            future.complete(result);
+          } else {
+            future.completeExceptionally(error);
+          }
+        });
+      });
+      return future;
     }
     throw new IllegalArgumentException("unknown resource: " + commit.operation().resource());
   }
@@ -62,9 +85,24 @@ public class ResourceManager extends StateMachine {
    */
   @SuppressWarnings("unchecked")
   @Filter(ResourceCommand.class)
-  protected boolean filterResource(Commit<ResourceCommand> commit, Compaction compaction) {
-    StateMachine resource = resources.get(commit.operation().resource());
-    return resource != null && resource.filter(new Commit(commit.index(), commit.session(), commit.timestamp(), commit.operation().operation()), compaction);
+  protected CompletableFuture<Boolean> filterResource(Commit<ResourceCommand> commit, Compaction compaction) {
+    ResourceHolder resource = resources.get(commit.operation().resource());
+    if (resource == null) {
+      return CompletableFuture.completedFuture(true);
+    }
+
+    CompletableFuture<Boolean> future = new CompletableFuture<>();
+    resource.context.execute(() -> {
+      CompletableFuture<Boolean> resultFuture = resource.stateMachine.filter(new Commit(commit.index(), commit.session(), commit.timestamp(), commit.operation().operation()), compaction);
+      resultFuture.whenComplete((result, error) -> {
+        if (error == null) {
+          future.complete(result);
+        } else {
+          future.completeExceptionally(error);
+        }
+      });
+    });
+    return future;
   }
 
   /**
@@ -229,7 +267,7 @@ public class ResourceManager extends StateMachine {
       try {
         StateMachine resource = commit.operation().type().newInstance();
         nodes.put(node.resource, node);
-        resources.put(node.resource, resource);
+        resources.put(node.resource, new ResourceHolder(resource, new ThreadPoolContext(executor, Context.currentContext().serializer().clone())));
       } catch (InstantiationException | IllegalAccessException e) {
         throw new ResourceManagerException("failed to instantiate state machine", e);
       }
@@ -339,8 +377,8 @@ public class ResourceManager extends StateMachine {
   @Override
   public void register(Session session) {
     sessions.put(session.id(), session);
-    for (StateMachine stateMachine : resources.values()) {
-      stateMachine.register(session);
+    for (ResourceHolder resource : resources.values()) {
+      resource.context.execute(() -> resource.stateMachine.register(session));
     }
   }
 
@@ -348,8 +386,8 @@ public class ResourceManager extends StateMachine {
   public void close(Session session) {
     sessions.remove(session.id());
     removeSession(node, session.id());
-    for (StateMachine stateMachine : resources.values()) {
-      stateMachine.close(session);
+    for (ResourceHolder resource : resources.values()) {
+      resource.context.execute(() -> resource.stateMachine.close(session));
     }
   }
 
@@ -357,9 +395,14 @@ public class ResourceManager extends StateMachine {
   public void expire(Session session) {
     sessions.remove(session.id());
     removeSession(node, session.id());
-    for (StateMachine stateMachine : resources.values()) {
-      stateMachine.expire(session);
+    for (ResourceHolder resource : resources.values()) {
+      resource.context.execute(() -> resource.stateMachine.expire(session));
     }
+  }
+
+  @Override
+  public void close() {
+    executor.shutdown();
   }
 
   /**
@@ -379,6 +422,19 @@ public class ResourceManager extends StateMachine {
       this.path = path;
       this.version = version;
       this.timestamp = timestamp;
+    }
+  }
+
+  /**
+   * Resource holder.
+   */
+  private static class ResourceHolder {
+    private final StateMachine stateMachine;
+    private final Context context;
+
+    private ResourceHolder(StateMachine stateMachine, Context context) {
+      this.stateMachine = stateMachine;
+      this.context = context;
     }
   }
 

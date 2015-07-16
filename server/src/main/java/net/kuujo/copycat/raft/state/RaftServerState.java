@@ -20,9 +20,11 @@ import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.raft.protocol.*;
 import net.kuujo.copycat.transport.Connection;
-import net.kuujo.copycat.transport.Transport;
 import net.kuujo.copycat.transport.Server;
-import net.kuujo.copycat.util.concurrent.*;
+import net.kuujo.copycat.transport.Transport;
+import net.kuujo.copycat.util.concurrent.Context;
+import net.kuujo.copycat.util.concurrent.Futures;
+import net.kuujo.copycat.util.concurrent.SingleThreadContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,7 +35,10 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -77,10 +82,7 @@ public class RaftServerState extends RaftClientState {
     this.log = log;
     this.members = members;
 
-    this.stateMachine = new RaftState(stateMachine, cluster, sessions,
-      new ThreadPoolContext("copycat-server-" + memberId + "-state-thread-%d",
-        new OrderedExecutor(Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())),
-        context.serializer().clone()));
+    this.stateMachine = new RaftState(stateMachine, cluster, sessions, new SingleThreadContext("copycat-server-" + memberId + "-state-%d", serializer.clone()));
 
     this.server = transport.server(memberId);
     this.connections = new ConnectionManager(transport.client(nextClientId()));

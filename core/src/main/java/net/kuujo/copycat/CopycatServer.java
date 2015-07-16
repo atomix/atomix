@@ -21,7 +21,11 @@ import net.kuujo.copycat.manager.ResourceManager;
 import net.kuujo.copycat.raft.Members;
 import net.kuujo.copycat.raft.RaftServer;
 import net.kuujo.copycat.transport.Transport;
+import net.kuujo.copycat.util.concurrent.CopycatThreadFactory;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -40,8 +44,8 @@ public class CopycatServer extends Copycat {
     return new Builder();
   }
 
-  public CopycatServer(RaftServer protocol) {
-    super(protocol);
+  private CopycatServer(RaftServer server) {
+    super(server);
   }
 
   /**
@@ -210,7 +214,9 @@ public class CopycatServer extends Copycat {
 
     @Override
     public CopycatServer build() {
-      return new CopycatServer(builder.withStateMachine(new ResourceManager()).build());
+      ThreadFactory threadFactory = new CopycatThreadFactory("copycat-resource-%d");
+      ScheduledExecutorService executor = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), threadFactory);
+      return new CopycatServer(builder.withStateMachine(new ResourceManager(executor)).build());
     }
   }
 

@@ -70,7 +70,7 @@ public class Node {
    * @return A list of children for this node.
    */
   public CompletableFuture<List<Node>> children() {
-    return copycat.protocol.submit(PathChildren.builder()
+    return copycat.raft.submit(PathChildren.builder()
       .withPath(path)
       .build())
       .thenApply(children -> {

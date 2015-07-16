@@ -19,6 +19,7 @@ import net.kuujo.copycat.log.Compaction;
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.raft.log.*;
+import net.kuujo.copycat.util.concurrent.ComposableFuture;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.Futures;
 import org.slf4j.Logger;
@@ -26,6 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 
 /**
  * Resource state machine.
@@ -68,7 +70,9 @@ class RaftState {
   public RaftState setSessionTimeout(long sessionTimeout) {
     if (sessionTimeout <= 0)
       throw new IllegalArgumentException("session timeout must be positive");
+
     this.sessionTimeout = sessionTimeout;
+
     return this;
   }
 
@@ -88,7 +92,9 @@ class RaftState {
    */
   private void setLastApplied(long lastApplied) {
     this.lastApplied = lastApplied;
+
     List<Runnable> queries = this.queries.remove(lastApplied);
+
     if (queries != null) {
       queries.forEach(Runnable::run);
     }
@@ -126,7 +132,7 @@ class RaftState {
    * @return A boolean value indicating whether to keep the entry.
    */
   public CompletableFuture<Boolean> filter(RegisterEntry entry, Compaction compaction) {
-    return CompletableFuture.completedFuture(contexts.containsKey(entry.getIndex()));
+    return Futures.completedFutureAsync(contexts.containsKey(entry.getIndex()), context);
   }
 
   /**
@@ -136,7 +142,7 @@ class RaftState {
    * @return A boolean value indicating whether to keep the entry.
    */
   public CompletableFuture<Boolean> filter(KeepAliveEntry entry, Compaction compaction) {
-    return CompletableFuture.completedFuture(contexts.containsKey(entry.getIndex()) && contexts.get(entry.getIndex()).index == entry.getIndex());
+    return Futures.completedFutureAsync(contexts.containsKey(entry.getIndex()) && contexts.get(entry.getIndex()).index == entry.getIndex(), context);
   }
 
   /**
@@ -146,7 +152,7 @@ class RaftState {
    * @return A boolean value indicating whether to keep the entry.
    */
   public CompletableFuture<Boolean> filter(NoOpEntry entry, Compaction compaction) {
-    return CompletableFuture.completedFuture(false);
+    return Futures.completedFutureAsync(false, context);
   }
 
   /**
@@ -157,14 +163,7 @@ class RaftState {
    */
   public CompletableFuture<Boolean> filter(CommandEntry entry, Compaction compaction) {
     Commit<? extends Command> commit = new Commit<>(entry.getIndex(), null, entry.getTimestamp(), entry.getCommand());
-    return CompletableFuture.supplyAsync(() -> {
-      try {
-        return stateMachine.filter(commit, compaction);
-      } catch (Exception e) {
-        LOGGER.warn("Failed to filter command {} at index {}: {}", entry.getCommand(), entry.getIndex(), e);
-        return true;
-      }
-    }, this.context);
+    return execute(() -> stateMachine.filter(commit, compaction));
   }
 
   /**
@@ -175,7 +174,7 @@ class RaftState {
    */
   public CompletableFuture<Boolean> filter(JoinEntry entry, Compaction compaction) {
     MemberState member = members.getMember(entry.getMember().id());
-    return CompletableFuture.completedFuture(member != null && member.getVersion() == entry.getIndex());
+    return Futures.completedFutureAsync(member != null && member.getVersion() == entry.getIndex(), context);
   }
 
   /**
@@ -185,7 +184,7 @@ class RaftState {
    * @return A boolean value indicating whether to keep the entry.
    */
   public CompletableFuture<Boolean> filter(LeaveEntry entry, Compaction compaction) {
-    return CompletableFuture.completedFuture(!compaction.type().isOrdered());
+    return Futures.completedFutureAsync(!compaction.type().isOrdered(), context);
   }
 
   /**
@@ -195,7 +194,7 @@ class RaftState {
    * @return A boolean value indicating whether to keep the entry.
    */
   public CompletableFuture<Boolean> filter(HeartbeatEntry entry, Compaction compaction) {
-    return CompletableFuture.completedFuture(false);
+    return Futures.completedFutureAsync(false, context);
   }
 
   /**
@@ -251,7 +250,8 @@ class RaftState {
    * @return The result.
    */
   public CompletableFuture<Object> apply(CommandEntry entry) {
-    return command(entry.getIndex(), entry.getSession(), entry.getRequest(), entry.getResponse(), entry.getTimestamp(), entry.getCommand());
+    return command(entry.getIndex(), entry.getSession(), entry.getRequest(), entry.getResponse(), entry.getTimestamp(), entry
+      .getCommand());
   }
 
   /**
@@ -344,18 +344,23 @@ class RaftState {
     // Set last applied only after the operation has been submitted to the state machine executor.
     CompletableFuture<Void> future;
     if (context == null) {
+
       LOGGER.warn("Unknown session: " + sessionId);
-      future = Futures.exceptionalFuture(new UnknownSessionException("unknown session: " + sessionId));
+      future = Futures.exceptionalFutureAsync(new UnknownSessionException("unknown session: " + sessionId), this.context);
+
     } else if (!context.update(index, timestamp)) {
-      contexts.remove(sessionId);
+
       LOGGER.warn("Expired session: " + sessionId);
+      contexts.remove(sessionId);
+
       ServerSession session = sessions.getSession(sessionId);
       if (session != null) {
         this.context.execute(() -> stateMachine.expire(session));
       }
-      future = Futures.exceptionalFuture(new UnknownSessionException("session expired: " + sessionId));
+
+      future = Futures.exceptionalFutureAsync(new UnknownSessionException("session expired: " + sessionId), this.context);
     } else {
-      future = CompletableFuture.runAsync(() -> {}, this.context);
+      future = Futures.completedFutureAsync(null, this.context);
     }
 
     setLastApplied(index);
@@ -371,7 +376,7 @@ class RaftState {
   private CompletableFuture<Long> noop(long index) {
     // We need to ensure that the command is applied to the state machine before queries are run.
     // Set last applied only after the operation has been submitted to the state machine executor.
-    CompletableFuture<Long> future = CompletableFuture.supplyAsync(() -> index, context);
+    CompletableFuture<Long> future = Futures.completedFutureAsync(index, context);
     setLastApplied(index);
     return future;
   }
@@ -389,27 +394,34 @@ class RaftState {
    */
   @SuppressWarnings("unchecked")
   private CompletableFuture<Object> command(long index, long sessionId, long request, long response, long timestamp, Command command) {
-    CompletableFuture<Object> future;
+    final CompletableFuture<Object> future;
 
     // First check to ensure that the session exists.
     SessionContext context = contexts.get(sessionId);
     if (context == null) {
+
       LOGGER.warn("Unknown session: " + sessionId);
-      future = Futures.exceptionalFuture(new UnknownSessionException("unknown session " + sessionId));
+      future = Futures.exceptionalFutureAsync(new UnknownSessionException("unknown session " + sessionId), this.context);
+
     } else if (!context.update(index, timestamp)) {
+
       contexts.remove(sessionId);
+
       ServerSession session = sessions.getSession(sessionId);
       if (session != null) {
         this.context.execute(() -> stateMachine.expire(session));
       }
+
       LOGGER.warn("Expired session: " + sessionId);
-      future = Futures.exceptionalFuture(new UnknownSessionException("unknown session " + sessionId));
+      future = Futures.exceptionalFutureAsync(new UnknownSessionException("unknown session " + sessionId), this.context);
+
     } else if (context.responses.containsKey(request)) {
       future = CompletableFuture.completedFuture(context.responses.get(request));
     } else {
       // Apply the command to the state machine.
       ServerSession session = sessions.getSession(sessionId);
-      future = CompletableFuture.supplyAsync(() -> stateMachine.apply(new Commit(index, session, timestamp, command)), this.context)
+
+      future = execute(() -> stateMachine.apply(new Commit(index, session, timestamp, command)))
         .thenApply(result -> {
           // Store the command result in the session.
           context.responses.put(request, result);
@@ -423,6 +435,7 @@ class RaftState {
     // We need to ensure that the command is applied to the state machine before queries are run.
     // Set last applied only after the operation has been submitted to the state machine executor.
     setLastApplied(index);
+
     return future;
   }
 
@@ -441,31 +454,33 @@ class RaftState {
     // If the session has not yet been opened or if the client provided a version greater than the last applied index
     // then wait until the up-to-date index is applied to the state machine.
     if (sessionId > lastApplied || version > lastApplied) {
+
       CompletableFuture<Object> future = new CompletableFuture<>();
-      List<Runnable> queries = this.queries.computeIfAbsent(Math.max(sessionId, version), id -> new ArrayList<>());
       ServerSession session = sessions.getSession(sessionId);
-      queries.add(() -> CompletableFuture.supplyAsync(() -> stateMachine.apply(new Commit(index, session, timestamp, query)), context).whenComplete((result, error) -> {
-        if (error == null) {
-          future.complete(result);
-        } else {
-          future.completeExceptionally((Throwable) error);
-        }
-      }));
+
+      List<Runnable> queries = this.queries.computeIfAbsent(Math.max(sessionId, version), id -> new ArrayList<>());
+      queries.add(() -> {
+        execute(() -> stateMachine.apply(new Commit(index, session, timestamp, query)), future);
+      });
+
       return future;
     } else {
+
       // Verify that the client's session is still alive.
       SessionContext context = contexts.get(sessionId);
       if (context == null) {
         LOGGER.warn("Unknown session: " + sessionId);
-        return Futures.exceptionalFuture(new UnknownSessionException("unknown session: " + sessionId));
+        return Futures.exceptionalFutureAsync(new UnknownSessionException("unknown session: " + sessionId), this.context);
       } else if (!context.expire(timestamp)) {
         LOGGER.warn("Expired session: " + sessionId);
+
         ServerSession session = sessions.getSession(sessionId);
         this.context.execute(() -> stateMachine.expire(session));
-        return Futures.exceptionalFuture(new UnknownSessionException("unknown session: " + sessionId));
+
+        return Futures.exceptionalFutureAsync(new UnknownSessionException("unknown session: " + sessionId), this.context);
       } else {
         ServerSession session = sessions.getSession(sessionId);
-        return CompletableFuture.supplyAsync(() -> stateMachine.apply(new Commit(index, session, timestamp, query)), this.context);
+        return execute(() -> stateMachine.apply(new Commit(index, session, timestamp, query)));
       }
     }
   }
@@ -479,12 +494,15 @@ class RaftState {
    */
   private CompletableFuture<Long> join(long index, Member member) {
     MemberState state = members.getMember(member.id());
+
     if (state == null) {
       state = new MemberState(member.id(), Member.Type.PASSIVE, System.currentTimeMillis()).setVersion(index);
       members.addMember(state);
     }
+
     setLastApplied(index);
-    return CompletableFuture.supplyAsync(() -> index, context);
+
+    return Futures.completedFutureAsync(index, context);
   }
 
   /**
@@ -496,11 +514,14 @@ class RaftState {
    */
   private CompletableFuture<Void> leave(long index, Member member) {
     MemberState state = members.getMember(member.id());
+
     if (state != null) {
       members.removeMember(state);
     }
+
     setLastApplied(index);
-    return CompletableFuture.completedFuture(null);
+
+    return Futures.completedFutureAsync(null, context);
   }
 
   /**
@@ -512,14 +533,11 @@ class RaftState {
    * @return A completable future to be completed once the heartbeat has been applied.
    */
   private CompletableFuture<Void> heartbeat(long index, int memberId, long timestamp) {
-    CompletableFuture<Void> future = new CompletableFuture<>();
-
     MemberState member = members.getMember(memberId);
+
     if (member != null) {
       member.update(timestamp, sessionTimeout);
     }
-
-    future.complete(null);
 
     for (MemberState state : members) {
       if (!state.update(timestamp, sessionTimeout)) {
@@ -528,6 +546,30 @@ class RaftState {
     }
 
     setLastApplied(index);
+
+    return Futures.completedFutureAsync(null, context);
+  }
+
+  /**
+   * Executes a method in the state machine thread and completes the given future asynchronously in the same thread.
+   */
+  private <T> CompletableFuture<T> execute(Supplier<CompletableFuture<T>> supplier) {
+    return execute(supplier, new ComposableFuture<T>());
+  }
+
+  /**
+   * Executes a method in the state machine thread and completes the given future asynchronously in the same thread.
+   */
+  private <T> CompletableFuture<T> execute(Supplier<CompletableFuture<T>> supplier, CompletableFuture<T> future) {
+    context.execute(() -> {
+      supplier.get().whenCompleteAsync((result, error) -> {
+        if (error == null) {
+          future.complete(result);
+        } else {
+          future.completeExceptionally(error);
+        }
+      }, context);
+    });
     return future;
   }
 

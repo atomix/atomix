@@ -38,8 +38,8 @@ public class CopycatClient extends Copycat {
     return new Builder();
   }
 
-  public CopycatClient(RaftClient protocol) {
-    super(protocol);
+  private CopycatClient(RaftClient client) {
+    super(client);
   }
 
   /**

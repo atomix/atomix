@@ -38,15 +38,15 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public abstract class Copycat implements Managed<Copycat> {
   static final String PATH_SEPARATOR = "/";
-  protected final ManagedRaft protocol;
+  protected final ManagedRaft raft;
   protected final Cluster cluster;
   private final Map<Class<? extends Resource>, Class<? extends StateMachine>> typeCache = new ConcurrentHashMap<>();
   private final Map<String, Node> nodes = new ConcurrentHashMap<>();
   private final ResourceFactory factory = new ResourceFactory();
 
-  protected Copycat(ManagedRaft protocol) {
-    this.protocol = protocol;
-    this.cluster = new Cluster(protocol);
+  protected Copycat(ManagedRaft raft) {
+    this.raft = raft;
+    this.cluster = new Cluster(raft);
   }
 
   /**
@@ -81,7 +81,7 @@ public abstract class Copycat implements Managed<Copycat> {
    * @return A completable future indicating whether the given path exists.
    */
   public CompletableFuture<Boolean> exists(String path) {
-    return protocol.submit(new PathExists(path));
+    return raft.submit(new PathExists(path));
   }
 
   /**
@@ -91,7 +91,7 @@ public abstract class Copycat implements Managed<Copycat> {
    * @return A completable future to be completed once the node has been created.
    */
   public CompletableFuture<Node> create(String path) {
-    return protocol.submit(CreatePath.builder()
+    return raft.submit(CreatePath.builder()
       .withPath(path)
       .build())
       .thenApply(result -> node(path));
@@ -116,7 +116,7 @@ public abstract class Copycat implements Managed<Copycat> {
       throw new IllegalArgumentException("invalid resource class: " + type);
     }
 
-    return protocol.submit(CreateResource.builder()
+    return raft.submit(CreateResource.builder()
       .withPath(path)
       .withType(stateMachine)
       .build())
@@ -130,7 +130,7 @@ public abstract class Copycat implements Managed<Copycat> {
    * @return A completable future to be completed once the node has been deleted.
    */
   public CompletableFuture<Copycat> delete(String path) {
-    return protocol.submit(DeletePath.builder()
+    return raft.submit(DeletePath.builder()
       .withPath(path)
       .build())
       .thenApply(result -> this);
@@ -138,22 +138,22 @@ public abstract class Copycat implements Managed<Copycat> {
 
   @Override
   public CompletableFuture<Copycat> open() {
-    return protocol.open().thenApply(v -> this);
+    return raft.open().thenApply(v -> this);
   }
 
   @Override
   public boolean isOpen() {
-    return protocol.isOpen();
+    return raft.isOpen();
   }
 
   @Override
   public CompletableFuture<Void> close() {
-    return protocol.close();
+    return raft.close();
   }
 
   @Override
   public boolean isClosed() {
-    return protocol.isClosed();
+    return raft.isClosed();
   }
 
   /**
@@ -177,7 +177,7 @@ public abstract class Copycat implements Managed<Copycat> {
     private <T extends Resource> T createResourceObject(Class<? super T> type, long id) {
       try {
         Constructor constructor = type.getConstructor(Raft.class);
-        return (T) constructor.newInstance(new ResourceProtocol(id, protocol));
+        return (T) constructor.newInstance(new ResourceProtocol(id, raft));
       } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
         throw new ResourceException("failed to instantiate resource: " + type, e);
       }

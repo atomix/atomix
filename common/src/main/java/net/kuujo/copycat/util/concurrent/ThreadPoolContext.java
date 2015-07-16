@@ -1,10 +1,26 @@
+/*
+ * Copyright 2015 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package net.kuujo.copycat.util.concurrent;
 
 import net.kuujo.alleycat.Alleycat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.Executors;
+import java.util.LinkedList;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -13,55 +29,63 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ThreadPoolContext extends SingleThreadContext {
+public class ThreadPoolContext extends Context {
   private static final Logger LOGGER = LoggerFactory.getLogger(ThreadPoolContext.class);
-  private final OrderedExecutor executor;
+  private final ScheduledExecutorService parent;
+  private final Runnable runner;
+  private final LinkedList<Runnable> tasks = new LinkedList<>();
+  private boolean running;
 
-  public ThreadPoolContext(String name, OrderedExecutor executor, Alleycat serializer) {
-    super(Executors.newSingleThreadScheduledExecutor(new CopycatThreadFactory(name)), serializer);
-    if (executor == null)
-      throw new NullPointerException("executor cannot be null");
-    this.executor = executor;
-    executor.references.incrementAndGet();
+  public ThreadPoolContext(ScheduledExecutorService parent, Alleycat serializer) {
+    super(serializer);
+    this.parent = parent;
+
+    // This code was shamelessly stolededed from Vert.x:
+    // https://github.com/eclipse/vert.x/blob/master/src/main/java/io/vertx/core/impl/OrderedExecutorFactory.java
+    runner = () -> {
+      for (;;) {
+        final Runnable task;
+        synchronized (tasks) {
+          task = tasks.poll();
+          if (task == null) {
+            running = false;
+            return;
+          }
+        }
+
+        try {
+          task.run();
+        } catch (Throwable t) {
+          LOGGER.error("Caught unexpected Throwable", t);
+        }
+      }
+    };
   }
 
   @Override
   public void execute(Runnable command) {
-    super.execute(wrapRunnable(command));
+    synchronized (tasks) {
+      tasks.add(command);
+      if (!running) {
+        running = true;
+        parent.execute(runner);
+      }
+    }
   }
 
   @Override
   public ScheduledFuture<?> schedule(Runnable runnable, long delay, TimeUnit unit) {
-    return super.schedule(wrapRunnable(runnable), delay, unit);
+    return parent.schedule(() -> execute(runnable), delay, unit);
   }
 
   @Override
   public ScheduledFuture<?> scheduleAtFixedRate(Runnable runnable, long delay, long rate, TimeUnit unit) {
-    return super.scheduleAtFixedRate(wrapRunnable(runnable), delay, rate, unit);
+    return parent.scheduleAtFixedRate(() -> execute(runnable), delay, rate, unit);
   }
 
   @Override
   public void close() {
-    if (executor.references.decrementAndGet() == 0) {
-      executor.close();
-    }
-  }
-
-  /**
-   * Wraps a runnable in an uncaught exception handler.
-   */
-  private Runnable wrapRunnable(final Runnable runnable) {
-    return () -> {
-      executor.execute(() -> {
-        ((CopycatThread) Thread.currentThread()).setContext(this);
-        try {
-          runnable.run();
-        } catch (RuntimeException e) {
-          LOGGER.error("An uncaught exception occured: {}", e);
-          e.printStackTrace();
-        }
-      });
-    };
+    // Do nothing.
   }
 
 }
