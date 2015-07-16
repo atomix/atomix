@@ -34,7 +34,7 @@
   <dependencies>
     <dependency>
       <groupId>net.kuujo.copycat</groupId>
-      <artifactId>copycat-raft-protocol</artifactId>
+      <artifactId>copycat-transport</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

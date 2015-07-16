@@ -22,6 +22,7 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import net.kuujo.copycat.Listener;
+import net.kuujo.copycat.transport.Connection;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.CopycatThread;
 import net.kuujo.copycat.util.concurrent.SingleThreadContext;

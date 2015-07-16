@@ -23,8 +23,8 @@ import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.copycat.AbstractResource;
 import net.kuujo.copycat.Mode;
 import net.kuujo.copycat.Stateful;
+import net.kuujo.copycat.log.Compaction;
 import net.kuujo.copycat.raft.*;
-import net.kuujo.copycat.raft.log.Compaction;
 
 import java.util.HashMap;
 import java.util.HashSet;

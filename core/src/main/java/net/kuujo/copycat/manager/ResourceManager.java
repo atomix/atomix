@@ -18,8 +18,8 @@ package net.kuujo.copycat.manager;
 import net.kuujo.copycat.ResourceCommand;
 import net.kuujo.copycat.ResourceOperation;
 import net.kuujo.copycat.ResourceQuery;
+import net.kuujo.copycat.log.Compaction;
 import net.kuujo.copycat.raft.*;
-import net.kuujo.copycat.raft.log.Compaction;
 
 import java.util.*;
 

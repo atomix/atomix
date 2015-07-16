@@ -70,8 +70,12 @@
 
   <modules>
     <module>common</module>
-    <module>raft</module>
+    <module>transport</module>
     <module>netty</module>
+    <module>log</module>
+    <module>protocol</module>
+    <module>client</module>
+    <module>server</module>
     <module>core</module>
     <module>collections</module>
     <module>atomic</module>

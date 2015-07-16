@@ -31,12 +31,12 @@ import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import net.kuujo.copycat.Listener;
-import net.kuujo.copycat.raft.Member;
+import net.kuujo.copycat.transport.Connection;
+import net.kuujo.copycat.transport.Server;
 import net.kuujo.copycat.util.concurrent.Context;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -82,7 +82,7 @@ public class NettyServer implements Server {
   }
 
   @Override
-  public CompletableFuture<Void> listen(Member member, Listener<Connection> listener) {
+  public CompletableFuture<Void> listen(InetSocketAddress address, Listener<Connection> listener) {
     if (listening)
       return CompletableFuture.completedFuture(null);
 
@@ -90,7 +90,7 @@ public class NettyServer implements Server {
     synchronized (this) {
       if (listenFuture == null) {
         listenFuture = new CompletableFuture<>();
-        listen(member, listener, context);
+        listen(address, listener, context);
       }
     }
     return listenFuture;
@@ -99,7 +99,7 @@ public class NettyServer implements Server {
   /**
    * Starts listening for the given member.
    */
-  private void listen(Member member, Listener<Connection> listener, Context context) {
+  private void listen(InetSocketAddress address, Listener<Connection> listener, Context context) {
     channelGroup = new DefaultChannelGroup("copycat-acceptor-channels", GlobalEventExecutor.INSTANCE);
 
     handler = new ServerHandler(connections, listener, context);
@@ -123,29 +123,21 @@ public class NettyServer implements Server {
       .childOption(ChannelOption.ALLOCATOR, ALLOCATOR)
       .childOption(ChannelOption.SO_KEEPALIVE, true);
 
-    try {
-      // Bind and start to accept incoming connections.
-      InetSocketAddress address = new InetSocketAddress(InetAddress.getByName(member.host()), member.port());
+    LOGGER.info("Binding to {}", address);
 
-      LOGGER.info("Binding to {}", address);
-
-      ChannelFuture bindFuture = bootstrap.bind(member.host(), member.port());
-      bindFuture.addListener((ChannelFutureListener) channelFuture -> {
-        if (channelFuture.isSuccess()) {
-          listening = true;
-          member.configure(member.host(), ((InetSocketAddress) bindFuture.channel().localAddress()).getPort());
-          context.execute(() -> {
-            LOGGER.info("Listening at {}:{}", member.host(), member.port());
-            listenFuture.complete(null);
-          });
-        } else {
-          context.execute(() -> listenFuture.completeExceptionally(channelFuture.cause()));
-        }
-      });
-      channelGroup.add(bindFuture.channel());
-    } catch (Exception e) {
-      listenFuture.completeExceptionally(e);
-    }
+    ChannelFuture bindFuture = bootstrap.bind(address);
+    bindFuture.addListener((ChannelFutureListener) channelFuture -> {
+      if (channelFuture.isSuccess()) {
+        listening = true;
+        context.execute(() -> {
+          LOGGER.info("Listening at {}", bindFuture.channel().localAddress());
+          listenFuture.complete(null);
+        });
+      } else {
+        context.execute(() -> listenFuture.completeExceptionally(channelFuture.cause()));
+      }
+    });
+    channelGroup.add(bindFuture.channel());
   }
 
   @Override

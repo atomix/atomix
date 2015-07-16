@@ -27,15 +27,14 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
 import net.kuujo.copycat.Listener;
-import net.kuujo.copycat.raft.Member;
+import net.kuujo.copycat.transport.Client;
+import net.kuujo.copycat.transport.Connection;
 import net.kuujo.copycat.util.concurrent.ComposableFuture;
 import net.kuujo.copycat.util.concurrent.Context;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -76,41 +75,35 @@ public class NettyClient implements Client {
   }
 
   @Override
-  public CompletableFuture<Connection> connect(Member member) {
+  public CompletableFuture<Connection> connect(InetSocketAddress address) {
     Context context = getContext();
     CompletableFuture<Connection> future = new ComposableFuture<>();
 
-    try {
-      InetSocketAddress address = new InetSocketAddress(InetAddress.getByName(member.host()), member.port());
+    LOGGER.info("Connecting to {}", address);
 
-      LOGGER.info("Connecting to {}", address);
-
-      Bootstrap bootstrap = new Bootstrap();
-      bootstrap.group(eventLoopGroup)
-        .channel(eventLoopGroup instanceof EpollEventLoopGroup ? EpollSocketChannel.class : NioSocketChannel.class)
-        .handler(new ChannelInitializer<SocketChannel>() {
-          @Override
-          protected void initChannel(SocketChannel channel) throws Exception {
-            ChannelPipeline pipeline = channel.pipeline();
-            pipeline.addLast(FIELD_PREPENDER);
-            pipeline.addLast(new LengthFieldBasedFrameDecoder(8192, 0, 2, 0, 2));
-            pipeline.addLast(new ClientHandler(connections, future::complete, context));
-          }
-        });
-
-      bootstrap.option(ChannelOption.TCP_NODELAY, true);
-      bootstrap.option(ChannelOption.SO_KEEPALIVE, true);
-      bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000);
-      bootstrap.option(ChannelOption.ALLOCATOR, ALLOCATOR);
-
-      bootstrap.connect(address).addListener(channelFuture -> {
-        if (!channelFuture.isSuccess()) {
-          future.completeExceptionally(channelFuture.cause());
+    Bootstrap bootstrap = new Bootstrap();
+    bootstrap.group(eventLoopGroup)
+      .channel(eventLoopGroup instanceof EpollEventLoopGroup ? EpollSocketChannel.class : NioSocketChannel.class)
+      .handler(new ChannelInitializer<SocketChannel>() {
+        @Override
+        protected void initChannel(SocketChannel channel) throws Exception {
+          ChannelPipeline pipeline = channel.pipeline();
+          pipeline.addLast(FIELD_PREPENDER);
+          pipeline.addLast(new LengthFieldBasedFrameDecoder(8192, 0, 2, 0, 2));
+          pipeline.addLast(new ClientHandler(connections, future::complete, context));
         }
       });
-    } catch (UnknownHostException e) {
-      context.execute(() -> future.completeExceptionally(e));
-    }
+
+    bootstrap.option(ChannelOption.TCP_NODELAY, true);
+    bootstrap.option(ChannelOption.SO_KEEPALIVE, true);
+    bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000);
+    bootstrap.option(ChannelOption.ALLOCATOR, ALLOCATOR);
+
+    bootstrap.connect(address).addListener(channelFuture -> {
+      if (!channelFuture.isSuccess()) {
+        future.completeExceptionally(channelFuture.cause());
+      }
+    });
     return future;
   }
 

@@ -18,6 +18,7 @@ package net.kuujo.copycat;
 import net.kuujo.alleycat.Alleycat;
 import net.kuujo.copycat.raft.Members;
 import net.kuujo.copycat.raft.RaftClient;
+import net.kuujo.copycat.transport.Transport;
 
 import java.util.concurrent.TimeUnit;
 
@@ -48,6 +49,17 @@ public class CopycatClient extends Copycat {
     private final RaftClient.Builder builder = RaftClient.builder();
 
     private Builder() {
+    }
+
+    /**
+     * Sets the client transport.
+     *
+     * @param transport The client transport.
+     * @return The client builder.
+     */
+    public Builder withTransport(Transport transport) {
+      builder.withTransport(transport);
+      return this;
     }
 
     /**

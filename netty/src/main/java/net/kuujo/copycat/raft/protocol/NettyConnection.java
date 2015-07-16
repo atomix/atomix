@@ -19,9 +19,13 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
+import io.netty.util.ReferenceCounted;
 import net.kuujo.copycat.Listener;
 import net.kuujo.copycat.ListenerContext;
 import net.kuujo.copycat.Listeners;
+import net.kuujo.copycat.transport.Connection;
+import net.kuujo.copycat.transport.MessageHandler;
+import net.kuujo.copycat.transport.TransportException;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.openhft.hashing.LongHashFunction;
 
@@ -99,10 +103,13 @@ public class NettyConnection implements Connection {
     int address = buffer.readInt();
     HandlerHolder handler = handlers.get(address);
     if (handler != null) {
-      Request request = readRequest(buffer);
+      Object request = readRequest(buffer);
       handler.context.execute(() -> {
         handleRequest(requestId, request, handler);
-        request.release();
+
+        if (request instanceof ReferenceCounted) {
+          ((ReferenceCounted) request).release();
+        }
       });
     }
   }
@@ -110,29 +117,35 @@ public class NettyConnection implements Connection {
   /**
    * Handles a request.
    */
-  private void handleRequest(long requestId, Request request, HandlerHolder handler) {
+  private void handleRequest(long requestId, Object request, HandlerHolder handler) {
     @SuppressWarnings("unchecked")
-    CompletableFuture<Response> responseFuture = handler.handler.handle(request);
+    CompletableFuture<Object> responseFuture = handler.handler.handle(request);
     responseFuture.whenCompleteAsync((response, error) -> {
       if (error == null) {
         handleRequestSuccess(requestId, response);
       } else {
         handleRequestFailure(requestId, error);
       }
-      request.release();
+
+      if (request instanceof ReferenceCounted) {
+        ((ReferenceCounted) request).release();
+      }
     }, context);
   }
 
   /**
    * Handles a request response.
    */
-  private void handleRequestSuccess(long requestId, Response response) {
+  private void handleRequestSuccess(long requestId, Object response) {
     ByteBuf buffer = channel.alloc().buffer(10)
       .writeByte(RESPONSE)
       .writeLong(requestId)
       .writeByte(SUCCESS);
     writeFuture = channel.writeAndFlush(writeResponse(buffer, response), channel.voidPromise());
-    response.release();
+
+    if (response instanceof ReferenceCounted) {
+      ((ReferenceCounted) response).release();
+    }
   }
 
   /**
@@ -167,12 +180,15 @@ public class NettyConnection implements Connection {
    * Handles a successful response.
    */
   @SuppressWarnings("unchecked")
-  private void handleResponseSuccess(long requestId, Response response) {
+  private void handleResponseSuccess(long requestId, Object response) {
     ContextualFuture future = responseFutures.get(requestId);
     if (future != null) {
       future.context.execute(() -> {
         future.complete(response);
-        response.release();
+
+        if (response instanceof ReferenceCounted) {
+          ((ReferenceCounted) response).release();
+        }
       });
     }
   }
@@ -192,7 +208,7 @@ public class NettyConnection implements Connection {
   /**
    * Writes a request to the given buffer.
    */
-  private ByteBuf writeRequest(ByteBuf buffer, Request request) {
+  private ByteBuf writeRequest(ByteBuf buffer, Object request) {
     ByteBufBuffer requestBuffer = BUFFER.get();
     requestBuffer.setByteBuf(buffer);
     context.serializer().writeObject(request, requestBuffer);
@@ -202,7 +218,7 @@ public class NettyConnection implements Connection {
   /**
    * Writes a response to the given buffer.
    */
-  private ByteBuf writeResponse(ByteBuf buffer, Response request) {
+  private ByteBuf writeResponse(ByteBuf buffer, Object request) {
     ByteBufBuffer responseBuffer = BUFFER.get();
     responseBuffer.setByteBuf(buffer);
     context.serializer().writeObject(request, responseBuffer);
@@ -222,7 +238,7 @@ public class NettyConnection implements Connection {
   /**
    * Reads a request from the given buffer.
    */
-  private Request readRequest(ByteBuf buffer) {
+  private Object readRequest(ByteBuf buffer) {
     ByteBufBuffer requestBuffer = BUFFER.get();
     requestBuffer.setByteBuf(buffer);
     return context.serializer().readObject(requestBuffer);
@@ -231,7 +247,7 @@ public class NettyConnection implements Connection {
   /**
    * Reads a response from the given buffer.
    */
-  private Response readResponse(ByteBuf buffer) {
+  private Object readResponse(ByteBuf buffer) {
     ByteBufBuffer responseBuffer = BUFFER.get();
     responseBuffer.setByteBuf(buffer);
     return context.serializer().readObject(responseBuffer);
@@ -267,7 +283,7 @@ public class NettyConnection implements Connection {
   }
 
   @Override
-  public <T extends Request<T>, U extends Response<U>> CompletableFuture<U> send(T request) {
+  public <T, U> CompletableFuture<U> send(T request) {
     Context context = getContext();
     ContextualFuture<U> future = new ContextualFuture<>(context);
 
@@ -284,7 +300,7 @@ public class NettyConnection implements Connection {
           responseFutures.put(requestId, future);
         } else {
           future.context.execute(() -> {
-            future.completeExceptionally(new ProtocolException(channelFuture.cause()));
+            future.completeExceptionally(new TransportException(channelFuture.cause()));
           });
         }
       });
@@ -293,7 +309,7 @@ public class NettyConnection implements Connection {
   }
 
   @Override
-  public <T extends Request<T>, U extends Response<U>> Connection handler(Class<T> type, RequestHandler<T, U> handler) {
+  public <T, U> Connection handler(Class<T> type, MessageHandler<T, U> handler) {
     handlers.put(hashMap.computeIfAbsent(type, this::hash32), new HandlerHolder(handler, getContext()));
     return null;
   }
@@ -322,10 +338,10 @@ public class NettyConnection implements Connection {
    * Holds message handler and thread context.
    */
   protected static class HandlerHolder {
-    private final RequestHandler handler;
+    private final MessageHandler handler;
     private final Context context;
 
-    private HandlerHolder(RequestHandler handler, Context context) {
+    private HandlerHolder(MessageHandler handler, Context context) {
       this.handler = handler;
       this.context = context;
     }
