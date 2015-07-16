@@ -18,6 +18,7 @@ package net.kuujo.copycat.raft;
 import net.kuujo.alleycat.Alleycat;
 import net.kuujo.copycat.ConfigurationException;
 import net.kuujo.copycat.raft.log.Log;
+import net.kuujo.copycat.raft.protocol.Protocol;
 import net.kuujo.copycat.raft.state.RaftServerState;
 
 import java.util.concurrent.CompletableFuture;
@@ -204,13 +205,20 @@ public class RaftServer implements ManagedRaft {
   /**
    * Raft server builder.
    */
-  public static class Builder implements Raft.Builder<RaftServer> {
+  public static class Builder implements Raft.Builder<Builder, RaftServer> {
+    private Protocol protocol;
     private Log log;
     private Alleycat serializer;
     private RaftConfig config = new RaftConfig();
     private StateMachine stateMachine;
     private int memberId;
     private Members members;
+
+    @Override
+    public Builder withProtocol(Protocol protocol) {
+      this.protocol = protocol;
+      return this;
+    }
 
     /**
      * Sets the server member ID.
@@ -371,12 +379,14 @@ public class RaftServer implements ManagedRaft {
     public RaftServer build() {
       if (stateMachine == null)
         throw new ConfigurationException("state machine not configured");
+      if (protocol == null)
+        throw new ConfigurationException("protocol not configured");
       if (members == null)
         throw new ConfigurationException("members not configured");
       if (log == null)
-        throw new NullPointerException("log cannot be null");
+        throw new ConfigurationException("log not configured");
 
-      RaftServerState context = (RaftServerState) new RaftServerState(memberId, log, stateMachine, members, serializer)
+      RaftServerState context = (RaftServerState) new RaftServerState(memberId, log, stateMachine, protocol, members, serializer)
         .setHeartbeatInterval(config.getHeartbeatInterval())
         .setElectionTimeout(config.getElectionTimeout())
         .setSessionTimeout(config.getSessionTimeout())

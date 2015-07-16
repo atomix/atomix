@@ -19,6 +19,9 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
+import net.kuujo.copycat.Listener;
+import net.kuujo.copycat.ListenerContext;
+import net.kuujo.copycat.Listeners;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.openhft.hashing.LongHashFunction;
 
@@ -52,8 +55,8 @@ public class NettyConnection implements Connection {
   private final Map<Integer, HandlerHolder> handlers = new ConcurrentHashMap<>();
   private final Map<Class, Integer> hashMap = new HashMap<>();
   private final LongHashFunction hash = LongHashFunction.city_1_1();
-  private ExceptionListener exceptionListener;
-  private CloseListener closeListener;
+  private final Listeners<Throwable> exceptionListeners = new Listeners<>();
+  private final Listeners<Connection> closeListeners = new Listeners<>();
   private volatile long requestId;
   private final Map<Long, ContextualFuture> responseFutures = new LinkedHashMap<>(1024);
   private ChannelFuture writeFuture;
@@ -128,7 +131,7 @@ public class NettyConnection implements Connection {
       .writeByte(RESPONSE)
       .writeLong(requestId)
       .writeByte(SUCCESS);
-    writeFuture = channel.write(writeResponse(buffer, response), channel.voidPromise());
+    writeFuture = channel.writeAndFlush(writeResponse(buffer, response), channel.voidPromise());
     response.release();
   }
 
@@ -140,7 +143,7 @@ public class NettyConnection implements Connection {
       .writeByte(RESPONSE)
       .writeLong(requestId)
       .writeByte(FAILURE);
-    writeFuture = channel.write(writeError(buffer, error), channel.voidPromise());
+    writeFuture = channel.writeAndFlush(writeError(buffer, error), channel.voidPromise());
   }
 
   /**
@@ -249,8 +252,8 @@ public class NettyConnection implements Connection {
    * @param t The exception to handle.
    */
   void handleException(Throwable t) {
-    if (exceptionListener != null) {
-      exceptionListener.exception(t);
+    for (ListenerContext<Throwable> listener : exceptionListeners) {
+      listener.accept(t);
     }
   }
 
@@ -258,8 +261,8 @@ public class NettyConnection implements Connection {
    * Handles the channel being closed.
    */
   void handleClosed() {
-    if (closeListener != null) {
-      closeListener.closed(this);
+    for (ListenerContext<Connection> listener : closeListeners) {
+      listener.accept(this);
     }
   }
 
@@ -296,15 +299,13 @@ public class NettyConnection implements Connection {
   }
 
   @Override
-  public Connection exceptionListener(ExceptionListener listener) {
-    exceptionListener = listener;
-    return this;
+  public ListenerContext<Throwable> exceptionListener(Listener<Throwable> listener) {
+    return exceptionListeners.add(listener);
   }
 
   @Override
-  public Connection closeListener(CloseListener listener) {
-    closeListener = listener;
-    return this;
+  public ListenerContext<Connection> closeListener(Listener<Connection> listener) {
+    return closeListeners.add(listener);
   }
 
   @Override

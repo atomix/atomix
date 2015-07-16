@@ -40,4 +40,11 @@ public interface Client {
    */
   CompletableFuture<Connection> connect(Member member);
 
+  /**
+   * Closes the client.
+   *
+   * @return A completable future to be called once the client is closed.
+   */
+  CompletableFuture<Void> close();
+
 }

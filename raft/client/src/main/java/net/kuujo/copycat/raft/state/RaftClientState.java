@@ -46,9 +46,9 @@ import java.util.stream.Collectors;
  */
 public class RaftClientState implements Managed<Void> {
   private static final Logger LOGGER = LoggerFactory.getLogger(RaftClientState.class);
-  private static final Random RANDOM = new Random();
   private static final long REQUEST_TIMEOUT = TimeUnit.SECONDS.toMillis(10);
   private final Members members;
+  private final Protocol protocol;
   private final Client client;
   private Connection connection;
   private final Context context;
@@ -69,25 +69,16 @@ public class RaftClientState implements Managed<Void> {
   private volatile long response;
   private volatile long version;
 
-  public RaftClientState(Members members, Alleycat serializer) {
+  public RaftClientState(int clientId, Protocol protocol, Members members, Alleycat serializer) {
     if (members == null)
       throw new NullPointerException("members cannot be null");
 
-    int clientId = nextClientId();
     this.context = new SingleThreadContext("copycat-client-" + clientId, serializer.clone());
     this.members = members;
-    this.client = ClientFactory.factory.createClient(clientId);
+    this.protocol = protocol;
+    this.client = protocol.client(clientId);
     this.session = new ClientSession(client.id());
     this.session.close();
-  }
-
-  /**
-   * Returns a random client ID.
-   *
-   * @return A random client ID.
-   */
-  private static int nextClientId() {
-    return RANDOM.nextInt(Integer.MAX_VALUE - 1023) + 1024;
   }
 
   /**
@@ -750,7 +741,7 @@ public class RaftClientState implements Managed<Void> {
       cancelRegisterTimer();
       cancelKeepAliveTimer();
       open = false;
-      close().whenCompleteAsync((result, error) -> {
+      protocol.close().whenCompleteAsync((result, error) -> {
         if (error == null) {
           future.complete(null);
         } else {

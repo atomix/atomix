@@ -15,6 +15,9 @@
  */
 package net.kuujo.copycat.raft.protocol;
 
+import net.kuujo.copycat.Listener;
+import net.kuujo.copycat.ListenerContext;
+
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -57,7 +60,7 @@ public interface Connection {
    * @param listener The exception listener.
    * @return The connection.
    */
-  Connection exceptionListener(ExceptionListener listener);
+  ListenerContext<Throwable> exceptionListener(Listener<Throwable> listener);
 
   /**
    * Sets a close listener on the connection.
@@ -65,7 +68,7 @@ public interface Connection {
    * @param listener The close listener.
    * @return The connection.
    */
-  Connection closeListener(CloseListener listener);
+  ListenerContext<Connection> closeListener(Listener<Connection> listener);
 
   /**
    * Closes the connection.

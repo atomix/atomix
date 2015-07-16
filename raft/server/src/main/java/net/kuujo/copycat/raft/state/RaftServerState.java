@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -36,7 +37,8 @@ import java.util.stream.Collectors;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class RaftServerState extends RaftClientState {
-  private final Logger LOGGER = LoggerFactory.getLogger(RaftServerState.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(RaftServerState.class);
+  private static final Random RANDOM = new Random();
   private final RaftState stateMachine;
   private final int memberId;
   private final Log log;
@@ -57,8 +59,8 @@ public class RaftServerState extends RaftClientState {
   private long globalIndex;
   private volatile boolean open;
 
-  public RaftServerState(int memberId, Log log, StateMachine stateMachine, Members members, Alleycat serializer) {
-    super(members, serializer);
+  public RaftServerState(int memberId, Log log, StateMachine stateMachine, Protocol protocol, Members members, Alleycat serializer) {
+    super(memberId, protocol, members, serializer);
 
     for (Member member : members.members()) {
       cluster.addMember(new MemberState(member.id(), member.type(), System.currentTimeMillis()));
@@ -74,10 +76,19 @@ public class RaftServerState extends RaftClientState {
         new OrderedExecutor(Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())),
         context.serializer().clone()));
 
-    this.server = ServerFactory.factory.createServer(memberId);
-    this.connections = new ConnectionManager(ClientFactory.factory.createClient(memberId));
+    this.server = protocol.server(memberId);
+    this.connections = new ConnectionManager(protocol.client(nextClientId()));
 
     log.compactor().filter(this.stateMachine::filter);
+  }
+
+  /**
+   * Returns a random client ID.
+   *
+   * @return A random client ID.
+   */
+  private static int nextClientId() {
+    return RANDOM.nextInt(Integer.MAX_VALUE - 1023) + 1024;
   }
 
   /**

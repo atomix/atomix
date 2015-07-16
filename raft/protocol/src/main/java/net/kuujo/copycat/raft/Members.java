@@ -28,6 +28,16 @@ import java.util.*;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class Members implements AlleycatSerializable {
+
+  /**
+   * Returns a new members builder.
+   *
+   * @return A new members builder.
+   */
+  public static Builder builder() {
+    return new Builder(new Members());
+  }
+
   private Map<Integer, Member> members = new HashMap<>();
   private List<Member> list = new ArrayList<>();
 
@@ -99,10 +109,9 @@ public class Members implements AlleycatSerializable {
      */
     @SuppressWarnings("unchecked")
     public Builder withMembers(Member... members) {
-      if (members != null) {
-        return withMembers(Arrays.asList(members));
-      }
-      return this;
+      if (members == null)
+        throw new NullPointerException("members cannot be null");
+      return withMembers(Arrays.asList(members));
     }
 
     /**

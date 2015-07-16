@@ -15,6 +15,10 @@
  */
 package net.kuujo.copycat.raft;
 
+import net.kuujo.copycat.raft.protocol.Protocol;
+
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -74,16 +78,55 @@ public interface Raft {
   <T> CompletableFuture<T> submit(Query<T> query);
 
   /**
-   * Deletes the protocol.
+   * Deletes the Raft instance.
    *
-   * @return The deleted protocol.
+   * @return The deleted Raft instance.
    */
   CompletableFuture<Void> delete();
 
   /**
-   * Protocol builder.
+   * Raft builder.
    */
-  static interface Builder<T extends Raft> extends net.kuujo.copycat.Builder<T> {
+  static interface Builder<T extends Builder<T, U>, U extends Raft> extends net.kuujo.copycat.Builder<U> {
+
+    /**
+     * Sets the network protocol.
+     *
+     * @param protocol The network protocol.
+     * @return The Raft builder.
+     */
+    T withProtocol(Protocol protocol);
+
+    /**
+     * Sets the Raft members.
+     *
+     * @param members The Raft members.
+     * @return The Raft builder.
+     */
+    default T withMembers(Member... members) {
+      if (members == null)
+        throw new NullPointerException("members cannot be null");
+      return withMembers(Arrays.asList(members));
+    }
+
+    /**
+     * Sets the Raft members.
+     *
+     * @param members The Raft members.
+     * @return The Raft builder.
+     */
+    default T withMembers(Collection<Member> members) {
+      return withMembers(Members.builder().withMembers(members).build());
+    }
+
+    /**
+     * Sets the Raft members.
+     *
+     * @param members The Raft members.
+     * @return The Raft builder.
+     */
+    T withMembers(Members members);
+
   }
 
 }

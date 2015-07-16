@@ -15,11 +15,18 @@
  */
 package net.kuujo.copycat.raft.protocol;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
+import net.kuujo.copycat.Listener;
+import net.kuujo.copycat.util.concurrent.Context;
+import net.kuujo.copycat.util.concurrent.CopycatThread;
+import net.kuujo.copycat.util.concurrent.SingleThreadContext;
+
+import java.util.Map;
 
 /**
  * Netty handler.
@@ -27,6 +34,25 @@ import io.netty.handler.timeout.IdleStateEvent;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class NettyHandler extends ChannelInboundHandlerAdapter {
+  private final Map<Channel, NettyConnection> connections;
+  private final Listener<Connection> listener;
+  private final Context context;
+
+  protected NettyHandler(Map<Channel, NettyConnection> connections, Listener<Connection> listener, Context context) {
+    this.connections = connections;
+    this.listener = listener;
+    this.context = context;
+  }
+
+  /**
+   * Adds a connection for the given channel.
+   *
+   * @param channel The channel for which to add the connection.
+   * @param connection The connection to add.
+   */
+  protected void setConnection(Channel channel, NettyConnection connection) {
+    connections.put(channel, connection);
+  }
 
   /**
    * Returns the connection for the given channel.
@@ -34,7 +60,9 @@ public abstract class NettyHandler extends ChannelInboundHandlerAdapter {
    * @param channel The channel for which to return the connection.
    * @return The connection.
    */
-  protected abstract NettyConnection getConnection(Channel channel);
+  protected NettyConnection getConnection(Channel channel) {
+    return connections.get(channel);
+  }
 
   /**
    * Removes the connection for the given channel.
@@ -42,7 +70,75 @@ public abstract class NettyHandler extends ChannelInboundHandlerAdapter {
    * @param channel The channel for which to remove the connection.
    * @return The connection.
    */
-  protected abstract NettyConnection removeConnection(Channel channel);
+  protected NettyConnection removeConnection(Channel channel) {
+    return connections.remove(channel);
+  }
+
+  /**
+   * Returns the current execution context or creates one.
+   */
+  private Context getOrCreateContext(Channel channel) {
+    Context context = Context.currentContext();
+    if (context != null) {
+      return context;
+    }
+
+    Thread thread = Thread.currentThread();
+    if (!(thread instanceof CopycatThread)) {
+      throw new IllegalStateException("illegal thread state");
+    }
+
+    context = new SingleThreadContext(channel.eventLoop(), this.context.serializer().clone());
+    ((CopycatThread) thread).setContext(context);
+    return context;
+  }
+
+  @Override
+  public void channelRead(final ChannelHandlerContext context, Object message) {
+    ByteBuf buffer = (ByteBuf) message;
+    int type = buffer.readByte();
+    switch (type) {
+      case NettyConnection.CONNECT:
+        handleConnect(buffer, context);
+        break;
+      case NettyConnection.REQUEST:
+        handleRequest(buffer, context);
+        break;
+      case NettyConnection.RESPONSE:
+        handleResponse(buffer, context);
+        break;
+    }
+  }
+
+  /**
+   * Handles a connection identification request.
+   */
+  private void handleConnect(ByteBuf request, ChannelHandlerContext context) {
+    Channel channel = context.channel();
+    NettyConnection connection = new NettyConnection(request.readInt(), channel, getOrCreateContext(channel));
+    setConnection(channel, connection);
+    this.context.execute(() -> listener.accept(connection));
+  }
+
+  /**
+   * Handles a request.
+   */
+  private void handleRequest(ByteBuf request, ChannelHandlerContext context) {
+    NettyConnection connection = getConnection(context.channel());
+    if (connection != null) {
+      connection.handleRequest(request);
+    }
+  }
+
+  /**
+   * Handles a response.
+   */
+  private void handleResponse(ByteBuf response, ChannelHandlerContext context) {
+    NettyConnection connection = getConnection(context.channel());
+    if (connection != null) {
+      connection.handleResponse(response);
+    }
+  }
 
   @Override
   public void exceptionCaught(ChannelHandlerContext context, final Throwable t) throws Exception {
@@ -62,9 +158,9 @@ public abstract class NettyHandler extends ChannelInboundHandlerAdapter {
   }
 
   @Override
-  public void channelInactive(ChannelHandlerContext chctx) throws Exception {
-    Channel ch = chctx.channel();
-    NettyConnection connection = removeConnection(ch);
+  public void channelInactive(ChannelHandlerContext context) throws Exception {
+    Channel channel = context.channel();
+    NettyConnection connection = removeConnection(channel);
     if (connection != null) {
       connection.handleClosed();
     }

@@ -15,22 +15,36 @@
  */
 package net.kuujo.copycat.raft.protocol;
 
-import java.util.ServiceLoader;
+import java.util.concurrent.CompletableFuture;
 
 /**
- * RPC client factory.
+ * Raft protocol.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ClientFactory {
-  static ClientFactory factory = ServiceLoader.load(ClientFactory.class).iterator().next();
+public interface Protocol {
 
   /**
-   * Creates a new RPC client.
+   * Creates a protocol client.
    *
-   * @param clientId The client ID.
-   * @return A new RPC client.
+   * @param id The client ID.
+   * @return The protocol client.
    */
-  Client createClient(int clientId);
+  Client client(int id);
+
+  /**
+   * Creates a protocol server.
+   *
+   * @param id The server ID.
+   * @return The protocol server.
+   */
+  Server server(int id);
+
+  /**
+   * Closes the protocol.
+   *
+   * @return A completable future to be completed once the protocol is closed.
+   */
+  CompletableFuture<Void> close();
 
 }
