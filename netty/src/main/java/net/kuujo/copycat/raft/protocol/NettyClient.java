@@ -29,7 +29,7 @@ import io.netty.handler.codec.LengthFieldPrepender;
 import net.kuujo.copycat.Listener;
 import net.kuujo.copycat.transport.Client;
 import net.kuujo.copycat.transport.Connection;
-import net.kuujo.copycat.util.concurrent.ComposableFuture;
+import net.kuujo.copycat.util.concurrent.CopycatFuture;
 import net.kuujo.copycat.util.concurrent.Context;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,7 +77,7 @@ public class NettyClient implements Client {
   @Override
   public CompletableFuture<Connection> connect(InetSocketAddress address) {
     Context context = getContext();
-    CompletableFuture<Connection> future = new ComposableFuture<>();
+    CompletableFuture<Connection> future = new CopycatFuture<>();
 
     LOGGER.info("Connecting to {}", address);
 
