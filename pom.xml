@@ -77,8 +77,10 @@
     <module>client</module>
     <module>server</module>
     <module>core</module>
+    <module>cluster</module>
     <module>collections</module>
     <module>atomic</module>
+    <module>queue</module>
     <module>all</module>
     <module>test</module>
   </modules>
