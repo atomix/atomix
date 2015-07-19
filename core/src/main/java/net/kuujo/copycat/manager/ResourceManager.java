@@ -66,7 +66,8 @@ public class ResourceManager extends StateMachine {
     if (resource != null) {
       CompletableFuture<Object> future = new ComposableFuture<>();
       resource.context.execute(() -> {
-        CompletableFuture<Object> resultFuture = resource.stateMachine.apply(new Commit(commit.index(), commit.session(), commit.timestamp(), commit.operation().operation()));
+        CompletableFuture<Object> resultFuture = resource.stateMachine.apply(new Commit(commit.index(), commit.session(), commit
+          .timestamp(), commit.operation().operation()));
         resultFuture.whenComplete((result, error) -> {
           if (error == null) {
             future.complete(result);
@@ -93,7 +94,8 @@ public class ResourceManager extends StateMachine {
 
     CompletableFuture<Boolean> future = new CompletableFuture<>();
     resource.context.execute(() -> {
-      CompletableFuture<Boolean> resultFuture = resource.stateMachine.filter(new Commit(commit.index(), commit.session(), commit.timestamp(), commit.operation().operation()), compaction);
+      CompletableFuture<Boolean> resultFuture = resource.stateMachine.filter(new Commit(commit.index(), commit.session(), commit
+        .timestamp(), commit.operation().operation()), compaction);
       resultFuture.whenComplete((result, error) -> {
         if (error == null) {
           future.complete(result);

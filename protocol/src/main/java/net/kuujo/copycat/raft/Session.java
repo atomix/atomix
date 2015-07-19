@@ -19,6 +19,7 @@ import net.kuujo.copycat.Listener;
 import net.kuujo.copycat.ListenerContext;
 import net.kuujo.copycat.Listeners;
 
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -29,14 +30,16 @@ import java.util.concurrent.CompletableFuture;
 public abstract class Session {
   private final long id;
   private final int member;
+  private final UUID connection;
   private boolean expired;
   private boolean closed;
   private final Listeners<Session> openListeners = new Listeners<>();
-  private Listeners<Session> closeListeners = new Listeners<>();
+  private final Listeners<Session> closeListeners = new Listeners<>();
 
-  protected Session(long id, int member) {
+  protected Session(long id, int member, UUID connection) {
     this.id = id;
     this.member = member;
+    this.connection = connection;
   }
 
   /**
@@ -58,10 +61,12 @@ public abstract class Session {
   }
 
   /**
-   * Opens the session.
+   * Returns the session connection ID.
+   *
+   * @return The session connection ID.
    */
-  protected void open() {
-    closed = false;
+  public UUID connection() {
+    return connection;
   }
 
   /**
@@ -147,26 +152,6 @@ public abstract class Session {
    */
   public boolean isExpired() {
     return expired;
-  }
-
-  /**
-   * Creates a listener.
-   */
-  private ListenerContext<Session> createListener(Listener<Session> listener, Runnable closer) {
-    if (listener == null)
-      throw new NullPointerException("listener cannot be null");
-
-    return new ListenerContext<Session>() {
-      @Override
-      public void accept(Session session) {
-        listener.accept(session);
-      }
-
-      @Override
-      public void close() {
-        closer.run();
-      }
-    };
   }
 
   @Override

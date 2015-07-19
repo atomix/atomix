@@ -29,13 +29,6 @@ import java.util.concurrent.CompletableFuture;
 public interface Raft {
 
   /**
-   * Returns the Raft sessions.
-   *
-   * @return The Raft sessions.
-   */
-  Sessions sessions();
-
-  /**
    * Returns the local session.
    *
    * @return The local session.
@@ -92,7 +85,7 @@ public interface Raft {
     /**
      * Sets the network transport.
      *
-     * @param transport The network transport.
+     * @param transport The network protocol.
      * @return The Raft builder.
      */
     T withTransport(Transport transport);

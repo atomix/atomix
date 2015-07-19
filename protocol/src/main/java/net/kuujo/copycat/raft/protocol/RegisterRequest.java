@@ -22,6 +22,7 @@ import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.alleycat.util.ReferenceManager;
 
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * Protocol register client request.
@@ -56,6 +57,9 @@ public class RegisterRequest extends ClientRequest<RegisterRequest> {
     return builder.get().reset(request);
   }
 
+  private int member;
+  private UUID connection;
+
   public RegisterRequest(ReferenceManager<RegisterRequest> referenceManager) {
     super(referenceManager);
   }
@@ -65,14 +69,34 @@ public class RegisterRequest extends ClientRequest<RegisterRequest> {
     return Type.REGISTER;
   }
 
-  @Override
-  public void writeObject(BufferOutput buffer, Alleycat alleycat) {
+  /**
+   * Returns the member ID.
+   *
+   * @return The member ID.
+   */
+  public int member() {
+    return member;
+  }
 
+  /**
+   * Returns the connection ID.
+   *
+   * @return The connection ID.
+   */
+  public UUID connection() {
+    return connection;
   }
 
   @Override
-  public void readObject(BufferInput buffer, Alleycat alleycat) {
+  public void writeObject(BufferOutput buffer, Alleycat serializer) {
+    buffer.writeInt(member);
+    serializer.writeObject(connection, buffer);
+  }
 
+  @Override
+  public void readObject(BufferInput buffer, Alleycat serializer) {
+    member = buffer.readInt();
+    connection = serializer.readObject(buffer);
   }
 
   @Override
@@ -87,6 +111,36 @@ public class RegisterRequest extends ClientRequest<RegisterRequest> {
 
     private Builder() {
       super(RegisterRequest::new);
+    }
+
+    @Override
+    Builder reset() {
+      super.reset();
+      request.member = 0;
+      request.connection = null;
+      return this;
+    }
+
+    /**
+     * Sets the member ID.
+     *
+     * @param member The member ID.
+     * @return The request builder.
+     */
+    public Builder withMember(int member) {
+      request.member = member;
+      return this;
+    }
+
+    /**
+     * Sets the connection ID.
+     *
+     * @param connection The connection ID.
+     * @return The request builder.
+     */
+    public Builder withConnection(UUID connection) {
+      request.connection = connection;
+      return this;
     }
 
     @Override

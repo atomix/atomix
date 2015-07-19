@@ -135,17 +135,6 @@ public class Member implements AlleycatSerializable {
   }
 
   /**
-   * Configures the member host and port.
-   *
-   * @param host The member host.
-   * @param port The member port.
-   */
-  public void configure(String host, int port) {
-    this.host = host;
-    this.port = port;
-  }
-
-  /**
    * Member builder.
    */
   public static class Builder implements net.kuujo.copycat.Builder<Member> {

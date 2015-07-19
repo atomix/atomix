@@ -15,7 +15,6 @@
  */
 package net.kuujo.copycat;
 
-import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.manager.CreatePath;
 import net.kuujo.copycat.manager.CreateResource;
 import net.kuujo.copycat.manager.DeletePath;
@@ -39,23 +38,12 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class Copycat implements Managed<Copycat> {
   static final String PATH_SEPARATOR = "/";
   protected final ManagedRaft raft;
-  protected final Cluster cluster;
   private final Map<Class<? extends Resource>, Class<? extends StateMachine>> typeCache = new ConcurrentHashMap<>();
   private final Map<String, Node> nodes = new ConcurrentHashMap<>();
   private final ResourceFactory factory = new ResourceFactory();
 
   protected Copycat(ManagedRaft raft) {
     this.raft = raft;
-    this.cluster = new Cluster(raft);
-  }
-
-  /**
-   * Returns the Copycat cluster.
-   *
-   * @return The Copycat cluster.
-   */
-  public Cluster cluster() {
-    return cluster;
   }
 
   /**
