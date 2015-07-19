@@ -29,7 +29,7 @@
   <dependencies>
     <dependency>
       <groupId>net.kuujo.copycat</groupId>
-      <artifactId>copycat-cluster</artifactId>
+      <artifactId>copycat-transport</artifactId>
       <version>${project.version}</version>
     </dependency>
   </dependencies>
