@@ -16,9 +16,13 @@
 package net.kuujo.copycat.util.concurrent;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 /**
+ * Special implementation of CompletableFuture with missing utility methods.
+ *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class ComposableFuture<T> extends CompletableFuture<T> implements BiConsumer<T, Throwable> {
@@ -30,6 +34,30 @@ public class ComposableFuture<T> extends CompletableFuture<T> implements BiConsu
     } else {
       completeExceptionally(error);
     }
+  }
+
+  public CompletableFuture<T> except(Consumer<Throwable> consumer) {
+    return whenComplete((result, error) -> {
+      if (error != null) {
+        consumer.accept(error);
+      }
+    });
+  }
+
+  public CompletableFuture<T> exceptAsync(Consumer<Throwable> consumer) {
+    return whenCompleteAsync((result, error) -> {
+      if (error != null) {
+        consumer.accept(error);
+      }
+    });
+  }
+
+  public CompletableFuture<T> exceptAsync(Consumer<Throwable> consumer, Executor executor) {
+    return whenCompleteAsync((result, error) -> {
+      if (error != null) {
+        consumer.accept(error);
+      }
+    }, executor);
   }
 
 }

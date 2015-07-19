@@ -19,14 +19,15 @@ import net.kuujo.alleycat.Alleycat;
 import net.kuujo.alleycat.AlleycatSerializable;
 import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
-import net.kuujo.copycat.AbstractResource;
 import net.kuujo.copycat.Listener;
 import net.kuujo.copycat.ListenerContext;
-import net.kuujo.copycat.raft.Command;
-import net.kuujo.copycat.raft.Operation;
-import net.kuujo.copycat.raft.Raft;
+import net.kuujo.copycat.Resource;
+import net.kuujo.copycat.Stateful;
+import net.kuujo.copycat.raft.*;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -35,7 +36,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class AsyncTopic<T> extends AbstractResource {
+@Stateful(AsyncTopic.StateMachine.class)
+public class AsyncTopic<T> extends Resource {
   private final List<TopicListenerContext<T>> listeners = new CopyOnWriteArrayList<>();
 
   @SuppressWarnings("unchecked")
@@ -123,6 +125,15 @@ public class AsyncTopic<T> extends AbstractResource {
 
     private T message;
 
+    /**
+     * Returns the publish message.
+     *
+     * @return The publish message.
+     */
+    public T message() {
+      return message;
+    }
+
     @Override
     public void writeObject(BufferOutput buffer, Alleycat serializer) {
       serializer.writeObject(message, buffer);
@@ -189,6 +200,54 @@ public class AsyncTopic<T> extends AbstractResource {
       protected SubscribeCommand create() {
         return new SubscribeCommand();
       }
+    }
+  }
+
+  /**
+   * Topic state machine.
+   */
+  public static class StateMachine extends net.kuujo.copycat.raft.StateMachine {
+    private final Set<Session> sessions = new HashSet<>();
+    private long time;
+
+    /**
+     * Updates the wall clock time.
+     */
+    private void updateTime(Commit<?> commit) {
+      time = Math.max(time, commit.timestamp());
+    }
+
+    @Override
+    public void register(Session session) {
+      sessions.add(session);
+    }
+
+    @Override
+    public void expire(Session session) {
+      sessions.remove(session);
+    }
+
+    @Override
+    public void close(Session session) {
+      sessions.remove(session);
+    }
+
+    /**
+     * Handles a publish commit.
+     */
+    @Apply(PublishCommand.class)
+    protected void applyPublish(Commit<PublishCommand> commit) {
+      for (Session session : sessions) {
+        session.publish(commit.operation().message());
+      }
+    }
+
+    /**
+     * Filters a publish commit.
+     */
+    @Filter(PublishCommand.class)
+    protected boolean filterPublish(Commit<PublishCommand> commit) {
+      return false;
     }
   }
 
