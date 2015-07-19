@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.cluster;
 
-import net.kuujo.copycat.AbstractResource;
+import net.kuujo.copycat.Resource;
 import net.kuujo.copycat.Listener;
 import net.kuujo.copycat.ListenerContext;
 import net.kuujo.copycat.Listeners;
@@ -26,7 +26,7 @@ import net.kuujo.copycat.raft.Raft;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class Cluster extends AbstractResource {
+public class Cluster extends Resource {
   private final Listeners<Member> joinListeners = new Listeners<>();
   private final Listeners<Member> leaveListeners = new Listeners<>();
 

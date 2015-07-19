@@ -309,96 +309,39 @@ public class ResourceManager extends StateMachine {
     return commit.index() >= compaction.index();
   }
 
-  /**
-   * Applies an add listener commit.
-   */
-  @Apply(AddListener.class)
-  protected boolean addListener(Commit<AddListener> commit) {
-    String path = commit.operation().path();
-
-    init(commit);
-
-    NodeHolder node = this.node;
-    for (String name : path.split(PATH_SEPARATOR)) {
-      if (!name.equals("")) {
-        node = node.children.get(name);
-        if (node == null) {
-          throw new ResourceManagerException("unknown path: " + path);
-        }
-      }
-    }
-
-    if (node.listeners.containsKey(commit.session().id())) {
-      node.listeners.put(commit.session().id(), node.listeners.get(commit.session().id()) + 1);
-    } else {
-      node.listeners.put(commit.session().id(), 1);
-    }
-    return true;
-  }
-
-  /**
-   * Applies a remove listener commit.
-   */
-  @Apply(RemoveListener.class)
-  protected boolean removeListener(Commit<RemoveListener> commit) {
-    String path = commit.operation().path();
-
-    init(commit);
-
-    NodeHolder node = this.node;
-    for (String name : path.split(PATH_SEPARATOR)) {
-      if (!name.equals("")) {
-        node = node.children.get(name);
-        if (node == null) {
-          throw new ResourceManagerException("unknown path: " + path);
-        }
-      }
-    }
-
-    if (node.listeners.containsKey(commit.session().id())) {
-      int count = node.listeners.get(commit.session().id());
-      if (count == 1) {
-        node.listeners.remove(commit.session().id());
-      } else {
-        node.listeners.put(commit.session().id(), count - 1);
-      }
-    }
-    return true;
-  }
-
-  /**
-   * Removes a session from all nodes.
-   */
-  private void removeSession(NodeHolder node, long session) {
-    node.listeners.remove(session);
-    for (NodeHolder child : node.children.values()) {
-      removeSession(child, session);
-    }
-  }
-
   @Override
   public void register(Session session) {
     sessions.put(session.id(), session);
     for (ResourceHolder resource : resources.values()) {
-      resource.context.execute(() -> resource.stateMachine.register(session));
+      resource.context.execute(() -> resource.stateMachine.register(resource.sessions.computeIfAbsent(session.id(), id -> new ResourceSession(id, session))));
     }
   }
 
   @Override
   public void close(Session session) {
     sessions.remove(session.id());
-    removeSession(node, session.id());
     for (ResourceHolder resource : resources.values()) {
-      resource.context.execute(() -> resource.stateMachine.close(session));
+      ResourceSession resourceSession = resource.sessions.get(session.id());
+      if (resourceSession != null) {
+        resource.context.execute(() -> {
+          resourceSession.close();
+          resource.stateMachine.close(resourceSession);
+        });
+      }
     }
   }
 
   @Override
   public void expire(Session session) {
     sessions.remove(session.id());
-    removeSession(node, session.id());
     for (ResourceHolder resource : resources.values()) {
-      resource.context.execute(() -> resource.stateMachine.expire(session));
+      ResourceSession resourceSession = resource.sessions.get(session.id());
+      if (resourceSession != null) {
+        resource.context.execute(() -> {
+          resourceSession.expire();
+          resource.stateMachine.expire(resourceSession);
+        });
+      }
     }
   }
 
@@ -416,7 +359,6 @@ public class ResourceManager extends StateMachine {
     private final long version;
     private final long timestamp;
     private long resource;
-    private final Map<Long, Integer> listeners = new HashMap<>();
     private final Map<String, NodeHolder> children = new LinkedHashMap<>();
 
     public NodeHolder(String name, String path, long version, long timestamp) {
@@ -431,6 +373,7 @@ public class ResourceManager extends StateMachine {
    * Resource holder.
    */
   private static class ResourceHolder {
+    private final Map<Long, ResourceSession> sessions = new HashMap<>();
     private final StateMachine stateMachine;
     private final Context context;
 

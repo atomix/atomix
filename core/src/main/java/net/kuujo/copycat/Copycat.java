@@ -41,6 +41,7 @@ public abstract class Copycat implements Managed<Copycat> {
   private final Map<Class<? extends Resource>, Class<? extends StateMachine>> typeCache = new ConcurrentHashMap<>();
   private final Map<String, Node> nodes = new ConcurrentHashMap<>();
   private final ResourceFactory factory = new ResourceFactory();
+  private final Map<Long, ResourceProtocol> resources = new ConcurrentHashMap<>();
 
   protected Copycat(ManagedRaft raft) {
     this.raft = raft;
@@ -126,7 +127,15 @@ public abstract class Copycat implements Managed<Copycat> {
 
   @Override
   public CompletableFuture<Copycat> open() {
-    return raft.open().thenApply(v -> this);
+    return raft.open().thenApply(v -> {
+      raft.session().<ResourceMessage>onReceive(message -> {
+        ResourceProtocol resource = resources.get(message.resource());
+        if (resource != null) {
+          resource.session().publish(message);
+        }
+      });
+      return this;
+    });
   }
 
   @Override
@@ -152,20 +161,13 @@ public abstract class Copycat implements Managed<Copycat> {
   private class ResourceFactory {
 
     /**
-     * Creates a new resource.
-     */
-    private <T extends Resource> T createResource(Class<? super T> type, long id) {
-      return createResourceObject(type, id);
-    }
-
-    /**
      * Creates a resource object.
      */
     @SuppressWarnings("unchecked")
-    private <T extends Resource> T createResourceObject(Class<? super T> type, long id) {
+    private <T extends Resource> T createResource(Class<? super T> type, long id) {
       try {
         Constructor constructor = type.getConstructor(Raft.class);
-        return (T) constructor.newInstance(new ResourceProtocol(id, raft));
+        return (T) constructor.newInstance(resources.computeIfAbsent(id, i -> new ResourceProtocol(id, raft)));
       } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
         throw new ResourceException("failed to instantiate resource: " + type, e);
       }

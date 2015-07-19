@@ -20,7 +20,7 @@ import net.kuujo.alleycat.AlleycatSerializable;
 import net.kuujo.alleycat.SerializeWith;
 import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
-import net.kuujo.copycat.AbstractResource;
+import net.kuujo.copycat.Resource;
 import net.kuujo.copycat.Mode;
 import net.kuujo.copycat.Stateful;
 import net.kuujo.copycat.log.Compaction;
@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Stateful(AsyncSet.StateMachine.class)
-public class AsyncSet<T> extends AbstractResource {
+public class AsyncSet<T> extends Resource {
 
   public AsyncSet(Raft protocol) {
     super(protocol);

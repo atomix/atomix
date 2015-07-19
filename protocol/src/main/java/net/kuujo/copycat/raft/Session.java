@@ -102,7 +102,7 @@ public abstract class Session {
    * @param listener The session receive listener.
    * @return The listener context.
    */
-  public abstract ListenerContext<?> onReceive(Listener<?> listener);
+  public abstract <T> ListenerContext<T> onReceive(Listener<T> listener);
 
   /**
    * Closes the session.

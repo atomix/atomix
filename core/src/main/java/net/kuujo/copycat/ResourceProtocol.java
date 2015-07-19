@@ -28,7 +28,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ResourceProtocol implements Raft {
+class ResourceProtocol implements Raft {
   private final long resource;
   private final Raft protocol;
 
