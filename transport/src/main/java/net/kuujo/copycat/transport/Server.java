@@ -18,6 +18,7 @@ package net.kuujo.copycat.transport;
 import net.kuujo.copycat.Listener;
 
 import java.net.InetSocketAddress;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -32,7 +33,7 @@ public interface Server {
    *
    * @return The server ID.
    */
-  int id();
+  UUID id();
 
   /**
    * Listens for connections on the server.

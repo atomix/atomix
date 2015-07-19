@@ -20,11 +20,12 @@ import io.netty.channel.epoll.Epoll;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import net.kuujo.copycat.transport.Client;
-import net.kuujo.copycat.transport.Transport;
 import net.kuujo.copycat.transport.Server;
+import net.kuujo.copycat.transport.Transport;
 import net.kuujo.copycat.util.concurrent.CopycatThreadFactory;
 
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadFactory;
@@ -36,8 +37,8 @@ import java.util.concurrent.ThreadFactory;
  */
 public class NettyTransport implements Transport {
   private final EventLoopGroup eventLoopGroup;
-  private final Map<Integer, NettyClient> clients = new ConcurrentHashMap<>();
-  private final Map<Integer, NettyServer> servers = new ConcurrentHashMap<>();
+  private final Map<UUID, NettyClient> clients = new ConcurrentHashMap<>();
+  private final Map<UUID, NettyServer> servers = new ConcurrentHashMap<>();
 
   public NettyTransport() {
     this(Runtime.getRuntime().availableProcessors());
@@ -62,12 +63,12 @@ public class NettyTransport implements Transport {
   }
 
   @Override
-  public Client client(int id) {
+  public Client client(UUID id) {
     return clients.computeIfAbsent(id, i -> new NettyClient(id, eventLoopGroup));
   }
 
   @Override
-  public Server server(int id) {
+  public Server server(UUID id) {
     return servers.computeIfAbsent(id, i -> new NettyServer(id, eventLoopGroup));
   }
 

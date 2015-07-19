@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.transport;
 
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -30,7 +31,7 @@ public interface Transport {
    * @param id The client ID.
    * @return The transport client.
    */
-  Client client(int id);
+  Client client(UUID id);
 
   /**
    * Creates a transport server.
@@ -38,7 +39,7 @@ public interface Transport {
    * @param id The server ID.
    * @return The transport server.
    */
-  Server server(int id);
+  Server server(UUID id);
 
   /**
    * Closes the transport.

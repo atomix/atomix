@@ -29,13 +29,15 @@ import io.netty.handler.codec.LengthFieldPrepender;
 import net.kuujo.copycat.Listener;
 import net.kuujo.copycat.transport.Client;
 import net.kuujo.copycat.transport.Connection;
-import net.kuujo.copycat.util.concurrent.CopycatFuture;
+import net.kuujo.copycat.util.concurrent.ComposableFuture;
 import net.kuujo.copycat.util.concurrent.Context;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -49,17 +51,17 @@ public class NettyClient implements Client {
   private static final ByteBufAllocator ALLOCATOR = new PooledByteBufAllocator(true);
   private static final ChannelHandler FIELD_PREPENDER = new LengthFieldPrepender(2);
 
-  private final int id;
+  private final UUID id;
   private final EventLoopGroup eventLoopGroup;
   private final Map<Channel, NettyConnection> connections = new ConcurrentHashMap<>();
 
-  public NettyClient(int id, EventLoopGroup eventLoopGroup) {
+  public NettyClient(UUID id, EventLoopGroup eventLoopGroup) {
     this.id = id;
     this.eventLoopGroup = eventLoopGroup;
   }
 
   @Override
-  public int id() {
+  public UUID id() {
     return id;
   }
 
@@ -77,7 +79,7 @@ public class NettyClient implements Client {
   @Override
   public CompletableFuture<Connection> connect(InetSocketAddress address) {
     Context context = getContext();
-    CompletableFuture<Connection> future = new CopycatFuture<>();
+    CompletableFuture<Connection> future = new ComposableFuture<>();
 
     LOGGER.info("Connecting to {}", address);
 
@@ -128,9 +130,11 @@ public class NettyClient implements Client {
     @Override
     public void channelActive(ChannelHandlerContext context) throws Exception {
       Channel channel = context.channel();
+      byte[] idBytes = id.toString().getBytes(StandardCharsets.UTF_8);
       ByteBuf buffer = channel.alloc().buffer(5)
         .writeByte(NettyConnection.CONNECT)
-        .writeInt(id);
+        .writeInt(idBytes.length)
+        .writeBytes(idBytes);
       channel.writeAndFlush(buffer).addListener(future -> {
         buffer.release();
       });

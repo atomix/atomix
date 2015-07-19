@@ -27,7 +27,9 @@ import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.CopycatThread;
 import net.kuujo.copycat.util.concurrent.SingleThreadContext;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Netty handler.
@@ -116,7 +118,9 @@ public abstract class NettyHandler extends ChannelInboundHandlerAdapter {
    */
   private void handleConnect(ByteBuf request, ChannelHandlerContext context) {
     Channel channel = context.channel();
-    NettyConnection connection = new NettyConnection(request.readInt(), channel, getOrCreateContext(channel));
+    byte[] idBytes = new byte[request.readInt()];
+    request.readBytes(idBytes);
+    NettyConnection connection = new NettyConnection(UUID.fromString(new String(idBytes, StandardCharsets.UTF_8)), channel, getOrCreateContext(channel));
     setConnection(channel, connection);
     this.context.execute(() -> listener.accept(connection));
   }

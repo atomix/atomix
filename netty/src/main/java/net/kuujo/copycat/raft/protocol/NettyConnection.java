@@ -32,6 +32,7 @@ import net.openhft.hashing.LongHashFunction;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -53,7 +54,7 @@ public class NettyConnection implements Connection {
     }
   };
 
-  private final int id;
+  private final UUID id;
   private final Channel channel;
   private final Context context;
   private final Map<Integer, HandlerHolder> handlers = new ConcurrentHashMap<>();
@@ -65,7 +66,7 @@ public class NettyConnection implements Connection {
   private final Map<Long, ContextualFuture> responseFutures = new LinkedHashMap<>(1024);
   private ChannelFuture writeFuture;
 
-  public NettyConnection(int id, Channel channel, Context context) {
+  public NettyConnection(UUID id, Channel channel, Context context) {
     this.id = id;
     this.channel = channel;
     this.context = context;
@@ -83,7 +84,7 @@ public class NettyConnection implements Connection {
   }
 
   @Override
-  public int id() {
+  public UUID id() {
     return id;
   }
 

@@ -16,6 +16,7 @@
 package net.kuujo.copycat.transport;
 
 import java.net.InetSocketAddress;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -30,7 +31,7 @@ public interface Client {
    *
    * @return The client ID.
    */
-  int id();
+  UUID id();
 
   /**
    * Connects the client.

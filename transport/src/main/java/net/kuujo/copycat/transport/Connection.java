@@ -18,6 +18,7 @@ package net.kuujo.copycat.transport;
 import net.kuujo.copycat.Listener;
 import net.kuujo.copycat.ListenerContext;
 
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -32,7 +33,7 @@ public interface Connection {
    *
    * @return The connection ID.
    */
-  int id();
+  UUID id();
 
   /**
    * Sends a request.

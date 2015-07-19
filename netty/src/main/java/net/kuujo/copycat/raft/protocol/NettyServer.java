@@ -39,6 +39,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -52,7 +53,7 @@ public class NettyServer implements Server {
   private static final ByteBufAllocator ALLOCATOR = new PooledByteBufAllocator(true);
   private static final ChannelHandler FIELD_PREPENDER = new LengthFieldPrepender(2);
 
-  private final int id;
+  private final UUID id;
   private final EventLoopGroup eventLoopGroup;
   private final Map<Channel, NettyConnection> connections = new ConcurrentHashMap<>();
   private ServerHandler handler;
@@ -60,13 +61,13 @@ public class NettyServer implements Server {
   private volatile boolean listening;
   private CompletableFuture<Void> listenFuture;
 
-  public NettyServer(int id, EventLoopGroup eventLoopGroup) {
+  public NettyServer(UUID id, EventLoopGroup eventLoopGroup) {
     this.id = id;
     this.eventLoopGroup = eventLoopGroup;
   }
 
   @Override
-  public int id() {
+  public UUID id() {
     return id;
   }
 
