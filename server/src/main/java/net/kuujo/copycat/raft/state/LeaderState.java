@@ -363,6 +363,8 @@ class LeaderState extends ActiveState {
     try (RegisterEntry entry = context.getLog().createEntry(RegisterEntry.class)) {
       entry.setTerm(context.getTerm());
       entry.setTimestamp(timestamp);
+      entry.setMember(request.member());
+      entry.setConnection(request.connection());
       index = context.getLog().appendEntry(entry);
       LOGGER.debug("{} - Appended {}", context.getMemberId(), entry);
     }
@@ -551,56 +553,6 @@ class LeaderState extends ActiveState {
           }, context.getContext());
         } else {
           future.complete(logResponse(LeaveResponse.builder()
-            .withStatus(Response.Status.ERROR)
-            .withError(RaftError.Type.PROTOCOL_ERROR)
-            .build()));
-        }
-      }
-    });
-    return future;
-  }
-
-  @Override
-  protected CompletableFuture<HeartbeatResponse> heartbeat(HeartbeatRequest request) {
-    context.checkThread();
-    logRequest(request);
-
-    final long index;
-    final long timestamp = System.currentTimeMillis();
-
-    try (HeartbeatEntry entry = context.getLog().createEntry(HeartbeatEntry.class)) {
-      entry.setTerm(context.getTerm());
-      entry.setTimestamp(timestamp);
-      entry.setMemberId(request.member());
-      index = context.getLog().appendEntry(entry);
-      LOGGER.debug("{} - Appended {}", context.getMemberId(), entry);
-    }
-
-    CompletableFuture<HeartbeatResponse> future = new CompletableFuture<>();
-    replicator.commit(index).whenComplete((commitIndex, commitError) -> {
-      context.checkThread();
-      if (isOpen()) {
-        if (commitError == null) {
-          HeartbeatEntry entry = context.getLog().getEntry(index);
-          applyEntry(entry).whenCompleteAsync((sessionId, sessionError) -> {
-            if (isOpen()) {
-              if (sessionError == null) {
-                future.complete(logResponse(HeartbeatResponse.builder()
-                  .withStatus(Response.Status.OK)
-                  .withLeader(context.getLeader())
-                  .withTerm(context.getTerm())
-                  .build()));
-              } else {
-                future.complete(logResponse(HeartbeatResponse.builder()
-                  .withStatus(Response.Status.ERROR)
-                  .withError(RaftError.Type.INTERNAL_ERROR)
-                  .build()));
-              }
-            }
-            entry.close();
-          }, context.getContext());
-        } else {
-          future.complete(logResponse(HeartbeatResponse.builder()
             .withStatus(Response.Status.ERROR)
             .withError(RaftError.Type.PROTOCOL_ERROR)
             .build()));

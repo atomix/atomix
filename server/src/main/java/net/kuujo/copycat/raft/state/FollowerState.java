@@ -18,7 +18,7 @@ package net.kuujo.copycat.raft.state;
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.raft.Member;
 import net.kuujo.copycat.raft.RaftServer;
-import net.kuujo.copycat.raft.log.HeartbeatEntry;
+import net.kuujo.copycat.raft.log.KeepAliveEntry;
 import net.kuujo.copycat.raft.log.RaftEntry;
 import net.kuujo.copycat.raft.protocol.*;
 import net.kuujo.copycat.raft.util.Quorum;
@@ -52,7 +52,8 @@ class FollowerState extends ActiveState {
 
   @Override
   public synchronized CompletableFuture<AbstractState> open() {
-    return super.open().thenRun(this::startHeartbeatTimeout).thenApply(v -> this);
+    startHeartbeatTimeout();
+    return CompletableFuture.completedFuture(this);
   }
 
   /**
@@ -174,20 +175,23 @@ class FollowerState extends ActiveState {
 
   @Override
   protected CompletableFuture<?> applyEntry(Entry entry) {
-    if (entry instanceof HeartbeatEntry) {
-      return super.applyEntry(entry).thenRun(() -> replicateCommits(((HeartbeatEntry) entry).getMemberId()));
+    if (entry instanceof KeepAliveEntry) {
+      return super.applyEntry(entry).thenRun(() -> replicateCommits(((KeepAliveEntry) entry).getSession()));
     } else {
       return super.applyEntry(entry);
     }
   }
 
   /**
-   * Replicates commits to the given member.
+   * Replicates commits for the given session.
    */
-  private void replicateCommits(int memberId) {
-    MemberState member = context.getCluster().getMember(memberId);
-    if (isActiveReplica(member)) {
-      commit(member);
+  private void replicateCommits(long sessionId) {
+    ServerSession session = context.getSessionManager().getSession(sessionId);
+    if (session != null && session.member() != 0) {
+      MemberState member = context.getCluster().getMember(session.member());
+      if (isActiveReplica(member)) {
+        commit(member);
+      }
     }
   }
 

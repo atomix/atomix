@@ -20,23 +20,19 @@ import net.kuujo.copycat.ListenerContext;
 import net.kuujo.copycat.Listeners;
 import net.kuujo.copycat.raft.Session;
 import net.kuujo.copycat.transport.Connection;
-import net.kuujo.copycat.raft.protocol.PublishRequest;
-import net.kuujo.copycat.raft.protocol.PublishResponse;
-import net.kuujo.copycat.raft.protocol.Response;
 
-import java.util.concurrent.CompletableFuture;
+import java.util.UUID;
 
 /**
  * Server session.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-class ServerSession extends Session {
-  private Connection connection;
-  private final Listeners<Object> listeners = new Listeners<>();
+abstract class ServerSession extends Session {
+  protected final Listeners<Object> listeners = new Listeners<>();
 
-  ServerSession(long id, int client) {
-    super(id, client);
+  ServerSession(long id, int client, UUID connection) {
+    super(id, client, connection);
   }
 
   /**
@@ -49,44 +45,12 @@ class ServerSession extends Session {
   /**
    * Sets the session connection.
    */
-  ServerSession setConnection(Connection connection) {
-    this.connection = connection;
-    connection.handler(PublishRequest.class, this::handlePublish);
-    return this;
-  }
+  abstract ServerSession setConnection(Connection connection);
 
   @Override
   @SuppressWarnings("unchecked")
   public ListenerContext<?> onReceive(Listener listener) {
     return listeners.add(listener);
-  }
-
-  @Override
-  public CompletableFuture<Void> publish(Object message) {
-    if (connection == null)
-      return CompletableFuture.completedFuture(null);
-
-    return connection.send(PublishRequest.builder()
-      .withSession(id())
-      .withMessage(message)
-      .build())
-      .thenApply(v -> null);
-  }
-
-  /**
-   * Handles a publish request.
-   *
-   * @param request The publish request to handle.
-   * @return A completable future to be completed with the publish response.
-   */
-  @SuppressWarnings("unchecked")
-  protected CompletableFuture<PublishResponse> handlePublish(PublishRequest request) {
-    for (ListenerContext listener : listeners) {
-      listener.accept(request.message());
-    }
-    return CompletableFuture.completedFuture(PublishResponse.builder()
-      .withStatus(Response.Status.OK)
-      .build());
   }
 
 }

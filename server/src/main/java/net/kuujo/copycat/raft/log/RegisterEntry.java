@@ -22,6 +22,8 @@ import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.alleycat.util.ReferenceManager;
 import net.kuujo.copycat.log.Entry;
 
+import java.util.UUID;
+
 /**
  * Register client entry.
  *
@@ -29,7 +31,8 @@ import net.kuujo.copycat.log.Entry;
  */
 @SerializeWith(id=303)
 public class RegisterEntry extends TimestampedEntry<RegisterEntry> {
-  private int client;
+  private int member;
+  private UUID connection;
 
   public RegisterEntry() {
   }
@@ -43,18 +46,38 @@ public class RegisterEntry extends TimestampedEntry<RegisterEntry> {
    *
    * @return The entry client.
    */
-  public int getClient() {
-    return client;
+  public int getMember() {
+    return member;
   }
 
   /**
    * Sets the entry client.
    *
-   * @param client The entry client.
+   * @param member The entry client.
    * @return The register entry.
    */
-  public RegisterEntry setClient(int client) {
-    this.client = client;
+  public RegisterEntry setMember(int member) {
+    this.member = member;
+    return this;
+  }
+
+  /**
+   * Returns the entry connection ID.
+   *
+   * @return The entry connection ID.
+   */
+  public UUID getConnection() {
+    return connection;
+  }
+
+  /**
+   * Sets the entry connection ID.
+   *
+   * @param connection The entry connection ID.
+   * @return The register entry.
+   */
+  public RegisterEntry setConnection(UUID connection) {
+    this.connection = connection;
     return this;
   }
 
@@ -66,13 +89,18 @@ public class RegisterEntry extends TimestampedEntry<RegisterEntry> {
   @Override
   public void writeObject(BufferOutput buffer, Alleycat alleycat) {
     super.writeObject(buffer, alleycat);
-    buffer.writeInt(client);
+    buffer.writeInt(member);
   }
 
   @Override
   public void readObject(BufferInput buffer, Alleycat alleycat) {
     super.readObject(buffer, alleycat);
-    client = buffer.readInt();
+    member = buffer.readInt();
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[index=%d, term=%d, member=%d, connection=%s]", getClass().getSimpleName(), getIndex(), getTerm(), getMember(), getConnection());
   }
 
 }

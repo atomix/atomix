@@ -48,11 +48,6 @@ class StartState extends AbstractState {
   }
 
   @Override
-  protected CompletableFuture<HeartbeatResponse> heartbeat(HeartbeatRequest request) {
-    return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
-  }
-
-  @Override
   protected CompletableFuture<RegisterResponse> register(RegisterRequest request) {
     return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
   }
@@ -84,6 +79,11 @@ class StartState extends AbstractState {
 
   @Override
   protected CompletableFuture<QueryResponse> query(QueryRequest request) {
+    return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
+  }
+
+  @Override
+  protected CompletableFuture<PublishResponse> publish(PublishRequest request) {
     return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
   }
 

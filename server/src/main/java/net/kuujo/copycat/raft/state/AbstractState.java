@@ -83,11 +83,6 @@ abstract class AbstractState implements Managed<AbstractState> {
   protected abstract CompletableFuture<LeaveResponse> leave(LeaveRequest request);
 
   /**
-   * Handles a heartbeat request.
-   */
-  protected abstract CompletableFuture<HeartbeatResponse> heartbeat(HeartbeatRequest request);
-
-  /**
    * Handles a register request.
    */
   protected abstract CompletableFuture<RegisterResponse> register(RegisterRequest request);
@@ -121,6 +116,11 @@ abstract class AbstractState implements Managed<AbstractState> {
    * Handles a query request.
    */
   protected abstract CompletableFuture<QueryResponse> query(QueryRequest request);
+
+  /**
+   * Handles a publish request.
+   */
+  protected abstract CompletableFuture<PublishResponse> publish(PublishRequest request);
 
   @Override
   public CompletableFuture<Void> close() {

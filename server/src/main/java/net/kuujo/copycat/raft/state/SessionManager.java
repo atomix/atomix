@@ -19,6 +19,7 @@ import net.kuujo.copycat.transport.Connection;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Session manager.
@@ -26,15 +27,22 @@ import java.util.Map;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 class SessionManager {
-  private final Map<Integer, Connection> connections = new HashMap<>();
+  private final int memberId;
+  private final RaftServerState context;
+  private final Map<UUID, Connection> connections = new HashMap<>();
   private final Map<Long, ServerSession> sessions = new HashMap<>();
+
+  SessionManager(int memberId, RaftServerState context) {
+    this.memberId = memberId;
+    this.context = context;
+  }
 
   /**
    * Registers a connection.
    */
   SessionManager registerConnection(Connection connection) {
     for (ServerSession session : sessions.values()) {
-      if (session.member() == connection.id()) {
+      if (session.connection() == connection.id()) {
         session.setConnection(connection);
       }
     }
@@ -47,7 +55,7 @@ class SessionManager {
    */
   SessionManager unregisterConnection(Connection connection) {
     for (ServerSession session : sessions.values()) {
-      if (session.member() == connection.id()) {
+      if (session.connection() == connection.id()) {
         session.setConnection(null);
       }
     }
@@ -56,18 +64,31 @@ class SessionManager {
   }
 
   /**
-   * Registers a server session.
+   * Registers a session.
    */
-  SessionManager registerSession(ServerSession session) {
-    sessions.put(session.id(), session.setConnection(connections.get(session.member())));
-    return this;
+  ServerSession registerSession(long sessionId, int memberId, UUID connectionId) {
+    ServerSession session;
+    if (memberId == this.memberId) {
+      session = new LocalServerSession(sessionId, memberId, connectionId, context);
+    } else {
+      session = new RemoteServerSession(sessionId, memberId, connectionId).setConnection(connections.get(connectionId));
+    }
+    sessions.put(sessionId, session);
+    return session;
   }
 
   /**
-   * Unregisters a server session.
+   * Unregisters a session.
    */
   SessionManager unregisterSession(ServerSession session) {
-    sessions.remove(session.id());
+    return unregisterSession(session.id());
+  }
+
+  /**
+   * Unregisters a session.
+   */
+  SessionManager unregisterSession(long sessionId) {
+    sessions.remove(sessionId);
     return this;
   }
 

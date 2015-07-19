@@ -16,10 +16,13 @@
 package net.kuujo.copycat.raft.state;
 
 import net.kuujo.alleycat.Alleycat;
+import net.kuujo.copycat.Listener;
+import net.kuujo.copycat.ListenerContext;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.raft.protocol.*;
 import net.kuujo.copycat.transport.Connection;
+import net.kuujo.copycat.transport.MessageHandler;
 import net.kuujo.copycat.transport.Server;
 import net.kuujo.copycat.transport.Transport;
 import net.kuujo.copycat.util.concurrent.Context;
@@ -34,7 +37,7 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledFuture;
@@ -49,7 +52,6 @@ import java.util.stream.Collectors;
  */
 public class RaftServerState extends RaftClientState {
   private static final Logger LOGGER = LoggerFactory.getLogger(RaftServerState.class);
-  private static final Random RANDOM = new Random();
   private final RaftState stateMachine;
   private final int memberId;
   private final Log log;
@@ -57,7 +59,8 @@ public class RaftServerState extends RaftClientState {
   private final Members members;
   private final Server server;
   private final ConnectionManager connections;
-  private final SessionManager sessions = new SessionManager();
+  private final StateConnection stateConnection = new StateConnection();
+  private final SessionManager sessions;
   private final Context context;
   private AbstractState state;
   private ScheduledFuture<?> joinTimer;
@@ -81,22 +84,14 @@ public class RaftServerState extends RaftClientState {
     this.context = new SingleThreadContext("copycat-server-" + memberId, serializer);
     this.log = log;
     this.members = members;
+    this.sessions = new SessionManager(memberId, this);
 
     this.stateMachine = new RaftState(stateMachine, cluster, sessions, new SingleThreadContext("copycat-server-" + memberId + "-state-%d", serializer.clone()));
 
-    this.server = transport.server(memberId);
-    this.connections = new ConnectionManager(transport.client(nextClientId()));
+    this.server = transport.server(UUID.randomUUID());
+    this.connections = new ConnectionManager(transport.client(UUID.randomUUID()));
 
     log.compactor().filter(this.stateMachine::filter);
-  }
-
-  /**
-   * Returns a random client ID.
-   *
-   * @return A random client ID.
-   */
-  private static int nextClientId() {
-    return RANDOM.nextInt(Integer.MAX_VALUE - 1023) + 1024;
   }
 
   /**
@@ -115,6 +110,15 @@ public class RaftServerState extends RaftClientState {
    */
   public Members getMembers() {
     return members;
+  }
+
+  /**
+   * Returns the server session manager.
+   *
+   * @return The server session manager.
+   */
+  SessionManager getSessionManager() {
+    return sessions;
   }
 
   /**
@@ -353,6 +357,13 @@ public class RaftServerState extends RaftClientState {
   }
 
   /**
+   * Returns the internal Raft state.
+   */
+  AbstractState getInternalState() {
+    return state;
+  }
+
+  /**
    * Returns the state machine proxy.
    *
    * @return The state machine proxy.
@@ -397,6 +408,14 @@ public class RaftServerState extends RaftClientState {
     return keepAlive(members, new CompletableFuture<>()).thenAccept(response -> {
       setVersion(response.version());
     });
+  }
+
+  /**
+   * This method always returns a connection to the local state machine for servers.
+   */
+  @Override
+  protected CompletableFuture<Connection> getConnection(Member member) {
+    return CompletableFuture.completedFuture(stateConnection);
   }
 
   /**
@@ -501,66 +520,6 @@ public class RaftServerState extends RaftClientState {
   }
 
   /**
-   * Starts the heartbeat timer.
-   */
-  private void startHeartbeatTimer() {
-    LOGGER.debug("Starting keep alive timer");
-    heartbeatTimer = context.scheduleAtFixedRate(this::heartbeat, 1, heartbeatInterval, TimeUnit.MILLISECONDS);
-  }
-
-  /**
-   * Sends a heartbeat to the leader.
-   */
-  private void heartbeat() {
-    if (heartbeat.compareAndSet(false, true)) {
-      LOGGER.debug("{} - Sending heartbeat request", memberId);
-      heartbeat(members.members().stream()
-        .filter(m -> m.type() == Member.Type.ACTIVE)
-        .collect(Collectors.toList()), new CompletableFuture<>()).thenRun(() -> heartbeat.set(false));
-    }
-  }
-
-  /**
-   * Sends a heartbeat to a random member.
-   */
-  private CompletableFuture<Void> heartbeat(List<Member> members, CompletableFuture<Void> future) {
-    if (members.isEmpty()) {
-      future.completeExceptionally(RaftError.Type.NO_LEADER_ERROR.instance());
-      heartbeat.set(false);
-      return future;
-    }
-    return heartbeat(selectMember(members), members, future);
-  }
-
-  /**
-   * Sends a heartbeat to a specific member.
-   */
-  private CompletableFuture<Void> heartbeat(Member member, List<Member> members, CompletableFuture<Void> future) {
-    HeartbeatRequest request = HeartbeatRequest.builder()
-      .withMember(memberId)
-      .build();
-    LOGGER.debug("Sending {} to {}", request, member);
-    connections.getConnection(member).thenAccept(connection -> {
-      connection.<HeartbeatRequest, HeartbeatResponse>send(request).whenComplete((response, error) -> {
-        context.checkThread();
-        if (isOpen()) {
-          if (error == null && response.status() == Response.Status.OK) {
-            setLeader(response.leader());
-            setTerm(response.term());
-            future.complete(null);
-          } else {
-            if (member.id() == getLeader()) {
-              setLeader(0);
-            }
-            heartbeat(members, future);
-          }
-        }
-      });
-    });
-    return future;
-  }
-
-  /**
    * Leaves the cluster.
    */
   private CompletableFuture<Void> leave() {
@@ -643,7 +602,6 @@ public class RaftServerState extends RaftClientState {
 
     connection.handler(JoinRequest.class, state::join);
     connection.handler(LeaveRequest.class, state::leave);
-    connection.handler(HeartbeatRequest.class, state::heartbeat);
     connection.handler(RegisterRequest.class, state::register);
     connection.handler(KeepAliveRequest.class, state::keepAlive);
     connection.handler(AppendRequest.class, state::append);
@@ -651,6 +609,7 @@ public class RaftServerState extends RaftClientState {
     connection.handler(VoteRequest.class, state::vote);
     connection.handler(CommandRequest.class, state::command);
     connection.handler(QueryRequest.class, state::query);
+    connection.handler(PublishRequest.class, state::publish);
 
     connection.closeListener(sessions::unregisterConnection);
   }
@@ -671,7 +630,6 @@ public class RaftServerState extends RaftClientState {
         transition(PassiveState.class);
       }, context)
         .thenCompose(v -> join())
-        .thenRunAsync(this::startHeartbeatTimer, context)
         .thenCompose(v -> super.open())
         .thenRun(() -> open = true);
     } else if (member.type() == Member.Type.ACTIVE) {
@@ -680,7 +638,6 @@ public class RaftServerState extends RaftClientState {
         transition(FollowerState.class);
         open = true;
       }, context)
-        .thenRunAsync(this::startHeartbeatTimer, context)
         .thenCompose(v -> super.open());
     } else {
       throw new IllegalStateException("unknown member type: " + member.type());
@@ -745,6 +702,66 @@ public class RaftServerState extends RaftClientState {
   @Override
   public String toString() {
     return getClass().getCanonicalName();
+  }
+
+  /**
+   * Dummy state connection.
+   */
+  private class StateConnection implements Connection {
+
+    @Override
+    public UUID id() {
+      return server.id();
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T, U> CompletableFuture<U> send(T request) {
+      Class<?> clazz = request.getClass();
+      if (clazz == JoinRequest.class) {
+        return (CompletableFuture<U>) state.join((JoinRequest) request);
+      } else if (clazz == LeaveRequest.class) {
+        return (CompletableFuture<U>) state.leave((LeaveRequest) request);
+      } else if (clazz == RegisterRequest.class) {
+        return (CompletableFuture<U>) state.register((RegisterRequest) request);
+      } else if (clazz == KeepAliveRequest.class) {
+        return (CompletableFuture<U>) state.keepAlive((KeepAliveRequest) request);
+      } else if (clazz == AppendRequest.class) {
+        return (CompletableFuture<U>) state.append((AppendRequest) request);
+      } else if (clazz == PollRequest.class) {
+        return (CompletableFuture<U>) state.poll((PollRequest) request);
+      } else if (clazz == VoteRequest.class) {
+        return (CompletableFuture<U>) state.vote((VoteRequest) request);
+      } else if (clazz == CommandRequest.class) {
+        return (CompletableFuture<U>) state.command((CommandRequest) request);
+      } else if (clazz == QueryRequest.class) {
+        return (CompletableFuture<U>) state.query((QueryRequest) request);
+      } else if (clazz == PublishRequest.class) {
+        return (CompletableFuture<U>) state.publish((PublishRequest) request);
+      }
+      return Futures.exceptionalFuture(new IllegalStateException("no handlers registered"));
+    }
+
+    @Override
+    public <T, U> Connection handler(Class<T> type, MessageHandler<T, U> handler) {
+      return null;
+    }
+
+    @Override
+    public ListenerContext<Throwable> exceptionListener(Listener<Throwable> listener) {
+      return null;
+    }
+
+    @Override
+    public ListenerContext<Connection> closeListener(Listener<Connection> listener) {
+      return null;
+    }
+
+    @Override
+    public CompletableFuture<Void> close() {
+      return null;
+    }
+
   }
 
 }

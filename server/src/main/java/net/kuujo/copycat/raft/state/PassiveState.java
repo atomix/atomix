@@ -18,10 +18,11 @@ package net.kuujo.copycat.raft.state;
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.raft.RaftError;
 import net.kuujo.copycat.raft.RaftServer;
+import net.kuujo.copycat.raft.Session;
 import net.kuujo.copycat.raft.log.RaftEntry;
 import net.kuujo.copycat.raft.protocol.*;
+import net.kuujo.copycat.util.concurrent.ComposableFuture;
 
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -139,7 +140,7 @@ public class PassiveState extends AbstractState {
     if (!request.entries().isEmpty()) {
 
       // Iterate through request entries and append them to the log.
-      for (RaftEntry entry : (List<RaftEntry>) request.entries()) {
+      for (RaftEntry entry : (Iterable<RaftEntry>) request.entries()) {
         // If the entry index is greater than the last log index, skip missing entries.
         if (!context.getLog().containsIndex(entry.getIndex())) {
           context.getLog().skip(entry.getIndex() - context.getLog().lastIndex() - 1).appendEntry(entry);
@@ -267,7 +268,8 @@ public class PassiveState extends AbstractState {
         .withError(RaftError.Type.NO_LEADER_ERROR)
         .build()));
     } else {
-      return context.getConnections().getConnection(context.getMembers().member(context.getLeader()))
+      return context.getConnections()
+        .getConnection(context.getMembers().member(context.getLeader()))
         .thenCompose(connection -> connection.send(request));
     }
   }
@@ -282,7 +284,8 @@ public class PassiveState extends AbstractState {
         .withError(RaftError.Type.NO_LEADER_ERROR)
         .build()));
     } else {
-      return context.getConnections().getConnection(context.getMembers().member(context.getLeader()))
+      return context.getConnections()
+        .getConnection(context.getMembers().member(context.getLeader()))
         .thenCompose(connection -> connection.send(request));
     }
   }
@@ -297,7 +300,8 @@ public class PassiveState extends AbstractState {
         .withError(RaftError.Type.NO_LEADER_ERROR)
         .build()));
     } else {
-      return context.getConnections().getConnection(context.getMembers().member(context.getLeader()))
+      return context.getConnections()
+        .getConnection(context.getMembers().member(context.getLeader()))
         .thenCompose(connection -> connection.send(request));
     }
   }
@@ -312,7 +316,8 @@ public class PassiveState extends AbstractState {
         .withError(RaftError.Type.NO_LEADER_ERROR)
         .build()));
     } else {
-      return context.getConnections().getConnection(context.getMembers().member(context.getLeader()))
+      return context.getConnections()
+        .getConnection(context.getMembers().member(context.getLeader()))
         .thenCompose(connection -> connection.send(request));
     }
   }
@@ -327,7 +332,8 @@ public class PassiveState extends AbstractState {
         .withError(RaftError.Type.NO_LEADER_ERROR)
         .build()));
     } else {
-      return context.getConnections().getConnection(context.getMembers().member(context.getLeader()))
+      return context.getConnections()
+        .getConnection(context.getMembers().member(context.getLeader()))
         .thenCompose(connection -> connection.send(request));
     }
   }
@@ -342,23 +348,37 @@ public class PassiveState extends AbstractState {
         .withError(RaftError.Type.NO_LEADER_ERROR)
         .build()));
     } else {
-      return context.getConnections().getConnection(context.getMembers().member(context.getLeader()))
+      return context.getConnections()
+        .getConnection(context.getMembers().member(context.getLeader()))
         .thenCompose(connection -> connection.send(request));
     }
   }
 
   @Override
-  protected CompletableFuture<HeartbeatResponse> heartbeat(HeartbeatRequest request) {
+  protected CompletableFuture<PublishResponse> publish(PublishRequest request) {
     context.checkThread();
     logRequest(request);
-    if (context.getLeader() == 0) {
-      return CompletableFuture.completedFuture(logResponse(HeartbeatResponse.builder()
-        .withStatus(Response.Status.ERROR)
-        .withError(RaftError.Type.NO_LEADER_ERROR)
-        .build()));
+
+    Session session = context.getSession();
+    if (session != null) {
+      CompletableFuture<PublishResponse> future = new ComposableFuture<>();
+      session.publish(request.message()).whenCompleteAsync((result, error) -> {
+        if (error == null) {
+          future.complete(logResponse(PublishResponse.builder()
+            .withStatus(Response.Status.OK)
+            .build()));
+        } else {
+          future.complete(logResponse(PublishResponse.builder()
+            .withStatus(Response.Status.ERROR)
+            .withError(RaftError.Type.INTERNAL_ERROR)
+            .build()));
+        }
+      }, context.getContext());
+      return future;
     } else {
-      return context.getConnections().getConnection(context.getMembers().member(context.getLeader()))
-        .thenCompose(connection -> connection.send(request));
+      return CompletableFuture.completedFuture(logResponse(PublishResponse.builder()
+        .withStatus(Response.Status.OK)
+        .build()));
     }
   }
 

@@ -111,8 +111,6 @@ class RaftState {
       return filter((CommandEntry) entry, compaction);
     } else if (entry instanceof KeepAliveEntry) {
       return filter((KeepAliveEntry) entry, compaction);
-    } else if (entry instanceof HeartbeatEntry) {
-      return filter((HeartbeatEntry) entry, compaction);
     } else if (entry instanceof RegisterEntry) {
       return filter((RegisterEntry) entry, compaction);
     } else if (entry instanceof NoOpEntry) {
@@ -188,16 +186,6 @@ class RaftState {
   }
 
   /**
-   * Filters an entry.
-   *
-   * @param entry The entry to filter.
-   * @return A boolean value indicating whether to keep the entry.
-   */
-  public CompletableFuture<Boolean> filter(HeartbeatEntry entry, Compaction compaction) {
-    return Futures.completedFutureAsync(false, context);
-  }
-
-  /**
    * Applies an entry to the state machine.
    *
    * @param entry The entry to apply.
@@ -218,8 +206,6 @@ class RaftState {
       return apply((JoinEntry) entry);
     } else if (entry instanceof LeaveEntry) {
       return apply((LeaveEntry) entry);
-    } else if (entry instanceof HeartbeatEntry) {
-      return apply((HeartbeatEntry) entry);
     }
     return Futures.exceptionalFuture(new InternalException("unknown state machine operation"));
   }
@@ -231,7 +217,7 @@ class RaftState {
    * @return The result.
    */
   public CompletableFuture<Long> apply(RegisterEntry entry) {
-    return register(entry.getIndex(), entry.getClient(), entry.getTimestamp());
+    return register(entry.getIndex(), entry.getMember(), entry.getConnection(), entry.getTimestamp());
   }
 
   /**
@@ -295,29 +281,26 @@ class RaftState {
   }
 
   /**
-   * Applies an entry to the state machine.
-   *
-   * @param entry The entry to apply.
-   * @return The result.
-   */
-  public CompletableFuture<Void> apply(HeartbeatEntry entry) {
-    return heartbeat(entry.getIndex(), entry.getMemberId(), entry.getTimestamp());
-  }
-
-  /**
    * Registers a member session.
    *
    * @param index The registration index.
-   * @param clientId The session client ID.
+   * @param memberId The session member ID.
+   * @param connectionId the session connection ID.
    * @param timestamp The registration timestamp.
    * @return The session ID.
    */
-  private CompletableFuture<Long> register(long index, int clientId, long timestamp) {
-    ServerSession session = new ServerSession(index, clientId);
-    sessions.registerSession(session);
+  private CompletableFuture<Long> register(long index, int memberId, UUID connectionId, long timestamp) {
+    Session session = sessions.registerSession(index, memberId, connectionId);
 
     SessionContext context = new SessionContext(timestamp);
     contexts.put(index, context);
+
+    if (memberId != 0) {
+      MemberState state = members.getMember(memberId);
+      if (state != null) {
+        state.setSession(index);
+      }
+    }
 
     // We need to ensure that the command is applied to the state machine before queries are run.
     // Set last applied only after the operation has been submitted to the state machine executor.
@@ -344,20 +327,11 @@ class RaftState {
     // Set last applied only after the operation has been submitted to the state machine executor.
     CompletableFuture<Void> future;
     if (context == null) {
-
       LOGGER.warn("Unknown session: " + sessionId);
       future = Futures.exceptionalFutureAsync(new UnknownSessionException("unknown session: " + sessionId), this.context);
-
     } else if (!context.update(index, timestamp)) {
-
       LOGGER.warn("Expired session: " + sessionId);
-      contexts.remove(sessionId);
-
-      ServerSession session = sessions.getSession(sessionId);
-      if (session != null) {
-        this.context.execute(() -> stateMachine.expire(session));
-      }
-
+      expireSession(sessionId);
       future = Futures.exceptionalFutureAsync(new UnknownSessionException("session expired: " + sessionId), this.context);
     } else {
       future = Futures.completedFutureAsync(null, this.context);
@@ -399,22 +373,12 @@ class RaftState {
     // First check to ensure that the session exists.
     SessionContext context = contexts.get(sessionId);
     if (context == null) {
-
       LOGGER.warn("Unknown session: " + sessionId);
       future = Futures.exceptionalFutureAsync(new UnknownSessionException("unknown session " + sessionId), this.context);
-
     } else if (!context.update(index, timestamp)) {
-
-      contexts.remove(sessionId);
-
-      ServerSession session = sessions.getSession(sessionId);
-      if (session != null) {
-        this.context.execute(() -> stateMachine.expire(session));
-      }
-
       LOGGER.warn("Expired session: " + sessionId);
+      expireSession(sessionId);
       future = Futures.exceptionalFutureAsync(new UnknownSessionException("unknown session " + sessionId), this.context);
-
     } else if (context.responses.containsKey(request)) {
       future = CompletableFuture.completedFuture(context.responses.get(request));
     } else {
@@ -454,7 +418,6 @@ class RaftState {
     // If the session has not yet been opened or if the client provided a version greater than the last applied index
     // then wait until the up-to-date index is applied to the state machine.
     if (sessionId > lastApplied || version > lastApplied) {
-
       CompletableFuture<Object> future = new CompletableFuture<>();
       ServerSession session = sessions.getSession(sessionId);
 
@@ -473,15 +436,29 @@ class RaftState {
         return Futures.exceptionalFutureAsync(new UnknownSessionException("unknown session: " + sessionId), this.context);
       } else if (!context.expire(timestamp)) {
         LOGGER.warn("Expired session: " + sessionId);
-
-        ServerSession session = sessions.getSession(sessionId);
-        this.context.execute(() -> stateMachine.expire(session));
-
+        expireSession(sessionId);
         return Futures.exceptionalFutureAsync(new UnknownSessionException("unknown session: " + sessionId), this.context);
       } else {
         ServerSession session = sessions.getSession(sessionId);
         return execute(() -> stateMachine.apply(new Commit(index, session, timestamp, query)));
       }
+    }
+  }
+
+  /**
+   * Expires a session.
+   */
+  private void expireSession(long sessionId) {
+    contexts.remove(sessionId);
+    ServerSession session = sessions.getSession(sessionId);
+    if (session != null) {
+      if (session.member() != 0) {
+        MemberState state = members.getMember(session.member());
+        if (state != null) {
+          state.setSession(0);
+        }
+      }
+      this.context.execute(() -> stateMachine.expire(session));
     }
   }
 
@@ -517,32 +494,6 @@ class RaftState {
 
     if (state != null) {
       members.removeMember(state);
-    }
-
-    setLastApplied(index);
-
-    return Futures.completedFutureAsync(null, context);
-  }
-
-  /**
-   * Applies a heartbeat to the state machine.
-   *
-   * @param index The heartbeat index.
-   * @param memberId The member ID.
-   * @param timestamp The heartbeat timestamp.
-   * @return A completable future to be completed once the heartbeat has been applied.
-   */
-  private CompletableFuture<Void> heartbeat(long index, int memberId, long timestamp) {
-    MemberState member = members.getMember(memberId);
-
-    if (member != null) {
-      member.update(timestamp, sessionTimeout);
-    }
-
-    for (MemberState state : members) {
-      if (!state.update(timestamp, sessionTimeout)) {
-        state.setSession(0);
-      }
     }
 
     setLastApplied(index);
