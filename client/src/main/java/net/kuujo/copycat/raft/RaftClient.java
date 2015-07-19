@@ -16,8 +16,8 @@
 package net.kuujo.copycat.raft;
 
 import net.kuujo.alleycat.Alleycat;
-import net.kuujo.copycat.transport.Transport;
 import net.kuujo.copycat.raft.state.RaftClientState;
+import net.kuujo.copycat.transport.Transport;
 
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
@@ -46,11 +46,6 @@ public class RaftClient implements ManagedRaft {
 
   private RaftClient(RaftClientState client) {
     this.client = client;
-  }
-
-  @Override
-  public Sessions sessions() {
-    return client.getSessions();
   }
 
   @Override
