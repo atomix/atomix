@@ -19,7 +19,6 @@ import net.kuujo.alleycat.Alleycat;
 import net.kuujo.copycat.raft.state.RaftClientState;
 import net.kuujo.copycat.transport.Transport;
 
-import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -138,7 +137,6 @@ public class RaftClient implements ManagedRaft {
    * Raft client builder.
    */
   public static class Builder implements Raft.Builder<Builder, RaftClient> {
-    private static final Random RANDOM = new Random();
     private Transport transport;
     private Alleycat serializer;
     private long keepAliveInterval = 1000;
@@ -201,16 +199,7 @@ public class RaftClient implements ManagedRaft {
 
     @Override
     public RaftClient build() {
-      return new RaftClient(new RaftClientState(nextClientId(), transport, members, serializer).setKeepAliveInterval(keepAliveInterval));
-    }
-
-    /**
-     * Returns a random client ID.
-     *
-     * @return A random client ID.
-     */
-    private static int nextClientId() {
-      return RANDOM.nextInt(Integer.MAX_VALUE - 1023) + 1024;
+      return new RaftClient(new RaftClientState(transport, members, serializer).setKeepAliveInterval(keepAliveInterval));
     }
   }
 

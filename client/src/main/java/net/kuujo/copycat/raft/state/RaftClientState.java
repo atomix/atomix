@@ -75,7 +75,11 @@ public class RaftClientState implements Managed<Void> {
   private volatile long response;
   private volatile long version;
 
-  public RaftClientState(int clientId, Transport transport, Members members, Alleycat serializer) {
+  public RaftClientState(Transport transport, Members members, Alleycat serializer) {
+    this(0, transport, members, serializer);
+  }
+
+  protected RaftClientState(int clientId, Transport transport, Members members, Alleycat serializer) {
     if (members == null)
       throw new NullPointerException("members cannot be null");
 
