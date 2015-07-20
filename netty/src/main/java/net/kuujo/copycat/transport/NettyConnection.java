@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.raft.protocol;
+package net.kuujo.copycat.transport;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
@@ -23,9 +23,6 @@ import io.netty.util.ReferenceCounted;
 import net.kuujo.copycat.Listener;
 import net.kuujo.copycat.ListenerContext;
 import net.kuujo.copycat.Listeners;
-import net.kuujo.copycat.transport.Connection;
-import net.kuujo.copycat.transport.MessageHandler;
-import net.kuujo.copycat.transport.TransportException;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.openhft.hashing.LongHashFunction;
 

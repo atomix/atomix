@@ -13,15 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.raft.protocol;
+package net.kuujo.copycat.transport;
 
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.Epoll;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
-import net.kuujo.copycat.transport.Client;
-import net.kuujo.copycat.transport.Server;
-import net.kuujo.copycat.transport.Transport;
 import net.kuujo.copycat.util.concurrent.CopycatThreadFactory;
 
 import java.util.Map;

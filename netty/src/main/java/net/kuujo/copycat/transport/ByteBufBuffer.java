@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.raft.protocol;
+package net.kuujo.copycat.transport;
 
 import io.netty.buffer.ByteBuf;
 import net.kuujo.alleycat.io.Buffer;
