@@ -23,6 +23,9 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * Transport server.
+ * <p>
+ * This is a low-level abstraction through which Copycat servers receive connections from clients. Users should never use
+ * this API directly.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -30,6 +33,8 @@ public interface Server {
 
   /**
    * Returns the server ID.
+   * <p>
+   * The server ID is a globally unique {@link java.util.UUID} through which the server can be identified.
    *
    * @return The server ID.
    */
@@ -37,6 +42,15 @@ public interface Server {
 
   /**
    * Listens for connections on the server.
+   * <p>
+   * Once the server has started listening on the provided {@code address}, {@link Listener#accept(Object)} will be
+   * called for the provided {@link net.kuujo.copycat.Listener} each time a new connection to the server is established.
+   * The provided connection's {@link net.kuujo.copycat.transport.Connection#id()} will reflect the
+   * {@link net.kuujo.copycat.transport.Client#id()} of the client that connected to the server and not the
+   * {@link net.kuujo.copycat.transport.Server#id()} of the server itself.
+   * <p>
+   * Once the server has bound to the provided {@link java.net.InetSocketAddress address} the returned
+   * {@link java.util.concurrent.CompletableFuture} will be completed.
    *
    * @param address The address on which to listen for connections.
    * @return A completable future to be called once the server has started listening for connections.
@@ -45,6 +59,9 @@ public interface Server {
 
   /**
    * Closes the server.
+   * <p>
+   * When the server is closed, any {@link Connection#closeListener(net.kuujo.copycat.Listener) close listeners} registered
+   * on the server's {@link net.kuujo.copycat.transport.Connection}s will be invoked prior to shutdown.
    *
    * @return A completable future to be completed once the server is closed.
    */

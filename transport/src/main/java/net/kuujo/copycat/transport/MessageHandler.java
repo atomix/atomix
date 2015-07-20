@@ -18,14 +18,31 @@ package net.kuujo.copycat.transport;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Message handler.
+ * Transport layer message handler.
+ * <p>
+ * This is a functional interface for handling messages on a {@link net.kuujo.copycat.transport.Connection} instance.
+ * Message handlers are {@link Connection#handler(Class, MessageHandler) registered} for specific types. When
+ * {@link MessageHandler#handle(Object)} is invoked by a {@link net.kuujo.copycat.transport.Connection}, the handler
+ * <em>must</em> return a valid {@link java.util.concurrent.CompletableFuture} to be completed with the message reply.
+ * <p>
+ * Note that input and output for the message handler must be serializable via the configured {@link net.kuujo.alleycat.Alleycat}
+ * instance. This means it must implement {@link java.io.Serializable}, {@link java.io.Externalizable}, or
+ * {@link net.kuujo.alleycat.AlleycatSerializable} or provide a custom {@link net.kuujo.alleycat.Serializer}.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
+@FunctionalInterface
 public interface MessageHandler<T, U> {
 
   /**
    * Handles a message.
+   * <p>
+   * The handler must synchronously return a {@link java.util.concurrent.CompletableFuture} to be completed with the
+   * message response. If the message is handled synchronously, return {@link CompletableFuture#completedFuture(Object)}
+   * to immediately complete the returned future. Otherwise, create a {@link java.util.concurrent.CompletableFuture}
+   * and call {@link java.util.concurrent.CompletableFuture#complete(Object)} or
+   * {@link java.util.concurrent.CompletableFuture#completeExceptionally(Throwable)} to complete the future with a reply
+   * or error respectively.
    *
    * @param message The message to handle.
    * @return A completable future to be completed with the message response.
