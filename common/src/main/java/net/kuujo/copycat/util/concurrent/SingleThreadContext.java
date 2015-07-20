@@ -21,10 +21,16 @@ public class SingleThreadContext extends Context {
   }
 
   public SingleThreadContext(ScheduledExecutorService executor, Alleycat serializer) {
+    this(getThread(executor), executor, serializer);
+  }
+
+  public SingleThreadContext(Thread thread, ScheduledExecutorService executor, Alleycat serializer) {
     super(serializer);
     this.executor = executor;
-    CopycatThread thread = getThread(executor);
-    thread.setContext(this);
+    if (!(thread instanceof CopycatThread)) {
+      throw new IllegalStateException("not a Copycat thread");
+    }
+    ((CopycatThread) thread).setContext(this);
   }
 
   /**

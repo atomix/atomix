@@ -17,13 +17,13 @@ package net.kuujo.copycat.transport;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import net.kuujo.copycat.Listener;
 import net.kuujo.copycat.util.concurrent.Context;
-import net.kuujo.copycat.util.concurrent.CopycatThread;
 import net.kuujo.copycat.util.concurrent.SingleThreadContext;
 
 import java.nio.charset.StandardCharsets;
@@ -84,15 +84,7 @@ public abstract class NettyHandler extends ChannelInboundHandlerAdapter {
     if (context != null) {
       return context;
     }
-
-    Thread thread = Thread.currentThread();
-    if (!(thread instanceof CopycatThread)) {
-      throw new IllegalStateException("illegal thread state");
-    }
-
-    context = new SingleThreadContext(channel.eventLoop(), this.context.serializer().clone());
-    ((CopycatThread) thread).setContext(context);
-    return context;
+    return new SingleThreadContext(Thread.currentThread(), channel.eventLoop(), this.context.serializer().clone());
   }
 
   @Override
@@ -102,6 +94,9 @@ public abstract class NettyHandler extends ChannelInboundHandlerAdapter {
     switch (type) {
       case NettyConnection.CONNECT:
         handleConnect(buffer, context);
+        break;
+      case NettyConnection.OK:
+        handleOk(buffer, context);
         break;
       case NettyConnection.REQUEST:
         handleRequest(buffer, context);
@@ -116,6 +111,25 @@ public abstract class NettyHandler extends ChannelInboundHandlerAdapter {
    * Handles a connection identification request.
    */
   private void handleConnect(ByteBuf request, ChannelHandlerContext context) {
+    Channel channel = context.channel();
+    byte[] idBytes = new byte[request.readInt()];
+    request.readBytes(idBytes);
+    NettyConnection connection = new NettyConnection(UUID.fromString(new String(idBytes, StandardCharsets.UTF_8)), channel, getOrCreateContext(channel));
+
+    ByteBuf buffer = channel.alloc().buffer(5)
+      .writeByte(NettyConnection.OK)
+      .writeInt(idBytes.length)
+      .writeBytes(idBytes);
+    channel.writeAndFlush(buffer).addListener((ChannelFutureListener) channelFuture -> {
+      setConnection(channel, connection);
+      this.context.execute(() -> listener.accept(connection));
+    });
+  }
+
+  /**
+   * Handles a connection completion request.
+   */
+  private void handleOk(ByteBuf request, ChannelHandlerContext context) {
     Channel channel = context.channel();
     byte[] idBytes = new byte[request.readInt()];
     request.readBytes(idBytes);

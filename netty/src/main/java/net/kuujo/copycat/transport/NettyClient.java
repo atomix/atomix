@@ -101,7 +101,7 @@ public class NettyClient implements Client {
 
     bootstrap.connect(address).addListener(channelFuture -> {
       if (!channelFuture.isSuccess()) {
-        future.completeExceptionally(channelFuture.cause());
+        context.execute(() -> future.completeExceptionally(channelFuture.cause()));
       }
     });
     return future;
@@ -133,9 +133,7 @@ public class NettyClient implements Client {
         .writeByte(NettyConnection.CONNECT)
         .writeInt(idBytes.length)
         .writeBytes(idBytes);
-      channel.writeAndFlush(buffer).addListener(future -> {
-        buffer.release();
-      });
+      channel.writeAndFlush(buffer, channel.voidPromise());
     }
   }
 

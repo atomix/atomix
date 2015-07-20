@@ -40,7 +40,7 @@ public class CopycatThread extends Thread {
    * Returns the thread context.
    */
   public Context getContext() {
-    return context.get();
+    return context != null ? context.get() : null;
   }
 
 }

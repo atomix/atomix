@@ -40,10 +40,11 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class NettyConnection implements Connection {
   static final byte CONNECT = 0x00;
-  static final byte REQUEST = 0x01;
-  static final byte RESPONSE = 0x02;
-  static final byte SUCCESS = 0x03;
-  static final byte FAILURE = 0x04;
+  static final byte OK = 0x01;
+  static final byte REQUEST = 0x02;
+  static final byte RESPONSE = 0x03;
+  static final byte SUCCESS = 0x04;
+  static final byte FAILURE = 0x05;
   private static final ThreadLocal<ByteBufBuffer> BUFFER = new ThreadLocal<ByteBufBuffer>() {
     @Override
     protected ByteBufBuffer initialValue() {
