@@ -23,7 +23,7 @@ import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.raft.protocol.*;
 import net.kuujo.copycat.raft.server.RaftServer;
 import net.kuujo.copycat.raft.server.StateMachine;
-import net.kuujo.copycat.raft.state.RaftClientState;
+import net.kuujo.copycat.raft.client.state.RaftClientState;
 import net.kuujo.copycat.transport.Connection;
 import net.kuujo.copycat.transport.MessageHandler;
 import net.kuujo.copycat.transport.Server;

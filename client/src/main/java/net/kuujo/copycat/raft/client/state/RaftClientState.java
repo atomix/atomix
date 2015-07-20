@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.raft.state;
+package net.kuujo.copycat.raft.client.state;
 
 import net.kuujo.alleycat.Alleycat;
 import net.kuujo.copycat.raft.*;
@@ -154,7 +154,7 @@ public class RaftClientState implements Managed<Void> {
    * @param sessionId The client session.
    * @return The Raft client.
    */
-  RaftClientState setSessionId(long sessionId) {
+  protected RaftClientState setSessionId(long sessionId) {
     this.sessionId = sessionId;
     this.request = 0;
     this.response = 0;
@@ -194,7 +194,7 @@ public class RaftClientState implements Managed<Void> {
    * @param request The client request number.
    * @return The Raft client.
    */
-  RaftClientState setRequest(long request) {
+  protected RaftClientState setRequest(long request) {
     this.request = request;
     return this;
   }
@@ -214,7 +214,7 @@ public class RaftClientState implements Managed<Void> {
    * @param response The client response number.
    * @return The Raft client.
    */
-  RaftClientState setResponse(long response) {
+  protected RaftClientState setResponse(long response) {
     this.response = response;
     return this;
   }
@@ -234,7 +234,7 @@ public class RaftClientState implements Managed<Void> {
    * @param version The client version.
    * @return The Raft client.
    */
-  RaftClientState setVersion(long version) {
+  protected RaftClientState setVersion(long version) {
     if (version > this.version)
       this.version = version;
     return this;
