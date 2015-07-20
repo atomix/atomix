@@ -21,7 +21,7 @@ import net.kuujo.copycat.manager.DeletePath;
 import net.kuujo.copycat.manager.PathExists;
 import net.kuujo.copycat.raft.ManagedRaft;
 import net.kuujo.copycat.raft.Raft;
-import net.kuujo.copycat.raft.StateMachine;
+import net.kuujo.copycat.raft.server.StateMachine;
 import net.kuujo.copycat.util.Managed;
 
 import java.lang.reflect.Constructor;

@@ -24,6 +24,9 @@ import net.kuujo.copycat.ListenerContext;
 import net.kuujo.copycat.Resource;
 import net.kuujo.copycat.Stateful;
 import net.kuujo.copycat.raft.*;
+import net.kuujo.copycat.raft.server.Apply;
+import net.kuujo.copycat.raft.server.Commit;
+import net.kuujo.copycat.raft.server.Filter;
 
 import java.util.HashSet;
 import java.util.List;
@@ -206,7 +209,7 @@ public class AsyncTopic<T> extends Resource {
   /**
    * Topic state machine.
    */
-  public static class StateMachine extends net.kuujo.copycat.raft.StateMachine {
+  public static class StateMachine extends net.kuujo.copycat.raft.server.StateMachine {
     private final Set<Session> sessions = new HashSet<>();
     private long time;
 

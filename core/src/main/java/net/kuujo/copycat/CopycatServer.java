@@ -19,7 +19,7 @@ import net.kuujo.alleycat.Alleycat;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.manager.ResourceManager;
 import net.kuujo.copycat.raft.Members;
-import net.kuujo.copycat.raft.RaftServer;
+import net.kuujo.copycat.raft.server.RaftServer;
 import net.kuujo.copycat.transport.Transport;
 import net.kuujo.copycat.util.concurrent.CopycatThreadFactory;
 

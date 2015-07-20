@@ -25,6 +25,9 @@ import net.kuujo.copycat.Mode;
 import net.kuujo.copycat.Stateful;
 import net.kuujo.copycat.log.Compaction;
 import net.kuujo.copycat.raft.*;
+import net.kuujo.copycat.raft.server.Apply;
+import net.kuujo.copycat.raft.server.Commit;
+import net.kuujo.copycat.raft.server.Filter;
 
 import java.util.HashSet;
 import java.util.concurrent.CompletableFuture;
@@ -742,7 +745,7 @@ public class AsyncReference<T> extends Resource {
   /**
    * Async reference state machine.
    */
-  public static class StateMachine extends net.kuujo.copycat.raft.StateMachine {
+  public static class StateMachine extends net.kuujo.copycat.raft.server.StateMachine {
     private final java.util.Set<Long> sessions = new HashSet<>();
     private final AtomicReference<Object> value = new AtomicReference<>();
     private Commit<? extends ReferenceCommand> command;

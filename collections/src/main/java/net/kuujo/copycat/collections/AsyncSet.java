@@ -25,6 +25,9 @@ import net.kuujo.copycat.Mode;
 import net.kuujo.copycat.Stateful;
 import net.kuujo.copycat.log.Compaction;
 import net.kuujo.copycat.raft.*;
+import net.kuujo.copycat.raft.server.Apply;
+import net.kuujo.copycat.raft.server.Commit;
+import net.kuujo.copycat.raft.server.Filter;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -583,7 +586,7 @@ public class AsyncSet<T> extends Resource {
   /**
    * Map state machine.
    */
-  public static class StateMachine extends net.kuujo.copycat.raft.StateMachine {
+  public static class StateMachine extends net.kuujo.copycat.raft.server.StateMachine {
     private final Map<Integer, Commit<? extends TtlCommand>> map = new HashMap<>();
     private final Set<Long> sessions = new HashSet<>();
     private long time;

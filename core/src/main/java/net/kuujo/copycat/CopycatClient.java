@@ -17,7 +17,7 @@ package net.kuujo.copycat;
 
 import net.kuujo.alleycat.Alleycat;
 import net.kuujo.copycat.raft.Members;
-import net.kuujo.copycat.raft.RaftClient;
+import net.kuujo.copycat.raft.client.RaftClient;
 import net.kuujo.copycat.transport.Transport;
 
 import java.util.concurrent.TimeUnit;

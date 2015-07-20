@@ -13,27 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat;
-
-import net.kuujo.copycat.raft.server.StateMachine;
-
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
 
 /**
- * Interface to be implemented by resources to indicate the associated state machine.
+ * This package provides base interfaces for Copycat's implementation of the
+ * <a href="https://raftconsensus.github.io/">Raft consensus algorithm</a>.
+ * <p>
+ * The classes and interfaces in this package are shared both by Copycat's Raft client and server implementations.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface Stateful {
-
-  /**
-   * The state machine for this resource.
-   */
-  Class<? extends StateMachine> value();
-
-}
+package net.kuujo.copycat.raft;

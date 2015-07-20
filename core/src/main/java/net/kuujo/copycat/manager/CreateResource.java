@@ -22,7 +22,7 @@ import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.copycat.raft.Command;
 import net.kuujo.copycat.raft.Operation;
-import net.kuujo.copycat.raft.StateMachine;
+import net.kuujo.copycat.raft.server.StateMachine;
 
 /**
  * Create resource command.
