@@ -16,7 +16,10 @@
 package net.kuujo.copycat;
 
 /**
- * Registered listener.
+ * Context for unregistering a registered listener.
+ * <p>
+ * The listener context represents a registered listener. The context is normally returned when a {@link Listener} is
+ * registered and can be used to unregister the listener via {@link #close()}.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -24,6 +27,9 @@ public interface ListenerContext<T> extends Listener<T>, AutoCloseable {
 
   /**
    * Closes the listener.
+   * <p>
+   * When the listener is closed, the listener will be unregistered and will no longer receive events for which it was
+   * listening.
    */
   @Override
   void close();

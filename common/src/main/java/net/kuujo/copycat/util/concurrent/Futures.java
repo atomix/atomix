@@ -19,14 +19,17 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
 /**
- * Future utilities.
+ * Utilities for creating completed and exceptional futures.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public final class Futures {
 
   /**
-   * Creates a future that is completed.
+   * Creates a future that is synchronously completed.
+   *
+   * @param result The future result.
+   * @return The completed future.
    */
   public static <T> CompletableFuture<T> completedFuture(T result) {
     return CompletableFuture.completedFuture(result);
@@ -34,13 +37,20 @@ public final class Futures {
 
   /**
    * Creates a future that is asynchronously completed.
+   *
+   * @param result The future result.
+   * @param executor The executor on which to complete the future.
+   * @return The completed future.
    */
   public static <T> CompletableFuture<T> completedFutureAsync(T result, Executor executor) {
     return CompletableFuture.supplyAsync(() -> result, executor);
   }
 
   /**
-   * Creates a future that is completed exceptionally.
+   * Creates a future that is synchronously completed exceptionally.
+   *
+   * @param t The future exception.
+   * @return The exceptionally completed future.
    */
   public static <T> CompletableFuture<T> exceptionalFuture(Throwable t) {
     CompletableFuture<T> future = new CompletableFuture<>();
@@ -50,6 +60,10 @@ public final class Futures {
 
   /**
    * Creates a future that is asynchronously completed exceptionally.
+   *
+   * @param t The future exception.
+   * @param executor The executor on which to complete the future.
+   * @return The exceptionally completed future.
    */
   public static <T> CompletableFuture<T> exceptionalFutureAsync(Throwable t, Executor executor) {
     CompletableFuture<T> future = new CompletableFuture<>();

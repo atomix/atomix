@@ -17,6 +17,12 @@ package net.kuujo.copycat;
 
 /**
  * Object builder.
+ * <p>
+ * This is a base interface for building objects in Copycat.
+ * <p>
+ * Throughout Copycat, builders are used to build a variety of objects. In most cases, builders are thread local and
+ * <em>not</em> designed to be thread safe and it is assumed that {@link #build()} will be called from the same thread
+ * in which the builder was created.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -24,6 +30,9 @@ public interface Builder<T> {
 
   /**
    * Builds the object.
+   * <p>
+   * The returned object may be a new instance of the built class or a recycled instance, depending on the semantics
+   * of the builder implementation. Users should never assume that a builder allocates a new instance.
    *
    * @return The built object.
    */

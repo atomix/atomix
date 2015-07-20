@@ -26,6 +26,10 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Thread pool context.
+ * <p>
+ * This is a special {@link net.kuujo.copycat.util.concurrent.Context} implementation that schedules events to be executed
+ * on a thread pool. Events executed by this context are guaranteed to be executed on order but may be executed on different
+ * threads in the provided thread pool.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -36,6 +40,12 @@ public class ThreadPoolContext extends Context {
   private final LinkedList<Runnable> tasks = new LinkedList<>();
   private boolean running;
 
+  /**
+   * Creates a new thread pool context.
+   *
+   * @param parent The thread pool on which to execute events.
+   * @param serializer The context serializer.
+   */
   public ThreadPoolContext(ScheduledExecutorService parent, Alleycat serializer) {
     super(serializer);
     this.parent = parent;

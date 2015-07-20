@@ -22,7 +22,21 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Execution context.
+ * Thread context.
+ * <p>
+ * The thread context is used by Copycat to determine the correct thread on which to execute asynchronous callbacks.
+ * All threads created within Copycat must be instances of {@link net.kuujo.copycat.util.concurrent.CopycatThread}. Once
+ * a thread has been created, the context is stored in the thread object via
+ * {@link net.kuujo.copycat.util.concurrent.CopycatThread#setContext(Context)}. This means there is a one-to-one relationship
+ * between a context and a thread. That is, a context is representative of a thread and provides an interface for firing
+ * events on that thread.
+ * <p>
+ * In addition to serving as an {@link java.util.concurrent.Executor}, the context also provides thread-local storage
+ * for {@link net.kuujo.alleycat.Alleycat} serializer instances. All serialization that takes place within a
+ * {@link net.kuujo.copycat.util.concurrent.CopycatThread} should use the context {@link #serializer()}.
+ * <p>
+ * Components of the framework that provide custom threads should use {@link net.kuujo.copycat.util.concurrent.CopycatThreadFactory}
+ * to allocate new threads and provide a custom {@link net.kuujo.copycat.util.concurrent.Context} implementation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

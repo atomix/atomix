@@ -9,6 +9,9 @@ import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Single threaded context.
+ * <p>
+ * This is a basic {@link net.kuujo.copycat.util.concurrent.Context} implementation that uses a
+ * {@link java.util.concurrent.ScheduledExecutorService} to schedule events on the context thread.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -16,10 +19,25 @@ public class SingleThreadContext extends Context {
   private static final Logger LOGGER = LoggerFactory.getLogger(SingleThreadContext.class);
   private final ScheduledExecutorService executor;
 
+  /**
+   * Creates a new single thread context.
+   * <p>
+   * The provided context name will be passed to {@link net.kuujo.copycat.util.concurrent.CopycatThreadFactory} and used
+   * when instantiating the context thread.
+   *
+   * @param name The context name.
+   * @param serializer The context serializer.
+   */
   public SingleThreadContext(String name, Alleycat serializer) {
     this(Executors.newSingleThreadScheduledExecutor(new CopycatThreadFactory(name)), serializer);
   }
 
+  /**
+   * Creates a new single thread context.
+   *
+   * @param executor The executor on which to schedule events. This must be a single thread scheduled executor.
+   * @param serializer The context serializer.
+   */
   public SingleThreadContext(ScheduledExecutorService executor, Alleycat serializer) {
     this(getThread(executor), executor, serializer);
   }

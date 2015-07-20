@@ -21,7 +21,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
- * Special implementation of CompletableFuture with missing utility methods.
+ * Special implementation of {@link java.util.concurrent.CompletableFuture} with missing utility methods.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -36,6 +36,12 @@ public class ComposableFuture<T> extends CompletableFuture<T> implements BiConsu
     }
   }
 
+  /**
+   * Sets a consumer to be called when the future is failed.
+   *
+   * @param consumer The consumer to call.
+   * @return A new future.
+   */
   public CompletableFuture<T> except(Consumer<Throwable> consumer) {
     return whenComplete((result, error) -> {
       if (error != null) {
@@ -44,6 +50,12 @@ public class ComposableFuture<T> extends CompletableFuture<T> implements BiConsu
     });
   }
 
+  /**
+   * Sets a consumer to be called asynchronously when the future is failed.
+   *
+   * @param consumer The consumer to call.
+   * @return A new future.
+   */
   public CompletableFuture<T> exceptAsync(Consumer<Throwable> consumer) {
     return whenCompleteAsync((result, error) -> {
       if (error != null) {
@@ -52,6 +64,13 @@ public class ComposableFuture<T> extends CompletableFuture<T> implements BiConsu
     });
   }
 
+  /**
+   * Sets a consumer to be called asynchronously when the future is failed.
+   *
+   * @param consumer The consumer to call.
+   * @param executor The executor with which to call the consumer.
+   * @return A new future.
+   */
   public CompletableFuture<T> exceptAsync(Consumer<Throwable> consumer, Executor executor) {
     return whenCompleteAsync((result, error) -> {
       if (error != null) {

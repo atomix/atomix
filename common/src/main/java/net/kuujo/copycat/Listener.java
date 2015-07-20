@@ -17,6 +17,13 @@ package net.kuujo.copycat;
 
 /**
  * Event listener.
+ * <p>
+ * This is a simple functional event listener interface used to listen for events from a variety of objects. When a listener
+ * is registered, a {@link net.kuujo.copycat.ListenerContext} is typically returned. The context can be used to unregister
+ * the listener at any time via {@link ListenerContext#close()}.
+ * <p>
+ * In all cases Copycat will ensure that a registered listener will <em>always</em> be {@link #accept(Object) invoked}
+ * on the same {@link net.kuujo.copycat.util.concurrent.CopycatThread Copycat thread}.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -25,6 +32,8 @@ public interface Listener<T> {
 
   /**
    * Calls the listener.
+   * <p>
+   * The listener will always be called on the same {@link net.kuujo.copycat.util.concurrent.CopycatThread Copycat thread}.
    *
    * @param event The event that occurred.
    */
