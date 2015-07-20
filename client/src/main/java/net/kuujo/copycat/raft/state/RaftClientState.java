@@ -617,7 +617,11 @@ public class RaftClientState implements Managed<Void> {
 
     Member member = selectMember(members);
 
-    RegisterRequest request = RegisterRequest.builder().build();
+    RegisterRequest request = RegisterRequest.builder()
+      .withMember(id)
+      .withConnection(client.id())
+      .build();
+
     LOGGER.debug("Sending {} to {}", request, member);
     getConnection(member).thenAccept(connection -> {
       context.checkThread();
