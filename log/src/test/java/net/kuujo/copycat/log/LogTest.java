@@ -38,8 +38,6 @@ public class LogTest {
       Assert.assertTrue(log.isEmpty());
       Assert.assertEquals(log.length(), 0);
 
-      long time = System.currentTimeMillis();
-
       long index;
       try (TestEntry entry = log.createEntry(TestEntry.class)) {
         entry.setTerm(1);
@@ -67,8 +65,6 @@ public class LogTest {
       appendEntries(log, 100);
       Assert.assertEquals(log.length(), 100);
 
-      long time = System.currentTimeMillis();
-
       long index;
       try (TestEntry entry = log.createEntry(TestEntry.class)) {
         entry.setTerm(1);
@@ -95,8 +91,6 @@ public class LogTest {
       appendEntries(log, 100);
       Assert.assertEquals(log.length(), 100);
 
-      long time = System.currentTimeMillis();
-
       long index;
       try (TestEntry entry = log.createEntry(TestEntry.class)) {
         entry.setTerm(1);
@@ -122,8 +116,6 @@ public class LogTest {
   public void testCreateReadAfterRollOver() {
     try (Log log = createLog()) {
       appendEntries(log, 1100);
-
-      long time = System.currentTimeMillis();
 
       long index;
       try (TestEntry entry = log.createEntry(TestEntry.class)) {
@@ -166,8 +158,6 @@ public class LogTest {
 
       log.skip(10);
 
-      long time = System.currentTimeMillis();
-
       long index;
       try (TestEntry entry = log.createEntry(TestEntry.class)) {
         entry.setTerm(1);
@@ -200,8 +190,6 @@ public class LogTest {
       log.skip(10);
 
       Assert.assertEquals(log.length(), 1030);
-
-      long time = System.currentTimeMillis();
 
       long index;
       try (TestEntry entry = log.createEntry(TestEntry.class)) {

@@ -20,7 +20,7 @@ package net.kuujo.copycat.log;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface OffsetIndex extends AutoCloseable {
+interface OffsetIndex extends AutoCloseable {
 
   /**
    * Returns the first offset in the index.

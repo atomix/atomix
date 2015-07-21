@@ -46,7 +46,7 @@ import java.io.IOException;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class SearchableOffsetIndex implements OffsetIndex {
+class SearchableOffsetIndex implements OffsetIndex {
 
   /**
    * Returns the size of the index for the given number of entries.

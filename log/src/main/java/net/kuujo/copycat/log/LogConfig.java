@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class LogConfig {
+class LogConfig {
   private static final String DEFAULT_DIRECTORY = System.getProperty("user.dir");
   private static final int DEFAULT_MAX_ENTRY_SIZE = 1024 * 8;
   private static final int DEFAULT_MAX_SEGMENT_SIZE = 1024 * 1024 * 32;

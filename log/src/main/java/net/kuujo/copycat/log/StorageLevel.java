@@ -16,7 +16,9 @@
 package net.kuujo.copycat.log;
 
 /**
- * Raft storage level.
+ * Log storage level constants.
+ * <p>
+ * The storage level indicates the persistence mechanism to be used by the Copycat {@link net.kuujo.copycat.log.Log}.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -24,11 +26,17 @@ public enum StorageLevel {
 
   /**
    * Memory storage level.
+   * <p>
+   * The memory storage level will configure the {@link net.kuujo.copycat.log.Log} to use a {@link net.kuujo.alleycat.io.HeapBuffer}
+   * to store log data in a {@code byte[]} backed memory buffer.
    */
   MEMORY,
 
   /**
    * Disk storage level.
+   * <p>
+   * The disk storage level will configure the {@link net.kuujo.copycat.log.Log} to use a {@link net.kuujo.alleycat.io.FileBuffer}
+   * to store log data on disk in a series of segment files.
    */
   DISK
 

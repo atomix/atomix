@@ -24,7 +24,15 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Log compactor.
+ * Handles compaction for a log.
+ * <p>
+ * The log compactor manages compaction processes for a {@link net.kuujo.copycat.log.Log} instance. When the compactor
+ * is {@link #open(net.kuujo.copycat.util.concurrent.Context) opened}, the compactor will schedule both
+ * {@link net.kuujo.copycat.log.MinorCompaction minor} and {@link net.kuujo.copycat.log.MajorCompaction major} compactions
+ * based on the {@link #getMinorCompactionInterval()} and {@link #getMajorCompactionInterval()} respectively. Compaction
+ * will take place in a single background thread. During compaction, the respective {@link net.kuujo.copycat.log.Compaction}
+ * is responsible for iterating over compactable segments, rewriting segments, and registering new segments with the
+ * {@link net.kuujo.copycat.log.SegmentManager}.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

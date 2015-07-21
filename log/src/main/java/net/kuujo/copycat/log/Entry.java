@@ -22,7 +22,15 @@ import net.kuujo.alleycat.util.ReferenceManager;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Raft entry.
+ * Log entry.
+ * <p>
+ * The {@code Entry} represents a single record in a Copycat {@link net.kuujo.copycat.log.Log}. Each entry is stored at
+ * a unique {@link #getIndex() index} in the log. Indexes are applied to entries once written to a log.
+ * <p>
+ * Custom entry implementations should implement serialization and deserialization logic via
+ * {@link net.kuujo.alleycat.AlleycatSerializable#writeObject(net.kuujo.alleycat.io.BufferOutput, net.kuujo.alleycat.Alleycat)}
+ * and {@link net.kuujo.alleycat.AlleycatSerializable#readObject(net.kuujo.alleycat.io.BufferInput, net.kuujo.alleycat.Alleycat)}.
+ * respectively.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

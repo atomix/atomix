@@ -24,7 +24,7 @@ import net.kuujo.copycat.util.concurrent.Context;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class Segment implements AutoCloseable {
+class Segment implements AutoCloseable {
 
   /**
    * Opens a new segment.
@@ -35,7 +35,7 @@ public class Segment implements AutoCloseable {
    * @param context The segment execution context.
    * @return The opened segment.
    */
-  public static Segment open(Buffer buffer, SegmentDescriptor descriptor, OffsetIndex index, Context context) {
+  static Segment open(Buffer buffer, SegmentDescriptor descriptor, OffsetIndex index, Context context) {
     return new Segment(buffer, descriptor, index, context);
   }
 
@@ -223,7 +223,7 @@ public class Segment implements AutoCloseable {
    * @param index The index from which to read the entry.
    * @return The entry at the given index.
    */
-  public <T extends Entry<?>> T getEntry(long index) {
+  public <T extends Entry> T getEntry(long index) {
     if (!isOpen())
       throw new IllegalStateException("segment not open");
     checkRange(index);

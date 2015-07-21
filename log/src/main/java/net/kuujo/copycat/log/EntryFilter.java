@@ -18,7 +18,12 @@ package net.kuujo.copycat.log;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Raft log entry filter.
+ * Log entry filter.
+ * <p>
+ * The entry filter assist in {@link net.kuujo.copycat.log.Compaction} by providing a mechanism through which to define
+ * which entries should be retained in the log during compaction. During the log compaction process, the configured
+ * {@link net.kuujo.copycat.log.Compactor#filter(EntryFilter)} will be called for each entry in the segment or segments
+ * being compacted.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -27,6 +32,11 @@ public interface EntryFilter {
 
   /**
    * Returns a boolean value indicating whether to keep the given entry in the log.
+   * <p>
+   * During compaction, the {@link net.kuujo.copycat.log.Compaction} will call this method for each {@link net.kuujo.copycat.log.Entry}
+   * in the segment or segments being compacted. If this method returns {@code true} then the entry will be written to
+   * the compacted segment, otherwise it will be <em>permanently discarded from the log</em>. Users should favor accepting
+   * unneeded entries over rejecting entries.
    *
    * @param entry The entry to check.
    * @param compaction The compaction context.
