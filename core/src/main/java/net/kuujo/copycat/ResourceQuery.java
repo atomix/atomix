@@ -35,7 +35,7 @@ public class ResourceQuery<T extends Query<U>, U> extends ResourceOperation<T, U
    */
   @SuppressWarnings("unchecked")
   public static <T extends Query<U>, U> Builder<T, U> builder() {
-    return Operation.builder(Builder.class);
+    return Operation.builder(Builder.class, Builder::new);
   }
 
   @Override
@@ -46,7 +46,12 @@ public class ResourceQuery<T extends Query<U>, U> extends ResourceOperation<T, U
   /**
    * Resource command builder.
    */
-  public static class Builder<T extends Query<U>, U> extends Query.Builder<Builder<T, U>, ResourceQuery<T, U>> {
+  public static class Builder<T extends Query<U>, U> extends Query.Builder<Builder<T, U>, ResourceQuery<T, U>, U> {
+
+    private Builder(BuilderPool<Builder<T, U>, ResourceQuery<T, U>> pool) {
+      super(pool);
+    }
+
     @Override
     protected ResourceQuery<T, U> create() {
       return new ResourceQuery<>();

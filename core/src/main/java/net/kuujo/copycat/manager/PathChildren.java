@@ -16,6 +16,7 @@
 package net.kuujo.copycat.manager;
 
 import net.kuujo.alleycat.SerializeWith;
+import net.kuujo.copycat.BuilderPool;
 import net.kuujo.copycat.raft.ConsistencyLevel;
 import net.kuujo.copycat.raft.Operation;
 import net.kuujo.copycat.raft.Query;
@@ -36,7 +37,7 @@ public class PathChildren extends PathOperation<List<String>> implements Query<L
    * @return A new PathChildren command builder.
    */
   public static Builder builder() {
-    return Operation.builder(PathChildren.Builder.class);
+    return Operation.builder(PathChildren.Builder.class, PathChildren.Builder::new);
   }
 
   public PathChildren() {
@@ -54,7 +55,11 @@ public class PathChildren extends PathOperation<List<String>> implements Query<L
   /**
    * Path children builder.
    */
-  public static class Builder extends PathOperation.Builder<Builder, PathChildren> {
+  public static class Builder extends PathOperation.Builder<Builder, PathChildren, List<String>> {
+    public Builder(BuilderPool<Builder, PathChildren> pool) {
+      super(pool);
+    }
+
     @Override
     protected PathChildren create() {
       return new PathChildren();

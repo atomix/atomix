@@ -16,6 +16,7 @@
 package net.kuujo.copycat.manager;
 
 import net.kuujo.alleycat.SerializeWith;
+import net.kuujo.copycat.BuilderPool;
 import net.kuujo.copycat.raft.ConsistencyLevel;
 import net.kuujo.copycat.raft.Operation;
 import net.kuujo.copycat.raft.Query;
@@ -34,7 +35,7 @@ public class ResourceExists extends PathOperation<Boolean> implements Query<Bool
    * @return A new ResourceExists command builder.
    */
   public static Builder builder() {
-    return Operation.builder(ResourceExists.Builder.class);
+    return Operation.builder(ResourceExists.Builder.class, ResourceExists.Builder::new);
   }
 
   public ResourceExists() {
@@ -52,7 +53,11 @@ public class ResourceExists extends PathOperation<Boolean> implements Query<Bool
   /**
    * Resource exists builder.
    */
-  public static class Builder extends PathOperation.Builder<Builder, ResourceExists> {
+  public static class Builder extends PathOperation.Builder<Builder, ResourceExists, Boolean> {
+    public Builder(BuilderPool<Builder, ResourceExists> pool) {
+      super(pool);
+    }
+
     @Override
     protected ResourceExists create() {
       return new ResourceExists();

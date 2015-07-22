@@ -20,6 +20,7 @@ import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.alleycat.util.ReferenceFactory;
 import net.kuujo.alleycat.util.ReferenceManager;
+import net.kuujo.copycat.BuilderPool;
 
 /**
  * Session request.
@@ -56,16 +57,15 @@ public abstract class SessionRequest<T extends SessionRequest<T>> extends Client
    * Client request builder.
    */
   public static abstract class Builder<T extends Builder<T, U>, U extends SessionRequest<U>> extends ClientRequest.Builder<T, U> {
-    protected Builder(ReferenceFactory<U> factory) {
-      super(factory);
+
+    protected Builder(BuilderPool<T, U> pool, ReferenceFactory<U> factory) {
+      super(pool, factory);
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    T reset() {
+    protected void reset() {
       super.reset();
       request.session = 0;
-      return (T) this;
     }
 
     /**

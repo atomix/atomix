@@ -33,6 +33,16 @@ import java.util.concurrent.ThreadFactory;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class NettyTransport implements Transport {
+
+  /**
+   * Returns a new Netty transport builder.
+   *
+   * @return A new Netty transport builder.
+   */
+  public static Builder builder() {
+    return new Builder();
+  }
+
   private final EventLoopGroup eventLoopGroup;
   private final Map<UUID, NettyClient> clients = new ConcurrentHashMap<>();
   private final Map<UUID, NettyServer> servers = new ConcurrentHashMap<>();
@@ -53,7 +63,7 @@ public class NettyTransport implements Transport {
     }
   }
 
-  public NettyTransport(EventLoopGroup eventLoopGroup) {
+  private NettyTransport(EventLoopGroup eventLoopGroup) {
     if (eventLoopGroup == null)
       throw new NullPointerException("eventLoopGroup cannot be null");
     this.eventLoopGroup = eventLoopGroup;
@@ -83,6 +93,43 @@ public class NettyTransport implements Transport {
     }
 
     return CompletableFuture.allOf(futures).thenRun(eventLoopGroup::shutdownGracefully);
+  }
+
+  /**
+   * Netty transport builder.
+   */
+  public static class Builder extends Transport.Builder {
+    private int threads = Runtime.getRuntime().availableProcessors();
+
+    private Builder() {
+    }
+
+    /**
+     * Sets the number of event loop threads.
+     *
+     * @param threads The number of event loop threads.
+     * @return The Netty transport builder.
+     */
+    public Builder withThreads(int threads) {
+      if (threads <= 0)
+        throw new IllegalArgumentException("threads must be positive");
+      this.threads = threads;
+      return this;
+    }
+
+    @Override
+    public Transport build() {
+      EventLoopGroup eventLoopGroup;
+
+      ThreadFactory threadFactory = new CopycatThreadFactory("copycat-event-loop-%d");
+      if (Epoll.isAvailable()) {
+        eventLoopGroup = new EpollEventLoopGroup(threads, threadFactory);
+      } else {
+        eventLoopGroup = new NioEventLoopGroup(threads, threadFactory);
+      }
+
+      return new NettyTransport(eventLoopGroup);
+    }
   }
 
 }

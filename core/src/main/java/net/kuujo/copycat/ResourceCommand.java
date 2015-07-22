@@ -34,13 +34,18 @@ public class ResourceCommand<T extends Command<U>, U> extends ResourceOperation<
    */
   @SuppressWarnings("unchecked")
   public static <T extends Command<U>, U> Builder<T, U> builder() {
-    return Operation.builder(Builder.class);
+    return Operation.builder(Builder.class, Builder::new);
   }
 
   /**
    * Resource command builder.
    */
-  public static class Builder<T extends Command<U>, U> extends Command.Builder<Builder<T, U>, ResourceCommand<T, U>> {
+  public static class Builder<T extends Command<U>, U> extends Command.Builder<Builder<T, U>, ResourceCommand<T, U>, U> {
+
+    private Builder(BuilderPool<Builder<T, U>, ResourceCommand<T, U>> pool) {
+      super(pool);
+    }
+
     @Override
     protected ResourceCommand<T, U> create() {
       return new ResourceCommand<>();

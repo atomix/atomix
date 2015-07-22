@@ -20,6 +20,7 @@ import net.kuujo.alleycat.SerializeWith;
 import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.alleycat.util.ReferenceManager;
+import net.kuujo.copycat.BuilderPool;
 import net.kuujo.copycat.raft.RaftError;
 
 import java.util.Objects;
@@ -31,12 +32,7 @@ import java.util.Objects;
  */
 @SerializeWith(id=263)
 public class PublishResponse extends AbstractResponse<PublishResponse> {
-  private static final ThreadLocal<Builder> builder = new ThreadLocal<Builder>() {
-    @Override
-    protected Builder initialValue() {
-      return new Builder();
-    }
-  };
+  private static final BuilderPool<Builder, PublishResponse> POOL = new BuilderPool<>(Builder::new);
 
   /**
    * Returns a new publish response builder.
@@ -44,7 +40,7 @@ public class PublishResponse extends AbstractResponse<PublishResponse> {
    * @return A new publish response builder.
    */
   public static Builder builder() {
-    return builder.get().reset();
+    return POOL.acquire();
   }
 
   /**
@@ -54,7 +50,7 @@ public class PublishResponse extends AbstractResponse<PublishResponse> {
    * @return The publish response builder.
    */
   public static Builder builder(PublishResponse response) {
-    return builder.get().reset(response);
+    return POOL.acquire(response);
   }
 
   public PublishResponse(ReferenceManager<PublishResponse> referenceManager) {
@@ -108,8 +104,8 @@ public class PublishResponse extends AbstractResponse<PublishResponse> {
    */
   public static class Builder extends AbstractResponse.Builder<Builder, PublishResponse> {
 
-    private Builder() {
-      super(PublishResponse::new);
+    private Builder(BuilderPool<Builder, PublishResponse> pool) {
+      super(pool, PublishResponse::new);
     }
 
     @Override

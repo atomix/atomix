@@ -20,6 +20,7 @@ import net.kuujo.alleycat.SerializeWith;
 import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.alleycat.util.ReferenceManager;
+import net.kuujo.copycat.BuilderPool;
 import net.kuujo.copycat.raft.Command;
 
 import java.util.Objects;
@@ -31,12 +32,7 @@ import java.util.Objects;
  */
 @SerializeWith(id=258)
 public class CommandRequest extends SessionRequest<CommandRequest> {
-  private static final ThreadLocal<Builder> builder = new ThreadLocal<Builder>() {
-    @Override
-    protected Builder initialValue() {
-      return new Builder();
-    }
-  };
+  private static final BuilderPool<Builder, CommandRequest> POOL = new BuilderPool<>(Builder::new);
 
   /**
    * Returns a new submit request builder.
@@ -44,7 +40,7 @@ public class CommandRequest extends SessionRequest<CommandRequest> {
    * @return A new submit request builder.
    */
   public static Builder builder() {
-    return builder.get().reset();
+    return POOL.acquire();
   }
 
   /**
@@ -54,7 +50,7 @@ public class CommandRequest extends SessionRequest<CommandRequest> {
    * @return The submit request builder.
    */
   public static Builder builder(CommandRequest request) {
-    return builder.get().reset(request);
+    return POOL.acquire(request);
   }
 
   private long request;
@@ -132,17 +128,16 @@ public class CommandRequest extends SessionRequest<CommandRequest> {
    */
   public static class Builder extends SessionRequest.Builder<Builder, CommandRequest> {
 
-    protected Builder() {
-      super(CommandRequest::new);
+    private Builder(BuilderPool<Builder, CommandRequest> pool) {
+      super(pool, CommandRequest::new);
     }
 
     @Override
-    Builder reset() {
+    protected void reset() {
       super.reset();
       request.request = 0;
       request.response = 0;
       request.command = null;
-      return this;
     }
 
     /**

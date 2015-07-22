@@ -20,13 +20,45 @@ package net.kuujo.copycat;
  * <p>
  * This is a base interface for building objects in Copycat.
  * <p>
- * Throughout Copycat, builders are used to build a variety of objects. In most cases, builders are thread local and
- * <em>not</em> designed to be thread safe and it is assumed that {@link #build()} will be called from the same thread
- * in which the builder was created.
+ * Throughout Copycat, builders are used to build a variety of objects. Builders are designed to be
+ * {@link net.kuujo.copycat.BuilderPool pooled} and reused in order to reduce GC pressure. When {@link #build()} or
+ * {@link #close()} is called on a builder, the builder will be released back to the {@link net.kuujo.copycat.BuilderPool}
+ * that created it.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Builder<T> {
+public abstract class Builder<T> implements AutoCloseable {
+  protected final BuilderPool pool;
+
+  protected Builder() {
+    this(null);
+  }
+
+  protected Builder(BuilderPool pool) {
+    this.pool = pool;
+  }
+
+  /**
+   * Resets the builder.
+   * <p>
+   * Builders should override this method to reset internal builder state for builders pooled via
+   * {@link net.kuujo.copycat.BuilderPool}. Each time a new builder is {@link BuilderPool#acquire() acquired} from a
+   * pool, this method will be called to reset the internal builder state.
+   */
+  protected void reset() {
+
+  }
+
+  /**
+   * Resets the builder.
+   * <p>
+   * Builders should override this method to reset internal builder state for builders pooled via
+   * {@link net.kuujo.copycat.BuilderPool}. Each time a new builder is {@link BuilderPool#acquire(Object) acquired} from a
+   * pool, this method will be called to reset the internal builder state.
+   */
+  protected void reset(T object) {
+
+  }
 
   /**
    * Builds the object.
@@ -36,6 +68,14 @@ public interface Builder<T> {
    *
    * @return The built object.
    */
-  T build();
+  public abstract T build();
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public void close() {
+    if (pool != null) {
+      pool.release(this);
+    }
+  }
 
 }

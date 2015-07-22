@@ -15,9 +15,11 @@
  */
 package net.kuujo.copycat.raft;
 
+import net.kuujo.copycat.BuilderPool;
+
 import java.io.Serializable;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 /**
@@ -34,53 +36,41 @@ public interface Operation<T> extends Serializable {
    * @return The builder.
    */
   @SuppressWarnings("unchecked")
-  static <T extends Builder> T builder(Class<T> type) {
+  static <T extends Builder> T builder(Class<T> type, Function<BuilderPool, T> factory) {
     // We run into strange reflection issues when using a lambda here, so just use an old style closure instead.
-    T builder = (T) Builder.BUILDERS.get().computeIfAbsent(type, new Function<Class<? extends Builder>, Builder>() {
-      @Override
-      public Builder apply(Class<? extends Builder> type) {
-        try {
-          return type.newInstance();
-        } catch (InstantiationException | IllegalAccessException e) {
-          throw new IllegalArgumentException("failed to instantiate builder: " + type, e);
-        }
-      }
-    });
-    builder.init(builder.create());
+    BuilderPool pool = Builder.POOLS.computeIfAbsent(type, t -> new BuilderPool(factory));
+    T builder = (T) pool.acquire();
+    builder.reset(builder.create());
     return builder;
   }
 
   /**
    * Operation builder.
    */
-  static abstract class Builder<T extends Operation<?>> implements net.kuujo.copycat.Builder<T> {
-    static final ThreadLocal<Map<Class<? extends Builder>, Builder>> BUILDERS = new ThreadLocal<Map<Class<? extends Builder>, Builder>>() {
-      @Override
-      protected Map<Class<? extends Builder>, Builder> initialValue() {
-        return new HashMap<>();
-      }
-    };
+  static abstract class Builder<T extends Builder<T, U, V>, U extends Operation<V>, V> extends net.kuujo.copycat.Builder<U> {
+    static final Map<Class<? extends Builder>, BuilderPool> POOLS = new ConcurrentHashMap<>();
 
-    protected T operation;
+    protected U operation;
+
+    protected Builder(BuilderPool<T, U> pool) {
+      super(pool);
+    }
 
     /**
      * Creates a new operation instance.
      *
      * @return A new operation instance.
      */
-    protected abstract T create();
+    protected abstract U create();
 
-    /**
-     * Initializes the operation builder.
-     *
-     * @param operation The operation instance.
-     */
-    protected void init(T operation) {
+    @Override
+    protected void reset(U operation) {
       this.operation = operation;
     }
 
     @Override
-    public T build() {
+    public U build() {
+      close();
       return operation;
     }
   }

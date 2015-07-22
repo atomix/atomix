@@ -21,6 +21,7 @@ import net.kuujo.alleycat.SerializeWith;
 import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.alleycat.util.ReferenceManager;
+import net.kuujo.copycat.BuilderPool;
 import net.kuujo.copycat.raft.RaftError;
 
 import java.util.Objects;
@@ -32,12 +33,7 @@ import java.util.Objects;
  */
 @SerializeWith(id=267)
 public class LeaveResponse extends AbstractResponse<LeaveResponse> {
-  private static final ThreadLocal<Builder> builder = new ThreadLocal<Builder>() {
-    @Override
-    protected Builder initialValue() {
-      return new Builder();
-    }
-  };
+  private static final BuilderPool<Builder, LeaveResponse> POOL = new BuilderPool<>(Builder::new);
 
   /**
    * Returns a new leave response builder.
@@ -45,7 +41,7 @@ public class LeaveResponse extends AbstractResponse<LeaveResponse> {
    * @return A new leave response builder.
    */
   public static Builder builder() {
-    return builder.get().reset();
+    return POOL.acquire();
   }
 
   /**
@@ -55,7 +51,7 @@ public class LeaveResponse extends AbstractResponse<LeaveResponse> {
    * @return The leave response builder.
    */
   public static Builder builder(LeaveResponse response) {
-    return builder.get().reset(response);
+    return POOL.acquire(response);
   }
 
   public LeaveResponse(ReferenceManager<LeaveResponse> referenceManager) {
@@ -109,14 +105,13 @@ public class LeaveResponse extends AbstractResponse<LeaveResponse> {
    */
   public static class Builder extends AbstractResponse.Builder<Builder, LeaveResponse> {
 
-    private Builder() {
-      super(LeaveResponse::new);
+    private Builder(BuilderPool<Builder, LeaveResponse> pool) {
+      super(pool, LeaveResponse::new);
     }
 
     @Override
-    Builder reset() {
+    protected void reset() {
       super.reset();
-      return this;
     }
 
     @Override

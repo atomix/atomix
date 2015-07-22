@@ -20,6 +20,7 @@ import net.kuujo.alleycat.SerializeWith;
 import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.alleycat.util.ReferenceManager;
+import net.kuujo.copycat.BuilderPool;
 import net.kuujo.copycat.raft.Member;
 
 import java.util.Objects;
@@ -31,12 +32,7 @@ import java.util.Objects;
  */
 @SerializeWith(id=262)
 public class JoinRequest extends AbstractRequest<JoinRequest> {
-  private static final ThreadLocal<Builder> builder = new ThreadLocal<Builder>() {
-    @Override
-    protected Builder initialValue() {
-      return new Builder();
-    }
-  };
+  private static final BuilderPool<Builder, JoinRequest> POOL = new BuilderPool<>(Builder::new);
 
   /**
    * Returns a new join request builder.
@@ -44,7 +40,7 @@ public class JoinRequest extends AbstractRequest<JoinRequest> {
    * @return A new join request builder.
    */
   public static Builder builder() {
-    return builder.get().reset();
+    return POOL.acquire();
   }
 
   /**
@@ -54,7 +50,7 @@ public class JoinRequest extends AbstractRequest<JoinRequest> {
    * @return The join request builder.
    */
   public static Builder builder(JoinRequest request) {
-    return builder.get().reset(request);
+    return POOL.acquire(request);
   }
 
   private Member member;
@@ -111,15 +107,14 @@ public class JoinRequest extends AbstractRequest<JoinRequest> {
    */
   public static class Builder extends AbstractRequest.Builder<Builder, JoinRequest> {
 
-    private Builder() {
-      super(JoinRequest::new);
+    private Builder(BuilderPool<Builder, JoinRequest> pool) {
+      super(pool, JoinRequest::new);
     }
 
     @Override
-    Builder reset() {
+    protected void reset() {
       super.reset();
       request.member = null;
-      return this;
     }
 
     /**

@@ -17,6 +17,7 @@ package net.kuujo.copycat.raft.protocol;
 
 import net.kuujo.alleycat.AlleycatSerializable;
 import net.kuujo.alleycat.util.ReferenceCounted;
+import net.kuujo.copycat.BuilderPool;
 import net.kuujo.copycat.raft.RaftError;
 
 /**
@@ -162,7 +163,11 @@ public interface Response<T extends Response<T>> extends ReferenceCounted<T>, Al
    * @param <T> The builder type.
    * @param <U> The response type.
    */
-  static interface Builder<T extends Builder<T, U>, U extends Response> extends net.kuujo.copycat.Builder<U> {
+  static abstract class Builder<T extends Builder<T, U>, U extends Response> extends net.kuujo.copycat.Builder<U> {
+
+    protected Builder(BuilderPool pool) {
+      super(pool);
+    }
 
     /**
      * Sets the response status.
@@ -170,7 +175,7 @@ public interface Response<T extends Response<T>> extends ReferenceCounted<T>, Al
      * @param status The response status.
      * @return The response builder.
      */
-    T withStatus(Status status);
+    public abstract T withStatus(Status status);
 
     /**
      * Sets the response error.
@@ -178,7 +183,7 @@ public interface Response<T extends Response<T>> extends ReferenceCounted<T>, Al
      * @param error The response error.
      * @return The response builder.
      */
-    T withError(RaftError error);
+    public abstract T withError(RaftError error);
 
   }
 

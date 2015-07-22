@@ -15,8 +15,6 @@
  */
 package net.kuujo.copycat;
 
-import net.kuujo.copycat.CopycatException;
-
 /**
  * Copycat resource exception.
  *

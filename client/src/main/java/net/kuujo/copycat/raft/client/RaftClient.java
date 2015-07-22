@@ -137,13 +137,21 @@ public class RaftClient implements ManagedRaft {
   /**
    * Raft client builder.
    */
-  public static class Builder implements Raft.Builder<Builder, RaftClient> {
+  public static class Builder extends Raft.Builder<Builder, RaftClient> {
     private Transport transport;
     private Alleycat serializer;
     private long keepAliveInterval = 1000;
     private Members members;
 
     private Builder() {
+    }
+
+    @Override
+    protected void reset() {
+      transport = null;
+      serializer = null;
+      keepAliveInterval = 1000;
+      members = null;
     }
 
     @Override

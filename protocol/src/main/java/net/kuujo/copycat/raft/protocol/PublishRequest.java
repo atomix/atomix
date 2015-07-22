@@ -20,6 +20,7 @@ import net.kuujo.alleycat.SerializeWith;
 import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.alleycat.util.ReferenceManager;
+import net.kuujo.copycat.BuilderPool;
 
 import java.util.Objects;
 
@@ -30,12 +31,7 @@ import java.util.Objects;
  */
 @SerializeWith(id=262)
 public class PublishRequest extends SessionRequest<PublishRequest> {
-  private static final ThreadLocal<Builder> builder = new ThreadLocal<Builder>() {
-    @Override
-    protected Builder initialValue() {
-      return new Builder();
-    }
-  };
+  private static final BuilderPool<Builder, PublishRequest> POOL = new BuilderPool<>(Builder::new);
 
   /**
    * Returns a new publish request builder.
@@ -43,7 +39,7 @@ public class PublishRequest extends SessionRequest<PublishRequest> {
    * @return A new publish request builder.
    */
   public static Builder builder() {
-    return builder.get().reset();
+    return POOL.acquire();
   }
 
   /**
@@ -53,7 +49,7 @@ public class PublishRequest extends SessionRequest<PublishRequest> {
    * @return The publish request builder.
    */
   public static Builder builder(PublishRequest request) {
-    return builder.get().reset(request);
+    return POOL.acquire(request);
   }
 
   private Object message;
@@ -110,15 +106,14 @@ public class PublishRequest extends SessionRequest<PublishRequest> {
    */
   public static class Builder extends SessionRequest.Builder<Builder, PublishRequest> {
 
-    private Builder() {
-      super(PublishRequest::new);
+    private Builder(BuilderPool<Builder, PublishRequest> pool) {
+      super(pool, PublishRequest::new);
     }
 
     @Override
-    Builder reset() {
+    protected void reset() {
       super.reset();
       request.message = null;
-      return this;
     }
 
     /**

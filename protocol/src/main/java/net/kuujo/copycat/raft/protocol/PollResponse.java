@@ -20,6 +20,7 @@ import net.kuujo.alleycat.SerializeWith;
 import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.alleycat.util.ReferenceManager;
+import net.kuujo.copycat.BuilderPool;
 import net.kuujo.copycat.raft.RaftError;
 
 import java.util.Objects;
@@ -31,12 +32,7 @@ import java.util.Objects;
  */
 @SerializeWith(id=269)
 public class PollResponse extends AbstractResponse<PollResponse> {
-  private static final ThreadLocal<Builder> builder = new ThreadLocal<Builder>() {
-    @Override
-    protected Builder initialValue() {
-      return new Builder();
-    }
-  };
+  private static final BuilderPool<Builder, PollResponse> POOL = new BuilderPool<>(Builder::new);
 
   /**
    * Returns a new poll response builder.
@@ -44,7 +40,7 @@ public class PollResponse extends AbstractResponse<PollResponse> {
    * @return A new poll response builder.
    */
   public static Builder builder() {
-    return builder.get().reset();
+    return POOL.acquire();
   }
 
   /**
@@ -54,7 +50,7 @@ public class PollResponse extends AbstractResponse<PollResponse> {
    * @return The poll response builder.
    */
   public static Builder builder(PollResponse response) {
-    return builder.get().reset(response);
+    return POOL.acquire(response);
   }
 
   private long term;
@@ -135,16 +131,15 @@ public class PollResponse extends AbstractResponse<PollResponse> {
    */
   public static class Builder extends AbstractResponse.Builder<Builder, PollResponse> {
 
-    private Builder() {
-      super(PollResponse::new);
+    private Builder(BuilderPool<Builder, PollResponse> pool) {
+      super(pool, PollResponse::new);
     }
 
     @Override
-    Builder reset() {
+    protected void reset() {
       super.reset();
       response.term = 0;
       response.accepted = false;
-      return this;
     }
 
     /**

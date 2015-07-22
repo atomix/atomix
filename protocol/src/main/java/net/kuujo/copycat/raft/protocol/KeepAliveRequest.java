@@ -17,6 +17,7 @@ package net.kuujo.copycat.raft.protocol;
 
 import net.kuujo.alleycat.SerializeWith;
 import net.kuujo.alleycat.util.ReferenceManager;
+import net.kuujo.copycat.BuilderPool;
 
 import java.util.Objects;
 
@@ -27,12 +28,7 @@ import java.util.Objects;
  */
 @SerializeWith(id=264)
 public class KeepAliveRequest extends SessionRequest<KeepAliveRequest> {
-  private static final ThreadLocal<Builder> builder = new ThreadLocal<Builder>() {
-    @Override
-    protected Builder initialValue() {
-      return new Builder();
-    }
-  };
+  private static final BuilderPool<Builder, KeepAliveRequest> POOL = new BuilderPool<>(Builder::new);
 
   /**
    * Returns a new keep alive request builder.
@@ -40,7 +36,7 @@ public class KeepAliveRequest extends SessionRequest<KeepAliveRequest> {
    * @return A new keep alive request builder.
    */
   public static Builder builder() {
-    return builder.get().reset();
+    return POOL.acquire();
   }
 
   /**
@@ -50,7 +46,7 @@ public class KeepAliveRequest extends SessionRequest<KeepAliveRequest> {
    * @return The keep alive request builder.
    */
   public static Builder builder(KeepAliveRequest request) {
-    return builder.get().reset(request);
+    return POOL.acquire(request);
   }
 
   public KeepAliveRequest(ReferenceManager<KeepAliveRequest> referenceManager) {
@@ -86,8 +82,8 @@ public class KeepAliveRequest extends SessionRequest<KeepAliveRequest> {
    */
   public static class Builder extends SessionRequest.Builder<Builder, KeepAliveRequest> {
 
-    private Builder() {
-      super(KeepAliveRequest::new);
+    private Builder(BuilderPool<Builder, KeepAliveRequest> pool) {
+      super(pool, KeepAliveRequest::new);
     }
 
     @Override

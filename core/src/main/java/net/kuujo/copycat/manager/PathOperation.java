@@ -19,6 +19,7 @@ import net.kuujo.alleycat.Alleycat;
 import net.kuujo.alleycat.AlleycatSerializable;
 import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
+import net.kuujo.copycat.BuilderPool;
 import net.kuujo.copycat.raft.Operation;
 
 /**
@@ -60,7 +61,11 @@ public abstract class PathOperation<T> implements Operation<T>, AlleycatSerializ
   /**
    * Path command builder.
    */
-  public static abstract class Builder<T extends Builder<T, U>, U extends PathOperation<?>> extends Operation.Builder<U> {
+  public static abstract class Builder<T extends Builder<T, U, V>, U extends PathOperation<V>, V> extends Operation.Builder<T, U, V> {
+
+    protected Builder(BuilderPool<T, U> pool) {
+      super(pool);
+    }
 
     /**
      * Sets the command path.

@@ -20,6 +20,7 @@ import net.kuujo.alleycat.SerializeWith;
 import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.alleycat.util.ReferenceManager;
+import net.kuujo.copycat.BuilderPool;
 import net.kuujo.copycat.raft.RaftError;
 
 import java.util.Objects;
@@ -31,12 +32,7 @@ import java.util.Objects;
  */
 @SerializeWith(id=275)
 public class VoteResponse extends AbstractResponse<VoteResponse> {
-  private static final ThreadLocal<Builder> builder = new ThreadLocal<Builder>() {
-    @Override
-    protected Builder initialValue() {
-      return new Builder();
-    }
-  };
+  private static final BuilderPool<Builder, VoteResponse> POOL = new BuilderPool<>(Builder::new);
 
   /**
    * Returns a new vote response builder.
@@ -44,7 +40,7 @@ public class VoteResponse extends AbstractResponse<VoteResponse> {
    * @return A new vote response builder.
    */
   public static Builder builder() {
-    return builder.get().reset();
+    return POOL.acquire();
   }
 
   /**
@@ -54,7 +50,7 @@ public class VoteResponse extends AbstractResponse<VoteResponse> {
    * @return The vote response builder.
    */
   public static Builder builder(VoteResponse response) {
-    return builder.get().reset(response);
+    return POOL.acquire(response);
   }
 
   private long term;
@@ -135,8 +131,15 @@ public class VoteResponse extends AbstractResponse<VoteResponse> {
    */
   public static class Builder extends AbstractResponse.Builder<Builder, VoteResponse> {
 
-    private Builder() {
-      super(VoteResponse::new);
+    private Builder(BuilderPool<Builder, VoteResponse> pool) {
+      super(pool, VoteResponse::new);
+    }
+
+    @Override
+    protected void reset() {
+      super.reset();
+      response.term = 0;
+      response.voted = false;
     }
 
     /**

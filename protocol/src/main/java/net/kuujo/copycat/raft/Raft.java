@@ -80,7 +80,7 @@ public interface Raft {
   /**
    * Raft builder.
    */
-  static interface Builder<T extends Builder<T, U>, U extends Raft> extends net.kuujo.copycat.Builder<U> {
+  static abstract class Builder<T extends Builder<T, U>, U extends Raft> extends net.kuujo.copycat.Builder<U> {
 
     /**
      * Sets the network transport.
@@ -88,7 +88,7 @@ public interface Raft {
      * @param transport The network protocol.
      * @return The Raft builder.
      */
-    T withTransport(Transport transport);
+    public abstract T withTransport(Transport transport);
 
     /**
      * Sets the Raft members.
@@ -96,7 +96,7 @@ public interface Raft {
      * @param members The Raft members.
      * @return The Raft builder.
      */
-    default T withMembers(Member... members) {
+    public T withMembers(Member... members) {
       if (members == null)
         throw new NullPointerException("members cannot be null");
       return withMembers(Arrays.asList(members));
@@ -108,7 +108,7 @@ public interface Raft {
      * @param members The Raft members.
      * @return The Raft builder.
      */
-    default T withMembers(Collection<Member> members) {
+    public T withMembers(Collection<Member> members) {
       return withMembers(Members.builder().withMembers(members).build());
     }
 
@@ -118,7 +118,7 @@ public interface Raft {
      * @param members The Raft members.
      * @return The Raft builder.
      */
-    T withMembers(Members members);
+    public abstract T withMembers(Members members);
 
   }
 

@@ -20,6 +20,7 @@ import net.kuujo.alleycat.SerializeWith;
 import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.alleycat.util.ReferenceManager;
+import net.kuujo.copycat.BuilderPool;
 import net.kuujo.copycat.raft.RaftError;
 
 import java.util.Objects;
@@ -31,12 +32,7 @@ import java.util.Objects;
  */
 @SerializeWith(id=259)
 public class CommandResponse extends ClientResponse<CommandResponse> {
-  private static final ThreadLocal<Builder> builder = new ThreadLocal<Builder>() {
-    @Override
-    protected Builder initialValue() {
-      return new Builder();
-    }
-  };
+  private static final BuilderPool<Builder, CommandResponse> POOL = new BuilderPool<>(Builder::new);
 
   /**
    * Returns a new submit response builder.
@@ -44,7 +40,7 @@ public class CommandResponse extends ClientResponse<CommandResponse> {
    * @return A new submit response builder.
    */
   public static Builder builder() {
-    return builder.get().reset();
+    return POOL.acquire();
   }
 
   /**
@@ -54,7 +50,7 @@ public class CommandResponse extends ClientResponse<CommandResponse> {
    * @return The submit response builder.
    */
   public static Builder builder(CommandResponse request) {
-    return builder.get().reset(request);
+    return POOL.acquire(request);
   }
 
   private Object result;
@@ -126,15 +122,14 @@ public class CommandResponse extends ClientResponse<CommandResponse> {
    */
   public static class Builder extends ClientResponse.Builder<Builder, CommandResponse> {
 
-    private Builder() {
-      super(CommandResponse::new);
+    private Builder(BuilderPool<Builder, CommandResponse> pool) {
+      super(pool, CommandResponse::new);
     }
 
     @Override
-    Builder reset() {
+    protected void reset() {
       super.reset();
       response.result = null;
-      return this;
     }
 
     /**

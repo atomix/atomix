@@ -18,6 +18,7 @@ package net.kuujo.copycat.raft.protocol;
 import net.kuujo.alleycat.util.ReferenceFactory;
 import net.kuujo.alleycat.util.ReferenceManager;
 import net.kuujo.alleycat.util.ReferencePool;
+import net.kuujo.copycat.BuilderPool;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -64,34 +65,28 @@ abstract class AbstractRequest<T extends Request<T>> implements Request<T> {
    * @param <T> The builder type.
    * @param <U> The request type.
    */
-  protected static abstract class Builder<T extends Builder<T, U>, U extends AbstractRequest<U>> implements Request.Builder<T, U> {
+  protected static abstract class Builder<T extends Builder<T, U>, U extends AbstractRequest<U>> extends Request.Builder<T, U> {
     protected final ReferencePool<U> pool;
     protected U request;
 
-    protected Builder(ReferenceFactory<U> factory) {
+    protected Builder(BuilderPool<T, U> pool, ReferenceFactory<U> factory) {
+      super(pool);
       this.pool = new ReferencePool<>(factory);
     }
 
-    /**
-     * Resets the builder, acquiring a new request from the internal reference pool.
-     */
-    @SuppressWarnings("unchecked")
-    T reset() {
+    @Override
+    protected void reset() {
       request = pool.acquire();
-      return (T) this;
     }
 
-    /**
-     * Resets the builder with the given request.
-     */
-    @SuppressWarnings("unchecked")
-    T reset(U request) {
+    @Override
+    protected void reset(U request) {
       this.request = request;
-      return (T) this;
     }
 
     @Override
     public U build() {
+      close();
       return request;
     }
   }

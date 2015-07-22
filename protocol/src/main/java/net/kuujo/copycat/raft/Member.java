@@ -55,7 +55,7 @@ public class Member implements AlleycatSerializable {
    * @return A new member builder.
    */
   public static Builder builder() {
-    return new Builder(new Member());
+    return new Builder();
   }
 
   private int id;
@@ -137,10 +137,14 @@ public class Member implements AlleycatSerializable {
   /**
    * Member builder.
    */
-  public static class Builder implements net.kuujo.copycat.Builder<Member> {
-    private final Member member;
+  public static class Builder extends net.kuujo.copycat.Builder<Member> {
+    private Member member = new Member();
 
-    private Builder(Member member) {
+    private Builder() {
+    }
+
+    @Override
+    protected void reset(Member member) {
       this.member = member;
     }
 

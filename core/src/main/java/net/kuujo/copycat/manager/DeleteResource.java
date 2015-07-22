@@ -20,6 +20,7 @@ import net.kuujo.alleycat.AlleycatSerializable;
 import net.kuujo.alleycat.SerializeWith;
 import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
+import net.kuujo.copycat.BuilderPool;
 import net.kuujo.copycat.raft.Command;
 import net.kuujo.copycat.raft.Operation;
 
@@ -37,7 +38,7 @@ public class DeleteResource implements Command<Boolean>, AlleycatSerializable {
    * @return A new DeleteResource command builder.
    */
   public static Builder builder() {
-    return Operation.builder(DeleteResource.Builder.class);
+    return Operation.builder(DeleteResource.Builder.class, DeleteResource.Builder::new);
   }
 
   private long resource;
@@ -67,7 +68,11 @@ public class DeleteResource implements Command<Boolean>, AlleycatSerializable {
   /**
    * Delete resource builder.
    */
-  public static class Builder extends Command.Builder<Builder, DeleteResource> {
+  public static class Builder extends Command.Builder<Builder, DeleteResource, Boolean> {
+    public Builder(BuilderPool<Builder, DeleteResource> pool) {
+      super(pool);
+    }
+
     @Override
     protected DeleteResource create() {
       return new DeleteResource();

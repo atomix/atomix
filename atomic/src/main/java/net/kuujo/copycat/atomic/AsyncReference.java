@@ -20,8 +20,9 @@ import net.kuujo.alleycat.AlleycatSerializable;
 import net.kuujo.alleycat.SerializeWith;
 import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
-import net.kuujo.copycat.Resource;
+import net.kuujo.copycat.BuilderPool;
 import net.kuujo.copycat.Mode;
+import net.kuujo.copycat.Resource;
 import net.kuujo.copycat.Stateful;
 import net.kuujo.copycat.log.Compaction;
 import net.kuujo.copycat.raft.*;
@@ -417,7 +418,10 @@ public class AsyncReference<T> extends Resource {
     /**
      * Base reference command builder.
      */
-    public static abstract class Builder<T extends Builder<T, U>, U extends ReferenceCommand<?>> extends Command.Builder<T, U> {
+    public static abstract class Builder<T extends Builder<T, U, V>, U extends ReferenceCommand<V>, V> extends Command.Builder<T, U, V> {
+      protected Builder(BuilderPool<T, U> pool) {
+        super(pool);
+      }
 
       /**
        * Sets the persistence mode.
@@ -484,7 +488,10 @@ public class AsyncReference<T> extends Resource {
     /**
      * Base reference query builder.
      */
-    public static abstract class Builder<T extends Builder<T, U>, U extends ReferenceQuery<?>> extends Query.Builder<T, U> {
+    public static abstract class Builder<T extends Builder<T, U, V>, U extends ReferenceQuery<V>, V> extends Query.Builder<T, U, V> {
+      protected Builder(BuilderPool<T, U> pool) {
+        super(pool);
+      }
 
       /**
        * Sets the query consistency level.
@@ -515,13 +522,17 @@ public class AsyncReference<T> extends Resource {
      */
     @SuppressWarnings("unchecked")
     public static <T> Builder<T> builder() {
-      return Operation.builder(Builder.class);
+      return Operation.builder(Builder.class, Builder::new);
     }
 
     /**
      * Get query builder.
      */
-    public static class Builder<T> extends ReferenceQuery.Builder<Builder<T>, Get<T>> {
+    public static class Builder<T> extends ReferenceQuery.Builder<Builder<T>, Get<T>, T> {
+      public Builder(BuilderPool<Builder<T>, Get<T>> pool) {
+        super(pool);
+      }
+
       @Override
       protected Get<T> create() {
         return new Get<>();
@@ -541,7 +552,7 @@ public class AsyncReference<T> extends Resource {
      * @return A new set command builder.
      */
     public static Builder builder() {
-      return Operation.builder(Builder.class);
+      return Operation.builder(Builder.class, Builder::new);
     }
 
     private Object value;
@@ -573,7 +584,11 @@ public class AsyncReference<T> extends Resource {
     /**
      * Put command builder.
      */
-    public static class Builder extends ReferenceCommand.Builder<Builder, Set> {
+    public static class Builder extends ReferenceCommand.Builder<Builder, Set, Void> {
+      public Builder(BuilderPool<Builder, Set> pool) {
+        super(pool);
+      }
+
       @Override
       protected Set create() {
         return new Set();
@@ -604,7 +619,7 @@ public class AsyncReference<T> extends Resource {
      * @return A new compare and set command builder.
      */
     public static Builder builder() {
-      return Operation.builder(Builder.class);
+      return Operation.builder(Builder.class, Builder::new);
     }
 
     private Object expect;
@@ -648,7 +663,11 @@ public class AsyncReference<T> extends Resource {
     /**
      * Compare and set command builder.
      */
-    public static class Builder extends ReferenceCommand.Builder<Builder, CompareAndSet> {
+    public static class Builder extends ReferenceCommand.Builder<Builder, CompareAndSet, Boolean> {
+      public Builder(BuilderPool<Builder, CompareAndSet> pool) {
+        super(pool);
+      }
+
       @Override
       protected CompareAndSet create() {
         return new CompareAndSet();
@@ -691,7 +710,7 @@ public class AsyncReference<T> extends Resource {
      */
     @SuppressWarnings("unchecked")
     public static <T> Builder<T> builder() {
-      return Operation.builder(Builder.class);
+      return Operation.builder(Builder.class, Builder::new);
     }
 
     private Object value;
@@ -723,7 +742,11 @@ public class AsyncReference<T> extends Resource {
     /**
      * Put command builder.
      */
-    public static class Builder<T> extends ReferenceCommand.Builder<Builder<T>, GetAndSet<T>> {
+    public static class Builder<T> extends ReferenceCommand.Builder<Builder<T>, GetAndSet<T>, T> {
+      public Builder(BuilderPool<Builder<T>, GetAndSet<T>> pool) {
+        super(pool);
+      }
+
       @Override
       protected GetAndSet<T> create() {
         return new GetAndSet<>();

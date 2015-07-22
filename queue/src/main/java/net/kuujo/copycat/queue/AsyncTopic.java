@@ -19,11 +19,11 @@ import net.kuujo.alleycat.Alleycat;
 import net.kuujo.alleycat.AlleycatSerializable;
 import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
-import net.kuujo.copycat.Listener;
-import net.kuujo.copycat.ListenerContext;
-import net.kuujo.copycat.Resource;
-import net.kuujo.copycat.Stateful;
-import net.kuujo.copycat.raft.*;
+import net.kuujo.copycat.*;
+import net.kuujo.copycat.raft.Command;
+import net.kuujo.copycat.raft.Operation;
+import net.kuujo.copycat.raft.Raft;
+import net.kuujo.copycat.raft.Session;
 import net.kuujo.copycat.raft.server.Apply;
 import net.kuujo.copycat.raft.server.Commit;
 import net.kuujo.copycat.raft.server.Filter;
@@ -106,7 +106,10 @@ public class AsyncTopic<T> extends Resource {
     /**
      * Base map command builder.
      */
-    public static abstract class Builder<T extends Builder<T, U>, U extends TopicCommand<?>> extends Command.Builder<T, U> {
+    public static abstract class Builder<T extends Builder<T, U, V>, U extends TopicCommand<V>, V> extends Command.Builder<T, U, V> {
+      protected Builder(BuilderPool<T, U> pool) {
+        super(pool);
+      }
     }
   }
 
@@ -123,7 +126,7 @@ public class AsyncTopic<T> extends Resource {
      */
     @SuppressWarnings("unchecked")
     public static <T> Builder<T> builder() {
-      return Operation.builder(Builder.class);
+      return Operation.builder(Builder.class, Builder::new);
     }
 
     private T message;
@@ -150,7 +153,11 @@ public class AsyncTopic<T> extends Resource {
     /**
      * Publish command builder.
      */
-    public static class Builder<T> extends TopicCommand.Builder<Builder<T>, PublishCommand<T>> {
+    public static class Builder<T> extends TopicCommand.Builder<Builder<T>, PublishCommand<T>, Void> {
+
+      public Builder(BuilderPool<Builder<T>, PublishCommand<T>> pool) {
+        super(pool);
+      }
 
       /**
        * Sets the publish command message.
@@ -182,7 +189,7 @@ public class AsyncTopic<T> extends Resource {
      */
     @SuppressWarnings("unchecked")
     public static Builder builder() {
-      return Operation.builder(Builder.class);
+      return Operation.builder(Builder.class, Builder::new);
     }
 
     @Override
@@ -198,7 +205,11 @@ public class AsyncTopic<T> extends Resource {
     /**
      * Publish command builder.
      */
-    public static class Builder extends TopicCommand.Builder<Builder, SubscribeCommand> {
+    public static class Builder extends TopicCommand.Builder<Builder, SubscribeCommand, Void> {
+      public Builder(BuilderPool<Builder, SubscribeCommand> pool) {
+        super(pool);
+      }
+
       @Override
       protected SubscribeCommand create() {
         return new SubscribeCommand();
@@ -211,14 +222,6 @@ public class AsyncTopic<T> extends Resource {
    */
   public static class StateMachine extends net.kuujo.copycat.raft.server.StateMachine {
     private final Set<Session> sessions = new HashSet<>();
-    private long time;
-
-    /**
-     * Updates the wall clock time.
-     */
-    private void updateTime(Commit<?> commit) {
-      time = Math.max(time, commit.timestamp());
-    }
 
     @Override
     public void register(Session session) {

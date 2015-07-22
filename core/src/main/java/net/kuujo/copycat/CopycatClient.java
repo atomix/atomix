@@ -45,10 +45,15 @@ public class CopycatClient extends Copycat {
   /**
    * Client builder.
    */
-  public static class Builder implements Copycat.Builder<CopycatClient> {
-    private final RaftClient.Builder builder = RaftClient.builder();
+  public static class Builder extends Copycat.Builder<CopycatClient> {
+    private RaftClient.Builder builder = RaftClient.builder();
 
     private Builder() {
+    }
+
+    @Override
+    protected void reset() {
+      builder = RaftClient.builder();
     }
 
     /**

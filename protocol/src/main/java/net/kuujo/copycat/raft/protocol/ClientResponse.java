@@ -17,6 +17,7 @@ package net.kuujo.copycat.raft.protocol;
 
 import net.kuujo.alleycat.util.ReferenceFactory;
 import net.kuujo.alleycat.util.ReferenceManager;
+import net.kuujo.copycat.BuilderPool;
 
 /**
  * Client response.
@@ -43,16 +44,14 @@ public abstract class ClientResponse<T extends ClientResponse<T>> extends Abstra
    * Client response builder.
    */
   public static abstract class Builder<T extends Builder<T, U>, U extends ClientResponse<U>> extends AbstractResponse.Builder<T, U> {
-    protected Builder(ReferenceFactory<U> factory) {
-      super(factory);
+    protected Builder(BuilderPool<T, U> pool, ReferenceFactory<U> factory) {
+      super(pool, factory);
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    T reset() {
+    protected void reset() {
       super.reset();
       response.version = 0;
-      return (T) this;
     }
 
     /**

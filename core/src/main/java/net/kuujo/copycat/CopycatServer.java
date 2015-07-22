@@ -51,10 +51,15 @@ public class CopycatServer extends Copycat {
   /**
    * Copycat builder.
    */
-  public static class Builder implements Copycat.Builder<CopycatServer> {
-    private final RaftServer.Builder builder = RaftServer.builder();
+  public static class Builder extends Copycat.Builder<CopycatServer> {
+    private RaftServer.Builder builder = RaftServer.builder();
 
     private Builder() {
+    }
+
+    @Override
+    protected void reset() {
+      builder = RaftServer.builder();
     }
 
     /**

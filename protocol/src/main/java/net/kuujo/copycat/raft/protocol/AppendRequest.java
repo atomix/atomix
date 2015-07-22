@@ -20,6 +20,7 @@ import net.kuujo.alleycat.SerializeWith;
 import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.alleycat.util.ReferenceManager;
+import net.kuujo.copycat.BuilderPool;
 import net.kuujo.copycat.log.Entry;
 
 import java.util.ArrayList;
@@ -34,12 +35,7 @@ import java.util.Objects;
  */
 @SerializeWith(id=256)
 public class AppendRequest extends AbstractRequest<AppendRequest> {
-  private static final ThreadLocal<Builder> builder = new ThreadLocal<Builder>() {
-    @Override
-    protected Builder initialValue() {
-      return new Builder();
-    }
-  };
+  private static final BuilderPool<Builder, AppendRequest> POOL = new BuilderPool<>(Builder::new);
 
   /**
    * Returns a new append request builder.
@@ -47,7 +43,7 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
    * @return A new append request builder.
    */
   public static Builder builder() {
-    return builder.get().reset();
+    return POOL.acquire();
   }
 
   /**
@@ -57,7 +53,7 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
    * @return The append request builder.
    */
   public static Builder builder(AppendRequest request) {
-    return builder.get().reset(request);
+    return POOL.acquire(request);
   }
 
   private long term;
@@ -210,12 +206,13 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
    * Append request builder.
    */
   public static class Builder extends AbstractRequest.Builder<Builder, AppendRequest> {
-    public Builder() {
-      super(AppendRequest::new);
+
+    private Builder(BuilderPool<Builder, AppendRequest> pool) {
+      super(pool, AppendRequest::new);
     }
 
     @Override
-    Builder reset() {
+    public void reset() {
       super.reset();
       request.leader = 0;
       request.term = 0;
@@ -224,7 +221,6 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
       request.entries.clear();
       request.commitIndex = 0;
       request.globalIndex = 0;
-      return this;
     }
 
     /**

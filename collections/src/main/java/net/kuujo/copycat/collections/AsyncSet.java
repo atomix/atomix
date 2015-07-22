@@ -20,8 +20,9 @@ import net.kuujo.alleycat.AlleycatSerializable;
 import net.kuujo.alleycat.SerializeWith;
 import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
-import net.kuujo.copycat.Resource;
+import net.kuujo.copycat.BuilderPool;
 import net.kuujo.copycat.Mode;
+import net.kuujo.copycat.Resource;
 import net.kuujo.copycat.Stateful;
 import net.kuujo.copycat.log.Compaction;
 import net.kuujo.copycat.raft.*;
@@ -220,7 +221,10 @@ public class AsyncSet<T> extends Resource {
     /**
      * Base set command builder.
      */
-    public static abstract class Builder<T extends Builder<T, U>, U extends SetCommand<?>> extends Command.Builder<T, U> {
+    public static abstract class Builder<T extends Builder<T, U, V>, U extends SetCommand<V>, V> extends Command.Builder<T, U, V> {
+      protected Builder(BuilderPool<T, U> pool) {
+        super(pool);
+      }
     }
   }
 
@@ -248,7 +252,10 @@ public class AsyncSet<T> extends Resource {
     /**
      * Base set query builder.
      */
-    public static abstract class Builder<T extends Builder<T, U>, U extends SetQuery<?>> extends Query.Builder<T, U> {
+    public static abstract class Builder<T extends Builder<T, U, V>, U extends SetQuery<V>, V> extends Query.Builder<T, U, V> {
+      protected Builder(BuilderPool<T, U> pool) {
+        super(pool);
+      }
 
       /**
        * Sets the query consistency level.
@@ -290,7 +297,10 @@ public class AsyncSet<T> extends Resource {
     /**
      * Base key command builder.
      */
-    public static abstract class Builder<T extends Builder<T, U>, U extends ValueCommand<?>> extends SetCommand.Builder<T, U> {
+    public static abstract class Builder<T extends Builder<T, U, V>, U extends ValueCommand<V>, V> extends SetCommand.Builder<T, U, V> {
+      protected Builder(BuilderPool<T, U> pool) {
+        super(pool);
+      }
 
       /**
        * Sets the command value.
@@ -334,7 +344,10 @@ public class AsyncSet<T> extends Resource {
     /**
      * Base value query builder.
      */
-    public static abstract class Builder<T extends Builder<T, U>, U extends ValueQuery<?>> extends SetQuery.Builder<T, U> {
+    public static abstract class Builder<T extends Builder<T, U, V>, U extends ValueQuery<V>, V> extends SetQuery.Builder<T, U, V> {
+      protected Builder(BuilderPool<T, U> pool) {
+        super(pool);
+      }
 
       /**
        * Sets the query value.
@@ -360,13 +373,17 @@ public class AsyncSet<T> extends Resource {
      * Returns a builder for this command.
      */
     public static Builder builder() {
-      return Operation.builder(Builder.class);
+      return Operation.builder(Builder.class, Builder::new);
     }
 
     /**
      * Contains key builder.
      */
-    public static class Builder extends ValueQuery.Builder<Builder, Contains> {
+    public static class Builder extends ValueQuery.Builder<Builder, Contains, Boolean> {
+      public Builder(BuilderPool<Builder, Contains> pool) {
+        super(pool);
+      }
+
       @Override
       protected Contains create() {
         return new Contains();
@@ -415,7 +432,10 @@ public class AsyncSet<T> extends Resource {
     /**
      * TTL command builder.
      */
-    public static abstract class Builder<T extends Builder<T, U>, U extends TtlCommand<?>> extends ValueCommand.Builder<T, U> {
+    public static abstract class Builder<T extends Builder<T, U, V>, U extends TtlCommand<V>, V> extends ValueCommand.Builder<T, U, V> {
+      protected Builder(BuilderPool<T, U> pool) {
+        super(pool);
+      }
 
       /**
        * Sets the time to live.
@@ -463,13 +483,17 @@ public class AsyncSet<T> extends Resource {
      * Returns a builder for this command.
      */
     public static Builder builder() {
-      return Operation.builder(Builder.class);
+      return Operation.builder(Builder.class, Builder::new);
     }
 
     /**
      * Add command builder.
      */
-    public static class Builder extends TtlCommand.Builder<Builder, Add> {
+    public static class Builder extends TtlCommand.Builder<Builder, Add, Boolean> {
+      public Builder(BuilderPool<Builder, Add> pool) {
+        super(pool);
+      }
+
       @Override
       protected Add create() {
         return new Add();
@@ -487,13 +511,17 @@ public class AsyncSet<T> extends Resource {
      * Returns a builder for this command.
      */
     public static Builder builder() {
-      return Operation.builder(Builder.class);
+      return Operation.builder(Builder.class, Builder::new);
     }
 
     /**
      * Remove command builder.
      */
-    public static class Builder extends ValueCommand.Builder<Builder, Remove> {
+    public static class Builder extends ValueCommand.Builder<Builder, Remove, Boolean> {
+      public Builder(BuilderPool<Builder, Remove> pool) {
+        super(pool);
+      }
+
       @Override
       protected Remove create() {
         return new Remove();
@@ -511,13 +539,17 @@ public class AsyncSet<T> extends Resource {
      * Returns a builder for this query.
      */
     public static Builder builder() {
-      return Operation.builder(Builder.class);
+      return Operation.builder(Builder.class, Builder::new);
     }
 
     /**
      * Size query builder.
      */
-    public static class Builder extends SetQuery.Builder<Builder, Size> {
+    public static class Builder extends SetQuery.Builder<Builder, Size, Integer> {
+      public Builder(BuilderPool<Builder, Size> pool) {
+        super(pool);
+      }
+
       @Override
       protected Size create() {
         return new Size();
@@ -535,13 +567,17 @@ public class AsyncSet<T> extends Resource {
      * Returns a builder for this query.
      */
     public static Builder builder() {
-      return Operation.builder(Builder.class);
+      return Operation.builder(Builder.class, Builder::new);
     }
 
     /**
      * Is empty query builder.
      */
-    public static class Builder extends SetQuery.Builder<Builder, IsEmpty> {
+    public static class Builder extends SetQuery.Builder<Builder, IsEmpty, Boolean> {
+      public Builder(BuilderPool<Builder, IsEmpty> pool) {
+        super(pool);
+      }
+
       @Override
       protected IsEmpty create() {
         return new IsEmpty();
@@ -559,7 +595,7 @@ public class AsyncSet<T> extends Resource {
      * Returns a builder for this command.
      */
     public static Builder builder() {
-      return Operation.builder(Builder.class);
+      return Operation.builder(Builder.class, Builder::new);
     }
 
     @Override
@@ -575,7 +611,11 @@ public class AsyncSet<T> extends Resource {
     /**
      * Get command builder.
      */
-    public static class Builder extends SetCommand.Builder<Builder, Clear> {
+    public static class Builder extends SetCommand.Builder<Builder, Clear, Void> {
+      public Builder(BuilderPool<Builder, Clear> pool) {
+        super(pool);
+      }
+
       @Override
       protected Clear create() {
         return new Clear();

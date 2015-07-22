@@ -35,7 +35,7 @@ public class Members implements AlleycatSerializable {
    * @return A new members builder.
    */
   public static Builder builder() {
-    return new Builder(new Members());
+    return new Builder();
   }
 
   private Map<Integer, Member> members = new HashMap<>();
@@ -94,10 +94,14 @@ public class Members implements AlleycatSerializable {
   /**
    * Members builder.
    */
-  public static class Builder implements net.kuujo.copycat.Builder<Members> {
-    private final Members members;
+  public static class Builder extends net.kuujo.copycat.Builder<Members> {
+    private Members members = new Members();
 
-    private Builder(Members members) {
+    private Builder() {
+    }
+
+    @Override
+    protected void reset(Members members) {
       this.members = members;
     }
 

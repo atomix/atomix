@@ -20,6 +20,7 @@ import net.kuujo.alleycat.SerializeWith;
 import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.alleycat.util.ReferenceManager;
+import net.kuujo.copycat.BuilderPool;
 import net.kuujo.copycat.raft.Members;
 import net.kuujo.copycat.raft.RaftError;
 
@@ -32,12 +33,7 @@ import java.util.Objects;
  */
 @SerializeWith(id=265)
 public class KeepAliveResponse extends ClientResponse<KeepAliveResponse> {
-  private static final ThreadLocal<Builder> builder = new ThreadLocal<Builder>() {
-    @Override
-    protected Builder initialValue() {
-      return new Builder();
-    }
-  };
+  private static final BuilderPool<Builder, KeepAliveResponse> POOL = new BuilderPool<>(Builder::new);
 
   /**
    * Returns a new keep alive response builder.
@@ -45,7 +41,7 @@ public class KeepAliveResponse extends ClientResponse<KeepAliveResponse> {
    * @return A new keep alive response builder.
    */
   public static Builder builder() {
-    return builder.get().reset();
+    return POOL.acquire();
   }
 
   /**
@@ -55,7 +51,7 @@ public class KeepAliveResponse extends ClientResponse<KeepAliveResponse> {
    * @return The keep alive response builder.
    */
   public static Builder builder(KeepAliveResponse response) {
-    return builder.get().reset(response);
+    return POOL.acquire(response);
   }
 
   private long term;
@@ -150,17 +146,16 @@ public class KeepAliveResponse extends ClientResponse<KeepAliveResponse> {
    */
   public static class Builder extends ClientResponse.Builder<Builder, KeepAliveResponse> {
 
-    private Builder() {
-      super(KeepAliveResponse::new);
+    private Builder(BuilderPool<Builder, KeepAliveResponse> pool) {
+      super(pool, KeepAliveResponse::new);
     }
 
     @Override
-    Builder reset() {
+    protected void reset() {
       super.reset();
       response.term = 0;
       response.leader = 0;
       response.members = null;
-      return this;
     }
 
     /**

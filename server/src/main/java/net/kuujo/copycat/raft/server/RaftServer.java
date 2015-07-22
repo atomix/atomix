@@ -201,7 +201,7 @@ public class RaftServer implements ManagedRaft {
   /**
    * Raft server builder.
    */
-  public static class Builder implements Raft.Builder<Builder, RaftServer> {
+  public static class Builder extends Raft.Builder<Builder, RaftServer> {
     private Transport transport;
     private Log log;
     private Alleycat serializer;
@@ -209,6 +209,20 @@ public class RaftServer implements ManagedRaft {
     private StateMachine stateMachine;
     private int memberId;
     private Members members;
+
+    private Builder() {
+    }
+
+    @Override
+    protected void reset() {
+      transport = null;
+      log = null;
+      serializer = null;
+      config = new RaftConfig();
+      stateMachine = null;
+      memberId = 0;
+      members = null;
+    }
 
     @Override
     public Builder withTransport(Transport transport) {

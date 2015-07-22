@@ -20,6 +20,7 @@ import net.kuujo.alleycat.SerializeWith;
 import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.alleycat.util.ReferenceManager;
+import net.kuujo.copycat.BuilderPool;
 import net.kuujo.copycat.raft.RaftError;
 
 import java.util.Objects;
@@ -31,12 +32,7 @@ import java.util.Objects;
  */
 @SerializeWith(id=257)
 public class AppendResponse extends AbstractResponse<AppendResponse> {
-  private static final ThreadLocal<Builder> builder = new ThreadLocal<Builder>() {
-    @Override
-    protected Builder initialValue() {
-      return new Builder();
-    }
-  };
+  private static final BuilderPool<Builder, AppendResponse> POOL = new BuilderPool<>(Builder::new);
 
   /**
    * Returns a new append response builder.
@@ -44,7 +40,7 @@ public class AppendResponse extends AbstractResponse<AppendResponse> {
    * @return A new append response builder.
    */
   public static Builder builder() {
-    return builder.get().reset();
+    return POOL.acquire();
   }
 
   /**
@@ -54,7 +50,7 @@ public class AppendResponse extends AbstractResponse<AppendResponse> {
    * @return The append response builder.
    */
   public static Builder builder(AppendResponse response) {
-    return builder.get().reset(response);
+    return POOL.acquire(response);
   }
 
   private long term;
@@ -149,8 +145,8 @@ public class AppendResponse extends AbstractResponse<AppendResponse> {
    */
   public static class Builder extends AbstractResponse.Builder<Builder, AppendResponse> {
 
-    public Builder() {
-      super(AppendResponse::new);
+    private Builder(BuilderPool<Builder, AppendResponse> pool) {
+      super(pool, AppendResponse::new);
     }
 
     /**

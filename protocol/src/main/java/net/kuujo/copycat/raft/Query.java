@@ -15,6 +15,8 @@
  */
 package net.kuujo.copycat.raft;
 
+import net.kuujo.copycat.BuilderPool;
+
 /**
  * Query operation.
  *
@@ -32,17 +34,22 @@ public interface Query<T> extends Operation<T> {
   /**
    * Query builder.
    */
-  static abstract class Builder<T extends Builder<T, U>, U extends Query<?>> extends Operation.Builder<U> {
+  static abstract class Builder<T extends Builder<T, U, V>, U extends Query<V>, V> extends Operation.Builder<T, U, V> {
     protected U query;
 
+    protected Builder(BuilderPool<T, U> pool) {
+      super(pool);
+    }
+
     @Override
-    protected void init(U query) {
-      super.init(query);
+    protected void reset(U query) {
+      super.reset(query);
       this.query = query;
     }
 
     @Override
     public U build() {
+      close();
       return query;
     }
   }

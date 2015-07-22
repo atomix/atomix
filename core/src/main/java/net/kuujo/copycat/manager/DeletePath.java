@@ -16,6 +16,7 @@
 package net.kuujo.copycat.manager;
 
 import net.kuujo.alleycat.SerializeWith;
+import net.kuujo.copycat.BuilderPool;
 import net.kuujo.copycat.raft.Command;
 import net.kuujo.copycat.raft.Operation;
 
@@ -33,7 +34,7 @@ public class DeletePath extends PathOperation<Boolean> implements Command<Boolea
    * @return A new DeletePath command builder.
    */
   public static Builder builder() {
-    return Operation.builder(DeletePath.Builder.class);
+    return Operation.builder(DeletePath.Builder.class, DeletePath.Builder::new);
   }
 
   public DeletePath() {
@@ -46,7 +47,11 @@ public class DeletePath extends PathOperation<Boolean> implements Command<Boolea
   /**
    * Create path builder.
    */
-  public static class Builder extends PathOperation.Builder<Builder, DeletePath> {
+  public static class Builder extends PathOperation.Builder<Builder, DeletePath, Boolean> {
+    public Builder(BuilderPool<Builder, DeletePath> pool) {
+      super(pool);
+    }
+
     @Override
     protected DeletePath create() {
       return new DeletePath();

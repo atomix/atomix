@@ -16,6 +16,7 @@
 package net.kuujo.copycat.manager;
 
 import net.kuujo.alleycat.SerializeWith;
+import net.kuujo.copycat.BuilderPool;
 import net.kuujo.copycat.raft.Command;
 import net.kuujo.copycat.raft.Operation;
 
@@ -33,7 +34,7 @@ public class CreatePath extends PathOperation<Boolean> implements Command<Boolea
    * @return A new CreatePath command builder.
    */
   public static Builder builder() {
-    return Operation.builder(CreatePath.Builder.class);
+    return Operation.builder(CreatePath.Builder.class, CreatePath.Builder::new);
   }
 
   public CreatePath() {
@@ -46,7 +47,12 @@ public class CreatePath extends PathOperation<Boolean> implements Command<Boolea
   /**
    * Create path builder.
    */
-  public static class Builder extends PathOperation.Builder<Builder, CreatePath> {
+  public static class Builder extends PathOperation.Builder<Builder, CreatePath, Boolean> {
+
+    public Builder(BuilderPool<Builder, CreatePath> pool) {
+      super(pool);
+    }
+
     @Override
     protected CreatePath create() {
       return new CreatePath();

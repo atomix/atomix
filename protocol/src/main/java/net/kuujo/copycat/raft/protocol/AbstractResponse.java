@@ -18,6 +18,7 @@ package net.kuujo.copycat.raft.protocol;
 import net.kuujo.alleycat.util.ReferenceFactory;
 import net.kuujo.alleycat.util.ReferenceManager;
 import net.kuujo.alleycat.util.ReferencePool;
+import net.kuujo.copycat.BuilderPool;
 import net.kuujo.copycat.raft.RaftError;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -82,32 +83,25 @@ abstract class AbstractResponse<T extends Response<T>> implements Response<T> {
    * @param <T> The builder type.
    * @param <U> The response type.
    */
-  protected static abstract class Builder<T extends Builder<T, U>, U extends AbstractResponse<U>> implements Response.Builder<T, U> {
+  protected static abstract class Builder<T extends Builder<T, U>, U extends AbstractResponse<U>> extends Response.Builder<T, U> {
     protected final ReferencePool<U> pool;
     protected U response;
 
-    protected Builder(ReferenceFactory<U> factory) {
+    protected Builder(BuilderPool<T, U> pool, ReferenceFactory<U> factory) {
+      super(pool);
       this.pool = new ReferencePool<>(factory);
     }
 
-    /**
-     * Resets the builder, acquiring a new response from the internal reference pool.
-     */
-    @SuppressWarnings("unchecked")
-    T reset() {
+    @Override
+    protected void reset() {
       response = pool.acquire();
       response.status = null;
       response.error = null;
-      return (T) this;
     }
 
-    /**
-     * Resets the builder with the given response.
-     */
-    @SuppressWarnings("unchecked")
-    T reset(U response) {
+    @Override
+    protected void reset(U response) {
       this.response = response;
-      return (T) this;
     }
 
     @Override
@@ -130,6 +124,7 @@ abstract class AbstractResponse<T extends Response<T>> implements Response<T> {
     public U build() {
       if (response.status == null)
         throw new NullPointerException("status cannot be null");
+      close();
       return response;
     }
   }

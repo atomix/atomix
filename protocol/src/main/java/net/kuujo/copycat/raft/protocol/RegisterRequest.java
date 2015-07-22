@@ -20,6 +20,7 @@ import net.kuujo.alleycat.SerializeWith;
 import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.alleycat.util.ReferenceManager;
+import net.kuujo.copycat.BuilderPool;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -31,12 +32,7 @@ import java.util.UUID;
  */
 @SerializeWith(id=272)
 public class RegisterRequest extends ClientRequest<RegisterRequest> {
-  private static final ThreadLocal<Builder> builder = new ThreadLocal<Builder>() {
-    @Override
-    protected Builder initialValue() {
-      return new Builder();
-    }
-  };
+  private static final BuilderPool<Builder, RegisterRequest> POOL = new BuilderPool<>(Builder::new);
 
   /**
    * Returns a new register client request builder.
@@ -44,7 +40,7 @@ public class RegisterRequest extends ClientRequest<RegisterRequest> {
    * @return A new register client request builder.
    */
   public static Builder builder() {
-    return builder.get().reset();
+    return POOL.acquire();
   }
 
   /**
@@ -54,7 +50,7 @@ public class RegisterRequest extends ClientRequest<RegisterRequest> {
    * @return The register client request builder.
    */
   public static Builder builder(RegisterRequest request) {
-    return builder.get().reset(request);
+    return POOL.acquire(request);
   }
 
   private int member;
@@ -109,16 +105,15 @@ public class RegisterRequest extends ClientRequest<RegisterRequest> {
    */
   public static class Builder extends ClientRequest.Builder<Builder, RegisterRequest> {
 
-    private Builder() {
-      super(RegisterRequest::new);
+    private Builder(BuilderPool<Builder, RegisterRequest> pool) {
+      super(pool, RegisterRequest::new);
     }
 
     @Override
-    Builder reset() {
+    protected void reset() {
       super.reset();
       request.member = 0;
       request.connection = null;
-      return this;
     }
 
     /**
@@ -128,6 +123,8 @@ public class RegisterRequest extends ClientRequest<RegisterRequest> {
      * @return The request builder.
      */
     public Builder withMember(int member) {
+      if (member < 0)
+        throw new IllegalArgumentException("member cannot be negative");
       request.member = member;
       return this;
     }
@@ -139,8 +136,20 @@ public class RegisterRequest extends ClientRequest<RegisterRequest> {
      * @return The request builder.
      */
     public Builder withConnection(UUID connection) {
+      if (connection == null)
+        throw new NullPointerException("connection cannot be null");
       request.connection = connection;
       return this;
+    }
+
+    @Override
+    public RegisterRequest build() {
+      super.build();
+      if (request.member < 0)
+        throw new IllegalArgumentException("member cannot be negative");
+      if (request.connection == null)
+        throw new NullPointerException("connection cannot be null");
+      return request;
     }
 
     @Override

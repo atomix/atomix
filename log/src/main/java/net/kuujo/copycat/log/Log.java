@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.log;
 
+import net.kuujo.copycat.BuilderPool;
 import net.kuujo.copycat.util.concurrent.Context;
 
 import java.io.File;
@@ -26,6 +27,7 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class Log implements AutoCloseable {
+  private static final BuilderPool<Builder, Log> POOL = new BuilderPool<>(Builder::new);
 
   /**
    * Returns a new Raft storage builder.
@@ -33,7 +35,7 @@ public class Log implements AutoCloseable {
    * @return A new Raft storage builder.
    */
   public static Builder builder() {
-    return new Builder();
+    return POOL.acquire();
   }
 
   protected final SegmentManager segments;
@@ -344,8 +346,12 @@ public class Log implements AutoCloseable {
   /**
    * Raft log builder.
    */
-  public static class Builder implements net.kuujo.copycat.Builder<Log> {
+  public static class Builder extends net.kuujo.copycat.Builder<Log> {
     private final LogConfig config = new LogConfig();
+
+    private Builder(BuilderPool pool) {
+      super(pool);
+    }
 
     /**
      * Sets the log directory, returning the builder for method chaining.
@@ -486,11 +492,15 @@ public class Log implements AutoCloseable {
      * @return A new buffered log.
      */
     public Log build() {
-      Log log = new Log(new SegmentManager(config));
-      log.compactor = new Compactor(log)
-        .withMinorCompactionInterval(config.getMinorCompactionInterval())
-        .withMajorCompactionInterval(config.getMajorCompactionInterval());
-      return log;
+      try {
+        Log log = new Log(new SegmentManager(config));
+        log.compactor = new Compactor(log)
+          .withMinorCompactionInterval(config.getMinorCompactionInterval())
+          .withMajorCompactionInterval(config.getMajorCompactionInterval());
+        return log;
+      } finally {
+        close();
+      }
     }
   }
 

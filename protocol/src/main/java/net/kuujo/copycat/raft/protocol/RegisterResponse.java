@@ -20,6 +20,7 @@ import net.kuujo.alleycat.SerializeWith;
 import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.alleycat.util.ReferenceManager;
+import net.kuujo.copycat.BuilderPool;
 import net.kuujo.copycat.raft.Members;
 import net.kuujo.copycat.raft.RaftError;
 
@@ -32,12 +33,7 @@ import java.util.Objects;
  */
 @SerializeWith(id=273)
 public class RegisterResponse extends AbstractResponse<RegisterResponse> {
-  private static final ThreadLocal<Builder> builder = new ThreadLocal<Builder>() {
-    @Override
-    protected Builder initialValue() {
-      return new Builder();
-    }
-  };
+  private static final BuilderPool<Builder, RegisterResponse> POOL = new BuilderPool<>(Builder::new);
 
   /**
    * Returns a new register client response builder.
@@ -45,7 +41,7 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
    * @return A new register client response builder.
    */
   public static Builder builder() {
-    return builder.get().reset();
+    return POOL.acquire();
   }
 
   /**
@@ -55,7 +51,7 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
    * @return The register client response builder.
    */
   public static Builder builder(RegisterResponse response) {
-    return builder.get().reset(response);
+    return POOL.acquire(response);
   }
 
   private long term;
@@ -159,18 +155,17 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
    */
   public static class Builder extends AbstractResponse.Builder<Builder, RegisterResponse> {
 
-    private Builder() {
-      super(RegisterResponse::new);
+    private Builder(BuilderPool<Builder, RegisterResponse> pool) {
+      super(pool, RegisterResponse::new);
     }
 
     @Override
-    Builder reset() {
+    protected void reset() {
       super.reset();
       response.term = 0;
       response.leader = 0;
       response.session = 0;
       response.members = null;
-      return this;
     }
 
     /**

@@ -15,6 +15,8 @@
  */
 package net.kuujo.copycat.raft;
 
+import net.kuujo.copycat.BuilderPool;
+
 /**
  * Command operation.
  *
@@ -25,17 +27,22 @@ public interface Command<T> extends Operation<T> {
   /**
    * Command builder.
    */
-  static abstract class Builder<T extends Builder<T, U>, U extends Command<?>> extends Operation.Builder<U> {
+  static abstract class Builder<T extends Builder<T, U, V>, U extends Command<V>, V> extends Operation.Builder<T, U, V> {
     protected U command;
 
+    protected Builder(BuilderPool<T, U> pool) {
+      super(pool);
+    }
+
     @Override
-    protected void init(U command) {
-      super.init(command);
+    protected void reset(U command) {
+      super.reset(command);
       this.command = command;
     }
 
     @Override
     public U build() {
+      close();
       return command;
     }
   }

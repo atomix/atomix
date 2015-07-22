@@ -20,6 +20,7 @@ import net.kuujo.alleycat.SerializeWith;
 import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.alleycat.util.ReferenceManager;
+import net.kuujo.copycat.BuilderPool;
 
 import java.util.Objects;
 
@@ -30,12 +31,7 @@ import java.util.Objects;
  */
 @SerializeWith(id=268)
 public class PollRequest extends AbstractRequest<PollRequest> {
-  private static final ThreadLocal<Builder> builder = new ThreadLocal<Builder>() {
-    @Override
-    protected Builder initialValue() {
-      return new Builder();
-    }
-  };
+  private static final BuilderPool<Builder, PollRequest> POOL = new BuilderPool<>(Builder::new);
 
   /**
    * Returns a new poll request builder.
@@ -43,7 +39,7 @@ public class PollRequest extends AbstractRequest<PollRequest> {
    * @return A new poll request builder.
    */
   public static Builder builder() {
-    return builder.get().reset();
+    return POOL.acquire();
   }
 
   /**
@@ -53,7 +49,7 @@ public class PollRequest extends AbstractRequest<PollRequest> {
    * @return The poll request builder.
    */
   public static Builder builder(PollRequest request) {
-    return builder.get().reset(request);
+    return POOL.acquire(request);
   }
 
   private long term;
@@ -149,18 +145,17 @@ public class PollRequest extends AbstractRequest<PollRequest> {
    */
   public static class Builder extends AbstractRequest.Builder<Builder, PollRequest> {
 
-    private Builder() {
-      super(PollRequest::new);
+    private Builder(BuilderPool<Builder, PollRequest> pool) {
+      super(pool, PollRequest::new);
     }
 
     @Override
-    Builder reset() {
+    protected void reset() {
       super.reset();
       request.term = 0;
       request.candidate = 0;
       request.logIndex = 0;
       request.logTerm = 0;
-      return this;
     }
 
     /**

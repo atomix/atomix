@@ -20,6 +20,7 @@ import net.kuujo.alleycat.SerializeWith;
 import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.alleycat.util.ReferenceManager;
+import net.kuujo.copycat.BuilderPool;
 import net.kuujo.copycat.raft.Query;
 
 import java.util.Objects;
@@ -31,12 +32,7 @@ import java.util.Objects;
  */
 @SerializeWith(id=270)
 public class QueryRequest extends SessionRequest<QueryRequest> {
-  private static final ThreadLocal<Builder> builder = new ThreadLocal<Builder>() {
-    @Override
-    protected Builder initialValue() {
-      return new Builder();
-    }
-  };
+  private static final BuilderPool<Builder, QueryRequest> POOL = new BuilderPool<>(Builder::new);
 
   /**
    * Returns a new query request builder.
@@ -44,7 +40,7 @@ public class QueryRequest extends SessionRequest<QueryRequest> {
    * @return A new query request builder.
    */
   public static Builder builder() {
-    return builder.get().reset();
+    return POOL.acquire();
   }
 
   /**
@@ -54,7 +50,7 @@ public class QueryRequest extends SessionRequest<QueryRequest> {
    * @return The query request builder.
    */
   public static Builder builder(QueryRequest request) {
-    return builder.get().reset(request);
+    return POOL.acquire(request);
   }
 
   private long version;
@@ -121,16 +117,15 @@ public class QueryRequest extends SessionRequest<QueryRequest> {
    */
   public static class Builder extends SessionRequest.Builder<Builder, QueryRequest> {
 
-    protected Builder() {
-      super(QueryRequest::new);
+    private Builder(BuilderPool<Builder, QueryRequest> pool) {
+      super(pool, QueryRequest::new);
     }
 
     @Override
-    Builder reset() {
+    protected void reset() {
       super.reset();
       request.version = 0;
       request.query = null;
-      return this;
     }
 
     /**

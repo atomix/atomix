@@ -20,8 +20,9 @@ import net.kuujo.alleycat.AlleycatSerializable;
 import net.kuujo.alleycat.SerializeWith;
 import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
-import net.kuujo.copycat.Resource;
+import net.kuujo.copycat.BuilderPool;
 import net.kuujo.copycat.Mode;
+import net.kuujo.copycat.Resource;
 import net.kuujo.copycat.Stateful;
 import net.kuujo.copycat.log.Compaction;
 import net.kuujo.copycat.raft.*;
@@ -430,7 +431,10 @@ public class AsyncMap<K, V> extends Resource {
     /**
      * Base map command builder.
      */
-    public static abstract class Builder<T extends Builder<T, U>, U extends MapCommand<?>> extends Command.Builder<T, U> {
+    public static abstract class Builder<T extends Builder<T, U, V>, U extends MapCommand<V>, V> extends Command.Builder<T, U, V> {
+      protected Builder(BuilderPool<T, U> pool) {
+        super(pool);
+      }
     }
   }
 
@@ -458,7 +462,10 @@ public class AsyncMap<K, V> extends Resource {
     /**
      * Base map query builder.
      */
-    public static abstract class Builder<T extends Builder<T, U>, U extends MapQuery<?>> extends Query.Builder<T, U> {
+    public static abstract class Builder<T extends Builder<T, U, V>, U extends MapQuery<V>, V> extends Query.Builder<T, U, V> {
+      protected Builder(BuilderPool<T, U> pool) {
+        super(pool);
+      }
 
       /**
        * Sets the query consistency level.
@@ -473,7 +480,6 @@ public class AsyncMap<K, V> extends Resource {
         query.consistency = consistency;
         return (T) this;
       }
-
     }
   }
 
@@ -503,7 +509,10 @@ public class AsyncMap<K, V> extends Resource {
     /**
      * Base key command builder.
      */
-    public static abstract class Builder<T extends Builder<T, U>, U extends KeyCommand<?>> extends MapCommand.Builder<T, U> {
+    public static abstract class Builder<T extends Builder<T, U, V>, U extends KeyCommand<V>, V> extends MapCommand.Builder<T, U, V> {
+      protected Builder(BuilderPool<T, U> pool) {
+        super(pool);
+      }
 
       /**
        * Sets the command key.
@@ -547,7 +556,10 @@ public class AsyncMap<K, V> extends Resource {
     /**
      * Base key query builder.
      */
-    public static abstract class Builder<T extends Builder<T, U>, U extends KeyQuery<?>> extends MapQuery.Builder<T, U> {
+    public static abstract class Builder<T extends Builder<T, U, V>, U extends KeyQuery<V>, V> extends MapQuery.Builder<T, U, V> {
+      protected Builder(BuilderPool<T, U> pool) {
+        super(pool);
+      }
 
       /**
        * Sets the query key.
@@ -573,13 +585,17 @@ public class AsyncMap<K, V> extends Resource {
      * Returns a builder for this command.
      */
     public static Builder builder() {
-      return Operation.builder(Builder.class);
+      return Operation.builder(Builder.class, Builder::new);
     }
 
     /**
      * Contains key builder.
      */
-    public static class Builder extends KeyQuery.Builder<Builder, ContainsKey> {
+    public static class Builder extends KeyQuery.Builder<Builder, ContainsKey, Boolean> {
+      public Builder(BuilderPool<Builder, ContainsKey> pool) {
+        super(pool);
+      }
+
       @Override
       protected ContainsKey create() {
         return new ContainsKey();
@@ -615,7 +631,10 @@ public class AsyncMap<K, V> extends Resource {
     /**
      * Key/value command builder.
      */
-    public static abstract class Builder<T extends Builder<T, U>, U extends KeyValueCommand<?>> extends KeyCommand.Builder<T, U> {
+    public static abstract class Builder<T extends Builder<T, U, V>, U extends KeyValueCommand<V>, V> extends KeyCommand.Builder<T, U, V> {
+      protected Builder(BuilderPool<T, U> pool) {
+        super(pool);
+      }
 
       /**
        * Sets the command value.
@@ -672,7 +691,10 @@ public class AsyncMap<K, V> extends Resource {
     /**
      * TTL command builder.
      */
-    public static abstract class Builder<T extends Builder<T, U>, U extends TtlCommand<?>> extends KeyValueCommand.Builder<T, U> {
+    public static abstract class Builder<T extends Builder<T, U, V>, U extends TtlCommand<V>, V> extends KeyValueCommand.Builder<T, U, V> {
+      protected Builder(BuilderPool<T, U> pool) {
+        super(pool);
+      }
 
       /**
        * Sets the persistence mode.
@@ -720,13 +742,17 @@ public class AsyncMap<K, V> extends Resource {
      * Returns a builder for this command.
      */
     public static Builder builder() {
-      return Operation.builder(Builder.class);
+      return Operation.builder(Builder.class, Builder::new);
     }
 
     /**
      * Put command builder.
      */
-    public static class Builder extends TtlCommand.Builder<Builder, Put> {
+    public static class Builder extends TtlCommand.Builder<Builder, Put, Object> {
+      public Builder(BuilderPool<Builder, Put> pool) {
+        super(pool);
+      }
+
       @Override
       protected Put create() {
         return new Put();
@@ -744,13 +770,17 @@ public class AsyncMap<K, V> extends Resource {
      * Returns a builder for this command.
      */
     public static Builder builder() {
-      return Operation.builder(Builder.class);
+      return Operation.builder(Builder.class, Builder::new);
     }
 
     /**
      * Put command builder.
      */
-    public static class Builder extends TtlCommand.Builder<Builder, PutIfAbsent> {
+    public static class Builder extends TtlCommand.Builder<Builder, PutIfAbsent, Object> {
+      public Builder(BuilderPool<Builder, PutIfAbsent> pool) {
+        super(pool);
+      }
+
       @Override
       protected PutIfAbsent create() {
         return new PutIfAbsent();
@@ -768,13 +798,17 @@ public class AsyncMap<K, V> extends Resource {
      * Returns a builder for this query.
      */
     public static Builder builder() {
-      return Operation.builder(Builder.class);
+      return Operation.builder(Builder.class, Builder::new);
     }
 
     /**
      * Get query builder.
      */
-    public static class Builder extends KeyQuery.Builder<Builder, Get> {
+    public static class Builder extends KeyQuery.Builder<Builder, Get, Object> {
+      public Builder(BuilderPool<Builder, Get> pool) {
+        super(pool);
+      }
+
       @Override
       protected Get create() {
         return new Get();
@@ -792,7 +826,7 @@ public class AsyncMap<K, V> extends Resource {
      * Returns a builder for this query.
      */
     public static Builder builder() {
-      return Operation.builder(Builder.class);
+      return Operation.builder(Builder.class, Builder::new);
     }
 
     private Object defaultValue;
@@ -821,7 +855,11 @@ public class AsyncMap<K, V> extends Resource {
     /**
      * Get command builder.
      */
-    public static class Builder extends KeyQuery.Builder<Builder, GetOrDefault> {
+    public static class Builder extends KeyQuery.Builder<Builder, GetOrDefault, Object> {
+      public Builder(BuilderPool<Builder, GetOrDefault> pool) {
+        super(pool);
+      }
+
       @Override
       protected GetOrDefault create() {
         return new GetOrDefault();
@@ -850,13 +888,17 @@ public class AsyncMap<K, V> extends Resource {
      * Returns a builder for this command.
      */
     public static Builder builder() {
-      return Operation.builder(Builder.class);
+      return Operation.builder(Builder.class, Builder::new);
     }
 
     /**
      * Get command builder.
      */
-    public static class Builder extends KeyValueCommand.Builder<Builder, Remove> {
+    public static class Builder extends KeyValueCommand.Builder<Builder, Remove, Object> {
+      public Builder(BuilderPool<Builder, Remove> pool) {
+        super(pool);
+      }
+
       @Override
       protected Remove create() {
         return new Remove();
@@ -874,13 +916,17 @@ public class AsyncMap<K, V> extends Resource {
      * Returns a builder for this command.
      */
     public static Builder builder() {
-      return Operation.builder(Builder.class);
+      return Operation.builder(Builder.class, Builder::new);
     }
 
     /**
      * Is empty command builder.
      */
-    public static class Builder extends MapQuery.Builder<Builder, IsEmpty> {
+    public static class Builder extends MapQuery.Builder<Builder, IsEmpty, Boolean> {
+      public Builder(BuilderPool<Builder, IsEmpty> pool) {
+        super(pool);
+      }
+
       @Override
       protected IsEmpty create() {
         return new IsEmpty();
@@ -898,13 +944,17 @@ public class AsyncMap<K, V> extends Resource {
      * Returns a builder for this command.
      */
     public static Builder builder() {
-      return Operation.builder(Builder.class);
+      return Operation.builder(Builder.class, Builder::new);
     }
 
     /**
      * Is empty command builder.
      */
-    public static class Builder extends MapQuery.Builder<Builder, Size> {
+    public static class Builder extends MapQuery.Builder<Builder, Size, Integer> {
+      public Builder(BuilderPool<Builder, Size> pool) {
+        super(pool);
+      }
+
       @Override
       protected Size create() {
         return new Size();
@@ -922,7 +972,7 @@ public class AsyncMap<K, V> extends Resource {
      * Returns a builder for this command.
      */
     public static Builder builder() {
-      return Operation.builder(Builder.class);
+      return Operation.builder(Builder.class, Builder::new);
     }
 
     @Override
@@ -938,7 +988,11 @@ public class AsyncMap<K, V> extends Resource {
     /**
      * Get command builder.
      */
-    public static class Builder extends MapCommand.Builder<Builder, Clear> {
+    public static class Builder extends MapCommand.Builder<Builder, Clear, Void> {
+      public Builder(BuilderPool<Builder, Clear> pool) {
+        super(pool);
+      }
+
       @Override
       protected Clear create() {
         return new Clear();
