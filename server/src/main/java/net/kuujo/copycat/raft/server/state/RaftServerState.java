@@ -19,15 +19,19 @@ import net.kuujo.alleycat.Alleycat;
 import net.kuujo.copycat.Listener;
 import net.kuujo.copycat.ListenerContext;
 import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.raft.*;
+import net.kuujo.copycat.raft.Member;
+import net.kuujo.copycat.raft.Members;
+import net.kuujo.copycat.raft.NoLeaderException;
+import net.kuujo.copycat.raft.Query;
+import net.kuujo.copycat.raft.client.state.RaftClientState;
 import net.kuujo.copycat.raft.protocol.*;
 import net.kuujo.copycat.raft.server.RaftServer;
 import net.kuujo.copycat.raft.server.StateMachine;
-import net.kuujo.copycat.raft.client.state.RaftClientState;
 import net.kuujo.copycat.transport.Connection;
 import net.kuujo.copycat.transport.MessageHandler;
 import net.kuujo.copycat.transport.Server;
 import net.kuujo.copycat.transport.Transport;
+import net.kuujo.copycat.util.concurrent.ComposableFuture;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.Futures;
 import net.kuujo.copycat.util.concurrent.SingleThreadContext;
@@ -620,31 +624,34 @@ public class RaftServerState extends RaftClientState {
   @Override
   public synchronized CompletableFuture<Void> open() {
     Member member = members.member(memberId);
-    InetSocketAddress address;
+
+    final InetSocketAddress address;
     try {
       address = new InetSocketAddress(InetAddress.getByName(member.host()), member.port());
     } catch (UnknownHostException e) {
       return Futures.exceptionalFuture(e);
     }
 
-    if (member.type() == Member.Type.PASSIVE) {
-      return server.listen(address, this::handleConnect).thenRunAsync(() -> {
-        log.open(context);
-        transition(PassiveState.class);
-      }, context)
-        .thenCompose(v -> join())
-        .thenCompose(v -> super.open())
-        .thenRun(() -> open = true);
-    } else if (member.type() == Member.Type.ACTIVE) {
-      return server.listen(address, this::handleConnect).thenRunAsync(() -> {
-        log.open(context);
-        transition(FollowerState.class);
-        open = true;
-      }, context)
-        .thenCompose(v -> super.open());
-    } else {
-      throw new IllegalStateException("unknown member type: " + member.type());
-    }
+    ComposableFuture<Void> future = new ComposableFuture<>();
+    context.execute(() -> {
+      if (member.type() == Member.Type.PASSIVE) {
+        server.listen(address, this::handleConnect).thenRun(() -> {
+          log.open(context);
+          transition(PassiveState.class);
+        }).thenCompose(v -> join())
+          .thenCompose(v -> super.open())
+          .thenRun(() -> open = true)
+          .whenCompleteAsync(future, context);
+      } else {
+        server.listen(address, this::handleConnect).thenRun(() -> {
+          log.open(context);
+          transition(FollowerState.class);
+          open = true;
+        }).thenCompose(v -> super.open())
+          .whenCompleteAsync(future, context);
+      }
+    });
+    return future;
   }
 
   @Override

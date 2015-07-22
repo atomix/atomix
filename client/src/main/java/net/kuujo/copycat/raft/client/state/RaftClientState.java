@@ -749,7 +749,7 @@ public class RaftClientState implements Managed<Void> {
   @Override
   public CompletableFuture<Void> open() {
     openFuture = new CompletableFuture<>();
-    register().thenRun(this::startKeepAliveTimer);
+    context.execute(() -> register().thenRun(this::startKeepAliveTimer));
     return openFuture;
   }
 
