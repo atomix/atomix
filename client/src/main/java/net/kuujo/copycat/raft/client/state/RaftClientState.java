@@ -413,7 +413,7 @@ public class RaftClientState implements Managed<Void> {
           if (response.status() == Response.Status.OK) {
             future.complete((T) response.result());
           } else {
-            future.completeExceptionally(response.error().instance());
+            future.completeExceptionally(response.error().createException());
           }
           setResponse(Math.max(getResponse(), request.request()));
         } else {
@@ -544,7 +544,7 @@ public class RaftClientState implements Managed<Void> {
           if (response.status() == Response.Status.OK) {
             future.complete((T) response.result());
           } else {
-            future.completeExceptionally(response.error().instance());
+            future.completeExceptionally(response.error().createException());
           }
         } else {
           future.completeExceptionally(error);
@@ -680,7 +680,7 @@ public class RaftClientState implements Managed<Void> {
    */
   protected CompletableFuture<KeepAliveResponse> keepAlive(List<Member> members, CompletableFuture<KeepAliveResponse> future) {
     if (members.isEmpty()) {
-      future.completeExceptionally(RaftError.Type.NO_LEADER_ERROR.instance());
+      future.completeExceptionally(RaftError.Type.NO_LEADER_ERROR.createException());
       keepAlive.set(false);
       return future;
     }

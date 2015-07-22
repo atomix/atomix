@@ -45,8 +45,6 @@ public interface RaftError {
         return Type.UNKNOWN_SESSION_ERROR;
       case 7:
         return Type.INTERNAL_ERROR;
-      case 8:
-        return Type.PROTOCOL_ERROR;
       default:
         throw new IllegalArgumentException("invalid error identifier: " + id);
     }
@@ -64,7 +62,7 @@ public interface RaftError {
    *
    * @return The error exception.
    */
-  RaftException instance();
+  RaftException createException();
 
   /**
    * Raft error types.
@@ -74,60 +72,82 @@ public interface RaftError {
     /**
      * No leader error.
      */
-    NO_LEADER_ERROR(1, new NoLeaderException("not the leader")),
+    NO_LEADER_ERROR(1) {
+      @Override
+      public RaftException createException() {
+        return new NoLeaderException("not the leader");
+      }
+    },
 
     /**
      * Read application error.
      */
-    QUERY_ERROR(2, new ReadException("failed to obtain read quorum")),
+    QUERY_ERROR(2) {
+      @Override
+      public RaftException createException() {
+        return new ReadException("failed to obtain read quorum");
+      }
+    },
 
     /**
      * Write application error.
      */
-    COMMAND_ERROR(3, new WriteException("failed to obtain write quorum")),
+    COMMAND_ERROR(3) {
+      @Override
+      public RaftException createException() {
+        return new WriteException("failed to obtain write quorum");
+      }
+    },
 
     /**
      * User application error.
      */
-    APPLICATION_ERROR(4, new ApplicationException("an application error occurred")),
+    APPLICATION_ERROR(4) {
+      @Override
+      public RaftException createException() {
+        return new ApplicationException("an application error occurred");
+      }
+    },
 
     /**
      * Illegal member state error.
      */
-    ILLEGAL_MEMBER_STATE_ERROR(5, new IllegalMemberStateException("illegal member state")),
+    ILLEGAL_MEMBER_STATE_ERROR(5) {
+      @Override
+      public RaftException createException() {
+        return new IllegalMemberStateException("illegal member state");
+      }
+    },
 
     /**
      * Unknown session error.
      */
-    UNKNOWN_SESSION_ERROR(6, new UnknownSessionException("unknown member session")),
+    UNKNOWN_SESSION_ERROR(6) {
+      @Override
+      public RaftException createException() {
+        return new UnknownSessionException("unknown member session");
+      }
+    },
 
     /**
      * Internal error.
      */
-    INTERNAL_ERROR(7, new InternalException("internal Raft error")),
-
-    /**
-     * Raft protocol error.
-     */
-    PROTOCOL_ERROR(8, new ProtocolException("Raft protocol error"));
+    INTERNAL_ERROR(7) {
+      @Override
+      public RaftException createException() {
+        return new InternalException("internal Raft error");
+      }
+    };
 
     private final byte id;
-    private final RaftException instance;
 
-    private Type(int id, RaftException instance) {
+    private Type(int id) {
       this.id = (byte) id;
-      this.instance = instance;
-      instance.setStackTrace(new StackTraceElement[0]);
     }
 
     @Override
     public byte id() {
       return id;
-    }
-
-    @Override
-    public RaftException instance() {
-      return instance;
     }
   }
 

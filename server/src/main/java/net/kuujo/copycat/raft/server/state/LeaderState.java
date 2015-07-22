@@ -243,7 +243,7 @@ class LeaderState extends ActiveState {
         } else {
           future.complete(logResponse(CommandResponse.builder()
             .withStatus(Response.Status.ERROR)
-            .withError(RaftError.Type.PROTOCOL_ERROR)
+            .withError(RaftError.Type.INTERNAL_ERROR)
             .build()));
         }
       }
@@ -403,7 +403,7 @@ class LeaderState extends ActiveState {
         } else {
           future.complete(logResponse(RegisterResponse.builder()
             .withStatus(Response.Status.ERROR)
-            .withError(RaftError.Type.PROTOCOL_ERROR)
+            .withError(RaftError.Type.INTERNAL_ERROR)
             .build()));
         }
       }
@@ -461,7 +461,7 @@ class LeaderState extends ActiveState {
         } else {
           future.complete(logResponse(KeepAliveResponse.builder()
             .withStatus(Response.Status.ERROR)
-            .withError(RaftError.Type.PROTOCOL_ERROR)
+            .withError(RaftError.Type.INTERNAL_ERROR)
             .build()));
         }
       }
@@ -509,7 +509,7 @@ class LeaderState extends ActiveState {
         } else {
           future.complete(logResponse(JoinResponse.builder()
             .withStatus(Response.Status.ERROR)
-            .withError(RaftError.Type.PROTOCOL_ERROR)
+            .withError(RaftError.Type.INTERNAL_ERROR)
             .build()));
         }
       }
@@ -555,7 +555,7 @@ class LeaderState extends ActiveState {
         } else {
           future.complete(logResponse(LeaveResponse.builder()
             .withStatus(Response.Status.ERROR)
-            .withError(RaftError.Type.PROTOCOL_ERROR)
+            .withError(RaftError.Type.INTERNAL_ERROR)
             .build()));
         }
       }
