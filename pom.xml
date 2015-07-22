@@ -76,6 +76,7 @@
     <module>protocol</module>
     <module>client</module>
     <module>server</module>
+    <module>raft</module>
     <module>core</module>
     <module>cluster</module>
     <module>collections</module>
