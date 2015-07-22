@@ -396,7 +396,7 @@ public class RaftServer implements ManagedRaft {
       if (log == null)
         throw new ConfigurationException("log not configured");
 
-      RaftServerState context = (RaftServerState) new RaftServerState(memberId, log, stateMachine, transport, members, serializer)
+      RaftServerState context = (RaftServerState) new RaftServerState(memberId, log, stateMachine, transport, members, serializer != null ? serializer : new Alleycat())
         .setHeartbeatInterval(config.getHeartbeatInterval())
         .setElectionTimeout(config.getElectionTimeout())
         .setSessionTimeout(config.getSessionTimeout())

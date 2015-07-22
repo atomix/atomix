@@ -59,7 +59,7 @@ public abstract class StateMachine implements AutoCloseable {
    * Initializes the state machine.
    */
   private void init(Class<?> clazz) {
-    while (clazz != Object.class) {
+    while (clazz != null && clazz != Object.class) {
       for (Method method : clazz.getDeclaredMethods()) {
         declareFilters(method);
         declareOperations(method);
@@ -78,8 +78,8 @@ public abstract class StateMachine implements AutoCloseable {
   private void declareFilters(Method method) {
     Filter filter = method.getAnnotation(Filter.class);
     if (filter != null) {
-      if (method.getReturnType() != Boolean.class && method.getReturnType() != boolean.class) {
-        throw new ConfigurationException("filter method " + method + " must return boolean");
+      if (method.getReturnType() != Boolean.class && method.getReturnType() != boolean.class && method.getReturnType() != CompletableFuture.class) {
+        throw new ConfigurationException("filter method " + method + " must return CompletableFuture<Boolean> or boolean");
       }
 
       method.setAccessible(true);

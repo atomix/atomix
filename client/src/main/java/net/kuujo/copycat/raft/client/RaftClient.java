@@ -208,7 +208,7 @@ public class RaftClient implements ManagedRaft {
 
     @Override
     public RaftClient build() {
-      return new RaftClient(new RaftClientState(transport, members, serializer).setKeepAliveInterval(keepAliveInterval));
+      return new RaftClient(new RaftClientState(transport, members, serializer != null ? serializer : new Alleycat()).setKeepAliveInterval(keepAliveInterval));
     }
   }
 
