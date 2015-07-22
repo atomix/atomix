@@ -43,7 +43,9 @@ public final class Futures {
    * @return The completed future.
    */
   public static <T> CompletableFuture<T> completedFutureAsync(T result, Executor executor) {
-    return CompletableFuture.supplyAsync(() -> result, executor);
+    CompletableFuture<T> future = new CompletableFuture<>();
+    executor.execute(() -> future.complete(result));
+    return future;
   }
 
   /**
