@@ -24,7 +24,7 @@
   </parent>
 
   <artifactId>copycat-netty</artifactId>
-  <name>Copycat Netty</name>
+  <name>Copycat Netty Transport</name>
 
   <properties>
     <netty.version>4.0.21.Final</netty.version>

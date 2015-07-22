@@ -24,7 +24,7 @@
   </parent>
 
   <artifactId>copycat-protocol</artifactId>
-  <name>Copycat Transport</name>
+  <name>Copycat Raft Protocol</name>
 
   <dependencies>
     <dependency>

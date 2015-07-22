@@ -24,7 +24,7 @@
   </parent>
 
   <artifactId>copycat-client</artifactId>
-  <name>Copycat Client</name>
+  <name>Copycat Raft Client</name>
 
   <dependencies>
     <dependency>
