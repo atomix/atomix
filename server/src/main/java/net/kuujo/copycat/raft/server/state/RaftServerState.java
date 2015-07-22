@@ -50,6 +50,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -729,27 +730,43 @@ public class RaftServerState extends RaftClientState {
     public <T, U> CompletableFuture<U> send(T request) {
       Class<?> clazz = request.getClass();
       if (clazz == JoinRequest.class) {
-        return (CompletableFuture<U>) state.join((JoinRequest) request);
+        return execute(() -> (CompletableFuture<U>) state.join((JoinRequest) request));
       } else if (clazz == LeaveRequest.class) {
-        return (CompletableFuture<U>) state.leave((LeaveRequest) request);
+        return execute(() -> (CompletableFuture<U>) state.leave((LeaveRequest) request));
       } else if (clazz == RegisterRequest.class) {
-        return (CompletableFuture<U>) state.register((RegisterRequest) request);
+        return execute(() -> (CompletableFuture<U>) state.register((RegisterRequest) request));
       } else if (clazz == KeepAliveRequest.class) {
-        return (CompletableFuture<U>) state.keepAlive((KeepAliveRequest) request);
+        return execute(() -> (CompletableFuture<U>) state.keepAlive((KeepAliveRequest) request));
       } else if (clazz == AppendRequest.class) {
-        return (CompletableFuture<U>) state.append((AppendRequest) request);
+        return execute(() -> (CompletableFuture<U>) state.append((AppendRequest) request));
       } else if (clazz == PollRequest.class) {
-        return (CompletableFuture<U>) state.poll((PollRequest) request);
+        return execute(() -> (CompletableFuture<U>) state.poll((PollRequest) request));
       } else if (clazz == VoteRequest.class) {
-        return (CompletableFuture<U>) state.vote((VoteRequest) request);
+        return execute(() -> (CompletableFuture<U>) state.vote((VoteRequest) request));
       } else if (clazz == CommandRequest.class) {
-        return (CompletableFuture<U>) state.command((CommandRequest) request);
+        return execute(() -> (CompletableFuture<U>) state.command((CommandRequest) request));
       } else if (clazz == QueryRequest.class) {
-        return (CompletableFuture<U>) state.query((QueryRequest) request);
+        return execute(() -> (CompletableFuture<U>) state.query((QueryRequest) request));
       } else if (clazz == PublishRequest.class) {
-        return (CompletableFuture<U>) state.publish((PublishRequest) request);
+        return execute(() -> (CompletableFuture<U>) state.publish((PublishRequest) request));
       }
       return Futures.exceptionalFuture(new IllegalStateException("no handlers registered"));
+    }
+
+    /**
+     * Executes a call to the internal Raft state on the server thread.
+     */
+    private <U> CompletableFuture<U> execute(Supplier<CompletableFuture<U>> supplier) {
+      Context context = Context.currentContext();
+      if (context == null) {
+        throw new IllegalStateException("not a Copycat thread");
+      }
+
+      ComposableFuture<U> future = new ComposableFuture<>();
+      RaftServerState.this.context.execute(() -> {
+        supplier.get().whenCompleteAsync(future, context);
+      });
+      return future;
     }
 
     @Override
