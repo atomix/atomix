@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class PassiveState extends AbstractState {
+class PassiveState extends AbstractState {
   protected boolean transition;
 
   public PassiveState(RaftServerState context) {
