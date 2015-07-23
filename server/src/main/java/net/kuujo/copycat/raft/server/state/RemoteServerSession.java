@@ -41,7 +41,9 @@ class RemoteServerSession extends ServerSession {
   @Override
   ServerSession setConnection(Connection connection) {
     this.connection = connection;
-    connection.handler(PublishRequest.class, this::handlePublish);
+    if (connection != null) {
+      connection.handler(PublishRequest.class, this::handlePublish);
+    }
     return this;
   }
 

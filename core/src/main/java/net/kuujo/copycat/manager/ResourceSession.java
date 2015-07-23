@@ -17,9 +17,11 @@ package net.kuujo.copycat.manager;
 
 import net.kuujo.copycat.Listener;
 import net.kuujo.copycat.ListenerContext;
+import net.kuujo.copycat.Listeners;
 import net.kuujo.copycat.ResourceMessage;
 import net.kuujo.copycat.raft.Session;
 
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -27,39 +29,108 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ResourceSession extends Session {
-  private final long id;
+public class ResourceSession implements Session {
+
+  /**
+   * Resource session state.
+   */
+  private static enum State {
+    OPEN,
+    CLOSED,
+    EXPIRED
+  }
+
+  private State state = State.OPEN;
+  private final long resource;
   private final Session parent;
+  private final Listeners<Session> openListeners = new Listeners<>();
+  private final Listeners<Session> closeListeners = new Listeners<>();
+  private final Listeners<?> receiveListeners = new Listeners();
 
-  public ResourceSession(long id, Session parent) {
-    super(parent.id(), parent.member(), parent.connection());
-    this.id = id;
+  public ResourceSession(long resource, Session parent) {
+    this.resource = resource;
     this.parent = parent;
+    parent.onOpen(this::handleOpen);
+    parent.onClose(this::handleClose);
+    parent.onReceive(this::handleReceive);
   }
 
   @Override
-  protected void close() {
-    super.close();
+  public long id() {
+    return parent.id();
   }
 
   @Override
-  protected void expire() {
-    super.expire();
+  public UUID connection() {
+    return parent.connection();
   }
 
   @Override
   public CompletableFuture<Void> publish(Object message) {
-    return parent.publish(new ResourceMessage<>(id, message));
+    return parent.publish(new ResourceMessage<>(resource, message));
+  }
+
+  /**
+   * handles receiving a message.
+   */
+  @SuppressWarnings("unchecked")
+  private void handleReceive(ResourceMessage message) {
+    if (message.resource() == resource) {
+      for (Listener listener : receiveListeners) {
+        listener.accept(message);
+      }
+    }
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public <T> ListenerContext onReceive(Listener<T> listener) {
-    return parent.<ResourceMessage>onReceive(message -> {
-      if (message.resource() == id) {
-        listener.accept((T) message.message());
-      }
-    });
+    return receiveListeners.add((Listener) listener);
+  }
+
+  @Override
+  public boolean isOpen() {
+    return state == State.OPEN;
+  }
+
+  /**
+   * Handles a session open event.
+   */
+  private void handleOpen(Session session) {
+    for (Listener<Session> listener : openListeners) {
+      listener.accept(this);
+    }
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public ListenerContext<Session> onOpen(Listener<Session> listener) {
+    return openListeners.add(listener);
+  }
+
+  /**
+   * Handles a session close event.
+   */
+  private void handleClose(Session session) {
+    for (Listener<Session> listener : closeListeners) {
+      listener.accept(this);
+    }
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public ListenerContext<Session> onClose(Listener<Session> listener) {
+    return closeListeners.add(listener);
+  }
+
+  @Override
+  public boolean isClosed() {
+    return state == State.CLOSED || state == State.EXPIRED;
+  }
+
+  @Override
+  public boolean isExpired() {
+    return state == State.EXPIRED;
   }
 
 }

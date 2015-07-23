@@ -17,7 +17,6 @@ package net.kuujo.copycat.raft;
 
 import net.kuujo.copycat.Listener;
 import net.kuujo.copycat.ListenerContext;
-import net.kuujo.copycat.Listeners;
 
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -27,56 +26,28 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class Session {
-  private final long id;
-  private final int member;
-  private final UUID connection;
-  private boolean expired;
-  private boolean closed;
-  private final Listeners<Session> openListeners = new Listeners<>();
-  private final Listeners<Session> closeListeners = new Listeners<>();
-
-  protected Session(long id, int member, UUID connection) {
-    this.id = id;
-    this.member = member;
-    this.connection = connection;
-  }
+public interface Session {
 
   /**
    * Returns the session ID.
    *
    * @return The session ID.
    */
-  public long id() {
-    return id;
-  }
-
-  /**
-   * Returns the session member ID.
-   *
-   * @return The session member ID.
-   */
-  public int member() {
-    return member;
-  }
+  long id();
 
   /**
    * Returns the session connection ID.
    *
    * @return The session connection ID.
    */
-  public UUID connection() {
-    return connection;
-  }
+  UUID connection();
 
   /**
    * Returns a boolean value indicating whether the session is open.
    *
    * @return Indicates whether the session is open.
    */
-  public boolean isOpen() {
-    return !closed;
-  }
+  boolean isOpen();
 
   /**
    * Sets an open listener on the session.
@@ -84,9 +55,7 @@ public abstract class Session {
    * @param listener The session open listener.
    * @return The listener context.
    */
-  public ListenerContext<Session> onOpen(Listener<Session> listener) {
-    return openListeners.add(listener);
-  }
+  ListenerContext<Session> onOpen(Listener<Session> listener);
 
   /**
    * Publishes a message to the session.
@@ -94,7 +63,7 @@ public abstract class Session {
    * @param message The message to publish.
    * @return A completable future to be called once the message has been published.
    */
-  public abstract CompletableFuture<Void> publish(Object message);
+  CompletableFuture<Void> publish(Object message);
 
   /**
    * Sets a session receive listener.
@@ -102,17 +71,7 @@ public abstract class Session {
    * @param listener The session receive listener.
    * @return The listener context.
    */
-  public abstract <T> ListenerContext<T> onReceive(Listener<T> listener);
-
-  /**
-   * Closes the session.
-   */
-  protected void close() {
-    closed = true;
-    for (ListenerContext<Session> listener : closeListeners) {
-      listener.accept(this);
-    }
-  }
+  <T> ListenerContext<T> onReceive(Listener<T> listener);
 
   /**
    * Sets a session close listener.
@@ -120,43 +79,20 @@ public abstract class Session {
    * @param listener The session close listener.
    * @return The session.
    */
-  public ListenerContext<Session> onClose(Listener<Session> listener) {
-    ListenerContext<Session> context = closeListeners.add(listener);
-    if (closed) {
-      context.accept(this);
-    }
-    return context;
-  }
+  ListenerContext<Session> onClose(Listener<Session> listener);
 
   /**
    * Returns a boolean value indicating whether the session is closed.
    *
    * @return Indicates whether the session is closed.
    */
-  public boolean isClosed() {
-    return closed;
-  }
-
-  /**
-   * Expires the session.
-   */
-  protected void expire() {
-    expired = true;
-    close();
-  }
+  boolean isClosed();
 
   /**
    * Returns a boolean value indicating whether the session is expired.
    *
    * @return Indicates whether the session is expired.
    */
-  public boolean isExpired() {
-    return expired;
-  }
-
-  @Override
-  public String toString() {
-    return String.format("Session[id=%d]", id);
-  }
+  boolean isExpired();
 
 }

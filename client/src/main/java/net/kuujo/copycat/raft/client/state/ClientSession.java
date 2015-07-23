@@ -33,42 +33,58 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-class ClientSession extends Session {
-  private final Listeners<Object> listeners = new Listeners<>();
-  private final Context context;
+class ClientSession implements Session {
 
-  public ClientSession(long id, int member, UUID connection, Context context) {
-    super(id, member, connection);
+  /**
+   * Session state.
+   */
+  private static enum State {
+    OPEN,
+    CLOSED,
+    EXPIRED
+  }
+
+  private final Listeners<Session> openListeners = new Listeners<>();
+  private final Listeners<Session> closeListeners = new Listeners<>();
+  private final Listeners<Object> receiveListeners = new Listeners<>();
+  private final Context context;
+  private volatile State state = State.CLOSED;
+  private volatile long id;
+  private volatile UUID connectionId;
+  private volatile Connection connection;
+
+  public ClientSession(Context context) {
     this.context = context;
+  }
+
+  @Override
+  public long id() {
+    return id;
+  }
+
+  @Override
+  public UUID connection() {
+    return connectionId;
   }
 
   /**
    * Sets the session connection.
    */
-  protected void setConnection(Connection connection) {
+  void connect(Connection connection) {
+    this.connection = connection;
     connection.handler(PublishRequest.class, this::handlePublish);
-  }
-
-  @Override
-  protected void expire() {
-    super.expire();
-  }
-
-  @Override
-  protected void close() {
-    super.close();
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public ListenerContext<?> onReceive(Listener listener) {
-    return listeners.add(listener);
+    return receiveListeners.add(listener);
   }
 
   @Override
   public CompletableFuture<Void> publish(Object message) {
     context.execute(() -> {
-      for (Listener<Object> listener : listeners) {
+      for (Listener<Object> listener : receiveListeners) {
         listener.accept(message);
       }
     });
@@ -83,13 +99,84 @@ class ClientSession extends Session {
    */
   @SuppressWarnings("unchecked")
   private CompletableFuture<PublishResponse> handlePublish(PublishRequest request) {
-    for (Listener listener : listeners) {
+    for (Listener listener : receiveListeners) {
       listener.accept(request.message());
     }
 
     return CompletableFuture.completedFuture(PublishResponse.builder()
       .withStatus(Response.Status.OK)
       .build());
+  }
+
+  /**
+   * Opens the session.
+   */
+  void open(long id, UUID connectionId) {
+    this.state = State.OPEN;
+    this.id = id;
+    this.connectionId = connectionId;
+
+    for (Listener<Session> listener : openListeners) {
+      listener.accept(this);
+    }
+  }
+
+  @Override
+  public boolean isOpen() {
+    return state == State.OPEN;
+  }
+
+  @Override
+  public ListenerContext<Session> onOpen(Listener<Session> listener) {
+    return openListeners.add(listener);
+  }
+
+  /**
+   * Closes the session.
+   */
+  void close() {
+    state = State.CLOSED;
+    triggerClose();
+  }
+
+  /**
+   * Triggers close listeners.
+   */
+  private void triggerClose() {
+    for (Listener<Session> listener : closeListeners) {
+      listener.accept(this);
+    }
+
+    id = 0;
+    connectionId = null;
+    connection = null;
+  }
+
+  @Override
+  public ListenerContext<Session> onClose(Listener<Session> listener) {
+    ListenerContext<Session> context = closeListeners.add(listener);
+    if (isClosed()) {
+      context.accept(this);
+    }
+    return context;
+  }
+
+  @Override
+  public boolean isClosed() {
+    return state == State.CLOSED || state == State.EXPIRED;
+  }
+
+  /**
+   * Expires the session.
+   */
+  void expire() {
+    state = State.EXPIRED;
+    triggerClose();
+  }
+
+  @Override
+  public boolean isExpired() {
+    return state == State.EXPIRED;
   }
 
 }

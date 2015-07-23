@@ -24,22 +24,43 @@ import net.kuujo.copycat.transport.Connection;
 import java.util.UUID;
 
 /**
- * Server session.
+ * Raft session.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-abstract class ServerSession extends Session {
+abstract class ServerSession implements Session {
   protected final Listeners<Object> listeners = new Listeners<>();
+  private final long id;
+  private final int member;
+  private final UUID connection;
+  private boolean expired;
+  private boolean closed;
+  private final Listeners<Session> openListeners = new Listeners<>();
+  private final Listeners<Session> closeListeners = new Listeners<>();
 
-  ServerSession(long id, int client, UUID connection) {
-    super(id, client, connection);
+  protected ServerSession(long id, int member, UUID connection) {
+    this.id = id;
+    this.member = member;
+    this.connection = connection;
+  }
+
+  @Override
+  public long id() {
+    return id;
   }
 
   /**
-   * Expires the session.
+   * Returns the session member.
+   *
+   * @return The session member.
    */
-  protected void expire() {
-    super.expire();
+  public int member() {
+    return member;
+  }
+
+  @Override
+  public UUID connection() {
+    return connection;
   }
 
   /**
@@ -48,9 +69,53 @@ abstract class ServerSession extends Session {
   abstract ServerSession setConnection(Connection connection);
 
   @Override
+  public boolean isOpen() {
+    return !closed;
+  }
+
+  @Override
+  public ListenerContext<Session> onOpen(Listener<Session> listener) {
+    return openListeners.add(listener);
+  }
+
+  @Override
   @SuppressWarnings("unchecked")
   public ListenerContext<?> onReceive(Listener listener) {
     return listeners.add(listener);
+  }
+
+  /**
+   * Closes the session.
+   */
+  protected void close() {
+    closed = true;
+    for (ListenerContext<Session> listener : closeListeners) {
+      listener.accept(this);
+    }
+  }
+
+  @Override
+  public ListenerContext<Session> onClose(Listener<Session> listener) {
+    ListenerContext<Session> context = closeListeners.add(listener);
+    if (closed) {
+      context.accept(this);
+    }
+    return context;
+  }
+
+  @Override
+  public boolean isClosed() {
+    return closed;
+  }
+
+  @Override
+  public boolean isExpired() {
+    return expired;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("Session[id=%d]", id);
   }
 
 }

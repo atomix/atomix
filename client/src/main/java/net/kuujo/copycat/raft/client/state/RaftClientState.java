@@ -69,7 +69,7 @@ public class RaftClientState implements Managed<Void> {
   private CompletableFuture<Void> openFuture;
   protected volatile int leader;
   protected volatile long term;
-  private volatile ClientSession session;
+  private final ClientSession session;
   protected volatile long sessionId;
   private volatile long request;
   private volatile long response;
@@ -88,6 +88,7 @@ public class RaftClientState implements Managed<Void> {
     this.members = members;
     this.transport = transport;
     this.client = transport.client(UUID.randomUUID());
+    this.session = new ClientSession(context);
   }
 
   /**
@@ -283,9 +284,7 @@ public class RaftClientState implements Managed<Void> {
     Function<Connection, Connection> connectHandler = connection -> {
       this.connection = connection;
       this.member = member;
-      if (session != null) {
-        session.setConnection(connection);
-      }
+      session.connect(connection);
       connection.closeListener(c -> this.connection = null);
       connection.exceptionListener(e -> this.connection = null);
       return connection;
@@ -377,7 +376,6 @@ public class RaftClientState implements Managed<Void> {
         setSessionId(0);
         if (session != null) {
           session.expire();
-          session = null;
         }
 
         register().thenRun(() -> {
@@ -508,7 +506,6 @@ public class RaftClientState implements Managed<Void> {
         setSessionId(0);
         if (session != null) {
           session.expire();
-          session = null;
         }
 
         register().thenRun(() -> {
@@ -605,7 +602,8 @@ public class RaftClientState implements Managed<Void> {
       setTerm(response.term());
       setLeader(response.leader());
       setSessionId(response.session());
-      session = new ClientSession(response.session(), id, client.id(), context);
+      session.open(response.session(), connection.id());
+      session.open(response.session(), client.id());
       this.members.configure(response.members());
     });
   }
@@ -766,7 +764,6 @@ public class RaftClientState implements Managed<Void> {
       cancelKeepAliveTimer();
       if (session != null) {
         session.close();
-        session = null;
       }
 
       open = false;

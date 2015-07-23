@@ -19,7 +19,7 @@ import net.kuujo.copycat.ResourceCommand;
 import net.kuujo.copycat.ResourceOperation;
 import net.kuujo.copycat.ResourceQuery;
 import net.kuujo.copycat.log.Compaction;
-import net.kuujo.copycat.raft.*;
+import net.kuujo.copycat.raft.Session;
 import net.kuujo.copycat.raft.server.Apply;
 import net.kuujo.copycat.raft.server.Commit;
 import net.kuujo.copycat.raft.server.Filter;
@@ -328,7 +328,6 @@ public class ResourceManager extends StateMachine {
       ResourceSession resourceSession = resource.sessions.get(session.id());
       if (resourceSession != null) {
         resource.context.execute(() -> {
-          resourceSession.close();
           resource.stateMachine.close(resourceSession);
         });
       }
@@ -342,7 +341,6 @@ public class ResourceManager extends StateMachine {
       ResourceSession resourceSession = resource.sessions.get(session.id());
       if (resourceSession != null) {
         resource.context.execute(() -> {
-          resourceSession.expire();
           resource.stateMachine.expire(resourceSession);
         });
       }
