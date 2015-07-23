@@ -16,6 +16,7 @@
 package net.kuujo.copycat.raft.server.state;
 
 import net.kuujo.alleycat.Alleycat;
+import net.kuujo.copycat.ConfigurationException;
 import net.kuujo.copycat.Listener;
 import net.kuujo.copycat.ListenerContext;
 import net.kuujo.copycat.log.Log;
@@ -45,7 +46,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ScheduledFuture;
 import java.util.function.Supplier;
 
 /**
@@ -56,7 +56,7 @@ import java.util.function.Supplier;
 public class RaftServerState extends RaftClientState {
   private static final Logger LOGGER = LoggerFactory.getLogger(RaftServerState.class);
   private final RaftState stateMachine;
-  private final int memberId;
+  private final Member member;
   private final Log log;
   private final ClusterState cluster = new ClusterState();
   private final Members members;
@@ -66,7 +66,6 @@ public class RaftServerState extends RaftClientState {
   private final SessionManager sessions;
   private final Context context;
   private AbstractState state;
-  private ScheduledFuture<?> joinTimer;
   private long electionTimeout = 500;
   private long heartbeatInterval = 250;
   private int lastVotedFor;
@@ -74,20 +73,41 @@ public class RaftServerState extends RaftClientState {
   private long globalIndex;
   private volatile boolean open;
 
-  public RaftServerState(int memberId, Members members, Transport transport, Log log, StateMachine stateMachine, Alleycat serializer) {
-    super(members.member(memberId), members, transport, serializer);
+  public RaftServerState(Member member, Members members, Transport transport, Log log, StateMachine stateMachine, Alleycat serializer) {
+    super(member.type() == Member.Type.ACTIVE ? members.member(member.id()) : member, members, transport, serializer);
 
-    for (Member member : members.members()) {
-      cluster.addMember(new MemberState(member.id(), member.type(), System.currentTimeMillis()));
+    if (member.type() == Member.Type.ACTIVE) {
+      member = members.member(member.id());
+      if (member == null) {
+        throw new ConfigurationException("active member must be listed in seed members list");
+      }
+      this.member = member;
+    } else if (member.type() == Member.Type.PASSIVE) {
+      if (members.member(member.id()) != null) {
+        throw new ConfigurationException("passive member cannot be listed in seed members list");
+      }
+      this.member = member;
+    } else {
+      throw new ConfigurationException("not a server member type: " + member.type());
     }
 
-    this.memberId = memberId;
-    this.context = new SingleThreadContext("copycat-server-" + memberId, serializer);
+    if (member.host() == null) {
+      throw new ConfigurationException("member host not configured");
+    }
+    if (member.port() <= 0) {
+      throw new ConfigurationException("member port not configured");
+    }
+
+    for (Member server : members.members()) {
+      cluster.addMember(new MemberState(server.id(), server.type(), System.currentTimeMillis()));
+    }
+
+    this.context = new SingleThreadContext("copycat-server-" + member.id(), serializer);
     this.log = log;
     this.members = members;
-    this.sessions = new SessionManager(memberId, this);
+    this.sessions = new SessionManager(member.id(), this);
 
-    this.stateMachine = new RaftState(stateMachine, cluster, sessions, new SingleThreadContext("copycat-server-" + memberId + "-state-%d", serializer.clone()));
+    this.stateMachine = new RaftState(stateMachine, cluster, sessions, new SingleThreadContext("copycat-server-" + member.id() + "-state-%d", serializer.clone()));
 
     this.server = transport.server(UUID.randomUUID());
     this.connections = new ConnectionManager(transport.client(UUID.randomUUID()));
@@ -101,7 +121,7 @@ public class RaftServerState extends RaftClientState {
    * @return The member ID.
    */
   public int getMemberId() {
-    return memberId;
+    return member.id();
   }
 
   /**
@@ -211,13 +231,13 @@ public class RaftServerState extends RaftClientState {
       if (leader != 0) {
         this.leader = leader;
         this.lastVotedFor = 0;
-        LOGGER.debug("{} - Found leader {}", memberId, leader);
+        LOGGER.debug("{} - Found leader {}", member.id(), leader);
       }
     } else if (leader != 0) {
       if (this.leader != leader) {
         this.leader = leader;
         this.lastVotedFor = 0;
-        LOGGER.debug("{} - Found leader {}", memberId, leader);
+        LOGGER.debug("{} - Found leader {}", member.id(), leader);
       }
     } else {
       this.leader = 0;
@@ -254,7 +274,7 @@ public class RaftServerState extends RaftClientState {
       this.term = term;
       this.leader = 0;
       this.lastVotedFor = 0;
-      LOGGER.debug("{} - Incremented term {}", memberId, term);
+      LOGGER.debug("{} - Incremented term {}", member.id(), term);
     }
     return this;
   }
@@ -284,9 +304,9 @@ public class RaftServerState extends RaftClientState {
     }
     this.lastVotedFor = candidate;
     if (candidate != 0) {
-      LOGGER.debug("{} - Voted for {}", memberId, candidate);
+      LOGGER.debug("{} - Voted for {}", member.id(), candidate);
     } else {
-      LOGGER.debug("{} - Reset last voted for", memberId);
+      LOGGER.debug("{} - Reset last voted for", member.id());
     }
     return this;
   }
@@ -392,7 +412,7 @@ public class RaftServerState extends RaftClientState {
   @Override
   protected Member selectMember(Query<?> query) {
     if (!query.consistency().isLeaderRequired()) {
-      return members.member(memberId);
+      return members.member(member.id());
     }
     return super.selectMember(query);
   }
@@ -429,7 +449,7 @@ public class RaftServerState extends RaftClientState {
       return CompletableFuture.completedFuture(this.state.type());
     }
 
-    LOGGER.info("{} - Transitioning to {}", memberId, state.getSimpleName());
+    LOGGER.info("{} - Transitioning to {}", member.id(), state.getSimpleName());
 
     // Force state transitions to occur synchronously in order to prevent race conditions.
     if (this.state != null) {
@@ -483,8 +503,6 @@ public class RaftServerState extends RaftClientState {
 
   @Override
   public synchronized CompletableFuture<Void> open() {
-    Member member = members.member(memberId);
-
     final InetSocketAddress address;
     try {
       address = new InetSocketAddress(InetAddress.getByName(member.host()), member.port());

@@ -209,6 +209,9 @@ public class RaftServer implements ManagedRaft {
     private RaftConfig config = new RaftConfig();
     private StateMachine stateMachine;
     private int memberId;
+    private Member.Type memberType = Member.Type.ACTIVE;
+    private String host;
+    private int port;
     private Members members;
 
     private Builder() {
@@ -239,6 +242,45 @@ public class RaftServer implements ManagedRaft {
      */
     public Builder withMemberId(int memberId) {
       this.memberId = memberId;
+      return this;
+    }
+
+    /**
+     * Sets the server member type.
+     *
+     * @param type The server member type.
+     * @return The Raft builder.
+     */
+    public Builder withMemberType(Member.Type type) {
+      if (type == null)
+        throw new NullPointerException("type cannot be null");
+      this.memberType = type;
+      return this;
+    }
+
+    /**
+     * Sets the server host.
+     *
+     * @param host The server host.
+     * @return The Raft builder.
+     */
+    public Builder withHost(String host) {
+      if (host == null)
+        throw new NullPointerException("host cannot be null");
+      this.host = host;
+      return this;
+    }
+
+    /**
+     * Sets the server port.
+     *
+     * @param port The server port.
+     * @return The Raft builder.
+     */
+    public Builder withPort(int port) {
+      if (port < 0)
+        throw new IllegalArgumentException("port cannot be negative");
+      this.port = port;
       return this;
     }
 
@@ -405,7 +447,14 @@ public class RaftServer implements ManagedRaft {
       // Resolve Alleycat serializable types with the ServiceLoaderResolver.
       serializer.resolve(new ServiceLoaderResolver());
 
-      RaftServerState context = (RaftServerState) new RaftServerState(memberId, members, transport, log, stateMachine, serializer)
+      Member member = Member.builder()
+        .withId(memberId)
+        .withType(memberType)
+        .withHost(host)
+        .withPort(port)
+        .build();
+
+      RaftServerState context = (RaftServerState) new RaftServerState(member, members, transport, log, stateMachine, serializer)
         .setHeartbeatInterval(config.getHeartbeatInterval())
         .setElectionTimeout(config.getElectionTimeout())
         .setSessionTimeout(config.getSessionTimeout())
