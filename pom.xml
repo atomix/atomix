@@ -71,6 +71,7 @@
   <modules>
     <module>common</module>
     <module>transport</module>
+    <module>local</module>
     <module>netty</module>
     <module>log</module>
     <module>protocol</module>
@@ -83,7 +84,6 @@
     <module>atomic</module>
     <module>queue</module>
     <module>all</module>
-    <module>test</module>
   </modules>
 
   <dependencies>
