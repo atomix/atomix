@@ -17,10 +17,10 @@ package net.kuujo.copycat.raft.server.state;
 
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.raft.Member;
+import net.kuujo.copycat.raft.protocol.*;
 import net.kuujo.copycat.raft.server.RaftServer;
 import net.kuujo.copycat.raft.server.log.KeepAliveEntry;
 import net.kuujo.copycat.raft.server.log.RaftEntry;
-import net.kuujo.copycat.raft.protocol.*;
 import net.kuujo.copycat.raft.server.util.Quorum;
 
 import java.util.*;
@@ -52,8 +52,7 @@ class FollowerState extends ActiveState {
 
   @Override
   public synchronized CompletableFuture<AbstractState> open() {
-    startHeartbeatTimeout();
-    return CompletableFuture.completedFuture(this);
+    return super.open().thenRun(this::startHeartbeatTimeout).thenApply(v -> this);
   }
 
   /**
@@ -69,7 +68,8 @@ class FollowerState extends ActiveState {
    */
   private void resetHeartbeatTimeout() {
     context.checkThread();
-    if (isClosed()) return;
+    if (isClosed())
+      return;
 
     // If a timer is already set, cancel the timer.
     if (heartbeatTimer != null) {
