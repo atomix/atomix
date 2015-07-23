@@ -28,6 +28,15 @@ public class Listeners<T> implements Iterable<ListenerContext<T>> {
   private final List<ListenerContext<T>> listeners = new CopyOnWriteArrayList<>();
 
   /**
+   * Returns the number of registered listeners.
+   *
+   * @return The number of registered listeners.
+   */
+  public int size() {
+    return listeners.size();
+  }
+
+  /**
    * Adds a listener to the set of listeners.
    *
    * @param listener The listener to add.

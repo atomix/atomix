@@ -63,6 +63,37 @@ public class AsyncReferenceTest extends ConcurrentTestCase {
   }
 
   /**
+   * Tests setting and getting a value with a change event.
+   */
+  @SuppressWarnings("unchecked")
+  public void testChange() throws Throwable {
+    Servers servers = createCopycats(3, 2);
+
+    Copycat copycat = servers.active.get(0);
+
+    Node node = copycat.create("/test").get();
+    AsyncReference<String> reference = node.create(AsyncReference.class).get();
+
+    expectResume();
+    reference.onChange(value -> {
+      threadAssertEquals("Hello world!", value);
+      resume();
+    }).thenRun(this::resume);
+    await();
+
+    expectResumes(2);
+    reference.set("Hello world!").thenRun(this::resume);
+    await();
+
+    expectResume();
+    reference.get().thenAccept(result -> {
+      threadAssertEquals(result, "Hello world!");
+      resume();
+    });
+    await();
+  }
+
+  /**
    * Tests compare-and-set.
    */
   public void testCompareAndSet() throws Throwable {

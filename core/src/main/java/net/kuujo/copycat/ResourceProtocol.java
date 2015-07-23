@@ -20,6 +20,7 @@ import net.kuujo.copycat.raft.Command;
 import net.kuujo.copycat.raft.Query;
 import net.kuujo.copycat.raft.Raft;
 import net.kuujo.copycat.raft.Session;
+import net.kuujo.copycat.util.concurrent.Context;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -31,15 +32,22 @@ import java.util.concurrent.CompletableFuture;
 class ResourceProtocol implements Raft {
   private final long resource;
   private final Raft protocol;
+  private final ResourceSession session;
 
   public ResourceProtocol(long resource, Raft protocol) {
     this.resource = resource;
     this.protocol = protocol;
+    this.session = new ResourceSession(resource, protocol.session(), protocol.context());
+  }
+
+  @Override
+  public Context context() {
+    return protocol.context();
   }
 
   @Override
   public Session session() {
-    return protocol.session();
+    return session;
   }
 
   @Override

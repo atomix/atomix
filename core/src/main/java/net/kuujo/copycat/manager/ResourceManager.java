@@ -43,7 +43,6 @@ public class ResourceManager extends StateMachine {
   private NodeHolder node;
   private final Map<Long, NodeHolder> nodes = new HashMap<>();
   private final Map<Long, ResourceHolder> resources = new HashMap<>();
-  private final Map<Long, Session> sessions = new HashMap<>();
 
   public ResourceManager(ScheduledExecutorService executor) {
     if (executor == null)
@@ -70,8 +69,9 @@ public class ResourceManager extends StateMachine {
     if (resource != null) {
       CompletableFuture<Object> future = new ComposableFuture<>();
       resource.context.execute(() -> {
-        CompletableFuture<Object> resultFuture = resource.stateMachine.apply(new Commit(commit.index(), commit.session(), commit
-          .timestamp(), commit.operation().operation()));
+        CompletableFuture<Object> resultFuture = resource.stateMachine.apply(new Commit(commit.index(), resource.sessions.computeIfAbsent(commit
+          .session()
+          .id(), id -> new ManagedResourceSession(commit.operation().resource(), commit.session())), commit.timestamp(), commit.operation().operation()));
         resultFuture.whenComplete((result, error) -> {
           if (error == null) {
             future.complete(result);
@@ -315,17 +315,16 @@ public class ResourceManager extends StateMachine {
 
   @Override
   public void register(Session session) {
-    sessions.put(session.id(), session);
-    for (ResourceHolder resource : resources.values()) {
-      resource.context.execute(() -> resource.stateMachine.register(resource.sessions.computeIfAbsent(session.id(), id -> new ResourceSession(id, session))));
+    for (Map.Entry<Long, ResourceHolder> entry : resources.entrySet()) {
+      ResourceHolder resource = entry.getValue();
+      resource.context.execute(() -> resource.stateMachine.register(resource.sessions.computeIfAbsent(session.id(), id -> new ManagedResourceSession(entry.getKey(), session))));
     }
   }
 
   @Override
   public void close(Session session) {
-    sessions.remove(session.id());
     for (ResourceHolder resource : resources.values()) {
-      ResourceSession resourceSession = resource.sessions.get(session.id());
+      ManagedResourceSession resourceSession = resource.sessions.get(session.id());
       if (resourceSession != null) {
         resource.context.execute(() -> {
           resource.stateMachine.close(resourceSession);
@@ -336,9 +335,8 @@ public class ResourceManager extends StateMachine {
 
   @Override
   public void expire(Session session) {
-    sessions.remove(session.id());
     for (ResourceHolder resource : resources.values()) {
-      ResourceSession resourceSession = resource.sessions.get(session.id());
+      ManagedResourceSession resourceSession = resource.sessions.get(session.id());
       if (resourceSession != null) {
         resource.context.execute(() -> {
           resource.stateMachine.expire(resourceSession);
@@ -375,7 +373,7 @@ public class ResourceManager extends StateMachine {
    * Resource holder.
    */
   private static class ResourceHolder {
-    private final Map<Long, ResourceSession> sessions = new HashMap<>();
+    private final Map<Long, ManagedResourceSession> sessions = new HashMap<>();
     private final StateMachine stateMachine;
     private final Context context;
 

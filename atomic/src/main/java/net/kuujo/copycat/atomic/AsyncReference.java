@@ -20,18 +20,17 @@ import net.kuujo.alleycat.AlleycatSerializable;
 import net.kuujo.alleycat.SerializeWith;
 import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
-import net.kuujo.copycat.BuilderPool;
-import net.kuujo.copycat.Mode;
-import net.kuujo.copycat.Resource;
-import net.kuujo.copycat.Stateful;
+import net.kuujo.copycat.*;
 import net.kuujo.copycat.log.Compaction;
 import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.raft.server.Apply;
 import net.kuujo.copycat.raft.server.Commit;
 import net.kuujo.copycat.raft.server.Filter;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -43,9 +42,15 @@ import java.util.concurrent.atomic.AtomicReference;
 @Stateful(AsyncReference.StateMachine.class)
 public class AsyncReference<T> extends Resource {
   private ConsistencyLevel defaultConsistency = ConsistencyLevel.LINEARIZABLE_LEASE;
+  private final java.util.Set<Listener<T>> changeListeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
   public AsyncReference(Raft protocol) {
     super(protocol);
+    protocol.session().<T>onReceive(event -> {
+      for (Listener<T> listener : changeListeners) {
+        listener.accept(event);
+      }
+    });
   }
 
   /**
@@ -376,6 +381,49 @@ public class AsyncReference<T> extends Resource {
       .withTtl(ttl, unit)
       .withMode(mode)
       .build());
+  }
+
+  /**
+   * Registers a change listener.
+   *
+   * @param listener The change listener.
+   * @return A completable future to be completed once the change listener has been registered.
+   */
+  public synchronized CompletableFuture<ListenerContext<T>> onChange(Listener<T> listener) {
+    if (!changeListeners.isEmpty()) {
+      changeListeners.add(listener);
+      return CompletableFuture.completedFuture(new ChangeListenerContext(listener));
+    }
+
+    changeListeners.add(listener);
+    return submit(ChangeListen.builder().build())
+      .thenApply(v -> new ChangeListenerContext(listener));
+  }
+
+  /**
+   * Change listener context.
+   */
+  private class ChangeListenerContext implements ListenerContext<T> {
+    private final Listener<T> listener;
+
+    private ChangeListenerContext(Listener<T> listener) {
+      this.listener = listener;
+    }
+
+    @Override
+    public void accept(T event) {
+      listener.accept(event);
+    }
+
+    @Override
+    public void close() {
+      synchronized (AsyncReference.this) {
+        changeListeners.remove(listener);
+        if (changeListeners.isEmpty()) {
+          submit(ChangeUnlisten.builder().build());
+        }
+      }
+    }
   }
 
   /**
@@ -766,10 +814,91 @@ public class AsyncReference<T> extends Resource {
   }
 
   /**
+   * Change listen.
+   */
+  @SerializeWith(id=464)
+  public static class ChangeListen implements Command<Void>, AlleycatSerializable {
+
+    /**
+     * Returns a new change listen builder.
+     *
+     * @return A new change listen builder.
+     */
+    public static Builder builder() {
+      return Operation.builder(Builder.class, Builder::new);
+    }
+
+    @Override
+    public void writeObject(BufferOutput buffer, Alleycat alleycat) {
+
+    }
+
+    @Override
+    public void readObject(BufferInput buffer, Alleycat alleycat) {
+
+    }
+
+    /**
+     * Change listen builder.
+     */
+    public static class Builder extends Command.Builder<Builder, ChangeListen, Void> {
+      public Builder(BuilderPool<Builder, ChangeListen> pool) {
+        super(pool);
+      }
+
+      @Override
+      protected ChangeListen create() {
+        return new ChangeListen();
+      }
+    }
+  }
+
+  /**
+   * Change unlisten.
+   */
+  @SerializeWith(id=465)
+  public static class ChangeUnlisten implements Command<Void>, AlleycatSerializable {
+
+    /**
+     * Returns a new change unlisten builder.
+     *
+     * @return A new change unlisten builder.
+     */
+    public static Builder builder() {
+      return Operation.builder(Builder.class, Builder::new);
+    }
+
+    @Override
+    public void writeObject(BufferOutput buffer, Alleycat alleycat) {
+
+    }
+
+    @Override
+    public void readObject(BufferInput buffer, Alleycat alleycat) {
+
+    }
+
+    /**
+     * Change unlisten builder.
+     */
+    public static class Builder extends Command.Builder<Builder, ChangeUnlisten, Void> {
+      public Builder(BuilderPool<Builder, ChangeUnlisten> pool) {
+        super(pool);
+      }
+
+      @Override
+      protected ChangeUnlisten create() {
+        return new ChangeUnlisten();
+      }
+    }
+  }
+
+  /**
    * Async reference state machine.
    */
   public static class StateMachine extends net.kuujo.copycat.raft.server.StateMachine {
     private final java.util.Set<Long> sessions = new HashSet<>();
+    private final java.util.Set<Session> listeners = new HashSet<>();
     private final AtomicReference<Object> value = new AtomicReference<>();
     private Commit<? extends ReferenceCommand> command;
     private long version;
@@ -812,6 +941,33 @@ public class AsyncReference<T> extends Resource {
     }
 
     /**
+     * Handles a listen commit.
+     */
+    @Apply(ChangeListen.class)
+    protected void listen(Commit<ChangeListen> commit) {
+      updateTime(commit);
+      listeners.add(commit.session());
+    }
+
+    /**
+     * Handles an unlisten commit.
+     */
+    @Apply(ChangeUnlisten.class)
+    protected void unlisten(Commit<ChangeUnlisten> commit) {
+      updateTime(commit);
+      listeners.remove(commit.session());
+    }
+
+    /**
+     * Triggers a change event.
+     */
+    private void change(Object value) {
+      for (Session session : listeners) {
+        session.publish(value);
+      }
+    }
+
+    /**
      * Handles a get commit.
      */
     @Apply(Get.class)
@@ -829,6 +985,7 @@ public class AsyncReference<T> extends Resource {
       value.set(commit.operation().value());
       command = commit;
       version = commit.index();
+      change(value.get());
     }
 
     /**
@@ -840,6 +997,7 @@ public class AsyncReference<T> extends Resource {
       if (isActive(command)) {
         if (value.compareAndSet(commit.operation().expect(), commit.operation().update())) {
           command = commit;
+          change(value.get());
           return true;
         }
         return false;
@@ -847,6 +1005,7 @@ public class AsyncReference<T> extends Resource {
         value.set(null);
         command = commit;
         version = commit.index();
+        change(null);
         return true;
       } else {
         return false;
@@ -863,11 +1022,13 @@ public class AsyncReference<T> extends Resource {
         Object result = value.getAndSet(commit.operation().value());
         command = commit;
         version = commit.index();
+        change(value.get());
         return result;
       } else {
         value.set(commit.operation().value());
         command = commit;
         version = commit.index();
+        change(value.get());
         return null;
       }
     }

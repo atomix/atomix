@@ -20,6 +20,7 @@ import net.kuujo.alleycat.ServiceLoaderResolver;
 import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.raft.client.state.RaftClientState;
 import net.kuujo.copycat.transport.Transport;
+import net.kuujo.copycat.util.concurrent.Context;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -47,6 +48,11 @@ public class RaftClient implements ManagedRaft {
 
   private RaftClient(RaftClientState client) {
     this.client = client;
+  }
+
+  @Override
+  public Context context() {
+    return client.getContext();
   }
 
   @Override

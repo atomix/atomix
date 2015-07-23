@@ -40,6 +40,11 @@ abstract class ServerSession implements Session {
   private final Listeners<Session> closeListeners = new Listeners<>();
 
   protected ServerSession(long id, Member member, UUID connection) {
+    if (member == null)
+      throw new NullPointerException("member cannot be null");
+    if (connection == null)
+      throw new NullPointerException("connection cannot be null");
+
     this.id = id;
     this.member = member;
     this.connection = connection;

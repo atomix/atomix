@@ -98,6 +98,15 @@ public class RaftClientState implements Managed<Void> {
   }
 
   /**
+   * Returns the client context.
+   *
+   * @return The client context.
+   */
+  public Context getContext() {
+    return context;
+  }
+
+  /**
    * Returns the cluster leader.
    *
    * @return The cluster leader.

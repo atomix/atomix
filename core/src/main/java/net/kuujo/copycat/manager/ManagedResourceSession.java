@@ -29,7 +29,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ResourceSession implements Session {
+class ManagedResourceSession implements Session {
 
   /**
    * Resource session state.
@@ -47,7 +47,7 @@ public class ResourceSession implements Session {
   private final Listeners<Session> closeListeners = new Listeners<>();
   private final Listeners<?> receiveListeners = new Listeners();
 
-  public ResourceSession(long resource, Session parent) {
+  public ManagedResourceSession(long resource, Session parent) {
     this.resource = resource;
     this.parent = parent;
     parent.onOpen(this::handleOpen);

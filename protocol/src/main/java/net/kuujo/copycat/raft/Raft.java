@@ -16,6 +16,7 @@
 package net.kuujo.copycat.raft;
 
 import net.kuujo.copycat.transport.Transport;
+import net.kuujo.copycat.util.concurrent.Context;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -27,6 +28,13 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface Raft {
+
+  /**
+   * Returns the protocol context.
+   *
+   * @return The protocol context.
+   */
+  Context context();
 
   /**
    * Returns the local session.

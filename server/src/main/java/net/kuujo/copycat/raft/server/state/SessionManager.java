@@ -43,7 +43,7 @@ class SessionManager {
    */
   SessionManager registerConnection(Connection connection) {
     for (ServerSession session : sessions.values()) {
-      if (session.connection() == connection.id()) {
+      if (session.connection().equals(connection.id())) {
         session.setConnection(connection);
       }
     }
@@ -56,7 +56,7 @@ class SessionManager {
    */
   SessionManager unregisterConnection(Connection connection) {
     for (ServerSession session : sessions.values()) {
-      if (session.connection() == connection.id()) {
+      if (session.connection().equals(connection.id())) {
         session.setConnection(null);
       }
     }

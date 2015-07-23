@@ -91,12 +91,14 @@ public class RegisterEntry extends TimestampedEntry<RegisterEntry> {
   public void writeObject(BufferOutput buffer, Alleycat alleycat) {
     super.writeObject(buffer, alleycat);
     alleycat.writeObject(member, buffer);
+    alleycat.writeObject(connection, buffer);
   }
 
   @Override
   public void readObject(BufferInput buffer, Alleycat alleycat) {
     super.readObject(buffer, alleycat);
     member = alleycat.readObject(buffer);
+    connection = alleycat.readObject(buffer);
   }
 
   @Override
