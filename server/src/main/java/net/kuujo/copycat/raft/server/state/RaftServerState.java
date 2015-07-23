@@ -49,7 +49,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -72,8 +71,6 @@ public class RaftServerState extends RaftClientState {
   private final Context context;
   private AbstractState state;
   private ScheduledFuture<?> joinTimer;
-  private ScheduledFuture<?> heartbeatTimer;
-  private final AtomicBoolean heartbeat = new AtomicBoolean();
   private long electionTimeout = 500;
   private long heartbeatInterval = 250;
   private int lastVotedFor;
@@ -585,20 +582,12 @@ public class RaftServerState extends RaftClientState {
   }
 
   /**
-   * Cancels the heartbeat timer.
-   */
-  private void cancelHeartbeatTimer() {
-    if (heartbeatTimer != null) {
-      LOGGER.debug("cancelling heartbeat timer");
-      heartbeatTimer.cancel(false);
-    }
-  }
-
-  /**
    * Handles a connection.
    */
   private void handleConnect(Connection connection) {
+    sessions.registerConnection(connection);
     registerHandlers(connection);
+    connection.closeListener(sessions::unregisterConnection);
   }
 
   /**
@@ -606,20 +595,19 @@ public class RaftServerState extends RaftClientState {
    */
   private void registerHandlers(Connection connection) {
     context.checkThread();
-    sessions.registerConnection(connection);
 
-    connection.handler(JoinRequest.class, state::join);
-    connection.handler(LeaveRequest.class, state::leave);
-    connection.handler(RegisterRequest.class, state::register);
-    connection.handler(KeepAliveRequest.class, state::keepAlive);
-    connection.handler(AppendRequest.class, state::append);
-    connection.handler(PollRequest.class, state::poll);
-    connection.handler(VoteRequest.class, state::vote);
-    connection.handler(CommandRequest.class, state::command);
-    connection.handler(QueryRequest.class, state::query);
-    connection.handler(PublishRequest.class, state::publish);
-
-    connection.closeListener(sessions::unregisterConnection);
+    // Note we do not use method references here because the "state" variable changes over time.
+    // We have to use lambdas to ensure the request handler points to the current state.
+    connection.handler(JoinRequest.class, request -> state.join(request));
+    connection.handler(LeaveRequest.class, request -> state.leave(request));
+    connection.handler(RegisterRequest.class, request -> state.register(request));
+    connection.handler(KeepAliveRequest.class, request -> state.keepAlive(request));
+    connection.handler(AppendRequest.class, request -> state.append(request));
+    connection.handler(PollRequest.class, request -> state.poll(request));
+    connection.handler(VoteRequest.class, request -> state.vote(request));
+    connection.handler(CommandRequest.class, request -> state.command(request));
+    connection.handler(QueryRequest.class, request -> state.query(request));
+    connection.handler(PublishRequest.class, request -> state.publish(request));
   }
 
   @Override
@@ -668,7 +656,6 @@ public class RaftServerState extends RaftClientState {
     CompletableFuture<Void> future = new CompletableFuture<>();
     context.execute(() -> {
       cancelJoinTimer();
-      cancelHeartbeatTimer();
       open = false;
       transition(StartState.class);
 

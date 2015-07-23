@@ -114,7 +114,7 @@ abstract class ActiveState extends PassiveState {
     // If the requesting candidate is our self then always vote for our self. Votes
     // for self are done by calling the local node. Note that this obviously
     // doesn't make sense for a leader.
-    else if (request.candidate() == context.getMemberId() && (context.getLastVotedFor() == 0 || context.getLastVotedFor() == request.candidate())) {
+    else if (request.candidate() == context.getMemberId()) {
       context.setLastVotedFor(context.getMemberId());
       LOGGER.debug("{} - Accepted {}: candidate is the local member", context.getMemberId(), request);
       return VoteResponse.builder()
