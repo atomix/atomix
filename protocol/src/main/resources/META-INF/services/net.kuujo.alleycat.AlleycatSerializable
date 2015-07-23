@@ -17,8 +17,6 @@ net.kuujo.copycat.raft.protocol.AppendRequest
 net.kuujo.copycat.raft.protocol.AppendResponse
 net.kuujo.copycat.raft.protocol.CommandRequest
 net.kuujo.copycat.raft.protocol.CommandResponse
-net.kuujo.copycat.raft.protocol.HeartbeatRequest
-net.kuujo.copycat.raft.protocol.HeartbeatResponse
 net.kuujo.copycat.raft.protocol.JoinRequest
 net.kuujo.copycat.raft.protocol.JoinResponse
 net.kuujo.copycat.raft.protocol.KeepAliveRequest

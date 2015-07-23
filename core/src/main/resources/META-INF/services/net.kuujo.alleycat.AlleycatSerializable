@@ -13,17 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-net.kuujo.copycat.cluster.Message
-
 net.kuujo.copycat.ResourceCommand
 net.kuujo.copycat.ResourceQuery
 
-net.kuujo.copycat.manager.AddListener
 net.kuujo.copycat.manager.CreatePath
 net.kuujo.copycat.manager.CreateResource
 net.kuujo.copycat.manager.DeletePath
 net.kuujo.copycat.manager.DeleteResource
 net.kuujo.copycat.manager.PathChildren
 net.kuujo.copycat.manager.PathExists
-net.kuujo.copycat.manager.RemoveListener
 net.kuujo.copycat.manager.ResourceExists

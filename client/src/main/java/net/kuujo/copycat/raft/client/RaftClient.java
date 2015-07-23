@@ -16,6 +16,7 @@
 package net.kuujo.copycat.raft.client;
 
 import net.kuujo.alleycat.Alleycat;
+import net.kuujo.alleycat.ServiceLoaderResolver;
 import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.raft.client.state.RaftClientState;
 import net.kuujo.copycat.transport.Transport;
@@ -208,7 +209,15 @@ public class RaftClient implements ManagedRaft {
 
     @Override
     public RaftClient build() {
-      return new RaftClient(new RaftClientState(transport, members, serializer != null ? serializer : new Alleycat()).setKeepAliveInterval(keepAliveInterval));
+      // If no Alleycat instance was provided, create one.
+      if (serializer == null) {
+        serializer = new Alleycat();
+      }
+
+      // Resolve Alleycat serializable types with the ServiceLoaderResolver.
+      serializer.resolve(new ServiceLoaderResolver());
+
+      return new RaftClient(new RaftClientState(transport, members, serializer).setKeepAliveInterval(keepAliveInterval));
     }
   }
 

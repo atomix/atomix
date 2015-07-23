@@ -16,6 +16,7 @@
 package net.kuujo.copycat.raft.server;
 
 import net.kuujo.alleycat.Alleycat;
+import net.kuujo.alleycat.ServiceLoaderResolver;
 import net.kuujo.copycat.ConfigurationException;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.raft.*;
@@ -396,7 +397,15 @@ public class RaftServer implements ManagedRaft {
       if (log == null)
         throw new ConfigurationException("log not configured");
 
-      RaftServerState context = (RaftServerState) new RaftServerState(memberId, log, stateMachine, transport, members, serializer != null ? serializer : new Alleycat())
+      // If no Alleycat instance was provided, create one.
+      if (serializer == null) {
+        serializer = new Alleycat();
+      }
+
+      // Resolve Alleycat serializable types with the ServiceLoaderResolver.
+      serializer.resolve(new ServiceLoaderResolver());
+
+      RaftServerState context = (RaftServerState) new RaftServerState(memberId, log, stateMachine, transport, members, serializer)
         .setHeartbeatInterval(config.getHeartbeatInterval())
         .setElectionTimeout(config.getElectionTimeout())
         .setSessionTimeout(config.getSessionTimeout())
