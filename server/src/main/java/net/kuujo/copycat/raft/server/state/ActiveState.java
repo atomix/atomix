@@ -16,11 +16,11 @@
 package net.kuujo.copycat.raft.server.state;
 
 import net.kuujo.copycat.raft.ConsistencyLevel;
-import net.kuujo.copycat.raft.server.RaftServer;
 import net.kuujo.copycat.raft.RaftError;
+import net.kuujo.copycat.raft.protocol.*;
+import net.kuujo.copycat.raft.server.RaftServer;
 import net.kuujo.copycat.raft.server.log.QueryEntry;
 import net.kuujo.copycat.raft.server.log.RaftEntry;
-import net.kuujo.copycat.raft.protocol.*;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -114,7 +114,7 @@ abstract class ActiveState extends PassiveState {
     // If the requesting candidate is our self then always vote for our self. Votes
     // for self are done by calling the local node. Note that this obviously
     // doesn't make sense for a leader.
-    else if (request.candidate() == context.getMemberId()) {
+    else if (request.candidate() == context.getMemberId() && (context.getLastVotedFor() == 0 || context.getLastVotedFor() == request.candidate())) {
       context.setLastVotedFor(context.getMemberId());
       LOGGER.debug("{} - Accepted {}: candidate is the local member", context.getMemberId(), request);
       return VoteResponse.builder()
