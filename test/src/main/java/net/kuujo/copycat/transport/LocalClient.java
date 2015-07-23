@@ -21,10 +21,11 @@ import net.kuujo.copycat.util.concurrent.Futures;
 import net.kuujo.copycat.util.concurrent.SingleThreadContext;
 
 import java.net.InetSocketAddress;
+import java.util.Collections;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Local client.
@@ -35,7 +36,7 @@ public class LocalClient implements Client {
   private final UUID id;
   private final LocalServerRegistry registry;
   private final Context context;
-  private final Set<LocalConnection> connections = new ConcurrentSkipListSet<>();
+  private final Set<LocalConnection> connections = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
   public LocalClient(UUID id, LocalServerRegistry registry, Alleycat serializer) {
     this.id = id;

@@ -37,7 +37,7 @@ public class LocalConnection implements Connection {
   private final Context context;
   private final Set<LocalConnection> connections;
   private LocalConnection connection;
-  private final Map<Class, MessageHandler> handlers = new ConcurrentHashMap<>();
+  private final Map<Class, HandlerHolder> handlers = new ConcurrentHashMap<>();
   private final Listeners<Throwable> exceptionListeners = new Listeners<>();
   private final Listeners<Connection> closeListeners = new Listeners<>();
 
@@ -89,10 +89,11 @@ public class LocalConnection implements Connection {
    */
   @SuppressWarnings("unchecked")
   private <T, U> CompletableFuture<U> receive(T message) {
-    MessageHandler<T, U> handler = handlers.get(message.getClass());
-    if (handler != null) {
+    HandlerHolder holder = handlers.get(message.getClass());
+    if (holder != null) {
+      MessageHandler<T, U> handler = holder.handler;
       CompletableFuture<U> future = new CompletableFuture<>();
-      context.execute(() -> {
+      holder.context.execute(() -> {
         handler.handle(message).whenComplete((result, error) -> {
           if (error == null) {
             future.complete(result);
@@ -109,7 +110,7 @@ public class LocalConnection implements Connection {
   @Override
   public <T, U> Connection handler(Class<T> type, MessageHandler<T, U> handler) {
     if (handler != null) {
-      handlers.put(type, handler);
+      handlers.put(type, new HandlerHolder(handler, getContext()));
     } else {
       handlers.remove(type);
     }
@@ -140,6 +141,19 @@ public class LocalConnection implements Connection {
       future.complete(null);
     });
     return future;
+  }
+
+  /**
+   * Holds message handler and thread context.
+   */
+  protected static class HandlerHolder {
+    private final MessageHandler handler;
+    private final Context context;
+
+    private HandlerHolder(MessageHandler handler, Context context) {
+      this.handler = handler;
+      this.context = context;
+    }
   }
 
 }

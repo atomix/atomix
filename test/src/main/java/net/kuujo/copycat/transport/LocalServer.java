@@ -21,10 +21,11 @@ import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.SingleThreadContext;
 
 import java.net.InetSocketAddress;
+import java.util.Collections;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Local server.
@@ -35,9 +36,9 @@ public class LocalServer implements Server {
   private final UUID id;
   private final LocalServerRegistry registry;
   private final Context context;
-  private final Set<LocalConnection> connections = new ConcurrentSkipListSet<>();
+  private final Set<LocalConnection> connections = Collections.newSetFromMap(new ConcurrentHashMap<>());
   private volatile InetSocketAddress address;
-  private volatile Listener<Connection> listener;
+  private volatile ListenerHolder listener;
 
   public LocalServer(UUID id, LocalServerRegistry registry, Alleycat serializer) {
     this.id = id;
@@ -68,7 +69,7 @@ public class LocalServer implements Server {
     LocalConnection localConnection = new LocalConnection(connection.id(), context, connections);
     connection.connect(localConnection);
     localConnection.connect(connection);
-    context.execute(() -> listener.accept(localConnection));
+    listener.context.execute(() -> listener.listener.accept(localConnection));
   }
 
   @Override
@@ -82,9 +83,12 @@ public class LocalServer implements Server {
 
     CompletableFuture<Void> future = new CompletableFuture<>();
     registry.register(address, this);
+    Context context = getContext();
+
     this.address = address;
-    this.listener = listener;
-    getContext().execute(() -> future.complete(null));
+    this.listener = new ListenerHolder(listener, context);
+
+    context.execute(() -> future.complete(null));
     return future;
   }
 
@@ -106,6 +110,19 @@ public class LocalServer implements Server {
     }
     CompletableFuture.allOf(futures).thenRunAsync(() -> future.complete(null), context);
     return future;
+  }
+
+  /**
+   * Listener holder.
+   */
+  private static class ListenerHolder {
+    private final Listener<Connection> listener;
+    private final Context context;
+
+    private ListenerHolder(Listener<Connection> listener, Context context) {
+      this.listener = listener;
+      this.context = context;
+    }
   }
 
 }
