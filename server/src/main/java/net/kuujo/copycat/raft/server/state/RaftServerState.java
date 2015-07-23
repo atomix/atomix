@@ -21,7 +21,6 @@ import net.kuujo.copycat.ListenerContext;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.raft.Member;
 import net.kuujo.copycat.raft.Members;
-import net.kuujo.copycat.raft.NoLeaderException;
 import net.kuujo.copycat.raft.Query;
 import net.kuujo.copycat.raft.client.state.RaftClientState;
 import net.kuujo.copycat.raft.protocol.*;
@@ -42,15 +41,12 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 /**
  * Raft state context.
@@ -78,8 +74,8 @@ public class RaftServerState extends RaftClientState {
   private long globalIndex;
   private volatile boolean open;
 
-  public RaftServerState(int memberId, Log log, StateMachine stateMachine, Transport transport, Members members, Alleycat serializer) {
-    super(memberId, transport, members, serializer);
+  public RaftServerState(int memberId, Members members, Transport transport, Log log, StateMachine stateMachine, Alleycat serializer) {
+    super(members.member(memberId), members, transport, serializer);
 
     for (Member member : members.members()) {
       cluster.addMember(new MemberState(member.id(), member.type(), System.currentTimeMillis()));
@@ -459,129 +455,6 @@ public class RaftServerState extends RaftClientState {
   }
 
   /**
-   * Joins the cluster.
-   */
-  private CompletableFuture<Void> join() {
-    CompletableFuture<Void> future = new CompletableFuture<>();
-    context.execute(() -> {
-      join(100, future);
-    });
-    return future;
-  }
-
-  /**
-   * Joins the cluster.
-   */
-  private CompletableFuture<Void> join(long interval, CompletableFuture<Void> future) {
-    join(new ArrayList<>(members.members()), new CompletableFuture<>()).whenComplete((result, error) -> {
-      if (error == null) {
-        future.complete(null);
-      } else {
-        long nextInterval = Math.min(interval * 2, 5000);
-        joinTimer = context.schedule(() -> join(nextInterval, future), nextInterval, TimeUnit.MILLISECONDS);
-      }
-    });
-    return future;
-  }
-
-  /**
-   * Joins the cluster by contacting a random member.
-   */
-  private CompletableFuture<Void> join(List<Member> members, CompletableFuture<Void> future) {
-    if (members.isEmpty()) {
-      future.completeExceptionally(new NoLeaderException("no leader found"));
-      return future;
-    }
-    return join(selectMember(members), members, future);
-  }
-
-  /**
-   * Sends a join request to a specific member.
-   */
-  private CompletableFuture<Void> join(Member member, List<Member> members, CompletableFuture<Void> future) {
-    JoinRequest request = JoinRequest.builder()
-      .withMember(this.members.member(memberId))
-      .build();
-    LOGGER.debug("Sending {} to {}", request, member);
-    connections.getConnection(member).thenAccept(connection -> {
-      connection.<JoinRequest, JoinResponse>send(request).whenComplete((response, error) -> {
-        context.checkThread();
-        if (error == null && response.status() == Response.Status.OK) {
-          setLeader(response.leader());
-          setTerm(response.term());
-          future.complete(null);
-          LOGGER.info("{} - Joined cluster", memberId);
-        } else {
-          if (member.id() == getLeader()) {
-            setLeader(0);
-          }
-          LOGGER.debug("Cluster join failed, retrying");
-          setLeader(0);
-          join(members, future);
-        }
-      });
-    });
-    return future;
-  }
-
-  /**
-   * Leaves the cluster.
-   */
-  private CompletableFuture<Void> leave() {
-    return leave(members.members().stream()
-      .filter(m -> m.type() == Member.Type.ACTIVE)
-      .collect(Collectors.toList()), new CompletableFuture<>());
-  }
-
-  /**
-   * Leaves the cluster by contacting a random member.
-   */
-  private CompletableFuture<Void> leave(List<Member> members, CompletableFuture<Void> future) {
-    if (members.isEmpty()) {
-      future.completeExceptionally(new NoLeaderException("no leader found"));
-      return future;
-    }
-    return leave(selectMember(members), members, future);
-  }
-
-  /**
-   * Sends a leave request to a specific member.
-   */
-  private CompletableFuture<Void> leave(Member member, List<Member> members, CompletableFuture<Void> future) {
-    LeaveRequest request = LeaveRequest.builder()
-      .withMember(this.members.member(memberId))
-      .build();
-    LOGGER.debug("Sending {} to {}", request, member);
-    connections.getConnection(member).thenAccept(connection -> {
-      connection.<LeaveRequest, LeaveResponse>send(request).whenComplete((response, error) -> {
-        context.checkThread();
-        if (error == null && response.status() == Response.Status.OK) {
-          future.complete(null);
-          LOGGER.info("{} - Left cluster", memberId);
-        } else {
-          if (member.id() == getLeader()) {
-            setLeader(0);
-          }
-          LOGGER.debug("Cluster leave failed, retrying");
-          setLeader(0);
-          leave(members, future);
-        }
-      });
-    });
-    return future;
-  }
-
-  /**
-   * Cancels the join timer.
-   */
-  private void cancelJoinTimer() {
-    if (joinTimer != null) {
-      LOGGER.debug("cancelling join timer");
-      joinTimer.cancel(false);
-    }
-  }
-
-  /**
    * Handles a connection.
    */
   private void handleConnect(Connection connection) {
@@ -598,8 +471,6 @@ public class RaftServerState extends RaftClientState {
 
     // Note we do not use method references here because the "state" variable changes over time.
     // We have to use lambdas to ensure the request handler points to the current state.
-    connection.handler(JoinRequest.class, request -> state.join(request));
-    connection.handler(LeaveRequest.class, request -> state.leave(request));
     connection.handler(RegisterRequest.class, request -> state.register(request));
     connection.handler(KeepAliveRequest.class, request -> state.keepAlive(request));
     connection.handler(AppendRequest.class, request -> state.append(request));
@@ -623,22 +494,12 @@ public class RaftServerState extends RaftClientState {
 
     ComposableFuture<Void> future = new ComposableFuture<>();
     context.execute(() -> {
-      if (member.type() == Member.Type.PASSIVE) {
-        server.listen(address, this::handleConnect).thenRun(() -> {
-          log.open(context);
-          transition(PassiveState.class);
-        }).thenCompose(v -> join())
-          .thenCompose(v -> super.open())
-          .thenRun(() -> open = true)
-          .whenCompleteAsync(future, context);
-      } else {
-        server.listen(address, this::handleConnect).thenRun(() -> {
-          log.open(context);
-          transition(FollowerState.class);
-          open = true;
-        }).thenCompose(v -> super.open())
-          .whenCompleteAsync(future, context);
-      }
+      server.listen(address, this::handleConnect).thenRun(() -> {
+        log.open(context);
+        transition(member.type() == Member.Type.ACTIVE ? FollowerState.class : PassiveState.class);
+        open = true;
+      }).thenCompose(v -> super.open())
+        .whenCompleteAsync(future, context);
     });
     return future;
   }
@@ -655,29 +516,24 @@ public class RaftServerState extends RaftClientState {
 
     CompletableFuture<Void> future = new CompletableFuture<>();
     context.execute(() -> {
-      cancelJoinTimer();
       open = false;
       transition(StartState.class);
 
-      leave().whenCompleteAsync((r1, e1) -> {
-        super.close().whenComplete((r2, e2) -> {
-          server.close().whenCompleteAsync((r3, e3) -> {
-            try {
-              log.close();
-            } catch (Exception e) {
-            }
+      super.close().whenCompleteAsync((r1, e1) -> {
+        server.close().whenCompleteAsync((r2, e2) -> {
+          try {
+            log.close();
+          } catch (Exception e) {
+          }
 
-            if (e1 != null) {
-              future.completeExceptionally(e1);
-            } else if (e2 != null) {
-              future.completeExceptionally(e2);
-            } else if (e3 != null) {
-              future.completeExceptionally(e3);
-            } else {
-              future.complete(null);
-            }
-          }, context);
-        });
+          if (e1 != null) {
+            future.completeExceptionally(e1);
+          } else if (e2 != null) {
+            future.completeExceptionally(e2);
+          } else {
+            future.complete(null);
+          }
+        }, context);
       }, context);
     });
     return future;
@@ -716,11 +572,7 @@ public class RaftServerState extends RaftClientState {
     @SuppressWarnings("unchecked")
     public <T, U> CompletableFuture<U> send(T request) {
       Class<?> clazz = request.getClass();
-      if (clazz == JoinRequest.class) {
-        return execute(() -> (CompletableFuture<U>) state.join((JoinRequest) request));
-      } else if (clazz == LeaveRequest.class) {
-        return execute(() -> (CompletableFuture<U>) state.leave((LeaveRequest) request));
-      } else if (clazz == RegisterRequest.class) {
+      if (clazz == RegisterRequest.class) {
         return execute(() -> (CompletableFuture<U>) state.register((RegisterRequest) request));
       } else if (clazz == KeepAliveRequest.class) {
         return execute(() -> (CompletableFuture<U>) state.keepAlive((KeepAliveRequest) request));

@@ -26,7 +26,6 @@ class MemberState {
   private final int id;
   private final Member.Type type;
   private long timestamp;
-  private long version;
   private int index;
   private long session;
   private long matchIndex;
@@ -77,26 +76,6 @@ class MemberState {
   }
 
   /**
-   * Returns the member version.
-   *
-   * @return The member version.
-   */
-  public long getVersion() {
-    return version;
-  }
-
-  /**
-   * Sets the member version.
-   *
-   * @param version The member version.
-   * @return The member state.
-   */
-  MemberState setVersion(long version) {
-    this.version = version;
-    return this;
-  }
-
-  /**
    * Returns the member index.
    *
    * @return The member index.
@@ -112,6 +91,7 @@ class MemberState {
    * @return The member state.
    */
   MemberState setIndex(int index) {
+    this.index = index;
     return this;
   }
 

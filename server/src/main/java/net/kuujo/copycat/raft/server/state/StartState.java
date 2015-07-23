@@ -15,8 +15,8 @@
  */
 package net.kuujo.copycat.raft.server.state;
 
-import net.kuujo.copycat.raft.server.RaftServer;
 import net.kuujo.copycat.raft.protocol.*;
+import net.kuujo.copycat.raft.server.RaftServer;
 import net.kuujo.copycat.util.concurrent.Futures;
 
 import java.util.concurrent.CompletableFuture;
@@ -35,16 +35,6 @@ class StartState extends AbstractState {
   @Override
   public RaftServer.State type() {
     return RaftServer.State.START;
-  }
-
-  @Override
-  protected CompletableFuture<JoinResponse> join(JoinRequest request) {
-    return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
-  }
-
-  @Override
-  protected CompletableFuture<LeaveResponse> leave(LeaveRequest request) {
-    return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
   }
 
   @Override

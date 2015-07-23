@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.raft.server.state;
 
+import net.kuujo.copycat.raft.Member;
 import net.kuujo.copycat.transport.Connection;
 
 import java.util.HashMap;
@@ -66,12 +67,12 @@ class SessionManager {
   /**
    * Registers a session.
    */
-  ServerSession registerSession(long sessionId, int memberId, UUID connectionId) {
+  ServerSession registerSession(long sessionId, Member member, UUID connectionId) {
     ServerSession session;
-    if (memberId == this.memberId) {
-      session = new LocalServerSession(sessionId, memberId, connectionId, context);
+    if (member.id() == memberId) {
+      session = new LocalServerSession(sessionId, member, connectionId, context);
     } else {
-      session = new RemoteServerSession(sessionId, memberId, connectionId).setConnection(connections.get(connectionId));
+      session = new RemoteServerSession(sessionId, member, connectionId).setConnection(connections.get(connectionId));
     }
     sessions.put(sessionId, session);
     return session;

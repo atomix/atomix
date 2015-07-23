@@ -405,7 +405,7 @@ public class RaftServer implements ManagedRaft {
       // Resolve Alleycat serializable types with the ServiceLoaderResolver.
       serializer.resolve(new ServiceLoaderResolver());
 
-      RaftServerState context = (RaftServerState) new RaftServerState(memberId, log, stateMachine, transport, members, serializer)
+      RaftServerState context = (RaftServerState) new RaftServerState(memberId, members, transport, log, stateMachine, serializer)
         .setHeartbeatInterval(config.getHeartbeatInterval())
         .setElectionTimeout(config.getElectionTimeout())
         .setSessionTimeout(config.getSessionTimeout())

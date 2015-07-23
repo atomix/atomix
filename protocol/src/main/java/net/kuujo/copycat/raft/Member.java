@@ -28,6 +28,14 @@ import net.kuujo.alleycat.io.BufferOutput;
 public class Member implements AlleycatSerializable {
 
   /**
+   * Default client member.
+   */
+  public static final Member CLIENT = builder()
+    .withId(0)
+    .withType(Type.CLIENT)
+    .build();
+
+  /**
    * Member type.
    */
   public static enum Type {
@@ -35,18 +43,32 @@ public class Member implements AlleycatSerializable {
     /**
      * Represents an active voting member.
      */
-    ACTIVE,
+    ACTIVE(true),
 
     /**
      * Represents a passive non-voting member.
      */
-    PASSIVE,
+    PASSIVE(true),
 
     /**
      * Represents a pure client.
      */
-    CLIENT
+    CLIENT(false);
 
+    private final boolean replica;
+
+    private Type(boolean replica) {
+      this.replica = replica;
+    }
+
+    /**
+     * Returns a boolean value indicating whether the member type is a replica type.
+     *
+     * @return Indicates whether the member type is a replica type.
+     */
+    public boolean isReplica() {
+      return replica;
+    }
   }
 
   /**
@@ -60,7 +82,6 @@ public class Member implements AlleycatSerializable {
 
   private int id;
   private Type type = Type.ACTIVE;
-  private long session;
   private String host;
   private int port;
 
@@ -90,15 +111,6 @@ public class Member implements AlleycatSerializable {
   }
 
   /**
-   * Returns the member session ID.
-   *
-   * @return The member session ID.
-   */
-  public long session() {
-    return session;
-  }
-
-  /**
    * Returns the member host.
    *
    * @return The member host.
@@ -121,8 +133,7 @@ public class Member implements AlleycatSerializable {
     buffer.writeInt(id)
       .writeByte(type.ordinal())
       .writeString(host)
-      .writeInt(port)
-      .writeLong(session);
+      .writeInt(port);
   }
 
   @Override
@@ -131,7 +142,6 @@ public class Member implements AlleycatSerializable {
     type = Type.values()[buffer.readByte()];
     host = buffer.readString();
     port = buffer.readInt();
-    session = buffer.readLong();
   }
 
   /**

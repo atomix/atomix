@@ -217,7 +217,7 @@ public class RaftClient implements ManagedRaft {
       // Resolve Alleycat serializable types with the ServiceLoaderResolver.
       serializer.resolve(new ServiceLoaderResolver());
 
-      return new RaftClient(new RaftClientState(transport, members, serializer).setKeepAliveInterval(keepAliveInterval));
+      return new RaftClient(new RaftClientState(members, transport, serializer).setKeepAliveInterval(keepAliveInterval));
     }
   }
 

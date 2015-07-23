@@ -187,8 +187,8 @@ class FollowerState extends ActiveState {
    */
   private void replicateCommits(long sessionId) {
     ServerSession session = context.getSessionManager().getSession(sessionId);
-    if (session != null && session.member() != 0) {
-      MemberState member = context.getCluster().getMember(session.member());
+    if (session != null && session.member().type() == Member.Type.PASSIVE) {
+      MemberState member = context.getCluster().getMember(session.member().id());
       if (isActiveReplica(member)) {
         commit(member);
       }

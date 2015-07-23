@@ -15,8 +15,8 @@
  */
 package net.kuujo.copycat.raft.server.state;
 
-import net.kuujo.copycat.raft.server.RaftServer;
 import net.kuujo.copycat.raft.protocol.*;
+import net.kuujo.copycat.raft.server.RaftServer;
 import net.kuujo.copycat.util.Managed;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,16 +71,6 @@ abstract class AbstractState implements Managed<AbstractState> {
   public boolean isOpen() {
     return open;
   }
-
-  /**
-   * Handles a join request.
-   */
-  protected abstract CompletableFuture<JoinResponse> join(JoinRequest request);
-
-  /**
-   * Handles a leave request.
-   */
-  protected abstract CompletableFuture<LeaveResponse> leave(LeaveRequest request);
 
   /**
    * Handles a register request.

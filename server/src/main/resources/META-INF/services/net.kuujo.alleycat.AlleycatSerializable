@@ -14,9 +14,7 @@
 # limitations under the License.
 #
 net.kuujo.copycat.raft.server.log.CommandEntry
-net.kuujo.copycat.raft.server.log.JoinEntry
 net.kuujo.copycat.raft.server.log.KeepAliveEntry
-net.kuujo.copycat.raft.server.log.LeaveEntry
 net.kuujo.copycat.raft.server.log.NoOpEntry
 net.kuujo.copycat.raft.server.log.QueryEntry
 net.kuujo.copycat.raft.server.log.RegisterEntry

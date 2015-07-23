@@ -21,6 +21,7 @@ import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.alleycat.util.ReferenceManager;
 import net.kuujo.copycat.BuilderPool;
+import net.kuujo.copycat.raft.Member;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -53,7 +54,7 @@ public class RegisterRequest extends ClientRequest<RegisterRequest> {
     return POOL.acquire(request);
   }
 
-  private int member;
+  private Member member;
   private UUID connection;
 
   public RegisterRequest(ReferenceManager<RegisterRequest> referenceManager) {
@@ -70,7 +71,7 @@ public class RegisterRequest extends ClientRequest<RegisterRequest> {
    *
    * @return The member ID.
    */
-  public int member() {
+  public Member member() {
     return member;
   }
 
@@ -85,13 +86,13 @@ public class RegisterRequest extends ClientRequest<RegisterRequest> {
 
   @Override
   public void writeObject(BufferOutput buffer, Alleycat serializer) {
-    buffer.writeInt(member);
+    serializer.writeObject(member, buffer);
     serializer.writeObject(connection, buffer);
   }
 
   @Override
   public void readObject(BufferInput buffer, Alleycat serializer) {
-    member = buffer.readInt();
+    member = serializer.readObject(buffer);
     connection = serializer.readObject(buffer);
   }
 
@@ -112,7 +113,7 @@ public class RegisterRequest extends ClientRequest<RegisterRequest> {
     @Override
     protected void reset() {
       super.reset();
-      request.member = 0;
+      request.member = null;
       request.connection = null;
     }
 
@@ -122,9 +123,9 @@ public class RegisterRequest extends ClientRequest<RegisterRequest> {
      * @param member The member ID.
      * @return The request builder.
      */
-    public Builder withMember(int member) {
-      if (member < 0)
-        throw new IllegalArgumentException("member cannot be negative");
+    public Builder withMember(Member member) {
+      if (member == null)
+        throw new NullPointerException("member cannot be null");
       request.member = member;
       return this;
     }
@@ -145,8 +146,8 @@ public class RegisterRequest extends ClientRequest<RegisterRequest> {
     @Override
     public RegisterRequest build() {
       super.build();
-      if (request.member < 0)
-        throw new IllegalArgumentException("member cannot be negative");
+      if (request.member == null)
+        throw new NullPointerException("member cannot be null");
       if (request.connection == null)
         throw new NullPointerException("connection cannot be null");
       return request;

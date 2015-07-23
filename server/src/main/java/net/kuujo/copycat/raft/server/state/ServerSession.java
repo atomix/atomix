@@ -18,6 +18,7 @@ package net.kuujo.copycat.raft.server.state;
 import net.kuujo.copycat.Listener;
 import net.kuujo.copycat.ListenerContext;
 import net.kuujo.copycat.Listeners;
+import net.kuujo.copycat.raft.Member;
 import net.kuujo.copycat.raft.Session;
 import net.kuujo.copycat.transport.Connection;
 
@@ -31,14 +32,14 @@ import java.util.UUID;
 abstract class ServerSession implements Session {
   protected final Listeners<Object> listeners = new Listeners<>();
   private final long id;
-  private final int member;
+  private final Member member;
   private final UUID connection;
   private boolean expired;
   private boolean closed;
   private final Listeners<Session> openListeners = new Listeners<>();
   private final Listeners<Session> closeListeners = new Listeners<>();
 
-  protected ServerSession(long id, int member, UUID connection) {
+  protected ServerSession(long id, Member member, UUID connection) {
     this.id = id;
     this.member = member;
     this.connection = connection;
@@ -54,7 +55,7 @@ abstract class ServerSession implements Session {
    *
    * @return The session member.
    */
-  public int member() {
+  public Member member() {
     return member;
   }
 

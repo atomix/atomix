@@ -52,11 +52,11 @@ import java.util.stream.Collectors;
 public class RaftClientState implements Managed<Void> {
   private static final Logger LOGGER = LoggerFactory.getLogger(RaftClientState.class);
   private static final long REQUEST_TIMEOUT = TimeUnit.SECONDS.toMillis(10);
-  private final int id;
+  private final Member member;
   private final Members members;
   private final Transport transport;
   private final Client client;
-  private Member member;
+  private Member remote;
   private Connection connection;
   private final Context context;
   private CompletableFuture<Void> registerFuture;
@@ -75,18 +75,24 @@ public class RaftClientState implements Managed<Void> {
   private volatile long response;
   private volatile long version;
 
-  public RaftClientState(Transport transport, Members members, Alleycat serializer) {
-    this(0, transport, members, serializer);
+  public RaftClientState(Members members, Transport transport, Alleycat serializer) {
+    this(Member.CLIENT, members, transport, serializer);
   }
 
-  protected RaftClientState(int clientId, Transport transport, Members members, Alleycat serializer) {
+  protected RaftClientState(Member member, Members members, Transport transport, Alleycat serializer) {
+    if (member == null)
+      throw new NullPointerException("member cannot be null");
     if (members == null)
       throw new NullPointerException("members cannot be null");
+    if (transport == null)
+      throw new NullPointerException("transport cannot be null");
+    if (serializer == null)
+      throw new NullPointerException("serializer cannot be null");
 
-    this.id = clientId;
-    this.context = new SingleThreadContext("copycat-client-" + clientId, serializer.clone());
+    this.member = member;
     this.members = members;
     this.transport = transport;
+    this.context = new SingleThreadContext("copycat-client-" + member.id(), serializer.clone());
     this.client = transport.client(UUID.randomUUID());
     this.session = new ClientSession(context);
   }
@@ -270,7 +276,7 @@ public class RaftClientState implements Managed<Void> {
    * @return A completable future to be completed once the connection has been connected.
    */
   protected CompletableFuture<Connection> getConnection(Member member) {
-    if (connection != null && member.equals(this.member)) {
+    if (connection != null && member.equals(this.remote)) {
       return CompletableFuture.completedFuture(connection);
     }
 
@@ -283,7 +289,7 @@ public class RaftClientState implements Managed<Void> {
 
     Function<Connection, Connection> connectHandler = connection -> {
       this.connection = connection;
-      this.member = member;
+      this.remote = member;
       session.connect(connection);
       connection.closeListener(c -> this.connection = null);
       connection.exceptionListener(e -> this.connection = null);
@@ -620,7 +626,7 @@ public class RaftClientState implements Managed<Void> {
     Member member = selectMember(members);
 
     RegisterRequest request = RegisterRequest.builder()
-      .withMember(id)
+      .withMember(member)
       .withConnection(client.id())
       .build();
 

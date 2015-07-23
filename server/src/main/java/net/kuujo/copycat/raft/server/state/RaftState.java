@@ -117,10 +117,6 @@ class RaftState {
       return filter((RegisterEntry) entry, compaction);
     } else if (entry instanceof NoOpEntry) {
       return filter((NoOpEntry) entry, compaction);
-    } else if (entry instanceof JoinEntry) {
-      return filter((JoinEntry) entry, compaction);
-    } else if (entry instanceof LeaveEntry) {
-      return filter((LeaveEntry) entry, compaction);
     }
     return CompletableFuture.completedFuture(false);
   }
@@ -168,27 +164,6 @@ class RaftState {
   }
 
   /**
-   * Filters an entry.
-   *
-   * @param entry The entry to filter.
-   * @return A boolean value indicating whether to keep the entry.
-   */
-  public CompletableFuture<Boolean> filter(JoinEntry entry, Compaction compaction) {
-    MemberState member = members.getMember(entry.getMember().id());
-    return Futures.completedFutureAsync(member != null && member.getVersion() == entry.getIndex(), context);
-  }
-
-  /**
-   * Filters an entry.
-   *
-   * @param entry The entry to filter.
-   * @return A boolean value indicating whether to keep the entry.
-   */
-  public CompletableFuture<Boolean> filter(LeaveEntry entry, Compaction compaction) {
-    return Futures.completedFutureAsync(!compaction.type().isOrdered(), context);
-  }
-
-  /**
    * Applies an entry to the state machine.
    *
    * @param entry The entry to apply.
@@ -205,10 +180,6 @@ class RaftState {
       return apply((KeepAliveEntry) entry);
     } else if (entry instanceof NoOpEntry) {
       return apply((NoOpEntry) entry);
-    } else if (entry instanceof JoinEntry) {
-      return apply((JoinEntry) entry);
-    } else if (entry instanceof LeaveEntry) {
-      return apply((LeaveEntry) entry);
     }
     return Futures.exceptionalFuture(new InternalException("unknown state machine operation"));
   }
@@ -264,55 +235,79 @@ class RaftState {
   }
 
   /**
-   * Applies an entry to the state machine.
-   *
-   * @param entry The entry to apply.
-   * @return The result.
-   */
-  public CompletableFuture<Long> apply(JoinEntry entry) {
-    return join(entry.getIndex(), entry.getMember());
-  }
-
-  /**
-   * Applies an entry to the state machine.
-   *
-   * @param entry The entry to apply.
-   * @return The result.
-   */
-  public CompletableFuture<Void> apply(LeaveEntry entry) {
-    return leave(entry.getIndex(), entry.getMember());
-  }
-
-  /**
    * Registers a member session.
    *
    * @param index The registration index.
-   * @param memberId The session member ID.
+   * @param member The session member ID.
    * @param connectionId the session connection ID.
    * @param timestamp The registration timestamp.
    * @return The session ID.
    */
-  private CompletableFuture<Long> register(long index, int memberId, UUID connectionId, long timestamp) {
-    Session session = sessions.registerSession(index, memberId, connectionId);
+  private CompletableFuture<Long> register(long index, Member member, UUID connectionId, long timestamp) {
+    switch (member.type()) {
+      case ACTIVE:
+        return registerActive(index, member, connectionId, timestamp);
+      case PASSIVE:
+        return registerPassive(index, member, connectionId, timestamp);
+      case CLIENT:
+        return registerClient(index, member, connectionId, timestamp);
+      default:
+        setLastApplied(index);
+        return Futures.exceptionalFutureAsync(new IllegalStateException("unknown member type"), context);
+    }
+  }
 
-    SessionContext context = new SessionContext(timestamp);
-    contexts.put(index, context);
-
-    if (memberId != 0) {
-      MemberState state = members.getMember(memberId);
-      if (state != null) {
-        state.setSession(index);
-      }
+  /**
+   * Registers an active member session.
+   */
+  private CompletableFuture<Long> registerActive(long index, Member member, UUID connectionId, long timestamp) {
+    MemberState state = members.getMember(member.id());
+    if (state == null) {
+      setLastApplied(index);
+      return Futures.exceptionalFutureAsync(new IllegalMemberStateException("cannot join active member"), context);
     }
 
-    // We need to ensure that the command is applied to the state machine before queries are run.
+    state.setSession(index);
+
+    Session session = sessions.registerSession(index, member, connectionId);
+    return registerSession(session, timestamp);
+  }
+
+  /**
+   * Registers a passive member session.
+   */
+  private CompletableFuture<Long> registerPassive(long index, Member member, UUID connectionId, long timestamp) {
+    MemberState state = new MemberState(member.id(), Member.Type.PASSIVE, System.currentTimeMillis());
+    state.setSession(index);
+
+    members.addMember(state);
+
+    Session session = sessions.registerSession(index, member, connectionId);
+    return registerSession(session, timestamp);
+  }
+
+  /**
+   * Registers a client session.
+   */
+  private CompletableFuture<Long> registerClient(long index, Member member, UUID connectionId, long timestamp) {
+    Session session = sessions.registerSession(index, member, connectionId);
+    return registerSession(session, timestamp);
+  }
+
+  /**
+   * Completes a session registration.
+   */
+  private CompletableFuture<Long> registerSession(Session session, long timestamp) {
+    SessionContext context = new SessionContext(timestamp);
+    contexts.put(session.id(), context);
+
     // Set last applied only after the operation has been submitted to the state machine executor.
     CompletableFuture<Long> future = CompletableFuture.supplyAsync(() -> {
       stateMachine.register(session);
       return session.id();
     }, this.context);
 
-    setLastApplied(index);
+    setLastApplied(session.id());
     return future;
   }
 
@@ -455,53 +450,17 @@ class RaftState {
     contexts.remove(sessionId);
     ServerSession session = sessions.getSession(sessionId);
     if (session != null) {
-      if (session.member() != 0) {
-        MemberState state = members.getMember(session.member());
+      if (session.member().type().isReplica()) {
+        MemberState state = members.getMember(session.member().id());
         if (state != null) {
           state.setSession(0);
+          if (session.member().type() == Member.Type.PASSIVE) {
+            members.removeMember(state);
+          }
         }
       }
       this.context.execute(() -> stateMachine.expire(session));
     }
-  }
-
-  /**
-   * Applies a join to the state machine.
-   *
-   * @param index The join index.
-   * @param member The joining member.
-   * @return A completable future to be completed with the join index.
-   */
-  private CompletableFuture<Long> join(long index, Member member) {
-    MemberState state = members.getMember(member.id());
-
-    if (state == null) {
-      state = new MemberState(member.id(), Member.Type.PASSIVE, System.currentTimeMillis()).setVersion(index);
-      members.addMember(state);
-    }
-
-    setLastApplied(index);
-
-    return Futures.completedFutureAsync(index, context);
-  }
-
-  /**
-   * Applies a leave to the state machine.
-   *
-   * @param index The leave index.
-   * @param member The leaving member.
-   * @return A completable future to be completed once the member has been removed.
-   */
-  private CompletableFuture<Void> leave(long index, Member member) {
-    MemberState state = members.getMember(member.id());
-
-    if (state != null) {
-      members.removeMember(state);
-    }
-
-    setLastApplied(index);
-
-    return Futures.completedFutureAsync(null, context);
   }
 
   /**

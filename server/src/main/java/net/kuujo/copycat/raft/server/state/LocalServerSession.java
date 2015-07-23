@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.raft.server.state;
 
+import net.kuujo.copycat.raft.Member;
 import net.kuujo.copycat.raft.protocol.PublishRequest;
 import net.kuujo.copycat.transport.Connection;
 import net.kuujo.copycat.util.concurrent.ComposableFuture;
@@ -30,8 +31,8 @@ import java.util.concurrent.CompletableFuture;
 class LocalServerSession extends ServerSession {
   private final RaftServerState context;
 
-  LocalServerSession(long id, int client, UUID connection, RaftServerState context) {
-    super(id, client, connection);
+  LocalServerSession(long id, Member member, UUID connection, RaftServerState context) {
+    super(id, member, connection);
     this.context = context;
   }
 

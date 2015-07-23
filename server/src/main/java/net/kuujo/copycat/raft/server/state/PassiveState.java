@@ -323,38 +323,6 @@ class PassiveState extends AbstractState {
   }
 
   @Override
-  protected CompletableFuture<JoinResponse> join(JoinRequest request) {
-    context.checkThread();
-    logRequest(request);
-    if (context.getLeader() == 0) {
-      return CompletableFuture.completedFuture(logResponse(JoinResponse.builder()
-        .withStatus(Response.Status.ERROR)
-        .withError(RaftError.Type.NO_LEADER_ERROR)
-        .build()));
-    } else {
-      return context.getConnections()
-        .getConnection(context.getMembers().member(context.getLeader()))
-        .thenCompose(connection -> connection.send(request));
-    }
-  }
-
-  @Override
-  protected CompletableFuture<LeaveResponse> leave(LeaveRequest request) {
-    context.checkThread();
-    logRequest(request);
-    if (context.getLeader() == 0) {
-      return CompletableFuture.completedFuture(logResponse(LeaveResponse.builder()
-        .withStatus(Response.Status.ERROR)
-        .withError(RaftError.Type.NO_LEADER_ERROR)
-        .build()));
-    } else {
-      return context.getConnections()
-        .getConnection(context.getMembers().member(context.getLeader()))
-        .thenCompose(connection -> connection.send(request));
-    }
-  }
-
-  @Override
   protected CompletableFuture<PublishResponse> publish(PublishRequest request) {
     context.checkThread();
     logRequest(request);

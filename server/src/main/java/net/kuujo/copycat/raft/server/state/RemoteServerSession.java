@@ -16,6 +16,7 @@
 package net.kuujo.copycat.raft.server.state;
 
 import net.kuujo.copycat.ListenerContext;
+import net.kuujo.copycat.raft.Member;
 import net.kuujo.copycat.raft.UnknownSessionException;
 import net.kuujo.copycat.raft.protocol.PublishRequest;
 import net.kuujo.copycat.raft.protocol.PublishResponse;
@@ -34,8 +35,8 @@ import java.util.concurrent.CompletableFuture;
 class RemoteServerSession extends ServerSession {
   private Connection connection;
 
-  public RemoteServerSession(long id, int client, UUID connection) {
-    super(id, client, connection);
+  public RemoteServerSession(long id, Member member, UUID connection) {
+    super(id, member, connection);
   }
 
   @Override
