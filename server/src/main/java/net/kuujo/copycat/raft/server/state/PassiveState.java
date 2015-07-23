@@ -23,6 +23,7 @@ import net.kuujo.copycat.raft.server.RaftServer;
 import net.kuujo.copycat.raft.server.log.RaftEntry;
 import net.kuujo.copycat.util.concurrent.ComposableFuture;
 
+import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -32,6 +33,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 class PassiveState extends AbstractState {
+  private final Random random = new Random();
   protected boolean transition;
 
   public PassiveState(RaftServerState context) {
@@ -294,11 +296,11 @@ class PassiveState extends AbstractState {
   protected CompletableFuture<RegisterResponse> register(RegisterRequest request) {
     context.checkThread();
     logRequest(request);
+
     if (context.getLeader() == 0) {
-      return CompletableFuture.completedFuture(logResponse(RegisterResponse.builder()
-        .withStatus(Response.Status.ERROR)
-        .withError(RaftError.Type.NO_LEADER_ERROR)
-        .build()));
+      return context.getConnections()
+        .getConnection(context.getMembers().members().get(random.nextInt(context.getMembers().members().size())))
+        .thenCompose(connection -> connection.send(request));
     } else {
       return context.getConnections()
         .getConnection(context.getMembers().member(context.getLeader()))
@@ -310,11 +312,11 @@ class PassiveState extends AbstractState {
   protected CompletableFuture<KeepAliveResponse> keepAlive(KeepAliveRequest request) {
     context.checkThread();
     logRequest(request);
+
     if (context.getLeader() == 0) {
-      return CompletableFuture.completedFuture(logResponse(KeepAliveResponse.builder()
-        .withStatus(Response.Status.ERROR)
-        .withError(RaftError.Type.NO_LEADER_ERROR)
-        .build()));
+      return context.getConnections()
+        .getConnection(context.getMembers().members().get(random.nextInt(context.getMembers().members().size())))
+        .thenCompose(connection -> connection.send(request));
     } else {
       return context.getConnections()
         .getConnection(context.getMembers().member(context.getLeader()))

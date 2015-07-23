@@ -17,6 +17,7 @@ package net.kuujo.copycat.raft.server.state;
 
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.raft.Member;
+import net.kuujo.copycat.raft.RaftError;
 import net.kuujo.copycat.raft.protocol.*;
 import net.kuujo.copycat.raft.server.RaftServer;
 import net.kuujo.copycat.raft.server.log.KeepAliveEntry;
@@ -53,6 +54,38 @@ class FollowerState extends ActiveState {
   @Override
   public synchronized CompletableFuture<AbstractState> open() {
     return super.open().thenRun(this::startHeartbeatTimeout).thenApply(v -> this);
+  }
+
+  @Override
+  protected CompletableFuture<RegisterResponse> register(RegisterRequest request) {
+    context.checkThread();
+    logRequest(request);
+    if (context.getLeader() == 0) {
+      return CompletableFuture.completedFuture(logResponse(RegisterResponse.builder()
+        .withStatus(Response.Status.ERROR)
+        .withError(RaftError.Type.NO_LEADER_ERROR)
+        .build()));
+    } else {
+      return context.getConnections()
+        .getConnection(context.getMembers().member(context.getLeader()))
+        .thenCompose(connection -> connection.send(request));
+    }
+  }
+
+  @Override
+  protected CompletableFuture<KeepAliveResponse> keepAlive(KeepAliveRequest request) {
+    context.checkThread();
+    logRequest(request);
+    if (context.getLeader() == 0) {
+      return CompletableFuture.completedFuture(logResponse(KeepAliveResponse.builder()
+        .withStatus(Response.Status.ERROR)
+        .withError(RaftError.Type.NO_LEADER_ERROR)
+        .build()));
+    } else {
+      return context.getConnections()
+        .getConnection(context.getMembers().member(context.getLeader()))
+        .thenCompose(connection -> connection.send(request));
+    }
   }
 
   /**
