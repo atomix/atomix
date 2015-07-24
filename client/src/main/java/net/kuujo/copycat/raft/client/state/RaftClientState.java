@@ -619,7 +619,6 @@ public class RaftClientState implements Managed<Void> {
       setSessionId(response.session());
       session.open(response.session(), connection.id());
       session.open(response.session(), client.id());
-      this.members.configure(response.members());
     });
   }
 
@@ -635,7 +634,7 @@ public class RaftClientState implements Managed<Void> {
     Member member = selectMember(members);
 
     RegisterRequest request = RegisterRequest.builder()
-      .withMember(member)
+      .withMember(this.member)
       .withConnection(client.id())
       .build();
 
@@ -684,7 +683,6 @@ public class RaftClientState implements Managed<Void> {
       setTerm(response.term());
       setLeader(response.leader());
       setVersion(response.version());
-      this.members.configure(response.members());
     });
   }
 
@@ -709,8 +707,12 @@ public class RaftClientState implements Managed<Void> {
       if (isOpen()) {
         connection.<KeepAliveRequest, KeepAliveResponse>send(request).whenComplete((response, error) -> {
           if (isOpen()) {
-            if (error == null && response.status() == Response.Status.OK) {
-              future.complete(response);
+            if (error == null) {
+              if (response.status() == Response.Status.OK) {
+                future.complete(response);
+              } else {
+                future.completeExceptionally(response.error().createException());
+              }
             } else {
               future.completeExceptionally(error);
             }

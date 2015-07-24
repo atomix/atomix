@@ -384,7 +384,6 @@ class LeaderState extends ActiveState {
                   .withLeader(context.getLeader())
                   .withTerm(context.getTerm())
                   .withSession((Long) sessionId)
-                  .withMembers(context.getMembers())
                   .build()));
               } else if (sessionError instanceof RaftException) {
                 future.complete(logResponse(RegisterResponse.builder()
@@ -442,7 +441,6 @@ class LeaderState extends ActiveState {
                   .withLeader(context.getLeader())
                   .withTerm(context.getTerm())
                   .withVersion(version)
-                  .withMembers(context.getMembers())
                   .build()));
               } else if (sessionError instanceof RaftException) {
                 future.complete(logResponse(KeepAliveResponse.builder()

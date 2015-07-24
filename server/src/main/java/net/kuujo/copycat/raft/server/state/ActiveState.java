@@ -125,7 +125,7 @@ abstract class ActiveState extends PassiveState {
     }
     // If the requesting candidate is not a known member of the cluster (to this
     // node) then don't vote for it. Only vote for candidates that we know about.
-    else if (!context.getCluster().getActiveMembers().stream().<Integer>map(MemberState::getId).collect(Collectors.toSet()).contains(request.candidate())) {
+    else if (!context.getCluster().getActiveMembers().stream().<Integer>map(m -> m.getMember().id()).collect(Collectors.toSet()).contains(request.candidate())) {
       LOGGER.debug("{} - Rejected {}: candidate is not known to the local member", context.getMemberId(), request);
       return VoteResponse.builder()
         .withStatus(Response.Status.OK)

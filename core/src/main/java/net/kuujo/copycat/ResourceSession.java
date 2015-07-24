@@ -65,11 +65,14 @@ class ResourceSession implements Session {
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<Void> publish(Object message) {
-    context.execute(() -> {
-      for (Listener<Object> listener : receiveListeners) {
-        listener.accept(message);
-      }
-    });
+    ResourceMessage resourceMessage = (ResourceMessage) message;
+    if (resourceMessage.resource() == resource) {
+      return CompletableFuture.runAsync(() -> {
+        for (Listener<Object> listener : receiveListeners) {
+          listener.accept(resourceMessage.message());
+        }
+      }, context);
+    }
     return CompletableFuture.completedFuture(null);
   }
 
@@ -97,17 +100,17 @@ class ResourceSession implements Session {
 
   @Override
   public ListenerContext<Session> onClose(Listener<Session> listener) {
-    return null;
+    return parent.onClose(listener);
   }
 
   @Override
   public boolean isClosed() {
-    return false;
+    return parent.isClosed();
   }
 
   @Override
   public boolean isExpired() {
-    return false;
+    return parent.isExpired();
   }
 
   /**

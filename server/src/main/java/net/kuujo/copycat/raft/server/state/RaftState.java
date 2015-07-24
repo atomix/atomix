@@ -277,7 +277,7 @@ class RaftState {
    * Registers a passive member session.
    */
   private CompletableFuture<Long> registerPassive(long index, Member member, UUID connectionId, long timestamp) {
-    MemberState state = new MemberState(member.id(), Member.Type.PASSIVE, System.currentTimeMillis());
+    MemberState state = new MemberState(member, System.currentTimeMillis());
     state.setSession(index);
 
     members.addMember(state);

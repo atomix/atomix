@@ -51,7 +51,6 @@ class ClientSession implements Session {
   private volatile State state = State.CLOSED;
   private volatile long id;
   private volatile UUID connectionId;
-  private volatile Connection connection;
 
   public ClientSession(Context context) {
     this.context = context;
@@ -71,7 +70,6 @@ class ClientSession implements Session {
    * Sets the session connection.
    */
   void connect(Connection connection) {
-    this.connection = connection;
     connection.handler(PublishRequest.class, this::handlePublish);
   }
 
@@ -83,12 +81,11 @@ class ClientSession implements Session {
 
   @Override
   public CompletableFuture<Void> publish(Object message) {
-    context.execute(() -> {
+    return CompletableFuture.runAsync(() -> {
       for (Listener<Object> listener : receiveListeners) {
         listener.accept(message);
       }
-    });
-    return CompletableFuture.completedFuture(null);
+    }, context);
   }
 
   /**
@@ -149,7 +146,6 @@ class ClientSession implements Session {
 
     id = 0;
     connectionId = null;
-    connection = null;
   }
 
   @Override

@@ -21,7 +21,6 @@ import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.alleycat.util.ReferenceManager;
 import net.kuujo.copycat.BuilderPool;
-import net.kuujo.copycat.raft.Members;
 import net.kuujo.copycat.raft.RaftError;
 
 import java.util.Objects;
@@ -56,7 +55,6 @@ public class KeepAliveResponse extends ClientResponse<KeepAliveResponse> {
 
   private long term;
   private int leader;
-  private Members members;
 
   public KeepAliveResponse(ReferenceManager<KeepAliveResponse> referenceManager) {
     super(referenceManager);
@@ -85,15 +83,6 @@ public class KeepAliveResponse extends ClientResponse<KeepAliveResponse> {
     return leader;
   }
 
-  /**
-   * Returns the responding node's member set.
-   *
-   * @return The responding node's member set.
-   */
-  public Members members() {
-    return members;
-  }
-
   @Override
   public void readObject(BufferInput buffer, Alleycat alleycat) {
     status = Status.forId(buffer.readByte());
@@ -102,7 +91,6 @@ public class KeepAliveResponse extends ClientResponse<KeepAliveResponse> {
       term = buffer.readLong();
       leader = buffer.readInt();
       version = buffer.readLong();
-      members = alleycat.readObject(buffer);
     } else {
       error = RaftError.forId(buffer.readByte());
     }
@@ -113,7 +101,6 @@ public class KeepAliveResponse extends ClientResponse<KeepAliveResponse> {
     buffer.writeByte(status.id());
     if (status == Status.OK) {
       buffer.writeLong(term).writeInt(leader).writeLong(version);
-      alleycat.writeObject(members, buffer);
     } else {
       buffer.writeByte(error.id());
     }
@@ -130,15 +117,14 @@ public class KeepAliveResponse extends ClientResponse<KeepAliveResponse> {
       KeepAliveResponse response = (KeepAliveResponse) object;
       return response.status == status
         && response.term == term
-        && response.leader == leader
-        && response.members.equals(members);
+        && response.leader == leader;
     }
     return false;
   }
 
   @Override
   public String toString() {
-    return String.format("%s[term=%d, leader=%d, members=%s]", getClass().getSimpleName(), term, leader, members);
+    return String.format("%s[term=%d, leader=%d]", getClass().getSimpleName(), term, leader);
   }
 
   /**
@@ -155,7 +141,6 @@ public class KeepAliveResponse extends ClientResponse<KeepAliveResponse> {
       super.reset();
       response.term = 0;
       response.leader = 0;
-      response.members = null;
     }
 
     /**
@@ -179,17 +164,6 @@ public class KeepAliveResponse extends ClientResponse<KeepAliveResponse> {
      */
     public Builder withLeader(int leader) {
       response.leader = leader;
-      return this;
-    }
-
-    /**
-     * Sets the response members.
-     *
-     * @param members The response members.
-     * @return The keep alive response builder.;
-     */
-    public Builder withMembers(Members members) {
-      response.members = members;
       return this;
     }
 

@@ -232,7 +232,7 @@ class FollowerState extends ActiveState {
    * Returns a boolean value indicating whether the given member is a replica of this follower.
    */
   private boolean isActiveReplica(MemberState member) {
-    if (member != null && member.getType() == Member.Type.PASSIVE && member.getSession() != 0) {
+    if (member != null && member.getMember().type() == Member.Type.PASSIVE && member.getSession() != 0) {
       MemberState thisMember = context.getCluster().getMember(context.getMemberId());
       int index = thisMember.getIndex();
       int activeMembers = context.getCluster().getActiveMembers().size();
@@ -257,7 +257,7 @@ class FollowerState extends ActiveState {
     if (member.getNextIndex() == 0)
       member.setNextIndex(context.getLog().lastIndex());
 
-    if (!committing.contains(member.getId())) {
+    if (!committing.contains(member.getMember().id())) {
       long prevIndex = getPrevIndex(member);
       RaftEntry prevEntry = getPrevEntry(prevIndex);
       List<RaftEntry> entries = getEntries(prevIndex);
@@ -323,11 +323,11 @@ class FollowerState extends ActiveState {
       .withGlobalIndex(context.getGlobalIndex())
       .build();
 
-    committing.add(member.getId());
+    committing.add(member.getMember().id());
     LOGGER.debug("{} - Sent {} to {}", context.getMemberId(), request, member);
-    context.getConnections().getConnection(context.getMembers().member(member.getId())).thenAccept(connection -> {
+    context.getConnections().getConnection(member.getMember()).thenAccept(connection -> {
       connection.<AppendRequest, AppendResponse>send(request).whenCompleteAsync((response, error) -> {
-        committing.remove(member.getId());
+        committing.remove(member.getMember().id());
         context.checkThread();
 
         if (isOpen()) {

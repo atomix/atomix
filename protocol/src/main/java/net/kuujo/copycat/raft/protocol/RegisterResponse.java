@@ -21,7 +21,6 @@ import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.alleycat.util.ReferenceManager;
 import net.kuujo.copycat.BuilderPool;
-import net.kuujo.copycat.raft.Members;
 import net.kuujo.copycat.raft.RaftError;
 
 import java.util.Objects;
@@ -57,7 +56,6 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
   private long term;
   private int leader;
   private long session;
-  private Members members;
 
   public RegisterResponse(ReferenceManager<RegisterResponse> referenceManager) {
     super(referenceManager);
@@ -95,15 +93,6 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
     return session;
   }
 
-  /**
-   * Returns the responding node's member set.
-   *
-   * @return The responding node's member set.
-   */
-  public Members members() {
-    return members;
-  }
-
   @Override
   public void readObject(BufferInput buffer, Alleycat alleycat) {
     status = Status.forId(buffer.readByte());
@@ -112,7 +101,6 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
       term = buffer.readLong();
       leader = buffer.readInt();
       session = buffer.readLong();
-      members = alleycat.readObject(buffer);
     } else {
       error = RaftError.forId(buffer.readByte());
     }
@@ -123,7 +111,6 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
     buffer.writeByte(status.id());
     if (status == Status.OK) {
       buffer.writeLong(term).writeInt(leader).writeLong(session);
-      alleycat.writeObject(members, buffer);
     } else {
       buffer.writeByte(error.id());
     }
@@ -147,7 +134,7 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
 
   @Override
   public String toString() {
-    return String.format("%s[term=%d, leader=%d, session=%d, members=%s]", getClass().getSimpleName(), term, leader, session, members);
+    return String.format("%s[term=%d, leader=%d, session=%d]", getClass().getSimpleName(), term, leader, session);
   }
 
   /**
@@ -165,7 +152,6 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
       response.term = 0;
       response.leader = 0;
       response.session = 0;
-      response.members = null;
     }
 
     /**
@@ -202,19 +188,6 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
       if (session <= 0)
         throw new IllegalArgumentException("session must be positive");
       response.session = session;
-      return this;
-    }
-
-    /**
-     * Sets the response members.
-     *
-     * @param members The response members.
-     * @return The response builder.
-     */
-    public Builder withMembers(Members members) {
-      if (members == null)
-        throw new NullPointerException("members cannot be null");
-      response.members = members;
       return this;
     }
 

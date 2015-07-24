@@ -36,8 +36,8 @@ class ClusterState implements Iterable<MemberState> {
    * @return The cluster state.
    */
   ClusterState addMember(MemberState member) {
-    members.put(member.getId(), member);
-    if (member.getType() == Member.Type.ACTIVE) {
+    members.put(member.getMember().id(), member);
+    if (member.getMember().type() == Member.Type.ACTIVE) {
       addActiveMember(member);
     } else {
       addPassiveMember(member);
@@ -73,7 +73,7 @@ class ClusterState implements Iterable<MemberState> {
    * Sorts the active members.
    */
   private void sortActiveMembers() {
-    Collections.sort(activeMembers, (m1, m2) -> m1.getId() - m2.getId());
+    Collections.sort(activeMembers, (m1, m2) -> m1.getMember().id() - m2.getMember().id());
     for (int i = 0; i < activeMembers.size(); i++) {
       activeMembers.get(i).setIndex(i);
     }
@@ -83,7 +83,7 @@ class ClusterState implements Iterable<MemberState> {
    * Sorts the passive members.
    */
   private void sortPassiveMembers() {
-    Collections.sort(passiveMembers, (m1, m2) -> m1.getId() - m2.getId());
+    Collections.sort(passiveMembers, (m1, m2) -> m1.getMember().id() - m2.getMember().id());
     for (int i = 0; i < passiveMembers.size(); i++) {
       passiveMembers.get(i).setIndex(i);
     }
@@ -96,8 +96,8 @@ class ClusterState implements Iterable<MemberState> {
    * @return The cluster state.
    */
   ClusterState removeMember(MemberState member) {
-    members.remove(member.getId());
-    if (member.getType() == Member.Type.ACTIVE) {
+    members.remove(member.getMember().id());
+    if (member.getMember().type() == Member.Type.ACTIVE) {
       removeActiveMember(member);
     } else {
       removePassiveMember(member);
@@ -111,7 +111,7 @@ class ClusterState implements Iterable<MemberState> {
   private void removeActiveMember(MemberState member) {
     Iterator<MemberState> iterator = activeMembers.iterator();
     while (iterator.hasNext()) {
-      if (iterator.next().getId() == member.getId()) {
+      if (iterator.next().getMember().id() == member.getMember().id()) {
         iterator.remove();
       }
     }
@@ -124,7 +124,7 @@ class ClusterState implements Iterable<MemberState> {
   private void removePassiveMember(MemberState member) {
     Iterator<MemberState> iterator = passiveMembers.iterator();
     while (iterator.hasNext()) {
-      if (iterator.next().getId() == member.getId()) {
+      if (iterator.next().getMember().id() == member.getMember().id()) {
         iterator.remove();
       }
     }

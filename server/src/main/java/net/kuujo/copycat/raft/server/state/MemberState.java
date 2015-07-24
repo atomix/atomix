@@ -23,36 +23,28 @@ import net.kuujo.copycat.raft.Member;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 class MemberState {
-  private final int id;
-  private final Member.Type type;
+  private final Member member;
   private long timestamp;
   private int index;
   private long session;
   private long matchIndex;
   private long nextIndex;
 
-  public MemberState(int id, Member.Type type, long timestamp) {
-    this.id = id;
-    this.type = type;
+  public MemberState(Member member, long timestamp) {
+    if (member == null)
+      throw new NullPointerException("member cannot be null");
+
+    this.member = member;
     this.timestamp = timestamp;
   }
 
   /**
-   * Returns the member ID.
+   * Returns the member configuration.
    *
-   * @return The member ID.
+   * @return The member configuration.
    */
-  int getId() {
-    return id;
-  }
-
-  /**
-   * Returns the member type.
-   *
-   * @return The member type.
-   */
-  Member.Type getType() {
-    return type;
+  public Member getMember() {
+    return member;
   }
 
   /**

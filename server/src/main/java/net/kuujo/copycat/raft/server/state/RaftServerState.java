@@ -99,7 +99,7 @@ public class RaftServerState extends RaftClientState {
     }
 
     for (Member server : members.members()) {
-      cluster.addMember(new MemberState(server.id(), server.type(), System.currentTimeMillis()));
+      cluster.addMember(new MemberState(server, System.currentTimeMillis()));
     }
 
     this.context = new SingleThreadContext("copycat-server-" + member.id(), serializer);
