@@ -18,7 +18,7 @@ package net.kuujo.copycat.raft.client;
 import net.kuujo.alleycat.Alleycat;
 import net.kuujo.alleycat.ServiceLoaderResolver;
 import net.kuujo.copycat.raft.*;
-import net.kuujo.copycat.raft.client.state.RaftClientState;
+import net.kuujo.copycat.raft.client.state.ClientContext;
 import net.kuujo.copycat.transport.Transport;
 import net.kuujo.copycat.util.concurrent.Context;
 
@@ -41,37 +41,37 @@ public class RaftClient implements ManagedRaft {
     return new Builder();
   }
 
-  private final RaftClientState client;
+  private final ClientContext context;
   private CompletableFuture<Raft> openFuture;
   private CompletableFuture<Void> closeFuture;
   private volatile boolean open;
 
-  private RaftClient(RaftClientState client) {
-    this.client = client;
+  protected RaftClient(ClientContext context) {
+    this.context = context;
   }
 
   @Override
   public Context context() {
-    return client.getContext();
+    return context.getContext();
   }
 
   @Override
   public Session session() {
-    return client.getSession();
+    return context.getSession();
   }
 
   @Override
   public <T> CompletableFuture<T> submit(Command<T> command) {
     if (!open)
       throw new IllegalStateException("protocol not open");
-    return client.submit(command);
+    return context.submit(command);
   }
 
   @Override
   public <T> CompletableFuture<T> submit(Query<T> query) {
     if (!open)
       throw new IllegalStateException("protocol not open");
-    return client.submit(query);
+    return context.submit(query);
   }
 
   @Override
@@ -83,13 +83,13 @@ public class RaftClient implements ManagedRaft {
       synchronized (this) {
         if (openFuture == null) {
           if (closeFuture == null) {
-            openFuture = client.open().thenApply(c -> {
+            openFuture = context.open().thenApply(c -> {
               openFuture = null;
               open = true;
               return this;
             });
           } else {
-            openFuture = closeFuture.thenCompose(v -> client.open().thenApply(c -> {
+            openFuture = closeFuture.thenCompose(v -> context.open().thenApply(c -> {
               openFuture = null;
               open = true;
               return this;
@@ -115,12 +115,12 @@ public class RaftClient implements ManagedRaft {
       synchronized (this) {
         if (closeFuture == null) {
           if (openFuture == null) {
-            closeFuture = client.close().thenRun(() -> {
+            closeFuture = context.close().thenRun(() -> {
               closeFuture = null;
               open = false;
             });
           } else {
-            closeFuture = openFuture.thenCompose(c -> client.close().thenRun(() -> {
+            closeFuture = openFuture.thenCompose(c -> context.close().thenRun(() -> {
               closeFuture = null;
               open = false;
             }));
@@ -223,7 +223,7 @@ public class RaftClient implements ManagedRaft {
       // Resolve Alleycat serializable types with the ServiceLoaderResolver.
       serializer.resolve(new ServiceLoaderResolver());
 
-      return new RaftClient(new RaftClientState(members, transport, serializer).setKeepAliveInterval(keepAliveInterval));
+      return new RaftClient(new ClientContext(members, transport, serializer).setKeepAliveInterval(keepAliveInterval));
     }
   }
 

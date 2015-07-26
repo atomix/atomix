@@ -21,51 +21,48 @@ import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.alleycat.util.ReferenceManager;
 import net.kuujo.copycat.BuilderPool;
-import net.kuujo.copycat.raft.Members;
 import net.kuujo.copycat.raft.RaftError;
 
 import java.util.Objects;
 
 /**
- * Protocol register client response.
+ * Protocol keep alive response.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=273)
-public class RegisterResponse extends AbstractResponse<RegisterResponse> {
-  private static final BuilderPool<Builder, RegisterResponse> POOL = new BuilderPool<>(Builder::new);
+@SerializeWith(id=265)
+public class SyncResponse extends ClientResponse<SyncResponse> {
+  private static final BuilderPool<Builder, SyncResponse> POOL = new BuilderPool<>(Builder::new);
 
   /**
-   * Returns a new register client response builder.
+   * Returns a new keep alive response builder.
    *
-   * @return A new register client response builder.
+   * @return A new keep alive response builder.
    */
   public static Builder builder() {
     return POOL.acquire();
   }
 
   /**
-   * Returns a register client response builder for an existing response.
+   * Returns a keep alive response builder for an existing response.
    *
    * @param response The response to build.
-   * @return The register client response builder.
+   * @return The keep alive response builder.
    */
-  public static Builder builder(RegisterResponse response) {
+  public static Builder builder(SyncResponse response) {
     return POOL.acquire(response);
   }
 
   private long term;
   private int leader;
-  private long session;
-  private Members members;
 
-  public RegisterResponse(ReferenceManager<RegisterResponse> referenceManager) {
+  public SyncResponse(ReferenceManager<SyncResponse> referenceManager) {
     super(referenceManager);
   }
 
   @Override
   public Type type() {
-    return Type.REGISTER;
+    return Type.KEEP_ALIVE;
   }
 
   /**
@@ -86,24 +83,6 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
     return leader;
   }
 
-  /**
-   * Returns the registered session ID.
-   *
-   * @return The registered session ID.
-   */
-  public long session() {
-    return session;
-  }
-
-  /**
-   * Returns the cluster members.
-   *
-   * @return The cluster members.
-   */
-  public Members members() {
-    return members;
-  }
-
   @Override
   public void readObject(BufferInput buffer, Alleycat alleycat) {
     status = Status.forId(buffer.readByte());
@@ -111,8 +90,7 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
       error = null;
       term = buffer.readLong();
       leader = buffer.readInt();
-      session = buffer.readLong();
-      members = alleycat.readObject(buffer);
+      version = buffer.readLong();
     } else {
       error = RaftError.forId(buffer.readByte());
     }
@@ -122,8 +100,7 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
   public void writeObject(BufferOutput buffer, Alleycat alleycat) {
     buffer.writeByte(status.id());
     if (status == Status.OK) {
-      buffer.writeLong(term).writeInt(leader).writeLong(session);
-      alleycat.writeObject(members, buffer);
+      buffer.writeLong(term).writeInt(leader).writeLong(version);
     } else {
       buffer.writeByte(error.id());
     }
@@ -136,8 +113,8 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
 
   @Override
   public boolean equals(Object object) {
-    if (object instanceof RegisterResponse) {
-      RegisterResponse response = (RegisterResponse) object;
+    if (object instanceof SyncResponse) {
+      SyncResponse response = (SyncResponse) object;
       return response.status == status
         && response.term == term
         && response.leader == leader;
@@ -147,16 +124,16 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
 
   @Override
   public String toString() {
-    return String.format("%s[term=%d, leader=%d, session=%d]", getClass().getSimpleName(), term, leader, session);
+    return String.format("%s[term=%d, leader=%d]", getClass().getSimpleName(), term, leader);
   }
 
   /**
-   * Register response builder.
+   * Status response builder.
    */
-  public static class Builder extends AbstractResponse.Builder<Builder, RegisterResponse> {
+  public static class Builder extends ClientResponse.Builder<Builder, SyncResponse> {
 
-    private Builder(BuilderPool<Builder, RegisterResponse> pool) {
-      super(pool, RegisterResponse::new);
+    private Builder(BuilderPool<Builder, SyncResponse> pool) {
+      super(pool, SyncResponse::new);
     }
 
     @Override
@@ -164,15 +141,13 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
       super.reset();
       response.term = 0;
       response.leader = 0;
-      response.session = 0;
-      response.members = null;
     }
 
     /**
      * Sets the response term.
      *
      * @param term The response term.
-     * @return The register response builder.
+     * @return The keep alive response builder.
      */
     public Builder withTerm(long term) {
       if (term < 0)
@@ -185,48 +160,20 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
      * Sets the response leader.
      *
      * @param leader The response leader.
-     * @return The register response builder.
+     * @return The keep alive response builder.
      */
     public Builder withLeader(int leader) {
       response.leader = leader;
       return this;
     }
 
-    /**
-     * Sets the response session ID.
-     *
-     * @param session The session ID.
-     * @return The register response builder.
-     */
-    public Builder withSession(long session) {
-      if (session <= 0)
-        throw new IllegalArgumentException("session must be positive");
-      response.session = session;
-      return this;
-    }
-
-    /**
-     * Sets the response members.
-     *
-     * @param members The response members.
-     * @return The response builder.
-     */
-    public Builder withMembers(Members members) {
-      if (members == null)
-        throw new NullPointerException("members cannot be null");
-      response.members = members;
-      return this;
-    }
-
     @Override
-    public RegisterResponse build() {
+    public SyncResponse build() {
       super.build();
       if (response.term < 0)
         throw new IllegalArgumentException("term cannot be negative");
       if (response.leader < 0)
         throw new IllegalArgumentException("leader cannot be negative");
-      if (response.status == Status.OK && response.members == null)
-        throw new NullPointerException("members cannot be null");
       return response;
     }
 

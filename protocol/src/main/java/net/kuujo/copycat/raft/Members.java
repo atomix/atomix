@@ -19,6 +19,7 @@ import net.kuujo.alleycat.Alleycat;
 import net.kuujo.alleycat.AlleycatSerializable;
 import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
+import net.kuujo.copycat.BuilderPool;
 
 import java.util.*;
 
@@ -28,6 +29,7 @@ import java.util.*;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class Members implements AlleycatSerializable {
+  private static final BuilderPool<Builder, Members> POOL = new BuilderPool<>(Builder::new);
 
   /**
    * Returns a new members builder.
@@ -35,7 +37,11 @@ public class Members implements AlleycatSerializable {
    * @return A new members builder.
    */
   public static Builder builder() {
-    return new Builder();
+    return POOL.acquire();
+  }
+
+  public static Builder builder(Members members) {
+    return POOL.acquire(members);
   }
 
   private Map<Integer, Member> members = new HashMap<>();
@@ -60,27 +66,6 @@ public class Members implements AlleycatSerializable {
     return members.get(id);
   }
 
-  /**
-   * Configures the members.
-   *
-   * @param members The members with which to configure the members.
-   */
-  public void configure(Members members) {
-    Iterator<Map.Entry<Integer, Member>> iterator = this.members.entrySet().iterator();
-    while (iterator.hasNext()) {
-      Member.Type type = iterator.next().getValue().type();
-      if (type == Member.Type.PASSIVE || type == Member.Type.CLIENT) {
-        iterator.remove();
-      }
-    }
-
-    for (Member member : members.members()) {
-      if (member.type() == Member.Type.ACTIVE || member.type() == Member.Type.CLIENT) {
-        this.members.put(member.id(), member);
-      }
-    }
-  }
-
   @Override
   public void writeObject(BufferOutput buffer, Alleycat alleycat) {
     alleycat.writeObject(members, buffer);
@@ -97,7 +82,14 @@ public class Members implements AlleycatSerializable {
   public static class Builder extends net.kuujo.copycat.Builder<Members> {
     private Members members = new Members();
 
-    private Builder() {
+    public Builder(BuilderPool<Builder, Members> pool) {
+      super(pool);
+    }
+
+    @Override
+    protected void reset() {
+      members.members.clear();
+      members.list.clear();
     }
 
     @Override
@@ -138,10 +130,10 @@ public class Members implements AlleycatSerializable {
     }
 
     /**
-     * Adds a cluster seed member.
+     * Adds a member.
      *
-     * @param member The cluster seed member to add.
-     * @return The cluster builder.
+     * @param member The member to add.
+     * @return The members builder.
      */
     public Builder addMember(Member member) {
       if (member == null)
@@ -151,6 +143,21 @@ public class Members implements AlleycatSerializable {
       if (!this.members.list.contains(member)) {
         this.members.list.add(member);
       }
+      return this;
+    }
+
+    /**
+     * Removes a member.
+     *
+     * @param member The member to remove.
+     * @return The members builder.
+     */
+    public Builder removeMember(Member member) {
+      if (member == null)
+        throw new NullPointerException("member cannot be null");
+
+      this.members.members.remove(member.id());
+      this.members.list.remove(member);
       return this;
     }
 

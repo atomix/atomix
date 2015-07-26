@@ -28,50 +28,6 @@ import net.kuujo.alleycat.io.BufferOutput;
 public class Member implements AlleycatSerializable {
 
   /**
-   * Default client member.
-   */
-  public static final Member CLIENT = builder()
-    .withId(0)
-    .withType(Type.CLIENT)
-    .build();
-
-  /**
-   * Member type.
-   */
-  public static enum Type {
-
-    /**
-     * Represents an active voting member.
-     */
-    ACTIVE(true),
-
-    /**
-     * Represents a passive non-voting member.
-     */
-    PASSIVE(true),
-
-    /**
-     * Represents a pure client.
-     */
-    CLIENT(false);
-
-    private final boolean replica;
-
-    private Type(boolean replica) {
-      this.replica = replica;
-    }
-
-    /**
-     * Returns a boolean value indicating whether the member type is a replica type.
-     *
-     * @return Indicates whether the member type is a replica type.
-     */
-    public boolean isReplica() {
-      return replica;
-    }
-  }
-
-  /**
    * Returns a new member builder.
    *
    * @return A new member builder.
@@ -81,7 +37,6 @@ public class Member implements AlleycatSerializable {
   }
 
   private int id;
-  private Type type = Type.ACTIVE;
   private String host;
   private int port;
 
@@ -99,15 +54,6 @@ public class Member implements AlleycatSerializable {
    */
   public int id() {
     return id;
-  }
-
-  /**
-   * Returns the member type.
-   *
-   * @return The member type.
-   */
-  public Type type() {
-    return type;
   }
 
   /**
@@ -131,7 +77,6 @@ public class Member implements AlleycatSerializable {
   @Override
   public void writeObject(BufferOutput buffer, Alleycat alleycat) {
     buffer.writeInt(id)
-      .writeByte(type.ordinal())
       .writeString(host)
       .writeInt(port);
   }
@@ -139,9 +84,31 @@ public class Member implements AlleycatSerializable {
   @Override
   public void readObject(BufferInput buffer, Alleycat alleycat) {
     id = buffer.readInt();
-    type = Type.values()[buffer.readByte()];
     host = buffer.readString();
     port = buffer.readInt();
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (object instanceof Member) {
+      Member member = (Member) object;
+      return member.id == id && member.host.equals(host) && member.port == port;
+    }
+    return false;
+  }
+
+  @Override
+  public int hashCode() {
+    int hashCode = 23;
+    hashCode = 37 * hashCode + id;
+    hashCode = 37 * hashCode + host.hashCode();
+    hashCode = 37 * hashCode + port;
+    return hashCode;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[id=%d, host=%s, port=%d]", getClass().getSimpleName(), id, host, port);
   }
 
   /**
@@ -166,17 +133,6 @@ public class Member implements AlleycatSerializable {
      */
     public Builder withId(int id) {
       member.id = id;
-      return this;
-    }
-
-    /**
-     * Sets the member type.
-     *
-     * @param type The member type.
-     * @return The member builder.
-     */
-    public Builder withType(Type type) {
-      member.type = type;
       return this;
     }
 

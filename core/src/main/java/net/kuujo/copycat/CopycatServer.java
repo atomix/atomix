@@ -18,7 +18,6 @@ package net.kuujo.copycat;
 import net.kuujo.alleycat.Alleycat;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.manager.ResourceManager;
-import net.kuujo.copycat.raft.Member;
 import net.kuujo.copycat.raft.Members;
 import net.kuujo.copycat.raft.server.RaftServer;
 import net.kuujo.copycat.transport.Transport;
@@ -82,39 +81,6 @@ public class CopycatServer extends Copycat {
      */
     public Builder withMemberId(int memberId) {
       builder.withMemberId(memberId);
-      return this;
-    }
-
-    /**
-     * Sets the server member type.
-     *
-     * @param type The server member type.
-     * @return The Raft builder.
-     */
-    public Builder withMemberType(Member.Type type) {
-      builder.withMemberType(type);
-      return this;
-    }
-
-    /**
-     * Sets the server host.
-     *
-     * @param host The server host.
-     * @return The Raft builder.
-     */
-    public Builder withHost(String host) {
-      builder.withHost(host);
-      return this;
-    }
-
-    /**
-     * Sets the server port.
-     *
-     * @param port The server port.
-     * @return The Raft builder.
-     */
-    public Builder withPort(int port) {
-      builder.withPort(port);
       return this;
     }
 

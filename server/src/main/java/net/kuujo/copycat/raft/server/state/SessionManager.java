@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.raft.server.state;
 
-import net.kuujo.copycat.raft.Member;
+import net.kuujo.copycat.raft.Session;
 import net.kuujo.copycat.transport.Connection;
 
 import java.util.HashMap;
@@ -28,14 +28,12 @@ import java.util.UUID;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 class SessionManager {
-  private final int memberId;
-  private final RaftServerState context;
+  private final Session session;
   private final Map<UUID, Connection> connections = new HashMap<>();
   private final Map<Long, ServerSession> sessions = new HashMap<>();
 
-  SessionManager(int memberId, RaftServerState context) {
-    this.memberId = memberId;
-    this.context = context;
+  SessionManager(Session session) {
+    this.session = session;
   }
 
   /**
@@ -67,13 +65,8 @@ class SessionManager {
   /**
    * Registers a session.
    */
-  ServerSession registerSession(long sessionId, Member member, UUID connectionId) {
-    ServerSession session;
-    if (member.id() == memberId) {
-      session = new LocalServerSession(sessionId, member, connectionId, context);
-    } else {
-      session = new RemoteServerSession(sessionId, member, connectionId).setConnection(connections.get(connectionId));
-    }
+  ServerSession registerSession(long sessionId, UUID connectionId) {
+    ServerSession session = new ServerSession(sessionId, connectionId).setConnection(connections.get(connectionId));
     sessions.put(sessionId, session);
     return session;
   }
@@ -81,16 +74,8 @@ class SessionManager {
   /**
    * Unregisters a session.
    */
-  SessionManager unregisterSession(ServerSession session) {
-    return unregisterSession(session.id());
-  }
-
-  /**
-   * Unregisters a session.
-   */
-  SessionManager unregisterSession(long sessionId) {
-    sessions.remove(sessionId);
-    return this;
+  ServerSession unregisterSession(long sessionId) {
+    return sessions.remove(sessionId);
   }
 
   /**
@@ -99,8 +84,14 @@ class SessionManager {
    * @param sessionId The session ID.
    * @return The session or {@code null} if the session doesn't exist.
    */
-  ServerSession getSession(long sessionId) {
-    return sessions.get(sessionId);
+  Session getSession(long sessionId) {
+    Session session = sessions.get(sessionId);
+    if (session != null) {
+      return session;
+    } else if (sessionId == this.session.id()) {
+      return this.session;
+    }
+    return null;
   }
 
 }

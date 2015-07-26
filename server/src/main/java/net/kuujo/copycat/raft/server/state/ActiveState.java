@@ -32,31 +32,31 @@ import java.util.stream.Collectors;
  */
 abstract class ActiveState extends PassiveState {
 
-  protected ActiveState(RaftServerState context) {
+  protected ActiveState(ServerContext context) {
     super(context);
   }
 
   @Override
-  protected void transition(RaftServer.State state) {
-    switch (state) {
-      case START:
-        context.transition(StartState.class);
-        break;
-      case PASSIVE:
-        context.transition(PassiveState.class);
-        break;
-      case FOLLOWER:
-        context.transition(FollowerState.class);
-        break;
-      case CANDIDATE:
-        context.transition(CandidateState.class);
-        break;
-      case LEADER:
-        context.transition(LeaderState.class);
-        break;
-      default:
-        throw new IllegalStateException();
+  protected CompletableFuture<AppendResponse> append(final AppendRequest request) {
+    context.checkThread();
+
+    // If the request indicates a term that is greater than the current term then
+    // assign that term and leader to the current context and step down as leader.
+    boolean transition = false;
+    if (request.term() > context.getTerm() || (request.term() == context.getTerm() && context.getLeader() == null)) {
+      context.setTerm(request.term());
+      context.setLeader(request.leader());
+      transition = true;
     }
+
+    CompletableFuture<AppendResponse> future = CompletableFuture.completedFuture(logResponse(handleAppend(logRequest(request))));
+
+    // If a transition is required then transition back to the follower state.
+    // If the node is already a follower then the transition will be ignored.
+    if (transition) {
+      transition(RaftServer.State.FOLLOWER);
+    }
+    return future;
   }
 
   @Override
@@ -104,29 +104,17 @@ abstract class ActiveState extends PassiveState {
     // vote for the candidate. We want to vote for candidates that are at least
     // as up to date as us.
     if (request.term() < context.getTerm()) {
-      LOGGER.debug("{} - Rejected {}: candidate's term is less than the current term", context.getMemberId(), request);
+      LOGGER.debug("{} - Rejected {}: candidate's term is less than the current term", context.getMember().id(), request);
       return VoteResponse.builder()
         .withStatus(Response.Status.OK)
         .withTerm(context.getTerm())
         .withVoted(false)
         .build();
     }
-    // If the requesting candidate is our self then always vote for our self. Votes
-    // for self are done by calling the local node. Note that this obviously
-    // doesn't make sense for a leader.
-    else if (request.candidate() == context.getMemberId()) {
-      context.setLastVotedFor(context.getMemberId());
-      LOGGER.debug("{} - Accepted {}: candidate is the local member", context.getMemberId(), request);
-      return VoteResponse.builder()
-        .withStatus(Response.Status.OK)
-        .withTerm(context.getTerm())
-        .withVoted(true)
-        .build();
-    }
     // If the requesting candidate is not a known member of the cluster (to this
     // node) then don't vote for it. Only vote for candidates that we know about.
     else if (!context.getCluster().getActiveMembers().stream().<Integer>map(m -> m.getMember().id()).collect(Collectors.toSet()).contains(request.candidate())) {
-      LOGGER.debug("{} - Rejected {}: candidate is not known to the local member", context.getMemberId(), request);
+      LOGGER.debug("{} - Rejected {}: candidate is not known to the local member", context.getMember().id(), request);
       return VoteResponse.builder()
         .withStatus(Response.Status.OK)
         .withTerm(context.getTerm())
@@ -152,7 +140,7 @@ abstract class ActiveState extends PassiveState {
     }
     // In this case, we've already voted for someone else.
     else {
-      LOGGER.debug("{} - Rejected {}: already voted for {}", context.getMemberId(), request, context.getLastVotedFor());
+      LOGGER.debug("{} - Rejected {}: already voted for {}", context.getMember().id(), request, context.getLastVotedFor());
       return VoteResponse.builder()
         .withStatus(Response.Status.OK)
         .withTerm(context.getTerm())
@@ -167,7 +155,7 @@ abstract class ActiveState extends PassiveState {
   private boolean logUpToDate(long index, long term, Request request) {
     // If the log is empty then vote for the candidate.
     if (context.getLog().isEmpty()) {
-      LOGGER.debug("{} - Accepted {}: candidate's log is up-to-date", context.getMemberId(), request);
+      LOGGER.debug("{} - Accepted {}: candidate's log is up-to-date", context.getMember().id(), request);
       return true;
     } else {
       // Otherwise, load the last entry in the log. The last entry should be
@@ -175,22 +163,38 @@ abstract class ActiveState extends PassiveState {
       long lastIndex = context.getLog().lastIndex();
       RaftEntry entry = context.getLog().getEntry(lastIndex);
       if (entry == null) {
-        LOGGER.debug("{} - Accepted {}: candidate's log is up-to-date", context.getMemberId(), request);
+        LOGGER.debug("{} - Accepted {}: candidate's log is up-to-date", context.getMember().id(), request);
         return true;
       }
 
       if (index != 0 && index >= lastIndex) {
         if (term >= entry.getTerm()) {
-          LOGGER.debug("{} - Accepted {}: candidate's log is up-to-date", context.getMemberId(), request);
+          LOGGER.debug("{} - Accepted {}: candidate's log is up-to-date", context.getMember().id(), request);
           return true;
         } else {
-          LOGGER.debug("{} - Rejected {}: candidate's last log term ({}) is in conflict with local log ({})", context.getMemberId(), request, term, entry.getTerm());
+          LOGGER.debug("{} - Rejected {}: candidate's last log term ({}) is in conflict with local log ({})", context.getMember().id(), request, term, entry.getTerm());
           return false;
         }
       } else {
-        LOGGER.debug("{} - Rejected {}: candidate's last log entry ({}) is at a lower index than the local log ({})", context.getMemberId(), request, index, lastIndex);
+        LOGGER.debug("{} - Rejected {}: candidate's last log entry ({}) is at a lower index than the local log ({})", context.getMember().id(), request, index, lastIndex);
         return false;
       }
+    }
+  }
+
+  @Override
+  protected CompletableFuture<CommandResponse> command(CommandRequest request) {
+    context.checkThread();
+    logRequest(request);
+    if (context.getLeader() == null) {
+      return CompletableFuture.completedFuture(logResponse(CommandResponse.builder()
+        .withStatus(Response.Status.ERROR)
+        .withError(RaftError.Type.NO_LEADER_ERROR)
+        .build()));
+    } else {
+      return context.getConnections()
+        .getConnection(context.getLeader())
+        .thenCompose(connection -> connection.send(request));
     }
   }
 
@@ -212,14 +216,14 @@ abstract class ActiveState extends PassiveState {
    * Forwards the query to the leader.
    */
   private CompletableFuture<QueryResponse> queryForward(QueryRequest request) {
-    if (context.getLeader() == 0) {
+    if (context.getLeader() == null) {
       return CompletableFuture.completedFuture(logResponse(QueryResponse.builder()
         .withStatus(Response.Status.ERROR)
         .withError(RaftError.Type.NO_LEADER_ERROR)
         .build()));
     }
 
-    return context.getConnections().getConnection(context.getMembers().member(context.getLeader()))
+    return context.getConnections().getConnection(context.getLeader())
       .thenCompose(connection -> connection.send(request));
   }
 
@@ -243,8 +247,8 @@ abstract class ActiveState extends PassiveState {
       .setSession(request.session())
       .setQuery(request.query());
 
-    long version = Math.max(context.getStateMachine().getLastApplied(), request.version());
-    context.getStateMachine().apply(entry).whenCompleteAsync((result, error) -> {
+    long version = Math.max(context.getLastApplied(), request.version());
+    context.apply(entry).whenCompleteAsync((result, error) -> {
       if (isOpen()) {
         if (error == null) {
           future.complete(logResponse(QueryResponse.builder()
@@ -284,8 +288,8 @@ abstract class ActiveState extends PassiveState {
       .setSession(request.session())
       .setQuery(request.query());
 
-    long version = context.getStateMachine().getLastApplied();
-    context.getStateMachine().apply(entry).whenCompleteAsync((result, error) -> {
+    long version = context.getLastApplied();
+    context.apply(entry).whenCompleteAsync((result, error) -> {
       if (isOpen()) {
         if (error == null) {
           future.complete(logResponse(QueryResponse.builder()

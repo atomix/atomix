@@ -30,10 +30,10 @@ import java.util.concurrent.CompletableFuture;
  */
 abstract class AbstractState implements Managed<AbstractState> {
   protected final Logger LOGGER = LoggerFactory.getLogger(getClass());
-  protected final RaftServerState context;
+  protected final ServerContext context;
   private volatile boolean open;
 
-  protected AbstractState(RaftServerState context) {
+  protected AbstractState(ServerContext context) {
     this.context = context;
   }
 
@@ -48,7 +48,7 @@ abstract class AbstractState implements Managed<AbstractState> {
    * Logs a request.
    */
   protected final <R extends Request> R logRequest(R request) {
-    LOGGER.debug("{} - Received {}", context.getMemberId(), request);
+    LOGGER.debug("{} - Received {}", context.getMember().id(), request);
     return request;
   }
 
@@ -56,7 +56,7 @@ abstract class AbstractState implements Managed<AbstractState> {
    * Logs a response.
    */
   protected final <R extends Response> R logResponse(R response) {
-    LOGGER.debug("{} - Sent {}", context.getMemberId(), response);
+    LOGGER.debug("{} - Sent {}", context.getMember().id(), response);
     return response;
   }
 
@@ -73,6 +73,34 @@ abstract class AbstractState implements Managed<AbstractState> {
   }
 
   /**
+   * Transitions to a new state.
+   */
+  protected void transition(RaftServer.State state) {
+    if (state == type())
+      return;
+
+    switch (state) {
+      case INACTIVE:
+        context.transition(InactiveState.class);
+        break;
+      case PASSIVE:
+        context.transition(PassiveState.class);
+        break;
+      case FOLLOWER:
+        context.transition(FollowerState.class);
+        break;
+      case CANDIDATE:
+        context.transition(CandidateState.class);
+        break;
+      case LEADER:
+        context.transition(LeaderState.class);
+        break;
+      default:
+        throw new IllegalStateException();
+    }
+  }
+
+  /**
    * Handles a register request.
    */
   protected abstract CompletableFuture<RegisterResponse> register(RegisterRequest request);
@@ -81,6 +109,16 @@ abstract class AbstractState implements Managed<AbstractState> {
    * Handles a keep alive request.
    */
   protected abstract CompletableFuture<KeepAliveResponse> keepAlive(KeepAliveRequest request);
+
+  /**
+   * Handles a join request.
+   */
+  protected abstract CompletableFuture<JoinResponse> join(JoinRequest request);
+
+  /**
+   * Handles a leave request.
+   */
+  protected abstract CompletableFuture<LeaveResponse> leave(LeaveRequest request);
 
   /**
    * Handles an append request.
@@ -106,11 +144,6 @@ abstract class AbstractState implements Managed<AbstractState> {
    * Handles a query request.
    */
   protected abstract CompletableFuture<QueryResponse> query(QueryRequest request);
-
-  /**
-   * Handles a publish request.
-   */
-  protected abstract CompletableFuture<PublishResponse> publish(PublishRequest request);
 
   @Override
   public CompletableFuture<Void> close() {

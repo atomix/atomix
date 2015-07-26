@@ -28,11 +28,11 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * RPC connection manager.
+ * Connection manager.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ConnectionManager {
+class ConnectionManager {
   private final Client client;
   private final Map<Integer, Connection> connections = new HashMap<>();
 

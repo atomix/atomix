@@ -42,18 +42,16 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * Raft client.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class RaftClientState implements Managed<Void> {
-  private static final Logger LOGGER = LoggerFactory.getLogger(RaftClientState.class);
+public class ClientContext implements Managed<Void> {
+  private static final Logger LOGGER = LoggerFactory.getLogger(ClientContext.class);
   private static final long REQUEST_TIMEOUT = TimeUnit.SECONDS.toMillis(10);
-  private final Member member;
-  private final Members members;
+  private Members members;
   private final Transport transport;
   private final Client client;
   private Member remote;
@@ -75,13 +73,7 @@ public class RaftClientState implements Managed<Void> {
   private volatile long response;
   private volatile long version;
 
-  public RaftClientState(Members members, Transport transport, Alleycat serializer) {
-    this(Member.CLIENT, members, transport, serializer);
-  }
-
-  protected RaftClientState(Member member, Members members, Transport transport, Alleycat serializer) {
-    if (member == null)
-      throw new NullPointerException("member cannot be null");
+  public ClientContext(Members members, Transport transport, Alleycat serializer) {
     if (members == null)
       throw new NullPointerException("members cannot be null");
     if (transport == null)
@@ -89,10 +81,9 @@ public class RaftClientState implements Managed<Void> {
     if (serializer == null)
       throw new NullPointerException("serializer cannot be null");
 
-    this.member = member;
     this.members = members;
     this.transport = transport;
-    this.context = new SingleThreadContext("copycat-client-" + member.id(), serializer.clone());
+    this.context = new SingleThreadContext("copycat-client-" + UUID.randomUUID().toString(), serializer.clone());
     this.client = transport.client(UUID.randomUUID());
     this.session = new ClientSession(context);
   }
@@ -111,8 +102,8 @@ public class RaftClientState implements Managed<Void> {
    *
    * @return The cluster leader.
    */
-  public int getLeader() {
-    return leader;
+  public Member getLeader() {
+    return leader != 0 ? members.member(leader) : null;
   }
 
   /**
@@ -121,7 +112,7 @@ public class RaftClientState implements Managed<Void> {
    * @param leader The cluster leader.
    * @return The Raft client.
    */
-  RaftClientState setLeader(int leader) {
+  ClientContext setLeader(int leader) {
     this.leader = leader;
     return this;
   }
@@ -141,7 +132,7 @@ public class RaftClientState implements Managed<Void> {
    * @param term The cluster term.
    * @return The Raft client.
    */
-  RaftClientState setTerm(long term) {
+  ClientContext setTerm(long term) {
     this.term = term;
     return this;
   }
@@ -170,16 +161,12 @@ public class RaftClientState implements Managed<Void> {
    * @param sessionId The client session.
    * @return The Raft client.
    */
-  protected RaftClientState setSessionId(long sessionId) {
+  protected ClientContext setSessionId(long sessionId) {
     this.sessionId = sessionId;
     this.request = 0;
     this.response = 0;
     this.version = 0;
-    if (sessionId != 0) {
 
-    } else if (session != null) {
-      session.close();
-    }
     if (sessionId != 0 && openFuture != null) {
       synchronized (this) {
         if (openFuture != null) {
@@ -192,6 +179,17 @@ public class RaftClientState implements Managed<Void> {
         }
       }
     }
+    return this;
+  }
+
+  /**
+   * Sets the client members.
+   *
+   * @param members The client members.
+   * @return The client context.
+   */
+  protected ClientContext setMembers(Members members) {
+    this.members = members;
     return this;
   }
 
@@ -210,7 +208,7 @@ public class RaftClientState implements Managed<Void> {
    * @param request The client request number.
    * @return The Raft client.
    */
-  protected RaftClientState setRequest(long request) {
+  protected ClientContext setRequest(long request) {
     this.request = request;
     return this;
   }
@@ -230,7 +228,7 @@ public class RaftClientState implements Managed<Void> {
    * @param response The client response number.
    * @return The Raft client.
    */
-  protected RaftClientState setResponse(long response) {
+  protected ClientContext setResponse(long response) {
     this.response = response;
     return this;
   }
@@ -250,7 +248,7 @@ public class RaftClientState implements Managed<Void> {
    * @param version The client version.
    * @return The Raft client.
    */
-  protected RaftClientState setVersion(long version) {
+  protected ClientContext setVersion(long version) {
     if (version > this.version)
       this.version = version;
     return this;
@@ -271,7 +269,7 @@ public class RaftClientState implements Managed<Void> {
    * @param keepAliveInterval The keep alive interval.
    * @return The Raft client.
    */
-  public RaftClientState setKeepAliveInterval(long keepAliveInterval) {
+  public ClientContext setKeepAliveInterval(long keepAliveInterval) {
     if (keepAliveInterval <= 0)
       throw new IllegalArgumentException("keep alive interval must be positive");
     this.keepAliveInterval = keepAliveInterval;
@@ -373,25 +371,26 @@ public class RaftClientState implements Managed<Void> {
    * @return The completion future.
    */
   private <T> CompletableFuture<T> submit(CommandRequest request, CompletableFuture<T> future) {
-    Member member = selectMember(request.command());
+    Member member = selectMember();
     this.<T>submit(request, member).whenComplete((result, error) -> {
       if (error == null) {
         request.close();
         future.complete(result);
       } else if (error instanceof TimeoutException) {
+        resetMember();
         submit(request, future);
       } else if (error instanceof NoLeaderException) {
+        resetMember();
         submit(request, future);
       } else if (error instanceof TransportException) {
         LOGGER.warn("Failed to communicate with {}: {}", member, error);
+        resetMember();
         submit(request, future);
       } else if (error instanceof UnknownSessionException) {
         LOGGER.warn("Lost session: {}", getSessionId());
 
         setSessionId(0);
-        if (session != null) {
-          session.expire();
-        }
+        session.expire();
 
         register().thenRun(() -> {
           submit(CommandRequest.builder(request)
@@ -436,14 +435,6 @@ public class RaftClientState implements Managed<Void> {
     });
 
     return future;
-  }
-
-  /**
-   * Selects the member to which to send the given command.
-   */
-  protected Member selectMember(Command<?> command) {
-    int leader = getLeader();
-    return leader == 0 ? members.members().get(random.nextInt(members.members().size())) : members.member(leader);
   }
 
   /**
@@ -504,24 +495,26 @@ public class RaftClientState implements Managed<Void> {
    * @return The completion future.
    */
   private <T> CompletableFuture<T> submit(QueryRequest request, CompletableFuture<T> future) {
-    Member member = selectMember(request.query());
+    Member member = selectMember();
     this.<T>submit(request, member).whenComplete((result, error) -> {
       if (error == null) {
         request.close();
         future.complete(result);
       } else if (error instanceof TimeoutException) {
+        resetMember();
         submit(request, future);
       } else if (error instanceof NoLeaderException) {
+        resetMember();
         submit(request, future);
       } else if (error instanceof TransportException) {
         LOGGER.warn("Failed to communicate with {}: {}", member, error);
+        resetMember();
         submit(request, future);
       } else if (error instanceof UnknownSessionException) {
         LOGGER.warn("Lost session: {}", getSessionId());
+
         setSessionId(0);
-        if (session != null) {
-          session.expire();
-        }
+        session.expire();
 
         register().thenRun(() -> {
           submit(QueryRequest.builder(request)
@@ -568,19 +561,6 @@ public class RaftClientState implements Managed<Void> {
   }
 
   /**
-   * Selects the member to which to send the given query.
-   */
-  protected Member selectMember(Query<?> query) {
-    ConsistencyLevel level = query.consistency();
-    if (level.isLeaderRequired()) {
-      int leader = getLeader();
-      return leader == 0 ? members.members().get(random.nextInt(members.members().size())) : members.member(leader);
-    } else {
-      return members.members().get(random.nextInt(members.members().size()));
-    }
-  }
-
-  /**
    * Registers the client.
    */
   private CompletableFuture<Void> register() {
@@ -617,7 +597,7 @@ public class RaftClientState implements Managed<Void> {
       setTerm(response.term());
       setLeader(response.leader());
       setSessionId(response.session());
-      session.open(response.session(), connection.id());
+      setMembers(response.members());
       session.open(response.session(), client.id());
     });
   }
@@ -634,7 +614,6 @@ public class RaftClientState implements Managed<Void> {
     Member member = selectMember(members);
 
     RegisterRequest request = RegisterRequest.builder()
-      .withMember(this.member)
       .withConnection(client.id())
       .build();
 
@@ -669,9 +648,7 @@ public class RaftClientState implements Managed<Void> {
    */
   private void keepAlive() {
     if (keepAlive.compareAndSet(false, true) && getSessionId() != 0) {
-      keepAlive(members.members().stream()
-        .filter(m -> m.type() == Member.Type.ACTIVE)
-        .collect(Collectors.toList())).whenComplete((result, error) -> keepAlive.set(false));
+      keepAlive(members.members()).whenComplete((result, error) -> keepAlive.set(false));
     }
   }
 
@@ -683,6 +660,7 @@ public class RaftClientState implements Managed<Void> {
       setTerm(response.term());
       setLeader(response.leader());
       setVersion(response.version());
+      setMembers(response.members());
     });
   }
 
@@ -724,20 +702,24 @@ public class RaftClientState implements Managed<Void> {
   }
 
   /**
+   * Resets the selected member.
+   */
+  private void resetMember() {
+    remote = null;
+  }
+
+  /**
+   * Selects a random member from the members list.
+   */
+  protected Member selectMember() {
+    return remote != null ? remote : members.members().get(random.nextInt(members.members().size()));
+  }
+
+  /**
    * Selects a random member from the given members list.
    */
   protected Member selectMember(List<Member> members) {
-    if (leader != 0) {
-      for (int i = 0; i < members.size(); i++) {
-        if (members.get(i).id() == leader) {
-          return members.remove(i);
-        }
-      }
-      setLeader(0);
-      return members.remove(random.nextInt(members.size()));
-    } else {
-      return members.remove(random.nextInt(members.size()));
-    }
+    return members.remove(random.nextInt(members.size()));
   }
 
   /**
@@ -779,7 +761,7 @@ public class RaftClientState implements Managed<Void> {
     context.execute(() -> {
       cancelRegisterTimer();
       cancelKeepAliveTimer();
-      if (session != null) {
+      if (session.isOpen()) {
         session.close();
       }
 

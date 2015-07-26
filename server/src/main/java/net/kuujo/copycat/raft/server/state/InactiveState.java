@@ -22,19 +22,19 @@ import net.kuujo.copycat.util.concurrent.Futures;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Start state.
+ * Inactive state.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-class StartState extends AbstractState {
+class InactiveState extends AbstractState {
 
-  public StartState(RaftServerState context) {
+  public InactiveState(ServerContext context) {
     super(context);
   }
 
   @Override
   public RaftServer.State type() {
-    return RaftServer.State.START;
+    return RaftServer.State.INACTIVE;
   }
 
   @Override
@@ -44,6 +44,16 @@ class StartState extends AbstractState {
 
   @Override
   protected CompletableFuture<KeepAliveResponse> keepAlive(KeepAliveRequest request) {
+    return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
+  }
+
+  @Override
+  protected CompletableFuture<JoinResponse> join(JoinRequest request) {
+    return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
+  }
+
+  @Override
+  protected CompletableFuture<LeaveResponse> leave(LeaveRequest request) {
     return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
   }
 
@@ -69,11 +79,6 @@ class StartState extends AbstractState {
 
   @Override
   protected CompletableFuture<QueryResponse> query(QueryRequest request) {
-    return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
-  }
-
-  @Override
-  protected CompletableFuture<PublishResponse> publish(PublishRequest request) {
     return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
   }
 

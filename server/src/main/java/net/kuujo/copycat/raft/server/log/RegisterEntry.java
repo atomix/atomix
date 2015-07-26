@@ -21,7 +21,6 @@ import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.alleycat.util.ReferenceManager;
 import net.kuujo.copycat.log.Entry;
-import net.kuujo.copycat.raft.Member;
 
 import java.util.UUID;
 
@@ -32,7 +31,6 @@ import java.util.UUID;
  */
 @SerializeWith(id=303)
 public class RegisterEntry extends TimestampedEntry<RegisterEntry> {
-  private Member member;
   private UUID connection;
 
   public RegisterEntry() {
@@ -40,26 +38,6 @@ public class RegisterEntry extends TimestampedEntry<RegisterEntry> {
 
   public RegisterEntry(ReferenceManager<Entry<?>> referenceManager) {
     super(referenceManager);
-  }
-
-  /**
-   * Returns the entry client.
-   *
-   * @return The entry client.
-   */
-  public Member getMember() {
-    return member;
-  }
-
-  /**
-   * Sets the entry client.
-   *
-   * @param member The entry client.
-   * @return The register entry.
-   */
-  public RegisterEntry setMember(Member member) {
-    this.member = member;
-    return this;
   }
 
   /**
@@ -90,20 +68,18 @@ public class RegisterEntry extends TimestampedEntry<RegisterEntry> {
   @Override
   public void writeObject(BufferOutput buffer, Alleycat alleycat) {
     super.writeObject(buffer, alleycat);
-    alleycat.writeObject(member, buffer);
     alleycat.writeObject(connection, buffer);
   }
 
   @Override
   public void readObject(BufferInput buffer, Alleycat alleycat) {
     super.readObject(buffer, alleycat);
-    member = alleycat.readObject(buffer);
     connection = alleycat.readObject(buffer);
   }
 
   @Override
   public String toString() {
-    return String.format("%s[index=%d, term=%d, member=%s, connection=%s]", getClass().getSimpleName(), getIndex(), getTerm(), getMember(), getConnection());
+    return String.format("%s[index=%d, term=%d, connection=%s]", getClass().getSimpleName(), getIndex(), getTerm(), getConnection());
   }
 
 }

@@ -24,18 +24,15 @@ import net.kuujo.copycat.raft.Member;
  */
 class MemberState {
   private final Member member;
-  private long timestamp;
   private int index;
-  private long session;
   private long matchIndex;
   private long nextIndex;
+  private long time;
 
-  public MemberState(Member member, long timestamp) {
+  public MemberState(Member member) {
     if (member == null)
       throw new NullPointerException("member cannot be null");
-
     this.member = member;
-    this.timestamp = timestamp;
   }
 
   /**
@@ -45,26 +42,6 @@ class MemberState {
    */
   public Member getMember() {
     return member;
-  }
-
-  /**
-   * Returns the member session.
-   *
-   * @return The member session.
-   */
-  public long getSession() {
-    return session;
-  }
-
-  /**
-   * Sets the member session.
-   *
-   * @param session The member session.
-   * @return The member state.
-   */
-  MemberState setSession(long session) {
-    this.session = session;
-    return this;
   }
 
   /**
@@ -128,16 +105,23 @@ class MemberState {
   }
 
   /**
-   * Updates the member.
+   * Returns the member commit time.
+   *
+   * @return The member commit time.
    */
-  public boolean update(long timestamp, long timeout) {
-    if (timestamp - timeout > this.timestamp) {
-      this.timestamp = timestamp;
-      return false;
-    } else {
-      this.timestamp = timestamp;
-      return true;
-    }
+  long getTime() {
+    return time;
+  }
+
+  /**
+   * Sets the member commit time.
+   *
+   * @param time The member commit time.
+   * @return The member state.
+   */
+  MemberState setTime(long time) {
+    this.time = time;
+    return this;
   }
 
 }

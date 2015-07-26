@@ -21,6 +21,7 @@ import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.alleycat.util.ReferenceManager;
 import net.kuujo.copycat.BuilderPool;
+import net.kuujo.copycat.raft.Members;
 import net.kuujo.copycat.raft.RaftError;
 
 import java.util.Objects;
@@ -55,6 +56,7 @@ public class KeepAliveResponse extends ClientResponse<KeepAliveResponse> {
 
   private long term;
   private int leader;
+  private Members members;
 
   public KeepAliveResponse(ReferenceManager<KeepAliveResponse> referenceManager) {
     super(referenceManager);
@@ -83,6 +85,15 @@ public class KeepAliveResponse extends ClientResponse<KeepAliveResponse> {
     return leader;
   }
 
+  /**
+   * Returns the cluster members.
+   *
+   * @return The cluster members.
+   */
+  public Members members() {
+    return members;
+  }
+
   @Override
   public void readObject(BufferInput buffer, Alleycat alleycat) {
     status = Status.forId(buffer.readByte());
@@ -91,6 +102,7 @@ public class KeepAliveResponse extends ClientResponse<KeepAliveResponse> {
       term = buffer.readLong();
       leader = buffer.readInt();
       version = buffer.readLong();
+      members = alleycat.readObject(buffer);
     } else {
       error = RaftError.forId(buffer.readByte());
     }
@@ -101,6 +113,7 @@ public class KeepAliveResponse extends ClientResponse<KeepAliveResponse> {
     buffer.writeByte(status.id());
     if (status == Status.OK) {
       buffer.writeLong(term).writeInt(leader).writeLong(version);
+      alleycat.writeObject(members, buffer);
     } else {
       buffer.writeByte(error.id());
     }
@@ -141,6 +154,7 @@ public class KeepAliveResponse extends ClientResponse<KeepAliveResponse> {
       super.reset();
       response.term = 0;
       response.leader = 0;
+      response.members = null;
     }
 
     /**
@@ -167,6 +181,19 @@ public class KeepAliveResponse extends ClientResponse<KeepAliveResponse> {
       return this;
     }
 
+    /**
+     * Sets the response members.
+     *
+     * @param members The response members.
+     * @return The response builder.
+     */
+    public Builder withMembers(Members members) {
+      if (members == null)
+        throw new NullPointerException("members cannot be null");
+      response.members = members;
+      return this;
+    }
+
     @Override
     public KeepAliveResponse build() {
       super.build();
@@ -174,6 +201,8 @@ public class KeepAliveResponse extends ClientResponse<KeepAliveResponse> {
         throw new IllegalArgumentException("term cannot be negative");
       if (response.leader < 0)
         throw new IllegalArgumentException("leader cannot be negative");
+      if (response.status == Status.OK && response.members == null)
+        throw new NullPointerException("members cannot be null");
       return response;
     }
 

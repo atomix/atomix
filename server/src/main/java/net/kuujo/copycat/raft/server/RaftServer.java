@@ -20,7 +20,7 @@ import net.kuujo.alleycat.ServiceLoaderResolver;
 import net.kuujo.copycat.ConfigurationException;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.raft.*;
-import net.kuujo.copycat.raft.server.state.RaftServerState;
+import net.kuujo.copycat.raft.server.state.ServerContext;
 import net.kuujo.copycat.transport.Transport;
 import net.kuujo.copycat.util.concurrent.Context;
 
@@ -44,7 +44,17 @@ public class RaftServer implements ManagedRaft {
     /**
      * Start state.
      */
-    START,
+    INACTIVE,
+
+    /**
+     * Join state.
+     */
+    JOIN,
+
+    /**
+     * Leave state.
+     */
+    LEAVE,
 
     /**
      * Passive state.
@@ -77,12 +87,12 @@ public class RaftServer implements ManagedRaft {
     return new Builder();
   }
 
-  private final RaftServerState context;
+  private final ServerContext context;
   private CompletableFuture<Raft> openFuture;
   private CompletableFuture<Void> closeFuture;
   private boolean open;
 
-  private RaftServer(RaftServerState context) {
+  private RaftServer(ServerContext context) {
     this.context = context;
   }
 
@@ -101,8 +111,7 @@ public class RaftServer implements ManagedRaft {
    * @return The current Raft leader.
    */
   public Member leader() {
-    int leader = context.getLeader();
-    return leader != 0 ? context.getMembers().member(leader) : null;
+    return context.getLeader();
   }
 
   @Override
@@ -215,9 +224,6 @@ public class RaftServer implements ManagedRaft {
     private RaftConfig config = new RaftConfig();
     private StateMachine stateMachine;
     private int memberId;
-    private Member.Type memberType = Member.Type.ACTIVE;
-    private String host;
-    private int port;
     private Members members;
 
     private Builder() {
@@ -248,45 +254,6 @@ public class RaftServer implements ManagedRaft {
      */
     public Builder withMemberId(int memberId) {
       this.memberId = memberId;
-      return this;
-    }
-
-    /**
-     * Sets the server member type.
-     *
-     * @param type The server member type.
-     * @return The Raft builder.
-     */
-    public Builder withMemberType(Member.Type type) {
-      if (type == null)
-        throw new NullPointerException("type cannot be null");
-      this.memberType = type;
-      return this;
-    }
-
-    /**
-     * Sets the server host.
-     *
-     * @param host The server host.
-     * @return The Raft builder.
-     */
-    public Builder withHost(String host) {
-      if (host == null)
-        throw new NullPointerException("host cannot be null");
-      this.host = host;
-      return this;
-    }
-
-    /**
-     * Sets the server port.
-     *
-     * @param port The server port.
-     * @return The Raft builder.
-     */
-    public Builder withPort(int port) {
-      if (port < 0)
-        throw new IllegalArgumentException("port cannot be negative");
-      this.port = port;
       return this;
     }
 
@@ -453,14 +420,7 @@ public class RaftServer implements ManagedRaft {
       // Resolve Alleycat serializable types with the ServiceLoaderResolver.
       serializer.resolve(new ServiceLoaderResolver());
 
-      Member member = Member.builder()
-        .withId(memberId)
-        .withType(memberType)
-        .withHost(host)
-        .withPort(port)
-        .build();
-
-      RaftServerState context = (RaftServerState) new RaftServerState(member, members, transport, log, stateMachine, serializer)
+      ServerContext context = (ServerContext) new ServerContext(memberId, members, transport, log, stateMachine, serializer)
         .setHeartbeatInterval(config.getHeartbeatInterval())
         .setElectionTimeout(config.getElectionTimeout())
         .setSessionTimeout(config.getSessionTimeout())

@@ -18,36 +18,38 @@ package net.kuujo.copycat.raft.server.state;
 import net.kuujo.copycat.Listener;
 import net.kuujo.copycat.ListenerContext;
 import net.kuujo.copycat.Listeners;
-import net.kuujo.copycat.raft.Member;
 import net.kuujo.copycat.raft.Session;
+import net.kuujo.copycat.raft.UnknownSessionException;
+import net.kuujo.copycat.raft.protocol.PublishRequest;
+import net.kuujo.copycat.raft.protocol.PublishResponse;
+import net.kuujo.copycat.raft.protocol.Response;
 import net.kuujo.copycat.transport.Connection;
+import net.kuujo.copycat.util.concurrent.Futures;
 
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Raft session.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-abstract class ServerSession implements Session {
+class ServerSession implements Session {
   protected final Listeners<Object> listeners = new Listeners<>();
   private final long id;
-  private final Member member;
-  private final UUID connection;
+  private final UUID connectionId;
+  private Connection connection;
   private boolean expired;
   private boolean closed;
   private final Listeners<Session> openListeners = new Listeners<>();
   private final Listeners<Session> closeListeners = new Listeners<>();
 
-  protected ServerSession(long id, Member member, UUID connection) {
-    if (member == null)
-      throw new NullPointerException("member cannot be null");
-    if (connection == null)
+  ServerSession(long id, UUID connectionId) {
+    if (connectionId == null)
       throw new NullPointerException("connection cannot be null");
 
     this.id = id;
-    this.member = member;
-    this.connection = connection;
+    this.connectionId = connectionId;
   }
 
   @Override
@@ -55,24 +57,53 @@ abstract class ServerSession implements Session {
     return id;
   }
 
-  /**
-   * Returns the session member.
-   *
-   * @return The session member.
-   */
-  public Member member() {
-    return member;
-  }
-
   @Override
   public UUID connection() {
-    return connection;
+    return connectionId;
   }
 
   /**
    * Sets the session connection.
    */
-  abstract ServerSession setConnection(Connection connection);
+  ServerSession setConnection(Connection connection) {
+    this.connection = connection;
+    if (connection != null) {
+      if (!connection.id().equals(connectionId)) {
+        throw new IllegalArgumentException("connection must match session connection ID");
+      }
+      connection.handler(PublishRequest.class, this::handlePublish);
+    }
+    return this;
+  }
+
+  @Override
+  public CompletableFuture<Void> publish(Object message) {
+    if (connection == null)
+      return Futures.exceptionalFuture(new UnknownSessionException("connection lost"));
+
+    return connection.send(PublishRequest.builder()
+      .withSession(id())
+      .withMessage(message)
+      .build())
+      .thenApply(v -> null);
+  }
+
+  /**
+   * Handles a publish request.
+   *
+   * @param request The publish request to handle.
+   * @return A completable future to be completed with the publish response.
+   */
+  @SuppressWarnings("unchecked")
+  protected CompletableFuture<PublishResponse> handlePublish(PublishRequest request) {
+    for (ListenerContext listener : listeners) {
+      listener.accept(request.message());
+    }
+
+    return CompletableFuture.completedFuture(PublishResponse.builder()
+      .withStatus(Response.Status.OK)
+      .build());
+  }
 
   @Override
   public boolean isOpen() {
@@ -93,7 +124,7 @@ abstract class ServerSession implements Session {
   /**
    * Closes the session.
    */
-  protected void close() {
+  void close() {
     closed = true;
     for (ListenerContext<Session> listener : closeListeners) {
       listener.accept(this);
@@ -112,6 +143,17 @@ abstract class ServerSession implements Session {
   @Override
   public boolean isClosed() {
     return closed;
+  }
+
+  /**
+   * Expires the session.
+   */
+  void expire() {
+    closed = true;
+    expired = true;
+    for (ListenerContext<Session> listener : closeListeners) {
+      listener.accept(this);
+    }
   }
 
   @Override

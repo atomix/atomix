@@ -43,9 +43,9 @@ public class AsyncReferenceTest extends ConcurrentTestCase {
    */
   @SuppressWarnings("unchecked")
   public void testSetGet() throws Throwable {
-    Servers servers = createCopycats(3, 2);
+    List<Copycat> servers = createCopycats(3);
 
-    Copycat copycat = servers.active.get(0);
+    Copycat copycat = servers.get(0);
 
     Node node = copycat.create("/test").get();
     AsyncReference<String> reference = node.create(AsyncReference.class).get();
@@ -67,9 +67,9 @@ public class AsyncReferenceTest extends ConcurrentTestCase {
    */
   @SuppressWarnings("unchecked")
   public void testChange() throws Throwable {
-    Servers servers = createCopycats(3, 2);
+    List<Copycat> servers = createCopycats(3);
 
-    Copycat copycat = servers.active.get(0);
+    Copycat copycat = servers.get(0);
 
     Node node = copycat.create("/test").get();
     AsyncReference<String> reference = node.create(AsyncReference.class).get();
@@ -97,16 +97,16 @@ public class AsyncReferenceTest extends ConcurrentTestCase {
    * Tests compare-and-set.
    */
   public void testCompareAndSet() throws Throwable {
-    Servers servers = createCopycats(3, 2);
+    List<Copycat> servers = createCopycats(3);
 
-    Node node1 = servers.active.get(0).create("/test").get();
+    Node node1 = servers.get(0).create("/test").get();
     AsyncReference<Integer> reference1 = node1.create(AsyncReference.class).get();
 
     expectResume();
     reference1.set(1).thenRun(this::resume);
     await();
 
-    Node node2 = servers.active.get(0).create("/test").get();
+    Node node2 = servers.get(0).create("/test").get();
     AsyncReference<Integer> reference2 = node2.create(AsyncReference.class).get();
 
     expectResume();
@@ -127,15 +127,15 @@ public class AsyncReferenceTest extends ConcurrentTestCase {
   /**
    * Creates a Copycat instance.
    */
-  private Servers createCopycats(int activeNodes, int passiveNodes) throws Throwable {
+  private List<Copycat> createCopycats(int nodes) throws Throwable {
     LocalServerRegistry registry = new LocalServerRegistry();
 
     List<Copycat> active = new ArrayList<>();
 
-    expectResumes(activeNodes);
+    expectResumes(nodes);
 
     Members.Builder builder = Members.builder();
-    for (int i = 1; i <= activeNodes; i++) {
+    for (int i = 1; i <= nodes; i++) {
       builder.addMember(Member.builder()
         .withId(i)
         .withHost("localhost")
@@ -145,7 +145,7 @@ public class AsyncReferenceTest extends ConcurrentTestCase {
 
     Members members = builder.build();
 
-    for (int i = 1; i <= activeNodes; i++) {
+    for (int i = 1; i <= nodes; i++) {
       Copycat copycat = CopycatServer.builder()
         .withMemberId(i)
         .withMembers(members)
@@ -164,43 +164,7 @@ public class AsyncReferenceTest extends ConcurrentTestCase {
 
     await();
 
-    List<Copycat> passive = new ArrayList<>();
-
-    expectResumes(passiveNodes);
-
-    for (int i = activeNodes + 1; i <= activeNodes + passiveNodes; i++) {
-      Copycat copycat = CopycatServer.builder()
-        .withMemberId(i)
-        .withMemberType(Member.Type.PASSIVE)
-        .withHost("localhost")
-        .withPort(5000 + i)
-        .withMembers(members)
-        .withTransport(LocalTransport.builder()
-          .withRegistry(registry)
-          .build())
-        .withLog(Log.builder()
-          .withStorageLevel(StorageLevel.MEMORY)
-          .build())
-        .build();
-
-      copycat.open().thenRun(this::resume);
-
-      passive.add(copycat);
-    }
-
-    await();
-
-    return new Servers(active, passive);
-  }
-
-  private static class Servers {
-    private final List<Copycat> active;
-    private final List<Copycat> passive;
-
-    private Servers(List<Copycat> active, List<Copycat> passive) {
-      this.active = active;
-      this.passive = passive;
-    }
+    return active;
   }
 
 }

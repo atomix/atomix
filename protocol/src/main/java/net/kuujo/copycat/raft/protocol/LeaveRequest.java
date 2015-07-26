@@ -21,106 +21,122 @@ import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.alleycat.util.ReferenceManager;
 import net.kuujo.copycat.BuilderPool;
+import net.kuujo.copycat.raft.Member;
 
 import java.util.Objects;
-import java.util.UUID;
 
 /**
- * Protocol register client request.
+ * Protocol leave request.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=272)
-public class RegisterRequest extends ClientRequest<RegisterRequest> {
-  private static final BuilderPool<Builder, RegisterRequest> POOL = new BuilderPool<>(Builder::new);
+@SerializeWith(id=256)
+public class LeaveRequest extends AbstractRequest<LeaveRequest> {
+  private static final BuilderPool<Builder, LeaveRequest> POOL = new BuilderPool<>(Builder::new);
 
   /**
-   * Returns a new register client request builder.
+   * Returns a new leave request builder.
    *
-   * @return A new register client request builder.
+   * @return A new leave request builder.
    */
   public static Builder builder() {
     return POOL.acquire();
   }
 
   /**
-   * Returns a register client request builder for an existing request.
+   * Returns an leave request builder for an existing request.
    *
    * @param request The request to build.
-   * @return The register client request builder.
+   * @return The leave request builder.
    */
-  public static Builder builder(RegisterRequest request) {
+  public static Builder builder(LeaveRequest request) {
     return POOL.acquire(request);
   }
 
-  private UUID connection;
+  private Member member;
 
-  public RegisterRequest(ReferenceManager<RegisterRequest> referenceManager) {
+  private LeaveRequest(ReferenceManager<LeaveRequest> referenceManager) {
     super(referenceManager);
   }
 
   @Override
   public Type type() {
-    return Type.REGISTER;
+    return Type.LEAVE;
   }
 
   /**
-   * Returns the connection ID.
+   * Returns the leaving member.
    *
-   * @return The connection ID.
+   * @return The leaving member.
    */
-  public UUID connection() {
-    return connection;
+  public Member member() {
+    return member;
   }
 
   @Override
   public void writeObject(BufferOutput buffer, Alleycat serializer) {
-    serializer.writeObject(connection, buffer);
+    serializer.writeObject(member, buffer);
   }
 
   @Override
   public void readObject(BufferInput buffer, Alleycat serializer) {
-    connection = serializer.readObject(buffer);
+    member = serializer.readObject(buffer);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(member);
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (object instanceof LeaveRequest) {
+      LeaveRequest request = (LeaveRequest) object;
+      return request.member.equals(member);
+    }
+    return false;
   }
 
   @Override
   public String toString() {
-    return String.format("%s", getClass().getSimpleName());
+    return String.format("%s[member=%s]", getClass().getSimpleName(), member);
   }
 
   /**
-   * Register client request builder.
+   * Leave request builder.
    */
-  public static class Builder extends ClientRequest.Builder<Builder, RegisterRequest> {
+  public static class Builder extends AbstractRequest.Builder<Builder, LeaveRequest> {
 
-    private Builder(BuilderPool<Builder, RegisterRequest> pool) {
-      super(pool, RegisterRequest::new);
+    private Builder(BuilderPool<Builder, LeaveRequest> pool) {
+      super(pool, LeaveRequest::new);
     }
 
     @Override
-    protected void reset() {
+    public void reset() {
       super.reset();
-      request.connection = null;
+      request.member = null;
     }
 
     /**
-     * Sets the connection ID.
+     * Sets the request member.
      *
-     * @param connection The connection ID.
+     * @param member The request member.
      * @return The request builder.
      */
-    public Builder withConnection(UUID connection) {
-      if (connection == null)
-        throw new NullPointerException("connection cannot be null");
-      request.connection = connection;
+    public Builder withMember(Member member) {
+      if (member == null)
+        throw new NullPointerException("member cannot be null");
+      request.member = member;
       return this;
     }
 
     @Override
-    public RegisterRequest build() {
+    public LeaveRequest build() {
       super.build();
-      if (request.connection == null)
-        throw new NullPointerException("connection cannot be null");
+
+      if (request.member == null)
+        throw new NullPointerException("member cannot be null");
+
       return request;
     }
 
