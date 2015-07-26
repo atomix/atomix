@@ -34,7 +34,5 @@ net.kuujo.copycat.raft.protocol.QueryRequest
 net.kuujo.copycat.raft.protocol.QueryResponse
 net.kuujo.copycat.raft.protocol.RegisterRequest
 net.kuujo.copycat.raft.protocol.RegisterResponse
-net.kuujo.copycat.raft.protocol.SyncRequest
-net.kuujo.copycat.raft.protocol.SyncResponse
 net.kuujo.copycat.raft.protocol.VoteRequest
 net.kuujo.copycat.raft.protocol.VoteResponse
