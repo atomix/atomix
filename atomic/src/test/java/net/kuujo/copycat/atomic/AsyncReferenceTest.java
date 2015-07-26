@@ -36,6 +36,7 @@ import java.util.List;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
+@SuppressWarnings("unchecked")
 public class AsyncReferenceTest extends ConcurrentTestCase {
 
   /**
@@ -66,7 +67,7 @@ public class AsyncReferenceTest extends ConcurrentTestCase {
    * Tests setting and getting a value with a change event.
    */
   @SuppressWarnings("unchecked")
-  public void testChange() throws Throwable {
+  public void testChangeEvent() throws Throwable {
     List<Copycat> servers = createCopycats(3);
 
     Copycat copycat = servers.get(0);
@@ -82,6 +83,120 @@ public class AsyncReferenceTest extends ConcurrentTestCase {
     await();
 
     expectResumes(2);
+    reference.set("Hello world!").thenRun(this::resume);
+    await();
+
+    expectResume();
+    reference.get().thenAccept(result -> {
+      threadAssertEquals(result, "Hello world!");
+      resume();
+    });
+    await();
+  }
+
+  /**
+   * Tests a membership change.
+   */
+  public void testMembershipChange() throws Throwable {
+    LocalServerRegistry registry = new LocalServerRegistry();
+
+    Members initialMembers = Members.builder()
+      .addMember(Member.builder()
+        .withId(1)
+        .withHost("localhost")
+        .withPort(5001)
+        .build())
+      .addMember(Member.builder()
+        .withId(2)
+        .withHost("localhost")
+        .withPort(5002)
+        .build())
+      .addMember(Member.builder()
+        .withId(3)
+        .withHost("localhost")
+        .withPort(5003)
+        .build())
+      .build();
+
+    Copycat copycat1 = CopycatServer.builder()
+      .withMemberId(1)
+      .withMembers(initialMembers)
+      .withTransport(LocalTransport.builder()
+        .withRegistry(registry)
+        .build())
+      .withLog(Log.builder()
+        .withStorageLevel(StorageLevel.MEMORY)
+        .build())
+      .build();
+    Copycat copycat2 = CopycatServer.builder()
+      .withMemberId(2)
+      .withMembers(initialMembers)
+      .withTransport(LocalTransport.builder()
+        .withRegistry(registry)
+        .build())
+      .withLog(Log.builder()
+        .withStorageLevel(StorageLevel.MEMORY)
+        .build())
+      .build();
+    Copycat copycat3 = CopycatServer.builder()
+      .withMemberId(3)
+      .withMembers(initialMembers)
+      .withTransport(LocalTransport.builder()
+        .withRegistry(registry)
+        .build())
+      .withLog(Log.builder()
+        .withStorageLevel(StorageLevel.MEMORY)
+        .build())
+      .build();
+
+    expectResumes(3);
+    copycat1.open().thenRun(this::resume);
+    copycat2.open().thenRun(this::resume);
+    copycat3.open().thenRun(this::resume);
+    await();
+
+    Members updatedMembers = Members.builder()
+      .addMember(Member.builder()
+        .withId(1)
+        .withHost("localhost")
+        .withPort(5001)
+        .build())
+      .addMember(Member.builder()
+        .withId(2)
+        .withHost("localhost")
+        .withPort(5002)
+        .build())
+      .addMember(Member.builder()
+        .withId(3)
+        .withHost("localhost")
+        .withPort(5003)
+        .build())
+      .addMember(Member.builder()
+        .withId(4)
+        .withHost("localhost")
+        .withPort(5004)
+        .build())
+      .build();
+
+    Copycat copycat4 = CopycatServer.builder()
+      .withMemberId(4)
+      .withMembers(updatedMembers)
+      .withTransport(LocalTransport.builder()
+        .withRegistry(registry)
+        .build())
+      .withLog(Log.builder()
+        .withStorageLevel(StorageLevel.MEMORY)
+        .build())
+      .build();
+
+    expectResume();
+    copycat4.open().thenRun(this::resume);
+    await();
+
+    Node node = copycat4.create("/test").get();
+    AsyncReference<String> reference = node.create(AsyncReference.class).get();
+
+    expectResume();
     reference.set("Hello world!").thenRun(this::resume);
     await();
 

@@ -68,12 +68,20 @@ public class Members implements AlleycatSerializable {
 
   @Override
   public void writeObject(BufferOutput buffer, Alleycat alleycat) {
-    alleycat.writeObject(members, buffer);
+    alleycat.writeObject(list, buffer);
   }
 
   @Override
   public void readObject(BufferInput buffer, Alleycat alleycat) {
-    members = alleycat.readObject(buffer);
+    list = alleycat.readObject(buffer);
+    for (Member member : list) {
+      members.put(member.id(), member);
+    }
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s%s", getClass().getSimpleName(), members.values());
   }
 
   /**

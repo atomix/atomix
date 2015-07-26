@@ -72,7 +72,7 @@ public class JoinState extends InactiveState {
   private void join(Iterator<MemberState> iterator) {
     if (iterator.hasNext()) {
       MemberState member = iterator.next();
-      LOGGER.debug("{} - Attempting to join via {}", context.getMember().id(), member);
+      LOGGER.debug("{} - Attempting to join via {}", context.getMember().id(), member.getMember());
 
       context.getConnections().getConnection(member.getMember()).thenCompose(connection -> {
         JoinRequest request = JoinRequest.builder()
@@ -82,7 +82,7 @@ public class JoinState extends InactiveState {
       }).whenComplete((response, error) -> {
         if (error == null) {
           if (response.status() == Response.Status.OK) {
-            LOGGER.info("{} - Successfully joined via {}", context.getMember().id(), member);
+            LOGGER.info("{} - Successfully joined via {}", context.getMember().id(), member.getMember());
 
             context.getCluster().configure(response.version(), response.active(), response.passive());
 
@@ -94,11 +94,11 @@ public class JoinState extends InactiveState {
               throw new IllegalStateException("not a member of the cluster");
             }
           } else {
-            LOGGER.debug("{} - Failed to join {}", context.getMember().id(), member);
+            LOGGER.debug("{} - Failed to join {}", context.getMember().id(), member.getMember());
             join(iterator);
           }
         } else {
-          LOGGER.debug("{} - Failed to join {}", context.getMember().id(), member);
+          LOGGER.debug("{} - Failed to join {}", context.getMember().id(), member.getMember());
           join(iterator);
         }
       });
