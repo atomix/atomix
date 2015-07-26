@@ -82,7 +82,6 @@
     <module>cluster</module>
     <module>collections</module>
     <module>atomic</module>
-    <module>queue</module>
     <module>all</module>
   </modules>
 
