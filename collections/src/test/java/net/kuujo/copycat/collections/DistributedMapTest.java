@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class AsyncMapTest extends ConcurrentTestCase {
+public class DistributedMapTest extends ConcurrentTestCase {
 
   /**
    * Tests putting and getting a value.
@@ -41,7 +41,7 @@ public class AsyncMapTest extends ConcurrentTestCase {
     Copycat copycat = copycats.get(0);
 
     Node node = copycat.create("/test").get();
-    AsyncMap<String, String> map = node.create(AsyncMap.class).get();
+    DistributedMap<String, String> map = node.create(DistributedMap.class).get();
 
     expectResume();
     map.put("foo", "Hello world!").thenRun(this::resume);
@@ -78,7 +78,7 @@ public class AsyncMapTest extends ConcurrentTestCase {
     Copycat copycat = copycats.get(0);
 
     Node node = copycat.create("/test").get();
-    AsyncMap<String, String> map = node.create(AsyncMap.class).get();
+    DistributedMap<String, String> map = node.create(DistributedMap.class).get();
 
     expectResume();
     map.size().thenAccept(size -> {
@@ -119,7 +119,7 @@ public class AsyncMapTest extends ConcurrentTestCase {
     Copycat copycat = copycats.get(0);
 
     Node node = copycat.create("/test").get();
-    AsyncMap<String, String> map = node.create(AsyncMap.class).get();
+    DistributedMap<String, String> map = node.create(DistributedMap.class).get();
 
     expectResume();
     map.put("foo", "Hello world!", 1, TimeUnit.SECONDS).thenRun(this::resume);

@@ -43,10 +43,10 @@ import java.util.concurrent.TimeUnit;
  * @param <T> The set value type.
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Stateful(AsyncSet.StateMachine.class)
-public class AsyncSet<T> extends Resource {
+@Stateful(DistributedSet.StateMachine.class)
+public class DistributedSet<T> extends Resource {
 
-  public AsyncSet(Raft protocol) {
+  public DistributedSet(Raft protocol) {
     super(protocol);
   }
 

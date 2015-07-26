@@ -31,32 +31,28 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Async lock test.
+ * Async leader election test.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
 @SuppressWarnings("unchecked")
-public class AsyncLockTest extends ConcurrentTestCase {
+public class DistributedElectionTest extends ConcurrentTestCase {
 
   /**
-   * Tests locking and unlocking a lock.
+   * Tests winning leadership.
    */
   @SuppressWarnings("unchecked")
-  public void testLockUnlock() throws Throwable {
+  public void testElection() throws Throwable {
     List<Copycat> servers = createCopycats(3);
 
     Copycat copycat = servers.get(0);
 
     Node node = copycat.create("/test").get();
-    AsyncLock lock = node.create(AsyncLock.class).get();
+    DistributedElection election = node.create(DistributedElection.class).get();
 
-    expectResume();
-    lock.lock().thenRun(this::resume);
-    await();
-
-    expectResume();
-    lock.unlock().thenRun(this::resume);
+    expectResumes(2);
+    election.onElection(v -> resume()).thenRun(this::resume);
     await();
   }
 

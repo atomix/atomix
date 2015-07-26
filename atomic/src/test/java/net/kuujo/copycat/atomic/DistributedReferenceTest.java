@@ -37,7 +37,7 @@ import java.util.List;
  */
 @Test
 @SuppressWarnings("unchecked")
-public class AsyncReferenceTest extends ConcurrentTestCase {
+public class DistributedReferenceTest extends ConcurrentTestCase {
 
   /**
    * Tests setting and getting a value.
@@ -49,7 +49,7 @@ public class AsyncReferenceTest extends ConcurrentTestCase {
     Copycat copycat = servers.get(0);
 
     Node node = copycat.create("/test").get();
-    AsyncReference<String> reference = node.create(AsyncReference.class).get();
+    DistributedReference<String> reference = node.create(DistributedReference.class).get();
 
     expectResume();
     reference.set("Hello world!").thenRun(this::resume);
@@ -73,7 +73,7 @@ public class AsyncReferenceTest extends ConcurrentTestCase {
     Copycat copycat = servers.get(0);
 
     Node node = copycat.create("/test").get();
-    AsyncReference<String> reference = node.create(AsyncReference.class).get();
+    DistributedReference<String> reference = node.create(DistributedReference.class).get();
 
     expectResume();
     reference.onChange(value -> {
@@ -194,7 +194,7 @@ public class AsyncReferenceTest extends ConcurrentTestCase {
     await();
 
     Node node = copycat4.create("/test").get();
-    AsyncReference<String> reference = node.create(AsyncReference.class).get();
+    DistributedReference<String> reference = node.create(DistributedReference.class).get();
 
     expectResume();
     reference.set("Hello world!").thenRun(this::resume);
@@ -215,14 +215,14 @@ public class AsyncReferenceTest extends ConcurrentTestCase {
     List<Copycat> servers = createCopycats(3);
 
     Node node1 = servers.get(0).create("/test").get();
-    AsyncReference<Integer> reference1 = node1.create(AsyncReference.class).get();
+    DistributedReference<Integer> reference1 = node1.create(DistributedReference.class).get();
 
     expectResume();
     reference1.set(1).thenRun(this::resume);
     await();
 
     Node node2 = servers.get(0).create("/test").get();
-    AsyncReference<Integer> reference2 = node2.create(AsyncReference.class).get();
+    DistributedReference<Integer> reference2 = node2.create(DistributedReference.class).get();
 
     expectResume();
     reference2.compareAndSet(1, 2).thenAccept(result -> {

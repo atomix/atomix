@@ -41,11 +41,11 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Stateful(AsyncLeaderElection.StateMachine.class)
-public class AsyncLeaderElection extends Resource {
+@Stateful(DistributedElection.StateMachine.class)
+public class DistributedElection extends Resource {
   private final Set<Listener<Void>> listeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
-  public AsyncLeaderElection(Raft protocol) {
+  public DistributedElection(Raft protocol) {
     super(protocol);
     protocol.session().onReceive(v -> {
       for (Listener<Void> listener : listeners) {
@@ -88,7 +88,7 @@ public class AsyncLeaderElection extends Resource {
 
     @Override
     public void close() {
-      synchronized (AsyncLeaderElection.this) {
+      synchronized (DistributedElection.this) {
         listeners.remove(listener);
         if (listeners.isEmpty()) {
           submit(Unlisten.builder().build());

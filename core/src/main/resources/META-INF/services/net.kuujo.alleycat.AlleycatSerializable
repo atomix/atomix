@@ -14,6 +14,7 @@
 # limitations under the License.
 #
 net.kuujo.copycat.ResourceCommand
+net.kuujo.copycat.ResourceMessage
 net.kuujo.copycat.ResourceQuery
 
 net.kuujo.copycat.manager.CreatePath

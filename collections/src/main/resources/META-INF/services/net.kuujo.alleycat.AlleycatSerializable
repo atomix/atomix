@@ -13,19 +13,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-net.kuujo.copycat.collections.AsyncMap$Clear
-net.kuujo.copycat.collections.AsyncMap$ContainsKey
-net.kuujo.copycat.collections.AsyncMap$Get
-net.kuujo.copycat.collections.AsyncMap$GetOrDefault
-net.kuujo.copycat.collections.AsyncMap$IsEmpty
-net.kuujo.copycat.collections.AsyncMap$Put
-net.kuujo.copycat.collections.AsyncMap$PutIfAbsent
-net.kuujo.copycat.collections.AsyncMap$Remove
-net.kuujo.copycat.collections.AsyncMap$Size
+net.kuujo.copycat.collections.DistributedMap$Clear
+net.kuujo.copycat.collections.DistributedMap$ContainsKey
+net.kuujo.copycat.collections.DistributedMap$Get
+net.kuujo.copycat.collections.DistributedMap$GetOrDefault
+net.kuujo.copycat.collections.DistributedMap$IsEmpty
+net.kuujo.copycat.collections.DistributedMap$Put
+net.kuujo.copycat.collections.DistributedMap$PutIfAbsent
+net.kuujo.copycat.collections.DistributedMap$Remove
+net.kuujo.copycat.collections.DistributedMap$Size
 
-net.kuujo.copycat.collections.AsyncSet$Add
-net.kuujo.copycat.collections.AsyncSet$Clear
-net.kuujo.copycat.collections.AsyncSet$Contains
-net.kuujo.copycat.collections.AsyncSet$IsEmpty
-net.kuujo.copycat.collections.AsyncSet$Remove
-net.kuujo.copycat.collections.AsyncSet$Size
+net.kuujo.copycat.collections.DistributedSet$Add
+net.kuujo.copycat.collections.DistributedSet$Clear
+net.kuujo.copycat.collections.DistributedSet$Contains
+net.kuujo.copycat.collections.DistributedSet$IsEmpty
+net.kuujo.copycat.collections.DistributedSet$Remove
+net.kuujo.copycat.collections.DistributedSet$Size

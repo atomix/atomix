@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.transport;
 
+import net.kuujo.alleycat.io.Buffer;
 import net.kuujo.copycat.Listener;
 import net.kuujo.copycat.ListenerContext;
 import net.kuujo.copycat.Listeners;
@@ -79,12 +80,14 @@ public class LocalConnection implements Connection {
   public <T, U> CompletableFuture<U> send(T message) {
     Context context = getContext();
     CompletableFuture<U> future = new CompletableFuture<>();
-    connection.<T, U>receive(message).whenCompleteAsync((result, error) -> {
+    Buffer buffer = context.serializer().writeObject(message);
+    connection.<U>receive(buffer.flip()).whenCompleteAsync((result, error) -> {
       if (error == null) {
         future.complete(result);
       } else {
         future.completeExceptionally(error);
       }
+      buffer.release();
     }, context);
     return future;
   }
@@ -93,10 +96,12 @@ public class LocalConnection implements Connection {
    * Receives a message.
    */
   @SuppressWarnings("unchecked")
-  private <T, U> CompletableFuture<U> receive(T message) {
+  private <U> CompletableFuture<U> receive(Buffer buffer) {
+    Context context = getContext();
+    Object message = context.serializer().readObject(buffer);
     HandlerHolder holder = handlers.get(message.getClass());
     if (holder != null) {
-      MessageHandler<T, U> handler = holder.handler;
+      MessageHandler<Object, U> handler = holder.handler;
       CompletableFuture<U> future = new CompletableFuture<>();
       holder.context.execute(() -> {
         handler.handle(message).whenComplete((result, error) -> {

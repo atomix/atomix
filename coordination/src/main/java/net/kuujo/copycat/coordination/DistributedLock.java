@@ -42,11 +42,11 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Stateful(AsyncLock.StateMachine.class)
-public class AsyncLock extends Resource {
+@Stateful(DistributedLock.StateMachine.class)
+public class DistributedLock extends Resource {
   private final Queue<Consumer<Boolean>> queue = new ConcurrentLinkedQueue<>();
 
-  public AsyncLock(Raft protocol) {
+  public DistributedLock(Raft protocol) {
     super(protocol);
     protocol.session().onReceive(this::receive);
   }

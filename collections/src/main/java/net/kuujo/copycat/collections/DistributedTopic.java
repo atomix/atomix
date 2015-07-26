@@ -39,12 +39,12 @@ import java.util.concurrent.CopyOnWriteArrayList;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Stateful(AsyncTopic.StateMachine.class)
-public class AsyncTopic<T> extends Resource {
+@Stateful(DistributedTopic.StateMachine.class)
+public class DistributedTopic<T> extends Resource {
   private final List<TopicListenerContext<T>> listeners = new CopyOnWriteArrayList<>();
 
   @SuppressWarnings("unchecked")
-  public AsyncTopic(Raft protocol) {
+  public DistributedTopic(Raft protocol) {
     super(protocol);
     protocol.session().onReceive(message -> {
       for (TopicListenerContext<T> listener : listeners) {

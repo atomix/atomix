@@ -44,10 +44,10 @@ import java.util.concurrent.TimeUnit;
  * @param <V> The map entry type.
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Stateful(AsyncMap.StateMachine.class)
-public class AsyncMap<K, V> extends Resource {
+@Stateful(DistributedMap.StateMachine.class)
+public class DistributedMap<K, V> extends Resource {
 
-  public AsyncMap(Raft protocol) {
+  public DistributedMap(Raft protocol) {
     super(protocol);
   }
 

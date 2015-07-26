@@ -39,12 +39,12 @@ import java.util.concurrent.atomic.AtomicReference;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Stateful(AsyncReference.StateMachine.class)
-public class AsyncReference<T> extends Resource {
+@Stateful(DistributedReference.StateMachine.class)
+public class DistributedReference<T> extends Resource {
   private ConsistencyLevel defaultConsistency = ConsistencyLevel.LINEARIZABLE_LEASE;
   private final java.util.Set<Listener<T>> changeListeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
-  public AsyncReference(Raft protocol) {
+  public DistributedReference(Raft protocol) {
     super(protocol);
     protocol.session().<T>onReceive(event -> {
       for (Listener<T> listener : changeListeners) {
@@ -72,7 +72,7 @@ public class AsyncReference<T> extends Resource {
    * @return The reference.
    * @throws java.lang.NullPointerException If the consistency level is {@code null}
    */
-  public AsyncReference<T> withDefaultConsistencyLevel(ConsistencyLevel consistency) {
+  public DistributedReference<T> withDefaultConsistencyLevel(ConsistencyLevel consistency) {
     setDefaultConsistencyLevel(consistency);
     return this;
   }
@@ -417,7 +417,7 @@ public class AsyncReference<T> extends Resource {
 
     @Override
     public void close() {
-      synchronized (AsyncReference.this) {
+      synchronized (DistributedReference.this) {
         changeListeners.remove(listener);
         if (changeListeners.isEmpty()) {
           submit(ChangeUnlisten.builder().build());

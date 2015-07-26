@@ -32,7 +32,7 @@ import static org.testng.Assert.assertTrue;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class AsyncSetTest extends ConcurrentTestCase {
+public class DistributedSetTest extends ConcurrentTestCase {
 
   /**
    * Tests adding and removing members from a set.
@@ -44,11 +44,11 @@ public class AsyncSetTest extends ConcurrentTestCase {
     Copycat copycat2 = copycats.get(1);
 
     Node node1 = copycat1.create("/test").get();
-    AsyncSet<String> set1 = node1.create(AsyncSet.class).get();
+    DistributedSet<String> set1 = node1.create(DistributedSet.class).get();
     assertFalse(set1.contains("Hello world!").get());
 
     Node node2 = copycat2.create("/test").get();
-    AsyncSet<String> set2 = node2.create(AsyncSet.class).get();
+    DistributedSet<String> set2 = node2.create(DistributedSet.class).get();
     assertFalse(set2.contains("Hello world!").get());
 
     set1.add("Hello world!").join();
