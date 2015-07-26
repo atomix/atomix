@@ -69,9 +69,8 @@ public class LocalClient implements Client {
     }
 
     LocalConnection connection = new LocalConnection(id, this.context, connections);
-    server.connect(connection);
     connections.add(connection);
-    return Futures.completedFutureAsync(connection, context);
+    return server.connect(connection).thenApplyAsync(v -> connection, context);
   }
 
   @Override
