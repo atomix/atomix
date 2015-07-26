@@ -25,48 +25,21 @@ public enum ConsistencyLevel {
   /**
    * Provides serializable consistency.
    */
-  SERIALIZABLE {
-    @Override
-    public boolean isLeaderRequired() {
-      return false;
-    }
-  },
+  SERIALIZABLE,
 
   /**
    * Provides sequential consistency.
    */
-  SEQUENTIAL {
-    @Override
-    public boolean isLeaderRequired() {
-      return false;
-    }
-  },
+  SEQUENTIAL,
 
   /**
    * Provides linearizable consistency based on a leader lease.
    */
-  LINEARIZABLE_LEASE {
-    @Override
-    public boolean isLeaderRequired() {
-      return true;
-    }
-  },
+  LINEARIZABLE_LEASE,
 
   /**
    * Provides strict linearizable consistency.
    */
-  LINEARIZABLE {
-    @Override
-    public boolean isLeaderRequired() {
-      return true;
-    }
-  };
-
-  /**
-   * Returns a boolean value indicating whether a leader is required for the consistency level.
-   *
-   * @return Indicates whether a leader is required for the consistency level.
-   */
-  public abstract boolean isLeaderRequired();
+  LINEARIZABLE
 
 }

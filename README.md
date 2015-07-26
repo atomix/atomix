@@ -15,12 +15,6 @@ solve a variety of distributed systems problems including:
 * [Distributed collections](#collections)
 * [Distributed atomic variables](#atomic-variables)
 
-The newest version of Copycat is 0.6 and is still under development. Over the coming weeks, new resources will
-be added to Copycat's high-level API including:
-* Distributed locks
-* Leader elections
-* State change listeners
-
 **Copycat is still undergoing heavy development and testing and is therefore not recommended for production!**
 
 [Jepsen](https://github.com/aphyr/jepsen) tests are [currently being developed](http://github.com/jhalterman/copycat-jepsen)
@@ -119,108 +113,87 @@ CopycatServer.Builder builder = CopycatServer.builder();
 
 #### Configuring the cluster
 
-Each `CopycatServer` instance requires a [Cluster][Cluster]. To set up the `Cluster`, use a [Cluster.Builder][ClusterBuilder].
+Each `CopycatClient` and `CopycatServer` requires a set of `Members` to which to connect. The `Members` list defines a
+set of servers to which to connect and join.
 
 ```java
-Cluster.Builder clusterBuilder = NettyCluster.builder();
-```
-
-Each server in the Copycat cluster must be identified by a unique numeric identifier. To configure the server ID,
-call `withMemberId` on the cluster builder:
-
-```java
-clusterBuilder.withMemberId(1);
-```
-
-The server ID *must remain constant through failures*. Some systems like ZooKeeper maintain consistency for the server
-ID by storing it in a file. Copycat is agnostic about how configuration is persisted across server restarts.
-
-Once the cluster member ID has been configured, you must add a set of members to the cluster. The `Copycat` instance
-will use this membership list to connect to and communicate with other nodes in the cluster.
-
-Copycat supports two types of replicating members (or servers) - `ACTIVE` and `PASSIVE`.
-
-Active members are Raft voting members and must be listed in the membership list on each server. Copycat does not
-currently support runtime changes to the active membership list, so each server's membership list should be identical.
-
-```java
-clusterBuilder.withMemberId(1)
-  .addMember(NettyMember.builder()
+Members members = Members.builder()
+  .addMember(Member.builder()
     .withId(1)
-    .withHost(InetAddress.getByName("123.456.789.1").getHostName())
-    .withPort(5050)
+    .withHost("123.456.789.0")
+    .withPort(5000)
     .build())
-  .addMember(NettyMember.builder()
-    .withId(1)
-    .withHost(InetAddress.getByName("123.456.789.2").getHostName())
-    .withPort(5050)
+  .addMember(Member.builder()
+    .withId(2)
+    .withHost("123.456.789.0")
+    .withPort(5000)
     .build())
-  .addMember(NettyMember.builder()
-    .withId(1)
-    .withHost(InetAddress.getByName("123.456.789.3").getHostName())
-    .withPort(5050)
+  .addMember(Member.builder()
+    .withId(3)
+    .withHost("123.456.789.0")
+    .withPort(5000)
     .build())
   .build();
 ```
 
-Whether the server being constructed is a Raft voting member is determined by whether its `id` is listed in the configured
-membership list. In the example above, the local ID is `1`, and that member is also listed in the membership list,
-so the server will be started as a Raft voting member.
+Each `Member` in the `Members` list indicates the path to a unique server. Each server in the list must be configured
+with a unique numeric ID that remains consistent across all clients and servers. The server ID *must remain constant
+through failures*. Some systems like ZooKeeper maintain consistency for the server ID by storing it in a file. Copycat
+is agnostic about how configuration is persisted across server restarts.
 
-On the other hand, passive members are participate in replication asynchronously and *should not be listed in the
-Raft membership list.*
-
-```java
-clusterBuilder.withMemberId(5)
-  .addMember(NettyMember.builder()
-    .withId(1)
-    .withHost(InetAddress.getByName("123.456.789.1").getHostName())
-    .withPort(5050)
-    .build())
-  .addMember(NettyMember.builder()
-    .withId(1)
-    .withHost(InetAddress.getByName("123.456.789.2").getHostName())
-    .withPort(5050)
-    .build())
-  .addMember(NettyMember.builder()
-    .withId(1)
-    .withHost(InetAddress.getByName("123.456.789.3").getHostName())
-    .withPort(5050)
-    .build())
-  .build();
-```
-
-*Note that Copycat requires a majority of servers to acknowledge a write, so your cluster should always have at
-least 3 Raft voting members, and the number of voting members should always be odd.*
-
-Up until now we've seen how to configure the `CopycatServer` with a cluster configuration. Let's see how that looks:
+The `Members` list is passed to the `CopycatClient` or `CopycatServer` builder.
 
 ```java
-Copycat copycat = CopycatServer.builder()
-  .withCluster(NettyCluster.builder()
-    .withMemberId(1)
-    .addMember(NettyMember.builder()
+Copycat copycat = CopycatClient.builder()
+  .withMembers(Members.builder()
+    .addMember(Member.builder()
       .withMemberId(1)
-      .withHost(InetAddress.getByName("123.456.789.1").getHostName())
+      .withHost("123.456.789.1")
       .withPort(5050)
       .build())
-    .addMember(NettyMember.builder()
+    .addMember(Member.builder()
       .withMemberId(2)
-      .withHost(InetAddress.getByName("123.456.789.2").getHostName())
+      .withHost("123.456.789.2")
       .withPort(5050)
       .build())
-    .addMember(NettyMember.builder()
+    .addMember(Member.builder()
       .withMemberId(3)
-      .withHost(InetAddress.getByName("123.456.789.3").getHostName())
+      .withHost("123.456.789.3")
       .withPort(5050)
       .build())
     .build())
   .build();
 ```
 
-This example will throw a `ConfigurationException` because the server has not yet been configured with a `Log`.
+When configuring a `CopycatServer`, you must specify a member ID for the server:
 
-#### Configuring the log
+```java
+Copycat copycat = CopycatClient.builder()
+  .withMemberId(1)
+  .withMembers(Members.builder()
+    .addMember(Member.builder()
+      .withMemberId(1)
+      .withHost("123.456.789.1")
+      .withPort(5050)
+      .build())
+    .addMember(Member.builder()
+      .withMemberId(2)
+      .withHost("123.456.789.2")
+      .withPort(5050)
+      .build())
+    .addMember(Member.builder()
+      .withMemberId(3)
+      .withHost("123.456.789.3")
+      .withPort(5050)
+      .build())
+    .build())
+  .build();
+```
+
+The member ID must be represented in the provided `Members` list. Note that this example will throw a `ConfigurationException`
+because the server has not yet been [configured with a log](#configuring-the-log).
+
+#### Configuring the server log
 
 Each `CopycatServer` communicates with other servers in the cluster to replicate state changes through a persistent
 log. To configure the log for the server, create a `Log.Builder`:
@@ -310,18 +283,18 @@ type of `Cluster` which lists only remote members.
 
 ```java
 Copycat copycat = CopycatClient.builder()
-  .withMembers(NettyMembers.builder()
-    .addMember(NettyMember.builder()
+  .withMembers(Members.builder()
+    .addMember(Member.builder()
       .withMemberId(1)
       .withHost("123.456.789.1")
       .withPort(5050)
       .build())
-    .addMember(NettyMember.builder()
+    .addMember(Member.builder()
       .withMemberId(2)
       .withHost("123.456.789.2")
       .withPort(5050)
       .build())
-    .addMember(NettyMember.builder()
+    .addMember(Member.builder()
       .withMemberId(3)
       .withHost("123.456.789.3")
       .withPort(5050)
@@ -429,7 +402,7 @@ When read operations - e.g. `AsyncMap.get` or `AsyncMap.size` - are performed on
 to specify the required level of consistency and optimizes the read according to the user defined consistency level.
 
 The four consistency levels available are:
-* `LINEARIZABLE_STRICT` - Provides guaranteed linearizability by forcing all reads to go through the leader and
+* `LINEARIZABLE` - Provides guaranteed linearizability by forcing all reads to go through the leader and
   verifying leadership with a majority of the Raft cluster during queries
 * `LINEARIZABLE_LEASE` - Provides best-effort optimized linearizability by forcing all reads to go through the leader
   but allowing most queries to be executed without contacting a majority of the cluster so long as less than the
@@ -704,18 +677,6 @@ com.mycompany.SerializableType1
 com.mycompany.SerializableType2
 ```
 
-Alternatively, users can register serializable types directly via the cluster's `Alleycat` instance:
-
-```java
-Cluster cluster = NettyCluster.builder()
-  .withMemberId(...)
-  .withMembers(...)
-  .build();
-
-cluster.alleycat().register(MySerializableType.class, 1);
-cluster.alleycat().register(OtherSerializableType.class, OtherSerializer.class, 2);
-```
-
 Users should annotate all `AlleycatSerializable` types with the `@SerializeWith` annotation and provide a serialization
 ID for efficient serialization. Alley cat reserves serializable type IDs `128` through `255` and Copycat reserves
 `256` through `512`. See the [Alleycat documentation](http://github.com/kuujo/alleycat) for more information.
@@ -730,5 +691,3 @@ Javadocs are available [here][Javadoc].
 [Copycat]: http://kuujo.github.io/copycat/java/net/kuujo/copycat/Copycat.html
 [CopycatServer]: http://kuujo.github.io/copycat/java/net/kuujo/copycat/CopycatServer.html
 [CopycatClient]: http://kuujo.github.io/copycat/java/net/kuujo/copycat/CopycatClient.html
-[Cluster]: http://kuujo.github.io/copycat/java/net/kuujo/copycat/cluster/Cluster.html
-[ClusterBuilder]: http://kuujo.github.io/copycat/java/net/kuujo/copycat/cluster/Cluster.Builder.html
