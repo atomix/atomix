@@ -79,8 +79,8 @@
     <module>server</module>
     <module>raft</module>
     <module>core</module>
-    <module>cluster</module>
     <module>collections</module>
+    <module>coordination</module>
     <module>atomic</module>
     <module>all</module>
   </modules>
