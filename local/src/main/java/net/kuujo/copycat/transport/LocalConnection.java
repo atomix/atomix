@@ -41,6 +41,10 @@ public class LocalConnection implements Connection {
   private final Listeners<Throwable> exceptionListeners = new Listeners<>();
   private final Listeners<Connection> closeListeners = new Listeners<>();
 
+  public LocalConnection(UUID id, Context context) {
+    this(id, context, null);
+  }
+
   public LocalConnection(UUID id, Context context, Set<LocalConnection> connections) {
     this.id = id;
     this.context = context;
@@ -50,8 +54,9 @@ public class LocalConnection implements Connection {
   /**
    * Connects the connection to another connection.
    */
-  void connect(LocalConnection connection) {
+  public LocalConnection connect(LocalConnection connection) {
     this.connection = connection;
+    return this;
   }
 
   @Override
@@ -131,7 +136,8 @@ public class LocalConnection implements Connection {
   public CompletableFuture<Void> close() {
     CompletableFuture<Void> future = new CompletableFuture<>();
     connection.close();
-    connections.remove(this);
+    if (connections != null)
+      connections.remove(this);
 
     for (Listener<Connection> closeListener : closeListeners) {
       context.execute(() -> closeListener.accept(this));
