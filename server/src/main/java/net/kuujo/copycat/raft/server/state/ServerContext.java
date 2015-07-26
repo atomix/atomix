@@ -31,7 +31,7 @@ import net.kuujo.copycat.raft.server.RaftServer;
 import net.kuujo.copycat.raft.server.StateMachine;
 import net.kuujo.copycat.raft.server.log.*;
 import net.kuujo.copycat.transport.Connection;
-import net.kuujo.copycat.transport.MessageHandler;
+import net.kuujo.copycat.transport.LocalConnection;
 import net.kuujo.copycat.transport.Server;
 import net.kuujo.copycat.transport.Transport;
 import net.kuujo.copycat.util.concurrent.ComposableFuture;
@@ -67,7 +67,8 @@ public class ServerContext extends ClientContext {
   private final Members members;
   private final Server server;
   private final ConnectionManager connections;
-  private final StateConnection stateConnection = new StateConnection();
+  private final LocalConnection inbound;
+  private final LocalConnection outbound;
   private final SessionManager sessions;
   private AbstractState state;
   private final Map<Long, SessionContext> contexts = new HashMap<>();
@@ -101,11 +102,15 @@ public class ServerContext extends ClientContext {
 
     this.context = new SingleThreadContext("copycat-server-" + member.id(), serializer);
     this.log = log;
-    this.sessions = new SessionManager(getSession());
+    this.sessions = new SessionManager();
     this.stateMachine = stateMachine;
     this.stateContext = new SingleThreadContext("copycat-server-" + member.id() + "-state-%d", serializer.clone());
     this.server = transport.server(UUID.randomUUID());
     this.connections = new ConnectionManager(transport.client(UUID.randomUUID()));
+    this.inbound = new LocalConnection(id, getContext());
+    this.outbound = new LocalConnection(id, super.getContext());
+    inbound.connect(outbound);
+    outbound.connect(inbound);
 
     log.compactor().filter(this::filter);
   }
@@ -447,7 +452,7 @@ public class ServerContext extends ClientContext {
    */
   @Override
   protected CompletableFuture<Connection> getConnection(Member member) {
-    return CompletableFuture.completedFuture(stateConnection);
+    return CompletableFuture.completedFuture(outbound);
   }
 
   /**
@@ -906,6 +911,12 @@ public class ServerContext extends ClientContext {
           }
         });
 
+        // Register handlers on the inbound local connection.
+        handleConnect(inbound);
+
+        // Set up client handlers.
+        connect(outbound);
+
         transition(JoinState.class);
         open = true;
       });
@@ -1019,80 +1030,6 @@ public class ServerContext extends ClientContext {
       this.timestamp = timestamp;
       return true;
     }
-  }
-
-  /**
-   * Dummy state connection.
-   */
-  private class StateConnection implements Connection {
-
-    @Override
-    public UUID id() {
-      return server.id();
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public <T, U> CompletableFuture<U> send(T request) {
-      Class<?> clazz = request.getClass();
-      if (clazz == RegisterRequest.class) {
-        return execute(() -> (CompletableFuture<U>) state.register((RegisterRequest) request));
-      } else if (clazz == KeepAliveRequest.class) {
-        return execute(() -> (CompletableFuture<U>) state.keepAlive((KeepAliveRequest) request));
-      } else if (clazz == JoinRequest.class) {
-        return execute(() -> (CompletableFuture<U>) state.join((JoinRequest) request));
-      } else if (clazz == LeaveRequest.class) {
-        return execute(() -> (CompletableFuture<U>) state.leave((LeaveRequest) request));
-      } else if (clazz == AppendRequest.class) {
-        return execute(() -> (CompletableFuture<U>) state.append((AppendRequest) request));
-      } else if (clazz == PollRequest.class) {
-        return execute(() -> (CompletableFuture<U>) state.poll((PollRequest) request));
-      } else if (clazz == VoteRequest.class) {
-        return execute(() -> (CompletableFuture<U>) state.vote((VoteRequest) request));
-      } else if (clazz == CommandRequest.class) {
-        return execute(() -> (CompletableFuture<U>) state.command((CommandRequest) request));
-      } else if (clazz == QueryRequest.class) {
-        return execute(() -> (CompletableFuture<U>) state.query((QueryRequest) request));
-      }
-      return Futures.exceptionalFuture(new IllegalStateException("no handlers registered"));
-    }
-
-    /**
-     * Executes a call to the internal Raft state on the server thread.
-     */
-    private <U> CompletableFuture<U> execute(Supplier<CompletableFuture<U>> supplier) {
-      Context context = Context.currentContext();
-      if (context == null) {
-        throw new IllegalStateException("not a Copycat thread");
-      }
-
-      ComposableFuture<U> future = new ComposableFuture<>();
-      ServerContext.this.context.execute(() -> {
-        supplier.get().whenCompleteAsync(future, context);
-      });
-      return future;
-    }
-
-    @Override
-    public <T, U> Connection handler(Class<T> type, MessageHandler<T, U> handler) {
-      return null;
-    }
-
-    @Override
-    public ListenerContext<Throwable> exceptionListener(Listener<Throwable> listener) {
-      return null;
-    }
-
-    @Override
-    public ListenerContext<Connection> closeListener(Listener<Connection> listener) {
-      return null;
-    }
-
-    @Override
-    public CompletableFuture<Void> close() {
-      return null;
-    }
-
   }
 
 }

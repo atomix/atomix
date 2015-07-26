@@ -28,13 +28,8 @@ import java.util.UUID;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 class SessionManager {
-  private final Session session;
   private final Map<UUID, Connection> connections = new HashMap<>();
   private final Map<Long, ServerSession> sessions = new HashMap<>();
-
-  SessionManager(Session session) {
-    this.session = session;
-  }
 
   /**
    * Registers a connection.
@@ -85,13 +80,7 @@ class SessionManager {
    * @return The session or {@code null} if the session doesn't exist.
    */
   Session getSession(long sessionId) {
-    Session session = sessions.get(sessionId);
-    if (session != null) {
-      return session;
-    } else if (sessionId == this.session.id()) {
-      return this.session;
-    }
-    return null;
+    return sessions.get(sessionId);
   }
 
 }

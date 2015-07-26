@@ -275,7 +275,8 @@ class PassiveState extends AbstractState {
         .withError(RaftError.Type.NO_LEADER_ERROR)
         .build()));
     } else {
-      return context.getConnection(context.getLeader())
+      return context.getConnections()
+        .getConnection(context.getLeader())
         .thenCompose(connection -> connection.send(request));
     }
   }

@@ -41,7 +41,6 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Function;
 
 /**
  * Raft client.
@@ -51,6 +50,7 @@ import java.util.function.Function;
 public class ClientContext implements Managed<Void> {
   private static final Logger LOGGER = LoggerFactory.getLogger(ClientContext.class);
   private static final long REQUEST_TIMEOUT = TimeUnit.SECONDS.toMillis(10);
+  protected final UUID id = UUID.randomUUID();
   private Members members;
   private final Transport transport;
   private final Client client;
@@ -84,7 +84,7 @@ public class ClientContext implements Managed<Void> {
     this.members = members;
     this.transport = transport;
     this.context = new SingleThreadContext("copycat-client-" + UUID.randomUUID().toString(), serializer.clone());
-    this.client = transport.client(UUID.randomUUID());
+    this.client = transport.client(id);
     this.session = new ClientSession(context);
   }
 
@@ -294,20 +294,28 @@ public class ClientContext implements Managed<Void> {
       return Futures.exceptionalFuture(e);
     }
 
-    Function<Connection, Connection> connectHandler = connection -> {
-      this.connection = connection;
-      this.remote = member;
-      session.connect(connection);
-      connection.closeListener(c -> this.connection = null);
-      connection.exceptionListener(e -> this.connection = null);
-      return connection;
-    };
-
     if (connection != null) {
-      return connection.close().thenCompose(v -> client.connect(address)).thenApply(connectHandler);
+      return connection.close().thenCompose(v -> client.connect(address)).thenApply(connection -> {
+        this.remote = member;
+        return connect(connection);
+      });
     }
 
-    return client.connect(address).thenApply(connectHandler);
+    return client.connect(address).thenApply(connection -> {
+      this.remote = member;
+      return connect(connection);
+    });
+  }
+
+  /**
+   * Sets up a new connection.
+   */
+  protected Connection connect(Connection connection) {
+    this.connection = connection;
+    session.connect(connection);
+    connection.closeListener(c -> this.connection = null);
+    connection.exceptionListener(e -> this.connection = null);
+    return connection;
   }
 
   /**
