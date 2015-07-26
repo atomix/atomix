@@ -37,7 +37,7 @@ public class LocalConnection implements Connection {
   private final Context context;
   private final Set<LocalConnection> connections;
   private LocalConnection connection;
-  private final Map<String, HandlerHolder> handlers = new ConcurrentHashMap<>();
+  private final Map<Class, HandlerHolder> handlers = new ConcurrentHashMap<>();
   private final Listeners<Throwable> exceptionListeners = new Listeners<>();
   private final Listeners<Connection> closeListeners = new Listeners<>();
 
@@ -94,7 +94,7 @@ public class LocalConnection implements Connection {
    */
   @SuppressWarnings("unchecked")
   private <T, U> CompletableFuture<U> receive(T message) {
-    HandlerHolder holder = handlers.get(message.getClass().getName());
+    HandlerHolder holder = handlers.get(message.getClass());
     if (holder != null) {
       MessageHandler<T, U> handler = holder.handler;
       CompletableFuture<U> future = new CompletableFuture<>();
@@ -115,7 +115,7 @@ public class LocalConnection implements Connection {
   @Override
   public <T, U> Connection handler(Class<T> type, MessageHandler<T, U> handler) {
     if (handler != null) {
-      handlers.put(type.getName(), new HandlerHolder(handler, getContext()));
+      handlers.put(type, new HandlerHolder(handler, getContext()));
     } else {
       handlers.remove(type);
     }
