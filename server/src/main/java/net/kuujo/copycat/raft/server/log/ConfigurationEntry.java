@@ -27,14 +27,14 @@ import net.kuujo.copycat.raft.Members;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class ConfigurationEntry extends RaftEntry<ConfigurationEntry> {
+public class ConfigurationEntry extends RaftEntry<ConfigurationEntry> {
   private Members active;
   private Members passive;
 
-  protected ConfigurationEntry() {
+  public ConfigurationEntry() {
   }
 
-  protected ConfigurationEntry(ReferenceManager<Entry<?>> referenceManager) {
+  public ConfigurationEntry(ReferenceManager<Entry<?>> referenceManager) {
     super(referenceManager);
   }
 
