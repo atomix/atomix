@@ -17,6 +17,7 @@ package net.kuujo.copycat.coordination;
 
 import net.kuujo.alleycat.Alleycat;
 import net.kuujo.alleycat.AlleycatSerializable;
+import net.kuujo.alleycat.SerializeWith;
 import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.copycat.*;
@@ -122,6 +123,7 @@ public class DistributedElection extends Resource {
   /**
    * Listen command.
    */
+  @SerializeWith(id=510)
   public static class Listen extends ElectionCommand<Void> {
 
     /**
@@ -152,6 +154,7 @@ public class DistributedElection extends Resource {
   /**
    * Unlisten command.
    */
+  @SerializeWith(id=510)
   public static class Unlisten extends ElectionCommand<Void> {
 
     /**

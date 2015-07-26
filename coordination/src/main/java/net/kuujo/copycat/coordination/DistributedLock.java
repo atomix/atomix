@@ -17,6 +17,7 @@ package net.kuujo.copycat.coordination;
 
 import net.kuujo.alleycat.Alleycat;
 import net.kuujo.alleycat.AlleycatSerializable;
+import net.kuujo.alleycat.SerializeWith;
 import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.copycat.BuilderPool;
@@ -158,6 +159,7 @@ public class DistributedLock extends Resource {
   /**
    * Lock command.
    */
+  @SerializeWith(id=512)
   public static class Lock extends LockCommand<Boolean> {
 
     /**
@@ -239,6 +241,7 @@ public class DistributedLock extends Resource {
   /**
    * Unlock command.
    */
+  @SerializeWith(id=513)
   public static class Unlock extends LockCommand<Void> {
 
     /**
