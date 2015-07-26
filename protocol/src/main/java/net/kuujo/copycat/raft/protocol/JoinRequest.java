@@ -30,7 +30,7 @@ import java.util.Objects;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=256)
+@SerializeWith(id=260)
 public class JoinRequest extends AbstractRequest<JoinRequest> {
   private static final BuilderPool<Builder, JoinRequest> POOL = new BuilderPool<>(Builder::new);
 

@@ -31,7 +31,7 @@ import java.util.Objects;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=265)
+@SerializeWith(id=263)
 public class KeepAliveResponse extends ClientResponse<KeepAliveResponse> {
   private static final BuilderPool<Builder, KeepAliveResponse> POOL = new BuilderPool<>(Builder::new);
 

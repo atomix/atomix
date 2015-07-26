@@ -30,7 +30,7 @@ import java.util.Objects;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=257)
+@SerializeWith(id=265)
 public class LeaveResponse extends AbstractResponse<LeaveResponse> {
   private static final BuilderPool<Builder, LeaveResponse> POOL = new BuilderPool<>(Builder::new);
 

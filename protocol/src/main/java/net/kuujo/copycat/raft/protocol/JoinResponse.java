@@ -31,7 +31,7 @@ import java.util.Objects;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=257)
+@SerializeWith(id=261)
 public class JoinResponse extends AbstractResponse<JoinResponse> {
   private static final BuilderPool<Builder, JoinResponse> POOL = new BuilderPool<>(Builder::new);
 

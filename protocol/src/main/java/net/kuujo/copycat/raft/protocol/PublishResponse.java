@@ -30,7 +30,7 @@ import java.util.Objects;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=263)
+@SerializeWith(id=269)
 public class PublishResponse extends AbstractResponse<PublishResponse> {
   private static final BuilderPool<Builder, PublishResponse> POOL = new BuilderPool<>(Builder::new);
 

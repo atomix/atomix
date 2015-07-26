@@ -26,7 +26,7 @@ import java.util.Objects;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=264)
+@SerializeWith(id=262)
 public class KeepAliveRequest extends SessionRequest<KeepAliveRequest> {
   private static final BuilderPool<Builder, KeepAliveRequest> POOL = new BuilderPool<>(Builder::new);
 

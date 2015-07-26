@@ -29,7 +29,7 @@ import java.util.Objects;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=262)
+@SerializeWith(id=268)
 public class PublishRequest extends SessionRequest<PublishRequest> {
   private static final BuilderPool<Builder, PublishRequest> POOL = new BuilderPool<>(Builder::new);
 

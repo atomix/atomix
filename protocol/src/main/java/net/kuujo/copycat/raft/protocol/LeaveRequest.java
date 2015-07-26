@@ -30,7 +30,7 @@ import java.util.Objects;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=256)
+@SerializeWith(id=264)
 public class LeaveRequest extends AbstractRequest<LeaveRequest> {
   private static final BuilderPool<Builder, LeaveRequest> POOL = new BuilderPool<>(Builder::new);
 
