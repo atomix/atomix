@@ -221,7 +221,7 @@
             <version>${maven.javadoc.plugin.version}</version>
             <configuration>
               <show>public</show>
-              <excludePackageNames>net.kuujo.copycat.server.state.*:net.kuujo.copycat.client.state.*</excludePackageNames>
+              <excludePackageNames>*.state.*</excludePackageNames>
               <reportOutputDirectory>target/docs</reportOutputDirectory>
               <additionalparam>-Xdoclint:none</additionalparam>
               <aggregate>true</aggregate>

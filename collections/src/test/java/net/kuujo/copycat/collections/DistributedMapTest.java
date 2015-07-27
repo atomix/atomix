@@ -17,9 +17,17 @@ package net.kuujo.copycat.collections;
 
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import net.kuujo.copycat.Copycat;
+import net.kuujo.copycat.CopycatServer;
 import net.kuujo.copycat.Node;
+import net.kuujo.copycat.log.Log;
+import net.kuujo.copycat.log.StorageLevel;
+import net.kuujo.copycat.raft.Member;
+import net.kuujo.copycat.raft.Members;
+import net.kuujo.copycat.transport.LocalServerRegistry;
+import net.kuujo.copycat.transport.LocalTransport;
 import org.testng.annotations.Test;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -154,27 +162,30 @@ public class DistributedMapTest extends ConcurrentTestCase {
    * Creates a Copycat instance.
    */
   private List<Copycat> createCopycats(int nodes) throws Throwable {
-  /*
-    TestMemberRegistry registry = new TestMemberRegistry();
+    LocalServerRegistry registry = new LocalServerRegistry();
 
     List<Copycat> copycats = new ArrayList<>();
 
     expectResumes(nodes);
 
+    Members.Builder builder = Members.builder();
     for (int i = 1; i <= nodes; i++) {
-      TestCluster.Builder builder = TestCluster.builder()
-        .withMemberId(i)
-        .withRegistry(registry);
+      builder.addMember(Member.builder()
+        .withId(i)
+        .withHost("localhost")
+        .withPort(5000 + i)
+        .build());
+    }
 
-      for (int j = 1; j <= nodes; j++) {
-        builder.addMember(TestMember.builder()
-          .withId(j)
-          .withAddress(String.format("test-%d", j))
-          .build());
-      }
+    Members members = builder.build();
 
+    for (int i = 1; i <= nodes; i++) {
       Copycat copycat = CopycatServer.builder()
-        .withCluster(builder.build())
+        .withMemberId(i)
+        .withMembers(members)
+        .withTransport(LocalTransport.builder()
+          .withRegistry(registry)
+          .build())
         .withLog(Log.builder()
           .withStorageLevel(StorageLevel.MEMORY)
           .build())
@@ -183,11 +194,11 @@ public class DistributedMapTest extends ConcurrentTestCase {
       copycat.open().thenRun(this::resume);
 
       copycats.add(copycat);
-    }*/
+    }
 
     await();
 
-    return Collections.EMPTY_LIST;
+    return copycats;
   }
 
 }

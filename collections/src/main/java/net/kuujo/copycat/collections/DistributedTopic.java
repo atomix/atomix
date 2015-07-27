@@ -15,22 +15,15 @@
  */
 package net.kuujo.copycat.collections;
 
-import net.kuujo.alleycat.Alleycat;
-import net.kuujo.alleycat.AlleycatSerializable;
-import net.kuujo.alleycat.io.BufferInput;
-import net.kuujo.alleycat.io.BufferOutput;
-import net.kuujo.copycat.*;
-import net.kuujo.copycat.raft.Command;
-import net.kuujo.copycat.raft.Operation;
+import net.kuujo.copycat.Listener;
+import net.kuujo.copycat.ListenerContext;
+import net.kuujo.copycat.Resource;
+import net.kuujo.copycat.Stateful;
+import net.kuujo.copycat.collections.state.TopicCommands;
+import net.kuujo.copycat.collections.state.TopicState;
 import net.kuujo.copycat.raft.Raft;
-import net.kuujo.copycat.raft.Session;
-import net.kuujo.copycat.raft.server.Apply;
-import net.kuujo.copycat.raft.server.Commit;
-import net.kuujo.copycat.raft.server.Filter;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -39,8 +32,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Stateful(DistributedTopic.StateMachine.class)
-public class DistributedTopic<T> extends Resource {
+@Stateful(TopicState.class)
+public class DistributedTopic<T> extends Resource implements AsyncTopic<T> {
   private final List<TopicListenerContext<T>> listeners = new CopyOnWriteArrayList<>();
 
   @SuppressWarnings("unchecked")
@@ -53,24 +46,14 @@ public class DistributedTopic<T> extends Resource {
     });
   }
 
-  /**
-   * Publishes a message to the topic.
-   *
-   * @param message The message to publish.
-   * @return A completable future to be completed once the message has been published.
-   */
+  @Override
   public CompletableFuture<Void> publish(T message) {
-    return submit(PublishCommand.builder()
+    return submit(TopicCommands.Publish.builder()
       .withMessage(message)
       .build());
   }
 
-  /**
-   * Sets a message listener on the topic.
-   *
-   * @param listener The message listener.
-   * @return The listener context.
-   */
+  @Override
   public ListenerContext<T> onMessage(Listener<T> listener) {
     TopicListenerContext<T> context = new TopicListenerContext<T>(listener);
     listeners.add(context);
@@ -95,165 +78,6 @@ public class DistributedTopic<T> extends Resource {
     @Override
     public void close() {
       listeners.remove(this);
-    }
-  }
-
-  /**
-   * Abstract topic command.
-   */
-  public static abstract class TopicCommand<V> implements Command<V>, AlleycatSerializable {
-
-    /**
-     * Base map command builder.
-     */
-    public static abstract class Builder<T extends Builder<T, U, V>, U extends TopicCommand<V>, V> extends Command.Builder<T, U, V> {
-      protected Builder(BuilderPool<T, U> pool) {
-        super(pool);
-      }
-    }
-  }
-
-  /**
-   * Publish command.
-   */
-  public static class PublishCommand<T> extends TopicCommand<Void> {
-
-    /**
-     * Returns a new publish command builder.
-     *
-     * @param <T> The message type.
-     * @return The publish command builder.
-     */
-    @SuppressWarnings("unchecked")
-    public static <T> Builder<T> builder() {
-      return Operation.builder(Builder.class, Builder::new);
-    }
-
-    private T message;
-
-    /**
-     * Returns the publish message.
-     *
-     * @return The publish message.
-     */
-    public T message() {
-      return message;
-    }
-
-    @Override
-    public void writeObject(BufferOutput buffer, Alleycat serializer) {
-      serializer.writeObject(message, buffer);
-    }
-
-    @Override
-    public void readObject(BufferInput buffer, Alleycat serializer) {
-      message = serializer.readObject(buffer);
-    }
-
-    /**
-     * Publish command builder.
-     */
-    public static class Builder<T> extends TopicCommand.Builder<Builder<T>, PublishCommand<T>, Void> {
-
-      public Builder(BuilderPool<Builder<T>, PublishCommand<T>> pool) {
-        super(pool);
-      }
-
-      /**
-       * Sets the publish command message.
-       *
-       * @param message The message.
-       * @return The publish command builder.
-       */
-      public Builder<T> withMessage(T message) {
-        command.message = message;
-        return this;
-      }
-
-      @Override
-      protected PublishCommand<T> create() {
-        return new PublishCommand<>();
-      }
-    }
-  }
-
-  /**
-   * Subscribe command.
-   */
-  public static class SubscribeCommand extends TopicCommand<Void> {
-
-    /**
-     * Returns a new publish command builder.
-     *
-     * @return The publish command builder.
-     */
-    @SuppressWarnings("unchecked")
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
-    }
-
-    @Override
-    public void writeObject(BufferOutput buffer, Alleycat alleycat) {
-
-    }
-
-    @Override
-    public void readObject(BufferInput buffer, Alleycat alleycat) {
-
-    }
-
-    /**
-     * Publish command builder.
-     */
-    public static class Builder extends TopicCommand.Builder<Builder, SubscribeCommand, Void> {
-      public Builder(BuilderPool<Builder, SubscribeCommand> pool) {
-        super(pool);
-      }
-
-      @Override
-      protected SubscribeCommand create() {
-        return new SubscribeCommand();
-      }
-    }
-  }
-
-  /**
-   * Topic state machine.
-   */
-  public static class StateMachine extends net.kuujo.copycat.raft.server.StateMachine {
-    private final Set<Session> sessions = new HashSet<>();
-
-    @Override
-    public void register(Session session) {
-      sessions.add(session);
-    }
-
-    @Override
-    public void expire(Session session) {
-      sessions.remove(session);
-    }
-
-    @Override
-    public void close(Session session) {
-      sessions.remove(session);
-    }
-
-    /**
-     * Handles a publish commit.
-     */
-    @Apply(PublishCommand.class)
-    protected void applyPublish(Commit<PublishCommand> commit) {
-      for (Session session : sessions) {
-        session.publish(commit.operation().message());
-      }
-    }
-
-    /**
-     * Filters a publish commit.
-     */
-    @Filter(PublishCommand.class)
-    protected boolean filterPublish(Commit<PublishCommand> commit) {
-      return false;
     }
   }
 

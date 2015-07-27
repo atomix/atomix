@@ -245,7 +245,7 @@ public class DistributedReferenceTest extends ConcurrentTestCase {
   private List<Copycat> createCopycats(int nodes) throws Throwable {
     LocalServerRegistry registry = new LocalServerRegistry();
 
-    List<Copycat> active = new ArrayList<>();
+    List<Copycat> copycats = new ArrayList<>();
 
     expectResumes(nodes);
 
@@ -274,12 +274,12 @@ public class DistributedReferenceTest extends ConcurrentTestCase {
 
       copycat.open().thenRun(this::resume);
 
-      active.add(copycat);
+      copycats.add(copycat);
     }
 
     await();
 
-    return active;
+    return copycats;
   }
 
 }

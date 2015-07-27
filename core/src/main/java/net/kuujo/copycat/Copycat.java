@@ -15,7 +15,10 @@
  */
 package net.kuujo.copycat;
 
-import net.kuujo.copycat.manager.*;
+import net.kuujo.copycat.manager.CreatePath;
+import net.kuujo.copycat.manager.CreateResource;
+import net.kuujo.copycat.manager.DeletePath;
+import net.kuujo.copycat.manager.PathExists;
 import net.kuujo.copycat.raft.ManagedRaft;
 import net.kuujo.copycat.raft.Raft;
 import net.kuujo.copycat.raft.server.StateMachine;
@@ -124,15 +127,7 @@ public abstract class Copycat implements Managed<Copycat> {
 
   @Override
   public CompletableFuture<Copycat> open() {
-    return raft.open().thenApply(v -> {
-      raft.session().<ResourceMessage>onReceive(message -> {
-        ResourceProtocol resource = resources.get(message.resource());
-        if (resource != null) {
-          resource.session().publish(message);
-        }
-      });
-      return this;
-    });
+    return raft.open().thenApply(v -> this);
   }
 
   @Override

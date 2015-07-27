@@ -13,8 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-net.kuujo.copycat.coordination.DistributedElection$Listen
-net.kuujo.copycat.coordination.DistributedElection$Unlisten
+net.kuujo.copycat.coordination.state.LeaderElectionCommands$Listen
+net.kuujo.copycat.coordination.state.LeaderElectionCommands$Unlisten
 
-net.kuujo.copycat.coordination.DistributedLock$Lock
-net.kuujo.copycat.coordination.DistributedLock$Unlock
+net.kuujo.copycat.coordination.state.LockCommands$Lock
+net.kuujo.copycat.coordination.state.LockCommands$Unlock

@@ -37,7 +37,7 @@ import java.util.List;
  */
 @Test
 @SuppressWarnings("unchecked")
-public class DistributedElectionTest extends ConcurrentTestCase {
+public class DistributedLeaderElectionTest extends ConcurrentTestCase {
 
   /**
    * Tests winning leadership.
@@ -49,7 +49,7 @@ public class DistributedElectionTest extends ConcurrentTestCase {
     Copycat copycat = servers.get(0);
 
     Node node = copycat.create("/test").get();
-    DistributedElection election = node.create(DistributedElection.class).get();
+    DistributedLeaderElection election = node.create(DistributedLeaderElection.class).get();
 
     expectResumes(2);
     election.onElection(v -> resume()).thenRun(this::resume);

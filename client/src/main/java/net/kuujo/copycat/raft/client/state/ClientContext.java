@@ -656,7 +656,7 @@ public class ClientContext implements Managed<Void> {
    */
   private void keepAlive() {
     if (keepAlive.compareAndSet(false, true) && getSessionId() != 0) {
-      keepAlive(members.members()).whenComplete((result, error) -> keepAlive.set(false));
+      keepAlive(new ArrayList<>(members.members())).whenComplete((result, error) -> keepAlive.set(false));
     }
   }
 
