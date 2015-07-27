@@ -90,6 +90,7 @@ public abstract class StateMachine implements AutoCloseable {
   private Map<Compaction.Type, FilterExecutor> allFilters = new HashMap<>();
   private final Map<Class<? extends Operation>, OperationExecutor> operations = new HashMap<>();
   private OperationExecutor allOperation;
+  private long time;
 
   protected StateMachine() {
     init();
@@ -284,12 +285,32 @@ public abstract class StateMachine implements AutoCloseable {
     @Override
     @SuppressWarnings("unchecked")
     public CompletableFuture<Object> apply(Commit<?> commit) {
+      if (Command.class.isAssignableFrom(commit.type())) {
+        setTime(commit.timestamp());
+      }
+
       try {
         return async ? (CompletableFuture<Object>) method.invoke(StateMachine.this, commit) : CompletableFuture.completedFuture(method.invoke(StateMachine.this, commit));
       } catch (IllegalAccessException | InvocationTargetException e) {
         throw new ApplicationException("failed to invoke operation", e);
       }
     }
+  }
+
+  /**
+   * Sets the state machine time.
+   */
+  private void setTime(long time) {
+    this.time = time;
+  }
+
+  /**
+   * Returns the current state machine time.
+   *
+   * @return The current state machine time.
+   */
+  protected long getTime() {
+    return time;
   }
 
   /**
