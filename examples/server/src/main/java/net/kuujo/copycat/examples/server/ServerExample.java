@@ -17,12 +17,11 @@ package net.kuujo.copycat.examples.server;
 
 import net.kuujo.copycat.Copycat;
 import net.kuujo.copycat.CopycatServer;
-import net.kuujo.copycat.cluster.NettyCluster;
-import net.kuujo.copycat.cluster.NettyMember;
-import net.kuujo.copycat.raft.log.Log;
-import net.kuujo.copycat.raft.log.StorageLevel;
-
-import java.net.InetAddress;
+import net.kuujo.copycat.transport.NettyTransport;
+import net.kuujo.copycat.raft.Members;
+import net.kuujo.copycat.raft.Member;
+import net.kuujo.copycat.log.Log;
+import net.kuujo.copycat.log.StorageLevel;
 
 /**
  * Server example.
@@ -42,25 +41,26 @@ public class ServerExample {
     int serverId = Integer.valueOf(parts[0]);
     int port = Integer.valueOf(parts[1]);
 
-    NettyCluster.Builder builder = NettyCluster.builder()
-      .withMemberId(serverId)
-      .addMember(NettyMember.builder()
+    Members.Builder builder = Members.builder()
+      .addMember(Member.builder()
         .withId(serverId)
-        .withHost(InetAddress.getLocalHost().getHostName())
+        .withHost("localhost")
         .withPort(port)
         .build());
 
     for (int i = 1; i < args.length; i++) {
       parts = args[i].split(":");
-      builder.addMember(NettyMember.builder()
-        .withId(Integer.valueOf(parts[0]))
-        .withHost(InetAddress.getByName(parts[1]).getHostName())
-        .withPort(Integer.valueOf(parts[2]))
-        .build());
+      builder.addMember(Member.builder()
+          .withId(Integer.valueOf(parts[0]))
+          .withHost(parts[1])
+          .withPort(Integer.valueOf(parts[2]))
+          .build());
     }
 
     Copycat copycat = CopycatServer.builder()
-      .withCluster(builder.build())
+      .withTransport(NettyTransport.builder().build())
+      .withMemberId(serverId)
+      .withMembers(builder.build())
       .withLog(Log.builder().withStorageLevel(StorageLevel.MEMORY).build())
       .build();
 

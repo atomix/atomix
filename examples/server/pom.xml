@@ -25,12 +25,17 @@
     </dependency>
     <dependency>
       <groupId>net.kuujo.copycat</groupId>
+      <artifactId>copycat-atomic</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>net.kuujo.copycat</groupId>
       <artifactId>copycat-collections</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>net.kuujo.copycat</groupId>
-      <artifactId>copycat-atomic</artifactId>
+      <artifactId>copycat-coordination</artifactId>
       <version>${project.version}</version>
     </dependency>
   </dependencies>
