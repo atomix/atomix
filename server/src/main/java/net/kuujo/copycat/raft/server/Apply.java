@@ -24,6 +24,13 @@ import java.lang.annotation.Target;
 
 /**
  * Annotation for applying operations to the state machine.
+ * <p>
+ * This annotation should be used to identify {@link net.kuujo.copycat.raft.server.StateMachine} methods for handling
+ * {@link net.kuujo.copycat.raft.server.Commit commits} submitted to the Raft cluster.
+ * <p>
+ * When an operation is submitted to the Raft cluster and persisted and replicated, the resulting {@link net.kuujo.copycat.raft.server.Commit}
+ * will be applied to the state machine on each {@link net.kuujo.copycat.raft.server.RaftServer} and the result from the
+ * leader will be returned to the client that submitted the operation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

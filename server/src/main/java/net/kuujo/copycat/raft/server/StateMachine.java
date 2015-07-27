@@ -33,7 +33,54 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
- * Raft state machine.
+ * Base class for user-provided Raft state machines.
+ * <p>
+ * Users should extend this class to create a state machine for use within a {@link net.kuujo.copycat.raft.server.RaftServer}.
+ * <p>
+ * State machines are responsible for handling {@link net.kuujo.copycat.raft.Operation operations} submitted to the Raft
+ * cluster and filtering {@link net.kuujo.copycat.raft.server.Commit committed} operations out of the Raft log. The most
+ * important rule of state machines is that <em>state machines must be deterministic</em> in order to maintain Copycat's
+ * consistency guarantees. That is, state machines must not change their behavior based on external influences and have
+ * no side effects. Users should <em>never</em> use {@code System} time to control behavior within a state machine.
+ * <p>
+ * When {@link net.kuujo.copycat.raft.Command commands} and {@link net.kuujo.copycat.raft.Query queries} are submitted
+ * to the Raft cluster, the {@link net.kuujo.copycat.raft.server.RaftServer} will log and replicate them as necessary
+ * and, once complete, apply them to the configured state machine.
+ * <p>
+ * State machine commands and queries are defined by annotating public or protected methods with the
+ * {@link net.kuujo.copycat.raft.server.Apply} annotation:
+ * <pre>
+ *   {@code
+ *   public class SetStateMachine extends StateMachine {
+ *     private final Set<String> values = new HashSet<>();
+ *
+ *     protected boolean applyContains(Commit<ContainsQuery> commit) {
+ *       return values.contains(commit.operation().value());
+ *     }
+ *
+ *   }
+ *   }
+ * </pre>
+ * Operations are applied to {@link net.kuujo.copycat.raft.server.Apply} annotated methods wrapped in a
+ * {@link net.kuujo.copycat.raft.server.Commit} object. The {@code Commit} object contains information about how the
+ * operation was committed including the {@link Commit#index()} at which it was logged in the Raft log, the
+ * {@link net.kuujo.copycat.raft.server.Commit#timestamp()} at which it was logged, and the {@link net.kuujo.copycat.raft.Session}
+ * that created the commit.
+ * <p>
+ * Operation methods can return either a synchronous result or an asynchronous result via {@link java.util.concurrent.CompletableFuture}.
+ * When the state machine is constructed, the {@link net.kuujo.copycat.raft.server.Apply} annotated methods will be
+ * evaluated for return types, so asynchronous methods <em>must specify a {@link java.util.concurrent.CompletableFuture}
+ * return type</em>. Once an operation is applied to the state machine, the value returned by the operation will be returned
+ * to the client that submitted the operation.
+ * <p>
+ * In addition to applying commits, state machines are also responsible for filtering existing commits out of the
+ * Raft log. To do so, state machine must implement {@link net.kuujo.copycat.raft.server.Filter} annotated methods similar
+ * to {@link net.kuujo.copycat.raft.server.Apply} methods. Filter methods should return a boolean value indicating whether
+ * a {@link net.kuujo.copycat.raft.server.Commit} should be retained in the log.
+ *
+ * @see net.kuujo.copycat.raft.server.Apply
+ * @see net.kuujo.copycat.raft.server.Filter
+ * @see net.kuujo.copycat.raft.server.Commit
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
