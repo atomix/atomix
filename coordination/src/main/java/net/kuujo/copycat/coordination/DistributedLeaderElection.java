@@ -21,7 +21,7 @@ import net.kuujo.copycat.Resource;
 import net.kuujo.copycat.Stateful;
 import net.kuujo.copycat.coordination.state.LeaderElectionCommands;
 import net.kuujo.copycat.coordination.state.LeaderElectionState;
-import net.kuujo.copycat.raft.Raft;
+import net.kuujo.copycat.Raft;
 
 import java.util.Collections;
 import java.util.Set;

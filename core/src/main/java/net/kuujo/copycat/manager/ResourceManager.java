@@ -16,11 +16,11 @@
 package net.kuujo.copycat.manager;
 
 import net.kuujo.copycat.log.Compaction;
-import net.kuujo.copycat.raft.Session;
-import net.kuujo.copycat.raft.server.Apply;
-import net.kuujo.copycat.raft.server.Commit;
-import net.kuujo.copycat.raft.server.Filter;
-import net.kuujo.copycat.raft.server.StateMachine;
+import net.kuujo.copycat.Session;
+import net.kuujo.copycat.server.Apply;
+import net.kuujo.copycat.server.Commit;
+import net.kuujo.copycat.server.Filter;
+import net.kuujo.copycat.server.StateMachine;
 import net.kuujo.copycat.resource.ResourceCommand;
 import net.kuujo.copycat.resource.ResourceOperation;
 import net.kuujo.copycat.resource.ResourceQuery;

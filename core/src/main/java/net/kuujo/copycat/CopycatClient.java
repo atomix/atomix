@@ -16,8 +16,7 @@
 package net.kuujo.copycat;
 
 import net.kuujo.alleycat.Alleycat;
-import net.kuujo.copycat.raft.Members;
-import net.kuujo.copycat.raft.client.RaftClient;
+import net.kuujo.copycat.client.RaftClient;
 import net.kuujo.copycat.transport.Transport;
 
 import java.util.concurrent.TimeUnit;
@@ -26,7 +25,7 @@ import java.util.concurrent.TimeUnit;
  * Client-side {@link net.kuujo.copycat.Copycat} implementation.
  * <p>
  * This is a {@link net.kuujo.copycat.Copycat} implementation that executes all {@link net.kuujo.copycat.Resource} operations
- * remotely via a {@link net.kuujo.copycat.raft.client.RaftClient}.
+ * remotely via a {@link net.kuujo.copycat.client.RaftClient}.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

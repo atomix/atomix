@@ -20,8 +20,8 @@ import net.kuujo.copycat.Resource;
 import net.kuujo.copycat.Stateful;
 import net.kuujo.copycat.collections.state.MapCommands;
 import net.kuujo.copycat.collections.state.MapState;
-import net.kuujo.copycat.raft.ConsistencyLevel;
-import net.kuujo.copycat.raft.Raft;
+import net.kuujo.copycat.ConsistencyLevel;
+import net.kuujo.copycat.Raft;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;

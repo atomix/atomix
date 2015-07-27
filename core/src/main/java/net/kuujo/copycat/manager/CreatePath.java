@@ -17,8 +17,8 @@ package net.kuujo.copycat.manager;
 
 import net.kuujo.alleycat.SerializeWith;
 import net.kuujo.copycat.BuilderPool;
-import net.kuujo.copycat.raft.Command;
-import net.kuujo.copycat.raft.Operation;
+import net.kuujo.copycat.Command;
+import net.kuujo.copycat.Operation;
 
 /**
  * Create getPath command.

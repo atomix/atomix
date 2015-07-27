@@ -19,7 +19,7 @@ import net.kuujo.alleycat.Alleycat;
 import net.kuujo.alleycat.AlleycatSerializable;
 import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
-import net.kuujo.copycat.raft.Operation;
+import net.kuujo.copycat.Operation;
 
 /**
  * Resource operation.

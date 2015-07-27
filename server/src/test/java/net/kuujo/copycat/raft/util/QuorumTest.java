@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.raft.util;
 
-import net.kuujo.copycat.raft.server.util.Quorum;
+import net.kuujo.copycat.server.util.Quorum;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 

@@ -18,8 +18,7 @@ package net.kuujo.copycat;
 import net.kuujo.alleycat.Alleycat;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.manager.ResourceManager;
-import net.kuujo.copycat.raft.Members;
-import net.kuujo.copycat.raft.server.RaftServer;
+import net.kuujo.copycat.server.RaftServer;
 import net.kuujo.copycat.transport.Transport;
 import net.kuujo.copycat.util.concurrent.CopycatThreadFactory;
 
@@ -32,7 +31,7 @@ import java.util.concurrent.TimeUnit;
  * Server-side {@link net.kuujo.copycat.Copycat} implementation.
  * <p>
  * This is a {@link net.kuujo.copycat.Copycat} implementation that manages state for resources and executes all
- * {@link net.kuujo.copycat.Resource} operations locally via a {@link net.kuujo.copycat.raft.server.RaftServer}.
+ * {@link net.kuujo.copycat.Resource} operations locally via a {@link net.kuujo.copycat.server.RaftServer}.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

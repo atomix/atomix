@@ -20,8 +20,8 @@ import net.kuujo.alleycat.AlleycatSerializable;
 import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.copycat.BuilderPool;
-import net.kuujo.copycat.raft.Command;
-import net.kuujo.copycat.raft.Operation;
+import net.kuujo.copycat.Command;
+import net.kuujo.copycat.Operation;
 
 /**
  * Topic commands.

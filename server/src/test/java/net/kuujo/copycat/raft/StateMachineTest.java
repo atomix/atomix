@@ -15,10 +15,13 @@
  */
 package net.kuujo.copycat.raft;
 
-import net.kuujo.copycat.raft.server.Apply;
-import net.kuujo.copycat.raft.server.Commit;
-import net.kuujo.copycat.raft.server.Filter;
-import net.kuujo.copycat.raft.server.StateMachine;
+import net.kuujo.copycat.Command;
+import net.kuujo.copycat.ConsistencyLevel;
+import net.kuujo.copycat.Query;
+import net.kuujo.copycat.server.Apply;
+import net.kuujo.copycat.server.Commit;
+import net.kuujo.copycat.server.Filter;
+import net.kuujo.copycat.server.StateMachine;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

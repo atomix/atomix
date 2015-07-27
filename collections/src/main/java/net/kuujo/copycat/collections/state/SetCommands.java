@@ -22,10 +22,10 @@ import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.copycat.BuilderPool;
 import net.kuujo.copycat.PersistenceLevel;
-import net.kuujo.copycat.raft.Command;
-import net.kuujo.copycat.raft.ConsistencyLevel;
-import net.kuujo.copycat.raft.Operation;
-import net.kuujo.copycat.raft.Query;
+import net.kuujo.copycat.Command;
+import net.kuujo.copycat.ConsistencyLevel;
+import net.kuujo.copycat.Operation;
+import net.kuujo.copycat.Query;
 
 import java.util.concurrent.TimeUnit;
 

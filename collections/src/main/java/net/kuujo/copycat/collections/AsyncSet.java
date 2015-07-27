@@ -16,7 +16,7 @@
 package net.kuujo.copycat.collections;
 
 import net.kuujo.copycat.PersistenceLevel;
-import net.kuujo.copycat.raft.ConsistencyLevel;
+import net.kuujo.copycat.ConsistencyLevel;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;

@@ -21,7 +21,7 @@ import net.kuujo.copycat.Resource;
 import net.kuujo.copycat.Stateful;
 import net.kuujo.copycat.coordination.state.TopicCommands;
 import net.kuujo.copycat.coordination.state.TopicState;
-import net.kuujo.copycat.raft.Raft;
+import net.kuujo.copycat.Raft;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
