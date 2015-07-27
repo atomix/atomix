@@ -41,8 +41,7 @@ public class LogTest {
       long index;
       try (TestEntry entry = log.createEntry(TestEntry.class)) {
         entry.setTerm(1);
-        entry.setRequest(100);
-        entry.setResponse(99);
+        entry.setRemove(true);
         index = log.appendEntry(entry);
       }
 
@@ -51,8 +50,7 @@ public class LogTest {
 
       try (TestEntry entry = log.getEntry(index)) {
         Assert.assertEquals(entry.getTerm(), 1);
-        Assert.assertEquals(entry.getRequest(), 100);
-        Assert.assertEquals(entry.getResponse(), 99);
+        Assert.assertTrue(entry.isRemove());
       }
     }
   }
@@ -68,8 +66,7 @@ public class LogTest {
       long index;
       try (TestEntry entry = log.createEntry(TestEntry.class)) {
         entry.setTerm(1);
-        entry.setRequest(100);
-        entry.setResponse(99);
+        entry.setRemove(true);
         index = log.appendEntry(entry);
       }
 
@@ -77,8 +74,7 @@ public class LogTest {
 
       try (TestEntry entry = log.getEntry(index)) {
         Assert.assertEquals(entry.getTerm(), 1);
-        Assert.assertEquals(entry.getRequest(), 100);
-        Assert.assertEquals(entry.getResponse(), 99);
+        Assert.assertTrue(entry.isRemove());
       }
     }
   }
@@ -94,8 +90,7 @@ public class LogTest {
       long index;
       try (TestEntry entry = log.createEntry(TestEntry.class)) {
         entry.setTerm(1);
-        entry.setRequest(100);
-        entry.setResponse(99);
+        entry.setRemove(true);
         index = log.appendEntry(entry);
       }
 
@@ -104,8 +99,7 @@ public class LogTest {
 
       try (TestEntry entry = log.getEntry(index)) {
         Assert.assertEquals(entry.getTerm(), 1);
-        Assert.assertEquals(entry.getRequest(), 100);
-        Assert.assertEquals(entry.getResponse(), 99);
+        Assert.assertTrue(entry.isRemove());
       }
     }
   }
@@ -120,8 +114,7 @@ public class LogTest {
       long index;
       try (TestEntry entry = log.createEntry(TestEntry.class)) {
         entry.setTerm(1);
-        entry.setRequest(100);
-        entry.setResponse(99);
+        entry.setRemove(true);
         index = log.appendEntry(entry);
       }
 
@@ -129,8 +122,7 @@ public class LogTest {
 
       try (TestEntry entry = log.getEntry(index)) {
         Assert.assertEquals(entry.getTerm(), 1);
-        Assert.assertEquals(entry.getRequest(), 100);
-        Assert.assertEquals(entry.getResponse(), 99);
+        Assert.assertTrue(entry.isRemove());
       }
     }
   }
@@ -161,8 +153,7 @@ public class LogTest {
       long index;
       try (TestEntry entry = log.createEntry(TestEntry.class)) {
         entry.setTerm(1);
-        entry.setRequest(100);
-        entry.setResponse(99);
+        entry.setRemove(true);
         index = log.appendEntry(entry);
       }
 
@@ -174,8 +165,7 @@ public class LogTest {
 
       try (TestEntry entry = log.getEntry(index)) {
         Assert.assertEquals(entry.getTerm(), 1);
-        Assert.assertEquals(entry.getRequest(), 100);
-        Assert.assertEquals(entry.getResponse(), 99);
+        Assert.assertTrue(entry.isRemove());
       }
     }
   }
@@ -194,8 +184,7 @@ public class LogTest {
       long index;
       try (TestEntry entry = log.createEntry(TestEntry.class)) {
         entry.setTerm(1);
-        entry.setRequest(100);
-        entry.setResponse(99);
+        entry.setRemove(true);
         index = log.appendEntry(entry);
       }
 
@@ -207,8 +196,7 @@ public class LogTest {
 
       try (TestEntry entry = log.getEntry(index)) {
         Assert.assertEquals(entry.getTerm(), 1);
-        Assert.assertEquals(entry.getRequest(), 100);
-        Assert.assertEquals(entry.getResponse(), 99);
+        Assert.assertTrue(entry.isRemove());
       }
     }
   }
@@ -242,8 +230,7 @@ public class LogTest {
     for (int i = 0; i < entries; i++) {
       try (TestEntry entry = log.createEntry(TestEntry.class)) {
         entry.setTerm(1);
-        entry.setRequest(i);
-        entry.setResponse(i);
+        entry.setRemove(true);
         log.appendEntry(entry);
       }
     }

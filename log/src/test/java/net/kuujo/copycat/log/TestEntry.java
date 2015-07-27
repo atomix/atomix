@@ -29,8 +29,7 @@ import net.kuujo.alleycat.util.ReferenceManager;
 @SerializeWith(id=1000)
 public class TestEntry extends Entry<TestEntry> {
   private long term;
-  private long request;
-  private long response;
+  private boolean remove;
 
   public TestEntry(ReferenceManager<Entry<?>> referenceManager) {
     super(referenceManager);
@@ -58,60 +57,39 @@ public class TestEntry extends Entry<TestEntry> {
   }
 
   /**
-   * Returns the command request number.
+   * Returns whether to remove the entry.
    *
-   * @return The command request number.
+   * @return Whether to remove the entry.
    */
-  public long getRequest() {
-    return request;
+  public boolean isRemove() {
+    return remove;
   }
 
   /**
-   * Sets the command request number.
+   * Sets whether to remove the entry.
    *
-   * @param request The command request number.
-   * @return The command entry.
+   * @param remove Whether to remove the entry.
+   * @return The entry.
    */
-  public TestEntry setRequest(long request) {
-    this.request = request;
-    return this;
-  }
-
-  /**
-   * Returns the command response number.
-   *
-   * @return The command response number.
-   */
-  public long getResponse() {
-    return response;
-  }
-
-  /**
-   * Sets the command response number.
-   *
-   * @param response The command response number.
-   * @return The command entry.
-   */
-  public TestEntry setResponse(long response) {
-    this.response = response;
+  public TestEntry setRemove(boolean remove) {
+    this.remove = remove;
     return this;
   }
 
   @Override
   public void writeObject(BufferOutput buffer, Alleycat alleycat) {
-    buffer.writeLong(term).writeLong(request).writeLong(response);
+    buffer.writeLong(term).writeBoolean(remove);
   }
 
   @Override
   public void readObject(BufferInput buffer, Alleycat alleycat) {
     term = buffer.readLong();
-    request = buffer.readLong();
-    response = buffer.readLong();
+    remove = buffer.readBoolean();
   }
 
   @Override
   public String toString() {
-    return String.format("%s[index=%d, term=%d, request=%d, response=%d]", getClass().getSimpleName(), getIndex(), term, request, response);
+    return String.format("%s[index=%d, term=%d, remove=%b]", getClass().getSimpleName(), getIndex(), term, remove);
   }
 
 }

@@ -49,7 +49,7 @@ public class MajorCompactionTest extends ConcurrentTestCase {
 
     final long index;
     try (TestEntry entry = log.createEntry(TestEntry.class)) {
-      entry.setTerm(1);
+      entry.setTerm(1).setRemove(true);
       index = log.appendEntry(entry);
     }
 
@@ -57,7 +57,7 @@ public class MajorCompactionTest extends ConcurrentTestCase {
 
     threadAssertEquals(log.length(), 1101L);
 
-    MajorCompaction compaction = new MajorCompaction(1024, (e, c) -> CompletableFuture.completedFuture(!(e instanceof TestEntry)), context);
+    MajorCompaction compaction = new MajorCompaction(1024, (e, c) -> CompletableFuture.completedFuture(!((TestEntry) e).isRemove()), context);
 
     expectResume();
     compaction.run(log.segments()).thenRun(this::resume);
@@ -79,8 +79,7 @@ public class MajorCompactionTest extends ConcurrentTestCase {
     for (int i = 0; i < entries; i++) {
       try (TestEntry entry = log.createEntry(TestEntry.class)) {
         entry.setTerm(1);
-        entry.setRequest(i);
-        entry.setResponse(i);
+        entry.setRemove(false);
         log.appendEntry(entry);
       }
     }
