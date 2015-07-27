@@ -33,10 +33,10 @@ public class StateMachineTest {
   /**
    * Tests a state machine.
    */
-  public void testStateMachine() {
+  public void testStateMachine() throws Throwable {
     StateMachine stateMachine = new TestStateMachine();
-    Assert.assertEquals(stateMachine.apply(new Commit<>(1, null, System.currentTimeMillis(), new TestCommand())), "write");
-    Assert.assertEquals(stateMachine.apply(new Commit<>(1, null, System.currentTimeMillis(), new TestQuery())), "read");
+    Assert.assertEquals(stateMachine.apply(new Commit<>(1, null, System.currentTimeMillis(), new TestCommand())).get(), "write");
+    Assert.assertEquals(stateMachine.apply(new Commit<>(1, null, System.currentTimeMillis(), new TestQuery())).get(), "read");
   }
 
   /**
