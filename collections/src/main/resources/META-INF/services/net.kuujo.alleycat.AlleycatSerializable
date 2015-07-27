@@ -29,6 +29,3 @@ net.kuujo.copycat.collections.state.SetCommands$Contains
 net.kuujo.copycat.collections.state.SetCommands$IsEmpty
 net.kuujo.copycat.collections.state.SetCommands$Remove
 net.kuujo.copycat.collections.state.SetCommands$Size
-
-net.kuujo.copycat.collections.state.TopicCommands$Publish
-net.kuujo.copycat.collections.state.TopicCommands$Subscribe

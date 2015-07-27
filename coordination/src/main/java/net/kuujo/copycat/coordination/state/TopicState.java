@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.collections.state;
+package net.kuujo.copycat.coordination.state;
 
 import net.kuujo.copycat.raft.Session;
 import net.kuujo.copycat.raft.server.Apply;

@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.collections;
+package net.kuujo.copycat.coordination;
 
 import net.kuujo.copycat.Listener;
 import net.kuujo.copycat.ListenerContext;
 import net.kuujo.copycat.Resource;
 import net.kuujo.copycat.Stateful;
-import net.kuujo.copycat.collections.state.TopicCommands;
-import net.kuujo.copycat.collections.state.TopicState;
+import net.kuujo.copycat.coordination.state.TopicCommands;
+import net.kuujo.copycat.coordination.state.TopicState;
 import net.kuujo.copycat.raft.Raft;
 
 import java.util.List;
