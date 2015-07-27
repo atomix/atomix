@@ -133,6 +133,12 @@ public class Member implements AlleycatSerializable {
     }
 
     @Override
+    protected void reset() {
+      super.reset();
+      this.member = new Member();
+    }
+
+    @Override
     protected void reset(Member member) {
       this.member = member;
     }
@@ -172,6 +178,7 @@ public class Member implements AlleycatSerializable {
 
     @Override
     public Member build() {
+      close();
       return member;
     }
   }

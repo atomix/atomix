@@ -103,8 +103,8 @@ public class Members implements AlleycatSerializable {
 
     @Override
     protected void reset() {
-      members.members.clear();
-      members.list.clear();
+      super.reset();
+      this.members = new Members();
     }
 
     @Override
