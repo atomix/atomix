@@ -18,14 +18,19 @@ package net.kuujo.copycat.raft;
 import net.kuujo.copycat.BuilderPool;
 
 /**
- * Command operation.
+ * Raft state commands modify system state.
+ * <p>
+ * Commands are submitted by clients to a {@link Raft} instance and used to modify Raft cluster-wide state. The Raft
+ * consensus protocol dictates that commands must be forwarded to the cluster leader and replicated to a majority of
+ * followers before being applied to the cluster state. Thus, in contrast to {@link net.kuujo.copycat.raft.Query queries},
+ * commands are not dictated by different consistency levels.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface Command<T> extends Operation<T> {
 
   /**
-   * Command builder.
+   * Base builder for commands.
    */
   static abstract class Builder<T extends Builder<T, U, V>, U extends Command<V>, V> extends Operation.Builder<T, U, V> {
     protected U command;

@@ -24,7 +24,10 @@ import net.kuujo.copycat.BuilderPool;
 import java.util.*;
 
 /**
- * Members.
+ * Container for Raft member configurations.
+ * <p>
+ * Members are immutable and therefore threadsafe. To create a {@link net.kuujo.copycat.raft.Members} instance, create a
+ * {@link net.kuujo.copycat.raft.Members.Builder} via the static {@link net.kuujo.copycat.raft.Members#builder()} method.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -33,6 +36,10 @@ public class Members implements AlleycatSerializable {
 
   /**
    * Returns a new members builder.
+   * <p>
+   * The returned {@link net.kuujo.copycat.raft.Members.Builder} is pooled internally via a {@link net.kuujo.copycat.BuilderPool}.
+   * Once the builder's {@link net.kuujo.copycat.raft.Members.Builder#build()} method is called, the builder will be
+   * released back to the internal pool and recycled on the next call to this method.
    *
    * @return A new members builder.
    */
@@ -171,6 +178,7 @@ public class Members implements AlleycatSerializable {
 
     @Override
     public Members build() {
+      close();
       return members;
     }
   }

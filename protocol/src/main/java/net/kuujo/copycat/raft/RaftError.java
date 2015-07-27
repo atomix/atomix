@@ -16,7 +16,7 @@
 package net.kuujo.copycat.raft;
 
 /**
- * Raft error constants.
+ * Base type for Raft server errors.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

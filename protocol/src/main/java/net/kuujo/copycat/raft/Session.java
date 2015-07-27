@@ -22,7 +22,14 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Raft session.
+ * Provides event-based methods for monitoring Raft sessions and communicating between Raft clients and servers.
+ * <p>
+ * Each client or server connected to any server in a Raft cluster must open a {@link net.kuujo.copycat.raft.Session}.
+ * Sessions can be used by both clients and servers to monitor the connection status of another client or server. When
+ * a client first connects to a server, it must register a new session. Once the session has been registered, listeners
+ * registered via {@link #onOpen(net.kuujo.copycat.Listener)} will be called on <em>both the client and
+ * server side</em>. Thereafter, the session can be used to {@link #publish(Object)} and
+ * {@link #onReceive(net.kuujo.copycat.Listener) receive} messages between client and server.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

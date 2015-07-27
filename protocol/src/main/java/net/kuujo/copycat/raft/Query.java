@@ -18,21 +18,40 @@ package net.kuujo.copycat.raft;
 import net.kuujo.copycat.BuilderPool;
 
 /**
- * Query operation.
+ * Raft state queries read system state.
+ * <p>
+ * Queries are submitted by clients to a {@link Raft} instance to read Raft cluster-wide state. In contrast to
+ * {@link net.kuujo.copycat.raft.Command commands}, queries allow for more flexible
+ * {@link net.kuujo.copycat.raft.ConsistencyLevel consistency levels} that trade consistency for performance.
+ * <p>
+ * All queries must specify a {@link #consistency()} with which to execute the query. The provided consistency level
+ * dictates how queries are submitted to the Raft cluster. Higher consistency levels like
+ * {@link net.kuujo.copycat.raft.ConsistencyLevel#LINEARIZABLE} and {@link net.kuujo.copycat.raft.ConsistencyLevel#LINEARIZABLE_LEASE}
+ * are forwarded to the cluster leader, while lower levels are allowed to read from followers for higher throughput.
+ * <p>
+ * By default, all queries should use the strongest consistency level, {@link net.kuujo.copycat.raft.ConsistencyLevel#LINEARIZABLE}.
+ * It is essential that users understand the trade-offs in the various consistency levels before using them.
+ *
+ * @see net.kuujo.copycat.raft.ConsistencyLevel
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface Query<T> extends Operation<T> {
 
   /**
-   * Returns the query consistency.
+   * Returns the query consistency level.
+   * <p>
+   * The consistency will dictate how the query is executed on the server state. Stronger consistency levels can guarantee
+   * linearizability in all or most cases, while weaker consistency levels trade linearizability for more performant
+   * reads from followers. Consult the {@link net.kuujo.copycat.raft.ConsistencyLevel} documentation for more information
+   * on the different consistency levels.
    *
-   * @return The query consistency.
+   * @return The query consistency level.
    */
   ConsistencyLevel consistency();
 
   /**
-   * Query builder.
+   * Base builder for queries.
    */
   static abstract class Builder<T extends Builder<T, U, V>, U extends Query<V>, V> extends Operation.Builder<T, U, V> {
     protected U query;

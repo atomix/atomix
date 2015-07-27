@@ -21,7 +21,15 @@ import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
 
 /**
- * Raft member.
+ * Configuration for connecting to a member of the Raft cluster.
+ * <p>
+ * Instances of this class are used to provide configurations for connecting to Raft servers. Each member in a Raft
+ * cluster must be defined by a unique {@link #id()} which is consistent across all clients and servers in the cluster.
+ * The provided {@link #host()} and {@link #port()} will be used by {@link net.kuujo.copycat.raft.Raft} instances to
+ * connect to servers in the cluster.
+ * <p>
+ * Members are immutable and therefore threadsafe. To create a {@link net.kuujo.copycat.raft.Member}, create a
+ * {@link net.kuujo.copycat.raft.Member.Builder} via the static {@link net.kuujo.copycat.raft.Member#builder()} method.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -29,6 +37,10 @@ public class Member implements AlleycatSerializable {
 
   /**
    * Returns a new member builder.
+   * <p>
+   * The returned {@link net.kuujo.copycat.raft.Member.Builder} is pooled internally via a {@link net.kuujo.copycat.BuilderPool}.
+   * Once the builder's {@link net.kuujo.copycat.raft.Member.Builder#build()} method is called, the builder will be
+   * released back to the internal pool and recycled on the next call to this method.
    *
    * @return A new member builder.
    */
@@ -112,7 +124,7 @@ public class Member implements AlleycatSerializable {
   }
 
   /**
-   * Member builder.
+   * Builds
    */
   public static class Builder extends net.kuujo.copycat.Builder<Member> {
     private Member member = new Member();

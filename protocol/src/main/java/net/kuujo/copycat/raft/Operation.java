@@ -23,7 +23,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 /**
- * State machine operation.
+ * Base type for Raft state operations.
+ * <p>
+ * This is a base interface for operations on the Raft cluster state.
+ *
+ * @see net.kuujo.copycat.raft.Command
+ * @see net.kuujo.copycat.raft.Query
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -31,6 +36,10 @@ public interface Operation<T> extends Serializable {
 
   /**
    * Returns a cached instance of the given builder.
+   * <p>
+   * Custom {@link net.kuujo.copycat.raft.Operation} implementations can use this method to retrieve a cached instance
+   * of a {@link net.kuujo.copycat.raft.Operation.Builder}. Builders returned by this method are internally pooled and
+   * reused to reduce GC overhead.
    *
    * @param type The builder type.
    * @return The builder.
@@ -45,7 +54,7 @@ public interface Operation<T> extends Serializable {
   }
 
   /**
-   * Operation builder.
+   * Base builder for Raft state operations.
    */
   static abstract class Builder<T extends Builder<T, U, V>, U extends Operation<V>, V> extends net.kuujo.copycat.Builder<U> {
     static final Map<Class<? extends Builder>, BuilderPool> POOLS = new ConcurrentHashMap<>();
@@ -58,6 +67,10 @@ public interface Operation<T> extends Serializable {
 
     /**
      * Creates a new operation instance.
+     * <p>
+     * Custom operation builders should override this method to provide an initial instance of the operation being built
+     * This method will be called to construct a new operation instance when a builder is first created via
+     * {@link Operation#builder(Class, java.util.function.Function)}.
      *
      * @return A new operation instance.
      */

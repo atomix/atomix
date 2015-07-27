@@ -16,7 +16,9 @@
 package net.kuujo.copycat.raft;
 
 /**
- * Application exception.
+ * User application exception.
+ * <p>
+ * Application exceptions are thrown when an exception occurs within a user-provided state machine.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
