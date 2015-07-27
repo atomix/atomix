@@ -7,6 +7,7 @@ Copycat is an extensible log-based distributed coordination framework for Java 8
 [Raft consensus protocol](https://raftconsensus.github.io/).
 
 #### [User Manual](#user-manual)
+#### [Javadocs][Javadoc]
 
 Copycat is a strongly consistent embedded distributed coordination framework built on the
 [Raft consensus protocol](https://raftconsensus.github.io/). Copycat exposes a set of high level APIs with tools to
@@ -683,9 +684,7 @@ ID for efficient serialization. Alley cat reserves serializable type IDs `128` t
 
 ### [User Manual](#user-manual)
 
-## Javadoc
-
-Javadocs are available [here][Javadoc].
+## [Javadoc][Javadoc]
 
 [Javadoc]: http://kuujo.github.io/copycat/java/
 [Copycat]: http://kuujo.github.io/copycat/java/net/kuujo/copycat/Copycat.html
