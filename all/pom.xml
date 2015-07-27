@@ -44,17 +44,12 @@
     </dependency>
     <dependency>
       <groupId>net.kuujo.copycat</groupId>
-      <artifactId>copycat-cluster</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>net.kuujo.copycat</groupId>
       <artifactId>copycat-collections</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>net.kuujo.copycat</groupId>
-      <artifactId>copycat-queue</artifactId>
+      <artifactId>copycat-coordination</artifactId>
       <version>${project.version}</version>
     </dependency>
   </dependencies>
