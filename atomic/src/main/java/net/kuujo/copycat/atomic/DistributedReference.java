@@ -99,28 +99,28 @@ public class DistributedReference<T> extends Resource implements AsyncReference<
   }
 
   @Override
-  public CompletableFuture<Void> set(T value, Mode mode) {
+  public CompletableFuture<Void> set(T value, PersistenceLevel persistence) {
     return submit(ReferenceCommands.Set.builder()
       .withValue(value)
-      .withMode(mode)
+      .withPersistence(persistence)
       .build());
   }
 
   @Override
-  public CompletableFuture<Void> set(T value, long ttl, Mode mode) {
+  public CompletableFuture<Void> set(T value, long ttl, PersistenceLevel persistence) {
     return submit(ReferenceCommands.Set.builder()
       .withValue(value)
       .withTtl(ttl)
-      .withMode(mode)
+      .withPersistence(persistence)
       .build());
   }
 
   @Override
-  public CompletableFuture<Void> set(T value, long ttl, TimeUnit unit, Mode mode) {
+  public CompletableFuture<Void> set(T value, long ttl, TimeUnit unit, PersistenceLevel persistence) {
     return submit(ReferenceCommands.Set.builder()
       .withValue(value)
       .withTtl(ttl, unit)
-      .withMode(mode)
+      .withPersistence(persistence)
       .build());
   }
 
@@ -148,28 +148,28 @@ public class DistributedReference<T> extends Resource implements AsyncReference<
   }
 
   @Override
-  public CompletableFuture<T> getAndSet(T value, Mode mode) {
+  public CompletableFuture<T> getAndSet(T value, PersistenceLevel persistence) {
     return submit(ReferenceCommands.GetAndSet.<T>builder()
       .withValue(value)
-      .withMode(mode)
+      .withPersistence(persistence)
       .build());
   }
 
   @Override
-  public CompletableFuture<T> getAndSet(T value, long ttl, Mode mode) {
+  public CompletableFuture<T> getAndSet(T value, long ttl, PersistenceLevel persistence) {
     return submit(ReferenceCommands.GetAndSet.<T>builder()
       .withValue(value)
       .withTtl(ttl)
-      .withMode(mode)
+      .withPersistence(persistence)
       .build());
   }
 
   @Override
-  public CompletableFuture<T> getAndSet(T value, long ttl, TimeUnit unit, Mode mode) {
+  public CompletableFuture<T> getAndSet(T value, long ttl, TimeUnit unit, PersistenceLevel persistence) {
     return submit(ReferenceCommands.GetAndSet.<T>builder()
       .withValue(value)
       .withTtl(ttl, unit)
-      .withMode(mode)
+      .withPersistence(persistence)
       .build());
   }
 
@@ -200,31 +200,31 @@ public class DistributedReference<T> extends Resource implements AsyncReference<
   }
 
   @Override
-  public CompletableFuture<Boolean> compareAndSet(T expect, T update, Mode mode) {
+  public CompletableFuture<Boolean> compareAndSet(T expect, T update, PersistenceLevel persistence) {
     return submit(ReferenceCommands.CompareAndSet.builder()
       .withExpect(expect)
       .withUpdate(update)
-      .withMode(mode)
+      .withPersistence(persistence)
       .build());
   }
 
   @Override
-  public CompletableFuture<Boolean> compareAndSet(T expect, T update, long ttl, Mode mode) {
+  public CompletableFuture<Boolean> compareAndSet(T expect, T update, long ttl, PersistenceLevel persistence) {
     return submit(ReferenceCommands.CompareAndSet.builder()
       .withExpect(expect)
       .withUpdate(update)
       .withTtl(ttl)
-      .withMode(mode)
+      .withPersistence(persistence)
       .build());
   }
 
   @Override
-  public CompletableFuture<Boolean> compareAndSet(T expect, T update, long ttl, TimeUnit unit, Mode mode) {
+  public CompletableFuture<Boolean> compareAndSet(T expect, T update, long ttl, TimeUnit unit, PersistenceLevel persistence) {
     return submit(ReferenceCommands.CompareAndSet.builder()
       .withExpect(expect)
       .withUpdate(update)
       .withTtl(ttl, unit)
-      .withMode(mode)
+      .withPersistence(persistence)
       .build());
   }
 

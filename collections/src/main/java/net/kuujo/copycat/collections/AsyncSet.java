@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.collections;
 
-import net.kuujo.copycat.Mode;
+import net.kuujo.copycat.PersistenceLevel;
 import net.kuujo.copycat.raft.ConsistencyLevel;
 
 import java.util.concurrent.CompletableFuture;
@@ -40,11 +40,11 @@ public interface AsyncSet<T> {
    * Adds a value to the set with a TTL.
    *
    * @param value The value to add.
-   * @param mode The persistence mode.
+   * @param persistence The persistence persistence.
    * @return A completable future to be completed with the result once complete.
    */
   @SuppressWarnings("unchecked")
-  CompletableFuture<Boolean> add(T value, Mode mode);
+  CompletableFuture<Boolean> add(T value, PersistenceLevel persistence);
 
   /**
    * Adds a value to the set with a TTL.
@@ -72,11 +72,11 @@ public interface AsyncSet<T> {
    *
    * @param value The value to add.
    * @param ttl The time to live in milliseconds.
-   * @param mode The persistence mode.
+   * @param persistence The persistence persistence.
    * @return A completable future to be completed with the result once complete.
    */
   @SuppressWarnings("unchecked")
-  CompletableFuture<Boolean> add(T value, long ttl, Mode mode);
+  CompletableFuture<Boolean> add(T value, long ttl, PersistenceLevel persistence);
 
   /**
    * Adds a value to the set with a TTL.
@@ -84,11 +84,11 @@ public interface AsyncSet<T> {
    * @param value The value to add.
    * @param ttl The time to live.
    * @param unit The time to live unit.
-   * @param mode The persistence mode.
+   * @param persistence The persistence persistence.
    * @return A completable future to be completed with the result once complete.
    */
   @SuppressWarnings("unchecked")
-  CompletableFuture<Boolean> add(T value, long ttl, TimeUnit unit, Mode mode);
+  CompletableFuture<Boolean> add(T value, long ttl, TimeUnit unit, PersistenceLevel persistence);
 
   /**
    * Removes a value from the set.

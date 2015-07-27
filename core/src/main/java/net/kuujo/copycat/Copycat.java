@@ -31,7 +31,21 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Copycat.
+ * Base type for creating and managing distributed {@link net.kuujo.copycat.Resource resources} in a Copycat cluster.
+ * <p>
+ * Resources are user provided stateful objects backed by a distributed state machine. This class facilitates the
+ * creation and management of {@link net.kuujo.copycat.Resource} objects via a filesystem like interface. There is a
+ * one-to-one relationship between paths and resources, so each path can be associated with one and only one resource.
+ * <p>
+ * To create a resource, create a {@link net.kuujo.copycat.Node} and then create the resource by passing the resource
+ * {@link java.lang.Class} to the {@link Node#create(Class)} method. When a resource is created, the
+ * {@link net.kuujo.copycat.raft.server.StateMachine} associated with the resource will be created on each Raft server
+ * and future operations submitted for that resource will be applied to the state machine. Internally, resource state
+ * machines are multiplexed across a shared Raft log.
+ * <p>
+ * {@link net.kuujo.copycat.Resource} implementations serve as a user-friendly interface through which to submit
+ * {@link net.kuujo.copycat.raft.Command commands} and {@link net.kuujo.copycat.raft.Query queries} to the underlying
+ * {@link net.kuujo.copycat.raft.Raft} client or server.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -49,6 +63,11 @@ public abstract class Copycat implements Managed<Copycat> {
 
   /**
    * Returns a reference to the node at the given path.
+   * <p>
+   * The returned node represents the node at the given {@code path}. The node may or may not already exist.
+   * This method does not create the returned node. In order to create the node in the cluster, the user must call
+   * the {@link net.kuujo.copycat.Node#create()} method on the returned {@link net.kuujo.copycat.Node} or alternatively
+   * call {@link #create(String)} directly.
    *
    * @param path The path for which to return the node.
    * @return A reference to the node at the given path.
@@ -75,6 +94,11 @@ public abstract class Copycat implements Managed<Copycat> {
 
   /**
    * Creates a node at the given path.
+   * <p>
+   * If a node at the given path already exists, the existing node will be returned, otherwise a new {@link net.kuujo.copycat.Node}
+   * will be returned. Additionally, if the node's parents don't already exist they'll be created. For instance, calling
+   * this method with {@code /foo/bar/baz} will create {@code foo}, {@code foo/bar}, and {@code foo/bar/baz} if they
+   * don't already exist.
    *
    * @param path The path for which to create the node.
    * @return A completable future to be completed once the node has been created.
@@ -88,9 +112,20 @@ public abstract class Copycat implements Managed<Copycat> {
 
   /**
    * Creates a resource at the given path.
+   * <p>
+   * If a node at the given path already exists, the existing node will be returned, otherwise a new {@link net.kuujo.copycat.Node}
+   * will be returned. Additionally, if the node's parents don't already exist they'll be created. For instance, calling
+   * this method with {@code /foo/bar/baz} will create {@code foo}, {@code foo/bar}, and {@code foo/bar/baz} if they
+   * don't already exist.
+   * <p>
+   * The provided {@link net.kuujo.copycat.Resource} class must be annotated with {@link net.kuujo.copycat.Stateful}
+   * indicating the {@link net.kuujo.copycat.raft.server.StateMachine} to create on the server side. The state machine
+   * class will be submitted to the cluster and created on each Raft server before the returned
+   * {@link java.util.concurrent.CompletableFuture} is completed.
    *
    * @param path The path at which to create the resource.
-   * @param type The resource type to create.
+   * @param type The resource type to create. This must be a class annotated with {@link net.kuujo.copycat.Stateful}
+   *             indicating the {@link net.kuujo.copycat.raft.server.StateMachine} class to use.
    * @param <T> The resource type.
    * @return A completable future to be completed once the resource has been created.
    */
@@ -114,6 +149,9 @@ public abstract class Copycat implements Managed<Copycat> {
 
   /**
    * Deletes a node at the given path.
+   * <p>
+   * Both the {@link net.kuujo.copycat.Node} at the given path and any {@link net.kuujo.copycat.Resource} associated
+   * with the node will be permanently deleted, and state stored at the node will not be recoverable.
    *
    * @param path The path at which to delete the node.
    * @return A completable future to be completed once the node has been deleted.

@@ -21,7 +21,7 @@ import net.kuujo.alleycat.SerializeWith;
 import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.copycat.BuilderPool;
-import net.kuujo.copycat.Mode;
+import net.kuujo.copycat.PersistenceLevel;
 import net.kuujo.copycat.raft.Command;
 import net.kuujo.copycat.raft.ConsistencyLevel;
 import net.kuujo.copycat.raft.Operation;
@@ -270,7 +270,7 @@ public class MapCommands {
    * TTL command.
    */
   public static abstract class TtlCommand<V> extends KeyValueCommand<V> {
-    protected Mode mode = Mode.PERSISTENT;
+    protected PersistenceLevel mode = PersistenceLevel.PERSISTENT;
     protected long ttl;
 
     /**
@@ -278,7 +278,7 @@ public class MapCommands {
      *
      * @return The persistence mode.
      */
-    public Mode mode() {
+    public PersistenceLevel mode() {
       return mode;
     }
 
@@ -300,7 +300,7 @@ public class MapCommands {
     @Override
     public void readObject(BufferInput buffer, Alleycat alleycat) {
       super.readObject(buffer, alleycat);
-      mode = Mode.values()[buffer.readByte()];
+      mode = PersistenceLevel.values()[buffer.readByte()];
       ttl = buffer.readLong();
     }
 
@@ -318,7 +318,7 @@ public class MapCommands {
        * @param mode The persistence mode.
        * @return The command builder.
        */
-      public Builder withMode(Mode mode) {
+      public Builder withPersistence(PersistenceLevel mode) {
         command.mode = mode;
         return this;
       }

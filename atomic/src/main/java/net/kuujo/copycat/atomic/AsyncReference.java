@@ -17,7 +17,7 @@ package net.kuujo.copycat.atomic;
 
 import net.kuujo.copycat.Listener;
 import net.kuujo.copycat.ListenerContext;
-import net.kuujo.copycat.Mode;
+import net.kuujo.copycat.PersistenceLevel;
 import net.kuujo.copycat.raft.ConsistencyLevel;
 
 import java.util.concurrent.CompletableFuture;
@@ -97,34 +97,34 @@ public interface AsyncReference<T> {
   CompletableFuture<Void> set(T value, long ttl, TimeUnit unit);
 
   /**
-   * Sets the value with a write mode.
+   * Sets the value with a write persistence.
    *
    * @param value The value to set.
-   * @param mode The write mode.
+   * @param persistence The write persistence.
    * @return A completable future to be completed once the value has been set.
    */
-  CompletableFuture<Void> set(T value, Mode mode);
+  CompletableFuture<Void> set(T value, PersistenceLevel persistence);
 
   /**
-   * Sets the value with a write mode.
+   * Sets the value with a write persistence.
    *
    * @param value The value to set.
    * @param ttl The time after which to expire the value.
-   * @param mode The write mode.
+   * @param persistence The write persistence.
    * @return A completable future to be completed once the value has been set.
    */
-  CompletableFuture<Void> set(T value, long ttl, Mode mode);
+  CompletableFuture<Void> set(T value, long ttl, PersistenceLevel persistence);
 
   /**
-   * Sets the value with a write mode.
+   * Sets the value with a write persistence.
    *
    * @param value The value to set.
    * @param ttl The time after which to expire the value.
    * @param unit The expiration time unit.
-   * @param mode The write mode.
+   * @param persistence The write persistence.
    * @return A completable future to be completed once the value has been set.
    */
-  CompletableFuture<Void> set(T value, long ttl, TimeUnit unit, Mode mode);
+  CompletableFuture<Void> set(T value, long ttl, TimeUnit unit, PersistenceLevel persistence);
 
   /**
    * Gets the current value and updates it.
@@ -157,20 +157,20 @@ public interface AsyncReference<T> {
    * Gets the current value and updates it.
    *
    * @param value The updated value.
-   * @param mode The write mode.
+   * @param persistence The write persistence.
    * @return A completable future to be completed with the previous value.
    */
-  CompletableFuture<T> getAndSet(T value, Mode mode);
+  CompletableFuture<T> getAndSet(T value, PersistenceLevel persistence);
 
   /**
    * Gets the current value and updates it.
    *
    * @param value The updated value.
    * @param ttl The time after which to expire the value.
-   * @param mode The write mode.
+   * @param persistence The write persistence.
    * @return A completable future to be completed with the previous value.
    */
-  CompletableFuture<T> getAndSet(T value, long ttl, Mode mode);
+  CompletableFuture<T> getAndSet(T value, long ttl, PersistenceLevel persistence);
 
   /**
    * Gets the current value and updates it.
@@ -178,10 +178,10 @@ public interface AsyncReference<T> {
    * @param value The updated value.
    * @param ttl The time after which to expire the value.
    * @param unit The expiration time unit.
-   * @param mode The write mode.
+   * @param persistence The write persistence.
    * @return A completable future to be completed with the previous value.
    */
-  CompletableFuture<T> getAndSet(T value, long ttl, TimeUnit unit, Mode mode);
+  CompletableFuture<T> getAndSet(T value, long ttl, TimeUnit unit, PersistenceLevel persistence);
 
   /**
    * Compares the current value and updated it if expected value == the current value.
@@ -218,10 +218,10 @@ public interface AsyncReference<T> {
    *
    * @param expect The expected value.
    * @param update The updated value.
-   * @param mode The write mode.
+   * @param persistence The write persistence.
    * @return A completable future to be completed with a boolean value indicating whether the value was updated.
    */
-  CompletableFuture<Boolean> compareAndSet(T expect, T update, Mode mode);
+  CompletableFuture<Boolean> compareAndSet(T expect, T update, PersistenceLevel persistence);
 
   /**
    * Compares the current value and updated it if expected value == the current value.
@@ -229,10 +229,10 @@ public interface AsyncReference<T> {
    * @param expect The expected value.
    * @param update The updated value.
    * @param ttl The time after which to expire the value.
-   * @param mode The write mode.
+   * @param persistence The write persistence.
    * @return A completable future to be completed with a boolean value indicating whether the value was updated.
    */
-  CompletableFuture<Boolean> compareAndSet(T expect, T update, long ttl, Mode mode);
+  CompletableFuture<Boolean> compareAndSet(T expect, T update, long ttl, PersistenceLevel persistence);
 
   /**
    * Compares the current value and updated it if expected value == the current value.
@@ -241,10 +241,10 @@ public interface AsyncReference<T> {
    * @param update The updated value.
    * @param ttl The time after which to expire the value.
    * @param unit The expiration time unit.
-   * @param mode The write mode.
+   * @param persistence The write persistence.
    * @return A completable future to be completed with a boolean value indicating whether the value was updated.
    */
-  CompletableFuture<Boolean> compareAndSet(T expect, T update, long ttl, TimeUnit unit, Mode mode);
+  CompletableFuture<Boolean> compareAndSet(T expect, T update, long ttl, TimeUnit unit, PersistenceLevel persistence);
 
   /**
    * Registers a change listener.

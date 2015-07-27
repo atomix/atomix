@@ -23,7 +23,10 @@ import net.kuujo.copycat.transport.Transport;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Copycat client.
+ * Client-side {@link net.kuujo.copycat.Copycat} implementation.
+ * <p>
+ * This is a {@link net.kuujo.copycat.Copycat} implementation that executes all {@link net.kuujo.copycat.Resource} operations
+ * remotely via a {@link net.kuujo.copycat.raft.client.RaftClient}.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

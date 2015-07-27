@@ -21,7 +21,7 @@ import net.kuujo.alleycat.SerializeWith;
 import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.copycat.BuilderPool;
-import net.kuujo.copycat.Mode;
+import net.kuujo.copycat.PersistenceLevel;
 import net.kuujo.copycat.raft.Command;
 import net.kuujo.copycat.raft.ConsistencyLevel;
 import net.kuujo.copycat.raft.Operation;
@@ -43,7 +43,7 @@ public class ReferenceCommands {
    * Abstract reference command.
    */
   public static abstract class ReferenceCommand<V> implements Command<V>, AlleycatSerializable {
-    protected Mode mode = Mode.PERSISTENT;
+    protected PersistenceLevel mode = PersistenceLevel.PERSISTENT;
     protected long ttl;
 
     /**
@@ -51,7 +51,7 @@ public class ReferenceCommands {
      *
      * @return The persistence mode.
      */
-    public Mode mode() {
+    public PersistenceLevel mode() {
       return mode;
     }
 
@@ -72,7 +72,7 @@ public class ReferenceCommands {
 
     @Override
     public void readObject(BufferInput buffer, Alleycat alleycat) {
-      mode = Mode.values()[buffer.readByte()];
+      mode = PersistenceLevel.values()[buffer.readByte()];
       ttl = buffer.readLong();
     }
 
@@ -91,7 +91,7 @@ public class ReferenceCommands {
        * @return The command builder.
        */
       @SuppressWarnings("unchecked")
-      public T withMode(Mode mode) {
+      public T withPersistence(PersistenceLevel mode) {
         if (mode == null)
           throw new NullPointerException("mode cannot be null");
         command.mode = mode;

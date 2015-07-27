@@ -29,7 +29,10 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Copycat server.
+ * Server-side {@link net.kuujo.copycat.Copycat} implementation.
+ * <p>
+ * This is a {@link net.kuujo.copycat.Copycat} implementation that manages state for resources and executes all
+ * {@link net.kuujo.copycat.Resource} operations locally via a {@link net.kuujo.copycat.raft.server.RaftServer}.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

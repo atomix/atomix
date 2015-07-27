@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.collections;
 
-import net.kuujo.copycat.Mode;
+import net.kuujo.copycat.PersistenceLevel;
 import net.kuujo.copycat.raft.ConsistencyLevel;
 
 import java.util.concurrent.CompletableFuture;
@@ -106,10 +106,10 @@ public interface AsyncMap<K, V> {
    *
    * @param key The key to set.
    * @param value The value to set.
-   * @param mode The mode in which to set the key.
+   * @param persistence The persistence in which to set the key.
    * @return A completable future to be completed with the result once complete.
    */
-  CompletableFuture<V> put(K key, V value, Mode mode);
+  CompletableFuture<V> put(K key, V value, PersistenceLevel persistence);
 
   /**
    * Puts a value in the map.
@@ -127,10 +127,10 @@ public interface AsyncMap<K, V> {
    * @param key The key to set.
    * @param value The value to set.
    * @param ttl The time to live in milliseconds.
-   * @param mode The mode in which to set the key.
+   * @param persistence The persistence in which to set the key.
    * @return A completable future to be completed with the result once complete.
    */
-  CompletableFuture<V> put(K key, V value, long ttl, Mode mode);
+  CompletableFuture<V> put(K key, V value, long ttl, PersistenceLevel persistence);
 
   /**
    * Puts a value in the map.
@@ -150,10 +150,10 @@ public interface AsyncMap<K, V> {
    * @param value The value to set.
    * @param ttl The time to live in milliseconds.
    * @param unit The time to live unit.
-   * @param mode The mode in which to set the key.
+   * @param persistence The persistence in which to set the key.
    * @return A completable future to be completed with the result once complete.
    */
-  CompletableFuture<V> put(K key, V value, long ttl, TimeUnit unit, Mode mode);
+  CompletableFuture<V> put(K key, V value, long ttl, TimeUnit unit, PersistenceLevel persistence);
 
   /**
    * Removes a value from the map.
@@ -207,10 +207,10 @@ public interface AsyncMap<K, V> {
    * @param key   The key to set.
    * @param value The value to set if the given key does not exist.
    * @param ttl The time to live in milliseconds.
-   * @param mode The mode in which to set the key.
+   * @param persistence The persistence in which to set the key.
    * @return A completable future to be completed with the result once complete.
    */
-  CompletableFuture<V> putIfAbsent(K key, V value, long ttl, Mode mode);
+  CompletableFuture<V> putIfAbsent(K key, V value, long ttl, PersistenceLevel persistence);
 
   /**
    * Puts a value in the map if the given key does not exist.
@@ -230,10 +230,10 @@ public interface AsyncMap<K, V> {
    * @param value The value to set if the given key does not exist.
    * @param ttl The time to live.
    * @param unit The time to live unit.
-   * @param mode The mode in which to set the key.
+   * @param persistence The persistence in which to set the key.
    * @return A completable future to be completed with the result once complete.
    */
-  CompletableFuture<V> putIfAbsent(K key, V value, long ttl, TimeUnit unit, Mode mode);
+  CompletableFuture<V> putIfAbsent(K key, V value, long ttl, TimeUnit unit, PersistenceLevel persistence);
 
   /**
    * Removes a key and value from the map.

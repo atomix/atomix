@@ -21,7 +21,7 @@ import net.kuujo.alleycat.SerializeWith;
 import net.kuujo.alleycat.io.BufferInput;
 import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.copycat.BuilderPool;
-import net.kuujo.copycat.Mode;
+import net.kuujo.copycat.PersistenceLevel;
 import net.kuujo.copycat.raft.Command;
 import net.kuujo.copycat.raft.ConsistencyLevel;
 import net.kuujo.copycat.raft.Operation;
@@ -222,7 +222,7 @@ public class SetCommands {
    */
   public static abstract class TtlCommand<V> extends ValueCommand<V> {
     protected long ttl;
-    protected Mode mode = Mode.PERSISTENT;
+    protected PersistenceLevel mode = PersistenceLevel.PERSISTENT;
 
     /**
      * Returns the time to live in milliseconds.
@@ -238,7 +238,7 @@ public class SetCommands {
      *
      * @return The persistence mode.
      */
-    public Mode mode() {
+    public PersistenceLevel mode() {
       return mode;
     }
 
@@ -251,7 +251,7 @@ public class SetCommands {
     @Override
     public void readObject(BufferInput buffer, Alleycat alleycat) {
       super.readObject(buffer, alleycat);
-      mode = Mode.values()[buffer.readByte()];
+      mode = PersistenceLevel.values()[buffer.readByte()];
       ttl = buffer.readLong();
     }
 
@@ -292,7 +292,7 @@ public class SetCommands {
        * @param mode The persistence mode.
        * @return The command builder.
        */
-      public Builder withMode(Mode mode) {
+      public Builder withPersistence(PersistenceLevel mode) {
         command.mode = mode;
         return this;
       }

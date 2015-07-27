@@ -16,11 +16,11 @@
 package net.kuujo.copycat;
 
 /**
- * Data mode.
+ * Data persistence level.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public enum Mode {
+public enum PersistenceLevel {
 
   /**
    * Ephemeral mode.

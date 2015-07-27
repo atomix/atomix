@@ -49,7 +49,12 @@ public class Node {
   }
 
   /**
-   * Returns a child node/
+   * Returns a child of this node.
+   * <p>
+   * The returned node represents the node at the given {@code path} relative to this node's {@link #path()}. The node
+   * may or may not already exist. This method does not create the returned node. In order to create the node in the
+   * cluster, the user must call the {@link net.kuujo.copycat.Node#create()} method on the returned
+   * {@link net.kuujo.copycat.Node}.
    *
    * @param path The child node's getPath.
    * @return The child node.
@@ -81,7 +86,7 @@ public class Node {
   }
 
   /**
-   * Reads a boolean value indicating whether this node exists.
+   * Checks whether this node exists.
    *
    * @return Indicates whether this node exists.
    */
@@ -90,7 +95,7 @@ public class Node {
   }
 
   /**
-   * Reads a boolean value indicating whether a child node exists.
+   * Checks whether the given path exists relative to this node's {@link #path()}.
    *
    * @param path The child node's getPath.
    * @return Indicates whether the child node exists.
@@ -101,6 +106,11 @@ public class Node {
 
   /**
    * Creates this node.
+   * <p>
+   * If a node at this {@link #path()} already exists, the existing node will be returned, otherwise a new node will be
+   * created. Additionally, if the node's parents don't already exist they'll be created. For instance, if this node's
+   * path is {@code /foo/bar/baz} calling this method will create {@code foo}, {@code foo/bar}, and {@code foo/bar/baz}
+   * if they don't already exist.
    *
    * @return A completable future to be completed once the node has been created.
    */
@@ -110,6 +120,11 @@ public class Node {
 
   /**
    * Creates a child of this node.
+   * <p>
+   * If a node at the given path already exists relative to this node's {@link #path()}, the existing node will be returned,
+   * otherwise a new {@link net.kuujo.copycat.Node} will be returned. Additionally, if the node's parents don't already
+   * exist they'll be created. For instance, calling this method with {@code /foo/bar/baz} will create {@code foo},
+   * {@code foo/bar}, and {@code foo/bar/baz} if they don't already exist.
    *
    * @param path The child node's getPath.
    * @return A completable future to be completed once the child has been created.
@@ -120,6 +135,11 @@ public class Node {
 
   /**
    * Creates a resource at this node.
+   * <p>
+   * The provided {@link net.kuujo.copycat.Resource} class must be annotated with {@link net.kuujo.copycat.Stateful}
+   * indicating the {@link net.kuujo.copycat.raft.server.StateMachine} to create on the server side. The state machine
+   * class will be submitted to the cluster and created on each Raft server before the returned
+   * {@link java.util.concurrent.CompletableFuture} is completed.
    *
    * @param type The resource type.
    * @param <T> The resource type.
@@ -131,6 +151,9 @@ public class Node {
 
   /**
    * Gets a resource at this node.
+   * <p>
+   * The provided {@link net.kuujo.copycat.Resource} class must be annotated with {@link net.kuujo.copycat.Stateful}
+   * indicating the {@link net.kuujo.copycat.raft.server.StateMachine} type on the server side.
    *
    * @param type The resource type.
    * @param <T> The resource type.
@@ -141,7 +164,10 @@ public class Node {
   }
 
   /**
-   * Deletes the resource at this node.
+   * Deletes this node.
+   * <p>
+   * Both the {@link net.kuujo.copycat.Node} at this path and any {@link net.kuujo.copycat.Resource} associated
+   * with the node will be permanently deleted, and state stored at the node will not be recoverable.
    *
    * @return A completable future to be completed once the resource has been deleted.
    */

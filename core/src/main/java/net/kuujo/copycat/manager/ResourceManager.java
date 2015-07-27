@@ -69,9 +69,8 @@ public class ResourceManager extends StateMachine {
     if (resource != null) {
       CompletableFuture<Object> future = new ComposableFuture<>();
       resource.context.execute(() -> {
-        CompletableFuture<Object> resultFuture = resource.stateMachine.apply(new Commit(commit.index(), resource.sessions.computeIfAbsent(commit
-          .session()
-          .id(), id -> new ManagedResourceSession(commit.operation().resource(), commit.session())), commit.timestamp(), commit.operation().operation()));
+        CompletableFuture<Object> resultFuture = resource.stateMachine.apply(new Commit(commit.index(), resource.sessions.computeIfAbsent(commit.session().id(), id ->
+          new ManagedResourceSession(commit.operation().resource(), commit.session())), commit.timestamp(), commit.operation().operation()));
         resultFuture.whenComplete((result, error) -> {
           if (error == null) {
             future.complete(result);

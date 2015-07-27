@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.collections;
 
-import net.kuujo.copycat.Mode;
+import net.kuujo.copycat.PersistenceLevel;
 import net.kuujo.copycat.Resource;
 import net.kuujo.copycat.Stateful;
 import net.kuujo.copycat.collections.state.SetCommands;
@@ -48,10 +48,10 @@ public class DistributedSet<T> extends Resource implements AsyncSet<T> {
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<Boolean> add(T value, Mode mode) {
+  public CompletableFuture<Boolean> add(T value, PersistenceLevel persistence) {
     return submit(SetCommands.Add.builder()
       .withValue(value.hashCode())
-      .withMode(mode)
+      .withPersistence(persistence)
       .build());
   }
 
@@ -75,21 +75,21 @@ public class DistributedSet<T> extends Resource implements AsyncSet<T> {
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<Boolean> add(T value, long ttl, Mode mode) {
+  public CompletableFuture<Boolean> add(T value, long ttl, PersistenceLevel persistence) {
     return submit(SetCommands.Add.builder()
       .withValue(value.hashCode())
       .withTtl(ttl)
-      .withMode(mode)
+      .withPersistence(persistence)
       .build());
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<Boolean> add(T value, long ttl, TimeUnit unit, Mode mode) {
+  public CompletableFuture<Boolean> add(T value, long ttl, TimeUnit unit, PersistenceLevel persistence) {
     return submit(SetCommands.Add.builder()
       .withValue(value.hashCode())
       .withTtl(ttl, unit)
-      .withMode(mode)
+      .withPersistence(persistence)
       .build());
   }
 

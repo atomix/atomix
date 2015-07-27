@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.collections;
 
-import net.kuujo.copycat.Mode;
+import net.kuujo.copycat.PersistenceLevel;
 import net.kuujo.copycat.Resource;
 import net.kuujo.copycat.Stateful;
 import net.kuujo.copycat.collections.state.MapCommands;
@@ -106,11 +106,11 @@ public class DistributedMap<K, V> extends Resource implements AsyncMap<K, V> {
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<V> put(K key, V value, Mode mode) {
+  public CompletableFuture<V> put(K key, V value, PersistenceLevel persistence) {
     return submit(MapCommands.Put.builder()
       .withKey(key)
       .withValue(value)
-      .withMode(mode)
+      .withPersistence(persistence)
       .build())
       .thenApply(result -> (V) result);
   }
@@ -128,12 +128,12 @@ public class DistributedMap<K, V> extends Resource implements AsyncMap<K, V> {
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<V> put(K key, V value, long ttl, Mode mode) {
+  public CompletableFuture<V> put(K key, V value, long ttl, PersistenceLevel persistence) {
     return submit(MapCommands.Put.builder()
       .withKey(key)
       .withValue(value)
       .withTtl(ttl)
-      .withMode(mode)
+      .withPersistence(persistence)
       .build())
       .thenApply(result -> (V) result);
   }
@@ -151,12 +151,12 @@ public class DistributedMap<K, V> extends Resource implements AsyncMap<K, V> {
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<V> put(K key, V value, long ttl, TimeUnit unit, Mode mode) {
+  public CompletableFuture<V> put(K key, V value, long ttl, TimeUnit unit, PersistenceLevel persistence) {
     return submit(MapCommands.Put.builder()
       .withKey(key)
       .withValue(value)
       .withTtl(ttl, unit)
-      .withMode(mode)
+      .withPersistence(persistence)
       .build())
       .thenApply(result -> (V) result);
   }
@@ -214,12 +214,12 @@ public class DistributedMap<K, V> extends Resource implements AsyncMap<K, V> {
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<V> putIfAbsent(K key, V value, long ttl, Mode mode) {
+  public CompletableFuture<V> putIfAbsent(K key, V value, long ttl, PersistenceLevel persistence) {
     return submit(MapCommands.PutIfAbsent.builder()
       .withKey(key)
       .withValue(value)
       .withTtl(ttl)
-      .withMode(mode)
+      .withPersistence(persistence)
       .build())
       .thenApply(result -> (V) result);
   }
@@ -237,12 +237,12 @@ public class DistributedMap<K, V> extends Resource implements AsyncMap<K, V> {
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<V> putIfAbsent(K key, V value, long ttl, TimeUnit unit, Mode mode) {
+  public CompletableFuture<V> putIfAbsent(K key, V value, long ttl, TimeUnit unit, PersistenceLevel persistence) {
     return submit(MapCommands.PutIfAbsent.builder()
       .withKey(key)
       .withValue(value)
       .withTtl(ttl, unit)
-      .withMode(mode)
+      .withPersistence(persistence)
       .build())
       .thenApply(result -> (V) result);
   }
