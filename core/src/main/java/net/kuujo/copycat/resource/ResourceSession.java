@@ -13,8 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat;
+package net.kuujo.copycat.resource;
 
+import net.kuujo.copycat.Listener;
+import net.kuujo.copycat.ListenerContext;
 import net.kuujo.copycat.raft.Session;
 import net.kuujo.copycat.util.concurrent.Context;
 

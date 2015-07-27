@@ -13,63 +13,70 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat;
+package net.kuujo.copycat.resource;
 
 import net.kuujo.alleycat.SerializeWith;
-import net.kuujo.copycat.raft.Command;
+import net.kuujo.copycat.BuilderPool;
+import net.kuujo.copycat.raft.ConsistencyLevel;
 import net.kuujo.copycat.raft.Operation;
+import net.kuujo.copycat.raft.Query;
 
 /**
- * Resource command.
+ * Resource query.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=400)
-public class ResourceCommand<T extends Command<U>, U> extends ResourceOperation<T, U> implements Command<U> {
+@SerializeWith(id=401)
+public class ResourceQuery<T extends Query<U>, U> extends ResourceOperation<T, U> implements Query<U> {
 
   /**
-   * Returns a new resource command builder.
+   * Returns a new resource query builder.
    *
-   * @return A new resource command builder.
+   * @return A new resource query builder.
    */
   @SuppressWarnings("unchecked")
-  public static <T extends Command<U>, U> Builder<T, U> builder() {
+  public static <T extends Query<U>, U> Builder<T, U> builder() {
     return Operation.builder(Builder.class, Builder::new);
+  }
+
+  @Override
+  public ConsistencyLevel consistency() {
+    return operation.consistency();
   }
 
   /**
    * Resource command builder.
    */
-  public static class Builder<T extends Command<U>, U> extends Command.Builder<Builder<T, U>, ResourceCommand<T, U>, U> {
+  public static class Builder<T extends Query<U>, U> extends Query.Builder<Builder<T, U>, ResourceQuery<T, U>, U> {
 
-    private Builder(BuilderPool<Builder<T, U>, ResourceCommand<T, U>> pool) {
+    private Builder(BuilderPool<Builder<T, U>, ResourceQuery<T, U>> pool) {
       super(pool);
     }
 
     @Override
-    protected ResourceCommand<T, U> create() {
-      return new ResourceCommand<>();
+    protected ResourceQuery<T, U> create() {
+      return new ResourceQuery<>();
     }
 
     /**
      * Sets the resource ID.
      *
      * @param resource The resource ID.
-     * @return The resource command builder.
+     * @return The resource query builder.
      */
     public Builder withResource(long resource) {
-      command.resource = resource;
+      query.resource = resource;
       return this;
     }
 
     /**
      * Sets the resource command.
      *
-     * @param command The resource command.
+     * @param query The resource command.
      * @return The resource command builder.
      */
-    public Builder withCommand(T command) {
-      this.command.operation = command;
+    public Builder withQuery(T query) {
+      this.query.operation = query;
       return this;
     }
   }

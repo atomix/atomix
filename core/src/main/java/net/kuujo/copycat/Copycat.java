@@ -15,13 +15,11 @@
  */
 package net.kuujo.copycat;
 
-import net.kuujo.copycat.manager.CreatePath;
-import net.kuujo.copycat.manager.CreateResource;
-import net.kuujo.copycat.manager.DeletePath;
-import net.kuujo.copycat.manager.PathExists;
+import net.kuujo.copycat.manager.*;
 import net.kuujo.copycat.raft.ManagedRaft;
 import net.kuujo.copycat.raft.Raft;
 import net.kuujo.copycat.raft.server.StateMachine;
+import net.kuujo.copycat.resource.ResourceProtocol;
 import net.kuujo.copycat.util.Managed;
 
 import java.lang.reflect.Constructor;

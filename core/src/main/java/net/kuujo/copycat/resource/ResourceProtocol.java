@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat;
+package net.kuujo.copycat.resource;
 
 import net.kuujo.copycat.manager.DeleteResource;
 import net.kuujo.copycat.raft.Command;
@@ -29,7 +29,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-class ResourceProtocol implements Raft {
+public class ResourceProtocol implements Raft {
   private final long resource;
   private final Raft protocol;
   private final ResourceSession session;

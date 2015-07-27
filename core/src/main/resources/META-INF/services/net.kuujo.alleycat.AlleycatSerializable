@@ -13,9 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-net.kuujo.copycat.ResourceCommand
-net.kuujo.copycat.ResourceMessage
-net.kuujo.copycat.ResourceQuery
+net.kuujo.copycat.resource.ResourceCommand
+net.kuujo.copycat.resource.ResourceMessage
+net.kuujo.copycat.resource.ResourceQuery
 
 net.kuujo.copycat.manager.CreatePath
 net.kuujo.copycat.manager.CreateResource

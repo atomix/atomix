@@ -15,15 +15,15 @@
  */
 package net.kuujo.copycat.manager;
 
-import net.kuujo.copycat.ResourceCommand;
-import net.kuujo.copycat.ResourceOperation;
-import net.kuujo.copycat.ResourceQuery;
 import net.kuujo.copycat.log.Compaction;
 import net.kuujo.copycat.raft.Session;
 import net.kuujo.copycat.raft.server.Apply;
 import net.kuujo.copycat.raft.server.Commit;
 import net.kuujo.copycat.raft.server.Filter;
 import net.kuujo.copycat.raft.server.StateMachine;
+import net.kuujo.copycat.resource.ResourceCommand;
+import net.kuujo.copycat.resource.ResourceOperation;
+import net.kuujo.copycat.resource.ResourceQuery;
 import net.kuujo.copycat.util.concurrent.ComposableFuture;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.ThreadPoolContext;
