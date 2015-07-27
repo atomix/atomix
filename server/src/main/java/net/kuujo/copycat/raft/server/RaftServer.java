@@ -22,6 +22,7 @@ import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.raft.server.state.ServerContext;
 import net.kuujo.copycat.transport.Transport;
+import net.kuujo.copycat.util.Managed;
 import net.kuujo.copycat.util.concurrent.Context;
 
 import java.util.concurrent.CompletableFuture;
@@ -32,7 +33,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class RaftServer implements ManagedRaft {
+public class RaftServer implements Raft, Managed<Raft> {
 
   /**
    * Raft state types.

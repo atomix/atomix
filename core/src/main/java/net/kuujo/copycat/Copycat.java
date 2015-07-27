@@ -15,8 +15,10 @@
  */
 package net.kuujo.copycat;
 
-import net.kuujo.copycat.manager.*;
-import net.kuujo.copycat.raft.ManagedRaft;
+import net.kuujo.copycat.manager.CreatePath;
+import net.kuujo.copycat.manager.CreateResource;
+import net.kuujo.copycat.manager.DeletePath;
+import net.kuujo.copycat.manager.PathExists;
 import net.kuujo.copycat.raft.Raft;
 import net.kuujo.copycat.raft.server.StateMachine;
 import net.kuujo.copycat.resource.ResourceProtocol;
@@ -35,13 +37,13 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public abstract class Copycat implements Managed<Copycat> {
   static final String PATH_SEPARATOR = "/";
-  protected final ManagedRaft raft;
+  protected final Raft raft;
   private final Map<Class<? extends Resource>, Class<? extends StateMachine>> typeCache = new ConcurrentHashMap<>();
   private final Map<String, Node> nodes = new ConcurrentHashMap<>();
   private final ResourceFactory factory = new ResourceFactory();
   private final Map<Long, ResourceProtocol> resources = new ConcurrentHashMap<>();
 
-  protected Copycat(ManagedRaft raft) {
+  protected <T extends Raft & Managed<Raft>> Copycat(T raft) {
     this.raft = raft;
   }
 
@@ -124,23 +126,27 @@ public abstract class Copycat implements Managed<Copycat> {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public CompletableFuture<Copycat> open() {
-    return raft.open().thenApply(v -> this);
+    return ((Managed<Raft>) raft).open().thenApply(v -> this);
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public boolean isOpen() {
-    return raft.isOpen();
+    return ((Managed<Raft>) raft).isOpen();
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public CompletableFuture<Void> close() {
-    return raft.close();
+    return ((Managed<Raft>) raft).close();
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public boolean isClosed() {
-    return raft.isClosed();
+    return ((Managed<Raft>) raft).isClosed();
   }
 
   /**

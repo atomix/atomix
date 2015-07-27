@@ -20,6 +20,7 @@ import net.kuujo.alleycat.ServiceLoaderResolver;
 import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.raft.client.state.ClientContext;
 import net.kuujo.copycat.transport.Transport;
+import net.kuujo.copycat.util.Managed;
 import net.kuujo.copycat.util.concurrent.Context;
 
 import java.util.concurrent.CompletableFuture;
@@ -30,7 +31,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class RaftClient implements ManagedRaft {
+public class RaftClient implements Raft, Managed<Raft> {
 
   /**
    * Returns a new Raft client builder.
