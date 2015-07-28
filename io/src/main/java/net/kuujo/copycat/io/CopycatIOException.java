@@ -18,7 +18,7 @@ package net.kuujo.copycat.io;
 import net.kuujo.copycat.CopycatException;
 
 /**
- * Alleycat IO exception.
+ * Copycat IO exception.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

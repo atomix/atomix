@@ -24,9 +24,9 @@ import net.kuujo.copycat.io.BufferOutput;
  * Classes can implement this interface as an alternative to providing a separate {@link TypeSerializer} instance. Note,
  * however, that {@link CopycatSerializable} classes must still be registered via {@link Serializer#register(Class)}.
  * <p>
- * Types that implement this interface should provide a no-argument constructor via which Alleycat can allocate new
- * instances of the class. During serialization, Alleycat will call {@link CopycatSerializable#writeObject(net.kuujo.copycat.io.BufferOutput, Serializer)}
- * to serialize the object to a {@link net.kuujo.copycat.io.Buffer}. During deserialization, Alleycat will call
+ * Types that implement this interface should provide a no-argument constructor via which Copycat can allocate new
+ * instances of the class. During serialization, Copycat will call {@link CopycatSerializable#writeObject(net.kuujo.copycat.io.BufferOutput, Serializer)}
+ * to serialize the object to a {@link net.kuujo.copycat.io.Buffer}. During deserialization, Copycat will call
  * {@link CopycatSerializable#readObject(net.kuujo.copycat.io.BufferInput, Serializer)} to deserialize
  * the object from a {@link net.kuujo.copycat.io.Buffer}.
  *
@@ -43,7 +43,7 @@ public interface CopycatSerializable {
    * set the buffer's {@link net.kuujo.copycat.io.Buffer#mark()} and {@link net.kuujo.copycat.io.Buffer#reset()}.
    * <p>
    * When writing dynamically sized attributes such as strings and collections, users should always write the attribute's
-   * size to the given buffer. Alleycat makes no guarantee that the buffer provided to
+   * size to the given buffer. Copycat makes no guarantee that the buffer provided to
    * {@link CopycatSerializable#readObject(net.kuujo.copycat.io.BufferInput, Serializer)} will reflect the
    * number of bytes written to the buffer during serialization.
    *
@@ -58,7 +58,7 @@ public interface CopycatSerializable {
    * <p>
    * Implementations of this method should read object attributes from the given buffer in the same order with which they
    * were written to the buffer in {@link CopycatSerializable#writeObject(net.kuujo.copycat.io.BufferOutput, Serializer)}.
-   * Alleycat guarantees only that the current {@link net.kuujo.copycat.io.Buffer#position()} will reflect the start
+   * Copycat guarantees only that the current {@link net.kuujo.copycat.io.Buffer#position()} will reflect the start
    * of the bytes written by {@link CopycatSerializable#writeObject(net.kuujo.copycat.io.BufferOutput, Serializer)},
    * but not that the {@link net.kuujo.copycat.io.Buffer#remaining()} bytes reflect the number of bytes written by
    * {@link CopycatSerializable#writeObject(net.kuujo.copycat.io.BufferOutput, Serializer)}.

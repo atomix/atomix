@@ -26,13 +26,13 @@ import java.util.*;
  * <p>
  * This class provides an interface for efficient serialization of Java objects. Serialization is performed by
  * {@link TypeSerializer} instances. Objects that can be serialized by {@link Serializer} must be registered. When objects
- * are serialized, Alleycat will write the object's type as an 16-bit unsigned integer. When reading objects, the
+ * are serialized, Copycat will write the object's type as an 16-bit unsigned integer. When reading objects, the
  * 16-bit identifier is used to construct a new object.
  * <p>
  * Serializable objects must either provide a {@link TypeSerializer}. implement {@link CopycatSerializable}, or implement
  * {@link java.io.Externalizable}. For efficiency, serializable objects may implement {@link net.kuujo.copycat.util.ReferenceCounted}
  * or provide a {@link PooledSerializer} that reuses objects during deserialization.
- * Alleycat will automatically deserialize {@link net.kuujo.copycat.util.ReferenceCounted} types using an object pool.
+ * Copycat will automatically deserialize {@link net.kuujo.copycat.util.ReferenceCounted} types using an object pool.
  * <p>
  * Serialization via this class is not thread safe.
  *
