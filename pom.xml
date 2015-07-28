@@ -208,6 +208,9 @@
     </profile>
     <profile>
       <id>javadoc</id>
+      <properties>
+        <jv>${project.version}</jv>
+      </properties>
       <build>
         <plugins>
           <plugin>
@@ -217,7 +220,11 @@
             <configuration>
               <show>public</show>
               <excludePackageNames>*.state.*:net.kuujo.copycat.resource:net.kuujo.copycat.manager:net.kuujo.copycat.raft.server.*:net.kuujo.copycat.io.serializer.*</excludePackageNames>
+              <doctitle>Copycat API Reference (${jv})</doctitle>
+              <windowtitle>Copycat API Reference (${jv})</windowtitle>
               <reportOutputDirectory>target/docs</reportOutputDirectory>
+              <destDir>${jv}/java</destDir>
+              <aggregate>true</aggregate>
               <additionalparam>
                 -Xdoclint:none
                 -link http://docs.oracle.com/javase/8/docs/api/
@@ -230,18 +237,7 @@
                 -group "Raft Consensus Algorithm" net.kuujo.copycat.raft*
                 -group "Miscellaneous" net.kuujo.copycat.util*
               </additionalparam>
-              <aggregate>true</aggregate>
-              <destDir>java</destDir>
             </configuration>
-            <executions>
-              <execution>
-                <id>javadoc-jar</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>jar</goal>
-                </goals>
-              </execution>
-            </executions>
           </plugin>
         </plugins>
       </build>
