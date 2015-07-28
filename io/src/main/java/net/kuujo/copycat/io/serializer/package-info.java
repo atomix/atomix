@@ -13,28 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.io.util;
 
 /**
- * Exception thrown when a {@link net.kuujo.copycat.util.ReferenceCounted} object with no active references is accessed.
+ * Provides a fast serialization framework built on the {@link net.kuujo.copycat.io.Buffer} abstraction.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class IllegalReferenceException extends IllegalStateException {
-
-  public IllegalReferenceException() {
-  }
-
-  public IllegalReferenceException(String s) {
-    super(s);
-  }
-
-  public IllegalReferenceException(String message, Throwable cause) {
-    super(message, cause);
-  }
-
-  public IllegalReferenceException(Throwable cause) {
-    super(cause);
-  }
-
-}
+package net.kuujo.copycat.io.serializer;

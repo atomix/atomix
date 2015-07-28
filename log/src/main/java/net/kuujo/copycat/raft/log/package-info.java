@@ -15,7 +15,7 @@
  */
 
 /**
- * This package provides a standalone segmented log for Copycat's <a href="https://raftconsensus.github.io/">Raft</a> implementation.
+ * Provides a standalone segmented log for Copycat's <a href="https://raftconsensus.github.io/">Raft</a> implementation.
  * <p>
  * The log is designed as a standalone journal built on Copycat's {@link net.kuujo.copycat.io.Buffer} abstraction.
  * The buffer abstraction allows Copycat's {@link net.kuujo.copycat.raft.log.Log} to write to memory or disk based on the
