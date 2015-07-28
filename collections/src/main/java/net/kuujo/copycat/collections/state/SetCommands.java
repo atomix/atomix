@@ -25,6 +25,7 @@ import net.kuujo.copycat.raft.Command;
 import net.kuujo.copycat.raft.ConsistencyLevel;
 import net.kuujo.copycat.raft.Operation;
 import net.kuujo.copycat.raft.Query;
+import net.kuujo.copycat.util.BuilderPool;
 
 import java.util.concurrent.TimeUnit;
 

@@ -140,7 +140,7 @@ public interface Raft {
   /**
    * Raft instance builder.
    */
-  static abstract class Builder<T extends Builder<T, U>, U extends Raft> extends net.kuujo.copycat.Builder<U> {
+  static abstract class Builder<T extends Builder<T, U>, U extends Raft> extends net.kuujo.copycat.util.Builder<U> {
 
     /**
      * Sets the network transport.

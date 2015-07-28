@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.raft.protocol;
 
-import net.kuujo.copycat.BuilderPool;
+import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.util.ReferenceManager;
 

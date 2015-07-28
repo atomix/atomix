@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.raft.protocol;
 
-import net.kuujo.copycat.BuilderPool;
+import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.raft.Members;
 import net.kuujo.copycat.raft.RaftError;
 import net.kuujo.copycat.io.BufferInput;

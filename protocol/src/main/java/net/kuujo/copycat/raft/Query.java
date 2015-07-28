@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.raft;
 
-import net.kuujo.copycat.BuilderPool;
+import net.kuujo.copycat.util.BuilderPool;
 
 /**
  * Raft state queries read system state.

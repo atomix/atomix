@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.raft.log;
 
-import net.kuujo.copycat.BuilderPool;
+import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.util.concurrent.Context;
 
 import java.io.File;
@@ -346,7 +346,7 @@ public class Log implements AutoCloseable {
   /**
    * Raft log builder.
    */
-  public static class Builder extends net.kuujo.copycat.Builder<Log> {
+  public static class Builder extends net.kuujo.copycat.util.Builder<Log> {
     private final LogConfig config = new LogConfig();
 
     private Builder(BuilderPool pool) {

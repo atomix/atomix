@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.raft;
 
-import net.kuujo.copycat.BuilderPool;
+import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.CopycatSerializable;
@@ -37,7 +37,7 @@ public class Members implements CopycatSerializable {
   /**
    * Returns a new members builder.
    * <p>
-   * The returned {@link Members.Builder} is pooled internally via a {@link net.kuujo.copycat.BuilderPool}.
+   * The returned {@link Members.Builder} is pooled internally via a {@link net.kuujo.copycat.util.BuilderPool}.
    * Once the builder's {@link Members.Builder#build()} method is called, the builder will be
    * released back to the internal pool and recycled on the next call to this method.
    *
@@ -94,7 +94,7 @@ public class Members implements CopycatSerializable {
   /**
    * Members builder.
    */
-  public static class Builder extends net.kuujo.copycat.Builder<Members> {
+  public static class Builder extends net.kuujo.copycat.util.Builder<Members> {
     private Members members = new Members();
 
     public Builder(BuilderPool<Builder, Members> pool) {

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat;
+package net.kuujo.copycat.util;
 
 /**
  * Object builder.
@@ -21,8 +21,8 @@ package net.kuujo.copycat;
  * This is a base interface for building objects in Copycat.
  * <p>
  * Throughout Copycat, builders are used to build a variety of objects. Builders are designed to be
- * {@link net.kuujo.copycat.BuilderPool pooled} and reused in order to reduce GC pressure. When {@link #build()} or
- * {@link #close()} is called on a builder, the builder will be released back to the {@link net.kuujo.copycat.BuilderPool}
+ * {@link BuilderPool pooled} and reused in order to reduce GC pressure. When {@link #build()} or
+ * {@link #close()} is called on a builder, the builder will be released back to the {@link BuilderPool}
  * that created it.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
@@ -42,7 +42,7 @@ public abstract class Builder<T> implements AutoCloseable {
    * Resets the builder.
    * <p>
    * Builders should override this method to reset internal builder state for builders pooled via
-   * {@link net.kuujo.copycat.BuilderPool}. Each time a new builder is {@link BuilderPool#acquire() acquired} from a
+   * {@link BuilderPool}. Each time a new builder is {@link BuilderPool#acquire() acquired} from a
    * pool, this method will be called to reset the internal builder state.
    */
   protected void reset() {
@@ -53,7 +53,7 @@ public abstract class Builder<T> implements AutoCloseable {
    * Resets the builder.
    * <p>
    * Builders should override this method to reset internal builder state for builders pooled via
-   * {@link net.kuujo.copycat.BuilderPool}. Each time a new builder is {@link BuilderPool#acquire(Object) acquired} from a
+   * {@link BuilderPool}. Each time a new builder is {@link BuilderPool#acquire(Object) acquired} from a
    * pool, this method will be called to reset the internal builder state.
    */
   protected void reset(T object) {

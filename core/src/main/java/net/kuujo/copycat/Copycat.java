@@ -211,7 +211,7 @@ public abstract class Copycat implements Managed<Copycat> {
   /**
    * Copycat builder.
    */
-  public static abstract class Builder<T extends Copycat> extends net.kuujo.copycat.Builder<T> {
+  public static abstract class Builder<T extends Copycat> extends net.kuujo.copycat.util.Builder<T> {
   }
 
 }

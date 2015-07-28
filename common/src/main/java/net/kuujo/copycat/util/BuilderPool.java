@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat;
+package net.kuujo.copycat.util;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -25,7 +25,7 @@ import java.util.function.Function;
  * Builders are frequently used throughout Copycat. In order to reduce garbage collection for objects that are frequently
  * constructed by builders, the builder pool recycles builders themselves. When a builder is {@link #acquire() acquired}
  * from a builder pool, an internal pool of existing builders will be {@link java.util.Queue#poll() polled} for existing
- * builders. If no builders are left in the pool, a new builder will be allocated. When {@link net.kuujo.copycat.Builder#close()}
+ * builders. If no builders are left in the pool, a new builder will be allocated. When {@link Builder#close()}
  * is called the builder will be {@link #release(Builder) released} ba
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>

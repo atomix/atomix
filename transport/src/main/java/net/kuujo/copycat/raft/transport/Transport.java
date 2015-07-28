@@ -74,7 +74,7 @@ public interface Transport {
   /**
    * Transport builder.
    */
-  static abstract class Builder extends net.kuujo.copycat.Builder<Transport> {
+  static abstract class Builder extends net.kuujo.copycat.util.Builder<Transport> {
   }
 
 }

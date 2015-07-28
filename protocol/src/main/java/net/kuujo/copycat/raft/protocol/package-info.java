@@ -26,10 +26,10 @@
  * garbage by allowing {@link net.kuujo.copycat.io.serializer.Serializer} to pool requests and responses during deserialization.
  * <p>
  * All {@link net.kuujo.copycat.raft.protocol.Request}s and {@link net.kuujo.copycat.raft.protocol.Response}s provide
- * a custom {@link net.kuujo.copycat.Builder} implementation specific to each request's or response's attributes. Builders
+ * a custom {@link net.kuujo.copycat.util.Builder} implementation specific to each request's or response's attributes. Builders
  * can be created by calling the static {@code builder()} method on a given {@code Request} or {@code Response} implementation.
  * Builders are thread local and are not thread safe. All builders assume that they will be completed via
- * {@link net.kuujo.copycat.Builder#build()} in the same thread in which it was created.
+ * {@link net.kuujo.copycat.util.Builder#build()} in the same thread in which it was created.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

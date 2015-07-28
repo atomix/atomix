@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.resource;
 
-import net.kuujo.copycat.BuilderPool;
+import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.raft.ConsistencyLevel;
 import net.kuujo.copycat.raft.Operation;
 import net.kuujo.copycat.raft.Query;

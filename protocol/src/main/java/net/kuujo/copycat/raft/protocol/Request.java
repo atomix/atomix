@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.raft.protocol;
 
-import net.kuujo.copycat.BuilderPool;
+import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.io.serializer.CopycatSerializable;
 import net.kuujo.copycat.util.ReferenceCounted;
 
@@ -95,7 +95,7 @@ public interface Request<T extends Request<T>> extends ReferenceCounted<T>, Copy
    *
    * @param <T> The builder type.
    */
-  static abstract class Builder<T extends Builder<T, U>, U extends Request> extends net.kuujo.copycat.Builder<U> {
+  static abstract class Builder<T extends Builder<T, U>, U extends Request> extends net.kuujo.copycat.util.Builder<U> {
     protected Builder(BuilderPool pool) {
       super(pool);
     }

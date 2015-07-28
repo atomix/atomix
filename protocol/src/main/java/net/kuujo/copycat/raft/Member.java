@@ -38,7 +38,7 @@ public class Member implements CopycatSerializable {
   /**
    * Returns a new member builder.
    * <p>
-   * The returned {@link Member.Builder} is pooled internally via a {@link net.kuujo.copycat.BuilderPool}.
+   * The returned {@link Member.Builder} is pooled internally via a {@link net.kuujo.copycat.util.BuilderPool}.
    * Once the builder's {@link Member.Builder#build()} method is called, the builder will be
    * released back to the internal pool and recycled on the next call to this method.
    *
@@ -126,7 +126,7 @@ public class Member implements CopycatSerializable {
   /**
    * Builds
    */
-  public static class Builder extends net.kuujo.copycat.Builder<Member> {
+  public static class Builder extends net.kuujo.copycat.util.Builder<Member> {
     private Member member = new Member();
 
     private Builder() {

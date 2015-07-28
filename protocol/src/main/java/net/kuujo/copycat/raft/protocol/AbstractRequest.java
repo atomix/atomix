@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.raft.protocol;
 
-import net.kuujo.copycat.BuilderPool;
+import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.util.ReferenceFactory;
 import net.kuujo.copycat.util.ReferenceManager;
 import net.kuujo.copycat.util.ReferencePool;
