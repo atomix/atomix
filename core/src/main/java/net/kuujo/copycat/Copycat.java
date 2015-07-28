@@ -19,7 +19,8 @@ import net.kuujo.copycat.manager.CreatePath;
 import net.kuujo.copycat.manager.CreateResource;
 import net.kuujo.copycat.manager.DeletePath;
 import net.kuujo.copycat.manager.PathExists;
-import net.kuujo.copycat.server.StateMachine;
+import net.kuujo.copycat.raft.Raft;
+import net.kuujo.copycat.raft.server.StateMachine;
 import net.kuujo.copycat.resource.ResourceProtocol;
 import net.kuujo.copycat.util.Managed;
 
@@ -38,13 +39,13 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>
  * To create a resource, create a {@link net.kuujo.copycat.Node} and then create the resource by passing the resource
  * {@link java.lang.Class} to the {@link Node#create(Class)} method. When a resource is created, the
- * {@link net.kuujo.copycat.server.StateMachine} associated with the resource will be created on each Raft server
+ * {@link net.kuujo.copycat.raft.server.StateMachine} associated with the resource will be created on each Raft server
  * and future operations submitted for that resource will be applied to the state machine. Internally, resource state
  * machines are multiplexed across a shared Raft log.
  * <p>
  * {@link net.kuujo.copycat.Resource} implementations serve as a user-friendly interface through which to submit
- * {@link Command commands} and {@link Query queries} to the underlying
- * {@link Raft} client or server.
+ * {@link net.kuujo.copycat.raft.Command commands} and {@link net.kuujo.copycat.raft.Query queries} to the underlying
+ * {@link net.kuujo.copycat.raft.Raft} client or server.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -118,13 +119,13 @@ public abstract class Copycat implements Managed<Copycat> {
    * don't already exist.
    * <p>
    * The provided {@link net.kuujo.copycat.Resource} class must be annotated with {@link net.kuujo.copycat.Stateful}
-   * indicating the {@link net.kuujo.copycat.server.StateMachine} to create on the server side. The state machine
+   * indicating the {@link net.kuujo.copycat.raft.server.StateMachine} to create on the server side. The state machine
    * class will be submitted to the cluster and created on each Raft server before the returned
    * {@link java.util.concurrent.CompletableFuture} is completed.
    *
    * @param path The path at which to create the resource.
    * @param type The resource type to create. This must be a class annotated with {@link net.kuujo.copycat.Stateful}
-   *             indicating the {@link net.kuujo.copycat.server.StateMachine} class to use.
+   *             indicating the {@link net.kuujo.copycat.raft.server.StateMachine} class to use.
    * @param <T> The resource type.
    * @return A completable future to be completed once the resource has been created.
    */

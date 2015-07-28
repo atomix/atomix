@@ -15,13 +15,13 @@
  */
 package net.kuujo.copycat.coordination.state;
 
-import net.kuujo.copycat.log.Compaction;
-import net.kuujo.copycat.Operation;
-import net.kuujo.copycat.Session;
-import net.kuujo.copycat.server.Apply;
-import net.kuujo.copycat.server.Commit;
-import net.kuujo.copycat.server.Filter;
-import net.kuujo.copycat.server.StateMachine;
+import net.kuujo.copycat.raft.log.Compaction;
+import net.kuujo.copycat.raft.Operation;
+import net.kuujo.copycat.raft.Session;
+import net.kuujo.copycat.raft.server.Apply;
+import net.kuujo.copycat.raft.server.Commit;
+import net.kuujo.copycat.raft.server.Filter;
+import net.kuujo.copycat.raft.server.StateMachine;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat;
 
-import net.kuujo.copycat.server.StateMachine;
+import net.kuujo.copycat.raft.server.StateMachine;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

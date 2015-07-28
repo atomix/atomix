@@ -18,7 +18,7 @@ package net.kuujo.copycat.manager;
 import net.kuujo.copycat.Listener;
 import net.kuujo.copycat.ListenerContext;
 import net.kuujo.copycat.Listeners;
-import net.kuujo.copycat.Session;
+import net.kuujo.copycat.raft.Session;
 import net.kuujo.copycat.resource.ResourceMessage;
 
 import java.util.UUID;

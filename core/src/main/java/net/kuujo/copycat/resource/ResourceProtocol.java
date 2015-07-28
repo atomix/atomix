@@ -16,10 +16,10 @@
 package net.kuujo.copycat.resource;
 
 import net.kuujo.copycat.manager.DeleteResource;
-import net.kuujo.copycat.Command;
-import net.kuujo.copycat.Query;
-import net.kuujo.copycat.Raft;
-import net.kuujo.copycat.Session;
+import net.kuujo.copycat.raft.Command;
+import net.kuujo.copycat.raft.Query;
+import net.kuujo.copycat.raft.Raft;
+import net.kuujo.copycat.raft.Session;
 import net.kuujo.copycat.util.concurrent.Context;
 
 import java.util.concurrent.CompletableFuture;

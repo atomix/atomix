@@ -18,8 +18,8 @@ package net.kuujo.copycat.atomic;
 import net.kuujo.copycat.*;
 import net.kuujo.copycat.atomic.state.ReferenceCommands;
 import net.kuujo.copycat.atomic.state.ReferenceState;
-import net.kuujo.copycat.ConsistencyLevel;
-import net.kuujo.copycat.Raft;
+import net.kuujo.copycat.raft.ConsistencyLevel;
+import net.kuujo.copycat.raft.Raft;
 
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;

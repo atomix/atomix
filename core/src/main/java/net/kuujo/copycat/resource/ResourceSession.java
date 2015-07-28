@@ -17,7 +17,7 @@ package net.kuujo.copycat.resource;
 
 import net.kuujo.copycat.Listener;
 import net.kuujo.copycat.ListenerContext;
-import net.kuujo.copycat.Session;
+import net.kuujo.copycat.raft.Session;
 import net.kuujo.copycat.util.concurrent.Context;
 
 import java.util.Collections;

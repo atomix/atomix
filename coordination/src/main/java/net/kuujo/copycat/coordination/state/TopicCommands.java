@@ -16,8 +16,8 @@
 package net.kuujo.copycat.coordination.state;
 
 import net.kuujo.copycat.BuilderPool;
-import net.kuujo.copycat.Command;
-import net.kuujo.copycat.Operation;
+import net.kuujo.copycat.raft.Command;
+import net.kuujo.copycat.raft.Operation;
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.CopycatSerializable;

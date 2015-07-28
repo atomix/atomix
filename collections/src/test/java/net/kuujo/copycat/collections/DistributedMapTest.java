@@ -19,12 +19,12 @@ import net.jodah.concurrentunit.ConcurrentTestCase;
 import net.kuujo.copycat.Copycat;
 import net.kuujo.copycat.CopycatServer;
 import net.kuujo.copycat.Node;
-import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.log.StorageLevel;
-import net.kuujo.copycat.Member;
-import net.kuujo.copycat.Members;
-import net.kuujo.copycat.transport.LocalServerRegistry;
-import net.kuujo.copycat.transport.LocalTransport;
+import net.kuujo.copycat.raft.log.Log;
+import net.kuujo.copycat.raft.log.StorageLevel;
+import net.kuujo.copycat.raft.Member;
+import net.kuujo.copycat.raft.Members;
+import net.kuujo.copycat.raft.transport.LocalServerRegistry;
+import net.kuujo.copycat.raft.transport.LocalTransport;
 import org.testng.annotations.Test;
 
 import java.util.ArrayList;
