@@ -33,7 +33,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Stateful(TopicState.class)
-public class DistributedTopic<T> extends Resource implements AsyncTopic<T> {
+public class DistributedTopic<T> extends Resource {
   private final List<TopicListenerContext<T>> listeners = new CopyOnWriteArrayList<>();
 
   @SuppressWarnings("unchecked")
@@ -46,14 +46,24 @@ public class DistributedTopic<T> extends Resource implements AsyncTopic<T> {
     });
   }
 
-  @Override
+  /**
+   * Publishes a message to the topic.
+   *
+   * @param message The message to publish.
+   * @return A completable future to be completed once the message has been published.
+   */
   public CompletableFuture<Void> publish(T message) {
     return submit(TopicCommands.Publish.builder()
       .withMessage(message)
       .build());
   }
 
-  @Override
+  /**
+   * Sets a message listener on the topic.
+   *
+   * @param listener The message listener.
+   * @return The listener context.
+   */
   public ListenerContext<T> onMessage(Listener<T> listener) {
     TopicListenerContext<T> context = new TopicListenerContext<T>(listener);
     listeners.add(context);

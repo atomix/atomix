@@ -33,7 +33,7 @@ import java.util.function.Consumer;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Stateful(LockState.class)
-public class DistributedLock extends Resource implements AsyncLock {
+public class DistributedLock extends Resource {
   private final Queue<Consumer<Boolean>> queue = new ConcurrentLinkedQueue<>();
 
   public DistributedLock(Raft protocol) {
@@ -51,7 +51,11 @@ public class DistributedLock extends Resource implements AsyncLock {
     }
   }
 
-  @Override
+  /**
+   * Acquires the lock.
+   *
+   * @return A completable future to be completed once the lock has been acquired.
+   */
   public CompletableFuture<Void> lock() {
     CompletableFuture<Void> future = new CompletableFuture<>();
     Consumer<Boolean> consumer = locked -> future.complete(null);
@@ -64,7 +68,11 @@ public class DistributedLock extends Resource implements AsyncLock {
     return future;
   }
 
-  @Override
+  /**
+   * Acquires the lock if it's free.
+   *
+   * @return A completable future to be completed with a boolean indicating whether the lock was acquired.
+   */
   public CompletableFuture<Boolean> tryLock() {
     CompletableFuture<Boolean> future = new CompletableFuture<>();
     Consumer<Boolean> consumer = future::complete;
@@ -77,7 +85,12 @@ public class DistributedLock extends Resource implements AsyncLock {
     return future;
   }
 
-  @Override
+  /**
+   * Acquires the lock if it's free within the given timeout.
+   *
+   * @param time The time within which to acquire the lock in milliseconds.
+   * @return A completable future to be completed with a boolean indicating whether the lock was acquired.
+   */
   public CompletableFuture<Boolean> tryLock(long time) {
     CompletableFuture<Boolean> future = new CompletableFuture<>();
     Consumer<Boolean> consumer = future::complete;
@@ -90,12 +103,30 @@ public class DistributedLock extends Resource implements AsyncLock {
     return future;
   }
 
-  @Override
+  /**
+   * Acquires the lock if it's free within the given timeout.
+   *
+   * @param time The time within which to acquire the lock.
+   * @param unit The time unit.
+   * @return A completable future to be completed with a boolean indicating whether the lock was acquired.
+   */
   public CompletableFuture<Boolean> tryLock(long time, TimeUnit unit) {
-    return submit(LockCommands.Lock.builder().withTimeout(time, unit).build());
+    CompletableFuture<Boolean> future = new CompletableFuture<>();
+    Consumer<Boolean> consumer = future::complete;
+    queue.add(consumer);
+    submit(LockCommands.Lock.builder().withTimeout(time, unit).build()).whenComplete((result, error) -> {
+      if (error != null) {
+        queue.remove(consumer);
+      }
+    });
+    return future;
   }
 
-  @Override
+  /**
+   * Releases the lock.
+   *
+   * @return A completable future to be completed once the lock has been released.
+   */
   public CompletableFuture<Void> unlock() {
     return submit(LockCommands.Unlock.builder().build());
   }

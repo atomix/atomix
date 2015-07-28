@@ -34,7 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Stateful(LeaderElectionState.class)
-public class DistributedLeaderElection extends Resource implements AsyncLeaderElection {
+public class DistributedLeaderElection extends Resource {
   private final Set<Listener<Void>> listeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
   public DistributedLeaderElection(Raft protocol) {
@@ -46,7 +46,12 @@ public class DistributedLeaderElection extends Resource implements AsyncLeaderEl
     });
   }
 
-  @Override
+  /**
+   * Registers a listener to be called when this client is elected.
+   *
+   * @param listener The listener to register.
+   * @return A completable future to be completed with the listener context.
+   */
   public CompletableFuture<ListenerContext<Void>> onElection(Listener<Void> listener) {
     if (!listeners.isEmpty()) {
       listeners.add(listener);
