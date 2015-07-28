@@ -33,20 +33,31 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Stateful(SetState.class)
-public class DistributedSet<T> extends Resource implements AsyncSet<T> {
+public class DistributedSet<T> extends Resource {
 
   public DistributedSet(Raft protocol) {
     super(protocol);
   }
 
-  @Override
+  /**
+   * Adds a value to the set.
+   *
+   * @param value The value to add.
+   * @return A completable future to be completed with the result once complete.
+   */
   public CompletableFuture<Boolean> add(T value) {
     return submit(SetCommands.Add.builder()
       .withValue(value.hashCode())
       .build());
   }
 
-  @Override
+  /**
+   * Adds a value to the set with a TTL.
+   *
+   * @param value The value to add.
+   * @param persistence The persistence persistence.
+   * @return A completable future to be completed with the result once complete.
+   */
   @SuppressWarnings("unchecked")
   public CompletableFuture<Boolean> add(T value, PersistenceLevel persistence) {
     return submit(SetCommands.Add.builder()
@@ -55,7 +66,13 @@ public class DistributedSet<T> extends Resource implements AsyncSet<T> {
       .build());
   }
 
-  @Override
+  /**
+   * Adds a value to the set with a TTL.
+   *
+   * @param value The value to add.
+   * @param ttl The time to live in milliseconds.
+   * @return A completable future to be completed with the result once complete.
+   */
   @SuppressWarnings("unchecked")
   public CompletableFuture<Boolean> add(T value, long ttl) {
     return submit(SetCommands.Add.builder()
@@ -64,7 +81,14 @@ public class DistributedSet<T> extends Resource implements AsyncSet<T> {
       .build());
   }
 
-  @Override
+  /**
+   * Adds a value to the set with a TTL.
+   *
+   * @param value The value to add.
+   * @param ttl The time to live.
+   * @param unit The time to live unit.
+   * @return A completable future to be completed with the result once complete.
+   */
   @SuppressWarnings("unchecked")
   public CompletableFuture<Boolean> add(T value, long ttl, TimeUnit unit) {
     return submit(SetCommands.Add.builder()
@@ -73,7 +97,14 @@ public class DistributedSet<T> extends Resource implements AsyncSet<T> {
       .build());
   }
 
-  @Override
+  /**
+   * Adds a value to the set with a TTL.
+   *
+   * @param value The value to add.
+   * @param ttl The time to live in milliseconds.
+   * @param persistence The persistence persistence.
+   * @return A completable future to be completed with the result once complete.
+   */
   @SuppressWarnings("unchecked")
   public CompletableFuture<Boolean> add(T value, long ttl, PersistenceLevel persistence) {
     return submit(SetCommands.Add.builder()
@@ -83,7 +114,15 @@ public class DistributedSet<T> extends Resource implements AsyncSet<T> {
       .build());
   }
 
-  @Override
+  /**
+   * Adds a value to the set with a TTL.
+   *
+   * @param value The value to add.
+   * @param ttl The time to live.
+   * @param unit The time to live unit.
+   * @param persistence The persistence persistence.
+   * @return A completable future to be completed with the result once complete.
+   */
   @SuppressWarnings("unchecked")
   public CompletableFuture<Boolean> add(T value, long ttl, TimeUnit unit, PersistenceLevel persistence) {
     return submit(SetCommands.Add.builder()
@@ -93,21 +132,37 @@ public class DistributedSet<T> extends Resource implements AsyncSet<T> {
       .build());
   }
 
-  @Override
+  /**
+   * Removes a value from the set.
+   *
+   * @param value The value to remove.
+   * @return A completable future to be completed with the result once complete.
+   */
   public CompletableFuture<Boolean> remove(T value) {
     return submit(SetCommands.Remove.builder()
       .withValue(value.hashCode())
       .build());
   }
 
-  @Override
+  /**
+   * Checks whether the set contains a value.
+   *
+   * @param value The value to check.
+   * @return A completable future to be completed with the result once complete.
+   */
   public CompletableFuture<Boolean> contains(Object value) {
     return submit(SetCommands.Contains.builder()
       .withValue(value.hashCode())
       .build());
   }
 
-  @Override
+  /**
+   * Checks whether the set contains a value.
+   *
+   * @param value The value to check.
+   * @param consistency The query consistency level.
+   * @return A completable future to be completed with the result once complete.
+   */
   public CompletableFuture<Boolean> contains(Object value, ConsistencyLevel consistency) {
     return submit(SetCommands.Contains.builder()
       .withValue(value.hashCode())
@@ -115,27 +170,49 @@ public class DistributedSet<T> extends Resource implements AsyncSet<T> {
       .build());
   }
 
-  @Override
+  /**
+   * Gets the set size.
+   *
+   * @return A completable future to be completed with the set size.
+   */
   public CompletableFuture<Integer> size() {
     return submit(SetCommands.Size.builder().build());
   }
 
-  @Override
+  /**
+   * Gets the set size.
+   *
+   * @param consistency The query consistency level.
+   * @return A completable future to be completed with the set size.
+   */
   public CompletableFuture<Integer> size(ConsistencyLevel consistency) {
     return submit(SetCommands.Size.builder().withConsistency(consistency).build());
   }
 
-  @Override
+  /**
+   * Checks whether the set is empty.
+   *
+   * @return A completable future to be completed with a boolean value indicating whether the set is empty.
+   */
   public CompletableFuture<Boolean> isEmpty() {
     return submit(SetCommands.IsEmpty.builder().build());
   }
 
-  @Override
+  /**
+   * Checks whether the set is empty.
+   *
+   * @param consistency The query consistency level.
+   * @return A completable future to be completed with a boolean value indicating whether the set is empty.
+   */
   public CompletableFuture<Boolean> isEmpty(ConsistencyLevel consistency) {
     return submit(SetCommands.IsEmpty.builder().withConsistency(consistency).build());
   }
 
-  @Override
+  /**
+   * Removes all values from the set.
+   *
+   * @return A completable future to be completed once the operation is complete.
+   */
   public CompletableFuture<Void> clear() {
     return submit(SetCommands.Clear.builder().build());
   }

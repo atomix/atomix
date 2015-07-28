@@ -34,40 +34,69 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Stateful(MapState.class)
-public class DistributedMap<K, V> extends Resource implements AsyncMap<K, V> {
+public class DistributedMap<K, V> extends Resource {
 
   public DistributedMap(Raft protocol) {
     super(protocol);
   }
 
-  @Override
+  /**
+   * Checks whether the map is empty.
+   *
+   * @return A completable future to be completed with a boolean value indicating whether the map is empty.
+   */
   public CompletableFuture<Boolean> isEmpty() {
     return submit(MapCommands.IsEmpty.builder().build());
   }
 
-  @Override
+  /**
+   * Checks whether the map is empty.
+   *
+   * @param consistency The query consistency level.
+   * @return A completable future to be completed with a boolean value indicating whether the map is empty.
+   */
   public CompletableFuture<Boolean> isEmpty(ConsistencyLevel consistency) {
     return submit(MapCommands.IsEmpty.builder().withConsistency(consistency).build());
   }
 
-  @Override
+  /**
+   * Gets the size of the map.
+   *
+   * @return A completable future to be completed with the number of entries in the map.
+   */
   public CompletableFuture<Integer> size() {
     return submit(MapCommands.Size.builder().build());
   }
 
-  @Override
+  /**
+   * Gets the size of the map.
+   *
+   * @param consistency The query consistency level.
+   * @return A completable future to be completed with the number of entries in the map.
+   */
   public CompletableFuture<Integer> size(ConsistencyLevel consistency) {
     return submit(MapCommands.Size.builder().withConsistency(consistency).build());
   }
 
-  @Override
+  /**
+   * Checks whether the map contains a key.
+   *
+   * @param key The key to check.
+   * @return A completable future to be completed with the result once complete.
+   */
   public CompletableFuture<Boolean> containsKey(Object key) {
     return submit(MapCommands.ContainsKey.builder()
       .withKey(key)
       .build());
   }
 
-  @Override
+  /**
+   * Checks whether the map contains a key.
+   *
+   * @param key The key to check.
+   * @param consistency The query consistency level.
+   * @return A completable future to be completed with the result once complete.
+   */
   public CompletableFuture<Boolean> containsKey(Object key, ConsistencyLevel consistency) {
     return submit(MapCommands.ContainsKey.builder()
       .withKey(key)
@@ -75,7 +104,12 @@ public class DistributedMap<K, V> extends Resource implements AsyncMap<K, V> {
       .build());
   }
 
-  @Override
+  /**
+   * Gets a value from the map.
+   *
+   * @param key The key to get.
+   * @return A completable future to be completed with the result once complete.
+   */
   @SuppressWarnings("unchecked")
   public CompletableFuture<V> get(Object key) {
     return submit(MapCommands.Get.builder()
@@ -84,7 +118,13 @@ public class DistributedMap<K, V> extends Resource implements AsyncMap<K, V> {
       .thenApply(result -> (V) result);
   }
 
-  @Override
+  /**
+   * Gets a value from the map.
+   *
+   * @param key The key to get.
+   * @param consistency The query consistency level.
+   * @return A completable future to be completed with the result once complete.
+   */
   @SuppressWarnings("unchecked")
   public CompletableFuture<V> get(Object key, ConsistencyLevel consistency) {
     return submit(MapCommands.Get.builder()
@@ -94,7 +134,13 @@ public class DistributedMap<K, V> extends Resource implements AsyncMap<K, V> {
       .thenApply(result -> (V) result);
   }
 
-  @Override
+  /**
+   * Puts a value in the map.
+   *
+   * @param key   The key to set.
+   * @param value The value to set.
+   * @return A completable future to be completed with the result once complete.
+   */
   @SuppressWarnings("unchecked")
   public CompletableFuture<V> put(K key, V value) {
     return submit(MapCommands.Put.builder()
@@ -104,7 +150,14 @@ public class DistributedMap<K, V> extends Resource implements AsyncMap<K, V> {
       .thenApply(result -> (V) result);
   }
 
-  @Override
+  /**
+   * Puts a value in the map.
+   *
+   * @param key The key to set.
+   * @param value The value to set.
+   * @param persistence The persistence in which to set the key.
+   * @return A completable future to be completed with the result once complete.
+   */
   @SuppressWarnings("unchecked")
   public CompletableFuture<V> put(K key, V value, PersistenceLevel persistence) {
     return submit(MapCommands.Put.builder()
@@ -115,7 +168,14 @@ public class DistributedMap<K, V> extends Resource implements AsyncMap<K, V> {
       .thenApply(result -> (V) result);
   }
 
-  @Override
+  /**
+   * Puts a value in the map.
+   *
+   * @param key The key to set.
+   * @param value The value to set.
+   * @param ttl The time to live in milliseconds.
+   * @return A completable future to be completed with the result once complete.
+   */
   @SuppressWarnings("unchecked")
   public CompletableFuture<V> put(K key, V value, long ttl) {
     return submit(MapCommands.Put.builder()
@@ -126,7 +186,15 @@ public class DistributedMap<K, V> extends Resource implements AsyncMap<K, V> {
       .thenApply(result -> (V) result);
   }
 
-  @Override
+  /**
+   * Puts a value in the map.
+   *
+   * @param key The key to set.
+   * @param value The value to set.
+   * @param ttl The time to live in milliseconds.
+   * @param persistence The persistence in which to set the key.
+   * @return A completable future to be completed with the result once complete.
+   */
   @SuppressWarnings("unchecked")
   public CompletableFuture<V> put(K key, V value, long ttl, PersistenceLevel persistence) {
     return submit(MapCommands.Put.builder()
@@ -138,7 +206,15 @@ public class DistributedMap<K, V> extends Resource implements AsyncMap<K, V> {
       .thenApply(result -> (V) result);
   }
 
-  @Override
+  /**
+   * Puts a value in the map.
+   *
+   * @param key The key to set.
+   * @param value The value to set.
+   * @param ttl The time to live in milliseconds.
+   * @param unit The time to live unit.
+   * @return A completable future to be completed with the result once complete.
+   */
   @SuppressWarnings("unchecked")
   public CompletableFuture<V> put(K key, V value, long ttl, TimeUnit unit) {
     return submit(MapCommands.Put.builder()
@@ -149,7 +225,16 @@ public class DistributedMap<K, V> extends Resource implements AsyncMap<K, V> {
       .thenApply(result -> (V) result);
   }
 
-  @Override
+  /**
+   * Puts a value in the map.
+   *
+   * @param key The key to set.
+   * @param value The value to set.
+   * @param ttl The time to live in milliseconds.
+   * @param unit The time to live unit.
+   * @param persistence The persistence in which to set the key.
+   * @return A completable future to be completed with the result once complete.
+   */
   @SuppressWarnings("unchecked")
   public CompletableFuture<V> put(K key, V value, long ttl, TimeUnit unit, PersistenceLevel persistence) {
     return submit(MapCommands.Put.builder()
@@ -161,7 +246,12 @@ public class DistributedMap<K, V> extends Resource implements AsyncMap<K, V> {
       .thenApply(result -> (V) result);
   }
 
-  @Override
+  /**
+   * Removes a value from the map.
+   *
+   * @param key The key to remove.
+   * @return A completable future to be completed with the result once complete.
+   */
   @SuppressWarnings("unchecked")
   public CompletableFuture<V> remove(Object key) {
     return submit(MapCommands.Remove.builder()
@@ -170,7 +260,13 @@ public class DistributedMap<K, V> extends Resource implements AsyncMap<K, V> {
       .thenApply(result -> (V) result);
   }
 
-  @Override
+  /**
+   * Gets the value of a key or the given default value if the key does not exist.
+   *
+   * @param key          The key to get.
+   * @param defaultValue The default value to return if the key does not exist.
+   * @return A completable future to be completed with the result once complete.
+   */
   @SuppressWarnings("unchecked")
   public CompletableFuture<V> getOrDefault(Object key, V defaultValue) {
     return submit(MapCommands.GetOrDefault.builder()
@@ -180,7 +276,14 @@ public class DistributedMap<K, V> extends Resource implements AsyncMap<K, V> {
       .thenApply(result -> (V) result);
   }
 
-  @Override
+  /**
+   * Gets the value of a key or the given default value if the key does not exist.
+   *
+   * @param key          The key to get.
+   * @param defaultValue The default value to return if the key does not exist.
+   * @param consistency The query consistency level.
+   * @return A completable future to be completed with the result once complete.
+   */
   @SuppressWarnings("unchecked")
   public CompletableFuture<V> getOrDefault(Object key, V defaultValue, ConsistencyLevel consistency) {
     return submit(MapCommands.GetOrDefault.builder()
@@ -191,7 +294,13 @@ public class DistributedMap<K, V> extends Resource implements AsyncMap<K, V> {
       .thenApply(result -> (V) result);
   }
 
-  @Override
+  /**
+   * Puts a value in the map if the given key does not exist.
+   *
+   * @param key   The key to set.
+   * @param value The value to set if the given key does not exist.
+   * @return A completable future to be completed with the result once complete.
+   */
   @SuppressWarnings("unchecked")
   public CompletableFuture<V> putIfAbsent(K key, V value) {
     return submit(MapCommands.PutIfAbsent.builder()
@@ -201,7 +310,14 @@ public class DistributedMap<K, V> extends Resource implements AsyncMap<K, V> {
       .thenApply(result -> (V) result);
   }
 
-  @Override
+  /**
+   * Puts a value in the map if the given key does not exist.
+   *
+   * @param key   The key to set.
+   * @param value The value to set if the given key does not exist.
+   * @param ttl The time to live in milliseconds.
+   * @return A completable future to be completed with the result once complete.
+   */
   @SuppressWarnings("unchecked")
   public CompletableFuture<V> putIfAbsent(K key, V value, long ttl) {
     return submit(MapCommands.PutIfAbsent.builder()
@@ -212,7 +328,15 @@ public class DistributedMap<K, V> extends Resource implements AsyncMap<K, V> {
       .thenApply(result -> (V) result);
   }
 
-  @Override
+  /**
+   * Puts a value in the map if the given key does not exist.
+   *
+   * @param key   The key to set.
+   * @param value The value to set if the given key does not exist.
+   * @param ttl The time to live in milliseconds.
+   * @param persistence The persistence in which to set the key.
+   * @return A completable future to be completed with the result once complete.
+   */
   @SuppressWarnings("unchecked")
   public CompletableFuture<V> putIfAbsent(K key, V value, long ttl, PersistenceLevel persistence) {
     return submit(MapCommands.PutIfAbsent.builder()
@@ -224,7 +348,15 @@ public class DistributedMap<K, V> extends Resource implements AsyncMap<K, V> {
       .thenApply(result -> (V) result);
   }
 
-  @Override
+  /**
+   * Puts a value in the map if the given key does not exist.
+   *
+   * @param key   The key to set.
+   * @param value The value to set if the given key does not exist.
+   * @param ttl The time to live.
+   * @param unit The time to live unit.
+   * @return A completable future to be completed with the result once complete.
+   */
   @SuppressWarnings("unchecked")
   public CompletableFuture<V> putIfAbsent(K key, V value, long ttl, TimeUnit unit) {
     return submit(MapCommands.PutIfAbsent.builder()
@@ -235,7 +367,16 @@ public class DistributedMap<K, V> extends Resource implements AsyncMap<K, V> {
       .thenApply(result -> (V) result);
   }
 
-  @Override
+  /**
+   * Puts a value in the map if the given key does not exist.
+   *
+   * @param key   The key to set.
+   * @param value The value to set if the given key does not exist.
+   * @param ttl The time to live.
+   * @param unit The time to live unit.
+   * @param persistence The persistence in which to set the key.
+   * @return A completable future to be completed with the result once complete.
+   */
   @SuppressWarnings("unchecked")
   public CompletableFuture<V> putIfAbsent(K key, V value, long ttl, TimeUnit unit, PersistenceLevel persistence) {
     return submit(MapCommands.PutIfAbsent.builder()
@@ -247,7 +388,13 @@ public class DistributedMap<K, V> extends Resource implements AsyncMap<K, V> {
       .thenApply(result -> (V) result);
   }
 
-  @Override
+  /**
+   * Removes a key and value from the map.
+   *
+   * @param key   The key to remove.
+   * @param value The value to remove.
+   * @return A completable future to be completed with the result once complete.
+   */
   public CompletableFuture<Boolean> remove(Object key, Object value) {
     return submit(MapCommands.Remove.builder()
       .withKey(key)
@@ -256,7 +403,11 @@ public class DistributedMap<K, V> extends Resource implements AsyncMap<K, V> {
       .thenApply(result -> (boolean) result);
   }
 
-  @Override
+  /**
+   * Removes all entries from the map.
+   *
+   * @return A completable future to be completed once the operation is complete.
+   */
   public CompletableFuture<Void> clear() {
     return submit(MapCommands.Clear.builder().build());
   }
