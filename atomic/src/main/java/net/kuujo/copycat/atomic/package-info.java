@@ -15,7 +15,7 @@
  */
 
 /**
- * Provides distributed atomic variables such as {@link net.kuujo.copycat.atomic.AsyncReference}.
+ * Provides distributed atomic variables such as {@link net.kuujo.copycat.atomic.DistributedAtomicValue}.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

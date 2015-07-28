@@ -15,8 +15,8 @@
  */
 
 /**
- * Provides distributed coordination resources such as {@link net.kuujo.copycat.coordination.AsyncLock} and
- * {@link net.kuujo.copycat.coordination.AsyncLeaderElection} and {@link net.kuujo.copycat.coordination.AsyncTopic}
+ * Provides distributed coordination resources such as {@link net.kuujo.copycat.coordination.DistributedLock} and
+ * {@link net.kuujo.copycat.coordination.DistributedLeaderElection} and {@link net.kuujo.copycat.coordination.DistributedTopic}
  * for publish-subscribe messaging.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>

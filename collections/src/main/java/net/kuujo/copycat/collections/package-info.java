@@ -15,7 +15,8 @@
  */
 
 /**
- * Provides distributed collections such as {@link net.kuujo.copycat.collections.AsyncMap} and {@link net.kuujo.copycat.collections.AsyncSet}.
+ * Provides distributed collections such as {@link net.kuujo.copycat.collections.DistributedMap} and
+ * {@link net.kuujo.copycat.collections.DistributedSet}.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
