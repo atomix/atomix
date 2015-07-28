@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.io.serializer;
+package net.kuujo.copycat.io.serializer.lang;
 
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
@@ -21,20 +21,27 @@ import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.TypeSerializer;
 
 /**
- * Character serializer.
+ * Character array serializer.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class CharacterSerializer implements TypeSerializer<Character> {
+public class CharacterArraySerializer implements TypeSerializer<char[]> {
 
   @Override
-  public void write(Character object, BufferOutput buffer, Serializer serializer) {
-    buffer.writeChar(object);
+  public void write(char[] chars, BufferOutput buffer, Serializer serializer) {
+    buffer.writeUnsignedShort(chars.length);
+    for (char c : chars) {
+      buffer.writeChar(c);
+    }
   }
 
   @Override
-  public Character read(Class<Character> type, BufferInput buffer, Serializer serializer) {
-    return buffer.readChar();
+  public char[] read(Class<char[]> type, BufferInput buffer, Serializer serializer) {
+    char[] chars = new char[buffer.readUnsignedShort()];
+    for (int i = 0; i < chars.length; i++) {
+      chars[i] = buffer.readChar();
+    }
+    return chars;
   }
 
 }

@@ -13,35 +13,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.io.serializer;
+package net.kuujo.copycat.io.serializer.collection;
 
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.TypeSerializer;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
- * Float array serializer.
+ * Set serializer.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class FloatArraySerializer implements TypeSerializer<float[]> {
+public class SetSerializer implements TypeSerializer<Set> {
 
   @Override
-  public void write(float[] floats, BufferOutput buffer, Serializer serializer) {
-    buffer.writeUnsignedShort(floats.length);
-    for (float f : floats) {
-      buffer.writeFloat(f);
+  public void write(Set object, BufferOutput buffer, Serializer serializer) {
+    buffer.writeUnsignedShort(object.size());
+    for (Object value : object) {
+      serializer.writeObject(value, buffer);
     }
   }
 
   @Override
-  public float[] read(Class<float[]> type, BufferInput buffer, Serializer serializer) {
-    float[] floats = new float[buffer.readUnsignedShort()];
-    for (int i = 0; i < floats.length; i++) {
-      floats[i] = buffer.readFloat();
+  @SuppressWarnings("unchecked")
+  public Set read(Class<Set> type, BufferInput buffer, Serializer serializer) {
+    int size = buffer.readUnsignedShort();
+    Set object = new HashSet<>(size);
+    for (int i = 0; i < size; i++) {
+      object.add(serializer.readObject(buffer));
     }
-    return floats;
+    return object;
   }
 
 }

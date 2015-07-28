@@ -16,6 +16,7 @@
 package net.kuujo.copycat.io.serializer;
 
 import net.kuujo.copycat.CopycatException;
+import net.kuujo.copycat.io.serializer.util.ExternalizableSerializer;
 
 import java.io.Externalizable;
 import java.util.*;

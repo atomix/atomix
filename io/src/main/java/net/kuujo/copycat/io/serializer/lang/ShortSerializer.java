@@ -13,34 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.io.serializer;
+package net.kuujo.copycat.io.serializer.lang;
 
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.TypeSerializer;
 
-import java.math.BigDecimal;
-import java.nio.charset.StandardCharsets;
-
 /**
- * Big decimal serializer.
+ * Short serializer.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class BigDecimalSerializer implements TypeSerializer<BigDecimal> {
+public class ShortSerializer implements TypeSerializer<Short> {
 
   @Override
-  public void write(BigDecimal object, BufferOutput buffer, Serializer serializer) {
-    byte[] bytes = object.toPlainString().getBytes(StandardCharsets.UTF_8);
-    buffer.writeInt(bytes.length).write(bytes);
+  public void write(Short object, BufferOutput buffer, Serializer serializer) {
+    buffer.writeShort(object);
   }
 
   @Override
-  public BigDecimal read(Class<BigDecimal> type, BufferInput buffer, Serializer serializer) {
-    byte[] bytes = new byte[buffer.readInt()];
-    buffer.read(bytes);
-    return new BigDecimal(new String(bytes, StandardCharsets.UTF_8));
+  public Short read(Class<Short> type, BufferInput buffer, Serializer serializer) {
+    return buffer.readShort();
   }
 
 }

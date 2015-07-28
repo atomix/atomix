@@ -13,28 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.io.serializer;
+package net.kuujo.copycat.io.serializer.util;
 
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.TypeSerializer;
 
+import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+
 /**
- * Boolean serializer.
+ * Big decimal serializer.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class BooleanSerializer implements TypeSerializer<Boolean> {
+public class BigIntegerSerializer implements TypeSerializer<BigInteger> {
 
   @Override
-  public void write(Boolean object, BufferOutput buffer, Serializer serializer) {
-    buffer.writeBoolean(object);
+  public void write(BigInteger object, BufferOutput buffer, Serializer serializer) {
+    byte[] bytes = object.toString().getBytes(StandardCharsets.UTF_8);
+    buffer.writeInt(bytes.length).write(bytes);
   }
 
   @Override
-  public Boolean read(Class<Boolean> type, BufferInput buffer, Serializer serializer) {
-    return buffer.readBoolean();
+  public BigInteger read(Class<BigInteger> type, BufferInput buffer, Serializer serializer) {
+    byte[] bytes = new byte[buffer.readInt()];
+    buffer.read(bytes);
+    return new BigInteger(new String(bytes, StandardCharsets.UTF_8));
   }
 
 }

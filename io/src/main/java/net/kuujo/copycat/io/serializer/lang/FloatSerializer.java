@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.io.serializer;
+package net.kuujo.copycat.io.serializer.lang;
 
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
@@ -21,20 +21,20 @@ import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.TypeSerializer;
 
 /**
- * Integer serializer.
+ * Float serializer.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class IntegerSerializer implements TypeSerializer<Integer> {
+public class FloatSerializer implements TypeSerializer<Float> {
 
   @Override
-  public void write(Integer object, BufferOutput buffer, Serializer serializer) {
-    buffer.writeInt(object);
+  public void write(Float object, BufferOutput buffer, Serializer serializer) {
+    buffer.writeFloat(object);
   }
 
   @Override
-  public Integer read(Class<Integer> type, BufferInput buffer, Serializer serializer) {
-    return buffer.readInt();
+  public Float read(Class<Float> type, BufferInput buffer, Serializer serializer) {
+    return buffer.readFloat();
   }
 
 }

@@ -13,30 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.io.serializer;
+package net.kuujo.copycat.io.serializer.util;
 
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.TypeSerializer;
 
-import java.util.TimeZone;
+import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 
 /**
- * Time zone serializer.
+ * Big decimal serializer.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class TimeZoneSerializer implements TypeSerializer<TimeZone> {
+public class BigDecimalSerializer implements TypeSerializer<BigDecimal> {
 
   @Override
-  public void write(TimeZone timeZone, BufferOutput buffer, Serializer serializer) {
-    buffer.writeUTF8(timeZone.getID());
+  public void write(BigDecimal object, BufferOutput buffer, Serializer serializer) {
+    byte[] bytes = object.toPlainString().getBytes(StandardCharsets.UTF_8);
+    buffer.writeInt(bytes.length).write(bytes);
   }
 
   @Override
-  public TimeZone read(Class<TimeZone> type, BufferInput buffer, Serializer serializer) {
-    return TimeZone.getTimeZone(buffer.readUTF8());
+  public BigDecimal read(Class<BigDecimal> type, BufferInput buffer, Serializer serializer) {
+    byte[] bytes = new byte[buffer.readInt()];
+    buffer.read(bytes);
+    return new BigDecimal(new String(bytes, StandardCharsets.UTF_8));
   }
 
 }

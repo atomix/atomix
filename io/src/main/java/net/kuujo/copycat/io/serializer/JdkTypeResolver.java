@@ -15,6 +15,11 @@
  */
 package net.kuujo.copycat.io.serializer;
 
+import net.kuujo.copycat.io.serializer.collection.ListSerializer;
+import net.kuujo.copycat.io.serializer.collection.MapSerializer;
+import net.kuujo.copycat.io.serializer.collection.SetSerializer;
+import net.kuujo.copycat.io.serializer.util.*;
+
 import java.io.Externalizable;
 import java.math.BigDecimal;
 import java.math.BigInteger;

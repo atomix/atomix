@@ -13,32 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.io.serializer;
+package net.kuujo.copycat.io.serializer.util;
 
-import net.kuujo.copycat.io.*;
-import net.kuujo.copycat.io.serializer.SerializationException;
+import net.kuujo.copycat.io.BufferInput;
+import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.TypeSerializer;
 
+import java.util.Calendar;
+import java.util.TimeZone;
+
 /**
- * Class serializer.
+ * Calendar serializer.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ClassSerializer implements TypeSerializer<Class> {
+public class CalendarSerializer implements TypeSerializer<Calendar> {
 
   @Override
-  public void write(Class object, BufferOutput buffer, Serializer serializer) {
-    buffer.writeUTF8(object.getName());
+  public void write(Calendar calendar, BufferOutput buffer, Serializer serializer) {
+    buffer.writeUTF8(calendar.getTimeZone().getID());
+    buffer.writeLong(calendar.getTimeInMillis());
   }
 
   @Override
-  public Class read(Class<Class> type, BufferInput buffer, Serializer serializer) {
-    try {
-      return Class.forName(buffer.readUTF8());
-    } catch (ClassNotFoundException e) {
-      throw new SerializationException(e);
-    }
+  public Calendar read(Class<Calendar> type, BufferInput buffer, Serializer serializer) {
+    Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone(buffer.readUTF8()));
+    calendar.setTimeInMillis(buffer.readLong());
+    return calendar;
   }
 
 }

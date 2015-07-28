@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.io.serializer;
+package net.kuujo.copycat.io.serializer.lang;
 
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
@@ -21,23 +21,27 @@ import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.TypeSerializer;
 
 /**
- * String serializer.
+ * Double array serializer.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class StringSerializer implements TypeSerializer<String> {
+public class DoubleArraySerializer implements TypeSerializer<double[]> {
 
   @Override
-  public void write(String object, BufferOutput buffer, Serializer serializer) {
-    byte[] bytes = object.getBytes();
-    buffer.writeUnsignedShort(bytes.length).write(bytes);
+  public void write(double[] doubles, BufferOutput buffer, Serializer serializer) {
+    buffer.writeUnsignedShort(doubles.length);
+    for (double d : doubles) {
+      buffer.writeDouble(d);
+    }
   }
 
   @Override
-  public String read(Class<String> type, BufferInput buffer, Serializer serializer) {
-    byte[] bytes = new byte[buffer.readUnsignedShort()];
-    buffer.read(bytes);
-    return new String(bytes);
+  public double[] read(Class<double[]> type, BufferInput buffer, Serializer serializer) {
+    double[] doubles = new double[buffer.readUnsignedShort()];
+    for (int i = 0; i < doubles.length; i++) {
+      doubles[i] = buffer.readDouble();
+    }
+    return doubles;
   }
 
 }

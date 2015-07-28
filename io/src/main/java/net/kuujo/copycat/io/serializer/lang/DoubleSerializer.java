@@ -13,34 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.io.serializer;
+package net.kuujo.copycat.io.serializer.lang;
 
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.TypeSerializer;
 
-import java.util.Calendar;
-import java.util.TimeZone;
-
 /**
- * Calendar serializer.
+ * Double serializer.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class CalendarSerializer implements TypeSerializer<Calendar> {
+public class DoubleSerializer implements TypeSerializer<Double> {
 
   @Override
-  public void write(Calendar calendar, BufferOutput buffer, Serializer serializer) {
-    buffer.writeUTF8(calendar.getTimeZone().getID());
-    buffer.writeLong(calendar.getTimeInMillis());
+  public void write(Double object, BufferOutput buffer, Serializer serializer) {
+    buffer.writeDouble(object);
   }
 
   @Override
-  public Calendar read(Class<Calendar> type, BufferInput buffer, Serializer serializer) {
-    Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone(buffer.readUTF8()));
-    calendar.setTimeInMillis(buffer.readLong());
-    return calendar;
+  public Double read(Class<Double> type, BufferInput buffer, Serializer serializer) {
+    return buffer.readDouble();
   }
 
 }

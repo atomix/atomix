@@ -13,30 +13,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.io.serializer;
+package net.kuujo.copycat.io.serializer.collection;
 
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.TypeSerializer;
 
-import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * Date serializer.
+ * Map serializer.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DateSerializer implements TypeSerializer<Date> {
+public class MapSerializer implements TypeSerializer<Map> {
 
   @Override
-  public void write(Date date, BufferOutput buffer, Serializer serializer) {
-    buffer.writeLong(date.getTime());
+  public void write(Map object, BufferOutput buffer, Serializer serializer) {
+    buffer.writeUnsignedShort(object.size());
+    for (Map.Entry entry : ((Map<?, ?>) object).entrySet()) {
+      serializer.writeObject(entry.getKey(), buffer);
+      serializer.writeObject(entry.getValue(), buffer);
+    }
   }
 
   @Override
-  public Date read(Class<Date> type, BufferInput buffer, Serializer serializer) {
-    return new Date(buffer.readLong());
+  @SuppressWarnings("unchecked")
+  public Map read(Class<Map> type, BufferInput buffer, Serializer serializer) {
+    int size = buffer.readUnsignedShort();
+    Map object = new HashMap<>(size);
+    for (int i = 0; i < size; i++) {
+      Object key = serializer.readObject(buffer);
+      Object value = serializer.readObject(buffer);
+      object.put(key, value);
+    }
+    return object;
   }
 
 }

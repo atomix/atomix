@@ -15,6 +15,8 @@
  */
 package net.kuujo.copycat.io.serializer;
 
+import net.kuujo.copycat.io.serializer.lang.*;
+
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;

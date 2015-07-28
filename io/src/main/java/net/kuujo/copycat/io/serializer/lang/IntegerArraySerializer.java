@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.io.serializer;
+package net.kuujo.copycat.io.serializer.lang;
 
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
@@ -21,20 +21,27 @@ import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.TypeSerializer;
 
 /**
- * Byte serializer.
+ * Integer array serializer.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ByteSerializer implements TypeSerializer<Byte> {
+public class IntegerArraySerializer implements TypeSerializer<int[]> {
 
   @Override
-  public void write(Byte object, BufferOutput buffer, Serializer serializer) {
-    buffer.writeByte(object);
+  public void write(int[] ints, BufferOutput buffer, Serializer serializer) {
+    buffer.writeUnsignedShort(ints.length);
+    for (int i : ints) {
+      buffer.writeInt(i);
+    }
   }
 
   @Override
-  public Byte read(Class<Byte> type, BufferInput buffer, Serializer serializer) {
-    return (byte) buffer.readByte();
+  public int[] read(Class<int[]> type, BufferInput buffer, Serializer serializer) {
+    int[] ints = new int[buffer.readUnsignedShort()];
+    for (int i = 0; i < ints.length; i++) {
+      ints[i] = buffer.readInt();
+    }
+    return ints;
   }
 
 }

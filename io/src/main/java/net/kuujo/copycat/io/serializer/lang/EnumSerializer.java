@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.io.serializer;
+package net.kuujo.copycat.io.serializer.lang;
 
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
@@ -21,27 +21,20 @@ import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.TypeSerializer;
 
 /**
- * Character array serializer.
+ * Enum serializer.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class CharacterArraySerializer implements TypeSerializer<char[]> {
+public class EnumSerializer implements TypeSerializer<Enum> {
 
   @Override
-  public void write(char[] chars, BufferOutput buffer, Serializer serializer) {
-    buffer.writeUnsignedShort(chars.length);
-    for (char c : chars) {
-      buffer.writeChar(c);
-    }
+  public void write(Enum object, BufferOutput buffer, Serializer serializer) {
+    buffer.writeUnsignedByte(object.ordinal());
   }
 
   @Override
-  public char[] read(Class<char[]> type, BufferInput buffer, Serializer serializer) {
-    char[] chars = new char[buffer.readUnsignedShort()];
-    for (int i = 0; i < chars.length; i++) {
-      chars[i] = buffer.readChar();
-    }
-    return chars;
+  public Enum read(Class<Enum> type, BufferInput buffer, Serializer serializer) {
+    return type.getEnumConstants()[buffer.readUnsignedByte()];
   }
 
 }

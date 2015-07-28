@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.io.serializer;
+package net.kuujo.copycat.io.serializer.lang;
 
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
@@ -21,27 +21,27 @@ import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.TypeSerializer;
 
 /**
- * Short array serializer.
+ * Boolean array serializer.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ShortArraySerializer implements TypeSerializer<short[]> {
+public class BooleanArraySerializer implements TypeSerializer<boolean[]> {
 
   @Override
-  public void write(short[] shorts, BufferOutput buffer, Serializer serializer) {
-    buffer.writeUnsignedShort(shorts.length);
-    for (short s : shorts) {
-      buffer.writeShort(s);
+  public void write(boolean[] chars, BufferOutput buffer, Serializer serializer) {
+    buffer.writeUnsignedShort(chars.length);
+    for (boolean b : chars) {
+      buffer.writeBoolean(b);
     }
   }
 
   @Override
-  public short[] read(Class<short[]> type, BufferInput buffer, Serializer serializer) {
-    short[] shorts = new short[buffer.readUnsignedShort()];
-    for (int i = 0; i < shorts.length; i++) {
-      shorts[i] = buffer.readShort();
+  public boolean[] read(Class<boolean[]> type, BufferInput buffer, Serializer serializer) {
+    boolean[] booleans = new boolean[buffer.readUnsignedShort()];
+    for (int i = 0; i < booleans.length; i++) {
+      booleans[i] = buffer.readBoolean();
     }
-    return shorts;
+    return booleans;
   }
 
 }

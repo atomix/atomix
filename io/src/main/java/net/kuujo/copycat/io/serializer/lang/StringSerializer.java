@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.io.serializer;
+package net.kuujo.copycat.io.serializer.lang;
 
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
@@ -21,20 +21,23 @@ import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.TypeSerializer;
 
 /**
- * Long serializer.
+ * String serializer.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class LongSerializer implements TypeSerializer<Long> {
+public class StringSerializer implements TypeSerializer<String> {
 
   @Override
-  public void write(Long object, BufferOutput buffer, Serializer serializer) {
-    buffer.writeLong(object);
+  public void write(String object, BufferOutput buffer, Serializer serializer) {
+    byte[] bytes = object.getBytes();
+    buffer.writeUnsignedShort(bytes.length).write(bytes);
   }
 
   @Override
-  public Long read(Class<Long> type, BufferInput buffer, Serializer serializer) {
-    return buffer.readLong();
+  public String read(Class<String> type, BufferInput buffer, Serializer serializer) {
+    byte[] bytes = new byte[buffer.readUnsignedShort()];
+    buffer.read(bytes);
+    return new String(bytes);
   }
 
 }

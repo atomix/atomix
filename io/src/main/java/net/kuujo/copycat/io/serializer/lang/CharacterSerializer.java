@@ -13,40 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.io.serializer;
+package net.kuujo.copycat.io.serializer.lang;
 
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.TypeSerializer;
 
-import java.util.HashSet;
-import java.util.Set;
-
 /**
- * Set serializer.
+ * Character serializer.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class SetSerializer implements TypeSerializer<Set> {
+public class CharacterSerializer implements TypeSerializer<Character> {
 
   @Override
-  public void write(Set object, BufferOutput buffer, Serializer serializer) {
-    buffer.writeUnsignedShort(object.size());
-    for (Object value : object) {
-      serializer.writeObject(value, buffer);
-    }
+  public void write(Character object, BufferOutput buffer, Serializer serializer) {
+    buffer.writeChar(object);
   }
 
   @Override
-  @SuppressWarnings("unchecked")
-  public Set read(Class<Set> type, BufferInput buffer, Serializer serializer) {
-    int size = buffer.readUnsignedShort();
-    Set object = new HashSet<>(size);
-    for (int i = 0; i < size; i++) {
-      object.add(serializer.readObject(buffer));
-    }
-    return object;
+  public Character read(Class<Character> type, BufferInput buffer, Serializer serializer) {
+    return buffer.readChar();
   }
 
 }

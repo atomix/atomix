@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.io.serializer;
+package net.kuujo.copycat.io.serializer.lang;
 
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
@@ -21,20 +21,27 @@ import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.TypeSerializer;
 
 /**
- * Float serializer.
+ * Integer array serializer.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class FloatSerializer implements TypeSerializer<Float> {
+public class LongArraySerializer implements TypeSerializer<long[]> {
 
   @Override
-  public void write(Float object, BufferOutput buffer, Serializer serializer) {
-    buffer.writeFloat(object);
+  public void write(long[] longs, BufferOutput buffer, Serializer serializer) {
+    buffer.writeUnsignedShort(longs.length);
+    for (long l : longs) {
+      buffer.writeLong(l);
+    }
   }
 
   @Override
-  public Float read(Class<Float> type, BufferInput buffer, Serializer serializer) {
-    return buffer.readFloat();
+  public long[] read(Class<long[]> type, BufferInput buffer, Serializer serializer) {
+    long[] longs = new long[buffer.readUnsignedShort()];
+    for (int i = 0; i < longs.length; i++) {
+      longs[i] = buffer.readLong();
+    }
+    return longs;
   }
 
 }

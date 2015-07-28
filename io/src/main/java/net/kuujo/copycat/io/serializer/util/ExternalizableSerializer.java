@@ -13,9 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.io.serializer;
+package net.kuujo.copycat.io.serializer.util;
 
-import net.kuujo.copycat.io.*;
+import net.kuujo.copycat.io.BufferInput;
+import net.kuujo.copycat.io.BufferObjectInput;
+import net.kuujo.copycat.io.BufferObjectOutput;
+import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.SerializationException;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.TypeSerializer;

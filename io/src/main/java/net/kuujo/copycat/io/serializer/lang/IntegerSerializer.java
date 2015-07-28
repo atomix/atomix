@@ -13,40 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.io.serializer;
+package net.kuujo.copycat.io.serializer.lang;
 
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.TypeSerializer;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
- * List serializer.
+ * Integer serializer.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ListSerializer implements TypeSerializer<List> {
+public class IntegerSerializer implements TypeSerializer<Integer> {
 
   @Override
-  public void write(List object, BufferOutput buffer, Serializer serializer) {
-    buffer.writeUnsignedShort(object.size());
-    for (Object value : object) {
-      serializer.writeObject(value, buffer);
-    }
+  public void write(Integer object, BufferOutput buffer, Serializer serializer) {
+    buffer.writeInt(object);
   }
 
   @Override
-  @SuppressWarnings("unchecked")
-  public List read(Class<List> type, BufferInput buffer, Serializer serializer) {
-    int size = buffer.readUnsignedShort();
-    List object = new ArrayList<>(size);
-    for (int i = 0; i < size; i++) {
-      object.add(serializer.readObject(buffer));
-    }
-    return object;
+  public Integer read(Class<Integer> type, BufferInput buffer, Serializer serializer) {
+    return buffer.readInt();
   }
 
 }

@@ -13,35 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.io.serializer;
+package net.kuujo.copycat.io.serializer.util;
 
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.TypeSerializer;
 
+import java.util.Date;
+
 /**
- * Boolean array serializer.
+ * Date serializer.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class BooleanArraySerializer implements TypeSerializer<boolean[]> {
+public class DateSerializer implements TypeSerializer<Date> {
 
   @Override
-  public void write(boolean[] chars, BufferOutput buffer, Serializer serializer) {
-    buffer.writeUnsignedShort(chars.length);
-    for (boolean b : chars) {
-      buffer.writeBoolean(b);
-    }
+  public void write(Date date, BufferOutput buffer, Serializer serializer) {
+    buffer.writeLong(date.getTime());
   }
 
   @Override
-  public boolean[] read(Class<boolean[]> type, BufferInput buffer, Serializer serializer) {
-    boolean[] booleans = new boolean[buffer.readUnsignedShort()];
-    for (int i = 0; i < booleans.length; i++) {
-      booleans[i] = buffer.readBoolean();
-    }
-    return booleans;
+  public Date read(Class<Date> type, BufferInput buffer, Serializer serializer) {
+    return new Date(buffer.readLong());
   }
 
 }

@@ -13,35 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.io.serializer;
+package net.kuujo.copycat.io.serializer.util;
 
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.TypeSerializer;
 
+import java.util.TimeZone;
+
 /**
- * Double array serializer.
+ * Time zone serializer.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DoubleArraySerializer implements TypeSerializer<double[]> {
+public class TimeZoneSerializer implements TypeSerializer<TimeZone> {
 
   @Override
-  public void write(double[] doubles, BufferOutput buffer, Serializer serializer) {
-    buffer.writeUnsignedShort(doubles.length);
-    for (double d : doubles) {
-      buffer.writeDouble(d);
-    }
+  public void write(TimeZone timeZone, BufferOutput buffer, Serializer serializer) {
+    buffer.writeUTF8(timeZone.getID());
   }
 
   @Override
-  public double[] read(Class<double[]> type, BufferInput buffer, Serializer serializer) {
-    double[] doubles = new double[buffer.readUnsignedShort()];
-    for (int i = 0; i < doubles.length; i++) {
-      doubles[i] = buffer.readDouble();
-    }
-    return doubles;
+  public TimeZone read(Class<TimeZone> type, BufferInput buffer, Serializer serializer) {
+    return TimeZone.getTimeZone(buffer.readUTF8());
   }
 
 }
