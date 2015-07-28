@@ -22,7 +22,6 @@ import net.kuujo.copycat.util.concurrent.Context;
 
 import java.util.Collections;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -47,11 +46,6 @@ class ResourceSession implements Session {
   @Override
   public long id() {
     return parent.id();
-  }
-
-  @Override
-  public UUID connection() {
-    return parent.connection();
   }
 
   @Override

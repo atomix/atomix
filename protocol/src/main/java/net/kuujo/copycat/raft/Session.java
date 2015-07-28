@@ -18,7 +18,6 @@ package net.kuujo.copycat.raft;
 import net.kuujo.copycat.Listener;
 import net.kuujo.copycat.ListenerContext;
 
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -41,13 +40,6 @@ public interface Session {
    * @return The session ID.
    */
   long id();
-
-  /**
-   * Returns the session connection ID.
-   *
-   * @return The session connection ID.
-   */
-  UUID connection();
 
   /**
    * Returns a boolean value indicating whether the session is open.

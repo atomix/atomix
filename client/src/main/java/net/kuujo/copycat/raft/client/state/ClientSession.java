@@ -61,11 +61,6 @@ class ClientSession implements Session {
     return id;
   }
 
-  @Override
-  public UUID connection() {
-    return connectionId;
-  }
-
   /**
    * Sets the session connection.
    */

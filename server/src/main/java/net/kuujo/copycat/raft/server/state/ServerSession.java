@@ -57,8 +57,12 @@ class ServerSession implements Session {
     return id;
   }
 
-  @Override
-  public UUID connection() {
+  /**
+   * Returns the server connection ID.
+   *
+   * @return The server connection ID.
+   */
+  UUID connection() {
     return connectionId;
   }
 

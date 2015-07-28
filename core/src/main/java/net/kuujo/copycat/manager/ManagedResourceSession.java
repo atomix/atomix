@@ -21,7 +21,6 @@ import net.kuujo.copycat.Listeners;
 import net.kuujo.copycat.raft.Session;
 import net.kuujo.copycat.resource.ResourceMessage;
 
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -58,11 +57,6 @@ class ManagedResourceSession implements Session {
   @Override
   public long id() {
     return parent.id();
-  }
-
-  @Override
-  public UUID connection() {
-    return parent.connection();
   }
 
   @Override
