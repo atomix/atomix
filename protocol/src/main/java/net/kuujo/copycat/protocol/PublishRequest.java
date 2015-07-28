@@ -15,12 +15,12 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.alleycat.Alleycat;
-import net.kuujo.alleycat.SerializeWith;
-import net.kuujo.alleycat.io.BufferInput;
-import net.kuujo.alleycat.io.BufferOutput;
-import net.kuujo.alleycat.util.ReferenceManager;
 import net.kuujo.copycat.BuilderPool;
+import net.kuujo.copycat.io.BufferInput;
+import net.kuujo.copycat.io.BufferOutput;
+import net.kuujo.copycat.io.serializer.SerializeWith;
+import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.util.ReferenceManager;
 
 import java.util.Objects;
 
@@ -73,13 +73,13 @@ public class PublishRequest extends SessionRequest<PublishRequest> {
   }
 
   @Override
-  public void readObject(BufferInput buffer, Alleycat alleycat) {
-    message = alleycat.readObject(buffer);
+  public void readObject(BufferInput buffer, Serializer serializer) {
+    message = serializer.readObject(buffer);
   }
 
   @Override
-  public void writeObject(BufferOutput buffer, Alleycat alleycat) {
-    alleycat.writeObject(message, buffer);
+  public void writeObject(BufferOutput buffer, Serializer serializer) {
+    serializer.writeObject(message, buffer);
   }
 
   @Override

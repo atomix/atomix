@@ -15,9 +15,9 @@
  */
 package net.kuujo.copycat.log;
 
-import net.kuujo.alleycat.io.Buffer;
-import net.kuujo.alleycat.io.util.BitArray;
-import net.kuujo.alleycat.io.util.Memory;
+import net.kuujo.copycat.io.Buffer;
+import net.kuujo.copycat.io.util.BitArray;
+import net.kuujo.copycat.io.util.Memory;
 
 import java.io.IOException;
 
@@ -25,23 +25,23 @@ import java.io.IOException;
  * Segment offset index.
  * <p>
  * The offset index handles indexing of entries in a given {@link Segment}. Given the offset and position of an entry
- * in a segment, the index will write the position to an underlying {@link net.kuujo.alleycat.io.Buffer}. With this information, the index provides
+ * in a segment, the index will write the position to an underlying {@link net.kuujo.copycat.io.Buffer}. With this information, the index provides
  * useful metadata about the log such as the number of physical entries in the log and the first and last offsets.
  * <p>
  * Each entry in the index is stored in 8 bytes, a 1 byte status flag, a 24-bit unsigned offset, and a 32-bit unsigned
  * position. This places a limitation on the maximum indexed offset at {@code 2^31 - 1} and maximum indexed position at
  * {@code 2^32 - 1}.
  * <p>
- * When the index is first created, the {@link net.kuujo.alleycat.io.Buffer} provided to the constructor will be scanned for existing entries.
+ * When the index is first created, the {@link net.kuujo.copycat.io.Buffer} provided to the constructor will be scanned for existing entries.
  * <p>
  * The index assumes that entries will always be indexed in increasing order. However, this index also allows arbitrary
  * entries to be missing from the log due to log compaction. Because of the potential for missing entries, binary search
- * is used to locate positions rather than absolute positions. For efficiency, a {@link net.kuujo.alleycat.io.MappedBuffer}
+ * is used to locate positions rather than absolute positions. For efficiency, a {@link net.kuujo.copycat.io.MappedBuffer}
  * can be used to improve the performance of the binary search algorithm for persistent indexes.
  * <p>
- * In order to prevent searching the index for missing entries, all offsets are added to a memory efficient {@link net.kuujo.alleycat.io.util.BitArray}
+ * In order to prevent searching the index for missing entries, all offsets are added to a memory efficient {@link net.kuujo.copycat.io.util.BitArray}
  * as they're written to the index. The bit array is sized according to the underlying index buffer. Prior to searching
- * for an offset in the index, the {@link net.kuujo.alleycat.io.util.BitArray} is checked for existence of the offset in the index. Only if the offset
+ * for an offset in the index, the {@link net.kuujo.copycat.io.util.BitArray} is checked for existence of the offset in the index. Only if the offset
  * exists in the index is a binary search required.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>

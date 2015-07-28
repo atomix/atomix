@@ -15,17 +15,17 @@
  */
 package net.kuujo.copycat.resource;
 
-import net.kuujo.alleycat.Alleycat;
-import net.kuujo.alleycat.AlleycatSerializable;
-import net.kuujo.alleycat.io.BufferInput;
-import net.kuujo.alleycat.io.BufferOutput;
+import net.kuujo.copycat.io.BufferInput;
+import net.kuujo.copycat.io.BufferOutput;
+import net.kuujo.copycat.io.serializer.CopycatSerializable;
+import net.kuujo.copycat.io.serializer.Serializer;
 
 /**
  * Resource message.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ResourceMessage<T> implements AlleycatSerializable {
+public class ResourceMessage<T> implements CopycatSerializable {
   private long resource;
   private T message;
 
@@ -56,13 +56,13 @@ public class ResourceMessage<T> implements AlleycatSerializable {
   }
 
   @Override
-  public void writeObject(BufferOutput buffer, Alleycat serializer) {
+  public void writeObject(BufferOutput buffer, Serializer serializer) {
     buffer.writeLong(resource);
     serializer.writeObject(message, buffer);
   }
 
   @Override
-  public void readObject(BufferInput buffer, Alleycat serializer) {
+  public void readObject(BufferInput buffer, Serializer serializer) {
     resource = buffer.readLong();
     message = serializer.readObject(buffer);
   }

@@ -15,13 +15,13 @@
  */
 package net.kuujo.copycat.coordination.state;
 
-import net.kuujo.alleycat.Alleycat;
-import net.kuujo.alleycat.AlleycatSerializable;
-import net.kuujo.alleycat.io.BufferInput;
-import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.copycat.BuilderPool;
 import net.kuujo.copycat.Command;
 import net.kuujo.copycat.Operation;
+import net.kuujo.copycat.io.BufferInput;
+import net.kuujo.copycat.io.BufferOutput;
+import net.kuujo.copycat.io.serializer.CopycatSerializable;
+import net.kuujo.copycat.io.serializer.Serializer;
 
 /**
  * Topic commands.
@@ -36,7 +36,7 @@ public class TopicCommands {
   /**
    * Abstract topic command.
    */
-  public static abstract class TopicCommand<V> implements Command<V>, AlleycatSerializable {
+  public static abstract class TopicCommand<V> implements Command<V>, CopycatSerializable {
 
     /**
      * Base map command builder.
@@ -76,12 +76,12 @@ public class TopicCommands {
     }
 
     @Override
-    public void writeObject(BufferOutput buffer, Alleycat serializer) {
+    public void writeObject(BufferOutput buffer, Serializer serializer) {
       serializer.writeObject(message, buffer);
     }
 
     @Override
-    public void readObject(BufferInput buffer, Alleycat serializer) {
+    public void readObject(BufferInput buffer, Serializer serializer) {
       message = serializer.readObject(buffer);
     }
 
@@ -128,12 +128,12 @@ public class TopicCommands {
     }
 
     @Override
-    public void writeObject(BufferOutput buffer, Alleycat alleycat) {
+    public void writeObject(BufferOutput buffer, Serializer serializer) {
 
     }
 
     @Override
-    public void readObject(BufferInput buffer, Alleycat alleycat) {
+    public void readObject(BufferInput buffer, Serializer serializer) {
 
     }
 

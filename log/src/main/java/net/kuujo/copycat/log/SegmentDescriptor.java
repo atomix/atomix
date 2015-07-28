@@ -15,9 +15,9 @@
  */
 package net.kuujo.copycat.log;
 
-import net.kuujo.alleycat.io.Buffer;
-import net.kuujo.alleycat.io.FileBuffer;
-import net.kuujo.alleycat.io.HeapBuffer;
+import net.kuujo.copycat.io.Buffer;
+import net.kuujo.copycat.io.FileBuffer;
+import net.kuujo.copycat.io.HeapBuffer;
 
 /**
  * Segment descriptor.
@@ -48,7 +48,7 @@ import net.kuujo.alleycat.io.HeapBuffer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public final class SegmentDescriptor implements AutoCloseable {
+final class SegmentDescriptor implements AutoCloseable {
   public static final int BYTES = 52;
 
   /**

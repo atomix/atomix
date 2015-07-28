@@ -15,14 +15,14 @@
  */
 package net.kuujo.copycat.coordination.state;
 
-import net.kuujo.alleycat.Alleycat;
-import net.kuujo.alleycat.AlleycatSerializable;
-import net.kuujo.alleycat.SerializeWith;
-import net.kuujo.alleycat.io.BufferInput;
-import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.copycat.BuilderPool;
 import net.kuujo.copycat.Command;
 import net.kuujo.copycat.Operation;
+import net.kuujo.copycat.io.BufferInput;
+import net.kuujo.copycat.io.BufferOutput;
+import net.kuujo.copycat.io.serializer.CopycatSerializable;
+import net.kuujo.copycat.io.serializer.SerializeWith;
+import net.kuujo.copycat.io.serializer.Serializer;
 
 import java.util.concurrent.TimeUnit;
 
@@ -39,13 +39,13 @@ public class LockCommands {
   /**
    * Abstract lock command.
    */
-  public static abstract class LockCommand<V> implements Command<V>, AlleycatSerializable {
+  public static abstract class LockCommand<V> implements Command<V>, CopycatSerializable {
     @Override
-    public void writeObject(BufferOutput buffer, Alleycat alleycat) {
+    public void writeObject(BufferOutput buffer, Serializer serializer) {
     }
 
     @Override
-    public void readObject(BufferInput buffer, Alleycat alleycat) {
+    public void readObject(BufferInput buffer, Serializer serializer) {
     }
 
     /**
@@ -86,12 +86,12 @@ public class LockCommands {
     }
 
     @Override
-    public void writeObject(BufferOutput buffer, Alleycat alleycat) {
+    public void writeObject(BufferOutput buffer, Serializer serializer) {
       buffer.writeLong(timeout);
     }
 
     @Override
-    public void readObject(BufferInput buffer, Alleycat alleycat) {
+    public void readObject(BufferInput buffer, Serializer serializer) {
       timeout = buffer.readLong();
     }
 

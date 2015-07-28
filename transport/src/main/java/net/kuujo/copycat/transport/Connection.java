@@ -27,9 +27,9 @@ import java.util.concurrent.CompletableFuture;
  * This is a low-level abstraction through which clients and servers communicate with one another once connected.
  * This is more or less a lightweight interface over sockets that supports arbitrary messages.
  * <p>
- * Messages sent over a connection must be serializable by the registered {@link net.kuujo.alleycat.Alleycat} serializer.
+ * Messages sent over a connection must be serializable by the registered {@link net.kuujo.copycat.io.serializer.Serializer}.
  * This means that messages must implement {@link java.io.Serializable}, {@link java.io.Externalizable}, or
- * {@link net.kuujo.alleycat.AlleycatSerializable} or provide a custom {@link net.kuujo.alleycat.Serializer}.
+ * {@link net.kuujo.copycat.io.serializer.CopycatSerializable} or provide a custom {@link net.kuujo.copycat.io.serializer.TypeSerializer}.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -49,9 +49,9 @@ public interface Connection {
   /**
    * Sends a message to the other side of the connection.
    * <p>
-   * The message must be serializable via the configured {@link net.kuujo.alleycat.Alleycat} instance. This means it
-   * must implement {@link java.io.Serializable}, {@link java.io.Externalizable}, or {@link net.kuujo.alleycat.AlleycatSerializable}
-   * or provide a custom {@link net.kuujo.alleycat.Serializer}.
+   * The message must be serializable via the configured {@link net.kuujo.copycat.io.serializer.Serializer} instance. This means it
+   * must implement {@link java.io.Serializable}, {@link java.io.Externalizable}, or {@link net.kuujo.copycat.io.serializer.CopycatSerializable}
+   * or provide a custom {@link net.kuujo.copycat.io.serializer.TypeSerializer}.
    * <p>
    * Note that {@link net.kuujo.copycat.transport.Connection}s are bi-directional. That is, messages can be send either
    * by the client or the server. All messages must have a reply, even if the reply is {@code null}. Once the reply
@@ -77,12 +77,12 @@ public interface Connection {
    * be registered on the connection for any given type.
    * <p>
    * The message handler must return a {@link java.util.concurrent.CompletableFuture} to be completed with the message
-   * reply. The reply value must be serializable via the configured {@link net.kuujo.alleycat.Alleycat} instance. This means it
-   * must implement {@link java.io.Serializable}, {@link java.io.Externalizable}, or {@link net.kuujo.alleycat.AlleycatSerializable}
-   * or provide a custom {@link net.kuujo.alleycat.Serializer}.
+   * reply. The reply value must be serializable via the configured {@link net.kuujo.copycat.io.serializer.Serializer} instance. This means it
+   * must implement {@link java.io.Serializable}, {@link java.io.Externalizable}, or {@link net.kuujo.copycat.io.serializer.CopycatSerializable}
+   * or provide a custom {@link net.kuujo.copycat.io.serializer.TypeSerializer}.
    *
    * @param type The message type for which to listen. This can be any class that is serializable by the configured
-   * {@link net.kuujo.alleycat.Alleycat} instance.
+   * {@link net.kuujo.copycat.io.serializer.Serializer} instance.
    * @param handler The type-specific message handler.
    * @param <T> The message type.
    * @param <U> The reply type.

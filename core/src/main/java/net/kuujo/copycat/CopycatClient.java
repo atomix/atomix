@@ -15,8 +15,8 @@
  */
 package net.kuujo.copycat;
 
-import net.kuujo.alleycat.Alleycat;
 import net.kuujo.copycat.client.RaftClient;
+import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.transport.Transport;
 
 import java.util.concurrent.TimeUnit;
@@ -75,7 +75,7 @@ public class CopycatClient extends Copycat {
      * @param serializer The client serializer.
      * @return The client builder.
      */
-    public Builder withSerializer(Alleycat serializer) {
+    public Builder withSerializer(Serializer serializer) {
       builder.withSerializer(serializer);
       return this;
     }

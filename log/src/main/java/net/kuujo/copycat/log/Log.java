@@ -205,7 +205,7 @@ public class Log implements AutoCloseable {
    * If the given index is outside of the bounds of the log then a {@link IndexOutOfBoundsException} will be
    * thrown. If the entry at the given index has been compacted from the then the returned entry will be {@code null}.
    * <p>
-   * Entries returned by this method are pooled and {@link net.kuujo.alleycat.util.ReferenceCounted}. In order to ensure
+   * Entries returned by this method are pooled and {@link net.kuujo.copycat.util.ReferenceCounted}. In order to ensure
    * the entry is released back to the internal entry pool call {@link Entry#close()} or load the entry in a
    * try-with-resources statement.
    * <pre>

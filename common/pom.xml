@@ -10,4 +10,13 @@
 
   <artifactId>copycat-common</artifactId>
   <name>Copycat Common</name>
+
+  <dependencies>
+    <dependency>
+      <groupId>net.kuujo.copycat</groupId>
+      <artifactId>copycat-io</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+  </dependencies>
+
 </project>

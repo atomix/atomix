@@ -15,11 +15,11 @@
  */
 package net.kuujo.copycat.manager;
 
-import net.kuujo.alleycat.SerializeWith;
 import net.kuujo.copycat.BuilderPool;
 import net.kuujo.copycat.ConsistencyLevel;
 import net.kuujo.copycat.Operation;
 import net.kuujo.copycat.Query;
+import net.kuujo.copycat.io.serializer.SerializeWith;
 
 import java.util.List;
 

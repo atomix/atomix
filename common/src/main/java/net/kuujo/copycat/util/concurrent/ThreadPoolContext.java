@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.util.concurrent;
 
-import net.kuujo.alleycat.Alleycat;
+import net.kuujo.copycat.io.serializer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,7 +46,7 @@ public class ThreadPoolContext extends Context {
    * @param parent The thread pool on which to execute events.
    * @param serializer The context serializer.
    */
-  public ThreadPoolContext(ScheduledExecutorService parent, Alleycat serializer) {
+  public ThreadPoolContext(ScheduledExecutorService parent, Serializer serializer) {
     super(serializer);
     this.parent = parent;
 

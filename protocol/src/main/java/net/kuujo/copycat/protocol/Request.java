@@ -15,16 +15,16 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.alleycat.AlleycatSerializable;
-import net.kuujo.alleycat.util.ReferenceCounted;
 import net.kuujo.copycat.BuilderPool;
+import net.kuujo.copycat.io.serializer.CopycatSerializable;
+import net.kuujo.copycat.util.ReferenceCounted;
 
 /**
  * Protocol request.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Request<T extends Request<T>> extends ReferenceCounted<T>, AlleycatSerializable {
+public interface Request<T extends Request<T>> extends ReferenceCounted<T>, CopycatSerializable {
 
   /**
    * Request type.

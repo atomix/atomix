@@ -15,12 +15,12 @@
  */
 package net.kuujo.copycat.server.log;
 
-import net.kuujo.alleycat.Alleycat;
-import net.kuujo.alleycat.io.BufferInput;
-import net.kuujo.alleycat.io.BufferOutput;
-import net.kuujo.alleycat.util.ReferenceManager;
-import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.Members;
+import net.kuujo.copycat.io.BufferInput;
+import net.kuujo.copycat.io.BufferOutput;
+import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.log.Entry;
+import net.kuujo.copycat.util.ReferenceManager;
 
 /**
  * Configuration entry.
@@ -88,17 +88,17 @@ public class ConfigurationEntry extends RaftEntry<ConfigurationEntry> {
   }
 
   @Override
-  public void writeObject(BufferOutput buffer, Alleycat alleycat) {
-    super.writeObject(buffer, alleycat);
-    alleycat.writeObject(active, buffer);
-    alleycat.writeObject(passive, buffer);
+  public void writeObject(BufferOutput buffer, Serializer serializer) {
+    super.writeObject(buffer, serializer);
+    serializer.writeObject(active, buffer);
+    serializer.writeObject(passive, buffer);
   }
 
   @Override
-  public void readObject(BufferInput buffer, Alleycat alleycat) {
-    super.readObject(buffer, alleycat);
-    active = alleycat.readObject(buffer);
-    passive = alleycat.readObject(buffer);
+  public void readObject(BufferInput buffer, Serializer serializer) {
+    super.readObject(buffer, serializer);
+    active = serializer.readObject(buffer);
+    passive = serializer.readObject(buffer);
   }
 
   @Override

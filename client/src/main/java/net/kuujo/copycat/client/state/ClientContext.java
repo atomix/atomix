@@ -15,8 +15,8 @@
  */
 package net.kuujo.copycat.client.state;
 
-import net.kuujo.alleycat.Alleycat;
 import net.kuujo.copycat.*;
+import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.protocol.*;
 import net.kuujo.copycat.transport.Client;
 import net.kuujo.copycat.transport.Connection;
@@ -73,7 +73,7 @@ public class ClientContext implements Managed<Void> {
   private volatile long response;
   private volatile long version;
 
-  public ClientContext(Members members, Transport transport, Alleycat serializer) {
+  public ClientContext(Members members, Transport transport, Serializer serializer) {
     if (members == null)
       throw new NullPointerException("members cannot be null");
     if (transport == null)

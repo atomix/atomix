@@ -15,17 +15,12 @@
  */
 package net.kuujo.copycat.collections.state;
 
-import net.kuujo.alleycat.Alleycat;
-import net.kuujo.alleycat.AlleycatSerializable;
-import net.kuujo.alleycat.SerializeWith;
-import net.kuujo.alleycat.io.BufferInput;
-import net.kuujo.alleycat.io.BufferOutput;
-import net.kuujo.copycat.BuilderPool;
-import net.kuujo.copycat.PersistenceLevel;
-import net.kuujo.copycat.Command;
-import net.kuujo.copycat.ConsistencyLevel;
-import net.kuujo.copycat.Operation;
-import net.kuujo.copycat.Query;
+import net.kuujo.copycat.*;
+import net.kuujo.copycat.io.BufferInput;
+import net.kuujo.copycat.io.BufferOutput;
+import net.kuujo.copycat.io.serializer.CopycatSerializable;
+import net.kuujo.copycat.io.serializer.SerializeWith;
+import net.kuujo.copycat.io.serializer.Serializer;
 
 import java.util.concurrent.TimeUnit;
 
@@ -42,7 +37,7 @@ public class MapCommands {
   /**
    * Abstract map command.
    */
-  public static abstract class MapCommand<V> implements Command<V>, AlleycatSerializable {
+  public static abstract class MapCommand<V> implements Command<V>, CopycatSerializable {
 
     /**
      * Base map command builder.
@@ -57,7 +52,7 @@ public class MapCommands {
   /**
    * Abstract map query.
    */
-  public static abstract class MapQuery<V> implements Query<V>, AlleycatSerializable {
+  public static abstract class MapQuery<V> implements Query<V>, CopycatSerializable {
     protected ConsistencyLevel consistency = ConsistencyLevel.LINEARIZABLE_LEASE;
 
     @Override
@@ -66,12 +61,12 @@ public class MapCommands {
     }
 
     @Override
-    public void writeObject(BufferOutput buffer, Alleycat alleycat) {
+    public void writeObject(BufferOutput buffer, Serializer serializer) {
       buffer.writeByte(consistency.ordinal());
     }
 
     @Override
-    public void readObject(BufferInput buffer, Alleycat alleycat) {
+    public void readObject(BufferInput buffer, Serializer serializer) {
       consistency = ConsistencyLevel.values()[buffer.readByte()];
     }
 
@@ -113,13 +108,13 @@ public class MapCommands {
     }
 
     @Override
-    public void writeObject(BufferOutput buffer, Alleycat alleycat) {
-      alleycat.writeObject(key, buffer);
+    public void writeObject(BufferOutput buffer, Serializer serializer) {
+      serializer.writeObject(key, buffer);
     }
 
     @Override
-    public void readObject(BufferInput buffer, Alleycat alleycat) {
-      key = alleycat.readObject(buffer);
+    public void readObject(BufferInput buffer, Serializer serializer) {
+      key = serializer.readObject(buffer);
     }
 
     /**
@@ -158,15 +153,15 @@ public class MapCommands {
     }
 
     @Override
-    public void writeObject(BufferOutput buffer, Alleycat alleycat) {
-      super.writeObject(buffer, alleycat);
-      alleycat.writeObject(key, buffer);
+    public void writeObject(BufferOutput buffer, Serializer serializer) {
+      super.writeObject(buffer, serializer);
+      serializer.writeObject(key, buffer);
     }
 
     @Override
-    public void readObject(BufferInput buffer, Alleycat alleycat) {
-      super.readObject(buffer, alleycat);
-      key = alleycat.readObject(buffer);
+    public void readObject(BufferInput buffer, Serializer serializer) {
+      super.readObject(buffer, serializer);
+      key = serializer.readObject(buffer);
     }
 
     /**
@@ -233,15 +228,15 @@ public class MapCommands {
     }
 
     @Override
-    public void writeObject(BufferOutput buffer, Alleycat alleycat) {
-      super.writeObject(buffer, alleycat);
-      alleycat.writeObject(value, buffer);
+    public void writeObject(BufferOutput buffer, Serializer serializer) {
+      super.writeObject(buffer, serializer);
+      serializer.writeObject(value, buffer);
     }
 
     @Override
-    public void readObject(BufferInput buffer, Alleycat alleycat) {
-      super.readObject(buffer, alleycat);
-      value = alleycat.readObject(buffer);
+    public void readObject(BufferInput buffer, Serializer serializer) {
+      super.readObject(buffer, serializer);
+      value = serializer.readObject(buffer);
     }
 
     /**
@@ -292,14 +287,14 @@ public class MapCommands {
     }
 
     @Override
-    public void writeObject(BufferOutput buffer, Alleycat alleycat) {
-      super.writeObject(buffer, alleycat);
+    public void writeObject(BufferOutput buffer, Serializer serializer) {
+      super.writeObject(buffer, serializer);
       buffer.writeByte(mode.ordinal()).writeLong(ttl);
     }
 
     @Override
-    public void readObject(BufferInput buffer, Alleycat alleycat) {
-      super.readObject(buffer, alleycat);
+    public void readObject(BufferInput buffer, Serializer serializer) {
+      super.readObject(buffer, serializer);
       mode = PersistenceLevel.values()[buffer.readByte()];
       ttl = buffer.readLong();
     }
@@ -457,15 +452,15 @@ public class MapCommands {
     }
 
     @Override
-    public void readObject(BufferInput buffer, Alleycat alleycat) {
-      super.readObject(buffer, alleycat);
-      defaultValue = alleycat.readObject(buffer);
+    public void readObject(BufferInput buffer, Serializer serializer) {
+      super.readObject(buffer, serializer);
+      defaultValue = serializer.readObject(buffer);
     }
 
     @Override
-    public void writeObject(BufferOutput buffer, Alleycat alleycat) {
-      super.writeObject(buffer, alleycat);
-      alleycat.writeObject(defaultValue, buffer);
+    public void writeObject(BufferOutput buffer, Serializer serializer) {
+      super.writeObject(buffer, serializer);
+      serializer.writeObject(defaultValue, buffer);
     }
 
     /**
@@ -592,12 +587,12 @@ public class MapCommands {
     }
 
     @Override
-    public void writeObject(BufferOutput buffer, Alleycat alleycat) {
+    public void writeObject(BufferOutput buffer, Serializer serializer) {
 
     }
 
     @Override
-    public void readObject(BufferInput buffer, Alleycat alleycat) {
+    public void readObject(BufferInput buffer, Serializer serializer) {
 
     }
 

@@ -15,13 +15,13 @@
  */
 package net.kuujo.copycat.server.log;
 
-import net.kuujo.alleycat.Alleycat;
-import net.kuujo.alleycat.SerializeWith;
-import net.kuujo.alleycat.io.BufferInput;
-import net.kuujo.alleycat.io.BufferOutput;
-import net.kuujo.alleycat.util.ReferenceManager;
 import net.kuujo.copycat.Query;
+import net.kuujo.copycat.io.BufferInput;
+import net.kuujo.copycat.io.BufferOutput;
+import net.kuujo.copycat.io.serializer.SerializeWith;
+import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.log.Entry;
+import net.kuujo.copycat.util.ReferenceManager;
 
 /**
  * Query entry.
@@ -78,15 +78,15 @@ public class QueryEntry extends OperationEntry<QueryEntry> {
   }
 
   @Override
-  public void writeObject(BufferOutput buffer, Alleycat alleycat) {
-    super.writeObject(buffer, alleycat);
-    alleycat.writeObject(query, buffer);
+  public void writeObject(BufferOutput buffer, Serializer serializer) {
+    super.writeObject(buffer, serializer);
+    serializer.writeObject(query, buffer);
   }
 
   @Override
-  public void readObject(BufferInput buffer, Alleycat alleycat) {
-    super.readObject(buffer, alleycat);
-    query = alleycat.readObject(buffer);
+  public void readObject(BufferInput buffer, Serializer serializer) {
+    super.readObject(buffer, serializer);
+    query = serializer.readObject(buffer);
   }
 
   @Override

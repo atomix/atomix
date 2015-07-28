@@ -25,9 +25,9 @@ import java.util.concurrent.CompletableFuture;
  * {@link MessageHandler#handle(Object)} is invoked by a {@link net.kuujo.copycat.transport.Connection}, the handler
  * <em>must</em> return a valid {@link java.util.concurrent.CompletableFuture} to be completed with the message reply.
  * <p>
- * Note that input and output for the message handler must be serializable via the configured {@link net.kuujo.alleycat.Alleycat}
+ * Note that input and output for the message handler must be serializable via the configured {@link net.kuujo.copycat.io.serializer.Serializer}
  * instance. This means it must implement {@link java.io.Serializable}, {@link java.io.Externalizable}, or
- * {@link net.kuujo.alleycat.AlleycatSerializable} or provide a custom {@link net.kuujo.alleycat.Serializer}.
+ * {@link net.kuujo.copycat.io.serializer.CopycatSerializable} or provide a custom {@link net.kuujo.copycat.io.serializer.TypeSerializer}.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

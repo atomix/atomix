@@ -15,9 +15,9 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.alleycat.util.ReferenceFactory;
-import net.kuujo.alleycat.util.ReferenceManager;
 import net.kuujo.copycat.BuilderPool;
+import net.kuujo.copycat.util.ReferenceFactory;
+import net.kuujo.copycat.util.ReferenceManager;
 
 /**
  * Client request.

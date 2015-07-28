@@ -15,12 +15,12 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.alleycat.Alleycat;
-import net.kuujo.alleycat.SerializeWith;
-import net.kuujo.alleycat.io.BufferInput;
-import net.kuujo.alleycat.io.BufferOutput;
-import net.kuujo.alleycat.util.ReferenceManager;
 import net.kuujo.copycat.BuilderPool;
+import net.kuujo.copycat.io.BufferInput;
+import net.kuujo.copycat.io.BufferOutput;
+import net.kuujo.copycat.io.serializer.SerializeWith;
+import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.util.ReferenceManager;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -74,12 +74,12 @@ public class RegisterRequest extends ClientRequest<RegisterRequest> {
   }
 
   @Override
-  public void writeObject(BufferOutput buffer, Alleycat serializer) {
+  public void writeObject(BufferOutput buffer, Serializer serializer) {
     serializer.writeObject(connection, buffer);
   }
 
   @Override
-  public void readObject(BufferInput buffer, Alleycat serializer) {
+  public void readObject(BufferInput buffer, Serializer serializer) {
     connection = serializer.readObject(buffer);
   }
 

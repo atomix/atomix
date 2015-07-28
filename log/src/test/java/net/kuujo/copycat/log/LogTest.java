@@ -15,8 +15,8 @@
  */
 package net.kuujo.copycat.log;
 
-import net.kuujo.alleycat.Alleycat;
-import net.kuujo.alleycat.ServiceLoaderResolver;
+import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.io.serializer.ServiceLoaderResolver;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.SingleThreadContext;
 import org.testng.Assert;
@@ -205,7 +205,7 @@ public class LogTest {
    * Creates a test execution context.
    */
   private Context createContext() {
-    return new SingleThreadContext("test", new Alleycat(new ServiceLoaderResolver()));
+    return new SingleThreadContext("test", new Serializer(new ServiceLoaderResolver()));
   }
 
   /**

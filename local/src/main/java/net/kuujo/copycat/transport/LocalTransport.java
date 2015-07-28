@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.transport;
 
-import net.kuujo.alleycat.Alleycat;
+import net.kuujo.copycat.io.serializer.Serializer;
 
 import java.util.Map;
 import java.util.UUID;
@@ -39,11 +39,11 @@ public class LocalTransport implements Transport {
   }
 
   private final LocalServerRegistry registry;
-  private final Alleycat serializer;
+  private final Serializer serializer;
   private final Map<UUID, LocalClient> clients = new ConcurrentHashMap<>();
   private final Map<UUID, LocalServer> servers = new ConcurrentHashMap<>();
 
-  private LocalTransport(LocalServerRegistry registry, Alleycat serializer) {
+  private LocalTransport(LocalServerRegistry registry, Serializer serializer) {
     this.registry = registry;
     this.serializer = serializer;
   }
@@ -79,7 +79,7 @@ public class LocalTransport implements Transport {
    */
   public static class Builder extends Transport.Builder {
     private LocalServerRegistry registry;
-    private Alleycat serializer;
+    private Serializer serializer;
 
     /**
      * Sets the transport server registry.
@@ -100,14 +100,14 @@ public class LocalTransport implements Transport {
      * @param serializer The transport serializer.
      * @return The transport builder.
      */
-    public Builder withSerializer(Alleycat serializer) {
+    public Builder withSerializer(Serializer serializer) {
       this.serializer = serializer;
       return this;
     }
 
     @Override
     public Transport build() {
-      return new LocalTransport(registry, serializer != null ? serializer : new Alleycat());
+      return new LocalTransport(registry, serializer != null ? serializer : new Serializer());
     }
   }
 

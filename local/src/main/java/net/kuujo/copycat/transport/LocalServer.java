@@ -15,8 +15,8 @@
  */
 package net.kuujo.copycat.transport;
 
-import net.kuujo.alleycat.Alleycat;
 import net.kuujo.copycat.Listener;
+import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.SingleThreadContext;
 
@@ -40,7 +40,7 @@ public class LocalServer implements Server {
   private volatile InetSocketAddress address;
   private volatile ListenerHolder listener;
 
-  public LocalServer(UUID id, LocalServerRegistry registry, Alleycat serializer) {
+  public LocalServer(UUID id, LocalServerRegistry registry, Serializer serializer) {
     this.id = id;
     this.registry = registry;
     this.context = new SingleThreadContext("test-" + id.toString(), serializer.clone());

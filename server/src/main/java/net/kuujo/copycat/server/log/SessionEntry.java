@@ -15,11 +15,11 @@
  */
 package net.kuujo.copycat.server.log;
 
-import net.kuujo.alleycat.Alleycat;
-import net.kuujo.alleycat.io.BufferInput;
-import net.kuujo.alleycat.io.BufferOutput;
-import net.kuujo.alleycat.util.ReferenceManager;
+import net.kuujo.copycat.io.BufferInput;
+import net.kuujo.copycat.io.BufferOutput;
+import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.log.Entry;
+import net.kuujo.copycat.util.ReferenceManager;
 
 /**
  * Session entry.
@@ -63,14 +63,14 @@ public abstract class SessionEntry<T extends SessionEntry<T>> extends Timestampe
   }
 
   @Override
-  public void writeObject(BufferOutput buffer, Alleycat alleycat) {
-    super.writeObject(buffer, alleycat);
+  public void writeObject(BufferOutput buffer, Serializer serializer) {
+    super.writeObject(buffer, serializer);
     buffer.writeLong(session);
   }
 
   @Override
-  public void readObject(BufferInput buffer, Alleycat alleycat) {
-    super.readObject(buffer, alleycat);
+  public void readObject(BufferInput buffer, Serializer serializer) {
+    super.readObject(buffer, serializer);
     session = buffer.readLong();
   }
 

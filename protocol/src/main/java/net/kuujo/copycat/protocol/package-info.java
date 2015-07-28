@@ -22,8 +22,8 @@
  * client-facing request types necessary to participate in consensus via the Raft consensus protocol.
  * <p>
  * All {@link net.kuujo.copycat.protocol.Request} and {@link net.kuujo.copycat.protocol.Response} objects are
- * {@link net.kuujo.alleycat.AlleycatSerializable} and {@link net.kuujo.alleycat.util.ReferenceCounted}. This reduces
- * garbage by allowing {@link net.kuujo.alleycat.Alleycat} to pool requests and responses during deserialization.
+ * {@link net.kuujo.copycat.io.serializer.CopycatSerializable} and {@link net.kuujo.copycat.util.ReferenceCounted}. This reduces
+ * garbage by allowing {@link net.kuujo.copycat.io.serializer.Serializer} to pool requests and responses during deserialization.
  * <p>
  * All {@link net.kuujo.copycat.protocol.Request}s and {@link net.kuujo.copycat.protocol.Response}s provide
  * a custom {@link net.kuujo.copycat.Builder} implementation specific to each request's or response's attributes. Builders

@@ -15,8 +15,8 @@
  */
 package net.kuujo.copycat.server.log;
 
-import net.kuujo.alleycat.util.ReferenceManager;
 import net.kuujo.copycat.log.Entry;
+import net.kuujo.copycat.util.ReferenceManager;
 
 /**
  * Operation entry.

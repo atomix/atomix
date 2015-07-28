@@ -15,10 +15,10 @@
  */
 package net.kuujo.copycat.log;
 
-import net.kuujo.alleycat.io.Buffer;
-import net.kuujo.alleycat.io.FileBuffer;
-import net.kuujo.alleycat.io.HeapBuffer;
 import net.kuujo.copycat.ConfigurationException;
+import net.kuujo.copycat.io.Buffer;
+import net.kuujo.copycat.io.FileBuffer;
+import net.kuujo.copycat.io.HeapBuffer;
 import net.kuujo.copycat.util.concurrent.Context;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -237,7 +237,8 @@ class SegmentManager implements AutoCloseable {
    * Creates an in memory segment.
    */
   private Segment createMemorySegment(SegmentDescriptor descriptor) {
-    Buffer buffer = HeapBuffer.allocate(Math.min(1024 * 1024, config.getMaxSegmentSize() + config.getMaxEntrySize() + SegmentDescriptor.BYTES), config.getMaxSegmentSize() + config.getMaxEntrySize() + SegmentDescriptor.BYTES);
+    Buffer buffer = HeapBuffer.allocate(Math.min(1024 * 1024, config.getMaxSegmentSize() + config.getMaxEntrySize() + SegmentDescriptor.BYTES),
+      config.getMaxSegmentSize() + config.getMaxEntrySize() + SegmentDescriptor.BYTES);
     Segment segment = Segment.open(buffer.position(SegmentDescriptor.BYTES).slice(), descriptor, createIndex(descriptor), context);
     LOGGER.debug("Created ephemeral segment: {}", segment);
     return segment;
@@ -263,7 +264,8 @@ class SegmentManager implements AutoCloseable {
   private Segment loadDiskSegment(long segmentId, long segmentVersion) {
     File file = SegmentFile.createSegmentFile(config.getDirectory(), segmentId, segmentVersion);
     try (SegmentDescriptor descriptor = new SegmentDescriptor(FileBuffer.allocate(file, SegmentDescriptor.BYTES))) {
-      Buffer buffer = FileBuffer.allocate(file, Math.min(1024 * 1024, config.getMaxSegmentSize() + config.getMaxEntrySize() + SegmentDescriptor.BYTES), config.getMaxSegmentSize() + config.getMaxEntrySize() + SegmentDescriptor.BYTES);
+      Buffer buffer = FileBuffer.allocate(file, Math.min(1024 * 1024, config.getMaxSegmentSize() + config.getMaxEntrySize() + SegmentDescriptor.BYTES),
+        config.getMaxSegmentSize() + config.getMaxEntrySize() + SegmentDescriptor.BYTES);
       buffer = buffer.position(SegmentDescriptor.BYTES).slice();
       Segment segment = Segment.open(buffer, descriptor, createIndex(descriptor), context);
       LOGGER.debug("Loaded segment: {} ({})", descriptor.id(), file.getName());

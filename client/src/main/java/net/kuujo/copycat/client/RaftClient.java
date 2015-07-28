@@ -15,10 +15,10 @@
  */
 package net.kuujo.copycat.client;
 
-import net.kuujo.alleycat.Alleycat;
-import net.kuujo.alleycat.ServiceLoaderResolver;
 import net.kuujo.copycat.*;
 import net.kuujo.copycat.client.state.ClientContext;
+import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.io.serializer.ServiceLoaderResolver;
 import net.kuujo.copycat.transport.Transport;
 import net.kuujo.copycat.util.Managed;
 import net.kuujo.copycat.util.concurrent.Context;
@@ -147,7 +147,7 @@ public class RaftClient implements Raft, Managed<Raft> {
    */
   public static class Builder extends Raft.Builder<Builder, RaftClient> {
     private Transport transport;
-    private Alleycat serializer;
+    private Serializer serializer;
     private long keepAliveInterval = 1000;
     private Members members;
 
@@ -174,7 +174,7 @@ public class RaftClient implements Raft, Managed<Raft> {
      * @param serializer The client serializer.
      * @return The client builder.
      */
-    public Builder withSerializer(Alleycat serializer) {
+    public Builder withSerializer(Serializer serializer) {
       this.serializer = serializer;
       return this;
     }
@@ -216,12 +216,12 @@ public class RaftClient implements Raft, Managed<Raft> {
 
     @Override
     public RaftClient build() {
-      // If no Alleycat instance was provided, create one.
+      // If no serializer instance was provided, create one.
       if (serializer == null) {
-        serializer = new Alleycat();
+        serializer = new Serializer();
       }
 
-      // Resolve Alleycat serializable types with the ServiceLoaderResolver.
+      // Resolve serializer serializable types with the ServiceLoaderResolver.
       serializer.resolve(new ServiceLoaderResolver());
 
       return new RaftClient(new ClientContext(members, transport, serializer).setKeepAliveInterval(keepAliveInterval));

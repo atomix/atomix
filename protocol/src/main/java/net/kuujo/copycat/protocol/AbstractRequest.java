@@ -15,10 +15,10 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.alleycat.util.ReferenceFactory;
-import net.kuujo.alleycat.util.ReferenceManager;
-import net.kuujo.alleycat.util.ReferencePool;
 import net.kuujo.copycat.BuilderPool;
+import net.kuujo.copycat.util.ReferenceFactory;
+import net.kuujo.copycat.util.ReferenceManager;
+import net.kuujo.copycat.util.ReferencePool;
 
 import java.util.concurrent.atomic.AtomicInteger;
 

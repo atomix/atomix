@@ -15,9 +15,9 @@
  */
 package net.kuujo.copycat.log;
 
-import net.kuujo.alleycat.AlleycatSerializable;
-import net.kuujo.alleycat.util.ReferenceCounted;
-import net.kuujo.alleycat.util.ReferenceManager;
+import net.kuujo.copycat.io.serializer.CopycatSerializable;
+import net.kuujo.copycat.util.ReferenceCounted;
+import net.kuujo.copycat.util.ReferenceManager;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -28,13 +28,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  * a unique {@link #getIndex() index} in the log. Indexes are applied to entries once written to a log.
  * <p>
  * Custom entry implementations should implement serialization and deserialization logic via
- * {@link net.kuujo.alleycat.AlleycatSerializable#writeObject(net.kuujo.alleycat.io.BufferOutput, net.kuujo.alleycat.Alleycat)}
- * and {@link net.kuujo.alleycat.AlleycatSerializable#readObject(net.kuujo.alleycat.io.BufferInput, net.kuujo.alleycat.Alleycat)}.
+ * {@link net.kuujo.copycat.io.serializer.CopycatSerializable#writeObject(net.kuujo.copycat.io.BufferOutput, net.kuujo.copycat.io.serializer.Serializer)}
+ * and {@link net.kuujo.copycat.io.serializer.CopycatSerializable#readObject(net.kuujo.copycat.io.BufferInput, net.kuujo.copycat.io.serializer.Serializer)}.
  * respectively.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class Entry<T extends Entry<T>> implements ReferenceCounted<Entry>, AlleycatSerializable {
+public abstract class Entry<T extends Entry<T>> implements ReferenceCounted<Entry>, CopycatSerializable {
   private final ReferenceManager<Entry<?>> referenceManager;
   private final AtomicInteger references = new AtomicInteger();
   private long index;

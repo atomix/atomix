@@ -15,9 +15,9 @@
  */
 package net.kuujo.copycat.log;
 
-import net.kuujo.alleycat.SerializationException;
-import net.kuujo.alleycat.util.ReferenceManager;
-import net.kuujo.alleycat.util.ReferencePool;
+import net.kuujo.copycat.io.serializer.SerializationException;
+import net.kuujo.copycat.util.ReferenceManager;
+import net.kuujo.copycat.util.ReferencePool;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;

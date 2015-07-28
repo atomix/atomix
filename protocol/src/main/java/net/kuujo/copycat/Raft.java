@@ -52,7 +52,7 @@ public interface Raft {
    * executed on a single thread via the returned {@link net.kuujo.copycat.util.concurrent.Context}.
    * <p>
    * The {@link net.kuujo.copycat.util.concurrent.Context} can also be used to access the Raft instance's internal
-   * {@link net.kuujo.alleycat.Alleycat serializer} via {@link Context#serializer()}.
+   * {@link net.kuujo.copycat.io.serializer.Serializer serializer} via {@link Context#serializer()}.
    *
    * @return The Raft context.
    */

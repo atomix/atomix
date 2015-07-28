@@ -15,12 +15,12 @@
  */
 package net.kuujo.copycat.server.log;
 
-import net.kuujo.alleycat.Alleycat;
-import net.kuujo.alleycat.SerializeWith;
-import net.kuujo.alleycat.io.BufferInput;
-import net.kuujo.alleycat.io.BufferOutput;
-import net.kuujo.alleycat.util.ReferenceManager;
+import net.kuujo.copycat.io.BufferInput;
+import net.kuujo.copycat.io.BufferOutput;
+import net.kuujo.copycat.io.serializer.SerializeWith;
+import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.log.Entry;
+import net.kuujo.copycat.util.ReferenceManager;
 
 import java.util.UUID;
 
@@ -66,15 +66,15 @@ public class RegisterEntry extends TimestampedEntry<RegisterEntry> {
   }
 
   @Override
-  public void writeObject(BufferOutput buffer, Alleycat alleycat) {
-    super.writeObject(buffer, alleycat);
-    alleycat.writeObject(connection, buffer);
+  public void writeObject(BufferOutput buffer, Serializer serializer) {
+    super.writeObject(buffer, serializer);
+    serializer.writeObject(connection, buffer);
   }
 
   @Override
-  public void readObject(BufferInput buffer, Alleycat alleycat) {
-    super.readObject(buffer, alleycat);
-    connection = alleycat.readObject(buffer);
+  public void readObject(BufferInput buffer, Serializer serializer) {
+    super.readObject(buffer, serializer);
+    connection = serializer.readObject(buffer);
   }
 
   @Override

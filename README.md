@@ -664,23 +664,357 @@ TODO
 
 ## Serialization
 
-Copycat uses [Alleycat](http://github.com/kuujo/alleycat) for I/O and serialization.
+## Buffers
 
-All `Alleycat` instance constructed by Copycat use Alleycat's `ServiceLoaderResolver`. Copycat registers internal
-`AlleycatSerializable` types via `META-INf/services/net.kuujo.alleycat.AlleycatSerializable`. To register additional
-serializable types, create an additional `META-INF/services/net.kuujo.alleycat.AlleycatSerializable` file and list
+Copycat provides a buffer abstraction that provides a common interface to both memory and disk. Currently, four buffer
+types are provided:
+* `HeapBuffer` - on-heap `byte[]` backed buffer
+* `DirectBuffer` - off-heap `sun.misc.Unsafe` based buffer
+* `MemoryMappedBuffer` - `MappedByteBuffer` backed buffer
+* `FileBuffer` - `RandomAccessFile` backed buffer
+
+The `Buffer` interface implements `BufferInput` and `BufferOutput` which are functionally similar to Java's `DataInput`
+and `DataOutput` respectively. Additionally, features of how bytes are managed are intentionally similar to
+[ByteBuffer][ByteBuffer]. Copycat's buffers expose many of the same methods such as `position`, `limit`, `flip`, and
+others. Additionally, buffers are allocated via a static `allocate` method similar to `ByteBuffer`:
+
+```java
+Buffer buffer = DirectBuffer.allocate(1024);
+```
+
+Buffers are dynamically allocated and allowed to grow over time, so users don't need to know the number of bytes they're
+expecting to use when the buffer is created.
+
+The `Buffer` API exposes a set of `read*` and `write*` methods for reading and writing bytes respectively:
+
+```java
+Buffer buffer = HeapBuffer.allocate(1024);
+buffer.writeInt(1024)
+  .writeUnsignedByte(255)
+  .writeBoolean(true)
+  .flip();
+
+assert buffer.readInt() == 1024;
+assert buffer.readUnsignedByte() == 255;
+assert buffer.readBoolean();
+```
+
+See the [Buffer API documentation][Buffer] for more detailed usage information.
+
+### Bytes
+
+All `Buffer` instances are backed by a `Bytes` instance which is a low-level API over a fixed number of bytes. In contrast
+to `Buffer`, `Bytes` do not maintain internal pointers and are not dynamically resizeable.
+
+`Bytes` can be allocated in the same way as buffers, using the respective `allocate` method:
+
+```java
+FileBytes bytes = FileBytes.allocate(new File("path/to/file"), 1024);
+```
+
+Additionally, bytes can be resized via the `resize` method:
+
+```java
+bytes.resize(2048);
+```
+
+When in-memory bytes are resized, the memory will be copied to a larger memory space via `Unsafe.copyMemory`. When disk
+backed bytes are resized, disk space will be allocated by resizing the underlying file.
+
+### Buffer pools
+
+All buffers can optionally be pooled and reference counted. Pooled buffers can be allocated via a `PooledAllocator`:
+
+```java
+BufferAllocator allocator = new PooledHeapAllocator();
+
+Buffer buffer = allocator.allocate(1024);
+```
+
+Copycat tracks buffer references by implementing the `ReferenceCounted` interface. When pooled buffers are allocated,
+their `ReferenceCounted.references` count will be `1`. To release the buffer back to the pool, the reference count must
+be decremented back to `0`:
+
+```java
+// Release the reference to the buffer
+buffer.release();
+```
+
+Alternatively, `Buffer` extends `AutoCloseable`, and buffers can be released back to the pool regardless of their
+reference count by calling `Buffer.close`:
+
+```java
+// Release the buffer back to the pool
+buffer.close();
+```
+
+## Serialization
+
+Copycat provides an efficient custom serialization framework that's designed to operate on both disk and memory via a
+common [Buffer](#buffers) abstraction.
+
+Copycat's serializer can be used by simply instantiating an `Serializer` instance:
+
+```java
+// Create a new Serializer instance with an unpooled heap allocator
+Serializer serializer = new Serializer(new UnpooledHeapAllocator());
+
+// Register the Person class with a serialization ID of 1
+serializer.register(Person.class, 1);
+```
+
+Objects are serialized and deserialized using the `writeObject` and `readObject` methods respectively:
+
+```java
+// Create a new Person object
+Person person = new Person(1234, "Jordan", "Halterman");
+
+// Write the Person object to a newly allocated buffer
+Buffer buffer = serializer.writeObject(person);
+
+// Flip the buffer for reading
+buffer.flip();
+
+// Read the Person object
+Person result = serializer.readObject(buffer);
+```
+
+The `Serializer` class supports serialization and deserialization of `CopycatSerializable` types, types that have an associated
+`Serializer`, and native Java `Serializable` and `Externalizable` types, with `Serializable` being the most inefficient
+method of serialization.
+
+Additionally, Copycat support copying objects by serializing and deserializing them. To copy an object, simply use the
+`Serializer.copy` method:
+
+```java
+Person copy = serializer.copy(person);
+```
+
+All `Serializer` instance constructed by Copycat use `ServiceLoaderResolver`. Copycat registers internal
+`CopycatSerializable` types via `META-INF/services/net.kuujo.copycat.io.serializer.CopycatSerializable`. To register additional
+serializable types, create an additional `META-INF/services/net.kuujo.copycat.io.serializer.CopycatSerializable` file and list
 serializable types in that file.
 
-`META-INF/services/net.kuujo.alleycat.AlleycatSerializable`
+`META-INF/services/net.kuujo.copycat.io.serializer.CopycatSerializable`
 
 ```
 com.mycompany.SerializableType1
 com.mycompany.SerializableType2
 ```
 
-Users should annotate all `AlleycatSerializable` types with the `@SerializeWith` annotation and provide a serialization
+Users should annotate all `CopycatSerializable` types with the `@SerializeWith` annotation and provide a serialization
 ID for efficient serialization. Alley cat reserves serializable type IDs `128` through `255` and Copycat reserves
-`256` through `512`. See the [Alleycat documentation](http://github.com/kuujo/alleycat) for more information.
+`256` through `512`.
+
+### Serializer registration
+
+Copycat natively serializes a number of commons types including:
+* Primitive types
+* Primitive wrappers
+* Primitive arrays
+* Primitive wrapper arrays
+* `String`
+* `Class`
+* `BigInteger`
+* `BigDecimal`
+* `Date`
+* `Calendar`
+* `TimeZone`
+* `Map`
+* `List`
+* `Set`
+
+Additionally, users can register custom serializers via one of the overloaded `Serializer.register` methods.
+
+To register a serializable type with an `Serializer` instance, the type must generally meet one of the following conditions:
+* Implement `CopycatSerializable`
+* Implement `Externalizable`
+* Provide a `Serializer` class
+* Provide a `SerializerFactory`
+
+```java
+Serializer serializer = new Serializer();
+serializer.register(Foo.class, FooSerializer.class);
+serializer.register(Bar.class);
+```
+
+Additionally, Copycat supports serialization of `Serializable` and `Externalizable` types without registration, but this
+mode of serialization is inefficient as it requires that Copycat serialize the full class name as well.
+
+#### Registration identifiers
+
+Types explicitly registered with a `Serializer` instance can provide a registration ID in lieu of serializing class names.
+If given a serialization ID, Copycat will write the serializable type ID to the serialized `Buffer` instance of the class
+name and use the ID to locate the serializable type upon deserializing the object. This means *it is critical that all
+processes that register a serializable type use consistent identifiers.*
+
+To register a serializable type ID, pass the `id` to the `register` method:
+
+```java
+Serializer serializer = new Serializer();
+serializer.register(Foo.class, FooSerializer.class, 1);
+serializer.register(Bar.class, 2);
+```
+
+Valid serialization IDs are between `0` and `65535`. However, Copycat reserves IDs `128` through `255` for internal use.
+Attempts to register serializable types within the reserved range will result in an `IllegalArgumentException`.
+
+### Serializer
+
+At the core of the serialization framework is the `Serializer`. The `Serializer` is a simple interface that exposes
+two methods for serializing and deserializing objects of a specific type respectively. That is, serializers are responsible
+for serializing objects of other types, and not themselves. Copycat provides this separate serialization interface in order
+to allow users to create custom serializers for types that couldn't otherwise be serialized by Copycat.
+
+The `Serializer` interface consists of two methods:
+
+```java
+public class FooSerializer implements Serializer<Foo> {
+
+  @Override
+  public void write(Foo foo, Buffer buffer, Serializer serializer) {
+    buffer.writeInt(foo.getBar());
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public Foo read(Class<Foo> type, Buffer buffer, Serializer serializer) {
+    Foo foo = new Foo();
+    foo.setBar(buffer.readInt());
+  }
+}
+```
+
+To serialize and deserialize an object, we simply write to and read from the passed in `Buffer` instance. In addition to
+the `Buffer`, the `Serializer` that is serializing or deserializing the instance is also passed in. This allows the
+serializer to serialize or deserialize subtypes as well:
+
+```java
+public class FooSerializer implements Serializer<Foo> {
+
+  @Override
+  public void write(Foo foo, Buffer buffer, Serializer serializer) {
+    buffer.writeInt(foo.getBar());
+    Baz baz = foo.getBaz();
+    serializer.writeObject(baz, buffer);
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public Foo read(Class<Foo> type, Buffer buffer, Serializer serializer) {
+    Foo foo = new Foo();
+    foo.setBar(buffer.readInt());
+    foo.setBaz(serializer.readObject(buffer));
+  }
+}
+```
+
+Copycat comes with a number of native `Serializer` implementations, for instance `ListSerializer`:
+
+```java
+public class ListSerializer implements Serializer<List> {
+
+  @Override
+  public void write(List object, Buffer buffer, Serializer serializer) {
+    buffer.writeUnsignedShort(object.size());
+    for (Object value : object) {
+      serializer.writeObject(value, buffer);
+    }
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public List read(Class<List> type, Buffer buffer, Serializer serializer) {
+    int size = buffer.readUnsignedShort();
+    List object = new ArrayList<>(size);
+    for (int i = 0; i < size; i++) {
+      object.add(serializer.readObject(buffer));
+    }
+    return object;
+  }
+
+}
+```
+
+### CopycatSerializable
+
+Instead of writing a custom `Serializer`, serializable types can also implement the `CopycatSerializable` interface.
+The `CopycatSerializable` interface is synonymous with Java's native `Serializable` interface. As with the `Serializer`
+interface, `CopycatSerializable` exposes two methods which receive both a [Buffer](#buffers) and a `Serializer`:
+
+```java
+public class Foo implements CopycatSerializable {
+  private int bar;
+  private Baz baz;
+
+  public Foo() {
+  }
+
+  public Foo(int bar, Baz baz) {
+    this.bar = bar;
+    this.baz = baz;
+  }
+
+  @Override
+  public void writeObject(Buffer buffer, Serializer serializer) {
+    buffer.writeInt(bar);
+    serializer.writeObject(baz);
+  }
+
+  @Override
+  public void readObject(Buffer buffer, Serializer serializer) {
+    bar = buffer.readInt();
+    baz = serializer.readObject(buffer);
+  }
+}
+```
+
+For the most efficient serialization, it is essential that you associate a serializable type `id` with all serializable
+types. Type IDs can be provided during type registration or by implementing the `@SerializeWith` annotation:
+
+```java
+@SerializeWith(id=1)
+public class Foo implements CopycatSerializable {
+  ...
+
+  @Override
+  public void writeObject(Buffer buffer, Serializer serializer) {
+    buffer.writeInt(bar);
+    serializer.writeObject(baz);
+  }
+
+  @Override
+  public void readObject(Buffer buffer, Serializer serializer) {
+    bar = buffer.readInt();
+    baz = serializer.readObject(buffer);
+  }
+}
+```
+
+For classes annotated with `@SerializeWith`, the ID will automatically be retrieved during registration:
+
+```java
+Serializer serializer = new Serializer();
+serializer.register(Foo.class);
+```
+
+### Pooled object deserialization
+
+Copycat's serialization framework integrates with [object pools](#buffer-pools) to support allocating pooled objects
+during deserialization. When a `Serializer` instance is used to deserialize a type that implements `ReferenceCounted`,
+Copycat will automatically create new objects from a `ReferencePool`:
+
+```java
+Serializer serializer = new Serializer();
+
+// Person implements ReferenceCounted<Person>
+Person person = serializer.readObject(buffer);
+
+// ...do some stuff with Person...
+
+// Release the Person reference back to Copycat's internal Person pool
+person.close();
+```
 
 ### [User Manual](#user-manual)
 

@@ -15,13 +15,13 @@
  */
 package net.kuujo.copycat.server.state;
 
-import net.kuujo.alleycat.Alleycat;
 import net.kuujo.copycat.*;
+import net.kuujo.copycat.client.state.ClientContext;
+import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.log.Compaction;
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.protocol.*;
-import net.kuujo.copycat.client.state.ClientContext;
 import net.kuujo.copycat.server.Commit;
 import net.kuujo.copycat.server.RaftServer;
 import net.kuujo.copycat.server.StateMachine;
@@ -78,7 +78,7 @@ public class ServerContext extends ClientContext {
   private long globalIndex;
   private volatile boolean open;
 
-  public ServerContext(int memberId, Members members, Transport transport, Log log, StateMachine stateMachine, Alleycat serializer) {
+  public ServerContext(int memberId, Members members, Transport transport, Log log, StateMachine stateMachine, Serializer serializer) {
     super(members, transport, serializer);
 
     member = members.member(memberId);
@@ -135,7 +135,7 @@ public class ServerContext extends ClientContext {
    *
    * @return The command serializer.
    */
-  public Alleycat getSerializer() {
+  public Serializer getSerializer() {
     return context.serializer();
   }
 

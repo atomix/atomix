@@ -15,8 +15,8 @@
  */
 package net.kuujo.copycat.log;
 
-import net.kuujo.alleycat.Alleycat;
-import net.kuujo.alleycat.io.Buffer;
+import net.kuujo.copycat.io.Buffer;
+import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.util.concurrent.Context;
 
 /**
@@ -40,7 +40,7 @@ class Segment implements AutoCloseable {
   }
 
   private final SegmentDescriptor descriptor;
-  private final Alleycat alleycat;
+  private final Serializer serializer;
   private final Buffer source;
   private final Buffer writeBuffer;
   private final Buffer readBuffer;
@@ -59,7 +59,7 @@ class Segment implements AutoCloseable {
       throw new NullPointerException("context cannot be null");
 
     this.source = buffer;
-    this.alleycat = context.serializer();
+    this.serializer = context.serializer();
     this.writeBuffer = buffer.slice();
     this.readBuffer = writeBuffer.asReadOnlyBuffer();
     this.descriptor = descriptor;
@@ -203,7 +203,7 @@ class Segment implements AutoCloseable {
     long position = writeBuffer.position();
 
     // Serialize the object into the segment buffer.
-    alleycat.writeObject(entry, writeBuffer.limit(-1));
+    serializer.writeObject(entry, writeBuffer.limit(-1));
 
     // Calculate the length of the serialized bytes based on the resulting buffer position and the starting position.
     int length = (int) (writeBuffer.position() - position);
@@ -244,7 +244,7 @@ class Segment implements AutoCloseable {
 
       // Deserialize the entry from a slice of the underlying buffer.
       try (Buffer value = readBuffer.slice(position, length)) {
-        T entry = alleycat.readObject(value);
+        T entry = serializer.readObject(value);
         entry.setIndex(index);
         return entry;
       }

@@ -15,10 +15,10 @@
  */
 package net.kuujo.copycat.resource;
 
-import net.kuujo.alleycat.SerializeWith;
 import net.kuujo.copycat.BuilderPool;
 import net.kuujo.copycat.Command;
 import net.kuujo.copycat.Operation;
+import net.kuujo.copycat.io.serializer.SerializeWith;
 
 /**
  * Resource command.

@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat;
 
-import net.kuujo.alleycat.Alleycat;
+import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.manager.ResourceManager;
 import net.kuujo.copycat.server.RaftServer;
@@ -103,7 +103,7 @@ public class CopycatServer extends Copycat {
      * @param serializer The Raft serializer.
      * @return The Raft builder.
      */
-    public Builder withSerializer(Alleycat serializer) {
+    public Builder withSerializer(Serializer serializer) {
       builder.withSerializer(serializer);
       return this;
     }

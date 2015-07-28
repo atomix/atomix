@@ -16,7 +16,7 @@
 package net.kuujo.copycat.transport;
 
 import net.jodah.concurrentunit.ConcurrentTestCase;
-import net.kuujo.alleycat.Alleycat;
+import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.SingleThreadContext;
 import org.testng.annotations.Test;
@@ -52,7 +52,7 @@ public class LocalTransportTest extends ConcurrentTestCase {
     Server server = serverTransport.server(UUID.randomUUID());
     Client client = clientTransport.client(UUID.randomUUID());
 
-    Context context = new SingleThreadContext("test-thread-%d", new Alleycat());
+    Context context = new SingleThreadContext("test-thread-%d", new Serializer());
 
     expectResume();
     context.execute(() -> {

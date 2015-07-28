@@ -15,9 +15,9 @@
  */
 package net.kuujo.copycat.server.log;
 
-import net.kuujo.alleycat.SerializeWith;
-import net.kuujo.alleycat.util.ReferenceManager;
+import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.log.Entry;
+import net.kuujo.copycat.util.ReferenceManager;
 
 /**
  * Keep alive entry.

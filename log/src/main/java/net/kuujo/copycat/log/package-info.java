@@ -17,7 +17,7 @@
 /**
  * This package provides a standalone segmented log for Copycat's <a href="https://raftconsensus.github.io/">Raft</a> implementation.
  * <p>
- * The log is designed as a standalone journal built on Alleycat's {@link net.kuujo.alleycat.io.Buffer} abstraction.
+ * The log is designed as a standalone journal built on Copycat's {@link net.kuujo.copycat.io.Buffer} abstraction.
  * The buffer abstraction allows Copycat's {@link net.kuujo.copycat.log.Log} to write to memory or disk based on the
  * buffer type.
  * <p>
@@ -28,7 +28,7 @@
  * The log achieves fast sequential writes by segmenting itself internally and compacting segments separately and
  * combining segments when necessary. Compaction works by iterating over a segment or segments,
  * {@link net.kuujo.copycat.log.EntryFilter filtering} entries out of the segment, and rewriting the segment to a new
- * {@link net.kuujo.alleycat.io.Buffer}. Compaction is done in two stages: major and minor. The minor compaction stage
+ * {@link net.kuujo.copycat.io.Buffer}. Compaction is done in two stages: major and minor. The minor compaction stage
  * relates to compacting a single segment. The log will prioritize minor compaction for more recent segments first.
  * Periodically, the log will execute a major compaction wherein all segments of the log are compacted together. This
  * means the entire log is traversed from start to finish, and segments are combined in cases where enough entries have

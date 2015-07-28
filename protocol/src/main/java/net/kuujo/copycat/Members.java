@@ -15,10 +15,10 @@
  */
 package net.kuujo.copycat;
 
-import net.kuujo.alleycat.Alleycat;
-import net.kuujo.alleycat.AlleycatSerializable;
-import net.kuujo.alleycat.io.BufferInput;
-import net.kuujo.alleycat.io.BufferOutput;
+import net.kuujo.copycat.io.BufferInput;
+import net.kuujo.copycat.io.BufferOutput;
+import net.kuujo.copycat.io.serializer.CopycatSerializable;
+import net.kuujo.copycat.io.serializer.Serializer;
 
 import java.util.*;
 
@@ -30,7 +30,7 @@ import java.util.*;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class Members implements AlleycatSerializable {
+public class Members implements CopycatSerializable {
   private static final BuilderPool<Builder, Members> POOL = new BuilderPool<>(Builder::new);
 
   /**
@@ -73,13 +73,13 @@ public class Members implements AlleycatSerializable {
   }
 
   @Override
-  public void writeObject(BufferOutput buffer, Alleycat alleycat) {
-    alleycat.writeObject(list, buffer);
+  public void writeObject(BufferOutput buffer, Serializer serializer) {
+    serializer.writeObject(list, buffer);
   }
 
   @Override
-  public void readObject(BufferInput buffer, Alleycat alleycat) {
-    list = alleycat.readObject(buffer);
+  public void readObject(BufferInput buffer, Serializer serializer) {
+    list = serializer.readObject(buffer);
     for (Member member : list) {
       members.put(member.id(), member);
     }

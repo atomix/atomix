@@ -15,18 +15,18 @@
  */
 package net.kuujo.copycat.resource;
 
-import net.kuujo.alleycat.Alleycat;
-import net.kuujo.alleycat.AlleycatSerializable;
-import net.kuujo.alleycat.io.BufferInput;
-import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.copycat.Operation;
+import net.kuujo.copycat.io.BufferInput;
+import net.kuujo.copycat.io.BufferOutput;
+import net.kuujo.copycat.io.serializer.CopycatSerializable;
+import net.kuujo.copycat.io.serializer.Serializer;
 
 /**
  * Resource operation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class ResourceOperation<T extends Operation<U>, U> implements Operation<U>, AlleycatSerializable {
+public abstract class ResourceOperation<T extends Operation<U>, U> implements Operation<U>, CopycatSerializable {
   protected long resource;
   protected T operation;
 
@@ -49,15 +49,15 @@ public abstract class ResourceOperation<T extends Operation<U>, U> implements Op
   }
 
   @Override
-  public void writeObject(BufferOutput buffer, Alleycat alleycat) {
+  public void writeObject(BufferOutput buffer, Serializer serializer) {
     buffer.writeLong(resource);
-    alleycat.writeObject(operation, buffer);
+    serializer.writeObject(operation, buffer);
   }
 
   @Override
-  public void readObject(BufferInput buffer, Alleycat alleycat) {
+  public void readObject(BufferInput buffer, Serializer serializer) {
     resource = buffer.readLong();
-    operation = alleycat.readObject(buffer);
+    operation = serializer.readObject(buffer);
   }
 
   @Override

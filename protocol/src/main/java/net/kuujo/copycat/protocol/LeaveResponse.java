@@ -15,13 +15,13 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.alleycat.Alleycat;
-import net.kuujo.alleycat.SerializeWith;
-import net.kuujo.alleycat.io.BufferInput;
-import net.kuujo.alleycat.io.BufferOutput;
-import net.kuujo.alleycat.util.ReferenceManager;
 import net.kuujo.copycat.BuilderPool;
 import net.kuujo.copycat.RaftError;
+import net.kuujo.copycat.io.BufferInput;
+import net.kuujo.copycat.io.BufferOutput;
+import net.kuujo.copycat.io.serializer.SerializeWith;
+import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.util.ReferenceManager;
 
 import java.util.Objects;
 
@@ -74,7 +74,7 @@ public class LeaveResponse extends AbstractResponse<LeaveResponse> {
   }
 
   @Override
-  public void readObject(BufferInput buffer, Alleycat alleycat) {
+  public void readObject(BufferInput buffer, Serializer serializer) {
     status = Status.forId(buffer.readByte());
     if (status == Status.OK) {
       error = null;
@@ -85,7 +85,7 @@ public class LeaveResponse extends AbstractResponse<LeaveResponse> {
   }
 
   @Override
-  public void writeObject(BufferOutput buffer, Alleycat alleycat) {
+  public void writeObject(BufferOutput buffer, Serializer serializer) {
     buffer.writeByte(status.id());
     if (status == Status.OK) {
       buffer.writeBoolean(succeeded);

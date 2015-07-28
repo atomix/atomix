@@ -13,28 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat;
+package net.kuujo.copycat.io;
 
 /**
- * Base Copycat exception.
+ * Unpooled heap allocator.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class CopycatException extends RuntimeException {
+public class UnpooledHeapAllocator extends UnpooledAllocator {
 
-  public CopycatException() {
-  }
-
-  public CopycatException(String message, Object... args) {
-    super(String.format(message, args));
-  }
-
-  public CopycatException(Throwable cause, String message, Object... args) {
-    super(String.format(message, args), cause);
-  }
-
-  public CopycatException(Throwable cause) {
-    super(cause);
+  @Override
+  public Buffer allocate(long initialCapacity, long maxCapacity) {
+    return HeapBuffer.allocate(initialCapacity, maxCapacity);
   }
 
 }

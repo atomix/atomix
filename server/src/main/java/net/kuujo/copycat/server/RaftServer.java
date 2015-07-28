@@ -15,9 +15,9 @@
  */
 package net.kuujo.copycat.server;
 
-import net.kuujo.alleycat.Alleycat;
-import net.kuujo.alleycat.ServiceLoaderResolver;
 import net.kuujo.copycat.*;
+import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.io.serializer.ServiceLoaderResolver;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.server.state.ServerContext;
 import net.kuujo.copycat.transport.Transport;
@@ -220,7 +220,7 @@ public class RaftServer implements Raft, Managed<Raft> {
   public static class Builder extends Raft.Builder<Builder, RaftServer> {
     private Transport transport;
     private Log log;
-    private Alleycat serializer;
+    private Serializer serializer;
     private RaftConfig config = new RaftConfig();
     private StateMachine stateMachine;
     private int memberId;
@@ -271,11 +271,11 @@ public class RaftServer implements Raft, Managed<Raft> {
     /**
      * Sets the Raft serializer.
      *
-     * @param alleycat The Raft serializer.
+     * @param serializer The Raft serializer.
      * @return The Raft builder.
      */
-    public Builder withSerializer(Alleycat alleycat) {
-      this.serializer = alleycat;
+    public Builder withSerializer(Serializer serializer) {
+      this.serializer = serializer;
       return this;
     }
 
@@ -412,12 +412,12 @@ public class RaftServer implements Raft, Managed<Raft> {
       if (log == null)
         throw new ConfigurationException("log not configured");
 
-      // If no Alleycat instance was provided, create one.
+      // If no serializer instance was provided, create one.
       if (serializer == null) {
-        serializer = new Alleycat();
+        serializer = new Serializer();
       }
 
-      // Resolve Alleycat serializable types with the ServiceLoaderResolver.
+      // Resolve serializer serializable types with the ServiceLoaderResolver.
       serializer.resolve(new ServiceLoaderResolver());
 
       ServerContext context = (ServerContext) new ServerContext(memberId, members, transport, log, stateMachine, serializer)

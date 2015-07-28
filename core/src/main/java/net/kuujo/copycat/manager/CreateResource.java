@@ -15,14 +15,14 @@
  */
 package net.kuujo.copycat.manager;
 
-import net.kuujo.alleycat.Alleycat;
-import net.kuujo.alleycat.SerializationException;
-import net.kuujo.alleycat.SerializeWith;
-import net.kuujo.alleycat.io.BufferInput;
-import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.copycat.BuilderPool;
 import net.kuujo.copycat.Command;
 import net.kuujo.copycat.Operation;
+import net.kuujo.copycat.io.BufferInput;
+import net.kuujo.copycat.io.BufferOutput;
+import net.kuujo.copycat.io.serializer.SerializationException;
+import net.kuujo.copycat.io.serializer.SerializeWith;
+import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.server.StateMachine;
 
 /**
@@ -62,15 +62,15 @@ public class CreateResource extends PathOperation<Long> implements Command<Long>
   }
 
   @Override
-  public void writeObject(BufferOutput buffer, Alleycat alleycat) {
-    super.writeObject(buffer, alleycat);
+  public void writeObject(BufferOutput buffer, Serializer serializer) {
+    super.writeObject(buffer, serializer);
     buffer.writeInt(type.getName().getBytes().length).write(type.getName().getBytes());
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public void readObject(BufferInput buffer, Alleycat alleycat) {
-    super.readObject(buffer, alleycat);
+  public void readObject(BufferInput buffer, Serializer serializer) {
+    super.readObject(buffer, serializer);
     byte[] bytes = new byte[buffer.readInt()];
     buffer.read(bytes);
     String typeName = new String(bytes);

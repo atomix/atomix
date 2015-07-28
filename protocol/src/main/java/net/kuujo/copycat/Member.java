@@ -15,10 +15,10 @@
  */
 package net.kuujo.copycat;
 
-import net.kuujo.alleycat.Alleycat;
-import net.kuujo.alleycat.AlleycatSerializable;
-import net.kuujo.alleycat.io.BufferInput;
-import net.kuujo.alleycat.io.BufferOutput;
+import net.kuujo.copycat.io.BufferInput;
+import net.kuujo.copycat.io.BufferOutput;
+import net.kuujo.copycat.io.serializer.CopycatSerializable;
+import net.kuujo.copycat.io.serializer.Serializer;
 
 /**
  * Configuration for connecting to a member of the Raft cluster.
@@ -33,7 +33,7 @@ import net.kuujo.alleycat.io.BufferOutput;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class Member implements AlleycatSerializable {
+public class Member implements CopycatSerializable {
 
   /**
    * Returns a new member builder.
@@ -87,14 +87,14 @@ public class Member implements AlleycatSerializable {
   }
 
   @Override
-  public void writeObject(BufferOutput buffer, Alleycat alleycat) {
+  public void writeObject(BufferOutput buffer, Serializer serializer) {
     buffer.writeInt(id)
       .writeString(host)
       .writeInt(port);
   }
 
   @Override
-  public void readObject(BufferInput buffer, Alleycat alleycat) {
+  public void readObject(BufferInput buffer, Serializer serializer) {
     id = buffer.readInt();
     host = buffer.readString();
     port = buffer.readInt();

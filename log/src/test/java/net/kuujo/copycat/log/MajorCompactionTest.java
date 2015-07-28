@@ -16,8 +16,8 @@
 package net.kuujo.copycat.log;
 
 import net.jodah.concurrentunit.ConcurrentTestCase;
-import net.kuujo.alleycat.Alleycat;
-import net.kuujo.alleycat.ServiceLoaderResolver;
+import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.io.serializer.ServiceLoaderResolver;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.SingleThreadContext;
 import org.testng.annotations.Test;
@@ -41,7 +41,7 @@ public class MajorCompactionTest extends ConcurrentTestCase {
       .withMaxEntriesPerSegment(128)
       .build();
 
-    Context context = new SingleThreadContext("test", new Alleycat(new ServiceLoaderResolver()));
+    Context context = new SingleThreadContext("test", new Serializer(new ServiceLoaderResolver()));
 
     log.open(context);
 

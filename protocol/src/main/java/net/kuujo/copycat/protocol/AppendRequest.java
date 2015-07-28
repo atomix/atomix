@@ -15,13 +15,13 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.alleycat.Alleycat;
-import net.kuujo.alleycat.SerializeWith;
-import net.kuujo.alleycat.io.BufferInput;
-import net.kuujo.alleycat.io.BufferOutput;
-import net.kuujo.alleycat.util.ReferenceManager;
 import net.kuujo.copycat.BuilderPool;
+import net.kuujo.copycat.io.BufferInput;
+import net.kuujo.copycat.io.BufferOutput;
+import net.kuujo.copycat.io.serializer.SerializeWith;
+import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.log.Entry;
+import net.kuujo.copycat.util.ReferenceManager;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -137,7 +137,7 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
   }
 
   @Override
-  public void writeObject(BufferOutput buffer, Alleycat alleycat) {
+  public void writeObject(BufferOutput buffer, Serializer serializer) {
     buffer.writeLong(term)
       .writeInt(leader)
       .writeLong(logIndex)
@@ -148,12 +148,12 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
     buffer.writeInt(entries.size());
     for (Entry entry : entries) {
       buffer.writeLong(entry.getIndex());
-      alleycat.writeObject(entry, buffer);
+      serializer.writeObject(entry, buffer);
     }
   }
 
   @Override
-  public void readObject(BufferInput buffer, Alleycat alleycat) {
+  public void readObject(BufferInput buffer, Serializer serializer) {
     term = buffer.readLong();
     leader = buffer.readInt();
     logIndex = buffer.readLong();
@@ -165,7 +165,7 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
     entries.clear();
     for (int i = 0; i < numEntries; i++) {
       long index = buffer.readLong();
-      Entry entry = alleycat.readObject(buffer);
+      Entry entry = serializer.readObject(buffer);
       entry.setIndex(index);
       entries.add(entry);
     }

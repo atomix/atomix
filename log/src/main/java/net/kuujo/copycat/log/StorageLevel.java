@@ -27,7 +27,7 @@ public enum StorageLevel {
   /**
    * Memory storage level.
    * <p>
-   * The memory storage level will configure the {@link net.kuujo.copycat.log.Log} to use a {@link net.kuujo.alleycat.io.HeapBuffer}
+   * The memory storage level will configure the {@link net.kuujo.copycat.log.Log} to use a {@link net.kuujo.copycat.io.HeapBuffer}
    * to store log data in a {@code byte[]} backed memory buffer.
    */
   MEMORY,
@@ -35,7 +35,7 @@ public enum StorageLevel {
   /**
    * Disk storage level.
    * <p>
-   * The disk storage level will configure the {@link net.kuujo.copycat.log.Log} to use a {@link net.kuujo.alleycat.io.FileBuffer}
+   * The disk storage level will configure the {@link net.kuujo.copycat.log.Log} to use a {@link net.kuujo.copycat.io.FileBuffer}
    * to store log data on disk in a series of segment files.
    */
   DISK

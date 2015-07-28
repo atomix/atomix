@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.util.concurrent;
 
-import net.kuujo.alleycat.Alleycat;
+import net.kuujo.copycat.io.serializer.Serializer;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledFuture;
@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
  * events on that thread.
  * <p>
  * In addition to serving as an {@link java.util.concurrent.Executor}, the context also provides thread-local storage
- * for {@link net.kuujo.alleycat.Alleycat} serializer instances. All serialization that takes place within a
+ * for {@link net.kuujo.copycat.io.serializer.Serializer} serializer instances. All serialization that takes place within a
  * {@link net.kuujo.copycat.util.concurrent.CopycatThread} should use the context {@link #serializer()}.
  * <p>
  * Components of the framework that provide custom threads should use {@link net.kuujo.copycat.util.concurrent.CopycatThreadFactory}
@@ -52,9 +52,9 @@ public abstract class Context implements Executor, AutoCloseable {
     return thread instanceof CopycatThread ? ((CopycatThread) thread).getContext() : null;
   }
 
-  private final Alleycat serializer;
+  private final Serializer serializer;
 
-  protected Context(Alleycat serializer) {
+  protected Context(Serializer serializer) {
     this.serializer = serializer;
   }
 
@@ -73,7 +73,7 @@ public abstract class Context implements Executor, AutoCloseable {
    *
    * @return The context serializer.
    */
-  public Alleycat serializer() {
+  public Serializer serializer() {
     return serializer;
   }
 

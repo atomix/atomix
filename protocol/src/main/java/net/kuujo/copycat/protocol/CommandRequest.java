@@ -15,13 +15,13 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.alleycat.Alleycat;
-import net.kuujo.alleycat.SerializeWith;
-import net.kuujo.alleycat.io.BufferInput;
-import net.kuujo.alleycat.io.BufferOutput;
-import net.kuujo.alleycat.util.ReferenceManager;
 import net.kuujo.copycat.BuilderPool;
 import net.kuujo.copycat.Command;
+import net.kuujo.copycat.io.BufferInput;
+import net.kuujo.copycat.io.BufferOutput;
+import net.kuujo.copycat.io.serializer.SerializeWith;
+import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.util.ReferenceManager;
 
 import java.util.Objects;
 
@@ -94,18 +94,18 @@ public class CommandRequest extends SessionRequest<CommandRequest> {
   }
 
   @Override
-  public void readObject(BufferInput buffer, Alleycat alleycat) {
-    super.readObject(buffer, alleycat);
+  public void readObject(BufferInput buffer, Serializer serializer) {
+    super.readObject(buffer, serializer);
     request = buffer.readLong();
     response = buffer.readLong();
-    command = alleycat.readObject(buffer);
+    command = serializer.readObject(buffer);
   }
 
   @Override
-  public void writeObject(BufferOutput buffer, Alleycat alleycat) {
-    super.writeObject(buffer, alleycat);
+  public void writeObject(BufferOutput buffer, Serializer serializer) {
+    super.writeObject(buffer, serializer);
     buffer.writeLong(request).writeLong(response);
-    alleycat.writeObject(command, buffer);
+    serializer.writeObject(command, buffer);
   }
 
   @Override

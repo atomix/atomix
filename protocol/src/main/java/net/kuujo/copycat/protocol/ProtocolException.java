@@ -27,12 +27,12 @@ public class ProtocolException extends CopycatException {
   public ProtocolException() {
   }
 
-  public ProtocolException(String message, Object... args) {
-    super(message, args);
+  public ProtocolException(String message) {
+    super(message);
   }
 
-  public ProtocolException(Throwable cause, String message, Object... args) {
-    super(cause, message, args);
+  public ProtocolException(String message, Throwable cause) {
+    super(message, cause);
   }
 
   public ProtocolException(Throwable cause) {

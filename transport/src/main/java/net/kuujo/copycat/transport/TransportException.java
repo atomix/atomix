@@ -27,12 +27,12 @@ public class TransportException extends CopycatException {
   public TransportException() {
   }
 
-  public TransportException(String message, Object... args) {
-    super(message, args);
+  public TransportException(String message) {
+    super(message);
   }
 
-  public TransportException(Throwable cause, String message, Object... args) {
-    super(cause, message, args);
+  public TransportException(String message, Throwable cause) {
+    super(message, cause);
   }
 
   public TransportException(Throwable cause) {

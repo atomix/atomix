@@ -15,17 +15,12 @@
  */
 package net.kuujo.copycat.atomic.state;
 
-import net.kuujo.alleycat.Alleycat;
-import net.kuujo.alleycat.AlleycatSerializable;
-import net.kuujo.alleycat.SerializeWith;
-import net.kuujo.alleycat.io.BufferInput;
-import net.kuujo.alleycat.io.BufferOutput;
-import net.kuujo.copycat.BuilderPool;
-import net.kuujo.copycat.PersistenceLevel;
-import net.kuujo.copycat.Command;
-import net.kuujo.copycat.ConsistencyLevel;
-import net.kuujo.copycat.Operation;
-import net.kuujo.copycat.Query;
+import net.kuujo.copycat.*;
+import net.kuujo.copycat.io.BufferInput;
+import net.kuujo.copycat.io.BufferOutput;
+import net.kuujo.copycat.io.serializer.CopycatSerializable;
+import net.kuujo.copycat.io.serializer.SerializeWith;
+import net.kuujo.copycat.io.serializer.Serializer;
 
 import java.util.concurrent.TimeUnit;
 
@@ -42,7 +37,7 @@ public class ReferenceCommands {
   /**
    * Abstract reference command.
    */
-  public static abstract class ReferenceCommand<V> implements Command<V>, AlleycatSerializable {
+  public static abstract class ReferenceCommand<V> implements Command<V>, CopycatSerializable {
     protected PersistenceLevel mode = PersistenceLevel.PERSISTENT;
     protected long ttl;
 
@@ -65,13 +60,13 @@ public class ReferenceCommands {
     }
 
     @Override
-    public void writeObject(BufferOutput buffer, Alleycat alleycat) {
+    public void writeObject(BufferOutput buffer, Serializer serializer) {
       buffer.writeByte(mode.ordinal())
         .writeLong(ttl);
     }
 
     @Override
-    public void readObject(BufferInput buffer, Alleycat alleycat) {
+    public void readObject(BufferInput buffer, Serializer serializer) {
       mode = PersistenceLevel.values()[buffer.readByte()];
       ttl = buffer.readLong();
     }
@@ -128,7 +123,7 @@ public class ReferenceCommands {
   /**
    * Abstract reference query.
    */
-  public static abstract class ReferenceQuery<V> implements Query<V>, AlleycatSerializable {
+  public static abstract class ReferenceQuery<V> implements Query<V>, CopycatSerializable {
     protected ConsistencyLevel consistency = ConsistencyLevel.LINEARIZABLE_LEASE;
 
     @Override
@@ -137,12 +132,12 @@ public class ReferenceCommands {
     }
 
     @Override
-    public void writeObject(BufferOutput buffer, Alleycat alleycat) {
+    public void writeObject(BufferOutput buffer, Serializer serializer) {
       buffer.writeByte(consistency.ordinal());
     }
 
     @Override
-    public void readObject(BufferInput buffer, Alleycat alleycat) {
+    public void readObject(BufferInput buffer, Serializer serializer) {
       consistency = ConsistencyLevel.values()[buffer.readByte()];
     }
 
@@ -228,13 +223,13 @@ public class ReferenceCommands {
     }
 
     @Override
-    public void writeObject(BufferOutput buffer, Alleycat alleycat) {
-      alleycat.writeObject(value, buffer);
+    public void writeObject(BufferOutput buffer, Serializer serializer) {
+      serializer.writeObject(value, buffer);
     }
 
     @Override
-    public void readObject(BufferInput buffer, Alleycat alleycat) {
-      value = alleycat.readObject(buffer);
+    public void readObject(BufferInput buffer, Serializer serializer) {
+      value = serializer.readObject(buffer);
     }
 
     @Override
@@ -305,15 +300,15 @@ public class ReferenceCommands {
     }
 
     @Override
-    public void writeObject(BufferOutput buffer, Alleycat alleycat) {
-      alleycat.writeObject(expect, buffer);
-      alleycat.writeObject(update, buffer);
+    public void writeObject(BufferOutput buffer, Serializer serializer) {
+      serializer.writeObject(expect, buffer);
+      serializer.writeObject(update, buffer);
     }
 
     @Override
-    public void readObject(BufferInput buffer, Alleycat alleycat) {
-      expect = alleycat.readObject(buffer);
-      update = alleycat.readObject(buffer);
+    public void readObject(BufferInput buffer, Serializer serializer) {
+      expect = serializer.readObject(buffer);
+      update = serializer.readObject(buffer);
     }
 
     @Override
@@ -386,13 +381,13 @@ public class ReferenceCommands {
     }
 
     @Override
-    public void writeObject(BufferOutput buffer, Alleycat alleycat) {
-      alleycat.writeObject(value, buffer);
+    public void writeObject(BufferOutput buffer, Serializer serializer) {
+      serializer.writeObject(value, buffer);
     }
 
     @Override
-    public void readObject(BufferInput buffer, Alleycat alleycat) {
-      value = alleycat.readObject(buffer);
+    public void readObject(BufferInput buffer, Serializer serializer) {
+      value = serializer.readObject(buffer);
     }
 
     @Override
@@ -430,7 +425,7 @@ public class ReferenceCommands {
    * Change listen.
    */
   @SerializeWith(id=464)
-  public static class Listen implements Command<Void>, AlleycatSerializable {
+  public static class Listen implements Command<Void>, CopycatSerializable {
 
     /**
      * Returns a new change listen builder.
@@ -442,12 +437,12 @@ public class ReferenceCommands {
     }
 
     @Override
-    public void writeObject(BufferOutput buffer, Alleycat alleycat) {
+    public void writeObject(BufferOutput buffer, Serializer serializer) {
 
     }
 
     @Override
-    public void readObject(BufferInput buffer, Alleycat alleycat) {
+    public void readObject(BufferInput buffer, Serializer serializer) {
 
     }
 
@@ -470,7 +465,7 @@ public class ReferenceCommands {
    * Change unlisten.
    */
   @SerializeWith(id=465)
-  public static class Unlisten implements Command<Void>, AlleycatSerializable {
+  public static class Unlisten implements Command<Void>, CopycatSerializable {
 
     /**
      * Returns a new change unlisten builder.
@@ -482,12 +477,12 @@ public class ReferenceCommands {
     }
 
     @Override
-    public void writeObject(BufferOutput buffer, Alleycat alleycat) {
+    public void writeObject(BufferOutput buffer, Serializer serializer) {
 
     }
 
     @Override
-    public void readObject(BufferInput buffer, Alleycat alleycat) {
+    public void readObject(BufferInput buffer, Serializer serializer) {
 
     }
 

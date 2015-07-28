@@ -1,6 +1,6 @@
 package net.kuujo.copycat.util.concurrent;
 
-import net.kuujo.alleycat.Alleycat;
+import net.kuujo.copycat.io.serializer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,7 +28,7 @@ public class SingleThreadContext extends Context {
    * @param name The context name.
    * @param serializer The context serializer.
    */
-  public SingleThreadContext(String name, Alleycat serializer) {
+  public SingleThreadContext(String name, Serializer serializer) {
     this(Executors.newSingleThreadScheduledExecutor(new CopycatThreadFactory(name)), serializer);
   }
 
@@ -38,11 +38,11 @@ public class SingleThreadContext extends Context {
    * @param executor The executor on which to schedule events. This must be a single thread scheduled executor.
    * @param serializer The context serializer.
    */
-  public SingleThreadContext(ScheduledExecutorService executor, Alleycat serializer) {
+  public SingleThreadContext(ScheduledExecutorService executor, Serializer serializer) {
     this(getThread(executor), executor, serializer);
   }
 
-  public SingleThreadContext(Thread thread, ScheduledExecutorService executor, Alleycat serializer) {
+  public SingleThreadContext(Thread thread, ScheduledExecutorService executor, Serializer serializer) {
     super(serializer);
     this.executor = executor;
     if (!(thread instanceof CopycatThread)) {

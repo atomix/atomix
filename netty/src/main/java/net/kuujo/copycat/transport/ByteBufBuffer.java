@@ -16,8 +16,8 @@
 package net.kuujo.copycat.transport;
 
 import io.netty.buffer.ByteBuf;
-import net.kuujo.alleycat.io.Buffer;
-import net.kuujo.alleycat.io.Bytes;
+import net.kuujo.copycat.io.Buffer;
+import net.kuujo.copycat.io.Bytes;
 
 import java.nio.ByteOrder;
 import java.nio.InvalidMarkException;

@@ -15,17 +15,17 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.alleycat.AlleycatSerializable;
-import net.kuujo.alleycat.util.ReferenceCounted;
 import net.kuujo.copycat.BuilderPool;
 import net.kuujo.copycat.RaftError;
+import net.kuujo.copycat.io.serializer.CopycatSerializable;
+import net.kuujo.copycat.util.ReferenceCounted;
 
 /**
  * Protocol response.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Response<T extends Response<T>> extends ReferenceCounted<T>, AlleycatSerializable {
+public interface Response<T extends Response<T>> extends ReferenceCounted<T>, CopycatSerializable {
 
   /**
    * Response type.

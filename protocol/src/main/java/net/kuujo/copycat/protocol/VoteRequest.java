@@ -15,12 +15,12 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.alleycat.Alleycat;
-import net.kuujo.alleycat.SerializeWith;
-import net.kuujo.alleycat.io.BufferInput;
-import net.kuujo.alleycat.io.BufferOutput;
-import net.kuujo.alleycat.util.ReferenceManager;
 import net.kuujo.copycat.BuilderPool;
+import net.kuujo.copycat.io.BufferInput;
+import net.kuujo.copycat.io.BufferOutput;
+import net.kuujo.copycat.io.serializer.SerializeWith;
+import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.util.ReferenceManager;
 
 import java.util.Objects;
 
@@ -103,7 +103,7 @@ public class VoteRequest extends AbstractRequest<VoteRequest> {
   }
 
   @Override
-  public void readObject(BufferInput buffer, Alleycat alleycat) {
+  public void readObject(BufferInput buffer, Serializer serializer) {
     term = buffer.readLong();
     candidate = buffer.readInt();
     logIndex = buffer.readLong();
@@ -111,7 +111,7 @@ public class VoteRequest extends AbstractRequest<VoteRequest> {
   }
 
   @Override
-  public void writeObject(BufferOutput buffer, Alleycat alleycat) {
+  public void writeObject(BufferOutput buffer, Serializer serializer) {
     buffer.writeLong(term)
       .writeInt(candidate)
       .writeLong(logIndex)

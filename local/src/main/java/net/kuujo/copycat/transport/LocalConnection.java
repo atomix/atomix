@@ -15,10 +15,10 @@
  */
 package net.kuujo.copycat.transport;
 
-import net.kuujo.alleycat.io.Buffer;
 import net.kuujo.copycat.Listener;
 import net.kuujo.copycat.ListenerContext;
 import net.kuujo.copycat.Listeners;
+import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.Futures;
 

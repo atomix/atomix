@@ -15,14 +15,14 @@
  */
 package net.kuujo.copycat.manager;
 
-import net.kuujo.alleycat.Alleycat;
-import net.kuujo.alleycat.AlleycatSerializable;
-import net.kuujo.alleycat.SerializeWith;
-import net.kuujo.alleycat.io.BufferInput;
-import net.kuujo.alleycat.io.BufferOutput;
 import net.kuujo.copycat.BuilderPool;
 import net.kuujo.copycat.Command;
 import net.kuujo.copycat.Operation;
+import net.kuujo.copycat.io.BufferInput;
+import net.kuujo.copycat.io.BufferOutput;
+import net.kuujo.copycat.io.serializer.CopycatSerializable;
+import net.kuujo.copycat.io.serializer.SerializeWith;
+import net.kuujo.copycat.io.serializer.Serializer;
 
 /**
  * Delete resource command.
@@ -30,7 +30,7 @@ import net.kuujo.copycat.Operation;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @SerializeWith(id=415)
-public class DeleteResource implements Command<Boolean>, AlleycatSerializable {
+public class DeleteResource implements Command<Boolean>, CopycatSerializable {
 
   /**
    * Returns a new DeleteResource builder.
@@ -56,12 +56,12 @@ public class DeleteResource implements Command<Boolean>, AlleycatSerializable {
   }
 
   @Override
-  public void writeObject(BufferOutput buffer, Alleycat alleycat) {
+  public void writeObject(BufferOutput buffer, Serializer serializer) {
     buffer.writeLong(resource);
   }
 
   @Override
-  public void readObject(BufferInput buffer, Alleycat alleycat) {
+  public void readObject(BufferInput buffer, Serializer serializer) {
     resource = buffer.readLong();
   }
 
