@@ -218,7 +218,18 @@
               <show>public</show>
               <excludePackageNames>*.state.*:net.kuujo.copycat.resource:net.kuujo.copycat.manager:net.kuujo.copycat.raft.server.*:net.kuujo.copycat.io.serializer.*</excludePackageNames>
               <reportOutputDirectory>target/docs</reportOutputDirectory>
-              <additionalparam>-Xdoclint:none</additionalparam>
+              <additionalparam>
+                -Xdoclint:none
+                -link http://docs.oracle.com/javase/8/docs/api/
+                -link http://www.slf4j.org/apidocs/
+                -link http://netty.io/5.0/api/
+
+                -group "High-level resource API" net.kuujo.copycat
+                -group "Distributed resources" net.kuujo.copycat.atomic:net.kuujo.copycat.collections:net.kuujo.copycat.coordination
+                -group "I/O &amp; Serialization" net.kuujo.copycat.io*
+                -group "Raft Consensus Algorithm" net.kuujo.copycat.raft*
+                -group "Miscellaneous" net.kuujo.copycat.util*
+              </additionalparam>
               <aggregate>true</aggregate>
               <destDir>java</destDir>
             </configuration>
