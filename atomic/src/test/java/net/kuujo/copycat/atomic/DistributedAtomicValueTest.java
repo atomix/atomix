@@ -31,13 +31,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Async reference test.
+ * Distributed atomic value test.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
 @SuppressWarnings("unchecked")
-public class DistributedReferenceTest extends ConcurrentTestCase {
+public class DistributedAtomicValueTest extends ConcurrentTestCase {
 
   /**
    * Tests setting and getting a value.
@@ -49,7 +49,7 @@ public class DistributedReferenceTest extends ConcurrentTestCase {
     Copycat copycat = servers.get(0);
 
     Node node = copycat.create("/test").get();
-    DistributedReference<String> reference = node.create(DistributedReference.class).get();
+    DistributedAtomicValue<String> reference = node.create(DistributedAtomicValue.class).get();
 
     expectResume();
     reference.set("Hello world!").thenRun(this::resume);
@@ -73,7 +73,7 @@ public class DistributedReferenceTest extends ConcurrentTestCase {
     Copycat copycat = servers.get(0);
 
     Node node = copycat.create("/test").get();
-    DistributedReference<String> reference = node.create(DistributedReference.class).get();
+    DistributedAtomicValue<String> reference = node.create(DistributedAtomicValue.class).get();
 
     expectResume();
     reference.onChange(value -> {
@@ -194,7 +194,7 @@ public class DistributedReferenceTest extends ConcurrentTestCase {
     await();
 
     Node node = copycat4.create("/test").get();
-    DistributedReference<String> reference = node.create(DistributedReference.class).get();
+    DistributedAtomicValue<String> reference = node.create(DistributedAtomicValue.class).get();
 
     expectResume();
     reference.set("Hello world!").thenRun(this::resume);
@@ -215,14 +215,14 @@ public class DistributedReferenceTest extends ConcurrentTestCase {
     List<Copycat> servers = createCopycats(3);
 
     Node node1 = servers.get(0).create("/test").get();
-    DistributedReference<Integer> reference1 = node1.create(DistributedReference.class).get();
+    DistributedAtomicValue<Integer> reference1 = node1.create(DistributedAtomicValue.class).get();
 
     expectResume();
     reference1.set(1).thenRun(this::resume);
     await();
 
     Node node2 = servers.get(0).create("/test").get();
-    DistributedReference<Integer> reference2 = node2.create(DistributedReference.class).get();
+    DistributedAtomicValue<Integer> reference2 = node2.create(DistributedAtomicValue.class).get();
 
     expectResume();
     reference2.compareAndSet(1, 2).thenAccept(result -> {

@@ -34,7 +34,7 @@ import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
 /**
- * Asynchronous map test.
+ * Distributed map test.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

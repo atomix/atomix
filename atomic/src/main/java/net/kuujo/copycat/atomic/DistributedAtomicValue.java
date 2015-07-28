@@ -15,20 +15,35 @@
  */
 package net.kuujo.copycat.atomic;
 
-import net.kuujo.copycat.Listener;
-import net.kuujo.copycat.ListenerContext;
-import net.kuujo.copycat.PersistenceLevel;
+import net.kuujo.copycat.*;
+import net.kuujo.copycat.atomic.state.ReferenceCommands;
+import net.kuujo.copycat.atomic.state.ReferenceState;
 import net.kuujo.copycat.raft.ConsistencyLevel;
+import net.kuujo.copycat.raft.Raft;
 
+import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Asynchronous atomic reference.
+ * Distributed atomic value.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface AsyncReference<T> {
+@Stateful(ReferenceState.class)
+public class DistributedAtomicValue<T> extends Resource {
+  private ConsistencyLevel defaultConsistency = ConsistencyLevel.LINEARIZABLE_LEASE;
+  private final java.util.Set<Listener<T>> changeListeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
+
+  public DistributedAtomicValue(Raft protocol) {
+    super(protocol);
+    protocol.session().<T>onReceive(event -> {
+      for (Listener<T> listener : changeListeners) {
+        listener.accept(event);
+      }
+    });
+  }
 
   /**
    * Sets the default read consistency level.
@@ -36,7 +51,11 @@ public interface AsyncReference<T> {
    * @param consistency The default read consistency level.
    * @throws java.lang.NullPointerException If the consistency level is {@code null}
    */
-  void setDefaultConsistencyLevel(ConsistencyLevel consistency);
+  public void setDefaultConsistencyLevel(ConsistencyLevel consistency) {
+    if (consistency == null)
+      throw new NullPointerException("consistency cannot be null");
+    this.defaultConsistency = consistency;
+  }
 
   /**
    * Sets the default consistency level, returning the resource for method chaining.
@@ -45,21 +64,28 @@ public interface AsyncReference<T> {
    * @return The reference.
    * @throws java.lang.NullPointerException If the consistency level is {@code null}
    */
-  DistributedReference<T> withDefaultConsistencyLevel(ConsistencyLevel consistency);
+  public DistributedAtomicValue<T> withDefaultConsistencyLevel(ConsistencyLevel consistency) {
+    setDefaultConsistencyLevel(consistency);
+    return this;
+  }
 
   /**
    * Returns the default consistency level.
    *
    * @return The default consistency level.
    */
-  ConsistencyLevel getDefaultConsistencyLevel();
+  public ConsistencyLevel getDefaultConsistencyLevel() {
+    return defaultConsistency;
+  }
 
   /**
    * Gets the current value.
    *
    * @return A completable future to be completed with the current value.
    */
-  CompletableFuture<T> get();
+  public CompletableFuture<T> get() {
+    return get(defaultConsistency);
+  }
 
   /**
    * Gets the current value.
@@ -67,7 +93,11 @@ public interface AsyncReference<T> {
    * @param consistency The read consistency level.
    * @return A completable future to be completed with the current value.
    */
-  CompletableFuture<T> get(ConsistencyLevel consistency);
+  public CompletableFuture<T> get(ConsistencyLevel consistency) {
+    return submit(ReferenceCommands.Get.<T>builder()
+      .withConsistency(consistency)
+      .build());
+  }
 
   /**
    * Sets the current value.
@@ -75,7 +105,11 @@ public interface AsyncReference<T> {
    * @param value The current value.
    * @return A completable future to be completed once the value has been set.
    */
-  CompletableFuture<Void> set(T value);
+  public CompletableFuture<Void> set(T value) {
+    return submit(ReferenceCommands.Set.builder()
+      .withValue(value)
+      .build());
+  }
 
   /**
    * Sets the value with a TTL.
@@ -84,7 +118,12 @@ public interface AsyncReference<T> {
    * @param ttl The time after which to expire the value.
    * @return A completable future to be completed once the value has been set.
    */
-  CompletableFuture<Void> set(T value, long ttl);
+  public CompletableFuture<Void> set(T value, long ttl) {
+    return submit(ReferenceCommands.Set.builder()
+      .withValue(value)
+      .withTtl(ttl)
+      .build());
+  }
 
   /**
    * Sets the value with a TTL.
@@ -94,7 +133,12 @@ public interface AsyncReference<T> {
    * @param unit The expiration time unit.
    * @return A completable future to be completed once the value has been set.
    */
-  CompletableFuture<Void> set(T value, long ttl, TimeUnit unit);
+  public CompletableFuture<Void> set(T value, long ttl, TimeUnit unit) {
+    return submit(ReferenceCommands.Set.builder()
+      .withValue(value)
+      .withTtl(ttl, unit)
+      .build());
+  }
 
   /**
    * Sets the value with a write persistence.
@@ -103,7 +147,12 @@ public interface AsyncReference<T> {
    * @param persistence The write persistence.
    * @return A completable future to be completed once the value has been set.
    */
-  CompletableFuture<Void> set(T value, PersistenceLevel persistence);
+  public CompletableFuture<Void> set(T value, PersistenceLevel persistence) {
+    return submit(ReferenceCommands.Set.builder()
+      .withValue(value)
+      .withPersistence(persistence)
+      .build());
+  }
 
   /**
    * Sets the value with a write persistence.
@@ -113,7 +162,13 @@ public interface AsyncReference<T> {
    * @param persistence The write persistence.
    * @return A completable future to be completed once the value has been set.
    */
-  CompletableFuture<Void> set(T value, long ttl, PersistenceLevel persistence);
+  public CompletableFuture<Void> set(T value, long ttl, PersistenceLevel persistence) {
+    return submit(ReferenceCommands.Set.builder()
+      .withValue(value)
+      .withTtl(ttl)
+      .withPersistence(persistence)
+      .build());
+  }
 
   /**
    * Sets the value with a write persistence.
@@ -124,7 +179,13 @@ public interface AsyncReference<T> {
    * @param persistence The write persistence.
    * @return A completable future to be completed once the value has been set.
    */
-  CompletableFuture<Void> set(T value, long ttl, TimeUnit unit, PersistenceLevel persistence);
+  public CompletableFuture<Void> set(T value, long ttl, TimeUnit unit, PersistenceLevel persistence) {
+    return submit(ReferenceCommands.Set.builder()
+      .withValue(value)
+      .withTtl(ttl, unit)
+      .withPersistence(persistence)
+      .build());
+  }
 
   /**
    * Gets the current value and updates it.
@@ -132,45 +193,25 @@ public interface AsyncReference<T> {
    * @param value The updated value.
    * @return A completable future to be completed with the previous value.
    */
-  CompletableFuture<T> getAndSet(T value);
-
-  /**
-   * Gets the current value and updates it.
-   *
-   * @param value The updated value.
-   * @param ttl The time after which to expire the value.
-   * @return A completable future to be completed with the previous value.
-   */
-  CompletableFuture<T> getAndSet(T value, long ttl);
-
-  /**
-   * Gets the current value and updates it.
-   *
-   * @param value The updated value.
-   * @param ttl The time after which to expire the value.
-   * @param unit The expiration time unit.
-   * @return A completable future to be completed with the previous value.
-   */
-  CompletableFuture<T> getAndSet(T value, long ttl, TimeUnit unit);
-
-  /**
-   * Gets the current value and updates it.
-   *
-   * @param value The updated value.
-   * @param persistence The write persistence.
-   * @return A completable future to be completed with the previous value.
-   */
-  CompletableFuture<T> getAndSet(T value, PersistenceLevel persistence);
+  public CompletableFuture<T> getAndSet(T value) {
+    return submit(ReferenceCommands.GetAndSet.<T>builder()
+      .withValue(value)
+      .build());
+  }
 
   /**
    * Gets the current value and updates it.
    *
    * @param value The updated value.
    * @param ttl The time after which to expire the value.
-   * @param persistence The write persistence.
    * @return A completable future to be completed with the previous value.
    */
-  CompletableFuture<T> getAndSet(T value, long ttl, PersistenceLevel persistence);
+  public CompletableFuture<T> getAndSet(T value, long ttl) {
+    return submit(ReferenceCommands.GetAndSet.<T>builder()
+      .withValue(value)
+      .withTtl(ttl)
+      .build());
+  }
 
   /**
    * Gets the current value and updates it.
@@ -178,10 +219,61 @@ public interface AsyncReference<T> {
    * @param value The updated value.
    * @param ttl The time after which to expire the value.
    * @param unit The expiration time unit.
+   * @return A completable future to be completed with the previous value.
+   */
+  public CompletableFuture<T> getAndSet(T value, long ttl, TimeUnit unit) {
+    return submit(ReferenceCommands.GetAndSet.<T>builder()
+      .withValue(value)
+      .withTtl(ttl, unit)
+      .build());
+  }
+
+  /**
+   * Gets the current value and updates it.
+   *
+   * @param value The updated value.
    * @param persistence The write persistence.
    * @return A completable future to be completed with the previous value.
    */
-  CompletableFuture<T> getAndSet(T value, long ttl, TimeUnit unit, PersistenceLevel persistence);
+  public CompletableFuture<T> getAndSet(T value, PersistenceLevel persistence) {
+    return submit(ReferenceCommands.GetAndSet.<T>builder()
+      .withValue(value)
+      .withPersistence(persistence)
+      .build());
+  }
+
+  /**
+   * Gets the current value and updates it.
+   *
+   * @param value The updated value.
+   * @param ttl The time after which to expire the value.
+   * @param persistence The write persistence.
+   * @return A completable future to be completed with the previous value.
+   */
+  public CompletableFuture<T> getAndSet(T value, long ttl, PersistenceLevel persistence) {
+    return submit(ReferenceCommands.GetAndSet.<T>builder()
+      .withValue(value)
+      .withTtl(ttl)
+      .withPersistence(persistence)
+      .build());
+  }
+
+  /**
+   * Gets the current value and updates it.
+   *
+   * @param value The updated value.
+   * @param ttl The time after which to expire the value.
+   * @param unit The expiration time unit.
+   * @param persistence The write persistence.
+   * @return A completable future to be completed with the previous value.
+   */
+  public CompletableFuture<T> getAndSet(T value, long ttl, TimeUnit unit, PersistenceLevel persistence) {
+    return submit(ReferenceCommands.GetAndSet.<T>builder()
+      .withValue(value)
+      .withTtl(ttl, unit)
+      .withPersistence(persistence)
+      .build());
+  }
 
   /**
    * Compares the current value and updated it if expected value == the current value.
@@ -190,7 +282,12 @@ public interface AsyncReference<T> {
    * @param update The updated value.
    * @return A completable future to be completed with a boolean value indicating whether the value was updated.
    */
-  CompletableFuture<Boolean> compareAndSet(T expect, T update);
+  public CompletableFuture<Boolean> compareAndSet(T expect, T update) {
+    return submit(ReferenceCommands.CompareAndSet.builder()
+      .withExpect(expect)
+      .withUpdate(update)
+      .build());
+  }
 
   /**
    * Compares the current value and updated it if expected value == the current value.
@@ -200,7 +297,13 @@ public interface AsyncReference<T> {
    * @param ttl The time after which to expire the value.
    * @return A completable future to be completed with a boolean value indicating whether the value was updated.
    */
-  CompletableFuture<Boolean> compareAndSet(T expect, T update, long ttl);
+  public CompletableFuture<Boolean> compareAndSet(T expect, T update, long ttl) {
+    return submit(ReferenceCommands.CompareAndSet.builder()
+      .withExpect(expect)
+      .withUpdate(update)
+      .withTtl(ttl)
+      .build());
+  }
 
   /**
    * Compares the current value and updated it if expected value == the current value.
@@ -211,7 +314,13 @@ public interface AsyncReference<T> {
    * @param unit The expiration time unit.
    * @return A completable future to be completed with a boolean value indicating whether the value was updated.
    */
-  CompletableFuture<Boolean> compareAndSet(T expect, T update, long ttl, TimeUnit unit);
+  public CompletableFuture<Boolean> compareAndSet(T expect, T update, long ttl, TimeUnit unit) {
+    return submit(ReferenceCommands.CompareAndSet.builder()
+      .withExpect(expect)
+      .withUpdate(update)
+      .withTtl(ttl, unit)
+      .build());
+  }
 
   /**
    * Compares the current value and updated it if expected value == the current value.
@@ -221,7 +330,13 @@ public interface AsyncReference<T> {
    * @param persistence The write persistence.
    * @return A completable future to be completed with a boolean value indicating whether the value was updated.
    */
-  CompletableFuture<Boolean> compareAndSet(T expect, T update, PersistenceLevel persistence);
+  public CompletableFuture<Boolean> compareAndSet(T expect, T update, PersistenceLevel persistence) {
+    return submit(ReferenceCommands.CompareAndSet.builder()
+      .withExpect(expect)
+      .withUpdate(update)
+      .withPersistence(persistence)
+      .build());
+  }
 
   /**
    * Compares the current value and updated it if expected value == the current value.
@@ -232,7 +347,14 @@ public interface AsyncReference<T> {
    * @param persistence The write persistence.
    * @return A completable future to be completed with a boolean value indicating whether the value was updated.
    */
-  CompletableFuture<Boolean> compareAndSet(T expect, T update, long ttl, PersistenceLevel persistence);
+  public CompletableFuture<Boolean> compareAndSet(T expect, T update, long ttl, PersistenceLevel persistence) {
+    return submit(ReferenceCommands.CompareAndSet.builder()
+      .withExpect(expect)
+      .withUpdate(update)
+      .withTtl(ttl)
+      .withPersistence(persistence)
+      .build());
+  }
 
   /**
    * Compares the current value and updated it if expected value == the current value.
@@ -244,7 +366,14 @@ public interface AsyncReference<T> {
    * @param persistence The write persistence.
    * @return A completable future to be completed with a boolean value indicating whether the value was updated.
    */
-  CompletableFuture<Boolean> compareAndSet(T expect, T update, long ttl, TimeUnit unit, PersistenceLevel persistence);
+  public CompletableFuture<Boolean> compareAndSet(T expect, T update, long ttl, TimeUnit unit, PersistenceLevel persistence) {
+    return submit(ReferenceCommands.CompareAndSet.builder()
+      .withExpect(expect)
+      .withUpdate(update)
+      .withTtl(ttl, unit)
+      .withPersistence(persistence)
+      .build());
+  }
 
   /**
    * Registers a change listener.
@@ -252,6 +381,41 @@ public interface AsyncReference<T> {
    * @param listener The change listener.
    * @return A completable future to be completed once the change listener has been registered.
    */
-  CompletableFuture<ListenerContext<T>> onChange(Listener<T> listener);
+  public synchronized CompletableFuture<ListenerContext<T>> onChange(Listener<T> listener) {
+    if (!changeListeners.isEmpty()) {
+      changeListeners.add(listener);
+      return CompletableFuture.completedFuture(new ChangeListenerContext(listener));
+    }
+
+    changeListeners.add(listener);
+    return submit(ReferenceCommands.Listen.builder().build())
+      .thenApply(v -> new ChangeListenerContext(listener));
+  }
+
+  /**
+   * Change listener context.
+   */
+  private class ChangeListenerContext implements ListenerContext<T> {
+    private final Listener<T> listener;
+
+    private ChangeListenerContext(Listener<T> listener) {
+      this.listener = listener;
+    }
+
+    @Override
+    public void accept(T event) {
+      listener.accept(event);
+    }
+
+    @Override
+    public void close() {
+      synchronized (DistributedAtomicValue.this) {
+        changeListeners.remove(listener);
+        if (changeListeners.isEmpty()) {
+          submit(ReferenceCommands.Unlisten.builder().build());
+        }
+      }
+    }
+  }
 
 }

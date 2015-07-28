@@ -27,7 +27,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Asynchronous map.
+ * Distributed map.
  *
  * @param <K> The map key type.
  * @param <V> The map entry type.

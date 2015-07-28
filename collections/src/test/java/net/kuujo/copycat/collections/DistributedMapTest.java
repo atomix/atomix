@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Asynchronous map test.
+ * Distributed map test.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
