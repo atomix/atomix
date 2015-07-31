@@ -89,7 +89,7 @@ public class SingleThreadContext extends Context {
       try {
         runnable.run();
       } catch (RuntimeException e) {
-        LOGGER.error("An uncaught exception occurred: {}", e);
+        LOGGER.error("An uncaught exception occurred", e);
         e.printStackTrace();
       }
     };
