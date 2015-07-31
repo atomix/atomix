@@ -1020,7 +1020,7 @@ person.close();
 
 ## [Javadoc][Javadoc]
 
-[Javadoc]: http://kuujo.github.io/copycat/java/
+[Javadoc]: http://kuujo.github.io/copycat/api/0.6.0/
 [Copycat]: http://kuujo.github.io/copycat/java/net/kuujo/copycat/Copycat.html
 [CopycatServer]: http://kuujo.github.io/copycat/java/net/kuujo/copycat/CopycatServer.html
 [CopycatClient]: http://kuujo.github.io/copycat/java/net/kuujo/copycat/CopycatClient.html

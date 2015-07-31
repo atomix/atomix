@@ -223,7 +223,7 @@
               <doctitle>Copycat API Reference (${jv})</doctitle>
               <windowtitle>Copycat API Reference (${jv})</windowtitle>
               <reportOutputDirectory>target/docs</reportOutputDirectory>
-              <destDir>${jv}/java</destDir>
+              <destDir>api/${jv}</destDir>
               <aggregate>true</aggregate>
               <additionalparam>
                 -Xdoclint:none
