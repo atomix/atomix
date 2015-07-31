@@ -23,7 +23,7 @@ import net.kuujo.copycat.raft.UnknownSessionException;
 import net.kuujo.copycat.raft.protocol.PublishRequest;
 import net.kuujo.copycat.raft.protocol.PublishResponse;
 import net.kuujo.copycat.raft.protocol.Response;
-import net.kuujo.copycat.raft.transport.Connection;
+import net.kuujo.copycat.io.transport.Connection;
 import net.kuujo.copycat.util.concurrent.Futures;
 
 import java.util.UUID;

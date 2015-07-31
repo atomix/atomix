@@ -16,7 +16,7 @@
 package net.kuujo.copycat.raft.server.state;
 
 import net.kuujo.copycat.raft.Session;
-import net.kuujo.copycat.raft.transport.Connection;
+import net.kuujo.copycat.io.transport.Connection;
 
 import java.util.HashMap;
 import java.util.Map;

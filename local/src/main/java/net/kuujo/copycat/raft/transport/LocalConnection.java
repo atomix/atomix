@@ -19,9 +19,9 @@ import net.kuujo.copycat.Listener;
 import net.kuujo.copycat.ListenerContext;
 import net.kuujo.copycat.Listeners;
 import net.kuujo.copycat.io.Buffer;
-import net.kuujo.copycat.raft.transport.Connection;
-import net.kuujo.copycat.raft.transport.MessageHandler;
-import net.kuujo.copycat.raft.transport.TransportException;
+import net.kuujo.copycat.io.transport.Connection;
+import net.kuujo.copycat.io.transport.MessageHandler;
+import net.kuujo.copycat.io.transport.TransportException;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.Futures;
 

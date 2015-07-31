@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.raft;
 
-import net.kuujo.copycat.raft.transport.Transport;
+import net.kuujo.copycat.io.transport.Transport;
 import net.kuujo.copycat.util.concurrent.Context;
 
 import java.util.Arrays;
@@ -97,7 +97,7 @@ public interface Raft {
    * Submits a command to the Raft protocol.
    * <p>
    * Commands are used to alter state machine state. All commands will be forwarded to the current Raft leader.
-   * Once a leader receives the command, it will write the command to its internal {@link net.kuujo.copycat.raft.log.Log} and
+   * Once a leader receives the command, it will write the command to its internal {@link net.kuujo.copycat.io.log.Log} and
    * replicate it to a majority of the cluster. Once the command has been replicated to a majority of the cluster, it
    * will apply the command to its state machine and respond with the result.
    * <p>
@@ -145,7 +145,7 @@ public interface Raft {
     /**
      * Sets the network transport.
      * <p>
-     * The provided {@link net.kuujo.copycat.raft.transport.Transport} will be used to connect to provided
+     * The provided {@link net.kuujo.copycat.io.transport.Transport} will be used to connect to provided
      * {@link Members} to join the cluster at startup and participate in all aspects of the Raft
      * consensus protocol.
      *

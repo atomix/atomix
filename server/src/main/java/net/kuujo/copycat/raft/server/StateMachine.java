@@ -16,7 +16,7 @@
 package net.kuujo.copycat.raft.server;
 
 import net.kuujo.copycat.ConfigurationException;
-import net.kuujo.copycat.raft.log.Compaction;
+import net.kuujo.copycat.io.log.Compaction;
 import net.kuujo.copycat.raft.ApplicationException;
 import net.kuujo.copycat.raft.Command;
 import net.kuujo.copycat.raft.Operation;

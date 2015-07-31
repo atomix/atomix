@@ -16,7 +16,7 @@
 package net.kuujo.copycat.atomic.state;
 
 import net.kuujo.copycat.PersistenceLevel;
-import net.kuujo.copycat.raft.log.Compaction;
+import net.kuujo.copycat.io.log.Compaction;
 import net.kuujo.copycat.raft.Session;
 import net.kuujo.copycat.raft.server.Apply;
 import net.kuujo.copycat.raft.server.Commit;

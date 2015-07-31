@@ -16,9 +16,9 @@
 package net.kuujo.copycat.raft.transport;
 
 import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.raft.transport.Client;
-import net.kuujo.copycat.raft.transport.Connection;
-import net.kuujo.copycat.raft.transport.TransportException;
+import net.kuujo.copycat.io.transport.Client;
+import net.kuujo.copycat.io.transport.Connection;
+import net.kuujo.copycat.io.transport.TransportException;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.Futures;
 import net.kuujo.copycat.util.concurrent.SingleThreadContext;

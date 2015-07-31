@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.raft.server.log;
 
-import net.kuujo.copycat.raft.log.Entry;
+import net.kuujo.copycat.io.log.Entry;
 import net.kuujo.copycat.util.ReferenceManager;
 
 /**

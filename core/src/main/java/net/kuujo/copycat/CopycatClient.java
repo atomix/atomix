@@ -18,7 +18,7 @@ package net.kuujo.copycat;
 import net.kuujo.copycat.raft.client.RaftClient;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.raft.Members;
-import net.kuujo.copycat.raft.transport.Transport;
+import net.kuujo.copycat.io.transport.Transport;
 
 import java.util.concurrent.TimeUnit;
 

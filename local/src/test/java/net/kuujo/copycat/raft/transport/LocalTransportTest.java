@@ -17,7 +17,9 @@ package net.kuujo.copycat.raft.transport;
 
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.raft.transport.*;
+import net.kuujo.copycat.io.transport.Client;
+import net.kuujo.copycat.io.transport.Server;
+import net.kuujo.copycat.io.transport.Transport;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.SingleThreadContext;
 import org.testng.annotations.Test;

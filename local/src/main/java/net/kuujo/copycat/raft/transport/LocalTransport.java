@@ -16,9 +16,9 @@
 package net.kuujo.copycat.raft.transport;
 
 import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.raft.transport.Client;
-import net.kuujo.copycat.raft.transport.Server;
-import net.kuujo.copycat.raft.transport.Transport;
+import net.kuujo.copycat.io.transport.Client;
+import net.kuujo.copycat.io.transport.Server;
+import net.kuujo.copycat.io.transport.Transport;
 
 import java.util.Map;
 import java.util.UUID;

@@ -19,7 +19,7 @@ import net.kuujo.copycat.raft.client.state.ClientContext;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.ServiceLoaderResolver;
 import net.kuujo.copycat.raft.*;
-import net.kuujo.copycat.raft.transport.Transport;
+import net.kuujo.copycat.io.transport.Transport;
 import net.kuujo.copycat.util.Managed;
 import net.kuujo.copycat.util.concurrent.Context;
 

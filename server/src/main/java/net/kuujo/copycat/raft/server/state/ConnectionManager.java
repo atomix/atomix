@@ -16,8 +16,8 @@
 package net.kuujo.copycat.raft.server.state;
 
 import net.kuujo.copycat.raft.Member;
-import net.kuujo.copycat.raft.transport.Client;
-import net.kuujo.copycat.raft.transport.Connection;
+import net.kuujo.copycat.io.transport.Client;
+import net.kuujo.copycat.io.transport.Connection;
 import net.kuujo.copycat.util.concurrent.Futures;
 
 import java.net.InetAddress;

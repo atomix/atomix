@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.raft.server;
 
-import net.kuujo.copycat.raft.log.Compaction;
+import net.kuujo.copycat.io.log.Compaction;
 import net.kuujo.copycat.raft.Command;
 
 import java.lang.annotation.ElementType;
@@ -27,7 +27,7 @@ import java.lang.annotation.Target;
  * Annotation for filtering committed operations out of the Raft log.
  * <p>
  * This annotation should be used to identify {@link StateMachine} methods for filtering
- * {@link net.kuujo.copycat.raft.log.Entry entries} out of the Raft {@link net.kuujo.copycat.raft.log.Log}. Once an entry has been
+ * {@link net.kuujo.copycat.io.log.Entry entries} out of the Raft {@link net.kuujo.copycat.io.log.Log}. Once an entry has been
  * committed to the log, the entry becomes available for log compaction. The Raft log will periodically compact itself
  * by consulting the state machine implementation on which entries can be removed from the log. Methods annotated with
  * this annotation should return a boolean value indicating whether the provided {@link Commit}
