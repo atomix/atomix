@@ -15,8 +15,8 @@
  */
 package net.kuujo.copycat.raft.server.state;
 
-import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.io.storage.Entry;
+import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.raft.protocol.*;
 import net.kuujo.copycat.raft.server.RaftServer;
 import net.kuujo.copycat.raft.server.storage.*;
@@ -147,6 +147,7 @@ class LeaderState extends ActiveState {
 
     if (context.getCluster().getMember(request.member().id()) != null) {
       return CompletableFuture.completedFuture(logResponse(JoinResponse.builder()
+        .withStatus(Response.Status.OK)
         .withVersion(context.getCluster().getVersion())
         .withActiveMembers(context.getCluster().buildActiveMembers())
         .withPassiveMembers(context.getCluster().buildPassiveMembers())
@@ -200,7 +201,9 @@ class LeaderState extends ActiveState {
     logRequest(request);
 
     if (context.getCluster().getMember(request.member().id()) == null) {
-      return CompletableFuture.completedFuture(logResponse(LeaveResponse.builder().build()));
+      return CompletableFuture.completedFuture(logResponse(LeaveResponse.builder()
+        .withStatus(Response.Status.OK)
+        .build()));
     }
 
     final long term = context.getTerm();

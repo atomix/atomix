@@ -15,12 +15,12 @@
  */
 package net.kuujo.copycat.raft.protocol;
 
-import net.kuujo.copycat.util.BuilderPool;
-import net.kuujo.copycat.raft.RaftError;
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.raft.RaftError;
+import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.util.ReferenceManager;
 
 import java.util.Objects;
@@ -53,8 +53,6 @@ public class LeaveResponse extends AbstractResponse<LeaveResponse> {
     return POOL.acquire(response);
   }
 
-  private boolean succeeded;
-
   public LeaveResponse(ReferenceManager<LeaveResponse> referenceManager) {
     super(referenceManager);
   }
@@ -64,21 +62,11 @@ public class LeaveResponse extends AbstractResponse<LeaveResponse> {
     return Type.LEAVE;
   }
 
-  /**
-   * Returns a boolean indicating whether the leave was successful.
-   *
-   * @return Indicates whether the leave was successful.
-   */
-  public boolean succeeded() {
-    return succeeded;
-  }
-
   @Override
   public void readObject(BufferInput buffer, Serializer serializer) {
     status = Status.forId(buffer.readByte());
     if (status == Status.OK) {
       error = null;
-      succeeded = buffer.readBoolean();
     } else {
       error = RaftError.forId(buffer.readByte());
     }
@@ -88,7 +76,6 @@ public class LeaveResponse extends AbstractResponse<LeaveResponse> {
   public void writeObject(BufferOutput buffer, Serializer serializer) {
     buffer.writeByte(status.id());
     if (status == Status.OK) {
-      buffer.writeBoolean(succeeded);
     } else {
       buffer.writeByte(error.id());
     }
@@ -96,22 +83,21 @@ public class LeaveResponse extends AbstractResponse<LeaveResponse> {
 
   @Override
   public int hashCode() {
-    return Objects.hash(succeeded);
+    return Objects.hash(getClass(), status);
   }
 
   @Override
   public boolean equals(Object object) {
     if (object instanceof LeaveResponse) {
       LeaveResponse response = (LeaveResponse) object;
-      return response.status == status
-        && response.succeeded == succeeded;
+      return response.status == status;
     }
     return false;
   }
 
   @Override
   public String toString() {
-    return String.format("%s[status=%s, succeeded=%b]", getClass().getSimpleName(), status, succeeded);
+    return String.format("%s[status=%s]", getClass().getSimpleName(), status);
   }
 
   /**
@@ -121,17 +107,6 @@ public class LeaveResponse extends AbstractResponse<LeaveResponse> {
 
     private Builder(BuilderPool<Builder, LeaveResponse> pool) {
       super(pool, LeaveResponse::new);
-    }
-
-    /**
-     * Sets whether the request succeeded.
-     *
-     * @param succeeded Whether the leave request succeeded.
-     * @return The leave response builder.
-     */
-    public Builder withSucceeded(boolean succeeded) {
-      response.succeeded = succeeded;
-      return this;
     }
 
     @Override
