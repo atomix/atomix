@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.raft.server.log;
+package net.kuujo.copycat.raft.server.storage;
 
 import net.kuujo.copycat.raft.Members;
 import net.kuujo.copycat.io.BufferInput;

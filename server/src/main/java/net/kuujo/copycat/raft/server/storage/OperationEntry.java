@@ -13,27 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.raft.server.log;
+package net.kuujo.copycat.raft.server.storage;
 
-import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.storage.Entry;
 import net.kuujo.copycat.util.ReferenceManager;
 
 /**
- * No-op entry.
+ * Operation entry.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=300)
-public class NoOpEntry extends RaftEntry<NoOpEntry> {
+public abstract class OperationEntry<T extends OperationEntry<T>> extends SessionEntry<T> {
 
-  public NoOpEntry(ReferenceManager<Entry<?>> referenceManager) {
+  protected OperationEntry(ReferenceManager<Entry<?>> referenceManager) {
     super(referenceManager);
   }
 
   @Override
-  public String toString() {
-    return String.format("%s[index=%d, term=%d]", getClass().getSimpleName(), getIndex(), getTerm());
+  public int size() {
+    return super.size() + 8 + 1024;
   }
 
 }

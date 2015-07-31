@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.raft.server.log;
+package net.kuujo.copycat.raft.server.storage;
 
+import net.kuujo.copycat.raft.Query;
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.SerializeWith;
@@ -22,64 +23,75 @@ import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.storage.Entry;
 import net.kuujo.copycat.util.ReferenceManager;
 
-import java.util.UUID;
-
 /**
- * Register client entry.
+ * Query entry.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=303)
-public class RegisterEntry extends TimestampedEntry<RegisterEntry> {
-  private UUID connection;
+@SerializeWith(id=307)
+public class QueryEntry extends OperationEntry<QueryEntry> {
+  private long version;
+  private Query query;
 
-  public RegisterEntry() {
-  }
-
-  public RegisterEntry(ReferenceManager<Entry<?>> referenceManager) {
+  public QueryEntry(ReferenceManager<Entry<?>> referenceManager) {
     super(referenceManager);
   }
 
   /**
-   * Returns the entry connection ID.
+   * Returns the query version.
    *
-   * @return The entry connection ID.
+   * @return The query version.
    */
-  public UUID getConnection() {
-    return connection;
+  public long getVersion() {
+    return version;
   }
 
   /**
-   * Sets the entry connection ID.
+   * Sets the query version.
    *
-   * @param connection The entry connection ID.
-   * @return The register entry.
+   * @param version The query version.
+   * @return The query entry.
    */
-  public RegisterEntry setConnection(UUID connection) {
-    this.connection = connection;
+  public QueryEntry setVersion(long version) {
+    this.version = version;
     return this;
   }
 
-  @Override
-  public int size() {
-    return super.size() + Integer.BYTES;
+  /**
+   * Returns the query.
+   *
+   * @return The query.
+   */
+  public Query getQuery() {
+    return query;
+  }
+
+  /**
+   * Sets the query.
+   *
+   * @param query The query.
+   * @return The query entry.
+   */
+  public QueryEntry setQuery(Query query) {
+    this.query = query;
+    return this;
   }
 
   @Override
   public void writeObject(BufferOutput buffer, Serializer serializer) {
     super.writeObject(buffer, serializer);
-    serializer.writeObject(connection, buffer);
+    serializer.writeObject(query, buffer);
   }
 
   @Override
   public void readObject(BufferInput buffer, Serializer serializer) {
     super.readObject(buffer, serializer);
-    connection = serializer.readObject(buffer);
+    query = serializer.readObject(buffer);
   }
 
   @Override
   public String toString() {
-    return String.format("%s[index=%d, term=%d, connection=%s]", getClass().getSimpleName(), getIndex(), getTerm(), getConnection());
+    return String.format("%s[index=%d, term=%d, session=%d, timestamp=%d, query=%s]", getClass().getSimpleName(), getIndex(), getTerm(), getSession(), getTimestamp(), query);
   }
 
 }

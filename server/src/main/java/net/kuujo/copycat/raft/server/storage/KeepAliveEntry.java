@@ -13,25 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.raft.server.log;
+package net.kuujo.copycat.raft.server.storage;
 
+import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.storage.Entry;
 import net.kuujo.copycat.util.ReferenceManager;
 
 /**
- * Operation entry.
+ * Keep alive entry.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class OperationEntry<T extends OperationEntry<T>> extends SessionEntry<T> {
+@SerializeWith(id=304)
+public class KeepAliveEntry extends SessionEntry<KeepAliveEntry> {
 
-  protected OperationEntry(ReferenceManager<Entry<?>> referenceManager) {
+  public KeepAliveEntry(ReferenceManager<Entry<?>> referenceManager) {
     super(referenceManager);
   }
 
   @Override
-  public int size() {
-    return super.size() + 8 + 1024;
+  public String toString() {
+    return String.format("%s[index=%d, term=%d, session=%d, timestamp=%d]", getClass().getSimpleName(), getIndex(), getTerm(), getSession(), getTimestamp());
   }
 
 }

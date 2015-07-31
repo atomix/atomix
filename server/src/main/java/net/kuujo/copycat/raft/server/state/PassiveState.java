@@ -19,8 +19,8 @@ import net.kuujo.copycat.io.storage.Entry;
 import net.kuujo.copycat.raft.RaftError;
 import net.kuujo.copycat.raft.protocol.*;
 import net.kuujo.copycat.raft.server.RaftServer;
-import net.kuujo.copycat.raft.server.log.ConfigurationEntry;
-import net.kuujo.copycat.raft.server.log.RaftEntry;
+import net.kuujo.copycat.raft.server.storage.ConfigurationEntry;
+import net.kuujo.copycat.raft.server.storage.RaftEntry;
 
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;

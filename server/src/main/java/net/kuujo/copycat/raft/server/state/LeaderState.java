@@ -19,7 +19,7 @@ import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.io.storage.Entry;
 import net.kuujo.copycat.raft.protocol.*;
 import net.kuujo.copycat.raft.server.RaftServer;
-import net.kuujo.copycat.raft.server.log.*;
+import net.kuujo.copycat.raft.server.storage.*;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;

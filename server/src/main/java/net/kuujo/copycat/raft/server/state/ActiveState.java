@@ -19,8 +19,8 @@ import net.kuujo.copycat.raft.ConsistencyLevel;
 import net.kuujo.copycat.raft.RaftError;
 import net.kuujo.copycat.raft.protocol.*;
 import net.kuujo.copycat.raft.server.RaftServer;
-import net.kuujo.copycat.raft.server.log.QueryEntry;
-import net.kuujo.copycat.raft.server.log.RaftEntry;
+import net.kuujo.copycat.raft.server.storage.QueryEntry;
+import net.kuujo.copycat.raft.server.storage.RaftEntry;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;

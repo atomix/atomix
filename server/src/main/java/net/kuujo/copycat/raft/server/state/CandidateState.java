@@ -17,7 +17,7 @@ package net.kuujo.copycat.raft.server.state;
 
 import net.kuujo.copycat.raft.protocol.*;
 import net.kuujo.copycat.raft.server.RaftServer;
-import net.kuujo.copycat.raft.server.log.RaftEntry;
+import net.kuujo.copycat.raft.server.storage.RaftEntry;
 import net.kuujo.copycat.raft.server.util.Quorum;
 
 import java.util.HashSet;

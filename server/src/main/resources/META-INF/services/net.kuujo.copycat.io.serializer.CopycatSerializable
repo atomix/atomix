@@ -13,9 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-net.kuujo.copycat.raft.server.log.CommandEntry
-net.kuujo.copycat.raft.server.log.ConfigurationEntry
-net.kuujo.copycat.raft.server.log.KeepAliveEntry
-net.kuujo.copycat.raft.server.log.NoOpEntry
-net.kuujo.copycat.raft.server.log.QueryEntry
-net.kuujo.copycat.raft.server.log.RegisterEntry
+net.kuujo.copycat.raft.server.storage.CommandEntry
+net.kuujo.copycat.raft.server.storage.ConfigurationEntry
+net.kuujo.copycat.raft.server.storage.KeepAliveEntry
+net.kuujo.copycat.raft.server.storage.NoOpEntry
+net.kuujo.copycat.raft.server.storage.QueryEntry
+net.kuujo.copycat.raft.server.storage.RegisterEntry
