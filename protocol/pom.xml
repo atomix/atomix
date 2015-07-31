@@ -29,7 +29,7 @@
   <dependencies>
     <dependency>
       <groupId>net.kuujo.copycat</groupId>
-      <artifactId>copycat-log</artifactId>
+      <artifactId>copycat-storage</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
