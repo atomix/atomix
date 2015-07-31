@@ -294,12 +294,14 @@ public class Log implements AutoCloseable {
    */
   public Log truncate(long index) {
     checkOpen();
-    checkIndex(index);
+    if (index > 0 && !containsIndex(index))
+      throw new IndexOutOfBoundsException(index + " is not a valid log index");
+
     if (lastIndex() == index)
       return this;
 
     for (Segment segment : segments.segments()) {
-      if (segment.containsIndex(index)) {
+      if (index == 0 || segment.containsIndex(index)) {
         segment.truncate(index);
       } else if (segment.descriptor().index() > index) {
         segments.remove(segment);

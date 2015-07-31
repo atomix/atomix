@@ -142,6 +142,20 @@ public class LogTest {
   }
 
   /**
+   * Tests emptying the log.
+   */
+  public void testTruncateZero() throws Throwable {
+    try (Log log = createLog()) {
+      appendEntries(log, 100);
+      Assert.assertEquals(log.lastIndex(), 100);
+      log.truncate(0);
+      Assert.assertEquals(log.lastIndex(), 0);
+      appendEntries(log, 10);
+      Assert.assertEquals(log.lastIndex(), 10);
+    }
+  }
+
+  /**
    * Tests skipping entries in the log.
    */
   public void testSkip() throws Throwable {
