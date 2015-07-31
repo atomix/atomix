@@ -18,7 +18,6 @@ package net.kuujo.copycat.io.transport;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.util.ReferenceCounted;
 import net.kuujo.copycat.Listener;
 import net.kuujo.copycat.ListenerContext;
@@ -325,12 +324,27 @@ public class NettyConnection implements Connection {
 
   @Override
   public CompletableFuture<Void> close() {
+    CompletableFuture<Void> future = new CompletableFuture<>();
     if (writeFuture != null) {
-      writeFuture.addListener(ChannelFutureListener.CLOSE);
+      writeFuture.addListener(channelFuture -> {
+        channel.close().addListener(closeFuture -> {
+          if (closeFuture.isSuccess()) {
+            future.complete(null);
+          } else {
+            future.completeExceptionally(closeFuture.cause());
+          }
+        });
+      });
     } else {
-      channel.close();
+      channel.close().addListener(closeFuture -> {
+        if (closeFuture.isSuccess()) {
+          future.complete(null);
+        } else {
+          future.completeExceptionally(closeFuture.cause());
+        }
+      });
     }
-    return null;
+    return future;
   }
 
   /**
