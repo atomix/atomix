@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.raft.server.state;
 
-import net.kuujo.copycat.io.log.Entry;
+import net.kuujo.copycat.io.storage.Entry;
 import net.kuujo.copycat.raft.RaftError;
 import net.kuujo.copycat.raft.protocol.*;
 import net.kuujo.copycat.raft.server.RaftServer;

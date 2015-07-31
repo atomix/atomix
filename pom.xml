@@ -73,7 +73,7 @@
     <module>transport</module>
     <module>local</module>
     <module>netty</module>
-    <module>log</module>
+    <module>storage</module>
     <module>protocol</module>
     <module>client</module>
     <module>server</module>

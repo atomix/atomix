@@ -97,7 +97,7 @@ public interface Raft {
    * Submits a command to the Raft protocol.
    * <p>
    * Commands are used to alter state machine state. All commands will be forwarded to the current Raft leader.
-   * Once a leader receives the command, it will write the command to its internal {@link net.kuujo.copycat.io.log.Log} and
+   * Once a leader receives the command, it will write the command to its internal {@link net.kuujo.copycat.io.storage.Log} and
    * replicate it to a majority of the cluster. Once the command has been replicated to a majority of the cluster, it
    * will apply the command to its state machine and respond with the result.
    * <p>

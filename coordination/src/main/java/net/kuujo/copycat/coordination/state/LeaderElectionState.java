@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.coordination.state;
 
-import net.kuujo.copycat.io.log.Compaction;
+import net.kuujo.copycat.io.storage.Compaction;
 import net.kuujo.copycat.raft.Operation;
 import net.kuujo.copycat.raft.Session;
 import net.kuujo.copycat.raft.server.Apply;

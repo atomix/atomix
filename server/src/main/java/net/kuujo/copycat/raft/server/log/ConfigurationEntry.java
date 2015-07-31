@@ -19,7 +19,7 @@ import net.kuujo.copycat.raft.Members;
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.io.log.Entry;
+import net.kuujo.copycat.io.storage.Entry;
 import net.kuujo.copycat.util.ReferenceManager;
 
 /**

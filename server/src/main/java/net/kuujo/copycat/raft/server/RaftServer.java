@@ -19,7 +19,7 @@ import net.kuujo.copycat.*;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.ServiceLoaderResolver;
 import net.kuujo.copycat.raft.*;
-import net.kuujo.copycat.io.log.Log;
+import net.kuujo.copycat.io.storage.Log;
 import net.kuujo.copycat.raft.server.state.ServerContext;
 import net.kuujo.copycat.io.transport.Transport;
 import net.kuujo.copycat.util.Managed;
