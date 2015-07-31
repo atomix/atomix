@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.raft.transport;
+package net.kuujo.copycat.io.transport;
 
 import java.net.InetSocketAddress;
 import java.util.Map;

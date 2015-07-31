@@ -28,7 +28,7 @@ import net.kuujo.copycat.raft.server.RaftServer;
 import net.kuujo.copycat.raft.server.StateMachine;
 import net.kuujo.copycat.raft.server.log.*;
 import net.kuujo.copycat.io.transport.Connection;
-import net.kuujo.copycat.raft.transport.LocalConnection;
+import net.kuujo.copycat.io.transport.LocalConnection;
 import net.kuujo.copycat.io.transport.Server;
 import net.kuujo.copycat.io.transport.Transport;
 import net.kuujo.copycat.util.concurrent.ComposableFuture;

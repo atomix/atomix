@@ -23,8 +23,8 @@ import net.kuujo.copycat.io.log.Log;
 import net.kuujo.copycat.io.log.StorageLevel;
 import net.kuujo.copycat.raft.Member;
 import net.kuujo.copycat.raft.Members;
-import net.kuujo.copycat.raft.transport.LocalServerRegistry;
-import net.kuujo.copycat.raft.transport.LocalTransport;
+import net.kuujo.copycat.io.transport.LocalServerRegistry;
+import net.kuujo.copycat.io.transport.LocalTransport;
 import org.testng.annotations.Test;
 
 import java.util.ArrayList;
