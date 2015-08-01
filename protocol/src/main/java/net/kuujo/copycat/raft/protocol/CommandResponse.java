@@ -31,7 +31,7 @@ import java.util.Objects;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @SerializeWith(id=259)
-public class CommandResponse extends ClientResponse<CommandResponse> {
+public class CommandResponse extends SessionResponse<CommandResponse> {
   private static final BuilderPool<Builder, CommandResponse> POOL = new BuilderPool<>(Builder::new);
 
   /**
@@ -118,7 +118,7 @@ public class CommandResponse extends ClientResponse<CommandResponse> {
   /**
    * Command response builder.
    */
-  public static class Builder extends ClientResponse.Builder<Builder, CommandResponse> {
+  public static class Builder extends SessionResponse.Builder<Builder, CommandResponse> {
 
     protected Builder(BuilderPool<Builder, CommandResponse> pool) {
       super(pool, CommandResponse::new);

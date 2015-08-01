@@ -20,20 +20,20 @@ import net.kuujo.copycat.util.ReferenceFactory;
 import net.kuujo.copycat.util.ReferenceManager;
 
 /**
- * Client response.
+ * Session response.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class ClientResponse<T extends ClientResponse<T>> extends AbstractResponse<T> {
+public abstract class SessionResponse<T extends SessionResponse<T>> extends AbstractResponse<T> {
 
-  public ClientResponse(ReferenceManager<T> referenceManager) {
+  public SessionResponse(ReferenceManager<T> referenceManager) {
     super(referenceManager);
   }
 
   /**
-   * Client response builder.
+   * Session response builder.
    */
-  public static abstract class Builder<T extends Builder<T, U>, U extends ClientResponse<U>> extends AbstractResponse.Builder<T, U> {
+  public static abstract class Builder<T extends Builder<T, U>, U extends SessionResponse<U>> extends AbstractResponse.Builder<T, U> {
     protected Builder(BuilderPool<T, U> pool, ReferenceFactory<U> factory) {
       super(pool, factory);
     }

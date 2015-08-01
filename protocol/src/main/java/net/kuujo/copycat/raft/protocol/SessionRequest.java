@@ -15,10 +15,10 @@
  */
 package net.kuujo.copycat.raft.protocol;
 
-import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.util.ReferenceFactory;
 import net.kuujo.copycat.util.ReferenceManager;
 
@@ -27,8 +27,9 @@ import net.kuujo.copycat.util.ReferenceManager;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class SessionRequest<T extends SessionRequest<T>> extends ClientRequest<T> {
+public abstract class SessionRequest<T extends SessionRequest<T>> extends AbstractRequest<T> {
   protected long session;
+  protected long version;
 
   public SessionRequest(ReferenceManager<T> referenceManager) {
     super(referenceManager);
@@ -43,22 +44,31 @@ public abstract class SessionRequest<T extends SessionRequest<T>> extends Client
     return session;
   }
 
+  /**
+   * Returns the response version.
+   *
+   * @return The response version.
+   */
+  public long version() {
+    return version;
+  }
+
   @Override
   public void readObject(BufferInput buffer, Serializer serializer) {
-    super.readObject(buffer, serializer);
     session = buffer.readLong();
+    version = buffer.readLong();
   }
 
   @Override
   public void writeObject(BufferOutput buffer, Serializer serializer) {
-    super.writeObject(buffer, serializer);
     buffer.writeLong(session);
+    buffer.writeLong(version);
   }
 
   /**
    * Client request builder.
    */
-  public static abstract class Builder<T extends Builder<T, U>, U extends SessionRequest<U>> extends ClientRequest.Builder<T, U> {
+  public static abstract class Builder<T extends Builder<T, U>, U extends SessionRequest<U>> extends AbstractRequest.Builder<T, U> {
 
     protected Builder(BuilderPool<T, U> pool, ReferenceFactory<U> factory) {
       super(pool, factory);
@@ -68,6 +78,7 @@ public abstract class SessionRequest<T extends SessionRequest<T>> extends Client
     protected void reset() {
       super.reset();
       request.session = 0;
+      request.version = 0;
     }
 
     /**
@@ -81,6 +92,20 @@ public abstract class SessionRequest<T extends SessionRequest<T>> extends Client
       if (session <= 0)
         throw new IllegalArgumentException("session must be positive");
       request.session = session;
+      return (T) this;
+    }
+
+    /**
+     * Sets the request version.
+     *
+     * @param version The request version.
+     * @return The request builder.
+     */
+    @SuppressWarnings("unchecked")
+    public T withVersion(long version) {
+      if (version < 0)
+        throw new IllegalArgumentException("version must be positive");
+      request.version = version;
       return (T) this;
     }
   }

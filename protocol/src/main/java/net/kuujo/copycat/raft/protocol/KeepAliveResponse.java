@@ -32,7 +32,7 @@ import java.util.Objects;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @SerializeWith(id=263)
-public class KeepAliveResponse extends ClientResponse<KeepAliveResponse> {
+public class KeepAliveResponse extends SessionResponse<KeepAliveResponse> {
   private static final BuilderPool<Builder, KeepAliveResponse> POOL = new BuilderPool<>(Builder::new);
 
   /**
@@ -142,7 +142,7 @@ public class KeepAliveResponse extends ClientResponse<KeepAliveResponse> {
   /**
    * Status response builder.
    */
-  public static class Builder extends ClientResponse.Builder<Builder, KeepAliveResponse> {
+  public static class Builder extends SessionResponse.Builder<Builder, KeepAliveResponse> {
 
     protected Builder(BuilderPool<Builder, KeepAliveResponse> pool) {
       super(pool, KeepAliveResponse::new);

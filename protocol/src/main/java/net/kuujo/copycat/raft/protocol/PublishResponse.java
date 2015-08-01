@@ -15,12 +15,12 @@
  */
 package net.kuujo.copycat.raft.protocol;
 
-import net.kuujo.copycat.util.BuilderPool;
-import net.kuujo.copycat.raft.RaftError;
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.raft.RaftError;
+import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.util.ReferenceManager;
 
 import java.util.Objects;
@@ -31,7 +31,7 @@ import java.util.Objects;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @SerializeWith(id=269)
-public class PublishResponse extends AbstractResponse<PublishResponse> {
+public class PublishResponse extends SessionResponse<PublishResponse> {
   private static final BuilderPool<Builder, PublishResponse> POOL = new BuilderPool<>(Builder::new);
 
   /**
@@ -102,7 +102,7 @@ public class PublishResponse extends AbstractResponse<PublishResponse> {
   /**
    * Publish response builder.
    */
-  public static class Builder extends AbstractResponse.Builder<Builder, PublishResponse> {
+  public static class Builder extends SessionResponse.Builder<Builder, PublishResponse> {
 
     protected Builder(BuilderPool<Builder, PublishResponse> pool) {
       super(pool, PublishResponse::new);

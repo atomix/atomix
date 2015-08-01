@@ -31,7 +31,7 @@ import java.util.Objects;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @SerializeWith(id=271)
-public class QueryResponse extends ClientResponse<QueryResponse> {
+public class QueryResponse extends SessionResponse<QueryResponse> {
   private static final BuilderPool<Builder, QueryResponse> POOL = new BuilderPool<>(Builder::new);
 
   /**
@@ -118,7 +118,7 @@ public class QueryResponse extends ClientResponse<QueryResponse> {
   /**
    * Query response builder.
    */
-  public static class Builder extends ClientResponse.Builder<Builder, QueryResponse> {
+  public static class Builder extends SessionResponse.Builder<Builder, QueryResponse> {
 
     protected Builder(BuilderPool<Builder, QueryResponse> pool) {
       super(pool, QueryResponse::new);
