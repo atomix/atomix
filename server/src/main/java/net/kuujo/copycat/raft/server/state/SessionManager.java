@@ -79,7 +79,7 @@ class SessionManager {
    * @param sessionId The session ID.
    * @return The session or {@code null} if the session doesn't exist.
    */
-  Session getSession(long sessionId) {
+  ServerSession getSession(long sessionId) {
     return sessions.get(sessionId);
   }
 

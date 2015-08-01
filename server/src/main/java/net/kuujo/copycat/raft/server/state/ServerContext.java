@@ -44,7 +44,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.util.*;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
@@ -68,7 +68,6 @@ public class ServerContext implements Managed<Void> {
   private final ConnectionManager connections;
   private final SessionManager sessions;
   private AbstractState state;
-  private final Map<Long, SessionContext> contexts = new HashMap<>();
   private long electionTimeout = 500;
   private long sessionTimeout = 5000;
   private long heartbeatInterval = 250;
@@ -508,7 +507,7 @@ public class ServerContext implements Managed<Void> {
    * @return A boolean value indicating whether to keep the entry.
    */
   CompletableFuture<Boolean> filter(RegisterEntry entry, Compaction compaction) {
-    return Futures.completedFuture(contexts.containsKey(entry.getIndex()));
+    return Futures.completedFuture(sessions.getSession(entry.getIndex()) != null);
   }
 
   /**
@@ -519,8 +518,8 @@ public class ServerContext implements Managed<Void> {
    * @return A boolean value indicating whether to keep the entry.
    */
   CompletableFuture<Boolean> filter(KeepAliveEntry entry, Compaction compaction) {
-    return Futures.completedFuture(contexts.containsKey(entry.getIndex()) && contexts.get(entry.getIndex()).index == entry
-      .getIndex());
+    ServerSession session = sessions.getSession(entry.getSession());
+    return Futures.completedFuture(session != null && session.getIndex() == entry.getIndex());
   }
 
   /**
@@ -648,10 +647,7 @@ public class ServerContext implements Managed<Void> {
    * @return The session ID.
    */
   private CompletableFuture<Long> register(long index, UUID connectionId, long timestamp) {
-    Session session = sessions.registerSession(index, connectionId);
-
-    SessionContext context = new SessionContext(timestamp);
-    contexts.put(session.id(), context);
+    ServerSession session = sessions.registerSession(index, connectionId).setTimestamp(timestamp);
 
     // Set last applied only after the operation has been submitted to the state machine executor.
     CompletableFuture<Long> future = new ComposableFuture<>();
@@ -672,17 +668,20 @@ public class ServerContext implements Managed<Void> {
    * @param sessionId The session to keep alive.
    */
   private CompletableFuture<Void> keepAlive(long index, long timestamp, long sessionId) {
-    SessionContext context = contexts.get(sessionId);
+    ServerSession session = sessions.getSession(sessionId);
 
     CompletableFuture<Void> future;
-    if (context == null) {
+    if (session == null) {
       LOGGER.warn("Unknown session: " + sessionId);
       future = Futures.exceptionalFuture(new UnknownSessionException("unknown session: " + sessionId));
-    } else if (!context.update(index, timestamp)) {
-      LOGGER.warn("Expired session: " + sessionId);
-      future = expireSession(sessionId);
     } else {
-      future = Futures.completedFutureAsync(null, this.context);
+      if (timestamp - sessionTimeout > session.getTimestamp()) {
+        LOGGER.warn("Expired session: " + sessionId);
+        future = expireSession(sessionId);
+      } else {
+        session.setIndex(index).setTimestamp(timestamp);
+        future = Futures.completedFutureAsync(null, this.context);
+      }
     }
 
     setLastApplied(index);
@@ -741,32 +740,26 @@ public class ServerContext implements Managed<Void> {
     final CompletableFuture<Object> future;
 
     // First check to ensure that the session exists.
-    SessionContext context = contexts.get(sessionId);
-    if (context == null) {
+    ServerSession session = sessions.getSession(sessionId);
+    if (session == null) {
       LOGGER.warn("Unknown session: " + sessionId);
       future = Futures.exceptionalFuture(new UnknownSessionException("unknown session " + sessionId));
+    } else if (timestamp - sessionTimeout > session.getTimestamp()) {
+      LOGGER.warn("Expired session: " + sessionId);
+      future = expireSession(sessionId);
     } else {
-      if (!context.update(index, timestamp)) {
-        LOGGER.warn("Expired session: " + sessionId);
-        future = expireSession(sessionId);
-      } else if (context.responses.containsKey(request)) {
-        future = CompletableFuture.completedFuture(context.responses.get(request));
+      session.setTimestamp(timestamp);
+      if (session.hasResponse(request)) {
+        future = CompletableFuture.completedFuture(session.getResponse(request));
       } else {
-        // Apply the command to the state machine.
-        Session session = sessions.getSession(sessionId);
-
         future = execute(() -> stateMachine.apply(new Commit(index, session, timestamp, command)))
           .thenApply(result -> {
             // Store the command result in the session.
-            context.responses.put(request, result);
-
-            // Clear any responses that have been received by the client for the session.
-            context.responses.headMap(version, true).clear();
+            session.registerResponse(request, result);
             return result;
           });
       }
-
-      context.query(version);
+      session.setVersion(version);
     }
 
     // We need to ensure that the command is applied to the state machine before queries are run.
@@ -788,23 +781,20 @@ public class ServerContext implements Managed<Void> {
    */
   @SuppressWarnings("unchecked")
   private CompletableFuture<Object> query(long index, long sessionId, long version, long timestamp, Query query) {
-    SessionContext context = contexts.get(sessionId);
-    if (context == null) {
+    ServerSession session = sessions.getSession(sessionId);
+    if (session == null) {
       LOGGER.warn("Unknown session: " + sessionId);
       return Futures.exceptionalFuture(new UnknownSessionException("unknown session " + sessionId));
-    } else if (!context.expire(timestamp)) {
+    } else if (timestamp - sessionTimeout > session.getTimestamp()) {
       LOGGER.warn("Expired session: " + sessionId);
       return expireSession(sessionId);
-    } else if (context.version < version) {
+    } else if (session.getVersion() < version) {
       ComposableFuture<Object> future = new ComposableFuture<>();
-      Session session = sessions.getSession(sessionId);
-      List<Runnable> queries = context.queries.computeIfAbsent(version, id -> new ArrayList<>());
-      queries.add(() -> {
+      session.registerQuery(version, () -> {
         execute(() -> stateMachine.apply(new Commit(index, session, timestamp, query)), future);
       });
       return future;
     } else {
-      Session session = sessions.getSession(sessionId);
       return execute(() -> stateMachine.apply(new Commit(index, session, timestamp, query)));
     }
   }
@@ -814,7 +804,6 @@ public class ServerContext implements Managed<Void> {
    */
   private <T> CompletableFuture<T> expireSession(long sessionId) {
     CompletableFuture<T> future = new CompletableFuture<>();
-    contexts.remove(sessionId);
     ServerSession session = sessions.unregisterSession(sessionId);
     if (session != null) {
       stateContext.execute(() -> {
@@ -922,72 +911,6 @@ public class ServerContext implements Managed<Void> {
   @Override
   public String toString() {
     return getClass().getCanonicalName();
-  }
-
-  /**
-   * Session context.
-   */
-  private class SessionContext {
-    private long index;
-    private long version;
-    private long timestamp;
-    private final Map<Long, List<Runnable>> queries = new HashMap<>();
-    private final TreeMap<Long, Object> responses = new TreeMap<>();
-
-    private SessionContext(long timestamp) {
-      this.timestamp = timestamp;
-    }
-
-    /**
-     * Runs queries for the given request.
-     */
-    public void query(long version) {
-      for (long i = this.version + 1; i <= version; i++) {
-        List<Runnable> queries = this.queries.remove(i);
-        if (queries != null) {
-          for (Runnable query : queries) {
-            query.run();
-          }
-        }
-      }
-      this.version = version;
-    }
-
-    /**
-     * Returns the session timestamp.
-     *
-     * @return The session timestamp.
-     */
-    public long timestamp() {
-      return timestamp;
-    }
-
-    /**
-     * Updates the session.
-     *
-     * @param timestamp The session.
-     */
-    private boolean expire(long timestamp) {
-      if (timestamp - sessionTimeout > this.timestamp) {
-        return false;
-      }
-      this.timestamp = timestamp;
-      return true;
-    }
-
-    /**
-     * Updates the session.
-     *
-     * @param timestamp The session.
-     */
-    private boolean update(long index, long timestamp) {
-      if (timestamp - sessionTimeout > this.timestamp) {
-        return false;
-      }
-      this.index = index;
-      this.timestamp = timestamp;
-      return true;
-    }
   }
 
 }

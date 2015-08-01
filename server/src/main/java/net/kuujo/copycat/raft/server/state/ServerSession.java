@@ -18,15 +18,15 @@ package net.kuujo.copycat.raft.server.state;
 import net.kuujo.copycat.Listener;
 import net.kuujo.copycat.ListenerContext;
 import net.kuujo.copycat.Listeners;
+import net.kuujo.copycat.io.transport.Connection;
 import net.kuujo.copycat.raft.Session;
 import net.kuujo.copycat.raft.UnknownSessionException;
 import net.kuujo.copycat.raft.protocol.PublishRequest;
 import net.kuujo.copycat.raft.protocol.PublishResponse;
 import net.kuujo.copycat.raft.protocol.Response;
-import net.kuujo.copycat.io.transport.Connection;
 import net.kuujo.copycat.util.concurrent.Futures;
 
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -39,6 +39,11 @@ class ServerSession implements Session {
   private final long id;
   private final UUID connectionId;
   private Connection connection;
+  private long index;
+  private long version;
+  private long timestamp;
+  private final Map<Long, List<Runnable>> queries = new HashMap<>();
+  private final Map<Long, Object> responses = new HashMap<>();
   private boolean expired;
   private boolean closed;
   private final Listeners<Session> openListeners = new Listeners<>();
@@ -49,6 +54,7 @@ class ServerSession implements Session {
       throw new NullPointerException("connection cannot be null");
 
     this.id = id;
+    this.index = id;
     this.connectionId = connectionId;
   }
 
@@ -64,6 +70,131 @@ class ServerSession implements Session {
    */
   UUID connection() {
     return connectionId;
+  }
+
+  /**
+   * Returns the session index.
+   *
+   * @return The session index.
+   */
+  long getIndex() {
+    return index;
+  }
+
+  /**
+   * Sets the session index.
+   *
+   * @param index The session index.
+   * @return The server session.
+   */
+  ServerSession setIndex(long index) {
+    this.index = index;
+    return this;
+  }
+
+  /**
+   * Returns the session version.
+   *
+   * @return The session version.
+   */
+  long getVersion() {
+    return version;
+  }
+
+  /**
+   * Sets the session version.
+   *
+   * @param version The session version.
+   * @return The server session.
+   */
+  ServerSession setVersion(long version) {
+    if (version > this.version) {
+      responses.remove(this.version);
+
+      for (long i = this.version + 1; i < version; i++) {
+        List<Runnable> queries = this.queries.remove(i);
+        if (queries != null) {
+          for (Runnable query : queries) {
+            query.run();
+          }
+        }
+        responses.remove(i);
+      }
+
+      List<Runnable> queries = this.queries.remove(version);
+      if (queries != null) {
+        for (Runnable query : queries) {
+          query.run();
+        }
+      }
+      this.version = version;
+    }
+    return this;
+  }
+
+  /**
+   * Returns the session timestamp.
+   *
+   * @return The session timestamp.
+   */
+  long getTimestamp() {
+    return timestamp;
+  }
+
+  /**
+   * Sets the session timestamp.
+   *
+   * @param timestamp The session timestamp.
+   * @return The server session.
+   */
+  ServerSession setTimestamp(long timestamp) {
+    this.timestamp = timestamp;
+    return this;
+  }
+
+  /**
+   * Registers a session query.
+   *
+   * @param version The session version.
+   * @param query The session query.
+   * @return The server session.
+   */
+  ServerSession registerQuery(long version, Runnable query) {
+    List<Runnable> queries = this.queries.computeIfAbsent(version, v -> new ArrayList<>());
+    queries.add(query);
+    return this;
+  }
+
+  /**
+   * Registers a session response.
+   *
+   * @param version The response version.
+   * @param response The response.
+   * @return The server session.
+   */
+  ServerSession registerResponse(long version, Object response) {
+    responses.put(version, response);
+    return this;
+  }
+
+  /**
+   * Returns a boolean value indicating whether the session has a response for the given version.
+   *
+   * @param version The response version.
+   * @return Indicates whether the session has a response for the given version.
+   */
+  boolean hasResponse(long version) {
+    return responses.containsKey(version);
+  }
+
+  /**
+   * Returns the session response for the given version.
+   *
+   * @param version The response version.
+   * @return The response.
+   */
+  Object getResponse(long version) {
+    return responses.get(version);
   }
 
   /**
