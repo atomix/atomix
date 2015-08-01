@@ -21,7 +21,7 @@ import net.kuujo.copycat.Resource;
 import net.kuujo.copycat.Stateful;
 import net.kuujo.copycat.coordination.state.LeaderElectionCommands;
 import net.kuujo.copycat.coordination.state.LeaderElectionState;
-import net.kuujo.copycat.raft.Raft;
+import net.kuujo.copycat.resource.ResourceContext;
 
 import java.util.Collections;
 import java.util.Set;
@@ -37,9 +37,9 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DistributedLeaderElection extends Resource {
   private final Set<Listener<Void>> listeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
-  public DistributedLeaderElection(Raft protocol) {
-    super(protocol);
-    protocol.session().onReceive(v -> {
+  public DistributedLeaderElection(ResourceContext context) {
+    super(context);
+    context.session().onReceive(v -> {
       for (Listener<Void> listener : listeners) {
         listener.accept(null);
       }

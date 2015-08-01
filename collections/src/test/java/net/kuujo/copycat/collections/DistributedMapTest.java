@@ -21,10 +21,10 @@ import net.kuujo.copycat.CopycatServer;
 import net.kuujo.copycat.Node;
 import net.kuujo.copycat.io.storage.Log;
 import net.kuujo.copycat.io.storage.StorageLevel;
-import net.kuujo.copycat.raft.Member;
-import net.kuujo.copycat.raft.Members;
 import net.kuujo.copycat.io.transport.LocalServerRegistry;
 import net.kuujo.copycat.io.transport.LocalTransport;
+import net.kuujo.copycat.raft.Member;
+import net.kuujo.copycat.raft.Members;
 import org.testng.annotations.Test;
 
 import java.util.ArrayList;
@@ -42,6 +42,7 @@ public class DistributedMapTest extends ConcurrentTestCase {
   /**
    * Tests putting and getting a value.
    */
+  @SuppressWarnings("unchecked")
   public void testPutGetRemove() throws Throwable {
     List<Copycat> copycats = createCopycats(3);
 
@@ -74,11 +75,14 @@ public class DistributedMapTest extends ConcurrentTestCase {
       resume();
     });
     await();
+
+    copycats.forEach(c -> c.close().join());
   }
 
   /**
    * Tests the map size.
    */
+  @SuppressWarnings("unchecked")
   public void testMapSize() throws Throwable {
     List<Copycat> copycats = createCopycats(3);
 
@@ -115,11 +119,14 @@ public class DistributedMapTest extends ConcurrentTestCase {
       resume();
     });
     await();
+
+    copycats.forEach(c -> c.close().join());
   }
 
   /**
    * Tests TTL.
    */
+  @SuppressWarnings("unchecked")
   public void testMapTtl() throws Throwable {
     List<Copycat> copycats = createCopycats(3);
 
@@ -139,8 +146,7 @@ public class DistributedMapTest extends ConcurrentTestCase {
     });
     await();
 
-    long startTime = System.currentTimeMillis();
-    while (System.currentTimeMillis() < startTime + 1000);
+    Thread.sleep(1000);
 
     expectResume();
     map.get("foo").thenAccept(result -> {
@@ -155,6 +161,8 @@ public class DistributedMapTest extends ConcurrentTestCase {
       resume();
     });
     await();
+
+    copycats.forEach(c -> c.close().join());
   }
 
   /**

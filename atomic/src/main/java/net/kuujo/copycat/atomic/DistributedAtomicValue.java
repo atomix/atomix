@@ -19,7 +19,7 @@ import net.kuujo.copycat.*;
 import net.kuujo.copycat.atomic.state.ReferenceCommands;
 import net.kuujo.copycat.atomic.state.ReferenceState;
 import net.kuujo.copycat.raft.ConsistencyLevel;
-import net.kuujo.copycat.raft.Raft;
+import net.kuujo.copycat.resource.ResourceContext;
 
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
@@ -36,9 +36,9 @@ public class DistributedAtomicValue<T> extends Resource {
   private ConsistencyLevel defaultConsistency = ConsistencyLevel.LINEARIZABLE_LEASE;
   private final java.util.Set<Listener<T>> changeListeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
-  public DistributedAtomicValue(Raft protocol) {
-    super(protocol);
-    protocol.session().<T>onReceive(event -> {
+  public DistributedAtomicValue(ResourceContext context) {
+    super(context);
+    context.session().<T>onReceive(event -> {
       for (Listener<T> listener : changeListeners) {
         listener.accept(event);
       }

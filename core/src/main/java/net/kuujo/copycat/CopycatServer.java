@@ -16,17 +16,15 @@
 package net.kuujo.copycat;
 
 import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.raft.Members;
 import net.kuujo.copycat.io.storage.Log;
-import net.kuujo.copycat.manager.ResourceManager;
-import net.kuujo.copycat.raft.server.RaftServer;
 import net.kuujo.copycat.io.transport.Transport;
+import net.kuujo.copycat.manager.ResourceManager;
+import net.kuujo.copycat.raft.Members;
+import net.kuujo.copycat.raft.client.RaftClient;
+import net.kuujo.copycat.raft.server.RaftServer;
 import net.kuujo.copycat.util.concurrent.CopycatThreadFactory;
 
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * Server-side {@link net.kuujo.copycat.Copycat} implementation.
@@ -47,22 +45,36 @@ public class CopycatServer extends Copycat {
     return new Builder();
   }
 
-  private CopycatServer(RaftServer server) {
-    super(server);
+  private final RaftServer server;
+
+  private CopycatServer(RaftClient client, RaftServer server) {
+    super(client);
+    this.server = server;
+  }
+
+  @Override
+  public CompletableFuture<Copycat> open() {
+    return server.open().thenCompose(v -> super.open());
+  }
+
+  @Override
+  public CompletableFuture<Void> close() {
+    return super.close().thenCompose(v -> server.close());
   }
 
   /**
    * Copycat builder.
    */
   public static class Builder extends Copycat.Builder<CopycatServer> {
-    private RaftServer.Builder builder = RaftServer.builder();
+    private RaftClient.Builder clientBuilder = RaftClient.builder();
+    private RaftServer.Builder serverBuilder = RaftServer.builder();
 
     private Builder() {
     }
 
     @Override
     protected void reset() {
-      builder = RaftServer.builder();
+      serverBuilder = RaftServer.builder();
     }
 
     /**
@@ -72,7 +84,8 @@ public class CopycatServer extends Copycat {
      * @return The client builder.
      */
     public Builder withTransport(Transport transport) {
-      builder.withTransport(transport);
+      clientBuilder.withTransport(transport);
+      serverBuilder.withTransport(transport);
       return this;
     }
 
@@ -83,7 +96,7 @@ public class CopycatServer extends Copycat {
      * @return The Raft builder.
      */
     public Builder withMemberId(int memberId) {
-      builder.withMemberId(memberId);
+      serverBuilder.withMemberId(memberId);
       return this;
     }
 
@@ -94,7 +107,8 @@ public class CopycatServer extends Copycat {
      * @return The Raft builder.
      */
     public Builder withMembers(Members members) {
-      builder.withMembers(members);
+      clientBuilder.withMembers(members);
+      serverBuilder.withMembers(members);
       return this;
     }
 
@@ -105,7 +119,8 @@ public class CopycatServer extends Copycat {
      * @return The Raft builder.
      */
     public Builder withSerializer(Serializer serializer) {
-      builder.withSerializer(serializer);
+      clientBuilder.withSerializer(serializer);
+      serverBuilder.withSerializer(serializer);
       return this;
     }
 
@@ -116,7 +131,7 @@ public class CopycatServer extends Copycat {
      * @return The Raft builder.
      */
     public Builder withLog(Log log) {
-      builder.withLog(log);
+      serverBuilder.withLog(log);
       return this;
     }
 
@@ -128,7 +143,7 @@ public class CopycatServer extends Copycat {
      * @throws IllegalArgumentException If the election timeout is not positive
      */
     public Builder withElectionTimeout(long electionTimeout) {
-      builder.withElectionTimeout(electionTimeout);
+      serverBuilder.withElectionTimeout(electionTimeout);
       return this;
     }
 
@@ -141,7 +156,7 @@ public class CopycatServer extends Copycat {
      * @throws IllegalArgumentException If the election timeout is not positive
      */
     public Builder withElectionTimeout(long electionTimeout, TimeUnit unit) {
-      builder.withElectionTimeout(electionTimeout, unit);
+      serverBuilder.withElectionTimeout(electionTimeout, unit);
       return this;
     }
 
@@ -153,7 +168,7 @@ public class CopycatServer extends Copycat {
      * @throws IllegalArgumentException If the heartbeat interval is not positive
      */
     public Builder withHeartbeatInterval(long heartbeatInterval) {
-      builder.withHeartbeatInterval(heartbeatInterval);
+      serverBuilder.withHeartbeatInterval(heartbeatInterval);
       return this;
     }
 
@@ -166,7 +181,7 @@ public class CopycatServer extends Copycat {
      * @throws IllegalArgumentException If the heartbeat interval is not positive
      */
     public Builder withHeartbeatInterval(long heartbeatInterval, TimeUnit unit) {
-      builder.withHeartbeatInterval(heartbeatInterval, unit);
+      serverBuilder.withHeartbeatInterval(heartbeatInterval, unit);
       return this;
     }
 
@@ -178,7 +193,7 @@ public class CopycatServer extends Copycat {
      * @throws IllegalArgumentException If the session timeout is not positive
      */
     public Builder withSessionTimeout(long sessionTimeout) {
-      builder.withSessionTimeout(sessionTimeout);
+      serverBuilder.withSessionTimeout(sessionTimeout);
       return this;
     }
 
@@ -191,7 +206,7 @@ public class CopycatServer extends Copycat {
      * @throws IllegalArgumentException If the session timeout is not positive
      */
     public Builder withSessionTimeout(long sessionTimeout, TimeUnit unit) {
-      builder.withSessionTimeout(sessionTimeout, unit);
+      serverBuilder.withSessionTimeout(sessionTimeout, unit);
       return this;
     }
 
@@ -203,7 +218,7 @@ public class CopycatServer extends Copycat {
      * @throws IllegalArgumentException If the keep alive interval is not positive
      */
     public Builder withKeepAliveInterval(long keepAliveInterval) {
-      builder.withKeepAliveInterval(keepAliveInterval);
+      clientBuilder.withKeepAliveInterval(keepAliveInterval);
       return this;
     }
 
@@ -216,7 +231,7 @@ public class CopycatServer extends Copycat {
      * @throws IllegalArgumentException If the keep alive interval is not positive
      */
     public Builder withKeepAliveInterval(long keepAliveInterval, TimeUnit unit) {
-      builder.withKeepAliveInterval(keepAliveInterval, unit);
+      clientBuilder.withKeepAliveInterval(keepAliveInterval, unit);
       return this;
     }
 
@@ -224,7 +239,7 @@ public class CopycatServer extends Copycat {
     public CopycatServer build() {
       ThreadFactory threadFactory = new CopycatThreadFactory("copycat-resource-%d");
       ScheduledExecutorService executor = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), threadFactory);
-      return new CopycatServer(builder.withStateMachine(new ResourceManager(executor)).build());
+      return new CopycatServer(clientBuilder.build(), serverBuilder.withStateMachine(new ResourceManager(executor)).build());
     }
   }
 

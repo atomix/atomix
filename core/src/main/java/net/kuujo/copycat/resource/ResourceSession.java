@@ -30,14 +30,14 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-class ResourceSession implements Session {
+public class ResourceSession implements Session {
   private final long resource;
   private final Session parent;
   private final Context context;
   private final Set<Listener> receiveListeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
   private ListenerContext<ResourceMessage<?>> listener;
 
-  ResourceSession(long resource, Session parent, Context context) {
+  public ResourceSession(long resource, Session parent, Context context) {
     this.resource = resource;
     this.parent = parent;
     this.context = context;

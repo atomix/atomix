@@ -139,19 +139,26 @@ public class LocalConnection implements Connection {
 
   @Override
   public CompletableFuture<Void> close() {
+    doClose();
+    connection.doClose();
+
     CompletableFuture<Void> future = new CompletableFuture<>();
-    connection.close();
+    getContext().execute(() -> {
+      future.complete(null);
+    });
+    return future;
+  }
+
+  /**
+   * Closes the connection.
+   */
+  private void doClose() {
     if (connections != null)
       connections.remove(this);
 
     for (Listener<Connection> closeListener : closeListeners) {
       context.execute(() -> closeListener.accept(this));
     }
-
-    getContext().execute(() -> {
-      future.complete(null);
-    });
-    return future;
   }
 
   /**

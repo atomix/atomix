@@ -19,7 +19,7 @@ import net.kuujo.copycat.Resource;
 import net.kuujo.copycat.Stateful;
 import net.kuujo.copycat.coordination.state.LockCommands;
 import net.kuujo.copycat.coordination.state.LockState;
-import net.kuujo.copycat.raft.Raft;
+import net.kuujo.copycat.resource.ResourceContext;
 
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
@@ -36,9 +36,9 @@ import java.util.function.Consumer;
 public class DistributedLock extends Resource {
   private final Queue<Consumer<Boolean>> queue = new ConcurrentLinkedQueue<>();
 
-  public DistributedLock(Raft protocol) {
-    super(protocol);
-    protocol.session().onReceive(this::receive);
+  public DistributedLock(ResourceContext context) {
+    super(context);
+    context.session().onReceive(this::receive);
   }
 
   /**

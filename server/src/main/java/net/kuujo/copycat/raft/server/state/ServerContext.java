@@ -15,22 +15,24 @@
  */
 package net.kuujo.copycat.raft.server.state;
 
-import net.kuujo.copycat.*;
-import net.kuujo.copycat.raft.client.state.ClientContext;
+import net.kuujo.copycat.ConfigurationException;
+import net.kuujo.copycat.Listener;
+import net.kuujo.copycat.ListenerContext;
+import net.kuujo.copycat.Listeners;
 import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.io.storage.Compaction;
 import net.kuujo.copycat.io.storage.Entry;
 import net.kuujo.copycat.io.storage.Log;
+import net.kuujo.copycat.io.transport.Connection;
+import net.kuujo.copycat.io.transport.Server;
+import net.kuujo.copycat.io.transport.Transport;
+import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.raft.protocol.*;
 import net.kuujo.copycat.raft.server.Commit;
 import net.kuujo.copycat.raft.server.RaftServer;
 import net.kuujo.copycat.raft.server.StateMachine;
-import net.kuujo.copycat.io.transport.Connection;
-import net.kuujo.copycat.io.transport.LocalConnection;
-import net.kuujo.copycat.io.transport.Server;
-import net.kuujo.copycat.io.transport.Transport;
 import net.kuujo.copycat.raft.server.storage.*;
+import net.kuujo.copycat.util.Managed;
 import net.kuujo.copycat.util.concurrent.ComposableFuture;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.Futures;
@@ -52,7 +54,7 @@ import java.util.function.Supplier;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ServerContext extends ClientContext {
+public class ServerContext implements Managed<Void> {
   private static final Logger LOGGER = LoggerFactory.getLogger(ServerContext.class);
   private final Listeners<RaftServer.State> listeners = new Listeners<>();
   private final Context context;
@@ -64,8 +66,6 @@ public class ServerContext extends ClientContext {
   private final Members members;
   private final Server server;
   private final ConnectionManager connections;
-  private final LocalConnection inbound;
-  private final LocalConnection outbound;
   private final SessionManager sessions;
   private AbstractState state;
   private final Map<Long, SessionContext> contexts = new HashMap<>();
@@ -73,6 +73,8 @@ public class ServerContext extends ClientContext {
   private long electionTimeout = 500;
   private long sessionTimeout = 5000;
   private long heartbeatInterval = 250;
+  private int leader;
+  private long term;
   private long lastApplied;
   private int lastVotedFor;
   private long commitIndex;
@@ -80,8 +82,6 @@ public class ServerContext extends ClientContext {
   private volatile boolean open;
 
   public ServerContext(int memberId, Members members, Transport transport, Log log, StateMachine stateMachine, Serializer serializer) {
-    super(members, transport, serializer);
-
     member = members.member(memberId);
     if (member == null) {
       throw new ConfigurationException("active member must be listed in members list");
@@ -104,10 +104,6 @@ public class ServerContext extends ClientContext {
     this.stateContext = new SingleThreadContext("copycat-server-" + member.id() + "-state-%d", serializer.clone());
     this.server = transport.server(UUID.randomUUID());
     this.connections = new ConnectionManager(transport.client(UUID.randomUUID()));
-    this.inbound = new LocalConnection(id, getContext());
-    this.outbound = new LocalConnection(id, super.getContext());
-    inbound.connect(outbound);
-    outbound.connect(inbound);
 
     log.compactor().filter(this::filter);
   }
@@ -423,33 +419,6 @@ public class ServerContext extends ClientContext {
    */
   void checkThread() {
     context.checkThread();
-  }
-
-  @Override
-  protected Member selectMember() {
-    return member;
-  }
-
-  @Override
-  protected CompletableFuture<Void> register(List<Member> members) {
-    return register(members, new CompletableFuture<>()).thenAccept(response -> {
-      setSessionId(response.session());
-    });
-  }
-
-  @Override
-  protected CompletableFuture<Void> keepAlive(List<Member> members) {
-    return keepAlive(members, new CompletableFuture<>()).thenAccept(response -> {
-      setVersion(response.version());
-    });
-  }
-
-  /**
-   * This method always returns a connection to the local state machine for servers.
-   */
-  @Override
-  protected CompletableFuture<Connection> getConnection(Member member) {
-    return CompletableFuture.completedFuture(outbound);
   }
 
   /**
@@ -896,26 +865,15 @@ public class ServerContext extends ClientContext {
       return Futures.exceptionalFuture(e);
     }
 
-    ComposableFuture<Void> future = new ComposableFuture<>();
+    CompletableFuture<Void> future = new CompletableFuture<>();
     context.execute(() -> {
       server.listen(address, this::handleConnect).thenRun(() -> {
         log.open(context);
         cluster.configure(0, members, Members.builder().build());
 
-        onStateChange(state -> {
-          if (state == RaftServer.State.FOLLOWER) {
-            super.open().whenCompleteAsync(future, context);
-          }
-        });
-
-        // Register handlers on the inbound local connection.
-        handleConnect(inbound);
-
-        // Set up client handlers.
-        connect(outbound);
-
         transition(JoinState.class);
         open = true;
+        future.complete(null);
       });
     });
     return future;
@@ -937,21 +895,18 @@ public class ServerContext extends ClientContext {
 
       onStateChange(state -> {
         if (state == RaftServer.State.INACTIVE) {
-          super.close().whenCompleteAsync((r1, e1) -> {
-            server.close().whenCompleteAsync((r2, e2) -> {
-              try {
-                log.close();
-              } catch (Exception e) {
-              }
+          server.close().whenCompleteAsync((r1, e1) -> {
+            try {
+              log.close();
+            } catch (Exception e) {
+            }
 
-              if (e1 != null) {
-                future.completeExceptionally(e1);
-              } else if (e2 != null) {
-                future.completeExceptionally(e2);
-              } else {
-                future.complete(null);
-              }
-            }, context);
+            context.close();
+            if (e1 != null) {
+              future.completeExceptionally(e1);
+            } else {
+              future.complete(null);
+            }
           }, context);
         }
       });

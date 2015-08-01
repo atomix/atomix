@@ -21,7 +21,7 @@ import net.kuujo.copycat.Stateful;
 import net.kuujo.copycat.collections.state.MapCommands;
 import net.kuujo.copycat.collections.state.MapState;
 import net.kuujo.copycat.raft.ConsistencyLevel;
-import net.kuujo.copycat.raft.Raft;
+import net.kuujo.copycat.resource.ResourceContext;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -36,8 +36,8 @@ import java.util.concurrent.TimeUnit;
 @Stateful(MapState.class)
 public class DistributedMap<K, V> extends Resource {
 
-  public DistributedMap(Raft protocol) {
-    super(protocol);
+  public DistributedMap(ResourceContext context) {
+    super(context);
   }
 
   /**

@@ -16,12 +16,12 @@
 package net.kuujo.copycat.raft.client.state;
 
 import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.raft.*;
-import net.kuujo.copycat.raft.protocol.*;
 import net.kuujo.copycat.io.transport.Client;
 import net.kuujo.copycat.io.transport.Connection;
 import net.kuujo.copycat.io.transport.Transport;
 import net.kuujo.copycat.io.transport.TransportException;
+import net.kuujo.copycat.raft.*;
+import net.kuujo.copycat.raft.protocol.*;
 import net.kuujo.copycat.util.Managed;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.Futures;
@@ -274,6 +274,22 @@ public class ClientContext implements Managed<Void> {
       throw new IllegalArgumentException("keep alive interval must be positive");
     this.keepAliveInterval = keepAliveInterval;
     return this;
+  }
+
+  /**
+   * Logs a request.
+   */
+  private <T extends Request<T>> T logRequest(T request, Member member) {
+    LOGGER.debug("Sending {} to {}", request, member);
+    return request;
+  }
+
+  /**
+   * Logs a response.
+   */
+  private <T extends Response<T>> T logResponse(T response, Member member) {
+    LOGGER.debug("Received {} from {}", response, member);
+    return response;
   }
 
   /**
@@ -625,11 +641,14 @@ public class ClientContext implements Managed<Void> {
       .withConnection(client.id())
       .build();
 
-    LOGGER.debug("Sending {} to {}", request, member);
     getConnection(member).thenAccept(connection -> {
       context.checkThread();
+      logRequest(request, member);
+
       connection.<RegisterRequest, RegisterResponse>send(request).whenComplete((response, error) -> {
         context.checkThread();
+        logResponse(response, member);
+
         if (error == null && response.status() == Response.Status.OK) {
           future.complete(response);
           LOGGER.debug("Registered new session: {}", getSessionId());
@@ -638,6 +657,7 @@ public class ClientContext implements Managed<Void> {
           setLeader(0);
           register(members, future);
         }
+        request.close();
       });
     });
     return future;
@@ -687,12 +707,15 @@ public class ClientContext implements Managed<Void> {
     KeepAliveRequest request = KeepAliveRequest.builder()
       .withSession(getSessionId())
       .build();
-    LOGGER.debug("Sending {} to {}", request, member);
     getConnection(member).thenAccept(connection -> {
       context.checkThread();
+      logRequest(request, member);
+
       if (isOpen()) {
         connection.<KeepAliveRequest, KeepAliveResponse>send(request).whenComplete((response, error) -> {
+          context.checkThread();
           if (isOpen()) {
+            logResponse(response, member);
             if (error == null) {
               if (response.status() == Response.Status.OK) {
                 future.complete(response);
@@ -703,6 +726,7 @@ public class ClientContext implements Managed<Void> {
               future.completeExceptionally(error);
             }
           }
+          request.close();
         });
       }
     });
@@ -775,6 +799,7 @@ public class ClientContext implements Managed<Void> {
 
       open = false;
       transport.close().whenCompleteAsync((result, error) -> {
+        context.close();
         if (error == null) {
           future.complete(null);
         } else {

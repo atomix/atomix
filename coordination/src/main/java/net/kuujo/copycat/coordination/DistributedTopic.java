@@ -21,7 +21,7 @@ import net.kuujo.copycat.Resource;
 import net.kuujo.copycat.Stateful;
 import net.kuujo.copycat.coordination.state.TopicCommands;
 import net.kuujo.copycat.coordination.state.TopicState;
-import net.kuujo.copycat.raft.Raft;
+import net.kuujo.copycat.resource.ResourceContext;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -37,9 +37,9 @@ public class DistributedTopic<T> extends Resource {
   private final List<TopicListenerContext<T>> listeners = new CopyOnWriteArrayList<>();
 
   @SuppressWarnings("unchecked")
-  public DistributedTopic(Raft protocol) {
-    super(protocol);
-    protocol.session().onReceive(message -> {
+  public DistributedTopic(ResourceContext context) {
+    super(context);
+    context.session().onReceive(message -> {
       for (TopicListenerContext<T> listener : listeners) {
         listener.accept((T) message);
       }

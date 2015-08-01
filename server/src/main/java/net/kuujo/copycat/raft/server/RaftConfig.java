@@ -26,12 +26,10 @@ class RaftConfig {
   private static final long DEFAULT_RAFT_ELECTION_TIMEOUT = 500;
   private static final long DEFAULT_RAFT_HEARTBEAT_INTERVAL = 150;
   private static final long DEFAULT_RAFT_SESSION_TIMEOUT = 5000;
-  private static final long DEFAULT_RAFT_KEEP_ALIVE_INTERVAL = 2000;
 
   private long electionTimeout = DEFAULT_RAFT_ELECTION_TIMEOUT;
   private long heartbeatInterval = DEFAULT_RAFT_HEARTBEAT_INTERVAL;
   private long sessionTimeout = DEFAULT_RAFT_SESSION_TIMEOUT;
-  private long keepAliveInterval = DEFAULT_RAFT_KEEP_ALIVE_INTERVAL;
 
   /**
    * Sets the Raft election timeout.
@@ -123,34 +121,6 @@ class RaftConfig {
    */
   public long getSessionTimeout() {
     return sessionTimeout;
-  }
-
-  /**
-   * Sets the client keep alive interval.
-   *
-   * @param keepAliveInterval The keep alive interval in milliseconds.
-   */
-  public void setKeepAliveInterval(long keepAliveInterval) {
-    this.keepAliveInterval = keepAliveInterval;
-  }
-
-  /**
-   * Sets the client keep alive interval.
-   *
-   * @param keepAliveInterval The keep alive interval.
-   * @param unit The keep alive interval time unit.
-   */
-  public void setKeepAliveInterval(long keepAliveInterval, TimeUnit unit) {
-    setKeepAliveInterval(unit.toMillis(keepAliveInterval));
-  }
-
-  /**
-   * Returns the client keep alive interval.
-   *
-   * @return The client keep alive interval in milliseconds.
-   */
-  public long getKeepAliveInterval() {
-    return keepAliveInterval;
   }
 
 }

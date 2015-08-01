@@ -21,7 +21,7 @@ import net.kuujo.copycat.Stateful;
 import net.kuujo.copycat.collections.state.SetCommands;
 import net.kuujo.copycat.collections.state.SetState;
 import net.kuujo.copycat.raft.ConsistencyLevel;
-import net.kuujo.copycat.raft.Raft;
+import net.kuujo.copycat.resource.ResourceContext;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -35,8 +35,8 @@ import java.util.concurrent.TimeUnit;
 @Stateful(SetState.class)
 public class DistributedSet<T> extends Resource {
 
-  public DistributedSet(Raft protocol) {
-    super(protocol);
+  public DistributedSet(ResourceContext context) {
+    super(context);
   }
 
   /**

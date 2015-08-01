@@ -15,16 +15,19 @@
  */
 package net.kuujo.copycat.raft.server;
 
-import net.kuujo.copycat.*;
+import net.kuujo.copycat.ConfigurationException;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.ServiceLoaderResolver;
-import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.io.storage.Log;
-import net.kuujo.copycat.raft.server.state.ServerContext;
 import net.kuujo.copycat.io.transport.Transport;
+import net.kuujo.copycat.raft.Member;
+import net.kuujo.copycat.raft.Members;
+import net.kuujo.copycat.raft.server.state.ServerContext;
 import net.kuujo.copycat.util.Managed;
 import net.kuujo.copycat.util.concurrent.Context;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -33,10 +36,10 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class RaftServer implements Raft, Managed<Raft> {
+public class RaftServer implements Managed<RaftServer> {
 
   /**
-   * Raft state types.
+   * Raft server state types.
    *
    * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
    */
@@ -89,7 +92,7 @@ public class RaftServer implements Raft, Managed<Raft> {
   }
 
   private final ServerContext context;
-  private CompletableFuture<Raft> openFuture;
+  private CompletableFuture<RaftServer> openFuture;
   private CompletableFuture<Void> closeFuture;
   private boolean open;
 
@@ -115,41 +118,33 @@ public class RaftServer implements Raft, Managed<Raft> {
     return context.getLeader();
   }
 
-  @Override
+  /**
+   * Returns the server execution context.
+   * <p>
+   * The execution context is the event loop that this server uses to communicate other Raft servers.
+   * Implementations must guarantee that all asynchronous {@link java.util.concurrent.CompletableFuture} callbacks are
+   * executed on a single thread via the returned {@link net.kuujo.copycat.util.concurrent.Context}.
+   * <p>
+   * The {@link net.kuujo.copycat.util.concurrent.Context} can also be used to access the Raft server's internal
+   * {@link net.kuujo.copycat.io.serializer.Serializer serializer} via {@link Context#serializer()}.
+   *
+   * @return The Raft context.
+   */
   public Context context() {
     return context.getContext();
   }
 
-  @Override
-  public Session session() {
-    return context.getSession();
-  }
-
   /**
-   * Returns the Raft state.
+   * Returns the Raft server state.
    *
-   * @return The Raft state.
+   * @return The Raft server state.
    */
   public State state() {
     return context.getState();
   }
 
   @Override
-  public <T> CompletableFuture<T> submit(Command<T> command) {
-    if (!open)
-      throw new IllegalStateException("protocol not open");
-    return context.submit(command);
-  }
-
-  @Override
-  public <T> CompletableFuture<T> submit(Query<T> query) {
-    if (!open)
-      throw new IllegalStateException("protocol not open");
-    return context.submit(query);
-  }
-
-  @Override
-  public CompletableFuture<Raft> open() {
+  public CompletableFuture<RaftServer> open() {
     if (open)
       return CompletableFuture.completedFuture(this);
 
@@ -210,7 +205,11 @@ public class RaftServer implements Raft, Managed<Raft> {
     return !open;
   }
 
-  @Override
+  /**
+   * Deletes the Raft server and its logs.
+   *
+   * @return A completable future to be completed once the server has been deleted.
+   */
   public CompletableFuture<Void> delete() {
     return close().thenRun(context::delete);
   }
@@ -218,7 +217,7 @@ public class RaftServer implements Raft, Managed<Raft> {
   /**
    * Raft server builder.
    */
-  public static class Builder extends Raft.Builder<Builder, RaftServer> {
+  public static class Builder extends net.kuujo.copycat.util.Builder<RaftServer> {
     private Transport transport;
     private Log log;
     private Serializer serializer;
@@ -241,7 +240,12 @@ public class RaftServer implements Raft, Managed<Raft> {
       members = null;
     }
 
-    @Override
+    /**
+     * Sets the server transport.
+     *
+     * @param transport The server transport.
+     * @return The server builder.
+     */
     public Builder withTransport(Transport transport) {
       this.transport = transport;
       return this;
@@ -256,6 +260,34 @@ public class RaftServer implements Raft, Managed<Raft> {
     public Builder withMemberId(int memberId) {
       this.memberId = memberId;
       return this;
+    }
+
+    /**
+     * Sets the Raft members.
+     * <p>
+     * The provided set of members will be used to connect to the Raft cluster. The members list does not have to represent
+     * the complete list of servers in the cluster, but it must have at least one reachable member.
+     *
+     * @param members The Raft members.
+     * @return The Raft builder.
+     */
+    public Builder withMembers(Member... members) {
+      if (members == null)
+        throw new NullPointerException("members cannot be null");
+      return withMembers(Arrays.asList(members));
+    }
+
+    /**
+     * Sets the Raft members.
+     * <p>
+     * The provided set of members will be used to connect to the Raft cluster. The members list does not have to represent
+     * the complete list of servers in the cluster, but it must have at least one reachable member.
+     *
+     * @param members The Raft members.
+     * @return The Raft builder.
+     */
+    public Builder withMembers(Collection<Member> members) {
+      return withMembers(Members.builder().withMembers(members).build());
     }
 
     /**
@@ -377,31 +409,6 @@ public class RaftServer implements Raft, Managed<Raft> {
       return this;
     }
 
-    /**
-     * Sets the Raft keep alive interval, returning the Raft configuration for method chaining.
-     *
-     * @param keepAliveInterval The Raft keep alive interval in milliseconds.
-     * @return The Raft configuration.
-     * @throws IllegalArgumentException If the keep alive interval is not positive
-     */
-    public Builder withKeepAliveInterval(long keepAliveInterval) {
-      config.setKeepAliveInterval(keepAliveInterval);
-      return this;
-    }
-
-    /**
-     * Sets the Raft keep alive interval, returning the Raft configuration for method chaining.
-     *
-     * @param keepAliveInterval The Raft keep alive interval.
-     * @param unit The keep alive interval unit.
-     * @return The Raft configuration.
-     * @throws IllegalArgumentException If the keep alive interval is not positive
-     */
-    public Builder withKeepAliveInterval(long keepAliveInterval, TimeUnit unit) {
-      config.setKeepAliveInterval(keepAliveInterval, unit);
-      return this;
-    }
-
     @Override
     public RaftServer build() {
       if (stateMachine == null)
@@ -424,8 +431,7 @@ public class RaftServer implements Raft, Managed<Raft> {
       ServerContext context = (ServerContext) new ServerContext(memberId, members, transport, log, stateMachine, serializer)
         .setHeartbeatInterval(config.getHeartbeatInterval())
         .setElectionTimeout(config.getElectionTimeout())
-        .setSessionTimeout(config.getSessionTimeout())
-        .setKeepAliveInterval(config.getKeepAliveInterval());
+        .setSessionTimeout(config.getSessionTimeout());
       return new RaftServer(context);
     }
   }

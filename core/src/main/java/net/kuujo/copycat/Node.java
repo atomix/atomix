@@ -75,7 +75,7 @@ public class Node {
    * @return A list of children for this node.
    */
   public CompletableFuture<List<Node>> children() {
-    return copycat.raft.submit(PathChildren.builder()
+    return copycat.client.submit(PathChildren.builder()
       .withPath(path)
       .build())
       .thenApply(children -> {

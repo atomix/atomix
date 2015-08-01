@@ -18,59 +18,83 @@ package net.kuujo.copycat.resource;
 import net.kuujo.copycat.manager.DeleteResource;
 import net.kuujo.copycat.raft.Command;
 import net.kuujo.copycat.raft.Query;
-import net.kuujo.copycat.raft.Raft;
 import net.kuujo.copycat.raft.Session;
+import net.kuujo.copycat.raft.client.RaftClient;
 import net.kuujo.copycat.util.concurrent.Context;
 
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Resource protocol.
+ * Resource context.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ResourceProtocol implements Raft {
+public class ResourceContext {
   private final long resource;
-  private final Raft protocol;
+  private final RaftClient client;
   private final ResourceSession session;
 
-  public ResourceProtocol(long resource, Raft protocol) {
+  public ResourceContext(long resource, RaftClient client) {
     this.resource = resource;
-    this.protocol = protocol;
-    this.session = new ResourceSession(resource, protocol.session(), protocol.context());
+    this.client = client;
+    this.session = new ResourceSession(resource, client.session(), client.context());
   }
 
-  @Override
+  /**
+   * Returns the resource execution context.
+   *
+   * @return The resource execution context.
+   */
   public Context context() {
-    return protocol.context();
+    return client.context();
   }
 
-  @Override
+  /**
+   * Returns the resource session.
+   *
+   * @return The resource session.
+   */
   public Session session() {
     return session;
   }
 
-  @Override
+  /**
+   * Submits a resource command.
+   *
+   * @param command The command to submit.
+   * @param <T> The command output type.
+   * @return A completable future to be completed with the command result.
+   */
   @SuppressWarnings("unchecked")
   public <T> CompletableFuture<T> submit(Command<T> command) {
-    return protocol.submit(ResourceCommand.builder()
+    return client.submit(ResourceCommand.builder()
       .withResource(resource)
       .withCommand(command)
       .build());
   }
 
-  @Override
+  /**
+   * Submits a resource query.
+   *
+   * @param query The query to submit.
+   * @param <T> The query output type.
+   * @return A completable future to be completed with the query result.
+   */
   @SuppressWarnings("unchecked")
   public <T> CompletableFuture<T> submit(Query<T> query) {
-    return protocol.submit(ResourceQuery.builder()
+    return client.submit(ResourceQuery.builder()
       .withResource(resource)
       .withQuery(query)
       .build());
   }
 
-  @Override
+  /**
+   * Deletes the resource.
+   *
+   * @return A completable future to be called once the resource has been deleted.
+   */
   public CompletableFuture<Void> delete() {
-    return protocol.submit(DeleteResource.builder()
+    return client.submit(DeleteResource.builder()
       .withResource(resource)
       .build())
       .thenApply(deleted -> null);

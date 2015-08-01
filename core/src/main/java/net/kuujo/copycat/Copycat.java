@@ -19,9 +19,9 @@ import net.kuujo.copycat.manager.CreatePath;
 import net.kuujo.copycat.manager.CreateResource;
 import net.kuujo.copycat.manager.DeletePath;
 import net.kuujo.copycat.manager.PathExists;
-import net.kuujo.copycat.raft.Raft;
+import net.kuujo.copycat.raft.client.RaftClient;
 import net.kuujo.copycat.raft.server.StateMachine;
-import net.kuujo.copycat.resource.ResourceProtocol;
+import net.kuujo.copycat.resource.ResourceContext;
 import net.kuujo.copycat.util.Managed;
 
 import java.lang.reflect.Constructor;
@@ -45,20 +45,20 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>
  * {@link net.kuujo.copycat.Resource} implementations serve as a user-friendly interface through which to submit
  * {@link net.kuujo.copycat.raft.Command commands} and {@link net.kuujo.copycat.raft.Query queries} to the underlying
- * {@link net.kuujo.copycat.raft.Raft} client or server.
+ * {@link net.kuujo.copycat.raft.client.RaftClient} client.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class Copycat implements Managed<Copycat> {
   static final String PATH_SEPARATOR = "/";
-  protected final Raft raft;
+  protected final RaftClient client;
   private final Map<Class<? extends Resource>, Class<? extends StateMachine>> typeCache = new ConcurrentHashMap<>();
   private final Map<String, Node> nodes = new ConcurrentHashMap<>();
   private final ResourceFactory factory = new ResourceFactory();
-  private final Map<Long, ResourceProtocol> resources = new ConcurrentHashMap<>();
+  private final Map<Long, ResourceContext> resources = new ConcurrentHashMap<>();
 
-  protected <T extends Raft & Managed<Raft>> Copycat(T raft) {
-    this.raft = raft;
+  protected Copycat(RaftClient client) {
+    this.client = client;
   }
 
   /**
@@ -89,7 +89,7 @@ public abstract class Copycat implements Managed<Copycat> {
    * @return A completable future indicating whether the given path exists.
    */
   public CompletableFuture<Boolean> exists(String path) {
-    return raft.submit(new PathExists(path));
+    return client.submit(new PathExists(path));
   }
 
   /**
@@ -104,7 +104,7 @@ public abstract class Copycat implements Managed<Copycat> {
    * @return A completable future to be completed once the node has been created.
    */
   public CompletableFuture<Node> create(String path) {
-    return raft.submit(CreatePath.builder()
+    return client.submit(CreatePath.builder()
       .withPath(path)
       .build())
       .thenApply(result -> node(path));
@@ -140,7 +140,7 @@ public abstract class Copycat implements Managed<Copycat> {
       throw new IllegalArgumentException("invalid resource class: " + type);
     }
 
-    return raft.submit(CreateResource.builder()
+    return client.submit(CreateResource.builder()
       .withPath(path)
       .withType(stateMachine)
       .build())
@@ -157,7 +157,7 @@ public abstract class Copycat implements Managed<Copycat> {
    * @return A completable future to be completed once the node has been deleted.
    */
   public CompletableFuture<Copycat> delete(String path) {
-    return raft.submit(DeletePath.builder()
+    return client.submit(DeletePath.builder()
       .withPath(path)
       .build())
       .thenApply(result -> this);
@@ -166,25 +166,25 @@ public abstract class Copycat implements Managed<Copycat> {
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<Copycat> open() {
-    return ((Managed<Raft>) raft).open().thenApply(v -> this);
+    return client.open().thenApply(v -> this);
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public boolean isOpen() {
-    return ((Managed<Raft>) raft).isOpen();
+    return client.isOpen();
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<Void> close() {
-    return ((Managed<Raft>) raft).close();
+    return client.close();
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public boolean isClosed() {
-    return ((Managed<Raft>) raft).isClosed();
+    return client.isClosed();
   }
 
   /**
@@ -200,8 +200,8 @@ public abstract class Copycat implements Managed<Copycat> {
     @SuppressWarnings("unchecked")
     private <T extends Resource> T createResource(Class<? super T> type, long id) {
       try {
-        Constructor constructor = type.getConstructor(Raft.class);
-        return (T) constructor.newInstance(resources.computeIfAbsent(id, i -> new ResourceProtocol(id, raft)));
+        Constructor constructor = type.getConstructor(ResourceContext.class);
+        return (T) constructor.newInstance(resources.computeIfAbsent(id, i -> new ResourceContext(id, client)));
       } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
         throw new ResourceException("failed to instantiate resource: " + type, e);
       }

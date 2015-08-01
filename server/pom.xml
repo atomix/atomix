@@ -34,12 +34,7 @@
     </dependency>
     <dependency>
       <groupId>net.kuujo.copycat</groupId>
-      <artifactId>copycat-local</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>net.kuujo.copycat</groupId>
-      <artifactId>copycat-client</artifactId>
+      <artifactId>copycat-protocol</artifactId>
       <version>${project.version}</version>
     </dependency>
   </dependencies>

@@ -16,9 +16,8 @@
 package net.kuujo.copycat;
 
 import net.kuujo.copycat.raft.Command;
-import net.kuujo.copycat.raft.Operation;
 import net.kuujo.copycat.raft.Query;
-import net.kuujo.copycat.raft.Raft;
+import net.kuujo.copycat.resource.ResourceContext;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -28,21 +27,10 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class Resource {
-  protected final Raft protocol;
+  protected final ResourceContext context;
 
-  protected Resource(Raft protocol) {
-    this.protocol = protocol;
-  }
-
-  /**
-   * Submits an operation to the Raft protocol.
-   *
-   * @param operation The operation to submit.
-   * @param <T> The operation result type.
-   * @return A completable future to be completed with the operation result.
-   */
-  protected <T> CompletableFuture<T> submit(Operation<T> operation) {
-    return protocol.submit(operation);
+  protected Resource(ResourceContext context) {
+    this.context = context;
   }
 
   /**
@@ -53,7 +41,7 @@ public abstract class Resource {
    * @return A completable future to be completed with the command result.
    */
   protected <T> CompletableFuture<T> submit(Command<T> command) {
-    return protocol.submit(command);
+    return context.submit(command);
   }
 
   /**
@@ -64,7 +52,7 @@ public abstract class Resource {
    * @return A completable future to be completed with the query result.
    */
   protected <T> CompletableFuture<T> submit(Query<T> query) {
-    return protocol.submit(query);
+    return context.submit(query);
   }
 
   /**
@@ -73,7 +61,7 @@ public abstract class Resource {
    * @return A completable future to be called once the resource has been deleted.
    */
   public CompletableFuture<Void> delete() {
-    return protocol.delete();
+    return context.delete();
   }
 
 }

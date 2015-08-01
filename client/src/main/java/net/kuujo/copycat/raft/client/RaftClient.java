@@ -15,14 +15,16 @@
  */
 package net.kuujo.copycat.raft.client;
 
-import net.kuujo.copycat.raft.client.state.ClientContext;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.ServiceLoaderResolver;
-import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.io.transport.Transport;
+import net.kuujo.copycat.raft.*;
+import net.kuujo.copycat.raft.client.state.ClientContext;
 import net.kuujo.copycat.util.Managed;
 import net.kuujo.copycat.util.concurrent.Context;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -31,7 +33,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class RaftClient implements Raft, Managed<Raft> {
+public class RaftClient implements Managed<RaftClient> {
 
   /**
    * Returns a new Raft client builder.
@@ -43,7 +45,7 @@ public class RaftClient implements Raft, Managed<Raft> {
   }
 
   private final ClientContext context;
-  private CompletableFuture<Raft> openFuture;
+  private CompletableFuture<RaftClient> openFuture;
   private CompletableFuture<Void> closeFuture;
   private volatile boolean open;
 
@@ -51,24 +53,95 @@ public class RaftClient implements Raft, Managed<Raft> {
     this.context = context;
   }
 
-  @Override
+  /**
+   * Returns the client execution context.
+   * <p>
+   * The execution context is the event loop that this client uses to communicate Raft servers.
+   * Implementations must guarantee that all asynchronous {@link java.util.concurrent.CompletableFuture} callbacks are
+   * executed on a single thread via the returned {@link net.kuujo.copycat.util.concurrent.Context}.
+   * <p>
+   * The {@link net.kuujo.copycat.util.concurrent.Context} can also be used to access the Raft client's internal
+   * {@link net.kuujo.copycat.io.serializer.Serializer serializer} via {@link Context#serializer()}.
+   *
+   * @return The Raft context.
+   */
   public Context context() {
     return context.getContext();
   }
 
-  @Override
+  /**
+   * Returns the client session.
+   * <p>
+   * The returned {@link Session} instance will remain constant throughout the lifetime of this client. Once the instance
+   * is opened, the session will have been registered with the Raft cluster and listeners registered via
+   * {@link Session#onOpen(net.kuujo.copycat.Listener)} will be called. In the event of a session expiration, listeners
+   * registered via {@link Session#onClose(net.kuujo.copycat.Listener)} will be called.
+   *
+   * @return The client session.
+   */
   public Session session() {
     return context.getSession();
   }
 
-  @Override
+  /**
+   * Submits an operation to the Raft cluster.
+   * <p>
+   * This method is provided for convenience. The submitted {@link Operation} must be an instance
+   * of {@link Command} or {@link Query}.
+   *
+   * @param operation The operation to submit.
+   * @param <T> The operation result type.
+   * @return A completable future to be completed with the operation result.
+   * @throws java.lang.IllegalArgumentException If the {@link Operation} is not an instance of
+   * either {@link Command} or {@link Query}.
+   */
+  public <T> CompletableFuture<T> submit(Operation<T> operation) {
+    if (operation instanceof Command) {
+      return submit((Command<T>) operation);
+    } else if (operation instanceof Query) {
+      return submit((Query<T>) operation);
+    } else {
+      throw new IllegalArgumentException("unknown operation type");
+    }
+  }
+
+  /**
+   * Submits a command to the Raft cluster.
+   * <p>
+   * Commands are used to alter state machine state. All commands will be forwarded to the current Raft leader.
+   * Once a leader receives the command, it will write the command to its internal {@link net.kuujo.copycat.io.storage.Log} and
+   * replicate it to a majority of the cluster. Once the command has been replicated to a majority of the cluster, it
+   * will apply the command to its state machine and respond with the result.
+   * <p>
+   * Once the command has been applied to a server state machine, the returned {@link java.util.concurrent.CompletableFuture}
+   * will be completed with the state machine output.
+   *
+   * @param command The command to submit.
+   * @param <T> The command result type.
+   * @return A completable future to be completed with the command result.
+   */
   public <T> CompletableFuture<T> submit(Command<T> command) {
     if (!open)
       throw new IllegalStateException("protocol not open");
     return context.submit(command);
   }
 
-  @Override
+  /**
+   * Submits a query to the Raft cluster.
+   * <p>
+   * Queries are used to read state machine state. The behavior of query submissions is primarily dependent on the
+   * query's {@link ConsistencyLevel}. For {@link ConsistencyLevel#LINEARIZABLE}
+   * and {@link ConsistencyLevel#LINEARIZABLE_LEASE} consistency levels, queries will be forwarded
+   * to the Raft leader. For lower consistency levels, queries are allowed to read from followers. All queries are executed
+   * by applying queries to an internal server state machine.
+   * <p>
+   * Once the query has been applied to a server state machine, the returned {@link java.util.concurrent.CompletableFuture}
+   * will be completed with the state machine output.
+   *
+   * @param query The query to submit.
+   * @param <T> The query result type.
+   * @return A completable future to be completed with the query result.
+   */
   public <T> CompletableFuture<T> submit(Query<T> query) {
     if (!open)
       throw new IllegalStateException("protocol not open");
@@ -76,7 +149,7 @@ public class RaftClient implements Raft, Managed<Raft> {
   }
 
   @Override
-  public CompletableFuture<Raft> open() {
+  public CompletableFuture<RaftClient> open() {
     if (open)
       return CompletableFuture.completedFuture(this);
 
@@ -137,15 +210,10 @@ public class RaftClient implements Raft, Managed<Raft> {
     return !open;
   }
 
-  @Override
-  public CompletableFuture<Void> delete() {
-    return CompletableFuture.completedFuture(null);
-  }
-
   /**
    * Raft client builder.
    */
-  public static class Builder extends Raft.Builder<Builder, RaftClient> {
+  public static class Builder extends net.kuujo.copycat.util.Builder<RaftClient> {
     private Transport transport;
     private Serializer serializer;
     private long keepAliveInterval = 1000;
@@ -162,7 +230,12 @@ public class RaftClient implements Raft, Managed<Raft> {
       members = null;
     }
 
-    @Override
+    /**
+     * Sets the client transport.
+     *
+     * @param transport The client transport.
+     * @return The client builder.
+     */
     public Builder withTransport(Transport transport) {
       this.transport = transport;
       return this;
@@ -204,10 +277,41 @@ public class RaftClient implements Raft, Managed<Raft> {
     }
 
     /**
-     * Sets the client seed members.
+     * Sets the Raft members.
+     * <p>
+     * The provided set of members will be used to connect to the Raft cluster. The members list does not have to represent
+     * the complete list of servers in the cluster, but it must have at least one reachable member.
      *
-     * @param members The client seed members.
-     * @return The client builder.
+     * @param members The Raft members.
+     * @return The Raft builder.
+     */
+    public Builder withMembers(Member... members) {
+      if (members == null)
+        throw new NullPointerException("members cannot be null");
+      return withMembers(Arrays.asList(members));
+    }
+
+    /**
+     * Sets the Raft members.
+     * <p>
+     * The provided set of members will be used to connect to the Raft cluster. The members list does not have to represent
+     * the complete list of servers in the cluster, but it must have at least one reachable member.
+     *
+     * @param members The Raft members.
+     * @return The Raft builder.
+     */
+    public Builder withMembers(Collection<Member> members) {
+      return withMembers(Members.builder().withMembers(members).build());
+    }
+
+    /**
+     * Sets the Raft members.
+     * <p>
+     * The provided set of members will be used to connect to the Raft cluster. The members list does not have to represent
+     * the complete list of servers in the cluster, but it must have at least one reachable member.
+     *
+     * @param members The Raft members.
+     * @return The Raft builder.
      */
     public Builder withMembers(Members members) {
       this.members = members;
