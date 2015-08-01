@@ -15,12 +15,12 @@
  */
 package net.kuujo.copycat.raft.protocol;
 
-import net.kuujo.copycat.util.BuilderPool;
-import net.kuujo.copycat.raft.RaftError;
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.raft.RaftError;
+import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.util.ReferenceManager;
 
 import java.util.Objects;
@@ -78,7 +78,6 @@ public class QueryResponse extends ClientResponse<QueryResponse> {
     status = Status.forId(buffer.readByte());
     if (status == Status.OK) {
       error = null;
-      version = buffer.readLong();
       result = serializer.readObject(buffer);
     } else {
       error = RaftError.forId(buffer.readByte());
@@ -89,7 +88,6 @@ public class QueryResponse extends ClientResponse<QueryResponse> {
   public void writeObject(BufferOutput buffer, Serializer serializer) {
     buffer.writeByte(status.id());
     if (status == Status.OK) {
-      buffer.writeLong(version);
       serializer.writeObject(result, buffer);
     } else {
       buffer.writeByte(error.id());
@@ -106,7 +104,6 @@ public class QueryResponse extends ClientResponse<QueryResponse> {
     if (object instanceof QueryResponse) {
       QueryResponse response = (QueryResponse) object;
       return response.status == status
-        && response.version == version
         && ((response.result == null && result == null)
         || response.result != null && result != null && response.result.equals(result));
     }
@@ -115,7 +112,7 @@ public class QueryResponse extends ClientResponse<QueryResponse> {
 
   @Override
   public String toString() {
-    return String.format("%s[status=%s, version=%d, result=%s]", getClass().getSimpleName(), status, version, result);
+    return String.format("%s[status=%s, result=%s]", getClass().getSimpleName(), status, result);
   }
 
   /**

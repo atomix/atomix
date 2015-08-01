@@ -15,12 +15,12 @@
  */
 package net.kuujo.copycat.raft.protocol;
 
-import net.kuujo.copycat.util.BuilderPool;
-import net.kuujo.copycat.raft.Query;
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.raft.Query;
+import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.util.ReferenceManager;
 
 import java.util.Objects;
@@ -53,7 +53,6 @@ public class QueryRequest extends SessionRequest<QueryRequest> {
     return POOL.acquire(request);
   }
 
-  private long version;
   private Query query;
 
   public QueryRequest(ReferenceManager<QueryRequest> referenceManager) {
@@ -63,15 +62,6 @@ public class QueryRequest extends SessionRequest<QueryRequest> {
   @Override
   public Type type() {
     return Type.QUERY;
-  }
-
-  /**
-   * Returns the request version.
-   *
-   * @return The request version.
-   */
-  public long version() {
-    return version;
   }
 
   /**
@@ -86,14 +76,12 @@ public class QueryRequest extends SessionRequest<QueryRequest> {
   @Override
   public void readObject(BufferInput buffer, Serializer serializer) {
     super.readObject(buffer, serializer);
-    version = buffer.readLong();
     query = serializer.readObject(buffer);
   }
 
   @Override
   public void writeObject(BufferOutput buffer, Serializer serializer) {
     super.writeObject(buffer, serializer);
-    buffer.writeLong(version);
     serializer.writeObject(query, buffer);
   }
 
@@ -126,19 +114,6 @@ public class QueryRequest extends SessionRequest<QueryRequest> {
       super.reset();
       request.version = 0;
       request.query = null;
-    }
-
-    /**
-     * Sets the request version.
-     *
-     * @param version The request version.
-     * @return The request builder.
-     */
-    public Builder withVersion(long version) {
-      if (version < 0)
-        throw new IllegalArgumentException("version must be positive");
-      request.version = version;
-      return this;
     }
 
     /**

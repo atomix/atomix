@@ -15,12 +15,12 @@
  */
 package net.kuujo.copycat.raft.protocol;
 
-import net.kuujo.copycat.util.BuilderPool;
-import net.kuujo.copycat.raft.Command;
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.raft.Command;
+import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.util.ReferenceManager;
 
 import java.util.Objects;
@@ -54,7 +54,6 @@ public class CommandRequest extends SessionRequest<CommandRequest> {
   }
 
   private long request;
-  private long response;
   private Command command;
 
   public CommandRequest(ReferenceManager<CommandRequest> referenceManager) {
@@ -76,15 +75,6 @@ public class CommandRequest extends SessionRequest<CommandRequest> {
   }
 
   /**
-   * Returns the command response ID.
-   *
-   * @return The command response ID.
-   */
-  public long response() {
-    return response;
-  }
-
-  /**
    * Returns the command.
    *
    * @return The command.
@@ -97,14 +87,13 @@ public class CommandRequest extends SessionRequest<CommandRequest> {
   public void readObject(BufferInput buffer, Serializer serializer) {
     super.readObject(buffer, serializer);
     request = buffer.readLong();
-    response = buffer.readLong();
     command = serializer.readObject(buffer);
   }
 
   @Override
   public void writeObject(BufferOutput buffer, Serializer serializer) {
     super.writeObject(buffer, serializer);
-    buffer.writeLong(request).writeLong(response);
+    buffer.writeLong(request);
     serializer.writeObject(command, buffer);
   }
 
@@ -120,7 +109,7 @@ public class CommandRequest extends SessionRequest<CommandRequest> {
 
   @Override
   public String toString() {
-    return String.format("%s[session=%d, command=%s]", getClass().getSimpleName(), session, command);
+    return String.format("%s[session=%d, request=%d, version=%d, command=%s]", getClass().getSimpleName(), session, request, version, command);
   }
 
   /**
@@ -136,7 +125,7 @@ public class CommandRequest extends SessionRequest<CommandRequest> {
     protected void reset() {
       super.reset();
       request.request = 0;
-      request.response = 0;
+      request.version = 0;
       request.command = null;
     }
 
@@ -150,19 +139,6 @@ public class CommandRequest extends SessionRequest<CommandRequest> {
       if (request <= 0)
         throw new IllegalArgumentException("request must be positive");
       this.request.request = request;
-      return this;
-    }
-
-    /**
-     * Sets the response ID.
-     *
-     * @param response The response ID.
-     * @return The request builder.
-     */
-    public Builder withResponse(long response) {
-      if (response < 0)
-        throw new IllegalArgumentException("response must be positive");
-      request.response = response;
       return this;
     }
 
@@ -186,8 +162,8 @@ public class CommandRequest extends SessionRequest<CommandRequest> {
         throw new IllegalArgumentException("session must be positive");
       if (request.request <= 0)
         throw new IllegalArgumentException("request must be positive");
-      if (request.response < 0)
-        throw new IllegalArgumentException("response must be positive");
+      if (request.version < 0)
+        throw new IllegalArgumentException("version must be positive");
       if (request.command == null)
         throw new NullPointerException("command cannot be null");
       return request;

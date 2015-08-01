@@ -304,7 +304,7 @@ class LeaderState extends ActiveState {
       entry.setTerm(term)
         .setSession(request.session())
         .setRequest(request.request())
-        .setResponse(request.response())
+        .setResponse(request.version())
         .setTimestamp(timestamp)
         .setCommand(command);
       index = context.getLog().appendEntry(entry);
@@ -432,13 +432,11 @@ class LeaderState extends ActiveState {
    * Applies a query to the state machine.
    */
   private CompletableFuture<QueryResponse> applyQuery(QueryEntry entry, CompletableFuture<QueryResponse> future) {
-    long version = context.getLastApplied();
     context.apply(entry).whenCompleteAsync((result, error) -> {
       if (isOpen()) {
         if (error == null) {
           future.complete(logResponse(QueryResponse.builder()
             .withStatus(Response.Status.OK)
-            .withVersion(version)
             .withResult(result)
             .build()));
         } else if (error instanceof RaftException) {
@@ -537,7 +535,6 @@ class LeaderState extends ActiveState {
       if (isOpen()) {
         if (commitError == null) {
           KeepAliveEntry entry = context.getLog().getEntry(index);
-          long version = context.getLastApplied();
           applyEntry(entry).whenCompleteAsync((sessionResult, sessionError) -> {
             if (isOpen()) {
               if (sessionError == null) {
@@ -545,7 +542,6 @@ class LeaderState extends ActiveState {
                   .withStatus(Response.Status.OK)
                   .withLeader(context.getMember().id())
                   .withTerm(context.getTerm())
-                  .withVersion(version)
                   .withMembers(context.getCluster().buildActiveMembers())
                   .build()));
               } else if (sessionError instanceof RaftException) {

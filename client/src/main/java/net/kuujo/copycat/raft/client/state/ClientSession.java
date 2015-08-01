@@ -18,11 +18,11 @@ package net.kuujo.copycat.raft.client.state;
 import net.kuujo.copycat.Listener;
 import net.kuujo.copycat.ListenerContext;
 import net.kuujo.copycat.Listeners;
+import net.kuujo.copycat.io.transport.Connection;
 import net.kuujo.copycat.raft.Session;
 import net.kuujo.copycat.raft.protocol.PublishRequest;
 import net.kuujo.copycat.raft.protocol.PublishResponse;
 import net.kuujo.copycat.raft.protocol.Response;
-import net.kuujo.copycat.io.transport.Connection;
 import net.kuujo.copycat.util.concurrent.Context;
 
 import java.util.UUID;
@@ -51,6 +51,8 @@ class ClientSession implements Session {
   private volatile State state = State.CLOSED;
   private volatile long id;
   private volatile UUID connectionId;
+  private long request;
+  private long version;
 
   public ClientSession(Context context) {
     this.context = context;
@@ -66,6 +68,27 @@ class ClientSession implements Session {
    */
   void connect(Connection connection) {
     connection.handler(PublishRequest.class, this::handlePublish);
+  }
+
+  /**
+   * Returns the next session request sequence number.
+   */
+  long nextRequest() {
+    return ++request;
+  }
+
+  /**
+   * Sets the session version number.
+   */
+  void setVersion(long version) {
+    this.version = Math.max(this.version, version);
+  }
+
+  /**
+   * Returns the session version number.
+   */
+  long getVersion() {
+    return version;
   }
 
   @Override

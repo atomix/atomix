@@ -15,11 +15,11 @@
  */
 package net.kuujo.copycat.raft.protocol;
 
-import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.util.ReferenceManager;
 
 import java.util.Objects;
@@ -31,7 +31,7 @@ import java.util.UUID;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @SerializeWith(id=272)
-public class RegisterRequest extends ClientRequest<RegisterRequest> {
+public class RegisterRequest extends AbstractRequest<RegisterRequest> {
   private static final BuilderPool<Builder, RegisterRequest> POOL = new BuilderPool<>(Builder::new);
 
   /**
@@ -91,7 +91,7 @@ public class RegisterRequest extends ClientRequest<RegisterRequest> {
   /**
    * Register client request builder.
    */
-  public static class Builder extends ClientRequest.Builder<Builder, RegisterRequest> {
+  public static class Builder extends AbstractRequest.Builder<Builder, RegisterRequest> {
 
     protected Builder(BuilderPool<Builder, RegisterRequest> pool) {
       super(pool, RegisterRequest::new);

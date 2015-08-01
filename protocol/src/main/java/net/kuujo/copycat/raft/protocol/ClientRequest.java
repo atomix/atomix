@@ -15,6 +15,9 @@
  */
 package net.kuujo.copycat.raft.protocol;
 
+import net.kuujo.copycat.io.BufferInput;
+import net.kuujo.copycat.io.BufferOutput;
+import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.util.ReferenceFactory;
 import net.kuujo.copycat.util.ReferenceManager;
@@ -25,9 +28,29 @@ import net.kuujo.copycat.util.ReferenceManager;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class ClientRequest<T extends ClientRequest<T>> extends AbstractRequest<T> {
+  protected long version;
 
   public ClientRequest(ReferenceManager<T> referenceManager) {
     super(referenceManager);
+  }
+
+  /**
+   * Returns the response version.
+   *
+   * @return The response version.
+   */
+  public long version() {
+    return version;
+  }
+
+  @Override
+  public void writeObject(BufferOutput buffer, Serializer serializer) {
+    buffer.writeLong(version);
+  }
+
+  @Override
+  public void readObject(BufferInput buffer, Serializer serializer) {
+    version = buffer.readLong();
   }
 
   /**
@@ -36,6 +59,24 @@ public abstract class ClientRequest<T extends ClientRequest<T>> extends Abstract
   public static abstract class Builder<T extends Builder<T, U>, U extends ClientRequest<U>> extends AbstractRequest.Builder<T, U> {
     protected Builder(BuilderPool<T, U> pool, ReferenceFactory<U> factory) {
       super(pool, factory);
+    }
+
+    @Override
+    protected void reset() {
+      super.reset();
+      request.version = 0;
+    }
+
+    /**
+     * Sets the request version.
+     *
+     * @param version The request version.
+     * @return The request builder.
+     */
+    @SuppressWarnings("unchecked")
+    public T withVersion(long version) {
+      request.version = version;
+      return (T) this;
     }
   }
 

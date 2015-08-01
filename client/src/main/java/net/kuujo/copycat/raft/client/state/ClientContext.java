@@ -68,10 +68,6 @@ public class ClientContext implements Managed<Void> {
   protected volatile int leader;
   protected volatile long term;
   private final ClientSession session;
-  protected volatile long sessionId;
-  private volatile long request;
-  private volatile long response;
-  private volatile long version;
 
   public ClientContext(Members members, Transport transport, Serializer serializer) {
     if (members == null)
@@ -147,42 +143,6 @@ public class ClientContext implements Managed<Void> {
   }
 
   /**
-   * Returns the client session.
-   *
-   * @return The client session.
-   */
-  public long getSessionId() {
-    return sessionId;
-  }
-
-  /**
-   * Sets the client session.
-   *
-   * @param sessionId The client session.
-   * @return The Raft client.
-   */
-  protected ClientContext setSessionId(long sessionId) {
-    this.sessionId = sessionId;
-    this.request = 0;
-    this.response = 0;
-    this.version = 0;
-
-    if (sessionId != 0 && openFuture != null) {
-      synchronized (this) {
-        if (openFuture != null) {
-          CompletableFuture<Void> future = openFuture;
-          context.execute(() -> {
-            open = true;
-            future.complete(null);
-          });
-          openFuture = null;
-        }
-      }
-    }
-    return this;
-  }
-
-  /**
    * Sets the client members.
    *
    * @param members The client members.
@@ -190,67 +150,6 @@ public class ClientContext implements Managed<Void> {
    */
   protected ClientContext setMembers(Members members) {
     this.members = members;
-    return this;
-  }
-
-  /**
-   * Returns the client request number.
-   *
-   * @return The client request number.
-   */
-  public long getRequest() {
-    return request;
-  }
-
-  /**
-   * Sets the client request number.
-   *
-   * @param request The client request number.
-   * @return The Raft client.
-   */
-  protected ClientContext setRequest(long request) {
-    this.request = request;
-    return this;
-  }
-
-  /**
-   * Returns the client response number.
-   *
-   * @return The client response number.
-   */
-  public long getResponse() {
-    return response;
-  }
-
-  /**
-   * Sets the client response number.
-   *
-   * @param response The client response number.
-   * @return The Raft client.
-   */
-  protected ClientContext setResponse(long response) {
-    this.response = response;
-    return this;
-  }
-
-  /**
-   * Returns the client version.
-   *
-   * @return The client version.
-   */
-  public long getVersion() {
-    return version;
-  }
-
-  /**
-   * Sets the client version.
-   *
-   * @param version The client version.
-   * @return The Raft client.
-   */
-  protected ClientContext setVersion(long version) {
-    if (version > this.version)
-      this.version = version;
     return this;
   }
 
@@ -348,31 +247,25 @@ public class ClientContext implements Managed<Void> {
 
     CompletableFuture<R> future = new CompletableFuture<>();
     context.execute(() -> {
-      long requestId = ++request;
+      if (session.isClosed()) {
+        future.completeExceptionally(new IllegalStateException("session not open"));
+        return;
+      }
+
       CommandRequest request = CommandRequest.builder()
-        .withSession(getSessionId())
-        .withRequest(requestId)
-        .withResponse(getResponse())
+        .withSession(session.id())
+        .withRequest(session.nextRequest())
+        .withVersion(session.getVersion())
         .withCommand(command)
         .build();
 
-      if (sessionId == 0) {
-        register().thenRun(() -> this.<R>submit(request).whenComplete((result, error) -> {
-          if (error == null) {
-            future.complete(result);
-          } else {
-            future.completeExceptionally(error);
-          }
-        }));
-      } else {
-        this.<R>submit(request).whenComplete((result, error) -> {
-          if (error == null) {
-            future.complete(result);
-          } else {
-            future.completeExceptionally(error);
-          }
-        });
-      }
+      this.<R>submit(request).whenComplete((result, error) -> {
+        if (error == null) {
+          future.complete(result);
+        } else {
+          future.completeExceptionally(error);
+        }
+      });
     });
     return future;
   }
@@ -411,14 +304,13 @@ public class ClientContext implements Managed<Void> {
         resetMember();
         submit(request, future);
       } else if (error instanceof UnknownSessionException) {
-        LOGGER.warn("Lost session: {}", getSessionId());
+        LOGGER.warn("Lost session: {}", session.id());
 
-        setSessionId(0);
         session.expire();
 
         register().thenRun(() -> {
           submit(CommandRequest.builder(request)
-            .withSession(getSessionId())
+            .withSession(session.id())
             .build(), future);
         });
       } else {
@@ -451,7 +343,8 @@ public class ClientContext implements Managed<Void> {
           } else {
             future.completeExceptionally(response.error().createException());
           }
-          setResponse(Math.max(getResponse(), request.request()));
+
+          session.setVersion(request.request());
         } else {
           future.completeExceptionally(error);
         }
@@ -475,28 +368,24 @@ public class ClientContext implements Managed<Void> {
 
     CompletableFuture<R> future = new CompletableFuture<>();
     context.execute(() -> {
+      if (!session.isOpen()) {
+        future.completeExceptionally(new IllegalStateException("session not open"));
+        return;
+      }
+
       QueryRequest request = QueryRequest.builder()
-        .withSession(getSessionId())
+        .withSession(session.id())
+        .withVersion(session.getVersion())
         .withQuery(query)
         .build();
 
-      if (sessionId == 0) {
-        register().thenRun(() -> this.<R>submit(request).whenComplete((result, error) -> {
-          if (error == null) {
-            future.complete(result);
-          } else {
-            future.completeExceptionally(error);
-          }
-        }));
-      } else {
-        this.<R>submit(request).whenComplete((result, error) -> {
-          if (error == null) {
-            future.complete(result);
-          } else {
-            future.completeExceptionally(error);
-          }
-        });
-      }
+      this.<R>submit(request).whenComplete((result, error) -> {
+        if (error == null) {
+          future.complete(result);
+        } else {
+          future.completeExceptionally(error);
+        }
+      });
     });
     return future;
   }
@@ -535,14 +424,13 @@ public class ClientContext implements Managed<Void> {
         resetMember();
         submit(request, future);
       } else if (error instanceof UnknownSessionException) {
-        LOGGER.warn("Lost session: {}", getSessionId());
+        LOGGER.warn("Lost session: {}", session.id());
 
-        setSessionId(0);
         session.expire();
 
         register().thenRun(() -> {
           submit(QueryRequest.builder(request)
-            .withSession(getSessionId())
+            .withSession(session.id())
             .build(), future);
         });
       } else {
@@ -620,9 +508,19 @@ public class ClientContext implements Managed<Void> {
     return register(members, new CompletableFuture<>()).thenAccept(response -> {
       setTerm(response.term());
       setLeader(response.leader());
-      setSessionId(response.session());
       setMembers(response.members());
       session.open(response.session(), client.id());
+
+      synchronized (this) {
+        if (openFuture != null) {
+          CompletableFuture<Void> future = openFuture;
+          context.execute(() -> {
+            open = true;
+            future.complete(null);
+          });
+          openFuture = null;
+        }
+      }
     });
   }
 
@@ -651,7 +549,7 @@ public class ClientContext implements Managed<Void> {
           logResponse(response, member);
           if (response.status() == Response.Status.OK) {
             future.complete(response);
-            LOGGER.debug("Registered new session: {}", getSessionId());
+            LOGGER.debug("Registered new session: {}", response.session());
           } else {
             LOGGER.debug("Session registration failed, retrying");
             setLeader(0);
@@ -679,7 +577,7 @@ public class ClientContext implements Managed<Void> {
    * Sends a keep alive request to a random member.
    */
   private void keepAlive() {
-    if (keepAlive.compareAndSet(false, true) && getSessionId() != 0) {
+    if (keepAlive.compareAndSet(false, true) && session.isOpen()) {
       keepAlive(new ArrayList<>(members.members())).whenComplete((result, error) -> keepAlive.set(false));
     }
   }
@@ -691,7 +589,6 @@ public class ClientContext implements Managed<Void> {
     return keepAlive(members, new CompletableFuture<>()).thenAccept(response -> {
       setTerm(response.term());
       setLeader(response.leader());
-      setVersion(response.version());
       setMembers(response.members());
     });
   }
@@ -709,8 +606,9 @@ public class ClientContext implements Managed<Void> {
     Member member = selectMember(members);
 
     KeepAliveRequest request = KeepAliveRequest.builder()
-      .withSession(getSessionId())
+      .withSession(session.id())
       .build();
+
     getConnection(member).thenAccept(connection -> {
       context.checkThread();
       logRequest(request, member);

@@ -25,19 +25,9 @@ import net.kuujo.copycat.util.ReferenceManager;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class ClientResponse<T extends ClientResponse<T>> extends AbstractResponse<T> {
-  protected long version;
 
   public ClientResponse(ReferenceManager<T> referenceManager) {
     super(referenceManager);
-  }
-
-  /**
-   * Returns the response version.
-   *
-   * @return The response version.
-   */
-  public long version() {
-    return version;
   }
 
   /**
@@ -46,24 +36,6 @@ public abstract class ClientResponse<T extends ClientResponse<T>> extends Abstra
   public static abstract class Builder<T extends Builder<T, U>, U extends ClientResponse<U>> extends AbstractResponse.Builder<T, U> {
     protected Builder(BuilderPool<T, U> pool, ReferenceFactory<U> factory) {
       super(pool, factory);
-    }
-
-    @Override
-    protected void reset() {
-      super.reset();
-      response.version = 0;
-    }
-
-    /**
-     * Sets the query response version.
-     *
-     * @param version The response version.
-     * @return The response builder.
-     */
-    @SuppressWarnings("unchecked")
-    public T withVersion(long version) {
-      response.version = version;
-      return (T) this;
     }
   }
 

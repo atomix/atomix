@@ -15,13 +15,13 @@
  */
 package net.kuujo.copycat.raft.protocol;
 
-import net.kuujo.copycat.util.BuilderPool;
-import net.kuujo.copycat.raft.Members;
-import net.kuujo.copycat.raft.RaftError;
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.raft.Members;
+import net.kuujo.copycat.raft.RaftError;
+import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.util.ReferenceManager;
 
 import java.util.Objects;
@@ -101,7 +101,6 @@ public class KeepAliveResponse extends ClientResponse<KeepAliveResponse> {
       error = null;
       term = buffer.readLong();
       leader = buffer.readInt();
-      version = buffer.readLong();
       members = serializer.readObject(buffer);
     } else {
       error = RaftError.forId(buffer.readByte());
@@ -112,7 +111,7 @@ public class KeepAliveResponse extends ClientResponse<KeepAliveResponse> {
   public void writeObject(BufferOutput buffer, Serializer serializer) {
     buffer.writeByte(status.id());
     if (status == Status.OK) {
-      buffer.writeLong(term).writeInt(leader).writeLong(version);
+      buffer.writeLong(term).writeInt(leader);
       serializer.writeObject(members, buffer);
     } else {
       buffer.writeByte(error.id());

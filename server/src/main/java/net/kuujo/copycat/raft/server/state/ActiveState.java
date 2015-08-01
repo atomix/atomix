@@ -247,13 +247,11 @@ abstract class ActiveState extends PassiveState {
       .setSession(request.session())
       .setQuery(request.query());
 
-    long version = Math.max(context.getLastApplied(), request.version());
     context.apply(entry).whenCompleteAsync((result, error) -> {
       if (isOpen()) {
         if (error == null) {
           future.complete(logResponse(QueryResponse.builder()
             .withStatus(Response.Status.OK)
-            .withVersion(version)
             .withResult(result)
             .build()));
         } else {
@@ -288,13 +286,11 @@ abstract class ActiveState extends PassiveState {
       .setSession(request.session())
       .setQuery(request.query());
 
-    long version = context.getLastApplied();
     context.apply(entry).whenCompleteAsync((result, error) -> {
       if (isOpen()) {
         if (error == null) {
           future.complete(logResponse(QueryResponse.builder()
             .withStatus(Response.Status.OK)
-            .withVersion(version)
             .withResult(result)
             .build()));
         } else {

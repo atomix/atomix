@@ -69,7 +69,6 @@ public class ServerContext implements Managed<Void> {
   private final SessionManager sessions;
   private AbstractState state;
   private final Map<Long, SessionContext> contexts = new HashMap<>();
-  private final Map<Long, List<Runnable>> queries = new HashMap<>();
   private long electionTimeout = 500;
   private long sessionTimeout = 5000;
   private long heartbeatInterval = 250;
@@ -388,12 +387,6 @@ public class ServerContext implements Managed<Void> {
    */
   private void setLastApplied(long lastApplied) {
     this.lastApplied = lastApplied;
-
-    List<Runnable> queries = this.queries.remove(lastApplied);
-
-    if (queries != null) {
-      queries.forEach(Runnable::run);
-    }
   }
 
   /**
@@ -738,13 +731,13 @@ public class ServerContext implements Managed<Void> {
    * @param index The command index.
    * @param sessionId The command session ID.
    * @param request The command request ID.
-   * @param response The command response ID.
+   * @param version The command response ID.
    * @param timestamp The command timestamp.
    * @param command The command to apply.
    * @return The command result.
    */
   @SuppressWarnings("unchecked")
-  private CompletableFuture<Object> command(long index, long sessionId, long request, long response, long timestamp, Command command) {
+  private CompletableFuture<Object> command(long index, long sessionId, long request, long version, long timestamp, Command command) {
     final CompletableFuture<Object> future;
 
     // First check to ensure that the session exists.
@@ -752,24 +745,28 @@ public class ServerContext implements Managed<Void> {
     if (context == null) {
       LOGGER.warn("Unknown session: " + sessionId);
       future = Futures.exceptionalFuture(new UnknownSessionException("unknown session " + sessionId));
-    } else if (!context.update(index, timestamp)) {
-      LOGGER.warn("Expired session: " + sessionId);
-      future = expireSession(sessionId);
-    } else if (context.responses.containsKey(request)) {
-      future = CompletableFuture.completedFuture(context.responses.get(request));
     } else {
-      // Apply the command to the state machine.
-      Session session = sessions.getSession(sessionId);
+      if (!context.update(index, timestamp)) {
+        LOGGER.warn("Expired session: " + sessionId);
+        future = expireSession(sessionId);
+      } else if (context.responses.containsKey(request)) {
+        future = CompletableFuture.completedFuture(context.responses.get(request));
+      } else {
+        // Apply the command to the state machine.
+        Session session = sessions.getSession(sessionId);
 
-      future = execute(() -> stateMachine.apply(new Commit(index, session, timestamp, command)))
-        .thenApply(result -> {
-          // Store the command result in the session.
-          context.responses.put(request, result);
+        future = execute(() -> stateMachine.apply(new Commit(index, session, timestamp, command)))
+          .thenApply(result -> {
+            // Store the command result in the session.
+            context.responses.put(request, result);
 
-          // Clear any responses that have been received by the client for the session.
-          context.responses.headMap(response, true).clear();
-          return result;
-        });
+            // Clear any responses that have been received by the client for the session.
+            context.responses.headMap(version, true).clear();
+            return result;
+          });
+      }
+
+      context.query(version);
     }
 
     // We need to ensure that the command is applied to the state machine before queries are run.
@@ -784,39 +781,31 @@ public class ServerContext implements Managed<Void> {
    *
    * @param index The query index.
    * @param sessionId The query session ID.
-   * @param version The request version.
+   * @param version The request response sequence number.
    * @param timestamp The query timestamp.
    * @param query The query to apply.
    * @return The query result.
    */
   @SuppressWarnings("unchecked")
   private CompletableFuture<Object> query(long index, long sessionId, long version, long timestamp, Query query) {
-    // If the session has not yet been opened or if the client provided a version greater than the last applied index
-    // then wait until the up-to-date index is applied to the state machine.
-    if (sessionId > lastApplied || version > lastApplied) {
+    SessionContext context = contexts.get(sessionId);
+    if (context == null) {
+      LOGGER.warn("Unknown session: " + sessionId);
+      return Futures.exceptionalFuture(new UnknownSessionException("unknown session " + sessionId));
+    } else if (!context.expire(timestamp)) {
+      LOGGER.warn("Expired session: " + sessionId);
+      return expireSession(sessionId);
+    } else if (context.version < version) {
       ComposableFuture<Object> future = new ComposableFuture<>();
       Session session = sessions.getSession(sessionId);
-
-      List<Runnable> queries = this.queries.computeIfAbsent(Math.max(sessionId, version), id -> new ArrayList<>());
+      List<Runnable> queries = context.queries.computeIfAbsent(version, id -> new ArrayList<>());
       queries.add(() -> {
         execute(() -> stateMachine.apply(new Commit(index, session, timestamp, query)), future);
       });
-
       return future;
     } else {
-
-      // Verify that the client's session is still alive.
-      SessionContext context = contexts.get(sessionId);
-      if (context == null) {
-        LOGGER.warn("Unknown session: " + sessionId);
-        return Futures.exceptionalFuture(new UnknownSessionException("unknown session " + sessionId));
-      } else if (!context.expire(timestamp)) {
-        LOGGER.warn("Expired session: " + sessionId);
-        return expireSession(sessionId);
-      } else {
-        Session session = sessions.getSession(sessionId);
-        return execute(() -> stateMachine.apply(new Commit(index, session, timestamp, query)));
-      }
+      Session session = sessions.getSession(sessionId);
+      return execute(() -> stateMachine.apply(new Commit(index, session, timestamp, query)));
     }
   }
 
@@ -940,11 +929,28 @@ public class ServerContext implements Managed<Void> {
    */
   private class SessionContext {
     private long index;
+    private long version;
     private long timestamp;
+    private final Map<Long, List<Runnable>> queries = new HashMap<>();
     private final TreeMap<Long, Object> responses = new TreeMap<>();
 
     private SessionContext(long timestamp) {
       this.timestamp = timestamp;
+    }
+
+    /**
+     * Runs queries for the given request.
+     */
+    public void query(long version) {
+      for (long i = this.version + 1; i <= version; i++) {
+        List<Runnable> queries = this.queries.remove(i);
+        if (queries != null) {
+          for (Runnable query : queries) {
+            query.run();
+          }
+        }
+      }
+      this.version = version;
     }
 
     /**
