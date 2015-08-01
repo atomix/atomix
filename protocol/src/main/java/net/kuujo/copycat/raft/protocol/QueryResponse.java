@@ -123,7 +123,7 @@ public class QueryResponse extends ClientResponse<QueryResponse> {
    */
   public static class Builder extends ClientResponse.Builder<Builder, QueryResponse> {
 
-    private Builder(BuilderPool<Builder, QueryResponse> pool) {
+    protected Builder(BuilderPool<Builder, QueryResponse> pool) {
       super(pool, QueryResponse::new);
     }
 

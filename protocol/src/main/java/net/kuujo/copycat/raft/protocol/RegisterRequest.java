@@ -93,7 +93,7 @@ public class RegisterRequest extends ClientRequest<RegisterRequest> {
    */
   public static class Builder extends ClientRequest.Builder<Builder, RegisterRequest> {
 
-    private Builder(BuilderPool<Builder, RegisterRequest> pool) {
+    protected Builder(BuilderPool<Builder, RegisterRequest> pool) {
       super(pool, RegisterRequest::new);
     }
 

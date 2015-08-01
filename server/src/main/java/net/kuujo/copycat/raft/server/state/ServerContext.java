@@ -876,7 +876,7 @@ public class ServerContext implements Managed<Void> {
         future.complete(null);
       });
     });
-    return future;
+    return future.thenRun(() -> LOGGER.info("{} - Started successfully!", member.id()));
   }
 
   @Override

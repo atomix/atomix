@@ -81,6 +81,12 @@ public class LocalTransport implements Transport {
     private LocalServerRegistry registry;
     private Serializer serializer;
 
+    @Override
+    protected void reset() {
+      registry = null;
+      serializer = null;
+    }
+
     /**
      * Sets the transport server registry.
      *

@@ -145,7 +145,7 @@ public class KeepAliveResponse extends ClientResponse<KeepAliveResponse> {
    */
   public static class Builder extends ClientResponse.Builder<Builder, KeepAliveResponse> {
 
-    private Builder(BuilderPool<Builder, KeepAliveResponse> pool) {
+    protected Builder(BuilderPool<Builder, KeepAliveResponse> pool) {
       super(pool, KeepAliveResponse::new);
     }
 

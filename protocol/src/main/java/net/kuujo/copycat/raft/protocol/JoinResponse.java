@@ -15,13 +15,13 @@
  */
 package net.kuujo.copycat.raft.protocol;
 
-import net.kuujo.copycat.util.BuilderPool;
-import net.kuujo.copycat.raft.Members;
-import net.kuujo.copycat.raft.RaftError;
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.raft.Members;
+import net.kuujo.copycat.raft.RaftError;
+import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.util.ReferenceManager;
 
 import java.util.Objects;
@@ -146,7 +146,7 @@ public class JoinResponse extends AbstractResponse<JoinResponse> {
    */
   public static class Builder extends AbstractResponse.Builder<Builder, JoinResponse> {
 
-    private Builder(BuilderPool<Builder, JoinResponse> pool) {
+    protected Builder(BuilderPool<Builder, JoinResponse> pool) {
       super(pool, JoinResponse::new);
     }
 

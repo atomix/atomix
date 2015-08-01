@@ -128,7 +128,7 @@ public class CommandRequest extends SessionRequest<CommandRequest> {
    */
   public static class Builder extends SessionRequest.Builder<Builder, CommandRequest> {
 
-    private Builder(BuilderPool<Builder, CommandRequest> pool) {
+    protected Builder(BuilderPool<Builder, CommandRequest> pool) {
       super(pool, CommandRequest::new);
     }
 

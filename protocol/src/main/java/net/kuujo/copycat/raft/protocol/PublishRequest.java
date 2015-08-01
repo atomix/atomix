@@ -106,7 +106,7 @@ public class PublishRequest extends SessionRequest<PublishRequest> {
    */
   public static class Builder extends SessionRequest.Builder<Builder, PublishRequest> {
 
-    private Builder(BuilderPool<Builder, PublishRequest> pool) {
+    protected Builder(BuilderPool<Builder, PublishRequest> pool) {
       super(pool, PublishRequest::new);
     }
 

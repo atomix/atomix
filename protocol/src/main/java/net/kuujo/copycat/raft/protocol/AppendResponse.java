@@ -145,7 +145,7 @@ public class AppendResponse extends AbstractResponse<AppendResponse> {
    */
   public static class Builder extends AbstractResponse.Builder<Builder, AppendResponse> {
 
-    private Builder(BuilderPool<Builder, AppendResponse> pool) {
+    protected Builder(BuilderPool<Builder, AppendResponse> pool) {
       super(pool, AppendResponse::new);
     }
 

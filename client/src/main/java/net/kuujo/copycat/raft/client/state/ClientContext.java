@@ -647,17 +647,21 @@ public class ClientContext implements Managed<Void> {
 
       connection.<RegisterRequest, RegisterResponse>send(request).whenComplete((response, error) -> {
         context.checkThread();
-        logResponse(response, member);
-
-        if (error == null && response.status() == Response.Status.OK) {
-          future.complete(response);
-          LOGGER.debug("Registered new session: {}", getSessionId());
+        if (error == null) {
+          logResponse(response, member);
+          if (response.status() == Response.Status.OK) {
+            future.complete(response);
+            LOGGER.debug("Registered new session: {}", getSessionId());
+          } else {
+            LOGGER.debug("Session registration failed, retrying");
+            setLeader(0);
+            register(members, future);
+          }
         } else {
           LOGGER.debug("Session registration failed, retrying");
           setLeader(0);
           register(members, future);
         }
-        request.close();
       });
     });
     return future;
@@ -715,8 +719,8 @@ public class ClientContext implements Managed<Void> {
         connection.<KeepAliveRequest, KeepAliveResponse>send(request).whenComplete((response, error) -> {
           context.checkThread();
           if (isOpen()) {
-            logResponse(response, member);
             if (error == null) {
+              logResponse(response, member);
               if (response.status() == Response.Status.OK) {
                 future.complete(response);
               } else {

@@ -145,7 +145,7 @@ public class PollRequest extends AbstractRequest<PollRequest> {
    */
   public static class Builder extends AbstractRequest.Builder<Builder, PollRequest> {
 
-    private Builder(BuilderPool<Builder, PollRequest> pool) {
+    protected Builder(BuilderPool<Builder, PollRequest> pool) {
       super(pool, PollRequest::new);
     }
 

@@ -105,7 +105,7 @@ public class LeaveResponse extends AbstractResponse<LeaveResponse> {
    */
   public static class Builder extends AbstractResponse.Builder<Builder, LeaveResponse> {
 
-    private Builder(BuilderPool<Builder, LeaveResponse> pool) {
+    protected Builder(BuilderPool<Builder, LeaveResponse> pool) {
       super(pool, LeaveResponse::new);
     }
 

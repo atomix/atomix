@@ -117,7 +117,7 @@ public class QueryRequest extends SessionRequest<QueryRequest> {
    */
   public static class Builder extends SessionRequest.Builder<Builder, QueryRequest> {
 
-    private Builder(BuilderPool<Builder, QueryRequest> pool) {
+    protected Builder(BuilderPool<Builder, QueryRequest> pool) {
       super(pool, QueryRequest::new);
     }
 

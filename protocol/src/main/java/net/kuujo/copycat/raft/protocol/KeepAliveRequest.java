@@ -82,7 +82,7 @@ public class KeepAliveRequest extends SessionRequest<KeepAliveRequest> {
    */
   public static class Builder extends SessionRequest.Builder<Builder, KeepAliveRequest> {
 
-    private Builder(BuilderPool<Builder, KeepAliveRequest> pool) {
+    protected Builder(BuilderPool<Builder, KeepAliveRequest> pool) {
       super(pool, KeepAliveRequest::new);
     }
 

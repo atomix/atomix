@@ -161,8 +161,6 @@ public class DistributedMapTest extends ConcurrentTestCase {
       resume();
     });
     await();
-
-    copycats.forEach(c -> c.close().join());
   }
 
   /**

@@ -155,7 +155,7 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
    */
   public static class Builder extends AbstractResponse.Builder<Builder, RegisterResponse> {
 
-    private Builder(BuilderPool<Builder, RegisterResponse> pool) {
+    protected Builder(BuilderPool<Builder, RegisterResponse> pool) {
       super(pool, RegisterResponse::new);
     }
 

@@ -131,7 +131,7 @@ public class PollResponse extends AbstractResponse<PollResponse> {
    */
   public static class Builder extends AbstractResponse.Builder<Builder, PollResponse> {
 
-    private Builder(BuilderPool<Builder, PollResponse> pool) {
+    protected Builder(BuilderPool<Builder, PollResponse> pool) {
       super(pool, PollResponse::new);
     }
 

@@ -207,7 +207,7 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
    */
   public static class Builder extends AbstractRequest.Builder<Builder, AppendRequest> {
 
-    private Builder(BuilderPool<Builder, AppendRequest> pool) {
+    protected Builder(BuilderPool<Builder, AppendRequest> pool) {
       super(pool, AppendRequest::new);
     }
 

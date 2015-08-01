@@ -104,7 +104,7 @@ public class PublishResponse extends AbstractResponse<PublishResponse> {
    */
   public static class Builder extends AbstractResponse.Builder<Builder, PublishResponse> {
 
-    private Builder(BuilderPool<Builder, PublishResponse> pool) {
+    protected Builder(BuilderPool<Builder, PublishResponse> pool) {
       super(pool, PublishResponse::new);
     }
 

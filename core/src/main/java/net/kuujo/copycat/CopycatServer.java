@@ -74,6 +74,7 @@ public class CopycatServer extends Copycat {
 
     @Override
     protected void reset() {
+      clientBuilder = RaftClient.builder();
       serverBuilder = RaftServer.builder();
     }
 

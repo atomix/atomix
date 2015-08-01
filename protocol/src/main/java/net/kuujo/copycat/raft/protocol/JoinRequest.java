@@ -107,7 +107,7 @@ public class JoinRequest extends AbstractRequest<JoinRequest> {
    */
   public static class Builder extends AbstractRequest.Builder<Builder, JoinRequest> {
 
-    private Builder(BuilderPool<Builder, JoinRequest> pool) {
+    protected Builder(BuilderPool<Builder, JoinRequest> pool) {
       super(pool, JoinRequest::new);
     }
 

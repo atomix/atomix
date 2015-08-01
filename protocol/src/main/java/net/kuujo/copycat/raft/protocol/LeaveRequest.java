@@ -107,7 +107,7 @@ public class LeaveRequest extends AbstractRequest<LeaveRequest> {
    */
   public static class Builder extends AbstractRequest.Builder<Builder, LeaveRequest> {
 
-    private Builder(BuilderPool<Builder, LeaveRequest> pool) {
+    protected Builder(BuilderPool<Builder, LeaveRequest> pool) {
       super(pool, LeaveRequest::new);
     }
 

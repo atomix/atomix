@@ -122,7 +122,7 @@ public class CommandResponse extends ClientResponse<CommandResponse> {
    */
   public static class Builder extends ClientResponse.Builder<Builder, CommandResponse> {
 
-    private Builder(BuilderPool<Builder, CommandResponse> pool) {
+    protected Builder(BuilderPool<Builder, CommandResponse> pool) {
       super(pool, CommandResponse::new);
     }
 
