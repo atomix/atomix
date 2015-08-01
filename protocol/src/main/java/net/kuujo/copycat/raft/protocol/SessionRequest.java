@@ -45,11 +45,13 @@ public abstract class SessionRequest<T extends SessionRequest<T>> extends Client
 
   @Override
   public void readObject(BufferInput buffer, Serializer serializer) {
+    super.readObject(buffer, serializer);
     session = buffer.readLong();
   }
 
   @Override
   public void writeObject(BufferOutput buffer, Serializer serializer) {
+    super.writeObject(buffer, serializer);
     buffer.writeLong(session);
   }
 
