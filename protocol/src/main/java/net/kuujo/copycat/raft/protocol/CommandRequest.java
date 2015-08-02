@@ -99,17 +99,24 @@ public class CommandRequest extends SessionRequest<CommandRequest> {
 
   @Override
   public int hashCode() {
-    return Objects.hash(command);
+    return Objects.hash(getClass(), session, version, request, command);
   }
 
   @Override
   public boolean equals(Object object) {
-    return object instanceof CommandRequest && ((CommandRequest) object).command.equals(command);
+    if (object instanceof CommandRequest) {
+      CommandRequest request = (CommandRequest) object;
+      return request.session == session
+        && request.version == version
+        && request.request == this.request
+        && request.command.equals(command);
+    }
+    return false;
   }
 
   @Override
   public String toString() {
-    return String.format("%s[session=%d, request=%d, version=%d, command=%s]", getClass().getSimpleName(), session, request, version, command);
+    return String.format("%s[session=%d, version=%d, request=%d, command=%s]", getClass().getSimpleName(), session, version, request, command);
   }
 
   /**

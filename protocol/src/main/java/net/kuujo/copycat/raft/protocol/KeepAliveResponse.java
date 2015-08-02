@@ -120,7 +120,7 @@ public class KeepAliveResponse extends SessionResponse<KeepAliveResponse> {
 
   @Override
   public int hashCode() {
-    return Objects.hash(status, term, leader);
+    return Objects.hash(getClass(), status, term, leader);
   }
 
   @Override
@@ -136,7 +136,7 @@ public class KeepAliveResponse extends SessionResponse<KeepAliveResponse> {
 
   @Override
   public String toString() {
-    return String.format("%s[term=%d, leader=%d]", getClass().getSimpleName(), term, leader);
+    return String.format("%s[status=%s, term=%d, leader=%d]", getClass().getSimpleName(), status, term, leader);
   }
 
   /**

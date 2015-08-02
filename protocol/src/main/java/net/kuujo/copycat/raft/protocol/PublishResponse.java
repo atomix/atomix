@@ -82,7 +82,7 @@ public class PublishResponse extends SessionResponse<PublishResponse> {
 
   @Override
   public int hashCode() {
-    return Objects.hash(status);
+    return Objects.hash(getClass(), status);
   }
 
   @Override

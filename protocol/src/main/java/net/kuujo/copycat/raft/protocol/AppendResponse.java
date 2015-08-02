@@ -120,7 +120,7 @@ public class AppendResponse extends AbstractResponse<AppendResponse> {
 
   @Override
   public int hashCode() {
-    return Objects.hash(term, succeeded, logIndex);
+    return Objects.hash(getClass(), status, term, succeeded, logIndex);
   }
 
   @Override

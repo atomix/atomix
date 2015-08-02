@@ -75,8 +75,7 @@ public class LeaveResponse extends AbstractResponse<LeaveResponse> {
   @Override
   public void writeObject(BufferOutput buffer, Serializer serializer) {
     buffer.writeByte(status.id());
-    if (status == Status.OK) {
-    } else {
+    if (status == Status.ERROR) {
       buffer.writeByte(error.id());
     }
   }

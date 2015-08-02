@@ -15,11 +15,11 @@
  */
 package net.kuujo.copycat.raft.protocol;
 
-import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.util.ReferenceManager;
 
 import java.util.Objects;
@@ -74,31 +74,35 @@ public class PublishRequest extends SessionRequest<PublishRequest> {
 
   @Override
   public void readObject(BufferInput buffer, Serializer serializer) {
+    super.readObject(buffer, serializer);
     message = serializer.readObject(buffer);
   }
 
   @Override
   public void writeObject(BufferOutput buffer, Serializer serializer) {
+    super.writeObject(buffer, serializer);
     serializer.writeObject(message, buffer);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(message);
+    return Objects.hash(getClass(), session, version, message);
   }
 
   @Override
   public boolean equals(Object object) {
     if (object instanceof PublishRequest) {
       PublishRequest request = (PublishRequest) object;
-      return request.message.equals(message);
+      return request.session == session
+        && request.version == version
+        && request.message.equals(message);
     }
     return false;
   }
 
   @Override
   public String toString() {
-    return String.format("%s[message=%s]", getClass().getSimpleName(), message);
+    return String.format("%s[session=%d, version=%d, message=%s]", getClass().getSimpleName(), session, version, message);
   }
 
   /**

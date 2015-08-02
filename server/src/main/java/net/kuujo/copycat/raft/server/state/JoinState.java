@@ -84,7 +84,7 @@ public class JoinState extends InactiveState {
           if (response.status() == Response.Status.OK) {
             LOGGER.info("{} - Successfully joined via {}", context.getMember().id(), member.getMember());
 
-            context.getCluster().configure(response.version(), response.active(), response.passive());
+            context.getCluster().configure(response.version(), response.activeMembers(), response.passiveMembers());
 
             if (context.getCluster().isActive()) {
               transition(RaftServer.State.FOLLOWER);

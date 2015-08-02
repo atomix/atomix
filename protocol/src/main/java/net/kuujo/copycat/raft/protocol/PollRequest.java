@@ -120,7 +120,7 @@ public class PollRequest extends AbstractRequest<PollRequest> {
 
   @Override
   public int hashCode() {
-    return Objects.hash(term, candidate, logIndex, logTerm);
+    return Objects.hash(getClass(), term, candidate, logIndex, logTerm);
   }
 
   @Override

@@ -55,8 +55,8 @@ public class JoinResponse extends AbstractResponse<JoinResponse> {
   }
 
   private long version;
-  private Members active;
-  private Members passive;
+  private Members activeMembers;
+  private Members passiveMembers;
 
   public JoinResponse(ReferenceManager<JoinResponse> referenceManager) {
     super(referenceManager);
@@ -81,8 +81,8 @@ public class JoinResponse extends AbstractResponse<JoinResponse> {
    *
    * @return The join members list.
    */
-  public Members active() {
-    return active;
+  public Members activeMembers() {
+    return activeMembers;
   }
 
   /**
@@ -90,8 +90,8 @@ public class JoinResponse extends AbstractResponse<JoinResponse> {
    *
    * @return The join members list.
    */
-  public Members passive() {
-    return passive;
+  public Members passiveMembers() {
+    return passiveMembers;
   }
 
   @Override
@@ -100,8 +100,8 @@ public class JoinResponse extends AbstractResponse<JoinResponse> {
     if (status == Status.OK) {
       error = null;
       version = buffer.readLong();
-      active = serializer.readObject(buffer);
-      passive = serializer.readObject(buffer);
+      activeMembers = serializer.readObject(buffer);
+      passiveMembers = serializer.readObject(buffer);
     } else {
       error = RaftError.forId(buffer.readByte());
     }
@@ -112,8 +112,8 @@ public class JoinResponse extends AbstractResponse<JoinResponse> {
     buffer.writeByte(status.id());
     if (status == Status.OK) {
       buffer.writeLong(version);
-      serializer.writeObject(active, buffer);
-      serializer.writeObject(passive, buffer);
+      serializer.writeObject(activeMembers, buffer);
+      serializer.writeObject(passiveMembers, buffer);
     } else {
       buffer.writeByte(error.id());
     }
@@ -121,7 +121,7 @@ public class JoinResponse extends AbstractResponse<JoinResponse> {
 
   @Override
   public int hashCode() {
-    return Objects.hash(version, active, passive);
+    return Objects.hash(getClass(), status, version, activeMembers, passiveMembers);
   }
 
   @Override
@@ -130,15 +130,15 @@ public class JoinResponse extends AbstractResponse<JoinResponse> {
       JoinResponse response = (JoinResponse) object;
       return response.status == status
         && response.version == version
-        && response.active.equals(active)
-        && response.passive.equals(passive);
+        && response.activeMembers.equals(activeMembers)
+        && response.passiveMembers.equals(passiveMembers);
     }
     return false;
   }
 
   @Override
   public String toString() {
-    return String.format("%s[status=%s, version=%d, active=%b, passive=%s]", getClass().getSimpleName(), status, version, active, passive);
+    return String.format("%s[status=%s, version=%d, activeMembers=%b, passiveMembers=%s]", getClass().getSimpleName(), status, version, activeMembers, passiveMembers);
   }
 
   /**
@@ -154,8 +154,8 @@ public class JoinResponse extends AbstractResponse<JoinResponse> {
     protected void reset() {
       super.reset();
       response.version = 0;
-      response.active = null;
-      response.passive = null;
+      response.activeMembers = null;
+      response.passiveMembers = null;
     }
 
     /**
@@ -180,7 +180,7 @@ public class JoinResponse extends AbstractResponse<JoinResponse> {
     public Builder withActiveMembers(Members members) {
       if (members == null)
         throw new NullPointerException("members cannot be null");
-      response.active = members;
+      response.activeMembers = members;
       return this;
     }
 
@@ -193,7 +193,7 @@ public class JoinResponse extends AbstractResponse<JoinResponse> {
     public Builder withPassiveMembers(Members members) {
       if (members == null)
         throw new NullPointerException("members cannot be null");
-      response.passive = members;
+      response.passiveMembers = members;
       return this;
     }
 
@@ -211,10 +211,10 @@ public class JoinResponse extends AbstractResponse<JoinResponse> {
     public JoinResponse build() {
       super.build();
       if (response.status == Status.OK) {
-        if (response.active == null)
-          throw new NullPointerException("active members cannot be null");
-        if (response.passive == null)
-          throw new NullPointerException("passive members cannot be null");
+        if (response.activeMembers == null)
+          throw new NullPointerException("activeMembers members cannot be null");
+        if (response.passiveMembers == null)
+          throw new NullPointerException("passiveMembers members cannot be null");
       }
       return response;
     }

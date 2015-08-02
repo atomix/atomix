@@ -107,7 +107,7 @@ public class VoteResponse extends AbstractResponse<VoteResponse> {
 
   @Override
   public int hashCode() {
-    return Objects.hash(status, term, voted);
+    return Objects.hash(getClass(), status, term, voted);
   }
 
   @Override
@@ -123,7 +123,7 @@ public class VoteResponse extends AbstractResponse<VoteResponse> {
 
   @Override
   public String toString() {
-    return String.format("%s[term=%d, voted=%b]", getClass().getSimpleName(), term, voted);
+    return String.format("%s[status=%s, term=%d, voted=%b]", getClass().getSimpleName(), status, term, voted);
   }
 
   /**

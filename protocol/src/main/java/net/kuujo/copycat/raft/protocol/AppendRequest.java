@@ -179,7 +179,7 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
 
   @Override
   public int hashCode() {
-    return Objects.hash(term, leader, logIndex, logTerm, entries, commitIndex, globalIndex);
+    return Objects.hash(getClass(), term, leader, logIndex, logTerm, entries, commitIndex, globalIndex);
   }
 
   @Override

@@ -87,12 +87,18 @@ public class QueryRequest extends SessionRequest<QueryRequest> {
 
   @Override
   public int hashCode() {
-    return Objects.hash(query);
+    return Objects.hash(getClass(), session, version, query);
   }
 
   @Override
   public boolean equals(Object object) {
-    return object instanceof QueryRequest && ((QueryRequest) object).query.equals(query);
+    if (object instanceof QueryRequest) {
+      QueryRequest request = (QueryRequest) object;
+      return request.session == session
+        && request.version == version
+        && request.query.equals(query);
+    }
+    return false;
   }
 
   @Override

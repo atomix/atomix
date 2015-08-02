@@ -84,6 +84,20 @@ public class RegisterRequest extends AbstractRequest<RegisterRequest> {
   }
 
   @Override
+  public int hashCode() {
+    return Objects.hash(getClass(), connection);
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (object instanceof RegisterRequest) {
+      RegisterRequest request = (RegisterRequest) object;
+      return request.connection.equals(connection);
+    }
+    return false;
+  }
+
+  @Override
   public String toString() {
     return String.format("%s", getClass().getSimpleName());
   }

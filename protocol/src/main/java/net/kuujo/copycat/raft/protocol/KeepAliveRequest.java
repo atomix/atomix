@@ -60,21 +60,22 @@ public class KeepAliveRequest extends SessionRequest<KeepAliveRequest> {
 
   @Override
   public int hashCode() {
-    return Objects.hash(session);
+    return Objects.hash(getClass(), session, version);
   }
 
   @Override
   public boolean equals(Object object) {
     if (object instanceof KeepAliveRequest) {
       KeepAliveRequest request = (KeepAliveRequest) object;
-      return request.session == session;
+      return request.session == session
+        && request.version == version;
     }
     return false;
   }
 
   @Override
   public String toString() {
-    return String.format("%s[session=%d]", getClass().getSimpleName(), session);
+    return String.format("%s[session=%d, version=%d]", getClass().getSimpleName(), session, version);
   }
 
   /**

@@ -15,13 +15,13 @@
  */
 package net.kuujo.copycat.raft.protocol;
 
-import net.kuujo.copycat.util.BuilderPool;
-import net.kuujo.copycat.raft.Members;
-import net.kuujo.copycat.raft.RaftError;
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.raft.Members;
+import net.kuujo.copycat.raft.RaftError;
+import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.util.ReferenceManager;
 
 import java.util.Objects;
@@ -131,7 +131,7 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
 
   @Override
   public int hashCode() {
-    return Objects.hash(status, term, leader);
+    return Objects.hash(getClass(), status, term, leader, session, members);
   }
 
   @Override
@@ -140,14 +140,16 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
       RegisterResponse response = (RegisterResponse) object;
       return response.status == status
         && response.term == term
-        && response.leader == leader;
+        && response.leader == leader
+        && response.session == session
+        && response.members.equals(members);
     }
     return false;
   }
 
   @Override
   public String toString() {
-    return String.format("%s[term=%d, leader=%d, session=%d]", getClass().getSimpleName(), term, leader, session);
+    return String.format("%s[status=%s, term=%d, leader=%d, session=%d, members=%s]", getClass().getSimpleName(), status, term, leader, session, members);
   }
 
   /**

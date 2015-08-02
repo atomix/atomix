@@ -96,7 +96,7 @@ public class QueryResponse extends SessionResponse<QueryResponse> {
 
   @Override
   public int hashCode() {
-    return Objects.hash(status, result);
+    return Objects.hash(getClass(), status, result);
   }
 
   @Override

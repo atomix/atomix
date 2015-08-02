@@ -96,7 +96,7 @@ public class CommandResponse extends SessionResponse<CommandResponse> {
 
   @Override
   public int hashCode() {
-    return Objects.hash(status, result);
+    return Objects.hash(getClass(), status, result);
   }
 
   @Override

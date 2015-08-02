@@ -15,12 +15,12 @@
  */
 package net.kuujo.copycat.raft.protocol;
 
-import net.kuujo.copycat.util.BuilderPool;
-import net.kuujo.copycat.raft.RaftError;
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.raft.RaftError;
+import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.util.ReferenceManager;
 
 import java.util.Objects;
@@ -107,7 +107,7 @@ public class PollResponse extends AbstractResponse<PollResponse> {
 
   @Override
   public int hashCode() {
-    return Objects.hash(status, term, accepted);
+    return Objects.hash(getClass(), status, term, accepted);
   }
 
   @Override
@@ -123,7 +123,7 @@ public class PollResponse extends AbstractResponse<PollResponse> {
 
   @Override
   public String toString() {
-    return String.format("%s[term=%d, accepted=%b]", getClass().getSimpleName(), term, accepted);
+    return String.format("%s[status=%s, term=%d, accepted=%b]", getClass().getSimpleName(), status, term, accepted);
   }
 
   /**

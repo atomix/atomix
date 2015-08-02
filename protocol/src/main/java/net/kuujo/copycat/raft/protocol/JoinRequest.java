@@ -85,7 +85,7 @@ public class JoinRequest extends AbstractRequest<JoinRequest> {
 
   @Override
   public int hashCode() {
-    return Objects.hash(member);
+    return Objects.hash(getClass(), member);
   }
 
   @Override
