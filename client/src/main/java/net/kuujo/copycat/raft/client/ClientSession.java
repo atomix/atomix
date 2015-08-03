@@ -34,7 +34,9 @@ import org.slf4j.LoggerFactory;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.util.Iterator;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
@@ -57,11 +59,12 @@ public class ClientSession implements Session, Managed<Session> {
     EXPIRED
   }
 
+  private final Random random = new Random();
   private final Client client;
   private Members members;
   private final long keepAliveInterval;
   private final Context context;
-  private Iterator<Member> connectMembers;
+  private List<Member> connectMembers;
   private Connection connection;
   private volatile State state = State.CLOSED;
   private volatile long id;
@@ -79,7 +82,7 @@ public class ClientSession implements Session, Managed<Session> {
     this.members = members;
     this.keepAliveInterval = keepAliveInterval;
     this.context = new SingleThreadContext("copycat-client-" + UUID.randomUUID().toString(), serializer.clone());
-    this.connectMembers = members.members().iterator();
+    this.connectMembers = new ArrayList<>(members.members());
   }
 
   @Override
@@ -101,7 +104,7 @@ public class ClientSession implements Session, Managed<Session> {
    */
   private void setMembers(Members members) {
     this.members = members;
-    this.connectMembers = this.members.members().iterator();
+    this.connectMembers = new ArrayList<>(this.members.members());
   }
 
   /**
@@ -139,9 +142,10 @@ public class ClientSession implements Session, Managed<Session> {
         if (response.status() == Response.Status.OK) {
           responseSequence = Math.max(responseSequence, request.commandSequence());
           future.complete((T) response.result());
+          resetMembers();
           request.close();
         } else {
-          submit(request, future);
+          resetConnection().submit(request, future);
         }
         response.close();
       } else {
@@ -186,9 +190,10 @@ public class ClientSession implements Session, Managed<Session> {
       if (error == null) {
         if (response.status() == Response.Status.OK) {
           future.complete((T) response.result());
+          resetMembers();
           request.close();
         } else {
-          submit(request, future);
+          resetConnection().submit(request, future);
         }
         response.close();
       } else {
@@ -251,14 +256,14 @@ public class ClientSession implements Session, Managed<Session> {
     }
 
     // If we've run out of members to which to connect then expire the session.
-    if (!connectMembers.hasNext()) {
+    if (connectMembers.isEmpty()) {
       LOGGER.warn("Failed to connect to cluster");
       resetConnection().onExpire();
       future.completeExceptionally(new IllegalStateException("session not open"));
       return future;
     }
 
-    Member member = connectMembers.next();
+    Member member = connectMembers.remove(random.nextInt(connectMembers.size()));
 
     final InetSocketAddress address;
     try {
@@ -305,7 +310,9 @@ public class ClientSession implements Session, Managed<Session> {
    * Resets the members to which to connect.
    */
   private ClientSession resetMembers() {
-    connectMembers = members.members().iterator();
+    if (connectMembers.isEmpty() || connectMembers.size() < members.members().size() - 1) {
+      connectMembers = new ArrayList<>(members.members());
+    }
     return this;
   }
 
