@@ -494,7 +494,7 @@ public class ClientSession implements Session, Managed<Session> {
         keepAliveFuture.cancel(false);
       }
       onClose();
-    });
+    }, context);
   }
 
   /**
