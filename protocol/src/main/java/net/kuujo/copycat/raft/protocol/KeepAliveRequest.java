@@ -15,8 +15,11 @@
  */
 package net.kuujo.copycat.raft.protocol;
 
-import net.kuujo.copycat.util.BuilderPool;
+import net.kuujo.copycat.io.BufferInput;
+import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.SerializeWith;
+import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.util.ReferenceManager;
 
 import java.util.Objects;
@@ -49,6 +52,8 @@ public class KeepAliveRequest extends SessionRequest<KeepAliveRequest> {
     return POOL.acquire(request);
   }
 
+  private long commandSequence;
+
   public KeepAliveRequest(ReferenceManager<KeepAliveRequest> referenceManager) {
     super(referenceManager);
   }
@@ -58,9 +63,30 @@ public class KeepAliveRequest extends SessionRequest<KeepAliveRequest> {
     return Type.KEEP_ALIVE;
   }
 
+  /**
+   * Returns the command sequence number.
+   *
+   * @return The command sequence number.
+   */
+  public long commandSequence() {
+    return commandSequence;
+  }
+
+  @Override
+  public void readObject(BufferInput buffer, Serializer serializer) {
+    super.readObject(buffer, serializer);
+    commandSequence = buffer.readLong();
+  }
+
+  @Override
+  public void writeObject(BufferOutput buffer, Serializer serializer) {
+    super.writeObject(buffer, serializer);
+    buffer.writeLong(commandSequence);
+  }
+
   @Override
   public int hashCode() {
-    return Objects.hash(getClass(), session, version);
+    return Objects.hash(getClass(), session, commandSequence);
   }
 
   @Override
@@ -68,14 +94,14 @@ public class KeepAliveRequest extends SessionRequest<KeepAliveRequest> {
     if (object instanceof KeepAliveRequest) {
       KeepAliveRequest request = (KeepAliveRequest) object;
       return request.session == session
-        && request.version == version;
+        && request.commandSequence == commandSequence;
     }
     return false;
   }
 
   @Override
   public String toString() {
-    return String.format("%s[session=%d, version=%d]", getClass().getSimpleName(), session, version);
+    return String.format("%s[session=%d, commandSequence=%d]", getClass().getSimpleName(), session, commandSequence);
   }
 
   /**
@@ -85,6 +111,25 @@ public class KeepAliveRequest extends SessionRequest<KeepAliveRequest> {
 
     protected Builder(BuilderPool<Builder, KeepAliveRequest> pool) {
       super(pool, KeepAliveRequest::new);
+    }
+
+    @Override
+    protected void reset() {
+      super.reset();
+      request.commandSequence = 0;
+    }
+
+    /**
+     * Sets the command sequence number.
+     *
+     * @param commandSequence The command sequence number.
+     * @return The request builder.
+     */
+    public Builder withCommandSequence(long commandSequence) {
+      if (commandSequence < 0)
+        throw new IllegalArgumentException("commandSequence cannot be negative");
+      request.commandSequence = commandSequence;
+      return this;
     }
 
     @Override

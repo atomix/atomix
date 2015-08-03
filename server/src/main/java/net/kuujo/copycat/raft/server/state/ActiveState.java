@@ -223,8 +223,9 @@ abstract class ActiveState extends PassiveState {
         .build()));
     }
 
+    LOGGER.debug("{} - Forwarded {}", context.getMember().id(), request);
     return context.getConnections().getConnection(context.getLeader())
-      .thenCompose(connection -> connection.send(request));
+      .thenCompose(connection -> connection.<QueryRequest, QueryResponse>send(request).thenApply(this::logResponse));
   }
 
   /**
@@ -243,8 +244,8 @@ abstract class ActiveState extends PassiveState {
       .setIndex(context.getCommitIndex())
       .setTerm(context.getTerm())
       .setTimestamp(System.currentTimeMillis())
-      .setVersion(request.version())
       .setSession(request.session())
+      .setSequence(request.commandSequence())
       .setQuery(request.query());
 
     context.apply(entry).whenCompleteAsync((result, error) -> {
@@ -282,8 +283,8 @@ abstract class ActiveState extends PassiveState {
       .setIndex(context.getCommitIndex())
       .setTerm(context.getTerm())
       .setTimestamp(System.currentTimeMillis())
-      .setVersion(0)
       .setSession(request.session())
+      .setSequence(0)
       .setQuery(request.query());
 
     context.apply(entry).whenCompleteAsync((result, error) -> {

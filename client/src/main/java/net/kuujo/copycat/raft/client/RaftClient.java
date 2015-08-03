@@ -19,9 +19,9 @@ import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.ServiceLoaderResolver;
 import net.kuujo.copycat.io.transport.Transport;
 import net.kuujo.copycat.raft.*;
-import net.kuujo.copycat.raft.client.state.ClientContext;
 import net.kuujo.copycat.util.Managed;
 import net.kuujo.copycat.util.concurrent.Context;
+import net.kuujo.copycat.util.concurrent.Futures;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -44,13 +44,19 @@ public class RaftClient implements Managed<RaftClient> {
     return new Builder();
   }
 
-  private final ClientContext context;
+  private final Transport transport;
+  private final Members members;
+  private final Serializer serializer;
+  private final long keepAliveInterval;
+  private ClientSession session;
   private CompletableFuture<RaftClient> openFuture;
   private CompletableFuture<Void> closeFuture;
-  private volatile boolean open;
 
-  protected RaftClient(ClientContext context) {
-    this.context = context;
+  protected RaftClient(Transport transport, Members members, Serializer serializer, long keepAliveInterval) {
+    this.transport = transport;
+    this.members = members;
+    this.serializer = serializer;
+    this.keepAliveInterval = keepAliveInterval;
   }
 
   /**
@@ -66,7 +72,7 @@ public class RaftClient implements Managed<RaftClient> {
    * @return The Raft context.
    */
   public Context context() {
-    return context.getContext();
+    return session != null ? session.context() : null;
   }
 
   /**
@@ -80,7 +86,7 @@ public class RaftClient implements Managed<RaftClient> {
    * @return The client session.
    */
   public Session session() {
-    return context.getSession();
+    return session;
   }
 
   /**
@@ -121,9 +127,9 @@ public class RaftClient implements Managed<RaftClient> {
    * @return A completable future to be completed with the command result.
    */
   public <T> CompletableFuture<T> submit(Command<T> command) {
-    if (!open)
-      throw new IllegalStateException("protocol not open");
-    return context.submit(command);
+    if (session == null)
+      return Futures.exceptionalFuture(new IllegalStateException("client not open"));
+    return session.submit(command);
   }
 
   /**
@@ -143,30 +149,35 @@ public class RaftClient implements Managed<RaftClient> {
    * @return A completable future to be completed with the query result.
    */
   public <T> CompletableFuture<T> submit(Query<T> query) {
-    if (!open)
-      throw new IllegalStateException("protocol not open");
-    return context.submit(query);
+    if (session == null)
+      return Futures.exceptionalFuture(new IllegalStateException("client not open"));
+    return session.submit(query);
   }
 
   @Override
   public CompletableFuture<RaftClient> open() {
-    if (open)
+    if (session != null && session.isOpen())
       return CompletableFuture.completedFuture(this);
 
     if (openFuture == null) {
       synchronized (this) {
         if (openFuture == null) {
+          ClientSession session = new ClientSession(transport, members, keepAliveInterval, serializer);
           if (closeFuture == null) {
-            openFuture = context.open().thenApply(c -> {
-              openFuture = null;
-              open = true;
-              return this;
+            openFuture = session.open().thenApply(s -> {
+              synchronized (this) {
+                openFuture = null;
+                this.session = session;
+                return this;
+              }
             });
           } else {
-            openFuture = closeFuture.thenCompose(v -> context.open().thenApply(c -> {
-              openFuture = null;
-              open = true;
-              return this;
+            openFuture = closeFuture.thenCompose(v -> session.open().thenApply(s -> {
+              synchronized (this) {
+                openFuture = null;
+                this.session = session;
+                return this;
+              }
             }));
           }
         }
@@ -177,26 +188,34 @@ public class RaftClient implements Managed<RaftClient> {
 
   @Override
   public boolean isOpen() {
-    return open;
+    return session != null && session.isOpen();
   }
 
   @Override
   public CompletableFuture<Void> close() {
-    if (!open)
+    if (session == null || !session.isOpen())
       return CompletableFuture.completedFuture(null);
 
     if (closeFuture == null) {
       synchronized (this) {
+        if (session == null) {
+          return CompletableFuture.completedFuture(null);
+        }
+
         if (closeFuture == null) {
           if (openFuture == null) {
-            closeFuture = context.close().thenRun(() -> {
-              closeFuture = null;
-              open = false;
+            closeFuture = session.close().whenComplete((result, error) -> {
+              synchronized (this) {
+                session = null;
+                closeFuture = null;
+              }
             });
           } else {
-            closeFuture = openFuture.thenCompose(c -> context.close().thenRun(() -> {
-              closeFuture = null;
-              open = false;
+            closeFuture = openFuture.thenCompose(v -> session.close().whenComplete((result, error) -> {
+              synchronized (this) {
+                session = null;
+                closeFuture = null;
+              }
             }));
           }
         }
@@ -207,7 +226,7 @@ public class RaftClient implements Managed<RaftClient> {
 
   @Override
   public boolean isClosed() {
-    return !open;
+    return session == null || session.isClosed();
   }
 
   /**
@@ -328,7 +347,7 @@ public class RaftClient implements Managed<RaftClient> {
       // Resolve serializer serializable types with the ServiceLoaderResolver.
       serializer.resolve(new ServiceLoaderResolver());
 
-      return new RaftClient(new ClientContext(members, transport, serializer).setKeepAliveInterval(keepAliveInterval));
+      return new RaftClient(transport, members, serializer, keepAliveInterval);
     }
   }
 

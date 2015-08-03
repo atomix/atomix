@@ -78,6 +78,7 @@ public class ServerContext implements Managed<Void> {
   private long commitIndex;
   private long globalIndex;
   private volatile boolean open;
+  private volatile CompletableFuture<Void> openFuture;
 
   public ServerContext(int memberId, Members members, Transport transport, Log log, StateMachine stateMachine, Serializer serializer) {
     member = members.member(memberId);
@@ -227,6 +228,10 @@ public class ServerContext implements Managed<Void> {
         this.leader = leader;
         this.lastVotedFor = 0;
         LOGGER.debug("{} - Found leader {}", member.id(), leader);
+        if (openFuture != null) {
+          openFuture.complete(null);
+          openFuture = null;
+        }
       }
     } else if (leader != 0) {
       if (this.leader != leader) {
@@ -595,7 +600,7 @@ public class ServerContext implements Managed<Void> {
    * @param entry The entry to apply.
    */
   CompletableFuture<Void> apply(KeepAliveEntry entry) {
-    return keepAlive(entry.getIndex(), entry.getTimestamp(), entry.getSession());
+    return keepAlive(entry.getIndex(), entry.getSequence(), entry.getTimestamp(), entry.getSession());
   }
 
   /**
@@ -605,7 +610,7 @@ public class ServerContext implements Managed<Void> {
    * @return The result.
    */
   CompletableFuture<Object> apply(CommandEntry entry) {
-    return command(entry.getIndex(), entry.getSession(), entry.getRequest(), entry.getResponse(), entry.getTimestamp(), entry.getCommand());
+    return command(entry.getIndex(), entry.getSession(), entry.getSequence(), entry.getTimestamp(), entry.getCommand());
   }
 
   /**
@@ -615,7 +620,7 @@ public class ServerContext implements Managed<Void> {
    * @return The result.
    */
   CompletableFuture<Object> apply(QueryEntry entry) {
-    return query(entry.getIndex(), entry.getSession(), entry.getVersion(), entry.getTimestamp(), entry.getQuery());
+    return query(entry.getIndex(), entry.getSession(), entry.getSequence(), entry.getTimestamp(), entry.getQuery());
   }
 
   /**
@@ -667,7 +672,7 @@ public class ServerContext implements Managed<Void> {
    * @param timestamp The keep alive timestamp.
    * @param sessionId The session to keep alive.
    */
-  private CompletableFuture<Void> keepAlive(long index, long timestamp, long sessionId) {
+  private CompletableFuture<Void> keepAlive(long index, long commandSequence, long timestamp, long sessionId) {
     ServerSession session = sessions.getSession(sessionId);
 
     CompletableFuture<Void> future;
@@ -679,7 +684,7 @@ public class ServerContext implements Managed<Void> {
         LOGGER.warn("Expired session: " + sessionId);
         future = expireSession(sessionId);
       } else {
-        session.setIndex(index).setTimestamp(timestamp);
+        session.setIndex(index).setTimestamp(timestamp).clearCommands(commandSequence);
         future = Futures.completedFutureAsync(null, this.context);
       }
     }
@@ -729,14 +734,13 @@ public class ServerContext implements Managed<Void> {
    *
    * @param index The command index.
    * @param sessionId The command session ID.
-   * @param request The command request ID.
-   * @param version The command response ID.
+   * @param commandSequence The command sequence number.
    * @param timestamp The command timestamp.
    * @param command The command to apply.
    * @return The command result.
    */
   @SuppressWarnings("unchecked")
-  private CompletableFuture<Object> command(long index, long sessionId, long request, long version, long timestamp, Command command) {
+  private CompletableFuture<Object> command(long index, long sessionId, long commandSequence, long timestamp, Command command) {
     final CompletableFuture<Object> future;
 
     // First check to ensure that the session exists.
@@ -749,17 +753,17 @@ public class ServerContext implements Managed<Void> {
       future = expireSession(sessionId);
     } else {
       session.setTimestamp(timestamp);
-      if (session.hasResponse(request)) {
-        future = CompletableFuture.completedFuture(session.getResponse(request));
+      if (session.hasResponse(commandSequence)) {
+        future = CompletableFuture.completedFuture(session.getResponse(commandSequence));
       } else {
         future = execute(() -> stateMachine.apply(new Commit(index, session, timestamp, command)))
           .thenApply(result -> {
             // Store the command result in the session.
-            session.registerResponse(request, result);
+            session.registerResponse(commandSequence, result);
             return result;
           });
+        session.setVersion(commandSequence);
       }
-      session.setVersion(version);
     }
 
     // We need to ensure that the command is applied to the state machine before queries are run.
@@ -774,13 +778,13 @@ public class ServerContext implements Managed<Void> {
    *
    * @param index The query index.
    * @param sessionId The query session ID.
-   * @param version The request response sequence number.
+   * @param commandSequence The command sequence number.
    * @param timestamp The query timestamp.
    * @param query The query to apply.
    * @return The query result.
    */
   @SuppressWarnings("unchecked")
-  private CompletableFuture<Object> query(long index, long sessionId, long version, long timestamp, Query query) {
+  private CompletableFuture<Object> query(long index, long sessionId, long commandSequence, long timestamp, Query query) {
     ServerSession session = sessions.getSession(sessionId);
     if (session == null) {
       LOGGER.warn("Unknown session: " + sessionId);
@@ -788,9 +792,9 @@ public class ServerContext implements Managed<Void> {
     } else if (timestamp - sessionTimeout > session.getTimestamp()) {
       LOGGER.warn("Expired session: " + sessionId);
       return expireSession(sessionId);
-    } else if (session.getVersion() < version) {
+    } else if (session.getVersion() < commandSequence) {
       ComposableFuture<Object> future = new ComposableFuture<>();
-      session.registerQuery(version, () -> {
+      session.registerQuery(commandSequence, () -> {
         execute(() -> stateMachine.apply(new Commit(index, session, timestamp, query)), future);
       });
       return future;
@@ -836,6 +840,9 @@ public class ServerContext implements Managed<Void> {
 
   @Override
   public synchronized CompletableFuture<Void> open() {
+    if (open)
+      return CompletableFuture.completedFuture(null);
+
     final InetSocketAddress address;
     try {
       address = new InetSocketAddress(InetAddress.getByName(member.host()), member.port());
@@ -843,7 +850,7 @@ public class ServerContext implements Managed<Void> {
       return Futures.exceptionalFuture(e);
     }
 
-    CompletableFuture<Void> future = new CompletableFuture<>();
+    openFuture = new CompletableFuture<>();
     context.execute(() -> {
       server.listen(address, this::handleConnect).thenRun(() -> {
         log.open(context);
@@ -851,10 +858,9 @@ public class ServerContext implements Managed<Void> {
 
         transition(JoinState.class);
         open = true;
-        future.complete(null);
       });
     });
-    return future.thenRun(() -> LOGGER.info("{} - Started successfully!", member.id()));
+    return openFuture.thenRun(() -> LOGGER.info("{} - Started successfully!", member.id()));
   }
 
   @Override

@@ -54,8 +54,6 @@ public class KeepAliveResponse extends SessionResponse<KeepAliveResponse> {
     return POOL.acquire(response);
   }
 
-  private long term;
-  private int leader;
   private Members members;
 
   public KeepAliveResponse(ReferenceManager<KeepAliveResponse> referenceManager) {
@@ -65,24 +63,6 @@ public class KeepAliveResponse extends SessionResponse<KeepAliveResponse> {
   @Override
   public Type type() {
     return Type.KEEP_ALIVE;
-  }
-
-  /**
-   * Returns the responding node's current term.
-   *
-   * @return The responding node's current term.
-   */
-  public long term() {
-    return term;
-  }
-
-  /**
-   * Returns the responding node's current leader.
-   *
-   * @return The responding node's current leader.
-   */
-  public int leader() {
-    return leader;
   }
 
   /**
@@ -99,8 +79,6 @@ public class KeepAliveResponse extends SessionResponse<KeepAliveResponse> {
     status = Status.forId(buffer.readByte());
     if (status == Status.OK) {
       error = null;
-      term = buffer.readLong();
-      leader = buffer.readInt();
       members = serializer.readObject(buffer);
     } else {
       error = RaftError.forId(buffer.readByte());
@@ -111,7 +89,6 @@ public class KeepAliveResponse extends SessionResponse<KeepAliveResponse> {
   public void writeObject(BufferOutput buffer, Serializer serializer) {
     buffer.writeByte(status.id());
     if (status == Status.OK) {
-      buffer.writeLong(term).writeInt(leader);
       serializer.writeObject(members, buffer);
     } else {
       buffer.writeByte(error.id());
@@ -120,23 +97,21 @@ public class KeepAliveResponse extends SessionResponse<KeepAliveResponse> {
 
   @Override
   public int hashCode() {
-    return Objects.hash(getClass(), status, term, leader);
+    return Objects.hash(getClass(), status);
   }
 
   @Override
   public boolean equals(Object object) {
     if (object instanceof KeepAliveResponse) {
       KeepAliveResponse response = (KeepAliveResponse) object;
-      return response.status == status
-        && response.term == term
-        && response.leader == leader;
+      return response.status == status;
     }
     return false;
   }
 
   @Override
   public String toString() {
-    return String.format("%s[status=%s, term=%d, leader=%d]", getClass().getSimpleName(), status, term, leader);
+    return String.format("%s[status=%s]", getClass().getSimpleName(), status);
   }
 
   /**
@@ -151,33 +126,7 @@ public class KeepAliveResponse extends SessionResponse<KeepAliveResponse> {
     @Override
     protected void reset() {
       super.reset();
-      response.term = 0;
-      response.leader = 0;
       response.members = null;
-    }
-
-    /**
-     * Sets the response term.
-     *
-     * @param term The response term.
-     * @return The keep alive response builder.
-     */
-    public Builder withTerm(long term) {
-      if (term < 0)
-        throw new IllegalArgumentException("term cannot be negative");
-      response.term = term;
-      return this;
-    }
-
-    /**
-     * Sets the response leader.
-     *
-     * @param leader The response leader.
-     * @return The keep alive response builder.
-     */
-    public Builder withLeader(int leader) {
-      response.leader = leader;
-      return this;
     }
 
     /**
@@ -196,10 +145,6 @@ public class KeepAliveResponse extends SessionResponse<KeepAliveResponse> {
     @Override
     public KeepAliveResponse build() {
       super.build();
-      if (response.term < 0)
-        throw new IllegalArgumentException("term cannot be negative");
-      if (response.leader < 0)
-        throw new IllegalArgumentException("leader cannot be negative");
       if (response.status == Status.OK && response.members == null)
         throw new NullPointerException("members cannot be null");
       return response;

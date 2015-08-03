@@ -53,7 +53,7 @@ public class CommandRequest extends SessionRequest<CommandRequest> {
     return POOL.acquire(request);
   }
 
-  private long request;
+  private long commandSequence;
   private Command command;
 
   public CommandRequest(ReferenceManager<CommandRequest> referenceManager) {
@@ -66,12 +66,12 @@ public class CommandRequest extends SessionRequest<CommandRequest> {
   }
 
   /**
-   * Returns the command request ID.
+   * Returns the request sequence number.
    *
-   * @return The command request ID.
+   * @return The request sequence number.
    */
-  public long request() {
-    return request;
+  public long commandSequence() {
+    return commandSequence;
   }
 
   /**
@@ -86,20 +86,20 @@ public class CommandRequest extends SessionRequest<CommandRequest> {
   @Override
   public void readObject(BufferInput buffer, Serializer serializer) {
     super.readObject(buffer, serializer);
-    request = buffer.readLong();
+    commandSequence = buffer.readLong();
     command = serializer.readObject(buffer);
   }
 
   @Override
   public void writeObject(BufferOutput buffer, Serializer serializer) {
     super.writeObject(buffer, serializer);
-    buffer.writeLong(request);
+    buffer.writeLong(commandSequence);
     serializer.writeObject(command, buffer);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(getClass(), session, version, request, command);
+    return Objects.hash(getClass(), session, commandSequence, command);
   }
 
   @Override
@@ -107,8 +107,7 @@ public class CommandRequest extends SessionRequest<CommandRequest> {
     if (object instanceof CommandRequest) {
       CommandRequest request = (CommandRequest) object;
       return request.session == session
-        && request.version == version
-        && request.request == this.request
+        && request.commandSequence == commandSequence
         && request.command.equals(command);
     }
     return false;
@@ -116,7 +115,7 @@ public class CommandRequest extends SessionRequest<CommandRequest> {
 
   @Override
   public String toString() {
-    return String.format("%s[session=%d, version=%d, request=%d, command=%s]", getClass().getSimpleName(), session, version, request, command);
+    return String.format("%s[session=%d, commandSequence=%d, command=%s]", getClass().getSimpleName(), session, commandSequence, command);
   }
 
   /**
@@ -131,21 +130,20 @@ public class CommandRequest extends SessionRequest<CommandRequest> {
     @Override
     protected void reset() {
       super.reset();
-      request.request = 0;
-      request.version = 0;
+      request.commandSequence = 0;
       request.command = null;
     }
 
     /**
-     * Sets the request ID.
+     * Sets the command sequence number.
      *
-     * @param request The request ID.
+     * @param commandSequence The command sequence number.
      * @return The request builder.
      */
-    public Builder withRequest(long request) {
-      if (request <= 0)
-        throw new IllegalArgumentException("request must be positive");
-      this.request.request = request;
+    public Builder withCommandSequence(long commandSequence) {
+      if (commandSequence <= 0)
+        throw new IllegalArgumentException("commandSequence cannot be less than 1");
+      request.commandSequence = commandSequence;
       return this;
     }
 
@@ -166,11 +164,9 @@ public class CommandRequest extends SessionRequest<CommandRequest> {
     public CommandRequest build() {
       super.build();
       if (request.session <= 0)
-        throw new IllegalArgumentException("session must be positive");
-      if (request.request <= 0)
-        throw new IllegalArgumentException("request must be positive");
-      if (request.version < 0)
-        throw new IllegalArgumentException("version must be positive");
+        throw new IllegalArgumentException("session cannot be less than 1");
+      if (request.commandSequence <= 0)
+        throw new IllegalArgumentException("commandSequence cannot be less than 1");
       if (request.command == null)
         throw new NullPointerException("command cannot be null");
       return request;

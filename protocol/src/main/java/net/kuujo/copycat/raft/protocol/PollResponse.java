@@ -169,8 +169,10 @@ public class PollResponse extends AbstractResponse<PollResponse> {
     @Override
     public PollResponse build() {
       super.build();
-      if (response.term < 0)
-        throw new IllegalArgumentException("term must be positive");
+      if (response.status == Response.Status.OK) {
+        if (response.term < 0)
+          throw new IllegalArgumentException("term must be positive");
+      }
       return response;
     }
 

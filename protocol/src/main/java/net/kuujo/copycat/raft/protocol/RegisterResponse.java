@@ -54,8 +54,6 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
     return POOL.acquire(response);
   }
 
-  private long term;
-  private int leader;
   private long session;
   private Members members;
 
@@ -66,24 +64,6 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
   @Override
   public Type type() {
     return Type.REGISTER;
-  }
-
-  /**
-   * Returns the responding node's current term.
-   *
-   * @return The responding node's current term.
-   */
-  public long term() {
-    return term;
-  }
-
-  /**
-   * Returns the responding node's current leader.
-   *
-   * @return The responding node's current leader.
-   */
-  public int leader() {
-    return leader;
   }
 
   /**
@@ -109,8 +89,6 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
     status = Status.forId(buffer.readByte());
     if (status == Status.OK) {
       error = null;
-      term = buffer.readLong();
-      leader = buffer.readInt();
       session = buffer.readLong();
       members = serializer.readObject(buffer);
     } else {
@@ -122,7 +100,7 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
   public void writeObject(BufferOutput buffer, Serializer serializer) {
     buffer.writeByte(status.id());
     if (status == Status.OK) {
-      buffer.writeLong(term).writeInt(leader).writeLong(session);
+      buffer.writeLong(session);
       serializer.writeObject(members, buffer);
     } else {
       buffer.writeByte(error.id());
@@ -131,7 +109,7 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
 
   @Override
   public int hashCode() {
-    return Objects.hash(getClass(), status, term, leader, session, members);
+    return Objects.hash(getClass(), status, session, members);
   }
 
   @Override
@@ -139,8 +117,6 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
     if (object instanceof RegisterResponse) {
       RegisterResponse response = (RegisterResponse) object;
       return response.status == status
-        && response.term == term
-        && response.leader == leader
         && response.session == session
         && response.members.equals(members);
     }
@@ -149,7 +125,7 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
 
   @Override
   public String toString() {
-    return String.format("%s[status=%s, term=%d, leader=%d, session=%d, members=%s]", getClass().getSimpleName(), status, term, leader, session, members);
+    return String.format("%s[status=%s, session=%d, members=%s]", getClass().getSimpleName(), status, session, members);
   }
 
   /**
@@ -164,34 +140,8 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
     @Override
     protected void reset() {
       super.reset();
-      response.term = 0;
-      response.leader = 0;
       response.session = 0;
       response.members = null;
-    }
-
-    /**
-     * Sets the response term.
-     *
-     * @param term The response term.
-     * @return The register response builder.
-     */
-    public Builder withTerm(long term) {
-      if (term < 0)
-        throw new IllegalArgumentException("term cannot be negative");
-      response.term = term;
-      return this;
-    }
-
-    /**
-     * Sets the response leader.
-     *
-     * @param leader The response leader.
-     * @return The register response builder.
-     */
-    public Builder withLeader(int leader) {
-      response.leader = leader;
-      return this;
     }
 
     /**
@@ -202,7 +152,7 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
      */
     public Builder withSession(long session) {
       if (session <= 0)
-        throw new IllegalArgumentException("session must be positive");
+        throw new IllegalArgumentException("session cannot be less than 1");
       response.session = session;
       return this;
     }
@@ -223,10 +173,6 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
     @Override
     public RegisterResponse build() {
       super.build();
-      if (response.term < 0)
-        throw new IllegalArgumentException("term cannot be negative");
-      if (response.leader < 0)
-        throw new IllegalArgumentException("leader cannot be negative");
       if (response.status == Status.OK && response.members == null)
         throw new NullPointerException("members cannot be null");
       return response;

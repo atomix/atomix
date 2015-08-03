@@ -15,12 +15,12 @@
  */
 package net.kuujo.copycat.raft.server.storage;
 
-import net.kuujo.copycat.raft.Command;
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.storage.Entry;
+import net.kuujo.copycat.raft.Command;
 import net.kuujo.copycat.util.ReferenceManager;
 
 /**
@@ -30,8 +30,7 @@ import net.kuujo.copycat.util.ReferenceManager;
  */
 @SerializeWith(id=306)
 public class CommandEntry extends OperationEntry<CommandEntry> {
-  private long request;
-  private long response;
+  private long sequence;
   private Command command;
 
   public CommandEntry(ReferenceManager<Entry<?>> referenceManager) {
@@ -39,42 +38,22 @@ public class CommandEntry extends OperationEntry<CommandEntry> {
   }
 
   /**
-   * Returns the command request number.
+   * Returns the command sequence number.
    *
-   * @return The command request number.
+   * @return The command sequence number.
    */
-  public long getRequest() {
-    return request;
+  public long getSequence() {
+    return sequence;
   }
 
   /**
-   * Sets the command request number.
+   * Sets the command sequence number.
    *
-   * @param request The command request number.
+   * @param sequence The command sequence number.
    * @return The command entry.
    */
-  public CommandEntry setRequest(long request) {
-    this.request = request;
-    return this;
-  }
-
-  /**
-   * Returns the command response number.
-   *
-   * @return The command response number.
-   */
-  public long getResponse() {
-    return response;
-  }
-
-  /**
-   * Sets the command response number.
-   *
-   * @param response The command response number.
-   * @return The command entry.
-   */
-  public CommandEntry setResponse(long response) {
-    this.response = response;
+  public CommandEntry setSequence(long sequence) {
+    this.sequence = sequence;
     return this;
   }
 
@@ -101,21 +80,20 @@ public class CommandEntry extends OperationEntry<CommandEntry> {
   @Override
   public void writeObject(BufferOutput buffer, Serializer serializer) {
     super.writeObject(buffer, serializer);
-    buffer.writeLong(request).writeLong(response);
+    buffer.writeLong(sequence);
     serializer.writeObject(command, buffer);
   }
 
   @Override
   public void readObject(BufferInput buffer, Serializer serializer) {
     super.readObject(buffer, serializer);
-    request = buffer.readLong();
-    response = buffer.readLong();
+    sequence = buffer.readLong();
     command = serializer.readObject(buffer);
   }
 
   @Override
   public String toString() {
-    return String.format("%s[index=%d, term=%d, session=%d, request=%d, response=%d, timestamp=%d, command=%s]", getClass().getSimpleName(), getIndex(), getTerm(), getSession(), request, response, getTimestamp(), command);
+    return String.format("%s[index=%d, term=%d, session=%d, sequence=%d, timestamp=%d, command=%s]", getClass().getSimpleName(), getIndex(), getTerm(), getSession(), getSequence(), getTimestamp(), command);
   }
 
 }

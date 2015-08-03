@@ -40,10 +40,14 @@ class ServerSession implements Session {
   private final UUID connectionId;
   private Connection connection;
   private long index;
-  private long version;
+  private long commandVersion;
+  private long commandLowWaterMark;
+  private long eventVersion;
+  private long eventLowWaterMark;
   private long timestamp;
   private final Map<Long, List<Runnable>> queries = new HashMap<>();
   private final Map<Long, Object> responses = new HashMap<>();
+  private final Map<Long, Object> events = new HashMap<>();
   private boolean expired;
   private boolean closed;
   private final Listeners<Session> openListeners = new Listeners<>();
@@ -93,41 +97,47 @@ class ServerSession implements Session {
   }
 
   /**
-   * Returns the session version.
+   * Returns the session command version.
    *
-   * @return The session version.
+   * @return The session command version.
    */
   long getVersion() {
-    return version;
+    return commandVersion;
   }
 
   /**
-   * Sets the session version.
+   * Sets the session command version.
    *
-   * @param version The session version.
+   * @param version The session command version.
    * @return The server session.
    */
   ServerSession setVersion(long version) {
-    if (version > this.version) {
-      responses.remove(this.version);
-
-      for (long i = this.version + 1; i < version; i++) {
+    if (version > commandVersion) {
+      for (long i = commandVersion + 1; i <= version; i++) {
         List<Runnable> queries = this.queries.remove(i);
         if (queries != null) {
           for (Runnable query : queries) {
             query.run();
           }
         }
-        responses.remove(i);
+        commandVersion = i;
       }
+    }
+    return this;
+  }
 
-      List<Runnable> queries = this.queries.remove(version);
-      if (queries != null) {
-        for (Runnable query : queries) {
-          query.run();
-        }
+  /**
+   * Clears command responses up to the given version.
+   *
+   * @param version The version to clear.
+   * @return The server session.
+   */
+  ServerSession clearCommands(long version) {
+    if (version > commandLowWaterMark) {
+      for (long i = commandLowWaterMark + 1; i <= version; i++) {
+        responses.remove(i);
+        commandLowWaterMark = i;
       }
-      this.version = version;
     }
     return this;
   }
@@ -212,15 +222,68 @@ class ServerSession implements Session {
   }
 
   @Override
-  public CompletableFuture<Void> publish(Object message) {
+  public CompletableFuture<Void> publish(Object event) {
     if (connection == null)
       return Futures.exceptionalFuture(new UnknownSessionException("connection lost"));
 
-    return connection.send(PublishRequest.builder()
+    long eventSequence = ++eventVersion;
+    events.put(eventSequence, event);
+    sendEvent(eventSequence, event);
+    return CompletableFuture.completedFuture(null);
+  }
+
+  /**
+   * Clears events up to the given version.
+   *
+   * @param version The version to clear.
+   * @return The server session.
+   */
+  private ServerSession clearEvents(long version) {
+    if (version > eventLowWaterMark) {
+      for (long i = eventLowWaterMark + 1; i <= version; i++) {
+        events.remove(i);
+        eventLowWaterMark = i;
+      }
+    }
+    return this;
+  }
+
+  /**
+   * Resends events from the given sequence.
+   *
+   * @param sequence The sequence from which to resend events.
+   * @return The server session.
+   */
+  private ServerSession resendEvents(long sequence) {
+    for (long i = sequence + 1; i <= eventVersion; i++) {
+      if (events.containsKey(i)) {
+        sendEvent(i, events.get(i));
+      }
+    }
+    return this;
+  }
+
+  /**
+   * Sends an event to the session.
+   *
+   * @param eventSequence The event sequence number.
+   * @param event The event to send.
+   */
+  private void sendEvent(long eventSequence, Object event) {
+    connection.<PublishRequest, PublishResponse>send(PublishRequest.builder()
       .withSession(id())
-      .withMessage(message)
-      .build())
-      .thenApply(v -> null);
+      .withEventSequence(eventSequence)
+      .withMessage(event)
+      .build()).whenComplete((response, error) -> {
+      if (isOpen() && error == null) {
+        if (response.status() == Response.Status.OK) {
+          clearEvents(response.eventSequence());
+        } else {
+          clearEvents(response.eventSequence());
+          resendEvents(response.eventSequence());
+        }
+      }
+    });
   }
 
   /**

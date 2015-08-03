@@ -189,10 +189,12 @@ public class AppendResponse extends AbstractResponse<AppendResponse> {
     @Override
     public AppendResponse build() {
       super.build();
-      if (response.term <= 0)
-        throw new IllegalArgumentException("term must be positive");
-      if (response.logIndex < 0)
-        throw new IllegalArgumentException("log index must be positive");
+      if (response.status == Response.Status.OK) {
+        if (response.term <= 0)
+          throw new IllegalArgumentException("term must be positive");
+        if (response.logIndex < 0)
+          throw new IllegalArgumentException("log index must be positive");
+      }
       return response;
     }
 

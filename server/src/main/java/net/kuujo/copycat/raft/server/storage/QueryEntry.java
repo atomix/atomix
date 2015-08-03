@@ -15,12 +15,12 @@
  */
 package net.kuujo.copycat.raft.server.storage;
 
-import net.kuujo.copycat.raft.Query;
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.storage.Entry;
+import net.kuujo.copycat.raft.Query;
 import net.kuujo.copycat.util.ReferenceManager;
 
 /**
@@ -30,7 +30,7 @@ import net.kuujo.copycat.util.ReferenceManager;
  */
 @SerializeWith(id=307)
 public class QueryEntry extends OperationEntry<QueryEntry> {
-  private long version;
+  private long sequence;
   private Query query;
 
   public QueryEntry(ReferenceManager<Entry<?>> referenceManager) {
@@ -38,22 +38,22 @@ public class QueryEntry extends OperationEntry<QueryEntry> {
   }
 
   /**
-   * Returns the query version.
+   * Returns the command sequence number.
    *
-   * @return The query version.
+   * @return The command sequence number.
    */
-  public long getVersion() {
-    return version;
+  public long getSequence() {
+    return sequence;
   }
 
   /**
-   * Sets the query version.
+   * Sets the command sequence number.
    *
-   * @param version The query version.
+   * @param sequence The command sequence number.
    * @return The query entry.
    */
-  public QueryEntry setVersion(long version) {
-    this.version = version;
+  public QueryEntry setSequence(long sequence) {
+    this.sequence = sequence;
     return this;
   }
 
@@ -80,18 +80,20 @@ public class QueryEntry extends OperationEntry<QueryEntry> {
   @Override
   public void writeObject(BufferOutput buffer, Serializer serializer) {
     super.writeObject(buffer, serializer);
+    buffer.writeLong(sequence);
     serializer.writeObject(query, buffer);
   }
 
   @Override
   public void readObject(BufferInput buffer, Serializer serializer) {
     super.readObject(buffer, serializer);
+    sequence = buffer.readLong();
     query = serializer.readObject(buffer);
   }
 
   @Override
   public String toString() {
-    return String.format("%s[index=%d, term=%d, session=%d, timestamp=%d, query=%s]", getClass().getSimpleName(), getIndex(), getTerm(), getSession(), getTimestamp(), query);
+    return String.format("%s[index=%d, term=%d, session=%d, sequence=%d, timestamp=%d, query=%s]", getClass().getSimpleName(), getIndex(), getTerm(), getSession(), getSequence(), getTimestamp(), query);
   }
 
 }

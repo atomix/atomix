@@ -15,12 +15,12 @@
  */
 package net.kuujo.copycat.raft.protocol;
 
-import net.kuujo.copycat.util.BuilderPool;
-import net.kuujo.copycat.raft.RaftError;
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.raft.RaftError;
+import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.util.ReferenceManager;
 
 import java.util.Objects;
@@ -169,8 +169,10 @@ public class VoteResponse extends AbstractResponse<VoteResponse> {
     @Override
     public VoteResponse build() {
       super.build();
-      if (response.term < 0)
-        throw new IllegalArgumentException("term cannot be negative");
+      if (response.status == Response.Status.OK) {
+        if (response.term < 0)
+          throw new IllegalArgumentException("term cannot be negative");
+      }
       return response;
     }
 

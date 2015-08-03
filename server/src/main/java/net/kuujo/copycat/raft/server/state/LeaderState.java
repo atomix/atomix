@@ -302,10 +302,9 @@ class LeaderState extends ActiveState {
 
     try (CommandEntry entry = context.getLog().createEntry(CommandEntry.class)) {
       entry.setTerm(term)
-        .setSession(request.session())
-        .setRequest(request.request())
-        .setResponse(request.version())
         .setTimestamp(timestamp)
+        .setSession(request.session())
+        .setSequence(request.commandSequence())
         .setCommand(command);
       index = context.getLog().appendEntry(entry);
       LOGGER.debug("{} - Appended entry to log at index {}", context.getMember().id(), index);
@@ -358,6 +357,9 @@ class LeaderState extends ActiveState {
 
   @Override
   protected CompletableFuture<QueryResponse> query(final QueryRequest request) {
+    context.checkThread();
+    logRequest(request);
+
     Query query = request.query();
 
     final long timestamp = System.currentTimeMillis();
@@ -366,9 +368,9 @@ class LeaderState extends ActiveState {
     QueryEntry entry = context.getLog().createEntry(QueryEntry.class)
       .setIndex(index)
       .setTerm(context.getTerm())
-      .setSession(request.session())
-      .setVersion(request.version())
       .setTimestamp(timestamp)
+      .setSession(request.session())
+      .setSequence(request.commandSequence())
       .setQuery(query);
 
     ConsistencyLevel consistency = query.consistency();
@@ -483,8 +485,6 @@ class LeaderState extends ActiveState {
               if (sessionError == null) {
                 future.complete(logResponse(RegisterResponse.builder()
                   .withStatus(Response.Status.OK)
-                  .withLeader(context.getMember().id())
-                  .withTerm(context.getTerm())
                   .withSession((Long) sessionId)
                   .withMembers(context.getCluster().buildActiveMembers())
                   .build()));
@@ -540,8 +540,6 @@ class LeaderState extends ActiveState {
               if (sessionError == null) {
                 future.complete(logResponse(KeepAliveResponse.builder()
                   .withStatus(Response.Status.OK)
-                  .withLeader(context.getMember().id())
-                  .withTerm(context.getTerm())
                   .withMembers(context.getCluster().buildActiveMembers())
                   .build()));
               } else if (sessionError instanceof RaftException) {

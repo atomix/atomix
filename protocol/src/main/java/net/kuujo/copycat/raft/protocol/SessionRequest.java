@@ -29,7 +29,6 @@ import net.kuujo.copycat.util.ReferenceManager;
  */
 public abstract class SessionRequest<T extends SessionRequest<T>> extends AbstractRequest<T> {
   protected long session;
-  protected long version;
 
   public SessionRequest(ReferenceManager<T> referenceManager) {
     super(referenceManager);
@@ -44,25 +43,14 @@ public abstract class SessionRequest<T extends SessionRequest<T>> extends Abstra
     return session;
   }
 
-  /**
-   * Returns the response version.
-   *
-   * @return The response version.
-   */
-  public long version() {
-    return version;
-  }
-
   @Override
   public void readObject(BufferInput buffer, Serializer serializer) {
     session = buffer.readLong();
-    version = buffer.readLong();
   }
 
   @Override
   public void writeObject(BufferOutput buffer, Serializer serializer) {
     buffer.writeLong(session);
-    buffer.writeLong(version);
   }
 
   /**
@@ -78,7 +66,6 @@ public abstract class SessionRequest<T extends SessionRequest<T>> extends Abstra
     protected void reset() {
       super.reset();
       request.session = 0;
-      request.version = 0;
     }
 
     /**
@@ -92,20 +79,6 @@ public abstract class SessionRequest<T extends SessionRequest<T>> extends Abstra
       if (session <= 0)
         throw new IllegalArgumentException("session must be positive");
       request.session = session;
-      return (T) this;
-    }
-
-    /**
-     * Sets the request version.
-     *
-     * @param version The request version.
-     * @return The request builder.
-     */
-    @SuppressWarnings("unchecked")
-    public T withVersion(long version) {
-      if (version < 0)
-        throw new IllegalArgumentException("version must be positive");
-      request.version = version;
       return (T) this;
     }
   }

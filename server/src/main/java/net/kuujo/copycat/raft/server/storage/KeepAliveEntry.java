@@ -15,7 +15,10 @@
  */
 package net.kuujo.copycat.raft.server.storage;
 
+import net.kuujo.copycat.io.BufferInput;
+import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.SerializeWith;
+import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.storage.Entry;
 import net.kuujo.copycat.util.ReferenceManager;
 
@@ -26,14 +29,47 @@ import net.kuujo.copycat.util.ReferenceManager;
  */
 @SerializeWith(id=304)
 public class KeepAliveEntry extends SessionEntry<KeepAliveEntry> {
+  private long sequence;
 
   public KeepAliveEntry(ReferenceManager<Entry<?>> referenceManager) {
     super(referenceManager);
   }
 
+  /**
+   * Returns the command sequence number.
+   *
+   * @return The command sequence number.
+   */
+  public long getSequence() {
+    return sequence;
+  }
+
+  /**
+   * Sets the command sequence number.
+   *
+   * @param commandSequence The command sequence number.
+   * @return The keep alive entry.
+   */
+  public KeepAliveEntry setSequence(long commandSequence) {
+    this.sequence = commandSequence;
+    return this;
+  }
+
+  @Override
+  public void readObject(BufferInput buffer, Serializer serializer) {
+    super.readObject(buffer, serializer);
+    sequence = buffer.readLong();
+  }
+
+  @Override
+  public void writeObject(BufferOutput buffer, Serializer serializer) {
+    super.writeObject(buffer, serializer);
+    buffer.writeLong(sequence);
+  }
+
   @Override
   public String toString() {
-    return String.format("%s[index=%d, term=%d, session=%d, timestamp=%d]", getClass().getSimpleName(), getIndex(), getTerm(), getSession(), getTimestamp());
+    return String.format("%s[index=%d, term=%d, session=%d, sequence=%d, timestamp=%d]", getClass().getSimpleName(), getIndex(), getTerm(), getSession(), getSequence(), getTimestamp());
   }
 
 }
