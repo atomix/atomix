@@ -105,24 +105,6 @@ class Segment implements AutoCloseable {
   }
 
   /**
-   * Returns a boolean value indicating whether the segment is immutable.
-   *
-   * @return Indicates whether the segment is immutable.
-   */
-  public boolean isLocked() {
-    return descriptor.locked();
-  }
-
-  /**
-   * Returns a boolean value indicating whether the segment is free of cleaned entries.
-   *
-   * @return Indicates whether the segment is free of cleaned entries.
-   */
-  public boolean isClean() {
-    return offsetIndex.deletes() == 0;
-  }
-
-  /**
    * Returns the total count of the segment in bytes.
    *
    * @return The count of the segment in bytes.
@@ -253,7 +235,7 @@ class Segment implements AutoCloseable {
    * @param index The index from which to read the entry.
    * @return The entry at the given index.
    */
-  public <T extends Entry> T getEntry(long index) {
+  public synchronized <T extends Entry> T getEntry(long index) {
     if (!isOpen())
       throw new IllegalStateException("segment not open");
     checkRange(index);
@@ -291,7 +273,7 @@ class Segment implements AutoCloseable {
   public boolean containsIndex(long index) {
     if (!isOpen())
       throw new IllegalStateException("segment not open");
-    return !isEmpty() && index >= descriptor.index() && index <= lastIndex();
+    return !isEmpty() && index >= firstIndex() && index <= lastIndex();
   }
 
   /**
@@ -381,7 +363,7 @@ class Segment implements AutoCloseable {
 
   @Override
   public String toString() {
-    return String.format("Segment[id=%d, version=%d, index=%d, length=%d]", descriptor.id(), descriptor.version(), descriptor.index(), length());
+    return String.format("Segment[id=%d, version=%d, index=%d, length=%d]", descriptor.id(), descriptor.version(), firstIndex(), length());
   }
 
 }

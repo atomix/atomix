@@ -132,9 +132,9 @@ public class EntryCleaner implements AutoCloseable {
    */
   private void cleanSegment(Segment segment, Segment cleanSegment) {
     while (!segment.isEmpty()) {
-      manager.removeSegment(cleanSegment);
-      cleanEntry(segment.firstIndex(), segment, cleanSegment);
-      manager.insertSegment(cleanSegment);
+      long index = segment.firstIndex();
+      cleanEntry(index, segment, cleanSegment);
+      manager.moveSegment(index, segment);
     }
   }
 
