@@ -15,13 +15,15 @@
  */
 package net.kuujo.copycat.examples.server;
 
+import java.net.InetAddress;
+
 import net.kuujo.copycat.Copycat;
 import net.kuujo.copycat.CopycatServer;
+import net.kuujo.copycat.io.storage.Log;
+import net.kuujo.copycat.io.storage.StorageLevel;
+import net.kuujo.copycat.io.transport.NettyTransport;
 import net.kuujo.copycat.raft.Member;
 import net.kuujo.copycat.raft.Members;
-import net.kuujo.copycat.raft.log.Log;
-import net.kuujo.copycat.raft.log.StorageLevel;
-import net.kuujo.copycat.raft.transport.NettyTransport;
 
 /**
  * Server example.
@@ -44,7 +46,7 @@ public class ServerExample {
     Members.Builder builder = Members.builder()
       .addMember(Member.builder()
         .withId(serverId)
-        .withHost("localhost")
+        .withHost(InetAddress.getLocalHost().getHostName())
         .withPort(port)
         .build());
 
