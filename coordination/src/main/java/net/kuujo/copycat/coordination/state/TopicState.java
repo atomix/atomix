@@ -18,7 +18,6 @@ package net.kuujo.copycat.coordination.state;
 import net.kuujo.copycat.raft.Session;
 import net.kuujo.copycat.raft.server.Apply;
 import net.kuujo.copycat.raft.server.Commit;
-import net.kuujo.copycat.raft.server.Filter;
 import net.kuujo.copycat.raft.server.StateMachine;
 
 import java.util.HashSet;
@@ -55,14 +54,6 @@ public class TopicState extends StateMachine {
     for (Session session : sessions) {
       session.publish(commit.operation().message());
     }
-  }
-
-  /**
-   * Filters a publish commit.
-   */
-  @Filter(TopicCommands.Publish.class)
-  protected boolean filterPublish(Commit<TopicCommands.Publish> commit) {
-    return false;
   }
 
 }
