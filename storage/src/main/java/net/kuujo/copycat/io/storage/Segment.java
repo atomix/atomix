@@ -92,7 +92,7 @@ class Segment implements AutoCloseable {
    * @return Indicates whether the segment is empty.
    */
   public boolean isEmpty() {
-    return offsetIndex.size() == 0;
+    return offsetIndex.size() > 0 ? offsetIndex.lastOffset() - offsetIndex.offset() + 1 + skip == 0 : skip == 0;
   }
 
   /**
@@ -101,7 +101,7 @@ class Segment implements AutoCloseable {
    * @return Indicates whether the segment is full.
    */
   public boolean isFull() {
-    return size() >= descriptor.maxSegmentSize() || offsetIndex.lastOffset() >= descriptor.maxEntries() - 1|| length() == Integer.MAX_VALUE;
+    return size() >= descriptor.maxSegmentSize() || offsetIndex.lastOffset() >= descriptor.maxEntries() - 1 || offsetIndex.lastOffset() + skip + 1 == Integer.MAX_VALUE;
   }
 
   /**
@@ -119,7 +119,7 @@ class Segment implements AutoCloseable {
    * @return The current range of the segment.
    */
   public int length() {
-    return offsetIndex.lastOffset() + skip + 1;
+    return !isEmpty() ? offsetIndex.lastOffset() - offsetIndex.offset() + 1 + skip : 0;
   }
 
   /**
@@ -132,6 +132,15 @@ class Segment implements AutoCloseable {
   }
 
   /**
+   * Returns the index of the segment.
+   *
+   * @return The index of the segment.
+   */
+  long index() {
+    return descriptor.index() + offsetIndex.offset();
+  }
+
+  /**
    * Returns the index of the first entry in the segment.
    *
    * @return The index of the first entry in the segment or {@code 0} if the segment is empty.
@@ -139,7 +148,7 @@ class Segment implements AutoCloseable {
   public long firstIndex() {
     if (!isOpen())
       throw new IllegalStateException("segment not open");
-    return !isEmpty() ? descriptor.index() + offsetIndex.firstOffset() : 0;
+    return !isEmpty() ? descriptor.index() + offsetIndex.offset() : 0;
   }
 
   /**
@@ -150,7 +159,7 @@ class Segment implements AutoCloseable {
   public long lastIndex() {
     if (!isOpen())
       throw new IllegalStateException("segment not open");
-    return !isEmpty() ? offsetIndex.lastOffset() + descriptor.index() + skip : 0;
+    return !isEmpty() ? offsetIndex.lastOffset() + descriptor.index() + skip : descriptor.index() - 1;
   }
 
   /**

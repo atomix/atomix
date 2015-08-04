@@ -67,8 +67,8 @@ class OffsetIndex implements AutoCloseable {
   private final Buffer buffer;
   private final BitArray bits;
   private final BitArray deletes;
+  private int offset;
   private int size;
-  private int firstOffset = -1;
   private int lastOffset = -1;
   private int currentOffset = -1;
   private long currentPosition = -1;
@@ -97,10 +97,6 @@ class OffsetIndex implements AutoCloseable {
 
     int offset = buffer.readInt();
     while (offset != END) {
-      if (firstOffset == -1) {
-        firstOffset = offset;
-      }
-
       lastOffset = offset;
       bits.set(offset % bits.size());
       size++;
@@ -113,17 +109,21 @@ class OffsetIndex implements AutoCloseable {
   }
 
   /**
-   * Returns the first offset in the index.
+   * Returns the index offset.
+   *
+   * @return The index offset.
    */
-  public int firstOffset() {
-    return firstOffset;
+  public int offset() {
+    return offset;
   }
 
   /**
-   * Resets the first offset in the index.
+   * Resets the index offset.
+   *
+   * @param offset The index offset.
    */
-  public void resetOffset(int firstOffset) {
-    this.firstOffset = firstOffset;
+  public void resetOffset(int offset) {
+    this.offset = offset;
   }
 
   /**
@@ -162,16 +162,21 @@ class OffsetIndex implements AutoCloseable {
 
     bits.set(offset % bits.size());
 
-    if (firstOffset == -1) {
-      firstOffset = offset;
-    }
-
     size++;
     lastOffset = offset;
 
     if (currentOffset == offset) {
       currentPosition = currentLength = currentOffset = -1;
     }
+  }
+
+  /**
+   * Returns a boolean value indicating whether the index is empty.
+   *
+   * @return Indicates whether the index is empty.
+   */
+  public boolean isEmpty() {
+    return size == 0;
   }
 
   /**

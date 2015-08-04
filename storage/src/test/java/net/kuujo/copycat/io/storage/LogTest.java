@@ -17,8 +17,6 @@ package net.kuujo.copycat.io.storage;
 
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.ServiceLoaderResolver;
-import net.kuujo.copycat.util.concurrent.Context;
-import net.kuujo.copycat.util.concurrent.SingleThreadContext;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -216,13 +214,6 @@ public class LogTest {
   }
 
   /**
-   * Creates a test execution context.
-   */
-  private Context createContext() {
-    return new SingleThreadContext("test", new Serializer(new ServiceLoaderResolver()));
-  }
-
-  /**
    * Creates a new in-memory log.
    */
   private Log createLog() {
@@ -231,6 +222,7 @@ public class LogTest {
       .withMaxEntrySize(1024)
       .withMaxSegmentSize(1024 * 1024)
       .withMaxEntriesPerSegment(1024)
+      .withSerializer(new Serializer(new ServiceLoaderResolver()))
       .build();
     log.open();
     Assert.assertTrue(log.isOpen());

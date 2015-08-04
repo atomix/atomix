@@ -226,7 +226,7 @@ public class Log implements AutoCloseable {
     if (segment == null)
       throw new IndexOutOfBoundsException("invalid index: " + index);
     T entry = segment.getEntry(index);
-    return !entry.isTombstone() ? entry : null;
+    return entry != null && !entry.isTombstone() ? entry : null;
   }
 
   /**
@@ -240,7 +240,9 @@ public class Log implements AutoCloseable {
    * @throws IllegalStateException If the log is not open.
    */
   public boolean containsIndex(long index) {
-    return !isEmpty() && firstIndex() <= index && index <= lastIndex();
+    long firstIndex = firstIndex();
+    long lastIndex = lastIndex();
+    return !isEmpty() && firstIndex <= index && index <= lastIndex;
   }
 
   /**

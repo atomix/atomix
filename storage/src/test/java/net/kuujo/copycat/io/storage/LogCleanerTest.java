@@ -18,11 +18,9 @@ package net.kuujo.copycat.io.storage;
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.ServiceLoaderResolver;
-import net.kuujo.copycat.util.concurrent.Context;
-import net.kuujo.copycat.util.concurrent.SingleThreadContext;
 import org.testng.annotations.Test;
 
-import java.util.ArrayList;
+import static org.testng.Assert.*;
 
 /**
  * Minor compaction test.
@@ -30,7 +28,7 @@ import java.util.ArrayList;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class EntryCleanerTest extends ConcurrentTestCase {
+public class LogCleanerTest extends ConcurrentTestCase {
 
   /**
    * Tests compacting the log.
@@ -38,38 +36,32 @@ public class EntryCleanerTest extends ConcurrentTestCase {
   public void testCompact() throws Throwable {
     Log log = Log.builder()
       .withStorageLevel(StorageLevel.MEMORY)
-      .withMaxEntriesPerSegment(128)
+      .withMaxEntriesPerSegment(10)
+      .withSerializer(new Serializer(new ServiceLoaderResolver()))
       .build();
-
-    Context context = new SingleThreadContext("test", new Serializer(new ServiceLoaderResolver()));
 
     log.open();
 
-    writeEntries(log, 550);
+    writeEntries(log, 30);
 
-    final long index;
-    try (TestEntry entry = log.createEntry(TestEntry.class)) {
-      entry.setTerm(1);
-      entry.setRemove(true);
-      index = log.appendEntry(entry);
+    assertEquals(log.length(), 30L);
+
+    for (long index = 21; index < 28; index++) {
+      log.cleanEntry(index);
     }
 
-    writeEntries(log, 550);
-
-    threadAssertEquals(log.length(), 1101L);
-
-    EntryCleaner cleaner = new EntryCleaner(log.segments(), context);
-
     expectResume();
-    cleaner.clean(new ArrayList<>(log.segments().segments())).thenRun(this::resume);
+    log.cleaner().clean().thenRun(this::resume);
     await();
 
-    threadAssertEquals(log.length(), 1101L);
-    threadAssertTrue(log.containsIndex(index));
-    threadAssertFalse(log.containsEntry(index));
+    assertEquals(log.length(), 30L);
 
-    try (TestEntry entry = log.getEntry(index)) {
-      threadAssertNull(entry);
+    for (long index = 21; index < 28; index++) {
+      assertTrue(log.containsIndex(index));
+      assertFalse(log.containsEntry(index));
+      try (TestEntry entry = log.getEntry(index)) {
+        assertNull(entry);
+      }
     }
   }
 

@@ -212,10 +212,10 @@ class SegmentManager implements AutoCloseable {
    * @param segment The segment to insert.
    */
   public synchronized void insertSegment(Segment segment) {
-    Segment oldSegment = segments.put(segment.firstIndex(), segment);
+    Segment oldSegment = segments.put(segment.index(), segment);
     if (oldSegment == null)
-      throw new IllegalStateException("unknown segment at index: " + segment.firstIndex());
-    segments.put(oldSegment.firstIndex(), oldSegment);
+      throw new IllegalStateException("unknown segment at index: " + segment.index());
+    segments.put(oldSegment.index(), oldSegment);
   }
 
   /**
@@ -224,7 +224,7 @@ class SegmentManager implements AutoCloseable {
    * @param segment The segment to remove.
    */
   public synchronized void removeSegment(Segment segment) {
-    segments.remove(segment.firstIndex());
+    segments.remove(segment.index());
     resetCurrentSegment();
   }
 
@@ -236,7 +236,8 @@ class SegmentManager implements AutoCloseable {
    */
   synchronized void moveSegment(long index, Segment segment) {
     segments.remove(index);
-    segments.put(segment.firstIndex(), segment);
+    if (!segment.isEmpty())
+      segments.put(segment.index(), segment);
   }
 
   /**

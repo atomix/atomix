@@ -89,18 +89,23 @@ public class LogCleaner implements AutoCloseable {
   private void cleanSegments(Context context) {
     AtomicInteger counter = new AtomicInteger();
     List<List<Segment>> cleanSegments = getCleanSegments();
-    for (List<Segment> segments : cleanSegments) {
-      EntryCleaner cleaner = new EntryCleaner(manager, new ThreadPoolContext(executor, manager.serializer()));
-      executor.execute(() -> {
-        cleaner.clean(segments);
-        if (counter.incrementAndGet() == cleanSegments.size()) {
-          if (context != null) {
-            context.execute(() -> cleanFuture.complete(null));
-          } else {
-            cleanFuture.complete(null);
-          }
-        }
-      });
+    if (!cleanSegments.isEmpty()) {
+      for (List<Segment> segments : cleanSegments) {
+        EntryCleaner cleaner = new EntryCleaner(manager, new ThreadPoolContext(executor, manager.serializer()));
+        executor.execute(() -> {
+          cleaner.clean(segments).whenComplete((result, error) -> {
+            if (counter.incrementAndGet() == cleanSegments.size()) {
+              if (context != null) {
+                context.execute(() -> cleanFuture.complete(null));
+              } else {
+                cleanFuture.complete(null);
+              }
+            }
+          });
+        });
+      }
+    } else {
+      cleanFuture.complete(null);
     }
   }
 
@@ -137,6 +142,11 @@ public class LogCleaner implements AutoCloseable {
         segments.add(segment);
       }
       previousSegment = segment;
+    }
+
+    // Ensure all cleanable segments have been added to the clean segments list.
+    if (segments != null) {
+      clean.add(segments);
     }
     return clean;
   }
