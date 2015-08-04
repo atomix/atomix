@@ -41,6 +41,7 @@ public class ResourceManager extends StateMachine {
   private NodeHolder node;
   private final Map<Long, NodeHolder> nodes = new HashMap<>();
   private final Map<Long, ResourceHolder> resources = new HashMap<>();
+  private final ResourceCommitPool commits = new ResourceCommitPool();
 
   public ResourceManager(ScheduledExecutorService executor) {
     if (executor == null)
@@ -67,8 +68,9 @@ public class ResourceManager extends StateMachine {
     if (resource != null) {
       CompletableFuture<Object> future = new ComposableFuture<>();
       resource.context.execute(() -> {
-        CompletableFuture<Object> resultFuture = resource.stateMachine.apply(new Commit(commit.index(), resource.sessions.computeIfAbsent(commit.session().id(), id ->
-          new ManagedResourceSession(commit.operation().resource(), commit.session())), commit.timestamp(), commit.operation().operation()));
+        CompletableFuture<Object> resultFuture = resource.stateMachine.apply(
+          commits.acquire(commit, resource.sessions.computeIfAbsent(commit.session().id(),
+            id -> new ManagedResourceSession(commit.operation().resource(), commit.session()))));
         resultFuture.whenComplete((result, error) -> {
           if (error == null) {
             future.complete(result);

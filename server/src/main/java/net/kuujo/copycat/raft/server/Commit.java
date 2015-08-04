@@ -31,18 +31,7 @@ import net.kuujo.copycat.raft.Session;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class Commit<T extends Operation> {
-  private final long index;
-  private final long timestamp;
-  private final Session session;
-  private final T operation;
-
-  public Commit(long index, Session session, long timestamp, T operation) {
-    this.index = index;
-    this.session = session;
-    this.timestamp = timestamp;
-    this.operation = operation;
-  }
+public interface Commit<T extends Operation> {
 
   /**
    * Returns the commit index.
@@ -57,9 +46,7 @@ public class Commit<T extends Operation> {
    *
    * @return The commit index.
    */
-  public long index() {
-    return index;
-  }
+  long index();
 
   /**
    * Returns the session that submitted the operation.
@@ -75,9 +62,7 @@ public class Commit<T extends Operation> {
    *
    * @return The session that created the commit.
    */
-  public Session session() {
-    return session;
-  }
+  Session session();
 
   /**
    * Returns the commit timestamp.
@@ -91,9 +76,7 @@ public class Commit<T extends Operation> {
    *
    * @return the commit timestamp.
    */
-  public long timestamp() {
-    return timestamp;
-  }
+  long timestamp();
 
   /**
    * Returns the commit type.
@@ -102,26 +85,21 @@ public class Commit<T extends Operation> {
    *
    * @return The commit type.
    */
-  @SuppressWarnings("unchecked")
-  public Class<T> type() {
-    return (Class<T>) operation.getClass();
-  }
+  Class<T> type();
 
   /**
    * Returns the operation submitted by the user.
-   * <p>
-   * The returned {@link net.kuujo.copycat.raft.Operation} is the operation submitted by the user via
-   * {@link net.kuujo.copycat.raft.client.RaftClient#submit(net.kuujo.copycat.raft.Operation)}.
    *
    * @return The operation submitted by the user.
    */
-  public T operation() {
-    return operation;
-  }
+  T operation();
 
-  @Override
-  public String toString() {
-    return String.format("Commit[index=%d, timestamp=%d, session=%s, operation=%s]", index, timestamp, session, operation);
-  }
+  /**
+   * Cleans the commit.
+   * <p>
+   * When the commit is cleaned, it will be removed from the log and may be removed permanently from disk at some
+   * arbitrary point in the future.
+   */
+  void clean();
 
 }

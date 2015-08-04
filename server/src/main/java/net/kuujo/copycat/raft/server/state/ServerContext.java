@@ -25,9 +25,11 @@ import net.kuujo.copycat.io.storage.Log;
 import net.kuujo.copycat.io.transport.Connection;
 import net.kuujo.copycat.io.transport.Server;
 import net.kuujo.copycat.io.transport.Transport;
-import net.kuujo.copycat.raft.*;
+import net.kuujo.copycat.raft.InternalException;
+import net.kuujo.copycat.raft.Member;
+import net.kuujo.copycat.raft.Members;
+import net.kuujo.copycat.raft.UnknownSessionException;
 import net.kuujo.copycat.raft.protocol.*;
-import net.kuujo.copycat.raft.server.Commit;
 import net.kuujo.copycat.raft.server.RaftServer;
 import net.kuujo.copycat.raft.server.StateMachine;
 import net.kuujo.copycat.raft.server.storage.*;
@@ -66,6 +68,8 @@ public class ServerContext implements Managed<Void> {
   private final Server server;
   private final ConnectionManager connections;
   private final SessionManager sessions;
+  private final ServerCommitCleaner cleaner;
+  private final ServerCommitPool commits;
   private AbstractState state;
   private long electionTimeout = 500;
   private long sessionTimeout = 5000;
@@ -98,6 +102,8 @@ public class ServerContext implements Managed<Void> {
     this.context = new SingleThreadContext("copycat-server-" + member.id(), serializer);
     this.log = log;
     this.sessions = new SessionManager();
+    this.cleaner = new ServerCommitCleaner(log);
+    this.commits = new ServerCommitPool(cleaner, sessions);
     this.stateMachine = stateMachine;
     this.stateContext = new SingleThreadContext("copycat-server-" + member.id() + "-state-%d", serializer.clone());
     this.server = transport.server(UUID.randomUUID());
@@ -508,7 +514,17 @@ public class ServerContext implements Managed<Void> {
    * @return The result.
    */
   CompletableFuture<Long> apply(RegisterEntry entry) {
-    return register(entry.getIndex(), entry.getConnection(), entry.getTimestamp());
+    ServerSession session = sessions.registerSession(entry.getIndex(), entry.getConnection()).setTimestamp(entry.getTimestamp());
+
+    // Set last applied only after the operation has been submitted to the state machine executor.
+    CompletableFuture<Long> future = new ComposableFuture<>();
+    stateContext.execute(() -> {
+      stateMachine.register(session);
+      this.context.execute(() -> future.complete(entry.getIndex()));
+    });
+
+    setLastApplied(session.id());
+    return future;
   }
 
   /**
@@ -517,7 +533,24 @@ public class ServerContext implements Managed<Void> {
    * @param entry The entry to apply.
    */
   CompletableFuture<Void> apply(KeepAliveEntry entry) {
-    return keepAlive(entry.getIndex(), entry.getSequence(), entry.getTimestamp(), entry.getSession());
+    ServerSession session = sessions.getSession(entry.getSession());
+
+    CompletableFuture<Void> future;
+    if (session == null) {
+      LOGGER.warn("Unknown session: " + entry.getSession());
+      future = Futures.exceptionalFuture(new UnknownSessionException("unknown session: " + entry.getSession()));
+    } else {
+      if (entry.getTimestamp() - sessionTimeout > session.getTimestamp()) {
+        LOGGER.warn("Expired session: " + entry.getSession());
+        future = expireSession(entry.getSession());
+      } else {
+        session.setIndex(entry.getIndex()).setTimestamp(entry.getTimestamp()).clearCommands(entry.getSequence());
+        future = Futures.completedFutureAsync(null, this.context);
+      }
+    }
+
+    setLastApplied(entry.getIndex());
+    return future;
   }
 
   /**
@@ -526,8 +559,38 @@ public class ServerContext implements Managed<Void> {
    * @param entry The entry to apply.
    * @return The result.
    */
+  @SuppressWarnings("unchecked")
   CompletableFuture<Object> apply(CommandEntry entry) {
-    return command(entry.getIndex(), entry.getSession(), entry.getSequence(), entry.getTimestamp(), entry.getCommand());
+    final CompletableFuture<Object> future;
+
+    // First check to ensure that the session exists.
+    ServerSession session = sessions.getSession(entry.getSession());
+    if (session == null) {
+      LOGGER.warn("Unknown session: " + entry.getSession());
+      future = Futures.exceptionalFuture(new UnknownSessionException("unknown session " + entry.getSession()));
+    } else if (entry.getTimestamp() - sessionTimeout > session.getTimestamp()) {
+      LOGGER.warn("Expired session: " + entry.getSession());
+      future = expireSession(entry.getSession());
+    } else {
+      session.setTimestamp(entry.getTimestamp());
+      if (session.hasResponse(entry.getSequence())) {
+        future = CompletableFuture.completedFuture(session.getResponse(entry.getSequence()));
+      } else {
+        future = execute(() -> stateMachine.apply(commits.acquire(entry)))
+          .thenApply(result -> {
+            // Store the command result in the session.
+            session.registerResponse(entry.getSequence(), result);
+            return result;
+          });
+        session.setVersion(entry.getSequence());
+      }
+    }
+
+    // We need to ensure that the command is applied to the state machine before queries are run.
+    // Set last applied only after the operation has been submitted to the state machine executor.
+    setLastApplied(entry.getIndex());
+
+    return future;
   }
 
   /**
@@ -536,8 +599,24 @@ public class ServerContext implements Managed<Void> {
    * @param entry The entry to apply.
    * @return The result.
    */
+  @SuppressWarnings("unchecked")
   CompletableFuture<Object> apply(QueryEntry entry) {
-    return query(entry.getIndex(), entry.getSession(), entry.getSequence(), entry.getTimestamp(), entry.getQuery());
+    ServerSession session = sessions.getSession(entry.getSession());
+    if (session == null) {
+      LOGGER.warn("Unknown session: " + entry.getSession());
+      return Futures.exceptionalFuture(new UnknownSessionException("unknown session " + entry.getSession()));
+    } else if (entry.getTimestamp() - sessionTimeout > session.getTimestamp()) {
+      LOGGER.warn("Expired session: " + entry.getSession());
+      return expireSession(entry.getSession());
+    } else if (session.getVersion() < entry.getSequence()) {
+      ComposableFuture<Object> future = new ComposableFuture<>();
+      session.registerQuery(entry.getSequence(), () -> {
+        execute(() -> stateMachine.apply(commits.acquire(entry)), future);
+      });
+      return future;
+    } else {
+      return execute(() -> stateMachine.apply(commits.acquire(entry)));
+    }
   }
 
   /**
@@ -547,7 +626,18 @@ public class ServerContext implements Managed<Void> {
    * @return The result.
    */
   CompletableFuture<Members> apply(ConfigurationEntry entry) {
-    return configure(entry.getIndex(), entry.getActive(), entry.getPassive());
+    if (cluster.isPassive()) {
+      cluster.configure(entry.getIndex(), entry.getActive(), entry.getPassive());
+      if (cluster.isActive()) {
+        transition(FollowerState.class);
+      }
+    } else {
+      cluster.configure(entry.getIndex(), entry.getActive(), entry.getPassive());
+      if (cluster.isPassive()) {
+        transition(PassiveState.class);
+      }
+    }
+    return Futures.completedFuture(cluster.buildActiveMembers());
   }
 
   /**
@@ -557,167 +647,10 @@ public class ServerContext implements Managed<Void> {
    * @return The result.
    */
   CompletableFuture<Long> apply(NoOpEntry entry) {
-    return noop(entry.getIndex());
-  }
-
-  /**
-   * Registers a member session.
-   *
-   * @param index The registration index.
-   * @param connectionId the session connection ID.
-   * @param timestamp The registration timestamp.
-   * @return The session ID.
-   */
-  private CompletableFuture<Long> register(long index, UUID connectionId, long timestamp) {
-    ServerSession session = sessions.registerSession(index, connectionId).setTimestamp(timestamp);
-
-    // Set last applied only after the operation has been submitted to the state machine executor.
-    CompletableFuture<Long> future = new ComposableFuture<>();
-    stateContext.execute(() -> {
-      stateMachine.register(session);
-      this.context.execute(() -> future.complete(index));
-    });
-
-    setLastApplied(session.id());
-    return future;
-  }
-
-  /**
-   * Keeps a member session alive.
-   *
-   * @param index The keep alive index.
-   * @param timestamp The keep alive timestamp.
-   * @param sessionId The session to keep alive.
-   */
-  private CompletableFuture<Void> keepAlive(long index, long commandSequence, long timestamp, long sessionId) {
-    ServerSession session = sessions.getSession(sessionId);
-
-    CompletableFuture<Void> future;
-    if (session == null) {
-      LOGGER.warn("Unknown session: " + sessionId);
-      future = Futures.exceptionalFuture(new UnknownSessionException("unknown session: " + sessionId));
-    } else {
-      if (timestamp - sessionTimeout > session.getTimestamp()) {
-        LOGGER.warn("Expired session: " + sessionId);
-        future = expireSession(sessionId);
-      } else {
-        session.setIndex(index).setTimestamp(timestamp).clearCommands(commandSequence);
-        future = Futures.completedFutureAsync(null, this.context);
-      }
-    }
-
-    setLastApplied(index);
-    return future;
-  }
-
-  /**
-   * Applies a no-op to the state machine.
-   *
-   * @param index The no-op index.
-   * @return The no-op index.
-   */
-  private CompletableFuture<Long> noop(long index) {
     // We need to ensure that the command is applied to the state machine before queries are run.
     // Set last applied only after the operation has been submitted to the state machine executor.
-    setLastApplied(index);
-    return Futures.completedFuture(index);
-  }
-
-  /**
-   * Applies a configuration entry to the state machine.
-   *
-   * @param version The entry version.
-   * @param active The active members.
-   * @param passive The passive members.
-   * @return A completable future to be completed with the active member configuration.
-   */
-  private CompletableFuture<Members> configure(long version, Members active, Members passive) {
-    if (cluster.isPassive()) {
-      cluster.configure(version, active, passive);
-      if (cluster.isActive()) {
-        transition(FollowerState.class);
-      }
-    } else {
-      cluster.configure(version, active, passive);
-      if (cluster.isPassive()) {
-        transition(PassiveState.class);
-      }
-    }
-    return Futures.completedFuture(cluster.buildActiveMembers());
-  }
-
-  /**
-   * Applies a command to the state machine.
-   *
-   * @param index The command index.
-   * @param sessionId The command session ID.
-   * @param commandSequence The command sequence number.
-   * @param timestamp The command timestamp.
-   * @param command The command to apply.
-   * @return The command result.
-   */
-  @SuppressWarnings("unchecked")
-  private CompletableFuture<Object> command(long index, long sessionId, long commandSequence, long timestamp, Command command) {
-    final CompletableFuture<Object> future;
-
-    // First check to ensure that the session exists.
-    ServerSession session = sessions.getSession(sessionId);
-    if (session == null) {
-      LOGGER.warn("Unknown session: " + sessionId);
-      future = Futures.exceptionalFuture(new UnknownSessionException("unknown session " + sessionId));
-    } else if (timestamp - sessionTimeout > session.getTimestamp()) {
-      LOGGER.warn("Expired session: " + sessionId);
-      future = expireSession(sessionId);
-    } else {
-      session.setTimestamp(timestamp);
-      if (session.hasResponse(commandSequence)) {
-        future = CompletableFuture.completedFuture(session.getResponse(commandSequence));
-      } else {
-        future = execute(() -> stateMachine.apply(new Commit(index, session, timestamp, command)))
-          .thenApply(result -> {
-            // Store the command result in the session.
-            session.registerResponse(commandSequence, result);
-            return result;
-          });
-        session.setVersion(commandSequence);
-      }
-    }
-
-    // We need to ensure that the command is applied to the state machine before queries are run.
-    // Set last applied only after the operation has been submitted to the state machine executor.
-    setLastApplied(index);
-
-    return future;
-  }
-
-  /**
-   * Applies a query to the state machine.
-   *
-   * @param index The query index.
-   * @param sessionId The query session ID.
-   * @param commandSequence The command sequence number.
-   * @param timestamp The query timestamp.
-   * @param query The query to apply.
-   * @return The query result.
-   */
-  @SuppressWarnings("unchecked")
-  private CompletableFuture<Object> query(long index, long sessionId, long commandSequence, long timestamp, Query query) {
-    ServerSession session = sessions.getSession(sessionId);
-    if (session == null) {
-      LOGGER.warn("Unknown session: " + sessionId);
-      return Futures.exceptionalFuture(new UnknownSessionException("unknown session " + sessionId));
-    } else if (timestamp - sessionTimeout > session.getTimestamp()) {
-      LOGGER.warn("Expired session: " + sessionId);
-      return expireSession(sessionId);
-    } else if (session.getVersion() < commandSequence) {
-      ComposableFuture<Object> future = new ComposableFuture<>();
-      session.registerQuery(commandSequence, () -> {
-        execute(() -> stateMachine.apply(new Commit(index, session, timestamp, query)), future);
-      });
-      return future;
-    } else {
-      return execute(() -> stateMachine.apply(new Commit(index, session, timestamp, query)));
-    }
+    setLastApplied(entry.getIndex());
+    return Futures.completedFuture(entry.getIndex());
   }
 
   /**

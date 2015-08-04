@@ -13,33 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.raft.server.storage;
+package net.kuujo.copycat.raft.server.state;
 
 import net.kuujo.copycat.io.storage.Entry;
-import net.kuujo.copycat.raft.Operation;
-import net.kuujo.copycat.util.ReferenceManager;
+import net.kuujo.copycat.io.storage.Log;
 
 /**
- * Operation entry.
+ * Server commit cleaner.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class OperationEntry<T extends OperationEntry<T>> extends SessionEntry<T> {
+class ServerCommitCleaner {
+  private final Log log;
 
-  protected OperationEntry(ReferenceManager<Entry<?>> referenceManager) {
-    super(referenceManager);
+  ServerCommitCleaner(Log log) {
+    this.log = log;
   }
 
   /**
-   * Returns the entry operation.
+   * Cleans the given index from the log.
    *
-   * @return The entry operation.
+   * @param entry The entry to clean.
    */
-  public abstract Operation getOperation();
-
-  @Override
-  public int size() {
-    return super.size() + 8 + 1024;
+  void clean(Entry entry) {
+    log.cleanEntry(entry.getIndex());
+    entry.close();
   }
 
 }

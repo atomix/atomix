@@ -20,6 +20,7 @@ import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.storage.Entry;
+import net.kuujo.copycat.raft.Operation;
 import net.kuujo.copycat.raft.Query;
 import net.kuujo.copycat.util.ReferenceManager;
 
@@ -55,6 +56,11 @@ public class QueryEntry extends OperationEntry<QueryEntry> {
   public QueryEntry setSequence(long sequence) {
     this.sequence = sequence;
     return this;
+  }
+
+  @Override
+  public Operation getOperation() {
+    return query;
   }
 
   /**
