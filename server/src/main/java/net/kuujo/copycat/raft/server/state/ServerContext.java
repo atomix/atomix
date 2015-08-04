@@ -843,13 +843,7 @@ public class ServerContext implements Managed<Void> {
     if (open)
       return CompletableFuture.completedFuture(null);
 
-    final InetSocketAddress address;
-    try {
-      address = new InetSocketAddress(InetAddress.getByName(member.host()), member.port());
-    } catch (UnknownHostException e) {
-      return Futures.exceptionalFuture(e);
-    }
-
+    final InetSocketAddress address = new InetSocketAddress(member.host(), member.port());
     openFuture = new CompletableFuture<>();
     context.execute(() -> {
       server.listen(address, this::handleConnect).thenRun(() -> {

@@ -58,13 +58,7 @@ class ConnectionManager {
    * @return A completable future to be called once the connection has been created.
    */
   private CompletableFuture<Connection> createConnection(Member member) {
-    InetSocketAddress address;
-    try {
-      address = new InetSocketAddress(InetAddress.getByName(member.host()), member.port());
-    } catch (UnknownHostException e) {
-      return Futures.exceptionalFuture(e);
-    }
-
+    InetSocketAddress address = new InetSocketAddress(member.host(), member.port());
     return client.connect(address).thenApply(connection -> {
       connections.put(member.id(), connection);
       return connection;
