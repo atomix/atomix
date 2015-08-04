@@ -39,9 +39,9 @@ public class MappedMemory extends NativeMemory {
    * Allocates memory mapped to a file on disk.
    *
    * @param file The file to which to map memory.
-   * @param size The size of the memory to map.
+   * @param size The count of the memory to map.
    * @return The mapped memory.
-   * @throws IllegalArgumentException If {@code size} is greater than {@link Integer#MAX_VALUE}
+   * @throws IllegalArgumentException If {@code count} is greater than {@link Integer#MAX_VALUE}
    */
   public static MappedMemory allocate(File file, long size) {
     return new MappedMemoryAllocator(file).allocate(size);
@@ -52,9 +52,9 @@ public class MappedMemory extends NativeMemory {
    *
    * @param file The file to which to map memory.
    * @param mode The mode with which to map memory.
-   * @param size The size of the memory to map.
+   * @param size The count of the memory to map.
    * @return The mapped memory.
-   * @throws IllegalArgumentException If {@code size} is greater than {@link Integer#MAX_VALUE}
+   * @throws IllegalArgumentException If {@code count} is greater than {@link Integer#MAX_VALUE}
    */
   public static MappedMemory allocate(File file, FileChannel.MapMode mode, long size) {
     if (size > MAX_SIZE)

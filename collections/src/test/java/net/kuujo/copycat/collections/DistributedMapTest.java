@@ -80,7 +80,7 @@ public class DistributedMapTest extends ConcurrentTestCase {
   }
 
   /**
-   * Tests the map size.
+   * Tests the map count.
    */
   @SuppressWarnings("unchecked")
   public void testMapSize() throws Throwable {

@@ -60,7 +60,7 @@ public class DistributedMap<K, V> extends Resource {
   }
 
   /**
-   * Gets the size of the map.
+   * Gets the count of the map.
    *
    * @return A completable future to be completed with the number of entries in the map.
    */
@@ -69,7 +69,7 @@ public class DistributedMap<K, V> extends Resource {
   }
 
   /**
-   * Gets the size of the map.
+   * Gets the count of the map.
    *
    * @param consistency The query consistency level.
    * @return A completable future to be completed with the number of entries in the map.

@@ -26,13 +26,13 @@ import org.testng.annotations.Test;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class SearchableOffsetIndexTest {
+public class OffsetIndexTest {
 
   /**
    * Tests indexing an offset and checking whether the index contains the offset.
    */
   public void testIndexContains() {
-    SearchableOffsetIndex index = new SearchableOffsetIndex(HeapBuffer.allocate(1024 * 8));
+    OffsetIndex index = new OffsetIndex(HeapBuffer.allocate(1024 * 8));
     Assert.assertFalse(index.contains(10));
     index.index(10, 1234, 8);
     Assert.assertTrue(index.contains(10));
@@ -44,7 +44,7 @@ public class SearchableOffsetIndexTest {
    * Tests reading the position and length of an offset.
    */
   public void testIndexPositionAndLength() {
-    SearchableOffsetIndex index = new SearchableOffsetIndex(HeapBuffer.allocate(1024 * 8));
+    OffsetIndex index = new OffsetIndex(HeapBuffer.allocate(1024 * 8));
     index.index(1, 0, 8);
     Assert.assertEquals(index.position(1), 0);
     Assert.assertEquals(index.length(1), 8);
@@ -67,14 +67,14 @@ public class SearchableOffsetIndexTest {
    */
   public void testIndexRecover() {
     Buffer buffer = HeapBuffer.allocate(1024 * 8);
-    SearchableOffsetIndex index = new SearchableOffsetIndex(buffer);
+    OffsetIndex index = new OffsetIndex(buffer);
     index.index(10, 1234, 8);
     index.index(11, 2345, 8);
     index.index(12, 3456, 8);
     Assert.assertEquals(index.size(), 3);
     Assert.assertEquals(index.lastOffset(), 12);
     buffer.rewind();
-    SearchableOffsetIndex recover = new SearchableOffsetIndex(buffer);
+    OffsetIndex recover = new OffsetIndex(buffer);
     Assert.assertEquals(recover.size(), 3);
     Assert.assertEquals(recover.lastOffset(), 12);
     Assert.assertEquals(recover.position(12), 3456);

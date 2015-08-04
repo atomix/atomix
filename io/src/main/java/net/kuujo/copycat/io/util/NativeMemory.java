@@ -35,7 +35,7 @@ public class NativeMemory implements Memory {
   /**
    * Allocates native memory via {@link DirectMemoryAllocator}.
    *
-   * @param size The size of the memory to allocate.
+   * @param size The count of the memory to allocate.
    * @return The allocated memory.
    */
   public static NativeMemory allocate(long size) {

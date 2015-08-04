@@ -171,19 +171,19 @@ public class DistributedSet<T> extends Resource {
   }
 
   /**
-   * Gets the set size.
+   * Gets the set count.
    *
-   * @return A completable future to be completed with the set size.
+   * @return A completable future to be completed with the set count.
    */
   public CompletableFuture<Integer> size() {
     return submit(SetCommands.Size.builder().build());
   }
 
   /**
-   * Gets the set size.
+   * Gets the set count.
    *
    * @param consistency The query consistency level.
-   * @return A completable future to be completed with the set size.
+   * @return A completable future to be completed with the set count.
    */
   public CompletableFuture<Integer> size(ConsistencyLevel consistency) {
     return submit(SetCommands.Size.builder().withConsistency(consistency).build());

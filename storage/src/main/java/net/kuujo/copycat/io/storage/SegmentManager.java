@@ -19,12 +19,15 @@ import net.kuujo.copycat.ConfigurationException;
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.FileBuffer;
 import net.kuujo.copycat.io.HeapBuffer;
-import net.kuujo.copycat.util.concurrent.Context;
+import net.kuujo.copycat.io.serializer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.util.*;
+import java.util.Collection;
+import java.util.Map;
+import java.util.NavigableMap;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
@@ -37,15 +40,18 @@ import java.util.concurrent.ConcurrentSkipListMap;
  */
 class SegmentManager implements AutoCloseable {
   private static final Logger LOGGER = LoggerFactory.getLogger(SegmentManager.class);
-  protected final LogConfig config;
+  private final LogConfig config;
+  private final Serializer serializer;
   private NavigableMap<Long, Segment> segments = new ConcurrentSkipListMap<>();
-  private Context context;
   private Segment currentSegment;
 
-  public SegmentManager(LogConfig config) {
+  public SegmentManager(LogConfig config, Serializer serializer) {
     if (config == null)
       throw new NullPointerException("config cannot be null");
+    if (serializer == null)
+      throw new NullPointerException("serializer cannot be null");
     this.config = config;
+    this.serializer = serializer;
   }
 
   /**
@@ -58,13 +64,18 @@ class SegmentManager implements AutoCloseable {
   }
 
   /**
-   * Opens the segments.
+   * Returns the entry serializer.
    *
-   * @param context The context in which to open the segments.
+   * @return The entry serializer.
    */
-  public void open(Context context) {
-    this.context = context;
+  public Serializer serializer() {
+    return serializer;
+  }
 
+  /**
+   * Opens the segments.
+   */
+  public void open() {
     // Load existing log segments from disk.
     for (Segment segment : loadSegments()) {
       segments.put(segment.descriptor().index(), segment);
@@ -82,7 +93,10 @@ class SegmentManager implements AutoCloseable {
         .withMaxSegmentSize(config.getMaxSegmentSize())
         .withMaxEntries(config.getMaxEntriesPerSegment())
         .build()) {
+
         currentSegment = createSegment(descriptor);
+        currentSegment.descriptor().update(System.currentTimeMillis());
+        currentSegment.descriptor().lock();
       }
       segments.put(1l, currentSegment);
     }
@@ -193,18 +207,24 @@ class SegmentManager implements AutoCloseable {
   }
 
   /**
+   * Inserts a segment.
+   *
+   * @param segment The segment to insert.
+   */
+  public void insertSegment(Segment segment) {
+    Segment oldSegment = segments.put(segment.firstIndex(), segment);
+    if (oldSegment == null)
+      throw new IllegalStateException("unknown segment at index: " + segment.firstIndex());
+    segments.put(oldSegment.firstIndex(), oldSegment);
+  }
+
+  /**
    * Removes a segment.
    *
    * @param segment The segment to remove.
    */
-  public void remove(Segment segment) {
-    currentSegment = null;
-
-    Map<Long, Segment> removalSegments = segments.tailMap(segment.descriptor().index());
-    removalSegments.clear();
-    for (Iterator<Segment> i = removalSegments.values().iterator(); i.hasNext();) {
-      i.next().delete();
-    }
+  public void removeSegment(Segment segment) {
+    segments.remove(segment.firstIndex());
     resetCurrentSegment();
   }
 
@@ -228,7 +248,7 @@ class SegmentManager implements AutoCloseable {
   private Segment createDiskSegment(SegmentDescriptor descriptor) {
     File segmentFile = SegmentFile.createSegmentFile(config.getDirectory(), descriptor.id(), descriptor.version());
     Buffer buffer = FileBuffer.allocate(segmentFile, 1024 * 1024, descriptor.maxSegmentSize() + SegmentDescriptor.BYTES);
-    Segment segment = Segment.open(buffer.position(SegmentDescriptor.BYTES).slice(), descriptor, createIndex(descriptor), context);
+    Segment segment = Segment.open(buffer.position(SegmentDescriptor.BYTES).slice(), descriptor, createIndex(descriptor), serializer.clone());
     LOGGER.debug("Created persistent segment: {}", segment);
     return segment;
   }
@@ -239,7 +259,7 @@ class SegmentManager implements AutoCloseable {
   private Segment createMemorySegment(SegmentDescriptor descriptor) {
     Buffer buffer = HeapBuffer.allocate(Math.min(1024 * 1024, config.getMaxSegmentSize() + config.getMaxEntrySize() + SegmentDescriptor.BYTES),
       config.getMaxSegmentSize() + config.getMaxEntrySize() + SegmentDescriptor.BYTES);
-    Segment segment = Segment.open(buffer.position(SegmentDescriptor.BYTES).slice(), descriptor, createIndex(descriptor), context);
+    Segment segment = Segment.open(buffer.position(SegmentDescriptor.BYTES).slice(), descriptor, createIndex(descriptor), serializer.clone());
     LOGGER.debug("Created ephemeral segment: {}", segment);
     return segment;
   }
@@ -267,7 +287,7 @@ class SegmentManager implements AutoCloseable {
       Buffer buffer = FileBuffer.allocate(file, Math.min(1024 * 1024, config.getMaxSegmentSize() + config.getMaxEntrySize() + SegmentDescriptor.BYTES),
         config.getMaxSegmentSize() + config.getMaxEntrySize() + SegmentDescriptor.BYTES);
       buffer = buffer.position(SegmentDescriptor.BYTES).slice();
-      Segment segment = Segment.open(buffer, descriptor, createIndex(descriptor), context);
+      Segment segment = Segment.open(buffer, descriptor, createIndex(descriptor), serializer.clone());
       LOGGER.debug("Loaded segment: {} ({})", descriptor.id(), file.getName());
       return segment;
     }
@@ -299,14 +319,14 @@ class SegmentManager implements AutoCloseable {
    */
   private OffsetIndex createDiskIndex(SegmentDescriptor descriptor) {
     File file = SegmentFile.createIndexFile(config.getDirectory(), descriptor.id(), descriptor.version());
-    return new SearchableOffsetIndex(FileBuffer.allocate(file, Math.min(1024 * 1024, descriptor.maxEntries()), SearchableOffsetIndex.size(descriptor.maxEntries())));
+    return new OffsetIndex(FileBuffer.allocate(file, Math.min(1024 * 1024, descriptor.maxEntries()), OffsetIndex.size(descriptor.maxEntries())));
   }
 
   /**
    * Creates an in memory segment index.
    */
   private OffsetIndex createMemoryIndex(SegmentDescriptor descriptor) {
-    return new SearchableOffsetIndex(HeapBuffer.allocate(Math.min(1024 * 1024, descriptor.maxEntries()), SearchableOffsetIndex.size(descriptor.maxEntries())));
+    return new OffsetIndex(HeapBuffer.allocate(Math.min(1024 * 1024, descriptor.maxEntries()), OffsetIndex.size(descriptor.maxEntries())));
   }
 
   /**
@@ -318,90 +338,68 @@ class SegmentManager implements AutoCloseable {
     // Ensure log directories are created.
     config.getDirectory().mkdirs();
 
-    // Create a map of descriptors for each existing segment in the log. This is done by iterating through the log
-    // directory and finding segment files for this log name. For each segment file, check the consistency of the file
-    // by comparing versions and locked state in order to prevent lost data from failures during log compaction.
-    Map<Long, SegmentDescriptor> descriptors = new HashMap<>();
+    TreeMap<Long, Segment> segments = new TreeMap<>();
+
+    // Iterate through all files in the log directory.
     for (File file : config.getDirectory().listFiles(File::isFile)) {
+
+      // If the file looks like a segment file, attempt to load the segment.
       if (SegmentFile.isSegmentFile(file)) {
         SegmentFile segmentFile = new SegmentFile(file);
-        try {
-          // Create a new segment descriptor.
-          SegmentDescriptor descriptor = new SegmentDescriptor(FileBuffer.allocate(file, SegmentDescriptor.BYTES));
+        SegmentDescriptor descriptor = new SegmentDescriptor(FileBuffer.allocate(file, SegmentDescriptor.BYTES));
 
-          // Check that the descriptor matches the segment file metadata.
-          if (descriptor.id() != segmentFile.id()) {
-            throw new DescriptorException(String.format("descriptor ID does not match filename ID: %s", segmentFile.file().getName()));
+        // Valid segments will have been locked. Segments that resulting from failures during log cleaning will be
+        // unlocked and should ultimately be deleted from disk.
+        if (descriptor.locked()) {
+
+          // Load the segment.
+          Segment segment = loadSegment(descriptor.id(), descriptor.version());
+
+          // Check whether an existing segment with the segment index already exists. Note that we don't use segment IDs
+          // since the log compaction process combines segments and therefore it's not easy to determine which segment
+          // will contain a given starting index by ID.
+          Map.Entry<Long, Segment> existingEntry = segments.floorEntry(segment.descriptor().index());
+          if (existingEntry != null) {
+
+            // If an existing descriptor exists with a lower index than this segment's first index, check to determine
+            // whether this segment's first index is contained in that existing index. If it is, determine which segment
+            // should take precedence based on segment versions.
+            Segment existingSegment = existingEntry.getValue();
+            if (existingSegment.firstIndex() <= segment.firstIndex() && existingSegment.firstIndex() + existingSegment.length() >= segment.firstIndex()) {
+              if (existingSegment.descriptor().version() < segment.descriptor().version()) {
+                LOGGER.debug("Replaced segment {} with newer version: {} ({})", existingSegment.descriptor().id(), segment.descriptor().version(), segmentFile.file().getName());
+                segments.remove(existingEntry.getKey());
+                existingSegment.close();
+                existingSegment.delete();
+                segments.put(segment.firstIndex(), segment);
+              } else {
+                segment.close();
+                segment.delete();
+              }
+            }
+            // If the next closes existing segment didn't contain this segment's first index, add this segment.
+            else {
+              LOGGER.debug("Found segment: {} ({})", segment.descriptor().id(), segmentFile.file().getName());
+              segments.put(segment.firstIndex(), segment);
+            }
           }
-          if (descriptor.version() != segmentFile.version()) {
-            throw new DescriptorException(String.format("descriptor version does not match filename version: %s", segmentFile.file().getName()));
+          // If there was no segment with a starting index close to this segment's index, add this segment.
+          else {
+            LOGGER.debug("Found segment: {} ({})", segment.descriptor().id(), segmentFile.file().getName());
+            segments.put(segment.firstIndex(), segment);
           }
 
-          // If a descriptor already exists for the segment, compare the descriptor versions.
-          SegmentDescriptor existingDescriptor = descriptors.get(segmentFile.id());
-
-          // If this segment's version is greater than the existing segment's version and the segment is locked then
-          // overwrite it. The segment will be locked if all entries have been committed, e.g. after compaction.
-          if (existingDescriptor == null) {
-            LOGGER.debug("Found segment: {} ({})", descriptor.id(), segmentFile.file().getName());
-            descriptors.put(descriptor.id(), descriptor);
-          } else if (descriptor.version() > existingDescriptor.version() && descriptor.locked()) {
-            LOGGER.debug("Replaced segment {} with newer version: {} ({})", existingDescriptor.id(), descriptor.version(), segmentFile.file().getName());
-            descriptors.put(descriptor.id(), descriptor);
-            existingDescriptor.close();
-            existingDescriptor.delete();
-          } else {
-            descriptor.close();
-          }
-        } catch (NumberFormatException e) {
-          // It must not have been a valid segment file.
+          descriptor.close();
+        }
+        // If the segment descriptor wasn't locked, close and delete the descriptor.
+        else {
+          descriptor.close();
+          descriptor.delete();
         }
       }
     }
 
-    // Once we've constructed a map of the most recent descriptors, load the segments.
-    List<Segment> segments = new ArrayList<>();
-    for (SegmentDescriptor descriptor : descriptors.values()) {
-      segments.add(loadSegment(descriptor.id(), descriptor.version()));
-      descriptor.close();
-    }
-    return segments;
-  }
-
-  /**
-   * Replaces the existing segment with the given ID with the given segment.
-   */
-  public void replace(Segment segment) {
-    LOGGER.debug("Replacing segment: {}", segment.descriptor().id());
-    Segment oldSegment = segments.put(segment.descriptor().index(), segment);
-    if (oldSegment != null) {
-      LOGGER.debug("Deleting segment: {}-{}", oldSegment.descriptor().id(), oldSegment.descriptor().version());
-      oldSegment.close();
-      oldSegment.delete();
-    }
-  }
-
-  /**
-   * Assigns a new segment list and deletes segments removed from the old segments map.
-   */
-  public void update(Collection<Segment> segments) {
-    NavigableMap<Long, Segment> newSegments = new ConcurrentSkipListMap<>();
-    segments.forEach(s -> newSegments.put(s.descriptor().index(), s));
-
-    // Assign the new segments map and delete any segments that were removed from the map.
-    NavigableMap<Long, Segment> oldSegments = this.segments;
-    this.segments = newSegments;
-    resetCurrentSegment();
-
-    // Deletable segments are determined by whether the segment does not have a matching segment/version in the new segments.
-    for (Segment oldSegment : oldSegments.values()) {
-      Segment segment = this.segments.get(oldSegment.descriptor().index());
-      if (segment == null || segment.descriptor().id() != oldSegment.descriptor().id() || segment.descriptor().version() > oldSegment.descriptor().version()) {
-        LOGGER.debug("Deleting segment: {}-{}", oldSegment.descriptor().id(), oldSegment.descriptor().version());
-        oldSegment.close();
-        oldSegment.delete();
-      }
-    }
+    return segments.values();
   }
 
   @Override

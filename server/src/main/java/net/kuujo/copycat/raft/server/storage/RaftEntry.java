@@ -44,9 +44,9 @@ public class RaftEntry<T extends RaftEntry<T>> extends Entry<T> {
   }
 
   /**
-   * Returns the entry size.
+   * Returns the entry count.
    *
-   * @return The entry size.
+   * @return The entry count.
    */
   public int size() {
     return 8;

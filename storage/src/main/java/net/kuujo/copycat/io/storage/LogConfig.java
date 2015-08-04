@@ -16,7 +16,6 @@
 package net.kuujo.copycat.io.storage;
 
 import java.io.File;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Copycat storage configuration.
@@ -31,16 +30,14 @@ class LogConfig {
   private static final int DEFAULT_MAX_ENTRY_SIZE = 1024 * 8;
   private static final int DEFAULT_MAX_SEGMENT_SIZE = 1024 * 1024 * 32;
   private static final int DEFAULT_MAX_ENTRIES_PER_SEGMENT = (int) (Math.pow(2, 31) - 1) / 8 - 16;
-  private static final long DEFAULT_MINOR_COMPACTION_INTERVAL = TimeUnit.MINUTES.toMillis(1);
-  private static final long DEFAULT_MAJOR_COMPACTION_INTERVAL = TimeUnit.HOURS.toMillis(1);
+  private static final int DEFAULT_CLEANER_THREADS = 4;
 
   private File directory = new File(DEFAULT_DIRECTORY);
   private StorageLevel level = StorageLevel.DISK;
   private int maxEntrySize = DEFAULT_MAX_ENTRY_SIZE;
   private int maxSegmentSize = DEFAULT_MAX_SEGMENT_SIZE;
   private int maxEntriesPerSegment = DEFAULT_MAX_ENTRIES_PER_SEGMENT;
-  private long minorCompactionInterval = DEFAULT_MINOR_COMPACTION_INTERVAL;
-  private long majorCompactionInterval = DEFAULT_MAJOR_COMPACTION_INTERVAL;
+  private int cleanerThreads = DEFAULT_CLEANER_THREADS;
 
   public LogConfig() {
   }
@@ -100,36 +97,6 @@ class LogConfig {
   }
 
   /**
-   * Sets the log directory, returning the configuration for method chaining.
-   * <p>
-   * The log will write segment files into the provided directory. It is recommended that a unique directory be dedicated
-   * for each unique log instance.
-   *
-   * @param directory The log directory.
-   * @return The log configuration.
-   * @throws NullPointerException If the {@code directory} is {@code null}
-   */
-  public LogConfig withDirectory(String directory) {
-    setDirectory(directory);
-    return this;
-  }
-
-  /**
-   * Sets the log directory, returning the configuration for method chaining.
-   * <p>
-   * The log will write segment files into the provided directory. It is recommended that a unique directory be dedicated
-   * for each unique log instance.
-   *
-   * @param directory The log directory.
-   * @return The log configuration.
-   * @throws NullPointerException If the {@code directory} is {@code null}
-   */
-  public LogConfig withDirectory(File directory) {
-    setDirectory(directory);
-    return this;
-  }
-
-  /**
    * Sets the log storage level.
    *
    * @param level The log storage level.
@@ -151,22 +118,11 @@ class LogConfig {
   }
 
   /**
-   * Sets the log storage level, returning the configuration for method chaining.
-   *
-   * @param level The log storage level.
-   * @return The log configuration.
-   */
-  public LogConfig withStorageLevel(StorageLevel level) {
-    setStorageLevel(level);
-    return this;
-  }
-
-  /**
-   * Sets the maximum entry size.
+   * Sets the maximum entry count.
    * <p>
-   * The maximum entry size will be used to place an upper limit on the size of log segments.
+   * The maximum entry count will be used to place an upper limit on the count of log segments.
    *
-   * @param maxEntrySize The maximum key size.
+   * @param maxEntrySize The maximum key count.
    * @throws IllegalArgumentException If the {@code maxEntrySize} is not positive or is greater than
    * {@link LogConfig#getMaxSegmentSize()}
    */
@@ -179,36 +135,22 @@ class LogConfig {
   }
 
   /**
-   * Returns the maximum entry size.
+   * Returns the maximum entry count.
    * <p>
-   * The maximum entry size will be used to place an upper limit on the size of log segments. By default the {@code maxEntrySize}
+   * The maximum entry count will be used to place an upper limit on the count of log segments. By default the {@code maxEntrySize}
    * is {@code 1024 * 8}
    *
-   * @return The maximum entry size.
+   * @return The maximum entry count.
    */
   public int getMaxEntrySize() {
     return maxEntrySize;
   }
 
   /**
-   * Sets the maximum entry size, returning the configuration for method chaining.
-   * <p>
-   * The maximum entry size will be used to place an upper limit on the size of log segments.
+   * Sets the maximum segment count.
    *
-   * @param maxEntrySize The maximum entry size.
-   * @return The log configuration.
-   * @throws IllegalArgumentException If the {@code maxEntrySize} is not positive
-   */
-  public LogConfig withMaxEntrySize(int maxEntrySize) {
-    setMaxEntrySize(maxEntrySize);
-    return this;
-  }
-
-  /**
-   * Sets the maximum segment size.
-   *
-   * @param maxSegmentSize The maximum segment size.
-   * @throws java.lang.IllegalArgumentException If the segment size is not positive or is less than
+   * @param maxSegmentSize The maximum segment count.
+   * @throws java.lang.IllegalArgumentException If the segment count is not positive or is less than
    * {@link LogConfig#getMaxEntrySize()}.
    */
   public void setMaxSegmentSize(int maxSegmentSize) {
@@ -220,23 +162,12 @@ class LogConfig {
   }
 
   /**
-   * Returns the maximum log segment size.
+   * Returns the maximum log segment count.
    *
-   * @return The maximum log segment size.
+   * @return The maximum log segment count.
    */
   public int getMaxSegmentSize() {
     return maxSegmentSize;
-  }
-
-  /**
-   * Sets the maximum log segment size, returning the configuration for method chaining.
-   *
-   * @param maxSegmentSize The maximum segment size.
-   * @return The log configuration.
-   */
-  public LogConfig withMaxSegmentSize(int maxSegmentSize) {
-    setMaxSegmentSize(maxSegmentSize);
-    return this;
   }
 
   /**
@@ -262,44 +193,23 @@ class LogConfig {
   }
 
   /**
-   * Sets the maximum number of allowed entries per segment, returning the configuration for method chaining.
+   * Sets the number of cleaner threads.
    *
-   * @param maxEntriesPerSegment The maximum number of allowed entries per segment.
-   * @return The log configuration.
-   * @throws java.lang.IllegalArgumentException If the maximum number of entries per segment is greater than
-   *         {@code (int) (Math.pow(2, 31) - 1) / 8}
+   * @param cleanerThreads The number of cleaner threads.
    */
-  public LogConfig withMaxEntriesPerSegment(int maxEntriesPerSegment) {
-    setMaxEntriesPerSegment(maxEntriesPerSegment);
-    return this;
+  public void setCleanerThreads(int cleanerThreads) {
+    if (cleanerThreads <= 0)
+      throw new IllegalArgumentException("cleanerThreads must be positive");
+    this.cleanerThreads = cleanerThreads;
   }
 
-  public void setMinorCompactionInterval(long compactionInterval) {
-    if (compactionInterval <= 0)
-      throw new IllegalArgumentException("compaction interval must be positive");
-    this.minorCompactionInterval = compactionInterval;
-  }
-
-  public void setMinorCompactionInterval(long compactionInterval, TimeUnit unit) {
-    setMinorCompactionInterval(unit.toMillis(compactionInterval));
-  }
-
-  public long getMinorCompactionInterval() {
-    return minorCompactionInterval;
-  }
-
-  public void setMajorCompactionInterval(long compactionInterval) {
-    if (compactionInterval <= 0)
-      throw new IllegalArgumentException("compaction interval must be positive");
-    this.majorCompactionInterval = compactionInterval;
-  }
-
-  public void setMajorCompactionInterval(long compactionInterval, TimeUnit unit) {
-    setMajorCompactionInterval(unit.toMillis(compactionInterval));
-  }
-
-  public long getMajorCompactionInterval() {
-    return majorCompactionInterval;
+  /**
+   * Returns the number of cleaner threads.
+   *
+   * @return The number of cleaner threads.
+   */
+  public int getCleanerThreads() {
+    return cleanerThreads;
   }
 
 }

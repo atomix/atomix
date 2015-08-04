@@ -19,7 +19,7 @@ import java.util.function.Consumer;
 
 /**
  * Quorum helper. Completes and invokes a callback when the number of {@link #succeed()} or
- * {@link #fail()} calls equal the expected quorum size. Not threadsafe.
+ * {@link #fail()} calls equal the expected quorum count. Not threadsafe.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

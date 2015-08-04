@@ -15,11 +15,11 @@
  */
 package net.kuujo.copycat.io.storage;
 
-import net.kuujo.copycat.util.BuilderPool;
-import net.kuujo.copycat.util.concurrent.Context;
+import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.util.concurrent.CopycatThreadFactory;
 
 import java.io.File;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Executors;
 
 /**
  * Raft log.
@@ -27,7 +27,6 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class Log implements AutoCloseable {
-  private static final BuilderPool<Builder, Log> POOL = new BuilderPool<>(Builder::new);
 
   /**
    * Returns a new Raft storage builder.
@@ -35,12 +34,12 @@ public class Log implements AutoCloseable {
    * @return A new Raft storage builder.
    */
   public static Builder builder() {
-    return POOL.acquire();
+    return new Builder();
   }
 
-  protected final SegmentManager segments;
-  protected Compactor compactor;
-  protected final TypedEntryPool entryPool = new TypedEntryPool();
+  private final SegmentManager segments;
+  private final TypedEntryPool entryPool = new TypedEntryPool();
+  private LogCleaner cleaner;
   private boolean open;
 
   protected Log(SegmentManager segments) {
@@ -49,22 +48,20 @@ public class Log implements AutoCloseable {
 
   /**
    * Opens the log.
-   *
-   * @param context The context in which to open the log.
    */
-  public void open(Context context) {
-    segments.open(context);
-    compactor.open(context);
+  public void open() {
+    segments.open();
+    cleaner = new LogCleaner(segments, Executors.newScheduledThreadPool(segments.config().getCleanerThreads(), new CopycatThreadFactory("copycat-log-cleaner-%d")));
     open = true;
   }
 
   /**
-   * Returns the log compactor.
+   * Returns the log cleaner.
    *
-   * @return The log compactor.
+   * @return The log cleaner.
    */
-  public Compactor compactor() {
-    return compactor;
+  public LogCleaner cleaner() {
+    return cleaner;
   }
 
   /**
@@ -112,9 +109,9 @@ public class Log implements AutoCloseable {
   }
 
   /**
-   * Returns the size of the log on disk in bytes.
+   * Returns the count of the log on disk in bytes.
    *
-   * @return The size of the log in bytes.
+   * @return The count of the log in bytes.
    */
   public long size() {
     return segments.segments().stream().mapToLong(Segment::size).sum();
@@ -163,6 +160,7 @@ public class Log implements AutoCloseable {
   private void checkRoll() {
     if (segments.currentSegment().isFull()) {
       segments.nextSegment();
+      cleaner.clean();
     }
   }
 
@@ -227,7 +225,8 @@ public class Log implements AutoCloseable {
     Segment segment = segments.segment(index);
     if (segment == null)
       throw new IndexOutOfBoundsException("invalid index: " + index);
-    return segment.getEntry(index);
+    T entry = segment.getEntry(index);
+    return !entry.isTombstone() ? entry : null;
   }
 
   /**
@@ -256,6 +255,21 @@ public class Log implements AutoCloseable {
       return false;
     Segment segment = segments.segment(index);
     return segment != null && segment.containsEntry(index);
+  }
+
+  /**
+   * Cleans the entry at the given index.
+   *
+   * @param index The index of the entry to clean.
+   * @return The log.
+   * @throws java.lang.IllegalStateException If the log is not open.
+   */
+  public Log cleanEntry(long index) {
+    checkOpen();
+    Segment segment = segments.segment(index);
+    if (segment != null)
+      segment.cleanEntry(index);
+    return this;
   }
 
   /**
@@ -304,7 +318,7 @@ public class Log implements AutoCloseable {
       if (index == 0 || segment.containsIndex(index)) {
         segment.truncate(index);
       } else if (segment.descriptor().index() > index) {
-        segments.remove(segment);
+        segments.removeSegment(segment);
       }
     }
     return this;
@@ -325,7 +339,8 @@ public class Log implements AutoCloseable {
   @Override
   public void close() {
     segments.close();
-    compactor.close();
+    if (cleaner != null)
+      cleaner.close();
     open = false;
   }
 
@@ -350,9 +365,23 @@ public class Log implements AutoCloseable {
    */
   public static class Builder extends net.kuujo.copycat.util.Builder<Log> {
     private final LogConfig config = new LogConfig();
+    private Serializer serializer;
 
-    private Builder(BuilderPool pool) {
-      super(pool);
+    private Builder() {
+    }
+
+    /**
+     * Sets the log entry serializer.
+     *
+     * @param serializer The log entry serializer.
+     * @return The log builder.
+     * @throws java.lang.NullPointerException If the serializer is {@code null}
+     */
+    public Builder withSerializer(Serializer serializer) {
+      if (serializer == null)
+        throw new NullPointerException("serializer cannot be null");
+      this.serializer = serializer;
+      return this;
     }
 
     /**
@@ -401,11 +430,11 @@ public class Log implements AutoCloseable {
     }
 
     /**
-     * Sets the maximum entry size, returning the builder for method chaining.
+     * Sets the maximum entry count, returning the builder for method chaining.
      * <p>
-     * The maximum entry size will be used to place an upper limit on the size of log segments.
+     * The maximum entry count will be used to place an upper limit on the count of log segments.
      *
-     * @param maxEntrySize The maximum entry size.
+     * @param maxEntrySize The maximum entry count.
      * @return The log builder.
      * @throws IllegalArgumentException If the {@code maxEntrySize} is not positive
      */
@@ -415,9 +444,9 @@ public class Log implements AutoCloseable {
     }
 
     /**
-     * Sets the maximum segment size, returning the builder for method chaining.
+     * Sets the maximum segment count, returning the builder for method chaining.
      *
-     * @param maxSegmentSize The maximum segment size.
+     * @param maxSegmentSize The maximum segment count.
      * @return The log builder.
      * @throws java.lang.IllegalArgumentException If the {@code maxSegmentSize} is not positive
      */
@@ -439,52 +468,13 @@ public class Log implements AutoCloseable {
     }
 
     /**
-     * Sets the minor compaction interval.
+     * Sets the number of log cleaner threads.
      *
-     * @param compactionInterval The minor compaction interval in milliseconds.
+     * @param cleanerThreads The number of log cleaner threads.
      * @return The log builder.
-     * @throws java.lang.IllegalArgumentException If the compaction interval is not positive
      */
-    public Builder withMinorCompactionInterval(long compactionInterval) {
-      config.setMinorCompactionInterval(compactionInterval);
-      return this;
-    }
-
-    /**
-     * Sets the minor compaction interval.
-     *
-     * @param compactionInterval The minor compaction interval.
-     * @param unit The interval time unit.
-     * @return The log builder.
-     * @throws java.lang.IllegalArgumentException If the compaction interval is not positive
-     */
-    public Builder withMinorCompactionInterval(long compactionInterval, TimeUnit unit) {
-      config.setMinorCompactionInterval(compactionInterval, unit);
-      return this;
-    }
-
-    /**
-     * Sets the major compaction interval.
-     *
-     * @param compactionInterval The major compaction interval in milliseconds.
-     * @return The log builder.
-     * @throws java.lang.IllegalArgumentException If the compaction interval is not positive
-     */
-    public Builder withMajorCompactionInterval(long compactionInterval) {
-      config.setMajorCompactionInterval(compactionInterval);
-      return this;
-    }
-
-    /**
-     * Sets the major compaction interval.
-     *
-     * @param compactionInterval The major compaction interval.
-     * @param unit The interval time unit.
-     * @return The log builder.
-     * @throws java.lang.IllegalArgumentException If the compaction interval is not positive
-     */
-    public Builder withMajorCompactionInterval(long compactionInterval, TimeUnit unit) {
-      config.setMajorCompactionInterval(compactionInterval, unit);
+    public Builder withCleanerThreads(int cleanerThreads) {
+      config.setCleanerThreads(cleanerThreads);
       return this;
     }
 
@@ -494,15 +484,8 @@ public class Log implements AutoCloseable {
      * @return A new buffered log.
      */
     public Log build() {
-      try {
-        Log log = new Log(new SegmentManager(config));
-        log.compactor = new Compactor(log)
-          .withMinorCompactionInterval(config.getMinorCompactionInterval())
-          .withMajorCompactionInterval(config.getMajorCompactionInterval());
-        return log;
-      } finally {
-        close();
-      }
+      SegmentManager segments = new SegmentManager(config, serializer);
+      return new Log(segments);
     }
   }
 

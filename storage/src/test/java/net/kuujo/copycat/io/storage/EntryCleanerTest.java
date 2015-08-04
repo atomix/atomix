@@ -22,7 +22,7 @@ import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.SingleThreadContext;
 import org.testng.annotations.Test;
 
-import java.util.concurrent.CompletableFuture;
+import java.util.ArrayList;
 
 /**
  * Minor compaction test.
@@ -30,7 +30,7 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class MinorCompactionTest extends ConcurrentTestCase {
+public class EntryCleanerTest extends ConcurrentTestCase {
 
   /**
    * Tests compacting the log.
@@ -43,7 +43,7 @@ public class MinorCompactionTest extends ConcurrentTestCase {
 
     Context context = new SingleThreadContext("test", new Serializer(new ServiceLoaderResolver()));
 
-    log.open(context);
+    log.open();
 
     writeEntries(log, 550);
 
@@ -58,10 +58,10 @@ public class MinorCompactionTest extends ConcurrentTestCase {
 
     threadAssertEquals(log.length(), 1101L);
 
-    MinorCompaction compaction = new MinorCompaction(1024, (e, c) -> CompletableFuture.completedFuture(!((TestEntry) e).isRemove()), context);
+    EntryCleaner cleaner = new EntryCleaner(log.segments(), context);
 
     expectResume();
-    compaction.run(log.segments()).thenRun(this::resume);
+    cleaner.clean(new ArrayList<>(log.segments().segments())).thenRun(this::resume);
     await();
 
     threadAssertEquals(log.length(), 1101L);

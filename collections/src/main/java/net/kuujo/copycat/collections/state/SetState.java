@@ -130,7 +130,7 @@ public class SetState extends StateMachine {
   }
 
   /**
-   * Handles a size commit.
+   * Handles a count commit.
    */
   @Apply(SetCommands.Size.class)
   protected int size(Commit<SetCommands.Size> commit) {

@@ -22,7 +22,7 @@ import java.io.IOException;
 /**
  * Direct memory bit set.
  * <p>
- * The direct bit set performs bitwise operations on a fixed length {@link net.kuujo.copycat.io.HeapBytes} instance.
+ * The direct bit set performs bitwise operations on a fixed count {@link net.kuujo.copycat.io.HeapBytes} instance.
  * Currently, all bytes are {@link net.kuujo.copycat.io.HeapBytes}, but theoretically {@link net.kuujo.copycat.io.MappedBytes}
  * could be used for durability as well.
  *
@@ -44,17 +44,17 @@ public class BitArray implements AutoCloseable {
   }
 
   private final HeapBytes bytes;
-  private final long length;
   private long size;
+  private long count;
 
-  private BitArray(HeapBytes bytes, long length) {
-    this(bytes, 0, length);
+  private BitArray(HeapBytes bytes, long size) {
+    this(bytes, 0, size);
   }
 
-  private BitArray(HeapBytes bytes, long size, long length) {
+  private BitArray(HeapBytes bytes, long count, long size) {
     this.bytes = bytes;
-    this.length = length;
     this.size = size;
+    this.count = count;
   }
 
   /**
@@ -71,12 +71,12 @@ public class BitArray implements AutoCloseable {
    * @return Indicates if the bit was changed.
    */
   public boolean set(long index) {
-    if (!(index < length))
+    if (!(index < size))
       throw new IndexOutOfBoundsException();
     if (!get(index)) {
       int offset = offset(index);
       bytes.writeLong(offset, bytes.readLong(offset) | (1L << index));
-      size++;
+      count++;
       return true;
     }
     return false;
@@ -89,7 +89,7 @@ public class BitArray implements AutoCloseable {
    * @return Indicates whether the bit is set.
    */
   public boolean get(long index) {
-    if (!(index < length))
+    if (!(index < size))
       throw new IndexOutOfBoundsException();
     return (bytes.readLong(offset(index)) & (1L << index)) != 0;
   }
@@ -99,8 +99,8 @@ public class BitArray implements AutoCloseable {
    *
    * @return The total number of bits in the bit set.
    */
-  public long length() {
-    return length;
+  public long size() {
+    return size;
   }
 
   /**
@@ -108,8 +108,20 @@ public class BitArray implements AutoCloseable {
    *
    * @return The number of bits set.
    */
-  public long size() {
-    return size;
+  public long count() {
+    return count;
+  }
+
+  /**
+   * Resizes the bit array to a new count.
+   *
+   * @param size The new count.
+   * @return The resized bit array.
+   */
+  public BitArray resize(long size) {
+    bytes.resize(Math.max(size / 64, 8) + 8);
+    this.size = size;
+    return this;
   }
 
   /**
@@ -118,7 +130,7 @@ public class BitArray implements AutoCloseable {
    * @return The copied bit set.
    */
   public BitArray copy() {
-    return new BitArray(bytes.copy(), size);
+    return new BitArray(bytes.copy(), count);
   }
 
   @Override

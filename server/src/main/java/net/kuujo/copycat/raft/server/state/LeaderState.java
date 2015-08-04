@@ -695,7 +695,7 @@ class LeaderState extends ActiveState {
 
       // Set the current commit index as the median replicated index.
       // Since replicas is a list with zero based indexes, use the negation of
-      // the required quorum size to get the index of the replica with the least
+      // the required quorum count to get the index of the replica with the least
       // possible quorum replication. That replica's match index is the commit index.
       // Set the commit index. Once the commit index has been set we can run
       // all tasks up to the given commit.

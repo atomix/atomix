@@ -43,7 +43,7 @@ public interface CopycatSerializable {
    * set the buffer's {@link net.kuujo.copycat.io.Buffer#mark()} and {@link net.kuujo.copycat.io.Buffer#reset()}.
    * <p>
    * When writing dynamically sized attributes such as strings and collections, users should always write the attribute's
-   * size to the given buffer. Copycat makes no guarantee that the buffer provided to
+   * count to the given buffer. Copycat makes no guarantee that the buffer provided to
    * {@link CopycatSerializable#readObject(net.kuujo.copycat.io.BufferInput, Serializer)} will reflect the
    * number of bytes written to the buffer during serialization.
    *

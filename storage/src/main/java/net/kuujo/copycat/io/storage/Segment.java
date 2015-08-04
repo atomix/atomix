@@ -17,7 +17,6 @@ package net.kuujo.copycat.io.storage;
 
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.util.concurrent.Context;
 
 /**
  * Log segment.
@@ -32,11 +31,11 @@ class Segment implements AutoCloseable {
    * @param buffer The segment buffer.
    * @param descriptor The segment descriptor.
    * @param index The segment index.
-   * @param context The segment execution context.
+   * @param serializer The segment entry serializer.
    * @return The opened segment.
    */
-  static Segment open(Buffer buffer, SegmentDescriptor descriptor, OffsetIndex index, Context context) {
-    return new Segment(buffer, descriptor, index, context);
+  static Segment open(Buffer buffer, SegmentDescriptor descriptor, OffsetIndex index, Serializer serializer) {
+    return new Segment(buffer, descriptor, index, serializer);
   }
 
   private final SegmentDescriptor descriptor;
@@ -48,18 +47,18 @@ class Segment implements AutoCloseable {
   private int skip = 0;
   private boolean open = true;
 
-  Segment(Buffer buffer, SegmentDescriptor descriptor, OffsetIndex offsetIndex, Context context) {
+  Segment(Buffer buffer, SegmentDescriptor descriptor, OffsetIndex offsetIndex, Serializer serializer) {
     if (buffer == null)
       throw new NullPointerException("buffer cannot be null");
     if (descriptor == null)
       throw new NullPointerException("descriptor cannot be null");
     if (offsetIndex == null)
       throw new NullPointerException("index cannot be null");
-    if (context == null)
-      throw new NullPointerException("context cannot be null");
+    if (serializer == null)
+      throw new NullPointerException("serializer cannot be null");
 
     this.source = buffer;
-    this.serializer = context.serializer();
+    this.serializer = serializer;
     this.writeBuffer = buffer.slice();
     this.readBuffer = writeBuffer.asReadOnlyBuffer();
     this.descriptor = descriptor;
@@ -115,9 +114,18 @@ class Segment implements AutoCloseable {
   }
 
   /**
-   * Returns the total size of the segment in bytes.
+   * Returns a boolean value indicating whether the segment is free of cleaned entries.
    *
-   * @return The size of the segment in bytes.
+   * @return Indicates whether the segment is free of cleaned entries.
+   */
+  public boolean isClean() {
+    return offsetIndex.deletes() == 0;
+  }
+
+  /**
+   * Returns the total count of the segment in bytes.
+   *
+   * @return The count of the segment in bytes.
    */
   public long size() {
     return writeBuffer.offset() + writeBuffer.position();
@@ -133,6 +141,15 @@ class Segment implements AutoCloseable {
   }
 
   /**
+   * Returns the count of entries in the segment.
+   *
+   * @return The count of entries in the segment.
+   */
+  public int count() {
+    return offsetIndex.lastOffset() + 1 - offsetIndex.deletes();
+  }
+
+  /**
    * Returns the index of the first entry in the segment.
    *
    * @return The index of the first entry in the segment or {@code 0} if the segment is empty.
@@ -140,7 +157,7 @@ class Segment implements AutoCloseable {
   public long firstIndex() {
     if (!isOpen())
       throw new IllegalStateException("segment not open");
-    return !isEmpty() ? descriptor.index() : 0;
+    return !isEmpty() ? descriptor.index() + offsetIndex.firstOffset() : 0;
   }
 
   /**
@@ -161,6 +178,19 @@ class Segment implements AutoCloseable {
    */
   public long nextIndex() {
     return !isEmpty() ? lastIndex() + 1 : descriptor.index() + skip;
+  }
+
+  /**
+   * Compacts the head of the segment up to the given index.
+   *
+   * @param firstIndex The first index in the segment.
+   * @return The segment.
+   */
+  public Segment compact(long firstIndex) {
+    if (!isEmpty()) {
+      offsetIndex.resetOffset(offset(firstIndex));
+    }
+    return this;
   }
 
   /**
@@ -245,7 +275,7 @@ class Segment implements AutoCloseable {
       // Deserialize the entry from a slice of the underlying buffer.
       try (Buffer value = readBuffer.slice(position, length)) {
         T entry = serializer.readObject(value);
-        entry.setIndex(index);
+        entry.setIndex(index).setTombstone(offsetIndex.deleted(offset));
         return entry;
       }
     }
@@ -274,6 +304,19 @@ class Segment implements AutoCloseable {
     if (!isOpen())
       throw new IllegalStateException("segment not open");
     return containsIndex(index) && offsetIndex.contains(offset(index));
+  }
+
+  /**
+   * Cleans an entry from the segment.
+   *
+   * @param index The index of the entry to clean.
+   * @return The segment.
+   */
+  public Segment cleanEntry(long index) {
+    if (!isOpen())
+      throw new IllegalStateException("segment not open");
+    offsetIndex.delete(offset(index));
+    return this;
   }
 
   /**
@@ -332,6 +375,7 @@ class Segment implements AutoCloseable {
    * Deletes the segment.
    */
   public void delete() {
+    offsetIndex.delete();
     descriptor.delete();
   }
 

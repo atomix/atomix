@@ -25,7 +25,7 @@ public class DirectMemory extends NativeMemory {
   /**
    * Allocates direct memory via {@link net.kuujo.copycat.io.util.DirectMemoryAllocator}.
    *
-   * @param size The size of the memory to allocate.
+   * @param size The count of the memory to allocate.
    * @return The allocated memory.
    */
   public static DirectMemory allocate(long size) {

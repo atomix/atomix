@@ -232,7 +232,7 @@ public class LogTest {
       .withMaxSegmentSize(1024 * 1024)
       .withMaxEntriesPerSegment(1024)
       .build();
-    log.open(createContext());
+    log.open();
     Assert.assertTrue(log.isOpen());
     return log;
   }

@@ -43,7 +43,7 @@ public class FileBytes extends AbstractBytes {
   static final String DEFAULT_MODE = "rw";
 
   /**
-   * Allocates a randomAccessFile buffer of unlimited size.
+   * Allocates a randomAccessFile buffer of unlimited count.
    * <p>
    * The buffer will be allocated with {@link Long#MAX_VALUE} bytes. As bytes are written to the buffer, the underlying
    * {@link java.io.RandomAccessFile} will expand.
@@ -58,10 +58,10 @@ public class FileBytes extends AbstractBytes {
   /**
    * Allocates a randomAccessFile buffer.
    * <p>
-   * If the underlying randomAccessFile is empty, the randomAccessFile size will expand dynamically as bytes are written to the randomAccessFile.
+   * If the underlying randomAccessFile is empty, the randomAccessFile count will expand dynamically as bytes are written to the randomAccessFile.
    *
    * @param file The randomAccessFile to allocate.
-   * @param size The size of the bytes to allocate.
+   * @param size The count of the bytes to allocate.
    * @return The allocated buffer.
    */
   public static FileBytes allocate(File file, long size) {
@@ -71,11 +71,11 @@ public class FileBytes extends AbstractBytes {
   /**
    * Allocates a randomAccessFile buffer.
    * <p>
-   * If the underlying randomAccessFile is empty, the randomAccessFile size will expand dynamically as bytes are written to the randomAccessFile.
+   * If the underlying randomAccessFile is empty, the randomAccessFile count will expand dynamically as bytes are written to the randomAccessFile.
    *
    * @param file The randomAccessFile to allocate.
    * @param mode The mode in which to open the underlying {@link java.io.RandomAccessFile}.
-   * @param size The size of the bytes to allocate.
+   * @param size The count of the bytes to allocate.
    * @return The allocated buffer.
    */
   public static FileBytes allocate(File file, String mode, long size) {
@@ -144,10 +144,10 @@ public class FileBytes extends AbstractBytes {
    * a {@link MappedBytes} instance.
    *
    * @param offset The offset from which to map the randomAccessFile into memory.
-   * @param size The size of the bytes to map into memory.
+   * @param size The count of the bytes to map into memory.
    * @return The mapped bytes.
-   * @throws IllegalArgumentException If {@code size} is greater than the maximum allowed
-   *         {@link java.nio.MappedByteBuffer} size: {@link Integer#MAX_VALUE}
+   * @throws IllegalArgumentException If {@code count} is greater than the maximum allowed
+   *         {@link java.nio.MappedByteBuffer} count: {@link Integer#MAX_VALUE}
    */
   public MappedBytes map(long offset, long size) {
     return map(offset, size, FileChannel.MapMode.READ_WRITE);
@@ -157,11 +157,11 @@ public class FileBytes extends AbstractBytes {
    * Maps a portion of the randomAccessFile into memory and returns a {@link MappedBytes} instance.
    *
    * @param offset The offset from which to map the randomAccessFile into memory.
-   * @param size The size of the bytes to map into memory.
+   * @param size The count of the bytes to map into memory.
    * @param mode The mode in which to map the randomAccessFile into memory.
    * @return The mapped bytes.
-   * @throws IllegalArgumentException If {@code size} is greater than the maximum allowed
-   *         {@link java.nio.MappedByteBuffer} size: {@link Integer#MAX_VALUE}
+   * @throws IllegalArgumentException If {@code count} is greater than the maximum allowed
+   *         {@link java.nio.MappedByteBuffer} count: {@link Integer#MAX_VALUE}
    */
   public MappedBytes map(long offset, long size, FileChannel.MapMode mode) {
     return new MappedBytes(file, new MappedMemoryAllocator(randomAccessFile, mode, offset).allocate(size));

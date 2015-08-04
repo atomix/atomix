@@ -30,11 +30,11 @@ public class HeapBytes extends AbstractBytes {
    * Allocates a new heap byte array.
    * <p>
    * When the array is constructed, {@link net.kuujo.copycat.io.util.HeapMemoryAllocator} will be used to allocate
-   * {@code size} bytes on the Java heap.
+   * {@code count} bytes on the Java heap.
    *
-   * @param size The size of the buffer to allocate (in bytes).
+   * @param size The count of the buffer to allocate (in bytes).
    * @return The heap buffer.
-   * @throws IllegalArgumentException If {@code size} is greater than the maximum allowed size for
+   * @throws IllegalArgumentException If {@code count} is greater than the maximum allowed count for
    *         an array on the Java heap - {@code Integer.MAX_VALUE - 5}
    */
   public static HeapBytes allocate(long size) {

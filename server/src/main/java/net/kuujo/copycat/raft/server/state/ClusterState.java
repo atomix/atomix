@@ -99,9 +99,9 @@ class ClusterState {
   }
 
   /**
-   * Returns the remote quorum size.
+   * Returns the remote quorum count.
    *
-   * @return The remote quorum size.
+   * @return The remote quorum count.
    */
   int getQuorum() {
     return (int) Math.ceil(activeMembers.size() / 2.0);

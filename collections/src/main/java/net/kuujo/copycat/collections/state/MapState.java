@@ -185,7 +185,7 @@ public class MapState extends StateMachine {
   }
 
   /**
-   * Handles a size commit.
+   * Handles a count commit.
    */
   @Apply(MapCommands.Size.class)
   protected int size(Commit<MapCommands.Size> commit) {

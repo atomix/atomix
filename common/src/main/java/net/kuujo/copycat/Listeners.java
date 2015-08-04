@@ -15,6 +15,8 @@
  */
 package net.kuujo.copycat;
 
+import net.kuujo.copycat.util.concurrent.Context;
+
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -46,10 +48,16 @@ public class Listeners<T> implements Iterable<ListenerContext<T>> {
     if (listener == null)
       throw new NullPointerException("listener cannot be null");
 
-    ListenerContext<T> context = new ListenerContext<T>() {
+    Context context = Context.currentContext();
+
+    ListenerContext<T> listenerContext = new ListenerContext<T>() {
       @Override
       public void accept(T event) {
-        listener.accept(event);
+        if (context != null) {
+          context.execute(() -> listener.accept(event));
+        } else {
+          listener.accept(event);
+        }
       }
 
       @Override
@@ -58,8 +66,8 @@ public class Listeners<T> implements Iterable<ListenerContext<T>> {
       }
     };
 
-    listeners.add(context);
-    return context;
+    listeners.add(listenerContext);
+    return listenerContext;
   }
 
   @Override

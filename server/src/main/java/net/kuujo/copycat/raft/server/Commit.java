@@ -111,7 +111,7 @@ public class Commit<T extends Operation> {
    * Returns the operation submitted by the user.
    * <p>
    * The returned {@link net.kuujo.copycat.raft.Operation} is the operation submitted by the user via
-   * {@link net.kuujo.copycat.raft.Raft#submit(net.kuujo.copycat.raft.Operation)}.
+   * {@link net.kuujo.copycat.raft.client.RaftClient#submit(net.kuujo.copycat.raft.Operation)}.
    *
    * @return The operation submitted by the user.
    */
