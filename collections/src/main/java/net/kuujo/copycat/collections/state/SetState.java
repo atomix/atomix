@@ -16,11 +16,9 @@
 package net.kuujo.copycat.collections.state;
 
 import net.kuujo.copycat.PersistenceLevel;
-import net.kuujo.copycat.io.storage.Compaction;
 import net.kuujo.copycat.raft.Session;
 import net.kuujo.copycat.raft.server.Apply;
 import net.kuujo.copycat.raft.server.Commit;
-import net.kuujo.copycat.raft.server.Filter;
 import net.kuujo.copycat.raft.server.StateMachine;
 
 import java.util.HashMap;
@@ -103,15 +101,6 @@ public class SetState extends StateMachine {
   }
 
   /**
-   * Filters an add commit.
-   */
-  @Filter({SetCommands.Add.class})
-  protected boolean filterPut(Commit<SetCommands.Add> commit) {
-    Commit<? extends SetCommands.TtlCommand> command = map.get(commit.operation().value());
-    return command != null && command.index() == commit.index() && isActive(command);
-  }
-
-  /**
    * Handles a remove commit.
    */
   @Apply(SetCommands.Remove.class)
@@ -119,14 +108,6 @@ public class SetState extends StateMachine {
     updateTime(commit);
     Commit<? extends SetCommands.TtlCommand> command = map.remove(commit.operation().value());
     return isActive(command);
-  }
-
-  /**
-   * Filters a remove commit.
-   */
-  @Filter(value={SetCommands.Remove.class, SetCommands.Clear.class}, compaction=Compaction.Type.MAJOR)
-  protected boolean filterRemove(Commit<?> commit, Compaction compaction) {
-    return commit.index() > compaction.index();
   }
 
   /**

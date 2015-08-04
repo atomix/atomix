@@ -16,11 +16,9 @@
 package net.kuujo.copycat.collections.state;
 
 import net.kuujo.copycat.PersistenceLevel;
-import net.kuujo.copycat.io.storage.Compaction;
 import net.kuujo.copycat.raft.Session;
 import net.kuujo.copycat.raft.server.Apply;
 import net.kuujo.copycat.raft.server.Commit;
-import net.kuujo.copycat.raft.server.Filter;
 import net.kuujo.copycat.raft.server.StateMachine;
 
 import java.util.HashMap;
@@ -143,15 +141,6 @@ public class MapState extends StateMachine {
   }
 
   /**
-   * Filters a put and put if absent commit.
-   */
-  @Filter({MapCommands.Put.class, MapCommands.PutIfAbsent.class})
-  protected boolean filterPut(Commit<? extends MapCommands.TtlCommand> commit) {
-    Commit<? extends MapCommands.TtlCommand> command = map.get(commit.operation().key());
-    return isActive(command) && command.index() == commit.index();
-  }
-
-  /**
    * Handles a remove commit.
    */
   @Apply(MapCommands.Remove.class)
@@ -174,14 +163,6 @@ public class MapState extends StateMachine {
       Commit<? extends MapCommands.TtlCommand> command =  map.remove(commit.operation().key());
       return isActive(command) ? command.operation().value() : null;
     }
-  }
-
-  /**
-   * Filters a remove commit.
-   */
-  @Filter(value={MapCommands.Remove.class, MapCommands.Clear.class}, compaction= Compaction.Type.MAJOR)
-  protected boolean filterRemove(Commit<?> commit, Compaction compaction) {
-    return commit.index() > compaction.index();
   }
 
   /**

@@ -15,10 +15,8 @@
  */
 package net.kuujo.copycat.coordination.state;
 
-import net.kuujo.copycat.io.storage.Compaction;
 import net.kuujo.copycat.raft.server.Apply;
 import net.kuujo.copycat.raft.server.Commit;
-import net.kuujo.copycat.raft.server.Filter;
 import net.kuujo.copycat.raft.server.StateMachine;
 
 import java.util.ArrayDeque;
@@ -82,22 +80,6 @@ public class LockState extends StateMachine {
       lock.session().publish(true);
       version = lock.index();
     }
-  }
-
-  /**
-   * Filters a lock commit.
-   */
-  @Filter(LockCommands.Lock.class)
-  protected boolean filterLock(Commit<LockCommands.Lock> commit, Compaction compaction) {
-    return commit.index() >= version;
-  }
-
-  /**
-   * Filters an unlock commit.
-   */
-  @Filter(LockCommands.Lock.class)
-  protected boolean filterUnlock(Commit<LockCommands.Unlock> commit, Compaction compaction) {
-    return commit.index() >= version;
   }
 
 }

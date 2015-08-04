@@ -15,8 +15,6 @@
  */
 package net.kuujo.copycat.raft.server;
 
-import net.kuujo.copycat.ConfigurationException;
-import net.kuujo.copycat.io.storage.Compaction;
 import net.kuujo.copycat.raft.ApplicationException;
 import net.kuujo.copycat.raft.Command;
 import net.kuujo.copycat.raft.Operation;
@@ -29,7 +27,6 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
@@ -72,22 +69,14 @@ import java.util.function.Function;
  * evaluated for return types, so asynchronous methods <em>must specify a {@link java.util.concurrent.CompletableFuture}
  * return type</em>. Once an operation is applied to the state machine, the value returned by the operation will be returned
  * to the client that submitted the operation.
- * <p>
- * In addition to applying commits, state machines are also responsible for filtering existing commits out of the
- * Raft log. To do so, state machine must implement {@link Filter} annotated methods similar
- * to {@link Apply} methods. Filter methods should return a boolean value indicating whether
- * a {@link Commit} should be retained in the log.
  *
  * @see Apply
- * @see Filter
  * @see Commit
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class StateMachine implements AutoCloseable {
   private final Logger LOGGER = LoggerFactory.getLogger(getClass());
-  private final Map<Compaction.Type, Map<Class<? extends Command>, FilterExecutor>> filters = new HashMap<>();
-  private Map<Compaction.Type, FilterExecutor> allFilters = new HashMap<>();
   private final Map<Class<? extends Operation>, OperationExecutor> operations = new HashMap<>();
   private OperationExecutor allOperation;
   private long time;
@@ -109,7 +98,6 @@ public abstract class StateMachine implements AutoCloseable {
   private void init(Class<?> clazz) {
     while (clazz != null && clazz != Object.class) {
       for (Method method : clazz.getDeclaredMethods()) {
-        declareFilters(method);
         declareOperations(method);
       }
 
@@ -118,66 +106,6 @@ public abstract class StateMachine implements AutoCloseable {
       }
       clazz = clazz.getSuperclass();
     }
-  }
-
-  /**
-   * Declares any filters defined by the given method.
-   */
-  private void declareFilters(Method method) {
-    Filter filter = method.getAnnotation(Filter.class);
-    if (filter != null) {
-      if (method.getReturnType() != Boolean.class && method.getReturnType() != boolean.class && method.getReturnType() != CompletableFuture.class) {
-        throw new ConfigurationException("filter method " + method + " must return CompletableFuture<Boolean> or boolean");
-      }
-
-      method.setAccessible(true);
-      for (Class<? extends Command> command : filter.value()) {
-        if (command == Filter.All.class) {
-          if (!allFilters.containsKey(filter.compaction())) {
-            if (method.getParameterCount() == 1) {
-              allFilters.put(filter.compaction(), new FilterExecutor(method));
-            }
-          }
-        } else {
-          Map<Class<? extends Command>, FilterExecutor> filters = this.filters.get(filter.compaction());
-          if (filters == null) {
-            filters = new HashMap<>();
-            this.filters.put(filter.compaction(), filters);
-          }
-          if (!filters.containsKey(command)) {
-            filters.put(command, new FilterExecutor(method));
-          }
-        }
-      }
-    }
-  }
-
-  /**
-   * Finds the filter method for the given command.
-   */
-  private BiFunction<Commit<?>, Compaction, CompletableFuture<Boolean>> findFilter(Class<? extends Command> type, Compaction.Type compaction) {
-    Map<Class<? extends Command>, FilterExecutor> filters = this.filters.get(compaction);
-    if (filters == null) {
-      BiFunction<Commit<?>, Compaction, CompletableFuture<Boolean>> filter = allFilters.get(compaction);
-      if (filter == null) {
-        throw new IllegalArgumentException("unknown command type: " + type);
-      }
-      return filter;
-    }
-
-    BiFunction<Commit<?>, Compaction, CompletableFuture<Boolean>> filter = filters.computeIfAbsent(type, t -> {
-      for (Map.Entry<Class<? extends Command>, FilterExecutor> entry : filters.entrySet()) {
-        if (entry.getKey().isAssignableFrom(type)) {
-          return entry.getValue();
-        }
-      }
-      return allFilters.get(compaction);
-    });
-
-    if (filter == null) {
-      throw new IllegalArgumentException("unknown command type: " + type);
-    }
-    return filter;
   }
 
   /**
@@ -237,40 +165,6 @@ public abstract class StateMachine implements AutoCloseable {
   }
 
   /**
-   * Filter executor.
-   */
-  private class FilterExecutor implements BiFunction<Commit<?>, Compaction, CompletableFuture<Boolean>> {
-    private final Method method;
-    private final boolean async;
-    private final boolean singleArg;
-
-    private FilterExecutor(Method method) {
-      this.method = method;
-      async = method.getReturnType() == CompletableFuture.class;
-      singleArg = method.getParameterCount() == 1;
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public CompletableFuture<Boolean> apply(Commit<?> commit, Compaction compaction) {
-      if (singleArg) {
-        try {
-          return async ? (CompletableFuture<Boolean>) method.invoke(StateMachine.this, commit) : CompletableFuture.completedFuture((boolean) method.invoke(StateMachine.this, commit));
-        } catch (IllegalAccessException | InvocationTargetException e) {
-          throw new ApplicationException("failed to invoke operation", e);
-        }
-      } else {
-        try {
-          return async ? (CompletableFuture<Boolean>) method.invoke(StateMachine.this, commit, compaction) : CompletableFuture.completedFuture((boolean) method
-            .invoke(StateMachine.this, commit, compaction));
-        } catch (IllegalAccessException | InvocationTargetException e) {
-          throw new ApplicationException("failed to invoke operation", e);
-        }
-      }
-    }
-  }
-
-  /**
    * Operation executor.
    */
   private class OperationExecutor implements Function<Commit<?>, CompletableFuture<Object>> {
@@ -320,18 +214,6 @@ public abstract class StateMachine implements AutoCloseable {
    */
   public void register(Session session) {
 
-  }
-
-  /**
-   * Filters a command.
-   *
-   * @param commit The commit to filter.
-   * @param compaction The compaction context.
-   * @return Whether to keep the commit.
-   */
-  public CompletableFuture<Boolean> filter(Commit<? extends Command> commit, Compaction compaction) {
-    LOGGER.debug("Filtering {}", commit);
-    return findFilter(commit.type(), compaction.type()).apply(commit, compaction);
   }
 
   /**

@@ -15,12 +15,10 @@
  */
 package net.kuujo.copycat.coordination.state;
 
-import net.kuujo.copycat.io.storage.Compaction;
 import net.kuujo.copycat.raft.Operation;
 import net.kuujo.copycat.raft.Session;
 import net.kuujo.copycat.raft.server.Apply;
 import net.kuujo.copycat.raft.server.Commit;
-import net.kuujo.copycat.raft.server.Filter;
 import net.kuujo.copycat.raft.server.StateMachine;
 
 import java.util.ArrayList;
@@ -83,22 +81,6 @@ public class LeaderElectionState extends StateMachine {
         this.leader.publish(true);
       }
     }
-  }
-
-  /**
-   * Filters listen commits.
-   */
-  @Filter(LeaderElectionCommands.Listen.class)
-  protected boolean filterListen(Commit<LeaderElectionCommands.Listen> commit, Compaction compaction) {
-    return commit.index() >= version;
-  }
-
-  /**
-   * Filters unlisten commits.
-   */
-  @Filter(LeaderElectionCommands.Unlisten.class)
-  protected boolean filterUnlisten(Commit<LeaderElectionCommands.Unlisten> commit, Compaction compaction) {
-    return commit.index() >= version;
   }
 
 }

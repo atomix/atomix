@@ -20,7 +20,6 @@ import net.kuujo.copycat.Listener;
 import net.kuujo.copycat.ListenerContext;
 import net.kuujo.copycat.Listeners;
 import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.io.storage.Compaction;
 import net.kuujo.copycat.io.storage.Entry;
 import net.kuujo.copycat.io.storage.Log;
 import net.kuujo.copycat.io.transport.Connection;
@@ -103,8 +102,6 @@ public class ServerContext implements Managed<Void> {
     this.stateContext = new SingleThreadContext("copycat-server-" + member.id() + "-state-%d", serializer.clone());
     this.server = transport.server(UUID.randomUUID());
     this.connections = new ConnectionManager(transport.client(UUID.randomUUID()));
-
-    log.compactor().filter(this::filter);
   }
 
   /**
@@ -339,7 +336,6 @@ public class ServerContext implements Managed<Void> {
     if (commitIndex < this.commitIndex)
       throw new IllegalArgumentException("cannot decrease commit index");
     this.commitIndex = commitIndex;
-    log.compactor().setMinorCompactionIndex(commitIndex);
     return this;
   }
 
@@ -362,7 +358,6 @@ public class ServerContext implements Managed<Void> {
     if (globalIndex < 0)
       throw new IllegalArgumentException("global index must be positive");
     this.globalIndex = Math.max(this.globalIndex, globalIndex);
-    log.compactor().setMajorCompactionIndex(globalIndex);
     return this;
   }
 
@@ -481,84 +476,6 @@ public class ServerContext implements Managed<Void> {
     connection.handler(VoteRequest.class, request -> state.vote(request));
     connection.handler(CommandRequest.class, request -> state.command(request));
     connection.handler(QueryRequest.class, request -> state.query(request));
-  }
-
-  /**
-   * Filters an entry.
-   *
-   * @param entry The entry to filter.
-   * @return A boolean value indicating whether to keep the entry.
-   */
-  CompletableFuture<Boolean> filter(Entry entry, Compaction compaction) {
-    if (entry instanceof CommandEntry) {
-      return filter((CommandEntry) entry, compaction);
-    } else if (entry instanceof KeepAliveEntry) {
-      return filter((KeepAliveEntry) entry, compaction);
-    } else if (entry instanceof RegisterEntry) {
-      return filter((RegisterEntry) entry, compaction);
-    } else if (entry instanceof ConfigurationEntry) {
-      return filter((ConfigurationEntry) entry, compaction);
-    } else if (entry instanceof NoOpEntry) {
-      return filter((NoOpEntry) entry, compaction);
-    }
-    return CompletableFuture.completedFuture(false);
-  }
-
-  /**
-   * Filters an entry.
-   *
-   * @param entry The entry to filter.
-   * @param compaction The compaction process.
-   * @return A boolean value indicating whether to keep the entry.
-   */
-  CompletableFuture<Boolean> filter(RegisterEntry entry, Compaction compaction) {
-    return Futures.completedFuture(sessions.getSession(entry.getIndex()) != null);
-  }
-
-  /**
-   * Filters an entry.
-   *
-   * @param entry The entry to filter.
-   * @param compaction The compaction process.
-   * @return A boolean value indicating whether to keep the entry.
-   */
-  CompletableFuture<Boolean> filter(KeepAliveEntry entry, Compaction compaction) {
-    ServerSession session = sessions.getSession(entry.getSession());
-    return Futures.completedFuture(session != null && session.getIndex() == entry.getIndex());
-  }
-
-  /**
-   * Filters a configuration entry.
-   *
-   * @param entry The entry to filter.
-   * @param compaction The compaction process.
-   * @return Indicates whether to keep the entry.
-   */
-  CompletableFuture<Boolean> filter(ConfigurationEntry entry, Compaction compaction) {
-    return Futures.completedFuture(entry.getIndex() == cluster.getVersion() || entry.getIndex() >= lastApplied);
-  }
-
-  /**
-   * Filters a no-op entry.
-   *
-   * @param entry The entry to filter.
-   * @param compaction The compaction process.
-   * @return A boolean value indicating whether to keep the entry.
-   */
-  CompletableFuture<Boolean> filter(NoOpEntry entry, Compaction compaction) {
-    return Futures.completedFuture(false);
-  }
-
-  /**
-   * Filters an entry.
-   *
-   * @param entry The entry to filter.
-   * @param compaction The compaction process.
-   * @return A boolean value indicating whether to keep the entry.
-   */
-  CompletableFuture<Boolean> filter(CommandEntry entry, Compaction compaction) {
-    Commit<? extends Command> commit = new Commit<>(entry.getIndex(), null, entry.getTimestamp(), entry.getCommand());
-    return execute(() -> stateMachine.filter(commit, compaction));
   }
 
   /**
@@ -853,7 +770,7 @@ public class ServerContext implements Managed<Void> {
     openFuture = new CompletableFuture<>();
     context.execute(() -> {
       server.listen(address, this::handleConnect).thenRun(() -> {
-        log.open(context);
+        log.open();
         cluster.configure(0, members, Members.builder().build());
 
         transition(JoinState.class);

@@ -15,11 +15,9 @@
  */
 package net.kuujo.copycat.manager;
 
-import net.kuujo.copycat.io.storage.Compaction;
 import net.kuujo.copycat.raft.Session;
 import net.kuujo.copycat.raft.server.Apply;
 import net.kuujo.copycat.raft.server.Commit;
-import net.kuujo.copycat.raft.server.Filter;
 import net.kuujo.copycat.raft.server.StateMachine;
 import net.kuujo.copycat.resource.ResourceCommand;
 import net.kuujo.copycat.resource.ResourceOperation;
@@ -85,32 +83,6 @@ public class ResourceManager extends StateMachine {
   }
 
   /**
-   * Filters resource commands.
-   */
-  @SuppressWarnings("unchecked")
-  @Filter(ResourceCommand.class)
-  protected CompletableFuture<Boolean> filterResource(Commit<ResourceCommand> commit, Compaction compaction) {
-    ResourceHolder resource = resources.get(commit.operation().resource());
-    if (resource == null) {
-      return CompletableFuture.completedFuture(true);
-    }
-
-    CompletableFuture<Boolean> future = new CompletableFuture<>();
-    resource.context.execute(() -> {
-      CompletableFuture<Boolean> resultFuture = resource.stateMachine.filter(new Commit(commit.index(), commit.session(), commit
-        .timestamp(), commit.operation().operation()), compaction);
-      resultFuture.whenComplete((result, error) -> {
-        if (error == null) {
-          future.complete(result);
-        } else {
-          future.completeExceptionally(error);
-        }
-      });
-    });
-    return future;
-  }
-
-  /**
    * Applies a create commit.
    */
   @Apply(CreatePath.class)
@@ -137,28 +109,6 @@ public class ResourceManager extends StateMachine {
     }
 
     return created;
-  }
-
-  /**
-   * Filters a create commit.
-   */
-  @Filter(CreatePath.class)
-  protected boolean filterCreatePath(Commit<CreatePath> commit, Compaction compaction) {
-    String path = commit.operation().path();
-
-    init(commit);
-
-    NodeHolder node = this.node;
-    for (String name : path.split(PATH_SEPARATOR)) {
-      if (!name.equals("")) {
-        NodeHolder child = node.children.get(name);
-        if (child == null) {
-          return false;
-        }
-        node = child;
-      }
-    }
-    return node.version == commit.index();
   }
 
   /**
@@ -236,14 +186,6 @@ public class ResourceManager extends StateMachine {
   }
 
   /**
-   * Filters a delete path commit.
-   */
-  @Filter(value=DeletePath.class, compaction=Compaction.Type.MAJOR)
-  protected boolean filterDeletePath(Commit<DeletePath> commit, Compaction compaction) {
-    return commit.index() >= compaction.index();
-  }
-
-  /**
    * Applies a create resource commit.
    */
   @Apply(CreateResource.class)
@@ -282,14 +224,6 @@ public class ResourceManager extends StateMachine {
   }
 
   /**
-   * Filters a create resource commit.
-   */
-  @Filter(CreateResource.class)
-  protected boolean filterCreateResource(Commit<CreateResource> commit, Compaction compaction) {
-    return resources.containsKey(commit.index());
-  }
-
-  /**
    * Applies a delete resource commit.
    */
   @Apply(DeleteResource.class)
@@ -302,14 +236,6 @@ public class ResourceManager extends StateMachine {
     }
 
     return resources.remove(commit.operation().resource()) != null;
-  }
-
-  /**
-   * Filters a delete resource commit.
-   */
-  @Filter(value=DeleteResource.class, compaction=Compaction.Type.MAJOR)
-  protected boolean filterDeleteResource(Commit<DeleteResource> commit, Compaction compaction) {
-    return commit.index() >= compaction.index();
   }
 
   @Override

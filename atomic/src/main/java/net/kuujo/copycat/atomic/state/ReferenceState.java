@@ -16,11 +16,9 @@
 package net.kuujo.copycat.atomic.state;
 
 import net.kuujo.copycat.PersistenceLevel;
-import net.kuujo.copycat.io.storage.Compaction;
 import net.kuujo.copycat.raft.Session;
 import net.kuujo.copycat.raft.server.Apply;
 import net.kuujo.copycat.raft.server.Commit;
-import net.kuujo.copycat.raft.server.Filter;
 import net.kuujo.copycat.raft.server.StateMachine;
 
 import java.util.HashSet;
@@ -166,14 +164,6 @@ public class ReferenceState extends StateMachine {
       change(value.get());
       return null;
     }
-  }
-
-  /**
-   * Filters all entries.
-   */
-  @Filter(Filter.All.class)
-  protected boolean filterAll(Commit<? extends ReferenceCommands.ReferenceCommand<?>> commit, Compaction compaction) {
-    return commit.index() >= version && isActive(commit);
   }
 
 }
