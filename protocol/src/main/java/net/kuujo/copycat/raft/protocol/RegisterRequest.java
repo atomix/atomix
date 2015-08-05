@@ -32,6 +32,12 @@ import java.util.UUID;
  */
 @SerializeWith(id=272)
 public class RegisterRequest extends AbstractRequest<RegisterRequest> {
+
+  /**
+   * The unique identifier for the register request type.
+   */
+  public static final byte TYPE = 0x07;
+
   private static final BuilderPool<Builder, RegisterRequest> POOL = new BuilderPool<>(Builder::new);
 
   /**
@@ -60,8 +66,8 @@ public class RegisterRequest extends AbstractRequest<RegisterRequest> {
   }
 
   @Override
-  public Type type() {
-    return Type.REGISTER;
+  public byte type() {
+    return TYPE;
   }
 
   /**

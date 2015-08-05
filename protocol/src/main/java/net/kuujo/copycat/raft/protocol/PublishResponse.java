@@ -32,6 +32,12 @@ import java.util.Objects;
  */
 @SerializeWith(id=269)
 public class PublishResponse extends SessionResponse<PublishResponse> {
+
+  /**
+   * The unique identifier for the publish response type.
+   */
+  public static final byte TYPE = 0x06;
+
   private static final BuilderPool<Builder, PublishResponse> POOL = new BuilderPool<>(Builder::new);
 
   /**
@@ -60,8 +66,8 @@ public class PublishResponse extends SessionResponse<PublishResponse> {
   }
 
   @Override
-  public Type type() {
-    return Type.PUBLISH;
+  public byte type() {
+    return TYPE;
   }
 
   /**

@@ -33,6 +33,12 @@ import java.util.Objects;
  */
 @SerializeWith(id=273)
 public class RegisterResponse extends AbstractResponse<RegisterResponse> {
+
+  /**
+   * The unique identifier for the register response type.
+   */
+  public static final byte TYPE = 0x08;
+
   private static final BuilderPool<Builder, RegisterResponse> POOL = new BuilderPool<>(Builder::new);
 
   /**
@@ -62,8 +68,8 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
   }
 
   @Override
-  public Type type() {
-    return Type.REGISTER;
+  public byte type() {
+    return TYPE;
   }
 
   /**

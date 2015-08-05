@@ -32,6 +32,12 @@ import java.util.Objects;
  */
 @SerializeWith(id=271)
 public class QueryResponse extends SessionResponse<QueryResponse> {
+
+  /**
+   * The unique identifier for the query response type.
+   */
+  public static final byte TYPE = 0x04;
+
   private static final BuilderPool<Builder, QueryResponse> POOL = new BuilderPool<>(Builder::new);
 
   /**
@@ -60,8 +66,8 @@ public class QueryResponse extends SessionResponse<QueryResponse> {
   }
 
   @Override
-  public Type type() {
-    return Type.QUERY;
+  public byte type() {
+    return TYPE;
   }
 
   /**

@@ -33,6 +33,12 @@ import java.util.Objects;
  */
 @SerializeWith(id=261)
 public class JoinResponse extends AbstractResponse<JoinResponse> {
+
+  /**
+   * The unique identifier for the join response type.
+   */
+  public static final byte TYPE = 0x0C;
+
   private static final BuilderPool<Builder, JoinResponse> POOL = new BuilderPool<>(Builder::new);
 
   /**
@@ -63,8 +69,8 @@ public class JoinResponse extends AbstractResponse<JoinResponse> {
   }
 
   @Override
-  public Type type() {
-    return Type.JOIN;
+  public byte type() {
+    return TYPE;
   }
 
   /**

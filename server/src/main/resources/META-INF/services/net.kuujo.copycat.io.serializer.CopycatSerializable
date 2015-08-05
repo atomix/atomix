@@ -13,6 +13,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+net.kuujo.copycat.raft.protocol.AppendRequest
+net.kuujo.copycat.raft.protocol.AppendResponse
+net.kuujo.copycat.raft.protocol.JoinRequest
+net.kuujo.copycat.raft.protocol.JoinResponse
+net.kuujo.copycat.raft.protocol.LeaveRequest
+net.kuujo.copycat.raft.protocol.LeaveResponse
+net.kuujo.copycat.raft.protocol.PollRequest
+net.kuujo.copycat.raft.protocol.PollResponse
+net.kuujo.copycat.raft.protocol.VoteRequest
+net.kuujo.copycat.raft.protocol.VoteResponse
+
 net.kuujo.copycat.raft.server.storage.CommandEntry
 net.kuujo.copycat.raft.server.storage.ConfigurationEntry
 net.kuujo.copycat.raft.server.storage.KeepAliveEntry

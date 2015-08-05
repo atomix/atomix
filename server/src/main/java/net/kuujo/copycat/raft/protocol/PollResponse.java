@@ -26,43 +26,49 @@ import net.kuujo.copycat.util.ReferenceManager;
 import java.util.Objects;
 
 /**
- * Protocol vote response.
+ * Protocol poll response.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=275)
-public class VoteResponse extends AbstractResponse<VoteResponse> {
-  private static final BuilderPool<Builder, VoteResponse> POOL = new BuilderPool<>(Builder::new);
+@SerializeWith(id=267)
+public class PollResponse extends AbstractResponse<PollResponse> {
 
   /**
-   * Returns a new vote response builder.
+   * The unique identifier for the poll response type.
+   */
+  public static final byte TYPE = 0x10;
+
+  private static final BuilderPool<Builder, PollResponse> POOL = new BuilderPool<>(Builder::new);
+
+  /**
+   * Returns a new poll response builder.
    *
-   * @return A new vote response builder.
+   * @return A new poll response builder.
    */
   public static Builder builder() {
     return POOL.acquire();
   }
 
   /**
-   * Returns a vote response builder for an existing response.
+   * Returns a poll response builder for an existing response.
    *
    * @param response The response to build.
-   * @return The vote response builder.
+   * @return The poll response builder.
    */
-  public static Builder builder(VoteResponse response) {
+  public static Builder builder(PollResponse response) {
     return POOL.acquire(response);
   }
 
   private long term;
-  private boolean voted;
+  private boolean accepted;
 
-  public VoteResponse(ReferenceManager<VoteResponse> referenceManager) {
+  public PollResponse(ReferenceManager<PollResponse> referenceManager) {
     super(referenceManager);
   }
 
   @Override
-  public Type type() {
-    return Type.VOTE;
+  public byte type() {
+    return TYPE;
   }
 
   /**
@@ -75,12 +81,12 @@ public class VoteResponse extends AbstractResponse<VoteResponse> {
   }
 
   /**
-   * Returns a boolean indicating whether the vote was granted.
+   * Returns a boolean indicating whether the poll was accepted.
    *
-   * @return Indicates whether the vote was granted.
+   * @return Indicates whether the poll was accepted.
    */
-  public boolean voted() {
-    return voted;
+  public boolean accepted() {
+    return accepted;
   }
 
   @Override
@@ -89,7 +95,7 @@ public class VoteResponse extends AbstractResponse<VoteResponse> {
     if (status == Response.Status.OK) {
       error = null;
       term = buffer.readLong();
-      voted = buffer.readBoolean();
+      accepted = buffer.readBoolean();
     } else {
       error = RaftError.forId(buffer.readByte());
     }
@@ -99,7 +105,7 @@ public class VoteResponse extends AbstractResponse<VoteResponse> {
   public void writeObject(BufferOutput buffer, Serializer serializer) {
     buffer.writeByte(status.id());
     if (status == Response.Status.OK) {
-      buffer.writeLong(term).writeBoolean(voted);
+      buffer.writeLong(term).writeBoolean(accepted);
     } else {
       buffer.writeByte(error.id());
     }
@@ -107,71 +113,71 @@ public class VoteResponse extends AbstractResponse<VoteResponse> {
 
   @Override
   public int hashCode() {
-    return Objects.hash(getClass(), status, term, voted);
+    return Objects.hash(getClass(), status, term, accepted);
   }
 
   @Override
   public boolean equals(Object object) {
-    if (object instanceof VoteResponse) {
-      VoteResponse response = (VoteResponse) object;
+    if (object instanceof PollResponse) {
+      PollResponse response = (PollResponse) object;
       return response.status == status
         && response.term == term
-        && response.voted == voted;
+        && response.accepted == accepted;
     }
     return false;
   }
 
   @Override
   public String toString() {
-    return String.format("%s[status=%s, term=%d, voted=%b]", getClass().getSimpleName(), status, term, voted);
+    return String.format("%s[status=%s, term=%d, accepted=%b]", getClass().getSimpleName(), status, term, accepted);
   }
 
   /**
    * Poll response builder.
    */
-  public static class Builder extends AbstractResponse.Builder<Builder, VoteResponse> {
+  public static class Builder extends AbstractResponse.Builder<Builder, PollResponse> {
 
-    protected Builder(BuilderPool<Builder, VoteResponse> pool) {
-      super(pool, VoteResponse::new);
+    protected Builder(BuilderPool<Builder, PollResponse> pool) {
+      super(pool, PollResponse::new);
     }
 
     @Override
     protected void reset() {
       super.reset();
       response.term = 0;
-      response.voted = false;
+      response.accepted = false;
     }
 
     /**
      * Sets the response term.
      *
      * @param term The response term.
-     * @return The vote response builder.
+     * @return The poll response builder.
      */
     public Builder withTerm(long term) {
       if (term < 0)
-        throw new IllegalArgumentException("term cannot be negative");
+        throw new IllegalArgumentException("term must be positive");
       response.term = term;
       return this;
     }
 
     /**
-     * Sets whether the vote was granted.
+     * Sets whether the poll was granted.
      *
-     * @param voted Whether the vote was granted.
-     * @return The vote response builder.
+     * @param accepted Whether the poll was granted.
+     * @return The poll response builder.
      */
-    public Builder withVoted(boolean voted) {
-      response.voted = voted;
+    public Builder withAccepted(boolean accepted) {
+      response.accepted = accepted;
       return this;
     }
 
     @Override
-    public VoteResponse build() {
+    public PollResponse build() {
       super.build();
       if (response.status == Response.Status.OK) {
         if (response.term < 0)
-          throw new IllegalArgumentException("term cannot be negative");
+          throw new IllegalArgumentException("term must be positive");
       }
       return response;
     }

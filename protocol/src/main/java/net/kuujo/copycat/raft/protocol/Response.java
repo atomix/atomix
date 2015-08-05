@@ -15,9 +15,9 @@
  */
 package net.kuujo.copycat.raft.protocol;
 
-import net.kuujo.copycat.util.BuilderPool;
-import net.kuujo.copycat.raft.RaftError;
 import net.kuujo.copycat.io.serializer.CopycatSerializable;
+import net.kuujo.copycat.raft.RaftError;
+import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.util.ReferenceCounted;
 
 /**
@@ -28,66 +28,9 @@ import net.kuujo.copycat.util.ReferenceCounted;
 public interface Response<T extends Response<T>> extends ReferenceCounted<T>, CopycatSerializable {
 
   /**
-   * Response type.
-   */
-  public static enum Type {
-
-    /**
-     * Join response.
-     */
-    JOIN,
-
-    /**
-     * Leave response.
-     */
-    LEAVE,
-
-    /**
-     * Register client response.
-     */
-    REGISTER,
-
-    /**
-     * Keep alive response.
-     */
-    KEEP_ALIVE,
-
-    /**
-     * Append response.
-     */
-    APPEND,
-
-    /**
-     * Poll response.
-     */
-    POLL,
-
-    /**
-     * Vote response.
-     */
-    VOTE,
-
-    /**
-     * Command response.
-     */
-    COMMAND,
-
-    /**
-     * Query response.
-     */
-    QUERY,
-
-    /**
-     * Publish response.
-     */
-    PUBLISH
-
-    }
-
-  /**
    * Response status.
    */
-  public static enum Status {
+  enum Status {
 
     /**
      * Indicates a successful response status.
@@ -117,7 +60,7 @@ public interface Response<T extends Response<T>> extends ReferenceCounted<T>, Co
 
     private final byte id;
 
-    private Status(int id) {
+    Status(int id) {
       this.id = (byte) id;
     }
 
@@ -129,6 +72,7 @@ public interface Response<T extends Response<T>> extends ReferenceCounted<T>, Co
     public byte id() {
       return id;
     }
+
   }
 
   /**
@@ -136,7 +80,7 @@ public interface Response<T extends Response<T>> extends ReferenceCounted<T>, Co
    *
    * @return The response type.
    */
-  Type type();
+  byte type();
 
   /**
    * Returns the response status.

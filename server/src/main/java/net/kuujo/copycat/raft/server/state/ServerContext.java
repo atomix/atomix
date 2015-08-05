@@ -20,6 +20,7 @@ import net.kuujo.copycat.Listener;
 import net.kuujo.copycat.ListenerContext;
 import net.kuujo.copycat.Listeners;
 import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.io.serializer.ServiceLoaderResolver;
 import net.kuujo.copycat.io.storage.Entry;
 import net.kuujo.copycat.io.storage.Log;
 import net.kuujo.copycat.io.transport.Connection;
@@ -99,6 +100,9 @@ public class ServerContext implements Managed<Void> {
     this.cluster = new ClusterState(this, member);
     this.members = members;
 
+    log.serializer().resolve(new ServiceLoaderResolver());
+    serializer.resolve(new ServiceLoaderResolver());
+
     this.context = new SingleThreadContext("copycat-server-" + member.id(), serializer);
     this.log = log;
     this.sessions = new SessionManager();
@@ -106,8 +110,10 @@ public class ServerContext implements Managed<Void> {
     this.commits = new ServerCommitPool(cleaner, sessions);
     this.stateMachine = stateMachine;
     this.stateContext = new SingleThreadContext("copycat-server-" + member.id() + "-state-%d", serializer.clone());
-    this.server = transport.server(UUID.randomUUID());
-    this.connections = new ConnectionManager(transport.client(UUID.randomUUID()));
+
+    UUID id = UUID.randomUUID();
+    this.server = transport.server(id);
+    this.connections = new ConnectionManager(transport.client(id));
   }
 
   /**

@@ -32,6 +32,12 @@ import java.util.Objects;
  */
 @SerializeWith(id=258)
 public class CommandRequest extends SessionRequest<CommandRequest> {
+
+  /**
+   * The unique identifier for the command request type.
+   */
+  public static final byte TYPE = 0x01;
+
   private static final BuilderPool<Builder, CommandRequest> POOL = new BuilderPool<>(Builder::new);
 
   /**
@@ -61,8 +67,8 @@ public class CommandRequest extends SessionRequest<CommandRequest> {
   }
 
   @Override
-  public Type type() {
-    return Type.COMMAND;
+  public byte type() {
+    return TYPE;
   }
 
   /**

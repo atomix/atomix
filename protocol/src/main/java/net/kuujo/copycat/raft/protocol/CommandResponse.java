@@ -32,6 +32,12 @@ import java.util.Objects;
  */
 @SerializeWith(id=259)
 public class CommandResponse extends SessionResponse<CommandResponse> {
+
+  /**
+   * The unique identifier for the command response type.
+   */
+  public static final byte TYPE = 0x02;
+
   private static final BuilderPool<Builder, CommandResponse> POOL = new BuilderPool<>(Builder::new);
 
   /**
@@ -60,8 +66,8 @@ public class CommandResponse extends SessionResponse<CommandResponse> {
   }
 
   @Override
-  public Type type() {
-    return Type.COMMAND;
+  public byte type() {
+    return TYPE;
   }
 
   /**

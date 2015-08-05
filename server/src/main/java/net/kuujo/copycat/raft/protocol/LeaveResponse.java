@@ -32,6 +32,12 @@ import java.util.Objects;
  */
 @SerializeWith(id=265)
 public class LeaveResponse extends AbstractResponse<LeaveResponse> {
+
+  /**
+   * The unique identifier for the leave response type.
+   */
+  public static final byte TYPE = 0x0E;
+
   private static final BuilderPool<Builder, LeaveResponse> POOL = new BuilderPool<>(Builder::new);
 
   /**
@@ -58,8 +64,8 @@ public class LeaveResponse extends AbstractResponse<LeaveResponse> {
   }
 
   @Override
-  public Type type() {
-    return Type.LEAVE;
+  public byte type() {
+    return TYPE;
   }
 
   @Override

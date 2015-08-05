@@ -15,40 +15,46 @@
  */
 package net.kuujo.copycat.raft.protocol;
 
-import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.util.ReferenceManager;
 
 import java.util.Objects;
 
 /**
- * Protocol poll request.
+ * Protocol vote request.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=266)
-public class PollRequest extends AbstractRequest<PollRequest> {
-  private static final BuilderPool<Builder, PollRequest> POOL = new BuilderPool<>(Builder::new);
+@SerializeWith(id=274)
+public class VoteRequest extends AbstractRequest<VoteRequest> {
 
   /**
-   * Returns a new poll request builder.
+   * The unique identifier for the vote request type.
+   */
+  public static final byte TYPE = 0x11;
+
+  private static final BuilderPool<Builder, VoteRequest> POOL = new BuilderPool<>(Builder::new);
+
+  /**
+   * Returns a new vote request builder.
    *
-   * @return A new poll request builder.
+   * @return A new vote request builder.
    */
   public static Builder builder() {
     return POOL.acquire();
   }
 
   /**
-   * Returns a poll request builder for an existing request.
+   * Returns a vote request builder for an existing request.
    *
    * @param request The request to build.
-   * @return The poll request builder.
+   * @return The vote request builder.
    */
-  public static Builder builder(PollRequest request) {
+  public static Builder builder(VoteRequest request) {
     return POOL.acquire(request);
   }
 
@@ -57,13 +63,13 @@ public class PollRequest extends AbstractRequest<PollRequest> {
   private long logIndex;
   private long logTerm;
 
-  public PollRequest(ReferenceManager<PollRequest> referenceManager) {
+  public VoteRequest(ReferenceManager<VoteRequest> referenceManager) {
     super(referenceManager);
   }
 
   @Override
-  public Type type() {
-    return Type.POLL;
+  public byte type() {
+    return TYPE;
   }
 
   /**
@@ -125,8 +131,8 @@ public class PollRequest extends AbstractRequest<PollRequest> {
 
   @Override
   public boolean equals(Object object) {
-    if (object instanceof PollRequest) {
-      PollRequest request = (PollRequest) object;
+    if (object instanceof VoteRequest) {
+      VoteRequest request = (VoteRequest) object;
       return request.term == term
         && request.candidate == candidate
         && request.logIndex == logIndex
@@ -141,12 +147,12 @@ public class PollRequest extends AbstractRequest<PollRequest> {
   }
 
   /**
-   * Poll request builder.
+   * Vote request builder.
    */
-  public static class Builder extends AbstractRequest.Builder<Builder, PollRequest> {
+  public static class Builder extends AbstractRequest.Builder<Builder, VoteRequest> {
 
-    protected Builder(BuilderPool<Builder, PollRequest> pool) {
-      super(pool, PollRequest::new);
+    protected Builder(BuilderPool<Builder, VoteRequest> pool) {
+      super(pool, VoteRequest::new);
     }
 
     @Override
@@ -162,10 +168,10 @@ public class PollRequest extends AbstractRequest<PollRequest> {
      * Sets the request term.
      *
      * @param term The request term.
-     * @return The poll request builder.
+     * @return The vote request builder.
      */
     public Builder withTerm(long term) {
-      if (term < 0)
+      if (term <= 0)
         throw new IllegalArgumentException("term must be positive");
       request.term = term;
       return this;
@@ -175,7 +181,7 @@ public class PollRequest extends AbstractRequest<PollRequest> {
      * Sets the request leader.
      *
      * @param candidate The request candidate.
-     * @return The poll request builder.
+     * @return The vote request builder.
      */
     public Builder withCandidate(int candidate) {
       if (candidate <= 0)
@@ -188,7 +194,7 @@ public class PollRequest extends AbstractRequest<PollRequest> {
      * Sets the request last log index.
      *
      * @param index The request last log index.
-     * @return The poll request builder.
+     * @return The vote request builder.
      */
     public Builder withLogIndex(long index) {
       if (index < 0)
@@ -201,22 +207,22 @@ public class PollRequest extends AbstractRequest<PollRequest> {
      * Sets the request last log term.
      *
      * @param term The request last log term.
-     * @return The poll request builder.
+     * @return The vote request builder.
      */
     public Builder withLogTerm(long term) {
       if (term < 0)
-        throw new IllegalArgumentException("log term must be positive");
+        throw new NullPointerException("log term must be positive");
       request.logTerm = term;
       return this;
     }
 
     @Override
-    public PollRequest build() {
+    public VoteRequest build() {
       super.build();
-      if (request.term < 0)
+      if (request.term <= 0)
         throw new IllegalArgumentException("term must be positive");
       if (request.candidate <= 0)
-        throw new NullPointerException("candidate must be positive");
+        throw new IllegalArgumentException("candidate cannot be negative");
       if (request.logIndex < 0)
         throw new IllegalArgumentException("log index must be positive");
       if (request.logTerm < 0)

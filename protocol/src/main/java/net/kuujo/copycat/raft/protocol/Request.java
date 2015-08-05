@@ -15,8 +15,8 @@
  */
 package net.kuujo.copycat.raft.protocol;
 
-import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.io.serializer.CopycatSerializable;
+import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.util.ReferenceCounted;
 
 /**
@@ -27,75 +27,18 @@ import net.kuujo.copycat.util.ReferenceCounted;
 public interface Request<T extends Request<T>> extends ReferenceCounted<T>, CopycatSerializable {
 
   /**
-   * Request type.
-   */
-  public static enum Type {
-
-    /**
-     * Join request.
-     */
-    JOIN,
-
-    /**
-     * Leave request.
-     */
-    LEAVE,
-
-    /**
-     * Register client request.
-     */
-    REGISTER,
-
-    /**
-     * Keep alive request.
-     */
-    KEEP_ALIVE,
-
-    /**
-     * Append request.
-     */
-    APPEND,
-
-    /**
-     * Poll request.
-     */
-    POLL,
-
-    /**
-     * Vote request.
-     */
-    VOTE,
-
-    /**
-     * Command request.
-     */
-    COMMAND,
-
-    /**
-     * Query request.
-     */
-    QUERY,
-
-    /**
-     * Publish request.
-     */
-    PUBLISH
-
-  }
-
-  /**
-   * Returns the request type.
+   * Returns the request type ID.
    *
-   * @return The request type.
+   * @return The request type ID.
    */
-  Type type();
+  byte type();
 
   /**
    * Request builder.
    *
    * @param <T> The builder type.
    */
-  static abstract class Builder<T extends Builder<T, U>, U extends Request> extends net.kuujo.copycat.util.Builder<U> {
+  abstract class Builder<T extends Builder<T, U>, U extends Request> extends net.kuujo.copycat.util.Builder<U> {
     protected Builder(BuilderPool pool) {
       super(pool);
     }

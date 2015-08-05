@@ -32,6 +32,12 @@ import java.util.Objects;
  */
 @SerializeWith(id=260)
 public class JoinRequest extends AbstractRequest<JoinRequest> {
+
+  /**
+   * The unique identifier for the join request type.
+   */
+  public static final byte TYPE = 0x0B;
+
   private static final BuilderPool<Builder, JoinRequest> POOL = new BuilderPool<>(Builder::new);
 
   /**
@@ -60,8 +66,8 @@ public class JoinRequest extends AbstractRequest<JoinRequest> {
   }
 
   @Override
-  public Type type() {
-    return Type.JOIN;
+  public byte type() {
+    return TYPE;
   }
 
   /**
