@@ -323,7 +323,7 @@ class OffsetIndex implements AutoCloseable {
    * @param offset The offset to delete.
    */
   public boolean delete(int offset) {
-    if (deletes.size() > offset) {
+    if (deletes.size() <= offset) {
       deletes.resize(deletes.size() * 2);
     }
     return deletes.set(offset);
