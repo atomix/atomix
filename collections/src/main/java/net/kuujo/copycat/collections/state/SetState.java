@@ -99,8 +99,9 @@ public class SetState extends StateMachine {
       commit.clean();
       return false;
     } else if (!isActive(previous, commit.timestamp())) {
+      if (previous != null)
+        previous.clean();
       map.put(commit.operation().value(), commit);
-      previous.clean();
       return true;
     } else {
       commit.clean();
