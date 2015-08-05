@@ -81,7 +81,7 @@ public class ClientSession implements Session, Managed<Session> {
     this.client = transport.client(id);
     this.members = members;
     this.keepAliveInterval = keepAliveInterval;
-    this.context = new SingleThreadContext("copycat-client-" + UUID.randomUUID().toString(), serializer.clone());
+    this.context = new SingleThreadContext("copycat-client-" + id.toString(), serializer.clone());
     this.connectMembers = new ArrayList<>(members.members());
   }
 

@@ -53,6 +53,7 @@ public class RaftClient implements Managed<RaftClient> {
   private CompletableFuture<Void> closeFuture;
 
   protected RaftClient(Transport transport, Members members, Serializer serializer, long keepAliveInterval) {
+    serializer.resolve(new ServiceLoaderResolver());
     this.transport = transport;
     this.members = members;
     this.serializer = serializer;
@@ -343,10 +344,6 @@ public class RaftClient implements Managed<RaftClient> {
       if (serializer == null) {
         serializer = new Serializer();
       }
-
-      // Resolve serializer serializable types with the ServiceLoaderResolver.
-      serializer.resolve(new ServiceLoaderResolver());
-
       return new RaftClient(transport, members, serializer, keepAliveInterval);
     }
   }

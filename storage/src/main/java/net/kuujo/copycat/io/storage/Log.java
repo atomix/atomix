@@ -65,6 +65,15 @@ public class Log implements AutoCloseable {
   }
 
   /**
+   * Returns the log entry serializer.
+   *
+   * @return The log entry serializer.
+   */
+  public Serializer serializer() {
+    return segments.serializer();
+  }
+
+  /**
    * Returns the log segment manager.
    *
    * @return The log segment manager.
@@ -367,7 +376,7 @@ public class Log implements AutoCloseable {
    */
   public static class Builder extends net.kuujo.copycat.util.Builder<Log> {
     private final LogConfig config = new LogConfig();
-    private Serializer serializer;
+    private Serializer serializer = new Serializer();
 
     private Builder() {
     }
