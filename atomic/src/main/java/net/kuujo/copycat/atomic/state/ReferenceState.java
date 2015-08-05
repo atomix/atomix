@@ -21,7 +21,10 @@ import net.kuujo.copycat.raft.server.Apply;
 import net.kuujo.copycat.raft.server.Commit;
 import net.kuujo.copycat.raft.server.StateMachine;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -30,19 +33,10 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class ReferenceState extends StateMachine {
-  private final java.util.Set<Long> sessions = new HashSet<>();
-  private final java.util.Set<Session> listeners = new HashSet<>();
+  private final Set<Long> sessions = new HashSet<>();
+  private final Map<Session, Commit<ReferenceCommands.Listen>> listeners = new HashMap<>();
   private final AtomicReference<Object> value = new AtomicReference<>();
-  private Commit<? extends ReferenceCommands.ReferenceCommand> command;
-  private long version;
-  private long time;
-
-  /**
-   * Updates the state machine timestamp.
-   */
-  private void updateTime(Commit commit) {
-    this.time = Math.max(time, commit.timestamp());
-  }
+  private Commit<? extends ReferenceCommands.ReferenceCommand> current;
 
   @Override
   public void register(Session session) {
@@ -52,17 +46,25 @@ public class ReferenceState extends StateMachine {
   @Override
   public void expire(Session session) {
     sessions.remove(session.id());
+    Commit<ReferenceCommands.Listen> listener = listeners.remove(session);
+    if (listener != null) {
+      listener.clean();
+    }
   }
 
   @Override
   public void close(Session session) {
     sessions.remove(session.id());
+    Commit<ReferenceCommands.Listen> listener = listeners.remove(session);
+    if (listener != null) {
+      listener.clean();
+    }
   }
 
   /**
    * Returns a boolean value indicating whether the given commit is active.
    */
-  private boolean isActive(Commit<? extends ReferenceCommands.ReferenceCommand> commit) {
+  private boolean isActive(Commit<? extends ReferenceCommands.ReferenceCommand> commit, long time) {
     if (commit == null) {
       return false;
     } else if (commit.operation().mode() == PersistenceLevel.EPHEMERAL && !sessions.contains(commit.session().id())) {
@@ -78,8 +80,11 @@ public class ReferenceState extends StateMachine {
    */
   @Apply(ReferenceCommands.Listen.class)
   protected void listen(Commit<ReferenceCommands.Listen> commit) {
-    updateTime(commit);
-    listeners.add(commit.session());
+    if (!commit.session().isOpen()) {
+      commit.clean();
+    } else {
+      listeners.put(commit.session(), commit);
+    }
   }
 
   /**
@@ -87,15 +92,17 @@ public class ReferenceState extends StateMachine {
    */
   @Apply(ReferenceCommands.Unlisten.class)
   protected void unlisten(Commit<ReferenceCommands.Unlisten> commit) {
-    updateTime(commit);
-    listeners.remove(commit.session());
+    Commit<ReferenceCommands.Listen> listener = listeners.remove(commit.session());
+    if (listener == null) {
+      commit.clean();
+    }
   }
 
   /**
    * Triggers a change event.
    */
   private void change(Object value) {
-    for (Session session : listeners) {
+    for (Session session : listeners.keySet()) {
       session.publish(value);
     }
   }
@@ -105,8 +112,11 @@ public class ReferenceState extends StateMachine {
    */
   @Apply(ReferenceCommands.Get.class)
   protected Object get(Commit<ReferenceCommands.Get> commit) {
-    updateTime(commit);
-    return value.get();
+    try {
+      return current != null && isActive(current, commit.timestamp()) ? value.get() : null;
+    } finally {
+      commit.close();
+    }
   }
 
   /**
@@ -114,11 +124,16 @@ public class ReferenceState extends StateMachine {
    */
   @Apply(ReferenceCommands.Set.class)
   protected void set(Commit<ReferenceCommands.Set> commit) {
-    updateTime(commit);
-    value.set(commit.operation().value());
-    command = commit;
-    version = commit.index();
-    change(value.get());
+    if (!isActive(commit, getTime())) {
+      commit.clean();
+    } else {
+      if (current != null) {
+        current.clean();
+      }
+      value.set(commit.operation().value());
+      current = commit;
+      change(value.get());
+    }
   }
 
   /**
@@ -126,18 +141,25 @@ public class ReferenceState extends StateMachine {
    */
   @Apply(ReferenceCommands.CompareAndSet.class)
   protected boolean compareAndSet(Commit<ReferenceCommands.CompareAndSet> commit) {
-    updateTime(commit);
-    if (isActive(command)) {
+    if (!isActive(commit, getTime())) {
+      commit.clean();
+      return false;
+    } else if (isActive(current, commit.timestamp())) {
       if (value.compareAndSet(commit.operation().expect(), commit.operation().update())) {
-        command = commit;
+        if (current != null) {
+          current.clean();
+        }
+        current = commit;
         change(value.get());
         return true;
       }
       return false;
     } else if (commit.operation().expect() == null) {
+      if (current != null) {
+        current.clean();
+      }
       value.set(null);
-      command = commit;
-      version = commit.index();
+      current = commit;
       change(null);
       return true;
     } else {
@@ -150,17 +172,25 @@ public class ReferenceState extends StateMachine {
    */
   @Apply(ReferenceCommands.GetAndSet.class)
   protected Object getAndSet(Commit<ReferenceCommands.GetAndSet> commit) {
-    updateTime(commit);
-    if (isActive(command)) {
+    if (!isActive(commit, getTime())) {
+      commit.clean();
+
+    }
+
+    if (isActive(current, commit.timestamp())) {
+      if (current != null) {
+        current.clean();
+      }
       Object result = value.getAndSet(commit.operation().value());
-      command = commit;
-      version = commit.index();
+      current = commit;
       change(value.get());
       return result;
     } else {
+      if (current != null) {
+        current.clean();
+      }
       value.set(commit.operation().value());
-      command = commit;
-      version = commit.index();
+      current = commit;
       change(value.get());
       return null;
     }
