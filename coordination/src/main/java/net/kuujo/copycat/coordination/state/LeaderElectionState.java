@@ -31,7 +31,6 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class LeaderElectionState extends StateMachine {
-  private long version;
   private Session leader;
   private final List<Commit<LeaderElectionCommands.Listen>> listeners = new ArrayList<>();
 
@@ -42,7 +41,6 @@ public class LeaderElectionState extends StateMachine {
       if (!listeners.isEmpty()) {
         Commit<LeaderElectionCommands.Listen> leader = listeners.remove(0);
         this.leader = leader.session();
-        this.version = leader.index();
         this.leader.publish(true);
       }
     }
@@ -60,8 +58,8 @@ public class LeaderElectionState extends StateMachine {
   protected void applyListen(Commit<LeaderElectionCommands.Listen> commit) {
     if (leader == null) {
       leader = commit.session();
-      version = commit.index();
       leader.publish(true);
+      commit.clean();
     } else {
       listeners.add(commit);
     }
@@ -77,9 +75,11 @@ public class LeaderElectionState extends StateMachine {
       if (!listeners.isEmpty()) {
         Commit<LeaderElectionCommands.Listen> leader = listeners.remove(0);
         this.leader = leader.session();
-        this.version = leader.index();
         this.leader.publish(true);
+        leader.clean();
       }
+    } else {
+      commit.clean();
     }
   }
 

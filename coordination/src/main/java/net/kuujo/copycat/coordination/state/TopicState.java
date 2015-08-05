@@ -54,6 +54,7 @@ public class TopicState extends StateMachine {
     for (Session session : sessions) {
       session.publish(commit.operation().message());
     }
+    commit.clean();
   }
 
 }

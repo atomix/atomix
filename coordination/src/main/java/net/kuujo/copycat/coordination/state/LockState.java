@@ -28,31 +28,19 @@ import java.util.Queue;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class LockState extends StateMachine {
-  private long version;
-  private long time;
   private Commit<LockCommands.Lock> lock;
   private final Queue<Commit<LockCommands.Lock>> queue = new ArrayDeque<>();
-
-  /**
-   * Updates the current time.
-   */
-  private void updateTime(Commit<?> commit) {
-    this.time = commit.timestamp();
-  }
 
   /**
    * Applies a lock commit.
    */
   @Apply(LockCommands.Lock.class)
   protected void applyLock(Commit<LockCommands.Lock> commit) {
-    updateTime(commit);
     if (lock == null) {
       lock = commit;
       commit.session().publish(true);
-      version = commit.index();
     } else if (commit.operation().timeout() == 0) {
       commit.session().publish(false);
-      version = commit.index();
     } else {
       queue.add(commit);
     }
@@ -63,22 +51,23 @@ public class LockState extends StateMachine {
    */
   @Apply(LockCommands.Unlock.class)
   protected void applyUnlock(Commit<LockCommands.Unlock> commit) {
-    updateTime(commit);
+    if (lock == null) {
+      commit.clean();
+    } else {
+      lock.clean();
 
-    if (lock == null)
-      throw new IllegalStateException("not locked");
-    if (!lock.session().equals(commit.session()))
-      throw new IllegalStateException("not the lock holder");
+      if (!lock.session().equals(commit.session()))
+        throw new IllegalStateException("not the lock holder");
 
-    lock = queue.poll();
-    while (lock != null && (lock.operation().timeout() != -1 && lock.timestamp() + lock.operation().timeout() < time)) {
-      version = lock.index();
       lock = queue.poll();
-    }
+      while (lock != null && (lock.operation().timeout() != -1 && lock.timestamp() + lock.operation().timeout() < getTime())) {
+        lock.clean();
+        lock = queue.poll();
+      }
 
-    if (lock != null) {
-      lock.session().publish(true);
-      version = lock.index();
+      if (lock != null) {
+        lock.session().publish(true);
+      }
     }
   }
 
