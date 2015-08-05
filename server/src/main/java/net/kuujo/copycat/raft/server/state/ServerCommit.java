@@ -76,6 +76,11 @@ class ServerCommit implements Commit {
   @Override
   public void clean() {
     cleaner.clean(entry);
+    close();
+  }
+
+  @Override
+  public void close() {
     pool.release(this);
   }
 

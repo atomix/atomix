@@ -31,7 +31,7 @@ import net.kuujo.copycat.raft.Session;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Commit<T extends Operation> {
+public interface Commit<T extends Operation> extends AutoCloseable {
 
   /**
    * Returns the commit index.
@@ -101,5 +101,13 @@ public interface Commit<T extends Operation> {
    * arbitrary point in the future.
    */
   void clean();
+
+  /**
+   * Closes the commit.
+   * <p>
+   * Once the commit is closed, it may be recycled and should no longer be accessed by the closer.
+   */
+  @Override
+  void close();
 
 }

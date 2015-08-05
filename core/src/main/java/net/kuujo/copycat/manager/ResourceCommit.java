@@ -73,6 +73,11 @@ class ResourceCommit implements Commit {
   @Override
   public void clean() {
     commit.clean();
+    close();
+  }
+
+  @Override
+  public void close() {
     pool.release(this);
   }
 
