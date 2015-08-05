@@ -336,7 +336,7 @@ class OffsetIndex implements AutoCloseable {
    * @return Whether the offset has been marked for deletion.
    */
   public boolean deleted(int offset) {
-    return deletes.get(offset);
+    return deletes.size() > offset && deletes.get(offset);
   }
 
   /**
