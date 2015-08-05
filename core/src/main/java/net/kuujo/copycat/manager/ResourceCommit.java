@@ -18,6 +18,7 @@ package net.kuujo.copycat.manager;
 import net.kuujo.copycat.raft.Operation;
 import net.kuujo.copycat.raft.Session;
 import net.kuujo.copycat.raft.server.Commit;
+import net.kuujo.copycat.resource.ResourceOperation;
 
 /**
  * Resource commit.
@@ -26,7 +27,7 @@ import net.kuujo.copycat.raft.server.Commit;
  */
 class ResourceCommit implements Commit {
   private final ResourceCommitPool pool;
-  private Commit commit;
+  private Commit<ResourceOperation> commit;
   private Session session;
 
   public ResourceCommit(ResourceCommitPool pool) {
@@ -39,7 +40,7 @@ class ResourceCommit implements Commit {
    * @param commit The parent commit.
    * @param session The resource session.
    */
-  void reset(Commit commit, Session session) {
+  void reset(Commit<ResourceOperation> commit, Session session) {
     this.commit = commit;
     this.session = session;
   }
@@ -61,12 +62,12 @@ class ResourceCommit implements Commit {
 
   @Override
   public Class type() {
-    return commit.type();
+    return commit.operation().operation().getClass();
   }
 
   @Override
   public Operation operation() {
-    return commit.operation();
+    return commit.operation().operation();
   }
 
   @Override

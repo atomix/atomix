@@ -78,11 +78,9 @@ public class Node {
     return copycat.client.submit(PathChildren.builder()
       .withPath(path)
       .build())
-      .thenApply(children -> {
-        return children.stream()
-          .map(copycat::node)
-          .collect(Collectors.toList());
-      });
+      .thenApply(children ->  children.stream()
+        .map(copycat::node)
+        .collect(Collectors.toList()));
   }
 
   /**
