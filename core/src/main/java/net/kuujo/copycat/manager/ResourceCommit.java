@@ -29,6 +29,7 @@ class ResourceCommit implements Commit {
   private final ResourceCommitPool pool;
   private Commit<ResourceOperation> commit;
   private Session session;
+  private volatile boolean open;
 
   public ResourceCommit(ResourceCommitPool pool) {
     this.pool = pool;
@@ -43,6 +44,7 @@ class ResourceCommit implements Commit {
   void reset(Commit<ResourceOperation> commit, Session session) {
     this.commit = commit;
     this.session = session;
+    open = true;
   }
 
   @Override
@@ -72,13 +74,19 @@ class ResourceCommit implements Commit {
 
   @Override
   public void clean() {
+    if (!open)
+      throw new IllegalStateException("commit closed");
     commit.clean();
     close();
   }
 
   @Override
   public void close() {
-    pool.release(this);
+    if (open) {
+      commit.close();
+      pool.release(this);
+      open = false;
+    }
   }
 
   @Override

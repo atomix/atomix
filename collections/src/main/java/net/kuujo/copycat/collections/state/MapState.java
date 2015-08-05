@@ -16,6 +16,7 @@
 package net.kuujo.copycat.collections.state;
 
 import net.kuujo.copycat.PersistenceLevel;
+import net.kuujo.copycat.raft.Operation;
 import net.kuujo.copycat.raft.Session;
 import net.kuujo.copycat.raft.server.Apply;
 import net.kuujo.copycat.raft.server.Commit;
@@ -25,6 +26,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Map state machine.
@@ -34,6 +36,11 @@ import java.util.Set;
 public class MapState extends StateMachine {
   private Map<Object, Commit<? extends MapCommands.TtlCommand>> map;
   private final Set<Long> sessions = new HashSet<>();
+
+  @Override
+  public CompletableFuture<Object> apply(Commit<? extends Operation> commit) {
+    return super.apply(commit);
+  }
 
   @Override
   public void register(Session session) {
@@ -210,7 +217,7 @@ public class MapState extends StateMachine {
       }
       return false;
     } else {
-      Commit<? extends MapCommands.TtlCommand> previous =  map.remove(commit.operation().key());
+      Commit<? extends MapCommands.TtlCommand> previous = map.remove(commit.operation().key());
       if (previous == null) {
         commit.clean();
         return true;

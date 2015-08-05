@@ -104,7 +104,7 @@ class PassiveState extends AbstractState {
     // If the previous entry term doesn't match the local previous term then reject the request.
     RaftEntry entry = context.getLog().getEntry(request.logIndex());
     if (entry == null || entry.getTerm() != request.logTerm()) {
-      LOGGER.warn("{} - Rejected {}: Request log term does not match local log term {} for the same entry", context.getMember().id(), request, entry.getTerm());
+      LOGGER.warn("{} - Rejected {}: Request log term does not match local log term {} for the same entry", context.getMember().id(), request, entry != null ? entry.getTerm() : "unknown");
       return AppendResponse.builder()
         .withStatus(Response.Status.OK)
         .withTerm(context.getTerm())

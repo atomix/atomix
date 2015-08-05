@@ -45,8 +45,8 @@ class ServerCommitPool implements AutoCloseable {
     ServerCommit commit = pool.poll();
     if (commit == null) {
       commit = new ServerCommit(this, cleaner, sessions);
-      commit.reset(entry);
     }
+    commit.reset(entry);
     return commit;
   }
 

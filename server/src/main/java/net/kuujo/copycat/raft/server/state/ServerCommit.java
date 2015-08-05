@@ -29,8 +29,11 @@ class ServerCommit implements Commit {
   private final ServerCommitPool pool;
   private final ServerCommitCleaner cleaner;
   private final SessionManager sessions;
-  private OperationEntry entry;
+  private long index;
   private Session session;
+  private long timestamp;
+  private Operation operation;
+  private volatile boolean open;
 
   public ServerCommit(ServerCommitPool pool, ServerCommitCleaner cleaner, SessionManager sessions) {
     this.pool = pool;
@@ -44,13 +47,16 @@ class ServerCommit implements Commit {
    * @param entry The entry.
    */
   void reset(OperationEntry entry) {
-    this.entry = entry;
+    this.index = entry.getIndex();
     this.session = sessions.getSession(entry.getSession());
+    this.timestamp = entry.getTimestamp();
+    this.operation = entry.getOperation();
+    open = true;
   }
 
   @Override
   public long index() {
-    return entry.getIndex();
+    return index;
   }
 
   @Override
@@ -60,28 +66,33 @@ class ServerCommit implements Commit {
 
   @Override
   public long timestamp() {
-    return entry.getTimestamp();
+    return timestamp;
   }
 
   @Override
   public Class type() {
-    return entry.getOperation().getClass();
+    return operation.getClass();
   }
 
   @Override
   public Operation operation() {
-    return entry.getOperation();
+    return operation;
   }
 
   @Override
   public void clean() {
-    cleaner.clean(entry);
+    if (!open)
+      throw new IllegalStateException("commit closed");
+    cleaner.clean(index);
     close();
   }
 
   @Override
   public void close() {
-    pool.release(this);
+    if (open) {
+      pool.release(this);
+      open = false;
+    }
   }
 
   @Override

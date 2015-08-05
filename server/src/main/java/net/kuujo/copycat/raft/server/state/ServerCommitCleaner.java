@@ -15,7 +15,6 @@
  */
 package net.kuujo.copycat.raft.server.state;
 
-import net.kuujo.copycat.io.storage.Entry;
 import net.kuujo.copycat.io.storage.Log;
 
 /**
@@ -32,12 +31,9 @@ class ServerCommitCleaner {
 
   /**
    * Cleans the given index from the log.
-   *
-   * @param entry The entry to clean.
    */
-  void clean(Entry entry) {
-    log.cleanEntry(entry.getIndex());
-    entry.close();
+  void clean(long index) {
+    log.cleanEntry(index);
   }
 
 }

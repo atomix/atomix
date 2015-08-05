@@ -126,26 +126,6 @@ public abstract class StateMachine implements AutoCloseable {
   }
 
   /**
-   * Wraps an operation method.
-   */
-  @SuppressWarnings("unchecked")
-  private Function<Commit<?>, CompletableFuture<Object>> wrapOperation(Method method) {
-    if (method.getParameterCount() < 1) {
-      throw new IllegalStateException("invalid operation method: not enough arguments");
-    } else if (method.getParameterCount() > 1) {
-      throw new IllegalStateException("invalid operation method: too many arguments");
-    } else {
-      return commit -> {
-        try {
-          return (CompletableFuture<Object>) method.invoke(this, commit);
-        } catch (IllegalAccessException | InvocationTargetException e) {
-          throw new ApplicationException("failed to invoke operation", e);
-        }
-      };
-    }
-  }
-
-  /**
    * Finds the operation method for the given operation.
    */
   private OperationExecutor findOperation(Class<? extends Operation> type) {

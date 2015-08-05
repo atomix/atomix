@@ -582,7 +582,8 @@ public class ServerContext implements Managed<Void> {
       if (session.hasResponse(entry.getSequence())) {
         future = CompletableFuture.completedFuture(session.getResponse(entry.getSequence()));
       } else {
-        future = execute(() -> stateMachine.apply(commits.acquire(entry)))
+        ServerCommit commit = commits.acquire(entry);
+        future = execute(() -> stateMachine.apply(commit))
           .thenApply(result -> {
             // Store the command result in the session.
             session.registerResponse(entry.getSequence(), result);

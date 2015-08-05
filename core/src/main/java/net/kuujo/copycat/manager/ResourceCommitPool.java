@@ -40,8 +40,8 @@ class ResourceCommitPool {
     ResourceCommit resourceCommit = pool.poll();
     if (resourceCommit == null) {
       resourceCommit = new ResourceCommit(this);
-      resourceCommit.reset(commit, session);
     }
+    resourceCommit.reset(commit, session);
     return resourceCommit;
   }
 

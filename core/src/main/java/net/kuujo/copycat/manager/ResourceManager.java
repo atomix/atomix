@@ -64,13 +64,14 @@ public class ResourceManager extends StateMachine {
   @SuppressWarnings("unchecked")
   @Apply({ResourceCommand.class, ResourceQuery.class})
   protected CompletableFuture<Object> commandResource(Commit<? extends ResourceOperation> commit) {
-    ResourceHolder resource = resources.get(commit.operation().resource());
+    final ResourceHolder resource = resources.get(commit.operation().resource());
     if (resource != null) {
       CompletableFuture<Object> future = new ComposableFuture<>();
       resource.context.execute(() -> {
-        CompletableFuture<Object> resultFuture = resource.stateMachine.apply(
-          commits.acquire(commit, resource.sessions.computeIfAbsent(commit.session().id(),
-            id -> new ManagedResourceSession(commit.operation().resource(), commit.session()))));
+        StateMachine resourceStateMachine = resource.stateMachine;
+        ResourceCommit resourceCommit = commits.acquire(commit, resource.sessions.computeIfAbsent(commit.session().id(),
+          id -> new ManagedResourceSession(commit.operation().resource(), commit.session())));
+        CompletableFuture<Object> resultFuture = resourceStateMachine.apply(resourceCommit);
         resultFuture.whenComplete((result, error) -> {
           if (error == null) {
             future.complete(result);
