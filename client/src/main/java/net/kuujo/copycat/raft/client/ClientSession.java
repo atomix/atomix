@@ -266,7 +266,6 @@ public class ClientSession implements Session, Managed<Session> {
     Member member = connectMembers.remove(random.nextInt(connectMembers.size()));
 
     final InetSocketAddress address = new InetSocketAddress(member.host(), member.port());
-    LOGGER.info("Connecting: {}", address);
     client.connect(address).whenComplete((connection, connectError) -> {
       if (connectError == null) {
         setupConnection(connection);
@@ -285,7 +284,6 @@ public class ClientSession implements Session, Managed<Session> {
           }
         });
       } else {
-        LOGGER.error("Failed to connect: {}", connectError, address);
         resetConnection().request(request, future, checkOpen);
       }
     });

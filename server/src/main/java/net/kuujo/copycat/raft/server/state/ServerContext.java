@@ -15,6 +15,16 @@
  */
 package net.kuujo.copycat.raft.server.state;
 
+import java.lang.reflect.InvocationTargetException;
+import java.net.InetSocketAddress;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.function.Supplier;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import net.kuujo.copycat.ConfigurationException;
 import net.kuujo.copycat.Listener;
 import net.kuujo.copycat.ListenerContext;
@@ -26,28 +36,35 @@ import net.kuujo.copycat.io.storage.Log;
 import net.kuujo.copycat.io.transport.Connection;
 import net.kuujo.copycat.io.transport.Server;
 import net.kuujo.copycat.io.transport.Transport;
-import net.kuujo.copycat.raft.*;
-import net.kuujo.copycat.raft.protocol.*;
+import net.kuujo.copycat.raft.Command;
+import net.kuujo.copycat.raft.InternalException;
+import net.kuujo.copycat.raft.Member;
+import net.kuujo.copycat.raft.Members;
+import net.kuujo.copycat.raft.Query;
+import net.kuujo.copycat.raft.UnknownSessionException;
+import net.kuujo.copycat.raft.protocol.AppendRequest;
+import net.kuujo.copycat.raft.protocol.CommandRequest;
+import net.kuujo.copycat.raft.protocol.JoinRequest;
+import net.kuujo.copycat.raft.protocol.KeepAliveRequest;
+import net.kuujo.copycat.raft.protocol.LeaveRequest;
+import net.kuujo.copycat.raft.protocol.PollRequest;
+import net.kuujo.copycat.raft.protocol.QueryRequest;
+import net.kuujo.copycat.raft.protocol.RegisterRequest;
+import net.kuujo.copycat.raft.protocol.VoteRequest;
 import net.kuujo.copycat.raft.server.Commit;
 import net.kuujo.copycat.raft.server.RaftServer;
 import net.kuujo.copycat.raft.server.StateMachine;
-import net.kuujo.copycat.raft.server.storage.*;
+import net.kuujo.copycat.raft.server.storage.CommandEntry;
+import net.kuujo.copycat.raft.server.storage.ConfigurationEntry;
+import net.kuujo.copycat.raft.server.storage.KeepAliveEntry;
+import net.kuujo.copycat.raft.server.storage.NoOpEntry;
+import net.kuujo.copycat.raft.server.storage.QueryEntry;
+import net.kuujo.copycat.raft.server.storage.RegisterEntry;
 import net.kuujo.copycat.util.Managed;
 import net.kuujo.copycat.util.concurrent.ComposableFuture;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.Futures;
 import net.kuujo.copycat.util.concurrent.SingleThreadContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.lang.reflect.InvocationTargetException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.function.Supplier;
 
 /**
  * Raft state context.

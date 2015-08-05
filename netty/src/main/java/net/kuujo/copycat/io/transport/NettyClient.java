@@ -100,7 +100,9 @@ public class NettyClient implements Client {
     bootstrap.option(ChannelOption.ALLOCATOR, ALLOCATOR);
 
     bootstrap.connect(address).addListener(channelFuture -> {
-      if (!channelFuture.isSuccess()) {
+      if (channelFuture.isSuccess()) {
+        LOGGER.info("Connected to {}", address);
+      } else {
         context.execute(() -> future.completeExceptionally(channelFuture.cause()));
       }
     });
