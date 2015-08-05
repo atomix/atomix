@@ -58,6 +58,14 @@ public class ResourceManager extends StateMachine {
     }
   }
 
+  @Override
+  public void tick(long timestamp) {
+    super.tick(timestamp);
+    for (ResourceHolder resource : resources.values()) {
+      resource.context.execute(() -> resource.stateMachine.tick(timestamp));
+    }
+  }
+
   /**
    * Applies resource commands.
    */

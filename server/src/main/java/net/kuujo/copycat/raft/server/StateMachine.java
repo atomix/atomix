@@ -188,6 +188,15 @@ public abstract class StateMachine implements AutoCloseable {
   }
 
   /**
+   * Updates the state machine time.
+   *
+   * @param timestamp The state machine timestamp.
+   */
+  public void tick(long timestamp) {
+    setTime(timestamp);
+  }
+
+  /**
    * Called when a new session is registered.
    *
    * @param session The session that was registered.

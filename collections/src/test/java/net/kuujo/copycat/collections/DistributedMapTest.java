@@ -146,7 +146,7 @@ public class DistributedMapTest extends ConcurrentTestCase {
     });
     await();
 
-    Thread.sleep(1000);
+    Thread.sleep(3000);
 
     expectResume();
     map.get("foo").thenAccept(result -> {
