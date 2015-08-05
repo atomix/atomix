@@ -324,7 +324,9 @@ class OffsetIndex implements AutoCloseable {
    */
   public boolean delete(int offset) {
     if (deletes.size() <= offset) {
-      deletes.resize(deletes.size() * 2);
+      while (deletes.size() <= offset) {
+        deletes.resize(deletes.size() * 2);
+      }
     }
     return deletes.set(offset);
   }
