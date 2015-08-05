@@ -32,16 +32,8 @@ import java.util.Set;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class SetState extends StateMachine {
-  private final Map<Integer, Commit<? extends SetCommands.TtlCommand>> map = new HashMap<>();
+  private Map<Integer, Commit<? extends SetCommands.TtlCommand>> map;
   private final Set<Long> sessions = new HashSet<>();
-  private long time;
-
-  /**
-   * Updates the wall clock time.
-   */
-  private void updateTime(Commit<?> commit) {
-    time = Math.max(time, commit.timestamp());
-  }
 
   @Override
   public void register(Session session) {
@@ -61,7 +53,7 @@ public class SetState extends StateMachine {
   /**
    * Returns a boolean value indicating whether the given commit is active.
    */
-  private boolean isActive(Commit<? extends SetCommands.TtlCommand> commit) {
+  private boolean isActive(Commit<? extends SetCommands.TtlCommand> commit, long time) {
     if (commit == null) {
       return false;
     } else if (commit.operation().mode() == PersistenceLevel.EPHEMERAL && !sessions.contains(commit.session().id())) {
@@ -77,27 +69,43 @@ public class SetState extends StateMachine {
    */
   @Apply(SetCommands.Contains.class)
   protected boolean contains(Commit<SetCommands.Contains> commit) {
-    updateTime(commit);
-    Commit<? extends SetCommands.TtlCommand> command = map.get(commit.operation().value());
-    if (!isActive(command)) {
-      map.remove(commit.operation().value());
-      return false;
+    try {
+      if (map == null) {
+        return false;
+      }
+
+      Commit<? extends SetCommands.TtlCommand> command = map.get(commit.operation().value());
+      if (!isActive(command, commit.timestamp())) {
+        map.remove(commit.operation().value());
+        return false;
+      }
+      return true;
+    } finally {
+      commit.close();
     }
-    return true;
   }
 
   /**
    * Handles an add commit.
    */
   @Apply(SetCommands.Add.class)
-  protected boolean put(Commit<SetCommands.Add> commit) {
-    updateTime(commit);
-    Commit<? extends SetCommands.TtlCommand> command = map.get(commit.operation().value());
-    if (!isActive(command)) {
-      map.put(commit.operation().value(), commit);
-      return true;
+  protected boolean add(Commit<SetCommands.Add> commit) {
+    if (map == null) {
+      map = new HashMap<>();
     }
-    return false;
+
+    Commit<? extends SetCommands.TtlCommand> previous = map.get(commit.operation().value());
+    if (!isActive(commit, getTime())) {
+      commit.clean();
+      return false;
+    } else if (!isActive(previous, commit.timestamp())) {
+      map.put(commit.operation().value(), commit);
+      previous.clean();
+      return true;
+    } else {
+      commit.clean();
+      return false;
+    }
   }
 
   /**
@@ -105,9 +113,19 @@ public class SetState extends StateMachine {
    */
   @Apply(SetCommands.Remove.class)
   protected boolean remove(Commit<SetCommands.Remove> commit) {
-    updateTime(commit);
-    Commit<? extends SetCommands.TtlCommand> command = map.remove(commit.operation().value());
-    return isActive(command);
+    if (map == null) {
+      commit.clean();
+      return false;
+    } else {
+      Commit<? extends SetCommands.TtlCommand> previous = map.remove(commit.operation().value());
+      if (previous == null) {
+        commit.clean();
+        return false;
+      } else {
+        previous.clean();
+        return isActive(previous, commit.timestamp());
+      }
+    }
   }
 
   /**
@@ -115,8 +133,11 @@ public class SetState extends StateMachine {
    */
   @Apply(SetCommands.Size.class)
   protected int size(Commit<SetCommands.Size> commit) {
-    updateTime(commit);
-    return map.size();
+    try {
+      return map != null ? map.size() : 0;
+    } finally {
+      commit.close();
+    }
   }
 
   /**
@@ -124,8 +145,11 @@ public class SetState extends StateMachine {
    */
   @Apply(SetCommands.IsEmpty.class)
   protected boolean isEmpty(Commit<SetCommands.IsEmpty> commit) {
-    updateTime(commit);
-    return map.isEmpty();
+    try {
+      return map == null || map.isEmpty();
+    } finally {
+      commit.close();
+    }
   }
 
   /**
@@ -133,8 +157,11 @@ public class SetState extends StateMachine {
    */
   @Apply(SetCommands.Clear.class)
   protected void clear(Commit<SetCommands.Clear> commit) {
-    updateTime(commit);
-    map.clear();
+    if (map == null) {
+      commit.clean();
+    } else {
+      map.clear();
+    }
   }
 
 }

@@ -32,16 +32,8 @@ import java.util.Set;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class MapState extends StateMachine {
-  private final Map<Object, Commit<? extends MapCommands.TtlCommand>> map = new HashMap<>();
+  private Map<Object, Commit<? extends MapCommands.TtlCommand>> map;
   private final Set<Long> sessions = new HashSet<>();
-  private long time;
-
-  /**
-   * Updates the wall clock time.
-   */
-  private void updateTime(Commit<?> commit) {
-    time = Math.max(time, commit.timestamp());
-  }
 
   @Override
   public void register(Session session) {
@@ -61,7 +53,7 @@ public class MapState extends StateMachine {
   /**
    * Returns a boolean value indicating whether the given commit is active.
    */
-  private boolean isActive(Commit<? extends MapCommands.TtlCommand> commit) {
+  private boolean isActive(Commit<? extends MapCommands.TtlCommand> commit, long time) {
     if (commit == null) {
       return false;
     } else if (commit.operation().mode() == PersistenceLevel.EPHEMERAL && !sessions.contains(commit.session().id())) {
@@ -77,13 +69,20 @@ public class MapState extends StateMachine {
    */
   @Apply(MapCommands.ContainsKey.class)
   protected boolean containsKey(Commit<MapCommands.ContainsKey> commit) {
-    updateTime(commit);
-    Commit<? extends MapCommands.TtlCommand> command = map.get(commit.operation().key());
-    if (!isActive(command)) {
-      map.remove(commit.operation().key());
-      return false;
+    try {
+      if (map == null) {
+        return false;
+      }
+
+      Commit<? extends MapCommands.TtlCommand> command = map.get(commit.operation().key());
+      if (!isActive(command, getTime())) {
+        map.remove(commit.operation().key());
+        return false;
+      }
+      return true;
+    } finally {
+      commit.close();
     }
-    return true;
   }
 
   /**
@@ -91,16 +90,23 @@ public class MapState extends StateMachine {
    */
   @Apply(MapCommands.Get.class)
   protected Object get(Commit<MapCommands.Get> commit) {
-    updateTime(commit);
-    Commit<? extends MapCommands.TtlCommand> command = map.get(commit.operation().key());
-    if (command != null) {
-      if (!isActive(command)) {
-        map.remove(commit.operation().key());
-      } else {
-        return command.operation().value();
-      }
+    if (map == null) {
+      return null;
     }
-    return null;
+
+    try {
+      Commit<? extends MapCommands.TtlCommand> command = map.get(commit.operation().key());
+      if (command != null) {
+        if (!isActive(command, getTime())) {
+          map.remove(commit.operation().key());
+        } else {
+          return command.operation().value();
+        }
+      }
+      return null;
+    } finally {
+      commit.close();
+    }
   }
 
   /**
@@ -108,16 +114,21 @@ public class MapState extends StateMachine {
    */
   @Apply(MapCommands.GetOrDefault.class)
   protected Object getOrDefault(Commit<MapCommands.GetOrDefault> commit) {
-    updateTime(commit);
-    Commit<? extends MapCommands.TtlCommand> command = map.get(commit.operation().key());
-    if (command == null) {
+    if (map == null) {
       return commit.operation().defaultValue();
-    } else if (!isActive(command)) {
-      map.remove(commit.operation().key());
-    } else {
-      return command.operation().value();
     }
-    return commit.operation().defaultValue();
+
+    try {
+      Commit<? extends MapCommands.TtlCommand> previous = map.get(commit.operation().key());
+      if (previous == null) {
+        return commit.operation().defaultValue();
+      } else if (isActive(previous, getTime())) {
+        return previous.operation().value();
+      }
+      return commit.operation().defaultValue();
+    } finally {
+      commit.close();
+    }
   }
 
   /**
@@ -125,9 +136,23 @@ public class MapState extends StateMachine {
    */
   @Apply(MapCommands.Put.class)
   protected Object put(Commit<MapCommands.Put> commit) {
-    updateTime(commit);
-    Commit<? extends MapCommands.TtlCommand> command = map.put(commit.operation().key(), commit);
-    return isActive(command) ? command.operation().value : null;
+    if (map == null) {
+      map = new HashMap<>();
+    }
+
+    Commit<? extends MapCommands.TtlCommand> previous = map.get(commit.operation().key());
+    if (previous == null) {
+      if (!isActive(commit, getTime())) {
+        commit.clean();
+      } else {
+        map.put(commit.operation().key(), commit);
+      }
+      return null;
+    } else {
+      map.put(commit.operation().key(), commit);
+      previous.clean();
+      return isActive(previous, commit.timestamp()) ? previous.operation().value() : null;
+    }
   }
 
   /**
@@ -135,9 +160,27 @@ public class MapState extends StateMachine {
    */
   @Apply(MapCommands.PutIfAbsent.class)
   protected Object putIfAbsent(Commit<MapCommands.PutIfAbsent> commit) {
-    updateTime(commit);
-    Commit<? extends MapCommands.TtlCommand> command = map.putIfAbsent(commit.operation().key(), commit);
-    return isActive(command) ? command.operation().value : null;
+    if (map == null) {
+      map = new HashMap<>();
+    }
+
+    Commit<? extends MapCommands.TtlCommand> previous = map.get(commit.operation().key());
+    if (previous == null) {
+      if (!isActive(commit, getTime())) {
+        commit.clean();
+      } else {
+        map.put(commit.operation().key(), commit);
+      }
+      return null;
+    } else {
+      if (!isActive(previous, commit.timestamp())) {
+        map.put(commit.operation().key(), commit);
+        previous.clean();
+        return null;
+      } else {
+        return previous.operation().value();
+      }
+    }
   }
 
   /**
@@ -145,23 +188,36 @@ public class MapState extends StateMachine {
    */
   @Apply(MapCommands.Remove.class)
   protected Object remove(Commit<MapCommands.Remove> commit) {
-    updateTime(commit);
-    if (commit.operation().value() != null) {
-      Commit<? extends MapCommands.TtlCommand> command = map.get(commit.operation().key());
-      if (!isActive(command)) {
+    if (map == null) {
+      commit.clean();
+      return null;
+    } else if (commit.operation().value() != null) {
+      Commit<? extends MapCommands.TtlCommand> previous = map.get(commit.operation().key());
+      if (previous == null) {
+        commit.clean();
+        return true;
+      } else if (!isActive(previous, commit.timestamp())) {
         map.remove(commit.operation().key());
+        previous.clean();
       } else {
-        Object value = command.operation().value();
+        Object value = previous.operation().value();
         if ((value == null && commit.operation().value() == null) || (value != null && commit.operation().value() != null && value.equals(commit.operation().value()))) {
           map.remove(commit.operation().key());
+          previous.clean();
           return true;
         }
         return false;
       }
       return false;
     } else {
-      Commit<? extends MapCommands.TtlCommand> command =  map.remove(commit.operation().key());
-      return isActive(command) ? command.operation().value() : null;
+      Commit<? extends MapCommands.TtlCommand> previous =  map.remove(commit.operation().key());
+      if (previous == null) {
+        commit.clean();
+        return true;
+      } else {
+        previous.clean();
+        return isActive(previous, commit.timestamp()) ? previous.operation().value() : null;
+      }
     }
   }
 
@@ -170,8 +226,11 @@ public class MapState extends StateMachine {
    */
   @Apply(MapCommands.Size.class)
   protected int size(Commit<MapCommands.Size> commit) {
-    updateTime(commit);
-    return map.size();
+    try {
+      return map != null ? map.size() : 0;
+    } finally {
+      commit.close();
+    }
   }
 
   /**
@@ -179,8 +238,11 @@ public class MapState extends StateMachine {
    */
   @Apply(MapCommands.IsEmpty.class)
   protected boolean isEmpty(Commit<MapCommands.IsEmpty> commit) {
-    updateTime(commit);
-    return map.isEmpty();
+    try {
+      return map == null || map.isEmpty();
+    } finally {
+      commit.close();
+    }
   }
 
   /**
@@ -188,8 +250,11 @@ public class MapState extends StateMachine {
    */
   @Apply(MapCommands.Clear.class)
   protected void clear(Commit<MapCommands.Clear> commit) {
-    updateTime(commit);
-    map.clear();
+    if (map == null) {
+      commit.clean();
+    } else {
+      map.clear();
+    }
   }
 
 }
