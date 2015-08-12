@@ -243,7 +243,7 @@ Copycat copycat = CopycatServer.builder()
     .build())
   .withLog(Log.builder()
     .withDirectory("log/data")
-    ,build())
+    .build())
   .build();
 ```
 
