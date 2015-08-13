@@ -17,8 +17,8 @@ package net.kuujo.copycat.manager;
 
 import net.kuujo.copycat.raft.Session;
 import net.kuujo.copycat.raft.server.Commit;
-import net.kuujo.copycat.raft.server.StateMachineExecutor;
 import net.kuujo.copycat.raft.server.StateMachine;
+import net.kuujo.copycat.raft.server.StateMachineExecutor;
 import net.kuujo.copycat.resource.ResourceOperation;
 import net.kuujo.copycat.util.concurrent.ComposableFuture;
 import net.kuujo.copycat.util.concurrent.Context;
@@ -222,7 +222,9 @@ public class ResourceManager extends StateMachine {
         StateMachine resource = commit.operation().type().newInstance();
         nodes.put(node.resource, node);
         Context context = new ThreadPoolContext(scheduler, Context.currentContext().serializer().clone());
-        resources.put(node.resource, new ResourceHolder(resource, new ResourceStateMachineExecutor(executor, context)));
+        StateMachineExecutor executor = new ResourceStateMachineExecutor(this.executor, context);
+        resources.put(node.resource, new ResourceHolder(resource, executor));
+        resource.configure(executor);
       } catch (InstantiationException | IllegalAccessException e) {
         throw new ResourceManagerException("failed to instantiate state machine", e);
       }
