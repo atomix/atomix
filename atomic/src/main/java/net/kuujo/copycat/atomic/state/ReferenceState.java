@@ -132,7 +132,7 @@ public class ReferenceState extends StateMachine {
    * Applies a set commit.
    */
   protected void set(Commit<ReferenceCommands.Set> commit) {
-    if (!isActive(commit, context().clock().instant())) {
+    if (!isActive(commit, context().time().instant())) {
       commit.clean();
     } else {
       if (current != null) {
@@ -148,7 +148,7 @@ public class ReferenceState extends StateMachine {
    * Handles a compare and set commit.
    */
   protected boolean compareAndSet(Commit<ReferenceCommands.CompareAndSet> commit) {
-    if (!isActive(commit, context().clock().instant())) {
+    if (!isActive(commit, context().time().instant())) {
       commit.clean();
       return false;
     } else if (isActive(current, commit.time())) {
@@ -178,7 +178,7 @@ public class ReferenceState extends StateMachine {
    * Handles a get and set commit.
    */
   protected Object getAndSet(Commit<ReferenceCommands.GetAndSet> commit) {
-    if (!isActive(commit, context().clock().instant())) {
+    if (!isActive(commit, context().time().instant())) {
       commit.clean();
 
     }

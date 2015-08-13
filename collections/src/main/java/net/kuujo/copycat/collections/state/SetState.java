@@ -104,7 +104,7 @@ public class SetState extends StateMachine {
     }
 
     Commit<? extends SetCommands.TtlCommand> previous = map.get(commit.operation().value());
-    if (!isActive(commit, context().clock().instant())) {
+    if (!isActive(commit, context().time().instant())) {
       commit.clean();
       return false;
     } else if (!isActive(previous, commit.time())) {

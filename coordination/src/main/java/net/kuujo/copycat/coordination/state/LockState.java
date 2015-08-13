@@ -64,7 +64,7 @@ public class LockState extends StateMachine {
         throw new IllegalStateException("not the lock holder");
 
       lock = queue.poll();
-      while (lock != null && (lock.operation().timeout() != -1 && lock.time().toEpochMilli() + lock.operation().timeout() < context().clock().instant().toEpochMilli())) {
+      while (lock != null && (lock.operation().timeout() != -1 && lock.time().toEpochMilli() + lock.operation().timeout() < context().time().instant().toEpochMilli())) {
         lock.clean();
         lock = queue.poll();
       }

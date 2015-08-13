@@ -21,7 +21,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 
 /**
- * State machine clock.
+ * State machine time.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
@@ -30,7 +30,7 @@ public class StateClock extends Clock {
   private Instant instant;
 
   /**
-   * Sets the state machine clock instant.
+   * Sets the state machine time instant.
    */
   void set(Instant instant) {
     this.instant = instant;

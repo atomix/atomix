@@ -30,7 +30,6 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -232,7 +231,7 @@ class ServerStateMachineExecutor implements StateMachineExecutor {
       this.delay = delay;
       this.interval = interval;
       this.callback = callback;
-      this.time = context.clock().instant().toEpochMilli() + delay;
+      this.time = context.time().instant().toEpochMilli() + delay;
     }
 
     /**
@@ -275,7 +274,7 @@ class ServerStateMachineExecutor implements StateMachineExecutor {
      */
     private void reschedule() {
       if (interval > 0) {
-        time = context.clock().instant().toEpochMilli() + delay;
+        time = context.time().instant().toEpochMilli() + delay;
         schedule();
       }
     }

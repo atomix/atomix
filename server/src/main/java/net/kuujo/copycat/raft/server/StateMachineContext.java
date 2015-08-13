@@ -33,11 +33,11 @@ public interface StateMachineContext {
   long version();
 
   /**
-   * Returns the deterministic state machine clock.
+   * Returns the deterministic state machine time.
    *
-   * @return The deterministic state machine clock.
+   * @return The deterministic state machine time.
    */
-  Clock clock();
+  Clock time();
 
   /**
    * Returns the state machine sessions.

@@ -45,7 +45,7 @@ class ServerStateMachineContext implements StateMachineContext {
   }
 
   @Override
-  public Clock clock() {
+  public Clock time() {
     return clock;
   }
 
@@ -56,7 +56,7 @@ class ServerStateMachineContext implements StateMachineContext {
 
   @Override
   public String toString() {
-    return String.format("%s[version=%d, clock=%s]", getClass().getSimpleName(), version, clock);
+    return String.format("%s[version=%d, time=%s]", getClass().getSimpleName(), version, clock);
   }
 
 }

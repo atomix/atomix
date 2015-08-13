@@ -88,7 +88,7 @@ public class MapState extends StateMachine {
       }
 
       Commit<? extends MapCommands.TtlCommand> command = map.get(commit.operation().key());
-      if (!isActive(command, context().clock().instant())) {
+      if (!isActive(command, context().time().instant())) {
         map.remove(commit.operation().key());
         return false;
       }
@@ -109,7 +109,7 @@ public class MapState extends StateMachine {
     try {
       Commit<? extends MapCommands.TtlCommand> command = map.get(commit.operation().key());
       if (command != null) {
-        if (!isActive(command, context().clock().instant())) {
+        if (!isActive(command, context().time().instant())) {
           map.remove(commit.operation().key());
         } else {
           return command.operation().value();
@@ -133,7 +133,7 @@ public class MapState extends StateMachine {
       Commit<? extends MapCommands.TtlCommand> previous = map.get(commit.operation().key());
       if (previous == null) {
         return commit.operation().defaultValue();
-      } else if (isActive(previous, context().clock().instant())) {
+      } else if (isActive(previous, context().time().instant())) {
         return previous.operation().value();
       }
       return commit.operation().defaultValue();
@@ -152,7 +152,7 @@ public class MapState extends StateMachine {
 
     Commit<? extends MapCommands.TtlCommand> previous = map.get(commit.operation().key());
     if (previous == null) {
-      if (!isActive(commit, context().clock().instant())) {
+      if (!isActive(commit, context().time().instant())) {
         commit.clean();
       } else {
         map.put(commit.operation().key(), commit);
@@ -175,7 +175,7 @@ public class MapState extends StateMachine {
 
     Commit<? extends MapCommands.TtlCommand> previous = map.get(commit.operation().key());
     if (previous == null) {
-      if (!isActive(commit, context().clock().instant())) {
+      if (!isActive(commit, context().time().instant())) {
         commit.clean();
       } else {
         map.put(commit.operation().key(), commit);
