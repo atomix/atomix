@@ -15,10 +15,14 @@
  */
 package net.kuujo.copycat.atomic;
 
-import net.kuujo.copycat.*;
+import net.kuujo.copycat.Listener;
+import net.kuujo.copycat.ListenerContext;
+import net.kuujo.copycat.PersistenceLevel;
+import net.kuujo.copycat.Resource;
 import net.kuujo.copycat.atomic.state.ReferenceCommands;
 import net.kuujo.copycat.atomic.state.ReferenceState;
 import net.kuujo.copycat.raft.ConsistencyLevel;
+import net.kuujo.copycat.raft.server.StateMachine;
 import net.kuujo.copycat.resource.ResourceContext;
 
 import java.util.Collections;
@@ -31,13 +35,18 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Stateful(ReferenceState.class)
 public class DistributedAtomicValue<T> extends Resource {
   private ConsistencyLevel defaultConsistency = ConsistencyLevel.LINEARIZABLE_LEASE;
   private final java.util.Set<Listener<T>> changeListeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
-  public DistributedAtomicValue(ResourceContext context) {
-    super(context);
+  @Override
+  protected Class<? extends StateMachine> stateMachine() {
+    return ReferenceState.class;
+  }
+
+  @Override
+  protected void open(ResourceContext context) {
+    super.open(context);
     context.session().<T>onReceive(event -> {
       for (Listener<T> listener : changeListeners) {
         listener.accept(event);

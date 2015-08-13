@@ -20,12 +20,9 @@ import net.kuujo.copycat.manager.CreateResource;
 import net.kuujo.copycat.manager.DeletePath;
 import net.kuujo.copycat.manager.PathExists;
 import net.kuujo.copycat.raft.client.RaftClient;
-import net.kuujo.copycat.raft.server.StateMachine;
 import net.kuujo.copycat.resource.ResourceContext;
 import net.kuujo.copycat.util.Managed;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -52,9 +49,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class Copycat implements Managed<Copycat> {
   static final String PATH_SEPARATOR = "/";
   protected final RaftClient client;
-  private final Map<Class<? extends Resource>, Class<? extends StateMachine>> typeCache = new ConcurrentHashMap<>();
   private final Map<String, Node> nodes = new ConcurrentHashMap<>();
-  private final ResourceFactory factory = new ResourceFactory();
   private final Map<Long, ResourceContext> resources = new ConcurrentHashMap<>();
 
   protected Copycat(RaftClient client) {
@@ -117,34 +112,27 @@ public abstract class Copycat implements Managed<Copycat> {
    * will be returned. Additionally, if the node's parents don't already exist they'll be created. For instance, calling
    * this method with {@code /foo/bar/baz} will create {@code foo}, {@code foo/bar}, and {@code foo/bar/baz} if they
    * don't already exist.
-   * <p>
-   * The provided {@link net.kuujo.copycat.Resource} class must be annotated with {@link net.kuujo.copycat.Stateful}
-   * indicating the {@link net.kuujo.copycat.raft.server.StateMachine} to create on the server side. The state machine
-   * class will be submitted to the cluster and created on each Raft server before the returned
-   * {@link java.util.concurrent.CompletableFuture} is completed.
    *
    * @param path The path at which to create the resource.
-   * @param type The resource type to create. This must be a class annotated with {@link net.kuujo.copycat.Stateful}
-   *             indicating the {@link net.kuujo.copycat.raft.server.StateMachine} class to use.
+   * @param type The resource type to create.
    * @param <T> The resource type.
    * @return A completable future to be completed once the resource has been created.
    */
   @SuppressWarnings("unchecked")
   public <T extends Resource> CompletableFuture<T> create(String path, Class<? super T> type) {
-    Class<? extends StateMachine> stateMachine = typeCache.computeIfAbsent((Class<? extends Resource>) type, t -> {
-      Stateful stateful = t.getAnnotation(Stateful.class);
-      return stateful != null ? stateful.value() : null;
-    });
-
-    if (stateMachine == null) {
-      throw new IllegalArgumentException("invalid resource class: " + type);
+    try {
+      T resource = (T) type.newInstance();
+      return client.submit(CreateResource.builder()
+        .withPath(path)
+        .withType(resource.stateMachine())
+        .build())
+        .thenApply(id -> {
+          resource.open(resources.computeIfAbsent(id, i -> new ResourceContext(id, client)));
+          return resource;
+        });
+    } catch (InstantiationException | IllegalAccessException e) {
+      throw new ResourceException("failed to instantiate resource: " + type, e);
     }
-
-    return client.submit(CreateResource.builder()
-      .withPath(path)
-      .withType(stateMachine)
-      .build())
-      .thenApply(id -> factory.createResource(type, id));
   }
 
   /**
@@ -185,27 +173,6 @@ public abstract class Copycat implements Managed<Copycat> {
   @SuppressWarnings("unchecked")
   public boolean isClosed() {
     return client.isClosed();
-  }
-
-  /**
-   * Resource factory.
-   *
-   * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
-   */
-  private class ResourceFactory {
-
-    /**
-     * Creates a resource object.
-     */
-    @SuppressWarnings("unchecked")
-    private <T extends Resource> T createResource(Class<? super T> type, long id) {
-      try {
-        Constructor constructor = type.getConstructor(ResourceContext.class);
-        return (T) constructor.newInstance(resources.computeIfAbsent(id, i -> new ResourceContext(id, client)));
-      } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
-        throw new ResourceException("failed to instantiate resource: " + type, e);
-      }
-    }
   }
 
   /**

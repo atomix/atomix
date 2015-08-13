@@ -17,11 +17,10 @@ package net.kuujo.copycat.collections;
 
 import net.kuujo.copycat.PersistenceLevel;
 import net.kuujo.copycat.Resource;
-import net.kuujo.copycat.Stateful;
 import net.kuujo.copycat.collections.state.MapCommands;
 import net.kuujo.copycat.collections.state.MapState;
 import net.kuujo.copycat.raft.ConsistencyLevel;
-import net.kuujo.copycat.resource.ResourceContext;
+import net.kuujo.copycat.raft.server.StateMachine;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
@@ -33,11 +32,11 @@ import java.util.concurrent.CompletableFuture;
  * @param <V> The map entry type.
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Stateful(MapState.class)
 public class DistributedMap<K, V> extends Resource {
 
-  public DistributedMap(ResourceContext context) {
-    super(context);
+  @Override
+  protected Class<? extends StateMachine> stateMachine() {
+    return MapState.class;
   }
 
   /**

@@ -17,6 +17,7 @@ package net.kuujo.copycat;
 
 import net.kuujo.copycat.raft.Command;
 import net.kuujo.copycat.raft.Query;
+import net.kuujo.copycat.raft.server.StateMachine;
 import net.kuujo.copycat.resource.ResourceContext;
 
 import java.util.concurrent.CompletableFuture;
@@ -27,11 +28,23 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class Resource {
-  protected final ResourceContext context;
+  protected ResourceContext context;
 
-  protected Resource(ResourceContext context) {
+  /**
+   * Initializes the resource.
+   *
+   * @param context The resource context.
+   */
+  protected void open(ResourceContext context) {
     this.context = context;
   }
+
+  /**
+   * Returns the resource state machine class.
+   *
+   * @return The resource state machine class.
+   */
+  protected abstract Class<? extends StateMachine> stateMachine();
 
   /**
    * Submits a command to the Raft protocol.

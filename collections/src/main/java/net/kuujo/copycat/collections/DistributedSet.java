@@ -17,11 +17,10 @@ package net.kuujo.copycat.collections;
 
 import net.kuujo.copycat.PersistenceLevel;
 import net.kuujo.copycat.Resource;
-import net.kuujo.copycat.Stateful;
 import net.kuujo.copycat.collections.state.SetCommands;
 import net.kuujo.copycat.collections.state.SetState;
 import net.kuujo.copycat.raft.ConsistencyLevel;
-import net.kuujo.copycat.resource.ResourceContext;
+import net.kuujo.copycat.raft.server.StateMachine;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
@@ -32,11 +31,11 @@ import java.util.concurrent.CompletableFuture;
  * @param <T> The set value type.
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Stateful(SetState.class)
 public class DistributedSet<T> extends Resource {
 
-  public DistributedSet(ResourceContext context) {
-    super(context);
+  @Override
+  protected Class<? extends StateMachine> stateMachine() {
+    return SetState.class;
   }
 
   /**

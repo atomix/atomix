@@ -18,9 +18,9 @@ package net.kuujo.copycat.coordination;
 import net.kuujo.copycat.Listener;
 import net.kuujo.copycat.ListenerContext;
 import net.kuujo.copycat.Resource;
-import net.kuujo.copycat.Stateful;
 import net.kuujo.copycat.coordination.state.TopicCommands;
 import net.kuujo.copycat.coordination.state.TopicState;
+import net.kuujo.copycat.raft.server.StateMachine;
 import net.kuujo.copycat.resource.ResourceContext;
 
 import java.util.List;
@@ -32,13 +32,17 @@ import java.util.concurrent.CopyOnWriteArrayList;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Stateful(TopicState.class)
 public class DistributedTopic<T> extends Resource {
   private final List<TopicListenerContext<T>> listeners = new CopyOnWriteArrayList<>();
 
-  @SuppressWarnings("unchecked")
-  public DistributedTopic(ResourceContext context) {
-    super(context);
+  @Override
+  protected Class<? extends StateMachine> stateMachine() {
+    return TopicState.class;
+  }
+
+  @Override
+  protected void open(ResourceContext context) {
+    super.open(context);
     context.session().onReceive(message -> {
       for (TopicListenerContext<T> listener : listeners) {
         listener.accept((T) message);

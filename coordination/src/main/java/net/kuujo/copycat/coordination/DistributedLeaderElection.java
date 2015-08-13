@@ -18,9 +18,9 @@ package net.kuujo.copycat.coordination;
 import net.kuujo.copycat.Listener;
 import net.kuujo.copycat.ListenerContext;
 import net.kuujo.copycat.Resource;
-import net.kuujo.copycat.Stateful;
 import net.kuujo.copycat.coordination.state.LeaderElectionCommands;
 import net.kuujo.copycat.coordination.state.LeaderElectionState;
+import net.kuujo.copycat.raft.server.StateMachine;
 import net.kuujo.copycat.resource.ResourceContext;
 
 import java.util.Collections;
@@ -33,12 +33,17 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Stateful(LeaderElectionState.class)
 public class DistributedLeaderElection extends Resource {
   private final Set<Listener<Void>> listeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
-  public DistributedLeaderElection(ResourceContext context) {
-    super(context);
+  @Override
+  protected Class<? extends StateMachine> stateMachine() {
+    return LeaderElectionState.class;
+  }
+
+  @Override
+  protected void open(ResourceContext context) {
+    super.open(context);
     context.session().onReceive(v -> {
       for (Listener<Void> listener : listeners) {
         listener.accept(null);
