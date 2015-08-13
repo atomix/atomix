@@ -30,6 +30,7 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -66,8 +67,29 @@ class ServerStateMachineExecutor implements StateMachineExecutor {
       // Get the function registered for the operation. If no function is registered, attempt to
       // use a global function if available.
       Function function = operations.get(commit.type());
+
+      if (function == null) {
+        // If no operation function was found for the class, try to find an operation function
+        // registered with a parent class.
+        for (Map.Entry<Class, Function> entry : operations.entrySet()) {
+          if (entry.getKey().isAssignableFrom(commit.type())) {
+            function = entry.getValue();
+            break;
+          }
+        }
+
+        // If a parent operation function was found, store the function for future reference.
+        if (function != null) {
+          operations.put(commit.type(), function);
+        }
+      }
+
+      // If no operation function was found, use the all operation and store it as the permanent operation.
       if (function == null) {
         function = allOperation;
+        if (function != null) {
+          operations.put(commit.type(), function);
+        }
       }
 
       if (function == null) {
