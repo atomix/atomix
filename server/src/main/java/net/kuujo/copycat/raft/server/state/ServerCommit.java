@@ -20,6 +20,8 @@ import net.kuujo.copycat.raft.Session;
 import net.kuujo.copycat.raft.server.Commit;
 import net.kuujo.copycat.raft.server.storage.OperationEntry;
 
+import java.time.Instant;
+
 /**
  * Server commit.
  *
@@ -31,7 +33,7 @@ class ServerCommit implements Commit {
   private final SessionManager sessions;
   private long index;
   private Session session;
-  private long timestamp;
+  private Instant instant;
   private Operation operation;
   private volatile boolean open;
 
@@ -49,7 +51,7 @@ class ServerCommit implements Commit {
   void reset(OperationEntry entry) {
     this.index = entry.getIndex();
     this.session = sessions.getSession(entry.getSession());
-    this.timestamp = entry.getTimestamp();
+    this.instant = Instant.ofEpochMilli(entry.getTimestamp());
     this.operation = entry.getOperation();
     open = true;
   }
@@ -65,8 +67,8 @@ class ServerCommit implements Commit {
   }
 
   @Override
-  public long timestamp() {
-    return timestamp;
+  public Instant time() {
+    return instant;
   }
 
   @Override
@@ -97,7 +99,7 @@ class ServerCommit implements Commit {
 
   @Override
   public String toString() {
-    return String.format("%s[index=%d, session=%s, timestamp=%d, operation=%s]", getClass().getSimpleName(), index(), session(), timestamp(), operation());
+    return String.format("%s[index=%d, session=%s, time=%s, operation=%s]", getClass().getSimpleName(), index(), session(), time(), operation());
   }
 
 }

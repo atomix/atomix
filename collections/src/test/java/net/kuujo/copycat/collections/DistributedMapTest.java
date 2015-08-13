@@ -27,9 +27,9 @@ import net.kuujo.copycat.raft.Member;
 import net.kuujo.copycat.raft.Members;
 import org.testng.annotations.Test;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Distributed map test.
@@ -136,7 +136,7 @@ public class DistributedMapTest extends ConcurrentTestCase {
     DistributedMap<String, String> map = node.create(DistributedMap.class).get();
 
     expectResume();
-    map.put("foo", "Hello world!", 1, TimeUnit.SECONDS).thenRun(this::resume);
+    map.put("foo", "Hello world!", Duration.ofSeconds(1)).thenRun(this::resume);
     await();
 
     expectResume();

@@ -103,15 +103,14 @@ class LeaderState extends ActiveState {
     if (!context.getLog().isEmpty()) {
       int count = 0;
       for (long lastApplied = Math.max(context.getLastApplied(), context.getLog().firstIndex()); lastApplied <= index; lastApplied++) {
-        try (Entry entry = context.getLog().getEntry(lastApplied)) {
-          if (entry != null) {
-            context.apply(entry).whenCompleteAsync((result, error) -> {
-              if (isOpen() && error != null) {
-                LOGGER.info("{} - An application error occurred: {}", context.getMember().id(), error);
-              }
-              entry.close();
-            }, context.getContext());
-          }
+        Entry entry = context.getLog().getEntry(lastApplied);
+        if (entry != null) {
+          context.apply(entry).whenComplete((result, error) -> {
+            if (isOpen() && error != null) {
+              LOGGER.info("{} - An application error occurred: {}", context.getMember().id(), error);
+            }
+            entry.close();
+          });
         }
         count++;
       }

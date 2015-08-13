@@ -15,21 +15,28 @@
  */
 package net.kuujo.copycat.raft.server.state;
 
-import net.kuujo.copycat.raft.Session;
 import net.kuujo.copycat.io.transport.Connection;
+import net.kuujo.copycat.raft.Session;
+import net.kuujo.copycat.raft.server.Sessions;
 
-import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Session manager.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-class SessionManager {
-  private final Map<UUID, Connection> connections = new HashMap<>();
-  private final Map<Long, ServerSession> sessions = new HashMap<>();
+class SessionManager implements Sessions {
+  private final Map<UUID, Connection> connections = new ConcurrentHashMap<>();
+  private final Map<Long, ServerSession> sessions = new ConcurrentHashMap<>();
+
+  @Override
+  public Session session(long sessionId) {
+    return sessions.get(sessionId);
+  }
 
   /**
    * Registers a connection.
@@ -81,6 +88,12 @@ class SessionManager {
    */
   ServerSession getSession(long sessionId) {
     return sessions.get(sessionId);
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public Iterator<Session> iterator() {
+    return (Iterator) sessions.values().iterator();
   }
 
 }

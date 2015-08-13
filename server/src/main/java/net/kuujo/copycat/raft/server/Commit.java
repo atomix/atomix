@@ -18,6 +18,8 @@ package net.kuujo.copycat.raft.server;
 import net.kuujo.copycat.raft.Operation;
 import net.kuujo.copycat.raft.Session;
 
+import java.time.Instant;
+
 /**
  * Represents the committed state and metadata of a Raft state machine operation.
  * <p>
@@ -26,7 +28,7 @@ import net.kuujo.copycat.raft.Session;
  * {@link StateMachine}. Operations that are wrapped in a {@link Commit}
  * object are guaranteed to be persisted in the Raft log on a majority of the cluster. The commit object provides metadata
  * about the committed operation such as the {@link #index()} at which the operation was written in the log, the
- * {@link #timestamp()} at which it was written, and the {@link net.kuujo.copycat.raft.Session} that submitted the
+ * {@link #time()} at which it was written, and the {@link net.kuujo.copycat.raft.Session} that submitted the
  * operation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
@@ -65,18 +67,18 @@ public interface Commit<T extends Operation> extends AutoCloseable {
   Session session();
 
   /**
-   * Returns the commit timestamp.
+   * Returns the time at which the operation was committed.
    * <p>
-   * The timestamp is representative of the time at which the leader wrote the operation to its log. Because commit
-   * timestamps are replicated through the Raft consensus algorithm, they are guaranteed to be consistent across all
-   * servers and therefore can be used to perform time-dependent operations such as expiring keys or timeouts.
+   * The time is representative of the time at which the leader wrote the operation to its log. Because instants
+   * are replicated through the Raft consensus algorithm, they are guaranteed to be consistent across all servers
+   * and therefore can be used to perform time-dependent operations such as expiring keys or timeouts.
    * <p>
    * Users should <em>never</em> use {@code System} time to control behavior in a state machine and should instead rely
-   * upon {@link Commit} timestamps for time-based controls.
+   * upon {@link Commit} times for time-based controls.
    *
-   * @return the commit timestamp.
+   * @return The commit time.
    */
-  long timestamp();
+  Instant time();
 
   /**
    * Returns the commit type.

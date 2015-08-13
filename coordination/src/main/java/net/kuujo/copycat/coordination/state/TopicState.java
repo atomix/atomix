@@ -16,12 +16,9 @@
 package net.kuujo.copycat.coordination.state;
 
 import net.kuujo.copycat.raft.Session;
-import net.kuujo.copycat.raft.server.Apply;
 import net.kuujo.copycat.raft.server.Commit;
 import net.kuujo.copycat.raft.server.StateMachine;
-
-import java.util.HashSet;
-import java.util.Set;
+import net.kuujo.copycat.raft.server.StateMachineExecutor;
 
 /**
  * Topic state machine.
@@ -29,29 +26,17 @@ import java.util.Set;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class TopicState extends StateMachine {
-  private final Set<Session> sessions = new HashSet<>();
 
   @Override
-  public void register(Session session) {
-    sessions.add(session);
-  }
-
-  @Override
-  public void expire(Session session) {
-    sessions.remove(session);
-  }
-
-  @Override
-  public void close(Session session) {
-    sessions.remove(session);
+  public void configure(StateMachineExecutor executor) {
+    executor.register(TopicCommands.Publish.class, this::publish);
   }
 
   /**
    * Handles a publish commit.
    */
-  @Apply(TopicCommands.Publish.class)
-  protected void applyPublish(Commit<TopicCommands.Publish> commit) {
-    for (Session session : sessions) {
+  protected void publish(Commit<TopicCommands.Publish> commit) {
+    for (Session session : context().sessions()) {
       session.publish(commit.operation().message());
     }
     commit.clean();

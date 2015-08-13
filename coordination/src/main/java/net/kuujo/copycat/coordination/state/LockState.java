@@ -15,9 +15,9 @@
  */
 package net.kuujo.copycat.coordination.state;
 
-import net.kuujo.copycat.raft.server.Apply;
 import net.kuujo.copycat.raft.server.Commit;
 import net.kuujo.copycat.raft.server.StateMachine;
+import net.kuujo.copycat.raft.server.StateMachineExecutor;
 
 import java.util.ArrayDeque;
 import java.util.Queue;
@@ -31,11 +31,16 @@ public class LockState extends StateMachine {
   private Commit<LockCommands.Lock> lock;
   private final Queue<Commit<LockCommands.Lock>> queue = new ArrayDeque<>();
 
+  @Override
+  public void configure(StateMachineExecutor executor) {
+    executor.register(LockCommands.Lock.class, this::lock);
+    executor.register(LockCommands.Unlock.class, this::unlock);
+  }
+
   /**
    * Applies a lock commit.
    */
-  @Apply(LockCommands.Lock.class)
-  protected void applyLock(Commit<LockCommands.Lock> commit) {
+  protected void lock(Commit<LockCommands.Lock> commit) {
     if (lock == null) {
       lock = commit;
       commit.session().publish(true);
@@ -49,8 +54,7 @@ public class LockState extends StateMachine {
   /**
    * Applies an unlock commit.
    */
-  @Apply(LockCommands.Unlock.class)
-  protected void applyUnlock(Commit<LockCommands.Unlock> commit) {
+  protected void unlock(Commit<LockCommands.Unlock> commit) {
     if (lock == null) {
       commit.clean();
     } else {
@@ -60,7 +64,7 @@ public class LockState extends StateMachine {
         throw new IllegalStateException("not the lock holder");
 
       lock = queue.poll();
-      while (lock != null && (lock.operation().timeout() != -1 && lock.timestamp() + lock.operation().timeout() < getTime())) {
+      while (lock != null && (lock.operation().timeout() != -1 && lock.time().toEpochMilli() + lock.operation().timeout() < context().clock().instant().toEpochMilli())) {
         lock.clean();
         lock = queue.poll();
       }

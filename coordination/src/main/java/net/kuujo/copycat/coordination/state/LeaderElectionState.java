@@ -15,15 +15,13 @@
  */
 package net.kuujo.copycat.coordination.state;
 
-import net.kuujo.copycat.raft.Operation;
 import net.kuujo.copycat.raft.Session;
-import net.kuujo.copycat.raft.server.Apply;
 import net.kuujo.copycat.raft.server.Commit;
 import net.kuujo.copycat.raft.server.StateMachine;
+import net.kuujo.copycat.raft.server.StateMachineExecutor;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * Leader election state machine.
@@ -33,6 +31,12 @@ import java.util.concurrent.CompletableFuture;
 public class LeaderElectionState extends StateMachine {
   private Session leader;
   private final List<Commit<LeaderElectionCommands.Listen>> listeners = new ArrayList<>();
+
+  @Override
+  public void configure(StateMachineExecutor executor) {
+    executor.register(LeaderElectionCommands.Listen.class, this::listen);
+    executor.register(LeaderElectionCommands.Unlisten.class, this::unlisten);
+  }
 
   @Override
   public void close(Session session) {
@@ -46,16 +50,10 @@ public class LeaderElectionState extends StateMachine {
     }
   }
 
-  @Override
-  public CompletableFuture<Object> apply(Commit<? extends Operation> commit) {
-    return super.apply(commit);
-  }
-
   /**
    * Applies listen commits.
    */
-  @Apply(LeaderElectionCommands.Listen.class)
-  protected void applyListen(Commit<LeaderElectionCommands.Listen> commit) {
+  protected void listen(Commit<LeaderElectionCommands.Listen> commit) {
     if (leader == null) {
       leader = commit.session();
       leader.publish(true);
@@ -68,8 +66,7 @@ public class LeaderElectionState extends StateMachine {
   /**
    * Applies listen commits.
    */
-  @Apply(LeaderElectionCommands.Unlisten.class)
-  protected void applyUnlisten(Commit<LeaderElectionCommands.Listen> commit) {
+  protected void unlisten(Commit<LeaderElectionCommands.Unlisten> commit) {
     if (leader != null && leader.equals(commit.session())) {
       leader = null;
       if (!listeners.isEmpty()) {

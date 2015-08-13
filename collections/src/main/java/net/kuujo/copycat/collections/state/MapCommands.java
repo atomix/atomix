@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.collections.state;
 
-import net.kuujo.copycat.*;
+import net.kuujo.copycat.PersistenceLevel;
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.CopycatSerializable;
@@ -26,8 +26,6 @@ import net.kuujo.copycat.raft.ConsistencyLevel;
 import net.kuujo.copycat.raft.Operation;
 import net.kuujo.copycat.raft.Query;
 import net.kuujo.copycat.util.BuilderPool;
-
-import java.util.concurrent.TimeUnit;
 
 /**
  * Map commands.
@@ -331,18 +329,6 @@ public class MapCommands {
        */
       public Builder withTtl(long ttl) {
         command.ttl = ttl;
-        return this;
-      }
-
-      /**
-       * Sets the time to live.
-       *
-       * @param ttl The time to live.
-       * @param unit The time to live unit.
-       * @return The command builder.
-       */
-      public Builder withTtl(long ttl, TimeUnit unit) {
-        command.ttl = unit.toMillis(ttl);
         return this;
       }
     }

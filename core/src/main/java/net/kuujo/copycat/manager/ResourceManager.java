@@ -16,19 +16,20 @@
 package net.kuujo.copycat.manager;
 
 import net.kuujo.copycat.raft.Session;
-import net.kuujo.copycat.raft.server.Apply;
 import net.kuujo.copycat.raft.server.Commit;
+import net.kuujo.copycat.raft.server.StateMachineExecutor;
 import net.kuujo.copycat.raft.server.StateMachine;
-import net.kuujo.copycat.resource.ResourceCommand;
 import net.kuujo.copycat.resource.ResourceOperation;
-import net.kuujo.copycat.resource.ResourceQuery;
 import net.kuujo.copycat.util.concurrent.ComposableFuture;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.ThreadPoolContext;
 
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 /**
  * Resource manager.
@@ -37,16 +38,29 @@ import java.util.concurrent.ScheduledExecutorService;
  */
 public class ResourceManager extends StateMachine {
   private static final String PATH_SEPARATOR = "/";
-  private final ScheduledExecutorService executor;
+  private final ScheduledExecutorService scheduler;
+  private StateMachineExecutor executor;
   private NodeHolder node;
   private final Map<Long, NodeHolder> nodes = new HashMap<>();
   private final Map<Long, ResourceHolder> resources = new HashMap<>();
   private final ResourceCommitPool commits = new ResourceCommitPool();
 
-  public ResourceManager(ScheduledExecutorService executor) {
-    if (executor == null)
+  public ResourceManager(ScheduledExecutorService scheduler) {
+    if (scheduler == null)
       throw new NullPointerException("executor cannot be null");
+    this.scheduler = scheduler;
+  }
+
+  @Override
+  public void configure(StateMachineExecutor executor) {
     this.executor = executor;
+    executor.register(ResourceOperation.class, (Function<Commit<ResourceOperation>, CompletableFuture<Object>>) this::operateResource);
+    executor.register(CreatePath.class, this::createPath);
+    executor.register(PathExists.class, this::pathExists);
+    executor.register(PathChildren.class, this::pathChildren);
+    executor.register(DeletePath.class, this::deletePath);
+    executor.register(CreateResource.class, this::createResource);
+    executor.register(DeleteResource.class, this::deleteResource);
   }
 
   /**
@@ -54,15 +68,7 @@ public class ResourceManager extends StateMachine {
    */
   private void init(Commit commit) {
     if (node == null) {
-      node = new NodeHolder(PATH_SEPARATOR, PATH_SEPARATOR, commit.index(), commit.timestamp());
-    }
-  }
-
-  @Override
-  public void tick(long timestamp) {
-    super.tick(timestamp);
-    for (ResourceHolder resource : resources.values()) {
-      resource.context.execute(() -> resource.stateMachine.tick(timestamp));
+      node = new NodeHolder(PATH_SEPARATOR, PATH_SEPARATOR, commit.index(), commit.time());
     }
   }
 
@@ -70,23 +76,18 @@ public class ResourceManager extends StateMachine {
    * Applies resource commands.
    */
   @SuppressWarnings("unchecked")
-  @Apply({ResourceCommand.class, ResourceQuery.class})
-  protected CompletableFuture<Object> commandResource(Commit<? extends ResourceOperation> commit) {
+  protected CompletableFuture<Object> operateResource(Commit<? extends ResourceOperation> commit) {
     final ResourceHolder resource = resources.get(commit.operation().resource());
     if (resource != null) {
       CompletableFuture<Object> future = new ComposableFuture<>();
-      resource.context.execute(() -> {
-        StateMachine resourceStateMachine = resource.stateMachine;
-        ResourceCommit resourceCommit = commits.acquire(commit, resource.sessions.computeIfAbsent(commit.session().id(),
-          id -> new ManagedResourceSession(commit.operation().resource(), commit.session())));
-        CompletableFuture<Object> resultFuture = resourceStateMachine.apply(resourceCommit);
-        resultFuture.whenComplete((result, error) -> {
-          if (error == null) {
-            future.complete(result);
-          } else {
-            future.completeExceptionally(error);
-          }
-        });
+      ResourceCommit resourceCommit = commits.acquire(commit, resource.sessions.computeIfAbsent(commit.session().id(),
+        id -> new ManagedResourceSession(commit.operation().resource(), commit.session())));
+      resource.executor.execute(resourceCommit).whenComplete((BiConsumer<Object, Throwable>) (result, error) -> {
+        if (error == null) {
+          future.complete(result);
+        } else {
+          future.completeExceptionally(error);
+        }
       });
       return future;
     }
@@ -96,7 +97,6 @@ public class ResourceManager extends StateMachine {
   /**
    * Applies a create commit.
    */
-  @Apply(CreatePath.class)
   protected boolean createPath(Commit<CreatePath> commit) {
     String path = commit.operation().path();
 
@@ -111,7 +111,7 @@ public class ResourceManager extends StateMachine {
         currentPath.append("/").append(name);
         NodeHolder child = node.children.get(name);
         if (child == null) {
-          child = new NodeHolder(name, currentPath.toString(), commit.index(), commit.timestamp());
+          child = new NodeHolder(name, currentPath.toString(), commit.index(), commit.time());
           node.children.put(child.name, child);
           created = true;
         }
@@ -125,7 +125,6 @@ public class ResourceManager extends StateMachine {
   /**
    * Applies an exists commit.
    */
-  @Apply(PathExists.class)
   protected boolean pathExists(Commit<PathExists> commit) {
     String path = commit.operation().path();
 
@@ -148,7 +147,6 @@ public class ResourceManager extends StateMachine {
    * Applies a getPath children commit.
    */
   @SuppressWarnings("unchecked")
-  @Apply(PathChildren.class)
   protected List<String> pathChildren(Commit<PathChildren> commit) {
     String path = commit.operation().path();
 
@@ -171,7 +169,6 @@ public class ResourceManager extends StateMachine {
   /**
    * Applies a delete commit.
    */
-  @Apply(DeletePath.class)
   protected boolean deletePath(Commit<DeletePath> commit) {
     String path = commit.operation().path();
 
@@ -199,7 +196,6 @@ public class ResourceManager extends StateMachine {
   /**
    * Applies a create resource commit.
    */
-  @Apply(CreateResource.class)
   protected long createResource(Commit<CreateResource> commit) {
     String path = commit.operation().path();
 
@@ -213,7 +209,7 @@ public class ResourceManager extends StateMachine {
         currentPath.append("/").append(name);
         NodeHolder child = node.children.get(name);
         if (child == null) {
-          child = new NodeHolder(name, currentPath.toString(), commit.index(), commit.timestamp());
+          child = new NodeHolder(name, currentPath.toString(), commit.index(), commit.time());
           node.children.put(child.name, child);
         }
         node = child;
@@ -225,7 +221,8 @@ public class ResourceManager extends StateMachine {
       try {
         StateMachine resource = commit.operation().type().newInstance();
         nodes.put(node.resource, node);
-        resources.put(node.resource, new ResourceHolder(resource, new ThreadPoolContext(executor, Context.currentContext().serializer().clone())));
+        Context context = new ThreadPoolContext(scheduler, Context.currentContext().serializer().clone());
+        resources.put(node.resource, new ResourceHolder(resource, new ResourceStateMachineExecutor(executor, context)));
       } catch (InstantiationException | IllegalAccessException e) {
         throw new ResourceManagerException("failed to instantiate state machine", e);
       }
@@ -237,7 +234,6 @@ public class ResourceManager extends StateMachine {
   /**
    * Applies a delete resource commit.
    */
-  @Apply(DeleteResource.class)
   protected boolean deleteResource(Commit<DeleteResource> commit) {
     init(commit);
 
@@ -246,14 +242,19 @@ public class ResourceManager extends StateMachine {
       node.resource = 0;
     }
 
-    return resources.remove(commit.operation().resource()) != null;
+    ResourceHolder resource = resources.remove(commit.operation().resource());
+    if (resource != null) {
+      resource.executor.close();
+      return true;
+    }
+    return false;
   }
 
   @Override
   public void register(Session session) {
     for (Map.Entry<Long, ResourceHolder> entry : resources.entrySet()) {
       ResourceHolder resource = entry.getValue();
-      resource.context.execute(() -> resource.stateMachine.register(resource.sessions.computeIfAbsent(session.id(), id -> new ManagedResourceSession(entry.getKey(), session))));
+      resource.executor.execute(() -> resource.stateMachine.register(resource.sessions.computeIfAbsent(session.id(), id -> new ManagedResourceSession(entry.getKey(), session))));
     }
   }
 
@@ -262,9 +263,7 @@ public class ResourceManager extends StateMachine {
     for (ResourceHolder resource : resources.values()) {
       ManagedResourceSession resourceSession = resource.sessions.get(session.id());
       if (resourceSession != null) {
-        resource.context.execute(() -> {
-          resource.stateMachine.close(resourceSession);
-        });
+        resource.executor.execute(() -> resource.stateMachine.close(resourceSession));
       }
     }
   }
@@ -274,16 +273,14 @@ public class ResourceManager extends StateMachine {
     for (ResourceHolder resource : resources.values()) {
       ManagedResourceSession resourceSession = resource.sessions.get(session.id());
       if (resourceSession != null) {
-        resource.context.execute(() -> {
-          resource.stateMachine.expire(resourceSession);
-        });
+        resource.executor.execute(() -> resource.stateMachine.expire(resourceSession));
       }
     }
   }
 
   @Override
   public void close() {
-    executor.shutdown();
+    scheduler.shutdown();
   }
 
   /**
@@ -293,15 +290,15 @@ public class ResourceManager extends StateMachine {
     private final String name;
     private final String path;
     private final long version;
-    private final long timestamp;
+    private final Instant created;
     private long resource;
     private final Map<String, NodeHolder> children = new LinkedHashMap<>();
 
-    public NodeHolder(String name, String path, long version, long timestamp) {
+    public NodeHolder(String name, String path, long version, Instant created) {
       this.name = name;
       this.path = path;
       this.version = version;
-      this.timestamp = timestamp;
+      this.created = created;
     }
   }
 
@@ -311,11 +308,11 @@ public class ResourceManager extends StateMachine {
   private static class ResourceHolder {
     private final Map<Long, ManagedResourceSession> sessions = new HashMap<>();
     private final StateMachine stateMachine;
-    private final Context context;
+    private final StateMachineExecutor executor;
 
-    private ResourceHolder(StateMachine stateMachine, Context context) {
+    private ResourceHolder(StateMachine stateMachine, StateMachineExecutor executor) {
       this.stateMachine = stateMachine;
-      this.context = context;
+      this.executor = executor;
     }
   }
 

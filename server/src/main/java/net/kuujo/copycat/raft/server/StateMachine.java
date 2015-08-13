@@ -15,19 +15,7 @@
  */
 package net.kuujo.copycat.raft.server;
 
-import net.kuujo.copycat.raft.ApplicationException;
-import net.kuujo.copycat.raft.Command;
-import net.kuujo.copycat.raft.Operation;
 import net.kuujo.copycat.raft.Session;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
 
 /**
  * Base class for user-provided Raft state machines.
@@ -43,158 +31,43 @@ import java.util.function.Function;
  * When {@link net.kuujo.copycat.raft.Command commands} and {@link net.kuujo.copycat.raft.Query queries} are submitted
  * to the Raft cluster, the {@link RaftServer} will log and replicate them as necessary
  * and, once complete, apply them to the configured state machine.
- * <p>
- * State machine commands and queries are defined by annotating public or protected methods with the
- * {@link Apply} annotation:
- * <pre>
- *   {@code
- *   public class SetStateMachine extends StateMachine {
- *     private final Set<String> values = new HashSet<>();
  *
- *     protected boolean applyContains(Commit<ContainsQuery> commit) {
- *       return values.contains(commit.operation().value());
- *     }
- *
- *   }
- *   }
- * </pre>
- * Operations are applied to {@link Apply} annotated methods wrapped in a
- * {@link Commit} object. The {@code Commit} object contains information about how the
- * operation was committed including the {@link Commit#index()} at which it was logged in the Raft log, the
- * {@link Commit#timestamp()} at which it was logged, and the {@link net.kuujo.copycat.raft.Session}
- * that created the commit.
- * <p>
- * Operation methods can return either a synchronous result or an asynchronous result via {@link java.util.concurrent.CompletableFuture}.
- * When the state machine is constructed, the {@link Apply} annotated methods will be
- * evaluated for return types, so asynchronous methods <em>must specify a {@link java.util.concurrent.CompletableFuture}
- * return type</em>. Once an operation is applied to the state machine, the value returned by the operation will be returned
- * to the client that submitted the operation.
- *
- * @see Apply
  * @see Commit
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class StateMachine implements AutoCloseable {
-  private final Logger LOGGER = LoggerFactory.getLogger(getClass());
-  private final Map<Class<? extends Operation>, OperationExecutor> operations = new HashMap<>();
-  private OperationExecutor allOperation;
-  private long time;
+  private StateMachineContext context;
 
   protected StateMachine() {
-    init();
   }
 
   /**
-   * Initializes the state machine.
-   */
-  private void init() {
-    init(getClass());
-  }
-
-  /**
-   * Initializes the state machine.
-   */
-  private void init(Class<?> clazz) {
-    while (clazz != null && clazz != Object.class) {
-      for (Method method : clazz.getDeclaredMethods()) {
-        declareOperations(method);
-      }
-
-      for (Class<?> iface : clazz.getInterfaces()) {
-        init(iface);
-      }
-      clazz = clazz.getSuperclass();
-    }
-  }
-
-  /**
-   * Declares any operations defined by the given method.
-   */
-  private void declareOperations(Method method) {
-    Apply apply = method.getAnnotation(Apply.class);
-    if (apply != null) {
-      method.setAccessible(true);
-      for (Class<? extends Operation> operation : apply.value()) {
-        if (operation == Apply.All.class) {
-          allOperation = new OperationExecutor(method);
-        } else if (!operations.containsKey(operation)) {
-          operations.put(operation, new OperationExecutor(method));
-        }
-      }
-    }
-  }
-
-  /**
-   * Finds the operation method for the given operation.
-   */
-  private OperationExecutor findOperation(Class<? extends Operation> type) {
-    OperationExecutor operation = operations.computeIfAbsent(type, t -> {
-      for (Map.Entry<Class<? extends Operation>, OperationExecutor> entry : operations.entrySet()) {
-        if (entry.getKey().isAssignableFrom(type)) {
-          return entry.getValue();
-        }
-      }
-      return allOperation;
-    });
-
-    if (operation == null) {
-      throw new IllegalArgumentException("unknown operation type: " + type);
-    }
-    return operation;
-  }
-
-  /**
-   * Operation executor.
-   */
-  private class OperationExecutor implements Function<Commit<?>, CompletableFuture<Object>> {
-    private final Method method;
-    private final boolean async;
-
-    private OperationExecutor(Method method) {
-      this.method = method;
-      async = method.getReturnType() == CompletableFuture.class;
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public CompletableFuture<Object> apply(Commit<?> commit) {
-      if (Command.class.isAssignableFrom(commit.type())) {
-        setTime(commit.timestamp());
-      }
-
-      try {
-        return async ? (CompletableFuture<Object>) method.invoke(StateMachine.this, commit) : CompletableFuture.completedFuture(method.invoke(StateMachine.this, commit));
-      } catch (IllegalAccessException | InvocationTargetException e) {
-        throw new ApplicationException("failed to invoke operation", e);
-      }
-    }
-  }
-
-  /**
-   * Sets the state machine time.
-   */
-  private void setTime(long time) {
-    this.time = time;
-  }
-
-  /**
-   * Returns the current state machine time.
+   * Sets the state machine context.
    *
-   * @return The current state machine time.
+   * @param context The state machine context.
    */
-  protected long getTime() {
-    return time;
+  public void setContext(StateMachineContext context) {
+    if (context == null)
+      throw new NullPointerException("context cannot be null");
+    this.context = context;
   }
 
   /**
-   * Updates the state machine time.
+   * Returns the state machine context.
    *
-   * @param timestamp The state machine timestamp.
+   * @return The state machine context.
    */
-  public void tick(long timestamp) {
-    setTime(timestamp);
+  public StateMachineContext context() {
+    return context;
   }
+
+  /**
+   * Configures the state machine.
+   *
+   * @param executor The state machine executor.
+   */
+  public abstract void configure(StateMachineExecutor executor);
 
   /**
    * Called when a new session is registered.
@@ -203,17 +76,6 @@ public abstract class StateMachine implements AutoCloseable {
    */
   public void register(Session session) {
 
-  }
-
-  /**
-   * Applies an operation to the state machine.
-   *
-   * @param commit The commit to apply.
-   * @return The operation result.
-   */
-  public CompletableFuture<Object> apply(Commit<? extends Operation> commit) {
-    LOGGER.debug("Applying {}", commit);
-    return findOperation(commit.type()).apply(commit);
   }
 
   /**

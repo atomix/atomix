@@ -23,8 +23,8 @@ import net.kuujo.copycat.collections.state.SetState;
 import net.kuujo.copycat.raft.ConsistencyLevel;
 import net.kuujo.copycat.resource.ResourceContext;
 
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Distributed set.
@@ -52,7 +52,7 @@ public class DistributedSet<T> extends Resource {
   }
 
   /**
-   * Adds a value to the set with a TTL.
+   * Adds a value to the set with a configured persistence level.
    *
    * @param value The value to add.
    * @param persistence The persistence persistence.
@@ -70,14 +70,14 @@ public class DistributedSet<T> extends Resource {
    * Adds a value to the set with a TTL.
    *
    * @param value The value to add.
-   * @param ttl The time to live in milliseconds.
+   * @param ttl The time to live duration.
    * @return A completable future to be completed with the result once complete.
    */
   @SuppressWarnings("unchecked")
-  public CompletableFuture<Boolean> add(T value, long ttl) {
+  public CompletableFuture<Boolean> add(T value, Duration ttl) {
     return submit(SetCommands.Add.builder()
       .withValue(value.hashCode())
-      .withTtl(ttl)
+      .withTtl(ttl.toMillis())
       .build());
   }
 
@@ -85,49 +85,15 @@ public class DistributedSet<T> extends Resource {
    * Adds a value to the set with a TTL.
    *
    * @param value The value to add.
-   * @param ttl The time to live.
-   * @param unit The time to live unit.
-   * @return A completable future to be completed with the result once complete.
-   */
-  @SuppressWarnings("unchecked")
-  public CompletableFuture<Boolean> add(T value, long ttl, TimeUnit unit) {
-    return submit(SetCommands.Add.builder()
-      .withValue(value.hashCode())
-      .withTtl(ttl, unit)
-      .build());
-  }
-
-  /**
-   * Adds a value to the set with a TTL.
-   *
-   * @param value The value to add.
-   * @param ttl The time to live in milliseconds.
+   * @param ttl The time to live duration.
    * @param persistence The persistence persistence.
    * @return A completable future to be completed with the result once complete.
    */
   @SuppressWarnings("unchecked")
-  public CompletableFuture<Boolean> add(T value, long ttl, PersistenceLevel persistence) {
+  public CompletableFuture<Boolean> add(T value, Duration ttl, PersistenceLevel persistence) {
     return submit(SetCommands.Add.builder()
       .withValue(value.hashCode())
-      .withTtl(ttl)
-      .withPersistence(persistence)
-      .build());
-  }
-
-  /**
-   * Adds a value to the set with a TTL.
-   *
-   * @param value The value to add.
-   * @param ttl The time to live.
-   * @param unit The time to live unit.
-   * @param persistence The persistence persistence.
-   * @return A completable future to be completed with the result once complete.
-   */
-  @SuppressWarnings("unchecked")
-  public CompletableFuture<Boolean> add(T value, long ttl, TimeUnit unit, PersistenceLevel persistence) {
-    return submit(SetCommands.Add.builder()
-      .withValue(value.hashCode())
-      .withTtl(ttl, unit)
+      .withTtl(ttl.toMillis())
       .withPersistence(persistence)
       .build());
   }

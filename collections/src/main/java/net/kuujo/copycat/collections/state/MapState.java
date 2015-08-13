@@ -16,17 +16,16 @@
 package net.kuujo.copycat.collections.state;
 
 import net.kuujo.copycat.PersistenceLevel;
-import net.kuujo.copycat.raft.Operation;
 import net.kuujo.copycat.raft.Session;
-import net.kuujo.copycat.raft.server.Apply;
 import net.kuujo.copycat.raft.server.Commit;
 import net.kuujo.copycat.raft.server.StateMachine;
+import net.kuujo.copycat.raft.server.StateMachineExecutor;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * Map state machine.
@@ -38,8 +37,16 @@ public class MapState extends StateMachine {
   private final Set<Long> sessions = new HashSet<>();
 
   @Override
-  public CompletableFuture<Object> apply(Commit<? extends Operation> commit) {
-    return super.apply(commit);
+  public void configure(StateMachineExecutor executor) {
+    executor.register(MapCommands.ContainsKey.class, this::containsKey);
+    executor.register(MapCommands.Get.class, this::get);
+    executor.register(MapCommands.GetOrDefault.class, this::getOrDefault);
+    executor.register(MapCommands.Put.class, this::put);
+    executor.register(MapCommands.PutIfAbsent.class, this::putIfAbsent);
+    executor.register(MapCommands.Remove.class, this::remove);
+    executor.register(MapCommands.Size.class, this::size);
+    executor.register(MapCommands.IsEmpty.class, this::isEmpty);
+    executor.register(MapCommands.Clear.class, this::clear);
   }
 
   @Override
@@ -60,12 +67,12 @@ public class MapState extends StateMachine {
   /**
    * Returns a boolean value indicating whether the given commit is active.
    */
-  private boolean isActive(Commit<? extends MapCommands.TtlCommand> commit, long time) {
+  private boolean isActive(Commit<? extends MapCommands.TtlCommand> commit, Instant instant) {
     if (commit == null) {
       return false;
     } else if (commit.operation().mode() == PersistenceLevel.EPHEMERAL && !sessions.contains(commit.session().id())) {
       return false;
-    } else if (commit.operation().ttl() != 0 && commit.operation().ttl() < time - commit.timestamp()) {
+    } else if (commit.operation().ttl() != 0 && commit.operation().ttl() < instant.toEpochMilli() - commit.time().toEpochMilli()) {
       return false;
     }
     return true;
@@ -74,7 +81,6 @@ public class MapState extends StateMachine {
   /**
    * Handles a contains key commit.
    */
-  @Apply(MapCommands.ContainsKey.class)
   protected boolean containsKey(Commit<MapCommands.ContainsKey> commit) {
     try {
       if (map == null) {
@@ -82,7 +88,7 @@ public class MapState extends StateMachine {
       }
 
       Commit<? extends MapCommands.TtlCommand> command = map.get(commit.operation().key());
-      if (!isActive(command, getTime())) {
+      if (!isActive(command, context().clock().instant())) {
         map.remove(commit.operation().key());
         return false;
       }
@@ -95,7 +101,6 @@ public class MapState extends StateMachine {
   /**
    * Handles a get commit.
    */
-  @Apply(MapCommands.Get.class)
   protected Object get(Commit<MapCommands.Get> commit) {
     if (map == null) {
       return null;
@@ -104,7 +109,7 @@ public class MapState extends StateMachine {
     try {
       Commit<? extends MapCommands.TtlCommand> command = map.get(commit.operation().key());
       if (command != null) {
-        if (!isActive(command, getTime())) {
+        if (!isActive(command, context().clock().instant())) {
           map.remove(commit.operation().key());
         } else {
           return command.operation().value();
@@ -119,7 +124,6 @@ public class MapState extends StateMachine {
   /**
    * Handles a get or default commit.
    */
-  @Apply(MapCommands.GetOrDefault.class)
   protected Object getOrDefault(Commit<MapCommands.GetOrDefault> commit) {
     if (map == null) {
       return commit.operation().defaultValue();
@@ -129,7 +133,7 @@ public class MapState extends StateMachine {
       Commit<? extends MapCommands.TtlCommand> previous = map.get(commit.operation().key());
       if (previous == null) {
         return commit.operation().defaultValue();
-      } else if (isActive(previous, getTime())) {
+      } else if (isActive(previous, context().clock().instant())) {
         return previous.operation().value();
       }
       return commit.operation().defaultValue();
@@ -141,7 +145,6 @@ public class MapState extends StateMachine {
   /**
    * Handles a put commit.
    */
-  @Apply(MapCommands.Put.class)
   protected Object put(Commit<MapCommands.Put> commit) {
     if (map == null) {
       map = new HashMap<>();
@@ -149,7 +152,7 @@ public class MapState extends StateMachine {
 
     Commit<? extends MapCommands.TtlCommand> previous = map.get(commit.operation().key());
     if (previous == null) {
-      if (!isActive(commit, getTime())) {
+      if (!isActive(commit, context().clock().instant())) {
         commit.clean();
       } else {
         map.put(commit.operation().key(), commit);
@@ -158,14 +161,13 @@ public class MapState extends StateMachine {
     } else {
       map.put(commit.operation().key(), commit);
       previous.clean();
-      return isActive(previous, commit.timestamp()) ? previous.operation().value() : null;
+      return isActive(previous, commit.time()) ? previous.operation().value() : null;
     }
   }
 
   /**
    * Handles a put if absent commit.
    */
-  @Apply(MapCommands.PutIfAbsent.class)
   protected Object putIfAbsent(Commit<MapCommands.PutIfAbsent> commit) {
     if (map == null) {
       map = new HashMap<>();
@@ -173,14 +175,14 @@ public class MapState extends StateMachine {
 
     Commit<? extends MapCommands.TtlCommand> previous = map.get(commit.operation().key());
     if (previous == null) {
-      if (!isActive(commit, getTime())) {
+      if (!isActive(commit, context().clock().instant())) {
         commit.clean();
       } else {
         map.put(commit.operation().key(), commit);
       }
       return null;
     } else {
-      if (!isActive(previous, commit.timestamp())) {
+      if (!isActive(previous, commit.time())) {
         map.put(commit.operation().key(), commit);
         previous.clean();
         return null;
@@ -193,7 +195,6 @@ public class MapState extends StateMachine {
   /**
    * Handles a remove commit.
    */
-  @Apply(MapCommands.Remove.class)
   protected Object remove(Commit<MapCommands.Remove> commit) {
     if (map == null) {
       commit.clean();
@@ -203,7 +204,7 @@ public class MapState extends StateMachine {
       if (previous == null) {
         commit.clean();
         return true;
-      } else if (!isActive(previous, commit.timestamp())) {
+      } else if (!isActive(previous, commit.time())) {
         map.remove(commit.operation().key());
         previous.clean();
       } else {
@@ -223,7 +224,7 @@ public class MapState extends StateMachine {
         return true;
       } else {
         previous.clean();
-        return isActive(previous, commit.timestamp()) ? previous.operation().value() : null;
+        return isActive(previous, commit.time()) ? previous.operation().value() : null;
       }
     }
   }
@@ -231,7 +232,6 @@ public class MapState extends StateMachine {
   /**
    * Handles a count commit.
    */
-  @Apply(MapCommands.Size.class)
   protected int size(Commit<MapCommands.Size> commit) {
     try {
       return map != null ? map.size() : 0;
@@ -243,7 +243,6 @@ public class MapState extends StateMachine {
   /**
    * Handles an is empty commit.
    */
-  @Apply(MapCommands.IsEmpty.class)
   protected boolean isEmpty(Commit<MapCommands.IsEmpty> commit) {
     try {
       return map == null || map.isEmpty();
@@ -255,7 +254,6 @@ public class MapState extends StateMachine {
   /**
    * Handles a clear commit.
    */
-  @Apply(MapCommands.Clear.class)
   protected void clear(Commit<MapCommands.Clear> commit) {
     if (map == null) {
       commit.clean();

@@ -26,11 +26,9 @@ import net.kuujo.copycat.io.storage.Log;
 import net.kuujo.copycat.io.transport.Connection;
 import net.kuujo.copycat.io.transport.Server;
 import net.kuujo.copycat.io.transport.Transport;
-import net.kuujo.copycat.raft.InternalException;
-import net.kuujo.copycat.raft.Member;
-import net.kuujo.copycat.raft.Members;
-import net.kuujo.copycat.raft.UnknownSessionException;
+import net.kuujo.copycat.raft.*;
 import net.kuujo.copycat.raft.protocol.*;
+import net.kuujo.copycat.raft.server.Commit;
 import net.kuujo.copycat.raft.server.RaftServer;
 import net.kuujo.copycat.raft.server.StateMachine;
 import net.kuujo.copycat.raft.server.storage.*;
@@ -46,6 +44,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.time.Instant;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -61,14 +60,13 @@ public class ServerContext implements Managed<Void> {
   private final Listeners<RaftServer.State> listeners = new Listeners<>();
   private final Context context;
   private final StateMachine stateMachine;
-  private final Context stateContext;
+  private final ServerStateMachineExecutor stateExecutor;
   private final Member member;
   private final Log log;
   private final ClusterState cluster;
   private final Members members;
   private final Server server;
   private final ConnectionManager connections;
-  private final SessionManager sessions;
   private final ServerCommitCleaner cleaner;
   private final ServerCommitPool commits;
   private AbstractState state;
@@ -103,13 +101,13 @@ public class ServerContext implements Managed<Void> {
     log.serializer().resolve(new ServiceLoaderResolver());
     serializer.resolve(new ServiceLoaderResolver());
 
+    this.stateExecutor = new ServerStateMachineExecutor(new SingleThreadContext("copycat-server-" + member.id() + "-state-%d", serializer.clone()));
+
     this.context = new SingleThreadContext("copycat-server-" + member.id(), serializer);
     this.log = log;
-    this.sessions = new SessionManager();
     this.cleaner = new ServerCommitCleaner(log);
-    this.commits = new ServerCommitPool(cleaner, sessions);
+    this.commits = new ServerCommitPool(cleaner, stateExecutor.context().sessions());
     this.stateMachine = stateMachine;
-    this.stateContext = new SingleThreadContext("copycat-server-" + member.id() + "-state-%d", serializer.clone());
 
     UUID id = UUID.randomUUID();
     this.server = transport.server(id);
@@ -466,9 +464,9 @@ public class ServerContext implements Managed<Void> {
    * Handles a connection.
    */
   private void handleConnect(Connection connection) {
-    sessions.registerConnection(connection);
+    stateExecutor.context().sessions().registerConnection(connection);
     registerHandlers(connection);
-    connection.closeListener(sessions::unregisterConnection);
+    connection.closeListener(stateExecutor.context().sessions()::unregisterConnection);
   }
 
   /**
@@ -520,13 +518,13 @@ public class ServerContext implements Managed<Void> {
    * @return The result.
    */
   CompletableFuture<Long> apply(RegisterEntry entry) {
-    ServerSession session = sessions.registerSession(entry.getIndex(), entry.getConnection()).setTimestamp(entry.getTimestamp());
+    ServerSession session = stateExecutor.context().sessions().registerSession(entry.getIndex(), entry.getConnection()).setTimestamp(entry.getTimestamp());
 
     // Set last applied only after the operation has been submitted to the state machine executor.
     CompletableFuture<Long> future = new ComposableFuture<>();
-    stateContext.execute(() -> {
+    stateExecutor.execute(() -> {
       stateMachine.register(session);
-      this.context.execute(() -> future.complete(entry.getIndex()));
+      context.execute(() -> future.complete(entry.getIndex()));
     });
 
     setLastApplied(session.id());
@@ -539,7 +537,7 @@ public class ServerContext implements Managed<Void> {
    * @param entry The entry to apply.
    */
   CompletableFuture<Void> apply(KeepAliveEntry entry) {
-    ServerSession session = sessions.getSession(entry.getSession());
+    ServerSession session = stateExecutor.context().sessions().getSession(entry.getSession());
 
     CompletableFuture<Void> future;
     if (session == null) {
@@ -550,12 +548,10 @@ public class ServerContext implements Managed<Void> {
         LOGGER.warn("Expired session: " + entry.getSession());
         future = expireSession(entry.getSession());
       } else {
-        long timestamp = entry.getTimestamp();
         session.setIndex(entry.getIndex()).setTimestamp(entry.getTimestamp()).clearCommands(entry.getSequence());
-        future = execute(() -> {
-          stateMachine.tick(timestamp);
-          return CompletableFuture.completedFuture(null);
-        });
+        future = new CompletableFuture<>();
+        stateExecutor.tick(Instant.ofEpochMilli(entry.getTimestamp()));
+        context.execute(() -> future.complete(null));
       }
     }
 
@@ -574,7 +570,7 @@ public class ServerContext implements Managed<Void> {
     final CompletableFuture<Object> future;
 
     // First check to ensure that the session exists.
-    ServerSession session = sessions.getSession(entry.getSession());
+    ServerSession session = stateExecutor.context().sessions().getSession(entry.getSession());
     if (session == null) {
       LOGGER.warn("Unknown session: " + entry.getSession());
       future = Futures.exceptionalFuture(new UnknownSessionException("unknown session " + entry.getSession()));
@@ -586,13 +582,19 @@ public class ServerContext implements Managed<Void> {
       if (session.hasResponse(entry.getSequence())) {
         future = CompletableFuture.completedFuture(session.getResponse(entry.getSequence()));
       } else {
+        // Create a server commit.
         ServerCommit commit = commits.acquire(entry);
-        future = execute(() -> stateMachine.apply(commit))
-          .thenApply(result -> {
-            // Store the command result in the session.
-            session.registerResponse(entry.getSequence(), result);
-            return result;
-          });
+
+        // Execute the state machine operation using the commit. Once complete, register the
+        // operation output with the session. This will ensure linearizability for commands
+        // applied to the state machine more than once.
+        long sequence = entry.getSequence();
+        future = execute(commit).thenApply(result -> {
+          session.registerResponse(sequence, result);
+          return result;
+        });
+
+        // Increment the session version.
         session.setVersion(entry.getSequence());
       }
     }
@@ -612,7 +614,7 @@ public class ServerContext implements Managed<Void> {
    */
   @SuppressWarnings("unchecked")
   CompletableFuture<Object> apply(QueryEntry entry) {
-    ServerSession session = sessions.getSession(entry.getSession());
+    ServerSession session = stateExecutor.context().sessions().getSession(entry.getSession());
     if (session == null) {
       LOGGER.warn("Unknown session: " + entry.getSession());
       return Futures.exceptionalFuture(new UnknownSessionException("unknown session " + entry.getSession()));
@@ -622,11 +624,11 @@ public class ServerContext implements Managed<Void> {
     } else if (session.getVersion() < entry.getSequence()) {
       ComposableFuture<Object> future = new ComposableFuture<>();
       session.registerQuery(entry.getSequence(), () -> {
-        execute(() -> stateMachine.apply(commits.acquire(entry)), future);
+        execute(commits.acquire(entry), future);
       });
       return future;
     } else {
-      return execute(() -> stateMachine.apply(commits.acquire(entry)));
+      return execute(commits.acquire(entry));
     }
   }
 
@@ -648,7 +650,7 @@ public class ServerContext implements Managed<Void> {
         transition(PassiveState.class);
       }
     }
-    return Futures.completedFuture(cluster.buildActiveMembers());
+    return Futures.completedFutureAsync(cluster.buildActiveMembers(), context);
   }
 
   /**
@@ -661,7 +663,7 @@ public class ServerContext implements Managed<Void> {
     // We need to ensure that the command is applied to the state machine before queries are run.
     // Set last applied only after the operation has been submitted to the state machine executor.
     setLastApplied(entry.getIndex());
-    return Futures.completedFuture(entry.getIndex());
+    return Futures.completedFutureAsync(entry.getIndex(), context);
   }
 
   /**
@@ -669,32 +671,51 @@ public class ServerContext implements Managed<Void> {
    */
   private <T> CompletableFuture<T> expireSession(long sessionId) {
     CompletableFuture<T> future = new CompletableFuture<>();
-    ServerSession session = sessions.unregisterSession(sessionId);
+    ServerSession session = stateExecutor.context().sessions().unregisterSession(sessionId);
     if (session != null) {
-      stateContext.execute(() -> {
+      stateExecutor.execute(() -> {
         session.expire();
         stateMachine.expire(session);
         context.execute(() -> future.completeExceptionally(new UnknownSessionException("unknown session: " + sessionId)));
       });
     } else {
-      future.completeExceptionally(new UnknownSessionException("unknown session: " + sessionId));
+      context.execute(() -> future.completeExceptionally(new UnknownSessionException("unknown session: " + sessionId)));
     }
     return future;
   }
 
   /**
-   * Executes a method in the state machine thread and completes the given future asynchronously in the same thread.
+   * Executes a command in the state machine thread and completes the given future asynchronously in the server thread.
+   */
+  private <T extends Operation<U>, U> CompletableFuture<U> execute(Commit<T> commit) {
+    return execute(commit, new ComposableFuture<>());
+  }
+
+  /**
+   * Executes a command in the state machine thread and completes the given future asynchronously in the server thread.
+   */
+  private <T extends Operation<U>, U> CompletableFuture<U> execute(Commit<T> commit, ComposableFuture<U> future) {
+    stateExecutor.execute(commit).whenComplete((result, error) -> {
+      context.execute(() -> future.accept(result, error));
+    });
+    return future;
+  }
+
+  /**
+   * Executes a method in the state machine thread and completes the given future asynchronously in the server thread.
    */
   private <T> CompletableFuture<T> execute(Supplier<CompletableFuture<T>> supplier) {
     return execute(supplier, new ComposableFuture<>());
   }
 
   /**
-   * Executes a method in the state machine thread and completes the given future asynchronously in the same thread.
+   * Executes a method in the state machine thread and completes the given future asynchronously in the server thread.
    */
   private <T> CompletableFuture<T> execute(Supplier<CompletableFuture<T>> supplier, ComposableFuture<T> future) {
-    stateContext.execute(() -> {
-      supplier.get().whenCompleteAsync(future, context);
+    stateExecutor.execute(() -> {
+      supplier.get().whenComplete((result, error) -> {
+        context.execute(() -> future.accept(result, error));
+      });
     });
     return future;
   }

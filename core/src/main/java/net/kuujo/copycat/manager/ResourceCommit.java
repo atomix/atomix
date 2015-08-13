@@ -20,6 +20,8 @@ import net.kuujo.copycat.raft.Session;
 import net.kuujo.copycat.raft.server.Commit;
 import net.kuujo.copycat.resource.ResourceOperation;
 
+import java.time.Instant;
+
 /**
  * Resource commit.
  *
@@ -58,8 +60,8 @@ class ResourceCommit implements Commit {
   }
 
   @Override
-  public long timestamp() {
-    return commit.timestamp();
+  public Instant time() {
+    return commit.time();
   }
 
   @Override
@@ -91,7 +93,7 @@ class ResourceCommit implements Commit {
 
   @Override
   public String toString() {
-    return String.format("%s[index=%d, session=%s, timestamp=%d, operation=%s]", getClass().getSimpleName(), index(), session(), timestamp(), operation());
+    return String.format("%s[index=%d, session=%s, time=%s, operation=%s]", getClass().getSimpleName(), index(), session(), time(), operation());
   }
 
 }

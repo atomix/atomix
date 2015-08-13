@@ -22,9 +22,11 @@ import net.kuujo.copycat.raft.server.RaftServer;
 import net.kuujo.copycat.raft.server.storage.ConfigurationEntry;
 import net.kuujo.copycat.raft.server.storage.RaftEntry;
 
+import java.util.ArrayDeque;
+import java.util.Queue;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Passive state.
@@ -33,6 +35,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 class PassiveState extends AbstractState {
   private final Random random = new Random();
+  private final Queue<AtomicInteger> counterPool = new ArrayDeque<>();
 
   public PassiveState(ServerContext context) {
     super(context);
@@ -102,17 +105,18 @@ class PassiveState extends AbstractState {
     }
 
     // If the previous entry term doesn't match the local previous term then reject the request.
-    RaftEntry entry = context.getLog().getEntry(request.logIndex());
-    if (entry == null || entry.getTerm() != request.logTerm()) {
-      LOGGER.warn("{} - Rejected {}: Request log term does not match local log term {} for the same entry", context.getMember().id(), request, entry != null ? entry.getTerm() : "unknown");
-      return AppendResponse.builder()
-        .withStatus(Response.Status.OK)
-        .withTerm(context.getTerm())
-        .withSucceeded(false)
-        .withLogIndex(request.logIndex() <= context.getLog().lastIndex() ? request.logIndex() - 1 : context.getLog().lastIndex())
-        .build();
-    } else {
-      return doAppendEntries(request);
+    try (RaftEntry entry = context.getLog().getEntry(request.logIndex())) {
+      if (entry == null || entry.getTerm() != request.logTerm()) {
+        LOGGER.warn("{} - Rejected {}: Request log term does not match local log term {} for the same entry", context.getMember().id(), request, entry != null ? entry.getTerm() : "unknown");
+        return AppendResponse.builder()
+          .withStatus(Response.Status.OK)
+          .withTerm(context.getTerm())
+          .withSucceeded(false)
+          .withLogIndex(request.logIndex() <= context.getLog().lastIndex() ? request.logIndex() - 1 : context.getLog().lastIndex())
+          .build();
+      } else {
+        return doAppendEntries(request);
+      }
     }
   }
 
@@ -133,19 +137,20 @@ class PassiveState extends AbstractState {
           LOGGER.debug("{} - Appended {} to log at index {}", context.getMember().id(), entry, entry.getIndex());
         } else {
           // Compare the term of the received entry with the matching entry in the log.
-          RaftEntry match = context.getLog().getEntry(entry.getIndex());
-          if (match != null) {
-            if (entry.getTerm() != match.getTerm()) {
-              // We found an invalid entry in the log. Remove the invalid entry and append the new entry.
-              // If appending to the log fails, apply commits and reply false to the append request.
-              LOGGER.warn("{} - Appended entry term does not match local log, removing incorrect entries", context.getMember().id());
-              context.getLog().truncate(entry.getIndex() - 1);
-              context.getLog().appendEntry(entry);
+          try (RaftEntry match = context.getLog().getEntry(entry.getIndex())) {
+            if (match != null) {
+              if (entry.getTerm() != match.getTerm()) {
+                // We found an invalid entry in the log. Remove the invalid entry and append the new entry.
+                // If appending to the log fails, apply commits and reply false to the append request.
+                LOGGER.warn("{} - Appended entry term does not match local log, removing incorrect entries", context.getMember().id());
+                context.getLog().truncate(entry.getIndex() - 1);
+                context.getLog().appendEntry(entry);
+                LOGGER.debug("{} - Appended {} to log at index {}", context.getMember().id(), entry, entry.getIndex());
+              }
+            } else {
+              context.getLog().truncate(entry.getIndex() - 1).appendEntry(entry);
               LOGGER.debug("{} - Appended {} to log at index {}", context.getMember().id(), entry, entry.getIndex());
             }
-          } else {
-            context.getLog().truncate(entry.getIndex() - 1).appendEntry(entry);
-            LOGGER.debug("{} - Appended {} to log at index {}", context.getMember().id(), entry, entry.getIndex());
           }
         }
 
@@ -189,27 +194,47 @@ class PassiveState extends AbstractState {
       long entriesToApply = effectiveIndex - lastApplied;
       LOGGER.debug("{} - Applying {} commits", context.getMember().id(), entriesToApply);
 
-      // Rather than composing all futures into a single future, use a counter to count completions in order to preserve memory.
-      AtomicLong counter = new AtomicLong();
       CompletableFuture<Void> future = new CompletableFuture<>();
+
+      // Rather than composing all futures into a single future, use a counter to count completions in order to preserve memory.
+      AtomicInteger counter = getCounter();
+
+      // Reset the counter to 0.
+      counter.set(0);
 
       for (long i = lastApplied + 1; i <= effectiveIndex; i++) {
         Entry entry = context.getLog().getEntry(i);
         if (entry != null && !(entry instanceof ConfigurationEntry)) {
-          applyEntry(entry).whenCompleteAsync((result, error) -> {
+          applyEntry(entry).whenComplete((result, error) -> {
             entry.close();
             if (isOpen() && error != null) {
               LOGGER.info("{} - An application error occurred: {}", context.getMember().id(), error.getMessage());
             }
             if (counter.incrementAndGet() == entriesToApply) {
               future.complete(null);
+              recycleCounter(counter);
             }
-          }, context.getContext());
+          });
         }
       }
       return future;
     }
     return CompletableFuture.completedFuture(null);
+  }
+
+  /**
+   * Gets a counter from the counter pool.
+   */
+  private AtomicInteger getCounter() {
+    AtomicInteger counter = counterPool.poll();
+    return counter != null ? counter : new AtomicInteger();
+  }
+
+  /**
+   * Adds a used counter to the counter pool.
+   */
+  private void recycleCounter(AtomicInteger counter) {
+    counterPool.add(counter);
   }
 
   /**

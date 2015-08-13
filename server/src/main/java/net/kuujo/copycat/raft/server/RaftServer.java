@@ -428,7 +428,7 @@ public class RaftServer implements Managed<RaftServer> {
       // Resolve serializer serializable types with the ServiceLoaderResolver.
       serializer.resolve(new ServiceLoaderResolver());
 
-      ServerContext context = (ServerContext) new ServerContext(memberId, members, transport, log, stateMachine, serializer)
+      ServerContext context = new ServerContext(memberId, members, transport, log, stateMachine, serializer)
         .setHeartbeatInterval(config.getHeartbeatInterval())
         .setElectionTimeout(config.getElectionTimeout())
         .setSessionTimeout(config.getSessionTimeout());

@@ -17,15 +17,17 @@ package net.kuujo.copycat.atomic.state;
 
 import net.kuujo.copycat.PersistenceLevel;
 import net.kuujo.copycat.raft.Session;
-import net.kuujo.copycat.raft.server.Apply;
 import net.kuujo.copycat.raft.server.Commit;
 import net.kuujo.copycat.raft.server.StateMachine;
+import net.kuujo.copycat.raft.server.StateMachineExecutor;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
 /**
  * Atomic reference state machine.
@@ -37,6 +39,16 @@ public class ReferenceState extends StateMachine {
   private final Map<Session, Commit<ReferenceCommands.Listen>> listeners = new HashMap<>();
   private final AtomicReference<Object> value = new AtomicReference<>();
   private Commit<? extends ReferenceCommands.ReferenceCommand> current;
+
+  @Override
+  public void configure(StateMachineExecutor executor) {
+    executor.register(ReferenceCommands.Listen.class, this::listen);
+    executor.register(ReferenceCommands.Unlisten.class, this::unlisten);
+    executor.register(ReferenceCommands.Get.class, (Function<Commit<ReferenceCommands.Get>, Object>) this::get);
+    executor.register(ReferenceCommands.Set.class, this::set);
+    executor.register(ReferenceCommands.CompareAndSet.class, this::compareAndSet);
+    executor.register(ReferenceCommands.GetAndSet.class, (Function<Commit< ReferenceCommands.GetAndSet>, Object>) this::getAndSet);
+  }
 
   @Override
   public void register(Session session) {
@@ -64,12 +76,12 @@ public class ReferenceState extends StateMachine {
   /**
    * Returns a boolean value indicating whether the given commit is active.
    */
-  private boolean isActive(Commit<? extends ReferenceCommands.ReferenceCommand> commit, long time) {
+  private boolean isActive(Commit<? extends ReferenceCommands.ReferenceCommand> commit, Instant time) {
     if (commit == null) {
       return false;
     } else if (commit.operation().mode() == PersistenceLevel.EPHEMERAL && !sessions.contains(commit.session().id())) {
       return false;
-    } else if (commit.operation().ttl() != 0 && commit.operation().ttl() < time - commit.timestamp()) {
+    } else if (commit.operation().ttl() != 0 && commit.operation().ttl() < time.toEpochMilli() - commit.time().toEpochMilli()) {
       return false;
     }
     return true;
@@ -78,7 +90,6 @@ public class ReferenceState extends StateMachine {
   /**
    * Handles a listen commit.
    */
-  @Apply(ReferenceCommands.Listen.class)
   protected void listen(Commit<ReferenceCommands.Listen> commit) {
     if (!commit.session().isOpen()) {
       commit.clean();
@@ -90,7 +101,6 @@ public class ReferenceState extends StateMachine {
   /**
    * Handles an unlisten commit.
    */
-  @Apply(ReferenceCommands.Unlisten.class)
   protected void unlisten(Commit<ReferenceCommands.Unlisten> commit) {
     Commit<ReferenceCommands.Listen> listener = listeners.remove(commit.session());
     if (listener == null) {
@@ -110,10 +120,9 @@ public class ReferenceState extends StateMachine {
   /**
    * Handles a get commit.
    */
-  @Apply(ReferenceCommands.Get.class)
   protected Object get(Commit<ReferenceCommands.Get> commit) {
     try {
-      return current != null && isActive(current, commit.timestamp()) ? value.get() : null;
+      return current != null && isActive(current, commit.time()) ? value.get() : null;
     } finally {
       commit.close();
     }
@@ -122,9 +131,8 @@ public class ReferenceState extends StateMachine {
   /**
    * Applies a set commit.
    */
-  @Apply(ReferenceCommands.Set.class)
   protected void set(Commit<ReferenceCommands.Set> commit) {
-    if (!isActive(commit, getTime())) {
+    if (!isActive(commit, context().clock().instant())) {
       commit.clean();
     } else {
       if (current != null) {
@@ -139,12 +147,11 @@ public class ReferenceState extends StateMachine {
   /**
    * Handles a compare and set commit.
    */
-  @Apply(ReferenceCommands.CompareAndSet.class)
   protected boolean compareAndSet(Commit<ReferenceCommands.CompareAndSet> commit) {
-    if (!isActive(commit, getTime())) {
+    if (!isActive(commit, context().clock().instant())) {
       commit.clean();
       return false;
-    } else if (isActive(current, commit.timestamp())) {
+    } else if (isActive(current, commit.time())) {
       if (value.compareAndSet(commit.operation().expect(), commit.operation().update())) {
         if (current != null) {
           current.clean();
@@ -170,14 +177,13 @@ public class ReferenceState extends StateMachine {
   /**
    * Handles a get and set commit.
    */
-  @Apply(ReferenceCommands.GetAndSet.class)
   protected Object getAndSet(Commit<ReferenceCommands.GetAndSet> commit) {
-    if (!isActive(commit, getTime())) {
+    if (!isActive(commit, context().clock().instant())) {
       commit.clean();
 
     }
 
-    if (isActive(current, commit.timestamp())) {
+    if (isActive(current, commit.time())) {
       if (current != null) {
         current.clean();
       }
