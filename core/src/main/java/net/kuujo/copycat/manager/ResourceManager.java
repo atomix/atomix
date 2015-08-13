@@ -224,6 +224,7 @@ public class ResourceManager extends StateMachine {
         Context context = new ThreadPoolContext(scheduler, Context.currentContext().serializer().clone());
         StateMachineExecutor executor = new ResourceStateMachineExecutor(this.executor, context);
         resources.put(node.resource, new ResourceHolder(resource, executor));
+        resource.init(executor.context());
         resource.configure(executor);
       } catch (InstantiationException | IllegalAccessException e) {
         throw new ResourceManagerException("failed to instantiate state machine", e);

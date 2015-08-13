@@ -743,6 +743,7 @@ public class ServerContext implements Managed<Void> {
         // Create a state machine executor and configure the state machine.
         stateExecutor = new ServerStateMachineExecutor(new SingleThreadContext("copycat-server-" + member.id() + "-state-%d", serializer.clone()));
         commits = new ServerCommitPool(new ServerCommitCleaner(log), stateExecutor.context().sessions());
+        stateMachine.init(stateExecutor.context());
         stateMachine.configure(stateExecutor);
 
         // Transition to the JOIN state. This will cause the server to attempt to join an existing cluster.

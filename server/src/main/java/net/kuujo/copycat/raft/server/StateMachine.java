@@ -43,11 +43,11 @@ public abstract class StateMachine implements AutoCloseable {
   }
 
   /**
-   * Sets the state machine context.
+   * Initializes the state machine.
    *
    * @param context The state machine context.
    */
-  public void setContext(StateMachineContext context) {
+  public void init(StateMachineContext context) {
     if (context == null)
       throw new NullPointerException("context cannot be null");
     this.context = context;
