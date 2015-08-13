@@ -58,17 +58,18 @@ import java.util.function.Supplier;
 public class ServerContext implements Managed<Void> {
   private static final Logger LOGGER = LoggerFactory.getLogger(ServerContext.class);
   private final Listeners<RaftServer.State> listeners = new Listeners<>();
-  private final Context context;
+  private final Serializer serializer;
+  private Context context;
   private final StateMachine stateMachine;
-  private final ServerStateMachineExecutor stateExecutor;
+  private ServerStateMachineExecutor stateExecutor;
   private final Member member;
   private final Log log;
   private final ClusterState cluster;
   private final Members members;
-  private final Server server;
-  private final ConnectionManager connections;
-  private final ServerCommitCleaner cleaner;
-  private final ServerCommitPool commits;
+  private final Transport transport;
+  private Server server;
+  private ConnectionManager connections;
+  private ServerCommitPool commits;
   private AbstractState state;
   private long electionTimeout = 500;
   private long sessionTimeout = 5000;
@@ -83,7 +84,7 @@ public class ServerContext implements Managed<Void> {
   private volatile CompletableFuture<Void> openFuture;
 
   public ServerContext(int memberId, Members members, Transport transport, Log log, StateMachine stateMachine, Serializer serializer) {
-    member = members.member(memberId);
+    Member member = members.member(memberId);
     if (member == null) {
       throw new ConfigurationException("active member must be listed in members list");
     }
@@ -95,23 +96,17 @@ public class ServerContext implements Managed<Void> {
       throw new ConfigurationException("member port not configured");
     }
 
+    this.transport = transport;
     this.cluster = new ClusterState(this, member);
     this.members = members;
+    this.member = member;
+    this.serializer = serializer;
 
     log.serializer().resolve(new ServiceLoaderResolver());
     serializer.resolve(new ServiceLoaderResolver());
 
-    this.stateExecutor = new ServerStateMachineExecutor(new SingleThreadContext("copycat-server-" + member.id() + "-state-%d", serializer.clone()));
-
-    this.context = new SingleThreadContext("copycat-server-" + member.id(), serializer);
     this.log = log;
-    this.cleaner = new ServerCommitCleaner(log);
-    this.commits = new ServerCommitPool(cleaner, stateExecutor.context().sessions());
     this.stateMachine = stateMachine;
-
-    UUID id = UUID.randomUUID();
-    this.server = transport.server(id);
-    this.connections = new ConnectionManager(transport.client(id));
   }
 
   /**
@@ -623,9 +618,7 @@ public class ServerContext implements Managed<Void> {
       return expireSession(entry.getSession());
     } else if (session.getVersion() < entry.getSequence()) {
       ComposableFuture<Object> future = new ComposableFuture<>();
-      session.registerQuery(entry.getSequence(), () -> {
-        execute(commits.acquire(entry), future);
-      });
+      session.registerQuery(entry.getSequence(), () -> execute(commits.acquire(entry), future));
       return future;
     } else {
       return execute(commits.acquire(entry));
@@ -695,9 +688,7 @@ public class ServerContext implements Managed<Void> {
    * Executes a command in the state machine thread and completes the given future asynchronously in the server thread.
    */
   private <T extends Operation<U>, U> CompletableFuture<U> execute(Commit<T> commit, ComposableFuture<U> future) {
-    stateExecutor.execute(commit).whenComplete((result, error) -> {
-      context.execute(() -> future.accept(result, error));
-    });
+    stateExecutor.execute(commit).whenComplete((result, error) -> context.execute(() -> future.accept(result, error)));
     return future;
   }
 
@@ -732,12 +723,29 @@ public class ServerContext implements Managed<Void> {
       return Futures.exceptionalFuture(e);
     }
 
+    context = new SingleThreadContext("copycat-server-" + member.id(), serializer);
+
     openFuture = new CompletableFuture<>();
     context.execute(() -> {
+
+      // Setup the server and connection manager.
+      UUID id = UUID.randomUUID();
+      server = transport.server(id);
+      connections = new ConnectionManager(transport.client(id));
+
       server.listen(address, this::handleConnect).thenRun(() -> {
+        // Open the log.
         log.open();
+
+        // Configure the cluster.
         cluster.configure(0, members, Members.builder().build());
 
+        // Create a state machine executor and configure the state machine.
+        stateExecutor = new ServerStateMachineExecutor(new SingleThreadContext("copycat-server-" + member.id() + "-state-%d", serializer.clone()));
+        commits = new ServerCommitPool(new ServerCommitCleaner(log), stateExecutor.context().sessions());
+        stateMachine.configure(stateExecutor);
+
+        // Transition to the JOIN state. This will cause the server to attempt to join an existing cluster.
         transition(JoinState.class);
         open = true;
       });
@@ -767,6 +775,7 @@ public class ServerContext implements Managed<Void> {
             } catch (Exception e) {
             }
 
+            stateExecutor.close();
             context.close();
             if (e1 != null) {
               future.completeExceptionally(e1);

@@ -188,6 +188,11 @@ class ServerStateMachineExecutor implements StateMachineExecutor {
     return this;
   }
 
+  @Override
+  public void close() {
+    executor.close();
+  }
+
   /**
    * Scheduled task.
    */
