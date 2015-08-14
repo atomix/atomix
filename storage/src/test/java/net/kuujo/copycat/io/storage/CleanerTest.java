@@ -28,19 +28,19 @@ import static org.testng.Assert.*;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class LogCleanerTest extends ConcurrentTestCase {
+public class CleanerTest extends ConcurrentTestCase {
 
   /**
    * Tests compacting the log.
    */
   public void testCompact() throws Throwable {
-    Log log = Log.builder()
+    Storage storage = Storage.builder()
       .withStorageLevel(StorageLevel.MEMORY)
       .withMaxEntriesPerSegment(10)
       .withSerializer(new Serializer(new ServiceLoaderResolver()))
       .build();
 
-    log.open();
+    Log log = storage.open();
 
     writeEntries(log, 30);
 

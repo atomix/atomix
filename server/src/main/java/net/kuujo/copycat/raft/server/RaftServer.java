@@ -18,7 +18,7 @@ package net.kuujo.copycat.raft.server;
 import net.kuujo.copycat.ConfigurationException;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.ServiceLoaderResolver;
-import net.kuujo.copycat.io.storage.Log;
+import net.kuujo.copycat.io.storage.Storage;
 import net.kuujo.copycat.io.transport.Transport;
 import net.kuujo.copycat.raft.Member;
 import net.kuujo.copycat.raft.Members;
@@ -219,7 +219,7 @@ public class RaftServer implements Managed<RaftServer> {
    */
   public static class Builder extends net.kuujo.copycat.util.Builder<RaftServer> {
     private Transport transport;
-    private Log log;
+    private Storage storage;
     private Serializer serializer;
     private RaftConfig config = new RaftConfig();
     private StateMachine stateMachine;
@@ -232,7 +232,7 @@ public class RaftServer implements Managed<RaftServer> {
     @Override
     protected void reset() {
       transport = null;
-      log = null;
+      storage = null;
       serializer = null;
       config = new RaftConfig();
       stateMachine = null;
@@ -313,13 +313,15 @@ public class RaftServer implements Managed<RaftServer> {
     }
 
     /**
-     * Sets the Raft log.
+     * Sets the storage module.
      *
-     * @param log The Raft log.
-     * @return The Raft builder.
+     * @param storage The storage module.
+     * @return The Raft server builder.
      */
-    public Builder withLog(Log log) {
-      this.log = log;
+    public Builder withStorage(Storage storage) {
+      if (storage == null)
+        throw new NullPointerException("storage cannot be null");
+      this.storage = storage;
       return this;
     }
 
@@ -330,6 +332,8 @@ public class RaftServer implements Managed<RaftServer> {
      * @return The Raft builder.
      */
     public Builder withStateMachine(StateMachine stateMachine) {
+      if (stateMachine == null)
+        throw new NullPointerException("stateMachine cannto be null");
       this.stateMachine = stateMachine;
       return this;
     }
@@ -417,8 +421,8 @@ public class RaftServer implements Managed<RaftServer> {
         throw new ConfigurationException("protocol not configured");
       if (members == null)
         throw new ConfigurationException("members not configured");
-      if (log == null)
-        throw new ConfigurationException("log not configured");
+      if (storage == null)
+        throw new ConfigurationException("storage not configured");
 
       // If no serializer instance was provided, create one.
       if (serializer == null) {
@@ -428,7 +432,7 @@ public class RaftServer implements Managed<RaftServer> {
       // Resolve serializer serializable types with the ServiceLoaderResolver.
       serializer.resolve(new ServiceLoaderResolver());
 
-      ServerContext context = new ServerContext(memberId, members, transport, log, stateMachine, serializer)
+      ServerContext context = new ServerContext(memberId, members, transport, storage, stateMachine, serializer)
         .setHeartbeatInterval(config.getHeartbeatInterval())
         .setElectionTimeout(config.getElectionTimeout())
         .setSessionTimeout(config.getSessionTimeout());

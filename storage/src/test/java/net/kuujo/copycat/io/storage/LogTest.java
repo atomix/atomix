@@ -217,16 +217,14 @@ public class LogTest {
    * Creates a new in-memory log.
    */
   private Log createLog() {
-    Log log = Log.builder()
+    Storage storage = Storage.builder()
       .withStorageLevel(StorageLevel.MEMORY)
       .withMaxEntrySize(1024)
       .withMaxSegmentSize(1024 * 1024)
       .withMaxEntriesPerSegment(1024)
       .withSerializer(new Serializer(new ServiceLoaderResolver()))
       .build();
-    log.open();
-    Assert.assertTrue(log.isOpen());
-    return log;
+    return storage.open();
   }
 
   /**

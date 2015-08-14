@@ -19,12 +19,12 @@ import net.jodah.concurrentunit.ConcurrentTestCase;
 import net.kuujo.copycat.Copycat;
 import net.kuujo.copycat.CopycatServer;
 import net.kuujo.copycat.Node;
-import net.kuujo.copycat.io.storage.Log;
+import net.kuujo.copycat.io.storage.Storage;
 import net.kuujo.copycat.io.storage.StorageLevel;
-import net.kuujo.copycat.raft.Member;
-import net.kuujo.copycat.raft.Members;
 import net.kuujo.copycat.io.transport.LocalServerRegistry;
 import net.kuujo.copycat.io.transport.LocalTransport;
+import net.kuujo.copycat.raft.Member;
+import net.kuujo.copycat.raft.Members;
 import org.testng.annotations.Test;
 
 import java.util.ArrayList;
@@ -124,7 +124,7 @@ public class DistributedAtomicValueTest extends ConcurrentTestCase {
       .withTransport(LocalTransport.builder()
         .withRegistry(registry)
         .build())
-      .withLog(Log.builder()
+      .withStorage(Storage.builder()
         .withStorageLevel(StorageLevel.MEMORY)
         .build())
       .build();
@@ -134,7 +134,7 @@ public class DistributedAtomicValueTest extends ConcurrentTestCase {
       .withTransport(LocalTransport.builder()
         .withRegistry(registry)
         .build())
-      .withLog(Log.builder()
+      .withStorage(Storage.builder()
         .withStorageLevel(StorageLevel.MEMORY)
         .build())
       .build();
@@ -144,7 +144,7 @@ public class DistributedAtomicValueTest extends ConcurrentTestCase {
       .withTransport(LocalTransport.builder()
         .withRegistry(registry)
         .build())
-      .withLog(Log.builder()
+      .withStorage(Storage.builder()
         .withStorageLevel(StorageLevel.MEMORY)
         .build())
       .build();
@@ -184,7 +184,7 @@ public class DistributedAtomicValueTest extends ConcurrentTestCase {
       .withTransport(LocalTransport.builder()
         .withRegistry(registry)
         .build())
-      .withLog(Log.builder()
+      .withStorage(Storage.builder()
         .withStorageLevel(StorageLevel.MEMORY)
         .build())
       .build();
@@ -267,7 +267,7 @@ public class DistributedAtomicValueTest extends ConcurrentTestCase {
         .withTransport(LocalTransport.builder()
           .withRegistry(registry)
           .build())
-        .withLog(Log.builder()
+        .withStorage(Storage.builder()
           .withStorageLevel(StorageLevel.MEMORY)
           .build())
         .build();

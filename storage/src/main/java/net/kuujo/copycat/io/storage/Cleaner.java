@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class LogCleaner implements AutoCloseable {
+public class Cleaner implements AutoCloseable {
   private static final double CLEAN_THRESHOLD = 0.5;
   private final SegmentManager manager;
   private final Listeners<EntryCleaner> startListeners = new Listeners<>();
@@ -40,7 +40,7 @@ public class LogCleaner implements AutoCloseable {
   private final ScheduledExecutorService executor;
   private CompletableFuture<Void> cleanFuture;
 
-  public LogCleaner(SegmentManager manager, ScheduledExecutorService executor) {
+  public Cleaner(SegmentManager manager, ScheduledExecutorService executor) {
     if (manager == null)
       throw new NullPointerException("manager cannot be null");
     if (executor == null)

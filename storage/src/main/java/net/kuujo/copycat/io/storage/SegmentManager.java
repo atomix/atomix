@@ -40,27 +40,15 @@ import java.util.concurrent.ConcurrentSkipListMap;
  */
 class SegmentManager implements AutoCloseable {
   private static final Logger LOGGER = LoggerFactory.getLogger(SegmentManager.class);
-  private final LogConfig config;
-  private final Serializer serializer;
+  private final Storage storage;
   private NavigableMap<Long, Segment> segments = new ConcurrentSkipListMap<>();
   private Segment currentSegment;
 
-  public SegmentManager(LogConfig config, Serializer serializer) {
-    if (config == null)
-      throw new NullPointerException("config cannot be null");
-    if (serializer == null)
-      throw new NullPointerException("serializer cannot be null");
-    this.config = config;
-    this.serializer = serializer;
-  }
-
-  /**
-   * Returns the log configuration.
-   *
-   * @return The log configuration.
-   */
-  LogConfig config() {
-    return config;
+  public SegmentManager(Storage storage) {
+    if (storage == null)
+      throw new NullPointerException("storage cannot be null");
+    this.storage = storage;
+    open();
   }
 
   /**
@@ -69,13 +57,13 @@ class SegmentManager implements AutoCloseable {
    * @return The entry serializer.
    */
   public Serializer serializer() {
-    return serializer;
+    return storage.serializer();
   }
 
   /**
    * Opens the segments.
    */
-  public void open() {
+  private void open() {
     // Load existing log segments from disk.
     for (Segment segment : loadSegments()) {
       segments.put(segment.descriptor().index(), segment);
@@ -89,9 +77,9 @@ class SegmentManager implements AutoCloseable {
         .withId(1)
         .withVersion(1)
         .withIndex(1)
-        .withMaxEntrySize(config.getMaxEntrySize())
-        .withMaxSegmentSize(config.getMaxSegmentSize())
-        .withMaxEntries(config.getMaxEntriesPerSegment())
+        .withMaxEntrySize(storage.maxEntrySize())
+        .withMaxSegmentSize(storage.maxSegmentSize())
+        .withMaxEntries(storage.maxEntriesPerSegment())
         .build()) {
 
         currentSegment = createSegment(descriptor);
@@ -131,9 +119,9 @@ class SegmentManager implements AutoCloseable {
         .withId(1)
         .withVersion(1)
         .withIndex(1)
-        .withMaxEntrySize(config.getMaxEntrySize())
-        .withMaxSegmentSize(config.getMaxSegmentSize())
-        .withMaxEntries(config.getMaxEntriesPerSegment())
+        .withMaxEntrySize(storage.maxEntrySize())
+        .withMaxSegmentSize(storage.maxSegmentSize())
+        .withMaxEntries(storage.maxEntriesPerSegment())
         .build()) {
         currentSegment = createSegment(descriptor);
       }
@@ -171,9 +159,9 @@ class SegmentManager implements AutoCloseable {
       .withId(lastSegment != null ? lastSegment.descriptor().id() + 1 : 1)
       .withVersion(1)
       .withIndex(currentSegment.lastIndex() + 1)
-      .withMaxEntrySize(config.getMaxEntrySize())
-      .withMaxSegmentSize(config.getMaxSegmentSize())
-      .withMaxEntries(config.getMaxEntriesPerSegment())
+      .withMaxEntrySize(storage.maxEntrySize())
+      .withMaxSegmentSize(storage.maxSegmentSize())
+      .withMaxEntries(storage.maxEntriesPerSegment())
       .build()) {
       currentSegment = createSegment(descriptor);
       segments.put(descriptor.index(), currentSegment);
@@ -244,13 +232,13 @@ class SegmentManager implements AutoCloseable {
    * Creates a new segment.
    */
   public Segment createSegment(SegmentDescriptor descriptor) {
-    switch (config.getStorageLevel()) {
+    switch (storage.level()) {
       case DISK:
         return createDiskSegment(descriptor);
       case MEMORY:
         return createMemorySegment(descriptor);
       default:
-        throw new ConfigurationException("unknown storage level: " + config.getStorageLevel());
+        throw new ConfigurationException("unknown storage level: " + storage.level());
     }
   }
 
@@ -258,9 +246,9 @@ class SegmentManager implements AutoCloseable {
    * Create an on-disk segment.
    */
   private Segment createDiskSegment(SegmentDescriptor descriptor) {
-    File segmentFile = SegmentFile.createSegmentFile(config.getDirectory(), descriptor.id(), descriptor.version());
+    File segmentFile = SegmentFile.createSegmentFile(storage.directory(), descriptor.id(), descriptor.version());
     Buffer buffer = FileBuffer.allocate(segmentFile, 1024 * 1024, descriptor.maxSegmentSize() + SegmentDescriptor.BYTES);
-    Segment segment = Segment.open(buffer.position(SegmentDescriptor.BYTES).slice(), descriptor, createIndex(descriptor), serializer.clone());
+    Segment segment = Segment.open(buffer.position(SegmentDescriptor.BYTES).slice(), descriptor, createIndex(descriptor), storage.serializer().clone());
     LOGGER.debug("Created persistent segment: {}", segment);
     return segment;
   }
@@ -269,9 +257,9 @@ class SegmentManager implements AutoCloseable {
    * Creates an in memory segment.
    */
   private Segment createMemorySegment(SegmentDescriptor descriptor) {
-    Buffer buffer = HeapBuffer.allocate(Math.min(1024 * 1024, config.getMaxSegmentSize() + config.getMaxEntrySize() + SegmentDescriptor.BYTES),
-      config.getMaxSegmentSize() + config.getMaxEntrySize() + SegmentDescriptor.BYTES);
-    Segment segment = Segment.open(buffer.position(SegmentDescriptor.BYTES).slice(), descriptor, createIndex(descriptor), serializer.clone());
+    Buffer buffer = HeapBuffer.allocate(Math.min(1024 * 1024, storage.maxSegmentSize() + storage.maxEntrySize() + SegmentDescriptor.BYTES),
+      storage.maxSegmentSize() + storage.maxEntrySize() + SegmentDescriptor.BYTES);
+    Segment segment = Segment.open(buffer.position(SegmentDescriptor.BYTES).slice(), descriptor, createIndex(descriptor), storage.serializer().clone());
     LOGGER.debug("Created ephemeral segment: {}", segment);
     return segment;
   }
@@ -280,13 +268,13 @@ class SegmentManager implements AutoCloseable {
    * Loads a segment.
    */
   public Segment loadSegment(long segmentId, long segmentVersion) {
-    switch (config.getStorageLevel()) {
+    switch (storage.level()) {
       case DISK:
         return loadDiskSegment(segmentId, segmentVersion);
       case MEMORY:
         return loadMemorySegment(segmentId, segmentVersion);
       default:
-        throw new ConfigurationException("unknown storage level: " + config.getStorageLevel());
+        throw new ConfigurationException("unknown storage level: " + storage.level());
     }
   }
 
@@ -294,12 +282,12 @@ class SegmentManager implements AutoCloseable {
    * Loads a segment from disk.
    */
   private Segment loadDiskSegment(long segmentId, long segmentVersion) {
-    File file = SegmentFile.createSegmentFile(config.getDirectory(), segmentId, segmentVersion);
+    File file = SegmentFile.createSegmentFile(storage.directory(), segmentId, segmentVersion);
     try (SegmentDescriptor descriptor = new SegmentDescriptor(FileBuffer.allocate(file, SegmentDescriptor.BYTES))) {
-      Buffer buffer = FileBuffer.allocate(file, Math.min(1024 * 1024, config.getMaxSegmentSize() + config.getMaxEntrySize() + SegmentDescriptor.BYTES),
-        config.getMaxSegmentSize() + config.getMaxEntrySize() + SegmentDescriptor.BYTES);
+      Buffer buffer = FileBuffer.allocate(file, Math.min(1024 * 1024, storage.maxSegmentSize() + storage.maxEntrySize() + SegmentDescriptor.BYTES),
+        storage.maxSegmentSize() + storage.maxEntrySize() + SegmentDescriptor.BYTES);
       buffer = buffer.position(SegmentDescriptor.BYTES).slice();
-      Segment segment = Segment.open(buffer, descriptor, createIndex(descriptor), serializer.clone());
+      Segment segment = Segment.open(buffer, descriptor, createIndex(descriptor), storage.serializer().clone());
       LOGGER.debug("Loaded segment: {} ({})", descriptor.id(), file.getName());
       return segment;
     }
@@ -316,13 +304,13 @@ class SegmentManager implements AutoCloseable {
    * Creates a segment index.
    */
   private OffsetIndex createIndex(SegmentDescriptor descriptor) {
-    switch (config.getStorageLevel()) {
+    switch (storage.level()) {
       case DISK:
         return createDiskIndex(descriptor);
       case MEMORY:
         return createMemoryIndex(descriptor);
       default:
-        throw new ConfigurationException("unknown storage level: " + config.getStorageLevel());
+        throw new ConfigurationException("unknown storage level: " + storage.level());
     }
   }
 
@@ -330,7 +318,7 @@ class SegmentManager implements AutoCloseable {
    * Creates an on disk segment index.
    */
   private OffsetIndex createDiskIndex(SegmentDescriptor descriptor) {
-    File file = SegmentFile.createIndexFile(config.getDirectory(), descriptor.id(), descriptor.version());
+    File file = SegmentFile.createIndexFile(storage.directory(), descriptor.id(), descriptor.version());
     return new OffsetIndex(FileBuffer.allocate(file, Math.min(1024 * 1024, descriptor.maxEntries()), OffsetIndex.size(descriptor.maxEntries())));
   }
 
@@ -348,12 +336,12 @@ class SegmentManager implements AutoCloseable {
    */
   protected Collection<Segment> loadSegments() {
     // Ensure log directories are created.
-    config.getDirectory().mkdirs();
+    storage.directory().mkdirs();
 
     TreeMap<Long, Segment> segments = new TreeMap<>();
 
     // Iterate through all files in the log directory.
-    for (File file : config.getDirectory().listFiles(File::isFile)) {
+    for (File file : storage.directory().listFiles(File::isFile)) {
 
       // If the file looks like a segment file, attempt to load the segment.
       if (SegmentFile.isSegmentFile(file)) {

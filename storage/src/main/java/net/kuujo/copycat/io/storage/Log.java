@@ -18,7 +18,6 @@ package net.kuujo.copycat.io.storage;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.util.concurrent.CopycatThreadFactory;
 
-import java.io.File;
 import java.util.concurrent.Executors;
 
 /**
@@ -27,32 +26,14 @@ import java.util.concurrent.Executors;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class Log implements AutoCloseable {
-
-  /**
-   * Returns a new Raft storage builder.
-   *
-   * @return A new Raft storage builder.
-   */
-  public static Builder builder() {
-    return new Builder();
-  }
-
   private final SegmentManager segments;
   private final TypedEntryPool entryPool = new TypedEntryPool();
-  private LogCleaner cleaner;
-  private boolean open;
+  private Cleaner cleaner;
+  private boolean open = true;
 
-  protected Log(SegmentManager segments) {
-    this.segments = segments;
-  }
-
-  /**
-   * Opens the log.
-   */
-  public void open() {
-    segments.open();
-    cleaner = new LogCleaner(segments, Executors.newScheduledThreadPool(segments.config().getCleanerThreads(), new CopycatThreadFactory("copycat-log-cleaner-%d")));
-    open = true;
+  protected Log(Storage storage) {
+    this.segments = new SegmentManager(storage);
+    this.cleaner = new Cleaner(segments, Executors.newScheduledThreadPool(storage.cleanerThreads(), new CopycatThreadFactory("copycat-log-cleaner-%d")));
   }
 
   /**
@@ -60,7 +41,7 @@ public class Log implements AutoCloseable {
    *
    * @return The log cleaner.
    */
-  public LogCleaner cleaner() {
+  public Cleaner cleaner() {
     return cleaner;
   }
 
@@ -71,15 +52,6 @@ public class Log implements AutoCloseable {
    */
   public Serializer serializer() {
     return segments.serializer();
-  }
-
-  /**
-   * Returns the log segment manager.
-   *
-   * @return The log segment manager.
-   */
-  SegmentManager segments() {
-    return segments;
   }
 
   /**
@@ -369,135 +341,6 @@ public class Log implements AutoCloseable {
    */
   public void delete() {
     segments.delete();
-  }
-
-  /**
-   * Raft log builder.
-   */
-  public static class Builder extends net.kuujo.copycat.util.Builder<Log> {
-    private final LogConfig config = new LogConfig();
-    private Serializer serializer = new Serializer();
-
-    private Builder() {
-    }
-
-    /**
-     * Sets the log entry serializer.
-     *
-     * @param serializer The log entry serializer.
-     * @return The log builder.
-     * @throws java.lang.NullPointerException If the serializer is {@code null}
-     */
-    public Builder withSerializer(Serializer serializer) {
-      if (serializer == null)
-        throw new NullPointerException("serializer cannot be null");
-      this.serializer = serializer;
-      return this;
-    }
-
-    /**
-     * Sets the log directory, returning the builder for method chaining.
-     * <p>
-     * The log will write segment files into the provided directory. It is recommended that a unique directory be dedicated
-     * for each unique log instance.
-     *
-     * @param directory The log directory.
-     * @return The log builder.
-     * @throws NullPointerException If the {@code directory} is {@code null}
-     */
-    public Builder withDirectory(String directory) {
-      config.setDirectory(directory);
-      return this;
-    }
-
-    /**
-     * Sets the log directory, returning the builder for method chaining.
-     * <p>
-     * The log will write segment files into the provided directory. It is recommended that a unique directory be dedicated
-     * for each unique log instance.
-     *
-     * @param directory The log directory.
-     * @return The log builder.
-     * @throws NullPointerException If the {@code directory} is {@code null}
-     */
-    public Builder withDirectory(File directory) {
-      config.setDirectory(directory);
-      return this;
-    }
-
-    /**
-     * Sets the log storage level.
-     * <p>
-     * The storage level dictates how entries in the log are persisted. By default, the {@link StorageLevel#DISK} level
-     * is used to persist entries to disk.
-     *
-     * @param level The storage level.
-     * @return The log builder.
-     * @throws java.lang.NullPointerException If the {@code level} is {@code null}
-     */
-    public Builder withStorageLevel(StorageLevel level) {
-      config.setStorageLevel(level);
-      return this;
-    }
-
-    /**
-     * Sets the maximum entry count, returning the builder for method chaining.
-     * <p>
-     * The maximum entry count will be used to place an upper limit on the count of log segments.
-     *
-     * @param maxEntrySize The maximum entry count.
-     * @return The log builder.
-     * @throws IllegalArgumentException If the {@code maxEntrySize} is not positive
-     */
-    public Builder withMaxEntrySize(int maxEntrySize) {
-      config.setMaxEntrySize(maxEntrySize);
-      return this;
-    }
-
-    /**
-     * Sets the maximum segment count, returning the builder for method chaining.
-     *
-     * @param maxSegmentSize The maximum segment count.
-     * @return The log builder.
-     * @throws java.lang.IllegalArgumentException If the {@code maxSegmentSize} is not positive
-     */
-    public Builder withMaxSegmentSize(int maxSegmentSize) {
-      config.setMaxSegmentSize(maxSegmentSize);
-      return this;
-    }
-
-    /**
-     * Sets the maximum number of allows entries per segment.
-     *
-     * @param maxEntriesPerSegment The maximum number of entries allowed per segment.
-     * @return The log builder.
-     * @throws java.lang.IllegalArgumentException If the {@code maxEntriesPerSegment} is not positive
-     */
-    public Builder withMaxEntriesPerSegment(int maxEntriesPerSegment) {
-      config.setMaxEntriesPerSegment(maxEntriesPerSegment);
-      return this;
-    }
-
-    /**
-     * Sets the number of log cleaner threads.
-     *
-     * @param cleanerThreads The number of log cleaner threads.
-     * @return The log builder.
-     */
-    public Builder withCleanerThreads(int cleanerThreads) {
-      config.setCleanerThreads(cleanerThreads);
-      return this;
-    }
-
-    /**
-     * Builds the log.
-     *
-     * @return A new buffered log.
-     */
-    public Log build() {
-      SegmentManager segments = new SegmentManager(config, serializer);
-      return new Log(segments);
-    }
   }
 
 }

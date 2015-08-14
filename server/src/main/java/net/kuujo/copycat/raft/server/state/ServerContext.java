@@ -23,6 +23,7 @@ import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.ServiceLoaderResolver;
 import net.kuujo.copycat.io.storage.Entry;
 import net.kuujo.copycat.io.storage.Log;
+import net.kuujo.copycat.io.storage.Storage;
 import net.kuujo.copycat.io.transport.Connection;
 import net.kuujo.copycat.io.transport.Server;
 import net.kuujo.copycat.io.transport.Transport;
@@ -63,10 +64,11 @@ public class ServerContext implements Managed<Void> {
   private final StateMachine stateMachine;
   private ServerStateMachineExecutor stateExecutor;
   private final Member member;
-  private final Log log;
+  private final Storage storage;
   private final ClusterState cluster;
   private final Members members;
   private final Transport transport;
+  private Log log;
   private Server server;
   private ConnectionManager connections;
   private ServerCommitPool commits;
@@ -83,7 +85,20 @@ public class ServerContext implements Managed<Void> {
   private volatile boolean open;
   private volatile CompletableFuture<Void> openFuture;
 
-  public ServerContext(int memberId, Members members, Transport transport, Log log, StateMachine stateMachine, Serializer serializer) {
+  public ServerContext(int memberId, Members members, Transport transport, Storage storage, StateMachine stateMachine, Serializer serializer) {
+    if (memberId <= 0)
+      throw new IllegalArgumentException("memberId must be positive");
+    if (members == null)
+      throw new NullPointerException("members cannot be null");
+    if (transport == null)
+      throw new NullPointerException("transport cannot be null");
+    if (storage == null)
+      throw new NullPointerException("storage cannot be null");
+    if (stateMachine == null)
+      throw new NullPointerException("stateMachine cannot be null");
+    if (serializer == null)
+      throw new NullPointerException("serializer cannot be null");
+
     Member member = members.member(memberId);
     if (member == null) {
       throw new ConfigurationException("active member must be listed in members list");
@@ -102,10 +117,10 @@ public class ServerContext implements Managed<Void> {
     this.member = member;
     this.serializer = serializer;
 
-    log.serializer().resolve(new ServiceLoaderResolver());
+    storage.serializer().resolve(new ServiceLoaderResolver());
     serializer.resolve(new ServiceLoaderResolver());
 
-    this.log = log;
+    this.storage = storage;
     this.stateMachine = stateMachine;
   }
 
@@ -735,7 +750,7 @@ public class ServerContext implements Managed<Void> {
 
       server.listen(address, this::handleConnect).thenRun(() -> {
         // Open the log.
-        log.open();
+        log = storage.open();
 
         // Configure the cluster.
         cluster.configure(0, members, Members.builder().build());

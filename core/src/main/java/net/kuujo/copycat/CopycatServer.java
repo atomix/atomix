@@ -16,7 +16,7 @@
 package net.kuujo.copycat;
 
 import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.io.storage.Log;
+import net.kuujo.copycat.io.storage.Storage;
 import net.kuujo.copycat.io.transport.Transport;
 import net.kuujo.copycat.manager.ResourceManager;
 import net.kuujo.copycat.raft.Members;
@@ -126,13 +126,13 @@ public class CopycatServer extends Copycat {
     }
 
     /**
-     * Sets the Raft log.
+     * Sets the server storage module.
      *
-     * @param log The Raft log.
-     * @return The Raft builder.
+     * @param storage The server storage module.
+     * @return The Copycat server builder.
      */
-    public Builder withLog(Log log) {
-      serverBuilder.withLog(log);
+    public Builder withStorage(Storage storage) {
+      serverBuilder.withStorage(storage);
       return this;
     }
 
