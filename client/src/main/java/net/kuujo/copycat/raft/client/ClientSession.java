@@ -47,7 +47,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ClientSession implements Session, Managed<Session> {
+class ClientSession implements Session, Managed<Session> {
   private static final Logger LOGGER = LoggerFactory.getLogger(ClientSession.class);
 
   /**
