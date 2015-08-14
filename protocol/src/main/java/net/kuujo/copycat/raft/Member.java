@@ -25,8 +25,7 @@ import net.kuujo.copycat.io.serializer.Serializer;
  * <p>
  * Instances of this class are used to provide configurations for connecting to Raft servers. Each member in a Raft
  * cluster must be defined by a unique {@link #id()} which is consistent across all clients and servers in the cluster.
- * The provided {@link #host()} and {@link #port()} will be used by {@link Raft} instances to
- * connect to servers in the cluster.
+ * The provided {@link #host()} and {@link #port()} will be used by clients to connect to Raft servers.
  * <p>
  * Members are immutable and therefore threadsafe. To create a {@link Member}, create a
  * {@link Member.Builder} via the static {@link Member#builder()} method.

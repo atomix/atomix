@@ -109,6 +109,11 @@ public class ResourceSession implements Session {
     return parent.isExpired();
   }
 
+  @Override
+  public String toString() {
+    return String.format("%s[id=%d, resource=%d]", getClass().getSimpleName(), id(), resource);
+  }
+
   /**
    * Receive listener context.
    */

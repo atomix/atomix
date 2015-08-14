@@ -100,4 +100,9 @@ public class ResourceContext {
       .thenApply(deleted -> null);
   }
 
+  @Override
+  public String toString() {
+    return String.format("%s[resource=%d]", getClass().getSimpleName(), resource);
+  }
+
 }

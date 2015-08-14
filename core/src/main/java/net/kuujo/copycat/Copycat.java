@@ -175,6 +175,11 @@ public abstract class Copycat implements Managed<Copycat> {
     return client.isClosed();
   }
 
+  @Override
+  public String toString() {
+    return String.format("%s[session=%s]", getClass().getSimpleName(), client.session());
+  }
+
   /**
    * Copycat builder.
    */

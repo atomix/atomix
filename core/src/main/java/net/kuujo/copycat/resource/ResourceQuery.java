@@ -44,6 +44,11 @@ public class ResourceQuery<T extends Query<U>, U> extends ResourceOperation<T, U
     return operation.consistency();
   }
 
+  @Override
+  public String toString() {
+    return String.format("%s[resource=%d, query=%s, consistency=%s]", getClass().getSimpleName(), resource, operation, consistency());
+  }
+
   /**
    * Resource command builder.
    */
