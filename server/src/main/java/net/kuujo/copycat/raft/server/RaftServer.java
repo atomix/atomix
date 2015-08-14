@@ -218,13 +218,19 @@ public class RaftServer implements Managed<RaftServer> {
    * Raft server builder.
    */
   public static class Builder extends net.kuujo.copycat.util.Builder<RaftServer> {
+    private static final long DEFAULT_RAFT_ELECTION_TIMEOUT = 500;
+    private static final long DEFAULT_RAFT_HEARTBEAT_INTERVAL = 150;
+    private static final long DEFAULT_RAFT_SESSION_TIMEOUT = 5000;
+
     private Transport transport;
     private Storage storage;
     private Serializer serializer;
-    private RaftConfig config = new RaftConfig();
     private StateMachine stateMachine;
     private int memberId;
     private Members members;
+    private long electionTimeout = DEFAULT_RAFT_ELECTION_TIMEOUT;
+    private long heartbeatInterval = DEFAULT_RAFT_HEARTBEAT_INTERVAL;
+    private long sessionTimeout = DEFAULT_RAFT_SESSION_TIMEOUT;
 
     private Builder() {
     }
@@ -234,7 +240,6 @@ public class RaftServer implements Managed<RaftServer> {
       transport = null;
       storage = null;
       serializer = null;
-      config = new RaftConfig();
       stateMachine = null;
       memberId = 0;
       members = null;
@@ -346,7 +351,9 @@ public class RaftServer implements Managed<RaftServer> {
      * @throws IllegalArgumentException If the election timeout is not positive
      */
     public Builder withElectionTimeout(long electionTimeout) {
-      config.setElectionTimeout(electionTimeout);
+      if (electionTimeout <= 0)
+        throw new IllegalArgumentException("election timeout must be positive");
+      this.electionTimeout = electionTimeout;
       return this;
     }
 
@@ -359,8 +366,7 @@ public class RaftServer implements Managed<RaftServer> {
      * @throws IllegalArgumentException If the election timeout is not positive
      */
     public Builder withElectionTimeout(long electionTimeout, TimeUnit unit) {
-      config.setElectionTimeout(electionTimeout, unit);
-      return this;
+      return withElectionTimeout(unit.toMillis(electionTimeout));
     }
 
     /**
@@ -371,7 +377,9 @@ public class RaftServer implements Managed<RaftServer> {
      * @throws IllegalArgumentException If the heartbeat interval is not positive
      */
     public Builder withHeartbeatInterval(long heartbeatInterval) {
-      config.setHeartbeatInterval(heartbeatInterval);
+      if (heartbeatInterval <= 0)
+        throw new IllegalArgumentException("heartbeat interval must be positive");
+      this.heartbeatInterval = heartbeatInterval;
       return this;
     }
 
@@ -384,8 +392,7 @@ public class RaftServer implements Managed<RaftServer> {
      * @throws IllegalArgumentException If the heartbeat interval is not positive
      */
     public Builder withHeartbeatInterval(long heartbeatInterval, TimeUnit unit) {
-      config.setHeartbeatInterval(heartbeatInterval, unit);
-      return this;
+      return withHeartbeatInterval(unit.toMillis(heartbeatInterval));
     }
 
     /**
@@ -396,7 +403,9 @@ public class RaftServer implements Managed<RaftServer> {
      * @throws IllegalArgumentException If the session timeout is not positive
      */
     public Builder withSessionTimeout(long sessionTimeout) {
-      config.setSessionTimeout(sessionTimeout);
+      if (sessionTimeout <= 0)
+        throw new IllegalArgumentException("session timeout must be positive");
+      this.sessionTimeout = sessionTimeout;
       return this;
     }
 
@@ -409,8 +418,7 @@ public class RaftServer implements Managed<RaftServer> {
      * @throws IllegalArgumentException If the session timeout is not positive
      */
     public Builder withSessionTimeout(long sessionTimeout, TimeUnit unit) {
-      config.setSessionTimeout(sessionTimeout, unit);
-      return this;
+      return withSessionTimeout(unit.toMillis(sessionTimeout));
     }
 
     @Override
@@ -433,9 +441,9 @@ public class RaftServer implements Managed<RaftServer> {
       serializer.resolve(new ServiceLoaderResolver());
 
       ServerContext context = new ServerContext(memberId, members, transport, storage, stateMachine, serializer)
-        .setHeartbeatInterval(config.getHeartbeatInterval())
-        .setElectionTimeout(config.getElectionTimeout())
-        .setSessionTimeout(config.getSessionTimeout());
+        .setHeartbeatInterval(heartbeatInterval)
+        .setElectionTimeout(electionTimeout)
+        .setSessionTimeout(sessionTimeout);
       return new RaftServer(context);
     }
   }
