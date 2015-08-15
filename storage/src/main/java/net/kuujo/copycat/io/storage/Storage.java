@@ -20,7 +20,29 @@ import net.kuujo.copycat.io.serializer.Serializer;
 import java.io.File;
 
 /**
- * Storage module.
+ * Immutable log configuration/factory.
+ * <p>
+ * This class provides a factory for {@link Log} objects. {@code Storage} objects are immutable and
+ * can be created only via the {@link net.kuujo.copycat.io.storage.Storage.Builder}. To create a new
+ * {@code Storage.Builder}, use the static {@link #builder()} factory method:
+ * <pre>
+ *   {@code
+ *     Storage storage = Storage.builder()
+ *       .withDirectory(new File("logs"))
+ *       .withStorageLevel(StorageLevel.DISK)
+ *       .build();
+ *   }
+ * </pre>
+ * Copycat's storage facility supports two modes - {@link StorageLevel#DISK} and {@link StorageLevel#MEMORY}.
+ * By default, the storage module uses {@link StorageLevel#DISK} and {@link #directory()} defaults
+ * to {@code System.getProperty("user.dir")}.
+ * <p>
+ * Users can also configure a number of options related to how {@link Log logs} are constructed and managed.
+ * Most notable of the configuration options is the number of {@link #cleanerThreads()}, which specifies the
+ * number of background threads to use to clean log {@link Segment segments}. The parallelism of the log
+ * compaction algorithm will be limited by the number of {@link #cleanerThreads()}.
+ *
+ * @see Log
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
@@ -121,6 +143,11 @@ public class Storage {
    */
   public Log open() {
     return new Log(this);
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[directory=%s, level=%s]", getClass().getSimpleName(), directory, level);
   }
 
   /**

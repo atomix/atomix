@@ -15,11 +15,11 @@
  */
 package net.kuujo.copycat.io.storage;
 
-import net.kuujo.copycat.util.ConfigurationException;
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.FileBuffer;
 import net.kuujo.copycat.io.HeapBuffer;
 import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.util.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -420,6 +420,11 @@ class SegmentManager implements AutoCloseable {
       LOGGER.debug("Deleting segment: {}", s.descriptor().id());
       s.delete();
     });
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[directory=%s, level=%s, segments=%d]", getClass().getSimpleName(), storage.directory(), storage.level(), segments.size());
   }
 
 }

@@ -343,4 +343,9 @@ public class Log implements AutoCloseable {
     segments.delete();
   }
 
+  @Override
+  public String toString() {
+    return String.format("%s[segments=%s]", getClass().getSimpleName(), segments);
+  }
+
 }
