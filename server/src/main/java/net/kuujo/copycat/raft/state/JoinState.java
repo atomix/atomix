@@ -15,15 +15,14 @@
  */
 package net.kuujo.copycat.raft.state;
 
+import net.kuujo.copycat.raft.RaftServer;
 import net.kuujo.copycat.raft.protocol.request.JoinRequest;
 import net.kuujo.copycat.raft.protocol.response.JoinResponse;
 import net.kuujo.copycat.raft.protocol.response.Response;
-import net.kuujo.copycat.raft.RaftServer;
+import net.kuujo.copycat.util.concurrent.Scheduled;
 
 import java.util.Iterator;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Join state.
@@ -31,7 +30,7 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class JoinState extends InactiveState {
-  private ScheduledFuture<?> joinFuture;
+  private Scheduled joinFuture;
 
   public JoinState(ServerContext context) {
     super(context);
@@ -56,7 +55,7 @@ public class JoinState extends InactiveState {
         context.getCluster().setActive(true);
         transition(RaftServer.State.FOLLOWER);
       }
-    }, context.getElectionTimeout().toMillis(), TimeUnit.MILLISECONDS);
+    }, context.getElectionTimeout());
   }
 
   /**
@@ -115,7 +114,7 @@ public class JoinState extends InactiveState {
   private void cancelJoinTimeout() {
     if (joinFuture != null) {
       LOGGER.info("{} - Cancelling join timeout", context.getMember().id());
-      joinFuture.cancel(false);
+      joinFuture.cancel();
       joinFuture = null;
     }
   }

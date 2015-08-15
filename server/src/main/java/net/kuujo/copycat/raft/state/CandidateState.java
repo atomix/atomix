@@ -15,21 +15,21 @@
  */
 package net.kuujo.copycat.raft.state;
 
+import net.kuujo.copycat.raft.RaftServer;
 import net.kuujo.copycat.raft.protocol.request.AppendRequest;
 import net.kuujo.copycat.raft.protocol.request.VoteRequest;
 import net.kuujo.copycat.raft.protocol.response.AppendResponse;
 import net.kuujo.copycat.raft.protocol.response.Response;
 import net.kuujo.copycat.raft.protocol.response.VoteResponse;
-import net.kuujo.copycat.raft.RaftServer;
 import net.kuujo.copycat.raft.storage.RaftEntry;
 import net.kuujo.copycat.raft.util.Quorum;
+import net.kuujo.copycat.util.concurrent.Scheduled;
 
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -40,7 +40,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 class CandidateState extends ActiveState {
   private final Random random = new Random();
   private Quorum quorum;
-  private ScheduledFuture<?> currentTimer;
+  private Scheduled currentTimer;
 
   public CandidateState(ServerContext context) {
     super(context);
@@ -76,14 +76,14 @@ class CandidateState extends ActiveState {
 
     // Cancel the current timer task and purge the election timer of cancelled tasks.
     if (currentTimer != null) {
-      currentTimer.cancel(false);
+      currentTimer.cancel();
     }
 
     // When the election timer is reset, increment the current term and
     // restart the election.
     context.setTerm(context.getTerm() + 1);
 
-    long delay = context.getElectionTimeout().toMillis() + (random.nextInt((int) context.getElectionTimeout().toMillis()) % context.getElectionTimeout().toMillis());
+    Duration delay = context.getElectionTimeout().plus(Duration.ofMillis(random.nextInt((int) context.getElectionTimeout().toMillis()) % context.getElectionTimeout().toMillis()));
     currentTimer = context.getContext().schedule(() -> {
       // When the election times out, clear the previous majority vote
       // check and restart the election.
@@ -94,7 +94,7 @@ class CandidateState extends ActiveState {
       }
       sendVoteRequests();
       LOGGER.debug("{} - Restarted election", context.getMember().id());
-    }, delay, TimeUnit.MILLISECONDS);
+    }, delay);
 
     final AtomicBoolean complete = new AtomicBoolean();
     final Set<MemberState> votingMembers = new HashSet<>(context.getCluster().getActiveMembers());
@@ -151,7 +151,7 @@ class CandidateState extends ActiveState {
               quorum.succeed();
             }
           }
-        }, context.getContext());
+        }, context.getContext().executor());
       });
     }
   }
@@ -204,7 +204,7 @@ class CandidateState extends ActiveState {
     context.checkThread();
     if (currentTimer != null) {
       LOGGER.debug("{} - Cancelling election", context.getMember().id());
-      currentTimer.cancel(false);
+      currentTimer.cancel();
     }
     if (quorum != null) {
       quorum.cancel();

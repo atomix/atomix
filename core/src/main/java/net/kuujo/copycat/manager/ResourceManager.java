@@ -15,10 +15,10 @@
  */
 package net.kuujo.copycat.manager;
 
-import net.kuujo.copycat.raft.session.Session;
 import net.kuujo.copycat.raft.Commit;
 import net.kuujo.copycat.raft.StateMachine;
 import net.kuujo.copycat.raft.StateMachineExecutor;
+import net.kuujo.copycat.raft.session.Session;
 import net.kuujo.copycat.resource.ResourceOperation;
 import net.kuujo.copycat.util.concurrent.ComposableFuture;
 import net.kuujo.copycat.util.concurrent.Context;
@@ -222,7 +222,7 @@ public class ResourceManager extends StateMachine {
         StateMachine resource = commit.operation().type().newInstance();
         nodes.put(node.resource, node);
         Context context = new ThreadPoolContext(scheduler, Context.currentContext().serializer().clone());
-        StateMachineExecutor executor = new ResourceStateMachineExecutor(this.executor, context);
+        StateMachineExecutor executor = new ResourceStateMachineExecutor(node.resource, this.executor, context);
         resources.put(node.resource, new ResourceHolder(resource, executor));
         resource.init(executor.context());
         resource.configure(executor);

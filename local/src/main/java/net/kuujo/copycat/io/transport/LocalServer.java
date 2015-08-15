@@ -69,7 +69,7 @@ public class LocalServer implements Server {
     LocalConnection localConnection = new LocalConnection(connection.id(), context, connections);
     connection.connect(localConnection);
     localConnection.connect(connection);
-    return CompletableFuture.runAsync(() -> listener.listener.accept(localConnection), listener.context);
+    return CompletableFuture.runAsync(() -> listener.listener.accept(localConnection), listener.context.executor());
   }
 
   @Override
@@ -108,7 +108,7 @@ public class LocalServer implements Server {
     for (LocalConnection connection : connections) {
       futures[i++] = connection.close();
     }
-    CompletableFuture.allOf(futures).thenRunAsync(() -> future.complete(null), context);
+    CompletableFuture.allOf(futures).thenRunAsync(() -> future.complete(null), context.executor());
     return future;
   }
 

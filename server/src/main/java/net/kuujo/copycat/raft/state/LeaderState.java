@@ -26,11 +26,11 @@ import net.kuujo.copycat.raft.protocol.error.RaftException;
 import net.kuujo.copycat.raft.protocol.request.*;
 import net.kuujo.copycat.raft.protocol.response.*;
 import net.kuujo.copycat.raft.storage.*;
+import net.kuujo.copycat.util.concurrent.Scheduled;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Leader state.
@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit;
  */
 class LeaderState extends ActiveState {
   private static final int MAX_BATCH_SIZE = 1024 * 32;
-  private ScheduledFuture<?> currentTimer;
+  private Scheduled currentTimer;
   private final Replicator replicator = new Replicator();
 
   public LeaderState(ServerContext context) {
@@ -132,7 +132,7 @@ class LeaderState extends ActiveState {
     // in the cluster. This timer acts as a heartbeat to ensure this node remains
     // the leader.
     LOGGER.debug("{} - Starting heartbeat timer", context.getMember().id());
-    currentTimer = context.getContext().scheduleAtFixedRate(this::heartbeatMembers, 0, context.getHeartbeatInterval().toMillis(), TimeUnit.MILLISECONDS);
+    currentTimer = context.getContext().schedule(this::heartbeatMembers, Duration.ZERO, context.getHeartbeatInterval());
   }
 
   /**
@@ -342,7 +342,7 @@ class LeaderState extends ActiveState {
                 }
               }
               entry.close();
-            }, context.getContext());
+            }, context.getContext().executor());
           } else {
             future.complete(logResponse(CommandResponse.builder()
               .withStatus(Response.Status.OK)
@@ -459,7 +459,7 @@ class LeaderState extends ActiveState {
         }
       }
       entry.close();
-    }, context.getContext());
+    }, context.getContext().executor());
     return future;
   }
 
@@ -506,7 +506,7 @@ class LeaderState extends ActiveState {
               }
             }
             entry.close();
-          }, context.getContext());
+          }, context.getContext().executor());
         } else {
           future.complete(logResponse(RegisterResponse.builder()
             .withStatus(Response.Status.ERROR)
@@ -560,7 +560,7 @@ class LeaderState extends ActiveState {
               }
             }
             entry.close();
-          }, context.getContext());
+          }, context.getContext().executor());
         } else {
           future.complete(logResponse(KeepAliveResponse.builder()
             .withStatus(Response.Status.ERROR)
@@ -578,7 +578,7 @@ class LeaderState extends ActiveState {
   private void cancelPingTimer() {
     if (currentTimer != null) {
       LOGGER.debug("{} - Cancelling heartbeat timer", context.getMember().id());
-      currentTimer.cancel(false);
+      currentTimer.cancel();
     }
   }
 

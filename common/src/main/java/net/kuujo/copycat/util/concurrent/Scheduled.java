@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package net.kuujo.copycat.util;
+package net.kuujo.copycat.util.concurrent;
 
 /**
  * Scheduled task.

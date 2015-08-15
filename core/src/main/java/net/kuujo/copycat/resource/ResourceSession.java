@@ -67,7 +67,7 @@ public class ResourceSession implements Session {
         for (Consumer<Object> listener : receiveListeners) {
           listener.accept(resourceMessage.message());
         }
-      }, context);
+      }, context.executor());
     }
     return CompletableFuture.completedFuture(null);
   }

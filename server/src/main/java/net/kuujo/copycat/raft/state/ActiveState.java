@@ -264,7 +264,7 @@ abstract class ActiveState extends PassiveState {
         }
       }
       entry.close();
-    }, context.getContext());
+    }, context.getContext().executor());
     return future;
   }
 
@@ -303,7 +303,7 @@ abstract class ActiveState extends PassiveState {
         }
       }
       entry.close();
-    }, context.getContext());
+    }, context.getContext().executor());
     return future;
   }
 

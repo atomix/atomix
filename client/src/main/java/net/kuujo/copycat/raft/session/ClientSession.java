@@ -31,6 +31,7 @@ import net.kuujo.copycat.util.Listeners;
 import net.kuujo.copycat.util.Managed;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.Futures;
+import net.kuujo.copycat.util.concurrent.Scheduled;
 import net.kuujo.copycat.util.concurrent.SingleThreadContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,8 +45,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
@@ -74,7 +73,7 @@ public class ClientSession implements Session, Managed<Session> {
   private Connection connection;
   private volatile State state = State.CLOSED;
   private volatile long id;
-  private ScheduledFuture<?> keepAliveFuture;
+  private Scheduled keepAliveFuture;
   private final Listeners<Session> openListeners = new Listeners<>();
   private final Listeners<Object> receiveListeners = new Listeners<>();
   private final Listeners<Session> closeListeners = new Listeners<>();
@@ -220,7 +219,7 @@ public class ClientSession implements Session, Managed<Session> {
    */
   private <T extends SessionRequest<T>, U extends SessionResponse<U>> CompletableFuture<U> request(T request) {
     if (!isOpen())
-      return Futures.exceptionalFutureAsync(new IllegalStateException("session not open"), context);
+      return Futures.exceptionalFutureAsync(new IllegalStateException("session not open"), context.executor());
     return request(request, new CompletableFuture<U>(), true);
   }
 
@@ -377,7 +376,7 @@ public class ClientSession implements Session, Managed<Session> {
       if (isOpen()) {
         keepAlive(new CompletableFuture<>()).thenRun(this::keepAlive);
       }
-    }, keepAliveInterval.toMillis(), TimeUnit.MILLISECONDS);
+    }, keepAliveInterval);
   }
 
   /**
@@ -454,7 +453,7 @@ public class ClientSession implements Session, Managed<Session> {
       for (Consumer<Object> listener : receiveListeners) {
         listener.accept(message);
       }
-    }, context);
+    }, context.executor());
   }
 
   /**
@@ -497,10 +496,10 @@ public class ClientSession implements Session, Managed<Session> {
   public CompletableFuture<Void> close() {
     return CompletableFuture.runAsync(() -> {
       if (keepAliveFuture != null) {
-        keepAliveFuture.cancel(false);
+        keepAliveFuture.cancel();
       }
       onClose();
-    }, context);
+    }, context.executor());
   }
 
   /**

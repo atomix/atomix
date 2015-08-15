@@ -16,22 +16,25 @@
 
 package net.kuujo.copycat.raft.state;
 
+import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.raft.Commit;
 import net.kuujo.copycat.raft.StateMachineExecutor;
 import net.kuujo.copycat.raft.protocol.Operation;
 import net.kuujo.copycat.raft.protocol.error.ApplicationException;
-import net.kuujo.copycat.util.Scheduled;
 import net.kuujo.copycat.util.concurrent.ComposableFuture;
 import net.kuujo.copycat.util.concurrent.Context;
+import net.kuujo.copycat.util.concurrent.Scheduled;
+import org.slf4j.Logger;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Raft server state machine executor.
@@ -54,6 +57,21 @@ class ServerStateMachineExecutor implements StateMachineExecutor {
   @Override
   public ServerStateMachineContext context() {
     return context;
+  }
+
+  @Override
+  public Logger logger() {
+    return executor.logger();
+  }
+
+  @Override
+  public Serializer serializer() {
+    return executor.serializer();
+  }
+
+  @Override
+  public Executor executor() {
+    return executor.executor();
   }
 
   @Override
@@ -99,7 +117,7 @@ class ServerStateMachineExecutor implements StateMachineExecutor {
         try {
           Object result = function.apply(commit);
           if (result instanceof CompletableFuture) {
-            ((CompletableFuture<U>) result).whenCompleteAsync(future, executor);
+            ((CompletableFuture<U>) result).whenCompleteAsync(future, executor.executor());
           } else if (result instanceof Future) {
             future.complete(((Future<U>) result).get());
           } else {
@@ -162,11 +180,11 @@ class ServerStateMachineExecutor implements StateMachineExecutor {
   }
 
   @Override
-  public <T> CompletableFuture<T> execute(Callable<T> callback) {
+  public <T> CompletableFuture<T> execute(Supplier<T> callback) {
     CompletableFuture<T> future = new CompletableFuture<>();
     executor.execute(() -> {
       try {
-        future.complete(callback.call());
+        future.complete(callback.get());
       } catch (Exception e) {
         future.completeExceptionally(e);
       }

@@ -88,7 +88,7 @@ public class LocalConnection implements Connection {
         future.completeExceptionally(error);
       }
       buffer.release();
-    }, context);
+    }, context.executor());
     return future;
   }
 

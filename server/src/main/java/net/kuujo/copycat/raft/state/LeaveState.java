@@ -20,11 +20,10 @@ import net.kuujo.copycat.raft.RaftServer;
 import net.kuujo.copycat.raft.protocol.request.LeaveRequest;
 import net.kuujo.copycat.raft.protocol.response.LeaveResponse;
 import net.kuujo.copycat.raft.protocol.response.Response;
+import net.kuujo.copycat.util.concurrent.Scheduled;
 
 import java.util.Iterator;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Leave state.
@@ -32,7 +31,7 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class LeaveState extends InactiveState {
-  private ScheduledFuture<?> leaveFuture;
+  private Scheduled leaveFuture;
 
   public LeaveState(ServerContext context) {
     super(context);
@@ -57,7 +56,7 @@ public class LeaveState extends InactiveState {
         LOGGER.warn("{} - Failed to leave the cluster in {} milliseconds", context.getMember().id(), context.getElectionTimeout());
         transition(RaftServer.State.INACTIVE);
       }
-    }, context.getElectionTimeout().toMillis(), TimeUnit.MILLISECONDS);
+    }, context.getElectionTimeout());
   }
 
   /**
@@ -122,7 +121,7 @@ public class LeaveState extends InactiveState {
   private void cancelLeaveTimer() {
     if (leaveFuture != null) {
       LOGGER.info("{} - Cancelling leave timeout", context.getMember().id());
-      leaveFuture.cancel(false);
+      leaveFuture.cancel();
       leaveFuture = null;
     }
   }

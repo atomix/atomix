@@ -15,19 +15,19 @@
  */
 package net.kuujo.copycat.raft.state;
 
+import net.kuujo.copycat.raft.RaftServer;
 import net.kuujo.copycat.raft.protocol.error.RaftError;
 import net.kuujo.copycat.raft.protocol.request.*;
 import net.kuujo.copycat.raft.protocol.response.*;
-import net.kuujo.copycat.raft.RaftServer;
 import net.kuujo.copycat.raft.storage.RaftEntry;
 import net.kuujo.copycat.raft.util.Quorum;
+import net.kuujo.copycat.util.concurrent.Scheduled;
 
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -37,7 +37,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 class FollowerState extends ActiveState {
   private final Random random = new Random();
-  private ScheduledFuture<?> heartbeatTimer;
+  private Scheduled heartbeatTimer;
 
   public FollowerState(ServerContext context) {
     super(context);
@@ -104,12 +104,12 @@ class FollowerState extends ActiveState {
     // If a timer is already set, cancel the timer.
     if (heartbeatTimer != null) {
       LOGGER.debug("{} - Reset heartbeat timeout", context.getMember().id());
-      heartbeatTimer.cancel(false);
+      heartbeatTimer.cancel();
     }
 
     // Set the election timeout in a semi-random fashion with the random range
     // being election timeout and 2 * election timeout.
-    long delay = context.getElectionTimeout().toMillis() + (random.nextInt((int) context.getElectionTimeout().toMillis()) % context.getElectionTimeout().toMillis());
+    Duration delay = context.getElectionTimeout().plus(Duration.ofMillis(random.nextInt((int) context.getElectionTimeout().toMillis()) % context.getElectionTimeout().toMillis()));
     heartbeatTimer = context.getContext().schedule(() -> {
       heartbeatTimer = null;
       if (isOpen()) {
@@ -121,7 +121,7 @@ class FollowerState extends ActiveState {
           resetHeartbeatTimeout();
         }
       }
-    }, delay, TimeUnit.MILLISECONDS);
+    }, delay);
   }
 
   /**
@@ -132,7 +132,7 @@ class FollowerState extends ActiveState {
     heartbeatTimer = context.getContext().schedule(() -> {
       LOGGER.debug("{} - Failed to poll a majority of the cluster in {} milliseconds", context.getMember().id(), context.getElectionTimeout());
       resetHeartbeatTimeout();
-    }, context.getElectionTimeout().toMillis(), TimeUnit.MILLISECONDS);
+    }, context.getElectionTimeout());
 
     // Create a quorum that will track the number of nodes that have responded to the poll request.
     final AtomicBoolean complete = new AtomicBoolean();
@@ -188,7 +188,7 @@ class FollowerState extends ActiveState {
               }
             }
           }
-        }, context.getContext());
+        }, context.getContext().executor());
       });
     }
   }
@@ -217,7 +217,7 @@ class FollowerState extends ActiveState {
   private void cancelHeartbeatTimeout() {
     if (heartbeatTimer != null) {
       LOGGER.debug("{} - Cancelling heartbeat timer", context.getMember().id());
-      heartbeatTimer.cancel(false);
+      heartbeatTimer.cancel();
     }
   }
 

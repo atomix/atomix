@@ -656,7 +656,7 @@ public class ServerContext implements Managed<Void> {
         transition(PassiveState.class);
       }
     }
-    return Futures.completedFutureAsync(cluster.buildActiveMembers(), context);
+    return Futures.completedFutureAsync(cluster.buildActiveMembers(), context.executor());
   }
 
   /**
@@ -669,7 +669,7 @@ public class ServerContext implements Managed<Void> {
     // We need to ensure that the command is applied to the state machine before queries are run.
     // Set last applied only after the operation has been submitted to the state machine executor.
     setLastApplied(entry.getIndex());
-    return Futures.completedFutureAsync(entry.getIndex(), context);
+    return Futures.completedFutureAsync(entry.getIndex(), context.executor());
   }
 
   /**
@@ -796,7 +796,7 @@ public class ServerContext implements Managed<Void> {
             } else {
               future.complete(null);
             }
-          }, context);
+          }, context.executor());
         }
       });
 
@@ -816,7 +816,7 @@ public class ServerContext implements Managed<Void> {
   public CompletableFuture<Void> delete() {
     if (open)
       return Futures.exceptionalFuture(new IllegalStateException("cannot delete open context"));
-    return CompletableFuture.runAsync(log::delete, context);
+    return CompletableFuture.runAsync(log::delete, context.executor());
   }
 
   @Override

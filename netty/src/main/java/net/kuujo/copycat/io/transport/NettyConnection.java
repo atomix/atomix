@@ -128,7 +128,7 @@ public class NettyConnection implements Connection {
       if (request instanceof ReferenceCounted) {
         ((ReferenceCounted) request).release();
       }
-    }, context);
+    }, context.executor());
   }
 
   /**

@@ -17,10 +17,8 @@
 package net.kuujo.copycat.raft;
 
 import net.kuujo.copycat.raft.protocol.Operation;
-import net.kuujo.copycat.util.Scheduled;
+import net.kuujo.copycat.util.concurrent.Context;
 
-import java.time.Duration;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -30,7 +28,7 @@ import java.util.function.Function;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public interface StateMachineExecutor extends AutoCloseable {
+public interface StateMachineExecutor extends Context {
 
   /**
    * Returns the state machine context.
@@ -38,22 +36,6 @@ public interface StateMachineExecutor extends AutoCloseable {
    * @return The state machine context.
    */
   StateMachineContext context();
-
-  /**
-   * Executes a callback deterministically.
-   *
-   * @param callback The callback to execute.
-   * @return A completable future to be completed once the callback has been completed.
-   */
-  CompletableFuture<Void> execute(Runnable callback);
-
-  /**
-   * Executes a callback deterministically.
-   *
-   * @param callback The callback to execute.
-   * @return A completable future to be completed once the callback has been completed.
-   */
-  <T> CompletableFuture<T> execute(Callable<T> callback);
 
   /**
    * Executes the given operation on the state machine.
@@ -64,25 +46,6 @@ public interface StateMachineExecutor extends AutoCloseable {
    * @return A completable future to be completed with the operation output.
    */
   <T extends Operation<U>, U> CompletableFuture<U> execute(Commit<T> commit);
-
-  /**
-   * Schedules a callback to run deterministically in the state machine.
-   *
-   * @param callback The callback to schedule.
-   * @param delay The delay after which to run the callback.
-   * @return The state machine executor.
-   */
-  Scheduled schedule(Runnable callback, Duration delay);
-
-  /**
-   * Schedules a callback to run deterministically at a fixed rate in the state machine.
-   *
-   * @param callback The callback to schedule.
-   * @param initialDelay The initial duration after which to run the callback.
-   * @param interval The interval at which to run the callback.
-   * @return The state machine executor.
-   */
-  Scheduled schedule(Runnable callback, Duration initialDelay, Duration interval);
 
   /**
    * Registers a global operation callback.

@@ -16,25 +16,29 @@
 
 package net.kuujo.copycat.manager;
 
+import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.raft.Commit;
 import net.kuujo.copycat.raft.StateMachineContext;
 import net.kuujo.copycat.raft.StateMachineExecutor;
 import net.kuujo.copycat.raft.protocol.Operation;
 import net.kuujo.copycat.raft.protocol.error.ApplicationException;
-import net.kuujo.copycat.util.Scheduled;
 import net.kuujo.copycat.util.concurrent.ComposableFuture;
 import net.kuujo.copycat.util.concurrent.Context;
+import net.kuujo.copycat.util.concurrent.Scheduled;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Resource state machine executor.
@@ -44,18 +48,35 @@ import java.util.function.Function;
 class ResourceStateMachineExecutor implements StateMachineExecutor {
   private final StateMachineExecutor parent;
   private final Context context;
+  private final Logger logger;
   private final Map<Class, Function> operations = new HashMap<>();
   private final Set<Scheduled> tasks = new HashSet<>();
   private Function allOperation;
 
-  ResourceStateMachineExecutor(StateMachineExecutor parent, Context context) {
+  ResourceStateMachineExecutor(long resource, StateMachineExecutor parent, Context context) {
     this.parent = parent;
     this.context = context;
+    this.logger = LoggerFactory.getLogger(String.format("%s-%d", getClass().getName(), resource));
   }
 
   @Override
   public StateMachineContext context() {
     return parent.context();
+  }
+
+  @Override
+  public Logger logger() {
+    return logger;
+  }
+
+  @Override
+  public Serializer serializer() {
+    return context.serializer();
+  }
+
+  @Override
+  public Executor executor() {
+    return context.executor();
   }
 
   @Override
@@ -73,11 +94,11 @@ class ResourceStateMachineExecutor implements StateMachineExecutor {
   }
 
   @Override
-  public <T> CompletableFuture<T> execute(Callable<T> callback) {
+  public <T> CompletableFuture<T> execute(Supplier<T> callback) {
     CompletableFuture<T> future = new CompletableFuture<>();
     context.execute(() -> {
       try {
-        future.complete(callback.call());
+        future.complete(callback.get());
       } catch (Exception e) {
         future.completeExceptionally(e);
       }
@@ -105,7 +126,7 @@ class ResourceStateMachineExecutor implements StateMachineExecutor {
         try {
           Object result = function.apply(commit);
           if (result instanceof CompletableFuture) {
-            ((CompletableFuture<U>) result).whenCompleteAsync(future, context);
+            ((CompletableFuture<U>) result).whenCompleteAsync(future, context.executor());
           } else if (result instanceof Future) {
             future.complete(((Future<U>) result).get());
           } else {

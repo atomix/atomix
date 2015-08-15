@@ -4,6 +4,7 @@ import net.kuujo.copycat.io.serializer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -15,9 +16,19 @@ import java.util.concurrent.atomic.AtomicReference;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class SingleThreadContext extends Context {
+public class SingleThreadContext implements Context {
   private static final Logger LOGGER = LoggerFactory.getLogger(SingleThreadContext.class);
   private final ScheduledExecutorService executor;
+  private final Serializer serializer;
+  private final Executor wrappedExecutor = command -> {
+    try {
+      command.run();
+    } catch (Throwable t) {
+      LOGGER.error("An uncaught exception occurred", t);
+      t.printStackTrace();
+      throw t;
+    }
+  };
 
   /**
    * Creates a new single thread context.
@@ -43,8 +54,8 @@ public class SingleThreadContext extends Context {
   }
 
   public SingleThreadContext(Thread thread, ScheduledExecutorService executor, Serializer serializer) {
-    super(serializer);
     this.executor = executor;
+    this.serializer = serializer;
     if (!(thread instanceof CopycatThread)) {
       throw new IllegalStateException("not a Copycat thread");
     }
@@ -67,18 +78,30 @@ public class SingleThreadContext extends Context {
   }
 
   @Override
-  public void execute(Runnable command) {
-    executor.execute(wrapRunnable(command));
+  public Logger logger() {
+    return LOGGER;
   }
 
   @Override
-  public ScheduledFuture<?> schedule(Runnable runnable, long delay, TimeUnit unit) {
-    return executor.schedule(wrapRunnable(runnable), delay, unit);
+  public Serializer serializer() {
+    return serializer;
   }
 
   @Override
-  public ScheduledFuture<?> scheduleAtFixedRate(Runnable runnable, long delay, long rate, TimeUnit unit) {
-    return executor.scheduleAtFixedRate(wrapRunnable(runnable), delay, rate, unit);
+  public Executor executor() {
+    return wrappedExecutor;
+  }
+
+  @Override
+  public Scheduled schedule(Runnable runnable, Duration delay) {
+    ScheduledFuture<?> future = executor.schedule(wrapRunnable(runnable), delay.toMillis(), TimeUnit.MILLISECONDS);
+    return () -> future.cancel(false);
+  }
+
+  @Override
+  public Scheduled schedule(Runnable runnable, Duration delay, Duration interval) {
+    ScheduledFuture<?> future = executor.scheduleAtFixedRate(wrapRunnable(runnable), delay.toMillis(), interval.toMillis(), TimeUnit.MILLISECONDS);
+    return () -> future.cancel(false);
   }
 
   /**
@@ -88,9 +111,10 @@ public class SingleThreadContext extends Context {
     return () -> {
       try {
         runnable.run();
-      } catch (RuntimeException e) {
-        LOGGER.error("An uncaught exception occurred", e);
-        e.printStackTrace();
+      } catch (Throwable t) {
+        LOGGER.error("An uncaught exception occurred", t);
+        t.printStackTrace();
+        throw t;
       }
     };
   }
