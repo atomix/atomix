@@ -16,10 +16,10 @@
 package net.kuujo.copycat.raft.state;
 
 import net.kuujo.copycat.io.storage.Entry;
+import net.kuujo.copycat.raft.RaftServer;
 import net.kuujo.copycat.raft.protocol.error.RaftError;
 import net.kuujo.copycat.raft.protocol.request.*;
 import net.kuujo.copycat.raft.protocol.response.*;
-import net.kuujo.copycat.raft.RaftServer;
 import net.kuujo.copycat.raft.storage.ConfigurationEntry;
 import net.kuujo.copycat.raft.storage.RaftEntry;
 
@@ -163,10 +163,7 @@ class PassiveState extends AbstractState {
     }
 
     // If we've made it this far, apply commits and send a successful response.
-    context.getContext().execute(() -> {
-      applyCommits(request.commitIndex())
-        .thenRun(() -> applyIndex(request.globalIndex()));
-    });
+    context.getContext().execute(() -> applyCommits(request.commitIndex())).thenRun(() -> applyIndex(request.globalIndex()));
 
     return AppendResponse.builder()
       .withStatus(Response.Status.OK)

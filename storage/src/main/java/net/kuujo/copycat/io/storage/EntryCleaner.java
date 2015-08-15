@@ -84,16 +84,10 @@ public class EntryCleaner implements AutoCloseable {
     if (segments.isEmpty())
       return CompletableFuture.completedFuture(null);
 
-    cleanFuture = new CompletableFuture<>();
-    context.execute(() -> {
-      try {
-        cleanSegments(segments);
-        cleanFuture.complete(null);
-      } catch (Exception e) {
-        cleanFuture.completeExceptionally(e);
-      }
-    });
-    return cleanFuture.whenComplete((result, error) -> cleanFuture = null);
+    cleanFuture = context.execute(() -> {
+      cleanSegments(segments);
+    }).whenComplete((result, error) -> cleanFuture = null);
+    return cleanFuture;
   }
 
   /**

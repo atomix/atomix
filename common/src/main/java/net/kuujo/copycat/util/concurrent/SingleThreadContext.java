@@ -20,13 +20,18 @@ public class SingleThreadContext implements Context {
   private static final Logger LOGGER = LoggerFactory.getLogger(SingleThreadContext.class);
   private final ScheduledExecutorService executor;
   private final Serializer serializer;
-  private final Executor wrappedExecutor = command -> {
-    try {
-      command.run();
-    } catch (Throwable t) {
-      LOGGER.error("An uncaught exception occurred", t);
-      t.printStackTrace();
-      throw t;
+  private final Executor wrappedExecutor = new Executor() {
+    @Override
+    public void execute(Runnable command) {
+      executor.execute(() -> {
+        try {
+          command.run();
+        } catch (Throwable t) {
+          LOGGER.error("An uncaught exception occurred", t);
+          t.printStackTrace();
+          throw t;
+        }
+      });
     }
   };
 

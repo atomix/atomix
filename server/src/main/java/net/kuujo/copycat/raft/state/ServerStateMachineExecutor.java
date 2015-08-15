@@ -78,7 +78,7 @@ class ServerStateMachineExecutor implements StateMachineExecutor {
   @SuppressWarnings("unchecked")
   public <T extends Operation<U>, U> CompletableFuture<U> execute(Commit<T> commit) {
     ComposableFuture<U> future = new ComposableFuture<>();
-    executor.execute(() -> {
+    executor.executor().execute(() -> {
       context.update(commit.index(), commit.time());
 
       // Get the function registered for the operation. If no function is registered, attempt to
@@ -149,7 +149,7 @@ class ServerStateMachineExecutor implements StateMachineExecutor {
       while (iterator.hasNext()) {
         ServerScheduledTask task = iterator.next();
         if (task.complete(instant)) {
-          executor.execute(task::execute);
+          executor.executor().execute(task::execute);
           complete.add(task);
           iterator.remove();
         } else {
@@ -167,29 +167,12 @@ class ServerStateMachineExecutor implements StateMachineExecutor {
 
   @Override
   public CompletableFuture<Void> execute(Runnable callback) {
-    CompletableFuture<Void> future = new CompletableFuture<>();
-    executor.execute(() -> {
-      try {
-        callback.run();
-        future.complete(null);
-      } catch (Exception e) {
-        future.completeExceptionally(e);
-      }
-    });
-    return future;
+    return executor.execute(callback);
   }
 
   @Override
   public <T> CompletableFuture<T> execute(Supplier<T> callback) {
-    CompletableFuture<T> future = new CompletableFuture<>();
-    executor.execute(() -> {
-      try {
-        future.complete(callback.get());
-      } catch (Exception e) {
-        future.completeExceptionally(e);
-      }
-    });
-    return future;
+    return executor.execute(callback);
   }
 
   @Override

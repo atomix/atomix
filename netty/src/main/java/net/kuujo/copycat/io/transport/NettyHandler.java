@@ -122,7 +122,7 @@ public abstract class NettyHandler extends ChannelInboundHandlerAdapter {
       .writeBytes(idBytes);
     channel.writeAndFlush(buffer).addListener((ChannelFutureListener) channelFuture -> {
       setConnection(channel, connection);
-      this.context.execute(() -> listener.accept(connection));
+      this.context.executor().execute(() -> listener.accept(connection));
     });
   }
 
@@ -135,7 +135,7 @@ public abstract class NettyHandler extends ChannelInboundHandlerAdapter {
     request.readBytes(idBytes);
     NettyConnection connection = new NettyConnection(UUID.fromString(new String(idBytes, StandardCharsets.UTF_8)), channel, getOrCreateContext(channel));
     setConnection(channel, connection);
-    this.context.execute(() -> listener.accept(connection));
+    this.context.executor().execute(() -> listener.accept(connection));
   }
 
   /**

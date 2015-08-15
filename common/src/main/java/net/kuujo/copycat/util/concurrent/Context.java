@@ -92,15 +92,16 @@ public interface Context extends AutoCloseable {
    * @return A completable future to be completed once the callback has been executed.
    */
   default CompletableFuture<Void> execute(Runnable callback) {
-    return CompletableFuture.runAsync(() -> {
+    CompletableFuture<Void> future = new CompletableFuture<>();
+    executor().execute(() -> {
       try {
         callback.run();
+        future.complete(null);
       } catch (Throwable t) {
-        logger().error("An uncaught exception occurred", t);
-        t.printStackTrace();
-        throw t;
+        future.completeExceptionally(t);
       }
-    }, executor());
+    });
+    return future;
   }
 
   /**
@@ -111,15 +112,15 @@ public interface Context extends AutoCloseable {
    * @return A completable future to be completed with the callback result.
    */
   default <T> CompletableFuture<T> execute(Supplier<T> callback) {
-    return CompletableFuture.supplyAsync(() -> {
+    CompletableFuture<T> future = new CompletableFuture<>();
+    executor().execute(() -> {
       try {
-        return callback.get();
+        future.complete(callback.get());
       } catch (Throwable t) {
-        logger().error("An uncaught exception occurred", t);
-        t.printStackTrace();
-        throw t;
+        future.completeExceptionally(t);
       }
-    }, executor());
+    });
+    return future;
   }
 
   /**

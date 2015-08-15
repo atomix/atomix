@@ -121,7 +121,7 @@ public class ClientSession implements Session, Managed<Session> {
    */
   public <T> CompletableFuture<T> submit(Command<T> command) {
     CompletableFuture<T> future = new CompletableFuture<>();
-    context.execute(() -> {
+    context.executor().execute(() -> {
 
       CommandRequest request = CommandRequest.builder()
         .withSession(id)
@@ -170,7 +170,7 @@ public class ClientSession implements Session, Managed<Session> {
    */
   public <T> CompletableFuture<T> submit(Query<T> query) {
     CompletableFuture<T> future = new CompletableFuture<>();
-    context.execute(() -> {
+    context.executor().execute(() -> {
 
       QueryRequest request = QueryRequest.builder()
         .withSession(id)
@@ -424,7 +424,7 @@ public class ClientSession implements Session, Managed<Session> {
   @Override
   public CompletableFuture<Session> open() {
     CompletableFuture<Session> future = new CompletableFuture<>();
-    context.execute(() -> {
+    context.executor().execute(() -> {
       register().whenComplete((result, error) -> {
         if (error == null) {
           this.state = State.OPEN;

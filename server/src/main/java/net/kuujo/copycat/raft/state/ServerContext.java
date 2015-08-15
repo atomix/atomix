@@ -530,7 +530,7 @@ public class ServerContext implements Managed<Void> {
 
     // Set last applied only after the operation has been submitted to the state machine executor.
     CompletableFuture<Long> future = new ComposableFuture<>();
-    stateExecutor.execute(() -> {
+    stateExecutor.executor().execute(() -> {
       stateMachine.register(session);
       context.execute(() -> future.complete(entry.getIndex()));
     });
@@ -679,13 +679,13 @@ public class ServerContext implements Managed<Void> {
     CompletableFuture<T> future = new CompletableFuture<>();
     ServerSession session = stateExecutor.context().sessions().unregisterSession(sessionId);
     if (session != null) {
-      stateExecutor.execute(() -> {
+      stateExecutor.executor().execute(() -> {
         session.expire();
         stateMachine.expire(session);
-        context.execute(() -> future.completeExceptionally(new UnknownSessionException("unknown session: " + sessionId)));
+        context.executor().execute(() -> future.completeExceptionally(new UnknownSessionException("unknown session: " + sessionId)));
       });
     } else {
-      context.execute(() -> future.completeExceptionally(new UnknownSessionException("unknown session: " + sessionId)));
+      context.executor().execute(() -> future.completeExceptionally(new UnknownSessionException("unknown session: " + sessionId)));
     }
     return future;
   }
@@ -701,7 +701,7 @@ public class ServerContext implements Managed<Void> {
    * Executes a command in the state machine thread and completes the given future asynchronously in the server thread.
    */
   private <T extends Operation<U>, U> CompletableFuture<U> execute(Commit<T> commit, ComposableFuture<U> future) {
-    stateExecutor.execute(commit).whenComplete((result, error) -> context.execute(() -> future.accept(result, error)));
+    stateExecutor.execute(commit).whenComplete((result, error) -> context.executor().execute(() -> future.accept(result, error)));
     return future;
   }
 
@@ -716,9 +716,9 @@ public class ServerContext implements Managed<Void> {
    * Executes a method in the state machine thread and completes the given future asynchronously in the server thread.
    */
   private <T> CompletableFuture<T> execute(Supplier<CompletableFuture<T>> supplier, ComposableFuture<T> future) {
-    stateExecutor.execute(() -> {
+    stateExecutor.executor().execute(() -> {
       supplier.get().whenComplete((result, error) -> {
-        context.execute(() -> future.accept(result, error));
+        context.executor().execute(() -> future.accept(result, error));
       });
     });
     return future;
@@ -739,7 +739,7 @@ public class ServerContext implements Managed<Void> {
     context = new SingleThreadContext("copycat-server-" + member.id(), serializer);
 
     openFuture = new CompletableFuture<>();
-    context.execute(() -> {
+    context.executor().execute(() -> {
 
       // Setup the server and connection manager.
       UUID id = UUID.randomUUID();
@@ -778,7 +778,7 @@ public class ServerContext implements Managed<Void> {
       return Futures.exceptionalFuture(new IllegalStateException("context not open"));
 
     CompletableFuture<Void> future = new CompletableFuture<>();
-    context.execute(() -> {
+    context.executor().execute(() -> {
       open = false;
 
       onStateChange(state -> {

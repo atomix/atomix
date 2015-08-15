@@ -102,7 +102,7 @@ public class NettyConnection implements Connection {
     HandlerHolder handler = handlers.get(address);
     if (handler != null) {
       Object request = readRequest(buffer);
-      handler.context.execute(() -> {
+      handler.context.executor().execute(() -> {
         handleRequest(requestId, request, handler);
 
         if (request instanceof ReferenceCounted) {
@@ -181,7 +181,7 @@ public class NettyConnection implements Connection {
   private void handleResponseSuccess(long requestId, Object response) {
     ContextualFuture future = responseFutures.get(requestId);
     if (future != null) {
-      future.context.execute(() -> {
+      future.context.executor().execute(() -> {
         future.complete(response);
 
         if (response instanceof ReferenceCounted) {
@@ -197,7 +197,7 @@ public class NettyConnection implements Connection {
   private void handleResponseFailure(long requestId, Throwable t) {
     ContextualFuture future = responseFutures.get(requestId);
     if (future != null) {
-      future.context.execute(() -> {
+      future.context.executor().execute(() -> {
         future.completeExceptionally(t);
       });
     }
@@ -287,7 +287,7 @@ public class NettyConnection implements Connection {
 
     long requestId = ++this.requestId;
 
-    context.execute(() -> {
+    context.executor().execute(() -> {
       ByteBuf buffer = this.channel.alloc().buffer(13, 1024 * 32);
       buffer.writeByte(REQUEST)
         .writeLong(requestId)
@@ -297,7 +297,7 @@ public class NettyConnection implements Connection {
         if (channelFuture.isSuccess()) {
           responseFutures.put(requestId, future);
         } else {
-          future.context.execute(() -> {
+          future.context.executor().execute(() -> {
             future.completeExceptionally(new TransportException(channelFuture.cause()));
           });
         }

@@ -55,7 +55,7 @@ public class Listeners<T> implements Iterable<Listener<T>> {
       @Override
       public void accept(T event) {
         if (context != null) {
-          context.execute(() -> listener.accept(event));
+          context.executor().execute(() -> listener.accept(event));
         } else {
           listener.accept(event);
         }

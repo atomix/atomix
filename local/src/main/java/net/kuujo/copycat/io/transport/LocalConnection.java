@@ -103,7 +103,7 @@ public class LocalConnection implements Connection {
     if (holder != null) {
       MessageHandler<Object, U> handler = holder.handler;
       CompletableFuture<U> future = new CompletableFuture<>();
-      holder.context.execute(() -> {
+      holder.context.executor().execute(() -> {
         handler.handle(message).whenComplete((result, error) -> {
           if (error == null) {
             future.complete(result);
@@ -141,12 +141,7 @@ public class LocalConnection implements Connection {
   public CompletableFuture<Void> close() {
     doClose();
     connection.doClose();
-
-    CompletableFuture<Void> future = new CompletableFuture<>();
-    getContext().execute(() -> {
-      future.complete(null);
-    });
-    return future;
+    return getContext().execute(() -> null);
   }
 
   /**
@@ -157,7 +152,7 @@ public class LocalConnection implements Connection {
       connections.remove(this);
 
     for (Consumer<Connection> closeListener : closeListeners) {
-      context.execute(() -> closeListener.accept(this));
+      context.executor().execute(() -> closeListener.accept(this));
     }
   }
 

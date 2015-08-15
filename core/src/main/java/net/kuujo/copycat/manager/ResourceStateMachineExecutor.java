@@ -81,36 +81,19 @@ class ResourceStateMachineExecutor implements StateMachineExecutor {
 
   @Override
   public CompletableFuture<Void> execute(Runnable callback) {
-    CompletableFuture<Void> future = new CompletableFuture<>();
-    context.execute(() -> {
-      try {
-        callback.run();
-        future.complete(null);
-      } catch (Exception e) {
-        future.completeExceptionally(e);
-      }
-    });
-    return future;
+    return context.execute(callback);
   }
 
   @Override
   public <T> CompletableFuture<T> execute(Supplier<T> callback) {
-    CompletableFuture<T> future = new CompletableFuture<>();
-    context.execute(() -> {
-      try {
-        future.complete(callback.get());
-      } catch (Exception e) {
-        future.completeExceptionally(e);
-      }
-    });
-    return future;
+    return context.execute(callback);
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public <T extends Operation<U>, U> CompletableFuture<U> execute(Commit<T> commit) {
     ComposableFuture<U> future = new ComposableFuture<>();
-    context.execute(() -> {
+    context.executor().execute(() -> {
       // Get the function registered for the operation. If no function is registered, attempt to
       // use a global function if available.
       Function function = operations.get(commit.type());
@@ -143,14 +126,14 @@ class ResourceStateMachineExecutor implements StateMachineExecutor {
 
   @Override
   public Scheduled schedule(Runnable callback, Duration delay) {
-    Scheduled task = parent.schedule(() -> context.execute(callback), delay);
+    Scheduled task = parent.schedule(() -> context.executor().execute(callback), delay);
     tasks.add(task);
     return task;
   }
 
   @Override
   public Scheduled schedule(Runnable callback, Duration initialDelay, Duration interval) {
-    Scheduled task = parent.schedule(() -> context.execute(callback), initialDelay, interval);
+    Scheduled task = parent.schedule(() -> context.executor().execute(callback), initialDelay, interval);
     tasks.add(task);
     return task;
   }
