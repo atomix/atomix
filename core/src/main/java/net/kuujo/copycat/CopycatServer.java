@@ -24,6 +24,7 @@ import net.kuujo.copycat.raft.RaftClient;
 import net.kuujo.copycat.raft.RaftServer;
 import net.kuujo.copycat.util.concurrent.CopycatThreadFactory;
 
+import java.time.Duration;
 import java.util.concurrent.*;
 
 /**
@@ -143,21 +144,8 @@ public class CopycatServer extends Copycat {
      * @return The Raft configuration.
      * @throws IllegalArgumentException If the election timeout is not positive
      */
-    public Builder withElectionTimeout(long electionTimeout) {
+    public Builder withElectionTimeout(Duration electionTimeout) {
       serverBuilder.withElectionTimeout(electionTimeout);
-      return this;
-    }
-
-    /**
-     * Sets the Raft election timeout, returning the Raft configuration for method chaining.
-     *
-     * @param electionTimeout The Raft election timeout.
-     * @param unit The timeout unit.
-     * @return The Raft configuration.
-     * @throws IllegalArgumentException If the election timeout is not positive
-     */
-    public Builder withElectionTimeout(long electionTimeout, TimeUnit unit) {
-      serverBuilder.withElectionTimeout(electionTimeout, unit);
       return this;
     }
 
@@ -168,21 +156,8 @@ public class CopycatServer extends Copycat {
      * @return The Raft configuration.
      * @throws IllegalArgumentException If the heartbeat interval is not positive
      */
-    public Builder withHeartbeatInterval(long heartbeatInterval) {
+    public Builder withHeartbeatInterval(Duration heartbeatInterval) {
       serverBuilder.withHeartbeatInterval(heartbeatInterval);
-      return this;
-    }
-
-    /**
-     * Sets the Raft heartbeat interval, returning the Raft configuration for method chaining.
-     *
-     * @param heartbeatInterval The Raft heartbeat interval.
-     * @param unit The heartbeat interval unit.
-     * @return The Raft configuration.
-     * @throws IllegalArgumentException If the heartbeat interval is not positive
-     */
-    public Builder withHeartbeatInterval(long heartbeatInterval, TimeUnit unit) {
-      serverBuilder.withHeartbeatInterval(heartbeatInterval, unit);
       return this;
     }
 
@@ -193,21 +168,8 @@ public class CopycatServer extends Copycat {
      * @return The Raft configuration.
      * @throws IllegalArgumentException If the session timeout is not positive
      */
-    public Builder withSessionTimeout(long sessionTimeout) {
+    public Builder withSessionTimeout(Duration sessionTimeout) {
       serverBuilder.withSessionTimeout(sessionTimeout);
-      return this;
-    }
-
-    /**
-     * Sets the Raft session timeout, returning the Raft configuration for method chaining.
-     *
-     * @param sessionTimeout The Raft session timeout.
-     * @param unit The timeout unit.
-     * @return The Raft configuration.
-     * @throws IllegalArgumentException If the session timeout is not positive
-     */
-    public Builder withSessionTimeout(long sessionTimeout, TimeUnit unit) {
-      serverBuilder.withSessionTimeout(sessionTimeout, unit);
       return this;
     }
 

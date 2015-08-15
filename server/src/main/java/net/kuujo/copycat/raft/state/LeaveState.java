@@ -16,10 +16,10 @@
 package net.kuujo.copycat.raft.state;
 
 import net.kuujo.copycat.raft.Member;
+import net.kuujo.copycat.raft.RaftServer;
 import net.kuujo.copycat.raft.protocol.request.LeaveRequest;
 import net.kuujo.copycat.raft.protocol.response.LeaveResponse;
 import net.kuujo.copycat.raft.protocol.response.Response;
-import net.kuujo.copycat.raft.RaftServer;
 
 import java.util.Iterator;
 import java.util.concurrent.CompletableFuture;
@@ -57,7 +57,7 @@ public class LeaveState extends InactiveState {
         LOGGER.warn("{} - Failed to leave the cluster in {} milliseconds", context.getMember().id(), context.getElectionTimeout());
         transition(RaftServer.State.INACTIVE);
       }
-    }, context.getElectionTimeout(), TimeUnit.MILLISECONDS);
+    }, context.getElectionTimeout().toMillis(), TimeUnit.MILLISECONDS);
   }
 
   /**

@@ -109,7 +109,7 @@ class FollowerState extends ActiveState {
 
     // Set the election timeout in a semi-random fashion with the random range
     // being election timeout and 2 * election timeout.
-    long delay = context.getElectionTimeout() + (random.nextInt((int) context.getElectionTimeout()) % context.getElectionTimeout());
+    long delay = context.getElectionTimeout().toMillis() + (random.nextInt((int) context.getElectionTimeout().toMillis()) % context.getElectionTimeout().toMillis());
     heartbeatTimer = context.getContext().schedule(() -> {
       heartbeatTimer = null;
       if (isOpen()) {
@@ -132,7 +132,7 @@ class FollowerState extends ActiveState {
     heartbeatTimer = context.getContext().schedule(() -> {
       LOGGER.debug("{} - Failed to poll a majority of the cluster in {} milliseconds", context.getMember().id(), context.getElectionTimeout());
       resetHeartbeatTimeout();
-    }, context.getElectionTimeout(), TimeUnit.MILLISECONDS);
+    }, context.getElectionTimeout().toMillis(), TimeUnit.MILLISECONDS);
 
     // Create a quorum that will track the number of nodes that have responded to the poll request.
     final AtomicBoolean complete = new AtomicBoolean();

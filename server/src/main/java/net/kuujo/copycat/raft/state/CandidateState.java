@@ -83,7 +83,7 @@ class CandidateState extends ActiveState {
     // restart the election.
     context.setTerm(context.getTerm() + 1);
 
-    long delay = context.getElectionTimeout() + (random.nextInt((int) context.getElectionTimeout()) % context.getElectionTimeout());
+    long delay = context.getElectionTimeout().toMillis() + (random.nextInt((int) context.getElectionTimeout().toMillis()) % context.getElectionTimeout().toMillis());
     currentTimer = context.getContext().schedule(() -> {
       // When the election times out, clear the previous majority vote
       // check and restart the election.

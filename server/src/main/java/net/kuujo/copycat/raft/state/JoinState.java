@@ -56,7 +56,7 @@ public class JoinState extends InactiveState {
         context.getCluster().setActive(true);
         transition(RaftServer.State.FOLLOWER);
       }
-    }, context.getElectionTimeout(), TimeUnit.MILLISECONDS);
+    }, context.getElectionTimeout().toMillis(), TimeUnit.MILLISECONDS);
   }
 
   /**

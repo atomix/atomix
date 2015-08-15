@@ -15,19 +15,19 @@
  */
 package net.kuujo.copycat.raft;
 
-import net.kuujo.copycat.util.ConfigurationException;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.ServiceLoaderResolver;
 import net.kuujo.copycat.io.storage.Storage;
 import net.kuujo.copycat.io.transport.Transport;
 import net.kuujo.copycat.raft.state.ServerContext;
+import net.kuujo.copycat.util.ConfigurationException;
 import net.kuujo.copycat.util.Managed;
 import net.kuujo.copycat.util.concurrent.Context;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Raft server.
@@ -216,9 +216,9 @@ public class RaftServer implements Managed<RaftServer> {
    * Raft server builder.
    */
   public static class Builder extends net.kuujo.copycat.util.Builder<RaftServer> {
-    private static final long DEFAULT_RAFT_ELECTION_TIMEOUT = 500;
-    private static final long DEFAULT_RAFT_HEARTBEAT_INTERVAL = 150;
-    private static final long DEFAULT_RAFT_SESSION_TIMEOUT = 5000;
+    private static final Duration DEFAULT_RAFT_ELECTION_TIMEOUT = Duration.ofMillis(500);
+    private static final Duration DEFAULT_RAFT_HEARTBEAT_INTERVAL = Duration.ofMillis(150);
+    private static final Duration DEFAULT_RAFT_SESSION_TIMEOUT = Duration.ofMillis(5000);
 
     private Transport transport;
     private Storage storage;
@@ -226,9 +226,9 @@ public class RaftServer implements Managed<RaftServer> {
     private StateMachine stateMachine;
     private int memberId;
     private Members members;
-    private long electionTimeout = DEFAULT_RAFT_ELECTION_TIMEOUT;
-    private long heartbeatInterval = DEFAULT_RAFT_HEARTBEAT_INTERVAL;
-    private long sessionTimeout = DEFAULT_RAFT_SESSION_TIMEOUT;
+    private Duration electionTimeout = DEFAULT_RAFT_ELECTION_TIMEOUT;
+    private Duration heartbeatInterval = DEFAULT_RAFT_HEARTBEAT_INTERVAL;
+    private Duration sessionTimeout = DEFAULT_RAFT_SESSION_TIMEOUT;
 
     private Builder() {
     }
@@ -344,79 +344,55 @@ public class RaftServer implements Managed<RaftServer> {
     /**
      * Sets the Raft election timeout, returning the Raft configuration for method chaining.
      *
-     * @param electionTimeout The Raft election timeout in milliseconds.
+     * @param electionTimeout The Raft election timeout duration.
      * @return The Raft configuration.
      * @throws IllegalArgumentException If the election timeout is not positive
      */
-    public Builder withElectionTimeout(long electionTimeout) {
-      if (electionTimeout <= 0)
-        throw new IllegalArgumentException("election timeout must be positive");
+    public Builder withElectionTimeout(Duration electionTimeout) {
+      if (electionTimeout == null)
+        throw new NullPointerException("electionTimeout cannot be null");
+      if (electionTimeout.isNegative() || electionTimeout.isZero())
+        throw new IllegalArgumentException("electionTimeout must be positive");
+      if (electionTimeout.toMillis() <= heartbeatInterval.toMillis())
+        throw new IllegalArgumentException("electionTimeout must be greater than heartbeatInterval");
       this.electionTimeout = electionTimeout;
       return this;
     }
 
     /**
-     * Sets the Raft election timeout, returning the Raft configuration for method chaining.
-     *
-     * @param electionTimeout The Raft election timeout.
-     * @param unit The timeout unit.
-     * @return The Raft configuration.
-     * @throws IllegalArgumentException If the election timeout is not positive
-     */
-    public Builder withElectionTimeout(long electionTimeout, TimeUnit unit) {
-      return withElectionTimeout(unit.toMillis(electionTimeout));
-    }
-
-    /**
      * Sets the Raft heartbeat interval, returning the Raft configuration for method chaining.
      *
-     * @param heartbeatInterval The Raft heartbeat interval in milliseconds.
+     * @param heartbeatInterval The Raft heartbeat interval duration.
      * @return The Raft configuration.
      * @throws IllegalArgumentException If the heartbeat interval is not positive
      */
-    public Builder withHeartbeatInterval(long heartbeatInterval) {
-      if (heartbeatInterval <= 0)
-        throw new IllegalArgumentException("heartbeat interval must be positive");
+    public Builder withHeartbeatInterval(Duration heartbeatInterval) {
+      if (heartbeatInterval == null)
+        throw new NullPointerException("sessionTimeout cannot be null");
+      if (heartbeatInterval.isNegative() || heartbeatInterval.isZero())
+        throw new IllegalArgumentException("sessionTimeout must be positive");
+      if (heartbeatInterval.toMillis() >= electionTimeout.toMillis())
+        throw new IllegalArgumentException("heartbeatInterval must be less than electionTimeout");
       this.heartbeatInterval = heartbeatInterval;
       return this;
     }
 
     /**
-     * Sets the Raft heartbeat interval, returning the Raft configuration for method chaining.
-     *
-     * @param heartbeatInterval The Raft heartbeat interval.
-     * @param unit The heartbeat interval unit.
-     * @return The Raft configuration.
-     * @throws IllegalArgumentException If the heartbeat interval is not positive
-     */
-    public Builder withHeartbeatInterval(long heartbeatInterval, TimeUnit unit) {
-      return withHeartbeatInterval(unit.toMillis(heartbeatInterval));
-    }
-
-    /**
      * Sets the Raft session timeout, returning the Raft configuration for method chaining.
      *
-     * @param sessionTimeout The Raft session timeout in milliseconds.
+     * @param sessionTimeout The Raft session timeout duration.
      * @return The Raft configuration.
      * @throws IllegalArgumentException If the session timeout is not positive
      */
-    public Builder withSessionTimeout(long sessionTimeout) {
-      if (sessionTimeout <= 0)
-        throw new IllegalArgumentException("session timeout must be positive");
+    public Builder withSessionTimeout(Duration sessionTimeout) {
+      if (sessionTimeout == null)
+        throw new NullPointerException("sessionTimeout cannot be null");
+      if (sessionTimeout.isNegative() || sessionTimeout.isZero())
+        throw new IllegalArgumentException("sessionTimeout must be positive");
+      if (sessionTimeout.toMillis() <= electionTimeout.toMillis())
+        throw new IllegalArgumentException("sessionTimeout must be greater than electionTimeout");
       this.sessionTimeout = sessionTimeout;
       return this;
-    }
-
-    /**
-     * Sets the Raft session timeout, returning the Raft configuration for method chaining.
-     *
-     * @param sessionTimeout The Raft session timeout.
-     * @param unit The timeout unit.
-     * @return The Raft configuration.
-     * @throws IllegalArgumentException If the session timeout is not positive
-     */
-    public Builder withSessionTimeout(long sessionTimeout, TimeUnit unit) {
-      return withSessionTimeout(unit.toMillis(sessionTimeout));
     }
 
     @Override

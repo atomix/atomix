@@ -16,13 +16,15 @@
 package net.kuujo.copycat.raft.state;
 
 import net.kuujo.copycat.io.storage.Entry;
-import net.kuujo.copycat.raft.*;
-import net.kuujo.copycat.raft.protocol.*;
+import net.kuujo.copycat.raft.Members;
+import net.kuujo.copycat.raft.RaftServer;
+import net.kuujo.copycat.raft.protocol.Command;
+import net.kuujo.copycat.raft.protocol.ConsistencyLevel;
+import net.kuujo.copycat.raft.protocol.Query;
 import net.kuujo.copycat.raft.protocol.error.RaftError;
 import net.kuujo.copycat.raft.protocol.error.RaftException;
 import net.kuujo.copycat.raft.protocol.request.*;
 import net.kuujo.copycat.raft.protocol.response.*;
-import net.kuujo.copycat.raft.RaftServer;
 import net.kuujo.copycat.raft.storage.*;
 
 import java.util.*;
@@ -130,7 +132,7 @@ class LeaderState extends ActiveState {
     // in the cluster. This timer acts as a heartbeat to ensure this node remains
     // the leader.
     LOGGER.debug("{} - Starting heartbeat timer", context.getMember().id());
-    currentTimer = context.getContext().scheduleAtFixedRate(this::heartbeatMembers, 0, context.getHeartbeatInterval(), TimeUnit.MILLISECONDS);
+    currentTimer = context.getContext().scheduleAtFixedRate(this::heartbeatMembers, 0, context.getHeartbeatInterval().toMillis(), TimeUnit.MILLISECONDS);
   }
 
   /**
@@ -404,7 +406,7 @@ class LeaderState extends ActiveState {
    */
   private CompletableFuture<QueryResponse> submitQueryLinearizableLease(QueryEntry entry) {
     long commitTime = replicator.commitTime();
-    if (System.currentTimeMillis() - commitTime < context.getElectionTimeout()) {
+    if (System.currentTimeMillis() - commitTime < context.getElectionTimeout().toMillis()) {
       return submitQuerySerializable(entry);
     } else {
       return submitQueryLinearizableStrict(entry);
@@ -864,7 +866,7 @@ class LeaderState extends ActiveState {
               // Verify that the leader has contacted a majority of the cluster within the last two election timeouts.
               // If the leader is not able to contact a majority of the cluster within two election timeouts, assume
               // that a partition occurred and transition back to the FOLLOWER state.
-              if (System.currentTimeMillis() - commitTime() > context.getElectionTimeout() * 2) {
+              if (System.currentTimeMillis() - commitTime() > context.getElectionTimeout().toMillis() * 2) {
                 LOGGER.warn("{} - Suspected network partition. Stepping down", context.getMember().id());
                 context.setLeader(0);
                 transition(RaftServer.State.FOLLOWER);

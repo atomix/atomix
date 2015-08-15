@@ -44,6 +44,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -73,9 +74,9 @@ public class ServerContext implements Managed<Void> {
   private ConnectionManager connections;
   private ServerCommitPool commits;
   private AbstractState state;
-  private long electionTimeout = 500;
-  private long sessionTimeout = 5000;
-  private long heartbeatInterval = 250;
+  private Duration electionTimeout = Duration.ofMillis(500);
+  private Duration sessionTimeout = Duration.ofMillis(5000);
+  private Duration heartbeatInterval = Duration.ofMillis(150);
   private int leader;
   private long term;
   private long lastApplied;
@@ -176,7 +177,7 @@ public class ServerContext implements Managed<Void> {
    * @param electionTimeout The election timeout.
    * @return The Raft context.
    */
-  public ServerContext setElectionTimeout(long electionTimeout) {
+  public ServerContext setElectionTimeout(Duration electionTimeout) {
     this.electionTimeout = electionTimeout;
     return this;
   }
@@ -186,7 +187,7 @@ public class ServerContext implements Managed<Void> {
    *
    * @return The election timeout.
    */
-  public long getElectionTimeout() {
+  public Duration getElectionTimeout() {
     return electionTimeout;
   }
 
@@ -196,7 +197,7 @@ public class ServerContext implements Managed<Void> {
    * @param heartbeatInterval The Raft heartbeat interval in milliseconds.
    * @return The Raft context.
    */
-  public ServerContext setHeartbeatInterval(long heartbeatInterval) {
+  public ServerContext setHeartbeatInterval(Duration heartbeatInterval) {
     this.heartbeatInterval = heartbeatInterval;
     return this;
   }
@@ -206,7 +207,7 @@ public class ServerContext implements Managed<Void> {
    *
    * @return The heartbeat interval in milliseconds.
    */
-  public long getHeartbeatInterval() {
+  public Duration getHeartbeatInterval() {
     return heartbeatInterval;
   }
 
@@ -215,7 +216,7 @@ public class ServerContext implements Managed<Void> {
    *
    * @return The session timeout.
    */
-  public long getSessionTimeout() {
+  public Duration getSessionTimeout() {
     return sessionTimeout;
   }
 
@@ -225,10 +226,7 @@ public class ServerContext implements Managed<Void> {
    * @param sessionTimeout The session timeout.
    * @return The Raft state machine.
    */
-  public ServerContext setSessionTimeout(long sessionTimeout) {
-    if (sessionTimeout <= 0)
-      throw new IllegalArgumentException("session timeout must be positive");
-
+  public ServerContext setSessionTimeout(Duration sessionTimeout) {
     this.sessionTimeout = sessionTimeout;
     return this;
   }
@@ -554,7 +552,7 @@ public class ServerContext implements Managed<Void> {
       LOGGER.warn("Unknown session: " + entry.getSession());
       future = Futures.exceptionalFuture(new UnknownSessionException("unknown session: " + entry.getSession()));
     } else {
-      if (entry.getTimestamp() - sessionTimeout > session.getTimestamp()) {
+      if (entry.getTimestamp() - sessionTimeout.toMillis() > session.getTimestamp()) {
         LOGGER.warn("Expired session: " + entry.getSession());
         future = expireSession(entry.getSession());
       } else {
@@ -584,7 +582,7 @@ public class ServerContext implements Managed<Void> {
     if (session == null) {
       LOGGER.warn("Unknown session: " + entry.getSession());
       future = Futures.exceptionalFuture(new UnknownSessionException("unknown session " + entry.getSession()));
-    } else if (entry.getTimestamp() - sessionTimeout > session.getTimestamp()) {
+    } else if (entry.getTimestamp() - sessionTimeout.toMillis() > session.getTimestamp()) {
       LOGGER.warn("Expired session: " + entry.getSession());
       future = expireSession(entry.getSession());
     } else {
@@ -628,7 +626,7 @@ public class ServerContext implements Managed<Void> {
     if (session == null) {
       LOGGER.warn("Unknown session: " + entry.getSession());
       return Futures.exceptionalFuture(new UnknownSessionException("unknown session " + entry.getSession()));
-    } else if (entry.getTimestamp() - sessionTimeout > session.getTimestamp()) {
+    } else if (entry.getTimestamp() - sessionTimeout.toMillis() > session.getTimestamp()) {
       LOGGER.warn("Expired session: " + entry.getSession());
       return expireSession(entry.getSession());
     } else if (session.getVersion() < entry.getSequence()) {
