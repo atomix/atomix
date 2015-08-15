@@ -15,12 +15,12 @@
  */
 package net.kuujo.copycat;
 
-import net.kuujo.copycat.raft.RaftClient;
 import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.raft.Members;
 import net.kuujo.copycat.io.transport.Transport;
+import net.kuujo.copycat.raft.Members;
+import net.kuujo.copycat.raft.RaftClient;
 
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 
 /**
  * Client-side {@link net.kuujo.copycat.Copycat} implementation.
@@ -87,20 +87,8 @@ public class CopycatClient extends Copycat {
      * @param keepAliveInterval The interval at which to send keep alive requests.
      * @return The client builder.
      */
-    public Builder withKeepAliveInterval(long keepAliveInterval) {
+    public Builder withKeepAliveInterval(Duration keepAliveInterval) {
       builder.withKeepAliveInterval(keepAliveInterval);
-      return this;
-    }
-
-    /**
-     * Sets the interval at which to send keep alive requests.
-     *
-     * @param keepAliveInterval The interval at which to send keep alive requests.
-     * @param unit The keep alive interval time unit.
-     * @return The client builder.
-     */
-    public Builder withKeepAliveInterval(long keepAliveInterval, TimeUnit unit) {
-      builder.withKeepAliveInterval(keepAliveInterval, unit);
       return this;
     }
 

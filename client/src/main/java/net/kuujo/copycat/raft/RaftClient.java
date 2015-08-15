@@ -28,10 +28,10 @@ import net.kuujo.copycat.util.Managed;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.Futures;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Raft client.
@@ -52,12 +52,12 @@ public class RaftClient implements Managed<RaftClient> {
   private final Transport transport;
   private final Members members;
   private final Serializer serializer;
-  private final long keepAliveInterval;
+  private final Duration keepAliveInterval;
   private ClientSession session;
   private CompletableFuture<RaftClient> openFuture;
   private CompletableFuture<Void> closeFuture;
 
-  protected RaftClient(Transport transport, Members members, Serializer serializer, long keepAliveInterval) {
+  protected RaftClient(Transport transport, Members members, Serializer serializer, Duration keepAliveInterval) {
     serializer.resolve(new ServiceLoaderResolver());
     this.transport = transport;
     this.members = members;
@@ -86,8 +86,8 @@ public class RaftClient implements Managed<RaftClient> {
    * <p>
    * The returned {@link Session} instance will remain constant throughout the lifetime of this client. Once the instance
    * is opened, the session will have been registered with the Raft cluster and listeners registered via
-   * {@link Session#onOpen(Listener)} will be called. In the event of a session expiration, listeners
-   * registered via {@link Session#onClose(Listener)} will be called.
+   * {@link Session#onOpen(java.util.function.Consumer)} will be called. In the event of a session expiration, listeners
+   * registered via {@link Session#onClose(java.util.function.Consumer)} will be called.
    *
    * @return The client session.
    */
@@ -241,7 +241,7 @@ public class RaftClient implements Managed<RaftClient> {
   public static class Builder extends net.kuujo.copycat.util.Builder<RaftClient> {
     private Transport transport;
     private Serializer serializer;
-    private long keepAliveInterval = 1000;
+    private Duration keepAliveInterval = Duration.ofMillis(1000);
     private Members members;
 
     private Builder() {
@@ -251,7 +251,7 @@ public class RaftClient implements Managed<RaftClient> {
     protected void reset() {
       transport = null;
       serializer = null;
-      keepAliveInterval = 1000;
+      keepAliveInterval = Duration.ofMillis(1000);
       members = null;
     }
 
@@ -283,22 +283,13 @@ public class RaftClient implements Managed<RaftClient> {
      * @param keepAliveInterval The interval at which to send keep alive requests.
      * @return The client builder.
      */
-    public Builder withKeepAliveInterval(long keepAliveInterval) {
-      if (keepAliveInterval <= 0)
-        throw new IllegalArgumentException("keep alive interval must be positive");
+    public Builder withKeepAliveInterval(Duration keepAliveInterval) {
+      if (keepAliveInterval == null)
+        throw new NullPointerException("keepAliveInterval cannot be null");
+      if (keepAliveInterval.isNegative() || keepAliveInterval.isZero())
+        throw new IllegalArgumentException("keepAliveInterval must be positive");
       this.keepAliveInterval = keepAliveInterval;
       return this;
-    }
-
-    /**
-     * Sets the interval at which to send keep alive requests.
-     *
-     * @param keepAliveInterval The interval at which to send keep alive requests.
-     * @param unit The keep alive interval time unit.
-     * @return The client builder.
-     */
-    public Builder withKeepAliveInterval(long keepAliveInterval, TimeUnit unit) {
-      return withKeepAliveInterval(unit.toMillis(keepAliveInterval));
     }
 
     /**

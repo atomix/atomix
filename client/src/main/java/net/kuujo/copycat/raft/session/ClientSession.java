@@ -38,6 +38,7 @@ import org.slf4j.LoggerFactory;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -67,7 +68,7 @@ public class ClientSession implements Session, Managed<Session> {
   private final Random random = new Random();
   private final Client client;
   private Members members;
-  private final long keepAliveInterval;
+  private final Duration keepAliveInterval;
   private final Context context;
   private List<Member> connectMembers;
   private Connection connection;
@@ -81,7 +82,7 @@ public class ClientSession implements Session, Managed<Session> {
   private long responseSequence;
   private long eventSequence;
 
-  public ClientSession(Transport transport, Members members, long keepAliveInterval, Serializer serializer) {
+  public ClientSession(Transport transport, Members members, Duration keepAliveInterval, Serializer serializer) {
     UUID id = UUID.randomUUID();
     this.client = transport.client(id);
     this.members = members;
@@ -376,7 +377,7 @@ public class ClientSession implements Session, Managed<Session> {
       if (isOpen()) {
         keepAlive(new CompletableFuture<>()).thenRun(this::keepAlive);
       }
-    }, keepAliveInterval, TimeUnit.MILLISECONDS);
+    }, keepAliveInterval.toMillis(), TimeUnit.MILLISECONDS);
   }
 
   /**

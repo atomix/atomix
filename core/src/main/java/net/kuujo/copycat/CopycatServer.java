@@ -25,7 +25,10 @@ import net.kuujo.copycat.raft.RaftServer;
 import net.kuujo.copycat.util.concurrent.CopycatThreadFactory;
 
 import java.time.Duration;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 
 /**
  * Server-side {@link net.kuujo.copycat.Copycat} implementation.
@@ -180,21 +183,8 @@ public class CopycatServer extends Copycat {
      * @return The Raft configuration.
      * @throws IllegalArgumentException If the keep alive interval is not positive
      */
-    public Builder withKeepAliveInterval(long keepAliveInterval) {
+    public Builder withKeepAliveInterval(Duration keepAliveInterval) {
       clientBuilder.withKeepAliveInterval(keepAliveInterval);
-      return this;
-    }
-
-    /**
-     * Sets the Raft keep alive interval, returning the Raft configuration for method chaining.
-     *
-     * @param keepAliveInterval The Raft keep alive interval.
-     * @param unit The keep alive interval unit.
-     * @return The Raft configuration.
-     * @throws IllegalArgumentException If the keep alive interval is not positive
-     */
-    public Builder withKeepAliveInterval(long keepAliveInterval, TimeUnit unit) {
-      clientBuilder.withKeepAliveInterval(keepAliveInterval, unit);
       return this;
     }
 
