@@ -15,6 +15,8 @@
  */
 package net.kuujo.copycat.io.transport;
 
+import net.kuujo.copycat.util.Listener;
+
 import java.net.InetSocketAddress;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -58,7 +60,7 @@ public interface Client {
    * Closes the client.
    * <p>
    * Before the client is closed, all {@link Connection}s opened by the client will be closed
-   * and any registered {@link Connection#closeListener(net.kuujo.copycat.Listener)}s will be invoked.
+   * and any registered {@link Connection#closeListener(Listener)}s will be invoked.
    *
    * @return A completable future to be called once the client is closed.
    */

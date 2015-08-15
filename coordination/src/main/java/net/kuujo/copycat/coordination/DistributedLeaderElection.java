@@ -15,12 +15,12 @@
  */
 package net.kuujo.copycat.coordination;
 
-import net.kuujo.copycat.Listener;
-import net.kuujo.copycat.ListenerContext;
+import net.kuujo.copycat.util.Listener;
+import net.kuujo.copycat.util.ListenerContext;
 import net.kuujo.copycat.Resource;
 import net.kuujo.copycat.coordination.state.LeaderElectionCommands;
 import net.kuujo.copycat.coordination.state.LeaderElectionState;
-import net.kuujo.copycat.raft.server.StateMachine;
+import net.kuujo.copycat.raft.StateMachine;
 import net.kuujo.copycat.resource.ResourceContext;
 
 import java.util.Collections;

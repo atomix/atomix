@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.io.storage;
 
-import net.kuujo.copycat.ConfigurationException;
+import net.kuujo.copycat.util.ConfigurationException;
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.FileBuffer;
 import net.kuujo.copycat.io.HeapBuffer;

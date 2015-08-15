@@ -15,8 +15,8 @@
  */
 package net.kuujo.copycat.io.transport;
 
-import net.kuujo.copycat.Listener;
-import net.kuujo.copycat.ListenerContext;
+import net.kuujo.copycat.util.Listener;
+import net.kuujo.copycat.util.ListenerContext;
 
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -93,8 +93,8 @@ public interface Connection {
    * Sets an exception listener on the connection.
    * <p>
    * In the event of an exception in the connection, the provided listener's {@link Listener#accept(Object)} method will
-   * be invoked. To unregister the listener, simply {@link net.kuujo.copycat.ListenerContext#close()} the returned
-   * {@link net.kuujo.copycat.ListenerContext}.
+   * be invoked. To unregister the listener, simply {@link ListenerContext#close()} the returned
+   * {@link ListenerContext}.
    *
    * @param listener The exception listener.
    * @return The connection.
@@ -118,7 +118,7 @@ public interface Connection {
    * <p>
    * Once the connection is closed, no more messages can be {@link Connection#send(Object) sent} or
    * {@link Connection#handler(Class, MessageHandler) received} by the connection. Any
-   * {@link Connection#closeListener(net.kuujo.copycat.Listener) close listeners} registered on the connection will be
+   * {@link Connection#closeListener(Listener) close listeners} registered on the connection will be
    * invoked, and the returned {@link java.util.concurrent.CompletableFuture} will be completed once the connection has
    * been closed.
    *

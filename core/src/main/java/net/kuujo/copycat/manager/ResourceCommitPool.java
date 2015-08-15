@@ -15,8 +15,8 @@
  */
 package net.kuujo.copycat.manager;
 
-import net.kuujo.copycat.raft.Session;
-import net.kuujo.copycat.raft.server.Commit;
+import net.kuujo.copycat.raft.session.Session;
+import net.kuujo.copycat.raft.Commit;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;

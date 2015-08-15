@@ -15,10 +15,10 @@
  */
 package net.kuujo.copycat.manager;
 
-import net.kuujo.copycat.raft.Session;
-import net.kuujo.copycat.raft.server.Commit;
-import net.kuujo.copycat.raft.server.StateMachine;
-import net.kuujo.copycat.raft.server.StateMachineExecutor;
+import net.kuujo.copycat.raft.session.Session;
+import net.kuujo.copycat.raft.Commit;
+import net.kuujo.copycat.raft.StateMachine;
+import net.kuujo.copycat.raft.StateMachineExecutor;
 import net.kuujo.copycat.resource.ResourceOperation;
 import net.kuujo.copycat.util.concurrent.ComposableFuture;
 import net.kuujo.copycat.util.concurrent.Context;

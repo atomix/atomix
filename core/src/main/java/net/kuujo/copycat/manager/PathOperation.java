@@ -16,7 +16,7 @@
 package net.kuujo.copycat.manager;
 
 import net.kuujo.copycat.util.BuilderPool;
-import net.kuujo.copycat.raft.Operation;
+import net.kuujo.copycat.raft.protocol.Operation;
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.CopycatSerializable;

@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.io.transport;
 
-import net.kuujo.copycat.Listener;
+import net.kuujo.copycat.util.Listener;
 
 import java.net.InetSocketAddress;
 import java.util.UUID;
@@ -44,7 +44,7 @@ public interface Server {
    * Listens for connections on the server.
    * <p>
    * Once the server has started listening on the provided {@code address}, {@link Listener#accept(Object)} will be
-   * called for the provided {@link net.kuujo.copycat.Listener} each time a new connection to the server is established.
+   * called for the provided {@link Listener} each time a new connection to the server is established.
    * The provided connection's {@link Connection#id()} will reflect the
    * {@link Client#id()} of the client that connected to the server and not the
    * {@link Server#id()} of the server itself.
@@ -60,7 +60,7 @@ public interface Server {
   /**
    * Closes the server.
    * <p>
-   * When the server is closed, any {@link Connection#closeListener(net.kuujo.copycat.Listener) close listeners} registered
+   * When the server is closed, any {@link Connection#closeListener(Listener) close listeners} registered
    * on the server's {@link Connection}s will be invoked prior to shutdown.
    *
    * @return A completable future to be completed once the server is closed.

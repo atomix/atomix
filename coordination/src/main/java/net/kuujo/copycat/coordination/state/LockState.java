@@ -15,9 +15,9 @@
  */
 package net.kuujo.copycat.coordination.state;
 
-import net.kuujo.copycat.raft.server.Commit;
-import net.kuujo.copycat.raft.server.StateMachine;
-import net.kuujo.copycat.raft.server.StateMachineExecutor;
+import net.kuujo.copycat.raft.Commit;
+import net.kuujo.copycat.raft.StateMachine;
+import net.kuujo.copycat.raft.StateMachineExecutor;
 
 import java.util.ArrayDeque;
 import java.util.Queue;

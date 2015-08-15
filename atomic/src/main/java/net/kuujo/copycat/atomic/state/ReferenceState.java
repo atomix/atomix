@@ -16,10 +16,10 @@
 package net.kuujo.copycat.atomic.state;
 
 import net.kuujo.copycat.PersistenceLevel;
-import net.kuujo.copycat.raft.Session;
-import net.kuujo.copycat.raft.server.Commit;
-import net.kuujo.copycat.raft.server.StateMachine;
-import net.kuujo.copycat.raft.server.StateMachineExecutor;
+import net.kuujo.copycat.raft.session.Session;
+import net.kuujo.copycat.raft.Commit;
+import net.kuujo.copycat.raft.StateMachine;
+import net.kuujo.copycat.raft.StateMachineExecutor;
 
 import java.time.Instant;
 import java.util.HashMap;

@@ -18,7 +18,7 @@ package net.kuujo.copycat.coordination;
 import net.kuujo.copycat.Resource;
 import net.kuujo.copycat.coordination.state.LockCommands;
 import net.kuujo.copycat.coordination.state.LockState;
-import net.kuujo.copycat.raft.server.StateMachine;
+import net.kuujo.copycat.raft.StateMachine;
 import net.kuujo.copycat.resource.ResourceContext;
 
 import java.util.Queue;

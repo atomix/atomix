@@ -16,12 +16,12 @@
 
 package net.kuujo.copycat.manager;
 
-import net.kuujo.copycat.raft.ApplicationException;
-import net.kuujo.copycat.raft.Operation;
-import net.kuujo.copycat.raft.server.Commit;
-import net.kuujo.copycat.raft.server.ScheduledTask;
-import net.kuujo.copycat.raft.server.StateMachineContext;
-import net.kuujo.copycat.raft.server.StateMachineExecutor;
+import net.kuujo.copycat.raft.protocol.error.ApplicationException;
+import net.kuujo.copycat.raft.protocol.Operation;
+import net.kuujo.copycat.raft.Commit;
+import net.kuujo.copycat.util.Scheduled;
+import net.kuujo.copycat.raft.StateMachineContext;
+import net.kuujo.copycat.raft.StateMachineExecutor;
 import net.kuujo.copycat.util.concurrent.ComposableFuture;
 import net.kuujo.copycat.util.concurrent.Context;
 
@@ -45,7 +45,7 @@ class ResourceStateMachineExecutor implements StateMachineExecutor {
   private final StateMachineExecutor parent;
   private final Context context;
   private final Map<Class, Function> operations = new HashMap<>();
-  private final Set<ScheduledTask> tasks = new HashSet<>();
+  private final Set<Scheduled> tasks = new HashSet<>();
   private Function allOperation;
 
   ResourceStateMachineExecutor(StateMachineExecutor parent, Context context) {
@@ -121,15 +121,15 @@ class ResourceStateMachineExecutor implements StateMachineExecutor {
   }
 
   @Override
-  public ScheduledTask schedule(Duration delay, Runnable callback) {
-    ScheduledTask task = parent.schedule(delay, () -> context.execute(callback));
+  public Scheduled schedule(Duration delay, Runnable callback) {
+    Scheduled task = parent.schedule(delay, () -> context.execute(callback));
     tasks.add(task);
     return task;
   }
 
   @Override
-  public ScheduledTask schedule(Duration initialDelay, Duration interval, Runnable callback) {
-    ScheduledTask task = parent.schedule(initialDelay, interval, () -> context.execute(callback));
+  public Scheduled schedule(Duration initialDelay, Duration interval, Runnable callback) {
+    Scheduled task = parent.schedule(initialDelay, interval, () -> context.execute(callback));
     tasks.add(task);
     return task;
   }
@@ -161,7 +161,7 @@ class ResourceStateMachineExecutor implements StateMachineExecutor {
 
   @Override
   public void close() {
-    tasks.forEach(ScheduledTask::cancel);
+    tasks.forEach(Scheduled::cancel);
   }
 
 }

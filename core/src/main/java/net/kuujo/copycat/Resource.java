@@ -15,9 +15,9 @@
  */
 package net.kuujo.copycat;
 
-import net.kuujo.copycat.raft.Command;
-import net.kuujo.copycat.raft.Query;
-import net.kuujo.copycat.raft.server.StateMachine;
+import net.kuujo.copycat.raft.protocol.Command;
+import net.kuujo.copycat.raft.protocol.Query;
+import net.kuujo.copycat.raft.StateMachine;
 import net.kuujo.copycat.resource.ResourceContext;
 
 import java.util.concurrent.CompletableFuture;

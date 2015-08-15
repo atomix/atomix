@@ -19,8 +19,8 @@ import net.kuujo.copycat.PersistenceLevel;
 import net.kuujo.copycat.Resource;
 import net.kuujo.copycat.collections.state.MapCommands;
 import net.kuujo.copycat.collections.state.MapState;
-import net.kuujo.copycat.raft.ConsistencyLevel;
-import net.kuujo.copycat.raft.server.StateMachine;
+import net.kuujo.copycat.raft.protocol.ConsistencyLevel;
+import net.kuujo.copycat.raft.StateMachine;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;

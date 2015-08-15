@@ -20,8 +20,8 @@ import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.CopycatSerializable;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.raft.Command;
-import net.kuujo.copycat.raft.Operation;
+import net.kuujo.copycat.raft.protocol.Command;
+import net.kuujo.copycat.raft.protocol.Operation;
 import net.kuujo.copycat.util.BuilderPool;
 
 import java.util.concurrent.TimeUnit;

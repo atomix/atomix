@@ -15,9 +15,9 @@
  */
 package net.kuujo.copycat.io.transport;
 
-import net.kuujo.copycat.Listener;
-import net.kuujo.copycat.ListenerContext;
-import net.kuujo.copycat.Listeners;
+import net.kuujo.copycat.util.Listener;
+import net.kuujo.copycat.util.ListenerContext;
+import net.kuujo.copycat.util.Listeners;
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.Futures;

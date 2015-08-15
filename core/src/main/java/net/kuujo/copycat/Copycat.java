@@ -19,7 +19,10 @@ import net.kuujo.copycat.manager.CreatePath;
 import net.kuujo.copycat.manager.CreateResource;
 import net.kuujo.copycat.manager.DeletePath;
 import net.kuujo.copycat.manager.PathExists;
-import net.kuujo.copycat.raft.client.RaftClient;
+import net.kuujo.copycat.raft.StateMachine;
+import net.kuujo.copycat.raft.RaftClient;
+import net.kuujo.copycat.raft.protocol.Command;
+import net.kuujo.copycat.raft.protocol.Query;
 import net.kuujo.copycat.resource.ResourceContext;
 import net.kuujo.copycat.util.Managed;
 
@@ -36,13 +39,13 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>
  * To create a resource, create a {@link net.kuujo.copycat.Node} and then create the resource by passing the resource
  * {@link java.lang.Class} to the {@link Node#create(Class)} method. When a resource is created, the
- * {@link net.kuujo.copycat.raft.server.StateMachine} associated with the resource will be created on each Raft server
+ * {@link StateMachine} associated with the resource will be created on each Raft server
  * and future operations submitted for that resource will be applied to the state machine. Internally, resource state
  * machines are multiplexed across a shared Raft log.
  * <p>
  * {@link net.kuujo.copycat.Resource} implementations serve as a user-friendly interface through which to submit
- * {@link net.kuujo.copycat.raft.Command commands} and {@link net.kuujo.copycat.raft.Query queries} to the underlying
- * {@link net.kuujo.copycat.raft.client.RaftClient} client.
+ * {@link Command commands} and {@link Query queries} to the underlying
+ * {@link RaftClient} client.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

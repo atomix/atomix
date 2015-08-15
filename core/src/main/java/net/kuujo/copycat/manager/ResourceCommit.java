@@ -15,9 +15,9 @@
  */
 package net.kuujo.copycat.manager;
 
-import net.kuujo.copycat.raft.Operation;
-import net.kuujo.copycat.raft.Session;
-import net.kuujo.copycat.raft.server.Commit;
+import net.kuujo.copycat.raft.protocol.Operation;
+import net.kuujo.copycat.raft.session.Session;
+import net.kuujo.copycat.raft.Commit;
 import net.kuujo.copycat.resource.ResourceOperation;
 
 import java.time.Instant;

@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.io.transport;
 
-import net.kuujo.copycat.Listener;
+import net.kuujo.copycat.util.Listener;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.SingleThreadContext;

@@ -16,13 +16,13 @@
 net.kuujo.copycat.raft.Member
 net.kuujo.copycat.raft.Members
 
-net.kuujo.copycat.raft.protocol.CommandRequest
-net.kuujo.copycat.raft.protocol.CommandResponse
-net.kuujo.copycat.raft.protocol.KeepAliveRequest
-net.kuujo.copycat.raft.protocol.KeepAliveResponse
-net.kuujo.copycat.raft.protocol.PublishRequest
-net.kuujo.copycat.raft.protocol.PublishResponse
-net.kuujo.copycat.raft.protocol.QueryRequest
-net.kuujo.copycat.raft.protocol.QueryResponse
-net.kuujo.copycat.raft.protocol.RegisterRequest
-net.kuujo.copycat.raft.protocol.RegisterResponse
+net.kuujo.copycat.raft.protocol.request.CommandRequest
+net.kuujo.copycat.raft.protocol.response.CommandResponse
+net.kuujo.copycat.raft.protocol.request.KeepAliveRequest
+net.kuujo.copycat.raft.protocol.response.KeepAliveResponse
+net.kuujo.copycat.raft.protocol.request.PublishRequest
+net.kuujo.copycat.raft.protocol.response.PublishResponse
+net.kuujo.copycat.raft.protocol.request.QueryRequest
+net.kuujo.copycat.raft.protocol.response.QueryResponse
+net.kuujo.copycat.raft.protocol.request.RegisterRequest
+net.kuujo.copycat.raft.protocol.response.RegisterResponse

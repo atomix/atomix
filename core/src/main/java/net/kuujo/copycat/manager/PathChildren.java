@@ -16,9 +16,9 @@
 package net.kuujo.copycat.manager;
 
 import net.kuujo.copycat.util.BuilderPool;
-import net.kuujo.copycat.raft.ConsistencyLevel;
-import net.kuujo.copycat.raft.Operation;
-import net.kuujo.copycat.raft.Query;
+import net.kuujo.copycat.raft.protocol.ConsistencyLevel;
+import net.kuujo.copycat.raft.protocol.Operation;
+import net.kuujo.copycat.raft.protocol.Query;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 
 import java.util.List;

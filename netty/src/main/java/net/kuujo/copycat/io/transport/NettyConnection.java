@@ -19,9 +19,9 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.util.ReferenceCounted;
-import net.kuujo.copycat.Listener;
-import net.kuujo.copycat.ListenerContext;
-import net.kuujo.copycat.Listeners;
+import net.kuujo.copycat.util.Listener;
+import net.kuujo.copycat.util.ListenerContext;
+import net.kuujo.copycat.util.Listeners;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.openhft.hashing.LongHashFunction;
 
