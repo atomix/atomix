@@ -16,12 +16,12 @@
 package net.kuujo.copycat.io.storage;
 
 import net.kuujo.copycat.util.Listener;
-import net.kuujo.copycat.util.ListenerContext;
 import net.kuujo.copycat.util.Listeners;
 import net.kuujo.copycat.util.concurrent.Context;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 /**
  * Log entry cleaner.
@@ -67,7 +67,7 @@ public class EntryCleaner implements AutoCloseable {
    * @param listener The listener to register.
    * @return The listener context.
    */
-  public ListenerContext<Entry> onClean(Listener<Entry> listener) {
+  public Listener<Entry> onClean(Consumer<Entry> listener) {
     return cleanListeners.add(listener);
   }
 
@@ -157,7 +157,7 @@ public class EntryCleaner implements AutoCloseable {
           cleanSegment.appendEntry(entry);
         } else {
           cleanSegment.skip(1);
-          for (Listener<Entry> listener : cleanListeners) {
+          for (Consumer<Entry> listener : cleanListeners) {
             listener.accept(entry);
           }
         }

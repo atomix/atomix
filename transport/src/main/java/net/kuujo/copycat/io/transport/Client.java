@@ -15,8 +15,6 @@
  */
 package net.kuujo.copycat.io.transport;
 
-import net.kuujo.copycat.util.Listener;
-
 import java.net.InetSocketAddress;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;

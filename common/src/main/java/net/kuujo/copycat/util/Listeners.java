@@ -20,14 +20,15 @@ import net.kuujo.copycat.util.concurrent.Context;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Consumer;
 
 /**
  * Utility for managing a set of listeners.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class Listeners<T> implements Iterable<ListenerContext<T>> {
-  private final List<ListenerContext<T>> listeners = new CopyOnWriteArrayList<>();
+public class Listeners<T> implements Iterable<Listener<T>> {
+  private final List<Listener<T>> listeners = new CopyOnWriteArrayList<>();
 
   /**
    * Returns the number of registered listeners.
@@ -44,13 +45,13 @@ public class Listeners<T> implements Iterable<ListenerContext<T>> {
    * @param listener The listener to add.
    * @return The listener context.
    */
-  public ListenerContext<T> add(Listener<T> listener) {
+  public Listener<T> add(Consumer<T> listener) {
     if (listener == null)
       throw new NullPointerException("listener cannot be null");
 
     Context context = Context.currentContext();
 
-    ListenerContext<T> listenerContext = new ListenerContext<T>() {
+    Listener<T> wrapper = new Listener<T>() {
       @Override
       public void accept(T event) {
         if (context != null) {
@@ -66,12 +67,12 @@ public class Listeners<T> implements Iterable<ListenerContext<T>> {
       }
     };
 
-    listeners.add(listenerContext);
-    return listenerContext;
+    listeners.add(wrapper);
+    return wrapper;
   }
 
   @Override
-  public Iterator<ListenerContext<T>> iterator() {
+  public Iterator<Listener<T>> iterator() {
     return listeners.iterator();
   }
 

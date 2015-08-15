@@ -15,11 +15,6 @@
  */
 package net.kuujo.copycat.raft.state;
 
-import net.kuujo.copycat.raft.storage.*;
-import net.kuujo.copycat.util.ConfigurationException;
-import net.kuujo.copycat.util.Listener;
-import net.kuujo.copycat.util.ListenerContext;
-import net.kuujo.copycat.util.Listeners;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.ServiceLoaderResolver;
 import net.kuujo.copycat.io.storage.Entry;
@@ -29,13 +24,14 @@ import net.kuujo.copycat.io.transport.Connection;
 import net.kuujo.copycat.io.transport.Server;
 import net.kuujo.copycat.io.transport.Transport;
 import net.kuujo.copycat.raft.*;
-import net.kuujo.copycat.raft.protocol.*;
+import net.kuujo.copycat.raft.protocol.Operation;
 import net.kuujo.copycat.raft.protocol.error.InternalException;
 import net.kuujo.copycat.raft.protocol.error.UnknownSessionException;
 import net.kuujo.copycat.raft.protocol.request.*;
-import net.kuujo.copycat.raft.Commit;
-import net.kuujo.copycat.raft.RaftServer;
-import net.kuujo.copycat.raft.StateMachine;
+import net.kuujo.copycat.raft.storage.*;
+import net.kuujo.copycat.util.ConfigurationException;
+import net.kuujo.copycat.util.Listener;
+import net.kuujo.copycat.util.Listeners;
 import net.kuujo.copycat.util.Managed;
 import net.kuujo.copycat.util.concurrent.ComposableFuture;
 import net.kuujo.copycat.util.concurrent.Context;
@@ -52,6 +48,7 @@ import java.time.Instant;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
@@ -133,7 +130,7 @@ public class ServerContext implements Managed<Void> {
    * @param listener The state change listener.
    * @return The listener context.
    */
-  public ListenerContext<RaftServer.State> onStateChange(Listener<RaftServer.State> listener) {
+  public Listener<RaftServer.State> onStateChange(Consumer<RaftServer.State> listener) {
     return listeners.add(listener);
   }
 

@@ -30,7 +30,6 @@ import io.netty.handler.codec.LengthFieldPrepender;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.concurrent.GlobalEventExecutor;
-import net.kuujo.copycat.util.Listener;
 import net.kuujo.copycat.util.concurrent.Context;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +39,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 
 /**
  * Netty server.
@@ -81,7 +81,7 @@ public class NettyServer implements Server {
   }
 
   @Override
-  public CompletableFuture<Void> listen(InetSocketAddress address, Listener<Connection> listener) {
+  public CompletableFuture<Void> listen(InetSocketAddress address, Consumer<Connection> listener) {
     if (listening)
       return CompletableFuture.completedFuture(null);
 
@@ -98,7 +98,7 @@ public class NettyServer implements Server {
   /**
    * Starts listening for the given member.
    */
-  private void listen(InetSocketAddress address, Listener<Connection> listener, Context context) {
+  private void listen(InetSocketAddress address, Consumer<Connection> listener, Context context) {
     channelGroup = new DefaultChannelGroup("copycat-acceptor-channels", GlobalEventExecutor.INSTANCE);
 
     handler = new ServerHandler(connections, listener, context);
@@ -155,7 +155,7 @@ public class NettyServer implements Server {
   @ChannelHandler.Sharable
   private static class ServerHandler extends NettyHandler {
 
-    private ServerHandler(Map<Channel, NettyConnection> connections, Listener<Connection> listener, Context context) {
+    private ServerHandler(Map<Channel, NettyConnection> connections, Consumer<Connection> listener, Context context) {
       super(connections, listener, context);
     }
 

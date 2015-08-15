@@ -16,10 +16,10 @@
 package net.kuujo.copycat.io.transport;
 
 import net.kuujo.copycat.util.Listener;
-import net.kuujo.copycat.util.ListenerContext;
 
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 /**
  * Transport connection.
@@ -92,33 +92,33 @@ public interface Connection {
   /**
    * Sets an exception listener on the connection.
    * <p>
-   * In the event of an exception in the connection, the provided listener's {@link Listener#accept(Object)} method will
-   * be invoked. To unregister the listener, simply {@link ListenerContext#close()} the returned
-   * {@link ListenerContext}.
+   * In the event of an exception in the connection, the provided listener's {@link Consumer#accept(Object)} method will
+   * be invoked. To unregister the listener, simply {@link Listener#close()} the returned
+   * {@link Listener}.
    *
    * @param listener The exception listener.
    * @return The connection.
    */
-  ListenerContext<Throwable> exceptionListener(Listener<Throwable> listener);
+  Listener<Throwable> exceptionListener(Consumer<Throwable> listener);
 
   /**
    * Sets a close listener on the connection.
    * <p>
-   * The provided listener's {@link Listener#accept(Object)} method will be invoked when the connection is closed. Note
+   * The provided listener's {@link Consumer#accept(Object)} method will be invoked when the connection is closed. Note
    * that a close event can be triggered via {@link Connection#close()} or by the
    * {@link Client} or {@link Server} that created the connection.
    *
    * @param listener The close listener.
    * @return The connection.
    */
-  ListenerContext<Connection> closeListener(Listener<Connection> listener);
+  Listener<Connection> closeListener(Consumer<Connection> listener);
 
   /**
    * Closes the connection.
    * <p>
    * Once the connection is closed, no more messages can be {@link Connection#send(Object) sent} or
    * {@link Connection#handler(Class, MessageHandler) received} by the connection. Any
-   * {@link Connection#closeListener(Listener) close listeners} registered on the connection will be
+   * {@link Connection#closeListener(Consumer) close listeners} registered on the connection will be
    * invoked, and the returned {@link java.util.concurrent.CompletableFuture} will be completed once the connection has
    * been closed.
    *

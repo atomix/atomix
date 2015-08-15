@@ -15,15 +15,15 @@
  */
 package net.kuujo.copycat.resource;
 
-import net.kuujo.copycat.util.Listener;
-import net.kuujo.copycat.util.ListenerContext;
 import net.kuujo.copycat.raft.session.Session;
+import net.kuujo.copycat.util.Listener;
 import net.kuujo.copycat.util.concurrent.Context;
 
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 
 /**
  * Resource session.
@@ -34,8 +34,8 @@ public class ResourceSession implements Session {
   private final long resource;
   private final Session parent;
   private final Context context;
-  private final Set<Listener> receiveListeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
-  private ListenerContext<ResourceMessage<?>> listener;
+  private final Set<Consumer> receiveListeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
+  private Listener<ResourceMessage<?>> listener;
 
   public ResourceSession(long resource, Session parent, Context context) {
     this.resource = resource;
@@ -54,7 +54,7 @@ public class ResourceSession implements Session {
   }
 
   @Override
-  public ListenerContext<Session> onOpen(Listener<Session> listener) {
+  public Listener<Session> onOpen(Consumer<Session> listener) {
     return parent.onOpen(listener);
   }
 
@@ -64,7 +64,7 @@ public class ResourceSession implements Session {
     ResourceMessage resourceMessage = (ResourceMessage) message;
     if (resourceMessage.resource() == resource) {
       return CompletableFuture.runAsync(() -> {
-        for (Listener<Object> listener : receiveListeners) {
+        for (Consumer<Object> listener : receiveListeners) {
           listener.accept(resourceMessage.message());
         }
       }, context);
@@ -74,12 +74,12 @@ public class ResourceSession implements Session {
 
   @Override
   @SuppressWarnings("unchecked")
-  public synchronized <T> ListenerContext<T> onReceive(Listener<T> listener) {
+  public synchronized <T> Listener<T> onReceive(Consumer<T> listener) {
     if (receiveListeners.isEmpty()) {
       this.listener = parent.onReceive(this::handleReceive);
     }
     receiveListeners.add(listener);
-    return new ReceiveListenerContext<>(listener);
+    return new ReceiveListener<>(listener);
   }
 
   /**
@@ -88,14 +88,14 @@ public class ResourceSession implements Session {
   @SuppressWarnings("unchecked")
   private void handleReceive(ResourceMessage<?> message) {
     if (message.resource() == resource) {
-      for (Listener listener : receiveListeners) {
+      for (Consumer listener : receiveListeners) {
         listener.accept(message.message());
       }
     }
   }
 
   @Override
-  public ListenerContext<Session> onClose(Listener<Session> listener) {
+  public Listener<Session> onClose(Consumer<Session> listener) {
     return parent.onClose(listener);
   }
 
@@ -117,10 +117,10 @@ public class ResourceSession implements Session {
   /**
    * Receive listener context.
    */
-  private class ReceiveListenerContext<T> implements ListenerContext<T> {
-    private final Listener<T> listener;
+  private class ReceiveListener<T> implements Listener<T> {
+    private final Consumer<T> listener;
 
-    private ReceiveListenerContext(Listener<T> listener) {
+    private ReceiveListener(Consumer<T> listener) {
       this.listener = listener;
     }
 

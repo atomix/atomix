@@ -20,7 +20,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.util.ReferenceCounted;
 import net.kuujo.copycat.util.Listener;
-import net.kuujo.copycat.util.ListenerContext;
 import net.kuujo.copycat.util.Listeners;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.openhft.hashing.LongHashFunction;
@@ -31,6 +30,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 
 /**
  * Netty connection.
@@ -266,7 +266,7 @@ public class NettyConnection implements Connection {
    * @param t The exception to handle.
    */
   void handleException(Throwable t) {
-    for (ListenerContext<Throwable> listener : exceptionListeners) {
+    for (Listener<Throwable> listener : exceptionListeners) {
       listener.accept(t);
     }
   }
@@ -275,7 +275,7 @@ public class NettyConnection implements Connection {
    * Handles the channel being closed.
    */
   void handleClosed() {
-    for (ListenerContext<Connection> listener : closeListeners) {
+    for (Listener<Connection> listener : closeListeners) {
       listener.accept(this);
     }
   }
@@ -313,12 +313,12 @@ public class NettyConnection implements Connection {
   }
 
   @Override
-  public ListenerContext<Throwable> exceptionListener(Listener<Throwable> listener) {
+  public Listener<Throwable> exceptionListener(Consumer<Throwable> listener) {
     return exceptionListeners.add(listener);
   }
 
   @Override
-  public ListenerContext<Connection> closeListener(Listener<Connection> listener) {
+  public Listener<Connection> closeListener(Consumer<Connection> listener) {
     return closeListeners.add(listener);
   }
 

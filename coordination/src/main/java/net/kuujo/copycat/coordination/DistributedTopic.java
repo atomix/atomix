@@ -15,17 +15,17 @@
  */
 package net.kuujo.copycat.coordination;
 
-import net.kuujo.copycat.util.Listener;
-import net.kuujo.copycat.util.ListenerContext;
 import net.kuujo.copycat.Resource;
 import net.kuujo.copycat.coordination.state.TopicCommands;
 import net.kuujo.copycat.coordination.state.TopicState;
 import net.kuujo.copycat.raft.StateMachine;
 import net.kuujo.copycat.resource.ResourceContext;
+import net.kuujo.copycat.util.Listener;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Consumer;
 
 /**
  * Async topic.
@@ -33,7 +33,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class DistributedTopic<T> extends Resource {
-  private final List<TopicListenerContext<T>> listeners = new CopyOnWriteArrayList<>();
+  private final List<TopicListener<T>> listeners = new CopyOnWriteArrayList<>();
 
   @Override
   protected Class<? extends StateMachine> stateMachine() {
@@ -44,7 +44,7 @@ public class DistributedTopic<T> extends Resource {
   protected void open(ResourceContext context) {
     super.open(context);
     context.session().onReceive(message -> {
-      for (TopicListenerContext<T> listener : listeners) {
+      for (TopicListener<T> listener : listeners) {
         listener.accept((T) message);
       }
     });
@@ -68,8 +68,8 @@ public class DistributedTopic<T> extends Resource {
    * @param listener The message listener.
    * @return The listener context.
    */
-  public ListenerContext<T> onMessage(Listener<T> listener) {
-    TopicListenerContext<T> context = new TopicListenerContext<T>(listener);
+  public Listener<T> onMessage(Consumer<T> listener) {
+    TopicListener<T> context = new TopicListener<T>(listener);
     listeners.add(context);
     return context;
   }
@@ -77,10 +77,10 @@ public class DistributedTopic<T> extends Resource {
   /**
    * Topic listener context.
    */
-  private class TopicListenerContext<T> implements ListenerContext<T> {
-    private final Listener<T> listener;
+  private class TopicListener<T> implements Listener<T> {
+    private final Consumer<T> listener;
 
-    private TopicListenerContext(Listener<T> listener) {
+    private TopicListener(Consumer<T> listener) {
       this.listener = listener;
     }
 

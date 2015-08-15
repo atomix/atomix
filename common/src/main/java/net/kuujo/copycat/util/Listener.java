@@ -15,28 +15,25 @@
  */
 package net.kuujo.copycat.util;
 
+import java.util.function.Consumer;
+
 /**
- * Event listener.
+ * Context for unregistering a registered listener.
  * <p>
- * This is a simple functional event listener interface used to listen for events from a variety of objects. When a listener
- * is registered, a {@link ListenerContext} is typically returned. The context can be used to unregister
- * the listener at any time via {@link ListenerContext#close()}.
- * <p>
- * In all cases Copycat will ensure that a registered listener will <em>always</em> be {@link #accept(Object) invoked}
- * on the same {@link net.kuujo.copycat.util.concurrent.CopycatThread Copycat thread}.
+ * The listener context represents a registered listener. The context is normally returned when a {@link Consumer} is
+ * registered and can be used to unregister the listener via {@link #close()}.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@FunctionalInterface
-public interface Listener<T> {
+public interface Listener<T> extends Consumer<T>, AutoCloseable {
 
   /**
-   * Calls the listener.
+   * Closes the listener.
    * <p>
-   * The listener will always be called on the same {@link net.kuujo.copycat.util.concurrent.CopycatThread Copycat thread}.
-   *
-   * @param event The event that occurred.
+   * When the listener is closed, the listener will be unregistered and will no longer receive events for which it was
+   * listening.
    */
-  void accept(T event);
+  @Override
+  void close();
 
 }

@@ -15,18 +15,18 @@
  */
 package net.kuujo.copycat.coordination;
 
-import net.kuujo.copycat.util.Listener;
-import net.kuujo.copycat.util.ListenerContext;
 import net.kuujo.copycat.Resource;
 import net.kuujo.copycat.coordination.state.LeaderElectionCommands;
 import net.kuujo.copycat.coordination.state.LeaderElectionState;
 import net.kuujo.copycat.raft.StateMachine;
 import net.kuujo.copycat.resource.ResourceContext;
+import net.kuujo.copycat.util.Listener;
 
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 
 /**
  * Asynchronous leader election resource.
@@ -34,7 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class DistributedLeaderElection extends Resource {
-  private final Set<Listener<Void>> listeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
+  private final Set<Consumer<Void>> listeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
   @Override
   protected Class<? extends StateMachine> stateMachine() {
@@ -45,7 +45,7 @@ public class DistributedLeaderElection extends Resource {
   protected void open(ResourceContext context) {
     super.open(context);
     context.session().onReceive(v -> {
-      for (Listener<Void> listener : listeners) {
+      for (Consumer<Void> listener : listeners) {
         listener.accept(null);
       }
     });
@@ -57,24 +57,24 @@ public class DistributedLeaderElection extends Resource {
    * @param listener The listener to register.
    * @return A completable future to be completed with the listener context.
    */
-  public CompletableFuture<ListenerContext<Void>> onElection(Listener<Void> listener) {
+  public CompletableFuture<Listener<Void>> onElection(Consumer<Void> listener) {
     if (!listeners.isEmpty()) {
       listeners.add(listener);
-      return CompletableFuture.completedFuture(new ElectionListenerContext(listener));
+      return CompletableFuture.completedFuture(new ElectionListener(listener));
     }
 
     listeners.add(listener);
     return submit(LeaderElectionCommands.Listen.builder().build())
-      .thenApply(v -> new ElectionListenerContext(listener));
+      .thenApply(v -> new ElectionListener(listener));
   }
 
   /**
    * Change listener context.
    */
-  private class ElectionListenerContext implements ListenerContext<Void> {
-    private final Listener<Void> listener;
+  private class ElectionListener implements Listener<Void> {
+    private final Consumer<Void> listener;
 
-    private ElectionListenerContext(Listener<Void> listener) {
+    private ElectionListener(Consumer<Void> listener) {
       this.listener = listener;
     }
 

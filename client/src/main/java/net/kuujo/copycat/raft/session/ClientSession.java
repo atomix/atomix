@@ -27,7 +27,6 @@ import net.kuujo.copycat.raft.protocol.error.UnknownSessionException;
 import net.kuujo.copycat.raft.protocol.request.*;
 import net.kuujo.copycat.raft.protocol.response.*;
 import net.kuujo.copycat.util.Listener;
-import net.kuujo.copycat.util.ListenerContext;
 import net.kuujo.copycat.util.Listeners;
 import net.kuujo.copycat.util.Managed;
 import net.kuujo.copycat.util.concurrent.Context;
@@ -46,6 +45,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 /**
  * Client session.
@@ -416,7 +416,7 @@ public class ClientSession implements Session, Managed<Session> {
     LOGGER.debug("Registered session: {}", sessionId);
     this.id = sessionId;
     this.state = State.OPEN;
-    for (Listener<Session> listener : openListeners) {
+    for (Consumer<Session> listener : openListeners) {
       listener.accept(this);
     }
   }
@@ -443,14 +443,14 @@ public class ClientSession implements Session, Managed<Session> {
   }
 
   @Override
-  public ListenerContext<Session> onOpen(Listener<Session> listener) {
+  public Listener<Session> onOpen(Consumer<Session> listener) {
     return openListeners.add(listener);
   }
 
   @Override
   public CompletableFuture<Void> publish(Object message) {
     return CompletableFuture.runAsync(() -> {
-      for (Listener<Object> listener : receiveListeners) {
+      for (Consumer<Object> listener : receiveListeners) {
         listener.accept(message);
       }
     }, context);
@@ -476,7 +476,7 @@ public class ClientSession implements Session, Managed<Session> {
 
     eventSequence = request.eventSequence();
 
-    for (Listener listener : receiveListeners) {
+    for (Consumer listener : receiveListeners) {
       listener.accept(request.message());
     }
 
@@ -488,7 +488,7 @@ public class ClientSession implements Session, Managed<Session> {
 
   @Override
   @SuppressWarnings("unchecked")
-  public ListenerContext<?> onReceive(Listener listener) {
+  public Listener<?> onReceive(Consumer listener) {
     return receiveListeners.add(listener);
   }
 
@@ -524,7 +524,7 @@ public class ClientSession implements Session, Managed<Session> {
   }
 
   @Override
-  public ListenerContext<Session> onClose(Listener<Session> listener) {
+  public Listener<Session> onClose(Consumer<Session> listener) {
     return closeListeners.add(listener);
   }
 

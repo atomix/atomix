@@ -16,7 +16,6 @@
 package net.kuujo.copycat.io.storage;
 
 import net.kuujo.copycat.util.Listener;
-import net.kuujo.copycat.util.ListenerContext;
 import net.kuujo.copycat.util.Listeners;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.ThreadPoolContext;
@@ -26,6 +25,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 /**
  * Log cleaner.
@@ -55,7 +55,7 @@ public class Cleaner implements AutoCloseable {
    * @param listener The listener to invoke when a cleaner process starts.
    * @return The listener context.
    */
-  public ListenerContext<EntryCleaner> onStart(Listener<EntryCleaner> listener) {
+  public Listener<EntryCleaner> onStart(Consumer<EntryCleaner> listener) {
     return startListeners.add(listener);
   }
 
@@ -65,7 +65,7 @@ public class Cleaner implements AutoCloseable {
    * @param listener The listener to invoke when a cleaner process completes.
    * @return The listener context.
    */
-  public ListenerContext<EntryCleaner> onComplete(Listener<EntryCleaner> listener) {
+  public Listener<EntryCleaner> onComplete(Consumer<EntryCleaner> listener) {
     return completeListeners.add(listener);
   }
 

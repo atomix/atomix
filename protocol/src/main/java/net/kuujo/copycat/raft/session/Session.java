@@ -16,9 +16,9 @@
 package net.kuujo.copycat.raft.session;
 
 import net.kuujo.copycat.util.Listener;
-import net.kuujo.copycat.util.ListenerContext;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 /**
  * Provides event-based methods for monitoring Raft sessions and communicating between Raft clients and servers.
@@ -26,9 +26,9 @@ import java.util.concurrent.CompletableFuture;
  * Each client or server connected to any server in a Raft cluster must open a {@link Session}.
  * Sessions can be used by both clients and servers to monitor the connection status of another client or server. When
  * a client first connects to a server, it must register a new session. Once the session has been registered, listeners
- * registered via {@link #onOpen(Listener)} will be called on <em>both the client and
+ * registered via {@link #onOpen(Consumer)} will be called on <em>both the client and
  * server side</em>. Thereafter, the session can be used to {@link #publish(Object)} and
- * {@link #onReceive(Listener) receive} messages between client and server.
+ * {@link #onReceive(Consumer) receive} messages between client and server.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -54,7 +54,7 @@ public interface Session {
    * @param listener The session open listener.
    * @return The listener context.
    */
-  ListenerContext<Session> onOpen(Listener<Session> listener);
+  Listener<Session> onOpen(Consumer<Session> listener);
 
   /**
    * Publishes a message to the session.
@@ -70,7 +70,7 @@ public interface Session {
    * @param listener The session receive listener.
    * @return The listener context.
    */
-  <T> ListenerContext<T> onReceive(Listener<T> listener);
+  <T> Listener<T> onReceive(Consumer<T> listener);
 
   /**
    * Sets a session close listener.
@@ -78,7 +78,7 @@ public interface Session {
    * @param listener The session close listener.
    * @return The session.
    */
-  ListenerContext<Session> onClose(Listener<Session> listener);
+  Listener<Session> onClose(Consumer<Session> listener);
 
   /**
    * Returns a boolean value indicating whether the session is closed.

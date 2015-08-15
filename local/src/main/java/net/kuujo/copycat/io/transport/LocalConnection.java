@@ -15,10 +15,9 @@
  */
 package net.kuujo.copycat.io.transport;
 
-import net.kuujo.copycat.util.Listener;
-import net.kuujo.copycat.util.ListenerContext;
-import net.kuujo.copycat.util.Listeners;
 import net.kuujo.copycat.io.Buffer;
+import net.kuujo.copycat.util.Listener;
+import net.kuujo.copycat.util.Listeners;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.Futures;
 
@@ -27,6 +26,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 
 /**
  * Local connection.
@@ -128,12 +128,12 @@ public class LocalConnection implements Connection {
   }
 
   @Override
-  public ListenerContext<Throwable> exceptionListener(Listener<Throwable> listener) {
+  public Listener<Throwable> exceptionListener(Consumer<Throwable> listener) {
     return exceptionListeners.add(listener);
   }
 
   @Override
-  public ListenerContext<Connection> closeListener(Listener<Connection> listener) {
+  public Listener<Connection> closeListener(Consumer<Connection> listener) {
     return closeListeners.add(listener);
   }
 
@@ -156,7 +156,7 @@ public class LocalConnection implements Connection {
     if (connections != null)
       connections.remove(this);
 
-    for (Listener<Connection> closeListener : closeListeners) {
+    for (Consumer<Connection> closeListener : closeListeners) {
       context.execute(() -> closeListener.accept(this));
     }
   }

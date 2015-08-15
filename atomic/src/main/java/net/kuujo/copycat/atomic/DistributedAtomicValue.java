@@ -15,20 +15,20 @@
  */
 package net.kuujo.copycat.atomic;
 
-import net.kuujo.copycat.util.Listener;
-import net.kuujo.copycat.util.ListenerContext;
 import net.kuujo.copycat.PersistenceLevel;
 import net.kuujo.copycat.Resource;
 import net.kuujo.copycat.atomic.state.ReferenceCommands;
 import net.kuujo.copycat.atomic.state.ReferenceState;
-import net.kuujo.copycat.raft.protocol.ConsistencyLevel;
 import net.kuujo.copycat.raft.StateMachine;
+import net.kuujo.copycat.raft.protocol.ConsistencyLevel;
 import net.kuujo.copycat.resource.ResourceContext;
+import net.kuujo.copycat.util.Listener;
 
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 /**
  * Distributed atomic value.
@@ -37,7 +37,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class DistributedAtomicValue<T> extends Resource {
   private ConsistencyLevel defaultConsistency = ConsistencyLevel.LINEARIZABLE_LEASE;
-  private final java.util.Set<Listener<T>> changeListeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
+  private final java.util.Set<Consumer<T>> changeListeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
   @Override
   protected Class<? extends StateMachine> stateMachine() {
@@ -48,7 +48,7 @@ public class DistributedAtomicValue<T> extends Resource {
   protected void open(ResourceContext context) {
     super.open(context);
     context.session().<T>onReceive(event -> {
-      for (Listener<T> listener : changeListeners) {
+      for (Consumer<T> listener : changeListeners) {
         listener.accept(event);
       }
     });
@@ -390,24 +390,24 @@ public class DistributedAtomicValue<T> extends Resource {
    * @param listener The change listener.
    * @return A completable future to be completed once the change listener has been registered.
    */
-  public synchronized CompletableFuture<ListenerContext<T>> onChange(Listener<T> listener) {
+  public synchronized CompletableFuture<Listener<T>> onChange(Consumer<T> listener) {
     if (!changeListeners.isEmpty()) {
       changeListeners.add(listener);
-      return CompletableFuture.completedFuture(new ChangeListenerContext(listener));
+      return CompletableFuture.completedFuture(new ChangeListener(listener));
     }
 
     changeListeners.add(listener);
     return submit(ReferenceCommands.Listen.builder().build())
-      .thenApply(v -> new ChangeListenerContext(listener));
+      .thenApply(v -> new ChangeListener(listener));
   }
 
   /**
    * Change listener context.
    */
-  private class ChangeListenerContext implements ListenerContext<T> {
-    private final Listener<T> listener;
+  private class ChangeListener implements Listener<T> {
+    private final Consumer<T> listener;
 
-    private ChangeListenerContext(Listener<T> listener) {
+    private ChangeListener(Consumer<T> listener) {
       this.listener = listener;
     }
 

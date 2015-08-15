@@ -24,7 +24,6 @@ import net.kuujo.copycat.raft.protocol.Operation;
 import net.kuujo.copycat.raft.protocol.Query;
 import net.kuujo.copycat.raft.session.ClientSession;
 import net.kuujo.copycat.raft.session.Session;
-import net.kuujo.copycat.util.Listener;
 import net.kuujo.copycat.util.Managed;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.Futures;

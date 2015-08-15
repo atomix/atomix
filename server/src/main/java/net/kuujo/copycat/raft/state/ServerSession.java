@@ -15,19 +15,19 @@
  */
 package net.kuujo.copycat.raft.state;
 
-import net.kuujo.copycat.util.Listener;
-import net.kuujo.copycat.util.ListenerContext;
-import net.kuujo.copycat.util.Listeners;
 import net.kuujo.copycat.io.transport.Connection;
-import net.kuujo.copycat.raft.session.Session;
 import net.kuujo.copycat.raft.protocol.error.UnknownSessionException;
 import net.kuujo.copycat.raft.protocol.request.PublishRequest;
 import net.kuujo.copycat.raft.protocol.response.PublishResponse;
 import net.kuujo.copycat.raft.protocol.response.Response;
+import net.kuujo.copycat.raft.session.Session;
+import net.kuujo.copycat.util.Listener;
+import net.kuujo.copycat.util.Listeners;
 import net.kuujo.copycat.util.concurrent.Futures;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 /**
  * Raft session.
@@ -294,7 +294,7 @@ class ServerSession implements Session {
    */
   @SuppressWarnings("unchecked")
   protected CompletableFuture<PublishResponse> handlePublish(PublishRequest request) {
-    for (ListenerContext listener : listeners) {
+    for (Listener listener : listeners) {
       listener.accept(request.message());
     }
 
@@ -309,13 +309,13 @@ class ServerSession implements Session {
   }
 
   @Override
-  public ListenerContext<Session> onOpen(Listener<Session> listener) {
+  public Listener<Session> onOpen(Consumer<Session> listener) {
     return openListeners.add(listener);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public ListenerContext<?> onReceive(Listener listener) {
+  public Listener<?> onReceive(Consumer listener) {
     return listeners.add(listener);
   }
 
@@ -324,14 +324,14 @@ class ServerSession implements Session {
    */
   void close() {
     closed = true;
-    for (ListenerContext<Session> listener : closeListeners) {
+    for (Listener<Session> listener : closeListeners) {
       listener.accept(this);
     }
   }
 
   @Override
-  public ListenerContext<Session> onClose(Listener<Session> listener) {
-    ListenerContext<Session> context = closeListeners.add(listener);
+  public Listener<Session> onClose(Consumer<Session> listener) {
+    Listener<Session> context = closeListeners.add(listener);
     if (closed) {
       context.accept(this);
     }
@@ -349,7 +349,7 @@ class ServerSession implements Session {
   void expire() {
     closed = true;
     expired = true;
-    for (ListenerContext<Session> listener : closeListeners) {
+    for (Listener<Session> listener : closeListeners) {
       listener.accept(this);
     }
   }
