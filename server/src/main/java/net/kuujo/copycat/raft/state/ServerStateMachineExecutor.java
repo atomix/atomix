@@ -16,11 +16,11 @@
 
 package net.kuujo.copycat.raft.state;
 
-import net.kuujo.copycat.raft.protocol.error.ApplicationException;
-import net.kuujo.copycat.raft.protocol.Operation;
 import net.kuujo.copycat.raft.Commit;
-import net.kuujo.copycat.util.Scheduled;
 import net.kuujo.copycat.raft.StateMachineExecutor;
+import net.kuujo.copycat.raft.protocol.Operation;
+import net.kuujo.copycat.raft.protocol.error.ApplicationException;
+import net.kuujo.copycat.util.Scheduled;
 import net.kuujo.copycat.util.concurrent.ComposableFuture;
 import net.kuujo.copycat.util.concurrent.Context;
 
@@ -175,13 +175,13 @@ class ServerStateMachineExecutor implements StateMachineExecutor {
   }
 
   @Override
-  public Scheduled schedule(Duration delay, Runnable callback) {
-    return new ServerScheduledTask(delay.toMillis(), callback).schedule();
+  public Scheduled schedule(Runnable callback, Duration delay) {
+    return new ServerScheduledTask(callback, delay.toMillis()).schedule();
   }
 
   @Override
-  public Scheduled schedule(Duration initialDelay, Duration interval, Runnable callback) {
-    return new ServerScheduledTask(initialDelay.toMillis(), interval.toMillis(), callback).schedule();
+  public Scheduled schedule(Runnable callback, Duration initialDelay, Duration interval) {
+    return new ServerScheduledTask(callback, initialDelay.toMillis(), interval.toMillis()).schedule();
   }
 
   @Override
@@ -223,11 +223,11 @@ class ServerStateMachineExecutor implements StateMachineExecutor {
     private final Runnable callback;
     private long time;
 
-    private ServerScheduledTask(long delay, Runnable callback) {
-      this(delay, 0, callback);
+    private ServerScheduledTask(Runnable callback, long delay) {
+      this(callback, delay, 0);
     }
 
-    private ServerScheduledTask(long delay, long interval, Runnable callback) {
+    private ServerScheduledTask(Runnable callback, long delay, long interval) {
       this.delay = delay;
       this.interval = interval;
       this.callback = callback;

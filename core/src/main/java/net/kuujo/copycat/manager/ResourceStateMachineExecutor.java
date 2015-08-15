@@ -16,12 +16,12 @@
 
 package net.kuujo.copycat.manager;
 
-import net.kuujo.copycat.raft.protocol.error.ApplicationException;
-import net.kuujo.copycat.raft.protocol.Operation;
 import net.kuujo.copycat.raft.Commit;
-import net.kuujo.copycat.util.Scheduled;
 import net.kuujo.copycat.raft.StateMachineContext;
 import net.kuujo.copycat.raft.StateMachineExecutor;
+import net.kuujo.copycat.raft.protocol.Operation;
+import net.kuujo.copycat.raft.protocol.error.ApplicationException;
+import net.kuujo.copycat.util.Scheduled;
 import net.kuujo.copycat.util.concurrent.ComposableFuture;
 import net.kuujo.copycat.util.concurrent.Context;
 
@@ -121,15 +121,15 @@ class ResourceStateMachineExecutor implements StateMachineExecutor {
   }
 
   @Override
-  public Scheduled schedule(Duration delay, Runnable callback) {
-    Scheduled task = parent.schedule(delay, () -> context.execute(callback));
+  public Scheduled schedule(Runnable callback, Duration delay) {
+    Scheduled task = parent.schedule(() -> context.execute(callback), delay);
     tasks.add(task);
     return task;
   }
 
   @Override
-  public Scheduled schedule(Duration initialDelay, Duration interval, Runnable callback) {
-    Scheduled task = parent.schedule(initialDelay, interval, () -> context.execute(callback));
+  public Scheduled schedule(Runnable callback, Duration initialDelay, Duration interval) {
+    Scheduled task = parent.schedule(() -> context.execute(callback), initialDelay, interval);
     tasks.add(task);
     return task;
   }

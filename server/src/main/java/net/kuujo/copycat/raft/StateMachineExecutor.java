@@ -68,21 +68,21 @@ public interface StateMachineExecutor extends AutoCloseable {
   /**
    * Schedules a callback to run deterministically in the state machine.
    *
-   * @param delay The delay after which to run the callback.
    * @param callback The callback to schedule.
+   * @param delay The delay after which to run the callback.
    * @return The state machine executor.
    */
-  Scheduled schedule(Duration delay, Runnable callback);
+  Scheduled schedule(Runnable callback, Duration delay);
 
   /**
    * Schedules a callback to run deterministically at a fixed rate in the state machine.
    *
+   * @param callback The callback to schedule.
    * @param initialDelay The initial duration after which to run the callback.
    * @param interval The interval at which to run the callback.
-   * @param callback The callback to schedule.
    * @return The state machine executor.
    */
-  Scheduled schedule(Duration initialDelay, Duration interval, Runnable callback);
+  Scheduled schedule(Runnable callback, Duration initialDelay, Duration interval);
 
   /**
    * Registers a global operation callback.
