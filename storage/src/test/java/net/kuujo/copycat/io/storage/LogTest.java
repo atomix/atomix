@@ -16,7 +16,7 @@
 package net.kuujo.copycat.io.storage;
 
 import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.io.serializer.ServiceLoaderResolver;
+import net.kuujo.copycat.io.serializer.ServiceLoaderTypeResolver;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -222,7 +222,7 @@ public class LogTest {
       .withMaxEntrySize(1024)
       .withMaxSegmentSize(1024 * 1024)
       .withMaxEntriesPerSegment(1024)
-      .withSerializer(new Serializer(new ServiceLoaderResolver()))
+      .withSerializer(new Serializer(new ServiceLoaderTypeResolver()))
       .build();
     return storage.open();
   }

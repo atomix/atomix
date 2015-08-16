@@ -16,7 +16,7 @@
 package net.kuujo.copycat.raft;
 
 import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.io.serializer.ServiceLoaderResolver;
+import net.kuujo.copycat.io.serializer.ServiceLoaderTypeResolver;
 import net.kuujo.copycat.io.storage.Storage;
 import net.kuujo.copycat.io.transport.Transport;
 import net.kuujo.copycat.raft.state.ServerContext;
@@ -411,8 +411,8 @@ public class RaftServer implements Managed<RaftServer> {
         serializer = new Serializer();
       }
 
-      // Resolve serializer serializable types with the ServiceLoaderResolver.
-      serializer.resolve(new ServiceLoaderResolver());
+      // Resolve serializer serializable types with the ServiceLoaderTypeResolver.
+      serializer.resolve(new ServiceLoaderTypeResolver());
 
       ServerContext context = new ServerContext(memberId, members, transport, storage, stateMachine, serializer)
         .setHeartbeatInterval(heartbeatInterval)

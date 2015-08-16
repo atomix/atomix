@@ -17,7 +17,7 @@ package net.kuujo.copycat.io.storage;
 
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.io.serializer.ServiceLoaderResolver;
+import net.kuujo.copycat.io.serializer.ServiceLoaderTypeResolver;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.*;
@@ -37,7 +37,7 @@ public class CleanerTest extends ConcurrentTestCase {
     Storage storage = Storage.builder()
       .withStorageLevel(StorageLevel.MEMORY)
       .withMaxEntriesPerSegment(10)
-      .withSerializer(new Serializer(new ServiceLoaderResolver()))
+      .withSerializer(new Serializer(new ServiceLoaderTypeResolver()))
       .build();
 
     Log log = storage.open();

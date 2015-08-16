@@ -37,7 +37,7 @@ import java.util.List;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ServiceLoaderResolver implements SerializableTypeResolver {
+public class ServiceLoaderTypeResolver implements SerializableTypeResolver {
 
   @Override
   public void resolve(SerializerRegistry registry) {

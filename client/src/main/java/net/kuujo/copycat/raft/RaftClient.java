@@ -16,7 +16,7 @@
 package net.kuujo.copycat.raft;
 
 import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.io.serializer.ServiceLoaderResolver;
+import net.kuujo.copycat.io.serializer.ServiceLoaderTypeResolver;
 import net.kuujo.copycat.io.transport.Transport;
 import net.kuujo.copycat.raft.protocol.Command;
 import net.kuujo.copycat.raft.protocol.ConsistencyLevel;
@@ -58,7 +58,7 @@ public class RaftClient implements Managed<RaftClient> {
   private CompletableFuture<Void> closeFuture;
 
   protected RaftClient(Transport transport, Members members, Serializer serializer, Duration keepAliveInterval) {
-    serializer.resolve(new ServiceLoaderResolver());
+    serializer.resolve(new ServiceLoaderTypeResolver());
     this.transport = transport;
     this.members = members;
     this.serializer = serializer;

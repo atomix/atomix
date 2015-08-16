@@ -16,7 +16,7 @@
 package net.kuujo.copycat.raft.state;
 
 import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.io.serializer.ServiceLoaderResolver;
+import net.kuujo.copycat.io.serializer.ServiceLoaderTypeResolver;
 import net.kuujo.copycat.io.storage.Entry;
 import net.kuujo.copycat.io.storage.Log;
 import net.kuujo.copycat.io.storage.Storage;
@@ -118,8 +118,8 @@ public class ServerContext implements Managed<Void> {
     this.member = member;
     this.serializer = serializer;
 
-    storage.serializer().resolve(new ServiceLoaderResolver());
-    serializer.resolve(new ServiceLoaderResolver());
+    storage.serializer().resolve(new ServiceLoaderTypeResolver());
+    serializer.resolve(new ServiceLoaderTypeResolver());
 
     this.storage = storage;
     this.stateMachine = stateMachine;
