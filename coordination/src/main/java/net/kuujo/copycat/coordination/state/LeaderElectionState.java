@@ -15,10 +15,10 @@
  */
 package net.kuujo.copycat.coordination.state;
 
-import net.kuujo.copycat.raft.session.Session;
 import net.kuujo.copycat.raft.Commit;
 import net.kuujo.copycat.raft.StateMachine;
 import net.kuujo.copycat.raft.StateMachineExecutor;
+import net.kuujo.copycat.raft.session.Session;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,12 +30,14 @@ import java.util.List;
  */
 public class LeaderElectionState extends StateMachine {
   private Session leader;
+  private long epoch;
   private final List<Commit<LeaderElectionCommands.Listen>> listeners = new ArrayList<>();
 
   @Override
   public void configure(StateMachineExecutor executor) {
     executor.register(LeaderElectionCommands.Listen.class, this::listen);
     executor.register(LeaderElectionCommands.Unlisten.class, this::unlisten);
+    executor.register(LeaderElectionCommands.IsLeader.class, this::isLeader);
   }
 
   @Override
@@ -45,6 +47,7 @@ public class LeaderElectionState extends StateMachine {
       if (!listeners.isEmpty()) {
         Commit<LeaderElectionCommands.Listen> leader = listeners.remove(0);
         this.leader = leader.session();
+        this.epoch = leader.index();
         this.leader.publish(true);
       }
     }
@@ -56,7 +59,8 @@ public class LeaderElectionState extends StateMachine {
   protected void listen(Commit<LeaderElectionCommands.Listen> commit) {
     if (leader == null) {
       leader = commit.session();
-      leader.publish(true);
+      epoch = commit.index();
+      leader.publish(epoch);
       commit.clean();
     } else {
       listeners.add(commit);
@@ -72,12 +76,20 @@ public class LeaderElectionState extends StateMachine {
       if (!listeners.isEmpty()) {
         Commit<LeaderElectionCommands.Listen> leader = listeners.remove(0);
         this.leader = leader.session();
-        this.leader.publish(true);
+        this.epoch = commit.index();
+        this.leader.publish(epoch);
         leader.clean();
       }
     } else {
       commit.clean();
     }
+  }
+
+  /**
+   * Applies an isLeader query.
+   */
+  protected boolean isLeader(Commit<LeaderElectionCommands.IsLeader> commit) {
+    return leader != null && leader.equals(commit.session()) && epoch == commit.operation().epoch();
   }
 
 }

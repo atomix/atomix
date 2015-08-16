@@ -34,7 +34,7 @@ import java.util.function.Consumer;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class DistributedLeaderElection extends Resource {
-  private final Set<Consumer<Void>> listeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
+  private final Set<Consumer<Long>> listeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
   @Override
   protected Class<? extends StateMachine> stateMachine() {
@@ -44,9 +44,9 @@ public class DistributedLeaderElection extends Resource {
   @Override
   protected void open(ResourceContext context) {
     super.open(context);
-    context.session().onReceive(v -> {
-      for (Consumer<Void> listener : listeners) {
-        listener.accept(null);
+    context.session().<Long>onReceive(epoch -> {
+      for (Consumer<Long> listener : listeners) {
+        listener.accept(epoch);
       }
     });
   }
@@ -57,7 +57,7 @@ public class DistributedLeaderElection extends Resource {
    * @param listener The listener to register.
    * @return A completable future to be completed with the listener context.
    */
-  public CompletableFuture<Listener<Void>> onElection(Consumer<Void> listener) {
+  public CompletableFuture<Listener<Long>> onElection(Consumer<Long> listener) {
     if (!listeners.isEmpty()) {
       listeners.add(listener);
       return CompletableFuture.completedFuture(new ElectionListener(listener));
@@ -69,18 +69,29 @@ public class DistributedLeaderElection extends Resource {
   }
 
   /**
+   * Verifies that the client is the current leader.
+   *
+   * @param epoch The epoch for which to check if this client is the leader.
+   * @return A completable future to be completed with a boolean value indicating whether the
+   *         client is the current leader.
+   */
+  public CompletableFuture<Boolean> isLeader(long epoch) {
+    return submit(LeaderElectionCommands.IsLeader.builder().withEpoch(epoch).build());
+  }
+
+  /**
    * Change listener context.
    */
-  private class ElectionListener implements Listener<Void> {
-    private final Consumer<Void> listener;
+  private class ElectionListener implements Listener<Long> {
+    private final Consumer<Long> listener;
 
-    private ElectionListener(Consumer<Void> listener) {
+    private ElectionListener(Consumer<Long> listener) {
       this.listener = listener;
     }
 
     @Override
-    public void accept(Void event) {
-      listener.accept(event);
+    public void accept(Long epoch) {
+      listener.accept(epoch);
     }
 
     @Override
