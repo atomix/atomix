@@ -20,6 +20,7 @@ import net.kuujo.copycat.raft.StateMachine;
 import net.kuujo.copycat.raft.StateMachineExecutor;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -39,7 +40,7 @@ public class TopicState extends StateMachine {
    * Applies listen commits.
    */
   protected void listen(Commit<TopicCommands.Listen> commit) {
-    if (!listeners.containsKey(commit.session().id())) {
+    if (commit.session().isOpen() && !listeners.containsKey(commit.session().id())) {
       listeners.put(commit.session().id(), commit);
     } else {
       commit.clean();
@@ -62,8 +63,17 @@ public class TopicState extends StateMachine {
    * Handles a publish commit.
    */
   protected void publish(Commit<TopicCommands.Publish> commit) {
-    for (Commit<TopicCommands.Listen> listener : listeners.values()) {
-      listener.session().publish(commit.operation().message());
+    if (commit.index() >= context().version()) {
+      Iterator<Map.Entry<Long, Commit<TopicCommands.Listen>>> iterator = listeners.entrySet().iterator();
+      while (iterator.hasNext()) {
+        Commit<TopicCommands.Listen> listener = iterator.next().getValue();
+        if (listener.session().isOpen()) {
+          listener.session().publish(commit.operation().message());
+        } else {
+          iterator.remove();
+          listener.clean();
+        }
+      }
     }
     commit.clean();
   }
