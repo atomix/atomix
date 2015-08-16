@@ -20,7 +20,7 @@ import net.kuujo.copycat.util.BuilderPool;
 /**
  * Raft state queries read system state.
  * <p>
- * Queries are submitted by clients to a {@link Raft} instance to read Raft cluster-wide state. In contrast to
+ * Queries are submitted by clients to a Raft server to read Raft cluster-wide state. In contrast to
  * {@link Command commands}, queries allow for more flexible
  * {@link ConsistencyLevel consistency levels} that trade consistency for performance.
  * <p>
@@ -45,10 +45,14 @@ public interface Query<T> extends Operation<T> {
    * linearizability in all or most cases, while weaker consistency levels trade linearizability for more performant
    * reads from followers. Consult the {@link ConsistencyLevel} documentation for more information
    * on the different consistency levels.
+   * <p>
+   * By default, this method enforces strong consistency with the {@link ConsistencyLevel#LINEARIZABLE} consistency level.
    *
    * @return The query consistency level.
    */
-  ConsistencyLevel consistency();
+  default ConsistencyLevel consistency() {
+    return ConsistencyLevel.LINEARIZABLE;
+  }
 
   /**
    * Base builder for queries.

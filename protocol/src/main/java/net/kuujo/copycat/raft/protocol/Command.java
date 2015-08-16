@@ -20,7 +20,7 @@ import net.kuujo.copycat.util.BuilderPool;
 /**
  * Raft state commands modify system state.
  * <p>
- * Commands are submitted by clients to a {@link Raft} instance and used to modify Raft cluster-wide state. The Raft
+ * Commands are submitted by clients to a Raft server and used to modify Raft cluster-wide state. The Raft
  * consensus protocol dictates that commands must be forwarded to the cluster leader and replicated to a majority of
  * followers before being applied to the cluster state. Thus, in contrast to {@link Query queries},
  * commands are not dictated by different consistency levels.
