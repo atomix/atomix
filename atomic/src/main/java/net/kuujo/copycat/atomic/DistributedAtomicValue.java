@@ -24,10 +24,10 @@ import net.kuujo.copycat.raft.protocol.ConsistencyLevel;
 import net.kuujo.copycat.resource.ResourceContext;
 import net.kuujo.copycat.util.Listener;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
@@ -127,25 +127,10 @@ public class DistributedAtomicValue<T> extends Resource {
    * @param ttl The time after which to expire the value.
    * @return A completable future to be completed once the value has been set.
    */
-  public CompletableFuture<Void> set(T value, long ttl) {
+  public CompletableFuture<Void> set(T value, Duration ttl) {
     return submit(ReferenceCommands.Set.builder()
       .withValue(value)
-      .withTtl(ttl)
-      .build());
-  }
-
-  /**
-   * Sets the value with a TTL.
-   *
-   * @param value The value to set.
-   * @param ttl The time after which to expire the value.
-   * @param unit The expiration time unit.
-   * @return A completable future to be completed once the value has been set.
-   */
-  public CompletableFuture<Void> set(T value, long ttl, TimeUnit unit) {
-    return submit(ReferenceCommands.Set.builder()
-      .withValue(value)
-      .withTtl(ttl, unit)
+      .withTtl(ttl.toMillis())
       .build());
   }
 
@@ -171,27 +156,10 @@ public class DistributedAtomicValue<T> extends Resource {
    * @param persistence The write persistence.
    * @return A completable future to be completed once the value has been set.
    */
-  public CompletableFuture<Void> set(T value, long ttl, PersistenceLevel persistence) {
+  public CompletableFuture<Void> set(T value, Duration ttl, PersistenceLevel persistence) {
     return submit(ReferenceCommands.Set.builder()
       .withValue(value)
-      .withTtl(ttl)
-      .withPersistence(persistence)
-      .build());
-  }
-
-  /**
-   * Sets the value with a write persistence.
-   *
-   * @param value The value to set.
-   * @param ttl The time after which to expire the value.
-   * @param unit The expiration time unit.
-   * @param persistence The write persistence.
-   * @return A completable future to be completed once the value has been set.
-   */
-  public CompletableFuture<Void> set(T value, long ttl, TimeUnit unit, PersistenceLevel persistence) {
-    return submit(ReferenceCommands.Set.builder()
-      .withValue(value)
-      .withTtl(ttl, unit)
+      .withTtl(ttl.toMillis())
       .withPersistence(persistence)
       .build());
   }
@@ -215,25 +183,10 @@ public class DistributedAtomicValue<T> extends Resource {
    * @param ttl The time after which to expire the value.
    * @return A completable future to be completed with the previous value.
    */
-  public CompletableFuture<T> getAndSet(T value, long ttl) {
+  public CompletableFuture<T> getAndSet(T value, Duration ttl) {
     return submit(ReferenceCommands.GetAndSet.<T>builder()
       .withValue(value)
-      .withTtl(ttl)
-      .build());
-  }
-
-  /**
-   * Gets the current value and updates it.
-   *
-   * @param value The updated value.
-   * @param ttl The time after which to expire the value.
-   * @param unit The expiration time unit.
-   * @return A completable future to be completed with the previous value.
-   */
-  public CompletableFuture<T> getAndSet(T value, long ttl, TimeUnit unit) {
-    return submit(ReferenceCommands.GetAndSet.<T>builder()
-      .withValue(value)
-      .withTtl(ttl, unit)
+      .withTtl(ttl.toMillis())
       .build());
   }
 
@@ -259,27 +212,10 @@ public class DistributedAtomicValue<T> extends Resource {
    * @param persistence The write persistence.
    * @return A completable future to be completed with the previous value.
    */
-  public CompletableFuture<T> getAndSet(T value, long ttl, PersistenceLevel persistence) {
+  public CompletableFuture<T> getAndSet(T value, Duration ttl, PersistenceLevel persistence) {
     return submit(ReferenceCommands.GetAndSet.<T>builder()
       .withValue(value)
-      .withTtl(ttl)
-      .withPersistence(persistence)
-      .build());
-  }
-
-  /**
-   * Gets the current value and updates it.
-   *
-   * @param value The updated value.
-   * @param ttl The time after which to expire the value.
-   * @param unit The expiration time unit.
-   * @param persistence The write persistence.
-   * @return A completable future to be completed with the previous value.
-   */
-  public CompletableFuture<T> getAndSet(T value, long ttl, TimeUnit unit, PersistenceLevel persistence) {
-    return submit(ReferenceCommands.GetAndSet.<T>builder()
-      .withValue(value)
-      .withTtl(ttl, unit)
+      .withTtl(ttl.toMillis())
       .withPersistence(persistence)
       .build());
   }
@@ -306,28 +242,11 @@ public class DistributedAtomicValue<T> extends Resource {
    * @param ttl The time after which to expire the value.
    * @return A completable future to be completed with a boolean value indicating whether the value was updated.
    */
-  public CompletableFuture<Boolean> compareAndSet(T expect, T update, long ttl) {
+  public CompletableFuture<Boolean> compareAndSet(T expect, T update, Duration ttl) {
     return submit(ReferenceCommands.CompareAndSet.builder()
       .withExpect(expect)
       .withUpdate(update)
-      .withTtl(ttl)
-      .build());
-  }
-
-  /**
-   * Compares the current value and updated it if expected value == the current value.
-   *
-   * @param expect The expected value.
-   * @param update The updated value.
-   * @param ttl The time after which to expire the value.
-   * @param unit The expiration time unit.
-   * @return A completable future to be completed with a boolean value indicating whether the value was updated.
-   */
-  public CompletableFuture<Boolean> compareAndSet(T expect, T update, long ttl, TimeUnit unit) {
-    return submit(ReferenceCommands.CompareAndSet.builder()
-      .withExpect(expect)
-      .withUpdate(update)
-      .withTtl(ttl, unit)
+      .withTtl(ttl.toMillis())
       .build());
   }
 
@@ -356,30 +275,11 @@ public class DistributedAtomicValue<T> extends Resource {
    * @param persistence The write persistence.
    * @return A completable future to be completed with a boolean value indicating whether the value was updated.
    */
-  public CompletableFuture<Boolean> compareAndSet(T expect, T update, long ttl, PersistenceLevel persistence) {
+  public CompletableFuture<Boolean> compareAndSet(T expect, T update, Duration ttl, PersistenceLevel persistence) {
     return submit(ReferenceCommands.CompareAndSet.builder()
       .withExpect(expect)
       .withUpdate(update)
-      .withTtl(ttl)
-      .withPersistence(persistence)
-      .build());
-  }
-
-  /**
-   * Compares the current value and updated it if expected value == the current value.
-   *
-   * @param expect The expected value.
-   * @param update The updated value.
-   * @param ttl The time after which to expire the value.
-   * @param unit The expiration time unit.
-   * @param persistence The write persistence.
-   * @return A completable future to be completed with a boolean value indicating whether the value was updated.
-   */
-  public CompletableFuture<Boolean> compareAndSet(T expect, T update, long ttl, TimeUnit unit, PersistenceLevel persistence) {
-    return submit(ReferenceCommands.CompareAndSet.builder()
-      .withExpect(expect)
-      .withUpdate(update)
-      .withTtl(ttl, unit)
+      .withTtl(ttl.toMillis())
       .withPersistence(persistence)
       .build());
   }

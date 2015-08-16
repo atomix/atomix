@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.atomic.state;
 
-import net.kuujo.copycat.*;
+import net.kuujo.copycat.PersistenceLevel;
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.CopycatSerializable;
@@ -26,8 +26,6 @@ import net.kuujo.copycat.raft.protocol.ConsistencyLevel;
 import net.kuujo.copycat.raft.protocol.Operation;
 import net.kuujo.copycat.raft.protocol.Query;
 import net.kuujo.copycat.util.BuilderPool;
-
-import java.util.concurrent.TimeUnit;
 
 /**
  * Atomic reference commands.
@@ -107,19 +105,6 @@ public class ReferenceCommands {
       @SuppressWarnings("unchecked")
       public T withTtl(long ttl) {
         command.ttl = ttl;
-        return (T) this;
-      }
-
-      /**
-       * Sets the time to live.
-       *
-       * @param ttl The time to live.
-       * @param unit The time to live unit.
-       * @return The command builder.
-       */
-      @SuppressWarnings("unchecked")
-      public T withTtl(long ttl, TimeUnit unit) {
-        command.ttl = unit.toMillis(ttl);
         return (T) this;
       }
     }
