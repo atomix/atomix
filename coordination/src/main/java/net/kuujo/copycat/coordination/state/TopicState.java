@@ -15,10 +15,12 @@
  */
 package net.kuujo.copycat.coordination.state;
 
-import net.kuujo.copycat.raft.session.Session;
 import net.kuujo.copycat.raft.Commit;
 import net.kuujo.copycat.raft.StateMachine;
 import net.kuujo.copycat.raft.StateMachineExecutor;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Topic state machine.
@@ -26,6 +28,7 @@ import net.kuujo.copycat.raft.StateMachineExecutor;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class TopicState extends StateMachine {
+  private final Map<Long, Commit<TopicCommands.Listen>> listeners = new HashMap<>();
 
   @Override
   public void configure(StateMachineExecutor executor) {
@@ -33,11 +36,34 @@ public class TopicState extends StateMachine {
   }
 
   /**
+   * Applies listen commits.
+   */
+  protected void listen(Commit<TopicCommands.Listen> commit) {
+    if (!listeners.containsKey(commit.session().id())) {
+      listeners.put(commit.session().id(), commit);
+    } else {
+      commit.clean();
+    }
+  }
+
+  /**
+   * Applies listen commits.
+   */
+  protected void unlisten(Commit<LeaderElectionCommands.Unlisten> commit) {
+    Commit<TopicCommands.Listen> listener = listeners.remove(commit.session().id());
+    if (listener != null) {
+      listener.clean();
+    } else {
+      commit.clean();
+    }
+  }
+
+  /**
    * Handles a publish commit.
    */
   protected void publish(Commit<TopicCommands.Publish> commit) {
-    for (Session session : context().sessions()) {
-      session.publish(commit.operation().message());
+    for (Commit<TopicCommands.Listen> listener : listeners.values()) {
+      listener.session().publish(commit.operation().message());
     }
     commit.clean();
   }
