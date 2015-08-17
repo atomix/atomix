@@ -20,4 +20,5 @@ net.kuujo.copycat.coordination.state.LockCommands$Lock
 net.kuujo.copycat.coordination.state.LockCommands$Unlock
 
 net.kuujo.copycat.coordination.state.TopicCommands$Publish
-net.kuujo.copycat.coordination.state.TopicCommands$Subscribe
+net.kuujo.copycat.coordination.state.TopicCommands$Listen
+net.kuujo.copycat.coordination.state.TopicCommands$Unlisten
