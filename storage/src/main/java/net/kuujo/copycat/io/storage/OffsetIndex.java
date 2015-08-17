@@ -17,6 +17,7 @@ package net.kuujo.copycat.io.storage;
 
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.FileBuffer;
+import net.kuujo.copycat.io.MappedBuffer;
 import net.kuujo.copycat.io.util.BitArray;
 import net.kuujo.copycat.io.util.Memory;
 
@@ -389,6 +390,8 @@ class OffsetIndex implements AutoCloseable {
   public void delete() {
     if (buffer instanceof FileBuffer) {
       ((FileBuffer) buffer).delete();
+    } else if (buffer instanceof MappedBuffer) {
+      ((MappedBuffer) buffer).delete();
     }
   }
 

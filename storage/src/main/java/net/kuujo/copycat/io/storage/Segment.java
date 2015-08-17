@@ -403,6 +403,7 @@ class Segment implements AutoCloseable {
     diskIndex.close();
     memoryBuffer.close();
     memoryIndex.close();
+    descriptor.close();
     open = false;
   }
 

@@ -321,6 +321,7 @@ public class Log implements AutoCloseable {
    */
   @Override
   public void close() {
+    flush();
     segments.close();
     if (cleaner != null)
       cleaner.close();
