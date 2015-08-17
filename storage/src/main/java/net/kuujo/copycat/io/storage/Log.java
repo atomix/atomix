@@ -207,7 +207,7 @@ public class Log implements AutoCloseable {
     if (segment == null)
       throw new IndexOutOfBoundsException("invalid index: " + index);
     T entry = segment.getEntry(index);
-    return entry != null && !entry.isTombstone() ? entry : null;
+    return entry != null ? entry : null;
   }
 
   /**

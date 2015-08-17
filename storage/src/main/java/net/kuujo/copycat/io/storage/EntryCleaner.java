@@ -15,13 +15,12 @@
  */
 package net.kuujo.copycat.io.storage;
 
-import net.kuujo.copycat.util.Listener;
-import net.kuujo.copycat.util.Listeners;
 import net.kuujo.copycat.util.concurrent.Context;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
 
 /**
  * Log entry cleaner.
@@ -29,9 +28,9 @@ import java.util.function.Consumer;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class EntryCleaner implements AutoCloseable {
+  private static final Logger LOGGER = LoggerFactory.getLogger(EntryCleaner.class);
   private final SegmentManager manager;
   private final Context context;
-  private final Listeners<Entry> cleanListeners = new Listeners<>();
   private CompletableFuture<Void> cleanFuture;
 
   public EntryCleaner(SegmentManager manager, Context context) {
@@ -59,16 +58,6 @@ public class EntryCleaner implements AutoCloseable {
    */
   public boolean isComplete() {
     return cleanFuture == null;
-  }
-
-  /**
-   * Registers an entry clean listener.
-   *
-   * @param listener The listener to register.
-   * @return The listener context.
-   */
-  public Listener<Entry> onClean(Consumer<Entry> listener) {
-    return cleanListeners.add(listener);
   }
 
   /**
@@ -147,16 +136,10 @@ public class EntryCleaner implements AutoCloseable {
   private void cleanEntry(long index, Segment segment, Segment cleanSegment) {
     try (Entry entry = segment.getEntry(index)) {
       if (entry != null) {
-        if (!entry.isTombstone()) {
-          cleanSegment.appendEntry(entry);
-        } else {
-          cleanSegment.skip(1);
-          for (Consumer<Entry> listener : cleanListeners) {
-            listener.accept(entry);
-          }
-        }
+        cleanSegment.appendEntry(entry);
       } else {
         cleanSegment.skip(1);
+        LOGGER.debug("Cleaned entry {} from segment {}", index, segment.descriptor().id());
       }
     }
 

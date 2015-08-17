@@ -15,8 +15,6 @@
  */
 package net.kuujo.copycat.io.storage;
 
-import net.kuujo.copycat.util.Listener;
-import net.kuujo.copycat.util.Listeners;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.ThreadPoolContext;
 
@@ -25,7 +23,6 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
 
 /**
  * Log cleaner.
@@ -35,8 +32,6 @@ import java.util.function.Consumer;
 public class Cleaner implements AutoCloseable {
   private static final double CLEAN_THRESHOLD = 0.5;
   private final SegmentManager manager;
-  private final Listeners<EntryCleaner> startListeners = new Listeners<>();
-  private final Listeners<EntryCleaner> completeListeners = new Listeners<>();
   private final ScheduledExecutorService executor;
   private CompletableFuture<Void> cleanFuture;
 
@@ -47,26 +42,6 @@ public class Cleaner implements AutoCloseable {
       throw new NullPointerException("executor cannot be null");
     this.manager = manager;
     this.executor = executor;
-  }
-
-  /**
-   * Registers a compaction start listener.
-   *
-   * @param listener The listener to invoke when a cleaner process starts.
-   * @return The listener context.
-   */
-  public Listener<EntryCleaner> onStart(Consumer<EntryCleaner> listener) {
-    return startListeners.add(listener);
-  }
-
-  /**
-   * Registers a cleaner complete listener.
-   *
-   * @param listener The listener to invoke when a cleaner process completes.
-   * @return The listener context.
-   */
-  public Listener<EntryCleaner> onComplete(Consumer<EntryCleaner> listener) {
-    return completeListeners.add(listener);
   }
 
   /**
@@ -92,17 +67,15 @@ public class Cleaner implements AutoCloseable {
     if (!cleanSegments.isEmpty()) {
       for (List<Segment> segments : cleanSegments) {
         EntryCleaner cleaner = new EntryCleaner(manager, new ThreadPoolContext(executor, manager.serializer()));
-        executor.execute(() -> {
-          cleaner.clean(segments).whenComplete((result, error) -> {
-            if (counter.incrementAndGet() == cleanSegments.size()) {
-              if (context != null) {
-                context.execute(() -> cleanFuture.complete(null));
-              } else {
-                cleanFuture.complete(null);
-              }
+        executor.execute(() -> cleaner.clean(segments).whenComplete((result, error) -> {
+          if (counter.incrementAndGet() == cleanSegments.size()) {
+            if (context != null) {
+              context.execute(() -> cleanFuture.complete(null));
+            } else {
+              cleanFuture.complete(null);
             }
-          });
-        });
+          }
+        }));
       }
     } else {
       cleanFuture.complete(null);

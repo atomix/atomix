@@ -252,6 +252,11 @@ class Segment implements AutoCloseable {
     // Get the offset of the index within this segment.
     int offset = offset(index);
 
+    // Return null if the offset has been deleted from the segment.
+    if (offsetIndex.deleted(offset)) {
+      return null;
+    }
+
     // Get the start position of the offset from the offset index.
     long position = offsetIndex.position(offset);
 
@@ -266,7 +271,7 @@ class Segment implements AutoCloseable {
       // Deserialize the entry from a slice of the underlying buffer.
       try (Buffer value = readBuffer.slice(position, length)) {
         T entry = serializer.readObject(value);
-        entry.setIndex(index).setTombstone(offsetIndex.deleted(offset));
+        entry.setIndex(index);
         return entry;
       }
     }

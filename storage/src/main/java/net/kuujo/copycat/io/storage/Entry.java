@@ -38,7 +38,6 @@ public abstract class Entry<T extends Entry<T>> implements ReferenceCounted<Entr
   private final ReferenceManager<Entry<?>> referenceManager;
   private final AtomicInteger references = new AtomicInteger();
   private long index;
-  private boolean tombstone;
 
   protected Entry() {
     referenceManager = null;
@@ -66,27 +65,6 @@ public abstract class Entry<T extends Entry<T>> implements ReferenceCounted<Entr
   @SuppressWarnings("unchecked")
   public T setIndex(long index) {
     this.index = index;
-    return (T) this;
-  }
-
-  /**
-   * Returns a boolean indicating whether the entry is a tombstone.
-   *
-   * @return Indicates whether the entry is a tombstone.
-   */
-  public boolean isTombstone() {
-    return tombstone;
-  }
-
-  /**
-   * Sets whether the entry is a tombstone.
-   *
-   * @param tombstone Whether the entry is a tombstone.
-   * @return The entry.
-   */
-  @SuppressWarnings("unchecked")
-  public T setTombstone(boolean tombstone) {
-    this.tombstone = tombstone;
     return (T) this;
   }
 
