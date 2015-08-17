@@ -61,7 +61,7 @@ public class TopicCommands {
   /**
    * Listen command.
    */
-  @SerializeWith(id=510)
+  @SerializeWith(id=515)
   public static class Listen extends TopicCommand<Void> {
 
     /**
@@ -92,7 +92,7 @@ public class TopicCommands {
   /**
    * Unlisten command.
    */
-  @SerializeWith(id=511)
+  @SerializeWith(id=516)
   public static class Unlisten extends TopicCommand<Void> {
 
     /**
@@ -123,6 +123,7 @@ public class TopicCommands {
   /**
    * Publish command.
    */
+  @SerializeWith(id=517)
   public static class Publish<T> extends TopicCommand<Void> {
 
     /**
