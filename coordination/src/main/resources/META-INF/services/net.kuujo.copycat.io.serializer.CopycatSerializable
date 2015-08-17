@@ -15,6 +15,7 @@
 #
 net.kuujo.copycat.coordination.state.LeaderElectionCommands$Listen
 net.kuujo.copycat.coordination.state.LeaderElectionCommands$Unlisten
+net.kuujo.copycat.coordination.state.LeaderElectionCommands$IsLeader
 
 net.kuujo.copycat.coordination.state.LockCommands$Lock
 net.kuujo.copycat.coordination.state.LockCommands$Unlock
