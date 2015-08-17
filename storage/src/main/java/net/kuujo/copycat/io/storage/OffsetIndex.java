@@ -249,7 +249,7 @@ class OffsetIndex implements AutoCloseable {
   /**
    * Returns the relative offset for the given offset.
    */
-  public int relativeOffset(int offset) {
+  private int relativeOffset(int offset) {
     if (size == 0) {
       return -1;
     }
@@ -268,6 +268,35 @@ class OffsetIndex implements AutoCloseable {
           return hi;
         }
         return -1;
+      } else if (i < offset) {
+        lo = mid;
+      } else {
+        hi = mid - 1;
+      }
+    }
+
+    if (buffer.readInt(hi * ENTRY_SIZE + HEADER_SIZE) == offset) {
+      return hi;
+    }
+    return -1;
+  }
+
+  /**
+   * Returns the offset nearest the given offset.
+   */
+  private int nearestOffset(int offset) {
+    if (size == 0) {
+      return -1;
+    }
+
+    int lo = 0;
+    int hi = size - 1;
+
+    while (lo < hi) {
+      int mid = lo + (hi - lo) / 2;
+      int i = buffer.readInt(mid * ENTRY_SIZE + HEADER_SIZE);
+      if (i == offset || lo == mid) {
+        return mid;
       } else if (i < offset) {
         lo = mid;
       } else {
@@ -301,10 +330,12 @@ class OffsetIndex implements AutoCloseable {
     if (offset == lastOffset)
       return;
 
-    int index = search(offset + 1);
+    int nearestOffset = nearestOffset(offset + 1);
 
-    if (index == -1)
-      throw new IllegalStateException("unknown offset: " + offset);
+    if (nearestOffset == -1)
+      return;
+
+    int nearestIndex = nearestOffset * ENTRY_SIZE + HEADER_SIZE;
 
     int lastOffset = lastOffset();
     for (int i = lastOffset; i > offset; i--) {
@@ -313,11 +344,11 @@ class OffsetIndex implements AutoCloseable {
       }
     }
 
-    long previousPosition = buffer.readUnsignedInt(index - OFFSET_SIZE);
-    long indexPosition = buffer.readUnsignedInt(index + OFFSET_SIZE);
+    long previousPosition = buffer.readUnsignedInt(nearestIndex - OFFSET_SIZE);
+    long indexPosition = buffer.readUnsignedInt(nearestIndex + OFFSET_SIZE);
 
-    buffer.position(index)
-      .zero(index)
+    buffer.position(nearestIndex)
+      .zero(nearestIndex)
       .mark()
       .writeByte(END)
       .writeInt((int) (indexPosition - previousPosition))
