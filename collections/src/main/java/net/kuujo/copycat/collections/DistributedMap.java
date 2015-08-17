@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.collections;
 
-import net.kuujo.copycat.PersistenceLevel;
+import net.kuujo.copycat.PersistenceMode;
 import net.kuujo.copycat.Resource;
 import net.kuujo.copycat.collections.state.MapCommands;
 import net.kuujo.copycat.collections.state.MapState;
@@ -158,7 +158,7 @@ public class DistributedMap<K, V> extends Resource {
    * @return A completable future to be completed with the result once complete.
    */
   @SuppressWarnings("unchecked")
-  public CompletableFuture<V> put(K key, V value, PersistenceLevel persistence) {
+  public CompletableFuture<V> put(K key, V value, PersistenceMode persistence) {
     return submit(MapCommands.Put.builder()
       .withKey(key)
       .withValue(value)
@@ -195,7 +195,7 @@ public class DistributedMap<K, V> extends Resource {
    * @return A completable future to be completed with the result once complete.
    */
   @SuppressWarnings("unchecked")
-  public CompletableFuture<V> put(K key, V value, Duration ttl, PersistenceLevel persistence) {
+  public CompletableFuture<V> put(K key, V value, Duration ttl, PersistenceMode persistence) {
     return submit(MapCommands.Put.builder()
       .withKey(key)
       .withValue(value)
@@ -297,7 +297,7 @@ public class DistributedMap<K, V> extends Resource {
    * @return A completable future to be completed with the result once complete.
    */
   @SuppressWarnings("unchecked")
-  public CompletableFuture<V> putIfAbsent(K key, V value, Duration ttl, PersistenceLevel persistence) {
+  public CompletableFuture<V> putIfAbsent(K key, V value, Duration ttl, PersistenceMode persistence) {
     return submit(MapCommands.PutIfAbsent.builder()
       .withKey(key)
       .withValue(value)

@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.collections.state;
 
-import net.kuujo.copycat.PersistenceLevel;
+import net.kuujo.copycat.PersistenceMode;
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.CopycatSerializable;
@@ -268,7 +268,7 @@ public class MapCommands {
    * TTL command.
    */
   public static abstract class TtlCommand<V> extends KeyValueCommand<V> {
-    protected PersistenceLevel mode = PersistenceLevel.PERSISTENT;
+    protected PersistenceMode mode = PersistenceMode.PERSISTENT;
     protected long ttl;
 
     /**
@@ -276,7 +276,7 @@ public class MapCommands {
      *
      * @return The persistence mode.
      */
-    public PersistenceLevel mode() {
+    public PersistenceMode mode() {
       return mode;
     }
 
@@ -298,7 +298,7 @@ public class MapCommands {
     @Override
     public void readObject(BufferInput buffer, Serializer serializer) {
       super.readObject(buffer, serializer);
-      mode = PersistenceLevel.values()[buffer.readByte()];
+      mode = PersistenceMode.values()[buffer.readByte()];
       ttl = buffer.readLong();
     }
 
@@ -316,7 +316,7 @@ public class MapCommands {
        * @param mode The persistence mode.
        * @return The command builder.
        */
-      public Builder withPersistence(PersistenceLevel mode) {
+      public Builder withPersistence(PersistenceMode mode) {
         command.mode = mode;
         return this;
       }

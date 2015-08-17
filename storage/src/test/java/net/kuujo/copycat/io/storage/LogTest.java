@@ -18,6 +18,8 @@ package net.kuujo.copycat.io.storage;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.ServiceLoaderTypeResolver;
 import org.testng.Assert;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 /**
@@ -27,6 +29,12 @@ import org.testng.annotations.Test;
  */
 @Test
 public class LogTest {
+  private Log log;
+
+  @BeforeMethod
+  public void resetLog() {
+    log = null;
+  }
 
   /**
    * Tests writing and reading an entry.
@@ -218,13 +226,13 @@ public class LogTest {
    */
   private Log createLog() {
     Storage storage = Storage.builder()
-      .withStorageLevel(StorageLevel.MEMORY)
       .withMaxEntrySize(1024)
       .withMaxSegmentSize(1024 * 1024)
       .withMaxEntriesPerSegment(1024)
       .withSerializer(new Serializer(new ServiceLoaderTypeResolver()))
       .build();
-    return storage.open();
+    log = storage.open();
+    return log;
   }
 
   /**
@@ -237,6 +245,13 @@ public class LogTest {
         entry.setRemove(true);
         log.appendEntry(entry);
       }
+    }
+  }
+
+  @AfterMethod
+  public void deleteLog() {
+    if (log != null) {
+      log.delete();
     }
   }
 

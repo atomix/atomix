@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.atomic;
 
-import net.kuujo.copycat.PersistenceLevel;
+import net.kuujo.copycat.PersistenceMode;
 import net.kuujo.copycat.Resource;
 import net.kuujo.copycat.atomic.state.ReferenceCommands;
 import net.kuujo.copycat.atomic.state.ReferenceState;
@@ -141,7 +141,7 @@ public class DistributedAtomicValue<T> extends Resource {
    * @param persistence The write persistence.
    * @return A completable future to be completed once the value has been set.
    */
-  public CompletableFuture<Void> set(T value, PersistenceLevel persistence) {
+  public CompletableFuture<Void> set(T value, PersistenceMode persistence) {
     return submit(ReferenceCommands.Set.builder()
       .withValue(value)
       .withPersistence(persistence)
@@ -156,7 +156,7 @@ public class DistributedAtomicValue<T> extends Resource {
    * @param persistence The write persistence.
    * @return A completable future to be completed once the value has been set.
    */
-  public CompletableFuture<Void> set(T value, Duration ttl, PersistenceLevel persistence) {
+  public CompletableFuture<Void> set(T value, Duration ttl, PersistenceMode persistence) {
     return submit(ReferenceCommands.Set.builder()
       .withValue(value)
       .withTtl(ttl.toMillis())
@@ -197,7 +197,7 @@ public class DistributedAtomicValue<T> extends Resource {
    * @param persistence The write persistence.
    * @return A completable future to be completed with the previous value.
    */
-  public CompletableFuture<T> getAndSet(T value, PersistenceLevel persistence) {
+  public CompletableFuture<T> getAndSet(T value, PersistenceMode persistence) {
     return submit(ReferenceCommands.GetAndSet.<T>builder()
       .withValue(value)
       .withPersistence(persistence)
@@ -212,7 +212,7 @@ public class DistributedAtomicValue<T> extends Resource {
    * @param persistence The write persistence.
    * @return A completable future to be completed with the previous value.
    */
-  public CompletableFuture<T> getAndSet(T value, Duration ttl, PersistenceLevel persistence) {
+  public CompletableFuture<T> getAndSet(T value, Duration ttl, PersistenceMode persistence) {
     return submit(ReferenceCommands.GetAndSet.<T>builder()
       .withValue(value)
       .withTtl(ttl.toMillis())
@@ -258,7 +258,7 @@ public class DistributedAtomicValue<T> extends Resource {
    * @param persistence The write persistence.
    * @return A completable future to be completed with a boolean value indicating whether the value was updated.
    */
-  public CompletableFuture<Boolean> compareAndSet(T expect, T update, PersistenceLevel persistence) {
+  public CompletableFuture<Boolean> compareAndSet(T expect, T update, PersistenceMode persistence) {
     return submit(ReferenceCommands.CompareAndSet.builder()
       .withExpect(expect)
       .withUpdate(update)
@@ -275,7 +275,7 @@ public class DistributedAtomicValue<T> extends Resource {
    * @param persistence The write persistence.
    * @return A completable future to be completed with a boolean value indicating whether the value was updated.
    */
-  public CompletableFuture<Boolean> compareAndSet(T expect, T update, Duration ttl, PersistenceLevel persistence) {
+  public CompletableFuture<Boolean> compareAndSet(T expect, T update, Duration ttl, PersistenceMode persistence) {
     return submit(ReferenceCommands.CompareAndSet.builder()
       .withExpect(expect)
       .withUpdate(update)

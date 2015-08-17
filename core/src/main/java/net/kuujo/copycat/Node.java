@@ -16,7 +16,6 @@
 package net.kuujo.copycat;
 
 import net.kuujo.copycat.manager.PathChildren;
-import net.kuujo.copycat.raft.StateMachine;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -79,7 +78,7 @@ public class Node {
     return copycat.client.submit(PathChildren.builder()
       .withPath(path)
       .build())
-      .thenApply(children ->  children.stream()
+      .thenApply(children -> children.stream()
         .map(copycat::node)
         .collect(Collectors.toList()));
   }
@@ -134,11 +133,6 @@ public class Node {
 
   /**
    * Creates a resource at this node.
-   * <p>
-   * The provided {@link net.kuujo.copycat.Resource} class must be annotated with {@link net.kuujo.copycat.Stateful}
-   * indicating the {@link StateMachine} to create on the server side. The state machine
-   * class will be submitted to the cluster and created on each Raft server before the returned
-   * {@link java.util.concurrent.CompletableFuture} is completed.
    *
    * @param type The resource type.
    * @param <T> The resource type.
@@ -149,10 +143,18 @@ public class Node {
   }
 
   /**
+   * Creates a configurable resource at this node.
+   *
+   * @param type The resource type.
+   * @param <T> The resource type.
+   * @return A completable future to be completed with the resource instance.
+   */
+  public <T extends Resource & Configurable<U>, U extends Options> CompletableFuture<T> create(Class<? super T> type, U options) {
+    return copycat.create(path, type, options);
+  }
+
+  /**
    * Gets a resource at this node.
-   * <p>
-   * The provided {@link net.kuujo.copycat.Resource} class must be annotated with {@link net.kuujo.copycat.Stateful}
-   * indicating the {@link StateMachine} type on the server side.
    *
    * @param type The resource type.
    * @param <T> The resource type.

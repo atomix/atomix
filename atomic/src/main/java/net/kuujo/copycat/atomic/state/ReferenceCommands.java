@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.atomic.state;
 
-import net.kuujo.copycat.PersistenceLevel;
+import net.kuujo.copycat.PersistenceMode;
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.CopycatSerializable;
@@ -41,7 +41,7 @@ public class ReferenceCommands {
    * Abstract reference command.
    */
   public static abstract class ReferenceCommand<V> implements Command<V>, CopycatSerializable {
-    protected PersistenceLevel mode = PersistenceLevel.PERSISTENT;
+    protected PersistenceMode mode = PersistenceMode.PERSISTENT;
     protected long ttl;
 
     /**
@@ -49,7 +49,7 @@ public class ReferenceCommands {
      *
      * @return The persistence mode.
      */
-    public PersistenceLevel mode() {
+    public PersistenceMode mode() {
       return mode;
     }
 
@@ -70,7 +70,7 @@ public class ReferenceCommands {
 
     @Override
     public void readObject(BufferInput buffer, Serializer serializer) {
-      mode = PersistenceLevel.values()[buffer.readByte()];
+      mode = PersistenceMode.values()[buffer.readByte()];
       ttl = buffer.readLong();
     }
 
@@ -89,7 +89,7 @@ public class ReferenceCommands {
        * @return The command builder.
        */
       @SuppressWarnings("unchecked")
-      public T withPersistence(PersistenceLevel mode) {
+      public T withPersistence(PersistenceMode mode) {
         if (mode == null)
           throw new NullPointerException("mode cannot be null");
         command.mode = mode;

@@ -20,7 +20,6 @@ import net.kuujo.copycat.Copycat;
 import net.kuujo.copycat.CopycatServer;
 import net.kuujo.copycat.Node;
 import net.kuujo.copycat.io.storage.Storage;
-import net.kuujo.copycat.io.storage.StorageLevel;
 import net.kuujo.copycat.io.transport.LocalServerRegistry;
 import net.kuujo.copycat.io.transport.LocalTransport;
 import net.kuujo.copycat.raft.Member;
@@ -85,7 +84,7 @@ public class DistributedLeaderElectionTest extends ConcurrentTestCase {
           .withRegistry(registry)
           .build())
         .withStorage(Storage.builder()
-          .withStorageLevel(StorageLevel.MEMORY)
+          .withDirectory("test-logs")
           .build())
         .build();
 

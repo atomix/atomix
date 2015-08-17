@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.atomic.state;
 
-import net.kuujo.copycat.PersistenceLevel;
+import net.kuujo.copycat.PersistenceMode;
 import net.kuujo.copycat.raft.session.Session;
 import net.kuujo.copycat.raft.Commit;
 import net.kuujo.copycat.raft.StateMachine;
@@ -79,7 +79,7 @@ public class ReferenceState extends StateMachine {
   private boolean isActive(Commit<? extends ReferenceCommands.ReferenceCommand> commit, Instant time) {
     if (commit == null) {
       return false;
-    } else if (commit.operation().mode() == PersistenceLevel.EPHEMERAL && !sessions.contains(commit.session().id())) {
+    } else if (commit.operation().mode() == PersistenceMode.EPHEMERAL && !sessions.contains(commit.session().id())) {
       return false;
     } else if (commit.operation().ttl() != 0 && commit.operation().ttl() < time.toEpochMilli() - commit.time().toEpochMilli()) {
       return false;

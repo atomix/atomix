@@ -38,6 +38,7 @@ public abstract class Entry<T extends Entry<T>> implements ReferenceCounted<Entr
   private final ReferenceManager<Entry<?>> referenceManager;
   private final AtomicInteger references = new AtomicInteger();
   private long index;
+  private PersistenceLevel persistenceLevel;
 
   protected Entry() {
     referenceManager = null;
@@ -65,6 +66,27 @@ public abstract class Entry<T extends Entry<T>> implements ReferenceCounted<Entr
   @SuppressWarnings("unchecked")
   public T setIndex(long index) {
     this.index = index;
+    return (T) this;
+  }
+
+  /**
+   * Returns the entry storage level.
+   *
+   * @return The entry storage level.
+   */
+  public PersistenceLevel getPersistenceLevel() {
+    return persistenceLevel;
+  }
+
+  /**
+   * Sets the entry storage level.
+   *
+   * @param level The entry storage level.
+   * @return The entry.
+   */
+  @SuppressWarnings("unchecked")
+  public T setPersistenceLevel(PersistenceLevel level) {
+    this.persistenceLevel = level;
     return (T) this;
   }
 

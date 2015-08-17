@@ -29,12 +29,12 @@ import java.io.File;
  *   {@code
  *     Storage storage = Storage.builder()
  *       .withDirectory(new File("logs"))
- *       .withStorageLevel(StorageLevel.DISK)
+ *       .withPersistenceLevel(PersistenceLevel.DISK)
  *       .build();
  *   }
  * </pre>
- * Copycat's storage facility supports two modes - {@link StorageLevel#DISK} and {@link StorageLevel#MEMORY}.
- * By default, the storage module uses {@link StorageLevel#DISK} and {@link #directory()} defaults
+ * Copycat's storage facility supports two modes - {@link PersistenceLevel#DISK} and {@link PersistenceLevel#MEMORY}.
+ * By default, the storage module uses {@link PersistenceLevel#DISK} and {@link #directory()} defaults
  * to {@code System.getProperty("user.dir")}.
  * <p>
  * Users can also configure a number of options related to how {@link Log logs} are constructed and managed.
@@ -55,7 +55,6 @@ public class Storage {
 
   private Serializer serializer = new Serializer();
   private File directory = new File(DEFAULT_DIRECTORY);
-  private StorageLevel level = StorageLevel.DISK;
   private int maxEntrySize = DEFAULT_MAX_ENTRY_SIZE;
   private int maxSegmentSize = DEFAULT_MAX_SEGMENT_SIZE;
   private int maxEntriesPerSegment = DEFAULT_MAX_ENTRIES_PER_SEGMENT;
@@ -83,18 +82,9 @@ public class Storage {
   }
 
   /**
-   * Returns the storage level.
-   *
-   * @return The storage level.
-   */
-  public StorageLevel level() {
-    return level;
-  }
-
-  /**
    * Returns the storage directory.
    *
-   * @return The storage directory or {@code null} if the {@link #level()} is {@link StorageLevel#MEMORY}
+   * @return The storage directory.
    */
   public File directory() {
     return directory;
@@ -147,7 +137,7 @@ public class Storage {
 
   @Override
   public String toString() {
-    return String.format("%s[directory=%s, level=%s]", getClass().getSimpleName(), directory, level);
+    return String.format("%s[directory=%s]", getClass().getSimpleName(), directory);
   }
 
   /**
@@ -203,23 +193,6 @@ public class Storage {
       if (directory == null)
         throw new NullPointerException("directory cannot be null");
       storage.directory = directory;
-      return this;
-    }
-
-    /**
-     * Sets the log storage level.
-     * <p>
-     * The storage level dictates how entries in the log are persisted. By default, the {@link StorageLevel#DISK} level
-     * is used to persist entries to disk.
-     *
-     * @param level The storage level.
-     * @return The log builder.
-     * @throws java.lang.NullPointerException If the {@code level} is {@code null}
-     */
-    public Builder withStorageLevel(StorageLevel level) {
-      if (level == null)
-        throw new NullPointerException("level cannot be null");
-      storage.level = level;
       return this;
     }
 

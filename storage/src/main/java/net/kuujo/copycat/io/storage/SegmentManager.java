@@ -16,10 +16,10 @@
 package net.kuujo.copycat.io.storage;
 
 import net.kuujo.copycat.io.Buffer;
+import net.kuujo.copycat.io.DirectBuffer;
 import net.kuujo.copycat.io.FileBuffer;
 import net.kuujo.copycat.io.HeapBuffer;
 import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.util.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,6 +82,8 @@ class SegmentManager implements AutoCloseable {
         .withMaxEntries(storage.maxEntriesPerSegment())
         .build()) {
 
+        descriptor.lock();
+
         currentSegment = createSegment(descriptor);
         currentSegment.descriptor().update(System.currentTimeMillis());
         currentSegment.descriptor().lock();
@@ -123,6 +125,7 @@ class SegmentManager implements AutoCloseable {
         .withMaxSegmentSize(storage.maxSegmentSize())
         .withMaxEntries(storage.maxEntriesPerSegment())
         .build()) {
+        descriptor.lock();
         currentSegment = createSegment(descriptor);
       }
       segments.put(1L, currentSegment);
@@ -163,6 +166,7 @@ class SegmentManager implements AutoCloseable {
       .withMaxSegmentSize(storage.maxSegmentSize())
       .withMaxEntries(storage.maxEntriesPerSegment())
       .build()) {
+      descriptor.lock();
       currentSegment = createSegment(descriptor);
       segments.put(descriptor.index(), currentSegment);
     }
@@ -229,38 +233,13 @@ class SegmentManager implements AutoCloseable {
   }
 
   /**
-   * Creates a new segment.
+   * Create a new segment.
    */
   public Segment createSegment(SegmentDescriptor descriptor) {
-    switch (storage.level()) {
-      case DISK:
-        return createDiskSegment(descriptor);
-      case MEMORY:
-        return createMemorySegment(descriptor);
-      default:
-        throw new ConfigurationException("unknown storage level: " + storage.level());
-    }
-  }
-
-  /**
-   * Create an on-disk segment.
-   */
-  private Segment createDiskSegment(SegmentDescriptor descriptor) {
     File segmentFile = SegmentFile.createSegmentFile(storage.directory(), descriptor.id(), descriptor.version());
     Buffer buffer = FileBuffer.allocate(segmentFile, 1024 * 1024, descriptor.maxSegmentSize() + SegmentDescriptor.BYTES);
-    Segment segment = Segment.open(buffer.position(SegmentDescriptor.BYTES).slice(), descriptor, createIndex(descriptor), storage.serializer().clone());
-    LOGGER.debug("Created persistent segment: {}", segment);
-    return segment;
-  }
-
-  /**
-   * Creates an in memory segment.
-   */
-  private Segment createMemorySegment(SegmentDescriptor descriptor) {
-    Buffer buffer = HeapBuffer.allocate(Math.min(1024 * 1024, storage.maxSegmentSize() + storage.maxEntrySize() + SegmentDescriptor.BYTES),
-      storage.maxSegmentSize() + storage.maxEntrySize() + SegmentDescriptor.BYTES);
-    Segment segment = Segment.open(buffer.position(SegmentDescriptor.BYTES).slice(), descriptor, createIndex(descriptor), storage.serializer().clone());
-    LOGGER.debug("Created ephemeral segment: {}", segment);
+    Segment segment = Segment.open(buffer.position(SegmentDescriptor.BYTES).slice(), DirectBuffer.allocate(1024 * 1024, descriptor.maxSegmentSize()), descriptor, createDiskIndex(descriptor), createMemoryIndex(descriptor), storage.serializer().clone());
+    LOGGER.debug("Created segment: {}", segment);
     return segment;
   }
 
@@ -268,26 +247,12 @@ class SegmentManager implements AutoCloseable {
    * Loads a segment.
    */
   public Segment loadSegment(long segmentId, long segmentVersion) {
-    switch (storage.level()) {
-      case DISK:
-        return loadDiskSegment(segmentId, segmentVersion);
-      case MEMORY:
-        return loadMemorySegment(segmentId, segmentVersion);
-      default:
-        throw new ConfigurationException("unknown storage level: " + storage.level());
-    }
-  }
-
-  /**
-   * Loads a segment from disk.
-   */
-  private Segment loadDiskSegment(long segmentId, long segmentVersion) {
     File file = SegmentFile.createSegmentFile(storage.directory(), segmentId, segmentVersion);
     try (SegmentDescriptor descriptor = new SegmentDescriptor(FileBuffer.allocate(file, SegmentDescriptor.BYTES))) {
       Buffer buffer = FileBuffer.allocate(file, Math.min(1024 * 1024, storage.maxSegmentSize() + storage.maxEntrySize() + SegmentDescriptor.BYTES),
         storage.maxSegmentSize() + storage.maxEntrySize() + SegmentDescriptor.BYTES);
       buffer = buffer.position(SegmentDescriptor.BYTES).slice();
-      Segment segment = Segment.open(buffer, descriptor, createIndex(descriptor), storage.serializer().clone());
+      Segment segment = Segment.open(buffer, DirectBuffer.allocate(1024 * 1024, storage.maxSegmentSize()), descriptor, createDiskIndex(descriptor), createMemoryIndex(descriptor), storage.serializer().clone());
       LOGGER.debug("Loaded segment: {} ({})", descriptor.id(), file.getName());
       return segment;
     }
@@ -301,25 +266,11 @@ class SegmentManager implements AutoCloseable {
   }
 
   /**
-   * Creates a segment index.
-   */
-  private OffsetIndex createIndex(SegmentDescriptor descriptor) {
-    switch (storage.level()) {
-      case DISK:
-        return createDiskIndex(descriptor);
-      case MEMORY:
-        return createMemoryIndex(descriptor);
-      default:
-        throw new ConfigurationException("unknown storage level: " + storage.level());
-    }
-  }
-
-  /**
    * Creates an on disk segment index.
    */
   private OffsetIndex createDiskIndex(SegmentDescriptor descriptor) {
     File file = SegmentFile.createIndexFile(storage.directory(), descriptor.id(), descriptor.version());
-    return new OffsetIndex(FileBuffer.allocate(file, Math.min(1024 * 1024, descriptor.maxEntries()), OffsetIndex.size(descriptor.maxEntries())));
+    return new OffsetIndex(FileBuffer.allocate(file, Math.min(1024 * 1024, descriptor.maxEntries() * 8), OffsetIndex.size(descriptor.maxEntries())));
   }
 
   /**
@@ -424,7 +375,7 @@ class SegmentManager implements AutoCloseable {
 
   @Override
   public String toString() {
-    return String.format("%s[directory=%s, level=%s, segments=%d]", getClass().getSimpleName(), storage.directory(), storage.level(), segments.size());
+    return String.format("%s[directory=%s, level=%s, segments=%d]", getClass().getSimpleName(), storage.directory(), segments.size());
   }
 
 }

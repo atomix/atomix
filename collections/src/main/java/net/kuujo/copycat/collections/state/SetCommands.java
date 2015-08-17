@@ -222,7 +222,7 @@ public class SetCommands {
    */
   public static abstract class TtlCommand<V> extends ValueCommand<V> {
     protected long ttl;
-    protected PersistenceLevel mode = PersistenceLevel.PERSISTENT;
+    protected PersistenceMode mode = PersistenceMode.PERSISTENT;
 
     /**
      * Returns the time to live in milliseconds.
@@ -238,7 +238,7 @@ public class SetCommands {
      *
      * @return The persistence mode.
      */
-    public PersistenceLevel mode() {
+    public PersistenceMode mode() {
       return mode;
     }
 
@@ -251,7 +251,7 @@ public class SetCommands {
     @Override
     public void readObject(BufferInput buffer, Serializer serializer) {
       super.readObject(buffer, serializer);
-      mode = PersistenceLevel.values()[buffer.readByte()];
+      mode = PersistenceMode.values()[buffer.readByte()];
       ttl = buffer.readLong();
     }
 
@@ -292,7 +292,7 @@ public class SetCommands {
        * @param mode The persistence mode.
        * @return The command builder.
        */
-      public Builder withPersistence(PersistenceLevel mode) {
+      public Builder withPersistence(PersistenceMode mode) {
         command.mode = mode;
         return this;
       }

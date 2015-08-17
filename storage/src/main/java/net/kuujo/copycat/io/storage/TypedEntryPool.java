@@ -56,7 +56,7 @@ class TypedEntryPool {
     }
 
     T entry = pool.acquire();
-    entry.setIndex(index);
+    entry.setIndex(index).setPersistenceLevel(PersistenceLevel.DISK);
     return entry;
   }
 

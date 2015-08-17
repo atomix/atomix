@@ -53,9 +53,9 @@ public class CreateResource extends PathOperation<Long> implements Command<Long>
   }
 
   /**
-   * Returns the resource class.
+   * Returns the resource state machine class.
    *
-   * @return The resource class.
+   * @return The resource state machine class.
    */
   public Class<? extends StateMachine> type() {
     return type;
@@ -95,10 +95,10 @@ public class CreateResource extends PathOperation<Long> implements Command<Long>
     }
 
     /**
-     * Sets the command type.
+     * Sets the resource state machine type.
      *
-     * @param type The command type.
-     * @return The command builder.
+     * @param type The resource state machine type.
+     * @return The create resource command builder.
      */
     public Builder withType(Class<? extends StateMachine> type) {
       operation.type = type;

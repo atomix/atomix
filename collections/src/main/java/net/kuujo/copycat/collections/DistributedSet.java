@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.collections;
 
-import net.kuujo.copycat.PersistenceLevel;
+import net.kuujo.copycat.PersistenceMode;
 import net.kuujo.copycat.Resource;
 import net.kuujo.copycat.collections.state.SetCommands;
 import net.kuujo.copycat.collections.state.SetState;
@@ -58,7 +58,7 @@ public class DistributedSet<T> extends Resource {
    * @return A completable future to be completed with the result once complete.
    */
   @SuppressWarnings("unchecked")
-  public CompletableFuture<Boolean> add(T value, PersistenceLevel persistence) {
+  public CompletableFuture<Boolean> add(T value, PersistenceMode persistence) {
     return submit(SetCommands.Add.builder()
       .withValue(value.hashCode())
       .withPersistence(persistence)
@@ -89,7 +89,7 @@ public class DistributedSet<T> extends Resource {
    * @return A completable future to be completed with the result once complete.
    */
   @SuppressWarnings("unchecked")
-  public CompletableFuture<Boolean> add(T value, Duration ttl, PersistenceLevel persistence) {
+  public CompletableFuture<Boolean> add(T value, Duration ttl, PersistenceMode persistence) {
     return submit(SetCommands.Add.builder()
       .withValue(value.hashCode())
       .withTtl(ttl.toMillis())

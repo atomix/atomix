@@ -35,7 +35,6 @@ public class CleanerTest extends ConcurrentTestCase {
    */
   public void testCompact() throws Throwable {
     Storage storage = Storage.builder()
-      .withStorageLevel(StorageLevel.MEMORY)
       .withMaxEntriesPerSegment(10)
       .withSerializer(new Serializer(new ServiceLoaderTypeResolver()))
       .build();

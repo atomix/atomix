@@ -19,8 +19,8 @@ import net.kuujo.copycat.manager.CreatePath;
 import net.kuujo.copycat.manager.CreateResource;
 import net.kuujo.copycat.manager.DeletePath;
 import net.kuujo.copycat.manager.PathExists;
-import net.kuujo.copycat.raft.StateMachine;
 import net.kuujo.copycat.raft.RaftClient;
+import net.kuujo.copycat.raft.StateMachine;
 import net.kuujo.copycat.raft.protocol.Command;
 import net.kuujo.copycat.raft.protocol.Query;
 import net.kuujo.copycat.resource.ResourceContext;
@@ -139,6 +139,42 @@ public abstract class Copycat implements Managed<Copycat> {
   }
 
   /**
+   * Creates a configurable resource at the given path.
+   * <p>
+   * If a node at the given path already exists, the existing node will be returned, otherwise a new {@link net.kuujo.copycat.Node}
+   * will be returned. Additionally, if the node's parents don't already exist they'll be created. For instance, calling
+   * this method with {@code /foo/bar/baz} will create {@code foo}, {@code foo/bar}, and {@code foo/bar/baz} if they
+   * don't already exist.
+   *
+   * @param path The path at which to create the resource.
+   * @param type The resource type to create.
+   * @param options The resource options.
+   * @param <T> The resource type.
+   * @param <U> The resource configuration type.
+   * @return A completable future to be completed once the resource has been created.
+   */
+  @SuppressWarnings("unchecked")
+  public <T extends Resource & Configurable<U>, U extends Options> CompletableFuture<T> create(String path, Class<? super T> type, U options) {
+    try {
+      T resource = (T) type.newInstance();
+      return client.submit(CreateResource.builder()
+        .withPath(path)
+        .withType(resource.stateMachine())
+        .build())
+        .thenApply(id -> {
+          resource.open(resources.computeIfAbsent(id, i -> {
+            ResourceContext context = new ResourceContext(id, client);
+            resource.configure(options);
+            return context;
+          }));
+          return resource;
+        });
+    } catch (InstantiationException | IllegalAccessException e) {
+      throw new ResourceException("failed to instantiate resource: " + type, e);
+    }
+  }
+
+  /**
    * Deletes a node at the given path.
    * <p>
    * Both the {@link net.kuujo.copycat.Node} at the given path and any {@link net.kuujo.copycat.Resource} associated
@@ -155,25 +191,21 @@ public abstract class Copycat implements Managed<Copycat> {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public CompletableFuture<Copycat> open() {
     return client.open().thenApply(v -> this);
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public boolean isOpen() {
     return client.isOpen();
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public CompletableFuture<Void> close() {
     return client.close();
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public boolean isClosed() {
     return client.isClosed();
   }

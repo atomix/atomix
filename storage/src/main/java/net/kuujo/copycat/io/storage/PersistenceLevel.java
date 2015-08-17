@@ -22,7 +22,7 @@ package net.kuujo.copycat.io.storage;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public enum StorageLevel {
+public enum PersistenceLevel {
 
   /**
    * Memory storage level.

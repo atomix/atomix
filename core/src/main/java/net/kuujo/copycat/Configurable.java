@@ -16,20 +16,17 @@
 package net.kuujo.copycat;
 
 /**
- * Data persistence level.
+ * Configurable resource.
  *
- * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
+ * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public enum PersistenceLevel {
+public interface Configurable<T extends Options> {
 
   /**
-   * Ephemeral mode.
+   * Configures the object.
+   *
+   * @param options The object options.
    */
-  EPHEMERAL,
-
-  /**
-   * Persistent mode.
-   */
-  PERSISTENT
+  void configure(T options);
 
 }

@@ -57,7 +57,7 @@ public interface Query<T> extends Operation<T> {
   /**
    * Base builder for queries.
    */
-  static abstract class Builder<T extends Builder<T, U, V>, U extends Query<V>, V> extends Operation.Builder<T, U, V> {
+  abstract class Builder<T extends Builder<T, U, V>, U extends Query<V>, V> extends Operation.Builder<T, U, V> {
     protected U query;
 
     protected Builder(BuilderPool<T, U> pool) {

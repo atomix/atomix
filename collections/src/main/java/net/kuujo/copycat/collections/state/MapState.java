@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.collections.state;
 
-import net.kuujo.copycat.PersistenceLevel;
+import net.kuujo.copycat.PersistenceMode;
 import net.kuujo.copycat.raft.session.Session;
 import net.kuujo.copycat.raft.Commit;
 import net.kuujo.copycat.raft.StateMachine;
@@ -70,7 +70,7 @@ public class MapState extends StateMachine {
   private boolean isActive(Commit<? extends MapCommands.TtlCommand> commit, Instant instant) {
     if (commit == null) {
       return false;
-    } else if (commit.operation().mode() == PersistenceLevel.EPHEMERAL && !sessions.contains(commit.session().id())) {
+    } else if (commit.operation().mode() == PersistenceMode.EPHEMERAL && !sessions.contains(commit.session().id())) {
       return false;
     } else if (commit.operation().ttl() != 0 && commit.operation().ttl() < instant.toEpochMilli() - commit.time().toEpochMilli()) {
       return false;

@@ -246,9 +246,9 @@ class OffsetIndex implements AutoCloseable {
   }
 
   /**
-   * Performs a binary search to find the given offset in the buffer.
+   * Returns the relative offset for the given offset.
    */
-  private int search(int offset) {
+  public int relativeOffset(int offset) {
     if (size == 0) {
       return -1;
     }
@@ -260,10 +260,11 @@ class OffsetIndex implements AutoCloseable {
       int mid = lo + (hi - lo) / 2;
       int i = buffer.readInt(mid * ENTRY_SIZE + HEADER_SIZE);
       if (i == offset) {
-        return mid * ENTRY_SIZE + HEADER_SIZE;
+        return mid;
       } else if (lo == mid) {
-        if (buffer.readInt(hi * ENTRY_SIZE + HEADER_SIZE) == offset) {
-          return hi * ENTRY_SIZE + HEADER_SIZE;
+        i = buffer.readInt(hi * ENTRY_SIZE + HEADER_SIZE);
+        if (i == offset) {
+          return hi;
         }
         return -1;
       } else if (i < offset) {
@@ -274,9 +275,17 @@ class OffsetIndex implements AutoCloseable {
     }
 
     if (buffer.readInt(hi * ENTRY_SIZE + HEADER_SIZE) == offset) {
-      return hi * ENTRY_SIZE + HEADER_SIZE;
+      return hi;
     }
     return -1;
+  }
+
+  /**
+   * Performs a binary search to find the given offset in the buffer.
+   */
+  private int search(int offset) {
+    int relativeOffset = relativeOffset(offset);
+    return relativeOffset != -1 ? relativeOffset * ENTRY_SIZE + HEADER_SIZE : -1;
   }
 
   /**
@@ -323,12 +332,17 @@ class OffsetIndex implements AutoCloseable {
    * @param offset The offset to delete.
    */
   public boolean delete(int offset) {
-    if (deletes.size() <= offset) {
-      while (deletes.size() <= offset) {
+    int relativeOffset = relativeOffset(offset);
+    if (relativeOffset == -1) {
+      return false;
+    }
+
+    if (deletes.size() <= relativeOffset) {
+      while (deletes.size() <= relativeOffset) {
         deletes.resize(deletes.size() * 2);
       }
     }
-    return deletes.set(offset);
+    return deletes.set(relativeOffset);
   }
 
   /**
@@ -338,7 +352,8 @@ class OffsetIndex implements AutoCloseable {
    * @return Whether the offset has been marked for deletion.
    */
   public boolean deleted(int offset) {
-    return deletes.size() > offset && deletes.get(offset);
+    int relativeOffset = relativeOffset(offset);
+    return relativeOffset == -1 || (deletes.size() > relativeOffset && deletes.get(relativeOffset));
   }
 
   /**

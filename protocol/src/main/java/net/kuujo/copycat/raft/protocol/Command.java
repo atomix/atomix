@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.raft.protocol;
 
+import net.kuujo.copycat.io.storage.PersistenceLevel;
 import net.kuujo.copycat.util.BuilderPool;
 
 /**
@@ -30,9 +31,26 @@ import net.kuujo.copycat.util.BuilderPool;
 public interface Command<T> extends Operation<T> {
 
   /**
+   * Returns the command storage level.
+   * <p>
+   * The storage level specifies how the command should be persisted in Raft replicated logs. Copycat's log
+   * supports persisting commands to disk or holding them in memory depending on the provided storage level.
+   * If the storage level is {@link PersistenceLevel#DISK} then the command will persist across failures, otherwise
+   * a failure will result in {@link PersistenceLevel#MEMORY} commands being lost.
+   * <p>
+   * It's important to note, though, that all commands will be replicated to a majority of the cluster regardless
+   * of their storage level.
+   *
+   * @return The command storage level.
+   */
+  default PersistenceLevel storage() {
+    return PersistenceLevel.DISK;
+  }
+
+  /**
    * Base builder for commands.
    */
-  static abstract class Builder<T extends Builder<T, U, V>, U extends Command<V>, V> extends Operation.Builder<T, U, V> {
+  abstract class Builder<T extends Builder<T, U, V>, U extends Command<V>, V> extends Operation.Builder<T, U, V> {
     protected U command;
 
     protected Builder(BuilderPool<T, U> pool) {
