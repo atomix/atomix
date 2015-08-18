@@ -18,8 +18,7 @@ package net.kuujo.copycat.io;
 import net.kuujo.copycat.io.util.BitArray;
 import org.testng.annotations.Test;
 
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.*;
 
 /**
  * Direct memory bit set test.
@@ -34,12 +33,25 @@ public class BitArrayTest {
    */
   public void testBitArray() {
     BitArray bits = BitArray.allocate(1024);
+
     for (int i = 0; i < 1024; i++) {
       assertFalse(bits.get(i));
     }
+
+    for (int i = 0; i < 64; i++) {
+      bits.set(i);
+    }
+
+    for (int i = 64; i < 1024; i++) {
+      assertFalse(bits.get(i));
+    }
+
     for (int i = 0; i < 1024; i++) {
       bits.set(i);
     }
+
+    assertEquals(bits.count(), 1024);
+
     for (int i = 0; i < 1024; i++) {
       assertTrue(bits.get(i));
     }

@@ -29,7 +29,6 @@ import java.io.IOException;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class BitArray implements AutoCloseable {
-  private static final int BITS_PER_OFFSET = 6;
 
   /**
    * Allocates a new direct bit set.
@@ -40,7 +39,7 @@ public class BitArray implements AutoCloseable {
   public static BitArray allocate(long bits) {
     if (!(bits > 0 & (bits & (bits - 1)) == 0))
       throw new IllegalArgumentException("size must be a power of 2");
-    return new BitArray(HeapBytes.allocate(Math.max(bits / 64, 8) + 8), bits);
+    return new BitArray(HeapBytes.allocate(Math.max(bits / 8 + 8, 8)), bits);
   }
 
   private final HeapBytes bytes;
@@ -58,10 +57,17 @@ public class BitArray implements AutoCloseable {
   }
 
   /**
-   * Returns the offset for the given index.
+   * Returns the offset of the long that stores the bit for the given index.
    */
-  private int offset(long index) {
-    return (int) index >> BITS_PER_OFFSET;
+  private long offset(long index) {
+    return (index / 64) * 8;
+  }
+
+  /**
+   * Returns the position of the bit for the given index.
+   */
+  private long position(long index) {
+    return index % 64;
   }
 
   /**
@@ -74,8 +80,7 @@ public class BitArray implements AutoCloseable {
     if (!(index < size))
       throw new IndexOutOfBoundsException();
     if (!get(index)) {
-      int offset = offset(index);
-      bytes.writeLong(offset, bytes.readLong(offset) | (1L << index));
+      bytes.writeLong(offset(index), bytes.readLong(offset(index)) | (1l << position(index)));
       count++;
       return true;
     }
@@ -91,7 +96,7 @@ public class BitArray implements AutoCloseable {
   public boolean get(long index) {
     if (!(index < size))
       throw new IndexOutOfBoundsException();
-    return (bytes.readLong(offset(index)) & (1L << index)) != 0;
+    return (bytes.readLong(offset(index)) & (1l << (position(index)))) != 0;
   }
 
   /**
