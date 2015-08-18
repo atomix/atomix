@@ -306,7 +306,7 @@ class SegmentManager implements AutoCloseable {
             // whether this segment's first index is contained in that existing index. If it is, determine which segment
             // should take precedence based on segment versions.
             Segment existingSegment = existingEntry.getValue();
-            if (existingSegment.firstIndex() <= segment.firstIndex() && existingSegment.firstIndex() + existingSegment.length() >= segment.firstIndex()) {
+            if (existingSegment.firstIndex() <= segment.firstIndex() && existingSegment.firstIndex() + existingSegment.length() > segment.firstIndex()) {
               if (existingSegment.descriptor().version() < segment.descriptor().version()) {
                 LOGGER.debug("Replaced segment {} with newer version: {} ({})", existingSegment.descriptor().id(), segment.descriptor().version(), segmentFile.file().getName());
                 segments.remove(existingEntry.getKey());

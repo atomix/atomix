@@ -140,7 +140,7 @@ public class Cleaner implements AutoCloseable {
 
         // If the percentage of entries marked for cleaning times the segment version meets the cleaning threshold,
         // add the segment to the segments list for cleaning.
-        if (cleanPercentage * segment.descriptor().version() > CLEAN_THRESHOLD) {
+        if (cleanPercentage * segment.descriptor().version() >= CLEAN_THRESHOLD) {
           segments.add(segment);
         }
       }

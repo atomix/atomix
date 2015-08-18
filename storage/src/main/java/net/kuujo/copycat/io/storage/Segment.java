@@ -332,7 +332,8 @@ class Segment implements AutoCloseable {
 
     // Check the memory index first for performance reasons.
     int offset = offset(index);
-    return memoryIndex.contains(offset) || diskIndex.contains(offset);
+    return (memoryIndex.contains(offset) && !memoryIndex.deleted(offset))
+      || (diskIndex.contains(offset) && !diskIndex.deleted(offset));
   }
 
   /**
