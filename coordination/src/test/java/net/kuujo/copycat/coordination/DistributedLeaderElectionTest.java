@@ -90,7 +90,7 @@ public class DistributedLeaderElectionTest extends ConcurrentTestCase {
           .withRegistry(registry)
           .build())
         .withStorage(Storage.builder()
-          .withDirectory("test-logs")
+          .withDirectory(new File(directory, "" + i))
           .build())
         .build();
 

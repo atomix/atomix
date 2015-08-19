@@ -94,7 +94,7 @@ public class DistributedLockTest extends ConcurrentTestCase {
           .withRegistry(registry)
           .build())
         .withStorage(Storage.builder()
-          .withDirectory("test-logs")
+          .withDirectory(new File(directory, "" + i))
           .build())
         .build();
 
