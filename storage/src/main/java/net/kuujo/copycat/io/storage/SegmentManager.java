@@ -189,7 +189,7 @@ class SegmentManager implements AutoCloseable {
   public Segment segment(long index) {
     checkOpen();
     // Check if the current segment contains the given index first in order to prevent an unnecessary map lookup.
-    if (currentSegment != null && currentSegment.containsIndex(index))
+    if (currentSegment != null && currentSegment.validIndex(index))
       return currentSegment;
 
     // If the index is in another segment, get the entry with the next lowest first index.

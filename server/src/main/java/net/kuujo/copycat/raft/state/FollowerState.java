@@ -151,7 +151,7 @@ class FollowerState extends ActiveState {
     // First, load the last log entry to get its term. We load the entry
     // by its index since the index is required by the protocol.
     long lastIndex = context.getLog().lastIndex();
-    RaftEntry lastEntry = context.getLog().containsEntry(lastIndex) ? context.getLog().getEntry(lastIndex) : null;
+    RaftEntry lastEntry = lastIndex > 0 ? context.getLog().get(lastIndex) : null;
 
     // Once we got the last log term, iterate through each current member
     // of the cluster and vote each member for a vote.

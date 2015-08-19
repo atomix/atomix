@@ -75,8 +75,8 @@ public class Log implements AutoCloseable {
    * Asserts that the index is a valid index.
    */
   private void checkIndex(long index) {
-    if (!containsIndex(index))
-      throw new IndexOutOfBoundsException(index + " is not a valid log index");
+    if (!validIndex(index))
+      throw new IndexOutOfBoundsException("invalid log index: " + index);
   }
 
   /**
@@ -157,7 +157,7 @@ public class Log implements AutoCloseable {
    * @throws IllegalStateException If the log is not open
    * @throws NullPointerException If the entry type is {@code null}
    */
-  public <T extends Entry<T>> T createEntry(Class<T> type) {
+  public <T extends Entry<T>> T create(Class<T> type) {
     checkOpen();
     checkRoll();
     return entryPool.acquire(type, segments.currentSegment().nextIndex());
@@ -172,10 +172,10 @@ public class Log implements AutoCloseable {
    * @throws java.lang.IndexOutOfBoundsException If the entry's index does not match
    *         the expected next log index.
    */
-  public long appendEntry(Entry entry) {
+  public long append(Entry entry) {
     checkOpen();
     checkRoll();
-    return segments.currentSegment().appendEntry(entry);
+    return segments.currentSegment().append(entry);
   }
 
   /**
@@ -189,7 +189,7 @@ public class Log implements AutoCloseable {
    * try-with-resources statement.
    * <pre>
    *   {@code
-   *   try (RaftEntry entry = log.getEntry(123)) {
+   *   try (RaftEntry entry = log.get(123)) {
    *     // Do some stuff...
    *   }
    *   }
@@ -200,13 +200,14 @@ public class Log implements AutoCloseable {
    * @throws IllegalStateException If the log is not open.
    * @throws IndexOutOfBoundsException If the given index is not within the bounds of the log.
    */
-  public <T extends Entry> T getEntry(long index) {
+  public <T extends Entry> T get(long index) {
     checkOpen();
     checkIndex(index);
+
     Segment segment = segments.segment(index);
     if (segment == null)
       throw new IndexOutOfBoundsException("invalid index: " + index);
-    T entry = segment.getEntry(index);
+    T entry = segment.get(index);
     return entry != null ? entry : null;
   }
 
@@ -220,7 +221,7 @@ public class Log implements AutoCloseable {
    * @return Indicates whether the given index is within the bounds of the log.
    * @throws IllegalStateException If the log is not open.
    */
-  public boolean containsIndex(long index) {
+  private boolean validIndex(long index) {
     long firstIndex = firstIndex();
     long lastIndex = lastIndex();
     return !isEmpty() && firstIndex <= index && index <= lastIndex;
@@ -233,11 +234,12 @@ public class Log implements AutoCloseable {
    * @return Indicates whether the log contains a live entry at the given index.
    * @throws IllegalStateException If the log is not open.
    */
-  public boolean containsEntry(long index) {
-    if (!containsIndex(index))
+  public boolean contains(long index) {
+    if (!validIndex(index))
       return false;
+
     Segment segment = segments.segment(index);
-    return segment != null && segment.containsEntry(index);
+    return segment != null && segment.contains(index);
   }
 
   /**
@@ -247,12 +249,27 @@ public class Log implements AutoCloseable {
    * @return The log.
    * @throws java.lang.IllegalStateException If the log is not open.
    */
-  public Log cleanEntry(long index) {
+  public Log clean(long index) {
     checkOpen();
+    checkIndex(index);
+
     Segment segment = segments.segment(index);
     if (segment != null)
-      segment.cleanEntry(index);
+      segment.clean(index);
     return this;
+  }
+
+  /**
+   * Cleans the given entry from the log.
+   *
+   * @param entry The entry to clean.
+   * @return The log.
+   * @throws IllegalStateException If the log is not open.
+   */
+  public Log clean(Entry entry) {
+    if (entry == null)
+      throw new NullPointerException("entry cannot be null");
+    return clean(entry.getIndex());
   }
 
   /**
@@ -291,14 +308,14 @@ public class Log implements AutoCloseable {
    */
   public Log truncate(long index) {
     checkOpen();
-    if (index > 0 && !containsIndex(index))
+    if (index > 0 && !validIndex(index))
       throw new IndexOutOfBoundsException(index + " is not a valid log index");
 
     if (lastIndex() == index)
       return this;
 
     for (Segment segment : segments.segments()) {
-      if (index == 0 || segment.containsIndex(index)) {
+      if (index == 0 || segment.validIndex(index)) {
         segment.truncate(index);
       } else if (segment.descriptor().index() > index) {
         segments.removeSegment(segment);

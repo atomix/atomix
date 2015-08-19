@@ -27,7 +27,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class EntryCleaner implements AutoCloseable {
+class EntryCleaner implements AutoCloseable {
   private static final Logger LOGGER = LoggerFactory.getLogger(EntryCleaner.class);
   private final SegmentManager manager;
   private final Context context;
@@ -40,24 +40,6 @@ public class EntryCleaner implements AutoCloseable {
       throw new NullPointerException("context cannot be null");
     this.manager = manager;
     this.context = context;
-  }
-
-  /**
-   * Returns a boolean value indicating whether the cleaner is running.
-   *
-   * @return Indicates whether the cleaner is running.
-   */
-  public boolean isRunning() {
-    return cleanFuture != null;
-  }
-
-  /**
-   * Returns a boolean value indicating whether the cleaner is complete.
-   *
-   * @return Indicates whether the cleaner is complete.
-   */
-  public boolean isComplete() {
-    return cleanFuture == null;
   }
 
   /**
@@ -134,9 +116,9 @@ public class EntryCleaner implements AutoCloseable {
    * @param cleanSegment The segment to which to write the cleaned segment.
    */
   private void cleanEntry(long index, Segment segment, Segment cleanSegment) {
-    try (Entry entry = segment.getEntry(index)) {
+    try (Entry entry = segment.get(index)) {
       if (entry != null) {
-        cleanSegment.appendEntry(entry);
+        cleanSegment.append(entry);
       } else {
         cleanSegment.skip(1);
         LOGGER.debug("Cleaned entry {} from segment {}", index, segment.descriptor().id());

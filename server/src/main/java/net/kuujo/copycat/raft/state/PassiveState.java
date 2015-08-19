@@ -106,7 +106,7 @@ class PassiveState extends AbstractState {
     }
 
     // If the previous entry term doesn't match the local previous term then reject the request.
-    try (RaftEntry entry = context.getLog().getEntry(request.logIndex())) {
+    try (RaftEntry entry = context.getLog().get(request.logIndex())) {
       if (entry == null || entry.getTerm() != request.logTerm()) {
         LOGGER.warn("{} - Rejected {}: Request log term does not match local log term {} for the same entry", context.getMember().id(), request, entry != null ? entry.getTerm() : "unknown");
         return AppendResponse.builder()
@@ -133,23 +133,23 @@ class PassiveState extends AbstractState {
       // Iterate through request entries and append them to the log.
       for (RaftEntry entry : (Iterable<RaftEntry>) request.entries()) {
         // If the entry index is greater than the last log index, skip missing entries.
-        if (!context.getLog().containsIndex(entry.getIndex())) {
-          context.getLog().skip(entry.getIndex() - context.getLog().lastIndex() - 1).appendEntry(entry);
+        if (context.getLog().lastIndex() < entry.getIndex()) {
+          context.getLog().skip(entry.getIndex() - context.getLog().lastIndex() - 1).append(entry);
           LOGGER.debug("{} - Appended {} to log at index {}", context.getMember().id(), entry, entry.getIndex());
         } else {
           // Compare the term of the received entry with the matching entry in the log.
-          try (RaftEntry match = context.getLog().getEntry(entry.getIndex())) {
+          try (RaftEntry match = context.getLog().get(entry.getIndex())) {
             if (match != null) {
               if (entry.getTerm() != match.getTerm()) {
                 // We found an invalid entry in the log. Remove the invalid entry and append the new entry.
                 // If appending to the log fails, apply commits and reply false to the append request.
                 LOGGER.warn("{} - Appended entry term does not match local log, removing incorrect entries", context.getMember().id());
                 context.getLog().truncate(entry.getIndex() - 1);
-                context.getLog().appendEntry(entry);
+                context.getLog().append(entry);
                 LOGGER.debug("{} - Appended {} to log at index {}", context.getMember().id(), entry, entry.getIndex());
               }
             } else {
-              context.getLog().truncate(entry.getIndex() - 1).appendEntry(entry);
+              context.getLog().truncate(entry.getIndex() - 1).append(entry);
               LOGGER.debug("{} - Appended {} to log at index {}", context.getMember().id(), entry, entry.getIndex());
             }
           }
@@ -201,7 +201,7 @@ class PassiveState extends AbstractState {
       counter.set(0);
 
       for (long i = lastApplied + 1; i <= effectiveIndex; i++) {
-        Entry entry = context.getLog().getEntry(i);
+        Entry entry = context.getLog().get(i);
         if (entry != null && !(entry instanceof ConfigurationEntry)) {
           applyEntry(entry).whenComplete((result, error) -> {
             entry.close();

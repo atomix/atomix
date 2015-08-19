@@ -162,7 +162,7 @@ abstract class ActiveState extends PassiveState {
       // Otherwise, load the last entry in the log. The last entry should be
       // at least as up to date as the candidates entry and term.
       long lastIndex = context.getLog().lastIndex();
-      RaftEntry entry = context.getLog().getEntry(lastIndex);
+      RaftEntry entry = context.getLog().get(lastIndex);
       if (entry == null) {
         LOGGER.debug("{} - Accepted {}: candidate's log is up-to-date", context.getMember().id(), request);
         return true;
@@ -241,7 +241,7 @@ abstract class ActiveState extends PassiveState {
     }
 
     CompletableFuture<QueryResponse> future = new CompletableFuture<>();
-    QueryEntry entry = context.getLog().createEntry(QueryEntry.class)
+    QueryEntry entry = context.getLog().create(QueryEntry.class)
       .setIndex(context.getCommitIndex())
       .setTerm(context.getTerm())
       .setTimestamp(System.currentTimeMillis())
@@ -280,7 +280,7 @@ abstract class ActiveState extends PassiveState {
     }
 
     CompletableFuture<QueryResponse> future = new CompletableFuture<>();
-    QueryEntry entry = context.getLog().createEntry(QueryEntry.class)
+    QueryEntry entry = context.getLog().create(QueryEntry.class)
       .setIndex(context.getCommitIndex())
       .setTerm(context.getTerm())
       .setTimestamp(System.currentTimeMillis())

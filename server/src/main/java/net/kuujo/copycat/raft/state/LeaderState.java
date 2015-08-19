@@ -81,9 +81,9 @@ class LeaderState extends ActiveState {
   private CompletableFuture<Void> commitEntries() {
     final long term = context.getTerm();
     final long index;
-    try (NoOpEntry entry = context.getLog().createEntry(NoOpEntry.class)) {
+    try (NoOpEntry entry = context.getLog().create(NoOpEntry.class)) {
       entry.setTerm(term);
-      index = context.getLog().appendEntry(entry);
+      index = context.getLog().append(entry);
     }
 
     CompletableFuture<Void> future = new CompletableFuture<>();
@@ -108,7 +108,7 @@ class LeaderState extends ActiveState {
     if (!context.getLog().isEmpty()) {
       int count = 0;
       for (long lastApplied = Math.max(context.getLastApplied(), context.getLog().firstIndex()); lastApplied <= index; lastApplied++) {
-        Entry entry = context.getLog().getEntry(lastApplied);
+        Entry entry = context.getLog().get(lastApplied);
         if (entry != null) {
           context.apply(entry).whenComplete((result, error) -> {
             if (isOpen() && error != null) {
@@ -166,12 +166,12 @@ class LeaderState extends ActiveState {
       .addMember(request.member())
       .build();
 
-    try (ConfigurationEntry entry = context.getLog().createEntry(ConfigurationEntry.class)) {
+    try (ConfigurationEntry entry = context.getLog().create(ConfigurationEntry.class)) {
       entry.setPersistenceLevel(PersistenceLevel.DISK)
         .setTerm(term)
         .setActive(activeMembers)
         .setPassive(passiveMembers);
-      index = context.getLog().appendEntry(entry);
+      index = context.getLog().append(entry);
       LOGGER.debug("{} - Appended {} to log at index {}", context.getMember().id(), entry, index);
 
       // Immediately apply the configuration change.
@@ -221,12 +221,12 @@ class LeaderState extends ActiveState {
       .removeMember(request.member())
       .build();
 
-    try (ConfigurationEntry entry = context.getLog().createEntry(ConfigurationEntry.class)) {
+    try (ConfigurationEntry entry = context.getLog().create(ConfigurationEntry.class)) {
       entry.setPersistenceLevel(PersistenceLevel.DISK)
         .setTerm(term)
         .setActive(activeMembers)
         .setPassive(passiveMembers);
-      index = context.getLog().appendEntry(entry);
+      index = context.getLog().append(entry);
       LOGGER.debug("{} - Appended {} to log at index {}", context.getMember().id(), entry, index);
 
       // Immediately apply the configuration change.
@@ -306,14 +306,14 @@ class LeaderState extends ActiveState {
     final long timestamp = System.currentTimeMillis();
     final long index;
 
-    try (CommandEntry entry = context.getLog().createEntry(CommandEntry.class)) {
+    try (CommandEntry entry = context.getLog().create(CommandEntry.class)) {
       entry.setPersistenceLevel(request.command().storage())
         .setTerm(term)
         .setTimestamp(timestamp)
         .setSession(request.session())
         .setSequence(request.commandSequence())
         .setCommand(command);
-      index = context.getLog().appendEntry(entry);
+      index = context.getLog().append(entry);
       LOGGER.debug("{} - Appended entry to log at index {}", context.getMember().id(), index);
     }
 
@@ -322,7 +322,7 @@ class LeaderState extends ActiveState {
       context.checkThread();
       if (isOpen()) {
         if (commitError == null) {
-          CommandEntry entry = context.getLog().getEntry(index);
+          CommandEntry entry = context.getLog().get(index);
           if (entry != null) {
             applyEntry(entry).whenCompleteAsync((result, error) -> {
               if (isOpen()) {
@@ -372,7 +372,7 @@ class LeaderState extends ActiveState {
     final long timestamp = System.currentTimeMillis();
     final long index = context.getCommitIndex();
 
-    QueryEntry entry = context.getLog().createEntry(QueryEntry.class)
+    QueryEntry entry = context.getLog().create(QueryEntry.class)
       .setIndex(index)
       .setTerm(context.getTerm())
       .setTimestamp(timestamp)
@@ -473,12 +473,12 @@ class LeaderState extends ActiveState {
     final long timestamp = System.currentTimeMillis();
     final long index;
 
-    try (RegisterEntry entry = context.getLog().createEntry(RegisterEntry.class)) {
+    try (RegisterEntry entry = context.getLog().create(RegisterEntry.class)) {
       entry.setPersistenceLevel(PersistenceLevel.DISK);
       entry.setTerm(context.getTerm());
       entry.setTimestamp(timestamp);
       entry.setConnection(request.connection());
-      index = context.getLog().appendEntry(entry);
+      index = context.getLog().append(entry);
       LOGGER.debug("{} - Appended {}", context.getMember().id(), entry);
     }
 
@@ -487,7 +487,7 @@ class LeaderState extends ActiveState {
       context.checkThread();
       if (isOpen()) {
         if (commitError == null) {
-          RegisterEntry entry = context.getLog().getEntry(index);
+          RegisterEntry entry = context.getLog().get(index);
           applyEntry(entry).whenCompleteAsync((sessionId, sessionError) -> {
             if (isOpen()) {
               if (sessionError == null) {
@@ -529,12 +529,12 @@ class LeaderState extends ActiveState {
     final long timestamp = System.currentTimeMillis();
     final long index;
 
-    try (KeepAliveEntry entry = context.getLog().createEntry(KeepAliveEntry.class)) {
+    try (KeepAliveEntry entry = context.getLog().create(KeepAliveEntry.class)) {
       entry.setPersistenceLevel(PersistenceLevel.MEMORY);
       entry.setTerm(context.getTerm());
       entry.setSession(request.session());
       entry.setTimestamp(timestamp);
-      index = context.getLog().appendEntry(entry);
+      index = context.getLog().append(entry);
       LOGGER.debug("{} - Appended {}", context.getMember().id(), entry);
     }
 
@@ -543,7 +543,7 @@ class LeaderState extends ActiveState {
       context.checkThread();
       if (isOpen()) {
         if (commitError == null) {
-          KeepAliveEntry entry = context.getLog().getEntry(index);
+          KeepAliveEntry entry = context.getLog().get(index);
           applyEntry(entry).whenCompleteAsync((sessionResult, sessionError) -> {
             if (isOpen()) {
               if (sessionError == null) {
@@ -748,8 +748,8 @@ class LeaderState extends ActiveState {
      * Gets the previous entry.
      */
     private RaftEntry getPrevEntry(MemberState member, long prevIndex) {
-      if (context.getLog().containsIndex(prevIndex)) {
-        return context.getLog().getEntry(prevIndex);
+      if (prevIndex > 0) {
+        return context.getLog().get(prevIndex);
       }
       return null;
     }
@@ -771,7 +771,7 @@ class LeaderState extends ActiveState {
       List<RaftEntry> entries = new ArrayList<>(1024);
       int size = 0;
       while (size < MAX_BATCH_SIZE && index <= context.getLog().lastIndex()) {
-        RaftEntry entry = context.getLog().getEntry(index);
+        RaftEntry entry = context.getLog().get(index);
         if (entry != null) {
           size += entry.size();
           entries.add(entry);
@@ -920,12 +920,12 @@ class LeaderState extends ActiveState {
           .removeMember(member.getMember())
           .build();
 
-        try (ConfigurationEntry entry = context.getLog().createEntry(ConfigurationEntry.class)) {
+        try (ConfigurationEntry entry = context.getLog().create(ConfigurationEntry.class)) {
           entry.setPersistenceLevel(PersistenceLevel.DISK)
             .setTerm(context.getTerm())
             .setActive(activeMembers)
             .setPassive(passiveMembers);
-          long index = context.getLog().appendEntry(entry);
+          long index = context.getLog().append(entry);
           LOGGER.debug("{} - Appended {} to log at index {}", context.getMember().id(), entry, index);
 
           // Immediately apply the configuration change.

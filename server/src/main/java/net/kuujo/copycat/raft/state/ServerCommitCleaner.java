@@ -33,7 +33,7 @@ class ServerCommitCleaner {
    * Cleans the given index from the log.
    */
   void clean(long index) {
-    log.cleanEntry(index);
+    log.clean(index);
   }
 
 }

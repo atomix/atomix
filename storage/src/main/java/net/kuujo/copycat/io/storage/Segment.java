@@ -216,21 +216,21 @@ class Segment implements AutoCloseable {
   /**
    * Commits an entry to the segment.
    */
-  public long appendEntry(Entry entry) {
+  public long append(Entry entry) {
     if (isFull())
       throw new IllegalStateException("segment is full");
 
     if (entry.getPersistenceLevel() == PersistenceLevel.DISK) {
-      return appendEntry(entry, diskBuffer, diskIndex);
+      return append(entry, diskBuffer, diskIndex);
     } else {
-      return appendEntry(entry, memoryBuffer, memoryIndex);
+      return append(entry, memoryBuffer, memoryIndex);
     }
   }
 
   /**
    * Appends an entry to the segment.
    */
-  private long appendEntry(Entry entry, Buffer buffer, OffsetIndex offsetIndex) {
+  private long append(Entry entry, Buffer buffer, OffsetIndex offsetIndex) {
     long index = nextIndex();
 
     if (entry.getIndex() != index) {
@@ -264,7 +264,7 @@ class Segment implements AutoCloseable {
    * @param index The index from which to read the entry.
    * @return The entry at the given index.
    */
-  public synchronized <T extends Entry> T getEntry(long index) {
+  public synchronized <T extends Entry> T get(long index) {
     if (!isOpen())
       throw new IllegalStateException("segment not open");
     checkRange(index);
@@ -282,12 +282,12 @@ class Segment implements AutoCloseable {
 
     // If the memory index contained the entry, read the entry from the memory buffer.
     if (position != -1) {
-      return getEntry(index, memoryBuffer, position, memoryIndex.length(offset), PersistenceLevel.MEMORY);
+      return get(index, memoryBuffer, position, memoryIndex.length(offset), PersistenceLevel.MEMORY);
     } else {
       // If the memory index did not contain the entry, attempt to read it from disk.
       position = diskIndex.position(offset);
       if (position != -1) {
-        return getEntry(index, diskBuffer, position, diskIndex.length(offset), PersistenceLevel.DISK);
+        return get(index, diskBuffer, position, diskIndex.length(offset), PersistenceLevel.DISK);
       }
     }
     return null;
@@ -296,7 +296,7 @@ class Segment implements AutoCloseable {
   /**
    * Reads an entry from the segment.
    */
-  private synchronized <T extends Entry> T getEntry(long index, Buffer buffer, long position, int length, PersistenceLevel persistenceLevel) {
+  private synchronized <T extends Entry> T get(long index, Buffer buffer, long position, int length, PersistenceLevel persistenceLevel) {
     try (Buffer value = buffer.slice(position, length)) {
       T entry = serializer.readObject(value);
       entry.setIndex(index).setPersistenceLevel(persistenceLevel);
@@ -310,7 +310,7 @@ class Segment implements AutoCloseable {
    * @param index The index to check.
    * @return Indicates whether the given index is within the range of the segment.
    */
-  public boolean containsIndex(long index) {
+  boolean validIndex(long index) {
     if (!isOpen())
       throw new IllegalStateException("segment not open");
     return !isEmpty() && index >= firstIndex() && index <= lastIndex();
@@ -322,13 +322,12 @@ class Segment implements AutoCloseable {
    * @param index The index to check.
    * @return Indicates whether the entry at the given index is active.
    */
-  public boolean containsEntry(long index) {
+  public boolean contains(long index) {
     if (!isOpen())
       throw new IllegalStateException("segment not open");
 
-    if (!containsIndex(index)) {
+    if (!validIndex(index))
       return false;
-    }
 
     // Check the memory index first for performance reasons.
     int offset = offset(index);
@@ -342,7 +341,7 @@ class Segment implements AutoCloseable {
    * @param index The index of the entry to clean.
    * @return The segment.
    */
-  public Segment cleanEntry(long index) {
+  public Segment clean(long index) {
     if (!isOpen())
       throw new IllegalStateException("segment not open");
     int offset = offset(index);

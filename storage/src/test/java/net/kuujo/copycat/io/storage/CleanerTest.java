@@ -46,7 +46,7 @@ public class CleanerTest extends ConcurrentTestCase {
     assertEquals(log.length(), 30L);
 
     for (long index = 21; index < 28; index++) {
-      log.cleanEntry(index);
+      log.clean(index);
     }
 
     expectResume();
@@ -56,9 +56,9 @@ public class CleanerTest extends ConcurrentTestCase {
     assertEquals(log.length(), 30L);
 
     for (long index = 21; index < 28; index++) {
-      assertTrue(log.containsIndex(index));
-      assertFalse(log.containsEntry(index));
-      try (TestEntry entry = log.getEntry(index)) {
+      assertTrue(log.lastIndex() >= index);
+      assertFalse(log.contains(index));
+      try (TestEntry entry = log.get(index)) {
         assertNull(entry);
       }
     }
@@ -69,10 +69,10 @@ public class CleanerTest extends ConcurrentTestCase {
    */
   private void writeEntries(Log log, int entries) {
     for (int i = 0; i < entries; i++) {
-      try (TestEntry entry = log.createEntry(TestEntry.class)) {
+      try (TestEntry entry = log.create(TestEntry.class)) {
         entry.setTerm(1);
         entry.setRemove(false);
-        log.appendEntry(entry);
+        log.append(entry);
       }
     }
   }
