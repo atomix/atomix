@@ -109,7 +109,7 @@ class FollowerState extends ActiveState {
 
     // Set the election timeout in a semi-random fashion with the random range
     // being election timeout and 2 * election timeout.
-    Duration delay = context.getElectionTimeout().plus(Duration.ofMillis(random.nextInt((int) context.getElectionTimeout().toMillis()) % context.getElectionTimeout().toMillis()));
+    Duration delay = context.getElectionTimeout().plus(Duration.ofMillis(random.nextInt((int) context.getElectionTimeout().toMillis())));
     heartbeatTimer = context.getContext().schedule(() -> {
       heartbeatTimer = null;
       if (isOpen()) {
