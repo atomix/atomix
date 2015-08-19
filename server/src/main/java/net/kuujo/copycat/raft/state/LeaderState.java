@@ -307,7 +307,7 @@ class LeaderState extends ActiveState {
     final long index;
 
     try (CommandEntry entry = context.getLog().create(CommandEntry.class)) {
-      entry.setPersistenceLevel(request.command().storage())
+      entry.setPersistenceLevel(request.command().persistence())
         .setTerm(term)
         .setTimestamp(timestamp)
         .setSession(request.session())

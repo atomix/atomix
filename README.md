@@ -12,28 +12,39 @@ Copycat is an extensible log-based distributed coordination framework for Java 8
 Copycat is a strongly consistent embedded distributed coordination framework built on the
 [Raft consensus protocol](https://raftconsensus.github.io/). Copycat exposes a set of high level APIs with tools to
 solve a variety of distributed systems problems including:
-* [Replicated state machines](#state-machines)
-* [Distributed collections](#collections)
-* [Distributed atomic variables](#atomic-variables)
+* [Distributed coordination tools](#distributed-coordination)
+* [Distributed collections](#distributed-collections)
+* [Distributed atomic variables](#distributed-atomic-variables)
+
+Additionally, Copycat is built on a series of low-level libraries that form its consensus algorithm. All base
+libraries are provided as standalone modules wherever possible, so users can use many of the following
+components of the Copycat project independent of higher level libraries:
+* A low-level [I/O & serialization framework](#io-serialization)
+* A generalization of [asynchronous client-server messaging](#transport) with a [Netty implementation](#nettytransport)
+* A low-level [self-cleaning log](#storage) designed for use with the [Raft consensus algorithm][Raft]
+* A feature-complete [implementation of the Raft consensus algorithm](#raft-consensus-algorithm)
+* A lightweight [Raft client](#raftclient) including support for linearizable operations via [sessions](#sessions)
 
 **Copycat is still undergoing heavy development and testing and is therefore not recommended for production!**
 
 [Jepsen](https://github.com/aphyr/jepsen) tests are [currently being developed](http://github.com/jhalterman/copycat-jepsen)
-to verify the stability of Copycat in an unreliable distributed environment. Thus far, Copycat has passed a number
-of Jepsen tests to verify that linearizability is maintained for both writes and reads during network partitions.
-However, there is still work to be done, and Copycat will not be fully released until significant testing is done
-both via normal testing frameworks and Jepsen. In the meantime, Copycat snapshots will be pushed, and a beta release
-of Copycat is expected within the coming weeks. Follow the project for updates!
+to verify the stability of Copycat in an unreliable distributed environment. There is still work to be done, and Copycat
+will not be fully released until significant testing is done both via normal testing frameworks and Jepsen. In the meantime,
+Copycat snapshots will be pushed, and a beta release of Copycat is expected within the coming weeks. Follow the project for
+updates!
 
 *Copycat requires Java 8*
 
 User Manual
 ===========
 
-Documentation is under active development. Docs will be updated frequently until a release, so checkback for more!
-If you would like to request specific documentation please [submit a request](http://github.com/kuujo/copycat/issues)
+Documentation is still under active development. The following documentation is loosely modeled on the structure
+of modules as illustrated in the [Javadoc][Javadoc]. Docs will be updated frequently until a release, so check
+back for more! If you would like to request specific documentation, please
+[submit a request](http://github.com/kuujo/copycat/issues)
 
 1. [Introduction](#introduction)
+   * [Project structure](#project-structure)
    * [Dependencies](#dependencies)
    * [The Copycat API](#the-copycat-api)
       * [CopycatServer](#copycatserver)
@@ -67,11 +78,14 @@ If you would like to request specific documentation please [submit a request](ht
       * [CopycatSerializable](#copycatserializable)
       * [TypeSerializer](#typeserializer)
    * [Storage](#storage)
+      * [Log](#log)
+      * [Log cleaning](#log-cleaning)
    * [Transports](#transports)
 1. [Raft consensus algorithm](#raft-consensus-algorithm)
    * [RaftServer](#raftserver)
    * [Server lifecycle](#server-lifecycle)
    * [Commands](#commands)
+      * [Command persistence](#command-persistence)
    * [Queries](#queries)
       * [Query consistency](#query-consistency)
    * [State machines](#state-machines)
@@ -79,7 +93,7 @@ If you would like to request specific documentation please [submit a request](ht
       * [StateMachineExecutor](#statemachineexecutor)
       * [Commits](#commits)
       * [Sessions](#sessions)
-      * [Log cleaning](#log-cleaning)
+      * [Commit cleaning](#commit-cleaning)
    * [RaftClient](#raftclient)
       * [Session](#session)
 1. [Miscellaneous](#miscellaneous)
@@ -89,7 +103,7 @@ If you would like to request specific documentation please [submit a request](ht
 
 ## Introduction
 
-Copycat is a framework for consistent distributed coordination. At the core of Copycat is a reusable implementation
+Copycat is a framework for consistent distributed coordination. At the core of Copycat is a generic implementation
 of the Raft consensus protocol. On top of Raft, Copycat provides a high level path-based API for creating and
 interacting with arbitrary replicated state machines such as maps, sets, locks, or user-defined resources. Resources
 can be created and operated on by any node in the cluster.
@@ -100,6 +114,39 @@ always be odd in order to achieve the greatest level of fault-tolerance.
 
 All network driven interfaces in Copycat are asynchronous and make heavy use of Java 8's `CompletableFuture`.
 At the core of Copycat is the [Copycat API][Copycat], which is exposed by both servers and clients.
+
+### Project structure
+
+Copycat is designed as a series of libraries that combine to form a high-level framework for managing consistent
+state in a distributed system. The project currently consists of 14 modules, each of which implements a portion
+of the framework's functionality. The components of the project are composed hierarchically, so lower level
+components can be used independently of most other modules.
+
+A rough outline of Copycat's project hierarchy is as follows (from high-level to low-level):
+
+* [Resources][Resource]
+   * [Distributed collections][collections] (artifact ID: `copycat-collections`)
+   * [Distributed atomic variables][atomic] (artifact ID: `copycat-atomic`)
+   * [Distributed coordination tools][coordination] (artifact ID: `copycat-coordination`)
+* [Copycat API][copycat] (artifact ID: `copycat`)
+   * [Copycat Client][CopycatClient]
+   * [Copycat Server][CopycatServer]
+   * [Resource API][Resource]
+* [Raft Consensus Algorithm][raft]
+   * [Raft Protocol][protocol] (artifact ID: `copycat-protocol`)
+   * [Raft Client][RaftClient] (artifact ID: `copycat-client`)
+   * [Raft Server][RaftServer] (artifact ID: `copycat-server`)
+* [I/O & Serialization][io]
+   * [Buffer][io] (artifact ID: `copycat-io`)
+   * [Serializer][serializer] (artifact ID: `copycat-io`)
+   * [Transport][transport] (artifact ID: `copycat-transport`)
+      * [Local transport][LocalTransport] (artifact ID: `copycat-local`)
+      * [Netty transport][NettyTransport] (artifact ID: `copycat-netty`)
+   * [Storage][storage] (artifact ID: `copycat-storage`)
+* [Utilities][utilities] (artifact ID: `copycat-common`)
+   * [Builder][Builder]
+   * [Listener][Listener]
+   * [Context][Context]
 
 ### Dependencies
 
@@ -495,7 +542,7 @@ of wall clock time that *should not be relied upon for accuracy*.
 ##### Ephemeral values
 
 In addition to supporting time-based state changes, `DistributedSet` also supports session-based changes via
-a configurable [PersistenceLevel](#persistence-model). When a value is added to the set with `PersistenceModel.EPHEMERAL`,
+a configurable [PersistenceMode](#persistence-mode). When a value is added to the set with `PersistenceMode.EPHEMERAL`,
 the value will disappear once the session that created the value is expired or closed.
 
 ```java
@@ -553,7 +600,7 @@ of wall clock time that *should not be relied upon for accuracy*.
 ##### Ephemeral keys
 
 In addition to supporting time-based state changes, `DistributedMap` also supports session-based changes via
-a configurable [PersistenceLevel](#persistence-model). When a key is added to the map with `PersistenceModel.EPHEMERAL`,
+a configurable [PersistenceMode](#persistence-mode). When a key is added to the map with `PersistenceMode.EPHEMERAL`,
 the key will disappear once the session that created the key is expired or closed.
 
 ```java
@@ -630,12 +677,12 @@ of wall clock time that *should not be relied upon for accuracy*.
 ##### Ephemeral value
 
 In addition to supporting time-based state changes, `DistributedAtomicValue` also supports session-based changes via
-a configurable [PersistenceLevel](#persistence-model). When the value is set with `PersistenceModel.EPHEMERAL`,
+a configurable [PersistenceMode](#persistence-mode). When the value is set with `PersistenceMode.EPHEMERAL`,
 the value will disappear once the session that created the value is expired or closed.
 
 ```java
 // Set the value with EPHEMERAL persistence
-value.set("Hello world!", PersistenceLevel.EPHEMERAL).thenRun(() -> {
+value.set("Hello world!", PersistenceMode.EPHEMERAL).thenRun(() -> {
   // Close the Copycat instance to force the value to be unset
   copycat.close();
 });
@@ -1297,11 +1344,98 @@ instance which controls the underlying `Log`. `Storage` objects are built via th
 ```java
 Storage storage = Storage.builder()
   .withDirectory("logs")
-  .withStorageLevel(StorageLevel.DISk)
+  .withStorageLevel(StorageLevel.DISK)
   .build();
 ```
 
-Logs can be stored either in `MEMORY` or on `DISK` according to the configured `StorageLevel`.
+#### Log
+
+*Note: Much of the following is relevant only to Copycat internals*
+
+Underlying the [Storage][Storage] API is the [Log][Log].
+
+```java
+Log log = storage.open();
+```
+
+The `Log` is an ordered and indexed list of entries stored in memory or on disk. Logs consist of a set of segments.
+Each segment represents range of entries in the overall log. Each segment is backed by two [buffers](#buffers), a
+`HeapBuffer` and a `FileBuffer`; this allows entries to be written *either* to disk or memory. Entries are serialized
+to disk using Copycat's [serialization framework](#serialization).
+
+Entries can only be appended to the log:
+
+```java
+try (MyEntry entry = log.create(MyEntry.class)) {
+  entry.setFoo("foo");
+  entry.setBar(1);
+  entry.setPersistenceLevel(PersistenceLevel.DISK);
+  log.append(entry);
+}
+```
+
+The `PersistenceLevel` controls how entries are stored. Entries appended with `PersistenceLevel.DISK` will be written
+to disk via a `FileBuffer`, and entries with `PersistenceLevel.MEMORY` will be stored in an in-memory buffer. In the
+event of a failure or other closure of the log, `PersistenceLevel.DISK` entries will persist, while `PersistenceLevel.MEMORY`
+entries will be lost, so *be careful*!
+
+Segment memory and disk buffers are each backed by an offset index. The offset index is responsible for tracking
+the indexes and positions of entries in the segment. In order to preserve disk/memory space, the index stores entry
+indices as offsets relative to the beginning of each segment. Additionally, each segment is limited to a maximum
+size of `Integer.MAX_VALUE` so that the position of an entry cannot exceed 4 bytes. This means each entry in the
+index consumes only 8 bytes - 4 for the offset and 4 for the position.
+
+Offset indexes are also responsible for tracking entries that have been [cleaned from the segment](#log-cleaning).
+When entries are cleaned from the log, a flag is set in the owning segment's offset index to indicate that the
+entry is awaiting compaction. Clean flags are stored in a bit set in memory, so each segment consumes at least
+`[num entries] / 8` bytes of memory.
+
+Entries in the log are always keyed by an `index` - a monotonically increasing 64-bit number. But because of the
+nature of [log cleaning](#log-cleaning) - allowing entries to arbitrarily be removed from the log - the log and
+its segments are designed to allow entries to be missing *at any point in the log*. Over time, it is expected that
+entries will be cleaned and compacted out of the log. The log and segments always store entries in as compact a
+form as possible. Offset indexes contain only entries that have been physically written to the segment, and indexes
+are searched with a binary search algorithm during reads.
+
+#### Log cleaning
+
+The most critical component of Copycat's [Log][Log] design relates to log cleaning. Cleaning is the process of
+removing arbitrary entries from the log over time. Copycat's `Log` is designed to facilitate storing operations
+on a state machine. Over time, as state machine operations become irrelevant to a state machine's state, they
+can be marked for deletion from the log by the `clean(index)` method.
+
+When an entry is `clean`ed from the log, the entry is internally marked for deletion from the log. Thereafter,
+the entry will no longer be accessible via the `Log` interface. Internally, the log sets an in-memory bit indicating
+that the entry at the given index is awaiting compaction.
+
+Note, though, that calling `clean` does not mean that an entry will be removed from disk or memory. Entries are
+only removed once the log rolls over to a new `Segment` or the user explicitly `clean`s the log:
+
+```java
+log.cleaner().clean();
+```
+
+When the log is cleaned, a background thread will evaluate the log's segments to determine whether they need to
+be compacted. Currently, segments are compacted based on two factors:
+* The number of entries that have been `clean`ed from the segment
+* The number of times the segment has been previously cleaned
+
+For a segment that has not yet been cleaned, cleaning will take place only once 50% of the entries in the segment
+have been `clean`ed. The second time the segment is cleaned, 25% of its entries must have been `clean`ed, and so
+forth.
+
+Log cleaning works by simply creating a new segment at the start of the segment being cleaned and iterating over
+the entries in the segment, rewriting live entries from the old segment to the new segment, and throwing out
+entries that have been `clean`ed:
+
+![Combining segments](http://s12.postimg.org/jhdthtpct/Combined_Segment_Compaction_New_Page_1.png)
+
+This graphic depicts the cleaning process. As entries are appended to the log, some older entries are marked
+for cleaning (the grey boxes). During the log cleaning process, a background thread iterates through the
+segment being cleaned (the bold boxes) and discards entries that have been `clean`ed (the bold white boxes).
+In the event that two neighboring segments have been compacted small enough to form a single segment, they
+will be combined into one segment (the last row). This ensures that the number of open files remains more or
+less constant as entries are cleaned from the log.
 
 ### Transports
 
@@ -1445,6 +1579,31 @@ additional configuration. However, for the best performance users should impleme
 or register a [TypeSerializer][TypeSerializer] for the type. This will reduce the size of the serialized object and allow
 Copycat's [Serializer](#serializer) to optimize class loading internally during deserialization.
 
+### Command persistence
+
+As mentioned, commands are operations that modify the state machine state, but there is one caveat to that rule. Copycat
+provides the option for commands to be stored in-memory only via the `PersistenceLevel` option. By default, all commands
+are persisted with `PersistenceLevel.DISK` so that they are not lost in the event of a failure. But Copycat supports
+`PersistenceLevel.MEMORY` commands in order to facilitate replicating events to all servers in the cluster.
+
+```java
+public class Publish<T> implements Command {
+
+  @Override
+  public PersistenceLevel persistence() {
+    return PersistenceLevel.MEMORY;
+  }
+
+}
+```
+
+`PersistenceLevel.MEMORY` commands should *never alter state machine state* since they can be lost during a failure
+and therefore result in non-deterministic state (two nodes with divergent state). Instead, they should be used for
+one-time events that need to reach all [sessions](#sessions). Each client's [Session][Session] is associated with
+a random Raft server (follower or leader), and so for an event to reach all sessions it must reach all servers.
+Committing a `PersistenceLevel.MEMORY` command allows it to be replicated to all servers without the additional
+I/O overhead.
+
 ### Queries
 
 In contrast to commands which perform state change operations, queries are read-only operations which do not modify the
@@ -1523,6 +1682,12 @@ public class MyStateMachine extends StateMachine {
 
 }
 ```
+
+Internally, state machines are backed by a series of entries in an underlying [log](#log). In the event of a crash and
+recovery, `PersistenceLevel.DISK` commands in the log will be replayed to the state machine, and `PersistenceLevel.MEMORY`
+commands and queries will be lost. For this reason, `PersistenceLevel.MEMORY` commands and queries should never alter
+state machine state since the removal of such commands/queries would result in non-deterministic state machine state
+(state on two different nodes would differ based on the commands in their logs).
 
 #### StateMachineExecutor
 
@@ -1606,10 +1771,15 @@ the message will be queued in memory and delivered to the session by the next se
 events are received by the client, the server removes received events from memory. Once the session is expired or closed, all
 servers remove the session and its events from memory.
 
-#### Log cleaning
+#### Commit cleaning
 
-Once a `Commit` object is no longer needed by the `StateMachine` in the event of a replay, the state machine should clean
-the commit from the Raft log by calling the `clean()` method:
+As commands are submitted to the cluster and applied to the Raft state machine, the underlying [log](#log) grows.
+Without some mechanism to reduce the size of the log, the log would grow without bound and ultimately servers would
+run out of disk space. Raft suggests a few different approaches of handling log compaction. Copycat uses the
+[log cleaning](#log-cleaning) approach.
+
+`Commit` objects are backed by entries in Copycat's replicated log. When a `Commit` is no longer neede dby the
+`StateMachine`, the state machine should clean the commit from Copycat's log by calling the `clean()` method:
 
 ```java
 protected void remove(Commit<RemoveCommand> commit) {
@@ -1617,6 +1787,26 @@ protected void remove(Commit<RemoveCommand> commit) {
   commit.clean();
 }
 ```
+
+Internally, the `clean()` call will be proxied to Copycat's underlying log:
+
+```java
+log.clean(commit.index());
+```
+
+As commits are cleaned by the state machine, entries in the underlying log will be marked for deletion. *Note
+that it is not safe to assume that once a commit is cleaned it is permanently removed from the log*. Cleaning
+an entry only *marks* it for deletion, and the entry won't actually be removed from the log until a background
+thread cleans the relevant log segment. This means in the event of a crash-recovery and replay of the log,
+a previously `clean`ed commit may still exists. For this reason, if a commit is dependent on a prior commit,
+state machines should only `clean` those commits if no prior related commits have been seen. (More on this
+later)
+
+Once the underlying `Log` has grown large enough, and once enough commits have been `clean`ed from the log,
+a pool of background threads will carry out their task to rewrite segments of the log to remove commits
+(entries) for which `clean()` has been called:
+
+![Raft cleaning](http://s21.postimg.org/fvlvlg9lz/Raft_Compaction_New_Page_3.png)
 
 ### RaftClient
 
@@ -1691,20 +1881,73 @@ The following documentation explains the usage of various miscellaneous APIs pro
 
 ### Builders
 
+Throughout the project, Copycat often uses the [builder pattern](https://en.wikipedia.org/wiki/Builder_pattern) in lieu
+of constructors to provide users with a fluent interface for configuring complex objects. Builders are implementations
+of the [Builder][Builder] interface and in most cases are nested within the type they build. For instance, the
+`CopycatClient.Builder` builds a [CopycatClient][CopycatClient] instance. Additionally, builders usually have an associated
+static `builder()` method that can be used to retrieve a builder:
+
+```java
+CopycatClient.Builder builder = CopycatClient.builder();
+```
+
+The reasoning behind using a static factory method for builders is in order to transparently support recycling
+builders. In some cases, builders are used to configure short-lived objects such as [commands][Command] and
+[Queries][query]. In those cases, rather than constructing a new `Builder` for each instance (thus resulting
+in two objects being created for one), Copycat recycles builders via the `builder()` factory method.
+
 ### Listeners
 
+Copycat largely provides its API for asynchronous callbacks via Java 8's [CompletableFuture][CompletableFuture].
+But in some cases, users need to register to receive events that are invoked by Copycat internally. For those
+cases, Copycat provides a [Listener][Listener] to help manage event listeners.
+
+Listeners work by first registering a `Consumer` for an event:
+
+```java
+DistributedTopic<String> topic = copycat.create("/topic", DistributedTopic.class).get();
+
+Listener<String> listener = topic.onMessage(message -> System.out.println("Received " + message)).get();
+```
+
+The `Listener` acts as a registration for the user-provided `Consumer` and allows the user to unregister
+the listener simply by calling the `close()` method:
+
+```java
+// Stop listening for messages.
+listener.close();
+```
+
 ### Contexts
+
+[Contexts][Context] are used by Copycat internally to control thread scheduling and execution. At a
+low level, `Context` implementations wrap single-thread or thread-pool [Executors][Executor]. All
+threads within a running Copycat cluster have an associated `Context`. The `Context` holds
+thread-unsafe objects such as a `Serializer` clone per thread.
 
 ### [User Manual](#user-manual)
 
 ## [Javadoc][Javadoc]
 
 [Javadoc]: http://kuujo.github.io/copycat/api/0.6.0/
+[Executor]: https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Executor.html
 [CompletableFuture]: https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html
+[collections]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/collections.html
+[atomic]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/atomic.html
+[coordination]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/coordination.html
+[copycat]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat.html
+[raft]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/raft.html
+[protocol]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/raft/protocol.html
+[io]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/io.html
+[serializer]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/io/serializer.html
+[transport]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/io/transport.html
+[storage]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/io/storage.html
+[utilities]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/util.html
 [Raft]: https://raftconsensus.github.io/
 [Copycat]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/Copycat.html
 [CopycatServer]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/CopycatServer.html
 [CopycatClient]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/CopycatClient.html
+[Resource]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/Resource.html
 [Transport]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/io/transport/Transport.html
 [LocalTransport]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/io/transport/LocalTransport.html
 [NettyTransport]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/io/transport/NettyTransport.html
@@ -1734,3 +1977,6 @@ The following documentation explains the usage of various miscellaneous APIs pro
 [DistributedLock]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/coordination/DistributedLock.html
 [DistributedLeaderElection]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/coordination/DistributedLeaderElection.html
 [DistributedTopic]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/coordination/DistributedTopic.html
+[Builder]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/util/Builder.html
+[Listener]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/util/Listener.html
+[Context]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/util/concurrent/Context.html

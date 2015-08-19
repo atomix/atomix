@@ -43,7 +43,7 @@ public interface Command<T> extends Operation<T> {
    *
    * @return The command storage level.
    */
-  default PersistenceLevel storage() {
+  default PersistenceLevel persistence() {
     return PersistenceLevel.DISK;
   }
 
