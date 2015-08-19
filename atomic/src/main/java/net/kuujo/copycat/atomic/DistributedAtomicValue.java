@@ -17,8 +17,8 @@ package net.kuujo.copycat.atomic;
 
 import net.kuujo.copycat.PersistenceMode;
 import net.kuujo.copycat.Resource;
-import net.kuujo.copycat.atomic.state.ReferenceCommands;
-import net.kuujo.copycat.atomic.state.ReferenceState;
+import net.kuujo.copycat.atomic.state.AtomicValueCommands;
+import net.kuujo.copycat.atomic.state.AtomicValueState;
 import net.kuujo.copycat.raft.StateMachine;
 import net.kuujo.copycat.raft.protocol.ConsistencyLevel;
 import net.kuujo.copycat.resource.ResourceContext;
@@ -41,7 +41,7 @@ public class DistributedAtomicValue<T> extends Resource {
 
   @Override
   protected Class<? extends StateMachine> stateMachine() {
-    return ReferenceState.class;
+    return AtomicValueState.class;
   }
 
   @Override
@@ -103,7 +103,7 @@ public class DistributedAtomicValue<T> extends Resource {
    * @return A completable future to be completed with the current value.
    */
   public CompletableFuture<T> get(ConsistencyLevel consistency) {
-    return submit(ReferenceCommands.Get.<T>builder()
+    return submit(AtomicValueCommands.Get.<T>builder()
       .withConsistency(consistency)
       .build());
   }
@@ -115,7 +115,7 @@ public class DistributedAtomicValue<T> extends Resource {
    * @return A completable future to be completed once the value has been set.
    */
   public CompletableFuture<Void> set(T value) {
-    return submit(ReferenceCommands.Set.builder()
+    return submit(AtomicValueCommands.Set.builder()
       .withValue(value)
       .build());
   }
@@ -128,7 +128,7 @@ public class DistributedAtomicValue<T> extends Resource {
    * @return A completable future to be completed once the value has been set.
    */
   public CompletableFuture<Void> set(T value, Duration ttl) {
-    return submit(ReferenceCommands.Set.builder()
+    return submit(AtomicValueCommands.Set.builder()
       .withValue(value)
       .withTtl(ttl.toMillis())
       .build());
@@ -142,7 +142,7 @@ public class DistributedAtomicValue<T> extends Resource {
    * @return A completable future to be completed once the value has been set.
    */
   public CompletableFuture<Void> set(T value, PersistenceMode persistence) {
-    return submit(ReferenceCommands.Set.builder()
+    return submit(AtomicValueCommands.Set.builder()
       .withValue(value)
       .withPersistence(persistence)
       .build());
@@ -157,7 +157,7 @@ public class DistributedAtomicValue<T> extends Resource {
    * @return A completable future to be completed once the value has been set.
    */
   public CompletableFuture<Void> set(T value, Duration ttl, PersistenceMode persistence) {
-    return submit(ReferenceCommands.Set.builder()
+    return submit(AtomicValueCommands.Set.builder()
       .withValue(value)
       .withTtl(ttl.toMillis())
       .withPersistence(persistence)
@@ -171,7 +171,7 @@ public class DistributedAtomicValue<T> extends Resource {
    * @return A completable future to be completed with the previous value.
    */
   public CompletableFuture<T> getAndSet(T value) {
-    return submit(ReferenceCommands.GetAndSet.<T>builder()
+    return submit(AtomicValueCommands.GetAndSet.<T>builder()
       .withValue(value)
       .build());
   }
@@ -184,7 +184,7 @@ public class DistributedAtomicValue<T> extends Resource {
    * @return A completable future to be completed with the previous value.
    */
   public CompletableFuture<T> getAndSet(T value, Duration ttl) {
-    return submit(ReferenceCommands.GetAndSet.<T>builder()
+    return submit(AtomicValueCommands.GetAndSet.<T>builder()
       .withValue(value)
       .withTtl(ttl.toMillis())
       .build());
@@ -198,7 +198,7 @@ public class DistributedAtomicValue<T> extends Resource {
    * @return A completable future to be completed with the previous value.
    */
   public CompletableFuture<T> getAndSet(T value, PersistenceMode persistence) {
-    return submit(ReferenceCommands.GetAndSet.<T>builder()
+    return submit(AtomicValueCommands.GetAndSet.<T>builder()
       .withValue(value)
       .withPersistence(persistence)
       .build());
@@ -213,7 +213,7 @@ public class DistributedAtomicValue<T> extends Resource {
    * @return A completable future to be completed with the previous value.
    */
   public CompletableFuture<T> getAndSet(T value, Duration ttl, PersistenceMode persistence) {
-    return submit(ReferenceCommands.GetAndSet.<T>builder()
+    return submit(AtomicValueCommands.GetAndSet.<T>builder()
       .withValue(value)
       .withTtl(ttl.toMillis())
       .withPersistence(persistence)
@@ -228,7 +228,7 @@ public class DistributedAtomicValue<T> extends Resource {
    * @return A completable future to be completed with a boolean value indicating whether the value was updated.
    */
   public CompletableFuture<Boolean> compareAndSet(T expect, T update) {
-    return submit(ReferenceCommands.CompareAndSet.builder()
+    return submit(AtomicValueCommands.CompareAndSet.builder()
       .withExpect(expect)
       .withUpdate(update)
       .build());
@@ -243,7 +243,7 @@ public class DistributedAtomicValue<T> extends Resource {
    * @return A completable future to be completed with a boolean value indicating whether the value was updated.
    */
   public CompletableFuture<Boolean> compareAndSet(T expect, T update, Duration ttl) {
-    return submit(ReferenceCommands.CompareAndSet.builder()
+    return submit(AtomicValueCommands.CompareAndSet.builder()
       .withExpect(expect)
       .withUpdate(update)
       .withTtl(ttl.toMillis())
@@ -259,7 +259,7 @@ public class DistributedAtomicValue<T> extends Resource {
    * @return A completable future to be completed with a boolean value indicating whether the value was updated.
    */
   public CompletableFuture<Boolean> compareAndSet(T expect, T update, PersistenceMode persistence) {
-    return submit(ReferenceCommands.CompareAndSet.builder()
+    return submit(AtomicValueCommands.CompareAndSet.builder()
       .withExpect(expect)
       .withUpdate(update)
       .withPersistence(persistence)
@@ -276,7 +276,7 @@ public class DistributedAtomicValue<T> extends Resource {
    * @return A completable future to be completed with a boolean value indicating whether the value was updated.
    */
   public CompletableFuture<Boolean> compareAndSet(T expect, T update, Duration ttl, PersistenceMode persistence) {
-    return submit(ReferenceCommands.CompareAndSet.builder()
+    return submit(AtomicValueCommands.CompareAndSet.builder()
       .withExpect(expect)
       .withUpdate(update)
       .withTtl(ttl.toMillis())
@@ -297,7 +297,7 @@ public class DistributedAtomicValue<T> extends Resource {
     }
 
     changeListeners.add(listener);
-    return submit(ReferenceCommands.Listen.builder().build())
+    return submit(AtomicValueCommands.Listen.builder().build())
       .thenApply(v -> new ChangeListener(listener));
   }
 
@@ -321,7 +321,7 @@ public class DistributedAtomicValue<T> extends Resource {
       synchronized (DistributedAtomicValue.this) {
         changeListeners.remove(listener);
         if (changeListeners.isEmpty()) {
-          submit(ReferenceCommands.Unlisten.builder().build());
+          submit(AtomicValueCommands.Unlisten.builder().build());
         }
       }
     }

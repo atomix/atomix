@@ -32,9 +32,9 @@ import net.kuujo.copycat.util.BuilderPool;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ReferenceCommands {
+public class AtomicValueCommands {
 
-  private ReferenceCommands() {
+  private AtomicValueCommands() {
   }
 
   /**

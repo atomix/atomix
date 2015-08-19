@@ -13,9 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-net.kuujo.copycat.atomic.state.ReferenceCommands$CompareAndSet
-net.kuujo.copycat.atomic.state.ReferenceCommands$Get
-net.kuujo.copycat.atomic.state.ReferenceCommands$GetAndSet
-net.kuujo.copycat.atomic.state.ReferenceCommands$Set
-net.kuujo.copycat.atomic.state.ReferenceCommands$Listen
-net.kuujo.copycat.atomic.state.ReferenceCommands$Unlisten
+net.kuujo.copycat.atomic.state.AtomicValueCommands$CompareAndSet
+net.kuujo.copycat.atomic.state.AtomicValueCommands$Get
+net.kuujo.copycat.atomic.state.AtomicValueCommands$GetAndSet
+net.kuujo.copycat.atomic.state.AtomicValueCommands$Set
+net.kuujo.copycat.atomic.state.AtomicValueCommands$Listen
+net.kuujo.copycat.atomic.state.AtomicValueCommands$Unlisten

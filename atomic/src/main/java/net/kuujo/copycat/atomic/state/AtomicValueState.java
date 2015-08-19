@@ -34,20 +34,20 @@ import java.util.function.Function;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ReferenceState extends StateMachine {
+public class AtomicValueState extends StateMachine {
   private final Set<Long> sessions = new HashSet<>();
-  private final Map<Session, Commit<ReferenceCommands.Listen>> listeners = new HashMap<>();
+  private final Map<Session, Commit<AtomicValueCommands.Listen>> listeners = new HashMap<>();
   private final AtomicReference<Object> value = new AtomicReference<>();
-  private Commit<? extends ReferenceCommands.ReferenceCommand> current;
+  private Commit<? extends AtomicValueCommands.ReferenceCommand> current;
 
   @Override
   public void configure(StateMachineExecutor executor) {
-    executor.register(ReferenceCommands.Listen.class, this::listen);
-    executor.register(ReferenceCommands.Unlisten.class, this::unlisten);
-    executor.register(ReferenceCommands.Get.class, (Function<Commit<ReferenceCommands.Get>, Object>) this::get);
-    executor.register(ReferenceCommands.Set.class, this::set);
-    executor.register(ReferenceCommands.CompareAndSet.class, this::compareAndSet);
-    executor.register(ReferenceCommands.GetAndSet.class, (Function<Commit< ReferenceCommands.GetAndSet>, Object>) this::getAndSet);
+    executor.register(AtomicValueCommands.Listen.class, this::listen);
+    executor.register(AtomicValueCommands.Unlisten.class, this::unlisten);
+    executor.register(AtomicValueCommands.Get.class, (Function<Commit<AtomicValueCommands.Get>, Object>) this::get);
+    executor.register(AtomicValueCommands.Set.class, this::set);
+    executor.register(AtomicValueCommands.CompareAndSet.class, this::compareAndSet);
+    executor.register(AtomicValueCommands.GetAndSet.class, (Function<Commit< AtomicValueCommands.GetAndSet>, Object>) this::getAndSet);
   }
 
   @Override
@@ -58,7 +58,7 @@ public class ReferenceState extends StateMachine {
   @Override
   public void expire(Session session) {
     sessions.remove(session.id());
-    Commit<ReferenceCommands.Listen> listener = listeners.remove(session);
+    Commit<AtomicValueCommands.Listen> listener = listeners.remove(session);
     if (listener != null) {
       listener.clean();
     }
@@ -67,7 +67,7 @@ public class ReferenceState extends StateMachine {
   @Override
   public void close(Session session) {
     sessions.remove(session.id());
-    Commit<ReferenceCommands.Listen> listener = listeners.remove(session);
+    Commit<AtomicValueCommands.Listen> listener = listeners.remove(session);
     if (listener != null) {
       listener.clean();
     }
@@ -76,7 +76,7 @@ public class ReferenceState extends StateMachine {
   /**
    * Returns a boolean value indicating whether the given commit is active.
    */
-  private boolean isActive(Commit<? extends ReferenceCommands.ReferenceCommand> commit, Instant time) {
+  private boolean isActive(Commit<? extends AtomicValueCommands.ReferenceCommand> commit, Instant time) {
     if (commit == null) {
       return false;
     } else if (commit.operation().mode() == PersistenceMode.EPHEMERAL && !sessions.contains(commit.session().id())) {
@@ -90,7 +90,7 @@ public class ReferenceState extends StateMachine {
   /**
    * Handles a listen commit.
    */
-  protected void listen(Commit<ReferenceCommands.Listen> commit) {
+  protected void listen(Commit<AtomicValueCommands.Listen> commit) {
     if (!commit.session().isOpen()) {
       commit.clean();
     } else {
@@ -101,8 +101,8 @@ public class ReferenceState extends StateMachine {
   /**
    * Handles an unlisten commit.
    */
-  protected void unlisten(Commit<ReferenceCommands.Unlisten> commit) {
-    Commit<ReferenceCommands.Listen> listener = listeners.remove(commit.session());
+  protected void unlisten(Commit<AtomicValueCommands.Unlisten> commit) {
+    Commit<AtomicValueCommands.Listen> listener = listeners.remove(commit.session());
     if (listener == null) {
       commit.clean();
     }
@@ -120,7 +120,7 @@ public class ReferenceState extends StateMachine {
   /**
    * Handles a get commit.
    */
-  protected Object get(Commit<ReferenceCommands.Get> commit) {
+  protected Object get(Commit<AtomicValueCommands.Get> commit) {
     try {
       return current != null && isActive(current, commit.time()) ? value.get() : null;
     } finally {
@@ -131,7 +131,7 @@ public class ReferenceState extends StateMachine {
   /**
    * Applies a set commit.
    */
-  protected void set(Commit<ReferenceCommands.Set> commit) {
+  protected void set(Commit<AtomicValueCommands.Set> commit) {
     if (!isActive(commit, context().time().instant())) {
       commit.clean();
     } else {
@@ -147,7 +147,7 @@ public class ReferenceState extends StateMachine {
   /**
    * Handles a compare and set commit.
    */
-  protected boolean compareAndSet(Commit<ReferenceCommands.CompareAndSet> commit) {
+  protected boolean compareAndSet(Commit<AtomicValueCommands.CompareAndSet> commit) {
     if (!isActive(commit, context().time().instant())) {
       commit.clean();
       return false;
@@ -177,7 +177,7 @@ public class ReferenceState extends StateMachine {
   /**
    * Handles a get and set commit.
    */
-  protected Object getAndSet(Commit<ReferenceCommands.GetAndSet> commit) {
+  protected Object getAndSet(Commit<AtomicValueCommands.GetAndSet> commit) {
     if (!isActive(commit, context().time().instant())) {
       commit.clean();
 
