@@ -24,8 +24,13 @@ import net.kuujo.copycat.io.transport.LocalServerRegistry;
 import net.kuujo.copycat.io.transport.LocalTransport;
 import net.kuujo.copycat.raft.Member;
 import net.kuujo.copycat.raft.Members;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,6 +42,7 @@ import java.util.List;
 @Test
 @SuppressWarnings("unchecked")
 public class DistributedLockTest extends ConcurrentTestCase {
+  private static final File directory = new File("test-logs");
 
   /**
    * Tests locking and unlocking a lock.
@@ -100,6 +106,31 @@ public class DistributedLockTest extends ConcurrentTestCase {
     await();
 
     return active;
+  }
+
+  @BeforeMethod
+  @AfterMethod
+  public void clearTests() throws IOException {
+    deleteDirectory(directory);
+  }
+
+  /**
+   * Deletes a directory recursively.
+   */
+  private void deleteDirectory(File directory) throws IOException {
+    if (directory.exists()) {
+      File[] files = directory.listFiles();
+      if (files != null) {
+        for (File file : files) {
+          if (file.isDirectory()) {
+            deleteDirectory(file);
+          } else {
+            Files.delete(file.toPath());
+          }
+        }
+      }
+      Files.delete(directory.toPath());
+    }
   }
 
 }

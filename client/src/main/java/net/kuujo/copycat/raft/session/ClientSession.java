@@ -424,16 +424,14 @@ public class ClientSession implements Session, Managed<Session> {
   @Override
   public CompletableFuture<Session> open() {
     CompletableFuture<Session> future = new CompletableFuture<>();
-    context.executor().execute(() -> {
-      register().whenComplete((result, error) -> {
-        if (error == null) {
-          this.state = State.OPEN;
-          future.complete(this);
-        } else {
-          future.completeExceptionally(error);
-        }
-      });
-    });
+    context.executor().execute(() -> register().whenComplete((result, error) -> {
+      if (error == null) {
+        this.state = State.OPEN;
+        future.complete(this);
+      } else {
+        future.completeExceptionally(error);
+      }
+    }));
     return future;
   }
 
