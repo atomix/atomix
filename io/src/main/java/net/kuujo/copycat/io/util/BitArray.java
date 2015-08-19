@@ -124,7 +124,7 @@ public class BitArray implements AutoCloseable {
    * @return The resized bit array.
    */
   public BitArray resize(long size) {
-    bytes.resize(Math.max(size / 64, 8) + 8);
+    bytes.resize(Math.max(size / 8 + 8, 8));
     this.size = size;
     return this;
   }
@@ -141,6 +141,11 @@ public class BitArray implements AutoCloseable {
   @Override
   public void close() throws IOException {
     bytes.close();
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[size=%d]", getClass().getSimpleName(), size);
   }
 
 }
