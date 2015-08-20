@@ -18,7 +18,6 @@ package net.kuujo.copycat.collections;
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import net.kuujo.copycat.Copycat;
 import net.kuujo.copycat.CopycatServer;
-import net.kuujo.copycat.Node;
 import net.kuujo.copycat.io.storage.Storage;
 import net.kuujo.copycat.io.transport.LocalServerRegistry;
 import net.kuujo.copycat.io.transport.LocalTransport;
@@ -53,8 +52,7 @@ public class DistributedMapTest extends ConcurrentTestCase {
 
     Copycat copycat = copycats.get(0);
 
-    Node node = copycat.create("/test").get();
-    DistributedMap<String, String> map = node.create(DistributedMap.class).get();
+    DistributedMap<String, String> map = copycat.create("test", DistributedMap.class).get();
 
     expectResume();
     map.put("foo", "Hello world!").thenRun(this::resume);
@@ -93,8 +91,7 @@ public class DistributedMapTest extends ConcurrentTestCase {
 
     Copycat copycat = copycats.get(0);
 
-    Node node = copycat.create("/test").get();
-    DistributedMap<String, String> map = node.create(DistributedMap.class).get();
+    DistributedMap<String, String> map = copycat.create("test", DistributedMap.class).get();
 
     expectResume();
     map.size().thenAccept(size -> {
@@ -137,8 +134,7 @@ public class DistributedMapTest extends ConcurrentTestCase {
 
     Copycat copycat = copycats.get(0);
 
-    Node node = copycat.create("/test").get();
-    DistributedMap<String, String> map = node.create(DistributedMap.class).get();
+    DistributedMap<String, String> map = copycat.create("test", DistributedMap.class).get();
 
     expectResume();
     map.put("foo", "Hello world!", Duration.ofSeconds(1)).thenRun(this::resume);

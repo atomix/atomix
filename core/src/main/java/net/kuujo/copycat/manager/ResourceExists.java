@@ -26,7 +26,7 @@ import net.kuujo.copycat.io.serializer.SerializeWith;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=416)
+@SerializeWith(id=417)
 public class ResourceExists extends PathOperation<Boolean> implements Query<Boolean> {
 
   /**

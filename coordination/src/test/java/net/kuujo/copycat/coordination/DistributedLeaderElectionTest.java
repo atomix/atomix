@@ -18,7 +18,6 @@ package net.kuujo.copycat.coordination;
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import net.kuujo.copycat.Copycat;
 import net.kuujo.copycat.CopycatServer;
-import net.kuujo.copycat.Node;
 import net.kuujo.copycat.io.storage.Storage;
 import net.kuujo.copycat.io.transport.LocalServerRegistry;
 import net.kuujo.copycat.io.transport.LocalTransport;
@@ -53,8 +52,7 @@ public class DistributedLeaderElectionTest extends ConcurrentTestCase {
 
     Copycat copycat = servers.get(0);
 
-    Node node = copycat.create("/test").get();
-    DistributedLeaderElection election = node.create(DistributedLeaderElection.class).get();
+    DistributedLeaderElection election = copycat.create("test", DistributedLeaderElection.class).get();
 
     expectResumes(2);
     election.onElection(v -> resume()).thenRun(this::resume);

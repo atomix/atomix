@@ -18,7 +18,6 @@ package net.kuujo.copycat.collections;
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import net.kuujo.copycat.Copycat;
 import net.kuujo.copycat.CopycatServer;
-import net.kuujo.copycat.Node;
 import net.kuujo.copycat.io.storage.Storage;
 import net.kuujo.copycat.io.transport.LocalServerRegistry;
 import net.kuujo.copycat.io.transport.LocalTransport;
@@ -55,12 +54,10 @@ public class DistributedSetTest extends ConcurrentTestCase {
     Copycat copycat1 = copycats.get(0);
     Copycat copycat2 = copycats.get(1);
 
-    Node node1 = copycat1.create("/test").get();
-    DistributedSet<String> set1 = node1.create(DistributedSet.class).get();
+    DistributedSet<String> set1 = copycat1.create("test", DistributedSet.class).get();
     assertFalse(set1.contains("Hello world!").get());
 
-    Node node2 = copycat2.create("/test").get();
-    DistributedSet<String> set2 = node2.create(DistributedSet.class).get();
+    DistributedSet<String> set2 = copycat2.create("test", DistributedSet.class).get();
     assertFalse(set2.contains("Hello world!").get());
 
     set1.add("Hello world!").join();

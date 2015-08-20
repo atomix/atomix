@@ -18,7 +18,6 @@ package net.kuujo.copycat.atomic;
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import net.kuujo.copycat.Copycat;
 import net.kuujo.copycat.CopycatServer;
-import net.kuujo.copycat.Node;
 import net.kuujo.copycat.io.storage.Storage;
 import net.kuujo.copycat.io.transport.LocalServerRegistry;
 import net.kuujo.copycat.io.transport.LocalTransport;
@@ -53,8 +52,7 @@ public class DistributedAtomicValueTest extends ConcurrentTestCase {
 
     Copycat copycat = servers.get(0);
 
-    Node node = copycat.create("/test").get();
-    DistributedAtomicValue<String> reference = node.create(DistributedAtomicValue.class).get();
+    DistributedAtomicValue<String> reference = copycat.create("test", DistributedAtomicValue.class).get();
 
     expectResume();
     reference.set("Hello world!").thenRun(this::resume);
@@ -77,8 +75,7 @@ public class DistributedAtomicValueTest extends ConcurrentTestCase {
 
     Copycat copycat = servers.get(0);
 
-    Node node = copycat.create("/test").get();
-    DistributedAtomicValue<String> reference = node.create(DistributedAtomicValue.class).get();
+    DistributedAtomicValue<String> reference = copycat.create("test", DistributedAtomicValue.class).get();
 
     expectResume();
     reference.onChange(value -> {
@@ -198,8 +195,7 @@ public class DistributedAtomicValueTest extends ConcurrentTestCase {
     copycat4.open().thenRun(this::resume);
     await();
 
-    Node node = copycat4.create("/test").get();
-    DistributedAtomicValue<String> reference = node.create(DistributedAtomicValue.class).get();
+    DistributedAtomicValue<String> reference = copycat4.create("test", DistributedAtomicValue.class).get();
 
     expectResume();
     reference.set("Hello world!").thenRun(this::resume);
@@ -219,15 +215,13 @@ public class DistributedAtomicValueTest extends ConcurrentTestCase {
   public void testCompareAndSet() throws Throwable {
     List<Copycat> servers = createCopycats(3);
 
-    Node node1 = servers.get(0).create("/test").get();
-    DistributedAtomicValue<Integer> reference1 = node1.create(DistributedAtomicValue.class).get();
+    DistributedAtomicValue<Integer> reference1 = servers.get(0).create("test", DistributedAtomicValue.class).get();
 
     expectResume();
     reference1.set(1).thenRun(this::resume);
     await();
 
-    Node node2 = servers.get(0).create("/test").get();
-    DistributedAtomicValue<Integer> reference2 = node2.create(DistributedAtomicValue.class).get();
+    DistributedAtomicValue<Integer> reference2 = servers.get(0).create("test", DistributedAtomicValue.class).get();
 
     expectResume();
     reference2.compareAndSet(1, 2).thenAccept(result -> {

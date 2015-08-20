@@ -21,35 +21,41 @@ import net.kuujo.copycat.io.serializer.SerializationException;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.raft.StateMachine;
-import net.kuujo.copycat.raft.protocol.Command;
+import net.kuujo.copycat.raft.protocol.ConsistencyLevel;
 import net.kuujo.copycat.raft.protocol.Operation;
+import net.kuujo.copycat.raft.protocol.Query;
 import net.kuujo.copycat.util.BuilderPool;
 
 /**
- * Create resource command.
+ * Get resource command.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=414)
-public class CreateResource extends PathOperation<Long> implements Command<Long> {
+@SerializeWith(id=416)
+public class GetResource extends PathOperation<Long> implements Query<Long> {
 
   /**
-   * Returns a new CreateResource builder.
+   * Returns a new GetResource builder.
    *
-   * @return A new CreateResource command builder.
+   * @return A new GetResource command builder.
    */
   public static Builder builder() {
-    return Operation.builder(CreateResource.Builder.class, CreateResource.Builder::new);
+    return Operation.builder(GetResource.Builder.class, GetResource.Builder::new);
   }
 
   private Class<? extends StateMachine> type;
 
-  public CreateResource() {
+  public GetResource() {
   }
 
-  public CreateResource(String path, Class<? extends StateMachine> type) {
+  public GetResource(String path, Class<? extends StateMachine> type) {
     super(path);
     this.type = type;
+  }
+
+  @Override
+  public ConsistencyLevel consistency() {
+    return ConsistencyLevel.LINEARIZABLE;
   }
 
   /**
@@ -84,14 +90,14 @@ public class CreateResource extends PathOperation<Long> implements Command<Long>
   /**
    * Create resource builder.
    */
-  public static class Builder extends PathOperation.Builder<Builder, CreateResource, Long> {
-    public Builder(BuilderPool<Builder, CreateResource> pool) {
+  public static class Builder extends PathOperation.Builder<Builder, GetResource, Long> {
+    public Builder(BuilderPool<Builder, GetResource> pool) {
       super(pool);
     }
 
     @Override
-    protected CreateResource create() {
-      return new CreateResource();
+    protected GetResource create() {
+      return new GetResource();
     }
 
     /**
