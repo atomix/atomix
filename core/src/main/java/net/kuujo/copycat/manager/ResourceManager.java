@@ -130,7 +130,7 @@ public class ResourceManager extends StateMachine {
     try {
       StateMachine resource = commit.operation().type().newInstance();
       Context context = new ThreadPoolContext(scheduler, Context.currentContext().serializer().clone());
-      StateMachineExecutor executor = new ResourceStateMachineExecutor(id, this.executor, context);
+      ResourceStateMachineExecutor executor = new ResourceStateMachineExecutor(id, this.executor, context);
 
       paths.put(path, id);
       resources.put(id, new ResourceHolder(path, resource, executor));
@@ -204,9 +204,9 @@ public class ResourceManager extends StateMachine {
     private final String path;
     private final Map<Long, ManagedResourceSession> sessions = new HashMap<>();
     private final StateMachine stateMachine;
-    private final StateMachineExecutor executor;
+    private final ResourceStateMachineExecutor executor;
 
-    private ResourceHolder(String path, StateMachine stateMachine, StateMachineExecutor executor) {
+    private ResourceHolder(String path, StateMachine stateMachine, ResourceStateMachineExecutor executor) {
       this.path = path;
       this.stateMachine = stateMachine;
       this.executor = executor;

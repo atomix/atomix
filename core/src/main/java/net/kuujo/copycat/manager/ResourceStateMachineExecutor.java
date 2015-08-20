@@ -89,9 +89,11 @@ class ResourceStateMachineExecutor implements StateMachineExecutor {
     return context.execute(callback);
   }
 
-  @Override
+  /**
+   * Executes the given commit on the state machine.
+   */
   @SuppressWarnings("unchecked")
-  public <T extends Operation<U>, U> CompletableFuture<U> execute(Commit<T> commit) {
+  <T extends Operation<U>, U> CompletableFuture<U> execute(Commit<T> commit) {
     ComposableFuture<U> future = new ComposableFuture<>();
     context.executor().execute(() -> {
       // Get the function registered for the operation. If no function is registered, attempt to

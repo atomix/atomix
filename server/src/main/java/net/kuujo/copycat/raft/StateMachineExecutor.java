@@ -19,7 +19,6 @@ package net.kuujo.copycat.raft;
 import net.kuujo.copycat.raft.protocol.Operation;
 import net.kuujo.copycat.util.concurrent.Context;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -36,16 +35,6 @@ public interface StateMachineExecutor extends Context {
    * @return The state machine context.
    */
   StateMachineContext context();
-
-  /**
-   * Executes the given operation on the state machine.
-   *
-   * @param commit The commit to execute.
-   * @param <T> The operation type.
-   * @param <U> The operation output type.
-   * @return A completable future to be completed with the operation output.
-   */
-  <T extends Operation<U>, U> CompletableFuture<U> execute(Commit<T> commit);
 
   /**
    * Registers a global operation callback.

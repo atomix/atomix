@@ -74,9 +74,11 @@ class ServerStateMachineExecutor implements StateMachineExecutor {
     return executor.executor();
   }
 
-  @Override
+  /**
+   * Executes the given commit on the state machine.
+   */
   @SuppressWarnings("unchecked")
-  public <T extends Operation<U>, U> CompletableFuture<U> execute(Commit<T> commit) {
+  <T extends Operation<U>, U> CompletableFuture<U> execute(Commit<T> commit) {
     ComposableFuture<U> future = new ComposableFuture<>();
     executor.executor().execute(() -> {
       context.update(commit.index(), commit.time());
