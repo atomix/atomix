@@ -17,18 +17,20 @@ package net.kuujo.copycat;
 
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.storage.Storage;
-import net.kuujo.copycat.io.transport.Transport;
+import net.kuujo.copycat.io.transport.*;
 import net.kuujo.copycat.manager.ResourceManager;
 import net.kuujo.copycat.raft.Members;
 import net.kuujo.copycat.raft.RaftClient;
 import net.kuujo.copycat.raft.RaftServer;
+import net.kuujo.copycat.util.ConfigurationException;
 import net.kuujo.copycat.util.concurrent.CopycatThreadFactory;
 
+import java.net.InetSocketAddress;
 import java.time.Duration;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.*;
+import java.util.function.Consumer;
 
 /**
  * Server-side {@link net.kuujo.copycat.Copycat} implementation.
@@ -67,11 +69,71 @@ public class CopycatServer extends Copycat {
   }
 
   /**
+   * Combined transport that aids in the local client communicating directly with the local server.
+   */
+  private static class CombinedTransport implements Transport {
+    private final Transport local;
+    private final Transport remote;
+    private final Map<UUID, Server> servers = new ConcurrentHashMap<>();
+
+    private CombinedTransport(Transport local, Transport remote) {
+      this.local = local;
+      this.remote = remote;
+    }
+
+    @Override
+    public Client client(UUID id) {
+      return remote.client(id);
+    }
+
+    @Override
+    public Server server(UUID id) {
+      return servers.computeIfAbsent(id, i -> new CombinedServer(local.server(i), remote.server(i)));
+    }
+
+    @Override
+    public CompletableFuture<Void> close() {
+      return local.close().thenCompose(v -> remote.close());
+    }
+  }
+
+  /**
+   * Combined server that access connections from the local client directly.
+   */
+  private static class CombinedServer implements Server {
+    private final Server local;
+    private final Server remote;
+
+    private CombinedServer(Server local, Server remote) {
+      this.local = local;
+      this.remote = remote;
+    }
+
+    @Override
+    public UUID id() {
+      return local.id();
+    }
+
+    @Override
+    public CompletableFuture<Void> listen(InetSocketAddress address, Consumer<Connection> listener) {
+      return local.listen(address, listener).thenCompose(v -> remote.listen(address, listener));
+    }
+
+    @Override
+    public CompletableFuture<Void> close() {
+      return local.close().thenCompose(v -> remote.close());
+    }
+  }
+
+  /**
    * Copycat builder.
    */
   public static class Builder extends Copycat.Builder<CopycatServer> {
     private RaftClient.Builder clientBuilder = RaftClient.builder();
     private RaftServer.Builder serverBuilder = RaftServer.builder();
+    private int memberId;
+    private Members members;
+    private LocalServerRegistry localRegistry = new LocalServerRegistry();
 
     private Builder() {
     }
@@ -80,6 +142,7 @@ public class CopycatServer extends Copycat {
     protected void reset() {
       clientBuilder = RaftClient.builder();
       serverBuilder = RaftServer.builder();
+      localRegistry = new LocalServerRegistry();
     }
 
     /**
@@ -89,8 +152,12 @@ public class CopycatServer extends Copycat {
      * @return The client builder.
      */
     public Builder withTransport(Transport transport) {
-      clientBuilder.withTransport(transport);
-      serverBuilder.withTransport(transport);
+      clientBuilder.withTransport(LocalTransport.builder()
+        .withRegistry(localRegistry)
+        .build());
+      serverBuilder.withTransport(new CombinedTransport(LocalTransport.builder()
+        .withRegistry(localRegistry)
+        .build(), transport));
       return this;
     }
 
@@ -101,7 +168,7 @@ public class CopycatServer extends Copycat {
      * @return The Raft builder.
      */
     public Builder withMemberId(int memberId) {
-      serverBuilder.withMemberId(memberId);
+      this.memberId = memberId;
       return this;
     }
 
@@ -112,8 +179,9 @@ public class CopycatServer extends Copycat {
      * @return The Raft builder.
      */
     public Builder withMembers(Members members) {
-      clientBuilder.withMembers(members);
-      serverBuilder.withMembers(members);
+      if (members == null)
+        throw new NullPointerException("members cannot be null");
+      this.members = members;
       return this;
     }
 
@@ -190,9 +258,31 @@ public class CopycatServer extends Copycat {
 
     @Override
     public CopycatServer build() {
+      if (memberId <= 0)
+        throw new ConfigurationException("no memberId configured");
+      if (members == null)
+        throw new ConfigurationException("no server members configured");
+
       ThreadFactory threadFactory = new CopycatThreadFactory("copycat-resource-%d");
       ScheduledExecutorService executor = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), threadFactory);
-      return new CopycatServer(clientBuilder.build(), serverBuilder.withStateMachine(new ResourceManager(executor)).build());
+
+      // Construct the underlying Raft client. Because the CopycatServer host both a RaftClient and RaftServer,
+      // we ensure the client connects directly to the local server by exposing only the local member to it.
+      // This ensures that we don't incur unnecessary network traffic by sending operations to a remote server
+      // when a local server is already available in the same JVM.
+      RaftClient client = clientBuilder.withMembers(Members.builder()
+          .addMember(members.member(memberId))
+          .build())
+        .build();
+
+      // Construct the underlying RaftServer. The server should have been configured with a CombinedTransport
+      // that facilitates the local client connecting directly to the server.
+      RaftServer server = serverBuilder.withMemberId(memberId)
+        .withMembers(members)
+        .withStateMachine(new ResourceManager(executor))
+        .build();
+
+      return new CopycatServer(client, server);
     }
   }
 
