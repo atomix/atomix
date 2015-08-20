@@ -33,10 +33,6 @@ import java.io.File;
  *       .build();
  *   }
  * </pre>
- * Copycat's storage facility supports two modes - {@link PersistenceLevel#DISK} and {@link PersistenceLevel#MEMORY}.
- * By default, the storage module uses {@link PersistenceLevel#DISK} and {@link #directory()} defaults
- * to {@code System.getProperty("user.dir")}.
- * <p>
  * Users can also configure a number of options related to how {@link Log logs} are constructed and managed.
  * Most notable of the configuration options is the number of {@link #cleanerThreads()}, which specifies the
  * number of background threads to use to clean log {@link Segment segments}. The parallelism of the log

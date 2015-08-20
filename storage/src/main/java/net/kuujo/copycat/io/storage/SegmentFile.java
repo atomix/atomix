@@ -32,13 +32,6 @@ class SegmentFile {
     return isFile(file, "log");
   }
 
-  /**
-   * Returns a boolean value indicating whether the given file appears to be a parsable index file.
-   */
-  static boolean isIndexFile(File file) {
-    return isFile(file, "index");
-  }
-
   private static boolean isFile(File file, String extension) {
     return file.getName().indexOf('-') != -1
       && file.getName().indexOf('-', file.getName().indexOf('-') + 1) != -1
@@ -51,13 +44,6 @@ class SegmentFile {
    */
   static File createSegmentFile(File directory, long id, long version) {
     return new File(directory, String.format("copycat-%d-%d.log", id, version));
-  }
-
-  /**
-   * Creates an index file for the given directory, log name, segment ID, and segment version.
-   */
-  static File createIndexFile(File directory, long id, long version) {
-    return new File(directory, String.format("copycat-%d-%d.index", id, version));
   }
 
   SegmentFile(File file) {

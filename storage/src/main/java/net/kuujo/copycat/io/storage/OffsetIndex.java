@@ -19,7 +19,6 @@ import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.FileBuffer;
 import net.kuujo.copycat.io.MappedBuffer;
 import net.kuujo.copycat.io.util.BitArray;
-import net.kuujo.copycat.io.util.Memory;
 
 import java.io.IOException;
 
@@ -58,55 +57,22 @@ class OffsetIndex implements AutoCloseable {
   }
 
   private static final long MAX_POSITION = (long) Math.pow(2, 32) - 1;
-  private static final int HEADER_SIZE = 8;
   private static final int ENTRY_SIZE = 8;
   private static final int OFFSET_SIZE = 4;
 
-  private static final long START = -1;
-  private static final int END = -1;
-
   private final Buffer buffer;
-  private final BitArray bits;
   private final BitArray deletes;
   private int offset;
   private int size;
   private int lastOffset = -1;
   private int currentOffset = -1;
   private long currentPosition = -1;
-  private int currentLength = -1;
 
   public OffsetIndex(Buffer buffer) {
     if (buffer == null)
       throw new NullPointerException("buffer cannot be null");
     this.buffer = buffer;
-    long bits = Memory.Util.toPow2(buffer.capacity() / ENTRY_SIZE);
-    this.bits = BitArray.allocate(bits);
     this.deletes = BitArray.allocate(1024);
-    init();
-  }
-
-  /**
-   * Initializes the internal bit set.
-   */
-  private void init() {
-    if (buffer.position(0).readLong() != START) {
-      buffer.position(0).writeLong(START);
-      return;
-    }
-
-    buffer.mark();
-
-    int offset = buffer.readInt();
-    while (offset != END) {
-      lastOffset = offset;
-      bits.set(offset % bits.size());
-      size++;
-
-      buffer.skip(4).mark();
-      offset = buffer.readInt();
-    }
-
-    buffer.reset();
   }
 
   /**
@@ -140,7 +106,7 @@ class OffsetIndex implements AutoCloseable {
    * @param offset The offset to index.
    * @param position The position of the offset to index.
    */
-  public void index(int offset, long position, int length) {
+  public void index(int offset, long position) {
     if (lastOffset > -1 && offset <= lastOffset) {
       throw new IllegalArgumentException("offset cannot be less than or equal to the last offset in the index");
     }
@@ -149,25 +115,14 @@ class OffsetIndex implements AutoCloseable {
       throw new IllegalArgumentException("position cannot be greater than " + MAX_POSITION);
     }
 
-    // If the length is zero, that indicates that this is a skipped entry. We don't index skipped entries at all.
-    if (length == 0) {
-      return;
-    }
-
     buffer.writeInt(offset)
-      .writeUnsignedInt(position)
-      .mark()
-      .writeInt(END)
-      .writeInt(length)
-      .reset();
-
-    bits.set(offset % bits.size());
+      .writeUnsignedInt(position);
 
     size++;
     lastOffset = offset;
 
     if (currentOffset == offset) {
-      currentPosition = currentLength = currentOffset = -1;
+      currentPosition = currentOffset = -1;
     }
   }
 
@@ -210,40 +165,16 @@ class OffsetIndex implements AutoCloseable {
       return currentPosition;
     }
 
-    // Check the bit set before attempting to perform a binary search of the index.
-    if (!bits.get(offset % bits.size())) {
-      return -1;
-    }
-
     // Perform a binary search to get the index of the offset in the index buffer.
     int index = search(offset);
 
     currentOffset = offset;
     if (index == -1) {
-      currentPosition = currentLength = -1;
+      currentPosition = -1;
     } else {
       currentPosition = buffer.readUnsignedInt(index + OFFSET_SIZE);
-
-      int next = buffer.readInt(index + ENTRY_SIZE);
-      if (next == END) {
-        currentLength = buffer.readInt(index + ENTRY_SIZE + OFFSET_SIZE);
-      } else {
-        currentLength = (int) (buffer.readUnsignedInt(index + ENTRY_SIZE + OFFSET_SIZE) - currentPosition);
-      }
     }
     return currentPosition;
-  }
-
-  /**
-   * Finds the length of the given offset by locating the next offset in the index.
-   *
-   * @param offset The offset for which to look up the length.
-   * @return The last position of the offset entry.
-   */
-  public int length(int offset) {
-    if (currentOffset == offset)
-      return currentLength;
-    return position(offset) != -1 ? currentLength : -1;
   }
 
   /**
@@ -259,11 +190,11 @@ class OffsetIndex implements AutoCloseable {
 
     while (lo < hi) {
       int mid = lo + (hi - lo) / 2;
-      int i = buffer.readInt(mid * ENTRY_SIZE + HEADER_SIZE);
+      int i = buffer.readInt(mid * ENTRY_SIZE);
       if (i == offset) {
         return mid;
       } else if (lo == mid) {
-        i = buffer.readInt(hi * ENTRY_SIZE + HEADER_SIZE);
+        i = buffer.readInt(hi * ENTRY_SIZE);
         if (i == offset) {
           return hi;
         }
@@ -275,7 +206,7 @@ class OffsetIndex implements AutoCloseable {
       }
     }
 
-    if (buffer.readInt(hi * ENTRY_SIZE + HEADER_SIZE) == offset) {
+    if (buffer.readInt(hi * ENTRY_SIZE) == offset) {
       return hi;
     }
     return -1;
@@ -294,7 +225,7 @@ class OffsetIndex implements AutoCloseable {
 
     while (lo < hi) {
       int mid = lo + (hi - lo) / 2;
-      int i = buffer.readInt(mid * ENTRY_SIZE + HEADER_SIZE);
+      int i = buffer.readInt(mid * ENTRY_SIZE);
       if (i == offset || lo == mid) {
         return mid;
       } else if (i < offset) {
@@ -304,7 +235,7 @@ class OffsetIndex implements AutoCloseable {
       }
     }
 
-    if (buffer.readInt(hi * ENTRY_SIZE + HEADER_SIZE) == offset) {
+    if (buffer.readInt(hi * ENTRY_SIZE) == offset) {
       return hi;
     }
     return -1;
@@ -315,7 +246,7 @@ class OffsetIndex implements AutoCloseable {
    */
   private int search(int offset) {
     int relativeOffset = relativeOffset(offset);
-    return relativeOffset != -1 ? relativeOffset * ENTRY_SIZE + HEADER_SIZE : -1;
+    return relativeOffset != -1 ? relativeOffset * ENTRY_SIZE : -1;
   }
 
   /**
@@ -326,16 +257,16 @@ class OffsetIndex implements AutoCloseable {
    *
    * @param offset The offset after which to truncate the index.
    */
-  public void truncate(int offset) {
+  public long truncate(int offset) {
     if (offset == lastOffset)
-      return;
+      return -1;
 
     int nearestOffset = nearestOffset(offset + 1);
 
     if (nearestOffset == -1)
-      return;
+      return -1;
 
-    int nearestIndex = nearestOffset * ENTRY_SIZE + HEADER_SIZE;
+    int nearestIndex = nearestOffset * ENTRY_SIZE;
 
     int lastOffset = lastOffset();
     for (int i = lastOffset; i > offset; i--) {
@@ -344,18 +275,15 @@ class OffsetIndex implements AutoCloseable {
       }
     }
 
-    long previousPosition = buffer.readUnsignedInt(nearestIndex - OFFSET_SIZE);
-    long indexPosition = buffer.readUnsignedInt(nearestIndex + OFFSET_SIZE);
+    long position = buffer.readUnsignedInt(nearestIndex + OFFSET_SIZE);
 
     buffer.position(nearestIndex)
-      .zero(nearestIndex)
-      .mark()
-      .writeByte(END)
-      .writeInt((int) (indexPosition - previousPosition))
-      .reset();
+      .zero(nearestIndex);
     this.lastOffset = offset;
 
-    currentPosition = currentOffset = currentLength = -1;
+    currentPosition = currentOffset = -1;
+
+    return position;
   }
 
   /**
@@ -408,7 +336,6 @@ class OffsetIndex implements AutoCloseable {
   public void close() {
     try {
       buffer.close();
-      bits.close();
       deletes.close();
     } catch (IOException e) {
       throw new LogException(e);

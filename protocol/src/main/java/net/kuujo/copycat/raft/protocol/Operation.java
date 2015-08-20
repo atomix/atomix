@@ -56,7 +56,7 @@ public interface Operation<T> extends Serializable {
   /**
    * Base builder for Raft state operations.
    */
-  static abstract class Builder<T extends Builder<T, U, V>, U extends Operation<V>, V> extends net.kuujo.copycat.util.Builder<U> {
+  abstract class Builder<T extends Builder<T, U, V>, U extends Operation<V>, V> extends net.kuujo.copycat.util.Builder<U> {
     static final Map<Class<? extends Builder>, BuilderPool> POOLS = new ConcurrentHashMap<>();
 
     protected U operation;

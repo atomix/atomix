@@ -3,14 +3,12 @@ Copycat
 
 [![Build Status](https://travis-ci.org/kuujo/copycat.png)](https://travis-ci.org/kuujo/copycat)
 
-Copycat is an extensible log-based distributed coordination framework for Java 8 built on the
-[Raft consensus protocol](https://raftconsensus.github.io/).
+Copycat is an extensible distributed coordination framework built on the [Raft consensus algorithm][Raft].
 
 #### [User Manual](#user-manual)
 #### [Javadocs][Javadoc]
 
-Copycat is a strongly consistent embedded distributed coordination framework built on the
-[Raft consensus protocol](https://raftconsensus.github.io/). Copycat exposes a set of high level APIs with tools to
+Copycat exposes a set of high level APIs with tools to
 solve a variety of distributed systems problems including:
 * [Distributed coordination tools](#distributed-coordination)
 * [Distributed collections](#distributed-collections)
@@ -1358,10 +1356,9 @@ Underlying the [Storage][Storage] API is the [Log][Log].
 Log log = storage.open();
 ```
 
-The `Log` is an ordered and indexed list of entries stored in memory or on disk. Logs consist of a set of segments.
-Each segment represents range of entries in the overall log. Each segment is backed by two [buffers](#buffers), a
-`HeapBuffer` and a `FileBuffer`; this allows entries to be written *either* to disk or memory. Entries are serialized
-to disk using Copycat's [serialization framework](#serialization).
+The `Log` is an ordered and indexed list of entries stored on disk in a series of files called *segments*.
+Each segment file represents range of entries in the overall log and is backed by a file-based [buffer](#buffers).
+Entries are serialized to disk using Copycat's [serialization framework](#serialization).
 
 Entries can only be appended to the log:
 
@@ -1369,26 +1366,26 @@ Entries can only be appended to the log:
 try (MyEntry entry = log.create(MyEntry.class)) {
   entry.setFoo("foo");
   entry.setBar(1);
-  entry.setPersistenceLevel(PersistenceLevel.DISK);
   log.append(entry);
 }
 ```
 
-The `PersistenceLevel` controls how entries are stored. Entries appended with `PersistenceLevel.DISK` will be written
-to disk via a `FileBuffer`, and entries with `PersistenceLevel.MEMORY` will be stored in an in-memory buffer. In the
-event of a failure or other closure of the log, `PersistenceLevel.DISK` entries will persist, while `PersistenceLevel.MEMORY`
-entries will be lost, so *be careful*!
-
-Segment memory and disk buffers are each backed by an offset index. The offset index is responsible for tracking
-the indexes and positions of entries in the segment. In order to preserve disk/memory space, the index stores entry
-indices as offsets relative to the beginning of each segment. Additionally, each segment is limited to a maximum
-size of `Integer.MAX_VALUE` so that the position of an entry cannot exceed 4 bytes. This means each entry in the
+Segment buffers are backed by an *offset index*. The offset index is responsible for tracking the offsets and positions
+of entries in the segment. Indexes are built in memory from segment entries as they're written to disk. In order to
+preserve disk/memory space, the index stores entry indices as offsets relative to the beginning of each segment. When
+a segment is loaded from disk, the in-memory index is recreated from disk. Additionally, each segment is limited to a
+maximum size of `Integer.MAX_VALUE` so that the position of an entry cannot exceed 4 bytes. This means each entry in the
 index consumes only 8 bytes - 4 for the offset and 4 for the position.
+
+When entries are read from a segment, the offset index is used to locate the starting position of the entry in the
+segment file. To locate an entry, the index uses a [binary search algorithm](https://en.wikipedia.org/wiki/Binary_search_algorithm)
+to locate the appropriate offset within the index buffer. Given the offset, the related *position* is used to seek
+to the appropriate position in the segment file where the entry is read and deserialized.
 
 Offset indexes are also responsible for tracking entries that have been [cleaned from the segment](#log-cleaning).
 When entries are cleaned from the log, a flag is set in the owning segment's offset index to indicate that the
-entry is awaiting compaction. Clean flags are stored in a bit set in memory, so each segment consumes at least
-`[num entries] / 8` bytes of memory.
+entry is awaiting compaction. Clean flags are stored in a bit set in memory, so each segment consumes
+`[num entries] / 8` additional bytes of memory for delete bits.
 
 Entries in the log are always keyed by an `index` - a monotonically increasing 64-bit number. But because of the
 nature of [log cleaning](#log-cleaning) - allowing entries to arbitrarily be removed from the log - the log and
@@ -1778,7 +1775,7 @@ Without some mechanism to reduce the size of the log, the log would grow without
 run out of disk space. Raft suggests a few different approaches of handling log compaction. Copycat uses the
 [log cleaning](#log-cleaning) approach.
 
-`Commit` objects are backed by entries in Copycat's replicated log. When a `Commit` is no longer neede dby the
+`Commit` objects are backed by entries in Copycat's replicated log. When a `Commit` is no longer needed by the
 `StateMachine`, the state machine should clean the commit from Copycat's log by calling the `clean()` method:
 
 ```java
@@ -1930,6 +1927,7 @@ thread-unsafe objects such as a `Serializer` clone per thread.
 ## [Javadoc][Javadoc]
 
 [Javadoc]: http://kuujo.github.io/copycat/api/0.6.0/
+[Raft]: https://raft.github.io/
 [Executor]: https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Executor.html
 [CompletableFuture]: https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html
 [collections]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/collections.html
@@ -1943,7 +1941,6 @@ thread-unsafe objects such as a `Serializer` clone per thread.
 [transport]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/io/transport.html
 [storage]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/io/storage.html
 [utilities]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/util.html
-[Raft]: https://raftconsensus.github.io/
 [Copycat]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/Copycat.html
 [CopycatServer]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/CopycatServer.html
 [CopycatClient]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/CopycatClient.html

@@ -17,6 +17,7 @@ package net.kuujo.copycat.io.storage;
 
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.FileBuffer;
+import net.kuujo.copycat.io.MappedBuffer;
 import net.kuujo.copycat.io.serializer.Serializer;
 
 /**
@@ -29,42 +30,39 @@ class Segment implements AutoCloseable {
   /**
    * Opens a new segment.
    */
-  static Segment open(Buffer diskBuffer, Buffer memoryBuffer, SegmentDescriptor descriptor, OffsetIndex diskIndex, OffsetIndex memoryIndex, Serializer serializer) {
-    return new Segment(diskBuffer, memoryBuffer, descriptor, diskIndex, memoryIndex, serializer);
+  static Segment open(Buffer buffer, SegmentDescriptor descriptor, OffsetIndex offsetIndex, Serializer serializer) {
+    return new Segment(buffer, descriptor, offsetIndex, serializer);
   }
 
   private final SegmentDescriptor descriptor;
   private final Serializer serializer;
-  private final Buffer diskBuffer;
-  private final Buffer memoryBuffer;
-  private final OffsetIndex diskIndex;
-  private final OffsetIndex memoryIndex;
+  private final Buffer buffer;
+  private final OffsetIndex offsetIndex;
   private int skip = 0;
   private boolean open = true;
 
-  Segment(Buffer diskBuffer, Buffer memoryBuffer, SegmentDescriptor descriptor, OffsetIndex diskIndex, OffsetIndex memoryIndex, Serializer serializer) {
-    if (diskBuffer == null)
-      throw new NullPointerException("diskBuffer cannot be null");
-    if (memoryBuffer == null)
-      throw new NullPointerException("memoryBuffer cannot be null");
+  Segment(Buffer buffer, SegmentDescriptor descriptor, OffsetIndex offsetIndex, Serializer serializer) {
+    if (buffer == null)
+      throw new NullPointerException("buffer cannot be null");
     if (descriptor == null)
       throw new NullPointerException("descriptor cannot be null");
-    if (diskIndex == null)
-      throw new NullPointerException("diskIndex cannot be null");
-    if (memoryIndex == null)
-      throw new NullPointerException("memoryIndex cannot be null");
+    if (offsetIndex == null)
+      throw new NullPointerException("offsetIndex cannot be null");
     if (serializer == null)
       throw new NullPointerException("serializer cannot be null");
 
     this.serializer = serializer;
-    this.diskBuffer = diskBuffer;
-    this.memoryBuffer = memoryBuffer;
+    this.buffer = buffer;
     this.descriptor = descriptor;
-    this.diskIndex = diskIndex;
-    this.memoryIndex = memoryIndex;
-    if (diskIndex.size() > 0) {
-      diskBuffer.position(diskIndex.position(diskIndex.lastOffset()) + diskIndex.length(diskIndex.lastOffset()));
+    this.offsetIndex = offsetIndex;
+
+    // Rebuild the index from the segment data.
+    int length = buffer.mark().readUnsignedShort();
+    while (length != 0) {
+      offsetIndex.index(buffer.readInt(), buffer.position());
+      length = buffer.skip(length).mark().readUnsignedShort();
     }
+    buffer.reset();
   }
 
   /**
@@ -91,14 +89,7 @@ class Segment implements AutoCloseable {
    * @return Indicates whether the segment is empty.
    */
   public boolean isEmpty() {
-    return isEmpty(memoryIndex) && isEmpty(diskIndex);
-  }
-
-  /**
-   * Returns a boolean value indicating whether the given index is empty.
-   */
-  private boolean isEmpty(OffsetIndex index) {
-    return index.size() > 0 ? index.lastOffset() - index.offset() + 1 + skip == 0 : skip == 0;
+    return offsetIndex.size() > 0 ? offsetIndex.lastOffset() - offsetIndex.offset() + 1 + skip == 0 : skip == 0;
   }
 
   /**
@@ -108,8 +99,8 @@ class Segment implements AutoCloseable {
    */
   public boolean isFull() {
     return size() >= descriptor.maxSegmentSize()
-      || memoryIndex.size() + diskIndex.size() >= descriptor.maxEntries()
-      || Math.max(memoryIndex.lastOffset(), diskIndex.lastOffset()) + skip + 1 == Integer.MAX_VALUE;
+      || offsetIndex.size() >= descriptor.maxEntries()
+      || offsetIndex.lastOffset() + skip + 1 == Integer.MAX_VALUE;
   }
 
   /**
@@ -118,7 +109,7 @@ class Segment implements AutoCloseable {
    * @return The count of the segment in bytes.
    */
   public long size() {
-    return diskBuffer.offset() + diskBuffer.position() + memoryBuffer.offset() + memoryBuffer.position();
+    return buffer.offset() + buffer.position();
   }
 
   /**
@@ -127,7 +118,7 @@ class Segment implements AutoCloseable {
    * @return The current range of the segment.
    */
   public int length() {
-    return !isEmpty() ? Math.max(memoryIndex.lastOffset(), diskIndex.lastOffset()) - Math.min(memoryIndex.offset(), diskIndex.offset()) + 1 + skip : 0;
+    return !isEmpty() ? offsetIndex.lastOffset() - offsetIndex.offset() + 1 + skip : 0;
   }
 
   /**
@@ -136,7 +127,7 @@ class Segment implements AutoCloseable {
    * @return The count of entries in the segment.
    */
   public int count() {
-    return Math.max(memoryIndex.lastOffset(), diskIndex.lastOffset()) + 1 - (memoryIndex.deletes() + diskIndex.deletes());
+    return offsetIndex.lastOffset() + 1 - offsetIndex.deletes();
   }
 
   /**
@@ -145,7 +136,7 @@ class Segment implements AutoCloseable {
    * @return The index of the segment.
    */
   long index() {
-    return descriptor.index() + Math.min(memoryIndex.offset(), diskIndex.offset());
+    return descriptor.index() + offsetIndex.offset();
   }
 
   /**
@@ -156,7 +147,7 @@ class Segment implements AutoCloseable {
   public long firstIndex() {
     if (!isOpen())
       throw new IllegalStateException("segment not open");
-    return !isEmpty() ? descriptor.index() + Math.max(0, Math.min(diskIndex.offset(), memoryIndex.offset())) : 0;
+    return !isEmpty() ? descriptor.index() + Math.max(0, offsetIndex.offset()) : 0;
   }
 
   /**
@@ -167,7 +158,7 @@ class Segment implements AutoCloseable {
   public long lastIndex() {
     if (!isOpen())
       throw new IllegalStateException("segment not open");
-    return !isEmpty() ? Math.max(diskIndex.lastOffset(), memoryIndex.lastOffset()) + descriptor.index() + skip : descriptor.index() - 1;
+    return !isEmpty() ? offsetIndex.lastOffset() + descriptor.index() + skip : descriptor.index() - 1;
   }
 
   /**
@@ -187,9 +178,7 @@ class Segment implements AutoCloseable {
    */
   public Segment compact(long firstIndex) {
     if (!isEmpty()) {
-      int offset = offset(firstIndex);
-      diskIndex.resetOffset(offset);
-      memoryIndex.resetOffset(offset);
+      offsetIndex.resetOffset(offset(firstIndex));
     }
     return this;
   }
@@ -220,17 +209,6 @@ class Segment implements AutoCloseable {
     if (isFull())
       throw new IllegalStateException("segment is full");
 
-    if (entry.getPersistenceLevel() == PersistenceLevel.DISK) {
-      return append(entry, diskBuffer, diskIndex);
-    } else {
-      return append(entry, memoryBuffer, memoryIndex);
-    }
-  }
-
-  /**
-   * Appends an entry to the segment.
-   */
-  private long append(Entry entry, Buffer buffer, OffsetIndex offsetIndex) {
     long index = nextIndex();
 
     if (entry.getIndex() != index) {
@@ -240,17 +218,23 @@ class Segment implements AutoCloseable {
     // Calculate the offset of the entry.
     int offset = offset(index);
 
-    // Record the starting position of the new entry.
-    long position = buffer.position();
+    // Mark the starting position of the record and record the starting position of the new entry.
+    long position = buffer.mark().position();
 
     // Serialize the object into the segment buffer.
-    serializer.writeObject(entry, buffer.limit(-1));
+    serializer.writeObject(entry, buffer.skip(Short.BYTES + Integer.BYTES).limit(-1));
 
     // Calculate the length of the serialized bytes based on the resulting buffer position and the starting position.
-    int length = (int) (buffer.position() - position);
+    int length = (int) (buffer.position() - (position + Short.BYTES + Integer.BYTES));
+
+    // Set the entry size.
+    entry.setSize(length);
+
+    // Write the length of the entry for indexing.
+    buffer.reset().writeUnsignedShort(length).writeInt(offset).skip(length);
 
     // Index the offset, position, and length.
-    offsetIndex.index(offset, position, length);
+    offsetIndex.index(offset, position);
 
     // Reset skip to zero since we wrote a new entry.
     skip = 0;
@@ -273,35 +257,33 @@ class Segment implements AutoCloseable {
     int offset = offset(index);
 
     // Return null if the offset has been deleted from the segment.
-    if (memoryIndex.deleted(offset) && diskIndex.deleted(offset)) {
+    if (offsetIndex.deleted(offset)) {
       return null;
     }
 
     // Get the start position of the entry from the memory index.
-    long position = memoryIndex.position(offset);
+    long position = offsetIndex.position(offset);
 
-    // If the memory index contained the entry, read the entry from the memory buffer.
+    // If the index contained the entry, read the entry from the buffer.
     if (position != -1) {
-      return get(index, memoryBuffer, position, memoryIndex.length(offset), PersistenceLevel.MEMORY);
-    } else {
-      // If the memory index did not contain the entry, attempt to read it from disk.
-      position = diskIndex.position(offset);
-      if (position != -1) {
-        return get(index, diskBuffer, position, diskIndex.length(offset), PersistenceLevel.DISK);
+
+      // Read the length of the entry.
+      int length = buffer.readUnsignedShort(position);
+
+      // Verify that the entry at the given offset matches.
+      int entryOffset = buffer.readInt(position + Short.BYTES);
+      if (entryOffset != offset) {
+        throw new IllegalStateException("inconsistent index: " + index);
+      }
+
+      // Read the entry buffer and deserialize the entry.
+      try (Buffer value = buffer.slice(position + Short.BYTES + Integer.BYTES, length)) {
+        T entry = serializer.readObject(value);
+        entry.setIndex(index).setSize(length);
+        return entry;
       }
     }
     return null;
-  }
-
-  /**
-   * Reads an entry from the segment.
-   */
-  private synchronized <T extends Entry> T get(long index, Buffer buffer, long position, int length, PersistenceLevel persistenceLevel) {
-    try (Buffer value = buffer.slice(position, length)) {
-      T entry = serializer.readObject(value);
-      entry.setIndex(index).setPersistenceLevel(persistenceLevel);
-      return entry;
-    }
   }
 
   /**
@@ -331,8 +313,7 @@ class Segment implements AutoCloseable {
 
     // Check the memory index first for performance reasons.
     int offset = offset(index);
-    return (memoryIndex.contains(offset) && !memoryIndex.deleted(offset))
-      || (diskIndex.contains(offset) && !diskIndex.deleted(offset));
+    return offsetIndex.contains(offset) && !offsetIndex.deleted(offset);
   }
 
   /**
@@ -344,9 +325,7 @@ class Segment implements AutoCloseable {
   public Segment clean(long index) {
     if (!isOpen())
       throw new IllegalStateException("segment not open");
-    int offset = offset(index);
-    diskIndex.delete(offset);
-    memoryIndex.delete(offset);
+    offsetIndex.delete(offset(index));
     return this;
   }
 
@@ -374,14 +353,16 @@ class Segment implements AutoCloseable {
       throw new IllegalStateException("segment not open");
 
     int offset = offset(index);
-    int lastOffset = Math.max(diskIndex.lastOffset(), memoryIndex.lastOffset());
+    int lastOffset = offsetIndex.lastOffset();
 
     if (offset < lastOffset) {
       int diff = lastOffset - offset;
       skip = Math.max(skip - diff, 0);
-      diskIndex.truncate(offset);
-      memoryIndex.truncate(offset);
-      diskIndex.flush();
+
+      long position = offsetIndex.truncate(offset);
+      buffer.position(position)
+        .zero(position)
+        .flush();
     }
     return this;
   }
@@ -392,17 +373,15 @@ class Segment implements AutoCloseable {
    * @return The segment.
    */
   public Segment flush() {
-    diskBuffer.flush();
-    diskIndex.flush();
+    buffer.flush();
+    offsetIndex.flush();
     return this;
   }
 
   @Override
   public void close() {
-    diskBuffer.close();
-    diskIndex.close();
-    memoryBuffer.close();
-    memoryIndex.close();
+    buffer.close();
+    offsetIndex.close();
     descriptor.close();
     open = false;
   }
@@ -411,10 +390,13 @@ class Segment implements AutoCloseable {
    * Deletes the segment.
    */
   public void delete() {
-    if (diskBuffer instanceof FileBuffer) {
-      ((FileBuffer) diskBuffer).delete();
+    if (buffer instanceof FileBuffer) {
+      ((FileBuffer) buffer).delete();
+    } else if (buffer instanceof MappedBuffer) {
+      ((MappedBuffer) buffer).delete();
     }
-    diskIndex.delete();
+
+    offsetIndex.delete();
     descriptor.delete();
   }
 

@@ -15,10 +15,10 @@
  */
 package net.kuujo.copycat.io.storage;
 
-import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.HeapBuffer;
-import org.testng.Assert;
 import org.testng.annotations.Test;
+
+import static org.testng.Assert.*;
 
 /**
  * Offset index test.
@@ -33,11 +33,11 @@ public class OffsetIndexTest {
    */
   public void testIndexContains() {
     OffsetIndex index = new OffsetIndex(HeapBuffer.allocate(1024 * 8));
-    Assert.assertFalse(index.contains(10));
-    index.index(10, 1234, 8);
-    Assert.assertTrue(index.contains(10));
-    Assert.assertFalse(index.contains(9));
-    Assert.assertFalse(index.contains(11));
+    assertFalse(index.contains(10));
+    index.index(10, 1234);
+    assertTrue(index.contains(10));
+    assertFalse(index.contains(9));
+    assertFalse(index.contains(11));
   }
 
   /**
@@ -45,39 +45,17 @@ public class OffsetIndexTest {
    */
   public void testIndexPositionAndLength() {
     OffsetIndex index = new OffsetIndex(HeapBuffer.allocate(1024 * 8));
-    index.index(1, 0, 8);
-    Assert.assertEquals(index.position(1), 0);
-    Assert.assertEquals(index.length(1), 8);
-    Assert.assertEquals(index.position(10), -1);
-    index.index(10, 1234, 8);
-    Assert.assertEquals(index.position(10), 1234);
-    Assert.assertEquals(index.length(10), 8);
-    index.index(11, 1244, 8);
-    Assert.assertEquals(index.position(11), 1244);
-    Assert.assertEquals(index.length(10), 10);
-    Assert.assertEquals(index.length(11), 8);
-    index.index(12, 3456, 8);
-    index.index(13, 4567, 8);
-    Assert.assertEquals(index.position(12), 3456);
-    Assert.assertEquals(index.position(13), 4567);
-  }
-
-  /**
-   * Tests recovering the index.
-   */
-  public void testIndexRecover() {
-    Buffer buffer = HeapBuffer.allocate(1024 * 8);
-    OffsetIndex index = new OffsetIndex(buffer);
-    index.index(10, 1234, 8);
-    index.index(11, 2345, 8);
-    index.index(12, 3456, 8);
-    Assert.assertEquals(index.size(), 3);
-    Assert.assertEquals(index.lastOffset(), 12);
-    buffer.rewind();
-    OffsetIndex recover = new OffsetIndex(buffer);
-    Assert.assertEquals(recover.size(), 3);
-    Assert.assertEquals(recover.lastOffset(), 12);
-    Assert.assertEquals(recover.position(12), 3456);
+    index.index(1, 0);
+    assertEquals(index.position(1), 0);
+    assertEquals(index.position(10), -1);
+    index.index(10, 1234);
+    assertEquals(index.position(10), 1234);
+    index.index(11, 1244);
+    assertEquals(index.position(11), 1244);
+    index.index(12, 3456);
+    index.index(13, 4567);
+    assertEquals(index.position(12), 3456);
+    assertEquals(index.position(13), 4567);
   }
 
 }

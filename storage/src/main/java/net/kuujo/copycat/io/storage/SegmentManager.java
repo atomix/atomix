@@ -15,7 +15,9 @@
  */
 package net.kuujo.copycat.io.storage;
 
-import net.kuujo.copycat.io.*;
+import net.kuujo.copycat.io.Buffer;
+import net.kuujo.copycat.io.FileBuffer;
+import net.kuujo.copycat.io.HeapBuffer;
 import net.kuujo.copycat.io.serializer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -238,7 +240,7 @@ class SegmentManager implements AutoCloseable {
     File segmentFile = SegmentFile.createSegmentFile(storage.directory(), descriptor.id(), descriptor.version());
     Buffer buffer = FileBuffer.allocate(segmentFile, 1024 * 1024, descriptor.maxSegmentSize() + SegmentDescriptor.BYTES);
     descriptor.copyTo(buffer);
-    Segment segment = Segment.open(buffer.position(SegmentDescriptor.BYTES).slice(), DirectBuffer.allocate(1024 * 1024, descriptor.maxSegmentSize()), descriptor, createDiskIndex(descriptor), createMemoryIndex(descriptor), storage.serializer().clone());
+    Segment segment = Segment.open(buffer.position(SegmentDescriptor.BYTES).slice(), descriptor, createIndex(descriptor), storage.serializer().clone());
     LOGGER.debug("Created segment: {}", segment);
     return segment;
   }
@@ -250,23 +252,15 @@ class SegmentManager implements AutoCloseable {
     File file = SegmentFile.createSegmentFile(storage.directory(), segmentId, segmentVersion);
     Buffer buffer = FileBuffer.allocate(file, Math.min(1024 * 1024, storage.maxSegmentSize() + storage.maxEntrySize() + SegmentDescriptor.BYTES), storage.maxSegmentSize() + storage.maxEntrySize() + SegmentDescriptor.BYTES);
     SegmentDescriptor descriptor = new SegmentDescriptor(buffer);
-    Segment segment = Segment.open(buffer.position(SegmentDescriptor.BYTES).slice(), DirectBuffer.allocate(1024 * 1024, storage.maxSegmentSize()), descriptor, createDiskIndex(descriptor), createMemoryIndex(descriptor), storage.serializer().clone());
+    Segment segment = Segment.open(buffer.position(SegmentDescriptor.BYTES).slice(), descriptor, createIndex(descriptor), storage.serializer().clone());
     LOGGER.debug("Loaded segment: {} ({})", descriptor.id(), file.getName());
     return segment;
   }
 
   /**
-   * Creates an on disk segment index.
-   */
-  private OffsetIndex createDiskIndex(SegmentDescriptor descriptor) {
-    File file = SegmentFile.createIndexFile(storage.directory(), descriptor.id(), descriptor.version());
-    return new OffsetIndex(MappedBuffer.allocate(file, Math.min(1024 * 1024, descriptor.maxEntries() * 8), OffsetIndex.size(descriptor.maxEntries())));
-  }
-
-  /**
    * Creates an in memory segment index.
    */
-  private OffsetIndex createMemoryIndex(SegmentDescriptor descriptor) {
+  private OffsetIndex createIndex(SegmentDescriptor descriptor) {
     return new OffsetIndex(HeapBuffer.allocate(Math.min(1024 * 1024, descriptor.maxEntries()), OffsetIndex.size(descriptor.maxEntries())));
   }
 

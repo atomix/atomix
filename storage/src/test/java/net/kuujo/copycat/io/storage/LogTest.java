@@ -67,7 +67,7 @@ public class LogTest {
    */
   public void testCreateReadLastEntry() {
     try (Log log = createLog()) {
-      appendEntries(log, 100, PersistenceLevel.DISK);
+      appendEntries(log, 100);
       assertEquals(log.length(), 100);
 
       long index;
@@ -91,7 +91,7 @@ public class LogTest {
    */
   public void testCreateReadMiddleEntry() {
     try (Log log = createLog()) {
-      appendEntries(log, 100, PersistenceLevel.DISK);
+      appendEntries(log, 100);
       assertEquals(log.length(), 100);
 
       long index;
@@ -101,7 +101,7 @@ public class LogTest {
         index = log.append(entry);
       }
 
-      appendEntries(log, 100, PersistenceLevel.DISK);
+      appendEntries(log, 100);
       assertEquals(log.length(), 201);
 
       try (TestEntry entry = log.get(index)) {
@@ -116,7 +116,7 @@ public class LogTest {
    */
   public void testCreateReadAfterRollOver() {
     try (Log log = createLog()) {
-      appendEntries(log, 1100, PersistenceLevel.DISK);
+      appendEntries(log, 1100);
 
       long index;
       try (TestEntry entry = log.create(TestEntry.class)) {
@@ -125,7 +125,7 @@ public class LogTest {
         index = log.append(entry);
       }
 
-      appendEntries(log, 1050, PersistenceLevel.DISK);
+      appendEntries(log, 1050);
 
       try (TestEntry entry = log.get(index)) {
         assertEquals(entry.getTerm(), 1);
@@ -139,11 +139,11 @@ public class LogTest {
    */
   public void testTruncate() throws Throwable {
     try (Log log = createLog()) {
-      appendEntries(log, 100, PersistenceLevel.DISK);
+      appendEntries(log, 100);
       assertEquals(log.lastIndex(), 100);
       log.truncate(10);
       assertEquals(log.lastIndex(), 10);
-      appendEntries(log, 10, PersistenceLevel.DISK);
+      appendEntries(log, 10);
       assertEquals(log.lastIndex(), 20);
     }
   }
@@ -153,11 +153,11 @@ public class LogTest {
    */
   public void testTruncateZero() throws Throwable {
     try (Log log = createLog()) {
-      appendEntries(log, 100, PersistenceLevel.DISK);
+      appendEntries(log, 100);
       assertEquals(log.lastIndex(), 100);
       log.truncate(0);
       assertEquals(log.lastIndex(), 0);
-      appendEntries(log, 10, PersistenceLevel.DISK);
+      appendEntries(log, 10);
       assertEquals(log.lastIndex(), 10);
     }
   }
@@ -167,7 +167,7 @@ public class LogTest {
    */
   public void testSkip() throws Throwable {
     try (Log log = createLog()) {
-      appendEntries(log, 100, PersistenceLevel.DISK);
+      appendEntries(log, 100);
 
       log.skip(10);
 
@@ -196,7 +196,7 @@ public class LogTest {
    */
   public void testSkipOnRollOver() {
     try (Log log = createLog()) {
-      appendEntries(log, 1020, PersistenceLevel.DISK);
+      appendEntries(log, 1020);
 
       log.skip(10);
 
@@ -227,7 +227,7 @@ public class LogTest {
    */
   public void testRecover() {
     try (Log log = createLog()) {
-      appendEntries(log, 1024, PersistenceLevel.DISK);
+      appendEntries(log, 1024);
       assertEquals(log.length(), 1024);
     }
 
@@ -241,7 +241,7 @@ public class LogTest {
    */
   public void testRecoverAfterCompact() {
     try (Log log = createLog()) {
-      appendEntries(log, 2048, PersistenceLevel.DISK);
+      appendEntries(log, 2048);
       for (long i = 1; i <= 2048; i++) {
         if (i % 3 == 0 || i % 3 == 1) {
           log.clean(i);
@@ -286,12 +286,11 @@ public class LogTest {
   /**
    * Appends a set of entries to the log.
    */
-  private void appendEntries(Log log, int entries, PersistenceLevel persistence) {
+  private void appendEntries(Log log, int entries) {
     for (int i = 0; i < entries; i++) {
       try (TestEntry entry = log.create(TestEntry.class)) {
         entry.setTerm(1);
         entry.setRemove(true);
-        entry.setPersistenceLevel(persistence);
         log.append(entry);
       }
     }

@@ -16,7 +16,6 @@
 package net.kuujo.copycat.raft.state;
 
 import net.kuujo.copycat.io.storage.Entry;
-import net.kuujo.copycat.io.storage.PersistenceLevel;
 import net.kuujo.copycat.raft.Members;
 import net.kuujo.copycat.raft.RaftServer;
 import net.kuujo.copycat.raft.protocol.Command;
@@ -167,8 +166,7 @@ class LeaderState extends ActiveState {
       .build();
 
     try (ConfigurationEntry entry = context.getLog().create(ConfigurationEntry.class)) {
-      entry.setPersistenceLevel(PersistenceLevel.DISK)
-        .setTerm(term)
+      entry.setTerm(term)
         .setActive(activeMembers)
         .setPassive(passiveMembers);
       index = context.getLog().append(entry);
@@ -222,8 +220,7 @@ class LeaderState extends ActiveState {
       .build();
 
     try (ConfigurationEntry entry = context.getLog().create(ConfigurationEntry.class)) {
-      entry.setPersistenceLevel(PersistenceLevel.DISK)
-        .setTerm(term)
+      entry.setTerm(term)
         .setActive(activeMembers)
         .setPassive(passiveMembers);
       index = context.getLog().append(entry);
@@ -307,8 +304,7 @@ class LeaderState extends ActiveState {
     final long index;
 
     try (CommandEntry entry = context.getLog().create(CommandEntry.class)) {
-      entry.setPersistenceLevel(request.command().persistence())
-        .setTerm(term)
+      entry.setTerm(term)
         .setTimestamp(timestamp)
         .setSession(request.session())
         .setSequence(request.commandSequence())
@@ -474,7 +470,6 @@ class LeaderState extends ActiveState {
     final long index;
 
     try (RegisterEntry entry = context.getLog().create(RegisterEntry.class)) {
-      entry.setPersistenceLevel(PersistenceLevel.DISK);
       entry.setTerm(context.getTerm());
       entry.setTimestamp(timestamp);
       entry.setConnection(request.connection());
@@ -530,7 +525,6 @@ class LeaderState extends ActiveState {
     final long index;
 
     try (KeepAliveEntry entry = context.getLog().create(KeepAliveEntry.class)) {
-      entry.setPersistenceLevel(PersistenceLevel.MEMORY);
       entry.setTerm(context.getTerm());
       entry.setSession(request.session());
       entry.setTimestamp(timestamp);
@@ -921,8 +915,7 @@ class LeaderState extends ActiveState {
           .build();
 
         try (ConfigurationEntry entry = context.getLog().create(ConfigurationEntry.class)) {
-          entry.setPersistenceLevel(PersistenceLevel.DISK)
-            .setTerm(context.getTerm())
+          entry.setTerm(context.getTerm())
             .setActive(activeMembers)
             .setPassive(passiveMembers);
           long index = context.getLog().append(entry);

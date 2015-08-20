@@ -419,19 +419,21 @@ public abstract class AbstractBuffer implements Buffer {
 
   @Override
   public Buffer zero() {
-    bytes.zero();
-    return this;
-  }
-
-  @Override
-  public Buffer zero(long offset) {
     bytes.zero(offset);
     return this;
   }
 
   @Override
+  public Buffer zero(long offset) {
+    checkOffset(offset);
+    bytes.zero(offset(offset));
+    return this;
+  }
+
+  @Override
   public Buffer zero(long offset, long length) {
-    bytes.zero(offset, length);
+    checkOffset(offset);
+    bytes.zero(offset(offset), length);
     return this;
   }
 

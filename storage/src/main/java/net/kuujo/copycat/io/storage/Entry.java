@@ -38,7 +38,7 @@ public abstract class Entry<T extends Entry<T>> implements ReferenceCounted<Entr
   private final ReferenceManager<Entry<?>> referenceManager;
   private final AtomicInteger references = new AtomicInteger();
   private long index;
-  private PersistenceLevel persistenceLevel;
+  private int size = -1;
 
   protected Entry() {
     referenceManager = null;
@@ -46,6 +46,16 @@ public abstract class Entry<T extends Entry<T>> implements ReferenceCounted<Entr
 
   protected Entry(ReferenceManager<Entry<?>> referenceManager) {
     this.referenceManager = referenceManager;
+  }
+
+  /**
+   * Resets the entry state.
+   */
+  @SuppressWarnings("unchecked")
+  protected T reset() {
+    this.index = 0;
+    this.size = -1;
+    return (T) this;
   }
 
   /**
@@ -70,23 +80,26 @@ public abstract class Entry<T extends Entry<T>> implements ReferenceCounted<Entr
   }
 
   /**
-   * Returns the entry storage level.
+   * Returns the entry size.
    *
-   * @return The entry storage level.
+   * @return The entry size.
+   * @throws IllegalStateException If the entry has not yet been persisted
    */
-  public PersistenceLevel getPersistenceLevel() {
-    return persistenceLevel;
+  public int size() {
+    if (size == -1)
+      throw new IllegalStateException("unknown size of non-persisted entry");
+    return size;
   }
 
   /**
-   * Sets the entry storage level.
+   * Sets the entry size.
    *
-   * @param level The entry storage level.
+   * @param size The entry size.
    * @return The entry.
    */
   @SuppressWarnings("unchecked")
-  public T setPersistenceLevel(PersistenceLevel level) {
-    this.persistenceLevel = level;
+  T setSize(int size) {
+    this.size = size;
     return (T) this;
   }
 
