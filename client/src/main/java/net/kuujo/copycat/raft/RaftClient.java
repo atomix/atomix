@@ -24,6 +24,7 @@ import net.kuujo.copycat.raft.protocol.Operation;
 import net.kuujo.copycat.raft.protocol.Query;
 import net.kuujo.copycat.raft.session.ClientSession;
 import net.kuujo.copycat.raft.session.Session;
+import net.kuujo.copycat.util.ConfigurationException;
 import net.kuujo.copycat.util.Managed;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.Futures;
@@ -336,6 +337,15 @@ public class RaftClient implements Managed<RaftClient> {
 
     @Override
     public RaftClient build() {
+      // If the transport is not configured, attempt to use the default Netty transport.
+      if (transport == null) {
+        try {
+          transport = (Transport) Class.forName("net.kuujo.copycat.io.transport.NettyTransport").newInstance();
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+          throw new ConfigurationException("transport not configured");
+        }
+      }
+
       // If no serializer instance was provided, create one.
       if (serializer == null) {
         serializer = new Serializer();

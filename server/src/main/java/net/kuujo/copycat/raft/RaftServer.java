@@ -399,12 +399,17 @@ public class RaftServer implements Managed<RaftServer> {
     public RaftServer build() {
       if (stateMachine == null)
         throw new ConfigurationException("state machine not configured");
-      if (transport == null)
-        throw new ConfigurationException("protocol not configured");
       if (members == null)
         throw new ConfigurationException("members not configured");
-      if (storage == null)
-        throw new ConfigurationException("storage not configured");
+
+      // If the transport is not configured, attempt to use the default Netty transport.
+      if (transport == null) {
+        try {
+          transport = (Transport) Class.forName("net.kuujo.copycat.io.transport.NettyTransport").newInstance();
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+          throw new ConfigurationException("transport not configured");
+        }
+      }
 
       // If no serializer instance was provided, create one.
       if (serializer == null) {
@@ -413,6 +418,13 @@ public class RaftServer implements Managed<RaftServer> {
 
       // Resolve serializer serializable types with the ServiceLoaderTypeResolver.
       serializer.resolve(new ServiceLoaderTypeResolver());
+
+      // If the storage is not configured, create a new Storage instance with the configured serializer.
+      if (storage == null) {
+        storage = Storage.builder()
+          .withSerializer(serializer)
+          .build();
+      }
 
       ServerContext context = new ServerContext(memberId, members, transport, storage, stateMachine, serializer)
         .setHeartbeatInterval(heartbeatInterval)
