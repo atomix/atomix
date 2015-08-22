@@ -3,14 +3,14 @@ Copycat
 
 [![Build Status](https://travis-ci.org/kuujo/copycat.png)](https://travis-ci.org/kuujo/copycat)
 
+#### [User Manual](#user-manual)
+#### [Raft Consensus Algorithm](#raft-consensus-algorithm)
+#### [Javadocs][Javadoc]
+
 Copycat is both a low-level implementation of the [Raft consensus protocol][Raft] and a high-level distributed
 coordination framework that combines the consistency of [ZooKeeper](https://zookeeper.apache.org/) with the
 usability of [Hazelcast](http://hazelcast.org/) to provide tools for managing and coordinating stateful resources
 in a distributed system.
-
-#### [Getting Started](#getting-started)
-#### [User Manual](#user-manual)
-#### [Javadocs][Javadoc]
 
 Copycat exposes a set of high level APIs with tools to solve a variety of distributed systems problems including:
 * [Distributed coordination tools](#distributed-coordination)
@@ -124,7 +124,6 @@ back for more! If you would like to request specific documentation, please
    * [Thread model](#thread-model)
       * [Asynchronous API usage](#asynchronous-api-usage)
       * [Synchronous API usage](#synchronous-api-usage)
-   * [Nodes](#nodes)
    * [Resources](#resources)
       * [Persistence model](#persistence-model)
       * [Consistency model](#consistency-model)
@@ -175,16 +174,44 @@ back for more! If you would like to request specific documentation, please
 ## Introduction
 
 Copycat is a framework for consistent distributed coordination. At the core of Copycat is a generic implementation
-of the Raft consensus protocol. On top of Raft, Copycat provides a high level path-based API for creating and
-interacting with arbitrary replicated state machines such as maps, sets, locks, or user-defined resources. Resources
-can be created and operated on by any node in the cluster.
+of the [Raft consensus algorithm][Raft]. On top of Raft, Copycat provides a high level API for creating and
+managing arbitrary user-defined replicated state machines such as maps, sets, locks, or user-defined resources.
+Resources can be created and modified by any replica or client in the cluster.
 
 Copycat clusters consist of at least one [replica](#copycatreplica) and any number of [clients](#copycatclient).
-For fault-tolerance, it is recommended that each Copycat cluster have 3 or 5 servers, and the number of servers should
-always be odd in order to achieve the greatest level of fault-tolerance.
+*Replicas* are stateful nodes that actively participate in the Raft consensus protocol, and *clients* are stateless nodes
+that modify system state remotely.
 
-All network driven interfaces in Copycat are asynchronous and make heavy use of Java 8's `CompletableFuture`.
-At the core of Copycat is the [Copycat API][Copycat], which is exposed by both servers and clients.
+When a cluster is started, the replicas in the cluster coordinate with one another to elect a leader. Once a leader
+has been elected, all state changes (i.e. writes) are proxied to the cluster leader. When the leader receives a write,
+it persists the write to [disk](#storage) and replicates it to the rest of the cluster. Once a write has been received
+and persisted on a majority of replicas, the write is committed and guaranteed not to be lost.
+
+Because the Copycat cluster is dependent on a majority of the cluster being reachable to commit writes, the cluster can
+tolerate a minority of the nodes failing. For this reason, it is recommended that each Copycat cluster have at least 3 or 5
+replicas, and the number of replicas should always be odd in order to achieve the greatest level of fault-tolerance. The number
+of replicas should be calculated as `2f + 1` where `f` is the number of failures to tolerate:
+* A cluster of `1` replica can tolerate `0` failures
+* A cluster of `2` replicas can tolerate `0` failures
+* A cluster of `3` replicas can tolerate `1` failure
+* A cluster of `4` replicas can tolerate `1` failure
+* A cluster of `5` replicas can tolerate `2` failures
+
+**So what's the difference between Copycat and those other projects?**
+
+[ZooKeeper](https://zookeeper.apache.org/) - Copycat and ZooKeeper are both backed by a similar consensus-based
+persistence/replication layer. But Copycat is a framework that can be embedded instead of depending on an external
+cluster. Additionally, ZooKeeper's low-level primitives require complex recipes or other tools like
+[Apache Curator](http://curator.apache.org/), whereas Copycat provides [high-level interfaces](#resources) for
+common data structures and coordination tools like [locks](#distributedlock), [maps](#distributedmap), and
+[leader elections](#distributedleaderelection), or the option to create [custom replicated state machines](#custom-resources).
+
+[Hazelcast](http://hazelcast.org/) - Hazelcast is a fast, in-memory data grid that, like Copycat, exposes rich APIs
+for operating on distributed objects. But whereas Hazelcast chooses
+[availability over consistency in the face of a partition](https://en.wikipedia.org/wiki/CAP_theorem), Copycat is
+designed to ensure that data is never lost in the event of a network partition or other failure. Like ZooKeeper,
+this requires that Copycat synchronously replicate all writes to a majority of the cluster and persist writes to disk,
+much like ZooKeeper.
 
 ### Project structure
 
@@ -287,23 +314,23 @@ instance is a [CopycatClient][CopycatClient] or [CopycatReplica][CopycatReplica]
 #### CopycatReplica
 
 The [CopycatReplica][CopycatReplica] is a [Copycat][Copycat] implementation that is responsible for receiving
-creating and managing [resources](#resources) on behalf of other clients and servers and receiving, persisting,
+creating and managing [resources](#resources) on behalf of other clients and replicas and receiving, persisting,
 and replicating state changes for existing resources.
 
-Users should think of replicas as stateful nodes. Because servers are responsible for persisting and replicating
+Users should think of replicas as stateful nodes. Because replicas are responsible for persisting and replicating
 resource state changes, they require more configuration than [clients](#copycatclient).
 
-To create a `CopycatReplica`, first you must create a [Transport](#transport) via which the server will communicate
-with other clients and servers:
+To create a `CopycatReplica`, first you must create a [Transport](#transport) via which the replica will communicate
+with other clients and replicas:
 
 ```java
 Transport transport = new NettyTransport();
 ```
 
-The [Transport][Transport] provides the mechanism through which servers communicate with one another and
-with clients. It is essential that all clients and servers configure the same transport.
+The [Transport][Transport] provides the mechanism through which replicas communicate with one another and
+with clients. It is essential that all clients and replicas configure the same transport.
 
-Once the transport is configured, the server must be provided with a list of members to which to connect.
+Once the transport is configured, the replica must be provided with a list of members to which to connect.
 Cluster membership information is provided by configuring a `Members` list.
 
 ```java
@@ -315,12 +342,12 @@ Members members = Members.builder()
 ```
 
 Each member in the `Members` list must be assigned a unique `id` that remains consistent across
-all clients and servers in the cluster, and the local server must be listed in the `Members` list.
-In other words, if host `123.456.789.1` is member `1` on one server, it must be listed as member
-`1` on all servers.
+all clients and replicas in the cluster, and the local replica must be listed in the `Members` list.
+In other words, if host `123.456.789.1` is member `1` on one replica, it must be listed as member
+`1` on all replicas.
 
 Finally, the `CopycatReplica` is responsible for persisting [resource](#resources) state changes.
-To do so, the underlying [Raft](#raft-consensus-algorithm) writes state changes to a [Log][Log].
+To do so, the underlying [Raft server](#raftserver) writes state changes to a persistent [Log][Log].
 Users must provide a [Storage][Storage] object which specifies how the underlying `Log` should
 be created and managed.
 
@@ -332,7 +359,7 @@ Storage storage = new Storage("logs");
 ```
 
 Finally, with the [Transport][Transport], [Storage][Storage], and `Members` configured, create
-the [CopycatReplica][CopycatReplica] with the server [Builder](#builders) and `open()` the server:
+the [CopycatReplica][CopycatReplica] with the replica [Builder](#builders) and `open()` the replica:
 
 ```java
 Copycat copycat = CopycatReplica.builder()
@@ -343,12 +370,11 @@ Copycat copycat = CopycatReplica.builder()
   .build();
 
 copycat.open().thenRun(() -> {
-  System.out.println("Server started!");
+  System.out.println("Copycat started!");
 });
 ```
 
-Once created, the server can be used as any `Copycat` instance to create and operate on[nodes](#nodes)
-and [resources](#resources).
+Once created, the replica can be used as any `Copycat` instance to create and operate on [resources](#resources).
 
 Internally, the `CopycatReplica` wraps a [RaftClient][RaftClient] and [RaftServer][RaftServer] to
 communicate with other members of the cluster. For more information on the specific implementation
@@ -425,31 +451,10 @@ CompletableFuture<String> future = map.get("foo");
 String result = future.get();
 ```
 
-### Nodes
-
-The high level `Copycat` API provides a hierarchical file-system-like interface that allows users to define arbitrary
-named resources. At each path, the user creates a `Node` object. A `Node` is essentially a representation of a single
-replicated state machine. Each Copycat cluster can manage multiple state machines.
-
-To create a `Node`, use the `Copycat.create` method:
-
-```java
-copycat.create("/test-node").thenAccept(node -> {
-  System.out.println("Successfully created node: " + node.path());
-});
-```
-
-The node can then be used to [create and manage a resource](#resources) associated with the node, or create
-child nodes:
-
-```java
-Node child = node.create("child").get();
-```
-
 ### Resources
 
 The true power of Copycat comes through provided and custom [Resource][Resource] implementation. Resources are
-distributed objects that are associated with [nodes](#nodes) in the Copycat cluster. Each node can be associated
+named distributed objects that are replicated and persisted in the Copycat cluster. Each name can be associated
 with a single resource, and each resource is backed by a replicated state machine managed by Copycat's underlying
 [implementation of the Raft consensus protocol](#raft-consensus-algorithm).
 
@@ -459,12 +464,12 @@ Resources are created by simply passing a `Resource` class to one of Copycat's `
 DistributedMap<String, String> map = copycat.create("/test-map", DistributedMap.class);
 ```
 
-Copycat uses the provided `Class` to create an associated [StateMachine](#state-machines) on each server.
+Copycat uses the provided `Class` to create an associated [StateMachine](#state-machines) on each replica.
 This allows users to create and integrate [custom resources](#custom-resources).
 
 #### Persistence model
 
-Copycat clients and servers communicate with each other through [sessions](#sessions). Each session represents
+Copycat clients and replicas communicate with each other through [sessions](#sessions). Each session represents
 a persistent connection between a single client and a complete Copycat cluster. Sessions allow Copycat to associate
 resource state changes with clients, and this information can often be used to manage state changes in terms of
 sessions as well.
@@ -535,7 +540,7 @@ to access the collection classes:
 
 The [DistributedSet][DistributedSet] resources provides an asynchronous API similar to that of `java.util.Set`.
 
-To create a `DistributedSet`, pass the class to `Copycat.create(String, Class)` or `Node.create(Class)`:
+To create a `DistributedSet`, pass the class to `Copycat.create(String, Class)`:
 
 ```java
 copycat.<DistributedSet<String>>create("/test-set", DistributedSet.class).thenAccept(set -> {
@@ -598,7 +603,7 @@ set.add("Hello world!", PersistenceMode.EPHEMERAL).thenRun(() -> {
 
 The [DistributedMap][DistributedMap] resources provides an asynchronous API similar to that of `java.util.Map`.
 
-To create a `DistributedMap`, pass the class to `Copycat.create(String, Class)` or `Node.create(Class)`:
+To create a `DistributedMap`, pass the class to `Copycat.create(String, Class)`:
 
 ```java
 copycat.<DistributedMap<String, String>>create("/test-map", DistributedMap.class).thenAccept(map -> {
@@ -675,7 +680,7 @@ to access the atomic classes:
 The [DistributedAtomicValue][DistributedAtomicValue] resource provides an asynchronous API similar to that of
 `java.util.concurrent.atomic.AtomicReference`.
 
-To create a `DistributedAtomicValue`, pass the class to `Copycat.create(String, Class)` or `Node.create(Class)`:
+To create a `DistributedAtomicValue`, pass the class to `Copycat.create(String, Class)`:
 
 ```java
 copycat.<DistributedAtomicValue<String>>create("/test-value", DistributedAtomicValue.class).thenAccept(value -> {
@@ -750,7 +755,7 @@ to access the coordination classes:
 The [DistributedLock][DistributedLock] resources provides an asynchronous API similar to that of
 `java.util.concurrent.locks.Lock`.
 
-To create a `DistributedLock`, pass the class to `Copycat.create(String, Class)` or `Node.create(Class)`:
+To create a `DistributedLock`, pass the class to `Copycat.create(String, Class)`:
 
 ```java
 copycat.create("/test-lock", DistributedLock.class).thenAccept(lock -> {
@@ -787,7 +792,7 @@ tasks among a set of clients.
 to coordinate some task or access to a resource among a set of processes. Copycat's `DistributedLeaderElection`
 handles the coordination of a leader and notifies processes when they become the leader.
 
-To create a `DistributedLeaderElection`, pass the class to `Copycat.create(String, Class)` or `Node.create(Class)`:
+To create a `DistributedLeaderElection`, pass the class to `Copycat.create(String, Class)`:
 
 ```java
 copycat.create("/test-election", DistributedLeaderElection.class).thenAccept(election -> {
@@ -855,7 +860,7 @@ messages between clients. Messages sent via a `DistributedTopic` are linearized 
 This means messages are guaranteed to be delivered exactly once and in the order in which they were sent to all sessions
 that are active at the time the message is sent.
 
-To create a `DistributedTopic`, pass the class to `Copycat.create(String, Class)` or `Node.create(Class)`:
+To create a `DistributedTopic`, pass the class to `Copycat.create(String, Class)`:
 
 ```java
 copycat.<DistributedTopic<String>>create("/test-topic", DistributedTopic.class).thenAccept(topic -> {
@@ -886,7 +891,7 @@ the time the message was sent.
 ### Custom resources
 
 The Copycat API is designed to facilitate operating on arbitrary user-defined resources. When a custom resource is created
-via `Copycat.create`, an associated state machine will be created on each Copycat server, and operations submitted by the
+via `Copycat.create`, an associated state machine will be created on each Copycat replica, and operations submitted by the
 resource instance will be applied to the replicated state machine. In that sense, we can think of a `Resource` instance
 as a client-side object and a `StateMachine` instance as the server-side representation of that object.
 
@@ -911,9 +916,9 @@ copycat.create(Value.class).thenAccept(value -> {
 });
 ```
 
-When a resource is created via `Copycat.create(String, Class)` or `Node.create(Class)`, the `StateMachine` class returned
-by the `Resource.stateMachine()` method will be constructed on each server in the cluster. Once the state machine has been
-created on a majority of the servers, the resource will be constructed and the returned `CompletableFuture` completed.
+When a resource is created via `Copycat.create(String, Class)`, the `StateMachine` class returned
+by the `Resource.stateMachine()` method will be constructed on each replica in the cluster. Once the state machine has been
+created on a majority of the replicas, the resource will be constructed and the returned `CompletableFuture` completed.
 
 Resource state changes are submitted to the Copycat cluster as [Command][Command] or [Query][Query] implementations.
 See the documentation on Raft [commands](#commands) and [queries](#queries) for specific information regarding the
@@ -1769,22 +1774,83 @@ protected Object get(Commit<GetQuery> commit) {
 
 #### Sessions
 
-Sessions represent connections between the `RaftClient` and `RaftServer` through which `StateMachine` implementations can send events
-to clients. Copycat's Raft clients are required to only connect to a single `RaftServer` at any given time. However, Copycat exposes
-the same `Session` objects to state machines on all servers. State machines can use the `Session` to `publish` events to the client.
+Copycat's Raft implementation uses sessions to provide linearizability for commands submitted to the cluster. Sessions
+represent a connection between a `RaftClient` and a `RaftServer` and are responsible for tracking communication between
+them.
+
+Certain failure scenarios can conceivably result on client commands being applied to the state machine more than once. For
+instance, if a client submits a command to the cluster and the leader logs and replicates the command before failing, the
+command may actually be committed and applied to state machines on each node. In that case, if the client resubmits the
+command to another node, the command will be applied twice to the state machine. Sessions solve this problem by temporarily
+storing command output in memory and deduplicating commands as they're applied to the state machine.
+
+##### How it works
+
+When a client connects to Copycat's Raft cluster, the client chooses a random Raft server to which to connect and
+submits a *register* request to the cluster. The *register* request is forwarded to the Raft cluster leader if one exists,
+and the leader logs and replicates the registration through the Raft log. Entries are logged and replicated with an
+approximate *timestamp* generated by the leader:
+
+**RegisterEntry**
+* `index`
+* `term`
+* `timestamp`
+
+Once the *register* request has been committed, the leader replies to the request with the *index* of the registration
+entry in the Raft log. Thereafter, the registration *index* becomes the globally unique *session ID*, and the client must
+submit commands and queries using that index.
+
+Once a session has been registered, the client must periodically submit *keep alive* requests to the Raft cluster. As with
+*register* requests, *keep alive* requests are logged and replicated by the leader and ultimately applied to an internal
+state machine. Keep alive requests also contain an additional `sequence` number which specifies the last command for which
+the client received a successful response, but more on that in a moment.
+
+**KeepAliveEntry**
+* `index`
+* `term`
+* `session`
+* `sequence`
+* `timestamp`
+
+Once a session has been registered, the client must submit all commands to the cluster with an active *session ID* and
+a monotonically increasing *sequence number* for the session. The *session ID* is used to associate the command with a
+set of commands stored in memory on the server, and the *sequence number* is used to deduplicate commands committed to the
+Raft cluster. When commands are applied to the user-provided [state machine](#state-machines), the command output is stored
+in an in-memory map of results. If a command is committed with a *sequence number* that has already been applied to the
+state machine, the previous output will be returned to the client and the command will not be applied to the state machine
+again.
+
+On the client side, in addition to tagging requests with a monotonically increasing *sequence number*, clients store the
+highest sequence number for which they've received a successful response. When a *keep alive* request is sent to the cluster,
+the client sends the last sequence number for which they've received a successful response, thus allowing servers to remove
+command output up to that number.
+
+##### Server events
+
+In addition to providing linearizable semantics for commands submitted to the cluster by clients, sessions are also used
+to allow servers to send events back to clients. To do so, Copycat exposes a `Session` object to the Raft state machine for
+each [command](#commands) or [query](#queries) applied to the state machine:
 
 ```java
 protected Object get(Commit<GetQuery> commit) {
-  commit.session().publish("got");
+  commit.session().publish("got it!");
   return map.get(commit.operation().key());
 }
 ```
 
-When an event is published to a client, only the server to which the client is connected will send the event to the client, thus
-ensuring that the client only receives one event for the entire cluster. If the client is disconnected when a message is published,
-the message will be queued in memory and delivered to the session by the next server to which the session's client connects. As
-events are received by the client, the server removes received events from memory. Once the session is expired or closed, all
-servers remove the session and its events from memory.
+Rather than connecting to the leader, Copycat's Raft clients connect to a random node and writes are proxied to the leader.
+When an event is published to a client by a state machine, only the server to which the client is connected will send the
+event ot the client, thus ensuring the client only receives one event from the cluster. In the event that the client is
+disconnected from the cluster (e.g. switching servers), events published through sessions are linearized in a manner similar
+to that of commands.
+
+When an event is published to a client by a state machine, the event is queue in memory with a sequential ID for the session.
+Clients keep track of the highest sequence number for which they've received an event and send that sequence number back to
+the cluster via *keep alive* requests. As keep alive requests are logged and replicated, servers clear acknowledged events
+from memory. This ensures that all servers hold unacknowledged events in memory until they've been received by the client
+associated with a given session. In the event that a session times out, all events are removed from memory.
+
+For more information on sessions in Raft, see section 6.3 of Diego Ongaro's [Raft dissertation](https://ramcloud.stanford.edu/~ongaro/thesis.pdf)
 
 #### Commit cleaning
 
