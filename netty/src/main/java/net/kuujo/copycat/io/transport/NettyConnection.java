@@ -139,7 +139,7 @@ public class NettyConnection implements Connection {
       .writeByte(RESPONSE)
       .writeLong(requestId)
       .writeByte(SUCCESS);
-    writeFuture = channel.writeAndFlush(writeResponse(buffer, response), channel.voidPromise());
+    channel.writeAndFlush(writeResponse(buffer, response), channel.voidPromise());
 
     if (response instanceof ReferenceCounted) {
       ((ReferenceCounted) response).release();
@@ -154,7 +154,7 @@ public class NettyConnection implements Connection {
       .writeByte(RESPONSE)
       .writeLong(requestId)
       .writeByte(FAILURE);
-    writeFuture = channel.writeAndFlush(writeError(buffer, error), channel.voidPromise());
+    channel.writeAndFlush(writeError(buffer, error), channel.voidPromise());
   }
 
   /**
@@ -325,7 +325,7 @@ public class NettyConnection implements Connection {
   @Override
   public CompletableFuture<Void> close() {
     CompletableFuture<Void> future = new CompletableFuture<>();
-    if (writeFuture != null) {
+    if (writeFuture != null && !writeFuture.isDone()) {
       writeFuture.addListener(channelFuture -> {
         channel.close().addListener(closeFuture -> {
           if (closeFuture.isSuccess()) {
