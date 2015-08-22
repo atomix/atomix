@@ -52,7 +52,7 @@ public class FileBuffer extends AbstractBuffer {
   /**
    * Allocates a file buffer.
    * <p>
-   * If the underlying file is empty, the file size will expand dynamically as bytes are written to the file.
+   * If the underlying file is empty, the file count will expand dynamically as bytes are written to the file.
    * The underlying {@link FileBytes} will be initialized to the nearest power of {@code 2}.
    *
    * @param file The file to allocate.
@@ -128,25 +128,25 @@ public class FileBuffer extends AbstractBuffer {
 
   /**
    * Maps a portion of the underlying file into memory in {@link java.nio.channels.FileChannel.MapMode#READ_WRITE} mode
-   * starting at the current position up to the given {@code size}.
+   * starting at the current position up to the given {@code count}.
    *
-   * @param size The size of the bytes to map into memory.
+   * @param size The count of the bytes to map into memory.
    * @return The mapped buffer.
-   * @throws IllegalArgumentException If {@code size} is greater than the maximum allowed
-   *         {@link java.nio.MappedByteBuffer} size: {@link Integer#MAX_VALUE}
+   * @throws IllegalArgumentException If {@code count} is greater than the maximum allowed
+   *         {@link java.nio.MappedByteBuffer} count: {@link Integer#MAX_VALUE}
    */
   public MappedBuffer map(long size) {
     return map(position(), size, FileChannel.MapMode.READ_WRITE);
   }
 
   /**
-   * Maps a portion of the underlying file into memory starting at the current position up to the given {@code size}.
+   * Maps a portion of the underlying file into memory starting at the current position up to the given {@code count}.
    *
-   * @param size The size of the bytes to map into memory.
+   * @param size The count of the bytes to map into memory.
    * @param mode The mode in which to map the bytes into memory.
    * @return The mapped buffer.
-   * @throws IllegalArgumentException If {@code size} is greater than the maximum allowed
-   *         {@link java.nio.MappedByteBuffer} size: {@link Integer#MAX_VALUE}
+   * @throws IllegalArgumentException If {@code count} is greater than the maximum allowed
+   *         {@link java.nio.MappedByteBuffer} count: {@link Integer#MAX_VALUE}
    */
   public MappedBuffer map(long size, FileChannel.MapMode mode) {
     return map(position(), size, mode);
@@ -154,27 +154,27 @@ public class FileBuffer extends AbstractBuffer {
 
   /**
    * Maps a portion of the underlying file into memory in {@link java.nio.channels.FileChannel.MapMode#READ_WRITE} mode
-   * starting at the given {@code offset} up to the given {@code size}.
+   * starting at the given {@code offset} up to the given {@code count}.
    *
    * @param offset The offset from which to map bytes into memory.
-   * @param size The size of the bytes to map into memory.
+   * @param size The count of the bytes to map into memory.
    * @return The mapped buffer.
-   * @throws IllegalArgumentException If {@code size} is greater than the maximum allowed
-   *         {@link java.nio.MappedByteBuffer} size: {@link Integer#MAX_VALUE}
+   * @throws IllegalArgumentException If {@code count} is greater than the maximum allowed
+   *         {@link java.nio.MappedByteBuffer} count: {@link Integer#MAX_VALUE}
    */
   public MappedBuffer map(long offset, long size) {
     return map(offset, size, FileChannel.MapMode.READ_WRITE);
   }
 
   /**
-   * Maps a portion of the underlying file into memory starting at the given {@code offset} up to the given {@code size}.
+   * Maps a portion of the underlying file into memory starting at the given {@code offset} up to the given {@code count}.
    *
    * @param offset The offset from which to map bytes into memory.
-   * @param size The size of the bytes to map into memory.
+   * @param size The count of the bytes to map into memory.
    * @param mode The mode in which to map the bytes into memory.
    * @return The mapped buffer.
-   * @throws IllegalArgumentException If {@code size} is greater than the maximum allowed
-   *         {@link java.nio.MappedByteBuffer} size: {@link Integer#MAX_VALUE}
+   * @throws IllegalArgumentException If {@code count} is greater than the maximum allowed
+   *         {@link java.nio.MappedByteBuffer} count: {@link Integer#MAX_VALUE}
    */
   public MappedBuffer map(long offset, long size, FileChannel.MapMode mode) {
     return new MappedBuffer(((FileBytes) bytes).map(offset, size, mode), 0, size, size);

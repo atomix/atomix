@@ -15,14 +15,13 @@
  */
 package net.kuujo.copycat.coordination.state;
 
-import net.kuujo.copycat.raft.Session;
-import net.kuujo.copycat.raft.server.Apply;
-import net.kuujo.copycat.raft.server.Commit;
-import net.kuujo.copycat.raft.server.Filter;
-import net.kuujo.copycat.raft.server.StateMachine;
+import net.kuujo.copycat.raft.Commit;
+import net.kuujo.copycat.raft.StateMachine;
+import net.kuujo.copycat.raft.StateMachineExecutor;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * Topic state machine.
@@ -30,39 +29,53 @@ import java.util.Set;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class TopicState extends StateMachine {
-  private final Set<Session> sessions = new HashSet<>();
+  private final Map<Long, Commit<TopicCommands.Listen>> listeners = new HashMap<>();
 
   @Override
-  public void register(Session session) {
-    sessions.add(session);
+  public void configure(StateMachineExecutor executor) {
+    executor.register(TopicCommands.Publish.class, this::publish);
   }
 
-  @Override
-  public void expire(Session session) {
-    sessions.remove(session);
+  /**
+   * Applies listen commits.
+   */
+  protected void listen(Commit<TopicCommands.Listen> commit) {
+    if (commit.session().isOpen() && !listeners.containsKey(commit.session().id())) {
+      listeners.put(commit.session().id(), commit);
+    } else {
+      commit.clean();
+    }
   }
 
-  @Override
-  public void close(Session session) {
-    sessions.remove(session);
+  /**
+   * Applies listen commits.
+   */
+  protected void unlisten(Commit<LeaderElectionCommands.Unlisten> commit) {
+    Commit<TopicCommands.Listen> listener = listeners.remove(commit.session().id());
+    if (listener != null) {
+      listener.clean();
+    } else {
+      commit.clean();
+    }
   }
 
   /**
    * Handles a publish commit.
    */
-  @Apply(TopicCommands.Publish.class)
-  protected void applyPublish(Commit<TopicCommands.Publish> commit) {
-    for (Session session : sessions) {
-      session.publish(commit.operation().message());
+  protected void publish(Commit<TopicCommands.Publish> commit) {
+    if (commit.index() >= context().version()) {
+      Iterator<Map.Entry<Long, Commit<TopicCommands.Listen>>> iterator = listeners.entrySet().iterator();
+      while (iterator.hasNext()) {
+        Commit<TopicCommands.Listen> listener = iterator.next().getValue();
+        if (listener.session().isOpen()) {
+          listener.session().publish(commit.operation().message());
+        } else {
+          iterator.remove();
+          listener.clean();
+        }
+      }
     }
-  }
-
-  /**
-   * Filters a publish commit.
-   */
-  @Filter(TopicCommands.Publish.class)
-  protected boolean filterPublish(Commit<TopicCommands.Publish> commit) {
-    return false;
+    commit.clean();
   }
 
 }

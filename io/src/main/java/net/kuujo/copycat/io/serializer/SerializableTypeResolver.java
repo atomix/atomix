@@ -18,7 +18,7 @@ package net.kuujo.copycat.io.serializer;
 /**
  * The serializer type resolver is responsible for locating serializable types and their serializers.
  * <p>
- * Users can implement custom type resolvers to automatically register serializers. See {@link ServiceLoaderResolver}
+ * Users can implement custom type resolvers to automatically register serializers. See {@link ServiceLoaderTypeResolver}
  * for an example implementation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>

@@ -17,16 +17,19 @@ package net.kuujo.copycat.collections;
 
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import net.kuujo.copycat.Copycat;
-import net.kuujo.copycat.CopycatServer;
-import net.kuujo.copycat.Node;
-import net.kuujo.copycat.io.storage.Log;
-import net.kuujo.copycat.io.storage.StorageLevel;
-import net.kuujo.copycat.raft.Member;
-import net.kuujo.copycat.raft.Members;
+import net.kuujo.copycat.CopycatReplica;
+import net.kuujo.copycat.io.storage.Storage;
 import net.kuujo.copycat.io.transport.LocalServerRegistry;
 import net.kuujo.copycat.io.transport.LocalTransport;
+import net.kuujo.copycat.raft.Member;
+import net.kuujo.copycat.raft.Members;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,6 +43,7 @@ import static org.testng.Assert.assertTrue;
  */
 @Test
 public class DistributedSetTest extends ConcurrentTestCase {
+  private static final File directory = new File("test-logs");
 
   /**
    * Tests adding and removing members from a set.
@@ -50,12 +54,10 @@ public class DistributedSetTest extends ConcurrentTestCase {
     Copycat copycat1 = copycats.get(0);
     Copycat copycat2 = copycats.get(1);
 
-    Node node1 = copycat1.create("/test").get();
-    DistributedSet<String> set1 = node1.create(DistributedSet.class).get();
+    DistributedSet<String> set1 = copycat1.create("test", DistributedSet.class).get();
     assertFalse(set1.contains("Hello world!").get());
 
-    Node node2 = copycat2.create("/test").get();
-    DistributedSet<String> set2 = node2.create(DistributedSet.class).get();
+    DistributedSet<String> set2 = copycat2.create("test", DistributedSet.class).get();
     assertFalse(set2.contains("Hello world!").get());
 
     set1.add("Hello world!").join();
@@ -79,24 +81,18 @@ public class DistributedSetTest extends ConcurrentTestCase {
 
     Members.Builder builder = Members.builder();
     for (int i = 1; i <= nodes; i++) {
-      builder.addMember(Member.builder()
-        .withId(i)
-        .withHost("localhost")
-        .withPort(5000 + i)
-        .build());
+      builder.addMember(new Member(i, "localhost", 5000 + i));
     }
 
     Members members = builder.build();
 
     for (int i = 1; i <= nodes; i++) {
-      Copycat copycat = CopycatServer.builder()
+      Copycat copycat = CopycatReplica.builder()
         .withMemberId(i)
         .withMembers(members)
-        .withTransport(LocalTransport.builder()
-          .withRegistry(registry)
-          .build())
-        .withLog(Log.builder()
-          .withStorageLevel(StorageLevel.MEMORY)
+        .withTransport(new LocalTransport(registry))
+        .withStorage(Storage.builder()
+          .withDirectory(new File(directory, "" + i))
           .build())
         .build();
 
@@ -108,6 +104,31 @@ public class DistributedSetTest extends ConcurrentTestCase {
     await();
 
     return copycats;
+  }
+
+  @BeforeMethod
+  @AfterMethod
+  public void clearTests() throws IOException {
+    deleteDirectory(directory);
+  }
+
+  /**
+   * Deletes a directory recursively.
+   */
+  private void deleteDirectory(File directory) throws IOException {
+    if (directory.exists()) {
+      File[] files = directory.listFiles();
+      if (files != null) {
+        for (File file : files) {
+          if (file.isDirectory()) {
+            deleteDirectory(file);
+          } else {
+            Files.delete(file.toPath());
+          }
+        }
+      }
+      Files.delete(directory.toPath());
+    }
   }
 
 }

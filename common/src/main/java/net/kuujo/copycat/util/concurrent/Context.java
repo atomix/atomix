@@ -16,10 +16,12 @@
 package net.kuujo.copycat.util.concurrent;
 
 import net.kuujo.copycat.io.serializer.Serializer;
+import org.slf4j.Logger;
 
+import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 /**
  * Thread context.
@@ -40,28 +42,22 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class Context implements Executor, AutoCloseable {
+public interface Context extends AutoCloseable {
 
   /**
    * Returns the current thread context.
    *
    * @return The current thread context or {@code null} if no context exists.
    */
-  public static Context currentContext() {
+  static Context currentContext() {
     Thread thread = Thread.currentThread();
     return thread instanceof CopycatThread ? ((CopycatThread) thread).getContext() : null;
-  }
-
-  private final Serializer serializer;
-
-  protected Context(Serializer serializer) {
-    this.serializer = serializer;
   }
 
   /**
    * Checks that the current thread is the correct context thread.
    */
-  public void checkThread() {
+  default void checkThread() {
     Thread thread = Thread.currentThread();
     if (!(thread instanceof CopycatThread && ((CopycatThread) thread).getContext() == this)) {
       throw new IllegalStateException("not running on the correct thread");
@@ -69,36 +65,85 @@ public abstract class Context implements Executor, AutoCloseable {
   }
 
   /**
+   * Returns the context logger.
+   *
+   * @return The context logger.
+   */
+  Logger logger();
+
+  /**
    * Returns the context serializer.
    *
    * @return The context serializer.
    */
-  public Serializer serializer() {
-    return serializer;
+  Serializer serializer();
+
+  /**
+   * Returns the underlying executor.
+   *
+   * @return The underlying executor.
+   */
+  Executor executor();
+
+  /**
+   * Executes a callback on the context.
+   *
+   * @param callback The callback to execute.
+   * @return A completable future to be completed once the callback has been executed.
+   */
+  default CompletableFuture<Void> execute(Runnable callback) {
+    CompletableFuture<Void> future = new CompletableFuture<>();
+    executor().execute(() -> {
+      try {
+        callback.run();
+        future.complete(null);
+      } catch (Throwable t) {
+        future.completeExceptionally(t);
+      }
+    });
+    return future;
+  }
+
+  /**
+   * Executes a callback on the context.
+   *
+   * @param callback The callback to execute.
+   * @param <T> The callback result type.
+   * @return A completable future to be completed with the callback result.
+   */
+  default <T> CompletableFuture<T> execute(Supplier<T> callback) {
+    CompletableFuture<T> future = new CompletableFuture<>();
+    executor().execute(() -> {
+      try {
+        future.complete(callback.get());
+      } catch (Throwable t) {
+        future.completeExceptionally(t);
+      }
+    });
+    return future;
   }
 
   /**
    * Schedules a runnable on the context.
    *
-   * @param runnable The runnable to schedule.
+   * @param callback The callback to schedule.
    * @param delay The delay at which to schedule the runnable.
-   * @param unit The time unit.
    */
-  public abstract ScheduledFuture<?> schedule(Runnable runnable, long delay, TimeUnit unit);
+  Scheduled schedule(Runnable callback, Duration delay);
 
   /**
    * Schedules a runnable at a fixed rate on the context.
    *
-   * @param runnable The runnable to schedule.
-   * @param delay The delay at which to schedule the runnable.
-   * @param unit The time unit.
+   * @param callback The callback to schedule.
+   * @param initialDelay The delay at which to schedule the runnable.
+   * @param interval The interval at which to run the task.
    */
-  public abstract ScheduledFuture<?> scheduleAtFixedRate(Runnable runnable, long delay, long rate, TimeUnit unit);
+  Scheduled schedule(Runnable callback, Duration initialDelay, Duration interval);
 
   /**
    * Closes the context.
    */
   @Override
-  public abstract void close();
+  void close();
 
 }

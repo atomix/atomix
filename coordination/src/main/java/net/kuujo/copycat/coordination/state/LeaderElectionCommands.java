@@ -15,14 +15,16 @@
  */
 package net.kuujo.copycat.coordination.state;
 
-import net.kuujo.copycat.util.BuilderPool;
-import net.kuujo.copycat.raft.Command;
-import net.kuujo.copycat.raft.Operation;
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.CopycatSerializable;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.raft.protocol.Command;
+import net.kuujo.copycat.raft.protocol.ConsistencyLevel;
+import net.kuujo.copycat.raft.protocol.Operation;
+import net.kuujo.copycat.raft.protocol.Query;
+import net.kuujo.copycat.util.BuilderPool;
 
 /**
  * Leader election commands.
@@ -32,6 +34,28 @@ import net.kuujo.copycat.io.serializer.Serializer;
 public class LeaderElectionCommands {
 
   private LeaderElectionCommands() {
+  }
+
+  /**
+   * Abstract election query.
+   */
+  public static abstract class ElectionQuery<V> implements Query<V>, CopycatSerializable {
+    @Override
+    public void writeObject(BufferOutput buffer, Serializer serializer) {
+    }
+
+    @Override
+    public void readObject(BufferInput buffer, Serializer serializer) {
+    }
+
+    /**
+     * Base reference command builder.
+     */
+    public static abstract class Builder<T extends Builder<T, U, V>, U extends ElectionQuery<V>, V> extends Query.Builder<T, U, V> {
+      protected Builder(BuilderPool<T, U> pool) {
+        super(pool);
+      }
+    }
   }
 
   /**
@@ -114,6 +138,65 @@ public class LeaderElectionCommands {
       @Override
       protected Unlisten create() {
         return new Unlisten();
+      }
+    }
+  }
+
+  /**
+   * Is leader query.
+   */
+  @SerializeWith(id=512)
+  public static class IsLeader extends ElectionQuery<Boolean> {
+
+    /**
+     * Returns a new is leader query builder.
+     *
+     * @return A new is leader query builder.
+     */
+    public static Builder builder() {
+      return Operation.builder(Builder.class, Builder::new);
+    }
+
+    private long epoch;
+
+    /**
+     * Returns the epoch to check.
+     *
+     * @return The epoch to check.
+     */
+    public long epoch() {
+      return epoch;
+    }
+
+    @Override
+    public ConsistencyLevel consistency() {
+      return ConsistencyLevel.LINEARIZABLE;
+    }
+
+    /**
+     * Is leader query builder.
+     */
+    public static class Builder extends ElectionQuery.Builder<Builder, IsLeader, Boolean> {
+      public Builder(BuilderPool<Builder, IsLeader> pool) {
+        super(pool);
+      }
+
+      @Override
+      protected IsLeader create() {
+        return new IsLeader();
+      }
+
+      /**
+       * Sets the epoch to check.
+       *
+       * @param epoch The epoch to check.
+       * @return The query builder.
+       */
+      public Builder withEpoch(long epoch) {
+        if (epoch <= 0)
+          throw new IllegalArgumentException("epoch must be positive");
+        query.epoch = epoch;
+        return this;
       }
     }
   }

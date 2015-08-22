@@ -15,17 +15,13 @@
  */
 package net.kuujo.copycat.coordination.state;
 
-import net.kuujo.copycat.io.storage.Compaction;
-import net.kuujo.copycat.raft.Operation;
-import net.kuujo.copycat.raft.Session;
-import net.kuujo.copycat.raft.server.Apply;
-import net.kuujo.copycat.raft.server.Commit;
-import net.kuujo.copycat.raft.server.Filter;
-import net.kuujo.copycat.raft.server.StateMachine;
+import net.kuujo.copycat.raft.Commit;
+import net.kuujo.copycat.raft.StateMachine;
+import net.kuujo.copycat.raft.StateMachineExecutor;
+import net.kuujo.copycat.raft.session.Session;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * Leader election state machine.
@@ -33,9 +29,16 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class LeaderElectionState extends StateMachine {
-  private long version;
   private Session leader;
+  private long epoch;
   private final List<Commit<LeaderElectionCommands.Listen>> listeners = new ArrayList<>();
+
+  @Override
+  public void configure(StateMachineExecutor executor) {
+    executor.register(LeaderElectionCommands.Listen.class, this::listen);
+    executor.register(LeaderElectionCommands.Unlisten.class, this::unlisten);
+    executor.register(LeaderElectionCommands.IsLeader.class, this::isLeader);
+  }
 
   @Override
   public void close(Session session) {
@@ -44,26 +47,21 @@ public class LeaderElectionState extends StateMachine {
       if (!listeners.isEmpty()) {
         Commit<LeaderElectionCommands.Listen> leader = listeners.remove(0);
         this.leader = leader.session();
-        this.version = leader.index();
+        this.epoch = leader.index();
         this.leader.publish(true);
       }
     }
   }
 
-  @Override
-  public CompletableFuture<Object> apply(Commit<? extends Operation> commit) {
-    return super.apply(commit);
-  }
-
   /**
    * Applies listen commits.
    */
-  @Apply(LeaderElectionCommands.Listen.class)
-  protected void applyListen(Commit<LeaderElectionCommands.Listen> commit) {
+  protected void listen(Commit<LeaderElectionCommands.Listen> commit) {
     if (leader == null) {
       leader = commit.session();
-      version = commit.index();
-      leader.publish(true);
+      epoch = commit.index();
+      leader.publish(epoch);
+      commit.clean();
     } else {
       listeners.add(commit);
     }
@@ -72,33 +70,26 @@ public class LeaderElectionState extends StateMachine {
   /**
    * Applies listen commits.
    */
-  @Apply(LeaderElectionCommands.Unlisten.class)
-  protected void applyUnlisten(Commit<LeaderElectionCommands.Listen> commit) {
+  protected void unlisten(Commit<LeaderElectionCommands.Unlisten> commit) {
     if (leader != null && leader.equals(commit.session())) {
       leader = null;
       if (!listeners.isEmpty()) {
         Commit<LeaderElectionCommands.Listen> leader = listeners.remove(0);
         this.leader = leader.session();
-        this.version = leader.index();
-        this.leader.publish(true);
+        this.epoch = commit.index();
+        this.leader.publish(epoch);
+        leader.clean();
       }
+    } else {
+      commit.clean();
     }
   }
 
   /**
-   * Filters listen commits.
+   * Applies an isLeader query.
    */
-  @Filter(LeaderElectionCommands.Listen.class)
-  protected boolean filterListen(Commit<LeaderElectionCommands.Listen> commit, Compaction compaction) {
-    return commit.index() >= version;
-  }
-
-  /**
-   * Filters unlisten commits.
-   */
-  @Filter(LeaderElectionCommands.Unlisten.class)
-  protected boolean filterUnlisten(Commit<LeaderElectionCommands.Unlisten> commit, Compaction compaction) {
-    return commit.index() >= version;
+  protected boolean isLeader(Commit<LeaderElectionCommands.IsLeader> commit) {
+    return leader != null && leader.equals(commit.session()) && epoch == commit.operation().epoch();
   }
 
 }

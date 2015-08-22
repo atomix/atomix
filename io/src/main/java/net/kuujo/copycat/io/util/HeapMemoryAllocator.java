@@ -32,8 +32,7 @@ public class HeapMemoryAllocator implements MemoryAllocator<HeapMemory> {
   @Override
   public HeapMemory reallocate(HeapMemory memory, long size) {
     HeapMemory copy = allocate(size);
-    NativeMemory.UNSAFE.copyMemory(memory.array(), HeapMemory.ARRAY_BASE_OFFSET, copy.array(), HeapMemory.ARRAY_BASE_OFFSET, Math
-      .min(size, memory.size()));
+    NativeMemory.UNSAFE.copyMemory(memory.array(), HeapMemory.ARRAY_BASE_OFFSET, copy.array(), HeapMemory.ARRAY_BASE_OFFSET, Math.min(size, memory.size()));
     memory.free();
     return copy;
   }

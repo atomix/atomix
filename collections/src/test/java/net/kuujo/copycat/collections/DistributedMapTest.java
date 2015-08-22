@@ -17,19 +17,22 @@ package net.kuujo.copycat.collections;
 
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import net.kuujo.copycat.Copycat;
-import net.kuujo.copycat.CopycatServer;
-import net.kuujo.copycat.Node;
-import net.kuujo.copycat.io.storage.Log;
-import net.kuujo.copycat.io.storage.StorageLevel;
+import net.kuujo.copycat.CopycatReplica;
+import net.kuujo.copycat.io.storage.Storage;
 import net.kuujo.copycat.io.transport.LocalServerRegistry;
 import net.kuujo.copycat.io.transport.LocalTransport;
 import net.kuujo.copycat.raft.Member;
 import net.kuujo.copycat.raft.Members;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Distributed map test.
@@ -38,6 +41,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Test
 public class DistributedMapTest extends ConcurrentTestCase {
+  private static final File directory = new File("test-logs");
 
   /**
    * Tests putting and getting a value.
@@ -48,8 +52,7 @@ public class DistributedMapTest extends ConcurrentTestCase {
 
     Copycat copycat = copycats.get(0);
 
-    Node node = copycat.create("/test").get();
-    DistributedMap<String, String> map = node.create(DistributedMap.class).get();
+    DistributedMap<String, String> map = copycat.create("test", DistributedMap.class).get();
 
     expectResume();
     map.put("foo", "Hello world!").thenRun(this::resume);
@@ -80,7 +83,7 @@ public class DistributedMapTest extends ConcurrentTestCase {
   }
 
   /**
-   * Tests the map size.
+   * Tests the map count.
    */
   @SuppressWarnings("unchecked")
   public void testMapSize() throws Throwable {
@@ -88,8 +91,7 @@ public class DistributedMapTest extends ConcurrentTestCase {
 
     Copycat copycat = copycats.get(0);
 
-    Node node = copycat.create("/test").get();
-    DistributedMap<String, String> map = node.create(DistributedMap.class).get();
+    DistributedMap<String, String> map = copycat.create("test", DistributedMap.class).get();
 
     expectResume();
     map.size().thenAccept(size -> {
@@ -132,11 +134,10 @@ public class DistributedMapTest extends ConcurrentTestCase {
 
     Copycat copycat = copycats.get(0);
 
-    Node node = copycat.create("/test").get();
-    DistributedMap<String, String> map = node.create(DistributedMap.class).get();
+    DistributedMap<String, String> map = copycat.create("test", DistributedMap.class).get();
 
     expectResume();
-    map.put("foo", "Hello world!", 1, TimeUnit.SECONDS).thenRun(this::resume);
+    map.put("foo", "Hello world!", Duration.ofSeconds(1)).thenRun(this::resume);
     await();
 
     expectResume();
@@ -146,7 +147,7 @@ public class DistributedMapTest extends ConcurrentTestCase {
     });
     await();
 
-    Thread.sleep(1000);
+    Thread.sleep(3000);
 
     expectResume();
     map.get("foo").thenAccept(result -> {
@@ -175,24 +176,18 @@ public class DistributedMapTest extends ConcurrentTestCase {
 
     Members.Builder builder = Members.builder();
     for (int i = 1; i <= nodes; i++) {
-      builder.addMember(Member.builder()
-        .withId(i)
-        .withHost("localhost")
-        .withPort(5000 + i)
-        .build());
+      builder.addMember(new Member(i, "localhost", 5000 + i));
     }
 
     Members members = builder.build();
 
     for (int i = 1; i <= nodes; i++) {
-      Copycat copycat = CopycatServer.builder()
+      Copycat copycat = CopycatReplica.builder()
         .withMemberId(i)
         .withMembers(members)
-        .withTransport(LocalTransport.builder()
-          .withRegistry(registry)
-          .build())
-        .withLog(Log.builder()
-          .withStorageLevel(StorageLevel.MEMORY)
+        .withTransport(new LocalTransport(registry))
+        .withStorage(Storage.builder()
+          .withDirectory(new File(directory, "" + i))
           .build())
         .build();
 
@@ -204,6 +199,31 @@ public class DistributedMapTest extends ConcurrentTestCase {
     await();
 
     return copycats;
+  }
+
+  @BeforeMethod
+  @AfterMethod
+  public void clearTests() throws IOException {
+    deleteDirectory(directory);
+  }
+
+  /**
+   * Deletes a directory recursively.
+   */
+  private void deleteDirectory(File directory) throws IOException {
+    if (directory.exists()) {
+      File[] files = directory.listFiles();
+      if (files != null) {
+        for (File file : files) {
+          if (file.isDirectory()) {
+            deleteDirectory(file);
+          } else {
+            Files.delete(file.toPath());
+          }
+        }
+      }
+      Files.delete(directory.toPath());
+    }
   }
 
 }

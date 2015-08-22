@@ -19,7 +19,9 @@ import net.kuujo.copycat.io.serializer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.LinkedList;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -33,12 +35,25 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ThreadPoolContext extends Context {
+public class ThreadPoolContext implements Context {
   private static final Logger LOGGER = LoggerFactory.getLogger(ThreadPoolContext.class);
   private final ScheduledExecutorService parent;
+  private final Serializer serializer;
   private final Runnable runner;
   private final LinkedList<Runnable> tasks = new LinkedList<>();
   private boolean running;
+  private final Executor executor = new Executor() {
+    @Override
+    public void execute(Runnable command) {
+      synchronized (tasks) {
+        tasks.add(command);
+        if (!running) {
+          running = true;
+          parent.execute(runner);
+        }
+      }
+    }
+  };
 
   /**
    * Creates a new thread pool context.
@@ -47,8 +62,13 @@ public class ThreadPoolContext extends Context {
    * @param serializer The context serializer.
    */
   public ThreadPoolContext(ScheduledExecutorService parent, Serializer serializer) {
-    super(serializer);
+    if (parent == null)
+      throw new NullPointerException("parent cannot be null");
+    if (serializer == null)
+      throw new NullPointerException("serializer cannot be null");
+
     this.parent = parent;
+    this.serializer = serializer;
 
     // This code was shamelessly stolededed from Vert.x:
     // https://github.com/eclipse/vert.x/blob/master/src/main/java/io/vertx/core/impl/OrderedExecutorFactory.java
@@ -67,31 +87,54 @@ public class ThreadPoolContext extends Context {
         try {
           task.run();
         } catch (Throwable t) {
-          LOGGER.error("Caught unexpected Throwable", t);
+          LOGGER.error("An uncaught exception occurred", t);
+          t.printStackTrace();
+          throw t;
         }
       }
     };
   }
 
   @Override
-  public void execute(Runnable command) {
-    synchronized (tasks) {
-      tasks.add(command);
-      if (!running) {
-        running = true;
-        parent.execute(runner);
+  public Logger logger() {
+    return LOGGER;
+  }
+
+  @Override
+  public Serializer serializer() {
+    return serializer;
+  }
+
+  @Override
+  public Executor executor() {
+    return executor;
+  }
+
+  @Override
+  public Scheduled schedule(Runnable runnable, Duration delay) {
+    ScheduledFuture<?> future = parent.schedule(() -> executor.execute(wrapRunnable(runnable)), delay.toMillis(), TimeUnit.MILLISECONDS);
+    return () -> future.cancel(false);
+  }
+
+  @Override
+  public Scheduled schedule(Runnable runnable, Duration delay, Duration interval) {
+    ScheduledFuture<?> future = parent.scheduleAtFixedRate(() -> executor.execute(wrapRunnable(runnable)), delay.toMillis(), interval.toMillis(), TimeUnit.MILLISECONDS);
+    return () -> future.cancel(false);
+  }
+
+  /**
+   * Wraps a runnable in an uncaught exception handler.
+   */
+  private Runnable wrapRunnable(final Runnable runnable) {
+    return () -> {
+      try {
+        runnable.run();
+      } catch (Throwable t) {
+        LOGGER.error("An uncaught exception occurred", t);
+        t.printStackTrace();
+        throw t;
       }
-    }
-  }
-
-  @Override
-  public ScheduledFuture<?> schedule(Runnable runnable, long delay, TimeUnit unit) {
-    return parent.schedule(() -> execute(runnable), delay, unit);
-  }
-
-  @Override
-  public ScheduledFuture<?> scheduleAtFixedRate(Runnable runnable, long delay, long rate, TimeUnit unit) {
-    return parent.scheduleAtFixedRate(() -> execute(runnable), delay, rate, unit);
+    };
   }
 
   @Override

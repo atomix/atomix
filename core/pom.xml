@@ -26,7 +26,6 @@
       <groupId>net.kuujo.copycat</groupId>
       <artifactId>copycat-local</artifactId>
       <version>${project.version}</version>
-      <scope>test</scope>
     </dependency>
   </dependencies>
 

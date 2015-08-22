@@ -17,15 +17,15 @@
 /**
  * The protocol layer provides a set of interfaces for communicating between Raft clients and servers in a Raft cluster.
  * <p>
- * At the core of the protocol layer are the {@link net.kuujo.copycat.raft.protocol.Request} and
- * {@link net.kuujo.copycat.raft.protocol.Response} interfaces. The protocol provides for all of the internal and
+ * At the core of the protocol layer are the {@link net.kuujo.copycat.raft.protocol.request.Request} and
+ * {@link net.kuujo.copycat.raft.protocol.response.Response} interfaces. The protocol provides for all of the internal and
  * client-facing request types necessary to participate in consensus via the Raft consensus protocol.
  * <p>
- * All {@link net.kuujo.copycat.raft.protocol.Request} and {@link net.kuujo.copycat.raft.protocol.Response} objects are
+ * All {@link net.kuujo.copycat.raft.protocol.request.Request} and {@link net.kuujo.copycat.raft.protocol.response.Response} objects are
  * {@link net.kuujo.copycat.io.serializer.CopycatSerializable} and {@link net.kuujo.copycat.util.ReferenceCounted}. This reduces
  * garbage by allowing {@link net.kuujo.copycat.io.serializer.Serializer} to pool requests and responses during deserialization.
  * <p>
- * All {@link net.kuujo.copycat.raft.protocol.Request}s and {@link net.kuujo.copycat.raft.protocol.Response}s provide
+ * All {@link net.kuujo.copycat.raft.protocol.request.Request}s and {@link net.kuujo.copycat.raft.protocol.response.Response}s provide
  * a custom {@link net.kuujo.copycat.util.Builder} implementation specific to each request's or response's attributes. Builders
  * can be created by calling the static {@code builder()} method on a given {@code Request} or {@code Response} implementation.
  * Builders are thread local and are not thread safe. All builders assume that they will be completed via

@@ -15,7 +15,6 @@
  */
 package net.kuujo.copycat.io.transport;
 
-import net.kuujo.copycat.Listener;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.SingleThreadContext;
@@ -26,6 +25,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 
 /**
  * Local server.
@@ -69,11 +69,11 @@ public class LocalServer implements Server {
     LocalConnection localConnection = new LocalConnection(connection.id(), context, connections);
     connection.connect(localConnection);
     localConnection.connect(connection);
-    return CompletableFuture.runAsync(() -> listener.listener.accept(localConnection), listener.context);
+    return CompletableFuture.runAsync(() -> listener.listener.accept(localConnection), listener.context.executor());
   }
 
   @Override
-  public synchronized CompletableFuture<Void> listen(InetSocketAddress address, Listener<Connection> listener) {
+  public synchronized CompletableFuture<Void> listen(InetSocketAddress address, Consumer<Connection> listener) {
     if (this.address != null) {
       if (!this.address.equals(address)) {
         throw new IllegalStateException(String.format("already listening at %s", this.address));
@@ -108,7 +108,7 @@ public class LocalServer implements Server {
     for (LocalConnection connection : connections) {
       futures[i++] = connection.close();
     }
-    CompletableFuture.allOf(futures).thenRunAsync(() -> future.complete(null), context);
+    CompletableFuture.allOf(futures).thenRunAsync(() -> future.complete(null), context.executor());
     return future;
   }
 
@@ -116,10 +116,10 @@ public class LocalServer implements Server {
    * Listener holder.
    */
   private static class ListenerHolder {
-    private final Listener<Connection> listener;
+    private final Consumer<Connection> listener;
     private final Context context;
 
-    private ListenerHolder(Listener<Connection> listener, Context context) {
+    private ListenerHolder(Consumer<Connection> listener, Context context) {
       this.listener = listener;
       this.context = context;
     }

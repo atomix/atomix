@@ -21,10 +21,10 @@ import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.CopycatSerializable;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.raft.Command;
-import net.kuujo.copycat.raft.ConsistencyLevel;
-import net.kuujo.copycat.raft.Operation;
-import net.kuujo.copycat.raft.Query;
+import net.kuujo.copycat.raft.protocol.Command;
+import net.kuujo.copycat.raft.protocol.ConsistencyLevel;
+import net.kuujo.copycat.raft.protocol.Operation;
+import net.kuujo.copycat.raft.protocol.Query;
 import net.kuujo.copycat.util.BuilderPool;
 
 import java.util.concurrent.TimeUnit;
@@ -222,7 +222,7 @@ public class SetCommands {
    */
   public static abstract class TtlCommand<V> extends ValueCommand<V> {
     protected long ttl;
-    protected PersistenceLevel mode = PersistenceLevel.PERSISTENT;
+    protected PersistenceMode mode = PersistenceMode.PERSISTENT;
 
     /**
      * Returns the time to live in milliseconds.
@@ -238,7 +238,7 @@ public class SetCommands {
      *
      * @return The persistence mode.
      */
-    public PersistenceLevel mode() {
+    public PersistenceMode mode() {
       return mode;
     }
 
@@ -251,7 +251,7 @@ public class SetCommands {
     @Override
     public void readObject(BufferInput buffer, Serializer serializer) {
       super.readObject(buffer, serializer);
-      mode = PersistenceLevel.values()[buffer.readByte()];
+      mode = PersistenceMode.values()[buffer.readByte()];
       ttl = buffer.readLong();
     }
 
@@ -292,7 +292,7 @@ public class SetCommands {
        * @param mode The persistence mode.
        * @return The command builder.
        */
-      public Builder withPersistence(PersistenceLevel mode) {
+      public Builder withPersistence(PersistenceMode mode) {
         command.mode = mode;
         return this;
       }

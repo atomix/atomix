@@ -75,7 +75,7 @@ public class HeapBuffer extends AbstractBuffer {
    * @param maxCapacity The maximum capacity of the buffer.
    * @return The heap buffer.
    * @throws IllegalArgumentException If {@code initialCapacity} or {@code maxCapacity} is greater than the
-   *         maximum allowed size for an array on the Java heap - {@code Integer.MAX_VALUE - 5}
+   *         maximum allowed count for an array on the Java heap - {@code Integer.MAX_VALUE - 5}
    *
    * @see HeapBuffer#allocate()
    * @see HeapBuffer#allocate(long)
@@ -93,7 +93,7 @@ public class HeapBuffer extends AbstractBuffer {
   /**
    * Wraps the given bytes in a heap buffer.
    * <p>
-   * The buffer will be created with an initial capacity and maximum capacity equal to the byte array size.
+   * The buffer will be created with an initial capacity and maximum capacity equal to the byte array count.
    *
    * @param bytes The bytes to wrap.
    * @return The wrapped bytes.

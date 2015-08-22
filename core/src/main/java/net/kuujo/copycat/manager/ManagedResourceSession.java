@@ -15,13 +15,13 @@
  */
 package net.kuujo.copycat.manager;
 
-import net.kuujo.copycat.Listener;
-import net.kuujo.copycat.ListenerContext;
-import net.kuujo.copycat.Listeners;
-import net.kuujo.copycat.raft.Session;
+import net.kuujo.copycat.raft.session.Session;
 import net.kuujo.copycat.resource.ResourceMessage;
+import net.kuujo.copycat.util.Listener;
+import net.kuujo.copycat.util.Listeners;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 /**
  * Resource session.
@@ -70,7 +70,7 @@ class ManagedResourceSession implements Session {
   @SuppressWarnings("unchecked")
   private void handleReceive(ResourceMessage message) {
     if (message.resource() == resource) {
-      for (Listener listener : receiveListeners) {
+      for (Consumer listener : receiveListeners) {
         listener.accept(message);
       }
     }
@@ -78,8 +78,8 @@ class ManagedResourceSession implements Session {
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T> ListenerContext onReceive(Listener<T> listener) {
-    return receiveListeners.add((Listener) listener);
+  public <T> Listener onReceive(Consumer<T> listener) {
+    return receiveListeners.add((Consumer) listener);
   }
 
   @Override
@@ -91,14 +91,14 @@ class ManagedResourceSession implements Session {
    * Handles a session open event.
    */
   private void handleOpen(Session session) {
-    for (Listener<Session> listener : openListeners) {
+    for (Consumer<Session> listener : openListeners) {
       listener.accept(this);
     }
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public ListenerContext<Session> onOpen(Listener<Session> listener) {
+  public Listener<Session> onOpen(Consumer<Session> listener) {
     return openListeners.add(listener);
   }
 
@@ -106,14 +106,14 @@ class ManagedResourceSession implements Session {
    * Handles a session close event.
    */
   private void handleClose(Session session) {
-    for (Listener<Session> listener : closeListeners) {
+    for (Consumer<Session> listener : closeListeners) {
       listener.accept(this);
     }
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public ListenerContext<Session> onClose(Listener<Session> listener) {
+  public Listener<Session> onClose(Consumer<Session> listener) {
     return closeListeners.add(listener);
   }
 

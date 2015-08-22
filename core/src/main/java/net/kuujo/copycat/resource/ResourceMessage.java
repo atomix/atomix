@@ -67,4 +67,9 @@ public class ResourceMessage<T> implements CopycatSerializable {
     message = serializer.readObject(buffer);
   }
 
+  @Override
+  public String toString() {
+    return String.format("%s[resource=%d, message=%s]", getClass().getSimpleName(), resource, message);
+  }
+
 }

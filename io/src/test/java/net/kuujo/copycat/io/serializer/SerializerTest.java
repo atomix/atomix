@@ -471,28 +471,28 @@ public class SerializerTest {
   }
 
   /**
-   * Tests serializing classes registered via ServiceLoaderResolver during construction.
+   * Tests serializing classes registered via ServiceLoaderTypeResolver during construction.
    */
   public void testResolverConstructor() {
-    testServiceLoaderResolver(new Serializer(new ServiceLoaderResolver()));
+    testServiceLoaderResolver(new Serializer(new ServiceLoaderTypeResolver()));
   }
 
   /**
-   * Tests serializing classes registered via ServiceLoaderResolver after construction.
+   * Tests serializing classes registered via ServiceLoaderTypeResolver after construction.
    */
   public void testResolverMethod() {
-    testServiceLoaderResolver(new Serializer().resolve(new ServiceLoaderResolver()));
+    testServiceLoaderResolver(new Serializer().resolve(new ServiceLoaderTypeResolver()));
   }
 
   /**
-   * Tests serializing classes registered via ServiceLoaderResolver multiple times.
+   * Tests serializing classes registered via ServiceLoaderTypeResolver multiple times.
    */
   public void testResolverConstructorAndMethod() {
-    testServiceLoaderResolver(new Serializer(new ServiceLoaderResolver()).resolve(new ServiceLoaderResolver()));
+    testServiceLoaderResolver(new Serializer(new ServiceLoaderTypeResolver()).resolve(new ServiceLoaderTypeResolver()));
   }
 
   /**
-   * Tests serializing classes registered via ServiceLoaderResolver.
+   * Tests serializing classes registered via ServiceLoaderTypeResolver.
    */
   private void testServiceLoaderResolver(Serializer serializer) {
     TestSerializeWithId withId = new TestSerializeWithId();

@@ -15,11 +15,10 @@
  */
 package net.kuujo.copycat.io.storage;
 
-import net.kuujo.copycat.util.BuilderPool;
-import net.kuujo.copycat.util.concurrent.Context;
+import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.util.concurrent.CopycatThreadFactory;
 
-import java.io.File;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Executors;
 
 /**
  * Raft log.
@@ -27,53 +26,32 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class Log implements AutoCloseable {
-  private static final BuilderPool<Builder, Log> POOL = new BuilderPool<>(Builder::new);
+  private final SegmentManager segments;
+  private final TypedEntryPool entryPool = new TypedEntryPool();
+  private Cleaner cleaner;
+  private boolean open = true;
 
-  /**
-   * Returns a new Raft storage builder.
-   *
-   * @return A new Raft storage builder.
-   */
-  public static Builder builder() {
-    return POOL.acquire();
-  }
-
-  protected final SegmentManager segments;
-  protected Compactor compactor;
-  protected final TypedEntryPool entryPool = new TypedEntryPool();
-  private boolean open;
-
-  protected Log(SegmentManager segments) {
-    this.segments = segments;
+  protected Log(Storage storage) {
+    this.segments = new SegmentManager(storage);
+    this.cleaner = new Cleaner(segments, Executors.newScheduledThreadPool(storage.cleanerThreads(), new CopycatThreadFactory("copycat-log-cleaner-%d")));
   }
 
   /**
-   * Opens the log.
+   * Returns the log cleaner.
    *
-   * @param context The context in which to open the log.
+   * @return The log cleaner.
    */
-  public void open(Context context) {
-    segments.open(context);
-    compactor.open(context);
-    open = true;
+  public Cleaner cleaner() {
+    return cleaner;
   }
 
   /**
-   * Returns the log compactor.
+   * Returns the log entry serializer.
    *
-   * @return The log compactor.
+   * @return The log entry serializer.
    */
-  public Compactor compactor() {
-    return compactor;
-  }
-
-  /**
-   * Returns the log segment manager.
-   *
-   * @return The log segment manager.
-   */
-  SegmentManager segments() {
-    return segments;
+  public Serializer serializer() {
+    return segments.serializer();
   }
 
   /**
@@ -97,8 +75,8 @@ public class Log implements AutoCloseable {
    * Asserts that the index is a valid index.
    */
   private void checkIndex(long index) {
-    if (!containsIndex(index))
-      throw new IndexOutOfBoundsException(index + " is not a valid log index");
+    if (!validIndex(index))
+      throw new IndexOutOfBoundsException("invalid log index: " + index);
   }
 
   /**
@@ -112,9 +90,9 @@ public class Log implements AutoCloseable {
   }
 
   /**
-   * Returns the size of the log on disk in bytes.
+   * Returns the count of the log on disk in bytes.
    *
-   * @return The size of the log in bytes.
+   * @return The count of the log in bytes.
    */
   public long size() {
     return segments.segments().stream().mapToLong(Segment::size).sum();
@@ -163,6 +141,7 @@ public class Log implements AutoCloseable {
   private void checkRoll() {
     if (segments.currentSegment().isFull()) {
       segments.nextSegment();
+      cleaner.clean();
     }
   }
 
@@ -178,7 +157,7 @@ public class Log implements AutoCloseable {
    * @throws IllegalStateException If the log is not open
    * @throws NullPointerException If the entry type is {@code null}
    */
-  public <T extends Entry<T>> T createEntry(Class<T> type) {
+  public <T extends Entry<T>> T create(Class<T> type) {
     checkOpen();
     checkRoll();
     return entryPool.acquire(type, segments.currentSegment().nextIndex());
@@ -193,10 +172,10 @@ public class Log implements AutoCloseable {
    * @throws java.lang.IndexOutOfBoundsException If the entry's index does not match
    *         the expected next log index.
    */
-  public long appendEntry(Entry entry) {
+  public long append(Entry entry) {
     checkOpen();
     checkRoll();
-    return segments.currentSegment().appendEntry(entry);
+    return segments.currentSegment().append(entry);
   }
 
   /**
@@ -210,7 +189,7 @@ public class Log implements AutoCloseable {
    * try-with-resources statement.
    * <pre>
    *   {@code
-   *   try (RaftEntry entry = log.getEntry(123)) {
+   *   try (RaftEntry entry = log.get(123)) {
    *     // Do some stuff...
    *   }
    *   }
@@ -221,13 +200,15 @@ public class Log implements AutoCloseable {
    * @throws IllegalStateException If the log is not open.
    * @throws IndexOutOfBoundsException If the given index is not within the bounds of the log.
    */
-  public <T extends Entry> T getEntry(long index) {
+  public <T extends Entry> T get(long index) {
     checkOpen();
     checkIndex(index);
+
     Segment segment = segments.segment(index);
     if (segment == null)
       throw new IndexOutOfBoundsException("invalid index: " + index);
-    return segment.getEntry(index);
+    T entry = segment.get(index);
+    return entry != null ? entry : null;
   }
 
   /**
@@ -240,8 +221,10 @@ public class Log implements AutoCloseable {
    * @return Indicates whether the given index is within the bounds of the log.
    * @throws IllegalStateException If the log is not open.
    */
-  public boolean containsIndex(long index) {
-    return !isEmpty() && firstIndex() <= index && index <= lastIndex();
+  private boolean validIndex(long index) {
+    long firstIndex = firstIndex();
+    long lastIndex = lastIndex();
+    return !isEmpty() && firstIndex <= index && index <= lastIndex;
   }
 
   /**
@@ -251,11 +234,42 @@ public class Log implements AutoCloseable {
    * @return Indicates whether the log contains a live entry at the given index.
    * @throws IllegalStateException If the log is not open.
    */
-  public boolean containsEntry(long index) {
-    if (!containsIndex(index))
+  public boolean contains(long index) {
+    if (!validIndex(index))
       return false;
+
     Segment segment = segments.segment(index);
-    return segment != null && segment.containsEntry(index);
+    return segment != null && segment.contains(index);
+  }
+
+  /**
+   * Cleans the entry at the given index.
+   *
+   * @param index The index of the entry to clean.
+   * @return The log.
+   * @throws java.lang.IllegalStateException If the log is not open.
+   */
+  public Log clean(long index) {
+    checkOpen();
+    checkIndex(index);
+
+    Segment segment = segments.segment(index);
+    if (segment != null)
+      segment.clean(index);
+    return this;
+  }
+
+  /**
+   * Cleans the given entry from the log.
+   *
+   * @param entry The entry to clean.
+   * @return The log.
+   * @throws IllegalStateException If the log is not open.
+   */
+  public Log clean(Entry entry) {
+    if (entry == null)
+      throw new NullPointerException("entry cannot be null");
+    return clean(entry.getIndex());
   }
 
   /**
@@ -294,17 +308,17 @@ public class Log implements AutoCloseable {
    */
   public Log truncate(long index) {
     checkOpen();
-    if (index > 0 && !containsIndex(index))
+    if (index > 0 && !validIndex(index))
       throw new IndexOutOfBoundsException(index + " is not a valid log index");
 
     if (lastIndex() == index)
       return this;
 
     for (Segment segment : segments.segments()) {
-      if (index == 0 || segment.containsIndex(index)) {
+      if (index == 0 || segment.validIndex(index)) {
         segment.truncate(index);
       } else if (segment.descriptor().index() > index) {
-        segments.remove(segment);
+        segments.removeSegment(segment);
       }
     }
     return this;
@@ -324,8 +338,10 @@ public class Log implements AutoCloseable {
    */
   @Override
   public void close() {
+    flush();
     segments.close();
-    compactor.close();
+    if (cleaner != null)
+      cleaner.close();
     open = false;
   }
 
@@ -345,165 +361,9 @@ public class Log implements AutoCloseable {
     segments.delete();
   }
 
-  /**
-   * Raft log builder.
-   */
-  public static class Builder extends net.kuujo.copycat.util.Builder<Log> {
-    private final LogConfig config = new LogConfig();
-
-    private Builder(BuilderPool pool) {
-      super(pool);
-    }
-
-    /**
-     * Sets the log directory, returning the builder for method chaining.
-     * <p>
-     * The log will write segment files into the provided directory. It is recommended that a unique directory be dedicated
-     * for each unique log instance.
-     *
-     * @param directory The log directory.
-     * @return The log builder.
-     * @throws NullPointerException If the {@code directory} is {@code null}
-     */
-    public Builder withDirectory(String directory) {
-      config.setDirectory(directory);
-      return this;
-    }
-
-    /**
-     * Sets the log directory, returning the builder for method chaining.
-     * <p>
-     * The log will write segment files into the provided directory. It is recommended that a unique directory be dedicated
-     * for each unique log instance.
-     *
-     * @param directory The log directory.
-     * @return The log builder.
-     * @throws NullPointerException If the {@code directory} is {@code null}
-     */
-    public Builder withDirectory(File directory) {
-      config.setDirectory(directory);
-      return this;
-    }
-
-    /**
-     * Sets the log storage level.
-     * <p>
-     * The storage level dictates how entries in the log are persisted. By default, the {@link StorageLevel#DISK} level
-     * is used to persist entries to disk.
-     *
-     * @param level The storage level.
-     * @return The log builder.
-     * @throws java.lang.NullPointerException If the {@code level} is {@code null}
-     */
-    public Builder withStorageLevel(StorageLevel level) {
-      config.setStorageLevel(level);
-      return this;
-    }
-
-    /**
-     * Sets the maximum entry size, returning the builder for method chaining.
-     * <p>
-     * The maximum entry size will be used to place an upper limit on the size of log segments.
-     *
-     * @param maxEntrySize The maximum entry size.
-     * @return The log builder.
-     * @throws IllegalArgumentException If the {@code maxEntrySize} is not positive
-     */
-    public Builder withMaxEntrySize(int maxEntrySize) {
-      config.setMaxEntrySize(maxEntrySize);
-      return this;
-    }
-
-    /**
-     * Sets the maximum segment size, returning the builder for method chaining.
-     *
-     * @param maxSegmentSize The maximum segment size.
-     * @return The log builder.
-     * @throws java.lang.IllegalArgumentException If the {@code maxSegmentSize} is not positive
-     */
-    public Builder withMaxSegmentSize(int maxSegmentSize) {
-      config.setMaxSegmentSize(maxSegmentSize);
-      return this;
-    }
-
-    /**
-     * Sets the maximum number of allows entries per segment.
-     *
-     * @param maxEntriesPerSegment The maximum number of entries allowed per segment.
-     * @return The log builder.
-     * @throws java.lang.IllegalArgumentException If the {@code maxEntriesPerSegment} is not positive
-     */
-    public Builder withMaxEntriesPerSegment(int maxEntriesPerSegment) {
-      config.setMaxEntriesPerSegment(maxEntriesPerSegment);
-      return this;
-    }
-
-    /**
-     * Sets the minor compaction interval.
-     *
-     * @param compactionInterval The minor compaction interval in milliseconds.
-     * @return The log builder.
-     * @throws java.lang.IllegalArgumentException If the compaction interval is not positive
-     */
-    public Builder withMinorCompactionInterval(long compactionInterval) {
-      config.setMinorCompactionInterval(compactionInterval);
-      return this;
-    }
-
-    /**
-     * Sets the minor compaction interval.
-     *
-     * @param compactionInterval The minor compaction interval.
-     * @param unit The interval time unit.
-     * @return The log builder.
-     * @throws java.lang.IllegalArgumentException If the compaction interval is not positive
-     */
-    public Builder withMinorCompactionInterval(long compactionInterval, TimeUnit unit) {
-      config.setMinorCompactionInterval(compactionInterval, unit);
-      return this;
-    }
-
-    /**
-     * Sets the major compaction interval.
-     *
-     * @param compactionInterval The major compaction interval in milliseconds.
-     * @return The log builder.
-     * @throws java.lang.IllegalArgumentException If the compaction interval is not positive
-     */
-    public Builder withMajorCompactionInterval(long compactionInterval) {
-      config.setMajorCompactionInterval(compactionInterval);
-      return this;
-    }
-
-    /**
-     * Sets the major compaction interval.
-     *
-     * @param compactionInterval The major compaction interval.
-     * @param unit The interval time unit.
-     * @return The log builder.
-     * @throws java.lang.IllegalArgumentException If the compaction interval is not positive
-     */
-    public Builder withMajorCompactionInterval(long compactionInterval, TimeUnit unit) {
-      config.setMajorCompactionInterval(compactionInterval, unit);
-      return this;
-    }
-
-    /**
-     * Builds the log.
-     *
-     * @return A new buffered log.
-     */
-    public Log build() {
-      try {
-        Log log = new Log(new SegmentManager(config));
-        log.compactor = new Compactor(log)
-          .withMinorCompactionInterval(config.getMinorCompactionInterval())
-          .withMajorCompactionInterval(config.getMajorCompactionInterval());
-        return log;
-      } finally {
-        close();
-      }
-    }
+  @Override
+  public String toString() {
+    return String.format("%s[segments=%s]", getClass().getSimpleName(), segments);
   }
 
 }

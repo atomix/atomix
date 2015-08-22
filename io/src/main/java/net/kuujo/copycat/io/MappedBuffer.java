@@ -27,7 +27,7 @@ import java.nio.channels.FileChannel;
  * Memory mapped file buffer.
  * <p>
  * Mapped buffers provide direct access to memory from allocated by a {@link java.nio.MappedByteBuffer}. Memory is allocated
- * by opening and expanding the given {@link java.io.File} to the desired {@code size} and mapping the file contents into memory
+ * by opening and expanding the given {@link java.io.File} to the desired {@code count} and mapping the file contents into memory
  * via {@link java.nio.channels.FileChannel#map(java.nio.channels.FileChannel.MapMode, long, long)}.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
@@ -40,7 +40,7 @@ public class MappedBuffer extends NativeBuffer {
    * of {@code 16MiB} and a maximum capacity of {@link Integer#MAX_VALUE}.
    * <p>
    * The resulting buffer will have a maximum capacity of {@link Integer#MAX_VALUE}. As bytes are written to the buffer
-   * its capacity will double in size each time the current capacity is reached. Memory will be mapped by opening and
+   * its capacity will double in count each time the current capacity is reached. Memory will be mapped by opening and
    * expanding the given {@link java.io.File} to the desired {@code capacity} and mapping the file contents into memory via
    * {@link java.nio.channels.FileChannel#map(java.nio.channels.FileChannel.MapMode, long, long)}.
    *
@@ -63,7 +63,7 @@ public class MappedBuffer extends NativeBuffer {
    * of {@code 16MiB} and a maximum capacity of {@link Integer#MAX_VALUE}.
    * <p>
    * The resulting buffer will be initialized to a capacity of {@code 4096} and have a maximum capacity of
-   * {@link Integer#MAX_VALUE}. As bytes are written to the buffer its capacity will double in size each time the current
+   * {@link Integer#MAX_VALUE}. As bytes are written to the buffer its capacity will double in count each time the current
    * capacity is reached. Memory will be mapped by opening and expanding the given {@link java.io.File} to the desired
    * {@code capacity} and mapping the file contents into memory via
    * {@link java.nio.channels.FileChannel#map(java.nio.channels.FileChannel.MapMode, long, long)}.
@@ -137,7 +137,7 @@ public class MappedBuffer extends NativeBuffer {
   /**
    * Allocates a mapped buffer.
    * <p>
-   * Memory will be mapped by opening and expanding the given {@link java.io.File} to the desired {@code size} and mapping the
+   * Memory will be mapped by opening and expanding the given {@link java.io.File} to the desired {@code count} and mapping the
    * file contents into memory via {@link java.nio.channels.FileChannel#map(java.nio.channels.FileChannel.MapMode, long, long)}.
    * <p>
    * The resulting buffer will have a capacity of {@code initialCapacity}. The underlying {@link MappedBytes} will be
@@ -165,7 +165,7 @@ public class MappedBuffer extends NativeBuffer {
   /**
    * Allocates a mapped buffer.
    * <p>
-   * Memory will be mapped by opening and expanding the given {@link java.io.File} to the desired {@code size} and mapping the
+   * Memory will be mapped by opening and expanding the given {@link java.io.File} to the desired {@code count} and mapping the
    * file contents into memory via {@link java.nio.channels.FileChannel#map(java.nio.channels.FileChannel.MapMode, long, long)}.
    * <p>
    * The resulting buffer will have a capacity of {@code initialCapacity}. The underlying {@link MappedBytes} will be

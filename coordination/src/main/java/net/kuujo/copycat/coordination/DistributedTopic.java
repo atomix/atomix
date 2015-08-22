@@ -15,32 +15,37 @@
  */
 package net.kuujo.copycat.coordination;
 
-import net.kuujo.copycat.Listener;
-import net.kuujo.copycat.ListenerContext;
 import net.kuujo.copycat.Resource;
-import net.kuujo.copycat.Stateful;
 import net.kuujo.copycat.coordination.state.TopicCommands;
 import net.kuujo.copycat.coordination.state.TopicState;
+import net.kuujo.copycat.raft.StateMachine;
 import net.kuujo.copycat.resource.ResourceContext;
+import net.kuujo.copycat.util.Listener;
 
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Consumer;
 
 /**
  * Async topic.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Stateful(TopicState.class)
 public class DistributedTopic<T> extends Resource {
-  private final List<TopicListenerContext<T>> listeners = new CopyOnWriteArrayList<>();
+  private final Set<Consumer<T>> listeners = new HashSet<>();
 
+  @Override
+  protected Class<? extends StateMachine> stateMachine() {
+    return TopicState.class;
+  }
+
+  @Override
   @SuppressWarnings("unchecked")
-  public DistributedTopic(ResourceContext context) {
-    super(context);
+  protected void open(ResourceContext context) {
+    super.open(context);
     context.session().onReceive(message -> {
-      for (TopicListenerContext<T> listener : listeners) {
+      for (Consumer<T> listener : listeners) {
         listener.accept((T) message);
       }
     });
@@ -64,30 +69,40 @@ public class DistributedTopic<T> extends Resource {
    * @param listener The message listener.
    * @return The listener context.
    */
-  public ListenerContext<T> onMessage(Listener<T> listener) {
-    TopicListenerContext<T> context = new TopicListenerContext<T>(listener);
-    listeners.add(context);
-    return context;
+  public CompletableFuture<Listener<T>> onMessage(Consumer<T> listener) {
+    if (!listeners.isEmpty()) {
+      listeners.add(listener);
+      return CompletableFuture.completedFuture(new TopicListener(listener));
+    }
+
+    listeners.add(listener);
+    return submit(TopicCommands.Listen.builder().build())
+      .thenApply(v -> new TopicListener(listener));
   }
 
   /**
-   * Topic listener context.
+   * Topic listener.
    */
-  private class TopicListenerContext<T> implements ListenerContext<T> {
-    private final Listener<T> listener;
+  private class TopicListener implements Listener<T> {
+    private final Consumer<T> listener;
 
-    private TopicListenerContext(Listener<T> listener) {
+    private TopicListener(Consumer<T> listener) {
       this.listener = listener;
     }
 
     @Override
-    public void accept(T event) {
-      listener.accept(event);
+    public void accept(T message) {
+      listener.accept(message);
     }
 
     @Override
     public void close() {
-      listeners.remove(this);
+      synchronized (DistributedTopic.this) {
+        listeners.remove(listener);
+        if (listeners.isEmpty()) {
+          submit(TopicCommands.Unlisten.builder().build());
+        }
+      }
     }
   }
 

@@ -15,16 +15,15 @@
  */
 package net.kuujo.copycat.collections;
 
-import net.kuujo.copycat.PersistenceLevel;
+import net.kuujo.copycat.PersistenceMode;
 import net.kuujo.copycat.Resource;
-import net.kuujo.copycat.Stateful;
 import net.kuujo.copycat.collections.state.MapCommands;
 import net.kuujo.copycat.collections.state.MapState;
-import net.kuujo.copycat.raft.ConsistencyLevel;
-import net.kuujo.copycat.resource.ResourceContext;
+import net.kuujo.copycat.raft.protocol.ConsistencyLevel;
+import net.kuujo.copycat.raft.StateMachine;
 
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Distributed map.
@@ -33,11 +32,11 @@ import java.util.concurrent.TimeUnit;
  * @param <V> The map entry type.
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Stateful(MapState.class)
 public class DistributedMap<K, V> extends Resource {
 
-  public DistributedMap(ResourceContext context) {
-    super(context);
+  @Override
+  protected Class<? extends StateMachine> stateMachine() {
+    return MapState.class;
   }
 
   /**
@@ -60,7 +59,7 @@ public class DistributedMap<K, V> extends Resource {
   }
 
   /**
-   * Gets the size of the map.
+   * Gets the count of the map.
    *
    * @return A completable future to be completed with the number of entries in the map.
    */
@@ -69,7 +68,7 @@ public class DistributedMap<K, V> extends Resource {
   }
 
   /**
-   * Gets the size of the map.
+   * Gets the count of the map.
    *
    * @param consistency The query consistency level.
    * @return A completable future to be completed with the number of entries in the map.
@@ -159,13 +158,13 @@ public class DistributedMap<K, V> extends Resource {
    * @return A completable future to be completed with the result once complete.
    */
   @SuppressWarnings("unchecked")
-  public CompletableFuture<V> put(K key, V value, PersistenceLevel persistence) {
+  public CompletableFuture<V> put(K key, V value, PersistenceMode persistence) {
     return submit(MapCommands.Put.builder()
       .withKey(key)
       .withValue(value)
       .withPersistence(persistence)
       .build())
-      .thenApply(result -> (V) result);
+      .thenApply(result -> result);
   }
 
   /**
@@ -173,17 +172,17 @@ public class DistributedMap<K, V> extends Resource {
    *
    * @param key The key to set.
    * @param value The value to set.
-   * @param ttl The time to live in milliseconds.
+   * @param ttl The duration after which to expire the key.
    * @return A completable future to be completed with the result once complete.
    */
   @SuppressWarnings("unchecked")
-  public CompletableFuture<V> put(K key, V value, long ttl) {
+  public CompletableFuture<V> put(K key, V value, Duration ttl) {
     return submit(MapCommands.Put.builder()
       .withKey(key)
       .withValue(value)
-      .withTtl(ttl)
+      .withTtl(ttl.toMillis())
       .build())
-      .thenApply(result -> (V) result);
+      .thenApply(result -> result);
   }
 
   /**
@@ -191,59 +190,19 @@ public class DistributedMap<K, V> extends Resource {
    *
    * @param key The key to set.
    * @param value The value to set.
-   * @param ttl The time to live in milliseconds.
+   * @param ttl The time to live duration.
    * @param persistence The persistence in which to set the key.
    * @return A completable future to be completed with the result once complete.
    */
   @SuppressWarnings("unchecked")
-  public CompletableFuture<V> put(K key, V value, long ttl, PersistenceLevel persistence) {
+  public CompletableFuture<V> put(K key, V value, Duration ttl, PersistenceMode persistence) {
     return submit(MapCommands.Put.builder()
       .withKey(key)
       .withValue(value)
-      .withTtl(ttl)
+      .withTtl(ttl.toMillis())
       .withPersistence(persistence)
       .build())
-      .thenApply(result -> (V) result);
-  }
-
-  /**
-   * Puts a value in the map.
-   *
-   * @param key The key to set.
-   * @param value The value to set.
-   * @param ttl The time to live in milliseconds.
-   * @param unit The time to live unit.
-   * @return A completable future to be completed with the result once complete.
-   */
-  @SuppressWarnings("unchecked")
-  public CompletableFuture<V> put(K key, V value, long ttl, TimeUnit unit) {
-    return submit(MapCommands.Put.builder()
-      .withKey(key)
-      .withValue(value)
-      .withTtl(ttl, unit)
-      .build())
-      .thenApply(result -> (V) result);
-  }
-
-  /**
-   * Puts a value in the map.
-   *
-   * @param key The key to set.
-   * @param value The value to set.
-   * @param ttl The time to live in milliseconds.
-   * @param unit The time to live unit.
-   * @param persistence The persistence in which to set the key.
-   * @return A completable future to be completed with the result once complete.
-   */
-  @SuppressWarnings("unchecked")
-  public CompletableFuture<V> put(K key, V value, long ttl, TimeUnit unit, PersistenceLevel persistence) {
-    return submit(MapCommands.Put.builder()
-      .withKey(key)
-      .withValue(value)
-      .withTtl(ttl, unit)
-      .withPersistence(persistence)
-      .build())
-      .thenApply(result -> (V) result);
+      .thenApply(result -> result);
   }
 
   /**
@@ -315,17 +274,17 @@ public class DistributedMap<K, V> extends Resource {
    *
    * @param key   The key to set.
    * @param value The value to set if the given key does not exist.
-   * @param ttl The time to live in milliseconds.
+   * @param ttl The time to live duration.
    * @return A completable future to be completed with the result once complete.
    */
   @SuppressWarnings("unchecked")
-  public CompletableFuture<V> putIfAbsent(K key, V value, long ttl) {
+  public CompletableFuture<V> putIfAbsent(K key, V value, Duration ttl) {
     return submit(MapCommands.PutIfAbsent.builder()
       .withKey(key)
       .withValue(value)
-      .withTtl(ttl)
+      .withTtl(ttl.toMillis())
       .build())
-      .thenApply(result -> (V) result);
+      .thenApply(result -> result);
   }
 
   /**
@@ -333,59 +292,19 @@ public class DistributedMap<K, V> extends Resource {
    *
    * @param key   The key to set.
    * @param value The value to set if the given key does not exist.
-   * @param ttl The time to live in milliseconds.
+   * @param ttl The time to live duration.
    * @param persistence The persistence in which to set the key.
    * @return A completable future to be completed with the result once complete.
    */
   @SuppressWarnings("unchecked")
-  public CompletableFuture<V> putIfAbsent(K key, V value, long ttl, PersistenceLevel persistence) {
+  public CompletableFuture<V> putIfAbsent(K key, V value, Duration ttl, PersistenceMode persistence) {
     return submit(MapCommands.PutIfAbsent.builder()
       .withKey(key)
       .withValue(value)
-      .withTtl(ttl)
+      .withTtl(ttl.toMillis())
       .withPersistence(persistence)
       .build())
-      .thenApply(result -> (V) result);
-  }
-
-  /**
-   * Puts a value in the map if the given key does not exist.
-   *
-   * @param key   The key to set.
-   * @param value The value to set if the given key does not exist.
-   * @param ttl The time to live.
-   * @param unit The time to live unit.
-   * @return A completable future to be completed with the result once complete.
-   */
-  @SuppressWarnings("unchecked")
-  public CompletableFuture<V> putIfAbsent(K key, V value, long ttl, TimeUnit unit) {
-    return submit(MapCommands.PutIfAbsent.builder()
-      .withKey(key)
-      .withValue(value)
-      .withTtl(ttl, unit)
-      .build())
-      .thenApply(result -> (V) result);
-  }
-
-  /**
-   * Puts a value in the map if the given key does not exist.
-   *
-   * @param key   The key to set.
-   * @param value The value to set if the given key does not exist.
-   * @param ttl The time to live.
-   * @param unit The time to live unit.
-   * @param persistence The persistence in which to set the key.
-   * @return A completable future to be completed with the result once complete.
-   */
-  @SuppressWarnings("unchecked")
-  public CompletableFuture<V> putIfAbsent(K key, V value, long ttl, TimeUnit unit, PersistenceLevel persistence) {
-    return submit(MapCommands.PutIfAbsent.builder()
-      .withKey(key)
-      .withValue(value)
-      .withTtl(ttl, unit)
-      .withPersistence(persistence)
-      .build())
-      .thenApply(result -> (V) result);
+      .thenApply(result -> result);
   }
 
   /**

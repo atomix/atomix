@@ -15,19 +15,17 @@
  */
 package net.kuujo.copycat.collections.state;
 
-import net.kuujo.copycat.*;
+import net.kuujo.copycat.PersistenceMode;
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.CopycatSerializable;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.raft.Command;
-import net.kuujo.copycat.raft.ConsistencyLevel;
-import net.kuujo.copycat.raft.Operation;
-import net.kuujo.copycat.raft.Query;
+import net.kuujo.copycat.raft.protocol.Command;
+import net.kuujo.copycat.raft.protocol.ConsistencyLevel;
+import net.kuujo.copycat.raft.protocol.Operation;
+import net.kuujo.copycat.raft.protocol.Query;
 import net.kuujo.copycat.util.BuilderPool;
-
-import java.util.concurrent.TimeUnit;
 
 /**
  * Map commands.
@@ -270,7 +268,7 @@ public class MapCommands {
    * TTL command.
    */
   public static abstract class TtlCommand<V> extends KeyValueCommand<V> {
-    protected PersistenceLevel mode = PersistenceLevel.PERSISTENT;
+    protected PersistenceMode mode = PersistenceMode.PERSISTENT;
     protected long ttl;
 
     /**
@@ -278,7 +276,7 @@ public class MapCommands {
      *
      * @return The persistence mode.
      */
-    public PersistenceLevel mode() {
+    public PersistenceMode mode() {
       return mode;
     }
 
@@ -300,7 +298,7 @@ public class MapCommands {
     @Override
     public void readObject(BufferInput buffer, Serializer serializer) {
       super.readObject(buffer, serializer);
-      mode = PersistenceLevel.values()[buffer.readByte()];
+      mode = PersistenceMode.values()[buffer.readByte()];
       ttl = buffer.readLong();
     }
 
@@ -318,7 +316,7 @@ public class MapCommands {
        * @param mode The persistence mode.
        * @return The command builder.
        */
-      public Builder withPersistence(PersistenceLevel mode) {
+      public Builder withPersistence(PersistenceMode mode) {
         command.mode = mode;
         return this;
       }
@@ -331,18 +329,6 @@ public class MapCommands {
        */
       public Builder withTtl(long ttl) {
         command.ttl = ttl;
-        return this;
-      }
-
-      /**
-       * Sets the time to live.
-       *
-       * @param ttl The time to live.
-       * @param unit The time to live unit.
-       * @return The command builder.
-       */
-      public Builder withTtl(long ttl, TimeUnit unit) {
-        command.ttl = unit.toMillis(ttl);
         return this;
       }
     }

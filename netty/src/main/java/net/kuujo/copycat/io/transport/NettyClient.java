@@ -26,7 +26,6 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
-import net.kuujo.copycat.Listener;
 import net.kuujo.copycat.util.concurrent.ComposableFuture;
 import net.kuujo.copycat.util.concurrent.Context;
 import org.slf4j.Logger;
@@ -38,6 +37,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 
 /**
  * Netty client.
@@ -123,7 +123,7 @@ public class NettyClient implements Client {
    * Client handler.
    */
   private class ClientHandler extends NettyHandler {
-    private ClientHandler(Map<Channel, NettyConnection> connections, Listener<Connection> listener, Context context) {
+    private ClientHandler(Map<Channel, NettyConnection> connections, Consumer<Connection> listener, Context context) {
       super(connections, listener, context);
     }
 

@@ -56,7 +56,7 @@ class TypedEntryPool {
     }
 
     T entry = pool.acquire();
-    entry.setIndex(index);
+    entry.reset().setIndex(index);
     return entry;
   }
 

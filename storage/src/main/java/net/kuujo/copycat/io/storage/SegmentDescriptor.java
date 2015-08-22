@@ -41,7 +41,7 @@ import net.kuujo.copycat.io.HeapBuffer;
  * - {@code maxEntrySize} (32-bit signed integer) - The maximum length in bytes of entry values allowed by the segment.
  * - {@code entries} (32-bit signed integer) - The total number of expected entries in the segment. This is the final
  *   number of entries allowed within the segment both before and after compaction. This entry count is used to determine
- *   the size of internal indexing and deduplication facilities.
+ *   the count of internal indexing and deduplication facilities.
  * - {@code locked} (8-bit boolean) - A boolean indicating whether the segment is locked. Segments will be locked once
  *   all entries have been committed to the segment. The lock state of each segment is used to determine log compaction
  *   and recovery behavior.
@@ -133,7 +133,7 @@ final class SegmentDescriptor implements AutoCloseable {
   }
 
   /**
-   * Returns the maximum entry size for the segment.
+   * Returns the maximum entry count for the segment.
    *
    * @return The maximum number of bytes for each entry in the segment.
    */
@@ -142,9 +142,9 @@ final class SegmentDescriptor implements AutoCloseable {
   }
 
   /**
-   * Returns the maximum size of the segment.
+   * Returns the maximum count of the segment.
    *
-   * @return The maximum allowed size of the segment.
+   * @return The maximum allowed count of the segment.
    */
   public long maxSegmentSize() {
     return maxSegmentSize;
@@ -278,9 +278,9 @@ final class SegmentDescriptor implements AutoCloseable {
     }
 
     /**
-     * Sets the maximum entry size for the segment.
+     * Sets the maximum entry count for the segment.
      *
-     * @param maxEntrySize The maximum entry size for the segment.
+     * @param maxEntrySize The maximum entry count for the segment.
      * @return The segment descriptor builder.
      */
     public Builder withMaxEntrySize(int maxEntrySize) {
@@ -289,9 +289,9 @@ final class SegmentDescriptor implements AutoCloseable {
     }
 
     /**
-     * Sets maximum size of the segment.
+     * Sets maximum count of the segment.
      *
-     * @param maxSegmentSize The maximum size of the segment.
+     * @param maxSegmentSize The maximum count of the segment.
      * @return The segment descriptor builder.
      */
     public Builder withMaxSegmentSize(long maxSegmentSize) {

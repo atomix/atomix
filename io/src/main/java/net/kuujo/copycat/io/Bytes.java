@@ -34,9 +34,9 @@ public interface Bytes extends BytesInput<Bytes>, BytesOutput<Bytes>, AutoClosea
   static long DOUBLE = 8;
 
   /**
-   * Returns the size of the bytes.
+   * Returns the count of the bytes.
    *
-   * @return The size of the bytes.
+   * @return The count of the bytes.
    */
   long size();
 
@@ -44,10 +44,10 @@ public interface Bytes extends BytesInput<Bytes>, BytesOutput<Bytes>, AutoClosea
    * Resizes the bytes.
    * <p>
    * When the bytes are resized, underlying memory addresses in copies of this instance may no longer be valid. Additionally,
-   * if the {@code newSize} is smaller than the current {@code size} then some data may be lost during the resize. Use
+   * if the {@code newSize} is smaller than the current {@code count} then some data may be lost during the resize. Use
    * with caution.
    *
-   * @param newSize The size to which to resize this instance.
+   * @param newSize The count to which to resize this instance.
    * @return The resized bytes.
    */
   Bytes resize(long newSize);

@@ -28,11 +28,11 @@ public class DirectBytes extends NativeBytes {
    * Allocates a direct {@link java.nio.ByteBuffer} based byte array.
    * <p>
    * When the array is constructed, {@link net.kuujo.copycat.io.util.DirectMemoryAllocator} will be used to allocate
-   * {@code size} bytes of off-heap memory. Memory is accessed by the buffer directly via {@link sun.misc.Unsafe}.
+   * {@code count} bytes of off-heap memory. Memory is accessed by the buffer directly via {@link sun.misc.Unsafe}.
    *
-   * @param size The size of the buffer to allocate (in bytes).
+   * @param size The count of the buffer to allocate (in bytes).
    * @return The native buffer.
-   * @throws IllegalArgumentException If {@code size} is greater than the maximum allowed size for
+   * @throws IllegalArgumentException If {@code count} is greater than the maximum allowed count for
    *         a {@link java.nio.ByteBuffer} - {@code Integer.MAX_VALUE - 5}
    */
   public static DirectBytes allocate(long size) {

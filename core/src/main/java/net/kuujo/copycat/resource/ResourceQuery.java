@@ -16,9 +16,9 @@
 package net.kuujo.copycat.resource;
 
 import net.kuujo.copycat.util.BuilderPool;
-import net.kuujo.copycat.raft.ConsistencyLevel;
-import net.kuujo.copycat.raft.Operation;
-import net.kuujo.copycat.raft.Query;
+import net.kuujo.copycat.raft.protocol.ConsistencyLevel;
+import net.kuujo.copycat.raft.protocol.Operation;
+import net.kuujo.copycat.raft.protocol.Query;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 
 /**
@@ -42,6 +42,11 @@ public class ResourceQuery<T extends Query<U>, U> extends ResourceOperation<T, U
   @Override
   public ConsistencyLevel consistency() {
     return operation.consistency();
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[resource=%d, query=%s, consistency=%s]", getClass().getSimpleName(), resource, operation, consistency());
   }
 
   /**

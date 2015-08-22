@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.resource;
 
-import net.kuujo.copycat.raft.Operation;
+import net.kuujo.copycat.raft.protocol.Operation;
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.CopycatSerializable;
@@ -62,7 +62,7 @@ public abstract class ResourceOperation<T extends Operation<U>, U> implements Op
 
   @Override
   public String toString() {
-    return String.format("ResourceOperation[resource=%s, operation=%s]", resource, operation.getClass().getSimpleName());
+    return String.format("%s[resource=%s, operation=%s]", getClass().getSimpleName(), resource, operation.getClass().getSimpleName());
   }
 
 }

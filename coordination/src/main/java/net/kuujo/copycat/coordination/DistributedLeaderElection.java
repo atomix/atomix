@@ -15,33 +15,38 @@
  */
 package net.kuujo.copycat.coordination;
 
-import net.kuujo.copycat.Listener;
-import net.kuujo.copycat.ListenerContext;
 import net.kuujo.copycat.Resource;
-import net.kuujo.copycat.Stateful;
 import net.kuujo.copycat.coordination.state.LeaderElectionCommands;
 import net.kuujo.copycat.coordination.state.LeaderElectionState;
+import net.kuujo.copycat.raft.StateMachine;
 import net.kuujo.copycat.resource.ResourceContext;
+import net.kuujo.copycat.util.Listener;
 
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 
 /**
  * Asynchronous leader election resource.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Stateful(LeaderElectionState.class)
 public class DistributedLeaderElection extends Resource {
-  private final Set<Listener<Void>> listeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
+  private final Set<Consumer<Long>> listeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
-  public DistributedLeaderElection(ResourceContext context) {
-    super(context);
-    context.session().onReceive(v -> {
-      for (Listener<Void> listener : listeners) {
-        listener.accept(null);
+  @Override
+  protected Class<? extends StateMachine> stateMachine() {
+    return LeaderElectionState.class;
+  }
+
+  @Override
+  protected void open(ResourceContext context) {
+    super.open(context);
+    context.session().<Long>onReceive(epoch -> {
+      for (Consumer<Long> listener : listeners) {
+        listener.accept(epoch);
       }
     });
   }
@@ -52,30 +57,41 @@ public class DistributedLeaderElection extends Resource {
    * @param listener The listener to register.
    * @return A completable future to be completed with the listener context.
    */
-  public CompletableFuture<ListenerContext<Void>> onElection(Listener<Void> listener) {
+  public CompletableFuture<Listener<Long>> onElection(Consumer<Long> listener) {
     if (!listeners.isEmpty()) {
       listeners.add(listener);
-      return CompletableFuture.completedFuture(new ElectionListenerContext(listener));
+      return CompletableFuture.completedFuture(new ElectionListener(listener));
     }
 
     listeners.add(listener);
     return submit(LeaderElectionCommands.Listen.builder().build())
-      .thenApply(v -> new ElectionListenerContext(listener));
+      .thenApply(v -> new ElectionListener(listener));
+  }
+
+  /**
+   * Verifies that the client is the current leader.
+   *
+   * @param epoch The epoch for which to check if this client is the leader.
+   * @return A completable future to be completed with a boolean value indicating whether the
+   *         client is the current leader.
+   */
+  public CompletableFuture<Boolean> isLeader(long epoch) {
+    return submit(LeaderElectionCommands.IsLeader.builder().withEpoch(epoch).build());
   }
 
   /**
    * Change listener context.
    */
-  private class ElectionListenerContext implements ListenerContext<Void> {
-    private final Listener<Void> listener;
+  private class ElectionListener implements Listener<Long> {
+    private final Consumer<Long> listener;
 
-    private ElectionListenerContext(Listener<Void> listener) {
+    private ElectionListener(Consumer<Long> listener) {
       this.listener = listener;
     }
 
     @Override
-    public void accept(Void event) {
-      listener.accept(event);
+    public void accept(Long epoch) {
+      listener.accept(epoch);
     }
 
     @Override

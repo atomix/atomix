@@ -15,11 +15,10 @@
  */
 package net.kuujo.copycat.io.transport;
 
-import net.kuujo.copycat.Listener;
-
 import java.net.InetSocketAddress;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 /**
  * Transport server.
@@ -43,8 +42,8 @@ public interface Server {
   /**
    * Listens for connections on the server.
    * <p>
-   * Once the server has started listening on the provided {@code address}, {@link Listener#accept(Object)} will be
-   * called for the provided {@link net.kuujo.copycat.Listener} each time a new connection to the server is established.
+   * Once the server has started listening on the provided {@code address}, {@link Consumer#accept(Object)} will be
+   * called for the provided {@link Consumer} each time a new connection to the server is established.
    * The provided connection's {@link Connection#id()} will reflect the
    * {@link Client#id()} of the client that connected to the server and not the
    * {@link Server#id()} of the server itself.
@@ -55,12 +54,12 @@ public interface Server {
    * @param address The address on which to listen for connections.
    * @return A completable future to be called once the server has started listening for connections.
    */
-  CompletableFuture<Void> listen(InetSocketAddress address, Listener<Connection> listener);
+  CompletableFuture<Void> listen(InetSocketAddress address, Consumer<Connection> listener);
 
   /**
    * Closes the server.
    * <p>
-   * When the server is closed, any {@link Connection#closeListener(net.kuujo.copycat.Listener) close listeners} registered
+   * When the server is closed, any {@link Connection#closeListener(Consumer) close listeners} registered
    * on the server's {@link Connection}s will be invoked prior to shutdown.
    *
    * @return A completable future to be completed once the server is closed.

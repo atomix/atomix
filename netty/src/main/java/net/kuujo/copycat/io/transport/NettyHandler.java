@@ -22,13 +22,13 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
-import net.kuujo.copycat.Listener;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.SingleThreadContext;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 /**
  * Netty handler.
@@ -37,10 +37,10 @@ import java.util.UUID;
  */
 public abstract class NettyHandler extends ChannelInboundHandlerAdapter {
   private final Map<Channel, NettyConnection> connections;
-  private final Listener<Connection> listener;
+  private final Consumer<Connection> listener;
   private final Context context;
 
-  protected NettyHandler(Map<Channel, NettyConnection> connections, Listener<Connection> listener, Context context) {
+  protected NettyHandler(Map<Channel, NettyConnection> connections, Consumer<Connection> listener, Context context) {
     this.connections = connections;
     this.listener = listener;
     this.context = context;
@@ -122,7 +122,7 @@ public abstract class NettyHandler extends ChannelInboundHandlerAdapter {
       .writeBytes(idBytes);
     channel.writeAndFlush(buffer).addListener((ChannelFutureListener) channelFuture -> {
       setConnection(channel, connection);
-      this.context.execute(() -> listener.accept(connection));
+      this.context.executor().execute(() -> listener.accept(connection));
     });
   }
 
@@ -135,7 +135,7 @@ public abstract class NettyHandler extends ChannelInboundHandlerAdapter {
     request.readBytes(idBytes);
     NettyConnection connection = new NettyConnection(UUID.fromString(new String(idBytes, StandardCharsets.UTF_8)), channel, getOrCreateContext(channel));
     setConnection(channel, connection);
-    this.context.execute(() -> listener.accept(connection));
+    this.context.executor().execute(() -> listener.accept(connection));
   }
 
   /**

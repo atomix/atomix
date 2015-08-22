@@ -15,11 +15,9 @@
  */
 package net.kuujo.copycat.coordination.state;
 
-import net.kuujo.copycat.io.storage.Compaction;
-import net.kuujo.copycat.raft.server.Apply;
-import net.kuujo.copycat.raft.server.Commit;
-import net.kuujo.copycat.raft.server.Filter;
-import net.kuujo.copycat.raft.server.StateMachine;
+import net.kuujo.copycat.raft.Commit;
+import net.kuujo.copycat.raft.StateMachine;
+import net.kuujo.copycat.raft.StateMachineExecutor;
 
 import java.util.ArrayDeque;
 import java.util.Queue;
@@ -30,31 +28,24 @@ import java.util.Queue;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class LockState extends StateMachine {
-  private long version;
-  private long time;
   private Commit<LockCommands.Lock> lock;
   private final Queue<Commit<LockCommands.Lock>> queue = new ArrayDeque<>();
 
-  /**
-   * Updates the current time.
-   */
-  private void updateTime(Commit<?> commit) {
-    this.time = commit.timestamp();
+  @Override
+  public void configure(StateMachineExecutor executor) {
+    executor.register(LockCommands.Lock.class, this::lock);
+    executor.register(LockCommands.Unlock.class, this::unlock);
   }
 
   /**
    * Applies a lock commit.
    */
-  @Apply(LockCommands.Lock.class)
-  protected void applyLock(Commit<LockCommands.Lock> commit) {
-    updateTime(commit);
+  protected void lock(Commit<LockCommands.Lock> commit) {
     if (lock == null) {
       lock = commit;
       commit.session().publish(true);
-      version = commit.index();
     } else if (commit.operation().timeout() == 0) {
       commit.session().publish(false);
-      version = commit.index();
     } else {
       queue.add(commit);
     }
@@ -63,41 +54,25 @@ public class LockState extends StateMachine {
   /**
    * Applies an unlock commit.
    */
-  @Apply(LockCommands.Unlock.class)
-  protected void applyUnlock(Commit<LockCommands.Unlock> commit) {
-    updateTime(commit);
+  protected void unlock(Commit<LockCommands.Unlock> commit) {
+    if (lock == null) {
+      commit.clean();
+    } else {
+      lock.clean();
 
-    if (lock == null)
-      throw new IllegalStateException("not locked");
-    if (!lock.session().equals(commit.session()))
-      throw new IllegalStateException("not the lock holder");
+      if (!lock.session().equals(commit.session()))
+        throw new IllegalStateException("not the lock holder");
 
-    lock = queue.poll();
-    while (lock != null && (lock.operation().timeout() != -1 && lock.timestamp() + lock.operation().timeout() < time)) {
-      version = lock.index();
       lock = queue.poll();
+      while (lock != null && (lock.operation().timeout() != -1 && lock.time().toEpochMilli() + lock.operation().timeout() < context().time().instant().toEpochMilli())) {
+        lock.clean();
+        lock = queue.poll();
+      }
+
+      if (lock != null) {
+        lock.session().publish(true);
+      }
     }
-
-    if (lock != null) {
-      lock.session().publish(true);
-      version = lock.index();
-    }
-  }
-
-  /**
-   * Filters a lock commit.
-   */
-  @Filter(LockCommands.Lock.class)
-  protected boolean filterLock(Commit<LockCommands.Lock> commit, Compaction compaction) {
-    return commit.index() >= version;
-  }
-
-  /**
-   * Filters an unlock commit.
-   */
-  @Filter(LockCommands.Lock.class)
-  protected boolean filterUnlock(Commit<LockCommands.Unlock> commit, Compaction compaction) {
-    return commit.index() >= version;
   }
 
 }

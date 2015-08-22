@@ -22,14 +22,13 @@ import java.io.IOException;
 /**
  * Direct memory bit set.
  * <p>
- * The direct bit set performs bitwise operations on a fixed length {@link net.kuujo.copycat.io.HeapBytes} instance.
+ * The direct bit set performs bitwise operations on a fixed count {@link net.kuujo.copycat.io.HeapBytes} instance.
  * Currently, all bytes are {@link net.kuujo.copycat.io.HeapBytes}, but theoretically {@link net.kuujo.copycat.io.MappedBytes}
  * could be used for durability as well.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class BitArray implements AutoCloseable {
-  private static final int BITS_PER_OFFSET = 6;
 
   /**
    * Allocates a new direct bit set.
@@ -40,28 +39,35 @@ public class BitArray implements AutoCloseable {
   public static BitArray allocate(long bits) {
     if (!(bits > 0 & (bits & (bits - 1)) == 0))
       throw new IllegalArgumentException("size must be a power of 2");
-    return new BitArray(HeapBytes.allocate(Math.max(bits / 64, 8) + 8), bits);
+    return new BitArray(HeapBytes.allocate(Math.max(bits / 8 + 8, 8)), bits);
   }
 
   private final HeapBytes bytes;
-  private final long length;
   private long size;
+  private long count;
 
-  private BitArray(HeapBytes bytes, long length) {
-    this(bytes, 0, length);
+  private BitArray(HeapBytes bytes, long size) {
+    this(bytes, 0, size);
   }
 
-  private BitArray(HeapBytes bytes, long size, long length) {
+  private BitArray(HeapBytes bytes, long count, long size) {
     this.bytes = bytes;
-    this.length = length;
     this.size = size;
+    this.count = count;
   }
 
   /**
-   * Returns the offset for the given index.
+   * Returns the offset of the long that stores the bit for the given index.
    */
-  private int offset(long index) {
-    return (int) index >> BITS_PER_OFFSET;
+  private long offset(long index) {
+    return (index / 64) * 8;
+  }
+
+  /**
+   * Returns the position of the bit for the given index.
+   */
+  private long position(long index) {
+    return index % 64;
   }
 
   /**
@@ -71,12 +77,11 @@ public class BitArray implements AutoCloseable {
    * @return Indicates if the bit was changed.
    */
   public boolean set(long index) {
-    if (!(index < length))
+    if (!(index < size))
       throw new IndexOutOfBoundsException();
     if (!get(index)) {
-      int offset = offset(index);
-      bytes.writeLong(offset, bytes.readLong(offset) | (1L << index));
-      size++;
+      bytes.writeLong(offset(index), bytes.readLong(offset(index)) | (1l << position(index)));
+      count++;
       return true;
     }
     return false;
@@ -89,9 +94,9 @@ public class BitArray implements AutoCloseable {
    * @return Indicates whether the bit is set.
    */
   public boolean get(long index) {
-    if (!(index < length))
+    if (!(index < size))
       throw new IndexOutOfBoundsException();
-    return (bytes.readLong(offset(index)) & (1L << index)) != 0;
+    return (bytes.readLong(offset(index)) & (1l << (position(index)))) != 0;
   }
 
   /**
@@ -99,8 +104,8 @@ public class BitArray implements AutoCloseable {
    *
    * @return The total number of bits in the bit set.
    */
-  public long length() {
-    return length;
+  public long size() {
+    return size;
   }
 
   /**
@@ -108,8 +113,20 @@ public class BitArray implements AutoCloseable {
    *
    * @return The number of bits set.
    */
-  public long size() {
-    return size;
+  public long count() {
+    return count;
+  }
+
+  /**
+   * Resizes the bit array to a new count.
+   *
+   * @param size The new count.
+   * @return The resized bit array.
+   */
+  public BitArray resize(long size) {
+    bytes.resize(Math.max(size / 8 + 8, 8));
+    this.size = size;
+    return this;
   }
 
   /**
@@ -118,12 +135,17 @@ public class BitArray implements AutoCloseable {
    * @return The copied bit set.
    */
   public BitArray copy() {
-    return new BitArray(bytes.copy(), size);
+    return new BitArray(bytes.copy(), count);
   }
 
   @Override
   public void close() throws IOException {
     bytes.close();
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[size=%d]", getClass().getSimpleName(), size);
   }
 
 }

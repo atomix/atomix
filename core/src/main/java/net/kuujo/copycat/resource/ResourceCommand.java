@@ -15,10 +15,10 @@
  */
 package net.kuujo.copycat.resource;
 
-import net.kuujo.copycat.util.BuilderPool;
-import net.kuujo.copycat.raft.Command;
-import net.kuujo.copycat.raft.Operation;
 import net.kuujo.copycat.io.serializer.SerializeWith;
+import net.kuujo.copycat.raft.protocol.Command;
+import net.kuujo.copycat.raft.protocol.Operation;
+import net.kuujo.copycat.util.BuilderPool;
 
 /**
  * Resource command.
@@ -36,6 +36,11 @@ public class ResourceCommand<T extends Command<U>, U> extends ResourceOperation<
   @SuppressWarnings("unchecked")
   public static <T extends Command<U>, U> Builder<T, U> builder() {
     return Operation.builder(Builder.class, Builder::new);
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[resource=%d, command=%s]", getClass().getSimpleName(), resource, operation);
   }
 
   /**

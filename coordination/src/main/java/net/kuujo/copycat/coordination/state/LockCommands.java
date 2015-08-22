@@ -15,14 +15,14 @@
  */
 package net.kuujo.copycat.coordination.state;
 
-import net.kuujo.copycat.util.BuilderPool;
-import net.kuujo.copycat.raft.Command;
-import net.kuujo.copycat.raft.Operation;
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.CopycatSerializable;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.raft.protocol.Command;
+import net.kuujo.copycat.raft.protocol.Operation;
+import net.kuujo.copycat.util.BuilderPool;
 
 import java.util.concurrent.TimeUnit;
 
@@ -62,7 +62,7 @@ public class LockCommands {
    * Lock command.
    */
   @SerializeWith(id=512)
-  public static class Lock extends LockCommand<Boolean> {
+  public static class Lock extends LockCommand<Void> {
 
     /**
      * Returns a new lock command builder.
@@ -98,7 +98,7 @@ public class LockCommands {
     /**
      * Try lock builder.
      */
-    public static class Builder extends LockCommand.Builder<Builder, Lock, Boolean> {
+    public static class Builder extends LockCommand.Builder<Builder, Lock, Void> {
       public Builder(BuilderPool<Builder, Lock> pool) {
         super(pool);
       }

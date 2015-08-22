@@ -17,7 +17,6 @@ package net.kuujo.copycat.io.transport;
 
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.io.transport.*;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.SingleThreadContext;
 import org.testng.annotations.Test;
@@ -42,13 +41,9 @@ public class LocalTransportTest extends ConcurrentTestCase {
   public void testSendReceive() throws Throwable {
     LocalServerRegistry registry = new LocalServerRegistry();
 
-    Transport clientTransport = LocalTransport.builder()
-      .withRegistry(registry)
-      .build();
+    Transport clientTransport = new LocalTransport(registry);
 
-    Transport serverTransport = LocalTransport.builder()
-      .withRegistry(registry)
-      .build();
+    Transport serverTransport = new LocalTransport(registry);
 
     Server server = serverTransport.server(UUID.randomUUID());
     Client client = clientTransport.client(UUID.randomUUID());
@@ -56,7 +51,7 @@ public class LocalTransportTest extends ConcurrentTestCase {
     Context context = new SingleThreadContext("test-thread-%d", new Serializer());
 
     expectResume();
-    context.execute(() -> {
+    context.executor().execute(() -> {
       try {
         server.listen(new InetSocketAddress(InetAddress.getByName("localhost"), 5555), connection -> {
           connection.<String, String>handler(String.class, message -> {
@@ -71,7 +66,7 @@ public class LocalTransportTest extends ConcurrentTestCase {
     await();
 
     expectResume();
-    context.execute(() -> {
+    context.executor().execute(() -> {
       try {
         client.connect(new InetSocketAddress(InetAddress.getByName("localhost"), 5555)).thenAccept(connection -> {
           connection.send("Hello world!").thenAccept(response -> {

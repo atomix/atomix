@@ -15,15 +15,15 @@
  */
 package net.kuujo.copycat.manager;
 
-import net.kuujo.copycat.util.BuilderPool;
-import net.kuujo.copycat.raft.Command;
-import net.kuujo.copycat.raft.Operation;
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.SerializationException;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.raft.server.StateMachine;
+import net.kuujo.copycat.raft.StateMachine;
+import net.kuujo.copycat.raft.protocol.Command;
+import net.kuujo.copycat.raft.protocol.Operation;
+import net.kuujo.copycat.util.BuilderPool;
 
 /**
  * Create resource command.
@@ -53,9 +53,9 @@ public class CreateResource extends PathOperation<Long> implements Command<Long>
   }
 
   /**
-   * Returns the resource class.
+   * Returns the resource state machine class.
    *
-   * @return The resource class.
+   * @return The resource state machine class.
    */
   public Class<? extends StateMachine> type() {
     return type;
@@ -95,10 +95,10 @@ public class CreateResource extends PathOperation<Long> implements Command<Long>
     }
 
     /**
-     * Sets the command type.
+     * Sets the resource state machine type.
      *
-     * @param type The command type.
-     * @return The command builder.
+     * @param type The resource state machine type.
+     * @return The create resource command builder.
      */
     public Builder withType(Class<? extends StateMachine> type) {
       operation.type = type;

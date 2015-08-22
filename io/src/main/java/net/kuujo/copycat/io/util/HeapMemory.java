@@ -29,9 +29,9 @@ public class HeapMemory implements Memory {
   /**
    * Allocates heap memory via {@link HeapMemoryAllocator}.
    *
-   * @param size The size of the memory to allocate.
+   * @param size The count of the memory to allocate.
    * @return The allocated memory.
-   * @throws IllegalArgumentException If {@code size} is greater than the maximum allowed size for
+   * @throws IllegalArgumentException If {@code count} is greater than the maximum allowed count for
    *         an array on the Java heap - {@code Integer.MAX_VALUE - 5}
    */
   public static HeapMemory allocate(long size) {

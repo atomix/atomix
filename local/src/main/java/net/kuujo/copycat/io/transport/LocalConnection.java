@@ -15,10 +15,9 @@
  */
 package net.kuujo.copycat.io.transport;
 
-import net.kuujo.copycat.Listener;
-import net.kuujo.copycat.ListenerContext;
-import net.kuujo.copycat.Listeners;
 import net.kuujo.copycat.io.Buffer;
+import net.kuujo.copycat.util.Listener;
+import net.kuujo.copycat.util.Listeners;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.Futures;
 
@@ -27,6 +26,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 
 /**
  * Local connection.
@@ -88,7 +88,7 @@ public class LocalConnection implements Connection {
         future.completeExceptionally(error);
       }
       buffer.release();
-    }, context);
+    }, context.executor());
     return future;
   }
 
@@ -103,7 +103,7 @@ public class LocalConnection implements Connection {
     if (holder != null) {
       MessageHandler<Object, U> handler = holder.handler;
       CompletableFuture<U> future = new CompletableFuture<>();
-      holder.context.execute(() -> {
+      holder.context.executor().execute(() -> {
         handler.handle(message).whenComplete((result, error) -> {
           if (error == null) {
             future.complete(result);
@@ -128,12 +128,12 @@ public class LocalConnection implements Connection {
   }
 
   @Override
-  public ListenerContext<Throwable> exceptionListener(Listener<Throwable> listener) {
+  public Listener<Throwable> exceptionListener(Consumer<Throwable> listener) {
     return exceptionListeners.add(listener);
   }
 
   @Override
-  public ListenerContext<Connection> closeListener(Listener<Connection> listener) {
+  public Listener<Connection> closeListener(Consumer<Connection> listener) {
     return closeListeners.add(listener);
   }
 
@@ -141,12 +141,7 @@ public class LocalConnection implements Connection {
   public CompletableFuture<Void> close() {
     doClose();
     connection.doClose();
-
-    CompletableFuture<Void> future = new CompletableFuture<>();
-    getContext().execute(() -> {
-      future.complete(null);
-    });
-    return future;
+    return getContext().execute(() -> null);
   }
 
   /**
@@ -156,8 +151,8 @@ public class LocalConnection implements Connection {
     if (connections != null)
       connections.remove(this);
 
-    for (Listener<Connection> closeListener : closeListeners) {
-      context.execute(() -> closeListener.accept(this));
+    for (Consumer<Connection> closeListener : closeListeners) {
+      context.executor().execute(() -> closeListener.accept(this));
     }
   }
 

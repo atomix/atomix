@@ -27,7 +27,7 @@ import java.nio.file.Files;
  * Mapped bytes.
  * <p>
  * Mapped bytes provide direct access to memory from allocated by a {@link java.nio.MappedByteBuffer}. Memory is allocated
- * by opening and expanding the given {@link java.io.File} to the desired {@code size} and mapping the file contents into memory
+ * by opening and expanding the given {@link java.io.File} to the desired {@code count} and mapping the file contents into memory
  * via {@link java.nio.channels.FileChannel#map(java.nio.channels.FileChannel.MapMode, long, long)}.
  * <p>
  * Closing the bytes via {@link Bytes#close()} will result in {@link Bytes#flush()}
@@ -40,14 +40,14 @@ public class MappedBytes extends NativeBytes {
   /**
    * Allocates a mapped buffer in {@link java.nio.channels.FileChannel.MapMode#READ_WRITE} mode.
    * <p>
-   * Memory will be mapped by opening and expanding the given {@link java.io.File} to the desired {@code size} and mapping the
+   * Memory will be mapped by opening and expanding the given {@link java.io.File} to the desired {@code count} and mapping the
    * file contents into memory via {@link java.nio.channels.FileChannel#map(java.nio.channels.FileChannel.MapMode, long, long)}.
    *
    * @param file The file to map into memory. If the file doesn't exist it will be automatically created.
-   * @param size The size of the buffer to allocate (in bytes).
+   * @param size The count of the buffer to allocate (in bytes).
    * @return The mapped buffer.
    * @throws NullPointerException If {@code file} is {@code null}
-   * @throws IllegalArgumentException If {@code size} is greater than {@link MappedMemory#MAX_SIZE}
+   * @throws IllegalArgumentException If {@code count} is greater than {@link MappedMemory#MAX_SIZE}
    *
    * @see MappedBytes#allocate(java.io.File, java.nio.channels.FileChannel.MapMode, long)
    */
@@ -58,15 +58,15 @@ public class MappedBytes extends NativeBytes {
   /**
    * Allocates a mapped buffer.
    * <p>
-   * Memory will be mapped by opening and expanding the given {@link java.io.File} to the desired {@code size} and mapping the
+   * Memory will be mapped by opening and expanding the given {@link java.io.File} to the desired {@code count} and mapping the
    * file contents into memory via {@link java.nio.channels.FileChannel#map(java.nio.channels.FileChannel.MapMode, long, long)}.
    *
    * @param file The file to map into memory. If the file doesn't exist it will be automatically created.
    * @param mode The mode with which to map the file.
-   * @param size The size of the buffer to allocate (in bytes).
+   * @param size The count of the buffer to allocate (in bytes).
    * @return The mapped buffer.
    * @throws NullPointerException If {@code file} is {@code null}
-   * @throws IllegalArgumentException If {@code size} is greater than {@link MappedMemory#MAX_SIZE}
+   * @throws IllegalArgumentException If {@code count} is greater than {@link MappedMemory#MAX_SIZE}
    *
    * @see MappedBytes#allocate(java.io.File, long)
    */

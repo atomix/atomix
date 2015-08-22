@@ -52,7 +52,7 @@ public class DirectBuffer extends NativeBuffer {
    *
    * @param capacity The capacity of the buffer to allocate (in bytes).
    * @return The direct buffer.
-   * @throws IllegalArgumentException If {@code capacity} is greater than the maximum allowed size for
+   * @throws IllegalArgumentException If {@code capacity} is greater than the maximum allowed count for
    *         a {@link java.nio.ByteBuffer} - {@code Integer.MAX_VALUE - 5}
    *
    * @see DirectBuffer#allocate()
@@ -74,7 +74,7 @@ public class DirectBuffer extends NativeBuffer {
    * @param maxCapacity The maximum capacity of the buffer.
    * @return The direct buffer.
    * @throws IllegalArgumentException If {@code capacity} or {@code maxCapacity} is greater than the maximum
-   *         allowed size for a {@link java.nio.ByteBuffer} - {@code Integer.MAX_VALUE - 5}
+   *         allowed count for a {@link java.nio.ByteBuffer} - {@code Integer.MAX_VALUE - 5}
    *
    * @see DirectBuffer#allocate()
    * @see DirectBuffer#allocate(long)

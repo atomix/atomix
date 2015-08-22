@@ -15,13 +15,14 @@
  */
 package net.kuujo.copycat.coordination.state;
 
-import net.kuujo.copycat.util.BuilderPool;
-import net.kuujo.copycat.raft.Command;
-import net.kuujo.copycat.raft.Operation;
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.CopycatSerializable;
+import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.raft.protocol.Command;
+import net.kuujo.copycat.raft.protocol.Operation;
+import net.kuujo.copycat.util.BuilderPool;
 
 /**
  * Topic commands.
@@ -37,6 +38,15 @@ public class TopicCommands {
    * Abstract topic command.
    */
   public static abstract class TopicCommand<V> implements Command<V>, CopycatSerializable {
+    @Override
+    public void writeObject(BufferOutput buffer, Serializer serializer) {
+
+    }
+
+    @Override
+    public void readObject(BufferInput buffer, Serializer serializer) {
+
+    }
 
     /**
      * Base map command builder.
@@ -49,8 +59,71 @@ public class TopicCommands {
   }
 
   /**
+   * Listen command.
+   */
+  @SerializeWith(id=515)
+  public static class Listen extends TopicCommand<Void> {
+
+    /**
+     * Returns a new listen command builder.
+     *
+     * @return A new listen command builder.
+     */
+    @SuppressWarnings("unchecked")
+    public static Builder builder() {
+      return Operation.builder(Builder.class, Builder::new);
+    }
+
+    /**
+     * Listen command builder.
+     */
+    public static class Builder extends TopicCommand.Builder<Builder, Listen, Void> {
+      public Builder(BuilderPool<Builder, Listen> pool) {
+        super(pool);
+      }
+
+      @Override
+      protected Listen create() {
+        return new Listen();
+      }
+    }
+  }
+
+  /**
+   * Unlisten command.
+   */
+  @SerializeWith(id=516)
+  public static class Unlisten extends TopicCommand<Void> {
+
+    /**
+     * Returns a new unlisten command builder.
+     *
+     * @return A new unlisten command builder.
+     */
+    @SuppressWarnings("unchecked")
+    public static Builder builder() {
+      return Operation.builder(Builder.class, Builder::new);
+    }
+
+    /**
+     * Unlisten command builder.
+     */
+    public static class Builder extends TopicCommand.Builder<Builder, Unlisten, Void> {
+      public Builder(BuilderPool<Builder, Unlisten> pool) {
+        super(pool);
+      }
+
+      @Override
+      protected Unlisten create() {
+        return new Unlisten();
+      }
+    }
+  }
+
+  /**
    * Publish command.
    */
+  @SerializeWith(id=517)
   public static class Publish<T> extends TopicCommand<Void> {
 
     /**
@@ -108,46 +181,6 @@ public class TopicCommands {
       @Override
       protected Publish<T> create() {
         return new Publish<>();
-      }
-    }
-  }
-
-  /**
-   * Subscribe command.
-   */
-  public static class Subscribe extends TopicCommand<Void> {
-
-    /**
-     * Returns a new publish command builder.
-     *
-     * @return The publish command builder.
-     */
-    @SuppressWarnings("unchecked")
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
-    }
-
-    @Override
-    public void writeObject(BufferOutput buffer, Serializer serializer) {
-
-    }
-
-    @Override
-    public void readObject(BufferInput buffer, Serializer serializer) {
-
-    }
-
-    /**
-     * Publish command builder.
-     */
-    public static class Builder extends TopicCommand.Builder<Builder, Subscribe, Void> {
-      public Builder(BuilderPool<Builder, Subscribe> pool) {
-        super(pool);
-      }
-
-      @Override
-      protected Subscribe create() {
-        return new Subscribe();
       }
     }
   }

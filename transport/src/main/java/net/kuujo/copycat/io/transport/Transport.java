@@ -71,10 +71,4 @@ public interface Transport {
    */
   CompletableFuture<Void> close();
 
-  /**
-   * Transport builder.
-   */
-  static abstract class Builder extends net.kuujo.copycat.util.Builder<Transport> {
-  }
-
 }

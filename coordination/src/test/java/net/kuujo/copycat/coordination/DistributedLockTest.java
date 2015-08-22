@@ -17,16 +17,19 @@ package net.kuujo.copycat.coordination;
 
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import net.kuujo.copycat.Copycat;
-import net.kuujo.copycat.CopycatServer;
-import net.kuujo.copycat.Node;
-import net.kuujo.copycat.io.storage.Log;
-import net.kuujo.copycat.io.storage.StorageLevel;
-import net.kuujo.copycat.raft.Member;
-import net.kuujo.copycat.raft.Members;
+import net.kuujo.copycat.CopycatReplica;
+import net.kuujo.copycat.io.storage.Storage;
 import net.kuujo.copycat.io.transport.LocalServerRegistry;
 import net.kuujo.copycat.io.transport.LocalTransport;
+import net.kuujo.copycat.raft.Member;
+import net.kuujo.copycat.raft.Members;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,6 +41,7 @@ import java.util.List;
 @Test
 @SuppressWarnings("unchecked")
 public class DistributedLockTest extends ConcurrentTestCase {
+  private static final File directory = new File("test-logs");
 
   /**
    * Tests locking and unlocking a lock.
@@ -48,8 +52,7 @@ public class DistributedLockTest extends ConcurrentTestCase {
 
     Copycat copycat = servers.get(0);
 
-    Node node = copycat.create("/test").get();
-    DistributedLock lock = node.create(DistributedLock.class).get();
+    DistributedLock lock = copycat.create("test", DistributedLock.class).get();
 
     expectResume();
     lock.lock().thenRun(this::resume);
@@ -72,25 +75,17 @@ public class DistributedLockTest extends ConcurrentTestCase {
 
     Members.Builder builder = Members.builder();
     for (int i = 1; i <= nodes; i++) {
-      builder.addMember(Member.builder()
-        .withId(i)
-        .withHost("localhost")
-        .withPort(5000 + i)
-        .build());
+      builder.addMember(new Member(i, "localhost", 5000 + i));
     }
 
     Members members = builder.build();
 
     for (int i = 1; i <= nodes; i++) {
-      Copycat copycat = CopycatServer.builder()
+      Copycat copycat = CopycatReplica.builder()
         .withMemberId(i)
         .withMembers(members)
-        .withTransport(LocalTransport.builder()
-          .withRegistry(registry)
-          .build())
-        .withLog(Log.builder()
-          .withStorageLevel(StorageLevel.MEMORY)
-          .build())
+        .withTransport(new LocalTransport(registry))
+        .withStorage(new Storage(new File(directory, "" + i)))
         .build();
 
       copycat.open().thenRun(this::resume);
@@ -101,6 +96,31 @@ public class DistributedLockTest extends ConcurrentTestCase {
     await();
 
     return active;
+  }
+
+  @BeforeMethod
+  @AfterMethod
+  public void clearTests() throws IOException {
+    deleteDirectory(directory);
+  }
+
+  /**
+   * Deletes a directory recursively.
+   */
+  private void deleteDirectory(File directory) throws IOException {
+    if (directory.exists()) {
+      File[] files = directory.listFiles();
+      if (files != null) {
+        for (File file : files) {
+          if (file.isDirectory()) {
+            deleteDirectory(file);
+          } else {
+            Files.delete(file.toPath());
+          }
+        }
+      }
+      Files.delete(directory.toPath());
+    }
   }
 
 }
