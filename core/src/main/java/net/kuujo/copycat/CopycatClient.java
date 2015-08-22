@@ -15,9 +15,6 @@
  */
 package net.kuujo.copycat;
 
-import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.io.transport.Transport;
-import net.kuujo.copycat.raft.Members;
 import net.kuujo.copycat.raft.RaftClient;
 
 import java.time.Duration;
@@ -41,7 +38,7 @@ public class CopycatClient extends Copycat {
     return new Builder();
   }
 
-  private CopycatClient(RaftClient client) {
+  public CopycatClient(RaftClient client) {
     super(client);
   }
 
@@ -49,36 +46,7 @@ public class CopycatClient extends Copycat {
    * Client builder.
    */
   public static class Builder extends Copycat.Builder<CopycatClient> {
-    private RaftClient.Builder builder = RaftClient.builder();
-
     private Builder() {
-    }
-
-    @Override
-    protected void reset() {
-      builder = RaftClient.builder();
-    }
-
-    /**
-     * Sets the client transport.
-     *
-     * @param transport The client transport.
-     * @return The client builder.
-     */
-    public Builder withTransport(Transport transport) {
-      builder.withTransport(transport);
-      return this;
-    }
-
-    /**
-     * Sets the client serializer.
-     *
-     * @param serializer The client serializer.
-     * @return The client builder.
-     */
-    public Builder withSerializer(Serializer serializer) {
-      builder.withSerializer(serializer);
-      return this;
     }
 
     /**
@@ -88,24 +56,13 @@ public class CopycatClient extends Copycat {
      * @return The client builder.
      */
     public Builder withKeepAliveInterval(Duration keepAliveInterval) {
-      builder.withKeepAliveInterval(keepAliveInterval);
-      return this;
-    }
-
-    /**
-     * Sets the client seed members.
-     *
-     * @param members The client seed members.
-     * @return The client builder.
-     */
-    public Builder withMembers(Members members) {
-      builder.withMembers(members);
+      clientBuilder.withKeepAliveInterval(keepAliveInterval);
       return this;
     }
 
     @Override
     public CopycatClient build() {
-      return new CopycatClient(builder.build());
+      return new CopycatClient(clientBuilder.build());
     }
   }
 

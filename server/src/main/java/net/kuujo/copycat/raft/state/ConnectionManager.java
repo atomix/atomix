@@ -15,14 +15,10 @@
  */
 package net.kuujo.copycat.raft.state;
 
-import net.kuujo.copycat.raft.Member;
 import net.kuujo.copycat.io.transport.Client;
 import net.kuujo.copycat.io.transport.Connection;
-import net.kuujo.copycat.util.concurrent.Futures;
+import net.kuujo.copycat.raft.Member;
 
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -58,14 +54,7 @@ class ConnectionManager {
    * @return A completable future to be called once the connection has been created.
    */
   private CompletableFuture<Connection> createConnection(Member member) {
-    InetSocketAddress address;
-    try {
-      address = new InetSocketAddress(InetAddress.getByName(member.host()), member.port());
-    } catch (UnknownHostException e) {
-      return Futures.exceptionalFuture(e);
-    }
-
-    return client.connect(address).thenApply(connection -> {
+    return client.connect(member.address()).thenApply(connection -> {
       connections.put(member.id(), connection);
       return connection;
     });

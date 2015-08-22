@@ -17,7 +17,7 @@ package net.kuujo.copycat.collections;
 
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import net.kuujo.copycat.Copycat;
-import net.kuujo.copycat.CopycatServer;
+import net.kuujo.copycat.CopycatReplica;
 import net.kuujo.copycat.io.storage.Storage;
 import net.kuujo.copycat.io.transport.LocalServerRegistry;
 import net.kuujo.copycat.io.transport.LocalTransport;
@@ -176,22 +176,16 @@ public class DistributedMapTest extends ConcurrentTestCase {
 
     Members.Builder builder = Members.builder();
     for (int i = 1; i <= nodes; i++) {
-      builder.addMember(Member.builder()
-        .withId(i)
-        .withHost("localhost")
-        .withPort(5000 + i)
-        .build());
+      builder.addMember(new Member(i, "localhost", 5000 + i));
     }
 
     Members members = builder.build();
 
     for (int i = 1; i <= nodes; i++) {
-      Copycat copycat = CopycatServer.builder()
+      Copycat copycat = CopycatReplica.builder()
         .withMemberId(i)
         .withMembers(members)
-        .withTransport(LocalTransport.builder()
-          .withRegistry(registry)
-          .build())
+        .withTransport(new LocalTransport(registry))
         .withStorage(Storage.builder()
           .withDirectory(new File(directory, "" + i))
           .build())

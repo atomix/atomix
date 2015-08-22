@@ -41,9 +41,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
@@ -103,13 +100,6 @@ public class ServerContext implements Managed<Void> {
     Member member = members.member(memberId);
     if (member == null) {
       throw new ConfigurationException("active member must be listed in members list");
-    }
-
-    if (member.host() == null) {
-      throw new ConfigurationException("member host not configured");
-    }
-    if (member.port() <= 0) {
-      throw new ConfigurationException("member port not configured");
     }
 
     this.transport = transport;
@@ -729,13 +719,6 @@ public class ServerContext implements Managed<Void> {
     if (open)
       return CompletableFuture.completedFuture(null);
 
-    final InetSocketAddress address;
-    try {
-      address = new InetSocketAddress(InetAddress.getByName(member.host()), member.port());
-    } catch (UnknownHostException e) {
-      return Futures.exceptionalFuture(e);
-    }
-
     context = new SingleThreadContext("copycat-server-" + member.id(), serializer);
 
     openFuture = new CompletableFuture<>();
@@ -746,7 +729,7 @@ public class ServerContext implements Managed<Void> {
       server = transport.server(id);
       connections = new ConnectionManager(transport.client(id));
 
-      server.listen(address, this::handleConnect).thenRun(() -> {
+      server.listen(member.address(), this::handleConnect).thenRun(() -> {
         // Open the log.
         log = storage.open();
 

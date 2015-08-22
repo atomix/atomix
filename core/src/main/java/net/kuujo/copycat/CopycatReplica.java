@@ -40,7 +40,7 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class CopycatServer extends Copycat {
+public class CopycatReplica extends Copycat {
 
   /**
    * Returns a new Copycat server builder.
@@ -53,7 +53,7 @@ public class CopycatServer extends Copycat {
 
   private final RaftServer server;
 
-  private CopycatServer(RaftClient client, RaftServer server) {
+  public CopycatReplica(RaftClient client, RaftServer server) {
     super(client);
     this.server = server;
   }
@@ -128,8 +128,7 @@ public class CopycatServer extends Copycat {
   /**
    * Copycat builder.
    */
-  public static class Builder extends Copycat.Builder<CopycatServer> {
-    private RaftClient.Builder clientBuilder = RaftClient.builder();
+  public static class Builder extends Copycat.Builder<CopycatReplica> {
     private RaftServer.Builder serverBuilder = RaftServer.builder();
     private int memberId;
     private Members members;
@@ -140,7 +139,7 @@ public class CopycatServer extends Copycat {
 
     @Override
     protected void reset() {
-      clientBuilder = RaftClient.builder();
+      super.reset();
       serverBuilder = RaftServer.builder();
       localRegistry = new LocalServerRegistry();
     }
@@ -152,12 +151,8 @@ public class CopycatServer extends Copycat {
      * @return The client builder.
      */
     public Builder withTransport(Transport transport) {
-      clientBuilder.withTransport(LocalTransport.builder()
-        .withRegistry(localRegistry)
-        .build());
-      serverBuilder.withTransport(new CombinedTransport(LocalTransport.builder()
-        .withRegistry(localRegistry)
-        .build(), transport));
+      clientBuilder.withTransport(new LocalTransport(localRegistry));
+      serverBuilder.withTransport(new CombinedTransport(new LocalTransport(localRegistry), transport));
       return this;
     }
 
@@ -257,7 +252,7 @@ public class CopycatServer extends Copycat {
     }
 
     @Override
-    public CopycatServer build() {
+    public CopycatReplica build() {
       if (memberId <= 0)
         throw new ConfigurationException("no memberId configured");
       if (members == null)
@@ -266,7 +261,7 @@ public class CopycatServer extends Copycat {
       ThreadFactory threadFactory = new CopycatThreadFactory("copycat-resource-%d");
       ScheduledExecutorService executor = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), threadFactory);
 
-      // Construct the underlying Raft client. Because the CopycatServer host both a RaftClient and RaftServer,
+      // Construct the underlying Raft client. Because the CopycatReplica host both a RaftClient and RaftServer,
       // we ensure the client connects directly to the local server by exposing only the local member to it.
       // This ensures that we don't incur unnecessary network traffic by sending operations to a remote server
       // when a local server is already available in the same JVM.
@@ -282,7 +277,7 @@ public class CopycatServer extends Copycat {
         .withStateMachine(new ResourceManager(executor))
         .build();
 
-      return new CopycatServer(client, server);
+      return new CopycatReplica(client, server);
     }
   }
 

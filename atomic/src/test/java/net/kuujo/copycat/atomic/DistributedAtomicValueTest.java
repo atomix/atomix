@@ -17,7 +17,7 @@ package net.kuujo.copycat.atomic;
 
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import net.kuujo.copycat.Copycat;
-import net.kuujo.copycat.CopycatServer;
+import net.kuujo.copycat.CopycatReplica;
 import net.kuujo.copycat.io.storage.Storage;
 import net.kuujo.copycat.io.transport.LocalServerRegistry;
 import net.kuujo.copycat.io.transport.LocalTransport;
@@ -103,49 +103,31 @@ public class DistributedAtomicValueTest extends ConcurrentTestCase {
     LocalServerRegistry registry = new LocalServerRegistry();
 
     Members initialMembers = Members.builder()
-      .addMember(Member.builder()
-        .withId(1)
-        .withHost("localhost")
-        .withPort(5001)
-        .build())
-      .addMember(Member.builder()
-        .withId(2)
-        .withHost("localhost")
-        .withPort(5002)
-        .build())
-      .addMember(Member.builder()
-        .withId(3)
-        .withHost("localhost")
-        .withPort(5003)
-        .build())
+      .addMember(new Member(1, "localhost", 5001))
+      .addMember(new Member(2, "localhost", 5002))
+      .addMember(new Member(3, "localhost", 5003))
       .build();
 
-    Copycat copycat1 = CopycatServer.builder()
+    Copycat copycat1 = CopycatReplica.builder()
       .withMemberId(1)
       .withMembers(initialMembers)
-      .withTransport(LocalTransport.builder()
-        .withRegistry(registry)
-        .build())
+      .withTransport(new LocalTransport(registry))
       .withStorage(Storage.builder()
         .withDirectory(new File(directory, "1"))
         .build())
       .build();
-    Copycat copycat2 = CopycatServer.builder()
+    Copycat copycat2 = CopycatReplica.builder()
       .withMemberId(2)
       .withMembers(initialMembers)
-      .withTransport(LocalTransport.builder()
-        .withRegistry(registry)
-        .build())
+      .withTransport(new LocalTransport(registry))
       .withStorage(Storage.builder()
         .withDirectory(new File(directory, "2"))
         .build())
       .build();
-    Copycat copycat3 = CopycatServer.builder()
+    Copycat copycat3 = CopycatReplica.builder()
       .withMemberId(3)
       .withMembers(initialMembers)
-      .withTransport(LocalTransport.builder()
-        .withRegistry(registry)
-        .build())
+      .withTransport(new LocalTransport(registry))
       .withStorage(Storage.builder()
         .withDirectory(new File(directory, "3"))
         .build())
@@ -158,34 +140,16 @@ public class DistributedAtomicValueTest extends ConcurrentTestCase {
     await();
 
     Members updatedMembers = Members.builder()
-      .addMember(Member.builder()
-        .withId(1)
-        .withHost("localhost")
-        .withPort(5001)
-        .build())
-      .addMember(Member.builder()
-        .withId(2)
-        .withHost("localhost")
-        .withPort(5002)
-        .build())
-      .addMember(Member.builder()
-        .withId(3)
-        .withHost("localhost")
-        .withPort(5003)
-        .build())
-      .addMember(Member.builder()
-        .withId(4)
-        .withHost("localhost")
-        .withPort(5004)
-        .build())
+      .addMember(new Member(1, "localhost", 5001))
+      .addMember(new Member(2, "localhost", 5002))
+      .addMember(new Member(3, "localhost", 5003))
+      .addMember(new Member(4, "localhost", 5004))
       .build();
 
-    Copycat copycat4 = CopycatServer.builder()
+    Copycat copycat4 = CopycatReplica.builder()
       .withMemberId(4)
       .withMembers(updatedMembers)
-      .withTransport(LocalTransport.builder()
-        .withRegistry(registry)
-        .build())
+      .withTransport(new LocalTransport(registry))
       .withStorage(Storage.builder()
         .withDirectory(new File(directory, "4"))
         .build())
@@ -250,22 +214,16 @@ public class DistributedAtomicValueTest extends ConcurrentTestCase {
 
     Members.Builder builder = Members.builder();
     for (int i = 1; i <= nodes; i++) {
-      builder.addMember(Member.builder()
-        .withId(i)
-        .withHost("localhost")
-        .withPort(5000 + i)
-        .build());
+      builder.addMember(new Member(i, "localhost", 5000 + i));
     }
 
     Members members = builder.build();
 
     for (int i = 1; i <= nodes; i++) {
-      Copycat copycat = CopycatServer.builder()
+      Copycat copycat = CopycatReplica.builder()
         .withMemberId(i)
         .withMembers(members)
-        .withTransport(LocalTransport.builder()
-          .withRegistry(registry)
-          .build())
+        .withTransport(new LocalTransport(registry))
         .withStorage(Storage.builder()
           .withDirectory(new File(directory, "" + i))
           .build())

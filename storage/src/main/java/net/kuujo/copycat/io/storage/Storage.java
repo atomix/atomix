@@ -47,7 +47,7 @@ public class Storage {
   private static final int DEFAULT_MAX_ENTRY_SIZE = 1024 * 8;
   private static final int DEFAULT_MAX_SEGMENT_SIZE = 1024 * 1024 * 32;
   private static final int DEFAULT_MAX_ENTRIES_PER_SEGMENT = (int) (Math.pow(2, 31) - 1) / 8 - 16;
-  private static final int DEFAULT_CLEANER_THREADS = 4;
+  private static final int DEFAULT_CLEANER_THREADS = Runtime.getRuntime().availableProcessors() / 2;
 
   private Serializer serializer = new Serializer();
   private File directory = new File(DEFAULT_DIRECTORY);
@@ -56,7 +56,36 @@ public class Storage {
   private int maxEntriesPerSegment = DEFAULT_MAX_ENTRIES_PER_SEGMENT;
   private int cleanerThreads = DEFAULT_CLEANER_THREADS;
 
-  private Storage() {
+  public Storage() {
+  }
+
+  public Storage(String directory) {
+    this(directory != null ? new File(directory) : null);
+  }
+
+  public Storage(File directory) {
+    if (directory == null)
+      throw new NullPointerException("directory cannot be null");
+    this.directory = directory;
+  }
+
+  public Storage(Serializer serializer) {
+    if (serializer == null)
+      throw new NullPointerException("serializer cannot be null");
+    this.serializer = serializer;
+  }
+
+  public Storage(String directory, Serializer serializer) {
+    this(directory != null ? new File(directory) : null, serializer);
+  }
+
+  public Storage(File directory, Serializer serializer) {
+    if (directory == null)
+      throw new NullPointerException("directory cannot be null");
+    if (serializer == null)
+      throw new NullPointerException("serializer cannot be null");
+    this.directory = directory;
+    this.serializer = serializer;
   }
 
   /**

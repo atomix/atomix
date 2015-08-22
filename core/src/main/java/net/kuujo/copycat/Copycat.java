@@ -15,9 +15,12 @@
  */
 package net.kuujo.copycat;
 
+import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.io.transport.Transport;
 import net.kuujo.copycat.manager.CreateResource;
 import net.kuujo.copycat.manager.GetResource;
 import net.kuujo.copycat.manager.ResourceExists;
+import net.kuujo.copycat.raft.Members;
 import net.kuujo.copycat.raft.RaftClient;
 import net.kuujo.copycat.raft.StateMachine;
 import net.kuujo.copycat.raft.protocol.Command;
@@ -147,6 +150,48 @@ public abstract class Copycat implements Managed<Copycat> {
    * Copycat builder.
    */
   public static abstract class Builder<T extends Copycat> extends net.kuujo.copycat.util.Builder<T> {
+    protected RaftClient.Builder clientBuilder = RaftClient.builder();
+
+    protected Builder() {
+    }
+
+    @Override
+    protected void reset() {
+      clientBuilder = RaftClient.builder();
+    }
+
+    /**
+     * Sets the client transport.
+     *
+     * @param transport The client transport.
+     * @return The client builder.
+     */
+    public Builder withTransport(Transport transport) {
+      clientBuilder.withTransport(transport);
+      return this;
+    }
+
+    /**
+     * Sets the client serializer.
+     *
+     * @param serializer The client serializer.
+     * @return The client builder.
+     */
+    public Builder withSerializer(Serializer serializer) {
+      clientBuilder.withSerializer(serializer);
+      return this;
+    }
+
+    /**
+     * Sets the client seed members.
+     *
+     * @param members The client seed members.
+     * @return The client builder.
+     */
+    public Builder withMembers(Members members) {
+      clientBuilder.withMembers(members);
+      return this;
+    }
   }
 
 }

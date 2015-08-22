@@ -19,7 +19,7 @@ libraries are provided as standalone modules wherever possible, so users can use
 components of the Copycat project independent of higher level libraries:
 * A low-level [I/O & serialization framework](#io-serialization)
 * A generalization of [asynchronous client-server messaging](#transport) with a [Netty implementation](#nettytransport)
-* A low-level [self-cleaning log](#storage) designed for use with the [Raft consensus algorithm][Raft]
+* A fast, persistent, cleanable [commit log](#storage) designed for use with the [Raft consensus algorithm][Raft]
 * A feature-complete [implementation of the Raft consensus algorithm](#raft-consensus-algorithm)
 * A lightweight [Raft client](#raftclient) including support for linearizable operations via [sessions](#sessions)
 
@@ -45,7 +45,7 @@ back for more! If you would like to request specific documentation, please
    * [Project structure](#project-structure)
    * [Dependencies](#dependencies)
    * [The Copycat API](#the-copycat-api)
-      * [CopycatServer](#copycatserver)
+      * [CopycatReplica](#copycatreplica)
       * [CopycatClient](#copycatclient)
    * [Thread model](#thread-model)
       * [Asynchronous API usage](#asynchronous-api-usage)
@@ -83,7 +83,6 @@ back for more! If you would like to request specific documentation, please
    * [RaftServer](#raftserver)
    * [Server lifecycle](#server-lifecycle)
    * [Commands](#commands)
-      * [Command persistence](#command-persistence)
    * [Queries](#queries)
       * [Query consistency](#query-consistency)
    * [State machines](#state-machines)
@@ -106,7 +105,7 @@ of the Raft consensus protocol. On top of Raft, Copycat provides a high level pa
 interacting with arbitrary replicated state machines such as maps, sets, locks, or user-defined resources. Resources
 can be created and operated on by any node in the cluster.
 
-Copycat clusters consist of at least one [server](#copycatserver) and any number of [clients](#copycatclient).
+Copycat clusters consist of at least one [replica](#copycatreplica) and any number of [clients](#copycatclient).
 For fault-tolerance, it is recommended that each Copycat cluster have 3 or 5 servers, and the number of servers should
 always be odd in order to achieve the greatest level of fault-tolerance.
 
@@ -128,7 +127,7 @@ A rough outline of Copycat's project hierarchy is as follows (from high-level to
    * [Distributed coordination tools][coordination] (artifact ID: `copycat-coordination`)
 * [Copycat API][copycat] (artifact ID: `copycat`)
    * [Copycat Client][CopycatClient]
-   * [Copycat Server][CopycatServer]
+   * [Copycat Replica][CopycatReplica]
    * [Resource API][Resource]
 * [Raft Consensus Algorithm][raft]
    * [Raft Protocol][protocol] (artifact ID: `copycat-protocol`)
@@ -150,8 +149,8 @@ A rough outline of Copycat's project hierarchy is as follows (from high-level to
 
 Copycat is designed to ensure that different components of the project ([resources](#resources),
 [Raft](#raft-consensus-algorithm), [I/O](#io-serialization), etc) can work independently of one another
-and with minimal dependencies. To that end, Copycat only depends on non-JDK libraries where dependencies are
-obvious, such as is the case with the [NettyTransport][NettyTransport].
+and with minimal dependencies. To that end, *the core library has zero dependencies*. The only components
+where dependencies are required is in custom `Transport` implementations, such as the [NettyTransport][NettyTransport].
 
 Copycat provides an all-encompassing dependency - `copycat-all` - which provides all base modules, transport,
 and [resource](#resources) dependencies.
@@ -175,7 +174,7 @@ project add the `copycat` dependency:
 </dependency>
 ```
 
-Additionally, in order to facilitate communication between [clients](#copycatclient) and [servers](#copycatserver)
+Additionally, in order to facilitate communication between [clients](#copycatclient) and [replicas](#copycatreplica)
 you must add a [Transport](#transport) dependency. Typically, the [NettyTransport][NettyTransport] will suffice
 for most use cases:
 
@@ -207,20 +206,20 @@ coordination tasks:
 * [Distributed coordination tools](#distributed-coordination)
 
 Resources are managed via a [Copycat][Copycat] instance which is shared by both [clients](#copycatclient) and
-[servers](#copycatserver). This allows Copycat clients and servers to be embedded in applications that don't
+[replicas](#copycatreplica). This allows Copycat clients and servers to be embedded in applications that don't
 care about the context. Resources can be created and operated on regardless of whether the local `Copycat`
-instance is a [CopycatClient][CopycatClient] or [CopycatServer][CopycatServer].
+instance is a [CopycatClient][CopycatClient] or [CopycatReplica][CopycatReplica].
 
-#### CopycatServer
+#### CopycatReplica
 
-The [CopycatServer][CopycatServer] is a [Copycat][Copycat] implementation that is responsible for receiving
+The [CopycatReplica][CopycatReplica] is a [Copycat][Copycat] implementation that is responsible for receiving
 creating and managing [resources](#resources) on behalf of other clients and servers and receiving, persisting,
 and replicating state changes for existing resources.
 
-Because servers are responsible for persisting and replicating resource state changes, they require
-more configuration than [clients](#copycatclient).
+Users should think of replicas as stateful nodes. Because servers are responsible for persisting and replicating
+resource state changes, they require more configuration than [clients](#copycatclient).
 
-To create a `CopycatServer`, first you must create a [Transport](#transport) via which the server will communicate
+To create a `CopycatReplica`, first you must create a [Transport](#transport) via which the server will communicate
 with other clients and servers:
 
 ```java
@@ -235,21 +234,9 @@ Cluster membership information is provided by configuring a `Members` list.
 
 ```java
 Members members = Members.builder()
-  .addMember(Member.builder()
-    .withId(1)
-    .withHost("123.456.789.1")
-    .withPort(5555)
-    .build())
-  .addMember(Member.builder()
-    .withId(2)
-    .withHost("123.456.789.2")
-    .withPort(5555)
-    .build())
-  .addMember(Member.builder()
-    .withId(3)
-    .withHost("123.456.789.3")
-    .withPort(5555)
-    .build())
+  .addMember(new Member(1, "123.456.789.1", 5555))
+  .addMember(new Member(2, "123.456.789.2", 5555))
+  .addMember(new Member(3, "123.456.789.3", 5555))
   .build();
 ```
 
@@ -258,31 +245,23 @@ all clients and servers in the cluster, and the local server must be listed in t
 In other words, if host `123.456.789.1` is member `1` on one server, it must be listed as member
 `1` on all servers.
 
-Finally, the `CopycatServer` is responsible for persisting [resource](#resources) state changes.
+Finally, the `CopycatReplica` is responsible for persisting [resource](#resources) state changes.
 To do so, the underlying [Raft](#raft-consensus-algorithm) writes state changes to a [Log][Log].
 Users must provide a [Storage][Storage] object which specifies how the underlying `Log` should
 be created and managed.
 
-To create a `Storage` object, use the storage [Builder](#builders):
+To create a [Storage](#storage) object, use the storage [Builder](#builders) or for simpler configurations
+simply pass the log directory into the `Storage` constructor:
 
 ```java
-Storage storage = Storage.builder()
-  .withDirectory("logs")
-  .withStorageLevel(StorageLevel.DISK)
-  .build();
+Storage storage = new Storage("logs");
 ```
 
-The configured `StorageLevel` defines how state changes should be persisted. The storage module
-can be configured with one of two storage levels:
-
-* `StorageLevel.MEMORY` - Stores state changes in an off-heap, in-memory [Buffer](#buffers)
-* `StorageLevel.DISK` - Stores state changes in a series of on-disk file buffers
-
 Finally, with the [Transport][Transport], [Storage][Storage], and `Members` configured, create
-the [CopycatServer][CopycatServer] with the server [Builder](#builders) and `open()` the server:
+the [CopycatReplica][CopycatReplica] with the server [Builder](#builders) and `open()` the server:
 
 ```java
-Copycat copycat = CopycatServer.builder()
+Copycat copycat = CopycatReplica.builder()
   .withMemberId(1)
   .withMembers(members)
   .withTransport(transport)
@@ -297,14 +276,16 @@ copycat.open().thenRun(() -> {
 Once created, the server can be used as any `Copycat` instance to create and operate on[nodes](#nodes)
 and [resources](#resources).
 
-Internally, the `CopycatServer` wraps a [RaftClient][RaftClient] and [RaftServer][RaftServer] to
+Internally, the `CopycatReplica` wraps a [RaftClient][RaftClient] and [RaftServer][RaftServer] to
 communicate with other members of the cluster. For more information on the specific implementation
-of `CopycatServer` see the [RaftClient](#raftclient) and [RaftServer](#raftserver) documentation.
+of `CopycatReplica` see the [RaftClient](#raftclient) and [RaftServer](#raftserver) documentation.
 
 #### CopycatClient
 
 The [CopycatClient][CopycatClient] is a [Copycat][Copycat] implementation that manages and operates
-on [resources](#resources) by communicating with a remote cluster of [servers](#copycatserver).
+on [resources](#resources) by communicating with a remote cluster of [replicas](#copycatreplica).
+
+Users should think of clients as stateless members of the Copycat cluster.
 
 To create a `CopycatClient`, use the client [Builder](#builders) and provide a [Transport][Transport]
 and a list of `Members` to which to connect:
@@ -313,21 +294,9 @@ and a list of `Members` to which to connect:
 Copycat copycat = CopycatClient.builder()
   .withTransport(new NettyTransport())
   .withMembers(Members.builder()
-    .addMember(Member.builder()
-      .withId(1)
-      .withHost("123.456.789.1")
-      .withPort(5555)
-      .build())
-    .addMember(Member.builder()
-      .withId(2)
-      .withHost("123.456.789.2")
-      .withPort(5555)
-      .build())
-    .addMember(Member.builder()
-      .withId(3)
-      .withHost("123.456.789.3")
-      .withPort(5555)
-      .build())
+    .addMember(new Member(1, "123.456.789.1", 5555))
+    .addMember(new Member(2, "123.456.789.2", 5555))
+    .addMember(new Member(3, "123.456.789.3", 5555))
     .build())
   .build();
 ```
@@ -426,14 +395,14 @@ a persistent connection between a single client and a complete Copycat cluster. 
 resource state changes with clients, and this information can often be used to manage state changes in terms of
 sessions as well.
 
-Some Copycat resources expose a configurable `PersistenceLevel` for resource state change operations. The
-persistence level specifies whether a state change is associated directly with the client's `Session`.
-Copycat exposes two persistence levels:
-* `PersistenceLevel.PERSISTENT` - State changes persist across session changes
-* `PersistenceLevel.EPHEMERAL` - State changes are associated directly with the session that created them
+Some Copycat resources expose a configurable `PersistenceMode` for resource state change operations. The
+persistence mode specifies whether a state change is associated directly with the client's `Session`.
+Copycat exposes two persistence modes:
+* `PersistenceMode.PERSISTENT` - State changes persist across session changes
+* `PersistenceMode.EPHEMERAL` - State changes are associated directly with the session that created them
 
-The `EPHEMERAL` persistence level allows resource state changes to be reflected only as long as the session
-that created them remains alive. For instance, if a `DistributedMap` key is set with `PersistenceLevel.EPHEMERAL`,
+The `EPHEMERAL` persistence mode allows resource state changes to be reflected only as long as the session
+that created them remains alive. For instance, if a `DistributedMap` key is set with `PersistenceMode.EPHEMERAL`,
 the key will disappear from the map when the session that created it expires or is otherwise closed.
 
 #### Consistency model
@@ -545,7 +514,7 @@ the value will disappear once the session that created the value is expired or c
 
 ```java
 // Add a value with EPHEMERAL persistence
-set.add("Hello world!", PersistenceLevel.EPHEMERAL).thenRun(() -> {
+set.add("Hello world!", PersistenceMode.EPHEMERAL).thenRun(() -> {
   // Close the Copycat instance to force the value to be removed from the set
   copycat.close();
 });
@@ -1336,7 +1305,7 @@ designed for use in the [Raft consensus algorithm](#raft-consensus-algorithm). E
 cluster writes state changes to disk via the [Log][Log]. Logs are built on top of Copycat's [Buffer](#buffers)
 abstraction, so the backing store can easily be switched between memory and disk.
 
-When constructing a `RaftServer` or `CopycatServer`, users must provide the server with a `Storage`
+When constructing a `RaftServer` or `CopycatReplica`, users must provide the server with a `Storage`
 instance which controls the underlying `Log`. `Storage` objects are built via the storage [Builder](#builders):
 
 ```java
@@ -1541,7 +1510,7 @@ determined that the joining member's log has caught up to its own (the joining n
 point in time), the member is promoted to a full member via another replicated configuration change.
 
 Once a node has fully joined the Raft cluster, in the event of a failure the quorum size will not change. To leave the cluster,
-the `close()` method must be called on a `CopycatServer` instance. When `close()` is called, the member will submit a *leave* request
+the `close()` method must be called on a `RaftServer` instance. When `close()` is called, the member will submit a *leave* request
 to the leader. Once the leaving member's configuration has been removed from the cluster and the new configuration replicated and
 committed, the server will complete the close.
 
@@ -1575,31 +1544,6 @@ The [Command][Command] interface extends [Operation][Operation] which is `Serial
 additional configuration. However, for the best performance users should implement [CopycatSerializable][CopycatSerializable]
 or register a [TypeSerializer][TypeSerializer] for the type. This will reduce the size of the serialized object and allow
 Copycat's [Serializer](#serializer) to optimize class loading internally during deserialization.
-
-### Command persistence
-
-As mentioned, commands are operations that modify the state machine state, but there is one caveat to that rule. Copycat
-provides the option for commands to be stored in-memory only via the `PersistenceLevel` option. By default, all commands
-are persisted with `PersistenceLevel.DISK` so that they are not lost in the event of a failure. But Copycat supports
-`PersistenceLevel.MEMORY` commands in order to facilitate replicating events to all servers in the cluster.
-
-```java
-public class Publish<T> implements Command {
-
-  @Override
-  public PersistenceLevel persistence() {
-    return PersistenceLevel.MEMORY;
-  }
-
-}
-```
-
-`PersistenceLevel.MEMORY` commands should *never alter state machine state* since they can be lost during a failure
-and therefore result in non-deterministic state (two nodes with divergent state). Instead, they should be used for
-one-time events that need to reach all [sessions](#sessions). Each client's [Session][Session] is associated with
-a random Raft server (follower or leader), and so for an event to reach all sessions it must reach all servers.
-Committing a `PersistenceLevel.MEMORY` command allows it to be replicated to all servers without the additional
-I/O overhead.
 
 ### Queries
 
@@ -1662,6 +1606,8 @@ submitted to the Raft cluster.
 
 **All state machines must be deterministic**
 
+Given the same commands in the same order, state machines must always arrive at the same state with the same output.
+
 Non-deterministic state machines will break the guarantees of the Raft consensus algorithm. Each [server](#raftserver) in the
 cluster must have *the same state machine*. When a command is submitted to the cluster, the command will be forwarded to the leader,
 logged to disk or memory, and replicated to a majority of the cluster before being applied to the state machine, and the return
@@ -1681,10 +1627,8 @@ public class MyStateMachine extends StateMachine {
 ```
 
 Internally, state machines are backed by a series of entries in an underlying [log](#log). In the event of a crash and
-recovery, `PersistenceLevel.DISK` commands in the log will be replayed to the state machine, and `PersistenceLevel.MEMORY`
-commands and queries will be lost. For this reason, `PersistenceLevel.MEMORY` commands and queries should never alter
-state machine state since the removal of such commands/queries would result in non-deterministic state machine state
-(state on two different nodes would differ based on the commands in their logs).
+recovery, state machine commands in the log will be replayed to the state machine. This is why it's so critical that state
+machines be deterministic.
 
 #### StateMachineExecutor
 
@@ -1814,27 +1758,15 @@ To create a client, you must supply the client [Builder](#builders) with a set o
 
 ```java
 Members members = Members.builder()
-  .addMember(Member.builder()
-    .withId(1)
-    .withHost("123.456.789.1")
-    .withPort(5555)
-    .build())
-  .addMember(Member.builder()
-    .withId(2)
-    .withHost("123.456.789.2")
-    .withPort(5555)
-    .build())
-  .addMember(Member.builder()
-    .withId(3)
-    .withHost("123.456.789.3")
-    .withPort(5555)
-    .build())
+  .addMember(new Member(1, "123.456.789.1" 5555))
+  .addMember(new Member(2, "123.456.789.2" 5555))
+  .addMember(new Member(3, "123.456.789.3" 5555))
   .build();
 ```
 
 The provided `Members` do not have to be representative of the full Copycat cluster, but they do have to provide at
 least one correct server to which the client can connect. In other words, the client must be able to communicate with
-at least one `CopycatServer` that is the leader or can communicate with the leader, and a majority of the cluster
+at least one `RaftServer` that is the leader or can communicate with the leader, and a majority of the cluster
 must be able to communicate with one another in order for the client to register a new [Session](#session).
 
 ```java
@@ -1942,7 +1874,7 @@ thread-unsafe objects such as a `Serializer` clone per thread.
 [storage]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/io/storage.html
 [utilities]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/util.html
 [Copycat]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/Copycat.html
-[CopycatServer]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/CopycatServer.html
+[CopycatReplica]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/CopycatReplica.html
 [CopycatClient]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/CopycatClient.html
 [Resource]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/Resource.html
 [Transport]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/io/transport/Transport.html

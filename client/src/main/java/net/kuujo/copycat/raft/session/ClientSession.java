@@ -36,9 +36,6 @@ import net.kuujo.copycat.util.concurrent.SingleThreadContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -270,15 +267,8 @@ public class ClientSession implements Session, Managed<Session> {
 
     Member member = connectMembers.remove(random.nextInt(connectMembers.size()));
 
-    final InetSocketAddress address;
-    try {
-      address = new InetSocketAddress(InetAddress.getByName(member.host()), member.port());
-    } catch (UnknownHostException e) {
-      return Futures.exceptionalFuture(e);
-    }
-
-    LOGGER.info("Connecting: {}", address);
-    client.connect(address).whenComplete((connection, connectError) -> {
+    LOGGER.info("Connecting: {}", member.address());
+    client.connect(member.address()).whenComplete((connection, connectError) -> {
       if (connectError == null) {
         setupConnection(connection);
 
@@ -296,7 +286,7 @@ public class ClientSession implements Session, Managed<Session> {
           }
         });
       } else {
-        LOGGER.info("Failed to connect: {}", address);
+        LOGGER.info("Failed to connect: {}", member.address());
         resetConnection().request(request, future, checkOpen);
       }
     });

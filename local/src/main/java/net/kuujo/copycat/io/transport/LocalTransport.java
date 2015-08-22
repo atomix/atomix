@@ -29,21 +29,20 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class LocalTransport implements Transport {
 
-  /**
-   * Returns a new local transport builder.
-   *
-   * @return A new local transport builder.
-   */
-  public static Builder builder() {
-    return new Builder();
-  }
-
   private final LocalServerRegistry registry;
   private final Serializer serializer;
   private final Map<UUID, LocalClient> clients = new ConcurrentHashMap<>();
   private final Map<UUID, LocalServer> servers = new ConcurrentHashMap<>();
 
-  private LocalTransport(LocalServerRegistry registry, Serializer serializer) {
+  public LocalTransport(LocalServerRegistry registry) {
+    this(registry, new Serializer());
+  }
+
+  public LocalTransport(LocalServerRegistry registry, Serializer serializer) {
+    if (registry == null)
+      throw new NullPointerException("registry cannot be null");
+    if (serializer == null)
+      throw new NullPointerException("serializer cannot be null");
     this.registry = registry;
     this.serializer = serializer;
   }
@@ -72,49 +71,6 @@ public class LocalTransport implements Transport {
     }
 
     return CompletableFuture.allOf(futures);
-  }
-
-  /**
-   * Local transport builder.
-   */
-  public static class Builder extends Transport.Builder {
-    private LocalServerRegistry registry;
-    private Serializer serializer;
-
-    @Override
-    protected void reset() {
-      registry = null;
-      serializer = null;
-    }
-
-    /**
-     * Sets the transport server registry.
-     *
-     * @param registry The local server registry.
-     * @return The transport builder.
-     */
-    public Builder withRegistry(LocalServerRegistry registry) {
-      if (registry == null)
-        throw new NullPointerException("registry cannot be null");
-      this.registry = registry;
-      return this;
-    }
-
-    /**
-     * Sets the transport serializer.
-     *
-     * @param serializer The transport serializer.
-     * @return The transport builder.
-     */
-    public Builder withSerializer(Serializer serializer) {
-      this.serializer = serializer;
-      return this;
-    }
-
-    @Override
-    public Transport build() {
-      return new LocalTransport(registry, serializer != null ? serializer : new Serializer());
-    }
   }
 
 }
