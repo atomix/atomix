@@ -223,9 +223,6 @@ class ServerSession implements Session {
 
   @Override
   public CompletableFuture<Void> publish(Object event) {
-    if (connection == null)
-      return Futures.exceptionalFuture(new UnknownSessionException("connection lost"));
-
     long eventSequence = ++eventVersion;
     events.put(eventSequence, event);
     sendEvent(eventSequence, event);
@@ -238,7 +235,7 @@ class ServerSession implements Session {
    * @param version The version to clear.
    * @return The server session.
    */
-  private ServerSession clearEvents(long version) {
+  ServerSession clearEvents(long version) {
     if (version > eventLowWaterMark) {
       for (long i = eventLowWaterMark + 1; i <= version; i++) {
         events.remove(i);
@@ -270,20 +267,22 @@ class ServerSession implements Session {
    * @param event The event to send.
    */
   private void sendEvent(long eventSequence, Object event) {
-    connection.<PublishRequest, PublishResponse>send(PublishRequest.builder()
-      .withSession(id())
-      .withEventSequence(eventSequence)
-      .withMessage(event)
-      .build()).whenComplete((response, error) -> {
-      if (isOpen() && error == null) {
-        if (response.status() == Response.Status.OK) {
-          clearEvents(response.eventSequence());
-        } else {
-          clearEvents(response.eventSequence());
-          resendEvents(response.eventSequence());
+    if (connection != null) {
+      connection.<PublishRequest, PublishResponse>send(PublishRequest.builder()
+        .withSession(id())
+        .withEventSequence(eventSequence)
+        .withMessage(event)
+        .build()).whenComplete((response, error) -> {
+        if (isOpen() && error == null) {
+          if (response.status() == Response.Status.OK) {
+            clearEvents(response.eventSequence());
+          } else {
+            clearEvents(response.eventSequence());
+            resendEvents(response.eventSequence());
+          }
         }
-      }
-    });
+      });
+    }
   }
 
   /**

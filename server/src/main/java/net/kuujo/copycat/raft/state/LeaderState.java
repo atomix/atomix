@@ -527,6 +527,8 @@ class LeaderState extends ActiveState {
     try (KeepAliveEntry entry = context.getLog().create(KeepAliveEntry.class)) {
       entry.setTerm(context.getTerm());
       entry.setSession(request.session());
+      entry.setCommandSequence(request.commandSequence());
+      entry.setEventSequence(request.eventSequence());
       entry.setTimestamp(timestamp);
       index = context.getLog().append(entry);
       LOGGER.debug("{} - Appended {}", context.getMember().id(), entry);

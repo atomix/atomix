@@ -546,7 +546,11 @@ public class ServerContext implements Managed<Void> {
         LOGGER.warn("Expired session: " + entry.getSession());
         future = expireSession(entry.getSession());
       } else {
-        session.setIndex(entry.getIndex()).setTimestamp(entry.getTimestamp()).clearCommands(entry.getSequence());
+        session.setIndex(entry.getIndex())
+          .setTimestamp(entry.getTimestamp())
+          .clearCommands(entry.getCommandSequence())
+          .clearEvents(entry.getEventSequence());
+
         future = new CompletableFuture<>();
         stateExecutor.tick(Instant.ofEpochMilli(entry.getTimestamp()));
         context.execute(() -> future.complete(null));

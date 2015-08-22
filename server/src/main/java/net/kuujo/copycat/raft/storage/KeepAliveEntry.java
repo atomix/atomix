@@ -29,7 +29,8 @@ import net.kuujo.copycat.util.ReferenceManager;
  */
 @SerializeWith(id=304)
 public class KeepAliveEntry extends SessionEntry<KeepAliveEntry> {
-  private long sequence;
+  private long commandSequence;
+  private long eventSequence;
 
   public KeepAliveEntry(ReferenceManager<Entry<?>> referenceManager) {
     super(referenceManager);
@@ -40,8 +41,8 @@ public class KeepAliveEntry extends SessionEntry<KeepAliveEntry> {
    *
    * @return The command sequence number.
    */
-  public long getSequence() {
-    return sequence;
+  public long getCommandSequence() {
+    return commandSequence;
   }
 
   /**
@@ -50,26 +51,48 @@ public class KeepAliveEntry extends SessionEntry<KeepAliveEntry> {
    * @param commandSequence The command sequence number.
    * @return The keep alive entry.
    */
-  public KeepAliveEntry setSequence(long commandSequence) {
-    this.sequence = commandSequence;
+  public KeepAliveEntry setCommandSequence(long commandSequence) {
+    this.commandSequence = commandSequence;
+    return this;
+  }
+
+  /**
+   * Returns the event sequence number.
+   *
+   * @return The event sequence number.
+   */
+  public long getEventSequence() {
+    return eventSequence;
+  }
+
+  /**
+   * Sets the event sequence number.
+   *
+   * @param eventSequence The event sequence number.
+   * @return The keep alive entry.
+   */
+  public KeepAliveEntry setEventSequence(long eventSequence) {
+    this.eventSequence = eventSequence;
     return this;
   }
 
   @Override
   public void readObject(BufferInput buffer, Serializer serializer) {
     super.readObject(buffer, serializer);
-    sequence = buffer.readLong();
+    commandSequence = buffer.readLong();
+    eventSequence = buffer.readLong();
   }
 
   @Override
   public void writeObject(BufferOutput buffer, Serializer serializer) {
     super.writeObject(buffer, serializer);
-    buffer.writeLong(sequence);
+    buffer.writeLong(commandSequence);
+    buffer.writeLong(eventSequence);
   }
 
   @Override
   public String toString() {
-    return String.format("%s[index=%d, term=%d, session=%d, sequence=%d, timestamp=%d]", getClass().getSimpleName(), getIndex(), getTerm(), getSession(), getSequence(), getTimestamp());
+    return String.format("%s[index=%d, term=%d, session=%d, commandSequence=%d, eventSequence=%d, timestamp=%d]", getClass().getSimpleName(), getIndex(), getTerm(), getSession(), getCommandSequence(), getEventSequence(), getTimestamp());
   }
 
 }

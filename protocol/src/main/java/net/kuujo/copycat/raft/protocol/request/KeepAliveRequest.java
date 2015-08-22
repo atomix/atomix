@@ -59,6 +59,7 @@ public class KeepAliveRequest extends SessionRequest<KeepAliveRequest> {
   }
 
   private long commandSequence;
+  private long eventSequence;
 
   public KeepAliveRequest(ReferenceManager<KeepAliveRequest> referenceManager) {
     super(referenceManager);
@@ -76,6 +77,15 @@ public class KeepAliveRequest extends SessionRequest<KeepAliveRequest> {
    */
   public long commandSequence() {
     return commandSequence;
+  }
+
+  /**
+   * Returns the event sequence number.
+   *
+   * @return The event sequence number.
+   */
+  public long eventSequence() {
+    return eventSequence;
   }
 
   @Override
@@ -107,7 +117,7 @@ public class KeepAliveRequest extends SessionRequest<KeepAliveRequest> {
 
   @Override
   public String toString() {
-    return String.format("%s[session=%d, commandSequence=%d]", getClass().getSimpleName(), session, commandSequence);
+    return String.format("%s[session=%d, commandSequence=%d, eventSequence=%d]", getClass().getSimpleName(), session, commandSequence, eventSequence);
   }
 
   /**
@@ -135,6 +145,19 @@ public class KeepAliveRequest extends SessionRequest<KeepAliveRequest> {
       if (commandSequence < 0)
         throw new IllegalArgumentException("commandSequence cannot be negative");
       request.commandSequence = commandSequence;
+      return this;
+    }
+
+    /**
+     * Sets the event sequence number.
+     *
+     * @param eventSequence The command sequence number.
+     * @return The request builder.
+     */
+    public Builder withEventSequence(long eventSequence) {
+      if (eventSequence < 0)
+        throw new IllegalArgumentException("eventSequence cannot be negative");
+      request.commandSequence = eventSequence;
       return this;
     }
 
