@@ -3,20 +3,23 @@ Copycat
 
 [![Build Status](https://travis-ci.org/kuujo/copycat.png)](https://travis-ci.org/kuujo/copycat)
 
-Copycat is an extensible distributed coordination framework built on the [Raft consensus algorithm][Raft].
+Copycat is both a low-level implementation of the [Raft consensus protocol][Raft] and a high-level distributed
+coordination framework that combines the consistency of [ZooKeeper](https://zookeeper.apache.org/) with the
+usability of [Hazelcast](http://hazelcast.org/) to provide tools for managing and coordinating stateful resources
+in a distributed system.
 
+#### [Getting Started](#getting-started)
 #### [User Manual](#user-manual)
 #### [Javadocs][Javadoc]
 
-Copycat exposes a set of high level APIs with tools to
-solve a variety of distributed systems problems including:
+Copycat exposes a set of high level APIs with tools to solve a variety of distributed systems problems including:
 * [Distributed coordination tools](#distributed-coordination)
 * [Distributed collections](#distributed-collections)
 * [Distributed atomic variables](#distributed-atomic-variables)
 
-Additionally, Copycat is built on a series of low-level libraries that form its consensus algorithm. All base
-libraries are provided as standalone modules wherever possible, so users can use many of the following
-components of the Copycat project independent of higher level libraries:
+Additionally, Copycat is built on a series of low-level libraries that form its consensus algorithm. Users can extend
+Copycat to build custom managed replicated state machines. All base libraries are provided as standalone modules wherever
+possible, so users can use many of the following components of the Copycat project independent of higher level libraries:
 * A low-level [I/O & serialization framework](#io-serialization)
 * A generalization of [asynchronous client-server messaging](#transport) with a [Netty implementation](#nettytransport)
 * A fast, persistent, cleanable [commit log](#storage) designed for use with the [Raft consensus algorithm][Raft]
@@ -32,6 +35,77 @@ Copycat snapshots will be pushed, and a beta release of Copycat is expected with
 updates!
 
 *Copycat requires Java 8*
+
+Getting Started
+===============
+
+The high-level [Copycat API](#the-copycat-api) is a single interface that aids in managing stateful resources
+(e.g. maps, sets, locks, leader elections) in a distributed system. The `Copycat` API is heavily influenced by
+[Hazelcast's](http://hazelcast.org/) API.
+
+The one critical method in Copycat's high-level API is the `create` method. The `create` method gets or creates a
+user-defined distributed resource.
+
+```java
+copycat.create("test-lock", DistributedLock.class).thenAccept(lock -> {
+  // Do stuff...
+});
+```
+
+Copycat's API is fully asynchronous and relies heavily on Java 8's [CompletableFuture][CompletableFuture].
+
+#### DistributedMap
+
+```java
+DistributedMap<String, String> map = copycat.create("test-map", DistributedMap.class).get();
+
+map.put("key", "value").thenRun(() -> {
+  map.get("key").thenAccept(value -> {
+    if (value.equals(value)) {
+      // Set a key with a TTL
+      map.putIfAbsent("otherkey", "othervalue", Duration.ofSeconds(1)).get();
+    }
+  });
+});
+```
+
+#### DistributedSet
+
+```java
+DistributedSet<String> set = copycat.create("test-set", DistributedSet.class).get();
+
+set.add("value").thenRun(() -> {
+  set.contains("value").thenAccept(result -> {
+    if (result) {
+      // Add a value with a TTL
+      set.add("othervalue", Duration.ofSeconds(1));
+    }
+  });
+});
+```
+
+#### DistributedLock
+
+```java
+DistributedLock lock = copycat.create("test-lock", DistributedLock.class).get();
+
+lock.lock().thenRun(() -> {
+  // Do stuff...
+  lock.unlock().thenRun(() -> {
+    // Did stuff
+  });
+});
+```
+
+#### DistributedLeaderElection
+
+```java
+DistributedLeaderElection election = copycat.create("test-election", DistributedLeaderElection.class).get();
+
+election.onElection(epoch -> {
+  System.out.println("Elected leader!");
+});
+```
 
 User Manual
 ===========
