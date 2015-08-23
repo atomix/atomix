@@ -378,6 +378,7 @@ public class ClientSession implements Session, Managed<Session> {
     KeepAliveRequest request = KeepAliveRequest.builder()
       .withSession(id)
       .withCommandSequence(responseSequence)
+      .withEventSequence(eventSequence)
       .build();
 
     this.<KeepAliveRequest, KeepAliveResponse>request(request).whenComplete((response, error) -> {

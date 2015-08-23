@@ -133,6 +133,7 @@ public class KeepAliveRequest extends SessionRequest<KeepAliveRequest> {
     protected void reset() {
       super.reset();
       request.commandSequence = 0;
+      request.eventSequence = 0;
     }
 
     /**
