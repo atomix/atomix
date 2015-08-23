@@ -27,7 +27,7 @@ import java.time.Duration;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class CopycatClient extends Copycat {
+public final class CopycatClient extends Copycat {
 
   /**
    * Returns a new Copycat client builder.

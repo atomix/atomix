@@ -40,7 +40,7 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class CopycatReplica extends Copycat {
+public final class CopycatReplica extends Copycat {
 
   /**
    * Returns a new Copycat server builder.
