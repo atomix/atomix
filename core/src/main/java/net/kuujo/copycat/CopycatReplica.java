@@ -128,7 +128,7 @@ public class CopycatReplica extends Copycat {
   /**
    * Copycat builder.
    */
-  public static class Builder extends Copycat.Builder<CopycatReplica> {
+  public static class Builder extends Copycat.Builder {
     private RaftServer.Builder serverBuilder = RaftServer.builder();
     private int memberId;
     private Members members;

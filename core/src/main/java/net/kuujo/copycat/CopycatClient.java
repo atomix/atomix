@@ -45,7 +45,7 @@ public class CopycatClient extends Copycat {
   /**
    * Client builder.
    */
-  public static class Builder extends Copycat.Builder<CopycatClient> {
+  public static class Builder extends Copycat.Builder {
     private Builder() {
     }
 

@@ -149,7 +149,7 @@ public abstract class Copycat implements Managed<Copycat> {
   /**
    * Copycat builder.
    */
-  public static abstract class Builder<T extends Copycat> extends net.kuujo.copycat.util.Builder<T> {
+  public static abstract class Builder extends net.kuujo.copycat.util.Builder<Copycat> {
     protected RaftClient.Builder clientBuilder = RaftClient.builder();
 
     protected Builder() {
@@ -161,10 +161,10 @@ public abstract class Copycat implements Managed<Copycat> {
     }
 
     /**
-     * Sets the client transport.
+     * Sets the Copycat transport.
      *
-     * @param transport The client transport.
-     * @return The client builder.
+     * @param transport The Copycat transport.
+     * @return The Copycat builder.
      */
     public Builder withTransport(Transport transport) {
       clientBuilder.withTransport(transport);
@@ -172,10 +172,10 @@ public abstract class Copycat implements Managed<Copycat> {
     }
 
     /**
-     * Sets the client serializer.
+     * Sets the Copycat serializer.
      *
-     * @param serializer The client serializer.
-     * @return The client builder.
+     * @param serializer The Copycat serializer.
+     * @return The Copycat builder.
      */
     public Builder withSerializer(Serializer serializer) {
       clientBuilder.withSerializer(serializer);
@@ -183,10 +183,10 @@ public abstract class Copycat implements Managed<Copycat> {
     }
 
     /**
-     * Sets the client seed members.
+     * Sets the Copycat cluster members.
      *
-     * @param members The client seed members.
-     * @return The client builder.
+     * @param members The cluster members.
+     * @return The Copycat builder.
      */
     public Builder withMembers(Members members) {
       clientBuilder.withMembers(members);
