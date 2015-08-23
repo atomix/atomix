@@ -15,13 +15,15 @@
  */
 package net.kuujo.copycat.io.storage;
 
-import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.io.serializer.ServiceLoaderTypeResolver;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertTrue;
+
 import org.testng.annotations.Test;
 
-import static org.testng.Assert.*;
+import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.io.serializer.ServiceLoaderTypeResolver;
 
 /**
  * Log test.
@@ -29,36 +31,40 @@ import static org.testng.Assert.*;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class LogTest {
-  private Log log;
-
-  @BeforeMethod
-  public void resetLog() {
-    log = null;
+public class LogTest extends AbstractLogTest {
+  /**
+   * Creates a new log.
+   */
+  @Override
+  protected Log createLog() {
+    return tempStorageBuilder().withMaxEntrySize(1024)
+        .withMaxSegmentSize(1024 * 1024)
+        .withMaxEntriesPerSegment(1024)
+        .withSerializer(new Serializer(new ServiceLoaderTypeResolver()))
+        .build()
+        .open();
   }
 
   /**
    * Tests writing and reading an entry.
    */
   public void testCreateReadFirstEntry() {
-    try (Log log = createLog()) {
-      assertTrue(log.isEmpty());
-      assertEquals(log.length(), 0);
+    assertTrue(log.isEmpty());
+    assertEquals(log.length(), 0);
 
-      long index;
-      try (TestEntry entry = log.create(TestEntry.class)) {
-        entry.setTerm(1);
-        entry.setRemove(true);
-        index = log.append(entry);
-      }
+    long index;
+    try (TestEntry entry = log.create(TestEntry.class)) {
+      entry.setTerm(1);
+      entry.setRemove(true);
+      index = log.append(entry);
+    }
 
-      assertEquals(log.length(), 1);
-      assertFalse(log.isEmpty());
+    assertEquals(log.length(), 1);
+    assertFalse(log.isEmpty());
 
-      try (TestEntry entry = log.get(index)) {
-        assertEquals(entry.getTerm(), 1);
-        assertTrue(entry.isRemove());
-      }
+    try (TestEntry entry = log.get(index)) {
+      assertEquals(entry.getTerm(), 1);
+      assertTrue(entry.isRemove());
     }
   }
 
@@ -66,23 +72,21 @@ public class LogTest {
    * Tests creating and reading the last entry in the log.
    */
   public void testCreateReadLastEntry() {
-    try (Log log = createLog()) {
-      appendEntries(log, 100);
-      assertEquals(log.length(), 100);
+    appendEntries(log, 100);
+    assertEquals(log.length(), 100);
 
-      long index;
-      try (TestEntry entry = log.create(TestEntry.class)) {
-        entry.setTerm(1);
-        entry.setRemove(true);
-        index = log.append(entry);
-      }
+    long index;
+    try (TestEntry entry = log.create(TestEntry.class)) {
+      entry.setTerm(1);
+      entry.setRemove(true);
+      index = log.append(entry);
+    }
 
-      assertEquals(log.length(), 101);
+    assertEquals(log.length(), 101);
 
-      try (TestEntry entry = log.get(index)) {
-        assertEquals(entry.getTerm(), 1);
-        assertTrue(entry.isRemove());
-      }
+    try (TestEntry entry = log.get(index)) {
+      assertEquals(entry.getTerm(), 1);
+      assertTrue(entry.isRemove());
     }
   }
 
@@ -90,24 +94,22 @@ public class LogTest {
    * Tests creating and reading the last entry in the log.
    */
   public void testCreateReadMiddleEntry() {
-    try (Log log = createLog()) {
-      appendEntries(log, 100);
-      assertEquals(log.length(), 100);
+    appendEntries(log, 100);
+    assertEquals(log.length(), 100);
 
-      long index;
-      try (TestEntry entry = log.create(TestEntry.class)) {
-        entry.setTerm(1);
-        entry.setRemove(true);
-        index = log.append(entry);
-      }
+    long index;
+    try (TestEntry entry = log.create(TestEntry.class)) {
+      entry.setTerm(1);
+      entry.setRemove(true);
+      index = log.append(entry);
+    }
 
-      appendEntries(log, 100);
-      assertEquals(log.length(), 201);
+    appendEntries(log, 100);
+    assertEquals(log.length(), 201);
 
-      try (TestEntry entry = log.get(index)) {
-        assertEquals(entry.getTerm(), 1);
-        assertTrue(entry.isRemove());
-      }
+    try (TestEntry entry = log.get(index)) {
+      assertEquals(entry.getTerm(), 1);
+      assertTrue(entry.isRemove());
     }
   }
 
@@ -115,22 +117,20 @@ public class LogTest {
    * Tests creating and reading entries after a roll over.
    */
   public void testCreateReadAfterRollOver() {
-    try (Log log = createLog()) {
-      appendEntries(log, 1100);
+    appendEntries(log, 1100);
 
-      long index;
-      try (TestEntry entry = log.create(TestEntry.class)) {
-        entry.setTerm(1);
-        entry.setRemove(true);
-        index = log.append(entry);
-      }
+    long index;
+    try (TestEntry entry = log.create(TestEntry.class)) {
+      entry.setTerm(1);
+      entry.setRemove(true);
+      index = log.append(entry);
+    }
 
-      appendEntries(log, 1050);
+    appendEntries(log, 1050);
 
-      try (TestEntry entry = log.get(index)) {
-        assertEquals(entry.getTerm(), 1);
-        assertTrue(entry.isRemove());
-      }
+    try (TestEntry entry = log.get(index)) {
+      assertEquals(entry.getTerm(), 1);
+      assertTrue(entry.isRemove());
     }
   }
 
@@ -138,56 +138,50 @@ public class LogTest {
    * Tests truncating entries in the log.
    */
   public void testTruncate() throws Throwable {
-    try (Log log = createLog()) {
-      appendEntries(log, 100);
-      assertEquals(log.lastIndex(), 100);
-      log.truncate(10);
-      assertEquals(log.lastIndex(), 10);
-      appendEntries(log, 10);
-      assertEquals(log.lastIndex(), 20);
-    }
+    appendEntries(log, 100);
+    assertEquals(log.lastIndex(), 100);
+    log.truncate(10);
+    assertEquals(log.lastIndex(), 10);
+    appendEntries(log, 10);
+    assertEquals(log.lastIndex(), 20);
   }
 
   /**
    * Tests emptying the log.
    */
   public void testTruncateZero() throws Throwable {
-    try (Log log = createLog()) {
-      appendEntries(log, 100);
-      assertEquals(log.lastIndex(), 100);
-      log.truncate(0);
-      assertEquals(log.lastIndex(), 0);
-      appendEntries(log, 10);
-      assertEquals(log.lastIndex(), 10);
-    }
+    appendEntries(log, 100);
+    assertEquals(log.lastIndex(), 100);
+    log.truncate(0);
+    assertEquals(log.lastIndex(), 0);
+    appendEntries(log, 10);
+    assertEquals(log.lastIndex(), 10);
   }
 
   /**
    * Tests skipping entries in the log.
    */
   public void testSkip() throws Throwable {
-    try (Log log = createLog()) {
-      appendEntries(log, 100);
+    appendEntries(log, 100);
 
-      log.skip(10);
+    log.skip(10);
 
-      long index;
-      try (TestEntry entry = log.create(TestEntry.class)) {
-        entry.setTerm(1);
-        entry.setRemove(true);
-        index = log.append(entry);
-      }
+    long index;
+    try (TestEntry entry = log.create(TestEntry.class)) {
+      entry.setTerm(1);
+      entry.setRemove(true);
+      index = log.append(entry);
+    }
 
-      assertEquals(log.length(), 111);
+    assertEquals(log.length(), 111);
 
-      try (TestEntry entry = log.get(101)) {
-        assertNull(entry);
-      }
+    try (TestEntry entry = log.get(101)) {
+      assertNull(entry);
+    }
 
-      try (TestEntry entry = log.get(index)) {
-        assertEquals(entry.getTerm(), 1);
-        assertTrue(entry.isRemove());
-      }
+    try (TestEntry entry = log.get(index)) {
+      assertEquals(entry.getTerm(), 1);
+      assertTrue(entry.isRemove());
     }
   }
 
@@ -195,30 +189,28 @@ public class LogTest {
    * Tests skipping entries on a segment rollover.
    */
   public void testSkipOnRollOver() {
-    try (Log log = createLog()) {
-      appendEntries(log, 1020);
+    appendEntries(log, 1020);
 
-      log.skip(10);
+    log.skip(10);
 
-      assertEquals(log.length(), 1030);
+    assertEquals(log.length(), 1030);
 
-      long index;
-      try (TestEntry entry = log.create(TestEntry.class)) {
-        entry.setTerm(1);
-        entry.setRemove(true);
-        index = log.append(entry);
-      }
+    long index;
+    try (TestEntry entry = log.create(TestEntry.class)) {
+      entry.setTerm(1);
+      entry.setRemove(true);
+      index = log.append(entry);
+    }
 
-      assertEquals(log.length(), 1031);
+    assertEquals(log.length(), 1031);
 
-      try (TestEntry entry = log.get(1021)) {
-        assertNull(entry);
-      }
+    try (TestEntry entry = log.get(1021)) {
+      assertNull(entry);
+    }
 
-      try (TestEntry entry = log.get(index)) {
-        assertEquals(entry.getTerm(), 1);
-        assertTrue(entry.isRemove());
-      }
+    try (TestEntry entry = log.get(index)) {
+      assertEquals(entry.getTerm(), 1);
+      assertTrue(entry.isRemove());
     }
   }
 
@@ -226,10 +218,8 @@ public class LogTest {
    * Tests recovering the log.
    */
   public void testRecover() {
-    try (Log log = createLog()) {
-      appendEntries(log, 1024);
-      assertEquals(log.length(), 1024);
-    }
+    appendEntries(log, 1024);
+    assertEquals(log.length(), 1024);
 
     try (Log log = createLog()) {
       assertEquals(log.length(), 1024);
@@ -240,22 +230,20 @@ public class LogTest {
    * Tests recovering the log after compaction.
    */
   public void testRecoverAfterCompact() {
-    try (Log log = createLog()) {
-      appendEntries(log, 2048);
-      for (long i = 1; i <= 2048; i++) {
-        if (i % 3 == 0 || i % 3 == 1) {
-          log.clean(i);
-        }
+    appendEntries(log, 2048);
+    for (long i = 1; i <= 2048; i++) {
+      if (i % 3 == 0 || i % 3 == 1) {
+        log.clean(i);
       }
-
-      for (long i = 1; i <= 2048; i ++) {
-        if (i % 3 == 0 || i % 3 == 1) {
-          assertTrue(log.lastIndex() >= i);
-          assertFalse(log.contains(i));
-        }
-      }
-      log.cleaner().clean().join();
     }
+
+    for (long i = 1; i <= 2048; i++) {
+      if (i % 3 == 0 || i % 3 == 1) {
+        assertTrue(log.lastIndex() >= i);
+        assertFalse(log.contains(i));
+      }
+    }
+    log.cleaner().clean().join();
 
     try (Log log = createLog()) {
       assertEquals(log.length(), 2048);
@@ -270,20 +258,6 @@ public class LogTest {
   }
 
   /**
-   * Creates a new in-memory log.
-   */
-  private Log createLog() {
-    Storage storage = Storage.builder()
-      .withMaxEntrySize(1024)
-      .withMaxSegmentSize(1024 * 1024)
-      .withMaxEntriesPerSegment(1024)
-      .withSerializer(new Serializer(new ServiceLoaderTypeResolver()))
-      .build();
-    log = storage.open();
-    return log;
-  }
-
-  /**
    * Appends a set of entries to the log.
    */
   private void appendEntries(Log log, int entries) {
@@ -295,12 +269,4 @@ public class LogTest {
       }
     }
   }
-
-  @AfterMethod
-  public void deleteLog() {
-    if (log != null) {
-      log.delete();
-    }
-  }
-
 }

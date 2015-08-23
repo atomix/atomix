@@ -15,12 +15,17 @@
  */
 package net.kuujo.copycat.io.storage;
 
-import net.jodah.concurrentunit.ConcurrentTestCase;
-import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.io.serializer.ServiceLoaderTypeResolver;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertTrue;
+
+import java.util.concurrent.CountDownLatch;
+
 import org.testng.annotations.Test;
 
-import static org.testng.Assert.*;
+import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.io.serializer.ServiceLoaderTypeResolver;
 
 /**
  * Minor compaction test.
@@ -28,20 +33,21 @@ import static org.testng.Assert.*;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class CleanerTest extends ConcurrentTestCase {
+public class CleanerTest extends AbstractLogTest {
 
+  protected Log createLog() {
+    return tempStorageBuilder()
+        .withMaxEntriesPerSegment(10)
+        .withSerializer(new Serializer(new ServiceLoaderTypeResolver()))
+        .build()
+        .open();
+  }
+  
   /**
    * Tests compacting the log.
    */
   public void testCompact() throws Throwable {
-    Storage storage = Storage.builder()
-      .withMaxEntriesPerSegment(10)
-      .withSerializer(new Serializer(new ServiceLoaderTypeResolver()))
-      .build();
-
-    Log log = storage.open();
-
-    writeEntries(log, 30);
+    writeEntries(30);
 
     assertEquals(log.length(), 30L);
 
@@ -49,8 +55,9 @@ public class CleanerTest extends ConcurrentTestCase {
       log.clean(index);
     }
 
-    log.cleaner().clean().thenRun(this::resume);
-    await();
+    CountDownLatch latch = new CountDownLatch(1);
+    log.cleaner().clean().thenRun(latch::countDown);
+    latch.await();
 
     assertEquals(log.length(), 30L);
 
@@ -66,7 +73,7 @@ public class CleanerTest extends ConcurrentTestCase {
   /**
    * Writes a set of session entries to the log.
    */
-  private void writeEntries(Log log, int entries) {
+  private void writeEntries(int entries) {
     for (int i = 0; i < entries; i++) {
       try (TestEntry entry = log.create(TestEntry.class)) {
         entry.setTerm(1);
