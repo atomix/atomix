@@ -15,6 +15,16 @@
  */
 package net.kuujo.copycat.coordination;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import net.kuujo.copycat.Copycat;
 import net.kuujo.copycat.CopycatReplica;
@@ -23,15 +33,6 @@ import net.kuujo.copycat.io.transport.LocalServerRegistry;
 import net.kuujo.copycat.io.transport.LocalTransport;
 import net.kuujo.copycat.raft.Member;
 import net.kuujo.copycat.raft.Members;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Async lock test.
@@ -39,14 +40,12 @@ import java.util.List;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-@SuppressWarnings("unchecked")
 public class DistributedLockTest extends ConcurrentTestCase {
   private static final File directory = new File("test-logs");
 
   /**
    * Tests locking and unlocking a lock.
    */
-  @SuppressWarnings("unchecked")
   public void testLockUnlock() throws Throwable {
     List<Copycat> servers = createCopycats(3);
 
@@ -54,11 +53,9 @@ public class DistributedLockTest extends ConcurrentTestCase {
 
     DistributedLock lock = copycat.create("test", DistributedLock.class).get();
 
-    expectResume();
     lock.lock().thenRun(this::resume);
     await();
 
-    expectResume();
     lock.unlock().thenRun(this::resume);
     await();
   }
@@ -70,8 +67,6 @@ public class DistributedLockTest extends ConcurrentTestCase {
     LocalServerRegistry registry = new LocalServerRegistry();
 
     List<Copycat> active = new ArrayList<>();
-
-    expectResumes(nodes);
 
     Members.Builder builder = Members.builder();
     for (int i = 1; i <= nodes; i++) {
@@ -93,7 +88,7 @@ public class DistributedLockTest extends ConcurrentTestCase {
       active.add(copycat);
     }
 
-    await();
+    await(0, nodes);
 
     return active;
   }

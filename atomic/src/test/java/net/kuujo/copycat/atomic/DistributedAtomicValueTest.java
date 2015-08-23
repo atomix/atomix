@@ -46,7 +46,6 @@ public class DistributedAtomicValueTest extends ConcurrentTestCase {
   /**
    * Tests setting and getting a value.
    */
-  @SuppressWarnings("unchecked")
   public void testSetGet() throws Throwable {
     List<Copycat> servers = createCopycats(3);
 
@@ -54,11 +53,9 @@ public class DistributedAtomicValueTest extends ConcurrentTestCase {
 
     DistributedAtomicValue<String> reference = copycat.create("test", DistributedAtomicValue.class).get();
 
-    expectResume();
     reference.set("Hello world!").thenRun(this::resume);
     await();
 
-    expectResume();
     reference.get().thenAccept(result -> {
       threadAssertEquals(result, "Hello world!");
       resume();
@@ -69,7 +66,6 @@ public class DistributedAtomicValueTest extends ConcurrentTestCase {
   /**
    * Tests setting and getting a value with a change event.
    */
-  @SuppressWarnings("unchecked")
   public void testChangeEvent() throws Throwable {
     List<Copycat> servers = createCopycats(3);
 
@@ -77,18 +73,15 @@ public class DistributedAtomicValueTest extends ConcurrentTestCase {
 
     DistributedAtomicValue<String> reference = copycat.create("test", DistributedAtomicValue.class).get();
 
-    expectResume();
     reference.onChange(value -> {
       threadAssertEquals("Hello world!", value);
       resume();
     }).thenRun(this::resume);
     await();
 
-    expectResumes(2);
     reference.set("Hello world!").thenRun(this::resume);
-    await();
+    await(0, 2);
 
-    expectResume();
     reference.get().thenAccept(result -> {
       threadAssertEquals(result, "Hello world!");
       resume();
@@ -133,11 +126,10 @@ public class DistributedAtomicValueTest extends ConcurrentTestCase {
         .build())
       .build();
 
-    expectResumes(3);
     copycat1.open().thenRun(this::resume);
     copycat2.open().thenRun(this::resume);
     copycat3.open().thenRun(this::resume);
-    await();
+    await(0, 3);
 
     Members updatedMembers = Members.builder()
       .addMember(new Member(1, "localhost", 5001))
@@ -155,17 +147,14 @@ public class DistributedAtomicValueTest extends ConcurrentTestCase {
         .build())
       .build();
 
-    expectResume();
     copycat4.open().thenRun(this::resume);
     await();
 
     DistributedAtomicValue<String> reference = copycat4.create("test", DistributedAtomicValue.class).get();
 
-    expectResume();
     reference.set("Hello world!").thenRun(this::resume);
     await();
 
-    expectResume();
     reference.get().thenAccept(result -> {
       threadAssertEquals(result, "Hello world!");
       resume();
@@ -181,20 +170,17 @@ public class DistributedAtomicValueTest extends ConcurrentTestCase {
 
     DistributedAtomicValue<Integer> reference1 = servers.get(0).create("test", DistributedAtomicValue.class).get();
 
-    expectResume();
     reference1.set(1).thenRun(this::resume);
     await();
 
     DistributedAtomicValue<Integer> reference2 = servers.get(0).create("test", DistributedAtomicValue.class).get();
 
-    expectResume();
     reference2.compareAndSet(1, 2).thenAccept(result -> {
       threadAssertTrue(result);
       resume();
     });
     await();
 
-    expectResume();
     reference2.compareAndSet(1, 3).thenAccept(result -> {
       threadAssertFalse(result);
       resume();
@@ -209,8 +195,6 @@ public class DistributedAtomicValueTest extends ConcurrentTestCase {
     LocalServerRegistry registry = new LocalServerRegistry();
 
     List<Copycat> copycats = new ArrayList<>();
-
-    expectResumes(nodes);
 
     Members.Builder builder = Members.builder();
     for (int i = 1; i <= nodes; i++) {
@@ -234,7 +218,7 @@ public class DistributedAtomicValueTest extends ConcurrentTestCase {
       copycats.add(copycat);
     }
 
-    await();
+    await(0, nodes);
 
     return copycats;
   }

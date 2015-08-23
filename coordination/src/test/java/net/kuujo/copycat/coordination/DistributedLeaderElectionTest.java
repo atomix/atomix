@@ -39,14 +39,12 @@ import java.util.List;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-@SuppressWarnings("unchecked")
 public class DistributedLeaderElectionTest extends ConcurrentTestCase {
   private static final File directory = new File("test-logs");
 
   /**
    * Tests winning leadership.
    */
-  @SuppressWarnings("unchecked")
   public void testElection() throws Throwable {
     List<Copycat> servers = createCopycats(3);
 
@@ -54,9 +52,8 @@ public class DistributedLeaderElectionTest extends ConcurrentTestCase {
 
     DistributedLeaderElection election = copycat.create("test", DistributedLeaderElection.class).get();
 
-    expectResumes(2);
     election.onElection(v -> resume()).thenRun(this::resume);
-    await();
+    await(0, 2);
   }
 
   /**
@@ -67,7 +64,6 @@ public class DistributedLeaderElectionTest extends ConcurrentTestCase {
 
     List<Copycat> active = new ArrayList<>();
 
-    expectResumes(nodes);
 
     Members.Builder builder = Members.builder();
     for (int i = 1; i <= nodes; i++) {
@@ -91,7 +87,7 @@ public class DistributedLeaderElectionTest extends ConcurrentTestCase {
       active.add(copycat);
     }
 
-    await();
+    await(0, nodes);
 
     return active;
   }

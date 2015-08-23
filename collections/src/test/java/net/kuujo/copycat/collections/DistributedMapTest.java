@@ -54,25 +54,21 @@ public class DistributedMapTest extends ConcurrentTestCase {
 
     DistributedMap<String, String> map = copycat.create("test", DistributedMap.class).get();
 
-    expectResume();
     map.put("foo", "Hello world!").thenRun(this::resume);
     await();
 
-    expectResume();
     map.get("foo").thenAccept(result -> {
       threadAssertEquals(result, "Hello world!");
       resume();
     });
     await();
 
-    expectResume();
     map.remove("foo").thenAccept(result -> {
       threadAssertEquals(result, "Hello world!");
       resume();
     });
     await();
 
-    expectResume();
     map.get("foo").thenAccept(result -> {
       threadAssertNull(result);
       resume();
@@ -93,29 +89,24 @@ public class DistributedMapTest extends ConcurrentTestCase {
 
     DistributedMap<String, String> map = copycat.create("test", DistributedMap.class).get();
 
-    expectResume();
     map.size().thenAccept(size -> {
       threadAssertEquals(size, 0);
       resume();
     });
     await();
 
-    expectResume();
     map.put("foo", "Hello world!").thenRun(this::resume);
     await();
 
-    expectResume();
     map.size().thenAccept(size -> {
       threadAssertEquals(size, 1);
       resume();
     });
     await();
 
-    expectResume();
     map.put("bar", "Hello world again!").thenRun(this::resume);
     await();
 
-    expectResume();
     map.size().thenAccept(size -> {
       threadAssertEquals(size, 2);
       resume();
@@ -136,11 +127,9 @@ public class DistributedMapTest extends ConcurrentTestCase {
 
     DistributedMap<String, String> map = copycat.create("test", DistributedMap.class).get();
 
-    expectResume();
     map.put("foo", "Hello world!", Duration.ofSeconds(1)).thenRun(this::resume);
     await();
 
-    expectResume();
     map.get("foo").thenAccept(result -> {
       threadAssertEquals(result, "Hello world!");
       resume();
@@ -149,14 +138,12 @@ public class DistributedMapTest extends ConcurrentTestCase {
 
     Thread.sleep(3000);
 
-    expectResume();
     map.get("foo").thenAccept(result -> {
       threadAssertNull(result);
       resume();
     });
     await();
 
-    expectResume();
     map.size().thenAccept(size -> {
       threadAssertEquals(size, 0);
       resume();
@@ -171,8 +158,6 @@ public class DistributedMapTest extends ConcurrentTestCase {
     LocalServerRegistry registry = new LocalServerRegistry();
 
     List<Copycat> copycats = new ArrayList<>();
-
-    expectResumes(nodes);
 
     Members.Builder builder = Members.builder();
     for (int i = 1; i <= nodes; i++) {
@@ -196,7 +181,7 @@ public class DistributedMapTest extends ConcurrentTestCase {
       copycats.add(copycat);
     }
 
-    await();
+    await(0, nodes);
 
     return copycats;
   }

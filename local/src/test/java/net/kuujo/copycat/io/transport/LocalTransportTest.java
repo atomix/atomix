@@ -50,7 +50,6 @@ public class LocalTransportTest extends ConcurrentTestCase {
 
     Context context = new SingleThreadContext("test-thread-%d", new Serializer());
 
-    expectResume();
     context.executor().execute(() -> {
       try {
         server.listen(new InetSocketAddress(InetAddress.getByName("localhost"), 5555), connection -> {
@@ -65,7 +64,6 @@ public class LocalTransportTest extends ConcurrentTestCase {
     });
     await();
 
-    expectResume();
     context.executor().execute(() -> {
       try {
         client.connect(new InetSocketAddress(InetAddress.getByName("localhost"), 5555)).thenAccept(connection -> {

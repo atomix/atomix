@@ -49,7 +49,6 @@ public class CleanerTest extends ConcurrentTestCase {
       log.clean(index);
     }
 
-    expectResume();
     log.cleaner().clean().thenRun(this::resume);
     await();
 

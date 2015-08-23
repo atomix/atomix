@@ -77,8 +77,6 @@ public class DistributedSetTest extends ConcurrentTestCase {
 
     List<Copycat> copycats = new ArrayList<>();
 
-    expectResumes(nodes);
-
     Members.Builder builder = Members.builder();
     for (int i = 1; i <= nodes; i++) {
       builder.addMember(new Member(i, "localhost", 5000 + i));
@@ -101,7 +99,7 @@ public class DistributedSetTest extends ConcurrentTestCase {
       copycats.add(copycat);
     }
 
-    await();
+    await(0, nodes);
 
     return copycats;
   }
