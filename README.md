@@ -3,8 +3,8 @@ Copycat
 
 [![Build Status](https://travis-ci.org/kuujo/copycat.png)](https://travis-ci.org/kuujo/copycat)
 
-#### [User Manual](#user-manual)
-#### [Raft Consensus Algorithm](#raft-consensus-algorithm)
+#### [User Manual](#user-manual-1)
+#### [Raft Consensus Algorithm](#raft-consensus-algorithm-1)
 #### [Javadocs][Javadoc]
 
 Copycat is both a low-level implementation of the [Raft consensus protocol][Raft] and a high-level distributed
@@ -153,19 +153,30 @@ back for more! If you would like to request specific documentation, please
       * [Log cleaning](#log-cleaning)
    * [Transports](#transports)
 1. [Raft consensus algorithm](#raft-consensus-algorithm)
+   * [RaftClient](#raftclient)
+      * [Client lifecycle](#client-lifecycle)
+      * [Client sessions](#session)
    * [RaftServer](#raftserver)
-   * [Server lifecycle](#server-lifecycle)
+      * [Server lifecycle](#server-lifecycle)
    * [Commands](#commands)
    * [Queries](#queries)
       * [Query consistency](#query-consistency)
    * [State machines](#state-machines)
-      * [StateMachineContext](#statemachinecontext)
-      * [StateMachineExecutor](#statemachineexecutor)
+      * [Registering operations](#registering-operations)
       * [Commits](#commits)
       * [Sessions](#sessions)
       * [Commit cleaning](#commit-cleaning)
-   * [RaftClient](#raftclient)
-      * [Session](#session)
+      * [Deterministic scheduling](#deterministic-scheduling)
+   * [Architecture](#architecture)
+      * [Clients](#clients)
+      * [Servers](#servers)
+      * [State machines](#state-machines-1)
+      * [Elections](#elections)
+      * [Commands](#commands-1)
+      * [Queries](#queries-1)
+      * [Sessions](#sessions-1)
+      * [Membership changes](#membership-changes)
+      * [Log compaction](#log-compaction)
 1. [Miscellaneous](#miscellaneous)
    * [Builders](#builders)
    * [Listeners](#listeners)
@@ -502,10 +513,8 @@ request by providing a `ConsistencyLevel` constant. The four minimum consistency
 * `ConsistencyLevel.LINEARIZABLE_LEASE` - Provides best-effort optimized linearizability by forcing all reads to go through the leader
   but allowing most queries to be executed without contacting a majority of the cluster so long as less than the
   election timeout has passed since the last time the leader communicated with a majority
-* `ConsistencyLevel.SEQUENTIAL` - Provides sequential consistency by allowing clients to read from followers but ensuring that state
-  does not go back in time from the perspective of any given session
-* `ConsistencyLevel.SERIALIZABLE` - Provides serializable consistency by allowing clients to read from followers members without any
-  additional checks
+* `ConsistencyLevel.SERIALIZABLE` - Provides serializable consistency by allowing clients to read from followers and ensuring that
+  clients see state progress monotonically
 
 Overloaded methods with `ConsistencyLevel` parameters are provided throughout Copycat's resources wherever it makes sense.
 
@@ -868,7 +877,7 @@ copycat.<DistributedTopic<String>>create("/test-topic", DistributedTopic.class).
 });
 ```
 
-Once the topic has been created, we can send and receive messages. To send messages to the topic,
+Once the topic has been created, users can send and receive messages. To send messages to the topic,
 use the `publish(T)` method:
 
 ```java
@@ -892,7 +901,7 @@ the time the message was sent.
 
 The Copycat API is designed to facilitate operating on arbitrary user-defined resources. When a custom resource is created
 via `Copycat.create`, an associated state machine will be created on each Copycat replica, and operations submitted by the
-resource instance will be applied to the replicated state machine. In that sense, we can think of a `Resource` instance
+resource instance will be applied to the replicated state machine. In that sense, think of a `Resource` instance
 as a client-side object and a `StateMachine` instance as the server-side representation of that object.
 
 To define a new resource, simply extend the base `Resource` class:
@@ -1326,7 +1335,7 @@ public class FooSerializer implements TypeSerializer<Foo> {
 }
 ```
 
-To serialize and deserialize an object, we simply write to and read from the passed in `BufferWriter` or `BufferReader`
+To serialize and deserialize an object, simply write to and read from the passed in `BufferWriter` or `BufferReader`
 instance respectively. In addition to the reader/writer, the `Serializer` that is serializing or deserializing the
 instance is also passed in. This allows the serializer to serialize or deserialize subtypes as well:
 
@@ -1470,7 +1479,7 @@ have been `clean`ed. The second time the segment is cleaned, 25% of its entries 
 forth.
 
 Log cleaning works by simply creating a new segment at the start of the segment being cleaned and iterating over
-the entries in the segment, rewriting live entries from the old segment to the new segment, and throwing out
+the entries in the segment, rewriting live entries from the old segment to the new segment, and discarding
 entries that have been `clean`ed:
 
 ![Combining segments](http://s12.postimg.org/jhdthtpct/Combined_Segment_Compaction_New_Page_1.png)
@@ -1496,6 +1505,7 @@ Transport transport = new NettyTransport();
 
 For test cases, Copycat provides the [LocalTransport][LocalTransport] which mimics the behavior of a
 network based transport via threads and executors.
+
 
 ## Raft consensus algorithm
 
@@ -1523,6 +1533,63 @@ The primary interface to the `copycat-server` module is [RaftServer][RaftServer]
 The `copycat-client` submodule provides a [RaftClient][RaftClient] interface for submitting [commands][Command]
 and [queries][Query] to a cluster of [RaftServer][RaftServer]s. The client implementation includes full support
 for linearizable commands via [sessions][Session].
+
+### RaftClient
+
+The [RaftClient][RaftClient] provides an interface for submitting [commands](#commands) and [queries](#queries) to a cluster
+of [Raft servers](#raftserver).
+
+To create a client, you must supply the client [Builder](#builders) with a set of `Members` to which to connect.
+
+```java
+Members members = Members.builder()
+  .addMember(new Member(1, "123.456.789.1" 5555))
+  .addMember(new Member(2, "123.456.789.2" 5555))
+  .addMember(new Member(3, "123.456.789.3" 5555))
+  .build();
+```
+
+The provided `Members` do not have to be representative of the full Copycat cluster, but they do have to provide at
+least one correct server to which the client can connect. In other words, the client must be able to communicate with
+at least one `RaftServer` that is the leader or can communicate with the leader, and a majority of the cluster
+must be able to communicate with one another in order for the client to register a new [Session](#session).
+
+```java
+RaftClient client = RaftClient.builder()
+  .withTransport(new NettyTransport())
+  .withMembers(members)
+  .build();
+```
+
+Once a `RaftClient` has been created, connect to the cluster by calling `open()` on the client:
+
+```java
+client.open().thenRun(() -> System.out.println("Successfully connected to the cluster!"));
+```
+
+When the client is opened, it will connect to a random server and attempt to register its session. If session registration fails,
+the client will continue to attempt registration via random servers until all servers have been tried. If the session cannot be
+registered, the `CompletableFuture` returned by `open()` will fail.
+
+#### Client lifecycle
+
+#### Client sessions
+
+Once the client's session has been registered, the `Session` object can be accessed via `RaftClient.session()`.
+
+The client will remain connected to the server through which the session was registered for as long as possible. If the server
+fails, the client can reconnect to another random server and maintain its open session.
+
+The `Session` object can be used to receive events `publish`ed by the server's `StateMachine`. To register a session event listener,
+use the `onReceive` method:
+
+```java
+client.session().onReceive(message -> System.out.println("Received " + message));
+```
+
+When events are sent from a server state machine to a client via the `Session` object, only the server to which the client is
+connected will send the event. Copycat servers guarantee that state machine events will be received by the client session in the
+order in which they're sent even if the client switches servers.
 
 ### RaftServer
 
@@ -1568,7 +1635,7 @@ The returned `CompletableFuture` will be completed once the server has connected
 the cluster and, critically, discovered the cluster leader. See the [server lifecycle](#server-lifecycle)
 for more information on how the server joins the cluster.
 
-### Server lifecycle
+#### Server lifecycle
 
 Copycat's Raft implementation supports dynamic membership changes designed to allow servers to arbitrarily join and leave the
 cluster. When a `RaftServer` is configured, the `Members` list provided in the server configuration specifies some number of
@@ -1657,15 +1724,15 @@ public class Get<T> implements Query {
 
   @Override
   public ConsistencyLevel consistency() {
-    return Consistency.SEQUENTIAL;
+    return Consistency.SERIALIZABLE;
   }
 
 }
 ```
 
 The consistency level returned by the overridden `consistency()` method amounts to a *minimum consistency requirement*.
-In many cases, a `SEQUENTIAL` consistency level can actually result in `LINEARIZABLE` consistency depending the server
-to which a client submits queries.
+In many cases, a `SERIALIZABLE` query can actually result in `LINEARIZABLE` read depending the server to which a client submits
+queries, but clients can only rely on the configured consistency level.
 
 Copycat provides four consistency levels:
 * `ConsistencyLevel.LINEARIZABLE` - Provides guaranteed linearizability by forcing all reads to go through the leader and
@@ -1673,10 +1740,8 @@ Copycat provides four consistency levels:
 * `ConsistencyLevel.LINEARIZABLE_LEASE` - Provides best-effort optimized linearizability by forcing all reads to go through the
   leader but allowing most queries to be executed without contacting a majority of the cluster so long as less than the
   election timeout has passed since the last time the leader communicated with a majority
-* `ConsistencyLevel.SEQUENTIAL` - Provides sequential consistency by allowing clients to read from followers but ensuring that
-  state does not go back in time from the perspective of any given session
-* `ConsistencyLevel.SERIALIZABLE` - Provides serializable consistency by allowing clients to read from followers members without
-  any additional checks
+* `ConsistencyLevel.SERIALIZABLE` - Provides serializable consistency by allowing clients to read from followers and ensuring
+  that clients see state progress monotonically
 
 ### State machines
 
@@ -1709,7 +1774,7 @@ Internally, state machines are backed by a series of entries in an underlying [l
 recovery, state machine commands in the log will be replayed to the state machine. This is why it's so critical that state
 machines be deterministic.
 
-#### StateMachineExecutor
+#### Registering operations
 
 The `StateMachineExecutor` is a special [Context](#contexts) implemntation that is responsible for applying [commands](#commands)
 and [queries](#queries) to the state machine. Operations are handled by registering callbacks on the provided `StateMachineExecutor`
@@ -1720,34 +1785,6 @@ in the `configure` method:
 protected void configure(StateMachineExecutor executor) {
   executor.register(SetCommand.class, this::set);
   executor.register(GetQuery.class, this::get);
-}
-```
-
-In addition to registering operation callbacks, the `StateMachineExecutor` also facilitates deterministic scheduling based on
-the Raft replicated log.
-
-```java
-executor.schedule(() -> System.out.println("Every second"), Duration.ofSeconds(1), Duration.ofSeconds(1));
-```
-
-Because of the complexities of coordinating distributed systems, time does not move at the same rate on all servers in the cluster.
-What is essential, though, is that time-based callbacks be executed at the same point in the Raft log on all nodes. In order to
-accomplish this, the leader writes an approximate `Instant` to the replicated log for each command. When a command is applied to the
-state machine, the command's timestamp is used to invoke any outstanding scheduled callbacks. This means the granularity of
-scheduled callbacks is limited by the minimum time between commands submitted to the cluster, including session register and
-keep-alive requests. Thus, users should not rely on `StateMachineExecutor` scheduling for accuracy.
-
-#### StateMachineContext
-
-The `StateMachineContext` provides a view of the local server's state at the time a [command](#command) or [query](#queries)
-is applied to the state machine. Users can use the context to access, for instance, the list of `Session`s currently registered
-in the cluster.
-
-To get the context, call the protected `context()` getter from inside the state machine:
-
-```java
-for (Session session : context().sessions()) {
-  session.publish("Hello world!");
 }
 ```
 
@@ -1774,6 +1811,251 @@ protected Object get(Commit<GetQuery> commit) {
 
 #### Sessions
 
+Sessions are representative of a single client's connection to the cluster. For each `Commit` applied to the state machine,
+an associated `Session` is provided. State machines can use sessions to associate clients with state changes or even send
+events back to the client through the session:
+
+```java
+protected Object put(Commit<PutCommand> commit) {
+  commit.session().publish("putteded");
+  return map.put(commit.operation().key(), commit.operation().value());
+}
+```
+
+The `StateMachineContext` provides a view of the local server's state at the time a [command](#command) or [query](#queries)
+is applied to the state machine. Users can use the context to access, for instance, the list of `Session`s currently registered
+in the cluster.
+
+To get the context, call the protected `context()` getter from inside the state machine:
+
+```java
+for (Session session : context().sessions()) {
+  session.publish("Hello world!");
+}
+```
+
+#### Commit cleaning
+
+As commands are submitted to the cluster and applied to the Raft state machine, the underlying [log](#log) grows.
+Without some mechanism to reduce the size of the log, the log would grow without bound and ultimately servers would
+run out of disk space. Raft suggests a few different approaches of handling log compaction. Copycat uses the
+[log cleaning](#log-cleaning) approach.
+
+`Commit` objects are backed by entries in Copycat's replicated log. When a `Commit` is no longer needed by the
+`StateMachine`, the state machine should clean the commit from Copycat's log by calling the `clean()` method:
+
+```java
+protected void remove(Commit<RemoveCommand> commit) {
+  map.remove(commit.operation().key());
+  commit.clean();
+}
+```
+
+Internally, the `clean()` call will be proxied to Copycat's underlying log:
+
+```java
+log.clean(commit.index());
+```
+
+As commits are cleaned by the state machine, entries in the underlying log will be marked for deletion. *Note
+that it is not safe to assume that once a commit is cleaned it is permanently removed from the log*. Cleaning
+an entry only *marks* it for deletion, and the entry won't actually be removed from the log until a background
+thread cleans the relevant log segment. This means in the event of a crash-recovery and replay of the log,
+a previously `clean`ed commit may still exists. For this reason, if a commit is dependent on a prior commit,
+state machines should only `clean` those commits if no prior related commits have been seen. (More on this
+later)
+
+Once the underlying `Log` has grown large enough, and once enough commits have been `clean`ed from the log,
+a pool of background threads will carry out their task to rewrite segments of the log to remove commits
+(entries) for which `clean()` has been called:
+
+#### Deterministic scheduling
+
+In addition to registering operation callbacks, the `StateMachineExecutor` also facilitates deterministic scheduling based on
+the Raft replicated log.
+
+```java
+executor.schedule(() -> System.out.println("Every second"), Duration.ofSeconds(1), Duration.ofSeconds(1));
+```
+
+Because of the complexities of coordinating distributed systems, time does not advance at the same rate on all servers in
+the cluster. What is essential, though, is that time-based callbacks be executed at the same point in the Raft log on all
+nodes. In order to accomplish this, the leader writes an approximate `Instant` to the replicated log for each command.
+When a command is applied to the state machine, the command's timestamp is used to invoke any outstanding scheduled callbacks.
+This means the granularity of scheduled callbacks is limited by the minimum time between commands submitted to the cluster,
+including session register and keep-alive requests. Thus, users should not rely on `StateMachineExecutor` scheduling for
+accuracy.
+
+### Architecture
+
+Copycat's implementation of the [Raft consensus algorithm][Raft] has been developed over a period of over two years. In most
+cases, it closely follows the recommendations of the Diego Ongaro's [Raft dissertation](https://ramcloud.stanford.edu/~ongaro/thesis.pdf),
+but sometimes it diverges from the norm. For instance, Raft dictates that all reads and writes be executed through the leader
+node, but Copycat's Raft implementation supports per-request consistency levels that allow clients to sacrifice linearizability
+and read from followers. Similarly, Raft literature recommends snapshots as the simplest approach to log compaction, but Copycat
+prefers log cleaning to promote more consistent performance throughout the lifetime of a cluster.
+
+It's important to note that when Copycat does diverge from the Raft norm, it does so using well-understood alternative
+methods that are described in the Raft literature and frequently discussed on Raft discussion forums. Copycat does not
+attempt to alter the fundamental correctness of the algorithm but rather extends it to promote usability in real-world
+use cases.
+
+The following documentation details Copycat's implementation of the Raft consensus algorithm and in particular the areas
+in which the implementation diverges from the recommendations in Raft literature and the reasoning behind various decisions.
+
+#### Clients
+
+Copycat's Raft client is responsible for connecting to a Raft cluster and submitting [commands](#commands-1) and
+[queries](#queries-1).
+
+The pattern with which clients communicate with servers diverges slightly from that which is described in the Raft
+literature. Copycat's Raft implementation uses client communication patterns that are closely modeled on those of
+[ZooKeeper](https://zookeeper.apache.org/). Clients are designed to connect to and communicate with a single
+server at a time. There is no correlation between the client and the Raft cluster's leader. In fact, clients never
+even leader about the leader.
+
+When a client is started, the client connects to a random server and attempts to register a new session. If the registration
+fails, the client attempts to connect to another random server and register a new session again. In the event that the client
+fails to register a session with any server, the client fails and must be restarted. Alternatively, once the client successfully
+registers a session through a server, the client continues to submit [commands](#commands-1) and [queries](#queries-1)
+through that server until a failure or shutdown event.
+
+Once the client has successfully registered its session, it begins sending periodic *keep alive* requests to the cluster.
+Clients are responsible for sending a keep alive request at an interval less than the cluster's *session timeout* to
+ensure their session remains open.
+
+If the server through which a client is communicating fails (the client detects a disconnection when sending a 
+command, query, or keep alive request), the client will connect to another random server and immediately attempt to send
+a new *keep alive* request. The client will continue attempting to commit a keep alive request until it locates another
+live member of the Raft cluster.
+
+#### Servers
+
+Raft servers are responsible for participating in elections and replicating state machine [commands](#commands-1) and
+[queries](#queries-1) through the Raft log.
+
+Each Raft server maintains a single [Transport](#transport) *server* and *client* which is connected to each other
+member of the Raft cluster at any given time. Each server uses a single-thread event loop internally to handle
+requests. This reduces complexity and ensures that order is strictly enforced on handled requests.
+
+#### State machines
+
+Each server is configured with a [state machine](#state-machines-1) to which it applies committed [commands](#commands-1)
+and [queries](#queries). State machines operations are executed in a separate *state machine* thread to ensure that
+blocking state machine operations do not block the internal server event loop.
+
+Servers maintain both an internal state machine and a user state machine. The internal state machine is responsible for
+maintaining internal system state such as [sessions](#sessions-1) and [membership](#membership-changes) and applying
+*commands* and *queries* to the user-provided `StateMachine`.
+
+#### Elections
+
+In addition to necessarily adhering to the typical Raft election process, Copycat's Raft implementation uses a pre-vote
+protocol to improve availability after failures. The pre-vote protocol (described in section `4.2.3` of the
+[Raft dissertation](https://ramcloud.stanford.edu/~ongaro/thesis.pdf)) ensures that only followers that are eligible to
+become leaders can participate in elections. When followers elections timeout, prior to transitioning to candidates and
+starting a new election, each follower polls the rest of the cluster to determine whether their log is up-to-date. Only
+followers with up-to-date logs will transition to *candidate* and begin a new election, thus ensuring that servers that
+can't win an election cannot disrupt the election process by resetting election timeouts for servers that can win an election.
+
+#### Commands
+
+Copycat's Raft implementation separates the concept of *writes* from *reads* in order to optimize the handling of each.
+*Commands* are state machine operations which alter the state machine state. All commands submitted to a Raft cluster are
+proxied to the leader, written to disk, and replicated through the Raft log.
+
+When the leader receives a command, it writes the command to the log along with a client provided *sequence number*,
+the *session ID* of the session which submitted the command, and an approximate *timestamp*. Notably, the *timestamp* is
+used to provide a deterministic approximation of time on which state machines can base time-based command handling like
+TTLs or other timeouts.
+
+There are certain scenarios where sequential consistency can be broken by clients submitting commands via disparate
+followers. If a client submits a command to server `A` which forwards it to server `B` (the leader), and then switches
+servers and submits a command to server `C` which also forwards it to server `B`, it is conceivable that the command
+submitted to server `C` could reach the leader prior to the command submitted via server `A`. If those commands are
+committed to the Raft log in the order in which they're received by the leader, that will violate sequential consistency
+since state changes will no longer reflect the client's program order.
+
+Because of the pattern with which clients communicate with servers, this may be an unlikely occurrence. Clients only
+switch servers in the event of a server failure. Nevertheless, failures are when it is most critical that a systems
+maintain their guarantees, so leaders are responsible for ensuring that commands received by a client are logged in
+sequential order as specified by that client.
+
+When a client submits a command to the cluster, it tags the command with a monotonically increasing *sequence* number.
+The sequence number is used for two purposes. First, it is used to sequence commands as they're written to the Raft
+log. If a leader receives a command with a sequence number greater than `1 + previousSequence` then the command request
+will be queued for handling once the commands are properly sequenced. This ensures that commands are written to the
+Raft log in the order in which they were sent by the client regardless of the route through which they travelled to the
+leader.
+
+Note, however, that commands are not rejected if the *sequence* number is less than that of commands previously submitted
+by the client. The reasoning behind this is to handle a specific failure scenario. [Sessions](#sessions-1) provide linearizability
+for commands submitted to the cluster by clients by using the same *sequence* number to store command output and deduplicate
+commands as they're applied to the state machine. If a client submits a command to a server that fails, the client doesn't
+necessarily know whether or not the command succeeded. Indeed, the command could have been replicated to a majority of the
+cluster prior to the server failure. In that case, the command would ultimately be committed and applied to the state machine,
+but the client would never receive the command output. Session-based linearizability ensures that clients can still read output
+for commands resubmitted to the cluster, but that requires that leaders allow commands with old *sequence* numbers to be logged
+and replicated.
+
+Finally, [queries](#queries-1) are optionally allowed to read stale state from followers. In order to do so in a manner that
+ensures serializability (state progresses monotonically) when the client switches between servers, the client needs to have a
+view of the most recent state for which it has received output. When commands are committed and applied to the user-provided
+state machine, command output is [cached in memory for linearizability](#sessions-1) and the command output returned to the
+client along with the *index* of the command. Thereafter, when the client submits a query to a follower, it will ensure that
+it does not see state go back in time by indicating to the follower the highest index for which it has seen state.
+
+*For more on linearizable semantics, see the [sessions](#sessions-1) documentation*
+
+#### Queries
+
+*Queries* are state machine operations which read state machine state but do not alter it. This is critical because queries
+are never logged to the Raft log or replicated. Instead, queries are applied either on a follower or the leader based on the
+configured per-query *consistency level*.
+
+When a query is submitted to the Raft cluster, as with all other requests the query request is sent to the server to which
+the client is connected. The server that receives the query request will handle the query based on the query's configured
+*consistency level*. If the server that receives the query request is not the leader, it will evaluate the request to
+determine whether it needs to be proxied to the leader:
+
+If the query is `LINEARIZABLE` or `LINEARIZABLE_LEASE`, the server will forward the query to the leader.
+
+`LINEARIZABLE` queries are handled by the leader by contacting a majority of the cluster before servicing the query.
+When the leader receives a linearizable read, if the leader is in the process of sending *AppendEntries* RPCs to followers
+then the query is queued for the next heartbeat. On the next heartbeat iteration, once the leader has successfully contacted
+a majority of the cluster, queued queries are applied to the user-provided state machine and the leader responds to their
+respective requests with the state machine output. Batching queries during heartbeats reduces the overhead of synchronously
+verifying the leadership during reads.
+
+`LINEARIZABLE_LEASE` queries are handled by the leader under the assumption that once the leader has verified its leadership
+with a majority of the cluster, it can assume that it will remain the leader for at least an election timeout. When a
+lease-based linearizable query is received by the leader, it will check to determine the last time it verified its leadership
+with a majority of the cluster. If more than an election timeout has elapsed since it contacted a majority of the cluster,
+the leader will immediately attempt to verify its leadership before applying the query to the user-provided state machine.
+Otherwise, if the leadership was verified within an election timeout, the leader will immediately apply the query to the
+user-provided state machine and respond with the state machine output.
+
+If the query is `SERIALIZABLE`, the receiving server performs a consistency check to ensure that its log is not too far
+out-of-sync with the leader to reliably service a query. If the receiving server's log is in-sync, it will wait until
+the log is caught up until the last index seen by the requesting client before servicing the query. When queries are
+submitted to the cluster, the client provides a *version* number which specifies the highest index for which
+it has seen a response. Awaiting that index when servicing queries on followers ensures that state does not go back
+in time if a client switches servers. Once the server's state machine has caught up to the client's *version*
+number, the server applies the query to its state machine and response with the state machine output.
+
+Clients' *version* numbers are based on feedback received from the cluster when submitting commands and queries.
+Clients receive *version* numbers for each command and query submitted to the cluster. When a client submits a command
+to the cluster, the command's *index* in the Raft replicated log will be returned to the client along with the output. This
+is the client's *version* number. Similarly, when a client submits a query to the cluster, the server that services the query
+will respond with the query output and the server's *lastApplied* index as the *version* number.
+
+Log consistency for inconsistent queries is determined  by checking whether the server's log's `lastIndex` is greater than
+or equal to the `commitIndex`. That is, if the last *AppendEntries* RPC received by the server did not contain a `commitIndex`
+less than or equal to the log's `lastIndex` after applying entries, the server is considered out-of-sync and queries are
+forwarded to the leader.
+
+#### Sessions
+
 Copycat's Raft implementation uses sessions to provide linearizability for commands submitted to the cluster. Sessions
 represent a connection between a `RaftClient` and a `RaftServer` and are responsible for tracking communication between
 them.
@@ -1789,12 +2071,7 @@ storing command output in memory and deduplicating commands as they're applied t
 When a client connects to Copycat's Raft cluster, the client chooses a random Raft server to which to connect and
 submits a *register* request to the cluster. The *register* request is forwarded to the Raft cluster leader if one exists,
 and the leader logs and replicates the registration through the Raft log. Entries are logged and replicated with an
-approximate *timestamp* generated by the leader:
-
-**RegisterEntry**
-* `index`
-* `term`
-* `timestamp`
+approximate *timestamp* generated by the leader.
 
 Once the *register* request has been committed, the leader replies to the request with the *index* of the registration
 entry in the Raft log. Thereafter, the registration *index* becomes the globally unique *session ID*, and the client must
@@ -1804,13 +2081,6 @@ Once a session has been registered, the client must periodically submit *keep al
 *register* requests, *keep alive* requests are logged and replicated by the leader and ultimately applied to an internal
 state machine. Keep alive requests also contain an additional `sequence` number which specifies the last command for which
 the client received a successful response, but more on that in a moment.
-
-**KeepAliveEntry**
-* `index`
-* `term`
-* `session`
-* `sequence`
-* `timestamp`
 
 Once a session has been registered, the client must submit all commands to the cluster with an active *session ID* and
 a monotonically increasing *sequence number* for the session. The *session ID* is used to associate the command with a
@@ -1850,99 +2120,51 @@ the cluster via *keep alive* requests. As keep alive requests are logged and rep
 from memory. This ensures that all servers hold unacknowledged events in memory until they've been received by the client
 associated with a given session. In the event that a session times out, all events are removed from memory.
 
-For more information on sessions in Raft, see section 6.3 of Diego Ongaro's [Raft dissertation](https://ramcloud.stanford.edu/~ongaro/thesis.pdf)
+*For more information on sessions in Raft, see section 6.3 of Diego Ongaro's
+[Raft dissertation](https://ramcloud.stanford.edu/~ongaro/thesis.pdf)*
 
-#### Commit cleaning
+#### Membership changes
 
-As commands are submitted to the cluster and applied to the Raft state machine, the underlying [log](#log) grows.
-Without some mechanism to reduce the size of the log, the log would grow without bound and ultimately servers would
-run out of disk space. Raft suggests a few different approaches of handling log compaction. Copycat uses the
-[log cleaning](#log-cleaning) approach.
+Membership changes are the process through which members are added to and removed from the Raft cluster. This is a notably
+fragile process due to the nature of consensus. Raft requires that an entry be stored on a majority of servers in order to
+be considered committed. But if new members are added to the cluster too quickly, this guarantee can be broken. If 3 members
+are added to a 2-node cluster and immediately begin participating in the voting protocol, the three new members could potentially
+form a consensus and any commands that were previously committed to the cluster (requiring `1` node for commitment) would no
+longer be guaranteed to persist following an election.
 
-`Commit` objects are backed by entries in Copycat's replicated log. When a `Commit` is no longer needed by the
-`StateMachine`, the state machine should clean the commit from Copycat's log by calling the `clean()` method:
+Throughout the evolution of the Raft consensus algorithm, two major approaches to membership changes have been suggested
+for handling membership changes. The approach originally suggested in Raft literature used joint-consensus to ensure that
+two majorities could not overlap each other during a membership change. But more recent literature suggests adding or removing
+a single member at a time in order to avoid the join-consensus problem altogether. Copycat takes the latter approach.
 
-```java
-protected void remove(Commit<RemoveCommand> commit) {
-  map.remove(commit.operation().key());
-  commit.clean();
-}
-```
+Copycat's configuration change algorithm is designed to allow servers to arbitrarily join and leave the cluster. When a cluster
+is started for the first time, the configuration provided to each server at startup is used as the base cluster configuration.
+Thereafter, servers that are joining the cluster are responsible for coordinating with the leader to join the cluster.
 
-Internally, the `clean()` call will be proxied to Copycat's underlying log:
+Copycat performs membership changes by adding two additional states to Raft servers: the *join* and *leave* states.
+When a Raft server is started, the server first transitions into the *join* state. While in the join state, the server
+attempts to determine whether a cluster is already available by attempting to contact a leader of the cluster. If the
+server fails to contact a leader, it transitions into the *follower* state and continues with normal operation of the
+Raft consensus protocol.
 
-```java
-log.clean(commit.index());
-```
+If a server in the *join* state does successfully contact a leader, it submits a *join* request to the leader, requesting
+to join the cluster. The leader may or may not already know about the joining member. When the leader receives a *join*
+request from a joining member, the leader immediately logs a *join* entry, updates its configuration, and replicates the
+entry to the rest of the cluster.
 
-As commits are cleaned by the state machine, entries in the underlying log will be marked for deletion. *Note
-that it is not safe to assume that once a commit is cleaned it is permanently removed from the log*. Cleaning
-an entry only *marks* it for deletion, and the entry won't actually be removed from the log until a background
-thread cleans the relevant log segment. This means in the event of a crash-recovery and replay of the log,
-a previously `clean`ed commit may still exists. For this reason, if a commit is dependent on a prior commit,
-state machines should only `clean` those commits if no prior related commits have been seen. (More on this
-later)
+The leader is responsible for maintaining two sets of members: *passive* members and *active* members. *Passive* members
+are members that are in the process of joining the cluster but cannot yet participate in elections, but in all other functions,
+including replication via *AppendEntries* RPCs, they function as normal Raft servers. The period in which a member is in
+the *passive* state is intended to catch up the joining member's log enough that it can safely transition to a full member
+of the cluster and participate in elections. The leader is responsible for determining when a *passive* member has caught
+up to it based on the passive member's log. Once the passive member's log contains the last *commitIndex* sent to that member,
+it is considered to be caught up. Once a member is caught up to the leader, the leader will log a second entry to the log
+and replicate the configuration, resulting in the joining member being promoted to *active* state. Once the *passive* member
+receives the configuration change, it transitions into the *follower* state and continues normal operation.
 
-Once the underlying `Log` has grown large enough, and once enough commits have been `clean`ed from the log,
-a pool of background threads will carry out their task to rewrite segments of the log to remove commits
-(entries) for which `clean()` has been called:
+#### Log compaction
 
-![Raft cleaning](http://s21.postimg.org/fvlvlg9lz/Raft_Compaction_New_Page_3.png)
-
-### RaftClient
-
-The [RaftClient][RaftClient] provides an interface for submitting [commands](#commands) and [queries](#queries) to a cluster
-of [Raft servers](#raftserver).
-
-To create a client, you must supply the client [Builder](#builders) with a set of `Members` to which to connect.
-
-```java
-Members members = Members.builder()
-  .addMember(new Member(1, "123.456.789.1" 5555))
-  .addMember(new Member(2, "123.456.789.2" 5555))
-  .addMember(new Member(3, "123.456.789.3" 5555))
-  .build();
-```
-
-The provided `Members` do not have to be representative of the full Copycat cluster, but they do have to provide at
-least one correct server to which the client can connect. In other words, the client must be able to communicate with
-at least one `RaftServer` that is the leader or can communicate with the leader, and a majority of the cluster
-must be able to communicate with one another in order for the client to register a new [Session](#session).
-
-```java
-RaftClient client = RaftClient.builder()
-  .withTransport(new NettyTransport())
-  .withMembers(members)
-  .build();
-```
-
-Once a `RaftClient` has been created, connect to the cluster by calling `open()` on the client:
-
-```java
-client.open().thenRun(() -> System.out.println("Successfully connected to the cluster!"));
-```
-
-When the client is opened, it will connect to a random server and attempt to register its session. If session registration fails,
-the client will continue to attempt registration via random servers until all servers have been tried. If the session cannot be
-registered, the `CompletableFuture` returned by `open()` will fail.
-
-#### Session
-
-Once the client's session has been registered, the `Session` object can be accessed via `RaftClient.session()`.
-
-The client will remain connected to the server through which the session was registered for as long as possible. If the server
-fails, the client can reconnect to another random server and maintain its open session.
-
-The `Session` object can be used to receive events `publish`ed by the server's `StateMachine`. To register a session event listener,
-use the `onReceive` method:
-
-```java
-client.session().onReceive(message -> System.out.println("Received " + message));
-```
-
-When events are sent from a server state machine to a client via the `Session` object, only the server to which the client is
-connected will send the event. Copycat servers guarantee that state machine events will be received by the client session in the
-order in which they're sent even if the client switches servers.
+![Raft log compaction](http://s21.postimg.org/fvlvlg9lz/Raft_Compaction_New_Page_3.png)
 
 ## Miscellaneous
 
