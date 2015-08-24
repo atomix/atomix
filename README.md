@@ -1,16 +1,19 @@
 Copycat
 =======
 
+**Persistent - Consistent - Fault-tolerant - Database - Coordination - Framework**
+
 [![Build Status](https://travis-ci.org/kuujo/copycat.png)](https://travis-ci.org/kuujo/copycat)
 
 #### [User Manual](#user-manual-1)
 #### [Raft Consensus Algorithm](#raft-consensus-algorithm-1)
 #### [Javadocs][Javadoc]
 
-Copycat is both a low-level implementation of the [Raft consensus protocol][Raft] and a high-level distributed
+Copycat is both a low-level implementation of the [Raft consensus algorithm][Raft] and a high-level distributed
 coordination framework that combines the consistency of [ZooKeeper](https://zookeeper.apache.org/) with the
 usability of [Hazelcast](http://hazelcast.org/) to provide tools for managing and coordinating stateful resources
-in a distributed system.
+in a distributed system. Its strongly consistent, fault-tolerant data store is designed for such use cases as
+configuration management, service discovery, and distributed synchronization.
 
 Copycat exposes a set of high level APIs with tools to solve a variety of distributed systems problems including:
 * [Distributed coordination tools](#distributed-coordination)
@@ -116,58 +119,61 @@ back for more! If you would like to request specific documentation, please
 [submit a request](http://github.com/kuujo/copycat/issues)
 
 1. [Introduction](#introduction)
+   * [The CAP theorem](#the-cap-theorem)
+   * [Copycat's consistency model](#consistency-model)
+   * [Fault-tolerance in Copycat](#fault-tolerance)
    * [Project structure](#project-structure)
-   * [Dependencies](#dependencies)
+   * [Dependency management](#dependencies)
    * [The Copycat API](#the-copycat-api)
-      * [CopycatReplica](#copycatreplica)
-      * [CopycatClient](#copycatclient)
-   * [Thread model](#thread-model)
+      * [Working with replicas](#copycatreplica)
+      * [Working with clients](#copycatclient)
+   * [Copycat's thread model](#thread-model)
       * [Asynchronous API usage](#asynchronous-api-usage)
       * [Synchronous API usage](#synchronous-api-usage)
-   * [Resources](#resources)
-      * [Persistence model](#persistence-model)
-      * [Consistency model](#consistency-model)
-1. [Distributed resources](#distributed-resources)
-   * [Distributed collections](#distributed-collections)
-      * [DistributedSet](#distributedset)
-      * [DistributedMap](#distributedmap)
-   * [Distributed atomic variables](#distributed-atomic-variables)
-      * [DistributedAtomicValue](#distributedatomicvalue)
-   * [Distributed coordination](#distributed-coordination)
-      * [DistributedLock](#distributedlock)
-      * [DistributedLeaderElection](#distributedleaderelection)
-      * [DistributedTopic](#distributedtopic)
-   * [Custom resources](#custom-resources)
+   * [What are resources?](#resources)
+      * [Persistence modes](#persistence-model)
+      * [Consistency levels](#consistency-levels)
+1. [Managing state in Copycat with resources](#distributed-resources)
+   * [Working with collections](#distributed-collections)
+      * [Sets](#distributedset)
+      * [Maps](#distributedmap)
+   * [Working with atomic variables](#distributed-atomic-variables)
+      * [Atomic values](#distributedatomicvalue)
+   * [Working with coordination tools](#distributed-coordination)
+      * [Distributed locks](#distributedlock)
+      * [Leader elections](#distributedleaderelection)
+      * [Topic messaging](#distributedtopic)
+   * [Writing custom resources](#custom-resources)
 1. [I/O & Serialization](#io--serialization)
    * [Buffers](#buffers)
       * [Bytes](#bytes)
       * [Buffer pools](#buffer-pools)
-   * [Serialization](#serialization)
-      * [Serializer](#serializer)
+   * [Serialization framework](#serialization)
+      * [The serializer API](#serializer)
       * [Pooled object deserialization](#pooled-object-deserialization)
       * [Serializable type resolution](#serializable-type-resolution)
-      * [CopycatSerializable](#copycatserializable)
-      * [TypeSerializer](#typeserializer)
-   * [Storage](#storage)
-      * [Log](#log)
+      * [Custom serializable types](#copycatserializable)
+      * [Custom type serializers](#typeserializer)
+   * [Storage framework](#storage)
+      * [The commit log](#log)
       * [Log cleaning](#log-cleaning)
-   * [Transports](#transports)
+   * [Transport framework](#transports)
 1. [Raft consensus algorithm](#raft-consensus-algorithm)
-   * [RaftClient](#raftclient)
+   * [Working with Raft clients](#raftclient)
       * [Client lifecycle](#client-lifecycle)
       * [Client sessions](#client-sessions)
-   * [RaftServer](#raftserver)
+   * [Working with Raft servers](#raftserver)
       * [Server lifecycle](#server-lifecycle)
-   * [Commands](#commands)
-   * [Queries](#queries)
+   * [Raft commands (writes)](#commands)
+   * [Raft queries (reads)](#queries)
       * [Query consistency](#query-consistency)
-   * [State machines](#state-machines)
-      * [Registering operations](#registering-operations)
-      * [Commits](#commits)
-      * [Sessions](#sessions)
-      * [Commit cleaning](#commit-cleaning)
-      * [Deterministic scheduling](#deterministic-scheduling)
-   * [Architecture](#architecture)
+   * [Building a state machine](#state-machines)
+      * [Registering state machine operations](#registering-operations)
+      * [State machine commits](#commits)
+      * [Accessing client sessions](#sessions)
+      * [Cleaning the commit log](#commit-cleaning)
+      * [Scheduling deterministic operations in the state machine](#deterministic-scheduling)
+   * [Raft implementation details](#raft-implementation-details)
       * [Clients](#clients)
       * [Servers](#servers)
       * [State machines](#state-machines-1)
@@ -177,10 +183,10 @@ back for more! If you would like to request specific documentation, please
       * [Sessions](#sessions-1)
       * [Membership changes](#membership-changes)
       * [Log compaction](#log-compaction)
-1. [Miscellaneous](#miscellaneous)
-   * [Builders](#builders)
-   * [Listeners](#listeners)
-   * [Contexts](#contexts)
+1. [Utilities](#utilities)
+   * [Working with builders](#builders)
+   * [Working with event listeners](#listeners)
+   * [Working with execution contexts](#contexts)
 
 ## Introduction
 
@@ -201,12 +207,7 @@ and persisted on a majority of replicas, the write is committed and guaranteed n
 Because the Copycat cluster is dependent on a majority of the cluster being reachable to commit writes, the cluster can
 tolerate a minority of the nodes failing. For this reason, it is recommended that each Copycat cluster have at least 3 or 5
 replicas, and the number of replicas should always be odd in order to achieve the greatest level of fault-tolerance. The number
-of replicas should be calculated as `2f + 1` where `f` is the number of failures to tolerate:
-* A cluster of `1` replica can tolerate `0` failures
-* A cluster of `2` replicas can tolerate `0` failures
-* A cluster of `3` replicas can tolerate `1` failure
-* A cluster of `4` replicas can tolerate `1` failure
-* A cluster of `5` replicas can tolerate `2` failures
+of replicas should be calculated as `2f + 1` where `f` is the number of failures to tolerate.
 
 **So what's the difference between Copycat and those other projects?**
 
@@ -224,10 +225,80 @@ designed to ensure that data is never lost in the event of a network partition o
 this requires that Copycat synchronously replicate all writes to a majority of the cluster and persist writes to disk,
 much like ZooKeeper.
 
+### The CAP theorem
+
+[The CAP theorem][CAP] is a frequently referenced theorem that states that it is impossible for a distributed
+system to simultaneously provide *Consistency*, *Availability*, and *Partition tolerance*. All distributed systems
+must necessarily sacrifice either consistency or availability, or some level of both, in the event of a partition.
+
+By definition, high-throughput, high-availability distributed databases like [Hazelcast](http://hazelcast.org/) or
+[Cassandra](http://cassandra.apache.org/) and other Dynamo-based systems fall under the *A* and *P* in the CAP theorem.
+That is, these systems generally sacrifice consistency in favor of availability during network failures. In AP systems,
+a network partition can result in temporary or even permanent loss of writes. These systems are generally designed to
+store and query large amounts of data quickly.
+
+Alternatively, systems like [ZooKeeper](https://zookeeper.apache.org/) which fall under the *C* and *P* in the CAP
+theorem are generally designed to store small amounts of mission critical state. CP systems provide strong consistency
+guarantees like [linearizability](https://en.wikipedia.org/wiki/Linearizability) and
+[sequential consistency](https://en.wikipedia.org/wiki/Sequential_consistency) even in the face of failures, but that
+level of consistency comes at a cost: availability. CP systems like ZooKeeper and Copycat are consensus-based and thus
+can only tolerate the loss of a minority of servers.
+
+### Consistency model
+
+In terms of the CAP theorem, Copycat falls squarely in the CP range. That means Copycat provides configurable strong
+consistency levels - [linearizability](https://en.wikipedia.org/wiki/Linearizability) for writes and reads, and
+optional weaker [serializability](https://en.wikipedia.org/wiki/Serializability) for reads - for all operations.
+Linearizability says that all operations must take place some time between their invocation and completion.
+This means that once a write is committed to the cluster, all clients are guaranteed to see the resulting state. 
+
+Consistency is guaranteed by [Copycat's implementation of the Raft consensus algorithm](#raft-consensus-algorithm).
+Raft uses a [distributed leader election](https://en.wikipedia.org/wiki/Leader_election) algorithm to elect a leader.
+The leader election algorithm guarantees that the server that is elected leader will have all the writes to the
+cluster that have previously been successful. All writes to the cluster go through the cluster leader and are
+*synchronously replicated to a majority of servers* before completion. Additionally, writes are sequenced in the
+order in which they're submitted by the client (sequential consistency).
+
+Unlike [ZooKeeper](https://zookeeper.apache.org/), Copycat natively supports linearizable reads as well. Much like
+writes, linearizable reads must go through the cluster leader (which always has the most recent cluster state) and
+may require contact with a majority of the cluster. For higher throughput, Copycat also allows reads from followers.
+Reads from followers guarantee *serializable consistency*, meaning all clients will see state changes in the same order
+but different clients may see different views of the state at any given time. Notably, *a client's view of the cluster
+will never go back in time* even when switching between servers. Additionally, Copycat places a bound on followers
+servicing reads: in order to service a read, a follower's log must be less than a heartbeat behind the leader's log.
+
+*See the [Raft implementation details](#raft-implementation-details) for more information on consistency
+in Copycat*
+
+### Fault-tolerance
+
+Because Copycat falls on the CP side of the CAP theorem, it favors consistency over availability, particularly under
+failure. In order to ensure consistency, Copycat's [consensus protocol](#raft-consensus-algorithm) requires that
+a majority of the cluster be alive and operating normally to service writes.
+
+* A cluster of `1` replica can tolerate `0` failures
+* A cluster of `2` replicas can tolerate `0` failures
+* A cluster of `3` replicas can tolerate `1` failure
+* A cluster of `4` replicas can tolerate `1` failure
+* A cluster of `5` replicas can tolerate `2` failures
+
+Failures in Copycat are handled by Raft's [leader election](https://en.wikipedia.org/wiki/Leader_election) algorithm.
+When the Copycat cluster starts, a leader is elected. Leaders are elected by a round of voting wherein servers vote
+for a candidate based on the [consistency of its log](#consistency-model).
+
+In the event of a failure of the leader, the remaining servers in the cluster will begin a new election and a new leader
+will be elected. This means for a brief period (seconds) the cluster will be unavailable.
+
+In the event of a partition, if the leader is on the quorum side of the partition, it will continue to operate normally.
+Alternatively, if the leader is on the non-quorum side of the partition, the leader will detect the partition (based on
+the fact that it can no longer contact a majority of the cluster) and step down, and the servers on the majority side
+of the partition will elect a new leader. Once the partition is resolved, nodes on the non-quorum side of the partition
+will join the quorum side and receive updates to their log from the remaining leader.
+
 ### Project structure
 
-Copycat is designed as a series of libraries that combine to form a high-level framework for managing consistent
-state in a distributed system. The project currently consists of 14 modules, each of which implements a portion
+Copycat is designed as a series of libraries that combine to form a framework for managing fault-tolerant state in
+a distributed system. The project currently consists of 14 modules, each of which implements a portion
 of the framework's functionality. The components of the project are composed hierarchically, so lower level
 components can be used independently of most other modules.
 
@@ -495,7 +566,7 @@ The `EPHEMERAL` persistence mode allows resource state changes to be reflected o
 that created them remains alive. For instance, if a `DistributedMap` key is set with `PersistenceMode.EPHEMERAL`,
 the key will disappear from the map when the session that created it expires or is otherwise closed.
 
-#### Consistency model
+#### Consistency levels
 
 When performing operations on resources, Copycat separates the types of operations into two categories:
 * *commands* - operations that alter the state of a resource
@@ -1153,7 +1224,7 @@ Additionally, Copycat support copying objects by serializing and deserializing t
 Person copy = serializer.copy(person);
 ```
 
-All `Serializer` instance constructed by Copycat use `ServiceLoaderResolver`. Copycat registers internal
+All `Serializer` instance constructed by Copycat use `ServiceLoaderTypeResolver`. Copycat registers internal
 `CopycatSerializable` types via `META-INF/services/net.kuujo.copycat.io.serializer.CopycatSerializable`. To register additional
 serializable types, create an additional `META-INF/services/net.kuujo.copycat.io.serializer.CopycatSerializable` file and list
 serializable types in that file.
@@ -1209,7 +1280,7 @@ Copycat always registers serializable types provided by [PrimitiveTypeResolver][
 * `List`
 * `Set`
 
-Additionally, Copycat's Raft implementation uses [ServiceLoaderResolver][ServiceLoaderResolver] to register
+Additionally, Copycat's Raft implementation uses [ServiceLoaderTypeResolver][ServiceLoaderTypeResolver] to register
 types registered via Java's `ServiceLoader`
 
 Users can resolve custom serializers at runtime via `Serializer.resolve` methods or register specific types
@@ -1569,11 +1640,11 @@ Once a `RaftClient` has been created, connect to the cluster by calling `open()`
 client.open().thenRun(() -> System.out.println("Successfully connected to the cluster!"));
 ```
 
+#### Client lifecycle
+
 When the client is opened, it will connect to a random server and attempt to register its session. If session registration fails,
 the client will continue to attempt registration via random servers until all servers have been tried. If the session cannot be
 registered, the `CompletableFuture` returned by `open()` will fail.
-
-#### Client lifecycle
 
 #### Client sessions
 
@@ -1888,7 +1959,7 @@ This means the granularity of scheduled callbacks is limited by the minimum time
 including session register and keep-alive requests. Thus, users should not rely on `StateMachineExecutor` scheduling for
 accuracy.
 
-### Architecture
+### Raft implementation details
 
 Copycat's implementation of the [Raft consensus algorithm][Raft] has been developed over a period of over two years. In most
 cases, it closely follows the recommendations of the Diego Ongaro's [Raft dissertation](https://ramcloud.stanford.edu/~ongaro/thesis.pdf),
@@ -2166,11 +2237,117 @@ receives the configuration change, it transitions into the *follower* state and 
 
 #### Log compaction
 
+From the [Raft dissertation](https://ramcloud.stanford.edu/~ongaro/thesis.pdf):
+
+> Raft’s log grows during normal operation as it incorporates more client requests. As it grows larger,
+> it occupies more space and takes more time to replay. Without some way to compact the log, this
+> will eventually cause availability problems: servers will either run out of space, or they will take too
+> long to start. Thus, some form of log compaction is necessary for any practical system.
+
+Raft literature suggests several ways to address the problem of logs growing unbounded. The most common of the log
+compaction methodologies is snapshots. Snapshotting compacts the Raft log by storing a snapshot of the state machine
+state and removing all commands applied to create that state. As simple as this sounds, though, there are some complexities.
+Servers have to ensure that snapshots are reflective of a specific point in the log even while continuing to service
+commands from clients. This may require that the process be forked for snapshotting or leaders step down prior to
+taking a snapshot. Additionally, if a follower falls too far behind the leader (the follower's log's last index is
+less than the leader's snapshot index), additional mechanisms are required to replicate snapshots from the leader to the
+follower.
+
+Alternative methods suggested in the Raft literature are mostly variations of log cleaning. Log cleaning is the process
+of removing individual entries from the log once they no longer contribute to the state machine state. The disadvantage
+of log cleaning - in particular for an abstract framework like Copycat - is that it adds additional complexity in requiring
+state machines to keep track of commands that no longer apply to the state machine's state. This complexity is multiplied
+by the delicacy handling tombstones. Commands that result in the absence of state must be carefully managed to ensure they're
+applied on *all* Raft servers. Nevertheless, log cleaning provides significant performance advantages by writing logs
+efficiently in long sequential strides.
+
+Copycat opted to sacrifice some complexity to state machines in favor of more efficient log compaction. Copycat's Raft
+log is written to a series of segment files and individually represent a subset of the entries in the log. As entries
+are written to the log and associated commands are applied to the state machine, state machines are responsible for
+explicitly cleaning the commits from the log. The log compaction algorithm is optimized to select segments based on the
+number of commits marked for cleaning. Periodically, a series of background threads will rewrite segments of the
+log in a thread-safe manner that ensures all segments can continue to be read and written. Whenever possible, neighboring
+segments are combined into a single segment.
+
 ![Raft log compaction](http://s21.postimg.org/fvlvlg9lz/Raft_Compaction_New_Page_3.png)
 
-## Miscellaneous
+*For more information on how commits are cleaned see the [log documentation](#log).*
 
-The following documentation explains the usage of various miscellaneous APIs provided by the `copycat-common` module.
+This compaction model means that Copycat's Raft protocol must be capable of accounting for entries missing from the log.
+When entries are replicated to a follower, each entry is replicated with its index so that the follower can write entries
+to its own log in the proper sequence. Entries that are not present in a server's log or in an *AppendEntries* RPC are simply
+skipped in the log. In order to maintain consistency, it is critical that state machines implement log cleaning correctly.
+
+The most complex case for state machines to handle is tombstone commands. It's fairly simple to determine when a stateful
+command has been superseded by a more recent command. For instance, consider this history:
+
+```
+put 1
+put 3
+```
+
+In the scenario above, once the second `put` command has been applied to the state machine, it's safe to remove the first
+`put` from the log. However, for commands that result in the absence of state (tombstones), cleaning the log is not as simple:
+
+```
+put 1
+put 3
+delete 3
+```
+
+In the scenario above, the first two `put` commands must be cleaned from the log before the final `delete` command can be
+cleaned. If the `delete` is cleaned from the log prior to either `put` and the server fails and restarts, the state machine
+will result in a non-deterministic state. Thus, state machines must ensure that commands that created state are cleaned
+before a command that results in the absence of that state.
+
+Furthermore, it is essential that the `delete` command be replicated on *all* servers in the cluster prior to being cleaned
+from any log. If, for instance, a server is partitioned when the `delete` is committed, and the `delete` is cleaned from the
+log prior to the partition healing, that server will never receive the tombstone and thus not clean all prior `put` commands.
+
+Some systems like [Kafka](http://kafka.apache.org/) handle tombstones by aging them out of the log after a large interval
+of time, meaning tombstones must be handled within a bounded timeframe. Copycat opts to ensure that tombstones have been
+persisted on all servers prior to cleaning them from the log.
+
+In order to handle log cleaning for tombstones, Copycat extends the Raft protocol to keep track of the highest index in the
+log that has been replicated on *all* servers in the cluster. During normal *AppendEntries* RPCs, the leader sends a
+*global index* which indicates the highest index represented on all servers in the cluster based on the leader's
+`matchIndex` for each server. This global index represents the highest index for which tombstones can be safely removed from
+the log.
+
+Given the global index, state machines must use the index to determine when it's safe to remove a tombstone from the log.
+But Copycat doesn't actually even expose the global index to the state machine. Instead, Copycat's state machines are designed
+to clean tombstones only when there are no prior commits that contribute to the state being deleted by the tombstone. It does
+so by periodically replaying globally committed commands to the state machine, allowing it to remove commits that have no
+prior state.
+
+Consider the tombstone history again:
+
+```
+put 1
+put 3
+delete 3
+```
+
+The first time that the final `delete` command is applied to the state machine, it will have marked the first two
+`put` commands for deletion from the log. At some point in the future after segment to which the associated entries
+belong are cleaned, the history in the log will contain only a single command:
+
+```
+delete 3
+```
+
+At that point, if commands are replayed to the state machine, the state machine will see that the `delete` does not
+actually result in the absence of state since the state never existed to begin with. Each server in the cluster will
+periodically replay early entries that have been persisted on all servers to a clone of the state machine to allow
+it to clean tombstones that relate to invalid state. This is a clever way to clean tombstones from the log by essentially
+*never* cleaning tombstones that delete state, and instead only cleaning tombstones that are essentially irrelevant.
+
+*See chapter 5 of Diego Ongaro's [Raft dissertation](https://ramcloud.stanford.edu/~ongaro/thesis.pdf) for more on
+log compaction*
+
+## Utilities
+
+The following documentation explains the usage of various utility APIs provided by the `copycat-common` module.
 
 ### Builders
 
@@ -2223,6 +2400,7 @@ thread-unsafe objects such as a `Serializer` clone per thread.
 ## [Javadoc][Javadoc]
 
 [Javadoc]: http://kuujo.github.io/copycat/api/0.6.0/
+[CAP]: https://en.wikipedia.org/wiki/CAP_theorem
 [Raft]: https://raft.github.io/
 [Executor]: https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Executor.html
 [CompletableFuture]: https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html
