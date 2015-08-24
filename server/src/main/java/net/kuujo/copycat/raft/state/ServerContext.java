@@ -623,9 +623,9 @@ public class ServerContext implements Managed<Void> {
     } else if (entry.getTimestamp() - sessionTimeout.toMillis() > session.getTimestamp()) {
       LOGGER.warn("Expired session: " + entry.getSession());
       return expireSession(entry.getSession());
-    } else if (session.getVersion() < entry.getSequence()) {
+    } else if (session.getVersion() < entry.getVersion()) {
       ComposableFuture<Object> future = new ComposableFuture<>();
-      session.registerQuery(entry.getSequence(), () -> execute(commits.acquire(entry), future));
+      session.registerQuery(entry.getVersion(), () -> execute(commits.acquire(entry), future));
       return future;
     } else {
       return execute(commits.acquire(entry));

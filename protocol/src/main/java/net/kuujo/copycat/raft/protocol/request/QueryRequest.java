@@ -59,7 +59,7 @@ public class QueryRequest extends SessionRequest<QueryRequest> {
     return POOL.acquire(request);
   }
 
-  private long commandSequence;
+  private long version;
   private Query query;
 
   public QueryRequest(ReferenceManager<QueryRequest> referenceManager) {
@@ -72,12 +72,12 @@ public class QueryRequest extends SessionRequest<QueryRequest> {
   }
 
   /**
-   * Returns the command sequence number.
+   * Returns the query version number.
    *
-   * @return The command sequence number.
+   * @return The query version number.
    */
-  public long commandSequence() {
-    return commandSequence;
+  public long version() {
+    return version;
   }
 
   /**
@@ -92,20 +92,20 @@ public class QueryRequest extends SessionRequest<QueryRequest> {
   @Override
   public void readObject(BufferInput buffer, Serializer serializer) {
     super.readObject(buffer, serializer);
-    commandSequence = buffer.readLong();
+    version = buffer.readLong();
     query = serializer.readObject(buffer);
   }
 
   @Override
   public void writeObject(BufferOutput buffer, Serializer serializer) {
     super.writeObject(buffer, serializer);
-    buffer.writeLong(commandSequence);
+    buffer.writeLong(version);
     serializer.writeObject(query, buffer);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(getClass(), session, commandSequence, query);
+    return Objects.hash(getClass(), session, version, query);
   }
 
   @Override
@@ -113,7 +113,7 @@ public class QueryRequest extends SessionRequest<QueryRequest> {
     if (object instanceof QueryRequest) {
       QueryRequest request = (QueryRequest) object;
       return request.session == session
-        && request.commandSequence == commandSequence
+        && request.version == version
         && request.query.equals(query);
     }
     return false;
@@ -121,7 +121,7 @@ public class QueryRequest extends SessionRequest<QueryRequest> {
 
   @Override
   public String toString() {
-    return String.format("%s[session=%d, commandSequence=%d, query=%s]", getClass().getSimpleName(), session, commandSequence, query);
+    return String.format("%s[session=%d, version=%d, query=%s]", getClass().getSimpleName(), session, version, query);
   }
 
   /**
@@ -136,20 +136,20 @@ public class QueryRequest extends SessionRequest<QueryRequest> {
     @Override
     protected void reset() {
       super.reset();
-      request.commandSequence = 0;
+      request.version = 0;
       request.query = null;
     }
 
     /**
-     * Sets the command sequence number.
+     * Sets the query version number.
      *
-     * @param commandSequence The command sequence number.
+     * @param version The query version number.
      * @return The request builder.
      */
-    public Builder withCommandSequence(long commandSequence) {
-      if (commandSequence < 0)
-        throw new IllegalArgumentException("commandSequence cannot be less than 1");
-      request.commandSequence = commandSequence;
+    public Builder withVersion(long version) {
+      if (version < 0)
+        throw new IllegalArgumentException("version cannot be less than 1");
+      request.version = version;
       return this;
     }
 
@@ -169,8 +169,6 @@ public class QueryRequest extends SessionRequest<QueryRequest> {
     @Override
     public QueryRequest build() {
       super.build();
-      if (request.commandSequence < 0)
-        throw new IllegalArgumentException("commandSequence cannot be less than 1");
       if (request.query == null)
         throw new NullPointerException("query cannot be null");
       return request;

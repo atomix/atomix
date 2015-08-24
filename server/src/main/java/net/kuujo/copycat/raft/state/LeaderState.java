@@ -319,34 +319,29 @@ class LeaderState extends ActiveState {
       if (isOpen()) {
         if (commitError == null) {
           CommandEntry entry = context.getLog().get(index);
-          if (entry != null) {
-            applyEntry(entry).whenCompleteAsync((result, error) -> {
-              if (isOpen()) {
-                if (error == null) {
-                  future.complete(logResponse(CommandResponse.builder()
-                    .withStatus(Response.Status.OK)
-                    .withResult(result)
-                    .build()));
-                } else if (error instanceof RaftException) {
-                  future.complete(logResponse(CommandResponse.builder()
-                    .withStatus(Response.Status.ERROR)
-                    .withError(((RaftException) error).getType())
-                    .build()));
-                } else {
-                  future.complete(logResponse(CommandResponse.builder()
-                    .withStatus(Response.Status.ERROR)
-                    .withError(RaftError.Type.INTERNAL_ERROR)
-                    .build()));
-                }
+          applyEntry(entry).whenCompleteAsync((result, error) -> {
+            if (isOpen()) {
+              if (error == null) {
+                future.complete(logResponse(CommandResponse.builder()
+                  .withStatus(Response.Status.OK)
+                  .withVersion(index)
+                  .withResult(result)
+                  .build()));
+              } else if (error instanceof RaftException) {
+                future.complete(logResponse(CommandResponse.builder()
+                  .withStatus(Response.Status.ERROR)
+                  .withVersion(index)
+                  .withError(((RaftException) error).getType())
+                  .build()));
+              } else {
+                future.complete(logResponse(CommandResponse.builder()
+                  .withStatus(Response.Status.ERROR)
+                  .withError(RaftError.Type.INTERNAL_ERROR)
+                  .build()));
               }
-              entry.close();
-            }, context.getContext().executor());
-          } else {
-            future.complete(logResponse(CommandResponse.builder()
-              .withStatus(Response.Status.OK)
-              .withResult(null)
-              .build()));
-          }
+            }
+            entry.close();
+          }, context.getContext().executor());
         } else {
           future.complete(logResponse(CommandResponse.builder()
             .withStatus(Response.Status.ERROR)
@@ -373,7 +368,7 @@ class LeaderState extends ActiveState {
       .setTerm(context.getTerm())
       .setTimestamp(timestamp)
       .setSession(request.session())
-      .setSequence(request.commandSequence())
+      .setVersion(request.version())
       .setQuery(query);
 
     ConsistencyLevel consistency = query.consistency();
@@ -437,16 +432,19 @@ class LeaderState extends ActiveState {
    * Applies a query to the state machine.
    */
   private CompletableFuture<QueryResponse> applyQuery(QueryEntry entry, CompletableFuture<QueryResponse> future) {
+    long version = context.getLastApplied();
     context.apply(entry).whenCompleteAsync((result, error) -> {
       if (isOpen()) {
         if (error == null) {
           future.complete(logResponse(QueryResponse.builder()
             .withStatus(Response.Status.OK)
+            .withVersion(version)
             .withResult(result)
             .build()));
         } else if (error instanceof RaftException) {
           future.complete(logResponse(QueryResponse.builder()
             .withStatus(Response.Status.ERROR)
+            .withVersion(version)
             .withError(((RaftException) error).getType())
             .build()));
         } else {

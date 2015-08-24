@@ -77,6 +77,7 @@ public class ClientSession implements Session, Managed<Session> {
   private long requestSequence;
   private long responseSequence;
   private long eventSequence;
+  private long version;
 
   public ClientSession(Transport transport, Members members, Duration keepAliveInterval, Serializer serializer) {
     UUID id = UUID.randomUUID();
@@ -143,10 +144,12 @@ public class ClientSession implements Session, Managed<Session> {
       if (error == null) {
         if (response.status() == Response.Status.OK) {
           responseSequence = Math.max(responseSequence, request.commandSequence());
+          version = Math.max(version, response.version());
           future.complete((T) response.result());
           resetMembers();
           request.close();
         } else {
+          version = Math.max(version, response.version());
           resetConnection().submit(request, future);
         }
         response.close();
@@ -171,7 +174,7 @@ public class ClientSession implements Session, Managed<Session> {
 
       QueryRequest request = QueryRequest.builder()
         .withSession(id)
-        .withCommandSequence(responseSequence)
+        .withVersion(responseSequence)
         .withQuery(query)
         .build();
 
@@ -191,10 +194,12 @@ public class ClientSession implements Session, Managed<Session> {
     this.<QueryRequest, QueryResponse>request(request).whenComplete((response, error) -> {
       if (error == null) {
         if (response.status() == Response.Status.OK) {
+          version = Math.max(version, response.version());
           future.complete((T) response.result());
           resetMembers();
           request.close();
         } else {
+          version = Math.max(version, response.version());
           resetConnection().submit(request, future);
         }
         response.close();

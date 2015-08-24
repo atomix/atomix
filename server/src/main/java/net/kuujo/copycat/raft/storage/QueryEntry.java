@@ -31,7 +31,7 @@ import net.kuujo.copycat.util.ReferenceManager;
  */
 @SerializeWith(id=307)
 public class QueryEntry extends OperationEntry<QueryEntry> {
-  private long sequence;
+  private long version;
   private Query query;
 
   public QueryEntry(ReferenceManager<Entry<?>> referenceManager) {
@@ -39,22 +39,22 @@ public class QueryEntry extends OperationEntry<QueryEntry> {
   }
 
   /**
-   * Returns the command sequence number.
+   * Returns the query version number.
    *
-   * @return The command sequence number.
+   * @return The query version number.
    */
-  public long getSequence() {
-    return sequence;
+  public long getVersion() {
+    return version;
   }
 
   /**
-   * Sets the command sequence number.
+   * Sets the query version number.
    *
-   * @param sequence The command sequence number.
+   * @param version The query version number.
    * @return The query entry.
    */
-  public QueryEntry setSequence(long sequence) {
-    this.sequence = sequence;
+  public QueryEntry setVersion(long version) {
+    this.version = version;
     return this;
   }
 
@@ -86,20 +86,20 @@ public class QueryEntry extends OperationEntry<QueryEntry> {
   @Override
   public void writeObject(BufferOutput buffer, Serializer serializer) {
     super.writeObject(buffer, serializer);
-    buffer.writeLong(sequence);
+    buffer.writeLong(version);
     serializer.writeObject(query, buffer);
   }
 
   @Override
   public void readObject(BufferInput buffer, Serializer serializer) {
     super.readObject(buffer, serializer);
-    sequence = buffer.readLong();
+    version = buffer.readLong();
     query = serializer.readObject(buffer);
   }
 
   @Override
   public String toString() {
-    return String.format("%s[index=%d, term=%d, session=%d, sequence=%d, timestamp=%d, query=%s]", getClass().getSimpleName(), getIndex(), getTerm(), getSession(), getSequence(), getTimestamp(), query);
+    return String.format("%s[index=%d, term=%d, session=%d, version=%d, timestamp=%d, query=%s]", getClass().getSimpleName(), getIndex(), getTerm(), getSession(), getVersion(), getTimestamp(), query);
   }
 
 }

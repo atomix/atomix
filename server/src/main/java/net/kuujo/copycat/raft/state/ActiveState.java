@@ -15,11 +15,12 @@
  */
 package net.kuujo.copycat.raft.state;
 
+import net.kuujo.copycat.raft.RaftServer;
 import net.kuujo.copycat.raft.protocol.ConsistencyLevel;
 import net.kuujo.copycat.raft.protocol.error.RaftError;
+import net.kuujo.copycat.raft.protocol.error.RaftException;
 import net.kuujo.copycat.raft.protocol.request.*;
 import net.kuujo.copycat.raft.protocol.response.*;
-import net.kuujo.copycat.raft.RaftServer;
 import net.kuujo.copycat.raft.storage.QueryEntry;
 import net.kuujo.copycat.raft.storage.RaftEntry;
 
@@ -204,9 +205,7 @@ abstract class ActiveState extends PassiveState {
     context.checkThread();
     logRequest(request);
 
-    if (request.query().consistency() == ConsistencyLevel.SEQUENTIAL) {
-      return querySequential(request);
-    } else if (request.query().consistency() == ConsistencyLevel.SERIALIZABLE) {
+    if (request.query().consistency() == ConsistencyLevel.SERIALIZABLE) {
       return querySerializable(request);
     } else {
       return queryForward(request);
@@ -230,45 +229,6 @@ abstract class ActiveState extends PassiveState {
   }
 
   /**
-   * Performs a sequential query.
-   */
-  private CompletableFuture<QueryResponse> querySequential(QueryRequest request) {
-    // If the commit index is not in the log then we've fallen too far behind the leader to perform a query.
-    // Forward the request to the leader.
-    if (context.getLog().lastIndex() < context.getCommitIndex()) {
-      LOGGER.debug("{} - State appears to be out of sync, forwarding query to leader");
-      return queryForward(request);
-    }
-
-    CompletableFuture<QueryResponse> future = new CompletableFuture<>();
-    QueryEntry entry = context.getLog().create(QueryEntry.class)
-      .setIndex(context.getCommitIndex())
-      .setTerm(context.getTerm())
-      .setTimestamp(System.currentTimeMillis())
-      .setSession(request.session())
-      .setSequence(request.commandSequence())
-      .setQuery(request.query());
-
-    context.apply(entry).whenCompleteAsync((result, error) -> {
-      if (isOpen()) {
-        if (error == null) {
-          future.complete(logResponse(QueryResponse.builder()
-            .withStatus(Response.Status.OK)
-            .withResult(result)
-            .build()));
-        } else {
-          future.complete(logResponse(QueryResponse.builder()
-            .withStatus(Response.Status.ERROR)
-            .withError(RaftError.Type.APPLICATION_ERROR)
-            .build()));
-        }
-      }
-      entry.close();
-    }, context.getContext().executor());
-    return future;
-  }
-
-  /**
    * Performs a serializable query.
    */
   private CompletableFuture<QueryResponse> querySerializable(QueryRequest request) {
@@ -285,20 +245,28 @@ abstract class ActiveState extends PassiveState {
       .setTerm(context.getTerm())
       .setTimestamp(System.currentTimeMillis())
       .setSession(request.session())
-      .setSequence(0)
+      .setVersion(request.version())
       .setQuery(request.query());
 
+    long version = context.getLastApplied();
     context.apply(entry).whenCompleteAsync((result, error) -> {
       if (isOpen()) {
         if (error == null) {
           future.complete(logResponse(QueryResponse.builder()
             .withStatus(Response.Status.OK)
+            .withVersion(version)
             .withResult(result)
+            .build()));
+        } else if (error instanceof RaftException) {
+          future.complete(logResponse(QueryResponse.builder()
+            .withStatus(Response.Status.ERROR)
+            .withVersion(version)
+            .withError(((RaftException) error).getType())
             .build()));
         } else {
           future.complete(logResponse(QueryResponse.builder()
             .withStatus(Response.Status.ERROR)
-            .withError(RaftError.Type.APPLICATION_ERROR)
+            .withError(RaftError.Type.INTERNAL_ERROR)
             .build()));
         }
       }

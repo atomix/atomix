@@ -31,27 +31,13 @@ public enum ConsistencyLevel {
   /**
    * Requires serializable {@link Query} consistency.
    * <p>
-   * Serializable consistency is implemented by allowing arbitrary reads from Raft followers. When a serializable
-   * {@link Query} is submitted to the cluster, the first server that receives the query should
-   * immediately apply the query to its state machine and return the result.
-   * <p>
-   * Note that in the event that a client switches servers between queries, state changes can be seen out of order.
-   * For instance, if a client reads state at index 100 from follower A and then switches to follower B with is only
-   * at index 90 in its log, the client will see state go back in time.
+   * Serializable consistency requires that clients always see state progress in monotonically increasing order. Note that
+   * this constraint allows reads from followers. When a serializable {@link Query} is submitted to the cluster, the first
+   * server that receives the query will handle it. However, in order to ensure that state does not go back in time, the
+   * client must submit its last known index with the query as well. If the server that receives the query has not advanced
+   * past the provided client index, it will queue the query and await more entries from the leader.
    */
   SERIALIZABLE,
-
-  /**
-   * Requires sequential {@link Query} consistency.
-   * <p>
-   * Sequential consistency requires that clients always see state progress in monotonically increasing order. Note that
-   * this constraint still allows reads from followers. When a sequential {@link Query} is submitted
-   * to the cluster, the first server that receives the query will handle it. However, in order to ensure that state does
-   * not go back in time, the client must submit its last known index with the query as well. If the server that receives
-   * the query has not advanced past the provided client index, it will queue the query and await more entries from the
-   * leader.
-   */
-  SEQUENTIAL,
 
   /**
    * Requires linearizable {@link Query} consistency based on leader lease.

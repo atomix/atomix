@@ -59,6 +59,7 @@ public class QueryResponse extends SessionResponse<QueryResponse> {
     return POOL.acquire(request);
   }
 
+  private long version;
   private Object result;
 
   public QueryResponse(ReferenceManager<QueryResponse> referenceManager) {
@@ -68,6 +69,15 @@ public class QueryResponse extends SessionResponse<QueryResponse> {
   @Override
   public byte type() {
     return TYPE;
+  }
+
+  /**
+   * Returns the query version.
+   *
+   * @return The query version.
+   */
+  public long version() {
+    return version;
   }
 
   /**
@@ -84,8 +94,10 @@ public class QueryResponse extends SessionResponse<QueryResponse> {
     status = Status.forId(buffer.readByte());
     if (status == Status.OK) {
       error = null;
+      version = buffer.readLong();
       result = serializer.readObject(buffer);
     } else {
+      version = buffer.readLong();
       error = RaftError.forId(buffer.readByte());
     }
   }
@@ -94,8 +106,10 @@ public class QueryResponse extends SessionResponse<QueryResponse> {
   public void writeObject(BufferOutput buffer, Serializer serializer) {
     buffer.writeByte(status.id());
     if (status == Status.OK) {
+      buffer.writeLong(version);
       serializer.writeObject(result, buffer);
     } else {
+      buffer.writeLong(version);
       buffer.writeByte(error.id());
     }
   }
@@ -110,6 +124,7 @@ public class QueryResponse extends SessionResponse<QueryResponse> {
     if (object instanceof QueryResponse) {
       QueryResponse response = (QueryResponse) object;
       return response.status == status
+        && response.version == version
         && ((response.result == null && result == null)
         || response.result != null && result != null && response.result.equals(result));
     }
@@ -118,7 +133,7 @@ public class QueryResponse extends SessionResponse<QueryResponse> {
 
   @Override
   public String toString() {
-    return String.format("%s[status=%s, result=%s]", getClass().getSimpleName(), status, result);
+    return String.format("%s[status=%s, version=%d, result=%s]", getClass().getSimpleName(), status, version, result);
   }
 
   /**
@@ -133,7 +148,21 @@ public class QueryResponse extends SessionResponse<QueryResponse> {
     @Override
     protected void reset() {
       super.reset();
+      response.version = 0;
       response.result = null;
+    }
+
+    /**
+     * Sets the query version number.
+     *
+     * @param version The query version number.
+     * @return The response builder.
+     */
+    public Builder withVersion(long version) {
+      if (version < 0)
+        throw new IllegalArgumentException("version cannot be negative");
+      response.version = version;
+      return this;
     }
 
     /**
