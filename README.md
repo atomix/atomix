@@ -20,8 +20,8 @@ Copycat exposes a set of high level APIs with tools to solve a variety of distri
 Additionally, Copycat is built on a series of low-level libraries that form its consensus algorithm. Users can extend
 Copycat to build custom managed replicated state machines. All base libraries are provided as standalone modules wherever
 possible, so users can use many of the following components of the Copycat project independent of higher level libraries:
-* A low-level [I/O & serialization framework](#io-serialization)
-* A generalization of [asynchronous client-server messaging](#transport) with a [Netty implementation](#nettytransport)
+* A low-level [I/O & serialization framework](#io--serialization)
+* A generalization of [asynchronous client-server messaging](#transports) with a [Netty implementation][nettytransport]
 * A fast, persistent, cleanable [commit log](#storage) designed for use with the [Raft consensus algorithm][Raft]
 * A feature-complete [implementation of the Raft consensus algorithm](#raft-consensus-algorithm)
 * A lightweight [Raft client](#raftclient) including support for linearizable operations via [sessions](#sessions)
@@ -138,7 +138,7 @@ back for more! If you would like to request specific documentation, please
       * [DistributedLeaderElection](#distributedleaderelection)
       * [DistributedTopic](#distributedtopic)
    * [Custom resources](#custom-resources)
-1. [I/O & Serialization](#io-serialization)
+1. [I/O & Serialization](#io--serialization)
    * [Buffers](#buffers)
       * [Bytes](#bytes)
       * [Buffer pools](#buffer-pools)
@@ -155,7 +155,7 @@ back for more! If you would like to request specific documentation, please
 1. [Raft consensus algorithm](#raft-consensus-algorithm)
    * [RaftClient](#raftclient)
       * [Client lifecycle](#client-lifecycle)
-      * [Client sessions](#session)
+      * [Client sessions](#client-sessions)
    * [RaftServer](#raftserver)
       * [Server lifecycle](#server-lifecycle)
    * [Commands](#commands)
@@ -260,7 +260,7 @@ A rough outline of Copycat's project hierarchy is as follows (from high-level to
 ### Dependencies
 
 Copycat is designed to ensure that different components of the project ([resources](#resources),
-[Raft](#raft-consensus-algorithm), [I/O](#io-serialization), etc) can work independently of one another
+[Raft](#raft-consensus-algorithm), [I/O](#io--serialization), etc) can work independently of one another
 and with minimal dependencies. To that end, *the core library has zero dependencies*. The only components
 where dependencies are required is in custom `Transport` implementations, such as the [NettyTransport][NettyTransport].
 
@@ -517,6 +517,8 @@ request by providing a `ConsistencyLevel` constant. The four minimum consistency
   clients see state progress monotonically
 
 Overloaded methods with `ConsistencyLevel` parameters are provided throughout Copycat's resources wherever it makes sense.
+In many cases, resources dictate the strongest consistency levels - e.g. [coordination](#distributed-coordination) - and
+so weaker consistency levels are not allowed.
 
 ## Distributed resources
 
@@ -1912,13 +1914,13 @@ The pattern with which clients communicate with servers diverges slightly from t
 literature. Copycat's Raft implementation uses client communication patterns that are closely modeled on those of
 [ZooKeeper](https://zookeeper.apache.org/). Clients are designed to connect to and communicate with a single
 server at a time. There is no correlation between the client and the Raft cluster's leader. In fact, clients never
-even leader about the leader.
+even learn about the leader.
 
-When a client is started, the client connects to a random server and attempts to register a new session. If the registration
-fails, the client attempts to connect to another random server and register a new session again. In the event that the client
-fails to register a session with any server, the client fails and must be restarted. Alternatively, once the client successfully
-registers a session through a server, the client continues to submit [commands](#commands-1) and [queries](#queries-1)
-through that server until a failure or shutdown event.
+When a client is started, the client connects to a random server and attempts to [register a new session](#session-1).
+If the registration fails, the client attempts to connect to another random server and register a new session again. In the
+event that the client fails to register a session with any server, the client fails and must be restarted. Alternatively,
+once the client successfully registers a session through a server, the client continues to submit [commands](#commands-1) and
+[queries](#queries-1) through that server until a failure or shutdown event.
 
 Once the client has successfully registered its session, it begins sending periodic *keep alive* requests to the cluster.
 Clients are responsible for sending a keep alive request at an interval less than the cluster's *session timeout* to
@@ -2216,7 +2218,7 @@ low level, `Context` implementations wrap single-thread or thread-pool [Executor
 threads within a running Copycat cluster have an associated `Context`. The `Context` holds
 thread-unsafe objects such as a `Serializer` clone per thread.
 
-### [User Manual](#user-manual)
+### [User Manual](#user-manual-1)
 
 ## [Javadoc][Javadoc]
 
@@ -2228,7 +2230,6 @@ thread-unsafe objects such as a `Serializer` clone per thread.
 [atomic]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/atomic.html
 [coordination]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/coordination.html
 [copycat]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat.html
-[raft]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/raft.html
 [protocol]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/raft/protocol.html
 [io]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/io.html
 [serializer]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/io/serializer.html
