@@ -183,7 +183,7 @@ public interface Memory {
   /**
    * Memory utilities.
    */
-  static class Util {
+  class Util {
 
     /**
      * Returns a boolean indicating whether the given count is a power of 2.

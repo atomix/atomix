@@ -600,7 +600,7 @@ public class SerializerTest {
     }
   }
 
-  public static enum TestEnum {
+  public enum TestEnum {
     ONE,
     TWO,
     THREE

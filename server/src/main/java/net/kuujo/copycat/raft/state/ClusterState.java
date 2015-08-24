@@ -39,7 +39,7 @@ class ClusterState {
   /**
    * Member state type.
    */
-  private static enum Type {
+  private enum Type {
     ACTIVE,
     PASSIVE
   }

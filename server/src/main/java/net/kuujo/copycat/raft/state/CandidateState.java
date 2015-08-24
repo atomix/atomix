@@ -37,7 +37,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-class CandidateState extends ActiveState {
+final class CandidateState extends ActiveState {
   private final Random random = new Random();
   private Quorum quorum;
   private Scheduled currentTimer;

@@ -67,7 +67,7 @@ public interface RaftError {
   /**
    * Raft error types.
    */
-  public static enum Type implements RaftError {
+  enum Type implements RaftError {
 
     /**
      * No leader error.
@@ -141,7 +141,7 @@ public interface RaftError {
 
     private final byte id;
 
-    private Type(int id) {
+    Type(int id) {
       this.id = (byte) id;
     }
 

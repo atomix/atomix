@@ -51,7 +51,7 @@ public class Members implements CopycatSerializable {
     return POOL.acquire(members);
   }
 
-  private Map<Integer, Member> members = new HashMap<>();
+  private final Map<Integer, Member> members = new HashMap<>();
   private List<Member> list = new ArrayList<>();
 
   /**

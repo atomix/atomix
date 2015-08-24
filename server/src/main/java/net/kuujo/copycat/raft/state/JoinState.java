@@ -29,7 +29,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class JoinState extends InactiveState {
+final class JoinState extends InactiveState {
   private Scheduled joinFuture;
 
   public JoinState(ServerContext context) {

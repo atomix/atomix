@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-class FollowerState extends ActiveState {
+final class FollowerState extends ActiveState {
   private final Random random = new Random();
   private Scheduled heartbeatTimer;
 

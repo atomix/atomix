@@ -48,6 +48,7 @@ public class DistributedSetTest extends ConcurrentTestCase {
   /**
    * Tests adding and removing members from a set.
    */
+  @SuppressWarnings("unchecked")
   public void testSetAddRemove() throws Throwable {
     List<Copycat> copycats = createCopycats(3);
 

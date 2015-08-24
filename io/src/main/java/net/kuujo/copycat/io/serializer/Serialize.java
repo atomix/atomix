@@ -39,7 +39,7 @@ public @interface Serialize {
    */
   @Target(ElementType.TYPE)
   @Retention(RetentionPolicy.RUNTIME)
-  public static @interface Type {
+  @interface Type {
 
     /**
      * The serialization ID.

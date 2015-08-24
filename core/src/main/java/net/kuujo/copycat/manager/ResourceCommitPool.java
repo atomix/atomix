@@ -36,6 +36,7 @@ class ResourceCommitPool {
    * @param session The resource session.
    * @return The acquired resource commit.
    */
+  @SuppressWarnings("unchecked")
   public ResourceCommit acquire(Commit commit, Session session) {
     ResourceCommit resourceCommit = pool.poll();
     if (resourceCommit == null) {

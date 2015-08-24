@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 abstract class AbstractRequest<T extends Request<T>> implements Request<T> {
   private final AtomicInteger references = new AtomicInteger();
-  private ReferenceManager<T> referenceManager;
+  private final ReferenceManager<T> referenceManager;
 
   protected AbstractRequest(ReferenceManager<T> referenceManager) {
     this.referenceManager = referenceManager;

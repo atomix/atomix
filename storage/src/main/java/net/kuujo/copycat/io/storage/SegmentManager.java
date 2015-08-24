@@ -40,7 +40,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 class SegmentManager implements AutoCloseable {
   private static final Logger LOGGER = LoggerFactory.getLogger(SegmentManager.class);
   private final Storage storage;
-  private NavigableMap<Long, Segment> segments = new ConcurrentSkipListMap<>();
+  private final NavigableMap<Long, Segment> segments = new ConcurrentSkipListMap<>();
   private Segment currentSegment;
 
   public SegmentManager(Storage storage) {

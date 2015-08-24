@@ -38,7 +38,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-class LeaderState extends ActiveState {
+final class LeaderState extends ActiveState {
   private static final int MAX_BATCH_SIZE = 1024 * 32;
   private Scheduled currentTimer;
   private final Replicator replicator = new Replicator();

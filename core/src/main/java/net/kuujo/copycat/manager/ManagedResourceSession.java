@@ -33,7 +33,7 @@ class ManagedResourceSession implements Session {
   /**
    * Resource session state.
    */
-  private static enum State {
+  private enum State {
     OPEN,
     CLOSED,
     EXPIRED
@@ -91,6 +91,7 @@ class ManagedResourceSession implements Session {
    * Handles a session open event.
    */
   private void handleOpen(Session session) {
+    state = State.OPEN;
     for (Consumer<Session> listener : openListeners) {
       listener.accept(this);
     }
@@ -106,6 +107,7 @@ class ManagedResourceSession implements Session {
    * Handles a session close event.
    */
   private void handleClose(Session session) {
+    state = session.isExpired() ? State.EXPIRED : State.CLOSED;
     for (Consumer<Session> listener : closeListeners) {
       listener.accept(this);
     }

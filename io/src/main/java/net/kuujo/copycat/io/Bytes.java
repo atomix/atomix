@@ -23,15 +23,15 @@ import java.nio.ByteOrder;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface Bytes extends BytesInput<Bytes>, BytesOutput<Bytes>, AutoCloseable {
-  static long BYTE = 1;
-  static long BOOLEAN = 1;
-  static long CHARACTER = 2;
-  static long SHORT = 2;
-  static long MEDIUM = 3;
-  static long INTEGER = 4;
-  static long LONG = 8;
-  static long FLOAT = 4;
-  static long DOUBLE = 8;
+  long BYTE = 1;
+  long BOOLEAN = 1;
+  long CHARACTER = 2;
+  long SHORT = 2;
+  long MEDIUM = 3;
+  long INTEGER = 4;
+  long LONG = 8;
+  long FLOAT = 4;
+  long DOUBLE = 8;
 
   /**
    * Returns the count of the bytes.

@@ -28,7 +28,7 @@ import java.util.concurrent.Executors;
 public class Log implements AutoCloseable {
   private final SegmentManager segments;
   private final TypedEntryPool entryPool = new TypedEntryPool();
-  private Cleaner cleaner;
+  private final Cleaner cleaner;
   private boolean open = true;
 
   protected Log(Storage storage) {
