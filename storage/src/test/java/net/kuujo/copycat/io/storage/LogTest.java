@@ -15,15 +15,12 @@
  */
 package net.kuujo.copycat.io.storage;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertNull;
-import static org.testng.Assert.assertTrue;
-
 import org.testng.annotations.Test;
 
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.ServiceLoaderTypeResolver;
+
+import static org.testng.Assert.*;
 
 /**
  * Log test.
@@ -223,6 +220,12 @@ public class LogTest extends AbstractLogTest {
 
     try (Log log = createLog()) {
       assertEquals(log.length(), 1024);
+
+      for (long i = log.firstIndex(); i <= log.lastIndex(); i++) {
+        try (Entry entry = log.get(i)) {
+          assertNotNull(entry);
+        }
+      }
     }
   }
 

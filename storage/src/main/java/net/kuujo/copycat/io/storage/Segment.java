@@ -57,10 +57,13 @@ class Segment implements AutoCloseable {
     this.offsetIndex = offsetIndex;
 
     // Rebuild the index from the segment data.
-    int length = buffer.mark().readUnsignedShort();
+    long position = buffer.mark().position();
+    int length = buffer.readUnsignedShort();
     while (length != 0) {
-      offsetIndex.index(buffer.readInt(), buffer.position());
-      length = buffer.skip(length).mark().readUnsignedShort();
+      int offset = buffer.readInt();
+      offsetIndex.index(offset, position);
+      position = buffer.skip(length).position();
+      length = buffer.mark().readUnsignedShort();
     }
     buffer.reset();
   }
