@@ -123,7 +123,7 @@ public class ClientSession implements Session, Managed<Session> {
 
       CommandRequest request = CommandRequest.builder()
         .withSession(id)
-        .withCommandSequence(++requestSequence)
+        .withSequence(++requestSequence)
         .withCommand(command)
         .build();
 
@@ -143,7 +143,7 @@ public class ClientSession implements Session, Managed<Session> {
     this.<CommandRequest, CommandResponse>request(request).whenComplete((response, error) -> {
       if (error == null) {
         if (response.status() == Response.Status.OK) {
-          responseSequence = Math.max(responseSequence, request.commandSequence());
+          responseSequence = Math.max(responseSequence, request.sequence());
           version = Math.max(version, response.version());
           future.complete((T) response.result());
           resetMembers();
@@ -461,14 +461,14 @@ public class ClientSession implements Session, Managed<Session> {
     if (request.session() != id)
       return Futures.exceptionalFuture(new UnknownSessionException("incorrect session ID"));
 
-    if (request.eventSequence() < eventSequence || request.eventSequence() > eventSequence + 1) {
+    if (request.sequence() < eventSequence || request.sequence() > eventSequence + 1) {
       return CompletableFuture.completedFuture(PublishResponse.builder()
         .withStatus(Response.Status.ERROR)
-        .withEventSequence(eventSequence)
+        .withSequence(eventSequence)
         .build());
     }
 
-    eventSequence = request.eventSequence();
+    eventSequence = request.sequence();
 
     for (Consumer listener : receiveListeners) {
       listener.accept(request.message());
@@ -476,7 +476,7 @@ public class ClientSession implements Session, Managed<Session> {
 
     return CompletableFuture.completedFuture(PublishResponse.builder()
       .withStatus(Response.Status.OK)
-      .withEventSequence(eventSequence)
+      .withSequence(eventSequence)
       .build());
   }
 

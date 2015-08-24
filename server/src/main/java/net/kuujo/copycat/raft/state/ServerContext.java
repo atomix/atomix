@@ -415,6 +415,16 @@ public class ServerContext implements Managed<Void> {
   }
 
   /**
+   * Gets a session by ID.
+   *
+   * @param sessionId The session ID.
+   * @return The server session.
+   */
+  ServerSession getSession(long sessionId) {
+    return stateExecutor.context().sessions().getSession(sessionId);
+  }
+
+  /**
    * Checks that the current thread is the state context thread.
    */
   void checkThread() {
@@ -597,7 +607,7 @@ public class ServerContext implements Managed<Void> {
         });
 
         // Increment the session version.
-        session.setVersion(entry.getSequence());
+        session.setVersion(sequence).setSequence(sequence);
       }
     }
 

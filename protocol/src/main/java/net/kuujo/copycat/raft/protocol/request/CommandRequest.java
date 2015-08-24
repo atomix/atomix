@@ -59,7 +59,7 @@ public class CommandRequest extends SessionRequest<CommandRequest> {
     return POOL.acquire(request);
   }
 
-  private long commandSequence;
+  private long sequence;
   private Command command;
 
   public CommandRequest(ReferenceManager<CommandRequest> referenceManager) {
@@ -76,8 +76,8 @@ public class CommandRequest extends SessionRequest<CommandRequest> {
    *
    * @return The request sequence number.
    */
-  public long commandSequence() {
-    return commandSequence;
+  public long sequence() {
+    return sequence;
   }
 
   /**
@@ -92,20 +92,20 @@ public class CommandRequest extends SessionRequest<CommandRequest> {
   @Override
   public void readObject(BufferInput buffer, Serializer serializer) {
     super.readObject(buffer, serializer);
-    commandSequence = buffer.readLong();
+    sequence = buffer.readLong();
     command = serializer.readObject(buffer);
   }
 
   @Override
   public void writeObject(BufferOutput buffer, Serializer serializer) {
     super.writeObject(buffer, serializer);
-    buffer.writeLong(commandSequence);
+    buffer.writeLong(sequence);
     serializer.writeObject(command, buffer);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(getClass(), session, commandSequence, command);
+    return Objects.hash(getClass(), session, sequence, command);
   }
 
   @Override
@@ -113,7 +113,7 @@ public class CommandRequest extends SessionRequest<CommandRequest> {
     if (object instanceof CommandRequest) {
       CommandRequest request = (CommandRequest) object;
       return request.session == session
-        && request.commandSequence == commandSequence
+        && request.sequence == sequence
         && request.command.equals(command);
     }
     return false;
@@ -121,7 +121,7 @@ public class CommandRequest extends SessionRequest<CommandRequest> {
 
   @Override
   public String toString() {
-    return String.format("%s[session=%d, commandSequence=%d, command=%s]", getClass().getSimpleName(), session, commandSequence, command);
+    return String.format("%s[session=%d, sequence=%d, command=%s]", getClass().getSimpleName(), session, sequence, command);
   }
 
   /**
@@ -136,7 +136,7 @@ public class CommandRequest extends SessionRequest<CommandRequest> {
     @Override
     protected void reset() {
       super.reset();
-      request.commandSequence = 0;
+      request.sequence = 0;
       request.command = null;
     }
 
@@ -146,10 +146,10 @@ public class CommandRequest extends SessionRequest<CommandRequest> {
      * @param commandSequence The command sequence number.
      * @return The request builder.
      */
-    public Builder withCommandSequence(long commandSequence) {
+    public Builder withSequence(long commandSequence) {
       if (commandSequence <= 0)
-        throw new IllegalArgumentException("commandSequence cannot be less than 1");
-      request.commandSequence = commandSequence;
+        throw new IllegalArgumentException("sequence cannot be less than 1");
+      request.sequence = commandSequence;
       return this;
     }
 
@@ -171,8 +171,8 @@ public class CommandRequest extends SessionRequest<CommandRequest> {
       super.build();
       if (request.session <= 0)
         throw new IllegalArgumentException("session cannot be less than 1");
-      if (request.commandSequence <= 0)
-        throw new IllegalArgumentException("commandSequence cannot be less than 1");
+      if (request.sequence <= 0)
+        throw new IllegalArgumentException("sequence cannot be less than 1");
       if (request.command == null)
         throw new NullPointerException("command cannot be null");
       return request;

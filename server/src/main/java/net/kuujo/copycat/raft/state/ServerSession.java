@@ -16,14 +16,12 @@
 package net.kuujo.copycat.raft.state;
 
 import net.kuujo.copycat.io.transport.Connection;
-import net.kuujo.copycat.raft.protocol.error.UnknownSessionException;
 import net.kuujo.copycat.raft.protocol.request.PublishRequest;
 import net.kuujo.copycat.raft.protocol.response.PublishResponse;
 import net.kuujo.copycat.raft.protocol.response.Response;
 import net.kuujo.copycat.raft.session.Session;
 import net.kuujo.copycat.util.Listener;
 import net.kuujo.copycat.util.Listeners;
-import net.kuujo.copycat.util.concurrent.Futures;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -40,12 +38,14 @@ class ServerSession implements Session {
   private final UUID connectionId;
   private Connection connection;
   private long index;
+  private long commandSequence;
   private long commandVersion;
   private long commandLowWaterMark;
   private long eventVersion;
   private long eventLowWaterMark;
   private long timestamp;
   private final Map<Long, List<Runnable>> queries = new HashMap<>();
+  private final Map<Long, Runnable> commands = new HashMap<>();
   private final Map<Long, Object> responses = new HashMap<>();
   private final Map<Long, Object> events = new HashMap<>();
   private boolean expired;
@@ -93,6 +93,46 @@ class ServerSession implements Session {
    */
   ServerSession setIndex(long index) {
     this.index = index;
+    return this;
+  }
+
+  /**
+   * Adds a command to be executed in sequence.
+   *
+   * @param sequence The command sequence number.
+   * @param runnable The command to execute.
+   * @return The server session.
+   */
+  ServerSession addCommand(long sequence, Runnable runnable) {
+    commands.put(sequence, runnable);
+    return this;
+  }
+
+  /**
+   * Returns the session sequence number.
+   *
+   * @return The session command sequence number.
+   */
+  long getSequence() {
+    return commandSequence;
+  }
+
+  /**
+   * Sets the session sequence number.
+   *
+   * @param sequence The session command sequence number.
+   * @return The server session.
+   */
+  ServerSession setSequence(long sequence) {
+    if (sequence > this.commandSequence) {
+      for (long i = 0; i < sequence - this.commandSequence; i++) {
+        this.commandSequence++;
+        Runnable command = commands.remove(this.commandSequence + 1);
+        if (command != null) {
+          command.run();
+        }
+      }
+    }
     return this;
   }
 
@@ -270,15 +310,15 @@ class ServerSession implements Session {
     if (connection != null) {
       connection.<PublishRequest, PublishResponse>send(PublishRequest.builder()
         .withSession(id())
-        .withEventSequence(eventSequence)
+        .withSequence(eventSequence)
         .withMessage(event)
         .build()).whenComplete((response, error) -> {
         if (isOpen() && error == null) {
           if (response.status() == Response.Status.OK) {
-            clearEvents(response.eventSequence());
+            clearEvents(response.sequence());
           } else {
-            clearEvents(response.eventSequence());
-            resendEvents(response.eventSequence());
+            clearEvents(response.sequence());
+            resendEvents(response.sequence());
           }
         }
       });

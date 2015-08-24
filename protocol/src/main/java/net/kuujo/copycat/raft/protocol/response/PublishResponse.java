@@ -59,7 +59,7 @@ public class PublishResponse extends SessionResponse<PublishResponse> {
     return POOL.acquire(response);
   }
 
-  private long eventSequence;
+  private long sequence;
 
   public PublishResponse(ReferenceManager<PublishResponse> referenceManager) {
     super(referenceManager);
@@ -75,8 +75,8 @@ public class PublishResponse extends SessionResponse<PublishResponse> {
    *
    * @return The event sequence number.
    */
-  public long eventSequence() {
-    return eventSequence;
+  public long sequence() {
+    return sequence;
   }
 
   @Override
@@ -128,7 +128,7 @@ public class PublishResponse extends SessionResponse<PublishResponse> {
     @Override
     protected void reset() {
       super.reset();
-      response.eventSequence = 0;
+      response.sequence = 0;
     }
 
     /**
@@ -137,18 +137,18 @@ public class PublishResponse extends SessionResponse<PublishResponse> {
      * @param eventSequence The event sequence number.
      * @return The request builder.
      */
-    public Builder withEventSequence(long eventSequence) {
+    public Builder withSequence(long eventSequence) {
       if (eventSequence <= 0)
-        throw new IllegalArgumentException("eventSequence cannot be less than 1");
-      response.eventSequence = eventSequence;
+        throw new IllegalArgumentException("sequence cannot be less than 1");
+      response.sequence = eventSequence;
       return this;
     }
 
     @Override
     public PublishResponse build() {
       super.build();
-      if (response.eventSequence <= 0)
-        throw new IllegalArgumentException("eventSequence cannot be less than 1");
+      if (response.sequence <= 0)
+        throw new IllegalArgumentException("sequence cannot be less than 1");
       return response;
     }
 

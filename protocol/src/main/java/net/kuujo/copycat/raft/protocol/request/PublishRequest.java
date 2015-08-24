@@ -58,7 +58,7 @@ public class PublishRequest extends SessionRequest<PublishRequest> {
     return POOL.acquire(request);
   }
 
-  private long eventSequence;
+  private long sequence;
   private Object message;
 
   public PublishRequest(ReferenceManager<PublishRequest> referenceManager) {
@@ -75,8 +75,8 @@ public class PublishRequest extends SessionRequest<PublishRequest> {
    *
    * @return The event sequence number.
    */
-  public long eventSequence() {
-    return eventSequence;
+  public long sequence() {
+    return sequence;
   }
 
   /**
@@ -91,20 +91,20 @@ public class PublishRequest extends SessionRequest<PublishRequest> {
   @Override
   public void readObject(BufferInput buffer, Serializer serializer) {
     super.readObject(buffer, serializer);
-    eventSequence = buffer.readLong();
+    sequence = buffer.readLong();
     message = serializer.readObject(buffer);
   }
 
   @Override
   public void writeObject(BufferOutput buffer, Serializer serializer) {
     super.writeObject(buffer, serializer);
-    buffer.writeLong(eventSequence);
+    buffer.writeLong(sequence);
     serializer.writeObject(message, buffer);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(getClass(), session, eventSequence, message);
+    return Objects.hash(getClass(), session, sequence, message);
   }
 
   @Override
@@ -112,7 +112,7 @@ public class PublishRequest extends SessionRequest<PublishRequest> {
     if (object instanceof PublishRequest) {
       PublishRequest request = (PublishRequest) object;
       return request.session == session
-        && request.eventSequence == eventSequence
+        && request.sequence == sequence
         && request.message.equals(message);
     }
     return false;
@@ -120,7 +120,7 @@ public class PublishRequest extends SessionRequest<PublishRequest> {
 
   @Override
   public String toString() {
-    return String.format("%s[session=%d, eventSequence=%d, message=%s]", getClass().getSimpleName(), session, eventSequence, message);
+    return String.format("%s[session=%d, sequence=%d, message=%s]", getClass().getSimpleName(), session, sequence, message);
   }
 
   /**
@@ -135,7 +135,7 @@ public class PublishRequest extends SessionRequest<PublishRequest> {
     @Override
     protected void reset() {
       super.reset();
-      request.eventSequence = 0;
+      request.sequence = 0;
       request.message = null;
     }
 
@@ -145,10 +145,10 @@ public class PublishRequest extends SessionRequest<PublishRequest> {
      * @param eventSequence The event sequence number.
      * @return The request builder.
      */
-    public Builder withEventSequence(long eventSequence) {
+    public Builder withSequence(long eventSequence) {
       if (eventSequence <= 0)
-        throw new IllegalArgumentException("eventSequence cannot be less than 1");
-      request.eventSequence = eventSequence;
+        throw new IllegalArgumentException("sequence cannot be less than 1");
+      request.sequence = eventSequence;
       return this;
     }
 
@@ -168,8 +168,8 @@ public class PublishRequest extends SessionRequest<PublishRequest> {
     @Override
     public PublishRequest build() {
       super.build();
-      if (request.eventSequence <= 0)
-        throw new IllegalArgumentException("eventSequence cannot be less than 1");
+      if (request.sequence <= 0)
+        throw new IllegalArgumentException("sequence cannot be less than 1");
       if (request.message == null)
         throw new NullPointerException("message cannot be null");
       return request;

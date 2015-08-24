@@ -26,6 +26,7 @@ import net.kuujo.copycat.raft.protocol.error.RaftException;
 import net.kuujo.copycat.raft.protocol.request.*;
 import net.kuujo.copycat.raft.protocol.response.*;
 import net.kuujo.copycat.raft.storage.*;
+import net.kuujo.copycat.util.concurrent.ComposableFuture;
 import net.kuujo.copycat.util.concurrent.Scheduled;
 
 import java.time.Duration;
@@ -298,22 +299,45 @@ class LeaderState extends ActiveState {
     context.checkThread();
     logRequest(request);
 
+    // Get the client's server session. If the session doesn't exist, return an unknown session error.
+    ServerSession session = context.getSession(request.session());
+    if (session == null) {
+      return CompletableFuture.completedFuture(logResponse(CommandResponse.builder()
+        .withStatus(Response.Status.ERROR)
+        .withError(RaftError.Type.UNKNOWN_SESSION_ERROR)
+        .build()));
+    }
+
+    ComposableFuture<CommandResponse> future = new ComposableFuture<>();
+
+    // If the session's current sequence number is less then one prior to the request sequence number,
+    // queue this request for handling later. We want to handle command requests in the order in which
+    // they were sent by the client.
+    // Note that it's possible for the request session sequence number to be greater than the request
+    // sequence number. In that case, it's likely that the command was submitted more than once to the
+    // cluster, and the command will be deduplicated once applied to the state machine.
+    if (session.getSequence() < request.sequence() - 1) {
+      session.addCommand(request.sequence(), () -> command(request).whenComplete(future));
+      return future;
+    }
+
     Command command = request.command();
+
     final long term = context.getTerm();
     final long timestamp = System.currentTimeMillis();
     final long index;
 
+    // Create a CommandEntry and append it to the log.
     try (CommandEntry entry = context.getLog().create(CommandEntry.class)) {
       entry.setTerm(term)
         .setTimestamp(timestamp)
         .setSession(request.session())
-        .setSequence(request.commandSequence())
+        .setSequence(request.sequence())
         .setCommand(command);
       index = context.getLog().append(entry);
       LOGGER.debug("{} - Appended entry to log at index {}", context.getMember().id(), index);
     }
 
-    CompletableFuture<CommandResponse> future = new CompletableFuture<>();
     replicator.commit(index).whenComplete((commitIndex, commitError) -> {
       context.checkThread();
       if (isOpen()) {
@@ -350,6 +374,11 @@ class LeaderState extends ActiveState {
         }
       }
     });
+
+    // Update the session sequence number. This is the highest sequence for which a command
+    // has been committed to the cluster.
+    session.setSequence(request.sequence());
+
     return future;
   }
 
