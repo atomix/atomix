@@ -166,16 +166,15 @@ final class LeaderState extends ActiveState {
       .addMember(request.member())
       .build();
 
-    try (ConfigurationEntry entry = context.getLog().create(ConfigurationEntry.class)) {
-      entry.setTerm(term)
-        .setActive(activeMembers)
-        .setPassive(passiveMembers);
-      index = context.getLog().append(entry);
-      LOGGER.debug("{} - Appended {} to log at index {}", context.getMember().id(), entry, index);
+    ConfigurationEntry entry = context.getLog().create(ConfigurationEntry.class);
+    entry.setTerm(term)
+      .setActive(activeMembers)
+      .setPassive(passiveMembers);
+    index = context.getLog().append(entry);
+    LOGGER.debug("{} - Appended {} to log at index {}", context.getMember().id(), entry, index);
 
-      // Immediately apply the configuration change.
-      applyEntry(entry);
-    }
+    // Immediately apply the configuration change.
+    applyEntry(entry).whenComplete((result, error) -> entry.close());
 
     CompletableFuture<JoinResponse> future = new CompletableFuture<>();
     replicator.commit(index).whenComplete((commitIndex, commitError) -> {
@@ -220,16 +219,15 @@ final class LeaderState extends ActiveState {
       .removeMember(request.member())
       .build();
 
-    try (ConfigurationEntry entry = context.getLog().create(ConfigurationEntry.class)) {
-      entry.setTerm(term)
-        .setActive(activeMembers)
-        .setPassive(passiveMembers);
-      index = context.getLog().append(entry);
-      LOGGER.debug("{} - Appended {} to log at index {}", context.getMember().id(), entry, index);
+    ConfigurationEntry entry = context.getLog().create(ConfigurationEntry.class);
+    entry.setTerm(term)
+      .setActive(activeMembers)
+      .setPassive(passiveMembers);
+    index = context.getLog().append(entry);
+    LOGGER.debug("{} - Appended {} to log at index {}", context.getMember().id(), entry, index);
 
-      // Immediately apply the configuration change.
-      applyEntry(entry);
-    }
+    // Immediately apply the configuration change.
+    applyEntry(entry).whenComplete((result, error) -> entry.close());
 
     CompletableFuture<LeaveResponse> future = new CompletableFuture<>();
     replicator.commit(index).whenComplete((commitIndex, commitError) -> {
