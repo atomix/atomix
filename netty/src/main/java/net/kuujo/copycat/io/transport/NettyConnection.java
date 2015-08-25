@@ -44,10 +44,16 @@ public class NettyConnection implements Connection {
   static final byte RESPONSE = 0x03;
   static final byte SUCCESS = 0x04;
   static final byte FAILURE = 0x05;
-  private static final ThreadLocal<ByteBufBuffer> BUFFER = new ThreadLocal<ByteBufBuffer>() {
+  private static final ThreadLocal<ByteBufferInput> INPUT = new ThreadLocal<ByteBufferInput>() {
     @Override
-    protected ByteBufBuffer initialValue() {
-      return new ByteBufBuffer();
+    protected ByteBufferInput initialValue() {
+      return new ByteBufferInput();
+    }
+  };
+  private static final ThreadLocal<ByteBufferOutput> OUTPUT = new ThreadLocal<ByteBufferOutput>() {
+    @Override
+    protected ByteBufferOutput initialValue() {
+      return new ByteBufferOutput();
     }
   };
 
@@ -197,9 +203,7 @@ public class NettyConnection implements Connection {
   private void handleResponseFailure(long requestId, Throwable t) {
     ContextualFuture future = responseFutures.get(requestId);
     if (future != null) {
-      future.context.executor().execute(() -> {
-        future.completeExceptionally(t);
-      });
+      future.context.executor().execute(() -> future.completeExceptionally(t));
     }
   }
 
@@ -207,9 +211,7 @@ public class NettyConnection implements Connection {
    * Writes a request to the given buffer.
    */
   private ByteBuf writeRequest(ByteBuf buffer, Object request) {
-    ByteBufBuffer requestBuffer = BUFFER.get();
-    requestBuffer.setByteBuf(buffer);
-    context.serializer().writeObject(request, requestBuffer);
+    context.serializer().writeObject(request, OUTPUT.get().setByteBuf(buffer));
     return buffer;
   }
 
@@ -217,9 +219,7 @@ public class NettyConnection implements Connection {
    * Writes a response to the given buffer.
    */
   private ByteBuf writeResponse(ByteBuf buffer, Object request) {
-    ByteBufBuffer responseBuffer = BUFFER.get();
-    responseBuffer.setByteBuf(buffer);
-    context.serializer().writeObject(request, responseBuffer);
+    context.serializer().writeObject(request, OUTPUT.get().setByteBuf(buffer));
     return buffer;
   }
 
@@ -227,9 +227,7 @@ public class NettyConnection implements Connection {
    * Writes an error to the given buffer.
    */
   private ByteBuf writeError(ByteBuf buffer, Throwable t) {
-    ByteBufBuffer requestBuffer = BUFFER.get();
-    requestBuffer.setByteBuf(buffer);
-    context.serializer().writeObject(t, requestBuffer);
+    context.serializer().writeObject(t, OUTPUT.get().setByteBuf(buffer));
     return buffer;
   }
 
@@ -237,27 +235,21 @@ public class NettyConnection implements Connection {
    * Reads a request from the given buffer.
    */
   private Object readRequest(ByteBuf buffer) {
-    ByteBufBuffer requestBuffer = BUFFER.get();
-    requestBuffer.setByteBuf(buffer);
-    return context.serializer().readObject(requestBuffer);
+    return context.serializer().readObject(INPUT.get().setByteBuf(buffer));
   }
 
   /**
    * Reads a response from the given buffer.
    */
   private Object readResponse(ByteBuf buffer) {
-    ByteBufBuffer responseBuffer = BUFFER.get();
-    responseBuffer.setByteBuf(buffer);
-    return context.serializer().readObject(responseBuffer);
+    return context.serializer().readObject(INPUT.get().setByteBuf(buffer));
   }
 
   /**
    * Reads an error from the given buffer.
    */
   private Throwable readError(ByteBuf buffer) {
-    ByteBufBuffer responseBuffer = BUFFER.get();
-    responseBuffer.setByteBuf(buffer);
-    return context.serializer().readObject(responseBuffer);
+    return context.serializer().readObject(INPUT.get().setByteBuf(buffer));
   }
 
   /**
@@ -297,9 +289,7 @@ public class NettyConnection implements Connection {
         if (channelFuture.isSuccess()) {
           responseFutures.put(requestId, future);
         } else {
-          future.context.executor().execute(() -> {
-            future.completeExceptionally(new TransportException(channelFuture.cause()));
-          });
+          future.context.executor().execute(() -> future.completeExceptionally(new TransportException(channelFuture.cause())));
         }
       });
     });
