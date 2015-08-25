@@ -70,7 +70,7 @@ public class ServerContext implements Managed<Void> {
   private Server server;
   private ConnectionManager connections;
   private ServerCommitPool commits;
-  private AbstractState state;
+  private AbstractState state = new InactiveState(this);
   private Duration electionTimeout = Duration.ofMillis(500);
   private Duration sessionTimeout = Duration.ofMillis(5000);
   private Duration heartbeatInterval = Duration.ofMillis(150);
@@ -738,24 +738,24 @@ public class ServerContext implements Managed<Void> {
     openFuture = new CompletableFuture<>();
     context.executor().execute(() -> {
 
+      // Open the log.
+      log = storage.open();
+
+      // Configure the cluster.
+      cluster.configure(0, members, Members.builder().build());
+
+      // Create a state machine executor and configure the state machine.
+      stateExecutor = new ServerStateMachineExecutor(new SingleThreadContext("copycat-server-" + member.id() + "-state-%d", serializer.clone()));
+      commits = new ServerCommitPool(new ServerCommitCleaner(log), stateExecutor.context().sessions());
+      stateMachine.init(stateExecutor.context());
+      stateMachine.configure(stateExecutor);
+
       // Setup the server and connection manager.
       UUID id = UUID.randomUUID();
       server = transport.server(id);
       connections = new ConnectionManager(transport.client(id));
 
       server.listen(member.address(), this::handleConnect).thenRun(() -> {
-        // Open the log.
-        log = storage.open();
-
-        // Configure the cluster.
-        cluster.configure(0, members, Members.builder().build());
-
-        // Create a state machine executor and configure the state machine.
-        stateExecutor = new ServerStateMachineExecutor(new SingleThreadContext("copycat-server-" + member.id() + "-state-%d", serializer.clone()));
-        commits = new ServerCommitPool(new ServerCommitCleaner(log), stateExecutor.context().sessions());
-        stateMachine.init(stateExecutor.context());
-        stateMachine.configure(stateExecutor);
-
         // Transition to the JOIN state. This will cause the server to attempt to join an existing cluster.
         transition(JoinState.class);
         open = true;
