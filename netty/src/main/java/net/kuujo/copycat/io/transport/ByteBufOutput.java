@@ -27,13 +27,13 @@ import java.nio.charset.StandardCharsets;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-final class ByteBufferOutput implements BufferOutput<ByteBufferOutput> {
+final class ByteBufOutput implements BufferOutput<ByteBufOutput> {
   ByteBuf buffer;
 
   /**
    * Sets the underlying byte buffer.
    */
-  ByteBufferOutput setByteBuf(ByteBuf buffer) {
+  ByteBufOutput setByteBuf(ByteBuf buffer) {
     this.buffer = buffer;
     return this;
   }
@@ -54,7 +54,7 @@ final class ByteBufferOutput implements BufferOutput<ByteBufferOutput> {
   }
 
   @Override
-  public ByteBufferOutput write(Buffer buffer) {
+  public ByteBufOutput write(Buffer buffer) {
     int size = Math.min((int) buffer.remaining(), this.buffer.writableBytes());
     checkWrite(size);
     byte[] bytes = new byte[size];
@@ -64,7 +64,7 @@ final class ByteBufferOutput implements BufferOutput<ByteBufferOutput> {
   }
 
   @Override
-  public ByteBufferOutput write(Bytes bytes) {
+  public ByteBufOutput write(Bytes bytes) {
     int size = Math.min((int) bytes.size(), buffer.writableBytes());
     checkWrite(size);
     byte[] b = new byte[size];
@@ -74,14 +74,14 @@ final class ByteBufferOutput implements BufferOutput<ByteBufferOutput> {
   }
 
   @Override
-  public ByteBufferOutput write(byte[] bytes) {
+  public ByteBufOutput write(byte[] bytes) {
     checkWrite(bytes.length);
     buffer.writeBytes(bytes);
     return this;
   }
 
   @Override
-  public ByteBufferOutput write(Bytes bytes, long offset, long length) {
+  public ByteBufOutput write(Bytes bytes, long offset, long length) {
     int size = Math.min((int) bytes.size(), (int) length);
     checkWrite(size);
     byte[] b = new byte[size];
@@ -91,110 +91,110 @@ final class ByteBufferOutput implements BufferOutput<ByteBufferOutput> {
   }
 
   @Override
-  public ByteBufferOutput write(byte[] bytes, long offset, long length) {
+  public ByteBufOutput write(byte[] bytes, long offset, long length) {
     checkWrite((int) length);
     buffer.writeBytes(bytes, (int) offset, (int) length);
     return this;
   }
 
   @Override
-  public ByteBufferOutput writeByte(int b) {
+  public ByteBufOutput writeByte(int b) {
     checkWrite(Bytes.BYTE);
     buffer.writeByte(b);
     return this;
   }
 
   @Override
-  public ByteBufferOutput writeUnsignedByte(int b) {
+  public ByteBufOutput writeUnsignedByte(int b) {
     checkWrite(Bytes.BYTE);
     buffer.writeByte(b);
     return this;
   }
 
   @Override
-  public ByteBufferOutput writeChar(char c) {
+  public ByteBufOutput writeChar(char c) {
     checkWrite(Bytes.CHARACTER);
     buffer.writeChar(c);
     return this;
   }
 
   @Override
-  public ByteBufferOutput writeShort(short s) {
+  public ByteBufOutput writeShort(short s) {
     checkWrite(Bytes.SHORT);
     buffer.writeShort(s);
     return this;
   }
 
   @Override
-  public ByteBufferOutput writeUnsignedShort(int s) {
+  public ByteBufOutput writeUnsignedShort(int s) {
     checkWrite(Bytes.SHORT);
     buffer.writeShort(s);
     return this;
   }
 
   @Override
-  public ByteBufferOutput writeInt(int i) {
+  public ByteBufOutput writeInt(int i) {
     checkWrite(Bytes.INTEGER);
     buffer.writeInt(i);
     return this;
   }
 
   @Override
-  public ByteBufferOutput writeUnsignedInt(long i) {
+  public ByteBufOutput writeUnsignedInt(long i) {
     checkWrite(Bytes.INTEGER);
     buffer.writeInt((int) i);
     return this;
   }
 
   @Override
-  public ByteBufferOutput writeMedium(int m) {
+  public ByteBufOutput writeMedium(int m) {
     checkWrite(Bytes.MEDIUM);
     buffer.writeMedium(m);
     return this;
   }
 
   @Override
-  public ByteBufferOutput writeUnsignedMedium(int m) {
+  public ByteBufOutput writeUnsignedMedium(int m) {
     checkWrite(Bytes.MEDIUM);
     buffer.writeMedium(m);
     return this;
   }
 
   @Override
-  public ByteBufferOutput writeLong(long l) {
+  public ByteBufOutput writeLong(long l) {
     checkWrite(Bytes.LONG);
     buffer.writeLong(l);
     return this;
   }
 
   @Override
-  public ByteBufferOutput writeFloat(float f) {
+  public ByteBufOutput writeFloat(float f) {
     checkWrite(Bytes.FLOAT);
     buffer.writeFloat(f);
     return this;
   }
 
   @Override
-  public ByteBufferOutput writeDouble(double d) {
+  public ByteBufOutput writeDouble(double d) {
     checkWrite(Bytes.DOUBLE);
     buffer.writeDouble(d);
     return this;
   }
 
   @Override
-  public ByteBufferOutput writeBoolean(boolean b) {
+  public ByteBufOutput writeBoolean(boolean b) {
     checkWrite(Bytes.BOOLEAN);
     buffer.writeBoolean(b);
     return this;
   }
 
   @Override
-  public ByteBufferOutput writeString(String s) {
+  public ByteBufOutput writeString(String s) {
     return writeUTF8(s);
   }
 
   @Override
-  public ByteBufferOutput writeUTF8(String s) {
+  public ByteBufOutput writeUTF8(String s) {
     byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
     checkWrite(Bytes.SHORT + bytes.length);
     buffer.writeShort(bytes.length).writeBytes(bytes);
@@ -202,7 +202,7 @@ final class ByteBufferOutput implements BufferOutput<ByteBufferOutput> {
   }
 
   @Override
-  public ByteBufferOutput flush() {
+  public ByteBufOutput flush() {
     return this;
   }
 

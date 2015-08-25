@@ -99,6 +99,8 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
       members = serializer.readObject(buffer);
     } else {
       error = RaftError.forId(buffer.readByte());
+      session = 0;
+      members = null;
     }
   }
 
@@ -124,7 +126,8 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
       RegisterResponse response = (RegisterResponse) object;
       return response.status == status
         && response.session == session
-        && response.members.equals(members);
+        && ((response.members == null && members == null)
+        || (response.members != null && members != null && response.members.equals(members)));
     }
     return false;
   }

@@ -84,6 +84,7 @@ public class PublishResponse extends SessionResponse<PublishResponse> {
     status = Status.forId(buffer.readByte());
     if (status == Status.OK) {
       error = null;
+      sequence = buffer.readLong();
     } else {
       error = RaftError.forId(buffer.readByte());
     }
@@ -92,7 +93,9 @@ public class PublishResponse extends SessionResponse<PublishResponse> {
   @Override
   public void writeObject(BufferOutput buffer, Serializer serializer) {
     buffer.writeByte(status.id());
-    if (status == Status.ERROR) {
+    if (status == Status.OK) {
+      buffer.writeLong(sequence);
+    } else {
       buffer.writeByte(error.id());
     }
   }
@@ -106,7 +109,8 @@ public class PublishResponse extends SessionResponse<PublishResponse> {
   public boolean equals(Object object) {
     if (object instanceof PublishResponse) {
       PublishResponse response = (PublishResponse) object;
-      return response.status == status;
+      return response.status == status
+        && response.sequence == sequence;
     }
     return false;
   }

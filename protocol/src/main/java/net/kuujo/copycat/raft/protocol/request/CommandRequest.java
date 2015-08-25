@@ -143,13 +143,13 @@ public class CommandRequest extends SessionRequest<CommandRequest> {
     /**
      * Sets the command sequence number.
      *
-     * @param commandSequence The command sequence number.
+     * @param sequence The command sequence number.
      * @return The request builder.
      */
-    public Builder withSequence(long commandSequence) {
-      if (commandSequence <= 0)
+    public Builder withSequence(long sequence) {
+      if (sequence <= 0)
         throw new IllegalArgumentException("sequence cannot be less than 1");
-      request.sequence = commandSequence;
+      request.sequence = sequence;
       return this;
     }
 

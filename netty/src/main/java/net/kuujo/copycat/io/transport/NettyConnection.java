@@ -44,16 +44,16 @@ public class NettyConnection implements Connection {
   static final byte RESPONSE = 0x03;
   static final byte SUCCESS = 0x04;
   static final byte FAILURE = 0x05;
-  private static final ThreadLocal<ByteBufferInput> INPUT = new ThreadLocal<ByteBufferInput>() {
+  private static final ThreadLocal<ByteBufInput> INPUT = new ThreadLocal<ByteBufInput>() {
     @Override
-    protected ByteBufferInput initialValue() {
-      return new ByteBufferInput();
+    protected ByteBufInput initialValue() {
+      return new ByteBufInput();
     }
   };
-  private static final ThreadLocal<ByteBufferOutput> OUTPUT = new ThreadLocal<ByteBufferOutput>() {
+  private static final ThreadLocal<ByteBufOutput> OUTPUT = new ThreadLocal<ByteBufOutput>() {
     @Override
-    protected ByteBufferOutput initialValue() {
-      return new ByteBufferOutput();
+    protected ByteBufOutput initialValue() {
+      return new ByteBufOutput();
     }
   };
 

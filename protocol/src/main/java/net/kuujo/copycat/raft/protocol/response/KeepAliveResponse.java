@@ -110,14 +110,16 @@ public class KeepAliveResponse extends SessionResponse<KeepAliveResponse> {
   public boolean equals(Object object) {
     if (object instanceof KeepAliveResponse) {
       KeepAliveResponse response = (KeepAliveResponse) object;
-      return response.status == status;
+      return response.status == status
+        && ((response.members == null && members == null)
+        || (response.members != null && members != null && response.members.equals(members)));
     }
     return false;
   }
 
   @Override
   public String toString() {
-    return String.format("%s[status=%s]", getClass().getSimpleName(), status);
+    return String.format("%s[status=%s, members=%s]", getClass().getSimpleName(), status, members);
   }
 
   /**

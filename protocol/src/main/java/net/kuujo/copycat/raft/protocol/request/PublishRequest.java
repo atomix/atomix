@@ -142,13 +142,13 @@ public class PublishRequest extends SessionRequest<PublishRequest> {
     /**
      * Sets the event sequence number.
      *
-     * @param eventSequence The event sequence number.
+     * @param sequence The event sequence number.
      * @return The request builder.
      */
-    public Builder withSequence(long eventSequence) {
-      if (eventSequence <= 0)
+    public Builder withSequence(long sequence) {
+      if (sequence <= 0)
         throw new IllegalArgumentException("sequence cannot be less than 1");
-      request.sequence = eventSequence;
+      request.sequence = sequence;
       return this;
     }
 

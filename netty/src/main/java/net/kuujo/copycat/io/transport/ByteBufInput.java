@@ -27,13 +27,13 @@ import java.nio.charset.StandardCharsets;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-final class ByteBufferInput implements BufferInput<ByteBufferInput> {
+final class ByteBufInput implements BufferInput<ByteBufInput> {
   ByteBuf buffer;
 
   /**
    * Sets the underlying byte buffer.
    */
-  ByteBufferInput setByteBuf(ByteBuf buffer) {
+  ByteBufInput setByteBuf(ByteBuf buffer) {
     this.buffer = buffer;
     return this;
   }
@@ -49,13 +49,13 @@ final class ByteBufferInput implements BufferInput<ByteBufferInput> {
   }
 
   @Override
-  public ByteBufferInput skip(long bytes) {
+  public ByteBufInput skip(long bytes) {
     buffer.readerIndex(buffer.readerIndex() + (int) bytes);
     return this;
   }
 
   @Override
-  public ByteBufferInput read(Buffer buffer) {
+  public ByteBufInput read(Buffer buffer) {
     byte[] bytes = new byte[this.buffer.readableBytes()];
     this.buffer.readBytes(bytes);
     buffer.write(bytes);
@@ -63,7 +63,7 @@ final class ByteBufferInput implements BufferInput<ByteBufferInput> {
   }
 
   @Override
-  public ByteBufferInput read(Bytes bytes) {
+  public ByteBufInput read(Bytes bytes) {
     byte[] b = new byte[Math.min((int) bytes.size(), buffer.readableBytes())];
     buffer.readBytes(b);
     bytes.write(0, b, 0, b.length);
@@ -71,13 +71,13 @@ final class ByteBufferInput implements BufferInput<ByteBufferInput> {
   }
 
   @Override
-  public ByteBufferInput read(byte[] bytes) {
+  public ByteBufInput read(byte[] bytes) {
     buffer.readBytes(bytes);
     return this;
   }
 
   @Override
-  public ByteBufferInput read(Bytes bytes, long dstOffset, long length) {
+  public ByteBufInput read(Bytes bytes, long dstOffset, long length) {
     byte[] b = new byte[Math.min((int) length, buffer.readableBytes())];
     buffer.readBytes(b);
     bytes.write(dstOffset, b, 0, b.length);
@@ -85,7 +85,7 @@ final class ByteBufferInput implements BufferInput<ByteBufferInput> {
   }
 
   @Override
-  public ByteBufferInput read(byte[] bytes, long offset, long length) {
+  public ByteBufInput read(byte[] bytes, long offset, long length) {
     buffer.readBytes(bytes, (int) offset, (int) length);
     return this;
   }

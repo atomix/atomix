@@ -112,7 +112,8 @@ public class KeepAliveRequest extends SessionRequest<KeepAliveRequest> {
     if (object instanceof KeepAliveRequest) {
       KeepAliveRequest request = (KeepAliveRequest) object;
       return request.session == session
-        && request.commandSequence == commandSequence;
+        && request.commandSequence == commandSequence
+        && request.eventSequence == eventSequence;
     }
     return false;
   }
@@ -160,7 +161,7 @@ public class KeepAliveRequest extends SessionRequest<KeepAliveRequest> {
     public Builder withEventSequence(long eventSequence) {
       if (eventSequence < 0)
         throw new IllegalArgumentException("eventSequence cannot be negative");
-      request.commandSequence = eventSequence;
+      request.eventSequence = eventSequence;
       return this;
     }
 
