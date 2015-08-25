@@ -82,6 +82,7 @@
     <module>collections</module>
     <module>coordination</module>
     <module>atomic</module>
+    <module>examples</module>
     <module>all</module>
   </modules>
 
