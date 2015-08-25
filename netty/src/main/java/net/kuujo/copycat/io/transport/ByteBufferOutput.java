@@ -45,9 +45,9 @@ final class ByteBufferOutput implements BufferOutput<ByteBufferOutput> {
     // If the buffer does not have enough bytes remaining, attempt to discard some of the read bytes.
     // It is possible that the buffer could discard 0 bytes, so we ensure the buffer is writable after
     // discarding some read bytes, and if not discard all read bytes.
-    if (!buffer.isWritable(size)) {
+    if (buffer.writerIndex() + size > buffer.maxCapacity()) {
       buffer.discardSomeReadBytes();
-      if (!buffer.isWritable(size)) {
+      if (buffer.writerIndex() + size > buffer.maxCapacity()) {
         buffer.discardReadBytes();
       }
     }
