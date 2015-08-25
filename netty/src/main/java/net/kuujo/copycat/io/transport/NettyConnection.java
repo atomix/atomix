@@ -185,7 +185,7 @@ public class NettyConnection implements Connection {
    */
   @SuppressWarnings("unchecked")
   private void handleResponseSuccess(long requestId, Object response) {
-    ContextualFuture future = responseFutures.get(requestId);
+    ContextualFuture future = responseFutures.remove(requestId);
     if (future != null) {
       future.context.executor().execute(() -> {
         future.complete(response);
@@ -201,7 +201,7 @@ public class NettyConnection implements Connection {
    * Handles a failure response.
    */
   private void handleResponseFailure(long requestId, Throwable t) {
-    ContextualFuture future = responseFutures.get(requestId);
+    ContextualFuture future = responseFutures.remove(requestId);
     if (future != null) {
       future.context.executor().execute(() -> future.completeExceptionally(t));
     }
