@@ -280,7 +280,7 @@ public class NettyConnection implements Connection {
     long requestId = ++this.requestId;
 
     context.executor().execute(() -> {
-      ByteBuf buffer = this.channel.alloc().buffer(13, 1024 * 32);
+      ByteBuf buffer = this.channel.alloc().buffer(13);
       buffer.writeByte(REQUEST)
         .writeLong(requestId)
         .writeInt(hashMap.computeIfAbsent(request.getClass(), this::hash32));
