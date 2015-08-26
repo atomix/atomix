@@ -58,11 +58,6 @@ public abstract class SessionEntry<T extends SessionEntry<T>> extends Timestampe
   }
 
   @Override
-  public int size() {
-    return super.size() + Long.BYTES;
-  }
-
-  @Override
   public void writeObject(BufferOutput buffer, Serializer serializer) {
     super.writeObject(buffer, serializer);
     buffer.writeLong(session);

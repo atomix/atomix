@@ -58,11 +58,6 @@ public abstract class TimestampedEntry<T extends TimestampedEntry<T>> extends Ra
   }
 
   @Override
-  public int size() {
-    return super.size() + Long.BYTES;
-  }
-
-  @Override
   public void writeObject(BufferOutput buffer, Serializer serializer) {
     super.writeObject(buffer, serializer);
     buffer.writeLong(timestamp);

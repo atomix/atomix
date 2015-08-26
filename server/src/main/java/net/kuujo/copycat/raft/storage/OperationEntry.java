@@ -37,9 +37,4 @@ public abstract class OperationEntry<T extends OperationEntry<T>> extends Sessio
    */
   public abstract Operation getOperation();
 
-  @Override
-  public int size() {
-    return super.size() + 8 + 1024;
-  }
-
 }

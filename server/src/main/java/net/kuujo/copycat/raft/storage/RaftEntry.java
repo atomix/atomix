@@ -43,15 +43,6 @@ public class RaftEntry<T extends RaftEntry<T>> extends Entry<T> {
     return (T) this;
   }
 
-  /**
-   * Returns the entry count.
-   *
-   * @return The entry count.
-   */
-  public int size() {
-    return 8;
-  }
-
   @Override
   public void writeObject(BufferOutput buffer, Serializer serializer) {
     buffer.writeLong(term);

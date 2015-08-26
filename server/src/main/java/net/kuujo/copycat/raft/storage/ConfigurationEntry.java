@@ -15,11 +15,11 @@
  */
 package net.kuujo.copycat.raft.storage;
 
-import net.kuujo.copycat.raft.Members;
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.storage.Entry;
+import net.kuujo.copycat.raft.Members;
 import net.kuujo.copycat.util.ReferenceManager;
 
 /**
@@ -80,11 +80,6 @@ public class ConfigurationEntry extends RaftEntry<ConfigurationEntry> {
       throw new NullPointerException("members cannot be null");
     this.passive = members;
     return this;
-  }
-
-  @Override
-  public int size() {
-    return super.size() + Integer.BYTES;
   }
 
   @Override

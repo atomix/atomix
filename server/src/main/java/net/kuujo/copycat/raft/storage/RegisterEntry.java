@@ -61,11 +61,6 @@ public class RegisterEntry extends TimestampedEntry<RegisterEntry> {
   }
 
   @Override
-  public int size() {
-    return super.size() + Integer.BYTES;
-  }
-
-  @Override
   public void writeObject(BufferOutput buffer, Serializer serializer) {
     super.writeObject(buffer, serializer);
     serializer.writeObject(connection, buffer);
