@@ -58,4 +58,42 @@ public class OffsetIndexTest {
     assertEquals(index.position(13), 4567);
   }
 
+  /**
+   * Tests truncating entries.
+   */
+  public void testTruncate() {
+    OffsetIndex index = new OffsetIndex(HeapBuffer.allocate(1024 * 8));
+    index.index(0, 0);
+    index.index(1, 10);
+    index.index(2, 20);
+    index.index(3, 30);
+    index.index(4, 40);
+    assertEquals(index.truncate(2), 30);
+  }
+
+  /**
+   * Tests truncating skipped entries.
+   */
+  public void testTruncateSkipped() {
+    OffsetIndex index = new OffsetIndex(HeapBuffer.allocate(1024 * 8));
+    index.index(0, 0);
+    index.index(1, 10);
+    index.index(3, 30);
+    index.index(4, 40);
+    assertEquals(index.truncate(2), 30);
+  }
+
+  /**
+   * Tests truncating a deleted item from the index.
+   */
+  public void testTruncateDeleted() {
+    OffsetIndex index = new OffsetIndex(HeapBuffer.allocate(1024 * 8));
+    index.index(0, 0);
+    index.index(1, 10);
+    index.index(3, 30);
+    index.index(4, 40);
+    index.delete(1);
+    assertEquals(index.truncate(1), 30);
+  }
+
 }

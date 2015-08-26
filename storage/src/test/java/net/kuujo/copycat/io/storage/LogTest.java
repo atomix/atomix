@@ -15,10 +15,11 @@
  */
 package net.kuujo.copycat.io.storage;
 
-import org.testng.annotations.Test;
-
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.ServiceLoaderTypeResolver;
+import org.testng.annotations.Test;
+
+import java.io.File;
 
 import static org.testng.Assert.*;
 
@@ -29,12 +30,22 @@ import static org.testng.Assert.*;
  */
 @Test
 public class LogTest extends AbstractLogTest {
+
   /**
    * Creates a new log.
    */
   @Override
   protected Log createLog() {
-    return tempStorageBuilder().withMaxEntrySize(1024)
+    return createLog(String.format("target/test-logs/%s", logId));
+  }
+
+  /**
+   * Creates a new log.
+   */
+  protected Log createLog(String directory) {
+    return tempStorageBuilder()
+        .withDirectory(new File(String.format("target/test-logs/%s", directory)))
+        .withMaxEntrySize(1024)
         .withMaxSegmentSize(1024 * 1024)
         .withMaxEntriesPerSegment(1024)
         .withSerializer(new Serializer(new ServiceLoaderTypeResolver()))
@@ -141,6 +152,20 @@ public class LogTest extends AbstractLogTest {
     assertEquals(log.lastIndex(), 10);
     appendEntries(log, 10);
     assertEquals(log.lastIndex(), 20);
+  }
+
+  /**
+   * Tests truncating to a skipped index.
+   */
+  public void testTruncateSkipped() throws Throwable {
+    appendEntries(log, 100);
+    assertEquals(log.lastIndex(), 100);
+    log.skip(10);
+    appendEntries(log, 100);
+    assertEquals(log.lastIndex(), 210);
+    log.truncate(105);
+    assertEquals(log.lastIndex(), 105);
+    assertNull(log.get(105));
   }
 
   /**

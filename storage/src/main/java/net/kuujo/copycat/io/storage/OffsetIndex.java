@@ -234,11 +234,7 @@ class OffsetIndex implements AutoCloseable {
         hi = mid - 1;
       }
     }
-
-    if (buffer.readInt(hi * ENTRY_SIZE) == offset) {
-      return hi;
-    }
-    return -1;
+    return hi + 1;
   }
 
   /**
@@ -260,6 +256,12 @@ class OffsetIndex implements AutoCloseable {
   public long truncate(int offset) {
     if (offset == lastOffset)
       return -1;
+
+    if (offset == -1) {
+      buffer.position(0).zero();
+      currentPosition = currentOffset = lastOffset = -1;
+      return 0;
+    }
 
     int nearestOffset = nearestOffset(offset + 1);
 
