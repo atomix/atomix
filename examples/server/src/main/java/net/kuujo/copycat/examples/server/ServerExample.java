@@ -16,6 +16,7 @@
 package net.kuujo.copycat.examples.server;
 
 import java.net.InetAddress;
+import java.util.UUID;
 
 import net.kuujo.copycat.Copycat;
 import net.kuujo.copycat.CopycatReplica;
@@ -54,7 +55,9 @@ public class ServerExample {
         .withTransport(new NettyTransport())
         .withMemberId(serverId)
         .withMembers(builder.build())
-        .withStorage(new Storage())
+        .withStorage(Storage.builder()
+            .withDirectory(System.getProperty("user.dir") + "/logs/" + UUID.randomUUID().toString())
+            .build())
         .build();
 
     copycat.open().join();
