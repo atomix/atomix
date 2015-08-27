@@ -112,7 +112,7 @@ final class LeaderState extends ActiveState {
         if (entry != null) {
           context.apply(entry).whenComplete((result, error) -> {
             if (isOpen() && error != null) {
-              LOGGER.info("{} - An application error occurred: {}", context.getMember().id(), error);
+              LOGGER.info("{} - An application error occurred: {}", context.getMember().id(), error.getMessage());
             }
             entry.close();
           });
