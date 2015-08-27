@@ -24,6 +24,7 @@ import net.kuujo.copycat.util.Listeners;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.openhft.hashing.LongHashFunction;
 
+import java.net.ConnectException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -258,6 +259,10 @@ public class NettyConnection implements Connection {
    * @param t The exception to handle.
    */
   void handleException(Throwable t) {
+    for (CompletableFuture responseFuture : responseFutures.values()) {
+      responseFuture.completeExceptionally(new ConnectException(t.getMessage()));
+    }
+    responseFutures.clear();
     for (Listener<Throwable> listener : exceptionListeners) {
       listener.accept(t);
     }
@@ -335,6 +340,14 @@ public class NettyConnection implements Connection {
       });
     }
     return future;
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (object instanceof NettyConnection) {
+      return ((NettyConnection) object).id().equals(id);
+    }
+    return false;
   }
 
   /**

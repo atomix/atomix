@@ -321,8 +321,16 @@ public class ClientSession implements Session, Managed<Session> {
    */
   private ClientSession setupConnection(Connection connection) {
     this.connection = connection;
-    connection.closeListener(c -> this.connection = null);
-    connection.exceptionListener(c -> this.connection = null);
+    connection.closeListener(c -> {
+      if (c.equals(this.connection)) {
+        this.connection = null;
+      }
+    });
+    connection.exceptionListener(c -> {
+      if (c.equals(this.connection)) {
+        this.connection = null;
+      }
+    });
     connection.handler(PublishRequest.class, this::handlePublish);
     return this;
   }
