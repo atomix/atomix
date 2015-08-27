@@ -22,6 +22,7 @@ import net.kuujo.copycat.raft.protocol.response.Response;
 import net.kuujo.copycat.util.concurrent.Scheduled;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -62,7 +63,13 @@ final class JoinState extends InactiveState {
    * Starts joining the cluster.
    */
   private void join() {
-    join(context.getCluster().getActiveMembers().iterator());
+    List<MemberState> votingMembers = context.getCluster().getActiveMembers();
+    if (votingMembers.isEmpty()) {
+      LOGGER.debug("{} - Single member cluster. Transitioning directly to leader.", context.getMember().id());
+      transition(RaftServer.State.LEADER);
+    } else {
+      join(context.getCluster().getActiveMembers().iterator());
+    }
   }
 
   /**

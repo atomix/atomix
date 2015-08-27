@@ -138,6 +138,13 @@ final class FollowerState extends ActiveState {
     final AtomicBoolean complete = new AtomicBoolean();
     final Set<MemberState> votingMembers = new HashSet<>(context.getCluster().getActiveMembers());
 
+    // If there are no other members in the cluster, immediately transition to leader.
+    if (votingMembers.isEmpty()) {
+      LOGGER.debug("{} - Single member cluster. Transitioning directly to leader.", context.getMember().id());
+      transition(RaftServer.State.LEADER);
+      return;
+    }
+
     final Quorum quorum = new Quorum(context.getCluster().getQuorum(), (elected) -> {
       // If a majority of the cluster indicated they would vote for us then transition to candidate.
       complete.set(true);

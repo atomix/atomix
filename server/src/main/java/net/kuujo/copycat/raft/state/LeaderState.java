@@ -665,7 +665,7 @@ final class LeaderState extends ActiveState {
       if (index == 0)
         return commit();
 
-      if (context.getCluster().getActiveMembers().size() == 1) {
+      if (context.getCluster().getActiveMembers().isEmpty()) {
         context.setCommitIndex(index);
         return CompletableFuture.completedFuture(index);
       }
