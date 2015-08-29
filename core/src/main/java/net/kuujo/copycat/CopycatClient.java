@@ -38,6 +38,9 @@ public final class CopycatClient extends Copycat {
     return new Builder();
   }
 
+  /**
+   * @throws NullPointerException if {@code client} is null
+   */
   public CopycatClient(RaftClient client) {
     super(client);
   }

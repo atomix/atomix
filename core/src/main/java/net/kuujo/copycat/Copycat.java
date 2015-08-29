@@ -15,6 +15,10 @@
  */
 package net.kuujo.copycat;
 
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.transport.Transport;
 import net.kuujo.copycat.manager.CreateResource;
@@ -26,11 +30,8 @@ import net.kuujo.copycat.raft.StateMachine;
 import net.kuujo.copycat.raft.protocol.Command;
 import net.kuujo.copycat.raft.protocol.Query;
 import net.kuujo.copycat.resource.ResourceContext;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.Managed;
-
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Base type for creating and managing distributed {@link net.kuujo.copycat.Resource resources} in a Copycat cluster.
@@ -54,8 +55,11 @@ public abstract class Copycat implements Managed<Copycat> {
   protected final RaftClient client;
   private final Map<Long, ResourceContext> resources = new ConcurrentHashMap<>();
 
+  /**
+   * @throws NullPointerException if {@code client} is null
+   */
   protected Copycat(RaftClient client) {
-    this.client = client;
+    this.client = Assert.notNull(client, "cient");
   }
 
   /**
@@ -63,6 +67,7 @@ public abstract class Copycat implements Managed<Copycat> {
    *
    * @param path The path to check.
    * @return A completable future indicating whether the given path exists.
+   * @throws NullPointerException if {@code path} is null
    */
   public CompletableFuture<Boolean> exists(String path) {
     return client.submit(new ResourceExists(path));
@@ -75,11 +80,12 @@ public abstract class Copycat implements Managed<Copycat> {
    * @param type The expected resource type.
    * @param <T> The resource type.
    * @return A completable future to be completed once the resource has been loaded.
+   * @throws NullPointerException if {@code path} or {@code type} are null
    */
   @SuppressWarnings("unchecked")
   public <T extends Resource> CompletableFuture<T> get(String path, Class<? super T> type) {
     try {
-      T resource = (T) type.newInstance();
+      T resource = (T) Assert.notNull(type, "type").newInstance();
       return client.submit(GetResource.builder()
         .withPath(path)
         .withType(resource.stateMachine())
@@ -103,11 +109,12 @@ public abstract class Copycat implements Managed<Copycat> {
    * @param type The resource type to create.
    * @param <T> The resource type.
    * @return A completable future to be completed once the resource has been created.
+   * @throws NullPointerException if {@code path} or {@code type} are null
    */
   @SuppressWarnings("unchecked")
   public <T extends Resource> CompletableFuture<T> create(String path, Class<? super T> type) {
     try {
-      T resource = (T) type.newInstance();
+      T resource = (T) Assert.notNull(type, "type").newInstance();
       return client.submit(CreateResource.builder()
         .withPath(path)
         .withType(resource.stateMachine())

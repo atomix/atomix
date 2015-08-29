@@ -38,10 +38,13 @@ public class ResourceSession implements Session {
   private final Set<Consumer> receiveListeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
   private Listener<ResourceMessage<?>> listener;
 
+  /**
+   * @throws NullPointerException if {@code parent} or {@code context} are null
+   */
   public ResourceSession(long resource, Session parent, Context context) {
     this.resource = resource;
-    this.parent = parent;
-    this.context = context;
+    this.parent = Assert.notNull(parent, "parent");
+    this.context = Assert.notNull(context, "context");
   }
 
   @Override

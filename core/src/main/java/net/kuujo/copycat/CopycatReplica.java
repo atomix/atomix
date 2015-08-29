@@ -54,6 +54,9 @@ public final class CopycatReplica extends Copycat {
 
   private final RaftServer server;
 
+  /**
+   * @throws NullPointerException if {@code client} or {@code server} are null
+   */
   public CopycatReplica(RaftClient client, RaftServer server) {
     super(client);
     this.server = server;
@@ -152,6 +155,7 @@ public final class CopycatReplica extends Copycat {
      *
      * @param transport The client server.
      * @return The client builder.
+     * @throws NullPointerException if {@code command} is null
      */
     public Builder withTransport(Transport transport) {
       clientBuilder.withTransport(new LocalTransport(localRegistry));
@@ -175,6 +179,7 @@ public final class CopycatReplica extends Copycat {
      *
      * @param members The voting Raft members.
      * @return The Raft builder.
+     * @throws NullPointerException if {@code command} is null
      */
     public Builder withMembers(Members members) {
       if (members == null)
@@ -188,6 +193,7 @@ public final class CopycatReplica extends Copycat {
      *
      * @param serializer The Raft serializer.
      * @return The Raft builder.
+     * @throws NullPointerException if {@code command} is null
      */
     public Builder withSerializer(Serializer serializer) {
       clientBuilder.withSerializer(serializer);
@@ -200,6 +206,7 @@ public final class CopycatReplica extends Copycat {
      *
      * @param storage The server storage module.
      * @return The Copycat server builder.
+     * @throws NullPointerException if {@code command} is null
      */
     public Builder withStorage(Storage storage) {
       serverBuilder.withStorage(storage);
@@ -212,6 +219,7 @@ public final class CopycatReplica extends Copycat {
      * @param electionTimeout The Raft election timeout in milliseconds.
      * @return The Raft configuration.
      * @throws IllegalArgumentException If the election timeout is not positive
+     * @throws NullPointerException if {@code command} is null
      */
     public Builder withElectionTimeout(Duration electionTimeout) {
       serverBuilder.withElectionTimeout(electionTimeout);
@@ -224,6 +232,7 @@ public final class CopycatReplica extends Copycat {
      * @param heartbeatInterval The Raft heartbeat interval in milliseconds.
      * @return The Raft configuration.
      * @throws IllegalArgumentException If the heartbeat interval is not positive
+     * @throws NullPointerException if {@code command} is null
      */
     public Builder withHeartbeatInterval(Duration heartbeatInterval) {
       serverBuilder.withHeartbeatInterval(heartbeatInterval);
@@ -236,6 +245,7 @@ public final class CopycatReplica extends Copycat {
      * @param sessionTimeout The Raft session timeout in milliseconds.
      * @return The Raft configuration.
      * @throws IllegalArgumentException If the session timeout is not positive
+     * @throws NullPointerException if {@code command} is null
      */
     public Builder withSessionTimeout(Duration sessionTimeout) {
       serverBuilder.withSessionTimeout(sessionTimeout);
@@ -248,6 +258,7 @@ public final class CopycatReplica extends Copycat {
      * @param keepAliveInterval The Raft keep alive interval in milliseconds.
      * @return The Raft configuration.
      * @throws IllegalArgumentException If the keep alive interval is not positive
+     * @throws NullPointerException if {@code command} is null
      */
     public Builder withKeepAliveInterval(Duration keepAliveInterval) {
       clientBuilder.withKeepAliveInterval(keepAliveInterval);

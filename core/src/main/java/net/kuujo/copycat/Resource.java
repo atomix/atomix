@@ -19,6 +19,7 @@ import net.kuujo.copycat.raft.protocol.Command;
 import net.kuujo.copycat.raft.protocol.Query;
 import net.kuujo.copycat.raft.StateMachine;
 import net.kuujo.copycat.resource.ResourceContext;
+import net.kuujo.copycat.util.Assert;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -34,9 +35,10 @@ public abstract class Resource {
    * Initializes the resource.
    *
    * @param context The resource context.
+   * @throws NullPointerException if {@code context} is null
    */
   protected void open(ResourceContext context) {
-    this.context = context;
+    this.context = Assert.notNull(context, "context");
   }
 
   /**
@@ -52,9 +54,10 @@ public abstract class Resource {
    * @param command The command to submit.
    * @param <T> The command result type.
    * @return A completable future to be completed with the command result.
+   * @throws NullPointerException if {@code command} is null
    */
   protected <T> CompletableFuture<T> submit(Command<T> command) {
-    return context.submit(command);
+    return context.submit(Assert.notNull(command, "command"));
   }
 
   /**
@@ -63,9 +66,10 @@ public abstract class Resource {
    * @param query The query to submit.
    * @param <T> The query result type.
    * @return A completable future to be completed with the query result.
+   * @throws NullPointerException if {@code query} is null
    */
   protected <T> CompletableFuture<T> submit(Query<T> query) {
-    return context.submit(query);
+    return context.submit(Assert.notNull(query, "query"));
   }
 
   /**

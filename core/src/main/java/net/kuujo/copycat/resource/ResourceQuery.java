@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.resource;
 
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.raft.protocol.ConsistencyLevel;
 import net.kuujo.copycat.raft.protocol.Operation;
@@ -79,9 +80,10 @@ public class ResourceQuery<T extends Query<U>, U> extends ResourceOperation<T, U
      *
      * @param query The resource command.
      * @return The resource command builder.
+     * @throws NullPointerException if {@code query} is null
      */
     public Builder withQuery(T query) {
-      this.query.operation = query;
+      this.query.operation = Assert.notNull(query, "query");
       return this;
     }
   }

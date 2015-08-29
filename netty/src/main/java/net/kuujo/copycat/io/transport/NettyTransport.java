@@ -42,9 +42,12 @@ public class NettyTransport implements Transport {
     this(Runtime.getRuntime().availableProcessors());
   }
 
+  /**
+   * @throws IllegalArgumentException if {@code threads} is not positive
+   * @param threads
+   */
   public NettyTransport(int threads) {
-    if (threads <= 0)
-      throw new IllegalArgumentException("threads must be positive");
+    Assert.arg(threads > 0, "threads must be positive");
 
     ThreadFactory threadFactory = new CopycatThreadFactory("copycat-event-loop-%d");
     if (Epoll.isAvailable()) {

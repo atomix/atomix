@@ -55,7 +55,7 @@ public class NettyClient implements Client {
   private final Map<Channel, NettyConnection> connections = new ConcurrentHashMap<>();
 
   /**
-   * @throws NullPointerException if any argument is null
+   * @throws NullPointerException if {@code id} or {@code eventLoopGroup} are null 
    */
   public NettyClient(UUID id, EventLoopGroup eventLoopGroup) {
     this.id = Assert.notNull(id, "id");

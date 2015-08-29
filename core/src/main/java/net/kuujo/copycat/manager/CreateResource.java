@@ -15,6 +15,8 @@
  */
 package net.kuujo.copycat.manager;
 
+import java.nio.file.Path;
+
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.SerializationException;
@@ -23,6 +25,7 @@ import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.raft.StateMachine;
 import net.kuujo.copycat.raft.protocol.Command;
 import net.kuujo.copycat.raft.protocol.Operation;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.BuilderPool;
 
 /**
@@ -47,9 +50,12 @@ public class CreateResource extends PathOperation<Long> implements Command<Long>
   public CreateResource() {
   }
 
+  /**
+   * @throws NullPointerException if {@code path} or {@code type} are null
+   */
   public CreateResource(String path, Class<? extends StateMachine> type) {
     super(path);
-    this.type = type;
+    this.type = Assert.notNull(type, "type");
   }
 
   /**
@@ -99,9 +105,10 @@ public class CreateResource extends PathOperation<Long> implements Command<Long>
      *
      * @param type The resource state machine type.
      * @return The create resource command builder.
+     * @throws NullPointerException if {@code type} is null
      */
     public Builder withType(Class<? extends StateMachine> type) {
-      operation.type = type;
+      operation.type = Assert.notNull(type, "type");
       return this;
     }
   }

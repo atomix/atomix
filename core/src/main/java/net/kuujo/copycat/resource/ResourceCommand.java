@@ -18,6 +18,7 @@ package net.kuujo.copycat.resource;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.raft.protocol.Command;
 import net.kuujo.copycat.raft.protocol.Operation;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.BuilderPool;
 
 /**
@@ -73,9 +74,10 @@ public class ResourceCommand<T extends Command<U>, U> extends ResourceOperation<
      *
      * @param command The resource command.
      * @return The resource command builder.
+     * @throws NullPointerException if {@code command} is null
      */
     public Builder withCommand(T command) {
-      this.command.operation = command;
+      this.command.operation = Assert.notNull(command, "command");
       return this;
     }
   }
