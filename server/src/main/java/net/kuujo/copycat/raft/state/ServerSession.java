@@ -44,6 +44,7 @@ class ServerSession implements Session {
   private long event;
   private long eventLowWaterMark;
   private long timestamp;
+  private final Queue<List<Runnable>> queriesPool = new ArrayDeque<>();
   private final Map<Long, List<Runnable>> queries = new HashMap<>();
   private final Map<Long, Runnable> commands = new HashMap<>();
   private final Map<Long, Object> responses = new HashMap<>();
@@ -119,6 +120,8 @@ class ServerSession implements Session {
           for (Runnable query : queries) {
             query.run();
           }
+          queries.clear();
+          queriesPool.add(queries);
         }
         this.version = i;
       }
@@ -174,7 +177,10 @@ class ServerSession implements Session {
    * @return The server session.
    */
   ServerSession registerQuery(long version, Runnable query) {
-    List<Runnable> queries = this.queries.computeIfAbsent(version, v -> new ArrayList<>());
+    List<Runnable> queries = this.queries.computeIfAbsent(version, v -> {
+      List<Runnable> q = queriesPool.poll();
+      return q != null ? q : new ArrayList<>(128);
+    });
     queries.add(query);
     return this;
   }
