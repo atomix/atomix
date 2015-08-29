@@ -249,7 +249,7 @@ abstract class ActiveState extends PassiveState {
       .setQuery(request.query());
 
     long version = context.getLastApplied();
-    context.apply(entry).whenCompleteAsync((result, error) -> {
+    context.getStateMachine().apply(entry).whenCompleteAsync((result, error) -> {
       if (isOpen()) {
         if (error == null) {
           future.complete(logResponse(QueryResponse.builder()

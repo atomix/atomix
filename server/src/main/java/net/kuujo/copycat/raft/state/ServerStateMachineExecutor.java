@@ -27,7 +27,6 @@ import net.kuujo.copycat.util.concurrent.Scheduled;
 import org.slf4j.Logger;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -134,14 +133,14 @@ class ServerStateMachineExecutor implements StateMachineExecutor {
     // We have to make sure to trigger scheduled callbacks in this thread in order to ensure
     // they're properly executed *immediately* after the above scheduled execution.
     // This means tasks are scheduled to be executed prior to the state machine time being set.
-    tick(commit.time());
+    tick(commit.time().toEpochMilli());
     return future;
   }
 
   /**
    * Executes scheduled callbacks based on the provided time.
    */
-  void tick(Instant instant) {
+  void tick(long timestamp) {
     // Only create an iterator if there are actually tasks scheduled.
     if (!tasks.isEmpty()) {
 
@@ -150,7 +149,7 @@ class ServerStateMachineExecutor implements StateMachineExecutor {
       Iterator<ServerScheduledTask> iterator = tasks.iterator();
       while (iterator.hasNext()) {
         ServerScheduledTask task = iterator.next();
-        if (task.complete(instant)) {
+        if (task.complete(timestamp)) {
           executor.executor().execute(task::execute);
           complete.add(task);
           iterator.remove();
@@ -285,8 +284,8 @@ class ServerStateMachineExecutor implements StateMachineExecutor {
     /**
      * Returns a boolean value indicating whether the task delay has been met.
      */
-    private boolean complete(Instant instant) {
-      return instant.toEpochMilli() >= time;
+    private boolean complete(long timestamp) {
+      return timestamp >= time;
     }
 
     /**

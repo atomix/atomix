@@ -15,25 +15,16 @@
  */
 package net.kuujo.copycat.raft.state;
 
-import net.kuujo.copycat.io.storage.Log;
-
 /**
  * Server commit cleaner.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-class ServerCommitCleaner {
-  private final Log log;
-
-  ServerCommitCleaner(Log log) {
-    this.log = log;
-  }
+interface ServerCommitCleaner {
 
   /**
    * Cleans the given index from the log.
    */
-  void clean(long index) {
-    log.clean(index);
-  }
+  void clean(long index);
 
 }
