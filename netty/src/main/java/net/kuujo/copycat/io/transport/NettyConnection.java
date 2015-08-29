@@ -81,7 +81,7 @@ public class NettyConnection implements Connection {
     this.id = id;
     this.channel = channel;
     this.context = context;
-    this.timeout = context.schedule(this::timeout, Duration.ofMillis(250));
+    this.timeout = context.schedule(this::timeout, Duration.ofMillis(250), Duration.ofMillis(250));
   }
 
   /**
@@ -287,6 +287,7 @@ public class NettyConnection implements Connection {
       for (Listener<Connection> listener : closeListeners) {
         listener.accept(this);
       }
+      timeout.cancel();
     }
   }
 
@@ -294,15 +295,18 @@ public class NettyConnection implements Connection {
    * Times out requests.
    */
   void timeout() {
+    // Use ConcurrentHashMap instead of LinkedHashMap
     long time = System.currentTimeMillis();
     Iterator<Map.Entry<Long, ContextualFuture>> iterator = responseFutures.entrySet().iterator();
     while (iterator.hasNext()) {
       ContextualFuture future = iterator.next().getValue();
       if (future.time + REQUEST_TIMEOUT < time) {
         iterator.remove();
-        future.context.execute(() -> {
+        future.context.executor().execute(() -> {
           future.completeExceptionally(new TimeoutException("request timed out"));
         });
+      } else {
+        break;
       }
     }
   }
@@ -316,6 +320,7 @@ public class NettyConnection implements Connection {
     long requestId = ++this.requestId;
 
     context.executor().execute(() -> {
+
       ByteBuf buffer = this.channel.alloc().buffer(13);
       buffer.writeByte(REQUEST)
         .writeLong(requestId)
