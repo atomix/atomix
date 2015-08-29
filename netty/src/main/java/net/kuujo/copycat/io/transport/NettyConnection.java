@@ -23,15 +23,14 @@ import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.Listener;
 import net.kuujo.copycat.util.Listeners;
 import net.kuujo.copycat.util.concurrent.Context;
+import net.kuujo.copycat.util.concurrent.Scheduled;
 import net.openhft.hashing.LongHashFunction;
 
-import java.net.ConnectException;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.time.Duration;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
 /**
@@ -46,6 +45,7 @@ public class NettyConnection implements Connection {
   static final byte RESPONSE = 0x03;
   static final byte SUCCESS = 0x04;
   static final byte FAILURE = 0x05;
+  private static final long REQUEST_TIMEOUT = 500;
   private static final ThreadLocal<ByteBufInput> INPUT = new ThreadLocal<ByteBufInput>() {
     @Override
     protected ByteBufInput initialValue() {
@@ -68,6 +68,9 @@ public class NettyConnection implements Connection {
   private final Listeners<Throwable> exceptionListeners = new Listeners<>();
   private final Listeners<Connection> closeListeners = new Listeners<>();
   private volatile long requestId;
+  private volatile Throwable failure;
+  private volatile boolean closed;
+  private Scheduled timeout;
   private final Map<Long, ContextualFuture> responseFutures = new LinkedHashMap<>(1024);
   private ChannelFuture writeFuture;
 
@@ -78,6 +81,7 @@ public class NettyConnection implements Connection {
     this.id = id;
     this.channel = channel;
     this.context = context;
+    this.timeout = context.schedule(this::timeout, Duration.ofMillis(250));
   }
 
   /**
@@ -261,12 +265,16 @@ public class NettyConnection implements Connection {
    * @param t The exception to handle.
    */
   void handleException(Throwable t) {
-    for (CompletableFuture responseFuture : responseFutures.values()) {
-      responseFuture.completeExceptionally(new ConnectException(t.getMessage()));
-    }
-    responseFutures.clear();
-    for (Listener<Throwable> listener : exceptionListeners) {
-      listener.accept(t);
+    if (failure == null) {
+      failure = t;
+      for (CompletableFuture responseFuture : responseFutures.values()) {
+        responseFuture.completeExceptionally(t);
+      }
+      responseFutures.clear();
+
+      for (Listener<Throwable> listener : exceptionListeners) {
+        listener.accept(t);
+      }
     }
   }
 
@@ -274,8 +282,28 @@ public class NettyConnection implements Connection {
    * Handles the channel being closed.
    */
   void handleClosed() {
-    for (Listener<Connection> listener : closeListeners) {
-      listener.accept(this);
+    if (!closed) {
+      closed = true;
+      for (Listener<Connection> listener : closeListeners) {
+        listener.accept(this);
+      }
+    }
+  }
+
+  /**
+   * Times out requests.
+   */
+  void timeout() {
+    long time = System.currentTimeMillis();
+    Iterator<Map.Entry<Long, ContextualFuture>> iterator = responseFutures.entrySet().iterator();
+    while (iterator.hasNext()) {
+      ContextualFuture future = iterator.next().getValue();
+      if (future.time + REQUEST_TIMEOUT < time) {
+        iterator.remove();
+        future.context.execute(() -> {
+          future.completeExceptionally(new TimeoutException("request timed out"));
+        });
+      }
     }
   }
 
@@ -283,7 +311,7 @@ public class NettyConnection implements Connection {
   public <T, U> CompletableFuture<U> send(T request) {
     Assert.notNull(request, "request");
     Context context = getContext();
-    ContextualFuture<U> future = new ContextualFuture<>(context);
+    ContextualFuture<U> future = new ContextualFuture<>(System.currentTimeMillis(), context);
 
     long requestId = ++this.requestId;
 
@@ -313,11 +341,17 @@ public class NettyConnection implements Connection {
 
   @Override
   public Listener<Throwable> exceptionListener(Consumer<Throwable> listener) {
+    if (failure != null) {
+      listener.accept(failure);
+    }
     return exceptionListeners.add(Assert.notNull(listener, "listener"));
   }
 
   @Override
   public Listener<Connection> closeListener(Consumer<Connection> listener) {
+    if (closed) {
+      listener.accept(this);
+    }
     return closeListeners.add(Assert.notNull(listener, "listener"));
   }
 
@@ -371,9 +405,11 @@ public class NettyConnection implements Connection {
    * Contextual future.
    */
   private static class ContextualFuture<T> extends CompletableFuture<T> {
+    private final long time;
     private final Context context;
 
-    private ContextualFuture(Context context) {
+    private ContextualFuture(long time, Context context) {
+      this.time = time;
       this.context = context;
     }
   }
