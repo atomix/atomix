@@ -58,7 +58,7 @@ class ServerSession implements Session {
       throw new NullPointerException("connection cannot be null");
 
     this.id = id;
-    this.command = id;
+    this.version = id;
     this.connectionId = connectionId;
   }
 
