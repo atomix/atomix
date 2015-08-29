@@ -32,6 +32,9 @@ public abstract class TimestampedEntry<T extends TimestampedEntry<T>> extends Ra
   protected TimestampedEntry() {
   }
 
+  /**
+   * @throws NullPointerException if {@code referenceManager} is null
+   */
   protected TimestampedEntry(ReferenceManager<Entry<?>> referenceManager) {
     super(referenceManager);
   }

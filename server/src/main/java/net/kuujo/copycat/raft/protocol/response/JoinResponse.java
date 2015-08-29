@@ -15,16 +15,17 @@
  */
 package net.kuujo.copycat.raft.protocol.response;
 
+import java.util.Objects;
+
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.raft.Members;
 import net.kuujo.copycat.raft.protocol.error.RaftError;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.util.ReferenceManager;
-
-import java.util.Objects;
 
 /**
  * Protocol join response.
@@ -64,6 +65,9 @@ public class JoinResponse extends AbstractResponse<JoinResponse> {
   private Members activeMembers;
   private Members passiveMembers;
 
+  /**
+   * @throws NullPointerException if {@code referenceManager} is null
+   */
   public JoinResponse(ReferenceManager<JoinResponse> referenceManager) {
     super(referenceManager);
   }
@@ -169,11 +173,10 @@ public class JoinResponse extends AbstractResponse<JoinResponse> {
      *
      * @param version The response version.
      * @return The response builder.
+     * @throws IllegalArgumentException if {@code version} is negative
      */
     public Builder withVersion(long version) {
-      if (version < 0)
-        throw new IllegalArgumentException("version cannot be negative");
-      response.version = version;
+      response.version = Assert.argNot(version, version < 0, "version cannot be negative");
       return this;
     }
 
@@ -182,11 +185,10 @@ public class JoinResponse extends AbstractResponse<JoinResponse> {
      *
      * @param members The response members.
      * @return The response builder.
+     * @throws NullPointerException if {@code members} is null
      */
     public Builder withActiveMembers(Members members) {
-      if (members == null)
-        throw new NullPointerException("members cannot be null");
-      response.activeMembers = members;
+      response.activeMembers = Assert.notNull(members, "members");
       return this;
     }
 
@@ -195,11 +197,10 @@ public class JoinResponse extends AbstractResponse<JoinResponse> {
      *
      * @param members The response members.
      * @return The response builder.
+     * @throws NullPointerException if {@code members} is null
      */
     public Builder withPassiveMembers(Members members) {
-      if (members == null)
-        throw new NullPointerException("members cannot be null");
-      response.passiveMembers = members;
+      response.passiveMembers = Assert.notNull(members, "members");
       return this;
     }
 
@@ -213,14 +214,15 @@ public class JoinResponse extends AbstractResponse<JoinResponse> {
       return object instanceof Builder && ((Builder) object).response.equals(response);
     }
 
+    /**
+     * @throws IllegalStateException if active members or passive members are null
+     */
     @Override
     public JoinResponse build() {
       super.build();
       if (response.status == Status.OK) {
-        if (response.activeMembers == null)
-          throw new NullPointerException("activeMembers members cannot be null");
-        if (response.passiveMembers == null)
-          throw new NullPointerException("passiveMembers members cannot be null");
+        Assert.state(response.activeMembers != null, "activeMembers members cannot be null");
+        Assert.state(response.passiveMembers != null, "passiveMembers members cannot be null");
       }
       return response;
     }

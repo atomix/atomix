@@ -18,6 +18,9 @@ public class RaftEntry<T extends RaftEntry<T>> extends Entry<T> {
     super();
   }
 
+  /**
+   * @throws NullPointerException if {@code referenceManager} is null
+   */
   protected RaftEntry(ReferenceManager<Entry<?>> referenceManager) {
     super(referenceManager);
   }

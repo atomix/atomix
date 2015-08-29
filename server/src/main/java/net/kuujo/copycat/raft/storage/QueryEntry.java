@@ -22,6 +22,7 @@ import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.storage.Entry;
 import net.kuujo.copycat.raft.protocol.Operation;
 import net.kuujo.copycat.raft.protocol.Query;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.ReferenceManager;
 
 /**
@@ -77,9 +78,10 @@ public class QueryEntry extends OperationEntry<QueryEntry> {
    *
    * @param query The query.
    * @return The query entry.
+   * @throws NullPointerException if {@code query} is null
    */
   public QueryEntry setQuery(Query query) {
-    this.query = query;
+    this.query = Assert.notNull(query, "query");
     return this;
   }
 

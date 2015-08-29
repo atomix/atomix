@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.raft.protocol.request;
 
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.raft.Member;
 import net.kuujo.copycat.io.BufferInput;
@@ -61,6 +62,9 @@ public class LeaveRequest extends AbstractRequest<LeaveRequest> {
 
   private Member member;
 
+  /**
+   * @throws NullPointerException if {@code referenceManager} is null
+   */
   private LeaveRequest(ReferenceManager<LeaveRequest> referenceManager) {
     super(referenceManager);
   }
@@ -128,21 +132,20 @@ public class LeaveRequest extends AbstractRequest<LeaveRequest> {
      *
      * @param member The request member.
      * @return The request builder.
+     * @throws NullPointerException if {@code member} is null
      */
     public Builder withMember(Member member) {
-      if (member == null)
-        throw new NullPointerException("member cannot be null");
-      request.member = member;
+      request.member = Assert.notNull(member, "member");
       return this;
     }
 
+    /**
+     * @throws IllegalStateException if member is null
+     */
     @Override
     public LeaveRequest build() {
       super.build();
-
-      if (request.member == null)
-        throw new NullPointerException("member cannot be null");
-
+      Assert.state(request.member != null, "member cannot be null");
       return request;
     }
 

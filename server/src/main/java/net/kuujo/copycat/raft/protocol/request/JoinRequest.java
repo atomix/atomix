@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.raft.protocol.request;
 
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.raft.Member;
 import net.kuujo.copycat.io.BufferInput;
@@ -61,6 +62,9 @@ public class JoinRequest extends AbstractRequest<JoinRequest> {
 
   private Member member;
 
+  /**
+   * @throws NullPointerException if {@code referenceManager} is null
+   */
   private JoinRequest(ReferenceManager<JoinRequest> referenceManager) {
     super(referenceManager);
   }
@@ -128,21 +132,20 @@ public class JoinRequest extends AbstractRequest<JoinRequest> {
      *
      * @param member The request member.
      * @return The request builder.
+     * @throws NullPointerException if {@code member} is null
      */
     public Builder withMember(Member member) {
-      if (member == null)
-        throw new NullPointerException("member cannot be null");
-      request.member = member;
+      request.member = Assert.notNull(member, "member");
       return this;
     }
 
+    /**
+     * @throws IllegalStateException if member is null
+     */
     @Override
     public JoinRequest build() {
       super.build();
-
-      if (request.member == null)
-        throw new NullPointerException("member cannot be null");
-
+      Assert.state(request.member != null, "member cannot be null");
       return request;
     }
 

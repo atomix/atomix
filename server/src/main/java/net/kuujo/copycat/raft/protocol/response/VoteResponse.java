@@ -15,15 +15,16 @@
  */
 package net.kuujo.copycat.raft.protocol.response;
 
+import java.util.Objects;
+
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.raft.protocol.error.RaftError;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.util.ReferenceManager;
-
-import java.util.Objects;
 
 /**
  * Protocol vote response.
@@ -62,6 +63,9 @@ public class VoteResponse extends AbstractResponse<VoteResponse> {
   private long term;
   private boolean voted;
 
+  /**
+   * @throws NullPointerException if {@code referenceManager} is null
+   */
   public VoteResponse(ReferenceManager<VoteResponse> referenceManager) {
     super(referenceManager);
   }
@@ -153,11 +157,10 @@ public class VoteResponse extends AbstractResponse<VoteResponse> {
      *
      * @param term The response term.
      * @return The vote response builder.
+     * @throws IllegalArgumentException if {@code term} is negative
      */
     public Builder withTerm(long term) {
-      if (term < 0)
-        throw new IllegalArgumentException("term cannot be negative");
-      response.term = term;
+      response.term = Assert.argNot(term, term < 0, "term cannot be negative");
       return this;
     }
 
@@ -172,12 +175,14 @@ public class VoteResponse extends AbstractResponse<VoteResponse> {
       return this;
     }
 
+    /**
+     * @throws IllegalStateException if {@code term} is negative
+     */
     @Override
     public VoteResponse build() {
       super.build();
       if (response.status == Response.Status.OK) {
-        if (response.term < 0)
-          throw new IllegalArgumentException("term cannot be negative");
+        Assert.stateNot(response.term < 0, "term cannot be negative");
       }
       return response;
     }

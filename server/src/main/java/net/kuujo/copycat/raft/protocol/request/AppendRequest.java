@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.raft.protocol.request;
 
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
@@ -70,6 +71,9 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
   private long commitIndex;
   private long globalIndex;
 
+  /**
+   * @throws NullPointerException if {@code referenceManager} is null
+   */
   private AppendRequest(ReferenceManager<AppendRequest> referenceManager) {
     super(referenceManager);
   }
@@ -234,11 +238,10 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
      *
      * @param term The request term.
      * @return The append request builder.
+     * @throws IllegalArgumentException if the {@code term} is not positive
      */
     public Builder withTerm(long term) {
-      if (term <= 0)
-        throw new IllegalArgumentException("term must be positive");
-      request.term = term;
+      request.term = Assert.arg(term, term > 0, "term must be positive");
       return this;
     }
 
@@ -247,9 +250,10 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
      *
      * @param leader The request leader.
      * @return The append request builder.
+     * @throws IllegalArgumentException if the {@code leader} is not positive
      */
     public Builder withLeader(int leader) {
-      request.leader = leader;
+      request.leader = Assert.arg(leader, leader > 0, "leader must be positive");
       return this;
     }
 
@@ -258,11 +262,10 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
      *
      * @param index The request last log index.
      * @return The append request builder.
+     * @throws IllegalArgumentException if the {@code index} is not positive
      */
     public Builder withLogIndex(long index) {
-      if (index < 0)
-        throw new IllegalArgumentException("log index must be positive");
-      request.logIndex = index;
+      request.logIndex = Assert.argNot(index, index < 0, "log index must be not be negative");
       return this;
     }
 
@@ -271,11 +274,10 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
      *
      * @param term The request last log term.
      * @return The append request builder.
+     * @throws IllegalArgumentException if the {@code term} is not positive
      */
     public Builder withLogTerm(long term) {
-      if (term < 0)
-        throw new IllegalArgumentException("log term must be positive");
-      request.logTerm = term;
+      request.logTerm = Assert.argNot(term, term < 0, "term must be positive");
       return this;
     }
 
@@ -284,9 +286,10 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
      *
      * @param entries The request entries.
      * @return The append request builder.
+     * @throws NullPointerException if {@code entries} is null
      */
     public Builder withEntries(Entry... entries) {
-      return withEntries(Arrays.asList(entries));
+      return withEntries(Arrays.asList(Assert.notNull(entries, "entries")));
     }
 
     /**
@@ -294,12 +297,11 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
      *
      * @param entries The request entries.
      * @return The append request builder.
+     * @throws NullPointerException if {@code entries} is null
      */
     @SuppressWarnings("unchecked")
     public Builder withEntries(List<? extends Entry> entries) {
-      if (entries == null)
-        throw new NullPointerException("entries cannot be null");
-      request.entries = (List<Entry>) entries;
+      request.entries = (List<Entry>) Assert.notNull(entries, "entries");
       return this;
     }
 
@@ -308,11 +310,10 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
      *
      * @param index The request commit index.
      * @return The append request builder.
+     * @throws IllegalArgumentException if index is not positive
      */
     public Builder withCommitIndex(long index) {
-      if (index < 0)
-        throw new IllegalArgumentException("commit index must be positive");
-      request.commitIndex = index;
+      request.commitIndex = Assert.argNot(index, index < 0, "commit index must not be negative");
       return this;
     }
 
@@ -321,30 +322,26 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
      *
      * @param index The global recycle index.
      * @return The append request builder.
+     * @throws IllegalArgumentException if index is not positive
      */
     public Builder withGlobalIndex(long index) {
-      if (index < 0)
-        throw new IllegalArgumentException("global index must be positive");
-      request.globalIndex = index;
+      request.globalIndex = Assert.argNot(index, index < 0, "global index must not be negative");
       return this;
     }
 
+    /**
+     * @throws IllegalStateException if the term, log term, log index, commit index, or global index are not positive, or 
+     * if entries is null 
+     */
     @Override
     public AppendRequest build() {
       super.build();
-      if (request.term <= 0)
-        throw new IllegalArgumentException("term must be positive");
-      if (request.logIndex < 0)
-        throw new IllegalArgumentException("log index must be positive");
-      if (request.logTerm < 0)
-        throw new IllegalArgumentException("log term must be positive");
-      if (request.entries == null)
-        throw new NullPointerException("entries cannot be null");
-      if (request.commitIndex < 0)
-        throw new IllegalArgumentException("commit index must be positive");
-      if (request.globalIndex < 0)
-        throw new IllegalArgumentException("global index must be positive");
-
+      Assert.stateNot(request.term <= 0, "term must be positive");
+      Assert.stateNot(request.logIndex < 0, "log index must not be negative");
+      Assert.stateNot(request.logTerm < 0, "log term must not be negative");
+      Assert.stateNot(request.entries == null, "entries cannot be null");
+      Assert.stateNot(request.commitIndex < 0, "commit index must not be negative");
+      Assert.stateNot(request.globalIndex < 0, "global index must not be negative");
       return request;
     }
 

@@ -27,6 +27,9 @@ import net.kuujo.copycat.util.ReferenceManager;
 @SerializeWith(id=300)
 public class NoOpEntry extends RaftEntry<NoOpEntry> {
 
+  /**
+   * @throws NullPointerException if {@code referenceManager} is null
+   */
   public NoOpEntry(ReferenceManager<Entry<?>> referenceManager) {
     super(referenceManager);
   }

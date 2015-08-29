@@ -22,6 +22,7 @@ import net.kuujo.copycat.raft.StateMachineContext;
 import net.kuujo.copycat.raft.StateMachineExecutor;
 import net.kuujo.copycat.raft.protocol.Operation;
 import net.kuujo.copycat.raft.protocol.error.ApplicationException;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.concurrent.ComposableFuture;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.Scheduled;
@@ -142,14 +143,14 @@ class ResourceStateMachineExecutor implements StateMachineExecutor {
 
   @Override
   public StateMachineExecutor register(Function<Commit<? extends Operation<?>>, ?> callback) {
-    allOperation = callback;
+    allOperation = Assert.notNull(callback, "callback");
     return this;
   }
 
   @Override
   public <T extends Operation<Void>> StateMachineExecutor register(Class<T> type, Consumer<Commit<T>> callback) {
-    if (callback == null)
-      throw new NullPointerException("callback cannot be null");
+    Assert.notNull(type, "type");
+    Assert.notNull(callback, "callback");
     operations.put(type, (Function<Commit<T>, Void>) commit -> {
       callback.accept(commit);
       return null;
@@ -159,8 +160,8 @@ class ResourceStateMachineExecutor implements StateMachineExecutor {
 
   @Override
   public <T extends Operation<U>, U> StateMachineExecutor register(Class<T> type, Function<Commit<T>, U> callback) {
-    if (callback == null)
-      throw new NullPointerException("callback cannot be null");
+    Assert.notNull(type, "type");
+    Assert.notNull(callback, "callback");
     operations.put(type, callback);
     return this;
   }

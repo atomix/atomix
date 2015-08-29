@@ -20,6 +20,7 @@ import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.storage.Entry;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.ReferenceManager;
 
 import java.util.UUID;
@@ -36,6 +37,9 @@ public class RegisterEntry extends TimestampedEntry<RegisterEntry> {
   public RegisterEntry() {
   }
 
+  /**
+   * @throws NullPointerException if {@code referenceManager} is null
+   */
   public RegisterEntry(ReferenceManager<Entry<?>> referenceManager) {
     super(referenceManager);
   }
@@ -54,9 +58,10 @@ public class RegisterEntry extends TimestampedEntry<RegisterEntry> {
    *
    * @param connection The entry connection ID.
    * @return The register entry.
+   * @throws NullPointerException if {@code connection} is null
    */
   public RegisterEntry setConnection(UUID connection) {
-    this.connection = connection;
+    this.connection = Assert.notNull(connection, "connection");
     return this;
   }
 

@@ -88,6 +88,7 @@ public class Log implements AutoCloseable {
    * @throws IllegalStateException If the log is not open.
    */
   public boolean isEmpty() {
+    assertIsOpen();
     return segments.firstSegment().isEmpty();
   }
 
@@ -95,8 +96,10 @@ public class Log implements AutoCloseable {
    * Returns the count of the log on disk in bytes.
    *
    * @return The count of the log in bytes.
+   * @throws IllegalStateException If the log is not open.
    */
   public long size() {
+    assertIsOpen();
     return segments.segments().stream().mapToLong(Segment::size).sum();
   }
 
@@ -107,8 +110,10 @@ public class Log implements AutoCloseable {
    * from the number of entries eligible for reads due to deduplication.
    *
    * @return The number of entries in the log.
+   * @throws IllegalStateException If the log is not open.
    */
   public long length() {
+    assertIsOpen();
     return segments.segments().stream().mapToLong(Segment::length).sum();
   }
 
@@ -271,6 +276,7 @@ public class Log implements AutoCloseable {
    * @return The log.
    * @throws IllegalStateException If the log is not open.
    * @throws NullPointerException if {@code entry} is null
+   * @throws IndexOutOfBoundsException If the {@code entry} index is not within the bounds of the log.
    */
   public Log clean(Entry entry) {
     Assert.notNull(entry, "entry");
@@ -335,14 +341,18 @@ public class Log implements AutoCloseable {
    * @throws IllegalStateException If the log is not open.
    */
   public void flush() {
+    assertIsOpen();
     segments.currentSegment().flush();
   }
 
   /**
    * Closes the log.
+   * 
+   * @throws IllegalStateException If the log is not open.
    */
   @Override
   public void close() {
+    assertIsOpen();
     flush();
     segments.close();
     if (cleaner != null)
