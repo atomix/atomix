@@ -177,7 +177,7 @@ public class CommandResponse extends SessionResponse<CommandResponse> {
      * @throws NullPointerException if {@code result} is null
      */
     public Builder withResult(Object result) {
-      response.result = Assert.notNull(result, "result");
+      response.result = result;
       return this;
     }
 
