@@ -22,6 +22,7 @@ import net.kuujo.copycat.manager.ResourceManager;
 import net.kuujo.copycat.raft.Members;
 import net.kuujo.copycat.raft.RaftClient;
 import net.kuujo.copycat.raft.RaftServer;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.ConfigurationException;
 import net.kuujo.copycat.util.concurrent.CopycatThreadFactory;
 
@@ -83,12 +84,12 @@ public final class CopycatReplica extends Copycat {
 
     @Override
     public Client client(UUID id) {
-      return remote.client(id);
+      return remote.client(Assert.notNull(id, "id"));
     }
 
     @Override
     public Server server(UUID id) {
-      return servers.computeIfAbsent(id, i -> new CombinedServer(local.server(i), remote.server(i)));
+      return servers.computeIfAbsent(Assert.notNull(id, "id"), i -> new CombinedServer(local.server(i), remote.server(i)));
     }
 
     @Override
@@ -116,6 +117,8 @@ public final class CopycatReplica extends Copycat {
 
     @Override
     public CompletableFuture<Void> listen(InetSocketAddress address, Consumer<Connection> listener) {
+      Assert.notNull(address, "address");
+      Assert.notNull(listener, "listener");
       return local.listen(address, listener).thenCompose(v -> remote.listen(address, listener));
     }
 

@@ -66,6 +66,8 @@ public interface Connection {
    * @param <T> The message type.
    * @param <U> The reply type.
    * @return A completable future to be completed with the response.
+   * @throws NullPointerException if {@code message} is null
+   * @throws IllegalStateException if not called from a Copycat thread
    */
   <T, U> CompletableFuture<U> send(T message);
 
@@ -86,6 +88,8 @@ public interface Connection {
    * @param handler The type-specific message handler.
    * @param <T> The message type.
    * @param <U> The reply type.
+   * @throws NullPointerException if {@code type} is null
+   * @throws IllegalStateException if not called from a Copycat thread
    */
   <T, U> Connection handler(Class<T> type, MessageHandler<T, U> handler);
 
@@ -98,6 +102,7 @@ public interface Connection {
    *
    * @param listener The exception listener.
    * @return The connection.
+   * @throws NullPointerException if {@code listener} is null
    */
   Listener<Throwable> exceptionListener(Consumer<Throwable> listener);
 
@@ -110,6 +115,7 @@ public interface Connection {
    *
    * @param listener The close listener.
    * @return The connection.
+   * @throws NullPointerException if {@code listener} is null
    */
   Listener<Connection> closeListener(Consumer<Connection> listener);
 

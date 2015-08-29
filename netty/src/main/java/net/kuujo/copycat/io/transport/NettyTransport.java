@@ -19,6 +19,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.Epoll;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.concurrent.CopycatThreadFactory;
 
 import java.util.Map;
@@ -55,12 +56,12 @@ public class NettyTransport implements Transport {
 
   @Override
   public Client client(UUID id) {
-    return clients.computeIfAbsent(id, i -> new NettyClient(id, eventLoopGroup));
+    return clients.computeIfAbsent(Assert.notNull(id, "id"), i -> new NettyClient(Assert.notNull(id, "id"), eventLoopGroup));
   }
 
   @Override
   public Server server(UUID id) {
-    return servers.computeIfAbsent(id, i -> new NettyServer(id, eventLoopGroup));
+    return servers.computeIfAbsent(Assert.notNull(id, "id"), i -> new NettyServer(id, eventLoopGroup));
   }
 
   @Override

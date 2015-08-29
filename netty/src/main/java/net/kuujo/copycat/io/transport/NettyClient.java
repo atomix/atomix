@@ -26,6 +26,7 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.concurrent.ComposableFuture;
 import net.kuujo.copycat.util.concurrent.Context;
 import org.slf4j.Logger;
@@ -53,9 +54,12 @@ public class NettyClient implements Client {
   private final EventLoopGroup eventLoopGroup;
   private final Map<Channel, NettyConnection> connections = new ConcurrentHashMap<>();
 
+  /**
+   * @throws NullPointerException if any argument is null
+   */
   public NettyClient(UUID id, EventLoopGroup eventLoopGroup) {
-    this.id = id;
-    this.eventLoopGroup = eventLoopGroup;
+    this.id = Assert.notNull(id, "id");
+    this.eventLoopGroup = Assert.notNull(eventLoopGroup, "eventLoopGroup");
   }
 
   @Override
@@ -68,14 +72,13 @@ public class NettyClient implements Client {
    */
   private Context getContext() {
     Context context = Context.currentContext();
-    if (context == null) {
-      throw new IllegalStateException("not on a Copycat thread");
-    }
+    Assert.state(context != null, "not on a Copycat thread");
     return context;
   }
 
   @Override
   public CompletableFuture<Connection> connect(InetSocketAddress address) {
+    Assert.notNull(address, "address");
     Context context = getContext();
     CompletableFuture<Connection> future = new ComposableFuture<>();
 
@@ -111,6 +114,7 @@ public class NettyClient implements Client {
 
   @Override
   public CompletableFuture<Void> close() {
+    getContext();
     int i = 0;
     CompletableFuture[] futures = new CompletableFuture[connections.size()];
     for (Connection connection : connections.values()) {

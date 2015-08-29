@@ -30,6 +30,7 @@ import io.netty.handler.codec.LengthFieldPrepender;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.concurrent.GlobalEventExecutor;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.concurrent.Context;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,6 +83,8 @@ public class NettyServer implements Server {
 
   @Override
   public CompletableFuture<Void> listen(InetSocketAddress address, Consumer<Connection> listener) {
+    Assert.notNull(address, "address");
+    Assert.notNull(listener, "listener");
     if (listening)
       return CompletableFuture.completedFuture(null);
 

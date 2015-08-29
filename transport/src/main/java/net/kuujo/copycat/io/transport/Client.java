@@ -51,6 +51,8 @@ public interface Client {
    *
    * @param address The address to which to connect.
    * @return A completable future to be completed once the client has been connected.
+   * @throws NullPointerException if {@code address} is null
+   * @throws IllegalStateException if not called from a Copycat thread
    */
   CompletableFuture<Connection> connect(InetSocketAddress address);
 
@@ -61,6 +63,7 @@ public interface Client {
    * and any registered {@link Connection#closeListener(Listener)}s will be invoked.
    *
    * @return A completable future to be called once the client is closed.
+   * @throws IllegalStateException if not called from a Copycat thread
    */
   CompletableFuture<Void> close();
 

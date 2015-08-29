@@ -16,6 +16,7 @@
 package net.kuujo.copycat.io.transport;
 
 import net.kuujo.copycat.io.Buffer;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.Listener;
 import net.kuujo.copycat.util.Listeners;
 import net.kuujo.copycat.util.concurrent.Context;
@@ -70,14 +71,13 @@ public class LocalConnection implements Connection {
    */
   private Context getContext() {
     Context context = Context.currentContext();
-    if (context == null) {
-      throw new IllegalStateException("not on a Copycat thread");
-    }
+    Assert.state(context != null, "not on a Copycat thread");
     return context;
   }
 
   @Override
   public <T, U> CompletableFuture<U> send(T message) {
+    Assert.notNull(message, "message");
     Context context = getContext();
     CompletableFuture<U> future = new CompletableFuture<>();
     Buffer buffer = context.serializer().writeObject(message);
@@ -119,6 +119,7 @@ public class LocalConnection implements Connection {
 
   @Override
   public <T, U> Connection handler(Class<T> type, MessageHandler<T, U> handler) {
+    Assert.notNull(type, "type");
     if (handler != null) {
       handlers.put(type, new HandlerHolder(handler, getContext()));
     } else {
@@ -129,12 +130,12 @@ public class LocalConnection implements Connection {
 
   @Override
   public Listener<Throwable> exceptionListener(Consumer<Throwable> listener) {
-    return exceptionListeners.add(listener);
+    return exceptionListeners.add(Assert.notNull(listener, "listener"));
   }
 
   @Override
   public Listener<Connection> closeListener(Consumer<Connection> listener) {
-    return closeListeners.add(listener);
+    return closeListeners.add(Assert.notNull(listener, "listener"));
   }
 
   @Override

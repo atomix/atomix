@@ -19,6 +19,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.util.ReferenceCounted;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.Listener;
 import net.kuujo.copycat.util.Listeners;
 import net.kuujo.copycat.util.concurrent.Context;
@@ -70,6 +71,9 @@ public class NettyConnection implements Connection {
   private final Map<Long, ContextualFuture> responseFutures = new LinkedHashMap<>(1024);
   private ChannelFuture writeFuture;
 
+  /**
+   * @throws NullPointerException if any argument is null
+   */
   public NettyConnection(UUID id, Channel channel, Context context) {
     this.id = id;
     this.channel = channel;
@@ -81,9 +85,7 @@ public class NettyConnection implements Connection {
    */
   private Context getContext() {
     Context context = Context.currentContext();
-    if (context == null) {
-      throw new IllegalStateException("not on a Copycat thread");
-    }
+    Assert.state(context != null, "not on a Copycat thread");
     return context;
   }
 
@@ -279,6 +281,7 @@ public class NettyConnection implements Connection {
 
   @Override
   public <T, U> CompletableFuture<U> send(T request) {
+    Assert.notNull(request, "request");
     Context context = getContext();
     ContextualFuture<U> future = new ContextualFuture<>(context);
 
@@ -303,18 +306,19 @@ public class NettyConnection implements Connection {
 
   @Override
   public <T, U> Connection handler(Class<T> type, MessageHandler<T, U> handler) {
+    Assert.notNull(type, "type");
     handlers.put(hashMap.computeIfAbsent(type, this::hash32), new HandlerHolder(handler, getContext()));
     return null;
   }
 
   @Override
   public Listener<Throwable> exceptionListener(Consumer<Throwable> listener) {
-    return exceptionListeners.add(listener);
+    return exceptionListeners.add(Assert.notNull(listener, "listener"));
   }
 
   @Override
   public Listener<Connection> closeListener(Consumer<Connection> listener) {
-    return closeListeners.add(listener);
+    return closeListeners.add(Assert.notNull(listener, "listener"));
   }
 
   @Override
