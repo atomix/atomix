@@ -287,13 +287,16 @@ class ServerStateMachine implements AutoCloseable {
   @SuppressWarnings("unchecked")
   CompletableFuture<Object> apply(QueryEntry entry) {
     ServerSession session = executor.context().sessions().getSession(entry.getSession());
+
+    // If the session is null then that indicates that the session already timed out or it never existed.
+    // Return with an UnknownSessionException.
     if (session == null) {
       LOGGER.warn("Unknown session: " + entry.getSession());
       return Futures.exceptionalFuture(new UnknownSessionException("unknown session " + entry.getSession()));
-    } else if (entry.getTimestamp() - session.timeout() > session.getTimestamp()) {
-      LOGGER.warn("Expired session: " + entry.getSession());
-      return expireSession(entry.getSession(), getContext());
-    } else if (session.getVersion() < entry.getVersion()) {
+    }
+    // If the session version is less than the request version, we have to wait for the state machine to catch
+    // up to the last version that the client saw. Queue the request to be executed once the state is caught up.
+    else if (session.getVersion() < entry.getVersion()) {
       ComposableFuture<Object> future = new ComposableFuture<>();
 
       // Get the caller's context.
@@ -304,7 +307,9 @@ class ServerStateMachine implements AutoCloseable {
         executeQuery(entry, future, context);
       });
       return future;
-    } else {
+    }
+    // Execute the query immediately if the state is caught up.
+    else {
       return executeQuery(entry, new CompletableFuture<>(), getContext());
     }
   }
