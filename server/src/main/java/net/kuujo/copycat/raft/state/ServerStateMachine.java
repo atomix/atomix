@@ -27,7 +27,6 @@ import net.kuujo.copycat.util.concurrent.Futures;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -40,7 +39,6 @@ class ServerStateMachine implements AutoCloseable {
   private final StateMachine stateMachine;
   private final ServerStateMachineExecutor executor;
   private final ServerCommitPool commits;
-  private Duration sessionTimeout;
   private long lastApplied;
 
   ServerStateMachine(StateMachine stateMachine, ServerCommitCleaner cleaner, Context context) {
@@ -65,26 +63,6 @@ class ServerStateMachine implements AutoCloseable {
    */
   ServerStateMachineExecutor executor() {
     return executor;
-  }
-
-  /**
-   * Returns the session timeout.
-   *
-   * @return The session timeout.
-   */
-  Duration getSessionTimeout() {
-    return sessionTimeout;
-  }
-
-  /**
-   * Sets the session timeout.
-   *
-   * @param sessionTimeout The session timeout.
-   */
-  void setSessionTimeout(Duration sessionTimeout) {
-    if (sessionTimeout == null)
-      throw new NullPointerException("sessionTimeout cannot be null");
-    this.sessionTimeout = sessionTimeout;
   }
 
   /**
@@ -156,7 +134,7 @@ class ServerStateMachine implements AutoCloseable {
    * @return The result.
    */
   private CompletableFuture<Long> apply(RegisterEntry entry) {
-    ServerSession session = executor.context().sessions().registerSession(entry.getIndex(), entry.getConnection()).setTimestamp(entry.getTimestamp());
+    ServerSession session = executor.context().sessions().registerSession(entry.getIndex(), entry.getConnection(), entry.getTimeout()).setTimestamp(entry.getTimestamp());
 
     Context context = getContext();
 
@@ -312,7 +290,7 @@ class ServerStateMachine implements AutoCloseable {
     if (session == null) {
       LOGGER.warn("Unknown session: " + entry.getSession());
       return Futures.exceptionalFuture(new UnknownSessionException("unknown session " + entry.getSession()));
-    } else if (entry.getTimestamp() - sessionTimeout.toMillis() > session.getTimestamp()) {
+    } else if (entry.getTimestamp() - session.timeout() > session.getTimestamp()) {
       LOGGER.warn("Expired session: " + entry.getSession());
       return expireSession(entry.getSession(), getContext());
     } else if (session.getVersion() < entry.getVersion()) {
@@ -365,7 +343,8 @@ class ServerStateMachine implements AutoCloseable {
    */
   private void expireSessions(long timestamp) {
     for (Session s : executor.context().sessions()) {
-      if (timestamp - sessionTimeout.toMillis() > ((ServerSession) s).getTimestamp()) {
+      ServerSession session = (ServerSession) s;
+      if (timestamp - session.timeout() > session.getTimestamp()) {
         ((ServerSession) s).expire();
         stateMachine.expire(s);
       }

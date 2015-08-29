@@ -67,8 +67,8 @@ class ServerSessionManager implements Sessions {
   /**
    * Registers a session.
    */
-  ServerSession registerSession(long sessionId, UUID connectionId) {
-    ServerSession session = new ServerSession(sessionId, connectionId).setConnection(connections.get(connectionId));
+  ServerSession registerSession(long sessionId, UUID connectionId, long timeout) {
+    ServerSession session = new ServerSession(sessionId, connectionId, timeout).setConnection(connections.get(connectionId));
     sessions.put(sessionId, session);
     return session;
   }

@@ -33,6 +33,7 @@ import java.util.UUID;
 @SerializeWith(id=303)
 public class RegisterEntry extends TimestampedEntry<RegisterEntry> {
   private UUID connection;
+  private long timeout;
 
   public RegisterEntry() {
   }
@@ -65,21 +66,43 @@ public class RegisterEntry extends TimestampedEntry<RegisterEntry> {
     return this;
   }
 
+  /**
+   * Returns the session timeout.
+   *
+   * @return The session timeout.
+   */
+  public long getTimeout() {
+    return timeout;
+  }
+
+  /**
+   * Sets the session timeout.
+   *
+   * @param timeout The session timeout.
+   * @return The register entry.
+   */
+  public RegisterEntry setTimeout(long timeout) {
+    this.timeout = Assert.argNot(timeout, timeout <= 0, "timeout must be positive");
+    return this;
+  }
+
   @Override
   public void writeObject(BufferOutput buffer, Serializer serializer) {
     super.writeObject(buffer, serializer);
+    buffer.writeLong(timeout);
     serializer.writeObject(connection, buffer);
   }
 
   @Override
   public void readObject(BufferInput buffer, Serializer serializer) {
     super.readObject(buffer, serializer);
+    timeout = buffer.readLong();
     connection = serializer.readObject(buffer);
   }
 
   @Override
   public String toString() {
-    return String.format("%s[index=%d, term=%d, connection=%s]", getClass().getSimpleName(), getIndex(), getTerm(), getConnection());
+    return String.format("%s[index=%d, term=%d, connection=%s, timeout=%d]", getClass().getSimpleName(), getIndex(), getTerm(), getConnection(), getTimestamp());
   }
 
 }

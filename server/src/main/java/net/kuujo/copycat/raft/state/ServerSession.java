@@ -37,6 +37,7 @@ class ServerSession implements Session {
   protected final Listeners<Object> listeners = new Listeners<>();
   private final long id;
   private final UUID connectionId;
+  private final long timeout;
   private Connection connection;
   private long version;
   private long command;
@@ -54,13 +55,14 @@ class ServerSession implements Session {
   private final Listeners<Session> openListeners = new Listeners<>();
   private final Listeners<Session> closeListeners = new Listeners<>();
 
-  ServerSession(long id, UUID connectionId) {
+  ServerSession(long id, UUID connectionId, long timeout) {
     if (connectionId == null)
       throw new NullPointerException("connection cannot be null");
 
     this.id = id;
     this.version = id;
     this.connectionId = connectionId;
+    this.timeout = timeout;
   }
 
   @Override
@@ -75,6 +77,15 @@ class ServerSession implements Session {
    */
   UUID connection() {
     return connectionId;
+  }
+
+  /**
+   * Returns the session timeout.
+   *
+   * @return The session timeout.
+   */
+  long timeout() {
+    return timeout;
   }
 
   /**

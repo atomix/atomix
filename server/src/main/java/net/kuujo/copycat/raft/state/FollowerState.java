@@ -113,6 +113,7 @@ final class FollowerState extends ActiveState {
     heartbeatTimer = context.getContext().schedule(() -> {
       heartbeatTimer = null;
       if (isOpen()) {
+        context.setLeader(0);
         if (context.getLastVotedFor() == 0) {
           LOGGER.debug("{} - Heartbeat timed out in {} milliseconds", context.getMember().id(), delay);
           sendPollRequests();

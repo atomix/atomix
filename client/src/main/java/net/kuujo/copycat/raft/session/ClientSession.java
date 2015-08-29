@@ -71,6 +71,7 @@ public class ClientSession implements Session, Managed<Session> {
   private Connection connection;
   private volatile State state = State.CLOSED;
   private volatile long id;
+  private long timeout;
   private Scheduled keepAliveFuture;
   private final Listeners<Session> openListeners = new Listeners<>();
   private final Listeners<Object> receiveListeners = new Listeners<>();
@@ -109,6 +110,13 @@ public class ClientSession implements Session, Managed<Session> {
   private void setMembers(Members members) {
     this.members = members;
     this.connectMembers = new ArrayList<>(this.members.members());
+  }
+
+  /**
+   * Sets the session timeout.
+   */
+  private void setTimeout(long timeout) {
+    this.timeout = timeout;
   }
 
   /**
@@ -357,6 +365,7 @@ public class ClientSession implements Session, Managed<Session> {
       if (error == null) {
         if (response.status() == Response.Status.OK) {
           setMembers(response.members());
+          setTimeout(response.timeout());
           onOpen(response.session());
           future.complete(null);
           resetMembers().keepAlive();

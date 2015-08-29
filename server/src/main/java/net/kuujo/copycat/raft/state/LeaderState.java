@@ -475,10 +475,12 @@ final class LeaderState extends ActiveState {
     final long timestamp = System.currentTimeMillis();
     final long index;
 
+    long timeout = context.getSessionTimeout().toMillis();
     try (RegisterEntry entry = context.getLog().create(RegisterEntry.class)) {
       entry.setTerm(context.getTerm());
       entry.setTimestamp(timestamp);
       entry.setConnection(request.connection());
+      entry.setTimeout(timeout);
       index = context.getLog().append(entry);
       LOGGER.debug("{} - Appended {}", context.getMember().id(), entry);
     }
@@ -495,6 +497,7 @@ final class LeaderState extends ActiveState {
                 future.complete(logResponse(RegisterResponse.builder()
                   .withStatus(Response.Status.OK)
                   .withSession((Long) sessionId)
+                  .withTimeout(timeout)
                   .withMembers(context.getCluster().buildActiveMembers())
                   .build()));
               } else if (sessionError instanceof RaftException) {

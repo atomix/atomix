@@ -498,7 +498,6 @@ public class ServerContext implements Managed<Void> {
       // Create a state machine executor and configure the state machine.
       Context stateContext = new SingleThreadContext("copycat-server-" + member.id() + "-state-%d", serializer.clone());
       stateMachine = new ServerStateMachine(userStateMachine, log::clean, stateContext);
-      stateMachine.setSessionTimeout(sessionTimeout);
 
       // Setup the server and connection manager.
       UUID id = UUID.randomUUID();
