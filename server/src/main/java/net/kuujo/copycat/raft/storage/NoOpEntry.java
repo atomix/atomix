@@ -25,7 +25,7 @@ import net.kuujo.copycat.util.ReferenceManager;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @SerializeWith(id=300)
-public class NoOpEntry extends RaftEntry<NoOpEntry> {
+public class NoOpEntry extends TimestampedEntry<NoOpEntry> {
 
   /**
    * @throws NullPointerException if {@code referenceManager} is null
@@ -36,7 +36,7 @@ public class NoOpEntry extends RaftEntry<NoOpEntry> {
 
   @Override
   public String toString() {
-    return String.format("%s[index=%d, term=%d]", getClass().getSimpleName(), getIndex(), getTerm());
+    return String.format("%s[index=%d, term=%d, timestamp=%s]", getClass().getSimpleName(), getIndex(), getTerm(), getTimestamp());
   }
 
 }

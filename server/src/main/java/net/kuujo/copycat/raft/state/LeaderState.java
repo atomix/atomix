@@ -81,7 +81,7 @@ final class LeaderState extends ActiveState {
     final long term = context.getTerm();
     final long index;
     try (NoOpEntry entry = context.getLog().create(NoOpEntry.class)) {
-      entry.setTerm(term);
+      entry.setTerm(term).setTimestamp(System.currentTimeMillis());
       index = context.getLog().append(entry);
     }
 

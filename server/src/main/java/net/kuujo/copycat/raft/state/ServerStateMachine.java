@@ -352,8 +352,11 @@ class ServerStateMachine implements AutoCloseable {
    * @return The result.
    */
   CompletableFuture<Long> apply(NoOpEntry entry) {
-    // We need to ensure that the command is applied to the state machine before queries are run.
-    // Set last applied only after the operation has been submitted to the state machine executor.
+    // Iterate through all the server sessions and reset timestamps. This ensures that sessions do not
+    // timeout during leadership changes.
+    for (ServerSession session : executor.context().sessions().sessions.values()) {
+      session.setTimestamp(entry.getTimestamp());
+    }
     return Futures.completedFutureAsync(entry.getIndex(), getContext().executor());
   }
 
