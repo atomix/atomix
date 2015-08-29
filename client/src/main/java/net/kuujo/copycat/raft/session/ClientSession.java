@@ -23,6 +23,7 @@ import net.kuujo.copycat.raft.Member;
 import net.kuujo.copycat.raft.Members;
 import net.kuujo.copycat.raft.protocol.Command;
 import net.kuujo.copycat.raft.protocol.Query;
+import net.kuujo.copycat.raft.protocol.error.RaftError;
 import net.kuujo.copycat.raft.protocol.error.UnknownSessionException;
 import net.kuujo.copycat.raft.protocol.request.*;
 import net.kuujo.copycat.raft.protocol.response.*;
@@ -72,6 +73,10 @@ public class ClientSession implements Session, Managed<Session> {
   private volatile State state = State.CLOSED;
   private volatile long id;
   private long timeout;
+  private long failureTime;
+  private CompletableFuture<Connection> connectFuture;
+  private Scheduled retryFuture;
+  private final List<Runnable> retries = new ArrayList<>();
   private Scheduled keepAliveFuture;
   private final Listeners<Session> openListeners = new Listeners<>();
   private final Listeners<Object> receiveListeners = new Listeners<>();
@@ -146,8 +151,10 @@ public class ClientSession implements Session, Managed<Session> {
    */
   @SuppressWarnings("unchecked")
   private <T> CompletableFuture<T> submit(CommandRequest request, CompletableFuture<T> future) {
-    if (!isOpen())
-      return Futures.exceptionalFuture(new IllegalStateException("session not open"));
+    if (!isOpen()) {
+      future.completeExceptionally(new IllegalStateException("session not open"));
+      return future;
+    }
 
     this.<CommandRequest, CommandResponse>request(request).whenComplete((response, error) -> {
       if (error == null) {
@@ -158,8 +165,7 @@ public class ClientSession implements Session, Managed<Session> {
           resetMembers();
           request.close();
         } else {
-          version = Math.max(version, response.version());
-          resetConnection().submit(request, future);
+          future.completeExceptionally(response.error().createException());
         }
         response.close();
       } else {
@@ -197,8 +203,10 @@ public class ClientSession implements Session, Managed<Session> {
    */
   @SuppressWarnings("unchecked")
   private <T> CompletableFuture<T> submit(QueryRequest request, CompletableFuture<T> future) {
-    if (!isOpen())
-      return Futures.exceptionalFuture(new IllegalStateException("session not open"));
+    if (!isOpen()) {
+      future.completeExceptionally(new IllegalStateException("session not open"));
+      return future;
+    }
 
     this.<QueryRequest, QueryResponse>request(request).whenComplete((response, error) -> {
       if (error == null) {
@@ -208,8 +216,7 @@ public class ClientSession implements Session, Managed<Session> {
           resetMembers();
           request.close();
         } else {
-          version = Math.max(version, response.version());
-          resetConnection().submit(request, future);
+          future.completeExceptionally(response.error().createException());
         }
         response.close();
       } else {
@@ -231,7 +238,7 @@ public class ClientSession implements Session, Managed<Session> {
   private <T extends SessionRequest<T>, U extends SessionResponse<U>> CompletableFuture<U> request(T request) {
     if (!isOpen())
       return Futures.exceptionalFutureAsync(new IllegalStateException("session not open"), context.executor());
-    return request(request, new CompletableFuture<U>(), true);
+    return request(request, new CompletableFuture<U>(), true, true);
   }
 
   /**
@@ -244,67 +251,165 @@ public class ClientSession implements Session, Managed<Session> {
    * @param <U> The response type.
    * @return The provided future to be completed once the response is received.
    */
-  private <T extends Request<T>, U extends Response<U>> CompletableFuture<U> request(T request, CompletableFuture<U> future, boolean checkOpen) {
+  private <T extends Request<T>, U extends Response<U>> CompletableFuture<U> request(T request, CompletableFuture<U> future, boolean checkOpen, boolean recordFailures) {
     context.checkThread();
 
+    // If the session already expired, immediately fail the future.
     if (checkOpen && !isOpen()) {
-      future.completeExceptionally(new IllegalStateException("session not open"));
+      future.completeExceptionally(new IllegalStateException("session expired"));
       return future;
     }
 
     // If we're already connected to a server, use the existing connection. The connection will be reset in the event
     // of an error on any connection, or callers can reset connections as well.
     if (connection != null) {
-      LOGGER.debug("Sending: {}", request);
-      connection.<T, U>send(request).whenComplete((response, error) -> {
+      return request(request, connection, future, checkOpen, true);
+    }
+
+    // If we've run out of servers to which to attempt to connect, determine whether we should expire the
+    // session based on the responses from servers with which we did successfully communicate and the
+    // time we were last able to successfully communicate with a correct server process. The failureTime
+    // indicates the first time we received a NO_LEADER_ERROR from a server.
+    if (connectMembers.isEmpty()) {
+      // If open checks are not being performed, don't retry connecting to the servers. Simply fail.
+      if (!checkOpen) {
+        LOGGER.warn("Failed to connect to cluster");
+        future.completeExceptionally(new IllegalStateException("session not open"));
+      }
+      // If retries have already been scheduled, queue a callback to be called to retry the request.
+      else if (retryFuture != null) {
+        retries.add(() -> {
+          LOGGER.debug("Retrying: {}", request);
+          request(request, future, true, true);
+        });
+      }
+      // If all servers indicated that no leader could be found and a session timeout has elapsed, time out the session.
+      else if (failureTime > 0 && failureTime + timeout < System.currentTimeMillis()) {
+        LOGGER.warn("Lost session");
+        resetConnection().onExpire();
+        future.completeExceptionally(new IllegalStateException("session expired"));
+      }
+      // If not all servers responded with a NO_LEADER_EXCEPTION or less than a session timeout has expired,
+      // schedule a retry to attempt to connect to servers again.
+      else {
+        LOGGER.warn("Failed to communicate with cluster. Retrying");
+        retryFuture = context.schedule(this::retryRequests, Duration.ofMillis(200));
+        retries.add(() -> request(request, future, true, true));
+      }
+      return future;
+    }
+
+    // Remove the next random member from the members list.
+    Member member = connectMembers.remove(random.nextInt(connectMembers.size()));
+
+    // Connect to the server. If the connection fails, recursively attempt to connect to the next server,
+    // otherwise setup the connection and send the request.
+    if (connectFuture == null) {
+      // If there's no existing connect future, create a new one.
+      LOGGER.info("Connecting: {}", member.address());
+      connectFuture = client.connect(member.address()).whenComplete((connection, error) -> {
         if (!checkOpen || isOpen()) {
           if (error == null) {
-            LOGGER.debug("Received: {}", response);
-            future.complete(response);
+            setupConnection(connection);
+            request(request, connection, future, checkOpen, recordFailures);
           } else {
-            resetConnection().request(request, future, checkOpen);
+            LOGGER.info("Failed to connect: {}", member.address());
+            resetConnection().request(request, future, checkOpen, recordFailures);
           }
         } else {
           future.completeExceptionally(new IllegalStateException("session not open"));
         }
       });
-      return future;
-    }
-
-    // If we've run out of members to which to connect then expire the session.
-    if (connectMembers.isEmpty()) {
-      LOGGER.warn("Failed to connect to cluster");
-      resetConnection().onExpire();
-      future.completeExceptionally(new IllegalStateException("session not open"));
-      return future;
-    }
-
-    Member member = connectMembers.remove(random.nextInt(connectMembers.size()));
-
-    LOGGER.info("Connecting: {}", member.address());
-    client.connect(member.address()).whenComplete((connection, connectError) -> {
-      if (connectError == null) {
-        setupConnection(connection);
-
-        LOGGER.debug("Sending: {}", request);
-        connection.<T, U>send(request).whenComplete((response, responseError) -> {
-          if (!checkOpen || isOpen()) {
-            if (responseError == null) {
-              LOGGER.debug("Received: {}", response);
-              future.complete(response);
-            } else {
-              resetConnection().request(request, future, checkOpen);
-            }
+    } else {
+      // We don't want concurrent requests to attempt to connect to the same server at the same time, so
+      // if the connection is already being attempted, piggyback on the existing connect future.
+      connectFuture.whenComplete((connection, error) -> {
+        if (!checkOpen || isOpen()) {
+          if (error == null) {
+            request(request, connection, future, checkOpen, recordFailures);
           } else {
-            future.completeExceptionally(new IllegalStateException("session not open"));
+            request(request, future, checkOpen, recordFailures);
           }
-        });
+        } else {
+          future.completeExceptionally(new IllegalStateException("session not open"));
+        }
+      });
+    }
+    return future;
+  }
+
+  /**
+   * Sends a session request to the given connection.
+   *
+   * @param request The request to send.
+   * @param connection The connection to which to send the request.
+   * @param future The future to complete once the response is received.
+   * @param checkOpen Whether to check if the session is open.
+   * @param <T> The request type.
+   * @param <U> The response type.
+   * @return The provided future to be completed once the response is received.
+   */
+  private <T extends Request<T>, U extends Response<U>> CompletableFuture<U> request(T request, Connection connection, CompletableFuture<U> future, boolean checkOpen, boolean recordFailures) {
+    LOGGER.debug("Sending: {}", request);
+    connection.<T, U>send(request).whenComplete((response, error) -> {
+      if (!checkOpen || isOpen()) {
+        if (error == null) {
+          LOGGER.debug("Received: {}", response);
+
+          // If the response is an error response, check if the session state has changed.
+          if (response.status() == Response.Status.ERROR) {
+            // If the response error is a no leader error, reset the connection and send another request.
+            // If this is the first time we've received a response from a server in this iteration,
+            // set the failure time to keep track of whether the session timed out.
+            if (response.error() == RaftError.Type.NO_LEADER_ERROR) {
+              if (recordFailures)
+                setFailureTime();
+              resetConnection().request(request, future, checkOpen, false);
+            }
+            // If the response error is an unknown session error, immediately expire the session.
+            else if (response.error() == RaftError.Type.UNKNOWN_SESSION_ERROR) {
+              resetConnection().onExpire();
+              future.completeExceptionally(new IllegalStateException("session expired"));
+            }
+            // If the response error is an application or internal error, immediately complete the future.
+            else if (response.error() == RaftError.Type.APPLICATION_ERROR
+              || response.error() == RaftError.Type.INTERNAL_ERROR) {
+              resetFailureTime();
+              future.completeExceptionally(response.error().createException());
+            }
+            // If we've made it this far, for all other error types attempt to resend the request.
+            else {
+              resetFailureTime().resetConnection().request(request, future, checkOpen, false);
+            }
+          }
+          // If the response status is OK, reset the failure time and complete the future.
+          else {
+            resetFailureTime();
+            future.complete(response);
+          }
+        }
+        // If an error occurred, attempt to contact the next server recursively.
+        else {
+          resetConnection().request(request, future, checkOpen, recordFailures);
+        }
       } else {
-        LOGGER.info("Failed to connect: {}", member.address());
-        resetConnection().request(request, future, checkOpen);
+        future.completeExceptionally(new IllegalStateException("session not open"));
       }
     });
     return future;
+  }
+
+  /**
+   * Retries sending requests.
+   */
+  private void retryRequests() {
+    retryFuture = null;
+    List<Runnable> retries = new ArrayList<>(this.retries);
+    this.retries.clear();
+    resetMembers();
+    for (Runnable retry : retries) {
+      retry.run();
+    }
   }
 
   /**
@@ -326,6 +431,24 @@ public class ClientSession implements Session, Managed<Session> {
   }
 
   /**
+   * Sets the failure time if not already set.
+   */
+  private ClientSession setFailureTime() {
+    if (failureTime == 0) {
+      failureTime = System.currentTimeMillis();
+    }
+    return this;
+  }
+
+  /**
+   * Resets the failure timeout.
+   */
+  private ClientSession resetFailureTime() {
+    failureTime = 0;
+    return this;
+  }
+
+  /**
    * Sets up the given connection.
    */
   private ClientSession setupConnection(Connection connection) {
@@ -341,6 +464,7 @@ public class ClientSession implements Session, Managed<Session> {
       }
     });
     connection.handler(PublishRequest.class, this::handlePublish);
+    connectFuture = null;
     return this;
   }
 
@@ -348,20 +472,15 @@ public class ClientSession implements Session, Managed<Session> {
    * Registers the session.
    */
   private CompletableFuture<Void> register() {
-    return register(new CompletableFuture<>());
-  }
-
-  /**
-   * Recursively attempts to register the session.
-   */
-  private CompletableFuture<Void> register(CompletableFuture<Void> future) {
     context.checkThread();
+
+    CompletableFuture<Void> future = new CompletableFuture<>();
 
     RegisterRequest request = RegisterRequest.builder()
       .withConnection(client.id())
       .build();
 
-    this.<RegisterRequest, RegisterResponse>request(request, new CompletableFuture<>(), false).whenComplete((response, error) -> {
+    this.<RegisterRequest, RegisterResponse>request(request, new CompletableFuture<>(), false, true).whenComplete((response, error) -> {
       if (error == null) {
         if (response.status() == Response.Status.OK) {
           setMembers(response.members());
@@ -370,13 +489,13 @@ public class ClientSession implements Session, Managed<Session> {
           future.complete(null);
           resetMembers().keepAlive();
         } else {
-          resetConnection().register(future);
+          future.completeExceptionally(response.error().createException());
         }
+        request.close();
         response.close();
       } else {
         future.completeExceptionally(error);
       }
-      request.close();
     });
     return future;
   }
@@ -387,40 +506,30 @@ public class ClientSession implements Session, Managed<Session> {
   private void keepAlive() {
     keepAliveFuture = context.schedule(() -> {
       if (isOpen()) {
-        keepAlive(new CompletableFuture<>()).thenRun(this::keepAlive);
+        context.checkThread();
+
+        KeepAliveRequest request = KeepAliveRequest.builder()
+          .withSession(id)
+          .withCommandSequence(responseSequence)
+          .withEventSequence(eventSequence)
+          .build();
+
+        this.<KeepAliveRequest, KeepAliveResponse>request(request).whenComplete((response, error) -> {
+          if (error == null) {
+            if (response.status() == Response.Status.OK) {
+              setMembers(response.members());
+              resetMembers().keepAlive();
+            } else if (isOpen()) {
+              keepAlive();
+            }
+            response.close();
+          } else if (isOpen()) {
+            keepAlive();
+          }
+          request.close();
+        });
       }
     }, keepAliveInterval);
-  }
-
-  /**
-   * Sends a keep alive request.
-   */
-  private CompletableFuture<Void> keepAlive(CompletableFuture<Void> future) {
-    context.checkThread();
-
-    KeepAliveRequest request = KeepAliveRequest.builder()
-      .withSession(id)
-      .withCommandSequence(responseSequence)
-      .withEventSequence(eventSequence)
-      .build();
-
-    this.<KeepAliveRequest, KeepAliveResponse>request(request).whenComplete((response, error) -> {
-      if (error == null) {
-        if (response.status() == Response.Status.OK) {
-          setMembers(response.members());
-          future.complete(null);
-          resetMembers();
-        } else {
-          resetConnection().keepAlive(future);
-        }
-        response.close();
-      } else {
-        future.completeExceptionally(error);
-      }
-      request.close();
-    });
-
-    return future;
   }
 
   /**
@@ -510,6 +619,9 @@ public class ClientSession implements Session, Managed<Session> {
     return CompletableFuture.runAsync(() -> {
       if (keepAliveFuture != null) {
         keepAliveFuture.cancel();
+      }
+      if (retryFuture != null) {
+        retryFuture.cancel();
       }
       onClose();
     }, context.executor());
