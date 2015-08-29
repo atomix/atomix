@@ -16,6 +16,7 @@
 package net.kuujo.copycat.io.storage;
 
 import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.util.Assert;
 
 import java.io.File;
 
@@ -59,33 +60,40 @@ public class Storage {
   public Storage() {
   }
 
+  /**
+   * @throws NullPointerException if {@code directory} is null
+   */
   public Storage(String directory) {
-    this(directory != null ? new File(directory) : null);
+    this(new File(Assert.notNull(directory, "directory")));
   }
 
+  /**
+   * @throws NullPointerException if {@code directory} is null
+   */
   public Storage(File directory) {
-    if (directory == null)
-      throw new NullPointerException("directory cannot be null");
-    this.directory = directory;
+    this.directory = Assert.notNull(directory, "directory");
   }
 
+  /**
+   * @throws NullPointerException if {@code directory} is null
+   */
   public Storage(Serializer serializer) {
-    if (serializer == null)
-      throw new NullPointerException("serializer cannot be null");
-    this.serializer = serializer;
+    this.serializer = Assert.notNull(serializer, "serializer");
   }
-
+  
+  /**
+   * @throws NullPointerException if {@code directory} or {@code serializer} are null
+   */
   public Storage(String directory, Serializer serializer) {
-    this(directory != null ? new File(directory) : null, serializer);
+    this(new File(Assert.notNull(directory, "directory")), serializer);
   }
 
+  /**
+   * @throws NullPointerException if {@code directory} or {@code serializer} are null
+   */
   public Storage(File directory, Serializer serializer) {
-    if (directory == null)
-      throw new NullPointerException("directory cannot be null");
-    if (serializer == null)
-      throw new NullPointerException("serializer cannot be null");
-    this.directory = directory;
-    this.serializer = serializer;
+    this.directory = Assert.notNull(directory, "directory");
+    this.serializer = Assert.notNull(serializer, "serializer");
   }
 
   /**
@@ -179,12 +187,10 @@ public class Storage {
      *
      * @param serializer The log entry serializer.
      * @return The log builder.
-     * @throws java.lang.NullPointerException If the serializer is {@code null}
+     * @throws NullPointerException If the serializer is {@code null}
      */
     public Builder withSerializer(Serializer serializer) {
-      if (serializer == null)
-        throw new NullPointerException("serializer cannot be null");
-      storage.serializer = serializer;
+      storage.serializer = Assert.notNull(serializer, "serializer");
       return this;
     }
 
@@ -199,9 +205,7 @@ public class Storage {
      * @throws NullPointerException If the {@code directory} is {@code null}
      */
     public Builder withDirectory(String directory) {
-      if (directory == null)
-        throw new NullPointerException("directory cannot be null");
-      return withDirectory(new File(directory));
+      return withDirectory(new File(Assert.notNull(directory, "directory")));
     }
 
     /**
@@ -215,9 +219,7 @@ public class Storage {
      * @throws NullPointerException If the {@code directory} is {@code null}
      */
     public Builder withDirectory(File directory) {
-      if (directory == null)
-        throw new NullPointerException("directory cannot be null");
-      storage.directory = directory;
+      storage.directory = Assert.notNull(directory, "directory");
       return this;
     }
 
@@ -228,13 +230,12 @@ public class Storage {
      *
      * @param maxEntrySize The maximum entry count.
      * @return The log builder.
-     * @throws IllegalArgumentException If the {@code maxEntrySize} is not positive
+     * @throws IllegalArgumentException If the {@code maxEntrySize} is not positive or {@code maxEntrySize} is not 
+     * less than the max segment size.
      */
     public Builder withMaxEntrySize(int maxEntrySize) {
-      if (maxEntrySize <= 0)
-        throw new IllegalArgumentException("maximum entry size must be positive");
-      if (maxEntrySize > storage.maxSegmentSize)
-        throw new IllegalArgumentException("maximum entry size must be less than maximum segment size");
+      Assert.arg(maxEntrySize > 0, "maximum entry size must be positive");
+      Assert.argNot(maxEntrySize > storage.maxSegmentSize, "maximum entry size must be less than maxSegmentSize");
       storage.maxEntrySize = maxEntrySize;
       return this;
     }
@@ -244,13 +245,12 @@ public class Storage {
      *
      * @param maxSegmentSize The maximum segment count.
      * @return The log builder.
-     * @throws java.lang.IllegalArgumentException If the {@code maxSegmentSize} is not positive
+     * @throws IllegalArgumentException If the {@code maxSegmentSize} is not positive or {@code maxSegmentSize} 
+     * is not greater than the maxEntrySize
      */
     public Builder withMaxSegmentSize(int maxSegmentSize) {
-      if (maxSegmentSize <= 0)
-        throw new IllegalArgumentException("maximum segment size must be positive");
-      if (maxSegmentSize < storage.maxEntrySize)
-        throw new IllegalArgumentException("maximum segment size must be greater than maxEntrySize");
+      Assert.arg(maxSegmentSize > 0, "maxSegmentSize must be positive");
+      Assert.argNot(maxSegmentSize < storage.maxEntrySize, "maximum segment size must be greater than maxEntrySize");
       storage.maxSegmentSize = maxSegmentSize;
       return this;
     }
@@ -260,11 +260,12 @@ public class Storage {
      *
      * @param maxEntriesPerSegment The maximum number of entries allowed per segment.
      * @return The log builder.
-     * @throws java.lang.IllegalArgumentException If the {@code maxEntriesPerSegment} is not positive
+     * @throws IllegalArgumentException If the {@code maxEntriesPerSegment} not greater than the default max entries per 
+     * segment
      */
     public Builder withMaxEntriesPerSegment(int maxEntriesPerSegment) {
-      if (maxEntriesPerSegment > DEFAULT_MAX_ENTRIES_PER_SEGMENT)
-        throw new IllegalArgumentException("max entries per segment cannot be greater than " + DEFAULT_MAX_ENTRIES_PER_SEGMENT);
+      Assert.argNot(maxEntriesPerSegment > DEFAULT_MAX_ENTRIES_PER_SEGMENT,
+          "max entries per segment cannot be greater than " + DEFAULT_MAX_ENTRIES_PER_SEGMENT);
       storage.maxEntriesPerSegment = maxEntriesPerSegment;
       return this;
     }
@@ -274,11 +275,10 @@ public class Storage {
      *
      * @param cleanerThreads The number of log cleaner threads.
      * @return The log builder.
+     * @throws IllegalArgumentException if {@code cleanerThreads} is not positive
      */
     public Builder withCleanerThreads(int cleanerThreads) {
-      if (cleanerThreads <= 0)
-        throw new IllegalArgumentException("cleanerThreads must be positive");
-      storage.cleanerThreads = cleanerThreads;
+      storage.cleanerThreads = Assert.arg(cleanerThreads, cleanerThreads > 0, "cleanerThreads must be positive");
       return this;
     }
 

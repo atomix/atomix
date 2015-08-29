@@ -17,6 +17,8 @@ package net.kuujo.copycat.io.storage;
 
 import java.io.File;
 
+import net.kuujo.copycat.util.Assert;
+
 /**
  * Segment file utility.
  *
@@ -27,12 +29,15 @@ class SegmentFile {
 
   /**
    * Returns a boolean value indicating whether the given file appears to be a parsable segment file.
+   * 
+   * @throws NullPointerException if {@code file} is null
    */
   static boolean isSegmentFile(File file) {
     return isFile(file, "log");
   }
 
   private static boolean isFile(File file, String extension) {
+    Assert.notNull(file, "file");
     return file.getName().indexOf('-') != -1
       && file.getName().indexOf('-', file.getName().indexOf('-') + 1) != -1
       && file.getName().lastIndexOf('.') > file.getName().lastIndexOf('-')
@@ -46,9 +51,11 @@ class SegmentFile {
     return new File(directory, String.format("copycat-%d-%d.log", id, version));
   }
 
+  /**
+   * @throws IllegalArgumentException if {@code file} is not a valid segment file
+   */
   SegmentFile(File file) {
-    if (!isSegmentFile(file))
-      throw new IllegalArgumentException("Not a valid segment file");
+    Assert.arg(isSegmentFile(file), "Not a valid segment file: %s", file.getName());
     this.file = file;
   }
 

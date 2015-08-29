@@ -11,14 +11,27 @@ public final class Assert {
     if (!expression)
       throw new IllegalArgumentException(String.format(errorMessageFormat, args));
   }
-  
+
   public static <T> T arg(T argument, boolean expression, String errorMessageFormat, Object... args) {
     arg(expression, errorMessageFormat, args);
     return argument;
   }
-  
+
+  public static void argNot(boolean expression, String errorMessageFormat, Object... args) {
+    arg(!expression, errorMessageFormat, args);
+  }
+
   public static <T> T argNot(T argument, boolean expression, String errorMessageFormat, Object... args) {
     return arg(argument, !expression, errorMessageFormat, args);
+  }
+
+  public static void index(boolean expression, String errorMessageFormat, Object... args) {
+    if (!expression)
+      throw new IndexOutOfBoundsException(String.format(errorMessageFormat, args));
+  }
+
+  public static void indexNot(boolean expression, String errorMessageFormat, Object... args) {
+    index(!expression, errorMessageFormat, args);
   }
 
   public static <T> T notNull(T reference, String parameterName) {
@@ -31,7 +44,7 @@ public final class Assert {
     if (!expression)
       throw new IllegalStateException(String.format(errorMessageFormat, args));
   }
-  
+
   public static void stateNot(boolean expression, String errorMessageFormat, Object... args) {
     state(!expression, errorMessageFormat, args);
   }

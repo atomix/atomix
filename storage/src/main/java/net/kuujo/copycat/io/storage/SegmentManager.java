@@ -19,6 +19,8 @@ import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.FileBuffer;
 import net.kuujo.copycat.io.HeapBuffer;
 import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.util.Assert;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,10 +45,11 @@ class SegmentManager implements AutoCloseable {
   private final NavigableMap<Long, Segment> segments = new ConcurrentSkipListMap<>();
   private Segment currentSegment;
 
+  /**
+   * @throws NullPointerException if {@code segments} is null
+   */
   public SegmentManager(Storage storage) {
-    if (storage == null)
-      throw new NullPointerException("storage cannot be null");
-    this.storage = storage;
+    this.storage = Assert.notNull(storage, "storage");
     open();
   }
 
@@ -92,11 +95,12 @@ class SegmentManager implements AutoCloseable {
   }
 
   /**
-   * Checks whether the manager is open.
+   * Asserts that the manager is open.
+   * 
+   * @throws IllegalStateException if the segment manager is not open
    */
-  private void checkOpen() {
-    if (currentSegment == null)
-      throw new IllegalStateException("segment manager not open");
+  private void assertOpen() {
+    Assert.state(currentSegment != null, "segment manager not open");
   }
 
   /**
@@ -134,18 +138,22 @@ class SegmentManager implements AutoCloseable {
 
   /**
    * Returns the first segment in the log.
+   * 
+   * @throws IllegalStateException if the segment manager is not open
    */
   public Segment firstSegment() {
-    checkOpen();
+    assertOpen();
     Map.Entry<Long, Segment> segment = segments.firstEntry();
     return segment != null ? segment.getValue() : null;
   }
 
   /**
    * Returns the last segment in the log.
+   * 
+   * @throws IllegalStateException if the segment manager is not open
    */
   public Segment lastSegment() {
-    checkOpen();
+    assertOpen();
     Map.Entry<Long, Segment> segment = segments.lastEntry();
     return segment != null ? segment.getValue() : null;
   }
@@ -154,9 +162,10 @@ class SegmentManager implements AutoCloseable {
    * Creates and returns the next segment.
    *
    * @return The next segment.
+   * @throws IllegalStateException if the segment manager is not open
    */
   public Segment nextSegment() {
-    checkOpen();
+    assertOpen();
     Segment lastSegment = lastSegment();
     SegmentDescriptor descriptor = SegmentDescriptor.builder()
       .withId(lastSegment != null ? lastSegment.descriptor().id() + 1 : 1)
@@ -187,9 +196,10 @@ class SegmentManager implements AutoCloseable {
    * Returns the segment for the given index.
    *
    * @param index The index for which to return the segment.
+   * @throws IllegalStateException if the segment manager is not open
    */
   public Segment segment(long index) {
-    checkOpen();
+    assertOpen();
     // Check if the current segment contains the given index first in order to prevent an unnecessary map lookup.
     if (currentSegment != null && currentSegment.validIndex(index))
       return currentSegment;
@@ -203,11 +213,11 @@ class SegmentManager implements AutoCloseable {
    * Inserts a segment.
    *
    * @param segment The segment to insert.
+   * @throws IllegalStateException if the segment is unknown
    */
   public synchronized void insertSegment(Segment segment) {
     Segment oldSegment = segments.put(segment.index(), segment);
-    if (oldSegment == null)
-      throw new IllegalStateException("unknown segment at index: " + segment.index());
+    Assert.arg(oldSegment != null, "unknown segment at index: %s", segment.index());
     segments.put(oldSegment.index(), oldSegment);
   }
 
