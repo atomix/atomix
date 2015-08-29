@@ -18,7 +18,7 @@ public final class Assert {
   }
   
   public static <T> T argNot(T argument, boolean expression, String errorMessageFormat, Object... args) {
-    return argNot(argument, !expression, errorMessageFormat, args);
+    return arg(argument, !expression, errorMessageFormat, args);
   }
 
   public static <T> T notNull(T reference, String parameterName) {
