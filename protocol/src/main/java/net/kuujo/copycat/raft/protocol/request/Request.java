@@ -39,6 +39,9 @@ public interface Request<T extends Request<T>> extends ReferenceCounted<T>, Copy
    * @param <T> The builder type.
    */
   abstract class Builder<T extends Builder<T, U>, U extends Request> extends net.kuujo.copycat.util.Builder<U> {
+    /**
+     * @throws NullPointerException if {@code pool} is null
+     */
     protected Builder(BuilderPool pool) {
       super(pool);
     }

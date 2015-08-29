@@ -34,8 +34,11 @@ public abstract class Builder<T> implements AutoCloseable {
     this(null);
   }
 
+  /**
+   * @throws NullPointerException if {@code pool} is null
+   */
   protected Builder(BuilderPool pool) {
-    this.pool = pool;
+    this.pool = Assert.notNull(pool, "pool");
   }
 
   /**
@@ -55,6 +58,8 @@ public abstract class Builder<T> implements AutoCloseable {
    * Builders should override this method to reset internal builder state for builders pooled via
    * {@link BuilderPool}. Each time a new builder is {@link BuilderPool#acquire(Object) acquired} from a
    * pool, this method will be called to reset the internal builder state.
+   * 
+   * @throws NullPointerException if {@code object} is null
    */
   protected void reset(T object) {
 

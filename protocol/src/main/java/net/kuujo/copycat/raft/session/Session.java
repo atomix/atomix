@@ -87,6 +87,7 @@ public interface Session {
    *
    * @param listener The session open listener.
    * @return The listener context.
+   * @throws NullPointerException if {@code listener} is null
    */
   Listener<Session> onOpen(Consumer<Session> listener);
 
@@ -106,6 +107,7 @@ public interface Session {
    *
    * @param message The message to publish.
    * @return A completable future to be called once the message has been published.
+   * @throws NullPointerException if {@code message} is null
    */
   CompletableFuture<Void> publish(Object message);
 
@@ -119,6 +121,7 @@ public interface Session {
    *
    * @param listener The session receive listener.
    * @return The listener context.
+   * @throws NullPointerException if {@code listener} is null
    */
   <T> Listener<T> onReceive(Consumer<T> listener);
 
@@ -133,6 +136,7 @@ public interface Session {
    *
    * @param listener The session close listener.
    * @return The session.
+   * @throws NullPointerException if {@code listener} is null
    */
   Listener<Session> onClose(Consumer<Session> listener);
 

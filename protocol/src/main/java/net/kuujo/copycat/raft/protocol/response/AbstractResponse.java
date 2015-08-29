@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.raft.protocol.response;
 
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.raft.protocol.error.RaftError;
 import net.kuujo.copycat.util.ReferenceFactory;
@@ -34,8 +35,11 @@ abstract class AbstractResponse<T extends Response<T>> implements Response<T> {
   protected Status status = Status.OK;
   protected RaftError error;
 
+  /**
+   * @throws NullPointerException if {@code referenceManager} is null
+   */
   protected AbstractResponse(ReferenceManager<T> referenceManager) {
-    this.referenceManager = referenceManager;
+    this.referenceManager = Assert.notNull(referenceManager, "referenceManager");
   }
 
   @Override
@@ -87,9 +91,12 @@ abstract class AbstractResponse<T extends Response<T>> implements Response<T> {
     protected final ReferencePool<U> pool;
     protected U response;
 
+    /**
+     * @throws NullPointerException if {@code pool} or {@code factory} are null
+     */
     protected Builder(BuilderPool<T, U> pool, ReferenceFactory<U> factory) {
       super(pool);
-      this.pool = new ReferencePool<>(factory);
+      this.pool = new ReferencePool<>(Assert.notNull(factory, "factory"));
     }
 
     @Override
@@ -101,29 +108,29 @@ abstract class AbstractResponse<T extends Response<T>> implements Response<T> {
 
     @Override
     protected void reset(U response) {
-      this.response = response;
+      this.response = Assert.notNull(response, "response");
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public T withStatus(Status status) {
-      if (status == null)
-        throw new NullPointerException("status cannot be null");
-      response.status = status;
+      response.status = Assert.notNull(status, "status");
       return (T) this;
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public T withError(RaftError error) {
-      response.error = error;
+      response.error = Assert.notNull(error, "error");
       return (T) this;
     }
 
+    /**
+     * @throws IllegalStateException if status is null
+     */
     @Override
     public U build() {
-      if (response.status == null)
-        throw new NullPointerException("status cannot be null");
+      Assert.stateNot(response.status == null, "status cannot be null");
       close();
       return response;
     }

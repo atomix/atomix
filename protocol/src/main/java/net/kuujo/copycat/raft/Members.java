@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.raft;
 
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
@@ -47,8 +48,13 @@ public class Members implements CopycatSerializable {
     return POOL.acquire();
   }
 
+  /**
+   * Returns a new Builder for the {@code members}.
+   * 
+   * @throws NullPointerException if {@code members} is null
+   */
   public static Builder builder(Members members) {
-    return POOL.acquire(members);
+    return POOL.acquire(Assert.notNull(members, "members"));
   }
 
   private final Map<Integer, Member> members = new HashMap<>();
@@ -109,7 +115,7 @@ public class Members implements CopycatSerializable {
 
     @Override
     protected void reset(Members members) {
-      this.members = members;
+      this.members = Assert.notNull(members, "members");
     }
 
     /**
@@ -117,12 +123,10 @@ public class Members implements CopycatSerializable {
      *
      * @param members The set of cluster seed members.
      * @return The cluster builder.
+     * @throws NullPointerException if {@code members} is null
      */
-    @SuppressWarnings("unchecked")
     public Builder withMembers(Member... members) {
-      if (members == null)
-        throw new NullPointerException("members cannot be null");
-      return withMembers(Arrays.asList(members));
+      return withMembers(Arrays.asList(Assert.notNull(members, "members")));
     }
 
     /**
@@ -130,11 +134,10 @@ public class Members implements CopycatSerializable {
      *
      * @param members The set of cluster seed members.
      * @return The cluster builder.
+     * @throws NullPointerException if {@code members} is null
      */
     public Builder withMembers(Collection<Member> members) {
-      if (members == null)
-        throw new NullPointerException("members cannot be null");
-
+      Assert.notNull(members, "members");
       this.members.members.clear();
       this.members.list.clear();
       for (Member member : members) {
@@ -149,11 +152,10 @@ public class Members implements CopycatSerializable {
      *
      * @param member The member to add.
      * @return The members builder.
+     * @throws NullPointerException if {@code member} is null
      */
     public Builder addMember(Member member) {
-      if (member == null)
-        throw new NullPointerException("member cannot be null");
-
+      Assert.notNull(member, "member");
       this.members.members.put(member.id(), member);
       if (!this.members.list.contains(member)) {
         this.members.list.add(member);
@@ -166,11 +168,10 @@ public class Members implements CopycatSerializable {
      *
      * @param member The member to remove.
      * @return The members builder.
+     * @throws NullPointerException if {@code member} is null
      */
     public Builder removeMember(Member member) {
-      if (member == null)
-        throw new NullPointerException("member cannot be null");
-
+      Assert.notNull(member, "member");
       this.members.members.remove(member.id());
       this.members.list.remove(member);
       return this;

@@ -20,6 +20,7 @@ import net.kuujo.copycat.raft.protocol.request.PublishRequest;
 import net.kuujo.copycat.raft.protocol.response.PublishResponse;
 import net.kuujo.copycat.raft.protocol.response.Response;
 import net.kuujo.copycat.raft.session.Session;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.Listener;
 import net.kuujo.copycat.util.Listeners;
 
@@ -263,6 +264,7 @@ class ServerSession implements Session {
 
   @Override
   public CompletableFuture<Void> publish(Object event) {
+    Assert.notNull(event, "event");
     long eventSequence = ++eventVersion;
     events.put(eventSequence, event);
     sendEvent(eventSequence, event);
@@ -349,13 +351,13 @@ class ServerSession implements Session {
 
   @Override
   public Listener<Session> onOpen(Consumer<Session> listener) {
-    return openListeners.add(listener);
+    return openListeners.add(Assert.notNull(listener, "listener"));
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public Listener<?> onReceive(Consumer listener) {
-    return listeners.add(listener);
+    return listeners.add(Assert.notNull(listener, "listener"));
   }
 
   /**
@@ -370,7 +372,7 @@ class ServerSession implements Session {
 
   @Override
   public Listener<Session> onClose(Consumer<Session> listener) {
-    Listener<Session> context = closeListeners.add(listener);
+    Listener<Session> context = closeListeners.add(Assert.notNull(listener, "listener"));
     if (closed) {
       context.accept(this);
     }

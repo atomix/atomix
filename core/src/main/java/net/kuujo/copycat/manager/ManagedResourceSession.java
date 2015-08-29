@@ -17,6 +17,7 @@ package net.kuujo.copycat.manager;
 
 import net.kuujo.copycat.raft.session.Session;
 import net.kuujo.copycat.resource.ResourceMessage;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.Listener;
 import net.kuujo.copycat.util.Listeners;
 
@@ -61,7 +62,7 @@ class ManagedResourceSession implements Session {
 
   @Override
   public CompletableFuture<Void> publish(Object message) {
-    return parent.publish(new ResourceMessage<>(resource, message));
+    return parent.publish(new ResourceMessage<>(resource, Assert.notNull(message, "message")));
   }
 
   /**
@@ -79,7 +80,7 @@ class ManagedResourceSession implements Session {
   @Override
   @SuppressWarnings("unchecked")
   public <T> Listener onReceive(Consumer<T> listener) {
-    return receiveListeners.add((Consumer) listener);
+    return receiveListeners.add((Consumer) Assert.notNull(listener, "listener"));
   }
 
   @Override
@@ -98,9 +99,8 @@ class ManagedResourceSession implements Session {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public Listener<Session> onOpen(Consumer<Session> listener) {
-    return openListeners.add(listener);
+    return openListeners.add(Assert.notNull(listener, "listener"));
   }
 
   /**
@@ -114,9 +114,8 @@ class ManagedResourceSession implements Session {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public Listener<Session> onClose(Consumer<Session> listener) {
-    return closeListeners.add(listener);
+    return closeListeners.add(Assert.notNull(listener, "listener"));
   }
 
   @Override

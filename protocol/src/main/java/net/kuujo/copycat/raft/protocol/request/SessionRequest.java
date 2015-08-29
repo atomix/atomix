@@ -18,6 +18,7 @@ package net.kuujo.copycat.raft.protocol.request;
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.util.ReferenceFactory;
 import net.kuujo.copycat.util.ReferenceManager;
@@ -30,6 +31,9 @@ import net.kuujo.copycat.util.ReferenceManager;
 public abstract class SessionRequest<T extends SessionRequest<T>> extends AbstractRequest<T> {
   protected long session;
 
+  /**
+   * @throws NullPointerException if {@code referenceManager} is null
+   */
   public SessionRequest(ReferenceManager<T> referenceManager) {
     super(referenceManager);
   }
@@ -57,7 +61,9 @@ public abstract class SessionRequest<T extends SessionRequest<T>> extends Abstra
    * Client request builder.
    */
   public static abstract class Builder<T extends Builder<T, U>, U extends SessionRequest<U>> extends AbstractRequest.Builder<T, U> {
-
+    /**
+     * @throws NullPointerException if {@code pool} or {@code factory} are null
+     */
     protected Builder(BuilderPool<T, U> pool, ReferenceFactory<U> factory) {
       super(pool, factory);
     }
@@ -73,12 +79,11 @@ public abstract class SessionRequest<T extends SessionRequest<T>> extends Abstra
      *
      * @param session The session ID.
      * @return The request builder.
+     * @throws IllegalArgumentException if {@code session} is less than 0
      */
     @SuppressWarnings("unchecked")
     public T withSession(long session) {
-      if (session <= 0)
-        throw new IllegalArgumentException("session must be positive");
-      request.session = session;
+      request.session = Assert.argNot(session, session < 0, "session must be positive");
       return (T) this;
     }
   }

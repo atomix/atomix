@@ -15,16 +15,17 @@
  */
 package net.kuujo.copycat.raft.protocol.response;
 
+import java.util.Objects;
+
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.raft.Members;
 import net.kuujo.copycat.raft.protocol.error.RaftError;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.util.ReferenceManager;
-
-import java.util.Objects;
 
 /**
  * Protocol register client response.
@@ -55,14 +56,18 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
    *
    * @param response The response to build.
    * @return The register client response builder.
+   * @throws NullPointerException if {@code response} is null
    */
   public static Builder builder(RegisterResponse response) {
-    return POOL.acquire(response);
+    return POOL.acquire(Assert.notNull(response, "response"));
   }
 
   private long session;
   private Members members;
 
+  /**
+   * @throws NullPointerException if {@code referenceManager} is null
+   */
   public RegisterResponse(ReferenceManager<RegisterResponse> referenceManager) {
     super(referenceManager);
   }
@@ -158,11 +163,10 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
      *
      * @param session The session ID.
      * @return The register response builder.
+     * @throws IllegamArgumentException if {@code session} is less than 1
      */
     public Builder withSession(long session) {
-      if (session <= 0)
-        throw new IllegalArgumentException("session cannot be less than 1");
-      response.session = session;
+      response.session = Assert.argNot(session, session < 1, "session cannot be less than 1");
       return this;
     }
 
@@ -171,19 +175,20 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
      *
      * @param members The response members.
      * @return The response builder.
+     * @throws NullPointerException if {@code members} is null
      */
     public Builder withMembers(Members members) {
-      if (members == null)
-        throw new NullPointerException("members cannot be null");
-      response.members = members;
+      response.members = Assert.notNull(members, "members");
       return this;
     }
 
+    /**
+     * @throws IllegalStateException if status is OK and members is null
+     */
     @Override
     public RegisterResponse build() {
       super.build();
-      if (response.status == Status.OK && response.members == null)
-        throw new NullPointerException("members cannot be null");
+      Assert.stateNot(response.status == Status.OK && response.members == null, "members cannot be null");
       return response;
     }
 

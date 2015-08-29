@@ -47,6 +47,7 @@ public interface Response<T extends Response<T>> extends ReferenceCounted<T>, Co
      *
      * @param id The status identifier.
      * @return The status for the given identifier.
+     * @throws IllegalArgumentException if {@code id} is not 0 or 1
      */
     public static Status forId(int id) {
       switch (id) {
@@ -104,6 +105,9 @@ public interface Response<T extends Response<T>> extends ReferenceCounted<T>, Co
    */
   abstract class Builder<T extends Builder<T, U>, U extends Response> extends net.kuujo.copycat.util.Builder<U> {
 
+    /**
+     * @throws NullPointerException if {@code pool} is null
+     */
     protected Builder(BuilderPool pool) {
       super(pool);
     }
@@ -113,6 +117,7 @@ public interface Response<T extends Response<T>> extends ReferenceCounted<T>, Co
      *
      * @param status The response status.
      * @return The response builder.
+     * @throws NullPointerException if {@code status} is null
      */
     public abstract T withStatus(Status status);
 
@@ -121,6 +126,7 @@ public interface Response<T extends Response<T>> extends ReferenceCounted<T>, Co
      *
      * @param error The response error.
      * @return The response builder.
+     * @throws NullPointerException if {@code error} is null
      */
     public abstract T withError(RaftError error);
 

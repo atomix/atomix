@@ -26,6 +26,7 @@ import net.kuujo.copycat.raft.protocol.Query;
 import net.kuujo.copycat.raft.protocol.error.UnknownSessionException;
 import net.kuujo.copycat.raft.protocol.request.*;
 import net.kuujo.copycat.raft.protocol.response.*;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.Listener;
 import net.kuujo.copycat.util.Listeners;
 import net.kuujo.copycat.util.Managed;
@@ -446,11 +447,12 @@ public class ClientSession implements Session, Managed<Session> {
 
   @Override
   public Listener<Session> onOpen(Consumer<Session> listener) {
-    return openListeners.add(listener);
+    return openListeners.add(Assert.notNull(listener, "listener"));
   }
 
   @Override
   public CompletableFuture<Void> publish(Object message) {
+    Assert.notNull(message, "message");
     return CompletableFuture.runAsync(() -> {
       for (Consumer<Object> listener : receiveListeners) {
         listener.accept(message);
@@ -491,7 +493,7 @@ public class ClientSession implements Session, Managed<Session> {
   @Override
   @SuppressWarnings("unchecked")
   public Listener<?> onReceive(Consumer listener) {
-    return receiveListeners.add(listener);
+    return receiveListeners.add(Assert.notNull(listener, "listener"));
   }
 
   @Override
@@ -527,7 +529,7 @@ public class ClientSession implements Session, Managed<Session> {
 
   @Override
   public Listener<Session> onClose(Consumer<Session> listener) {
-    return closeListeners.add(listener);
+    return closeListeners.add(Assert.notNull(listener, "listener"));
   }
 
   /**
