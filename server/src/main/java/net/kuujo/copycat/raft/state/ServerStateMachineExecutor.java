@@ -129,11 +129,6 @@ class ServerStateMachineExecutor implements StateMachineExecutor {
         }
       }
     });
-
-    // We have to make sure to trigger scheduled callbacks in this thread in order to ensure
-    // they're properly executed *immediately* after the above scheduled execution.
-    // This means tasks are scheduled to be executed prior to the state machine time being set.
-    tick(commit.time().toEpochMilli());
     return future;
   }
 

@@ -102,9 +102,14 @@ class ServerStateMachine implements AutoCloseable {
    * @param lastApplied The last applied index.
    */
   private void setLastApplied(long lastApplied) {
-    if (lastApplied < this.lastApplied)
+    if (lastApplied < this.lastApplied) {
       throw new IllegalArgumentException("lastApplied index must be greater than previous lastApplied index");
-    this.lastApplied = Math.max(this.lastApplied, lastApplied);
+    } else if (lastApplied > this.lastApplied) {
+      this.lastApplied = lastApplied;
+      for (ServerSession session : executor.context().sessions().sessions.values()) {
+        session.setVersion(lastApplied);
+      }
+    }
   }
 
   /**
@@ -165,6 +170,9 @@ class ServerStateMachine implements AutoCloseable {
     // Expire any remaining expired sessions.
     expireSessions(entry.getTimestamp());
 
+    // Allow the executor to execute any scheduled events.
+    executor.tick(entry.getTimestamp());
+
     return future;
   }
 
@@ -177,28 +185,31 @@ class ServerStateMachine implements AutoCloseable {
     ServerSession session = executor.context().sessions().getSession(entry.getSession());
 
     CompletableFuture<Void> future;
+
+    // If the server session is null, the session either never existed or already expired.
     if (session == null) {
       LOGGER.warn("Unknown session: " + entry.getSession());
       future = Futures.exceptionalFuture(new UnknownSessionException("unknown session: " + entry.getSession()));
-    } else if (entry.getTimestamp() - sessionTimeout.toMillis() > session.getTimestamp()) {
-      LOGGER.warn("Expired session: " + entry.getSession());
-      future = expireSession(entry.getSession(), getContext());
-    } else {
+    }
+    // If the session exists, don't allow it to expire even if its expiration has passed since we still
+    // managed to receive a keep alive request from the client before it was removed.
+    else {
       Context context = getContext();
 
       // The keep alive request contains the
-      session.setVersion(entry.getIndex())
-        .setTimestamp(entry.getTimestamp())
+      session.setTimestamp(entry.getTimestamp())
         .clearResponses(entry.getCommandSequence())
         .clearEvents(entry.getEventSequence());
 
       future = new CompletableFuture<>();
-      executor.tick(entry.getTimestamp());
       context.execute(() -> future.complete(null));
     }
 
     // Expire any remaining expired sessions.
     expireSessions(entry.getTimestamp());
+
+    // Allow the executor to execute any scheduled events.
+    executor.tick(entry.getTimestamp());
 
     return future;
   }
@@ -279,11 +290,13 @@ class ServerStateMachine implements AutoCloseable {
       }
     });
 
-    // Update the session timestamp, version, and command sequence number. This is done in the caller's thread since all
+    // Update the session timestamp and command sequence number. This is done in the caller's thread since all
     // timestamp/version/sequence checks are done in this thread prior to executing operations on the state machine thread.
-    session.setTimestamp(entry.getTimestamp())
-      .setVersion(entry.getIndex())
-      .setSequence(sequence);
+    session.setTimestamp(entry.getTimestamp()).setSequence(sequence);
+
+    // Allow the executor to execute any scheduled events.
+    executor.tick(entry.getTimestamp());
+
     return future;
   }
 
