@@ -294,7 +294,7 @@ public class ClientSession implements Session, Managed<Session> {
       else {
         LOGGER.warn("Failed to communicate with cluster. Retrying");
         retryFuture = context.schedule(this::retryRequests, Duration.ofMillis(200));
-        retries.add(() -> request(request, future, true, true));
+        retries.add(() -> resetMembers().request(request, future, true, true));
       }
       return future;
     }
@@ -308,6 +308,7 @@ public class ClientSession implements Session, Managed<Session> {
       // If there's no existing connect future, create a new one.
       LOGGER.info("Connecting: {}", member.address());
       connectFuture = client.connect(member.address()).whenComplete((connection, error) -> {
+        connectFuture = null;
         if (!checkOpen || isOpen()) {
           if (error == null) {
             setupConnection(connection);
@@ -464,7 +465,6 @@ public class ClientSession implements Session, Managed<Session> {
       }
     });
     connection.handler(PublishRequest.class, this::handlePublish);
-    connectFuture = null;
     return this;
   }
 
