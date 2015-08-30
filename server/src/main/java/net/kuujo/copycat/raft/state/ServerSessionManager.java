@@ -31,7 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 class ServerSessionManager implements Sessions {
   private final Map<UUID, Connection> connections = new ConcurrentHashMap<>();
-  private final Map<Long, ServerSession> sessions = new ConcurrentHashMap<>();
+  final Map<Long, ServerSession> sessions = new ConcurrentHashMap<>();
 
   @Override
   public Session session(long sessionId) {
@@ -67,8 +67,8 @@ class ServerSessionManager implements Sessions {
   /**
    * Registers a session.
    */
-  ServerSession registerSession(long sessionId, UUID connectionId) {
-    ServerSession session = new ServerSession(sessionId, connectionId).setConnection(connections.get(connectionId));
+  ServerSession registerSession(long sessionId, UUID connectionId, long timeout) {
+    ServerSession session = new ServerSession(sessionId, connectionId, timeout).setConnection(connections.get(connectionId));
     sessions.put(sessionId, session);
     return session;
   }

@@ -155,9 +155,20 @@ class PassiveState extends AbstractState {
           }
         }
 
-        // If the entry is a configuration entry then apply it immediately.
+        // If the entry is a configuration entry then immediately configure the cluster.
         if (entry instanceof ConfigurationEntry) {
-          applyEntry(entry);
+          ConfigurationEntry configurationEntry = (ConfigurationEntry) entry;
+          if (context.getCluster().isPassive()) {
+            context.getCluster().configure(entry.getIndex(), configurationEntry.getActive(), configurationEntry.getPassive());
+            if (context.getCluster().isActive()) {
+              transition(RaftServer.State.FOLLOWER);
+            }
+          } else {
+            context.getCluster().configure(entry.getIndex(), configurationEntry.getActive(), configurationEntry.getPassive());
+            if (context.getCluster().isPassive()) {
+              transition(RaftServer.State.PASSIVE);
+            }
+          }
         }
       }
     }
@@ -240,7 +251,7 @@ class PassiveState extends AbstractState {
    */
   protected CompletableFuture<?> applyEntry(Entry entry) {
     LOGGER.debug("{} - Applying {}", context.getMember().id(), entry);
-    return context.apply(entry);
+    return context.getStateMachine().apply(entry);
   }
 
   /**

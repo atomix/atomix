@@ -53,6 +53,7 @@ public interface Server {
    *
    * @param address The address on which to listen for connections.
    * @return A completable future to be called once the server has started listening for connections.
+   * @throws NullPointerException if {@code address} ir {@code listener} are null
    */
   CompletableFuture<Void> listen(InetSocketAddress address, Consumer<Connection> listener);
 

@@ -19,14 +19,17 @@ import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.storage.Storage;
 import net.kuujo.copycat.io.transport.*;
 import net.kuujo.copycat.manager.ResourceManager;
+import net.kuujo.copycat.raft.Member;
 import net.kuujo.copycat.raft.Members;
 import net.kuujo.copycat.raft.RaftClient;
 import net.kuujo.copycat.raft.RaftServer;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.ConfigurationException;
 import net.kuujo.copycat.util.concurrent.CopycatThreadFactory;
 
 import java.net.InetSocketAddress;
 import java.time.Duration;
+import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.*;
@@ -43,16 +46,52 @@ import java.util.function.Consumer;
 public final class CopycatReplica extends Copycat {
 
   /**
-   * Returns a new Copycat server builder.
+   * Returns a new Copycat replica builder.
+   * <p>
+   * The provided set of members will be used to connect to the other members in the Raft cluster. The {@code memberId}
+   * must be the {@link Member#id()} of a member listed in the provided members list.
    *
-   * @return A new Copycat server builder.
+   * @param memberId The local server member ID. This must be the ID of a member listed in the provided members list.
+   * @param members The cluster members to which to connect.
+   * @return The replica builder.
    */
-  public static Builder builder() {
-    return new Builder();
+  public static Builder builder(int memberId, Member... members) {
+    return builder(memberId, Members.builder().withMembers(members).build());
+  }
+
+  /**
+   * Returns a new Copycat replica builder.
+   * <p>
+   * The provided set of members will be used to connect to the other members in the Raft cluster. The {@code memberId}
+   * must be the {@link Member#id()} of a member listed in the provided members list.
+   *
+   * @param memberId The local server member ID. This must be the ID of a member listed in the provided members list.
+   * @param members The cluster members to which to connect.
+   * @return The replica builder.
+   */
+  public static Builder builder(int memberId, Collection<Member> members) {
+    return builder(memberId, Members.builder().withMembers(members).build());
+  }
+
+  /**
+   * Returns a new Copycat replica builder.
+   * <p>
+   * The provided set of members will be used to connect to the other members in the Raft cluster. The {@code memberId}
+   * must be the {@link Member#id()} of a member listed in the provided members list.
+   *
+   * @param memberId The local server member ID. This must be the ID of a member listed in the provided members list.
+   * @param members The cluster members to which to connect.
+   * @return The replica builder.
+   */
+  public static Builder builder(int memberId, Members members) {
+    return new Builder(memberId, members);
   }
 
   private final RaftServer server;
 
+  /**
+   * @throws NullPointerException if {@code client} or {@code server} are null
+   */
   public CopycatReplica(RaftClient client, RaftServer server) {
     super(client);
     this.server = server;
@@ -83,12 +122,12 @@ public final class CopycatReplica extends Copycat {
 
     @Override
     public Client client(UUID id) {
-      return remote.client(id);
+      return remote.client(Assert.notNull(id, "id"));
     }
 
     @Override
     public Server server(UUID id) {
-      return servers.computeIfAbsent(id, i -> new CombinedServer(local.server(i), remote.server(i)));
+      return servers.computeIfAbsent(Assert.notNull(id, "id"), i -> new CombinedServer(local.server(i), remote.server(i)));
     }
 
     @Override
@@ -116,6 +155,8 @@ public final class CopycatReplica extends Copycat {
 
     @Override
     public CompletableFuture<Void> listen(InetSocketAddress address, Consumer<Connection> listener) {
+      Assert.notNull(address, "address");
+      Assert.notNull(listener, "listener");
       return local.listen(address, listener).thenCompose(v -> remote.listen(address, listener));
     }
 
@@ -129,19 +170,14 @@ public final class CopycatReplica extends Copycat {
    * Copycat builder.
    */
   public static class Builder extends Copycat.Builder {
-    private RaftServer.Builder serverBuilder = RaftServer.builder();
-    private int memberId;
-    private Members members;
+    private RaftServer.Builder serverBuilder;
+    private Transport transport;
     private LocalServerRegistry localRegistry = new LocalServerRegistry();
 
-    private Builder() {
-    }
-
-    @Override
-    protected void reset() {
-      super.reset();
-      serverBuilder = RaftServer.builder();
-      localRegistry = new LocalServerRegistry();
+    private Builder(int memberId, Members members) {
+      super(Members.builder().addMember(members.member(memberId)).build());
+      Assert.arg(members.member(memberId) != null, "memberId must be listed in the members list");
+      this.serverBuilder = RaftServer.builder(memberId, members);
     }
 
     /**
@@ -149,34 +185,10 @@ public final class CopycatReplica extends Copycat {
      *
      * @param transport The client server.
      * @return The client builder.
+     * @throws NullPointerException if {@code command} is null
      */
     public Builder withTransport(Transport transport) {
-      clientBuilder.withTransport(new LocalTransport(localRegistry));
-      serverBuilder.withTransport(new CombinedTransport(new LocalTransport(localRegistry), transport));
-      return this;
-    }
-
-    /**
-     * Sets the server member ID.
-     *
-     * @param memberId The server member ID.
-     * @return The Raft builder.
-     */
-    public Builder withMemberId(int memberId) {
-      this.memberId = memberId;
-      return this;
-    }
-
-    /**
-     * Sets the voting Raft members.
-     *
-     * @param members The voting Raft members.
-     * @return The Raft builder.
-     */
-    public Builder withMembers(Members members) {
-      if (members == null)
-        throw new NullPointerException("members cannot be null");
-      this.members = members;
+      this.transport = Assert.notNull(transport, "transport");
       return this;
     }
 
@@ -185,6 +197,7 @@ public final class CopycatReplica extends Copycat {
      *
      * @param serializer The Raft serializer.
      * @return The Raft builder.
+     * @throws NullPointerException if {@code command} is null
      */
     public Builder withSerializer(Serializer serializer) {
       clientBuilder.withSerializer(serializer);
@@ -197,6 +210,7 @@ public final class CopycatReplica extends Copycat {
      *
      * @param storage The server storage module.
      * @return The Copycat server builder.
+     * @throws NullPointerException if {@code command} is null
      */
     public Builder withStorage(Storage storage) {
       serverBuilder.withStorage(storage);
@@ -209,6 +223,7 @@ public final class CopycatReplica extends Copycat {
      * @param electionTimeout The Raft election timeout in milliseconds.
      * @return The Raft configuration.
      * @throws IllegalArgumentException If the election timeout is not positive
+     * @throws NullPointerException if {@code command} is null
      */
     public Builder withElectionTimeout(Duration electionTimeout) {
       serverBuilder.withElectionTimeout(electionTimeout);
@@ -221,6 +236,7 @@ public final class CopycatReplica extends Copycat {
      * @param heartbeatInterval The Raft heartbeat interval in milliseconds.
      * @return The Raft configuration.
      * @throws IllegalArgumentException If the heartbeat interval is not positive
+     * @throws NullPointerException if {@code command} is null
      */
     public Builder withHeartbeatInterval(Duration heartbeatInterval) {
       serverBuilder.withHeartbeatInterval(heartbeatInterval);
@@ -233,6 +249,7 @@ public final class CopycatReplica extends Copycat {
      * @param sessionTimeout The Raft session timeout in milliseconds.
      * @return The Raft configuration.
      * @throws IllegalArgumentException If the session timeout is not positive
+     * @throws NullPointerException if {@code command} is null
      */
     public Builder withSessionTimeout(Duration sessionTimeout) {
       serverBuilder.withSessionTimeout(sessionTimeout);
@@ -245,6 +262,7 @@ public final class CopycatReplica extends Copycat {
      * @param keepAliveInterval The Raft keep alive interval in milliseconds.
      * @return The Raft configuration.
      * @throws IllegalArgumentException If the keep alive interval is not positive
+     * @throws NullPointerException if {@code command} is null
      */
     public Builder withKeepAliveInterval(Duration keepAliveInterval) {
       clientBuilder.withKeepAliveInterval(keepAliveInterval);
@@ -253,29 +271,27 @@ public final class CopycatReplica extends Copycat {
 
     @Override
     public CopycatReplica build() {
-      if (memberId <= 0)
-        throw new ConfigurationException("no memberId configured");
-      if (members == null)
-        throw new ConfigurationException("no server members configured");
-
       ThreadFactory threadFactory = new CopycatThreadFactory("copycat-resource-%d");
       ScheduledExecutorService executor = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), threadFactory);
 
-      // Construct the underlying Raft client. Because the CopycatReplica host both a RaftClient and RaftServer,
-      // we ensure the client connects directly to the local server by exposing only the local member to it.
-      // This ensures that we don't incur unnecessary network traffic by sending operations to a remote server
-      // when a local server is already available in the same JVM.
-      RaftClient client = clientBuilder.withMembers(Members.builder()
-          .addMember(members.member(memberId))
-          .build())
-        .build();
+      // If no transport was configured by the user, attempt to load the Netty transport.
+      if (transport == null) {
+        try {
+          transport = (Transport) Class.forName("net.kuujo.copycat.io.transport.NettyTransport").newInstance();
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+          throw new ConfigurationException("transport not configured");
+        }
+      }
+
+      // Configure the client and server with a transport that routes all local client communication
+      // directly through the local server, ensuring we don't incur unnecessary network traffic by
+      // sending operations to a remote server when a local server is already available in the same JVM.
+      RaftClient client = clientBuilder.withTransport(new LocalTransport(localRegistry)).build();
 
       // Construct the underlying RaftServer. The server should have been configured with a CombinedTransport
       // that facilitates the local client connecting directly to the server.
-      RaftServer server = serverBuilder.withMemberId(memberId)
-        .withMembers(members)
-        .withStateMachine(new ResourceManager(executor))
-        .build();
+      RaftServer server = serverBuilder.withTransport(new CombinedTransport(new LocalTransport(localRegistry), transport))
+        .withStateMachine(new ResourceManager(executor)).build();
 
       return new CopycatReplica(client, server);
     }

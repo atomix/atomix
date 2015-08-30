@@ -27,7 +27,7 @@ import java.time.Instant;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-class ServerCommit implements Commit {
+class ServerCommit implements Commit<Operation> {
   private final ServerCommitPool pool;
   private final ServerCommitCleaner cleaner;
   private final ServerSessionManager sessions;

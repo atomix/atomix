@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.manager;
 
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.raft.protocol.Operation;
 import net.kuujo.copycat.io.BufferInput;
@@ -33,8 +34,11 @@ public abstract class PathOperation<T> implements Operation<T>, CopycatSerializa
   protected PathOperation() {
   }
 
+  /**
+   * @throws NullPointerException if {@code path} is null
+   */
   protected PathOperation(String path) {
-    this.path = path;
+    this.path = Assert.notNull(path, "path");
   }
 
   /**
@@ -72,10 +76,11 @@ public abstract class PathOperation<T> implements Operation<T>, CopycatSerializa
      *
      * @param path The command path.
      * @return The command builder.
+     * @throws NullPointerException if {@code path} is null
      */
     @SuppressWarnings("unchecked")
     public T withPath(String path) {
-      operation.path = path;
+      operation.path = Assert.notNull(path, "path");
       return (T) this;
     }
   }

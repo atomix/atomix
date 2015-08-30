@@ -86,9 +86,7 @@ public class DistributedSetTest extends ConcurrentTestCase {
     Members members = builder.build();
 
     for (int i = 1; i <= nodes; i++) {
-      Copycat copycat = CopycatReplica.builder()
-        .withMemberId(i)
-        .withMembers(members)
+      Copycat copycat = CopycatReplica.builder(i, members)
         .withTransport(new LocalTransport(registry))
         .withStorage(Storage.builder()
           .withDirectory(new File(directory, "" + i))

@@ -32,6 +32,9 @@ public class KeepAliveEntry extends SessionEntry<KeepAliveEntry> {
   private long commandSequence;
   private long eventSequence;
 
+  public KeepAliveEntry() {
+  }
+
   public KeepAliveEntry(ReferenceManager<Entry<?>> referenceManager) {
     super(referenceManager);
   }

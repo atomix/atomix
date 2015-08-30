@@ -99,6 +99,13 @@ final class CandidateState extends ActiveState {
     final AtomicBoolean complete = new AtomicBoolean();
     final Set<MemberState> votingMembers = new HashSet<>(context.getCluster().getActiveMembers());
 
+    // If there are no other members in the cluster, immediately transition to leader.
+    if (votingMembers.isEmpty()) {
+      LOGGER.debug("{} - Single member cluster. Transitioning directly to leader.", context.getMember().id());
+      transition(RaftServer.State.LEADER);
+      return;
+    }
+
     // Send vote requests to all nodes. The vote request that is sent
     // to this node will be automatically successful.
     // First check if the quorum is null. If the quorum isn't null then that

@@ -20,6 +20,7 @@ import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.raft.protocol.error.RaftError;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.util.ReferenceManager;
 
@@ -54,14 +55,18 @@ public class CommandResponse extends SessionResponse<CommandResponse> {
    *
    * @param request The response to build.
    * @return The submit response builder.
+   * @throws NullPointerException if {@code request} is null
    */
   public static Builder builder(CommandResponse request) {
-    return POOL.acquire(request);
+    return POOL.acquire(Assert.notNull(request, "request"));
   }
 
   private long version;
   private Object result;
 
+  /**
+   * @throws NullPointerException if {@code referenceManager} is null
+   */
   public CommandResponse(ReferenceManager<CommandResponse> referenceManager) {
     super(referenceManager);
   }
@@ -157,11 +162,10 @@ public class CommandResponse extends SessionResponse<CommandResponse> {
      *
      * @param version The query version number.
      * @return The response builder.
+     * @throws IllegalArgumentException if {@code version} is less than 0
      */
     public Builder withVersion(long version) {
-      if (version < 0)
-        throw new IllegalArgumentException("version cannot be negative");
-      response.version = version;
+      response.version = Assert.argNot(version, version < 0, "version cannot be negative");
       return this;
     }
 
@@ -170,8 +174,8 @@ public class CommandResponse extends SessionResponse<CommandResponse> {
      *
      * @param result The response result.
      * @return The response builder.
+     * @throws NullPointerException if {@code result} is null
      */
-    @SuppressWarnings("unchecked")
     public Builder withResult(Object result) {
       response.result = result;
       return this;

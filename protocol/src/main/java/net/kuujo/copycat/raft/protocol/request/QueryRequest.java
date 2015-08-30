@@ -20,6 +20,7 @@ import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.raft.protocol.Query;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.util.ReferenceManager;
 
@@ -54,14 +55,18 @@ public class QueryRequest extends SessionRequest<QueryRequest> {
    *
    * @param request The request to build.
    * @return The query request builder.
+   * @throws IllegalStateException if request is null
    */
   public static Builder builder(QueryRequest request) {
-    return POOL.acquire(request);
+    return POOL.acquire(Assert.notNull(request, "request"));
   }
 
   private long version;
   private Query query;
 
+  /**
+   * @throws NullPointerException if {@code referenceManager} is null
+   */
   public QueryRequest(ReferenceManager<QueryRequest> referenceManager) {
     super(referenceManager);
   }
@@ -128,7 +133,9 @@ public class QueryRequest extends SessionRequest<QueryRequest> {
    * Query request builder.
    */
   public static class Builder extends SessionRequest.Builder<Builder, QueryRequest> {
-
+    /**
+     * @throws NullPointerException if {@code pool} is null
+     */
     protected Builder(BuilderPool<Builder, QueryRequest> pool) {
       super(pool, QueryRequest::new);
     }
@@ -145,11 +152,10 @@ public class QueryRequest extends SessionRequest<QueryRequest> {
      *
      * @param version The query version number.
      * @return The request builder.
+     * @throws IllegalArgumentException if {@code version} is less than 1
      */
     public Builder withVersion(long version) {
-      if (version < 0)
-        throw new IllegalArgumentException("version cannot be less than 1");
-      request.version = version;
+      request.version = Assert.argNot(version, version < 0, "version cannot be less than 1");
       return this;
     }
 
@@ -158,19 +164,20 @@ public class QueryRequest extends SessionRequest<QueryRequest> {
      *
      * @param query The request query.
      * @return The request builder.
+     * @throws NullPointerException if {@code query} is null
      */
     public Builder withQuery(Query query) {
-      if (query == null)
-        throw new NullPointerException("query cannot be null");
-      request.query = query;
+      request.query = Assert.notNull(query, "query");
       return this;
     }
 
+    /**
+     * @throws IllegalStateException if {@code query} is null
+     */
     @Override
     public QueryRequest build() {
       super.build();
-      if (request.query == null)
-        throw new NullPointerException("query cannot be null");
+      Assert.stateNot(request.query == null, "query cannot be null");
       return request;
     }
 

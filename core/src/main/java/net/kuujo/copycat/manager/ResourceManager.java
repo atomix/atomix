@@ -20,6 +20,7 @@ import net.kuujo.copycat.raft.StateMachine;
 import net.kuujo.copycat.raft.StateMachineExecutor;
 import net.kuujo.copycat.raft.session.Session;
 import net.kuujo.copycat.resource.ResourceOperation;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.concurrent.ComposableFuture;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.ThreadPoolContext;
@@ -44,10 +45,11 @@ public class ResourceManager extends StateMachine {
   private final Map<Long, ResourceHolder> resources = new HashMap<>();
   private final ResourceCommitPool commits = new ResourceCommitPool();
 
+  /**
+   * @throws NullPointerException if {@code scheduler} is null
+   */
   public ResourceManager(ScheduledExecutorService scheduler) {
-    if (scheduler == null)
-      throw new NullPointerException("executor cannot be null");
-    this.scheduler = scheduler;
+    this.scheduler = Assert.notNull(scheduler, "scheduler");
   }
 
   @Override

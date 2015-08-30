@@ -34,10 +34,11 @@ public class BuilderPool<T extends Builder<U>, U> {
   private final Function<BuilderPool<T, U>, T> factory;
   private final Queue<T> pool = new ConcurrentLinkedQueue<>();
 
+  /**
+   * @throws NullPointerException if {@code factory} is null
+   */
   public BuilderPool(Function<BuilderPool<T, U>, T> factory) {
-    if (factory == null)
-      throw new NullPointerException("factory cannot be null");
-    this.factory = factory;
+    this.factory = Assert.notNull(factory, "factory");
   }
 
   /**

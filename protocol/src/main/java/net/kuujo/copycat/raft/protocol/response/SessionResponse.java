@@ -26,6 +26,9 @@ import net.kuujo.copycat.util.ReferenceManager;
  */
 public abstract class SessionResponse<T extends SessionResponse<T>> extends AbstractResponse<T> {
 
+  /**
+   * @throws NullPointerException if {@code referenceManager} is null
+   */
   public SessionResponse(ReferenceManager<T> referenceManager) {
     super(referenceManager);
   }

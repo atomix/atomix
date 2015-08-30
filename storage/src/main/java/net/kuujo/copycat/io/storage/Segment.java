@@ -19,6 +19,7 @@ import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.FileBuffer;
 import net.kuujo.copycat.io.MappedBuffer;
 import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.util.Assert;
 
 /**
  * Log segment.
@@ -29,6 +30,8 @@ class Segment implements AutoCloseable {
 
   /**
    * Opens a new segment.
+   * 
+   * @throws NullPointerException if any argument is null
    */
   static Segment open(Buffer buffer, SegmentDescriptor descriptor, OffsetIndex offsetIndex, Serializer serializer) {
     return new Segment(buffer, descriptor, offsetIndex, serializer);
@@ -41,20 +44,14 @@ class Segment implements AutoCloseable {
   private int skip = 0;
   private boolean open = true;
 
+  /**
+   * @throws NullPointerException if any argument is null
+   */
   Segment(Buffer buffer, SegmentDescriptor descriptor, OffsetIndex offsetIndex, Serializer serializer) {
-    if (buffer == null)
-      throw new NullPointerException("buffer cannot be null");
-    if (descriptor == null)
-      throw new NullPointerException("descriptor cannot be null");
-    if (offsetIndex == null)
-      throw new NullPointerException("offsetIndex cannot be null");
-    if (serializer == null)
-      throw new NullPointerException("serializer cannot be null");
-
-    this.serializer = serializer;
-    this.buffer = buffer;
-    this.descriptor = descriptor;
-    this.offsetIndex = offsetIndex;
+    this.serializer = Assert.notNull(serializer, "serializer");
+    this.buffer = Assert.notNull(buffer, "buffer");
+    this.descriptor = Assert.notNull(descriptor, "descriptor");
+    this.offsetIndex = Assert.notNull(offsetIndex, "offsetIndex");
 
     // Rebuild the index from the segment data.
     long position = buffer.mark().position();
@@ -146,10 +143,10 @@ class Segment implements AutoCloseable {
    * Returns the index of the first entry in the segment.
    *
    * @return The index of the first entry in the segment or {@code 0} if the segment is empty.
+   * @throws IllegalStateException if the segment is not open
    */
   public long firstIndex() {
-    if (!isOpen())
-      throw new IllegalStateException("segment not open");
+    assertSegmentOpen();
     return !isEmpty() ? descriptor.index() + Math.max(0, offsetIndex.offset()) : 0;
   }
 
@@ -157,10 +154,10 @@ class Segment implements AutoCloseable {
    * Returns the index of the last entry in the segment.
    *
    * @return The index of the last entry in the segment or {@code 0} if the segment is empty.
+   * @throws IllegalStateException if the segment is not open
    */
   public long lastIndex() {
-    if (!isOpen())
-      throw new IllegalStateException("segment not open");
+    assertSegmentOpen();
     return !isEmpty() ? offsetIndex.lastOffset() + descriptor.index() + skip : descriptor.index() - 1;
   }
 
@@ -195,28 +192,27 @@ class Segment implements AutoCloseable {
 
   /**
    * Checks the range of the given index.
+   * 
+   * @throws IndexOutOfBoundsException if the {@code index} is invalid for the segment
    */
   private void checkRange(long index) {
-    if (isEmpty())
-      throw new IndexOutOfBoundsException("segment is empty");
-    if (index < firstIndex())
-      throw new IndexOutOfBoundsException(index + " is less than the first index in the segment");
-    if (index > lastIndex())
-      throw new IndexOutOfBoundsException(index + " is greater than the last index in the segment");
+    Assert.indexNot(isEmpty(), "segment is empty");
+    Assert.indexNot(index < firstIndex(), index + " is less than the first index in the segment");
+    Assert.indexNot(index > lastIndex(), index + " is greater than the last index in the segment");
   }
 
   /**
    * Commits an entry to the segment.
+   * 
+   * @throws NullPointerException if {@code entry} is null
+   * @throws IllegalStateException if the segment is full
+   * @throws IndexOutOfBoundsException if the {@code entry} index does not match the next index
    */
   public long append(Entry entry) {
-    if (isFull())
-      throw new IllegalStateException("segment is full");
-
+    Assert.notNull(entry, "entry");
+    Assert.stateNot(isFull(), "segment is full");
     long index = nextIndex();
-
-    if (entry.getIndex() != index) {
-      throw new IndexOutOfBoundsException("inconsistent index: " + entry.getIndex());
-    }
+    Assert.index(index == entry.getIndex(), "inconsistent index: %s", entry.getIndex());
 
     // Calculate the offset of the entry.
     int offset = offset(index);
@@ -250,10 +246,10 @@ class Segment implements AutoCloseable {
    *
    * @param index The index from which to read the entry.
    * @return The entry at the given index.
+   * @throws IllegalStateException if the segment is not open or {@code index} is inconsistent with the entry
    */
   public synchronized <T extends Entry> T get(long index) {
-    if (!isOpen())
-      throw new IllegalStateException("segment not open");
+    assertSegmentOpen();
     checkRange(index);
 
     // Get the offset of the index within this segment.
@@ -275,9 +271,7 @@ class Segment implements AutoCloseable {
 
       // Verify that the entry at the given offset matches.
       int entryOffset = buffer.readInt(position + Short.BYTES);
-      if (entryOffset != offset) {
-        throw new IllegalStateException("inconsistent index: " + index);
-      }
+      Assert.state(entryOffset == offset, "inconsistent index: %s", index);
 
       // Read the entry buffer and deserialize the entry.
       try (Buffer value = buffer.slice(position + Short.BYTES + Integer.BYTES, length)) {
@@ -294,10 +288,10 @@ class Segment implements AutoCloseable {
    *
    * @param index The index to check.
    * @return Indicates whether the given index is within the range of the segment.
+   * @throws IllegalStateException if the segment is not open
    */
   boolean validIndex(long index) {
-    if (!isOpen())
-      throw new IllegalStateException("segment not open");
+    assertSegmentOpen();
     return !isEmpty() && index >= firstIndex() && index <= lastIndex();
   }
 
@@ -306,10 +300,10 @@ class Segment implements AutoCloseable {
    *
    * @param index The index to check.
    * @return Indicates whether the entry at the given index is active.
+   * @throws IllegalStateException if the segment is not open
    */
   public boolean contains(long index) {
-    if (!isOpen())
-      throw new IllegalStateException("segment not open");
+    assertSegmentOpen();
 
     if (!validIndex(index))
       return false;
@@ -324,10 +318,10 @@ class Segment implements AutoCloseable {
    *
    * @param index The index of the entry to clean.
    * @return The segment.
+   * @throws IllegalStateException if the segment is not open
    */
   public Segment clean(long index) {
-    if (!isOpen())
-      throw new IllegalStateException("segment not open");
+    assertSegmentOpen();
     offsetIndex.delete(offset(index));
     return this;
   }
@@ -337,10 +331,10 @@ class Segment implements AutoCloseable {
    *
    * @param entries The number of entries to skip.
    * @return The segment.
+   * @throws IllegalStateException if the segment is not open
    */
   public Segment skip(long entries) {
-    if (!isOpen())
-      throw new IllegalStateException("segment not open");
+    assertSegmentOpen();
     this.skip += entries;
     return this;
   }
@@ -350,10 +344,10 @@ class Segment implements AutoCloseable {
    *
    * @param index The index after which to remove entries.
    * @return The segment.
+   * @throws IllegalStateException if the segment is not open
    */
   public Segment truncate(long index) {
-    if (!isOpen())
-      throw new IllegalStateException("segment not open");
+    assertSegmentOpen();
 
     int offset = offset(index);
     int lastOffset = offsetIndex.lastOffset();
@@ -408,4 +402,7 @@ class Segment implements AutoCloseable {
     return String.format("Segment[id=%d, version=%d, index=%d, length=%d]", descriptor.id(), descriptor.version(), firstIndex(), length());
   }
 
+  private void assertSegmentOpen() {
+    Assert.state(isOpen(), "segment not open");
+  }
 }

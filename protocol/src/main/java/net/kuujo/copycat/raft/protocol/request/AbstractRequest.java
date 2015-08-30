@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.raft.protocol.request;
 
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.util.ReferenceFactory;
 import net.kuujo.copycat.util.ReferenceManager;
@@ -31,8 +32,11 @@ abstract class AbstractRequest<T extends Request<T>> implements Request<T> {
   private final AtomicInteger references = new AtomicInteger();
   private final ReferenceManager<T> referenceManager;
 
+  /**
+   * @throws NullPointerException if {@code referenceManager} is null
+   */
   protected AbstractRequest(ReferenceManager<T> referenceManager) {
-    this.referenceManager = referenceManager;
+    this.referenceManager = Assert.notNull(referenceManager, "referenceManager");
   }
 
   @Override
@@ -69,6 +73,9 @@ abstract class AbstractRequest<T extends Request<T>> implements Request<T> {
     protected final ReferencePool<U> pool;
     protected U request;
 
+    /**
+     * @throws NullPointerException if {@code pool} or {@code factory} are null
+     */
     protected Builder(BuilderPool<T, U> pool, ReferenceFactory<U> factory) {
       super(pool);
       this.pool = new ReferencePool<>(factory);
@@ -81,7 +88,7 @@ abstract class AbstractRequest<T extends Request<T>> implements Request<T> {
 
     @Override
     protected void reset(U request) {
-      this.request = request;
+      this.request = Assert.notNull(request, "request");
     }
 
     @Override

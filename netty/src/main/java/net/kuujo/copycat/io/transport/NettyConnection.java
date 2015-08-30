@@ -19,17 +19,18 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.util.ReferenceCounted;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.Listener;
 import net.kuujo.copycat.util.Listeners;
 import net.kuujo.copycat.util.concurrent.Context;
+import net.kuujo.copycat.util.concurrent.Scheduled;
 import net.openhft.hashing.LongHashFunction;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.time.Duration;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
 /**
@@ -44,6 +45,7 @@ public class NettyConnection implements Connection {
   static final byte RESPONSE = 0x03;
   static final byte SUCCESS = 0x04;
   static final byte FAILURE = 0x05;
+  private static final long REQUEST_TIMEOUT = 500;
   private static final ThreadLocal<ByteBufInput> INPUT = new ThreadLocal<ByteBufInput>() {
     @Override
     protected ByteBufInput initialValue() {
@@ -66,13 +68,20 @@ public class NettyConnection implements Connection {
   private final Listeners<Throwable> exceptionListeners = new Listeners<>();
   private final Listeners<Connection> closeListeners = new Listeners<>();
   private volatile long requestId;
+  private volatile Throwable failure;
+  private volatile boolean closed;
+  private Scheduled timeout;
   private final Map<Long, ContextualFuture> responseFutures = new LinkedHashMap<>(1024);
   private ChannelFuture writeFuture;
 
+  /**
+   * @throws NullPointerException if any argument is null
+   */
   public NettyConnection(UUID id, Channel channel, Context context) {
     this.id = id;
     this.channel = channel;
     this.context = context;
+    this.timeout = context.schedule(this::timeout, Duration.ofMillis(250), Duration.ofMillis(250));
   }
 
   /**
@@ -80,9 +89,7 @@ public class NettyConnection implements Connection {
    */
   private Context getContext() {
     Context context = Context.currentContext();
-    if (context == null) {
-      throw new IllegalStateException("not on a Copycat thread");
-    }
+    Assert.state(context != null, "not on a Copycat thread");
     return context;
   }
 
@@ -258,8 +265,16 @@ public class NettyConnection implements Connection {
    * @param t The exception to handle.
    */
   void handleException(Throwable t) {
-    for (Listener<Throwable> listener : exceptionListeners) {
-      listener.accept(t);
+    if (failure == null) {
+      failure = t;
+      for (CompletableFuture responseFuture : responseFutures.values()) {
+        responseFuture.completeExceptionally(t);
+      }
+      responseFutures.clear();
+
+      for (Listener<Throwable> listener : exceptionListeners) {
+        listener.accept(t);
+      }
     }
   }
 
@@ -267,19 +282,45 @@ public class NettyConnection implements Connection {
    * Handles the channel being closed.
    */
   void handleClosed() {
-    for (Listener<Connection> listener : closeListeners) {
-      listener.accept(this);
+    if (!closed) {
+      closed = true;
+      for (Listener<Connection> listener : closeListeners) {
+        listener.accept(this);
+      }
+      timeout.cancel();
+    }
+  }
+
+  /**
+   * Times out requests.
+   */
+  void timeout() {
+    // Use ConcurrentHashMap instead of LinkedHashMap
+    long time = System.currentTimeMillis();
+    Iterator<Map.Entry<Long, ContextualFuture>> iterator = responseFutures.entrySet().iterator();
+    while (iterator.hasNext()) {
+      ContextualFuture future = iterator.next().getValue();
+      if (future.time + REQUEST_TIMEOUT < time) {
+        iterator.remove();
+        future.context.executor().execute(() -> {
+          future.completeExceptionally(new TimeoutException("request timed out"));
+        });
+      } else {
+        break;
+      }
     }
   }
 
   @Override
   public <T, U> CompletableFuture<U> send(T request) {
+    Assert.notNull(request, "request");
     Context context = getContext();
-    ContextualFuture<U> future = new ContextualFuture<>(context);
+    ContextualFuture<U> future = new ContextualFuture<>(System.currentTimeMillis(), context);
 
     long requestId = ++this.requestId;
 
     context.executor().execute(() -> {
+
       ByteBuf buffer = this.channel.alloc().buffer(13);
       buffer.writeByte(REQUEST)
         .writeLong(requestId)
@@ -298,18 +339,25 @@ public class NettyConnection implements Connection {
 
   @Override
   public <T, U> Connection handler(Class<T> type, MessageHandler<T, U> handler) {
+    Assert.notNull(type, "type");
     handlers.put(hashMap.computeIfAbsent(type, this::hash32), new HandlerHolder(handler, getContext()));
     return null;
   }
 
   @Override
   public Listener<Throwable> exceptionListener(Consumer<Throwable> listener) {
-    return exceptionListeners.add(listener);
+    if (failure != null) {
+      listener.accept(failure);
+    }
+    return exceptionListeners.add(Assert.notNull(listener, "listener"));
   }
 
   @Override
   public Listener<Connection> closeListener(Consumer<Connection> listener) {
-    return closeListeners.add(listener);
+    if (closed) {
+      listener.accept(this);
+    }
+    return closeListeners.add(Assert.notNull(listener, "listener"));
   }
 
   @Override
@@ -337,6 +385,14 @@ public class NettyConnection implements Connection {
     return future;
   }
 
+  @Override
+  public boolean equals(Object object) {
+    if (object instanceof NettyConnection) {
+      return ((NettyConnection) object).id().equals(id);
+    }
+    return false;
+  }
+
   /**
    * Holds message handler and thread context.
    */
@@ -354,9 +410,11 @@ public class NettyConnection implements Connection {
    * Contextual future.
    */
   private static class ContextualFuture<T> extends CompletableFuture<T> {
+    private final long time;
     private final Context context;
 
-    private ContextualFuture(Context context) {
+    private ContextualFuture(long time, Context context) {
+      this.time = time;
       this.context = context;
     }
   }

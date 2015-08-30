@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.io.storage;
 
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.ThreadPoolContext;
 
@@ -35,13 +36,12 @@ public class Cleaner implements AutoCloseable {
   private final ScheduledExecutorService executor;
   private CompletableFuture<Void> cleanFuture;
 
+  /**
+   * @throws NullPointerException if {@code manager} or {@code executor} are null
+   */
   public Cleaner(SegmentManager manager, ScheduledExecutorService executor) {
-    if (manager == null)
-      throw new NullPointerException("manager cannot be null");
-    if (executor == null)
-      throw new NullPointerException("executor cannot be null");
-    this.manager = manager;
-    this.executor = executor;
+    this.manager = Assert.notNull(manager, "manager");
+    this.executor = Assert.notNull(executor, "executor");
   }
 
   /**

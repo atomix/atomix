@@ -21,6 +21,7 @@ import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.raft.Members;
 import net.kuujo.copycat.raft.protocol.error.RaftError;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.util.ReferenceManager;
 
@@ -55,14 +56,19 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
    *
    * @param response The response to build.
    * @return The register client response builder.
+   * @throws NullPointerException if {@code response} is null
    */
   public static Builder builder(RegisterResponse response) {
-    return POOL.acquire(response);
+    return POOL.acquire(Assert.notNull(response, "response"));
   }
 
   private long session;
   private Members members;
+  private long timeout;
 
+  /**
+   * @throws NullPointerException if {@code referenceManager} is null
+   */
   public RegisterResponse(ReferenceManager<RegisterResponse> referenceManager) {
     super(referenceManager);
   }
@@ -90,12 +96,22 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
     return members;
   }
 
+  /**
+   * Returns the client session timeout.
+   *
+   * @return The client session timeout.
+   */
+  public long timeout() {
+    return timeout;
+  }
+
   @Override
   public void readObject(BufferInput buffer, Serializer serializer) {
     status = Status.forId(buffer.readByte());
     if (status == Status.OK) {
       error = null;
       session = buffer.readLong();
+      timeout = buffer.readLong();
       members = serializer.readObject(buffer);
     } else {
       error = RaftError.forId(buffer.readByte());
@@ -109,6 +125,7 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
     buffer.writeByte(status.id());
     if (status == Status.OK) {
       buffer.writeLong(session);
+      buffer.writeLong(timeout);
       serializer.writeObject(members, buffer);
     } else {
       buffer.writeByte(error.id());
@@ -127,7 +144,8 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
       return response.status == status
         && response.session == session
         && ((response.members == null && members == null)
-        || (response.members != null && members != null && response.members.equals(members)));
+        || (response.members != null && members != null && response.members.equals(members)))
+        && response.timeout == timeout;
     }
     return false;
   }
@@ -151,6 +169,7 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
       super.reset();
       response.session = 0;
       response.members = null;
+      response.timeout = 0;
     }
 
     /**
@@ -158,11 +177,10 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
      *
      * @param session The session ID.
      * @return The register response builder.
+     * @throws IllegalArgumentException if {@code session} is less than 1
      */
     public Builder withSession(long session) {
-      if (session <= 0)
-        throw new IllegalArgumentException("session cannot be less than 1");
-      response.session = session;
+      response.session = Assert.argNot(session, session < 1, "session must be positive");
       return this;
     }
 
@@ -171,19 +189,33 @@ public class RegisterResponse extends AbstractResponse<RegisterResponse> {
      *
      * @param members The response members.
      * @return The response builder.
+     * @throws NullPointerException if {@code members} is null
      */
     public Builder withMembers(Members members) {
-      if (members == null)
-        throw new NullPointerException("members cannot be null");
-      response.members = members;
+      response.members = Assert.notNull(members, "members");
       return this;
     }
 
+    /**
+     * Sets the session timeout.
+     *
+     * @param timeout The session timeout.
+     * @return The register response builder.
+     * @throws IllegalArgumentException if the session timeout is not positive
+     */
+    public Builder withTimeout(long timeout) {
+      response.timeout = Assert.argNot(timeout, timeout <= 0, "timeout must be positive");
+      return this;
+    }
+
+    /**
+     * @throws IllegalStateException if status is OK and members is null
+     */
     @Override
     public RegisterResponse build() {
       super.build();
-      if (response.status == Status.OK && response.members == null)
-        throw new NullPointerException("members cannot be null");
+      Assert.stateNot(response.status == Status.OK && response.members == null, "members cannot be null");
+      Assert.stateNot(response.status == Status.OK && response.timeout <= 0, "timeout must be positive");
       return response;
     }
 

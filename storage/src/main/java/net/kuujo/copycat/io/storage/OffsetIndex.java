@@ -19,6 +19,7 @@ import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.FileBuffer;
 import net.kuujo.copycat.io.MappedBuffer;
 import net.kuujo.copycat.io.util.BitArray;
+import net.kuujo.copycat.util.Assert;
 
 import java.io.IOException;
 
@@ -68,10 +69,12 @@ class OffsetIndex implements AutoCloseable {
   private int currentOffset = -1;
   private long currentPosition = -1;
 
+  /**
+   * @throws NullPointerException if {@code buffer} is null
+   * @param buffer
+   */
   public OffsetIndex(Buffer buffer) {
-    if (buffer == null)
-      throw new NullPointerException("buffer cannot be null");
-    this.buffer = buffer;
+    this.buffer = Assert.notNull(buffer, "buffer");
     this.deletes = BitArray.allocate(1024);
   }
 
@@ -105,18 +108,15 @@ class OffsetIndex implements AutoCloseable {
    *
    * @param offset The offset to index.
    * @param position The position of the offset to index.
+   * @throws IllegalArgumentException if the {@code offset} is less than or equal to the last offset in the index, 
+   * or {@code position} is greater than MAX_POSITION
    */
   public void index(int offset, long position) {
-    if (lastOffset > -1 && offset <= lastOffset) {
-      throw new IllegalArgumentException("offset cannot be less than or equal to the last offset in the index");
-    }
+    Assert.argNot(offset, lastOffset > -1 && offset <= lastOffset, 
+        "offset cannot be less than or equal to the last offset in the index");
+    Assert.argNot(position > MAX_POSITION, "position cannot be greater than " + MAX_POSITION);
 
-    if (position > MAX_POSITION) {
-      throw new IllegalArgumentException("position cannot be greater than " + MAX_POSITION);
-    }
-
-    buffer.writeInt(offset)
-      .writeUnsignedInt(position);
+    buffer.writeInt(offset).writeUnsignedInt(position);
 
     size++;
     lastOffset = offset;

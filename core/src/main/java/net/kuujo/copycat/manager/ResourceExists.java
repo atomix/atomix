@@ -41,6 +41,9 @@ public class ResourceExists extends PathOperation<Boolean> implements Query<Bool
   public ResourceExists() {
   }
 
+  /**
+   * @throws NullPointerException if {@code path} is null
+   */
   public ResourceExists(String path) {
     super(path);
   }

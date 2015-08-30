@@ -15,14 +15,15 @@
  */
 package net.kuujo.copycat.raft.protocol.request;
 
+import java.util.Objects;
+
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.util.ReferenceManager;
-
-import java.util.Objects;
 
 /**
  * Protocol vote request.
@@ -58,11 +59,14 @@ public class VoteRequest extends AbstractRequest<VoteRequest> {
     return POOL.acquire(request);
   }
 
-  private long term;
+  private long term = -1;
   private int candidate;
-  private long logIndex;
-  private long logTerm;
+  private long logIndex = -1;
+  private long logTerm = -1;
 
+  /**
+   * @throws NullPointerException if {@code referenceManager} is null
+   */
   public VoteRequest(ReferenceManager<VoteRequest> referenceManager) {
     super(referenceManager);
   }
@@ -158,22 +162,21 @@ public class VoteRequest extends AbstractRequest<VoteRequest> {
     @Override
     protected void reset() {
       super.reset();
-      request.term = 0;
+      request.term = -1;
       request.candidate = 0;
-      request.logIndex = 0;
-      request.logTerm = 0;
+      request.logIndex = -1;
+      request.logTerm = -1;
     }
 
     /**
      * Sets the request term.
      *
      * @param term The request term.
-     * @return The vote request builder.
+     * @return The poll request builder.
+     * @throws IllegalArgumentException if {@code term} is negative
      */
     public Builder withTerm(long term) {
-      if (term <= 0)
-        throw new IllegalArgumentException("term must be positive");
-      request.term = term;
+      request.term = Assert.argNot(term, term < 0, "term must not be negative");
       return this;
     }
 
@@ -181,12 +184,11 @@ public class VoteRequest extends AbstractRequest<VoteRequest> {
      * Sets the request leader.
      *
      * @param candidate The request candidate.
-     * @return The vote request builder.
+     * @return The poll request builder.
+     * @throws IllegalArgumentException if {@code candidate} is not positive
      */
     public Builder withCandidate(int candidate) {
-      if (candidate <= 0)
-        throw new IllegalArgumentException("candidate must be positive");
-      request.candidate = candidate;
+      request.candidate = Assert.argNot(candidate, candidate <= 0, "candidate must be positive");
       return this;
     }
 
@@ -194,12 +196,11 @@ public class VoteRequest extends AbstractRequest<VoteRequest> {
      * Sets the request last log index.
      *
      * @param index The request last log index.
-     * @return The vote request builder.
+     * @return The poll request builder.
+     * @throws IllegalArgumentException if {@code index} is negative
      */
     public Builder withLogIndex(long index) {
-      if (index < 0)
-        throw new IllegalArgumentException("log index must be positive");
-      request.logIndex = index;
+      request.logIndex = Assert.argNot(index, index < 0, "log index must not be negative");
       return this;
     }
 
@@ -207,26 +208,24 @@ public class VoteRequest extends AbstractRequest<VoteRequest> {
      * Sets the request last log term.
      *
      * @param term The request last log term.
-     * @return The vote request builder.
+     * @return The poll request builder.
+     * @throws IllegalArgumentException if {@code term} is negative
      */
     public Builder withLogTerm(long term) {
-      if (term < 0)
-        throw new NullPointerException("log term must be positive");
-      request.logTerm = term;
+      request.logTerm = Assert.argNot(term, term < 0,"log term must not be negative");
       return this;
     }
 
+    /**
+     * @throws IllegalStateException if candidate is not positive or if term, logIndex or logTerm are negative
+     */
     @Override
     public VoteRequest build() {
       super.build();
-      if (request.term <= 0)
-        throw new IllegalArgumentException("term must be positive");
-      if (request.candidate <= 0)
-        throw new IllegalArgumentException("candidate cannot be negative");
-      if (request.logIndex < 0)
-        throw new IllegalArgumentException("log index must be positive");
-      if (request.logTerm < 0)
-        throw new IllegalArgumentException("log term must be positive");
+      Assert.stateNot(request.term < 0, "term must not be negative");
+      Assert.stateNot(request.candidate <= 0, "candidate must be positive");
+      Assert.stateNot(request.logIndex < 0, "log index must not be negative");
+      Assert.stateNot(request.logTerm < 0, "log term must not be negative");
       return request;
     }
 

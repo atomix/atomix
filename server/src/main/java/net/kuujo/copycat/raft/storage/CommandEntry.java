@@ -22,6 +22,7 @@ import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.storage.Entry;
 import net.kuujo.copycat.raft.protocol.Command;
 import net.kuujo.copycat.raft.protocol.Operation;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.ReferenceManager;
 
 /**
@@ -33,6 +34,9 @@ import net.kuujo.copycat.util.ReferenceManager;
 public class CommandEntry extends OperationEntry<CommandEntry> {
   private long sequence;
   private Command command;
+
+  public CommandEntry() {
+  }
 
   public CommandEntry(ReferenceManager<Entry<?>> referenceManager) {
     super(referenceManager);
@@ -77,9 +81,10 @@ public class CommandEntry extends OperationEntry<CommandEntry> {
    *
    * @param command The command.
    * @return The command entry.
+   * @throws NullPointerException if {@code command} is null
    */
   public CommandEntry setCommand(Command command) {
-    this.command = command;
+    this.command = Assert.notNull(command, "command");
     return this;
   }
 

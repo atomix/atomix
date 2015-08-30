@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.io.storage;
 
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.concurrent.Context;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,13 +34,12 @@ class EntryCleaner implements AutoCloseable {
   private final Context context;
   private CompletableFuture<Void> cleanFuture;
 
+  /**
+   * @throws NullPointerException if {@code manager} or {@code context} are null
+   */
   public EntryCleaner(SegmentManager manager, Context context) {
-    if (manager == null)
-      throw new NullPointerException("manager cannot be null");
-    if (context == null)
-      throw new NullPointerException("context cannot be null");
-    this.manager = manager;
-    this.context = context;
+    this.manager = Assert.notNull(manager, "manager");
+    this.context = Assert.notNull(context, "context");
   }
 
   /**
@@ -47,8 +47,10 @@ class EntryCleaner implements AutoCloseable {
    *
    * @param segments The segments to clean.
    * @return A completable future to be completed once the segments have been cleaned.
+   * @throws NullPointerException if {@code segments} is null
    */
   CompletableFuture<Void> clean(List<Segment> segments) {
+    Assert.notNull(segments, "segments");
     if (cleanFuture != null)
       return cleanFuture;
 

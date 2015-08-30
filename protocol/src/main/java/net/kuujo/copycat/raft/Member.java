@@ -19,6 +19,7 @@ import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.CopycatSerializable;
 import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.ConfigurationException;
 
 import java.net.InetAddress;
@@ -37,22 +38,24 @@ public class Member implements CopycatSerializable {
   public Member() {
   }
 
+  /**
+   * @throws NullPointerException if {@code host} is null
+   */
   public Member(int id, String host, int port) {
-    if (host == null)
-      throw new NullPointerException("host cannot be null");
     this.id = id;
     try {
-      this.address = new InetSocketAddress(InetAddress.getByName(host), port);
+      this.address = new InetSocketAddress(InetAddress.getByName(Assert.notNull(host, "host")), port);
     } catch (UnknownHostException e) {
       throw new ConfigurationException(e);
     }
   }
 
+  /**
+   * @throws NullPointerException if {@code address} is null
+   */
   public Member(int id, InetSocketAddress address) {
-    if (address == null)
-      throw new NullPointerException("address cannot be null");
     this.id = id;
-    this.address = address;
+    this.address = Assert.notNull(address, "address");
   }
 
   /**

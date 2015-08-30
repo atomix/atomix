@@ -15,15 +15,16 @@
  */
 package net.kuujo.copycat.raft.protocol.response;
 
-import net.kuujo.copycat.util.BuilderPool;
-import net.kuujo.copycat.raft.protocol.error.RaftError;
+import java.util.Objects;
+
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.raft.protocol.error.RaftError;
+import net.kuujo.copycat.util.Assert;
+import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.util.ReferenceManager;
-
-import java.util.Objects;
 
 /**
  * Protocol append response.
@@ -63,6 +64,9 @@ public class AppendResponse extends AbstractResponse<AppendResponse> {
   private boolean succeeded;
   private long logIndex;
 
+  /**
+   * @throws NullPointerException if {@code referenceManager} is null
+   */
   public AppendResponse(ReferenceManager<AppendResponse> referenceManager) {
     super(referenceManager);
   }
@@ -159,12 +163,11 @@ public class AppendResponse extends AbstractResponse<AppendResponse> {
      * Sets the response term.
      *
      * @param term The response term.
-     * @return The append response builder.
+     * @return The append response builder
+     * @throws IllegalArgumentException if {@code term} is not positive
      */
     public Builder withTerm(long term) {
-      if (term <= 0)
-        throw new IllegalArgumentException("term must be positive");
-      response.term = term;
+      response.term = Assert.argNot(term, term <= 0, "term must be positive");
       return this;
     }
 
@@ -184,22 +187,22 @@ public class AppendResponse extends AbstractResponse<AppendResponse> {
      *
      * @param index The last index of the replica's log.
      * @return The append response builder.
+     * @throws IllegalArgumentException if {@code index} is negative
      */
     public Builder withLogIndex(long index) {
-      if (index < 0)
-        throw new IllegalArgumentException("log index must be positive");
-      response.logIndex = index;
+      response.logIndex = Assert.argNot(index, index < 0, "term must not be negative");
       return this;
     }
 
+    /**
+     * @throws IllegalStateException if status is ok and term is not positive or log index is negative
+     */
     @Override
     public AppendResponse build() {
       super.build();
       if (response.status == Response.Status.OK) {
-        if (response.term <= 0)
-          throw new IllegalArgumentException("term must be positive");
-        if (response.logIndex < 0)
-          throw new IllegalArgumentException("log index must be positive");
+        Assert.stateNot(response.term <= 0, "term must be positive");
+        Assert.stateNot(response.logIndex < 0, "log index must be positive");
       }
       return response;
     }

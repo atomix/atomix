@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.raft.protocol;
 
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.BuilderPool;
 
 import java.io.Serializable;
@@ -78,7 +79,7 @@ public interface Operation<T> extends Serializable {
 
     @Override
     protected void reset(U operation) {
-      this.operation = operation;
+      this.operation = Assert.notNull(operation, "operation");
     }
 
     @Override

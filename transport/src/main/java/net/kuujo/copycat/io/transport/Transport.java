@@ -45,6 +45,7 @@ public interface Transport {
    *
    * @param id The client ID.
    * @return The transport client.
+   * @throws NullPointerException if {@code id} is null
    */
   Client client(UUID id);
 
@@ -58,6 +59,7 @@ public interface Transport {
    *
    * @param id The server ID.
    * @return The transport server.
+   * @throws NullPointerException if {@code id} is null
    */
   Server server(UUID id);
 

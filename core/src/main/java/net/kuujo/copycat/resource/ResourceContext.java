@@ -20,6 +20,7 @@ import net.kuujo.copycat.raft.RaftClient;
 import net.kuujo.copycat.raft.protocol.Command;
 import net.kuujo.copycat.raft.protocol.Query;
 import net.kuujo.copycat.raft.session.Session;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.concurrent.Context;
 
 import java.util.concurrent.CompletableFuture;
@@ -34,9 +35,12 @@ public class ResourceContext {
   private final RaftClient client;
   private final ResourceSession session;
 
+  /**
+   * @throws NullPointerException if {@code client} is null
+   */
   public ResourceContext(long resource, RaftClient client) {
     this.resource = resource;
-    this.client = client;
+    this.client = Assert.notNull(client, "client");
     this.session = new ResourceSession(resource, client.session(), client.context());
   }
 
@@ -64,6 +68,7 @@ public class ResourceContext {
    * @param command The command to submit.
    * @param <T> The command output type.
    * @return A completable future to be completed with the command result.
+   * @throws NullPointerException if {@code command} is null
    */
   @SuppressWarnings("unchecked")
   public <T> CompletableFuture<T> submit(Command<T> command) {

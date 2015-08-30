@@ -16,6 +16,7 @@
 package net.kuujo.copycat.io.storage;
 
 import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.concurrent.CopycatThreadFactory;
 
 import java.util.concurrent.Executors;
@@ -31,6 +32,9 @@ public class Log implements AutoCloseable {
   private final Cleaner cleaner;
   private boolean open = true;
 
+  /**
+   * @throws NullPointerException if {@code storage} is null
+   */
   protected Log(Storage storage) {
     this.segments = new SegmentManager(storage);
     this.cleaner = new Cleaner(segments, Executors.newScheduledThreadPool(storage.cleanerThreads(), new CopycatThreadFactory("copycat-log-cleaner-%d")));
@@ -66,17 +70,15 @@ public class Log implements AutoCloseable {
   /**
    * Asserts that the log is open.
    */
-  private void checkOpen() {
-    if (!isOpen())
-      throw new IllegalStateException("log is not open");
+  private void assertIsOpen() {
+    Assert.state(isOpen(), "log is not open");
   }
 
   /**
    * Asserts that the index is a valid index.
    */
-  private void checkIndex(long index) {
-    if (!validIndex(index))
-      throw new IndexOutOfBoundsException("invalid log index: " + index);
+  private void assertValidIndex(long index) {
+    Assert.index(validIndex(index), "invalid log index: %s", index);
   }
 
   /**
@@ -86,6 +88,7 @@ public class Log implements AutoCloseable {
    * @throws IllegalStateException If the log is not open.
    */
   public boolean isEmpty() {
+    assertIsOpen();
     return segments.firstSegment().isEmpty();
   }
 
@@ -93,8 +96,10 @@ public class Log implements AutoCloseable {
    * Returns the count of the log on disk in bytes.
    *
    * @return The count of the log in bytes.
+   * @throws IllegalStateException If the log is not open.
    */
   public long size() {
+    assertIsOpen();
     return segments.segments().stream().mapToLong(Segment::size).sum();
   }
 
@@ -105,8 +110,10 @@ public class Log implements AutoCloseable {
    * from the number of entries eligible for reads due to deduplication.
    *
    * @return The number of entries in the log.
+   * @throws IllegalStateException If the log is not open.
    */
   public long length() {
+    assertIsOpen();
     return segments.segments().stream().mapToLong(Segment::length).sum();
   }
 
@@ -155,10 +162,11 @@ public class Log implements AutoCloseable {
    * @param type The entry type.
    * @return The log entry.
    * @throws IllegalStateException If the log is not open
-   * @throws NullPointerException If the entry type is {@code null}
+   * @throws NullPointerException If the {@code type} is {@code null}
    */
   public <T extends Entry<T>> T create(Class<T> type) {
-    checkOpen();
+    Assert.notNull(type, "type");
+    assertIsOpen();
     checkRoll();
     return entryPool.acquire(type, segments.currentSegment().nextIndex());
   }
@@ -168,12 +176,13 @@ public class Log implements AutoCloseable {
    *
    * @param entry The entry to append.
    * @return The appended entry index.
-   * @throws java.lang.NullPointerException If the entry is {@code null}
-   * @throws java.lang.IndexOutOfBoundsException If the entry's index does not match
-   *         the expected next log index.
+   * @throws IllegalStateException If the log is not open
+   * @throws NullPointerException If {@code entry} is {@code null}
+   * @throws IndexOutOfBoundsException If the entry's index does not match the expected next log index.
    */
   public long append(Entry entry) {
-    checkOpen();
+    Assert.notNull(entry, "entry");
+    assertIsOpen();
     checkRoll();
     return segments.currentSegment().append(entry);
   }
@@ -201,8 +210,8 @@ public class Log implements AutoCloseable {
    * @throws IndexOutOfBoundsException If the given index is not within the bounds of the log.
    */
   public <T extends Entry> T get(long index) {
-    checkOpen();
-    checkIndex(index);
+    assertIsOpen();
+    assertValidIndex(index);
 
     Segment segment = segments.segment(index);
     if (segment == null)
@@ -247,11 +256,12 @@ public class Log implements AutoCloseable {
    *
    * @param index The index of the entry to clean.
    * @return The log.
-   * @throws java.lang.IllegalStateException If the log is not open.
+   * @throws IllegalStateException If the log is not open.
+   * @throws IndexOutOfBoundsException If the given index is not within the bounds of the log.
    */
   public Log clean(long index) {
-    checkOpen();
-    checkIndex(index);
+    assertIsOpen();
+    assertValidIndex(index);
 
     Segment segment = segments.segment(index);
     if (segment != null)
@@ -265,10 +275,11 @@ public class Log implements AutoCloseable {
    * @param entry The entry to clean.
    * @return The log.
    * @throws IllegalStateException If the log is not open.
+   * @throws NullPointerException if {@code entry} is null
+   * @throws IndexOutOfBoundsException If the {@code entry} index is not within the bounds of the log.
    */
   public Log clean(Entry entry) {
-    if (entry == null)
-      throw new NullPointerException("entry cannot be null");
+    Assert.notNull(entry, "entry");
     return clean(entry.getIndex());
   }
 
@@ -286,7 +297,7 @@ public class Log implements AutoCloseable {
    * @throws IndexOutOfBoundsException If skipping the given number of entries places the index out of the bounds of the log.
    */
   public Log skip(long entries) {
-    checkOpen();
+    assertIsOpen();
     Segment segment = segments.currentSegment();
     while (segment.length() + entries > Integer.MAX_VALUE) {
       int skip = Integer.MAX_VALUE - segment.length();
@@ -307,9 +318,9 @@ public class Log implements AutoCloseable {
    * @throws IndexOutOfBoundsException If the given index is not within the bounds of the log.
    */
   public Log truncate(long index) {
-    checkOpen();
-    if (index > 0 && !validIndex(index))
-      throw new IndexOutOfBoundsException(index + " is not a valid log index");
+    assertIsOpen();
+    if (index > 0)
+      assertValidIndex(index);
 
     if (lastIndex() == index)
       return this;
@@ -330,14 +341,18 @@ public class Log implements AutoCloseable {
    * @throws IllegalStateException If the log is not open.
    */
   public void flush() {
+    assertIsOpen();
     segments.currentSegment().flush();
   }
 
   /**
    * Closes the log.
+   * 
+   * @throws IllegalStateException If the log is not open.
    */
   @Override
   public void close() {
+    assertIsOpen();
     flush();
     segments.close();
     if (cleaner != null)

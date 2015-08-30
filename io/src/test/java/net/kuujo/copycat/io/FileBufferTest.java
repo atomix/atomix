@@ -15,15 +15,14 @@
  */
 package net.kuujo.copycat.io;
 
-import org.testng.annotations.AfterMethod;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
-import java.util.UUID;
 
-import static org.testng.Assert.*;
+import org.testng.annotations.AfterTest;
 
 /**
  * File buffer test.
@@ -31,28 +30,26 @@ import static org.testng.Assert.*;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class FileBufferTest extends BufferTest {
-  private File file;
-
-  private File createFile() {
-    file = new File(UUID.randomUUID().toString());
-    return file;
+  @AfterTest
+  protected void afterTest() {
+    FileTesting.cleanFiles();
   }
 
   @Override
   protected Buffer createBuffer(long capacity) {
-    return FileBuffer.allocate(createFile(), capacity);
+    return FileBuffer.allocate(FileTesting.createFile(), capacity);
   }
 
   @Override
   protected Buffer createBuffer(long capacity, long maxCapacity) {
-    return FileBuffer.allocate(createFile(), capacity, maxCapacity);
+    return FileBuffer.allocate(FileTesting.createFile(), capacity, maxCapacity);
   }
 
   /**
    * Rests reopening a file that has been closed.
    */
   public void testPersist() {
-    File file = createFile();
+    File file = FileTesting.createFile();
     try (FileBuffer buffer = FileBuffer.allocate(file, 16)) {
       buffer.writeLong(10).writeLong(11).flip();
       assertEquals(buffer.readLong(), 10);
@@ -68,7 +65,7 @@ public class FileBufferTest extends BufferTest {
    * Tests deleting a file.
    */
   public void testDelete() {
-    File file = createFile();
+    File file = FileTesting.createFile();
     FileBuffer buffer = FileBuffer.allocate(file, 16);
     buffer.writeLong(10).writeLong(11).flip();
     assertEquals(buffer.readLong(), 10);
@@ -76,14 +73,6 @@ public class FileBufferTest extends BufferTest {
     assertTrue(Files.exists(file.toPath()));
     buffer.delete();
     assertFalse(Files.exists(file.toPath()));
-  }
-
-  @AfterMethod
-  public void cleanupFile() throws IOException {
-    try {
-      Files.delete(file.toPath());
-    } catch (NoSuchFileException e) {
-    }
   }
 
 }

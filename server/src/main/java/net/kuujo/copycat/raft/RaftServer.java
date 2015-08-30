@@ -20,12 +20,12 @@ import net.kuujo.copycat.io.serializer.ServiceLoaderTypeResolver;
 import net.kuujo.copycat.io.storage.Storage;
 import net.kuujo.copycat.io.transport.Transport;
 import net.kuujo.copycat.raft.state.ServerContext;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.ConfigurationException;
 import net.kuujo.copycat.util.Managed;
 import net.kuujo.copycat.util.concurrent.Context;
 
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 
@@ -81,12 +81,45 @@ public class RaftServer implements Managed<RaftServer> {
   }
 
   /**
-   * Returns a new Raft builder.
+   * Returns a new Raft server builder.
+   * <p>
+   * The provided set of members will be used to connect to the other members in the Raft cluster. The {@code memberId}
+   * must be the {@link Member#id()} of a member listed in the provided members list.
    *
-   * @return A new Raft builder.
+   * @param memberId The local server member ID. This must be the ID of a member listed in the provided members list.
+   * @param members The cluster members to which to connect.
+   * @return The server builder.
    */
-  public static Builder builder() {
-    return new Builder();
+  public static Builder builder(int memberId, Member... members) {
+    return builder(memberId, Members.builder().withMembers(members).build());
+  }
+
+  /**
+   * Returns a new Raft server builder.
+   * <p>
+   * The provided set of members will be used to connect to the other members in the Raft cluster. The {@code memberId}
+   * must be the {@link Member#id()} of a member listed in the provided members list.
+   *
+   * @param memberId The local server member ID. This must be the ID of a member listed in the provided members list.
+   * @param members The cluster members to which to connect.
+   * @return The server builder.
+   */
+  public static Builder builder(int memberId, Collection<Member> members) {
+    return builder(memberId, Members.builder().withMembers(members).build());
+  }
+
+  /**
+   * Returns a new Raft server builder.
+   * <p>
+   * The provided set of members will be used to connect to the other members in the Raft cluster. The {@code memberId}
+   * must be the {@link Member#id()} of a member listed in the provided members list.
+   *
+   * @param memberId The local server member ID. This must be the ID of a member listed in the provided members list.
+   * @param members The cluster members to which to connect.
+   * @return The server builder.
+   */
+  public static Builder builder(int memberId, Members members) {
+    return new Builder(memberId, members);
   }
 
   private final ServerContext context;
@@ -230,17 +263,10 @@ public class RaftServer implements Managed<RaftServer> {
     private Duration heartbeatInterval = DEFAULT_RAFT_HEARTBEAT_INTERVAL;
     private Duration sessionTimeout = DEFAULT_RAFT_SESSION_TIMEOUT;
 
-    private Builder() {
-    }
-
-    @Override
-    protected void reset() {
-      transport = null;
-      storage = null;
-      serializer = null;
-      stateMachine = null;
-      memberId = 0;
-      members = null;
+    private Builder(int memberId, Members members) {
+      Assert.arg(members.member(memberId) != null, "memberId must be listed in the members list");
+      this.memberId = Assert.argNot(memberId, memberId <= 0, "member ID must be positive");
+      this.members = Assert.notNull(members, "members");
     }
 
     /**
@@ -248,59 +274,10 @@ public class RaftServer implements Managed<RaftServer> {
      *
      * @param transport The server transport.
      * @return The server builder.
+     * @throws NullPointerException if {@code transport} is null
      */
     public Builder withTransport(Transport transport) {
-      this.transport = transport;
-      return this;
-    }
-
-    /**
-     * Sets the server member ID.
-     *
-     * @param memberId The server member ID.
-     * @return The Raft builder.
-     */
-    public Builder withMemberId(int memberId) {
-      this.memberId = memberId;
-      return this;
-    }
-
-    /**
-     * Sets the Raft members.
-     * <p>
-     * The provided set of members will be used to connect to the Raft cluster. The members list does not have to represent
-     * the complete list of servers in the cluster, but it must have at least one reachable member.
-     *
-     * @param members The Raft members.
-     * @return The Raft builder.
-     */
-    public Builder withMembers(Member... members) {
-      if (members == null)
-        throw new NullPointerException("members cannot be null");
-      return withMembers(Arrays.asList(members));
-    }
-
-    /**
-     * Sets the Raft members.
-     * <p>
-     * The provided set of members will be used to connect to the Raft cluster. The members list does not have to represent
-     * the complete list of servers in the cluster, but it must have at least one reachable member.
-     *
-     * @param members The Raft members.
-     * @return The Raft builder.
-     */
-    public Builder withMembers(Collection<Member> members) {
-      return withMembers(Members.builder().withMembers(members).build());
-    }
-
-    /**
-     * Sets the voting Raft members.
-     *
-     * @param members The voting Raft members.
-     * @return The Raft builder.
-     */
-    public Builder withMembers(Members members) {
-      this.members = members;
+      this.transport = Assert.notNull(transport, "transport");
       return this;
     }
 
@@ -309,9 +286,10 @@ public class RaftServer implements Managed<RaftServer> {
      *
      * @param serializer The Raft serializer.
      * @return The Raft builder.
+     * @throws NullPointerException if {@code serializer} is null
      */
     public Builder withSerializer(Serializer serializer) {
-      this.serializer = serializer;
+      this.serializer = Assert.notNull(serializer, "serializer");
       return this;
     }
 
@@ -320,11 +298,10 @@ public class RaftServer implements Managed<RaftServer> {
      *
      * @param storage The storage module.
      * @return The Raft server builder.
+     * @throws NullPointerException if {@code storage} is null
      */
     public Builder withStorage(Storage storage) {
-      if (storage == null)
-        throw new NullPointerException("storage cannot be null");
-      this.storage = storage;
+      this.storage = Assert.notNull(storage, "storage");
       return this;
     }
 
@@ -333,11 +310,10 @@ public class RaftServer implements Managed<RaftServer> {
      *
      * @param stateMachine The Raft state machine.
      * @return The Raft builder.
+     * @throws NullPointerException if {@code stateMachine} is null
      */
     public Builder withStateMachine(StateMachine stateMachine) {
-      if (stateMachine == null)
-        throw new NullPointerException("stateMachine cannto be null");
-      this.stateMachine = stateMachine;
+      this.stateMachine = Assert.notNull(stateMachine, "stateMachine");
       return this;
     }
 
@@ -347,15 +323,12 @@ public class RaftServer implements Managed<RaftServer> {
      * @param electionTimeout The Raft election timeout duration.
      * @return The Raft configuration.
      * @throws IllegalArgumentException If the election timeout is not positive
+     * @throws NullPointerException if {@code electionTimeout} is null
      */
     public Builder withElectionTimeout(Duration electionTimeout) {
-      if (electionTimeout == null)
-        throw new NullPointerException("electionTimeout cannot be null");
-      if (electionTimeout.isNegative() || electionTimeout.isZero())
-        throw new IllegalArgumentException("electionTimeout must be positive");
-      if (electionTimeout.toMillis() <= heartbeatInterval.toMillis())
-        throw new IllegalArgumentException("electionTimeout must be greater than heartbeatInterval");
-      this.electionTimeout = electionTimeout;
+      Assert.argNot(electionTimeout.isNegative() || electionTimeout.isZero(), "electionTimeout must be positive");
+      Assert.argNot(electionTimeout.toMillis() <= heartbeatInterval.toMillis(), "electionTimeout must be greater than heartbeatInterval");
+      this.electionTimeout = Assert.notNull(electionTimeout, "electionTimeout");
       return this;
     }
 
@@ -365,15 +338,12 @@ public class RaftServer implements Managed<RaftServer> {
      * @param heartbeatInterval The Raft heartbeat interval duration.
      * @return The Raft configuration.
      * @throws IllegalArgumentException If the heartbeat interval is not positive
+     * @throws NullPointerException if {@code heartbeatInterval} is null
      */
     public Builder withHeartbeatInterval(Duration heartbeatInterval) {
-      if (heartbeatInterval == null)
-        throw new NullPointerException("sessionTimeout cannot be null");
-      if (heartbeatInterval.isNegative() || heartbeatInterval.isZero())
-        throw new IllegalArgumentException("sessionTimeout must be positive");
-      if (heartbeatInterval.toMillis() >= electionTimeout.toMillis())
-        throw new IllegalArgumentException("heartbeatInterval must be less than electionTimeout");
-      this.heartbeatInterval = heartbeatInterval;
+      Assert.argNot(heartbeatInterval.isNegative() || heartbeatInterval.isZero(), "sessionTimeout must be positive");
+      Assert.argNot(heartbeatInterval.toMillis() >= electionTimeout.toMillis(), "heartbeatInterval must be less than electionTimeout");
+      this.heartbeatInterval = Assert.notNull(heartbeatInterval, "heartbeatInterval");
       return this;
     }
 
@@ -383,18 +353,18 @@ public class RaftServer implements Managed<RaftServer> {
      * @param sessionTimeout The Raft session timeout duration.
      * @return The Raft configuration.
      * @throws IllegalArgumentException If the session timeout is not positive
+     * @throws NullPointerException if {@code sessionTimeout} is null
      */
     public Builder withSessionTimeout(Duration sessionTimeout) {
-      if (sessionTimeout == null)
-        throw new NullPointerException("sessionTimeout cannot be null");
-      if (sessionTimeout.isNegative() || sessionTimeout.isZero())
-        throw new IllegalArgumentException("sessionTimeout must be positive");
-      if (sessionTimeout.toMillis() <= electionTimeout.toMillis())
-        throw new IllegalArgumentException("sessionTimeout must be greater than electionTimeout");
-      this.sessionTimeout = sessionTimeout;
+      Assert.argNot(sessionTimeout.isNegative() || sessionTimeout.isZero(), "sessionTimeout must be positive");
+      Assert.argNot(sessionTimeout.toMillis() <= electionTimeout.toMillis(), "sessionTimeout must be greater than electionTimeout");
+      this.sessionTimeout = Assert.notNull(sessionTimeout, "sessionTimeout");
       return this;
     }
 
+    /**
+     * @throws ConfigurationException if a state machine, members or transport are not configured
+     */
     @Override
     public RaftServer build() {
       if (stateMachine == null)

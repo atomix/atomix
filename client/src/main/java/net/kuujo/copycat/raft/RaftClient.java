@@ -24,13 +24,13 @@ import net.kuujo.copycat.raft.protocol.Operation;
 import net.kuujo.copycat.raft.protocol.Query;
 import net.kuujo.copycat.raft.session.ClientSession;
 import net.kuujo.copycat.raft.session.Session;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.ConfigurationException;
 import net.kuujo.copycat.util.Managed;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.Futures;
 
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 
@@ -43,11 +43,41 @@ public class RaftClient implements Managed<RaftClient> {
 
   /**
    * Returns a new Raft client builder.
+   * <p>
+   * The provided set of members will be used to connect to the Raft cluster. The members list does not have to represent
+   * the complete list of servers in the cluster, but it must have at least one reachable member.
    *
-   * @return A new Raft client builder.
+   * @param members The cluster members to which to connect.
+   * @return The client builder.
    */
-  public static Builder builder() {
-    return new Builder();
+  public static Builder builder(Member... members) {
+    return builder(Members.builder().withMembers(members).build());
+  }
+
+  /**
+   * Returns a new Raft client builder.
+   * <p>
+   * The provided set of members will be used to connect to the Raft cluster. The members list does not have to represent
+   * the complete list of servers in the cluster, but it must have at least one reachable member.
+   *
+   * @param members The cluster members to which to connect.
+   * @return The client builder.
+   */
+  public static Builder builder(Collection<Member> members) {
+    return builder(Members.builder().withMembers(members).build());
+  }
+
+  /**
+   * Returns a new Raft client builder.
+   * <p>
+   * The provided set of members will be used to connect to the Raft cluster. The members list does not have to represent
+   * the complete list of servers in the cluster, but it must have at least one reachable member.
+   *
+   * @param members The cluster members to which to connect.
+   * @return The client builder.
+   */
+  public static Builder builder(Members members) {
+    return new Builder(members);
   }
 
   private final Transport transport;
@@ -105,10 +135,11 @@ public class RaftClient implements Managed<RaftClient> {
    * @param operation The operation to submit.
    * @param <T> The operation result type.
    * @return A completable future to be completed with the operation result.
-   * @throws java.lang.IllegalArgumentException If the {@link Operation} is not an instance of
-   * either {@link Command} or {@link Query}.
+   * @throws IllegalArgumentException If the {@link Operation} is not an instance of {@link Command} or {@link Query}.
+   * @throws NullPointerException if {@code operation} is null
    */
   public <T> CompletableFuture<T> submit(Operation<T> operation) {
+    Assert.notNull(operation, "operation");
     if (operation instanceof Command) {
       return submit((Command<T>) operation);
     } else if (operation instanceof Query) {
@@ -132,8 +163,10 @@ public class RaftClient implements Managed<RaftClient> {
    * @param command The command to submit.
    * @param <T> The command result type.
    * @return A completable future to be completed with the command result.
+   * @throws NullPointerException if {@code command} is null
    */
   public <T> CompletableFuture<T> submit(Command<T> command) {
+    Assert.notNull(command, "command");
     if (session == null)
       return Futures.exceptionalFuture(new IllegalStateException("client not open"));
     return session.submit(command);
@@ -154,8 +187,10 @@ public class RaftClient implements Managed<RaftClient> {
    * @param query The query to submit.
    * @param <T> The query result type.
    * @return A completable future to be completed with the query result.
+   * @throws NullPointerException if {@code query} is null
    */
   public <T> CompletableFuture<T> submit(Query<T> query) {
+    Assert.notNull(query, "query");
     if (session == null)
       return Futures.exceptionalFuture(new IllegalStateException("client not open"));
     return session.submit(query);
@@ -245,7 +280,8 @@ public class RaftClient implements Managed<RaftClient> {
     private Duration keepAliveInterval = Duration.ofMillis(1000);
     private Members members;
 
-    private Builder() {
+    private Builder(Members members) {
+      this.members = Assert.notNull(members, "members");
     }
 
     @Override
@@ -261,9 +297,10 @@ public class RaftClient implements Managed<RaftClient> {
      *
      * @param transport The client transport.
      * @return The client builder.
+     * @throws NullPointerException if {@code transport} is null
      */
     public Builder withTransport(Transport transport) {
-      this.transport = transport;
+      this.transport = Assert.notNull(transport, "transport");
       return this;
     }
 
@@ -272,9 +309,10 @@ public class RaftClient implements Managed<RaftClient> {
      *
      * @param serializer The client serializer.
      * @return The client builder.
+     * @throws NullPointerException if {@code serializer} is null
      */
     public Builder withSerializer(Serializer serializer) {
-      this.serializer = serializer;
+      this.serializer = Assert.notNull(serializer, "serializer");
       return this;
     }
 
@@ -283,58 +321,18 @@ public class RaftClient implements Managed<RaftClient> {
      *
      * @param keepAliveInterval The interval at which to send keep alive requests.
      * @return The client builder.
+     * @throws NullPointerException if {@code keepAliveInterval} is null
+     * @throws IllegalArgumentException if {@code keepAliveInterval} is not positive
      */
     public Builder withKeepAliveInterval(Duration keepAliveInterval) {
-      if (keepAliveInterval == null)
-        throw new NullPointerException("keepAliveInterval cannot be null");
-      if (keepAliveInterval.isNegative() || keepAliveInterval.isZero())
-        throw new IllegalArgumentException("keepAliveInterval must be positive");
-      this.keepAliveInterval = keepAliveInterval;
+      Assert.argNot(keepAliveInterval.isNegative() || keepAliveInterval.isZero(), "keepAliveInterval must be positive");
+      this.keepAliveInterval = Assert.notNull(keepAliveInterval, "keepAliveInterval");
       return this;
     }
 
     /**
-     * Sets the Raft members.
-     * <p>
-     * The provided set of members will be used to connect to the Raft cluster. The members list does not have to represent
-     * the complete list of servers in the cluster, but it must have at least one reachable member.
-     *
-     * @param members The Raft members.
-     * @return The Raft builder.
+     * @throws ConfigurationException if transport is not configured
      */
-    public Builder withMembers(Member... members) {
-      if (members == null)
-        throw new NullPointerException("members cannot be null");
-      return withMembers(Arrays.asList(members));
-    }
-
-    /**
-     * Sets the Raft members.
-     * <p>
-     * The provided set of members will be used to connect to the Raft cluster. The members list does not have to represent
-     * the complete list of servers in the cluster, but it must have at least one reachable member.
-     *
-     * @param members The Raft members.
-     * @return The Raft builder.
-     */
-    public Builder withMembers(Collection<Member> members) {
-      return withMembers(Members.builder().withMembers(members).build());
-    }
-
-    /**
-     * Sets the Raft members.
-     * <p>
-     * The provided set of members will be used to connect to the Raft cluster. The members list does not have to represent
-     * the complete list of servers in the cluster, but it must have at least one reachable member.
-     *
-     * @param members The Raft members.
-     * @return The Raft builder.
-     */
-    public Builder withMembers(Members members) {
-      this.members = members;
-      return this;
-    }
-
     @Override
     public RaftClient build() {
       // If the transport is not configured, attempt to use the default Netty transport.

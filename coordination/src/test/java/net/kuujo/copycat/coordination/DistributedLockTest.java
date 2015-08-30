@@ -15,16 +15,6 @@
  */
 package net.kuujo.copycat.coordination;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
-
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import net.kuujo.copycat.Copycat;
 import net.kuujo.copycat.CopycatReplica;
@@ -33,6 +23,15 @@ import net.kuujo.copycat.io.transport.LocalServerRegistry;
 import net.kuujo.copycat.io.transport.LocalTransport;
 import net.kuujo.copycat.raft.Member;
 import net.kuujo.copycat.raft.Members;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Async lock test.
@@ -76,9 +75,7 @@ public class DistributedLockTest extends ConcurrentTestCase {
     Members members = builder.build();
 
     for (int i = 1; i <= nodes; i++) {
-      Copycat copycat = CopycatReplica.builder()
-        .withMemberId(i)
-        .withMembers(members)
+      Copycat copycat = CopycatReplica.builder(i, members)
         .withTransport(new LocalTransport(registry))
         .withStorage(new Storage(new File(directory, "" + i)))
         .build();

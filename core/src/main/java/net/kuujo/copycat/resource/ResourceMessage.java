@@ -19,6 +19,7 @@ import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.CopycatSerializable;
 import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.util.Assert;
 
 /**
  * Resource message.
@@ -32,9 +33,12 @@ public class ResourceMessage<T> implements CopycatSerializable {
   public ResourceMessage() {
   }
 
+  /**
+   * @throws NullPointerException if {@code message} is null
+   */
   public ResourceMessage(long resource, T message) {
     this.resource = resource;
-    this.message = message;
+    this.message = Assert.notNull(message, "message");
   }
 
   /**

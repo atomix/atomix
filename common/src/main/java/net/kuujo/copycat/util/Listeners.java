@@ -44,11 +44,11 @@ public class Listeners<T> implements Iterable<Listener<T>> {
    *
    * @param listener The listener to add.
    * @return The listener context.
+   * @throws NullPointerException if {@code listener} is null
    */
   public Listener<T> add(Consumer<T> listener) {
-    if (listener == null)
-      throw new NullPointerException("listener cannot be null");
-
+    Assert.notNull(listener, "listener");
+    
     Context context = Context.currentContext();
 
     Listener<T> wrapper = new Listener<T>() {

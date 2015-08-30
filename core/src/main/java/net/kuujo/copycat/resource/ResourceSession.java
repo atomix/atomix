@@ -16,6 +16,7 @@
 package net.kuujo.copycat.resource;
 
 import net.kuujo.copycat.raft.session.Session;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.Listener;
 import net.kuujo.copycat.util.concurrent.Context;
 
@@ -37,10 +38,13 @@ public class ResourceSession implements Session {
   private final Set<Consumer> receiveListeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
   private Listener<ResourceMessage<?>> listener;
 
+  /**
+   * @throws NullPointerException if {@code parent} or {@code context} are null
+   */
   public ResourceSession(long resource, Session parent, Context context) {
     this.resource = resource;
-    this.parent = parent;
-    this.context = context;
+    this.parent = Assert.notNull(parent, "parent");
+    this.context = Assert.notNull(context, "context");
   }
 
   @Override
@@ -55,13 +59,13 @@ public class ResourceSession implements Session {
 
   @Override
   public Listener<Session> onOpen(Consumer<Session> listener) {
-    return parent.onOpen(listener);
+    return parent.onOpen(Assert.notNull(listener, "listener"));
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<Void> publish(Object message) {
-    ResourceMessage resourceMessage = (ResourceMessage) message;
+    ResourceMessage resourceMessage = (ResourceMessage) Assert.notNull(message, "message");
     if (resourceMessage.resource() == resource) {
       return CompletableFuture.runAsync(() -> {
         for (Consumer<Object> listener : receiveListeners) {
@@ -73,8 +77,8 @@ public class ResourceSession implements Session {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public synchronized <T> Listener<T> onReceive(Consumer<T> listener) {
+    Assert.notNull(listener, "listener");
     if (receiveListeners.isEmpty()) {
       this.listener = parent.onReceive(this::handleReceive);
     }
@@ -96,7 +100,7 @@ public class ResourceSession implements Session {
 
   @Override
   public Listener<Session> onClose(Consumer<Session> listener) {
-    return parent.onClose(listener);
+    return parent.onClose(Assert.notNull(listener, "listener"));
   }
 
   @Override

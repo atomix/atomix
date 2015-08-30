@@ -19,6 +19,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.Epoll;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.concurrent.CopycatThreadFactory;
 
 import java.util.Map;
@@ -41,9 +42,12 @@ public class NettyTransport implements Transport {
     this(Runtime.getRuntime().availableProcessors());
   }
 
+  /**
+   * @throws IllegalArgumentException if {@code threads} is not positive
+   * @param threads
+   */
   public NettyTransport(int threads) {
-    if (threads <= 0)
-      throw new IllegalArgumentException("threads must be positive");
+    Assert.arg(threads > 0, "threads must be positive");
 
     ThreadFactory threadFactory = new CopycatThreadFactory("copycat-event-loop-%d");
     if (Epoll.isAvailable()) {
@@ -55,12 +59,12 @@ public class NettyTransport implements Transport {
 
   @Override
   public Client client(UUID id) {
-    return clients.computeIfAbsent(id, i -> new NettyClient(id, eventLoopGroup));
+    return clients.computeIfAbsent(Assert.notNull(id, "id"), i -> new NettyClient(Assert.notNull(id, "id"), eventLoopGroup));
   }
 
   @Override
   public Server server(UUID id) {
-    return servers.computeIfAbsent(id, i -> new NettyServer(id, eventLoopGroup));
+    return servers.computeIfAbsent(Assert.notNull(id, "id"), i -> new NettyServer(id, eventLoopGroup));
   }
 
   @Override

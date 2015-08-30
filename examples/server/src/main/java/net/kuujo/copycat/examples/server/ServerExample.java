@@ -15,14 +15,15 @@
  */
 package net.kuujo.copycat.examples.server;
 
-import java.net.InetAddress;
-
 import net.kuujo.copycat.Copycat;
 import net.kuujo.copycat.CopycatReplica;
 import net.kuujo.copycat.io.storage.Storage;
 import net.kuujo.copycat.io.transport.NettyTransport;
 import net.kuujo.copycat.raft.Member;
 import net.kuujo.copycat.raft.Members;
+
+import java.net.InetAddress;
+import java.util.UUID;
 
 /**
  * Server example.
@@ -50,11 +51,11 @@ public class ServerExample {
       builder.addMember(new Member(Integer.valueOf(parts[0]), parts[1], Integer.valueOf(parts[2])));
     }
 
-    Copycat copycat = CopycatReplica.builder()
+    Copycat copycat = CopycatReplica.builder(serverId, builder.build())
         .withTransport(new NettyTransport())
-        .withMemberId(serverId)
-        .withMembers(builder.build())
-        .withStorage(new Storage())
+        .withStorage(Storage.builder()
+          .withDirectory(System.getProperty("user.dir") + "/logs/" + UUID.randomUUID().toString())
+          .build())
         .build();
 
     copycat.open().join();

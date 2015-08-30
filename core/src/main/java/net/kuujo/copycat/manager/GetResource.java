@@ -24,6 +24,7 @@ import net.kuujo.copycat.raft.StateMachine;
 import net.kuujo.copycat.raft.protocol.ConsistencyLevel;
 import net.kuujo.copycat.raft.protocol.Operation;
 import net.kuujo.copycat.raft.protocol.Query;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.BuilderPool;
 
 /**
@@ -48,9 +49,12 @@ public class GetResource extends PathOperation<Long> implements Query<Long> {
   public GetResource() {
   }
 
+  /**
+   * @throws NullPointerException if {@code path} or {@code type} are null
+   */
   public GetResource(String path, Class<? extends StateMachine> type) {
     super(path);
-    this.type = type;
+    this.type = Assert.notNull(type, "type");
   }
 
   @Override
@@ -105,9 +109,10 @@ public class GetResource extends PathOperation<Long> implements Query<Long> {
      *
      * @param type The resource state machine type.
      * @return The create resource command builder.
+     * @throws NullPointerException if {@code type} is null
      */
     public Builder withType(Class<? extends StateMachine> type) {
-      operation.type = type;
+      operation.type = Assert.notNull(type, "type");
       return this;
     }
   }

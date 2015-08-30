@@ -16,6 +16,7 @@
 package net.kuujo.copycat.io.transport;
 
 import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.util.Assert;
 
 import java.util.Map;
 import java.util.UUID;
@@ -49,12 +50,12 @@ public class LocalTransport implements Transport {
 
   @Override
   public Client client(UUID id) {
-    return clients.computeIfAbsent(id, i -> new LocalClient(id, registry, serializer));
+    return clients.computeIfAbsent(Assert.notNull(id, "id"), i -> new LocalClient(id, registry, serializer));
   }
 
   @Override
   public Server server(UUID id) {
-    return servers.computeIfAbsent(id, i -> new LocalServer(id, registry, serializer));
+    return servers.computeIfAbsent(Assert.notNull(id, "id"), i -> new LocalServer(id, registry, serializer));
   }
 
   @Override

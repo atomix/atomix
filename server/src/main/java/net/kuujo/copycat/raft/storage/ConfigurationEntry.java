@@ -20,6 +20,7 @@ import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.storage.Entry;
 import net.kuujo.copycat.raft.Members;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.ReferenceManager;
 
 /**
@@ -52,11 +53,10 @@ public class ConfigurationEntry extends RaftEntry<ConfigurationEntry> {
    *
    * @param members The active members.
    * @return The configuration entry.
+   * @throws NullPointerException if {@code members} is null
    */
   public ConfigurationEntry setActive(Members members) {
-    if (members == null)
-      throw new NullPointerException("members cannot be null");
-    this.active = members;
+    this.active = Assert.notNull(members, "members");
     return this;
   }
 
@@ -74,11 +74,10 @@ public class ConfigurationEntry extends RaftEntry<ConfigurationEntry> {
    *
    * @param members The passive members.
    * @return The configuration entry.
+   * @throws NullPointerException if {@code members} is null
    */
   public ConfigurationEntry setPassive(Members members) {
-    if (members == null)
-      throw new NullPointerException("members cannot be null");
-    this.passive = members;
+    this.passive = Assert.notNull(members, "members");
     return this;
   }
 

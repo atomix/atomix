@@ -8,6 +8,7 @@ Copycat
 #### [User Manual](#user-manual-1)
 #### [Raft Consensus Algorithm](#raft-consensus-algorithm-1)
 #### [Javadocs][Javadoc]
+#### [Google Group](https://groups.google.com/forum/#!forum/copycat)
 
 Copycat is both a low-level implementation of the [Raft consensus algorithm][Raft] and a high-level distributed
 coordination framework that combines the consistency of [ZooKeeper](https://zookeeper.apache.org/) with the
@@ -59,54 +60,112 @@ Copycat's API is fully asynchronous and relies heavily on Java 8's [CompletableF
 
 #### DistributedMap
 
+**Synchronous API**
+
 ```java
 DistributedMap<String, String> map = copycat.create("test-map", DistributedMap.class).get();
 
-map.put("key", "value").thenRun(() -> {
-  map.get("key").thenAccept(value -> {
-    if (value.equals(value)) {
-      // Set a key with a TTL
-      map.putIfAbsent("otherkey", "othervalue", Duration.ofSeconds(1)).get();
-    }
+map.put("key", "value").join();
+
+String value = map.get("key").get();
+
+if (value.equals("value")) {
+  map.putIfAbsent("otherkey", "othervalue", Duration.ofSeconds(1)).join();
+}
+```
+
+**Asynchronous API**
+
+```java
+DistributedMap<String, String> map = copycat.create("test-map", DistributedMap.class).thenAccept(map -> {
+  map.put("key", "value").thenRun(() -> {
+    map.get("key").thenAccept(value -> {
+      if (value.equals("value")) {
+        // Set a key with a TTL
+        map.putIfAbsent("otherkey", "othervalue", Duration.ofSeconds(1)).get();
+      }
+    });
   });
 });
 ```
 
 #### DistributedSet
 
+**Synchronous API**
+
 ```java
 DistributedSet<String> set = copycat.create("test-set", DistributedSet.class).get();
 
-set.add("value").thenRun(() -> {
-  set.contains("value").thenAccept(result -> {
-    if (result) {
-      // Add a value with a TTL
-      set.add("othervalue", Duration.ofSeconds(1));
-    }
+set.add("value").join();
+
+if (set.contains("value").get()) {
+  set.add("othervalue", Duration.ofSeconds()).join();
+}
+```
+
+**Asynchronous API**
+
+```java
+DistributedSet<String> set = copycat.create("test-set", DistributedSet.class).thenAccept(set -> {
+  set.add("value").thenRun(() -> {
+    set.contains("value").thenAccept(result -> {
+      if (result) {
+        // Add a value with a TTL
+        set.add("othervalue", Duration.ofSeconds(1));
+      }
+    });
   });
 });
 ```
 
 #### DistributedLock
 
+**Synchronous API**
+
 ```java
 DistributedLock lock = copycat.create("test-lock", DistributedLock.class).get();
 
-lock.lock().thenRun(() -> {
-  // Do stuff...
-  lock.unlock().thenRun(() -> {
-    // Did stuff
+// Lock the lock
+lock.lock().join();
+
+// Unlock the lock
+lock.unlock().join();
+```
+
+**Asynchronous API**
+
+```java
+DistributedLock lock = copycat.create("test-lock", DistributedLock.class).thenAccept(lock -> {
+  lock.lock().thenRun(() -> {
+    // Do stuff...
+    lock.unlock().thenRun(() -> {
+      // Did stuff
+    });
   });
 });
 ```
 
 #### DistributedLeaderElection
 
+**Synchronous API**
+
 ```java
 DistributedLeaderElection election = copycat.create("test-election", DistributedLeaderElection.class).get();
 
 election.onElection(epoch -> {
   System.out.println("Elected leader!");
+}).join();
+```
+
+**Asynchronous API**
+
+```java
+DistributedLeaderElection election = copycat.create("test-election", DistributedLeaderElection.class).thenAccept(election -> {
+  election.onElection(epoch -> {
+    System.out.println("Elected leader!");
+  }).thenRun(() -> {
+    System.out.println("Waiting for election");
+  });
 });
 ```
 
@@ -342,7 +401,7 @@ and [resource](#resources) dependencies.
 <dependency>
   <groupId>net.kuujo.copycat</groupId>
   <artifactId>copycat-all</artifactId>
-  <version>0.6.0-SNAPSHOT</version>
+  <version>1.0.0-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -353,7 +412,7 @@ project add the `copycat` dependency:
 <dependency>
   <groupId>net.kuujo.copycat</groupId>
   <artifactId>copycat</artifactId>
-  <version>0.6.0-SNAPSHOT</version>
+  <version>1.0.0-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -365,7 +424,7 @@ for most use cases:
 <dependency>
   <groupId>net.kuujo.copycat</groupId>
   <artifactId>copycat-netty</artifactId>
-  <version>0.6.0-SNAPSHOT</version>
+  <version>1.0.0-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -375,7 +434,7 @@ Finally, to add specific [resources](#resources) as dependencies, add one of the
 <dependency>
   <groupId>net.kuujo.copycat</groupId>
   <artifactId>copycat-collections</artifactId>
-  <version>0.6.0-SNAPSHOT</version>
+  <version>1.0.0-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -444,9 +503,7 @@ Finally, with the [Transport][Transport], [Storage][Storage], and `Members` conf
 the [CopycatReplica][CopycatReplica] with the replica [Builder](#builders) and `open()` the replica:
 
 ```java
-Copycat copycat = CopycatReplica.builder()
-  .withMemberId(1)
-  .withMembers(members)
+Copycat copycat = CopycatReplica.builder(1, members)
   .withTransport(transport)
   .withStorage(storage)
   .build();
@@ -473,13 +530,14 @@ To create a `CopycatClient`, use the client [Builder](#builders) and provide a [
 and a list of `Members` to which to connect:
 
 ```java
-Copycat copycat = CopycatClient.builder()
+Members members = Members.builder()
+ .addMember(new Member(1, "123.456.789.1", 5555))
+ .addMember(new Member(2, "123.456.789.2", 5555))
+ .addMember(new Member(3, "123.456.789.3", 5555))
+ .build()
+
+Copycat copycat = CopycatClient.builder(members)
   .withTransport(new NettyTransport())
-  .withMembers(Members.builder()
-    .addMember(new Member(1, "123.456.789.1", 5555))
-    .addMember(new Member(2, "123.456.789.2", 5555))
-    .addMember(new Member(3, "123.456.789.3", 5555))
-    .build())
   .build();
 ```
 
@@ -614,7 +672,7 @@ to access the collection classes:
 <dependency>
   <groupId>net.kuujo.copycat</groupId>
   <artifactId>copycat-collections</artifactId>
-  <version>0.6.0-SNAPSHOT</version>
+  <version>1.0.0-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -753,7 +811,7 @@ to access the atomic classes:
 <dependency>
   <groupId>net.kuujo.copycat</groupId>
   <artifactId>copycat-atomic</artifactId>
-  <version>0.6.0-SNAPSHOT</version>
+  <version>1.0.0-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -828,7 +886,7 @@ to access the coordination classes:
 <dependency>
   <groupId>net.kuujo.copycat</groupId>
   <artifactId>copycat-coordination</artifactId>
-  <version>0.6.0-SNAPSHOT</version>
+  <version>1.0.0-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -1470,9 +1528,12 @@ When constructing a `RaftServer` or `CopycatReplica`, users must provide the ser
 instance which controls the underlying `Log`. `Storage` objects are built via the storage [Builder](#builders):
 
 ```java
+Storage storage = new Storage("logs");
+```
+
+```java
 Storage storage = Storage.builder()
   .withDirectory("logs")
-  .withStorageLevel(StorageLevel.DISK)
   .build();
 ```
 
@@ -1628,9 +1689,8 @@ at least one `RaftServer` that is the leader or can communicate with the leader,
 must be able to communicate with one another in order for the client to register a new [Session](#session).
 
 ```java
-RaftClient client = RaftClient.builder()
+RaftClient client = RaftClient.builder(members)
   .withTransport(new NettyTransport())
-  .withMembers(members)
   .build();
 ```
 
@@ -1675,7 +1735,7 @@ The `RaftServer` class is provided in the `copycat-server` module:
 <dependency>
   <groupId>net.kuujo.copycat</groupId>
   <artifactId>copycat-server</artifactId>
-  <version>0.6.0-SNAPSHOT</version>
+  <version>1.0.0-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -1687,13 +1747,9 @@ Each `RaftServer` consists of three essential components:
 To create a Raft server, use the server [Builder](#builders):
 
 ```java
-RaftServer server = RaftServer.builder()
-  .withMemberId(1)
-  .withMembers(members)
+RaftServer server = RaftServer.builder(1, members)
   .withTransport(new NettyTransport())
-  .withStorage(Storage.builder()
-    .withStorageLevel(StorageLevel.MEMORY)
-    .build())
+  .withStorage(new Storage("logs"))
   .withStateMachine(new MyStateMachine())
   .build();
 ```
@@ -2399,54 +2455,54 @@ thread-unsafe objects such as a `Serializer` clone per thread.
 
 ## [Javadoc][Javadoc]
 
-[Javadoc]: http://kuujo.github.io/copycat/api/0.6.0/
+[Javadoc]: http://kuujo.github.io/copycat/api/1.0.0/
 [CAP]: https://en.wikipedia.org/wiki/CAP_theorem
 [Raft]: https://raft.github.io/
 [Executor]: https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Executor.html
 [CompletableFuture]: https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html
-[collections]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/collections.html
-[atomic]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/atomic.html
-[coordination]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/coordination.html
-[copycat]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat.html
-[protocol]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/raft/protocol.html
-[io]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/io.html
-[serializer]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/io/serializer.html
-[transport]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/io/transport.html
-[storage]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/io/storage.html
-[utilities]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/util.html
-[Copycat]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/Copycat.html
-[CopycatReplica]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/CopycatReplica.html
-[CopycatClient]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/CopycatClient.html
-[Resource]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/Resource.html
-[Transport]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/io/transport/Transport.html
-[LocalTransport]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/io/transport/LocalTransport.html
-[NettyTransport]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/io/transport/NettyTransport.html
-[Storage]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/io/storage/Storage.html
-[Log]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/io/storage/Log.html
-[Buffer]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/io/Buffer.html
-[BufferReader]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/io/BufferReader.html
-[BufferWriter]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/io/BufferWriter.html
-[Serializer]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/io/serializer/Serializer.html
-[CopycatSerializable]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/io/serializer/CopycatSerializable.html
-[TypeSerializer]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/io/serializer/TypeSerializer.html
-[SerializableTypeResolver]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/io/serializer/SerializableTypeResolver.html
-[PrimitiveTypeResolver]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/io/serializer/SerializableTypeResolver.html
-[JdkTypeResolver]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/io/serializer/SerializableTypeResolver.html
-[ServiceLoaderTypeResolver]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/io/serializer/ServiceLoaderTypeResolver.html
-[RaftServer]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/raft/RaftServer.html
-[RaftClient]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/raft/RaftClient.html
-[Session]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/raft/session/Session.html
-[Operation]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/raft/protocol/Operation.html
-[Command]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/raft/protocol/Command.html
-[Query]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/raft/protocol/Query.html
-[Commit]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/raft/protocol/Commit.html
-[ConsistencyLevel]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/raft/protocol/ConsistencyLevel.html
-[DistributedAtomicValue]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/atomic/DistributedAtomicValue.html
-[DistributedSet]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/collections/DistributedSet.html
-[DistributedMap]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/collections/DistributedMap.html
-[DistributedLock]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/coordination/DistributedLock.html
-[DistributedLeaderElection]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/coordination/DistributedLeaderElection.html
-[DistributedTopic]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/coordination/DistributedTopic.html
-[Builder]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/util/Builder.html
-[Listener]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/util/Listener.html
-[Context]: http://kuujo.github.io/copycat/api/0.6.0/net/kuujo/copycat/util/concurrent/Context.html
+[collections]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/collections.html
+[atomic]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/atomic.html
+[coordination]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/coordination.html
+[copycat]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat.html
+[protocol]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/raft/protocol.html
+[io]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/io.html
+[serializer]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/io/serializer.html
+[transport]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/io/transport.html
+[storage]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/io/storage.html
+[utilities]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/util.html
+[Copycat]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/Copycat.html
+[CopycatReplica]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/CopycatReplica.html
+[CopycatClient]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/CopycatClient.html
+[Resource]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/Resource.html
+[Transport]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/io/transport/Transport.html
+[LocalTransport]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/io/transport/LocalTransport.html
+[NettyTransport]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/io/transport/NettyTransport.html
+[Storage]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/io/storage/Storage.html
+[Log]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/io/storage/Log.html
+[Buffer]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/io/Buffer.html
+[BufferReader]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/io/BufferReader.html
+[BufferWriter]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/io/BufferWriter.html
+[Serializer]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/io/serializer/Serializer.html
+[CopycatSerializable]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/io/serializer/CopycatSerializable.html
+[TypeSerializer]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/io/serializer/TypeSerializer.html
+[SerializableTypeResolver]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/io/serializer/SerializableTypeResolver.html
+[PrimitiveTypeResolver]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/io/serializer/SerializableTypeResolver.html
+[JdkTypeResolver]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/io/serializer/SerializableTypeResolver.html
+[ServiceLoaderTypeResolver]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/io/serializer/ServiceLoaderTypeResolver.html
+[RaftServer]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/raft/RaftServer.html
+[RaftClient]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/raft/RaftClient.html
+[Session]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/raft/session/Session.html
+[Operation]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/raft/protocol/Operation.html
+[Command]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/raft/protocol/Command.html
+[Query]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/raft/protocol/Query.html
+[Commit]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/raft/protocol/Commit.html
+[ConsistencyLevel]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/raft/protocol/ConsistencyLevel.html
+[DistributedAtomicValue]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/atomic/DistributedAtomicValue.html
+[DistributedSet]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/collections/DistributedSet.html
+[DistributedMap]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/collections/DistributedMap.html
+[DistributedLock]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/coordination/DistributedLock.html
+[DistributedLeaderElection]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/coordination/DistributedLeaderElection.html
+[DistributedTopic]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/coordination/DistributedTopic.html
+[Builder]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/util/Builder.html
+[Listener]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/util/Listener.html
+[Context]: http://kuujo.github.io/copycat/api/1.0.0/net/kuujo/copycat/util/concurrent/Context.html

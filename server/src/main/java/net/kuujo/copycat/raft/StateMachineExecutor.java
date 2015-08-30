@@ -41,6 +41,7 @@ public interface StateMachineExecutor extends Context {
    *
    * @param callback The operation callback.
    * @return The state machine executor.
+   * @throws NullPointerException if {@code callback} is null
    */
   StateMachineExecutor register(Function<Commit<? extends Operation<?>>, ?> callback);
 
@@ -51,6 +52,7 @@ public interface StateMachineExecutor extends Context {
    * @param callback The operation callback.
    * @param <T> The operation type.
    * @return The state machine executor.
+   * @throws NullPointerException if {@code type} or {@code callback} are null
    */
   <T extends Operation<Void>> StateMachineExecutor register(Class<T> type, Consumer<Commit<T>> callback);
 
@@ -62,6 +64,7 @@ public interface StateMachineExecutor extends Context {
    * @param <T> The operation type.
    * @param <U> The operation output type.
    * @return The state machine executor.
+   * @throws NullPointerException if {@code type} or {@code callback} are null
    */
   <T extends Operation<U>, U> StateMachineExecutor register(Class<T> type, Function<Commit<T>, U> callback);
 

@@ -16,6 +16,7 @@
 package net.kuujo.copycat.io.transport;
 
 import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.SingleThreadContext;
 
@@ -74,6 +75,8 @@ public class LocalServer implements Server {
 
   @Override
   public synchronized CompletableFuture<Void> listen(InetSocketAddress address, Consumer<Connection> listener) {
+    Assert.notNull(address, "address");
+    Assert.notNull(listener, "listener");
     if (this.address != null) {
       if (!this.address.equals(address)) {
         throw new IllegalStateException(String.format("already listening at %s", this.address));

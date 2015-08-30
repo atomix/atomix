@@ -20,6 +20,7 @@ import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.raft.protocol.Command;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.util.ReferenceManager;
 
@@ -54,14 +55,18 @@ public class CommandRequest extends SessionRequest<CommandRequest> {
    *
    * @param request The request to build.
    * @return The submit request builder.
+   * @throws NullPointerException if {@code request} is null
    */
   public static Builder builder(CommandRequest request) {
-    return POOL.acquire(request);
+    return POOL.acquire(Assert.notNull(request, "request"));
   }
 
   private long sequence;
   private Command command;
 
+  /**
+   * @throws NullPointerException if {@code referenceManager} is null
+   */
   public CommandRequest(ReferenceManager<CommandRequest> referenceManager) {
     super(referenceManager);
   }
@@ -128,7 +133,10 @@ public class CommandRequest extends SessionRequest<CommandRequest> {
    * Write request builder.
    */
   public static class Builder extends SessionRequest.Builder<Builder, CommandRequest> {
-
+    
+    /**
+     * @throws NullPointerException if {@code pool} is null
+     */
     protected Builder(BuilderPool<Builder, CommandRequest> pool) {
       super(pool, CommandRequest::new);
     }
@@ -145,11 +153,10 @@ public class CommandRequest extends SessionRequest<CommandRequest> {
      *
      * @param sequence The command sequence number.
      * @return The request builder.
+     * @throws IllegalArgumentException if {@code sequence} is less than 1
      */
     public Builder withSequence(long sequence) {
-      if (sequence <= 0)
-        throw new IllegalArgumentException("sequence cannot be less than 1");
-      request.sequence = sequence;
+      request.sequence = Assert.argNot(sequence, sequence < 1, "sequence cannot be less than 1");
       return this;
     }
 
@@ -158,23 +165,22 @@ public class CommandRequest extends SessionRequest<CommandRequest> {
      *
      * @param command The request command.
      * @return The request builder.
+     * @throws NullPointerException if {@code command} is null
      */
     public Builder withCommand(Command command) {
-      if (command == null)
-        throw new NullPointerException("command cannot be null");
-      request.command = command;
+      request.command = Assert.notNull(command, "command");
       return this;
     }
 
+    /**
+     * @throws IllegalStateException if session or sequence are less than 1, or command is null
+     */
     @Override
     public CommandRequest build() {
       super.build();
-      if (request.session <= 0)
-        throw new IllegalArgumentException("session cannot be less than 1");
-      if (request.sequence <= 0)
-        throw new IllegalArgumentException("sequence cannot be less than 1");
-      if (request.command == null)
-        throw new NullPointerException("command cannot be null");
+      Assert.stateNot(request.session < 1, "session cannot be less than 1");
+      Assert.stateNot(request.sequence < 1, "sequence cannot be less than 1");
+      Assert.stateNot(request.command == null, "command cannot be null");
       return request;
     }
 

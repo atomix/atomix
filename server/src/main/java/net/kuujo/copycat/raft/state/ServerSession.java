@@ -20,6 +20,7 @@ import net.kuujo.copycat.raft.protocol.request.PublishRequest;
 import net.kuujo.copycat.raft.protocol.response.PublishResponse;
 import net.kuujo.copycat.raft.protocol.response.Response;
 import net.kuujo.copycat.raft.session.Session;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.Listener;
 import net.kuujo.copycat.util.Listeners;
 
@@ -36,14 +37,15 @@ class ServerSession implements Session {
   protected final Listeners<Object> listeners = new Listeners<>();
   private final long id;
   private final UUID connectionId;
+  private final long timeout;
   private Connection connection;
-  private long index;
-  private long commandSequence;
-  private long commandVersion;
+  private long version;
+  private long command;
   private long commandLowWaterMark;
-  private long eventVersion;
+  private long event;
   private long eventLowWaterMark;
   private long timestamp;
+  private final Queue<List<Runnable>> queriesPool = new ArrayDeque<>();
   private final Map<Long, List<Runnable>> queries = new HashMap<>();
   private final Map<Long, Runnable> commands = new HashMap<>();
   private final Map<Long, Object> responses = new HashMap<>();
@@ -53,13 +55,14 @@ class ServerSession implements Session {
   private final Listeners<Session> openListeners = new Listeners<>();
   private final Listeners<Session> closeListeners = new Listeners<>();
 
-  ServerSession(long id, UUID connectionId) {
+  ServerSession(long id, UUID connectionId, long timeout) {
     if (connectionId == null)
       throw new NullPointerException("connection cannot be null");
 
     this.id = id;
-    this.index = id;
+    this.version = id;
     this.connectionId = connectionId;
+    this.timeout = timeout;
   }
 
   @Override
@@ -77,109 +80,12 @@ class ServerSession implements Session {
   }
 
   /**
-   * Returns the session index.
+   * Returns the session timeout.
    *
-   * @return The session index.
+   * @return The session timeout.
    */
-  long getIndex() {
-    return index;
-  }
-
-  /**
-   * Sets the session index.
-   *
-   * @param index The session index.
-   * @return The server session.
-   */
-  ServerSession setIndex(long index) {
-    this.index = index;
-    return this;
-  }
-
-  /**
-   * Adds a command to be executed in sequence.
-   *
-   * @param sequence The command sequence number.
-   * @param runnable The command to execute.
-   * @return The server session.
-   */
-  ServerSession addCommand(long sequence, Runnable runnable) {
-    commands.put(sequence, runnable);
-    return this;
-  }
-
-  /**
-   * Returns the session sequence number.
-   *
-   * @return The session command sequence number.
-   */
-  long getSequence() {
-    return commandSequence;
-  }
-
-  /**
-   * Sets the session sequence number.
-   *
-   * @param sequence The session command sequence number.
-   * @return The server session.
-   */
-  ServerSession setSequence(long sequence) {
-    if (sequence > this.commandSequence) {
-      for (long i = 0; i < sequence - this.commandSequence; i++) {
-        this.commandSequence++;
-        Runnable command = commands.remove(this.commandSequence + 1);
-        if (command != null) {
-          command.run();
-        }
-      }
-    }
-    return this;
-  }
-
-  /**
-   * Returns the session command version.
-   *
-   * @return The session command version.
-   */
-  long getVersion() {
-    return commandVersion;
-  }
-
-  /**
-   * Sets the session command version.
-   *
-   * @param version The session command version.
-   * @return The server session.
-   */
-  ServerSession setVersion(long version) {
-    if (version > commandVersion) {
-      for (long i = commandVersion + 1; i <= version; i++) {
-        List<Runnable> queries = this.queries.remove(i);
-        if (queries != null) {
-          for (Runnable query : queries) {
-            query.run();
-          }
-        }
-        commandVersion = i;
-      }
-    }
-    return this;
-  }
-
-  /**
-   * Clears command responses up to the given version.
-   *
-   * @param version The version to clear.
-   * @return The server session.
-   */
-  ServerSession clearCommands(long version) {
-    if (version > commandLowWaterMark) {
-      for (long i = commandLowWaterMark + 1; i <= version; i++) {
-        responses.remove(i);
-        commandLowWaterMark = i;
-      }
-    }
-    return this;
+  long timeout() {
+    return timeout;
   }
 
   /**
@@ -198,7 +104,88 @@ class ServerSession implements Session {
    * @return The server session.
    */
   ServerSession setTimestamp(long timestamp) {
-    this.timestamp = timestamp;
+    this.timestamp = Math.max(this.timestamp, timestamp);
+    return this;
+  }
+
+  /**
+   * Returns the session command version.
+   *
+   * @return The session command version.
+   */
+  long getVersion() {
+    return version;
+  }
+
+  /**
+   * Sets the session command version.
+   *
+   * @param version The session command version.
+   * @return The server session.
+   */
+  ServerSession setVersion(long version) {
+    if (version > this.version) {
+      for (long i = this.version + 1; i <= version; i++) {
+        List<Runnable> queries = this.queries.remove(i);
+        if (queries != null) {
+          for (Runnable query : queries) {
+            query.run();
+          }
+          queries.clear();
+          queriesPool.add(queries);
+        }
+        this.version = i;
+      }
+    }
+    return this;
+  }
+
+  /**
+   * Adds a command to be executed in sequence.
+   *
+   * @param sequence The command sequence number.
+   * @param runnable The command to execute.
+   * @return The server session.
+   */
+  ServerSession registerCommand(long sequence, Runnable runnable) {
+    commands.put(sequence, runnable);
+    return this;
+  }
+
+  /**
+   * Returns the command sequence number.
+   *
+   * @return The command sequence number.
+   */
+  long getSequence() {
+    return command;
+  }
+
+  /**
+   * Returns the next session sequence number.
+   *
+   * @return The next session sequence number.
+   */
+  long nextSequence() {
+    return command + 1;
+  }
+
+  /**
+   * Sets the session sequence number.
+   *
+   * @param sequence The session command sequence number.
+   * @return The server session.
+   */
+  ServerSession setSequence(long sequence) {
+    if (sequence > this.command) {
+      for (long i = 0; i < sequence - this.command; i++) {
+        this.command++;
+        Runnable command = commands.remove(this.command + 1);
+        if (command != null) {
+          command.run();
+        }
+      }
+    }
     return this;
   }
 
@@ -210,7 +197,10 @@ class ServerSession implements Session {
    * @return The server session.
    */
   ServerSession registerQuery(long version, Runnable query) {
-    List<Runnable> queries = this.queries.computeIfAbsent(version, v -> new ArrayList<>());
+    List<Runnable> queries = this.queries.computeIfAbsent(version, v -> {
+      List<Runnable> q = queriesPool.poll();
+      return q != null ? q : new ArrayList<>(128);
+    });
     queries.add(query);
     return this;
   }
@@ -218,33 +208,49 @@ class ServerSession implements Session {
   /**
    * Registers a session response.
    *
-   * @param version The response version.
+   * @param sequence The response sequence number.
    * @param response The response.
    * @return The server session.
    */
-  ServerSession registerResponse(long version, Object response) {
-    responses.put(version, response);
+  ServerSession registerResponse(long sequence, Object response) {
+    responses.put(sequence, response);
+    return this;
+  }
+
+  /**
+   * Clears command responses up to the given version.
+   *
+   * @param version The version to clear.
+   * @return The server session.
+   */
+  ServerSession clearResponses(long version) {
+    if (version > commandLowWaterMark) {
+      for (long i = commandLowWaterMark + 1; i <= version; i++) {
+        responses.remove(i);
+        commandLowWaterMark = i;
+      }
+    }
     return this;
   }
 
   /**
    * Returns a boolean value indicating whether the session has a response for the given version.
    *
-   * @param version The response version.
+   * @param sequence The response sequence number.
    * @return Indicates whether the session has a response for the given version.
    */
-  boolean hasResponse(long version) {
-    return responses.containsKey(version);
+  boolean hasResponse(long sequence) {
+    return responses.containsKey(sequence);
   }
 
   /**
    * Returns the session response for the given version.
    *
-   * @param version The response version.
+   * @param sequence The response sequence.
    * @return The response.
    */
-  Object getResponse(long version) {
-    return responses.get(version);
+  Object getResponse(long sequence) {
+    return responses.get(sequence);
   }
 
   /**
@@ -263,21 +269,21 @@ class ServerSession implements Session {
 
   @Override
   public CompletableFuture<Void> publish(Object event) {
-    long eventSequence = ++eventVersion;
+    long eventSequence = ++this.event;
     events.put(eventSequence, event);
     sendEvent(eventSequence, event);
     return CompletableFuture.completedFuture(null);
   }
 
   /**
-   * Clears events up to the given version.
+   * Clears events up to the given sequence.
    *
-   * @param version The version to clear.
+   * @param sequence The sequence to clear.
    * @return The server session.
    */
-  ServerSession clearEvents(long version) {
-    if (version > eventLowWaterMark) {
-      for (long i = eventLowWaterMark + 1; i <= version; i++) {
+  ServerSession clearEvents(long sequence) {
+    if (sequence > eventLowWaterMark) {
+      for (long i = eventLowWaterMark + 1; i <= sequence; i++) {
         events.remove(i);
         eventLowWaterMark = i;
       }
@@ -292,7 +298,7 @@ class ServerSession implements Session {
    * @return The server session.
    */
   private ServerSession resendEvents(long sequence) {
-    for (long i = sequence + 1; i <= eventVersion; i++) {
+    for (long i = sequence + 1; i <= event; i++) {
       if (events.containsKey(i)) {
         sendEvent(i, events.get(i));
       }
@@ -349,13 +355,13 @@ class ServerSession implements Session {
 
   @Override
   public Listener<Session> onOpen(Consumer<Session> listener) {
-    return openListeners.add(listener);
+    return openListeners.add(Assert.notNull(listener, "listener"));
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public Listener<?> onReceive(Consumer listener) {
-    return listeners.add(listener);
+    return listeners.add(Assert.notNull(listener, "listener"));
   }
 
   /**
@@ -370,7 +376,7 @@ class ServerSession implements Session {
 
   @Override
   public Listener<Session> onClose(Consumer<Session> listener) {
-    Listener<Session> context = closeListeners.add(listener);
+    Listener<Session> context = closeListeners.add(Assert.notNull(listener, "listener"));
     if (closed) {
       context.accept(this);
     }

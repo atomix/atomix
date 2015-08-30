@@ -19,6 +19,7 @@ import net.kuujo.copycat.raft.protocol.Command;
 import net.kuujo.copycat.raft.protocol.Operation;
 import net.kuujo.copycat.raft.protocol.Query;
 import net.kuujo.copycat.raft.session.Session;
+import net.kuujo.copycat.util.Assert;
 
 /**
  * Base class for user-provided Raft state machines.
@@ -49,11 +50,10 @@ public abstract class StateMachine implements AutoCloseable {
    * Initializes the state machine.
    *
    * @param context The state machine context.
+   * @throws NullPointerException if {@code context} is null
    */
   public void init(StateMachineContext context) {
-    if (context == null)
-      throw new NullPointerException("context cannot be null");
-    this.context = context;
+    this.context = Assert.notNull(context, "context");
   }
 
   /**

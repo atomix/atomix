@@ -15,15 +15,16 @@
  */
 package net.kuujo.copycat.raft.protocol.response;
 
+import java.util.Objects;
+
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.raft.protocol.error.RaftError;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.util.ReferenceManager;
-
-import java.util.Objects;
 
 /**
  * Protocol poll response.
@@ -62,6 +63,9 @@ public class PollResponse extends AbstractResponse<PollResponse> {
   private long term;
   private boolean accepted;
 
+  /**
+   * @throws NullPointerException if {@code referenceManager} is null
+   */
   public PollResponse(ReferenceManager<PollResponse> referenceManager) {
     super(referenceManager);
   }
@@ -153,11 +157,10 @@ public class PollResponse extends AbstractResponse<PollResponse> {
      *
      * @param term The response term.
      * @return The poll response builder.
+     * @throws IllegalArgumentException if {@code term} is not positive
      */
     public Builder withTerm(long term) {
-      if (term < 0)
-        throw new IllegalArgumentException("term must be positive");
-      response.term = term;
+      response.term = Assert.argNot(term, term < 0, "term must be positive");
       return this;
     }
 
@@ -172,12 +175,14 @@ public class PollResponse extends AbstractResponse<PollResponse> {
       return this;
     }
 
+    /**
+     * @throws IllegalStateException if status is OK and {@code term} is not positive
+     */
     @Override
     public PollResponse build() {
       super.build();
       if (response.status == Response.Status.OK) {
-        if (response.term < 0)
-          throw new IllegalArgumentException("term must be positive");
+        Assert.stateNot(response.term < 0, "term must be positive");
       }
       return response;
     }

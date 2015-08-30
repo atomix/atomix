@@ -26,6 +26,7 @@ import net.kuujo.copycat.raft.StateMachine;
 import net.kuujo.copycat.raft.protocol.Command;
 import net.kuujo.copycat.raft.protocol.Query;
 import net.kuujo.copycat.resource.ResourceContext;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.Managed;
 
 import java.util.Map;
@@ -54,8 +55,11 @@ public abstract class Copycat implements Managed<Copycat> {
   protected final RaftClient client;
   private final Map<Long, ResourceContext> resources = new ConcurrentHashMap<>();
 
+  /**
+   * @throws NullPointerException if {@code client} is null
+   */
   protected Copycat(RaftClient client) {
-    this.client = client;
+    this.client = Assert.notNull(client, "cient");
   }
 
   /**
@@ -63,6 +67,7 @@ public abstract class Copycat implements Managed<Copycat> {
    *
    * @param path The path to check.
    * @return A completable future indicating whether the given path exists.
+   * @throws NullPointerException if {@code path} is null
    */
   public CompletableFuture<Boolean> exists(String path) {
     return client.submit(new ResourceExists(path));
@@ -75,11 +80,12 @@ public abstract class Copycat implements Managed<Copycat> {
    * @param type The expected resource type.
    * @param <T> The resource type.
    * @return A completable future to be completed once the resource has been loaded.
+   * @throws NullPointerException if {@code path} or {@code type} are null
    */
   @SuppressWarnings("unchecked")
   public <T extends Resource> CompletableFuture<T> get(String path, Class<? super T> type) {
     try {
-      T resource = (T) type.newInstance();
+      T resource = (T) Assert.notNull(type, "type").newInstance();
       return client.submit(GetResource.builder()
         .withPath(path)
         .withType(resource.stateMachine())
@@ -103,11 +109,12 @@ public abstract class Copycat implements Managed<Copycat> {
    * @param type The resource type to create.
    * @param <T> The resource type.
    * @return A completable future to be completed once the resource has been created.
+   * @throws NullPointerException if {@code path} or {@code type} are null
    */
   @SuppressWarnings("unchecked")
   public <T extends Resource> CompletableFuture<T> create(String path, Class<? super T> type) {
     try {
-      T resource = (T) type.newInstance();
+      T resource = (T) Assert.notNull(type, "type").newInstance();
       return client.submit(CreateResource.builder()
         .withPath(path)
         .withType(resource.stateMachine())
@@ -150,14 +157,10 @@ public abstract class Copycat implements Managed<Copycat> {
    * Copycat builder.
    */
   public static abstract class Builder extends net.kuujo.copycat.util.Builder<Copycat> {
-    protected RaftClient.Builder clientBuilder = RaftClient.builder();
+    protected RaftClient.Builder clientBuilder;
 
-    protected Builder() {
-    }
-
-    @Override
-    protected void reset() {
-      clientBuilder = RaftClient.builder();
+    protected Builder(Members members) {
+      clientBuilder = RaftClient.builder(members);
     }
 
     /**
@@ -179,17 +182,6 @@ public abstract class Copycat implements Managed<Copycat> {
      */
     public Builder withSerializer(Serializer serializer) {
       clientBuilder.withSerializer(serializer);
-      return this;
-    }
-
-    /**
-     * Sets the Copycat cluster members.
-     *
-     * @param members The cluster members.
-     * @return The Copycat builder.
-     */
-    public Builder withMembers(Members members) {
-      clientBuilder.withMembers(members);
       return this;
     }
   }

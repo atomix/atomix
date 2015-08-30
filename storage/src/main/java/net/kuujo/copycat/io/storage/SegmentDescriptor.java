@@ -18,6 +18,7 @@ package net.kuujo.copycat.io.storage;
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.FileBuffer;
 import net.kuujo.copycat.io.HeapBuffer;
+import net.kuujo.copycat.util.Assert;
 
 /**
  * Segment descriptor.
@@ -67,6 +68,7 @@ final class SegmentDescriptor implements AutoCloseable {
    *
    * @param buffer The descriptor buffer.
    * @return The descriptor builder.
+   * @throws NullPointerException if {@code buffer} is null
    */
   public static Builder builder(Buffer buffer) {
     return new Builder(buffer);
@@ -82,10 +84,11 @@ final class SegmentDescriptor implements AutoCloseable {
   private final int maxEntries;
   private boolean locked;
 
+  /**
+   * @throws NullPointerException if {@code buffer} is null
+   */
   public SegmentDescriptor(Buffer buffer) {
-    if (buffer == null)
-      throw new NullPointerException("buffer cannot be null");
-    this.buffer = buffer;
+    this.buffer = Assert.notNull(buffer, "buffer");
     this.id = buffer.readLong();
     this.version = buffer.readLong();
     this.index = buffer.readLong();
@@ -239,9 +242,7 @@ final class SegmentDescriptor implements AutoCloseable {
     private final Buffer buffer;
 
     private Builder(Buffer buffer) {
-      if (buffer == null)
-        throw new NullPointerException("buffer cannot be null");
-      this.buffer = buffer;
+      this.buffer = Assert.notNull(buffer, "buffer");
     }
 
     /**

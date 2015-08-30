@@ -16,6 +16,7 @@
 package net.kuujo.copycat.io.transport;
 
 import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.Futures;
 import net.kuujo.copycat.util.concurrent.SingleThreadContext;
@@ -54,14 +55,13 @@ public class LocalClient implements Client {
    */
   private Context getContext() {
     Context context = Context.currentContext();
-    if (context == null) {
-      throw new IllegalStateException("not on a Copycat thread");
-    }
+    Assert.state(context != null, "not on a Copycat thread");
     return context;
   }
 
   @Override
   public CompletableFuture<Connection> connect(InetSocketAddress address) {
+    Assert.notNull(address, "address");
     Context context = getContext();
     LocalServer server = registry.get(address);
     if (server == null) {

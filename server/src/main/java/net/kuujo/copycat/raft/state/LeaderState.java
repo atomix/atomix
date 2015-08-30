@@ -26,7 +26,6 @@ import net.kuujo.copycat.raft.protocol.error.RaftException;
 import net.kuujo.copycat.raft.protocol.request.*;
 import net.kuujo.copycat.raft.protocol.response.*;
 import net.kuujo.copycat.raft.storage.*;
-import net.kuujo.copycat.util.concurrent.ComposableFuture;
 import net.kuujo.copycat.util.concurrent.Scheduled;
 
 import java.time.Duration;
@@ -82,7 +81,7 @@ final class LeaderState extends ActiveState {
     final long term = context.getTerm();
     final long index;
     try (NoOpEntry entry = context.getLog().create(NoOpEntry.class)) {
-      entry.setTerm(term);
+      entry.setTerm(term).setTimestamp(System.currentTimeMillis());
       index = context.getLog().append(entry);
     }
 
@@ -110,9 +109,9 @@ final class LeaderState extends ActiveState {
       for (long lastApplied = Math.max(context.getLastApplied(), context.getLog().firstIndex()); lastApplied <= index; lastApplied++) {
         Entry entry = context.getLog().get(lastApplied);
         if (entry != null) {
-          context.apply(entry).whenComplete((result, error) -> {
+          context.getStateMachine().apply(entry).whenComplete((result, error) -> {
             if (isOpen() && error != null) {
-              LOGGER.info("{} - An application error occurred: {}", context.getMember().id(), error);
+              LOGGER.info("{} - An application error occurred: {}", context.getMember().id(), error.getMessage());
             }
             entry.close();
           });
@@ -166,15 +165,18 @@ final class LeaderState extends ActiveState {
       .addMember(request.member())
       .build();
 
-    ConfigurationEntry entry = context.getLog().create(ConfigurationEntry.class);
-    entry.setTerm(term)
-      .setActive(activeMembers)
-      .setPassive(passiveMembers);
-    index = context.getLog().append(entry);
-    LOGGER.debug("{} - Appended {} to log at index {}", context.getMember().id(), entry, index);
+    try (ConfigurationEntry entry = context.getLog().create(ConfigurationEntry.class)) {
+      entry.setTerm(term)
+        .setActive(activeMembers)
+        .setPassive(passiveMembers);
+      index = context.getLog().append(entry);
+      LOGGER.debug("{} - Appended {} to log at index {}", context.getMember().id(), entry, index);
 
-    // Immediately apply the configuration change.
-    applyEntry(entry).whenComplete((result, error) -> entry.close());
+      // Immediately apply the configuration change. No need to validate whether this node was changed
+      // to PASSIVE since it's the leader and would have already transitioned to the LEAVE state if
+      // it were leaving the cluster.
+      context.getCluster().configure(entry.getIndex(), entry.getActive(), entry.getPassive());
+    }
 
     CompletableFuture<JoinResponse> future = new CompletableFuture<>();
     replicator.commit(index).whenComplete((commitIndex, commitError) -> {
@@ -219,15 +221,18 @@ final class LeaderState extends ActiveState {
       .removeMember(request.member())
       .build();
 
-    ConfigurationEntry entry = context.getLog().create(ConfigurationEntry.class);
-    entry.setTerm(term)
-      .setActive(activeMembers)
-      .setPassive(passiveMembers);
-    index = context.getLog().append(entry);
-    LOGGER.debug("{} - Appended {} to log at index {}", context.getMember().id(), entry, index);
+    try (ConfigurationEntry entry = context.getLog().create(ConfigurationEntry.class)) {
+      entry.setTerm(term)
+        .setActive(activeMembers)
+        .setPassive(passiveMembers);
+      index = context.getLog().append(entry);
+      LOGGER.debug("{} - Appended {} to log at index {}", context.getMember().id(), entry, index);
 
-    // Immediately apply the configuration change.
-    applyEntry(entry).whenComplete((result, error) -> entry.close());
+      // Immediately apply the configuration change. No need to validate whether this node was changed
+      // to PASSIVE since it's the leader and would have already transitioned to the LEAVE state if
+      // it were leaving the cluster.
+      context.getCluster().configure(entry.getIndex(), entry.getActive(), entry.getPassive());
+    }
 
     CompletableFuture<LeaveResponse> future = new CompletableFuture<>();
     replicator.commit(index).whenComplete((commitIndex, commitError) -> {
@@ -297,27 +302,7 @@ final class LeaderState extends ActiveState {
     context.checkThread();
     logRequest(request);
 
-    // Get the client's server session. If the session doesn't exist, return an unknown session error.
-    ServerSession session = context.getSession(request.session());
-    if (session == null) {
-      return CompletableFuture.completedFuture(logResponse(CommandResponse.builder()
-        .withStatus(Response.Status.ERROR)
-        .withError(RaftError.Type.UNKNOWN_SESSION_ERROR)
-        .build()));
-    }
-
-    ComposableFuture<CommandResponse> future = new ComposableFuture<>();
-
-    // If the session's current sequence number is less then one prior to the request sequence number,
-    // queue this request for handling later. We want to handle command requests in the order in which
-    // they were sent by the client.
-    // Note that it's possible for the request session sequence number to be greater than the request
-    // sequence number. In that case, it's likely that the command was submitted more than once to the
-    // cluster, and the command will be deduplicated once applied to the state machine.
-    if (session.getSequence() < request.sequence() - 1) {
-      session.addCommand(request.sequence(), () -> command(request).whenComplete(future));
-      return future;
-    }
+    CompletableFuture<CommandResponse> future = new CompletableFuture<>();
 
     Command command = request.command();
 
@@ -372,10 +357,6 @@ final class LeaderState extends ActiveState {
         }
       }
     });
-
-    // Update the session sequence number. This is the highest sequence for which a command
-    // has been committed to the cluster.
-    session.setSequence(request.sequence());
 
     return future;
   }
@@ -460,7 +441,7 @@ final class LeaderState extends ActiveState {
    */
   private CompletableFuture<QueryResponse> applyQuery(QueryEntry entry, CompletableFuture<QueryResponse> future) {
     long version = context.getLastApplied();
-    context.apply(entry).whenCompleteAsync((result, error) -> {
+    context.getStateMachine().apply(entry).whenCompleteAsync((result, error) -> {
       if (isOpen()) {
         if (error == null) {
           future.complete(logResponse(QueryResponse.builder()
@@ -494,10 +475,12 @@ final class LeaderState extends ActiveState {
     final long timestamp = System.currentTimeMillis();
     final long index;
 
+    long timeout = context.getSessionTimeout().toMillis();
     try (RegisterEntry entry = context.getLog().create(RegisterEntry.class)) {
       entry.setTerm(context.getTerm());
       entry.setTimestamp(timestamp);
       entry.setConnection(request.connection());
+      entry.setTimeout(timeout);
       index = context.getLog().append(entry);
       LOGGER.debug("{} - Appended {}", context.getMember().id(), entry);
     }
@@ -514,6 +497,7 @@ final class LeaderState extends ActiveState {
                 future.complete(logResponse(RegisterResponse.builder()
                   .withStatus(Response.Status.OK)
                   .withSession((Long) sessionId)
+                  .withTimeout(timeout)
                   .withMembers(context.getCluster().buildActiveMembers())
                   .build()));
               } else if (sessionError instanceof RaftException) {
@@ -665,7 +649,7 @@ final class LeaderState extends ActiveState {
       if (index == 0)
         return commit();
 
-      if (context.getCluster().getActiveMembers().size() == 1) {
+      if (context.getCluster().getActiveMembers().isEmpty()) {
         context.setCommitIndex(index);
         return CompletableFuture.completedFuture(index);
       }
@@ -948,8 +932,8 @@ final class LeaderState extends ActiveState {
           long index = context.getLog().append(entry);
           LOGGER.debug("{} - Appended {} to log at index {}", context.getMember().id(), entry, index);
 
-          // Immediately apply the configuration change.
-          applyEntry(entry);
+          // Immediately apply the configuration upon appending the configuration entry.
+          context.getCluster().configure(entry.getIndex(), entry.getActive(), entry.getPassive());
         }
       }
     }

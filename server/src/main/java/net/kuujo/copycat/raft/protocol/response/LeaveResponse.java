@@ -59,6 +59,9 @@ public class LeaveResponse extends AbstractResponse<LeaveResponse> {
     return POOL.acquire(response);
   }
 
+  /**
+   * @throws NullPointerException if {@code referenceManager} is null
+   */
   public LeaveResponse(ReferenceManager<LeaveResponse> referenceManager) {
     super(referenceManager);
   }

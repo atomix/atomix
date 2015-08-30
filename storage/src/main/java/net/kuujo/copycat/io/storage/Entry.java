@@ -16,6 +16,7 @@
 package net.kuujo.copycat.io.storage;
 
 import net.kuujo.copycat.io.serializer.CopycatSerializable;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.ReferenceCounted;
 import net.kuujo.copycat.util.ReferenceManager;
 
@@ -86,8 +87,7 @@ public abstract class Entry<T extends Entry<T>> implements ReferenceCounted<Entr
    * @throws IllegalStateException If the entry has not yet been persisted
    */
   public int size() {
-    if (size == -1)
-      throw new IllegalStateException("unknown size of non-persisted entry");
+    Assert.stateNot(size == -1, "cannot determine size for non-persisted entry");
     return size;
   }
 

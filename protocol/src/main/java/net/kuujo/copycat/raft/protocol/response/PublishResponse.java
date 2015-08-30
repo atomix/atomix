@@ -20,6 +20,7 @@ import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.raft.protocol.error.RaftError;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.util.ReferenceManager;
 
@@ -54,13 +55,17 @@ public class PublishResponse extends SessionResponse<PublishResponse> {
    *
    * @param response The response to build.
    * @return The publish response builder.
+   * @throws NullPointerException if {@code response} is null
    */
   public static Builder builder(PublishResponse response) {
-    return POOL.acquire(response);
+    return POOL.acquire(Assert.notNull(response, "response"));
   }
 
   private long sequence;
 
+  /**
+   * @throws NullPointerException if {@code referenceManager} is null
+   */
   public PublishResponse(ReferenceManager<PublishResponse> referenceManager) {
     super(referenceManager);
   }
@@ -140,19 +145,20 @@ public class PublishResponse extends SessionResponse<PublishResponse> {
      *
      * @param eventSequence The event sequence number.
      * @return The request builder.
+     * @throws IllegalArgumentException if {@code eventSequence} is less than 1
      */
     public Builder withSequence(long eventSequence) {
-      if (eventSequence <= 0)
-        throw new IllegalArgumentException("sequence cannot be less than 1");
-      response.sequence = eventSequence;
+      response.sequence = Assert.argNot(eventSequence, eventSequence < 1, "eventSequence cannot be less than 1");
       return this;
     }
 
+    /**
+     * @throws IllegalStateException if sequence is less than 1
+     */
     @Override
     public PublishResponse build() {
       super.build();
-      if (response.sequence <= 0)
-        throw new IllegalArgumentException("sequence cannot be less than 1");
+      Assert.stateNot(response.sequence < 1, "sequence cannot be less than 1");
       return response;
     }
 

@@ -19,6 +19,7 @@ import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.util.ReferenceManager;
 
@@ -54,13 +55,17 @@ public class RegisterRequest extends AbstractRequest<RegisterRequest> {
    *
    * @param request The request to build.
    * @return The register client request builder.
+   * @throws NullPointerException if {@code request} is null
    */
   public static Builder builder(RegisterRequest request) {
-    return POOL.acquire(request);
+    return POOL.acquire(Assert.notNull(request, "request"));
   }
 
   private UUID connection;
 
+  /**
+   * @throws NullPointerException if {@code referenceManager} is null
+   */
   public RegisterRequest(ReferenceManager<RegisterRequest> referenceManager) {
     super(referenceManager);
   }
@@ -113,6 +118,9 @@ public class RegisterRequest extends AbstractRequest<RegisterRequest> {
    */
   public static class Builder extends AbstractRequest.Builder<Builder, RegisterRequest> {
 
+    /**
+     * @throws NullPointerException if {@code pool} is null
+     */
     protected Builder(BuilderPool<Builder, RegisterRequest> pool) {
       super(pool, RegisterRequest::new);
     }
@@ -128,19 +136,20 @@ public class RegisterRequest extends AbstractRequest<RegisterRequest> {
      *
      * @param connection The connection ID.
      * @return The request builder.
+     * @throws NullPointerException if {@code connection} is null
      */
     public Builder withConnection(UUID connection) {
-      if (connection == null)
-        throw new NullPointerException("connection cannot be null");
-      request.connection = connection;
+      request.connection = Assert.notNull(connection, "connection");
       return this;
     }
 
+    /**
+     * @throws IllegalStateException if connection is null
+     */
     @Override
     public RegisterRequest build() {
       super.build();
-      if (request.connection == null)
-        throw new NullPointerException("connection cannot be null");
+      Assert.stateNot(request.connection == null, "connection");
       return request;
     }
 

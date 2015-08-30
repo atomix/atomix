@@ -19,6 +19,7 @@ import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.util.ReferenceManager;
 
@@ -53,14 +54,18 @@ public class PublishRequest extends SessionRequest<PublishRequest> {
    *
    * @param request The request to build.
    * @return The publish request builder.
+   * @throws NullPointerException if {@code request} is null
    */
   public static Builder builder(PublishRequest request) {
-    return POOL.acquire(request);
+    return POOL.acquire(Assert.notNull(request, "request"));
   }
 
   private long sequence;
   private Object message;
 
+  /**
+   * @throws NullPointerException if {@code referenceManager} is null
+   */
   public PublishRequest(ReferenceManager<PublishRequest> referenceManager) {
     super(referenceManager);
   }
@@ -127,7 +132,9 @@ public class PublishRequest extends SessionRequest<PublishRequest> {
    * Publish request builder.
    */
   public static class Builder extends SessionRequest.Builder<Builder, PublishRequest> {
-
+    /**
+     * @throws NullPointerException if {@code pool} is null
+     */
     protected Builder(BuilderPool<Builder, PublishRequest> pool) {
       super(pool, PublishRequest::new);
     }
@@ -144,11 +151,10 @@ public class PublishRequest extends SessionRequest<PublishRequest> {
      *
      * @param sequence The event sequence number.
      * @return The request builder.
+     * @throws IllegalArgumentException if {@code sequence} is less than 1
      */
     public Builder withSequence(long sequence) {
-      if (sequence <= 0)
-        throw new IllegalArgumentException("sequence cannot be less than 1");
-      request.sequence = sequence;
+      request.sequence = Assert.argNot(sequence, sequence < 1, "sequence cannot be less than 1");;
       return this;
     }
 
@@ -157,21 +163,21 @@ public class PublishRequest extends SessionRequest<PublishRequest> {
      *
      * @param message The request message.
      * @return The publish request builder.
+     * @throws NullPointerException if {@code message} is null
      */
     public Builder withMessage(Object message) {
-      if (message == null)
-        throw new NullPointerException("message cannot be null");
-      request.message = message;
+      request.message = Assert.notNull(message, "message");
       return this;
     }
 
+    /**
+     * @throws IllegalStateException if sequence is less than 1 or message is null
+     */
     @Override
     public PublishRequest build() {
       super.build();
-      if (request.sequence <= 0)
-        throw new IllegalArgumentException("sequence cannot be less than 1");
-      if (request.message == null)
-        throw new NullPointerException("message cannot be null");
+      Assert.stateNot(request.sequence < 1, "sequence cannot be less than 1");
+      Assert.stateNot(request.message == null, "message cannot be null");
       return request;
     }
 
