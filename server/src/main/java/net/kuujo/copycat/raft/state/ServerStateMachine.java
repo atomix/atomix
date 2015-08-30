@@ -19,7 +19,6 @@ import net.kuujo.copycat.io.storage.Entry;
 import net.kuujo.copycat.raft.StateMachine;
 import net.kuujo.copycat.raft.protocol.error.InternalException;
 import net.kuujo.copycat.raft.protocol.error.UnknownSessionException;
-import net.kuujo.copycat.raft.session.Session;
 import net.kuujo.copycat.raft.storage.*;
 import net.kuujo.copycat.util.concurrent.ComposableFuture;
 import net.kuujo.copycat.util.concurrent.Context;
@@ -27,6 +26,8 @@ import net.kuujo.copycat.util.concurrent.Futures;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -347,11 +348,13 @@ class ServerStateMachine implements AutoCloseable {
    * Expires any sessions that have timed out.
    */
   private void expireSessions(long timestamp) {
-    for (Session s : executor.context().sessions()) {
-      ServerSession session = (ServerSession) s;
+    Set<Long> sessions = new HashSet<>(executor.context().sessions().sessions.keySet());
+    for (long sessionId : sessions) {
+      ServerSession session = executor.context().sessions().getSession(sessionId);
       if (timestamp - session.timeout() > session.getTimestamp()) {
-        ((ServerSession) s).expire();
-        stateMachine.expire(s);
+        executor.context().sessions().unregisterSession(sessionId);
+        session.expire();
+        stateMachine.expire(session);
       }
     }
   }
