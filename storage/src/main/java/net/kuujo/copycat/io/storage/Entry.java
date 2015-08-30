@@ -45,9 +45,6 @@ public abstract class Entry<T extends Entry<T>> implements ReferenceCounted<Entr
     referenceManager = null;
   }
 
-  /**
-   * @throws NullPointerException if {@code referenceManager} is null
-   */
   protected Entry(ReferenceManager<Entry<?>> referenceManager) {
     this.referenceManager = referenceManager;
   }

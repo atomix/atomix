@@ -26,9 +26,9 @@ import net.kuujo.copycat.util.ReferenceManager;
  */
 public abstract class OperationEntry<T extends OperationEntry<T>> extends SessionEntry<T> {
 
-  /**
-   * @throws NullPointerException if {@code referenceManager} is null
-   */
+  protected OperationEntry() {
+  }
+
   protected OperationEntry(ReferenceManager<Entry<?>> referenceManager) {
     super(referenceManager);
   }

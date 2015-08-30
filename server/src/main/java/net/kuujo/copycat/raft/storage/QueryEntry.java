@@ -35,6 +35,9 @@ public class QueryEntry extends OperationEntry<QueryEntry> {
   private long version;
   private Query query;
 
+  public QueryEntry() {
+  }
+
   public QueryEntry(ReferenceManager<Entry<?>> referenceManager) {
     super(referenceManager);
   }

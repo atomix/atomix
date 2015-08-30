@@ -27,9 +27,9 @@ import net.kuujo.copycat.util.ReferenceManager;
 @SerializeWith(id=300)
 public class NoOpEntry extends TimestampedEntry<NoOpEntry> {
 
-  /**
-   * @throws NullPointerException if {@code referenceManager} is null
-   */
+  public NoOpEntry() {
+  }
+
   public NoOpEntry(ReferenceManager<Entry<?>> referenceManager) {
     super(referenceManager);
   }

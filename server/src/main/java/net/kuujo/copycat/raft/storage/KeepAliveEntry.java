@@ -32,9 +32,9 @@ public class KeepAliveEntry extends SessionEntry<KeepAliveEntry> {
   private long commandSequence;
   private long eventSequence;
 
-  /**
-   * @throws NullPointerException if {@code referenceManager} is null
-   */
+  public KeepAliveEntry() {
+  }
+
   public KeepAliveEntry(ReferenceManager<Entry<?>> referenceManager) {
     super(referenceManager);
   }

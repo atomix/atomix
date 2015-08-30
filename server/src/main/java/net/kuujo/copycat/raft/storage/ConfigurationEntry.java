@@ -35,9 +35,6 @@ public class ConfigurationEntry extends RaftEntry<ConfigurationEntry> {
   public ConfigurationEntry() {
   }
 
-  /**
-   * @throws NullPointerException if {@code referenceManager} is null
-   */
   public ConfigurationEntry(ReferenceManager<Entry<?>> referenceManager) {
     super(referenceManager);
   }

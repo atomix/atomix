@@ -153,6 +153,15 @@ class ServerSession implements Session {
   }
 
   /**
+   * Returns the command sequence number.
+   *
+   * @return The command sequence number.
+   */
+  long getSequence() {
+    return command;
+  }
+
+  /**
    * Returns the next session sequence number.
    *
    * @return The next session sequence number.

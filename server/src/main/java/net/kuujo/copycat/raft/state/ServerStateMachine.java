@@ -286,7 +286,7 @@ class ServerStateMachine implements AutoCloseable {
    * @return The result.
    */
   @SuppressWarnings("unchecked")
-  CompletableFuture<Object> apply(QueryEntry entry) {
+  private CompletableFuture<Object> apply(QueryEntry entry) {
     ServerSession session = executor.context().sessions().getSession(entry.getSession());
 
     // If the session is null then that indicates that the session already timed out or it never existed.
@@ -335,7 +335,7 @@ class ServerStateMachine implements AutoCloseable {
    * @param entry The entry to apply.
    * @return The result.
    */
-  CompletableFuture<Long> apply(NoOpEntry entry) {
+  private CompletableFuture<Long> apply(NoOpEntry entry) {
     // Iterate through all the server sessions and reset timestamps. This ensures that sessions do not
     // timeout during leadership changes.
     for (ServerSession session : executor.context().sessions().sessions.values()) {
@@ -357,24 +357,6 @@ class ServerStateMachine implements AutoCloseable {
         stateMachine.expire(session);
       }
     }
-  }
-
-  /**
-   * Expires a session.
-   */
-  private <T> CompletableFuture<T> expireSession(long sessionId, Context context) {
-    CompletableFuture<T> future = new CompletableFuture<>();
-    ServerSession session = executor.context().sessions().unregisterSession(sessionId);
-    if (session != null) {
-      executor.executor().execute(() -> {
-        session.expire();
-        stateMachine.expire(session);
-        context.executor().execute(() -> future.completeExceptionally(new UnknownSessionException("unknown session: " + sessionId)));
-      });
-    } else {
-      context.executor().execute(() -> future.completeExceptionally(new UnknownSessionException("unknown session: " + sessionId)));
-    }
-    return future;
   }
 
   @Override

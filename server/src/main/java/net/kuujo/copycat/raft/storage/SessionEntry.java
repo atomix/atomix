@@ -32,9 +32,6 @@ public abstract class SessionEntry<T extends SessionEntry<T>> extends Timestampe
   protected SessionEntry() {
   }
 
-  /**
-   * @throws NullPointerException if {@code referenceManager} is null
-   */
   protected SessionEntry(ReferenceManager<Entry<?>> referenceManager) {
     super(referenceManager);
   }

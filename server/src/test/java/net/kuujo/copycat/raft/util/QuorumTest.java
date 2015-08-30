@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.raft.server.util;
+package net.kuujo.copycat.raft.util;
 
 import net.kuujo.copycat.raft.util.Quorum;
 import org.testng.annotations.BeforeMethod;

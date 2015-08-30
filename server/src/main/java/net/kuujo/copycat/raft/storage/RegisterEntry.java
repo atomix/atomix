@@ -38,9 +38,6 @@ public class RegisterEntry extends TimestampedEntry<RegisterEntry> {
   public RegisterEntry() {
   }
 
-  /**
-   * @throws NullPointerException if {@code referenceManager} is null
-   */
   public RegisterEntry(ReferenceManager<Entry<?>> referenceManager) {
     super(referenceManager);
   }

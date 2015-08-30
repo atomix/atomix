@@ -35,9 +35,9 @@ public class CommandEntry extends OperationEntry<CommandEntry> {
   private long sequence;
   private Command command;
 
-  /**
-   * @throws NullPointerException if {@code referenceManager} is null
-   */
+  public CommandEntry() {
+  }
+
   public CommandEntry(ReferenceManager<Entry<?>> referenceManager) {
     super(referenceManager);
   }
