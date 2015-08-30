@@ -101,25 +101,19 @@ public class DistributedAtomicValueTest extends ConcurrentTestCase {
       .addMember(new Member(3, "localhost", 5003))
       .build();
 
-    Copycat copycat1 = CopycatReplica.builder()
-      .withMemberId(1)
-      .withMembers(initialMembers)
+    Copycat copycat1 = CopycatReplica.builder(1, initialMembers)
       .withTransport(new LocalTransport(registry))
       .withStorage(Storage.builder()
         .withDirectory(new File(directory, "1"))
         .build())
       .build();
-    Copycat copycat2 = CopycatReplica.builder()
-      .withMemberId(2)
-      .withMembers(initialMembers)
+    Copycat copycat2 = CopycatReplica.builder(2, initialMembers)
       .withTransport(new LocalTransport(registry))
       .withStorage(Storage.builder()
         .withDirectory(new File(directory, "2"))
         .build())
       .build();
-    Copycat copycat3 = CopycatReplica.builder()
-      .withMemberId(3)
-      .withMembers(initialMembers)
+    Copycat copycat3 = CopycatReplica.builder(3, initialMembers)
       .withTransport(new LocalTransport(registry))
       .withStorage(Storage.builder()
         .withDirectory(new File(directory, "3"))
@@ -138,9 +132,7 @@ public class DistributedAtomicValueTest extends ConcurrentTestCase {
       .addMember(new Member(4, "localhost", 5004))
       .build();
 
-    Copycat copycat4 = CopycatReplica.builder()
-      .withMemberId(4)
-      .withMembers(updatedMembers)
+    Copycat copycat4 = CopycatReplica.builder(4, updatedMembers)
       .withTransport(new LocalTransport(registry))
       .withStorage(Storage.builder()
         .withDirectory(new File(directory, "4"))
@@ -204,9 +196,7 @@ public class DistributedAtomicValueTest extends ConcurrentTestCase {
     Members members = builder.build();
 
     for (int i = 1; i <= nodes; i++) {
-      Copycat copycat = CopycatReplica.builder()
-        .withMemberId(i)
-        .withMembers(members)
+      Copycat copycat = CopycatReplica.builder(i, members)
         .withTransport(new LocalTransport(registry))
         .withStorage(Storage.builder()
           .withDirectory(new File(directory, "" + i))

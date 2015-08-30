@@ -15,9 +15,12 @@
  */
 package net.kuujo.copycat;
 
+import net.kuujo.copycat.raft.Member;
+import net.kuujo.copycat.raft.Members;
 import net.kuujo.copycat.raft.RaftClient;
 
 import java.time.Duration;
+import java.util.Collection;
 
 /**
  * Client-side {@link net.kuujo.copycat.Copycat} implementation.
@@ -31,11 +34,41 @@ public final class CopycatClient extends Copycat {
 
   /**
    * Returns a new Copycat client builder.
+   * <p>
+   * The provided set of members will be used to connect to the Raft cluster. The members list does not have to represent
+   * the complete list of servers in the cluster, but it must have at least one reachable member.
    *
-   * @return A new Copycat client builder.
+   * @param members The cluster members to which to connect.
+   * @return The client builder.
    */
-  public static Builder builder() {
-    return new Builder();
+  public static Builder builder(Member... members) {
+    return new Builder(Members.builder().withMembers(members).build());
+  }
+
+  /**
+   * Returns a new Copycat client builder.
+   * <p>
+   * The provided set of members will be used to connect to the Raft cluster. The members list does not have to represent
+   * the complete list of servers in the cluster, but it must have at least one reachable member.
+   *
+   * @param members The cluster members to which to connect.
+   * @return The client builder.
+   */
+  public static Builder builder(Collection<Member> members) {
+    return new Builder(Members.builder().withMembers(members).build());
+  }
+
+  /**
+   * Returns a new Copycat client builder.
+   * <p>
+   * The provided set of members will be used to connect to the Raft cluster. The members list does not have to represent
+   * the complete list of servers in the cluster, but it must have at least one reachable member.
+   *
+   * @param members The cluster members to which to connect.
+   * @return The client builder.
+   */
+  public static Builder builder(Members members) {
+    return new Builder(members);
   }
 
   /**
@@ -49,7 +82,8 @@ public final class CopycatClient extends Copycat {
    * Client builder.
    */
   public static class Builder extends Copycat.Builder {
-    private Builder() {
+    private Builder(Members members) {
+      super(members);
     }
 
     /**

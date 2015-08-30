@@ -445,9 +445,7 @@ Finally, with the [Transport][Transport], [Storage][Storage], and `Members` conf
 the [CopycatReplica][CopycatReplica] with the replica [Builder](#builders) and `open()` the replica:
 
 ```java
-Copycat copycat = CopycatReplica.builder()
-  .withMemberId(1)
-  .withMembers(members)
+Copycat copycat = CopycatReplica.builder(1, members)
   .withTransport(transport)
   .withStorage(storage)
   .build();
@@ -474,13 +472,14 @@ To create a `CopycatClient`, use the client [Builder](#builders) and provide a [
 and a list of `Members` to which to connect:
 
 ```java
-Copycat copycat = CopycatClient.builder()
+Members members = Members.builder()
+ .addMember(new Member(1, "123.456.789.1", 5555))
+ .addMember(new Member(2, "123.456.789.2", 5555))
+ .addMember(new Member(3, "123.456.789.3", 5555))
+ .build()
+
+Copycat copycat = CopycatClient.builder(members)
   .withTransport(new NettyTransport())
-  .withMembers(Members.builder()
-    .addMember(new Member(1, "123.456.789.1", 5555))
-    .addMember(new Member(2, "123.456.789.2", 5555))
-    .addMember(new Member(3, "123.456.789.3", 5555))
-    .build())
   .build();
 ```
 
@@ -1471,9 +1470,12 @@ When constructing a `RaftServer` or `CopycatReplica`, users must provide the ser
 instance which controls the underlying `Log`. `Storage` objects are built via the storage [Builder](#builders):
 
 ```java
+Storage storage = new Storage("logs");
+```
+
+```java
 Storage storage = Storage.builder()
   .withDirectory("logs")
-  .withStorageLevel(StorageLevel.DISK)
   .build();
 ```
 
@@ -1629,9 +1631,8 @@ at least one `RaftServer` that is the leader or can communicate with the leader,
 must be able to communicate with one another in order for the client to register a new [Session](#session).
 
 ```java
-RaftClient client = RaftClient.builder()
+RaftClient client = RaftClient.builder(members)
   .withTransport(new NettyTransport())
-  .withMembers(members)
   .build();
 ```
 
@@ -1688,13 +1689,9 @@ Each `RaftServer` consists of three essential components:
 To create a Raft server, use the server [Builder](#builders):
 
 ```java
-RaftServer server = RaftServer.builder()
-  .withMemberId(1)
-  .withMembers(members)
+RaftServer server = RaftServer.builder(1, members)
   .withTransport(new NettyTransport())
-  .withStorage(Storage.builder()
-    .withStorageLevel(StorageLevel.MEMORY)
-    .build())
+  .withStorage(new Storage("logs"))
   .withStateMachine(new MyStateMachine())
   .build();
 ```

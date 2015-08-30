@@ -15,10 +15,6 @@
  */
 package net.kuujo.copycat;
 
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.transport.Transport;
 import net.kuujo.copycat.manager.CreateResource;
@@ -32,6 +28,10 @@ import net.kuujo.copycat.raft.protocol.Query;
 import net.kuujo.copycat.resource.ResourceContext;
 import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.Managed;
+
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Base type for creating and managing distributed {@link net.kuujo.copycat.Resource resources} in a Copycat cluster.
@@ -157,14 +157,10 @@ public abstract class Copycat implements Managed<Copycat> {
    * Copycat builder.
    */
   public static abstract class Builder extends net.kuujo.copycat.util.Builder<Copycat> {
-    protected RaftClient.Builder clientBuilder = RaftClient.builder();
+    protected RaftClient.Builder clientBuilder;
 
-    protected Builder() {
-    }
-
-    @Override
-    protected void reset() {
-      clientBuilder = RaftClient.builder();
+    protected Builder(Members members) {
+      clientBuilder = RaftClient.builder(members);
     }
 
     /**
@@ -186,17 +182,6 @@ public abstract class Copycat implements Managed<Copycat> {
      */
     public Builder withSerializer(Serializer serializer) {
       clientBuilder.withSerializer(serializer);
-      return this;
-    }
-
-    /**
-     * Sets the Copycat cluster members.
-     *
-     * @param members The cluster members.
-     * @return The Copycat builder.
-     */
-    public Builder withMembers(Members members) {
-      clientBuilder.withMembers(members);
       return this;
     }
   }

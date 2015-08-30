@@ -26,7 +26,6 @@ import net.kuujo.copycat.util.Managed;
 import net.kuujo.copycat.util.concurrent.Context;
 
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 
@@ -82,12 +81,45 @@ public class RaftServer implements Managed<RaftServer> {
   }
 
   /**
-   * Returns a new Raft builder.
+   * Returns a new Raft server builder.
+   * <p>
+   * The provided set of members will be used to connect to the other members in the Raft cluster. The {@code memberId}
+   * must be the {@link Member#id()} of a member listed in the provided members list.
    *
-   * @return A new Raft builder.
+   * @param memberId The local server member ID. This must be the ID of a member listed in the provided members list.
+   * @param members The cluster members to which to connect.
+   * @return The server builder.
    */
-  public static Builder builder() {
-    return new Builder();
+  public static Builder builder(int memberId, Member... members) {
+    return builder(memberId, Members.builder().withMembers(members).build());
+  }
+
+  /**
+   * Returns a new Raft server builder.
+   * <p>
+   * The provided set of members will be used to connect to the other members in the Raft cluster. The {@code memberId}
+   * must be the {@link Member#id()} of a member listed in the provided members list.
+   *
+   * @param memberId The local server member ID. This must be the ID of a member listed in the provided members list.
+   * @param members The cluster members to which to connect.
+   * @return The server builder.
+   */
+  public static Builder builder(int memberId, Collection<Member> members) {
+    return builder(memberId, Members.builder().withMembers(members).build());
+  }
+
+  /**
+   * Returns a new Raft server builder.
+   * <p>
+   * The provided set of members will be used to connect to the other members in the Raft cluster. The {@code memberId}
+   * must be the {@link Member#id()} of a member listed in the provided members list.
+   *
+   * @param memberId The local server member ID. This must be the ID of a member listed in the provided members list.
+   * @param members The cluster members to which to connect.
+   * @return The server builder.
+   */
+  public static Builder builder(int memberId, Members members) {
+    return new Builder(memberId, members);
   }
 
   private final ServerContext context;
@@ -231,17 +263,10 @@ public class RaftServer implements Managed<RaftServer> {
     private Duration heartbeatInterval = DEFAULT_RAFT_HEARTBEAT_INTERVAL;
     private Duration sessionTimeout = DEFAULT_RAFT_SESSION_TIMEOUT;
 
-    private Builder() {
-    }
-
-    @Override
-    protected void reset() {
-      transport = null;
-      storage = null;
-      serializer = null;
-      stateMachine = null;
-      memberId = 0;
-      members = null;
+    private Builder(int memberId, Members members) {
+      Assert.arg(members.member(memberId) != null, "memberId must be listed in the members list");
+      this.memberId = Assert.argNot(memberId, memberId <= 0, "member ID must be positive");
+      this.members = Assert.notNull(members, "members");
     }
 
     /**
@@ -253,57 +278,6 @@ public class RaftServer implements Managed<RaftServer> {
      */
     public Builder withTransport(Transport transport) {
       this.transport = Assert.notNull(transport, "transport");
-      return this;
-    }
-
-    /**
-     * Sets the server member ID.
-     *
-     * @param memberId The server member ID.
-     * @return The Raft builder.
-     */
-    public Builder withMemberId(int memberId) {
-      this.memberId = memberId;
-      return this;
-    }
-
-    /**
-     * Sets the Raft members.
-     * <p>
-     * The provided set of members will be used to connect to the Raft cluster. The members list does not have to represent
-     * the complete list of servers in the cluster, but it must have at least one reachable member.
-     *
-     * @param members The Raft members.
-     * @return The Raft builder.
-     * @throws NullPointerException if {@code members} is null
-     */
-    public Builder withMembers(Member... members) {
-      return withMembers(Arrays.asList(Assert.notNull(members, "members")));
-    }
-
-    /**
-     * Sets the Raft members.
-     * <p>
-     * The provided set of members will be used to connect to the Raft cluster. The members list does not have to represent
-     * the complete list of servers in the cluster, but it must have at least one reachable member.
-     *
-     * @param members The Raft members.
-     * @return The Raft builder.
-     * @throws NullPointerException if {@code members} is null
-     */
-    public Builder withMembers(Collection<Member> members) {
-      return withMembers(Members.builder().withMembers(members).build());
-    }
-
-    /**
-     * Sets the voting Raft members.
-     *
-     * @param members The voting Raft members.
-     * @return The Raft builder.
-     * @throws NullPointerException if {@code members} is null
-     */
-    public Builder withMembers(Members members) {
-      this.members = Assert.notNull(members, "members");
       return this;
     }
 
@@ -390,7 +364,6 @@ public class RaftServer implements Managed<RaftServer> {
 
     /**
      * @throws ConfigurationException if a state machine, members or transport are not configured
-     * @return
      */
     @Override
     public RaftServer build() {

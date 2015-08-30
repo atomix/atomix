@@ -31,7 +31,6 @@ import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.Futures;
 
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 
@@ -44,11 +43,41 @@ public class RaftClient implements Managed<RaftClient> {
 
   /**
    * Returns a new Raft client builder.
+   * <p>
+   * The provided set of members will be used to connect to the Raft cluster. The members list does not have to represent
+   * the complete list of servers in the cluster, but it must have at least one reachable member.
    *
-   * @return A new Raft client builder.
+   * @param members The cluster members to which to connect.
+   * @return The client builder.
    */
-  public static Builder builder() {
-    return new Builder();
+  public static Builder builder(Member... members) {
+    return builder(Members.builder().withMembers(members).build());
+  }
+
+  /**
+   * Returns a new Raft client builder.
+   * <p>
+   * The provided set of members will be used to connect to the Raft cluster. The members list does not have to represent
+   * the complete list of servers in the cluster, but it must have at least one reachable member.
+   *
+   * @param members The cluster members to which to connect.
+   * @return The client builder.
+   */
+  public static Builder builder(Collection<Member> members) {
+    return builder(Members.builder().withMembers(members).build());
+  }
+
+  /**
+   * Returns a new Raft client builder.
+   * <p>
+   * The provided set of members will be used to connect to the Raft cluster. The members list does not have to represent
+   * the complete list of servers in the cluster, but it must have at least one reachable member.
+   *
+   * @param members The cluster members to which to connect.
+   * @return The client builder.
+   */
+  public static Builder builder(Members members) {
+    return new Builder(members);
   }
 
   private final Transport transport;
@@ -251,7 +280,8 @@ public class RaftClient implements Managed<RaftClient> {
     private Duration keepAliveInterval = Duration.ofMillis(1000);
     private Members members;
 
-    private Builder() {
+    private Builder(Members members) {
+      this.members = Assert.notNull(members, "members");
     }
 
     @Override
@@ -297,49 +327,6 @@ public class RaftClient implements Managed<RaftClient> {
     public Builder withKeepAliveInterval(Duration keepAliveInterval) {
       Assert.argNot(keepAliveInterval.isNegative() || keepAliveInterval.isZero(), "keepAliveInterval must be positive");
       this.keepAliveInterval = Assert.notNull(keepAliveInterval, "keepAliveInterval");
-      return this;
-    }
-
-    /**
-     * Sets the Raft members.
-     * <p>
-     * The provided set of members will be used to connect to the Raft cluster. The members list does not have to represent
-     * the complete list of servers in the cluster, but it must have at least one reachable member.
-     *
-     * @param members The Raft members.
-     * @return The Raft builder.
-     * @throws NullPointerException if {@code members} is null
-     */
-    public Builder withMembers(Member... members) {
-      return withMembers(Arrays.asList(Assert.notNull(members, "members")));
-    }
-
-    /**
-     * Sets the Raft members.
-     * <p>
-     * The provided set of members will be used to connect to the Raft cluster. The members list does not have to represent
-     * the complete list of servers in the cluster, but it must have at least one reachable member.
-     *
-     * @param members The Raft members.
-     * @return The Raft builder.
-     * @throws NullPointerException if {@code members} is null
-     */
-    public Builder withMembers(Collection<Member> members) {
-      return withMembers(Members.builder().withMembers(members).build());
-    }
-
-    /**
-     * Sets the Raft members.
-     * <p>
-     * The provided set of members will be used to connect to the Raft cluster. The members list does not have to represent
-     * the complete list of servers in the cluster, but it must have at least one reachable member.
-     *
-     * @param members The Raft members.
-     * @return The Raft builder.
-     * @throws NullPointerException if {@code members} is null
-     */
-    public Builder withMembers(Members members) {
-      this.members = Assert.notNull(members, "members");
       return this;
     }
 
