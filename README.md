@@ -8,6 +8,7 @@ Copycat
 #### [User Manual](#user-manual-1)
 #### [Raft Consensus Algorithm](#raft-consensus-algorithm-1)
 #### [Javadocs][Javadoc]
+#### [Google Group](https://groups.google.com/forum/#!forum/copycat)
 
 Copycat is both a low-level implementation of the [Raft consensus algorithm][Raft] and a high-level distributed
 coordination framework that combines the consistency of [ZooKeeper](https://zookeeper.apache.org/) with the
