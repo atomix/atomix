@@ -48,16 +48,14 @@ public class DistributedPerformanceTest extends ConcurrentTestCase {
   @SuppressWarnings("unchecked")
   public void testPerformance() throws Throwable {
     Members.Builder builder = Members.builder();
-    for (int i = 1; i <= 5; i++) {
+    for (int i = 1; i <= 3; i++) {
       builder.addMember(new Member(i, "localhost", 5000 + i));
     }
 
     Members members = builder.build();
 
     for (int i = 1; i <= 3; i++) {
-      Copycat copycat = CopycatReplica.builder()
-        .withMemberId(i)
-        .withMembers(members)
+      Copycat copycat = CopycatReplica.builder(i, members)
         .withTransport(new NettyTransport(4))
         .withStorage(Storage.builder()
           .withDirectory(new File(directory, "" + i))
@@ -69,8 +67,7 @@ public class DistributedPerformanceTest extends ConcurrentTestCase {
 
     await(0, 3);
 
-    Copycat copycat = CopycatClient.builder()
-      .withMembers(members)
+    Copycat copycat = CopycatClient.builder(members)
       .withTransport(new NettyTransport(2))
       .build();
 
