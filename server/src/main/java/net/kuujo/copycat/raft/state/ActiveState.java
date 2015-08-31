@@ -169,17 +169,21 @@ abstract class ActiveState extends PassiveState {
         return true;
       }
 
-      if (index != 0 && index >= lastIndex) {
-        if (term >= entry.getTerm()) {
-          LOGGER.debug("{} - Accepted {}: candidate's log is up-to-date", context.getMember().id(), request);
-          return true;
+      try {
+        if (index != 0 && index >= lastIndex) {
+          if (term >= entry.getTerm()) {
+            LOGGER.debug("{} - Accepted {}: candidate's log is up-to-date", context.getMember().id(), request);
+            return true;
+          } else {
+            LOGGER.debug("{} - Rejected {}: candidate's last log term ({}) is in conflict with local log ({})", context.getMember().id(), request, term, entry.getTerm());
+            return false;
+          }
         } else {
-          LOGGER.debug("{} - Rejected {}: candidate's last log term ({}) is in conflict with local log ({})", context.getMember().id(), request, term, entry.getTerm());
+          LOGGER.debug("{} - Rejected {}: candidate's last log entry ({}) is at a lower index than the local log ({})", context.getMember().id(), request, index, lastIndex);
           return false;
         }
-      } else {
-        LOGGER.debug("{} - Rejected {}: candidate's last log entry ({}) is at a lower index than the local log ({})", context.getMember().id(), request, index, lastIndex);
-        return false;
+      } finally {
+        entry.close();
       }
     }
   }
