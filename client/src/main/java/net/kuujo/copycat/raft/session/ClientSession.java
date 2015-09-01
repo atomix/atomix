@@ -163,15 +163,14 @@ public class ClientSession implements Session, Managed<Session> {
           version = Math.max(version, response.version());
           future.complete((T) response.result());
           resetMembers();
-          request.close();
         } else {
           future.completeExceptionally(response.error().createException());
         }
         response.close();
       } else {
         future.completeExceptionally(error);
-        request.close();
       }
+      request.close();
     });
     return future;
   }
@@ -214,15 +213,14 @@ public class ClientSession implements Session, Managed<Session> {
           version = Math.max(version, response.version());
           future.complete((T) response.result());
           resetMembers();
-          request.close();
         } else {
           future.completeExceptionally(response.error().createException());
         }
         response.close();
       } else {
         future.completeExceptionally(error);
-        request.close();
       }
+      request.close();
     });
     return future;
   }
@@ -491,11 +489,11 @@ public class ClientSession implements Session, Managed<Session> {
         } else {
           future.completeExceptionally(response.error().createException());
         }
-        request.close();
         response.close();
       } else {
         future.completeExceptionally(error);
       }
+      request.close();
     });
     return future;
   }
@@ -601,6 +599,8 @@ public class ClientSession implements Session, Managed<Session> {
     for (Consumer listener : receiveListeners) {
       listener.accept(request.message());
     }
+
+    request.close();
 
     return CompletableFuture.completedFuture(PublishResponse.builder()
       .withStatus(Response.Status.OK)
