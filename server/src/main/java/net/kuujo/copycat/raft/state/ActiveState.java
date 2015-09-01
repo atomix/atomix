@@ -205,16 +205,14 @@ abstract class ActiveState extends PassiveState {
     try {
       context.checkThread();
       logRequest(request);
+
       if (context.getLeader() == null) {
         return CompletableFuture.completedFuture(logResponse(CommandResponse.builder()
           .withStatus(Response.Status.ERROR)
           .withError(RaftError.Type.NO_LEADER_ERROR)
           .build()));
       } else {
-        request.acquire();
-        return context.getConnections()
-          .getConnection(context.getLeader())
-          .thenCompose(connection -> connection.send(request));
+        return this.<CommandRequest, CommandResponse>forward(request).thenApply(this::logResponse);
       }
     } finally {
       request.release();
@@ -249,9 +247,7 @@ abstract class ActiveState extends PassiveState {
     }
 
     LOGGER.debug("{} - Forwarded {}", context.getMember().id(), request);
-    request.acquire();
-    return context.getConnections().getConnection(context.getLeader())
-      .thenCompose(connection -> connection.<QueryRequest, QueryResponse>send(request).thenApply(this::logResponse));
+    return this.<QueryRequest, QueryResponse>forward(request).thenApply(this::logResponse);
   }
 
   /**

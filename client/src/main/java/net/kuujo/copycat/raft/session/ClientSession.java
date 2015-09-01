@@ -156,6 +156,7 @@ public class ClientSession implements Session, Managed<Session> {
       return future;
     }
 
+    request.acquire();
     this.<CommandRequest, CommandResponse>request(request).whenComplete((response, error) -> {
       if (error == null) {
         if (response.status() == Response.Status.OK) {
@@ -170,6 +171,7 @@ public class ClientSession implements Session, Managed<Session> {
       } else {
         future.completeExceptionally(error);
       }
+      request.release();
     });
     return future;
   }
@@ -206,6 +208,7 @@ public class ClientSession implements Session, Managed<Session> {
       return future;
     }
 
+    request.acquire();
     this.<QueryRequest, QueryResponse>request(request).whenComplete((response, error) -> {
       if (error == null) {
         if (response.status() == Response.Status.OK) {
@@ -219,6 +222,7 @@ public class ClientSession implements Session, Managed<Session> {
       } else {
         future.completeExceptionally(error);
       }
+      request.release();
     });
     return future;
   }
@@ -347,6 +351,9 @@ public class ClientSession implements Session, Managed<Session> {
    * @return The provided future to be completed once the response is received.
    */
   private <T extends Request<T>, U extends Response<U>> CompletableFuture<U> request(T request, Connection connection, CompletableFuture<U> future, boolean checkOpen, boolean recordFailures) {
+    // Always acquire an additional reference prior to sending a request. The request reference will be released before the response is received.
+    request.acquire();
+
     LOGGER.debug("Sending: {}", request);
     connection.<T, U>send(request).whenComplete((response, error) -> {
       if (!checkOpen || isOpen()) {
@@ -477,6 +484,7 @@ public class ClientSession implements Session, Managed<Session> {
       .withConnection(client.id())
       .build();
 
+    request.acquire();
     this.<RegisterRequest, RegisterResponse>request(request, new CompletableFuture<>(), false, true).whenComplete((response, error) -> {
       if (error == null) {
         if (response.status() == Response.Status.OK) {
@@ -492,6 +500,7 @@ public class ClientSession implements Session, Managed<Session> {
       } else {
         future.completeExceptionally(error);
       }
+      request.release();
     });
     return future;
   }
@@ -510,6 +519,7 @@ public class ClientSession implements Session, Managed<Session> {
           .withEventSequence(eventSequence)
           .build();
 
+        request.acquire();
         this.<KeepAliveRequest, KeepAliveResponse>request(request).whenComplete((response, error) -> {
           if (error == null) {
             if (response.status() == Response.Status.OK) {
@@ -522,6 +532,7 @@ public class ClientSession implements Session, Managed<Session> {
           } else if (isOpen()) {
             keepAlive();
           }
+          request.release();
         });
       }
     }, keepAliveInterval);

@@ -58,16 +58,14 @@ final class FollowerState extends ActiveState {
     try {
       context.checkThread();
       logRequest(request);
+
       if (context.getLeader() == null) {
         return CompletableFuture.completedFuture(logResponse(RegisterResponse.builder()
           .withStatus(Response.Status.ERROR)
           .withError(RaftError.Type.NO_LEADER_ERROR)
           .build()));
       } else {
-        request.acquire();
-        return context.getConnections()
-          .getConnection(context.getLeader())
-          .thenCompose(connection -> connection.send(request));
+        return this.<RegisterRequest, RegisterResponse>forward(request).thenApply(this::logResponse);
       }
     } finally {
       request.release();
@@ -79,16 +77,14 @@ final class FollowerState extends ActiveState {
     try {
       context.checkThread();
       logRequest(request);
+
       if (context.getLeader() == null) {
         return CompletableFuture.completedFuture(logResponse(KeepAliveResponse.builder()
           .withStatus(Response.Status.ERROR)
           .withError(RaftError.Type.NO_LEADER_ERROR)
           .build()));
       } else {
-        request.acquire();
-        return context.getConnections()
-          .getConnection(context.getLeader())
-          .thenCompose(connection -> connection.send(request));
+        return this.<KeepAliveRequest, KeepAliveResponse>forward(request).thenApply(this::logResponse);
       }
     } finally {
       request.release();

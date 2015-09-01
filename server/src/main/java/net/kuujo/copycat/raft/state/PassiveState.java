@@ -275,6 +275,7 @@ class PassiveState extends AbstractState {
     try {
       context.checkThread();
       logRequest(request);
+
       return CompletableFuture.completedFuture(logResponse(PollResponse.builder()
         .withStatus(Response.Status.ERROR)
         .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
@@ -298,6 +299,28 @@ class PassiveState extends AbstractState {
     }
   }
 
+  /**
+   * Forwards the given request to the leader if possible.
+   */
+  protected <T extends Request<T>, U extends Response<U>> CompletableFuture<U> forward(T request) {
+    request.acquire();
+    CompletableFuture<U> future = new CompletableFuture<>();
+    context.getConnections().getConnection(context.getLeader()).whenComplete((connection, connectError) -> {
+      if (connectError == null) {
+        connection.<T, U>send(request).whenComplete((response, responseError) -> {
+          if (responseError == null) {
+            future.complete(response);
+          } else {
+            future.completeExceptionally(responseError);
+          }
+        });
+      } else {
+        request.release();
+      }
+    });
+    return future;
+  }
+
   @Override
   protected CompletableFuture<CommandResponse> command(CommandRequest request) {
     try {
@@ -309,10 +332,7 @@ class PassiveState extends AbstractState {
           .withError(RaftError.Type.NO_LEADER_ERROR)
           .build()));
       } else {
-        request.acquire();
-        return context.getConnections()
-          .getConnection(context.getLeader())
-          .thenCompose(connection -> connection.send(request));
+        return this.<CommandRequest, CommandResponse>forward(request).thenApply(this::logResponse);
       }
     } finally {
       request.release();
@@ -330,10 +350,7 @@ class PassiveState extends AbstractState {
           .withError(RaftError.Type.NO_LEADER_ERROR)
           .build()));
       } else {
-        request.acquire();
-        return context.getConnections()
-          .getConnection(context.getLeader())
-          .thenCompose(connection -> connection.send(request));
+        return this.<QueryRequest, QueryResponse>forward(request).thenApply(this::logResponse);
       }
     } finally {
       request.release();
@@ -382,10 +399,7 @@ class PassiveState extends AbstractState {
           .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
           .build()));
       } else {
-        request.acquire();
-        return context.getConnections()
-          .getConnection(context.getLeader())
-          .thenCompose(connection -> connection.send(request));
+        return this.<JoinRequest, JoinResponse>forward(request).thenApply(this::logResponse);
       }
     } finally {
       request.release();
@@ -404,10 +418,7 @@ class PassiveState extends AbstractState {
           .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
           .build()));
       } else {
-        request.acquire();
-        return context.getConnections()
-          .getConnection(context.getLeader())
-          .thenCompose(connection -> connection.send(request));
+        return this.<LeaveRequest, LeaveResponse>forward(request).thenApply(this::logResponse);
       }
     } finally {
       request.release();
