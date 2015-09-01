@@ -117,6 +117,7 @@ public abstract class Entry<T extends Entry<T>> implements ReferenceCounted<Entr
         referenceManager.release(this);
     } else if (refs < 0) {
       references.set(0);
+      throw new IllegalStateException("cannot dereference non-referenced object");
     }
   }
 
@@ -127,6 +128,8 @@ public abstract class Entry<T extends Entry<T>> implements ReferenceCounted<Entr
 
   @Override
   public void close() {
+    if (references.get() == 0)
+      throw new IllegalStateException("cannot close non-referenced object");
     references.set(0);
     if (referenceManager != null)
       referenceManager.release(this);

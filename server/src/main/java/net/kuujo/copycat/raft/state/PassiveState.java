@@ -49,16 +49,20 @@ class PassiveState extends AbstractState {
 
   @Override
   protected CompletableFuture<AppendResponse> append(final AppendRequest request) {
-    context.checkThread();
+    try {
+      context.checkThread();
 
-    // If the request indicates a term that is greater than the current term then
-    // assign that term and leader to the current context and step down as leader.
-    if (request.term() > context.getTerm() || (request.term() == context.getTerm() && context.getLeader() == null)) {
-      context.setTerm(request.term());
-      context.setLeader(request.leader());
+      // If the request indicates a term that is greater than the current term then
+      // assign that term and leader to the current context and step down as leader.
+      if (request.term() > context.getTerm() || (request.term() == context.getTerm() && context.getLeader() == null)) {
+        context.setTerm(request.term());
+        context.setLeader(request.leader());
+      }
+
+      return CompletableFuture.completedFuture(logResponse(handleAppend(logRequest(request))));
+    } finally {
+      request.release();
     }
-
-    return CompletableFuture.completedFuture(logResponse(handleAppend(logRequest(request))));
   }
 
   /**
@@ -170,6 +174,9 @@ class PassiveState extends AbstractState {
             }
           }
         }
+
+        // Release the entry back to the pool.
+        entry.release();
       }
     }
 
@@ -208,14 +215,10 @@ class PassiveState extends AbstractState {
       // Rather than composing all futures into a single future, use a counter to count completions in order to preserve memory.
       AtomicInteger counter = getCounter();
 
-      // Reset the counter to 0.
-      counter.set(0);
-
       for (long i = lastApplied + 1; i <= effectiveIndex; i++) {
         Entry entry = context.getLog().get(i);
         if (entry != null && !(entry instanceof ConfigurationEntry)) {
           applyEntry(entry).whenComplete((result, error) -> {
-            entry.close();
             if (isOpen() && error != null) {
               LOGGER.info("{} - An application error occurred: {}", context.getMember().id(), error.getMessage());
             }
@@ -223,6 +226,7 @@ class PassiveState extends AbstractState {
               future.complete(null);
               recycleCounter(counter);
             }
+            entry.release();
           });
         }
       }
@@ -236,7 +240,10 @@ class PassiveState extends AbstractState {
    */
   private AtomicInteger getCounter() {
     AtomicInteger counter = counterPool.poll();
-    return counter != null ? counter : new AtomicInteger();
+    if (counter == null)
+      counter = new AtomicInteger();
+    counter.set(0);
+    return counter;
   }
 
   /**
@@ -265,119 +272,145 @@ class PassiveState extends AbstractState {
 
   @Override
   protected CompletableFuture<PollResponse> poll(PollRequest request) {
-    context.checkThread();
-    logRequest(request);
-    return CompletableFuture.completedFuture(logResponse(PollResponse.builder()
-      .withStatus(Response.Status.ERROR)
-      .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
-      .build()));
+    try {
+      context.checkThread();
+      logRequest(request);
+      return CompletableFuture.completedFuture(logResponse(PollResponse.builder()
+        .withStatus(Response.Status.ERROR)
+        .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
+        .build()));
+    } finally {
+      request.release();
+    }
   }
 
   @Override
   protected CompletableFuture<VoteResponse> vote(VoteRequest request) {
-    context.checkThread();
-    logRequest(request);
-    return CompletableFuture.completedFuture(logResponse(VoteResponse.builder()
-      .withStatus(Response.Status.ERROR)
-      .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
-      .build()));
+    try {
+      context.checkThread();
+      logRequest(request);
+      return CompletableFuture.completedFuture(logResponse(VoteResponse.builder()
+        .withStatus(Response.Status.ERROR)
+        .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
+        .build()));
+    } finally {
+      request.release();
+    }
   }
 
   @Override
   protected CompletableFuture<CommandResponse> command(CommandRequest request) {
-    context.checkThread();
-    logRequest(request);
-    if (context.getLeader() == null) {
-      return CompletableFuture.completedFuture(logResponse(CommandResponse.builder()
-        .withStatus(Response.Status.ERROR)
-        .withError(RaftError.Type.NO_LEADER_ERROR)
-        .build()));
-    } else {
-      return context.getConnections()
-        .getConnection(context.getLeader())
-        .thenCompose(connection -> connection.send(request));
+    try {
+      context.checkThread();
+      logRequest(request);
+      if (context.getLeader() == null) {
+        return CompletableFuture.completedFuture(logResponse(CommandResponse.builder()
+          .withStatus(Response.Status.ERROR)
+          .withError(RaftError.Type.NO_LEADER_ERROR)
+          .build()));
+      } else {
+        request.acquire();
+        return context.getConnections()
+          .getConnection(context.getLeader())
+          .thenCompose(connection -> connection.send(request));
+      }
+    } finally {
+      request.release();
     }
   }
 
   @Override
   protected CompletableFuture<QueryResponse> query(QueryRequest request) {
-    context.checkThread();
-    logRequest(request);
-    if (context.getLeader() == null) {
-      return CompletableFuture.completedFuture(logResponse(QueryResponse.builder()
-        .withStatus(Response.Status.ERROR)
-        .withError(RaftError.Type.NO_LEADER_ERROR)
-        .build()));
-    } else {
-      return context.getConnections()
-        .getConnection(context.getLeader())
-        .thenCompose(connection -> connection.send(request));
+    try {
+      context.checkThread();
+      logRequest(request);
+      if (context.getLeader() == null) {
+        return CompletableFuture.completedFuture(logResponse(QueryResponse.builder()
+          .withStatus(Response.Status.ERROR)
+          .withError(RaftError.Type.NO_LEADER_ERROR)
+          .build()));
+      } else {
+        request.acquire();
+        return context.getConnections()
+          .getConnection(context.getLeader())
+          .thenCompose(connection -> connection.send(request));
+      }
+    } finally {
+      request.release();
     }
   }
 
   @Override
   protected CompletableFuture<RegisterResponse> register(RegisterRequest request) {
-    context.checkThread();
-    logRequest(request);
+    try {
+      context.checkThread();
+      logRequest(request);
 
-    if (context.getLeader() == null) {
-      return context.getConnections()
-        .getConnection(context.getCluster().getActiveMembers().get(random.nextInt(context.getCluster().getActiveMembers().size())).getMember())
-        .thenCompose(connection -> connection.send(request));
-    } else {
-      return context.getConnections()
-        .getConnection(context.getLeader())
-        .thenCompose(connection -> connection.send(request));
+      return CompletableFuture.completedFuture(logResponse(RegisterResponse.builder()
+        .withStatus(Response.Status.ERROR)
+        .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
+        .build()));
+    } finally {
+      request.release();
     }
   }
 
   @Override
   protected CompletableFuture<KeepAliveResponse> keepAlive(KeepAliveRequest request) {
-    context.checkThread();
-    logRequest(request);
+    try {
+      context.checkThread();
+      logRequest(request);
 
-    if (context.getLeader() == null) {
-      return context.getConnections()
-        .getConnection(context.getCluster().getActiveMembers().get(random.nextInt(context.getCluster().getActiveMembers().size())).getMember())
-        .thenCompose(connection -> connection.send(request));
-    } else {
-      return context.getConnections()
-        .getConnection(context.getLeader() )
-        .thenCompose(connection -> connection.send(request));
+      return CompletableFuture.completedFuture(logResponse(KeepAliveResponse.builder()
+        .withStatus(Response.Status.ERROR)
+        .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
+        .build()));
+    } finally {
+      request.release();
     }
   }
 
   @Override
   protected CompletableFuture<JoinResponse> join(JoinRequest request) {
-    context.checkThread();
-    logRequest(request);
+    try {
+      context.checkThread();
+      logRequest(request);
 
-    if (context.getLeader() == null) {
-      return CompletableFuture.completedFuture(logResponse(JoinResponse.builder()
-        .withStatus(Response.Status.ERROR)
-        .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
-        .build()));
-    } else {
-      return context.getConnections()
-        .getConnection(context.getLeader())
-        .thenCompose(connection -> connection.send(request));
+      if (context.getLeader() == null) {
+        return CompletableFuture.completedFuture(logResponse(JoinResponse.builder()
+          .withStatus(Response.Status.ERROR)
+          .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
+          .build()));
+      } else {
+        request.acquire();
+        return context.getConnections()
+          .getConnection(context.getLeader())
+          .thenCompose(connection -> connection.send(request));
+      }
+    } finally {
+      request.release();
     }
   }
 
   @Override
   protected CompletableFuture<LeaveResponse> leave(LeaveRequest request) {
-    context.checkThread();
-    logRequest(request);
+    try {
+      context.checkThread();
+      logRequest(request);
 
-    if (context.getLeader() == null) {
-      return CompletableFuture.completedFuture(logResponse(LeaveResponse.builder()
-        .withStatus(Response.Status.ERROR)
-        .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
-        .build()));
-    } else {
-      return context.getConnections()
-        .getConnection(context.getLeader())
-        .thenCompose(connection -> connection.send(request));
+      if (context.getLeader() == null) {
+        return CompletableFuture.completedFuture(logResponse(LeaveResponse.builder()
+          .withStatus(Response.Status.ERROR)
+          .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
+          .build()));
+      } else {
+        request.acquire();
+        return context.getConnections()
+          .getConnection(context.getLeader())
+          .thenCompose(connection -> connection.send(request));
+      }
+    } finally {
+      request.release();
     }
   }
 

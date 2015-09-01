@@ -103,6 +103,7 @@ final class JoinState extends InactiveState {
             LOGGER.debug("{} - Failed to join {}", context.getMember().id(), member.getMember());
             join(iterator);
           }
+          response.release();
         } else {
           LOGGER.debug("{} - Failed to join {}", context.getMember().id(), member.getMember());
           join(iterator);

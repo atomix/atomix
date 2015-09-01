@@ -21,6 +21,7 @@ import io.netty.channel.ChannelFuture;
 import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.Listener;
 import net.kuujo.copycat.util.Listeners;
+import net.kuujo.copycat.util.ReferenceCounted;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.Scheduled;
 import net.openhft.hashing.LongHashFunction;
@@ -142,6 +143,10 @@ public class NettyConnection implements Connection {
       .writeLong(requestId)
       .writeByte(SUCCESS);
     channel.writeAndFlush(writeResponse(buffer, response), channel.voidPromise());
+
+    if (response instanceof ReferenceCounted) {
+      ((ReferenceCounted) response).release();
+    }
   }
 
   /**
@@ -198,6 +203,9 @@ public class NettyConnection implements Connection {
    */
   private ByteBuf writeRequest(ByteBuf buffer, Object request) {
     context.serializer().writeObject(request, OUTPUT.get().setByteBuf(buffer));
+    if (request instanceof ReferenceCounted) {
+      ((ReferenceCounted) request).release();
+    }
     return buffer;
   }
 

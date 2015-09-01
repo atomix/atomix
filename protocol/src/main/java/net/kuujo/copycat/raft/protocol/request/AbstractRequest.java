@@ -15,11 +15,7 @@
  */
 package net.kuujo.copycat.raft.protocol.request;
 
-import net.kuujo.copycat.util.Assert;
-import net.kuujo.copycat.util.BuilderPool;
-import net.kuujo.copycat.util.ReferenceFactory;
-import net.kuujo.copycat.util.ReferenceManager;
-import net.kuujo.copycat.util.ReferencePool;
+import net.kuujo.copycat.util.*;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -47,9 +43,15 @@ abstract class AbstractRequest<T extends Request<T>> implements Request<T> {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public void release() {
-    if (references.decrementAndGet() == 0)
-      close();
+    int refs = references.decrementAndGet();
+    if (refs == 0) {
+      referenceManager.release((T) this);
+    } else if (refs < 0) {
+      references.set(0);
+      throw new IllegalStateException("cannot dereference non-referenced object");
+    }
   }
 
   @Override
@@ -60,6 +62,9 @@ abstract class AbstractRequest<T extends Request<T>> implements Request<T> {
   @Override
   @SuppressWarnings("unchecked")
   public void close() {
+    if (references.get() == 0)
+      throw new IllegalStateException("cannot close non-referenced object");
+    references.set(0);
     referenceManager.release((T) this);
   }
 
