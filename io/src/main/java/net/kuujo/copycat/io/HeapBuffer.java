@@ -45,13 +45,13 @@ public class HeapBuffer extends AbstractBuffer {
   }
 
   /**
-   * Allocates a fixed capacity heap buffer.
+   * Allocates a heap buffer with the given initial capacity.
    * <p>
    * When the buffer is constructed, {@link net.kuujo.copycat.io.util.HeapMemoryAllocator} will be used to allocate
-   * {@code capacity} bytes of memory on the Java heap. The resulting buffer will have a fixed capacity of {@code capacity}.
+   * {@code capacity} bytes of memory on the Java heap. The resulting buffer will have an initial capacity of {@code capacity}.
    * The underlying {@link HeapBytes} will be initialized to the next power of {@code 2}.
    *
-   * @param capacity The capacity of the buffer to allocate (in bytes).
+   * @param initialCapacity The initial capacity of the buffer to allocate (in bytes).
    * @return The heap buffer.
    * @throws IllegalArgumentException If {@code capacity} is greater than the maximum allowed capacity for
    *         an array on the Java heap - {@code Integer.MAX_VALUE - 5}
@@ -59,8 +59,8 @@ public class HeapBuffer extends AbstractBuffer {
    * @see HeapBuffer#allocate()
    * @see HeapBuffer#allocate(long, long)
    */
-  public static HeapBuffer allocate(long capacity) {
-    return allocate(capacity, capacity);
+  public static HeapBuffer allocate(long initialCapacity) {
+    return allocate(initialCapacity, HeapMemory.MAX_SIZE);
   }
 
   /**

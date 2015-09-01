@@ -50,21 +50,21 @@ public class FileBuffer extends AbstractBuffer {
   }
 
   /**
-   * Allocates a file buffer.
+   * Allocates a file buffer with the given initial capacity.
    * <p>
    * If the underlying file is empty, the file count will expand dynamically as bytes are written to the file.
    * The underlying {@link FileBytes} will be initialized to the nearest power of {@code 2}.
    *
    * @param file The file to allocate.
-   * @param capacity The capacity of the bytes to allocate.
+   * @param initialCapacity The initial capacity of the bytes to allocate.
    * @return The allocated buffer.
    *
    * @see FileBuffer#allocate(java.io.File)
    * @see FileBuffer#allocate(java.io.File, long, long)
    * @see FileBuffer#allocate(java.io.File, String, long, long)
    */
-  public static FileBuffer allocate(File file, long capacity) {
-    return allocate(file, FileBytes.DEFAULT_MODE, capacity, capacity);
+  public static FileBuffer allocate(File file, long initialCapacity) {
+    return allocate(file, FileBytes.DEFAULT_MODE, initialCapacity, Long.MAX_VALUE);
   }
 
   /**

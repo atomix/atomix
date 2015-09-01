@@ -44,13 +44,13 @@ public class DirectBuffer extends NativeBuffer {
   }
 
   /**
-   * Allocates a fixed capacity direct buffer.
+   * Allocates a direct buffer with the given initial capacity.
    * <p>
    * When the buffer is constructed, {@link net.kuujo.copycat.io.util.DirectMemoryAllocator} will be used to allocate
-   * {@code capacity} bytes of off-heap memory. The resulting buffer will have a fixed capacity of {@code capacity}.
+   * {@code capacity} bytes of off-heap memory. The resulting buffer will have an initial capacity of {@code capacity}.
    * The underlying {@link DirectBytes} will be initialized to the next power of {@code 2}.
    *
-   * @param capacity The capacity of the buffer to allocate (in bytes).
+   * @param initialCapacity The initial capacity of the buffer to allocate (in bytes).
    * @return The direct buffer.
    * @throws IllegalArgumentException If {@code capacity} is greater than the maximum allowed count for
    *         a {@link java.nio.ByteBuffer} - {@code Integer.MAX_VALUE - 5}
@@ -58,8 +58,8 @@ public class DirectBuffer extends NativeBuffer {
    * @see DirectBuffer#allocate()
    * @see DirectBuffer#allocate(long, long)
    */
-  public static DirectBuffer allocate(long capacity) {
-    return allocate(capacity, capacity);
+  public static DirectBuffer allocate(long initialCapacity) {
+    return allocate(initialCapacity, Long.MAX_VALUE);
   }
 
   /**
