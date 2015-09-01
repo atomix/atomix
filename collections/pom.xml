@@ -39,7 +39,7 @@
     </dependency>
     <dependency>
       <groupId>net.kuujo.copycat</groupId>
-      <artifactId>copycat-local</artifactId>
+      <artifactId>copycat-test</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>

@@ -15,8 +15,7 @@
  */
 
 /**
- * Copycat is a cluster coordination framework built on a Raft distributed log. Copycat provides a set of abstractions
- * for managing state consistently across a cluster.
+ * Core Copycat APIs, including {@link net.kuujo.copycat.CopycatClient} and {@link net.kuujo.copycat.CopycatReplica}.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
