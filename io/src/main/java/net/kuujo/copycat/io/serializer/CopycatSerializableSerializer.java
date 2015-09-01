@@ -15,11 +15,8 @@
  */
 package net.kuujo.copycat.io.serializer;
 
-import net.kuujo.copycat.io.*;
-import net.kuujo.copycat.io.serializer.CopycatSerializable;
-import net.kuujo.copycat.io.serializer.SerializationException;
-import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.io.serializer.TypeSerializer;
+import net.kuujo.copycat.io.BufferInput;
+import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.util.ReferenceCounted;
 import net.kuujo.copycat.util.ReferenceFactory;
 import net.kuujo.copycat.util.ReferenceManager;
@@ -94,14 +91,11 @@ public class CopycatSerializableSerializer<T extends CopycatSerializable> implem
    * Dynamically created a reference factory for a pooled type.
    */
   private ReferenceFactory createFactory(final Constructor constructor) {
-    return new ReferenceFactory() {
-      @Override
-      public ReferenceCounted<?> createReference(ReferenceManager manager) {
-        try {
-          return (ReferenceCounted<?>) constructor.newInstance(manager);
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
-          throw new SerializationException("failed to instantiate reference", e);
-        }
+    return manager -> {
+      try {
+        return (ReferenceCounted<?>) constructor.newInstance(manager);
+      } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+        throw new SerializationException("failed to instantiate reference", e);
       }
     };
   }

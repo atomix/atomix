@@ -22,21 +22,33 @@ import net.kuujo.copycat.util.ReferencePool;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class PooledAllocator implements BufferAllocator {
+public abstract class PooledAllocator implements BufferAllocator {
   private final ReferencePool<AbstractBuffer> pool;
 
   protected PooledAllocator(ReferencePool<AbstractBuffer> pool) {
     this.pool = pool;
   }
 
+  /**
+   * Returns the maximum buffer capacity.
+   *
+   * @return The maximum buffer capacity.
+   */
+  protected abstract long maxCapacity();
+
+  @Override
+  public Buffer allocate() {
+    return allocate(4096, maxCapacity());
+  }
+
   @Override
   public Buffer allocate(long capacity) {
-    return allocate(capacity, capacity);
+    return allocate(capacity, maxCapacity());
   }
 
   @Override
   public Buffer allocate(long initialCapacity, long maxCapacity) {
-    return pool.acquire().reset(0, initialCapacity, maxCapacity);
+    return pool.acquire().reset(0, initialCapacity, maxCapacity).clear();
   }
 
 }

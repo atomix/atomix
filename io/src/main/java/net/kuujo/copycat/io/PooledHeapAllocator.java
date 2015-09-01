@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.io;
 
+import net.kuujo.copycat.io.util.HeapMemory;
 import net.kuujo.copycat.util.ReferencePool;
 
 /**
@@ -27,6 +28,11 @@ public class PooledHeapAllocator extends PooledAllocator {
   @SuppressWarnings("unchecked")
   public PooledHeapAllocator() {
     super((ReferencePool) new HeapBufferPool());
+  }
+
+  @Override
+  protected long maxCapacity() {
+    return HeapMemory.MAX_SIZE;
   }
 
 }

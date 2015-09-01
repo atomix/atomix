@@ -23,12 +23,19 @@ package net.kuujo.copycat.io;
 public interface BufferAllocator {
 
   /**
-   * Allocates a fixed capacity buffer.
+   * Allocates a dynamic capacity buffer.
    *
-   * @param capacity The buffer capacity.
    * @return The allocated buffer.
    */
-  Buffer allocate(long capacity);
+  Buffer allocate();
+
+  /**
+   * Allocates a dynamic capacity buffer with the given initial capacity.
+   *
+   * @param initialCapacity The initial buffer capacity.
+   * @return The allocated buffer.
+   */
+  Buffer allocate(long initialCapacity);
 
   /**
    * Allocates a new buffer.
