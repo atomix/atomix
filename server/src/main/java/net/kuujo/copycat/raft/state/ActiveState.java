@@ -40,31 +40,39 @@ abstract class ActiveState extends PassiveState {
 
   @Override
   protected CompletableFuture<AppendResponse> append(final AppendRequest request) {
-    context.checkThread();
+    try {
+      context.checkThread();
 
-    // If the request indicates a term that is greater than the current term then
-    // assign that term and leader to the current context and step down as leader.
-    boolean transition = false;
-    if (request.term() > context.getTerm() || (request.term() == context.getTerm() && context.getLeader() == null)) {
-      context.setTerm(request.term());
-      context.setLeader(request.leader());
-      transition = true;
+      // If the request indicates a term that is greater than the current term then
+      // assign that term and leader to the current context and step down as leader.
+      boolean transition = false;
+      if (request.term() > context.getTerm() || (request.term() == context.getTerm() && context.getLeader() == null)) {
+        context.setTerm(request.term());
+        context.setLeader(request.leader());
+        transition = true;
+      }
+
+      CompletableFuture<AppendResponse> future = CompletableFuture.completedFuture(logResponse(handleAppend(logRequest(request))));
+
+      // If a transition is required then transition back to the follower state.
+      // If the node is already a follower then the transition will be ignored.
+      if (transition) {
+        transition(RaftServer.State.FOLLOWER);
+      }
+      return future;
+    } finally {
+      request.release();
     }
-
-    CompletableFuture<AppendResponse> future = CompletableFuture.completedFuture(logResponse(handleAppend(logRequest(request))));
-
-    // If a transition is required then transition back to the follower state.
-    // If the node is already a follower then the transition will be ignored.
-    if (transition) {
-      transition(RaftServer.State.FOLLOWER);
-    }
-    return future;
   }
 
   @Override
   protected CompletableFuture<PollResponse> poll(PollRequest request) {
-    context.checkThread();
-    return CompletableFuture.completedFuture(logResponse(handlePoll(logRequest(request))));
+    try {
+      context.checkThread();
+      return CompletableFuture.completedFuture(logResponse(handlePoll(logRequest(request))));
+    } finally {
+      request.release();
+    }
   }
 
   /**
@@ -88,8 +96,12 @@ abstract class ActiveState extends PassiveState {
 
   @Override
   protected CompletableFuture<VoteResponse> vote(VoteRequest request) {
-    context.checkThread();
-    return CompletableFuture.completedFuture(logResponse(handleVote(logRequest(request))));
+    try {
+      context.checkThread();
+      return CompletableFuture.completedFuture(logResponse(handleVote(logRequest(request))));
+    } finally {
+      request.release();
+    }
   }
 
   /**
@@ -190,29 +202,38 @@ abstract class ActiveState extends PassiveState {
 
   @Override
   protected CompletableFuture<CommandResponse> command(CommandRequest request) {
-    context.checkThread();
-    logRequest(request);
-    if (context.getLeader() == null) {
-      return CompletableFuture.completedFuture(logResponse(CommandResponse.builder()
-        .withStatus(Response.Status.ERROR)
-        .withError(RaftError.Type.NO_LEADER_ERROR)
-        .build()));
-    } else {
-      return context.getConnections()
-        .getConnection(context.getLeader())
-        .thenCompose(connection -> connection.send(request));
+    try {
+      context.checkThread();
+      logRequest(request);
+      if (context.getLeader() == null) {
+        return CompletableFuture.completedFuture(logResponse(CommandResponse.builder()
+          .withStatus(Response.Status.ERROR)
+          .withError(RaftError.Type.NO_LEADER_ERROR)
+          .build()));
+      } else {
+        request.acquire();
+        return context.getConnections()
+          .getConnection(context.getLeader())
+          .thenCompose(connection -> connection.send(request));
+      }
+    } finally {
+      request.release();
     }
   }
 
   @Override
   protected CompletableFuture<QueryResponse> query(QueryRequest request) {
-    context.checkThread();
-    logRequest(request);
+    try {
+      context.checkThread();
+      logRequest(request);
 
-    if (request.query().consistency() == ConsistencyLevel.SERIALIZABLE) {
-      return querySerializable(request);
-    } else {
-      return queryForward(request);
+      if (request.query().consistency() == ConsistencyLevel.SERIALIZABLE) {
+        return querySerializable(request);
+      } else {
+        return queryForward(request);
+      }
+    } finally {
+      request.release();
     }
   }
 
@@ -228,6 +249,7 @@ abstract class ActiveState extends PassiveState {
     }
 
     LOGGER.debug("{} - Forwarded {}", context.getMember().id(), request);
+    request.acquire();
     return context.getConnections().getConnection(context.getLeader())
       .thenCompose(connection -> connection.<QueryRequest, QueryResponse>send(request).thenApply(this::logResponse));
   }
@@ -274,7 +296,7 @@ abstract class ActiveState extends PassiveState {
             .build()));
         }
       }
-      entry.close();
+      entry.release();
     }, context.getContext().executor());
     return future;
   }

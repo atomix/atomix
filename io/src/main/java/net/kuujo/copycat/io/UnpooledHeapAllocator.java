@@ -15,12 +15,19 @@
  */
 package net.kuujo.copycat.io;
 
+import net.kuujo.copycat.io.util.HeapMemory;
+
 /**
  * Unpooled heap allocator.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class UnpooledHeapAllocator extends UnpooledAllocator {
+
+  @Override
+  protected long maxCapacity() {
+    return HeapMemory.MAX_SIZE;
+  }
 
   @Override
   public Buffer allocate(long initialCapacity, long maxCapacity) {

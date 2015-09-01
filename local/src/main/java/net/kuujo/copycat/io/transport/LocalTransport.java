@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.io.transport;
 
+import net.kuujo.copycat.io.PooledDirectAllocator;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.util.Assert;
 
@@ -29,14 +30,13 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class LocalTransport implements Transport {
-
   private final LocalServerRegistry registry;
   private final Serializer serializer;
   private final Map<UUID, LocalClient> clients = new ConcurrentHashMap<>();
   private final Map<UUID, LocalServer> servers = new ConcurrentHashMap<>();
 
   public LocalTransport(LocalServerRegistry registry) {
-    this(registry, new Serializer());
+    this(registry, new Serializer(new PooledDirectAllocator()));
   }
 
   public LocalTransport(LocalServerRegistry registry, Serializer serializer) {

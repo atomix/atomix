@@ -138,12 +138,13 @@ class ServerStateMachine implements AutoCloseable {
     ServerSession session = executor.context().sessions().registerSession(entry.getIndex(), entry.getConnection(), entry.getTimeout()).setTimestamp(entry.getTimestamp());
 
     Context context = getContext();
+    long index = entry.getIndex();
 
     // Set last applied only after the operation has been submitted to the state machine executor.
     CompletableFuture<Long> future = new ComposableFuture<>();
     executor.executor().execute(() -> {
       stateMachine.register(session);
-      context.execute(() -> future.complete(entry.getIndex()));
+      context.execute(() -> future.complete(index));
     });
 
     // Expire any remaining expired sessions.
@@ -228,8 +229,10 @@ class ServerStateMachine implements AutoCloseable {
       // Ensure the response check is executed in the state machine thread in order to ensure the
       // command was applied, otherwise there will be a race condition and concurrent modification issues.
       Context context = getContext();
+      long sequence = entry.getSequence();
+
       executor.executor().execute(() -> {
-        Object response = session.getResponse(entry.getSequence());
+        Object response = session.getResponse(sequence);
         if (response == null) {
           context.executor().execute(() -> future.complete(null));
         } else if (response instanceof Throwable) {
@@ -303,23 +306,24 @@ class ServerStateMachine implements AutoCloseable {
       // Get the caller's context.
       Context context = getContext();
 
+      ServerCommit commit = commits.acquire(entry);
       session.registerQuery(entry.getVersion(), () -> {
         context.checkThread();
-        executeQuery(entry, future, context);
+        executeQuery(commit, future, context);
       });
       return future;
     }
     // Execute the query immediately if the state is caught up.
     else {
-      return executeQuery(entry, new CompletableFuture<>(), getContext());
+      return executeQuery(commits.acquire(entry), new CompletableFuture<>(), getContext());
     }
   }
 
   /**
    * Executes a state machine query.
    */
-  private CompletableFuture<Object> executeQuery(QueryEntry entry, CompletableFuture<Object> future, Context context) {
-    executor.execute(commits.acquire(entry)).whenComplete((result, error) -> {
+  private CompletableFuture<Object> executeQuery(ServerCommit commit, CompletableFuture<Object> future, Context context) {
+    executor.execute(commit).whenComplete((result, error) -> {
       if (error == null) {
         context.execute(() -> future.complete(result));
       } else {

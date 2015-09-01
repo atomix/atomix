@@ -55,33 +55,43 @@ final class FollowerState extends ActiveState {
 
   @Override
   protected CompletableFuture<RegisterResponse> register(RegisterRequest request) {
-    context.checkThread();
-    logRequest(request);
-    if (context.getLeader() == null) {
-      return CompletableFuture.completedFuture(logResponse(RegisterResponse.builder()
-        .withStatus(Response.Status.ERROR)
-        .withError(RaftError.Type.NO_LEADER_ERROR)
-        .build()));
-    } else {
-      return context.getConnections()
-        .getConnection(context.getLeader())
-        .thenCompose(connection -> connection.send(request));
+    try {
+      context.checkThread();
+      logRequest(request);
+      if (context.getLeader() == null) {
+        return CompletableFuture.completedFuture(logResponse(RegisterResponse.builder()
+          .withStatus(Response.Status.ERROR)
+          .withError(RaftError.Type.NO_LEADER_ERROR)
+          .build()));
+      } else {
+        request.acquire();
+        return context.getConnections()
+          .getConnection(context.getLeader())
+          .thenCompose(connection -> connection.send(request));
+      }
+    } finally {
+      request.release();
     }
   }
 
   @Override
   protected CompletableFuture<KeepAliveResponse> keepAlive(KeepAliveRequest request) {
-    context.checkThread();
-    logRequest(request);
-    if (context.getLeader() == null) {
-      return CompletableFuture.completedFuture(logResponse(KeepAliveResponse.builder()
-        .withStatus(Response.Status.ERROR)
-        .withError(RaftError.Type.NO_LEADER_ERROR)
-        .build()));
-    } else {
-      return context.getConnections()
-        .getConnection(context.getLeader())
-        .thenCompose(connection -> connection.send(request));
+    try {
+      context.checkThread();
+      logRequest(request);
+      if (context.getLeader() == null) {
+        return CompletableFuture.completedFuture(logResponse(KeepAliveResponse.builder()
+          .withStatus(Response.Status.ERROR)
+          .withError(RaftError.Type.NO_LEADER_ERROR)
+          .build()));
+      } else {
+        request.acquire();
+        return context.getConnections()
+          .getConnection(context.getLeader())
+          .thenCompose(connection -> connection.send(request));
+      }
+    } finally {
+      request.release();
     }
   }
 
@@ -161,10 +171,18 @@ final class FollowerState extends ActiveState {
     long lastIndex = context.getLog().lastIndex();
     RaftEntry lastEntry = lastIndex > 0 ? context.getLog().get(lastIndex) : null;
 
+    final long lastTerm;
+    if (lastEntry != null) {
+      lastTerm = lastEntry.getTerm();
+      lastEntry.close();
+    } else {
+      lastTerm = 0;
+    }
+
+    LOGGER.debug("{} - Polling members {}", context.getMember().id(), votingMembers);
+
     // Once we got the last log term, iterate through each current member
     // of the cluster and vote each member for a vote.
-    LOGGER.debug("{} - Polling members {}", context.getMember().id(), votingMembers);
-    final long lastTerm = lastEntry != null ? lastEntry.getTerm() : 0;
     for (MemberState member : votingMembers) {
       LOGGER.debug("{} - Polling {} for next term {}", context.getMember().id(), member, context.getTerm() + 1);
       PollRequest request = PollRequest.builder()
@@ -184,6 +202,7 @@ final class FollowerState extends ActiveState {
               if (response.term() > context.getTerm()) {
                 context.setTerm(response.term());
               }
+
               if (!response.accepted()) {
                 LOGGER.debug("{} - Received rejected poll from {}", context.getMember().id(), member);
                 quorum.fail();
@@ -194,7 +213,10 @@ final class FollowerState extends ActiveState {
                 LOGGER.debug("{} - Received accepted poll from {}", context.getMember().id(), member);
                 quorum.succeed();
               }
+              response.release();
             }
+          } else if (response != null) {
+            response.release();
           }
         }, context.getContext().executor());
       });

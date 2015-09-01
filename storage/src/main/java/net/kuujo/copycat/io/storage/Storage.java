@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.io.storage;
 
+import net.kuujo.copycat.io.PooledDirectAllocator;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.util.Assert;
 
@@ -50,7 +51,7 @@ public class Storage {
   private static final int DEFAULT_MAX_ENTRIES_PER_SEGMENT = (int) (Math.pow(2, 31) - 1) / 8 - 16;
   private static final int DEFAULT_CLEANER_THREADS = Runtime.getRuntime().availableProcessors() / 2;
 
-  private Serializer serializer = new Serializer();
+  private Serializer serializer = new Serializer(new PooledDirectAllocator());
   private File directory = new File(DEFAULT_DIRECTORY);
   private int maxEntrySize = DEFAULT_MAX_ENTRY_SIZE;
   private int maxSegmentSize = DEFAULT_MAX_SEGMENT_SIZE;

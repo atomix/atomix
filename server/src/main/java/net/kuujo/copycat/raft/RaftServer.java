@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.raft;
 
+import net.kuujo.copycat.io.PooledDirectAllocator;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.ServiceLoaderTypeResolver;
 import net.kuujo.copycat.io.storage.Storage;
@@ -383,7 +384,7 @@ public class RaftServer implements Managed<RaftServer> {
 
       // If no serializer instance was provided, create one.
       if (serializer == null) {
-        serializer = new Serializer();
+        serializer = new Serializer(new PooledDirectAllocator());
       }
 
       // Resolve serializer serializable types with the ServiceLoaderTypeResolver.

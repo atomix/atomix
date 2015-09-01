@@ -74,7 +74,7 @@ public abstract class AbstractBuffer implements Buffer {
     this.initialCapacity = capacity;
     this.maxCapacity = maxCapacity;
     capacity(initialCapacity);
-    references.set(1);
+    references.set(0);
     rewind();
     return this;
   }

@@ -355,8 +355,7 @@ public class Log implements AutoCloseable {
     assertIsOpen();
     flush();
     segments.close();
-    if (cleaner != null)
-      cleaner.close();
+    cleaner.close();
     open = false;
   }
 

@@ -183,7 +183,9 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
 
   @Override
   public void close() {
-    entries.forEach(Entry::release);
+    for (Entry entry : entries) {
+      entry.release();
+    }
     super.close();
   }
 

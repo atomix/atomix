@@ -122,10 +122,18 @@ final class CandidateState extends ActiveState {
     long lastIndex = context.getLog().lastIndex();
     RaftEntry lastEntry = lastIndex != 0 ? context.getLog().get(lastIndex) : null;
 
+    final long lastTerm;
+    if (lastEntry != null) {
+      lastTerm = lastEntry.getTerm();
+      lastEntry.close();
+    } else {
+      lastTerm = 0;
+    }
+
+    LOGGER.debug("{} - Requesting votes from {}", context.getMember().id(), votingMembers);
+
     // Once we got the last log term, iterate through each current member
     // of the cluster and vote each member for a vote.
-    LOGGER.debug("{} - Requesting votes from {}", context.getMember().id(), votingMembers);
-    final long lastTerm = lastEntry != null ? lastEntry.getTerm() : 0;
     for (MemberState member : votingMembers) {
       LOGGER.debug("{} - Requesting vote from {} for term {}", context.getMember().id(), member, context.getTerm());
       VoteRequest request = VoteRequest.builder()
@@ -142,21 +150,26 @@ final class CandidateState extends ActiveState {
             if (error != null) {
               LOGGER.warn(error.getMessage());
               quorum.fail();
-            } else if (response.term() > context.getTerm()) {
-              LOGGER.debug("{} - Received greater term from {}", context.getMember().id(), member);
-              context.setTerm(response.term());
-              complete.set(true);
-              transition(RaftServer.State.FOLLOWER);
-            } else if (!response.voted()) {
-              LOGGER.debug("{} - Received rejected vote from {}", context.getMember().id(), member);
-              quorum.fail();
-            } else if (response.term() != context.getTerm()) {
-              LOGGER.debug("{} - Received successful vote for a different term from {}", context.getMember().id(), member);
-              quorum.fail();
             } else {
-              LOGGER.debug("{} - Received successful vote from {}", context.getMember().id(), member);
-              quorum.succeed();
+              if (response.term() > context.getTerm()) {
+                LOGGER.debug("{} - Received greater term from {}", context.getMember().id(), member);
+                context.setTerm(response.term());
+                complete.set(true);
+                transition(RaftServer.State.FOLLOWER);
+              } else if (!response.voted()) {
+                LOGGER.debug("{} - Received rejected vote from {}", context.getMember().id(), member);
+                quorum.fail();
+              } else if (response.term() != context.getTerm()) {
+                LOGGER.debug("{} - Received successful vote for a different term from {}", context.getMember().id(), member);
+                quorum.fail();
+              } else {
+                LOGGER.debug("{} - Received successful vote from {}", context.getMember().id(), member);
+                quorum.succeed();
+              }
+              response.release();
             }
+          } else if (response != null) {
+            response.release();
           }
         }, context.getContext().executor());
       });
@@ -189,6 +202,7 @@ final class CandidateState extends ActiveState {
     }
 
     // If the vote request is not for this candidate then reject the vote.
+    request.release();
     if (request.candidate() == context.getMember().id()) {
       return CompletableFuture.completedFuture(logResponse(VoteResponse.builder()
         .withStatus(Response.Status.OK)

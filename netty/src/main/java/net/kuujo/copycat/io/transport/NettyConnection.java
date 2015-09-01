@@ -18,10 +18,10 @@ package net.kuujo.copycat.io.transport;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
-import io.netty.util.ReferenceCounted;
 import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.Listener;
 import net.kuujo.copycat.util.Listeners;
+import net.kuujo.copycat.util.ReferenceCounted;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.Scheduled;
 import net.openhft.hashing.LongHashFunction;
@@ -115,13 +115,7 @@ public class NettyConnection implements Connection {
     HandlerHolder handler = handlers.get(address);
     if (handler != null) {
       Object request = readRequest(buffer);
-      handler.context.executor().execute(() -> {
-        handleRequest(requestId, request, handler);
-
-        if (request instanceof ReferenceCounted) {
-          ((ReferenceCounted) request).release();
-        }
-      });
+      handler.context.executor().execute(() -> handleRequest(requestId, request, handler));
     }
   }
 
@@ -136,10 +130,6 @@ public class NettyConnection implements Connection {
         handleRequestSuccess(requestId, response);
       } else {
         handleRequestFailure(requestId, error);
-      }
-
-      if (request instanceof ReferenceCounted) {
-        ((ReferenceCounted) request).release();
       }
     }, context.executor());
   }
@@ -194,13 +184,7 @@ public class NettyConnection implements Connection {
   private void handleResponseSuccess(long requestId, Object response) {
     ContextualFuture future = responseFutures.remove(requestId);
     if (future != null) {
-      future.context.executor().execute(() -> {
-        future.complete(response);
-
-        if (response instanceof ReferenceCounted) {
-          ((ReferenceCounted) response).release();
-        }
-      });
+      future.context.executor().execute(() -> future.complete(response));
     }
   }
 
@@ -219,6 +203,9 @@ public class NettyConnection implements Connection {
    */
   private ByteBuf writeRequest(ByteBuf buffer, Object request) {
     context.serializer().writeObject(request, OUTPUT.get().setByteBuf(buffer));
+    if (request instanceof ReferenceCounted) {
+      ((ReferenceCounted) request).release();
+    }
     return buffer;
   }
 

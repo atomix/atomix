@@ -16,7 +16,6 @@
 package net.kuujo.copycat.io.serializer;
 
 import net.kuujo.copycat.io.*;
-import net.kuujo.copycat.io.util.HeapMemory;
 
 import java.io.*;
 import java.util.*;
@@ -344,17 +343,39 @@ public class Serializer implements Cloneable {
   }
 
   /**
-   * Allocates a new buffer with a fixed initial and maximum capacity.
+   * Returns the underlying buffer allocator.
+   *
+   * @return The underlying buffer allocator.
+   */
+  public BufferAllocator allocator() {
+    return allocator;
+  }
+
+  /**
+   * Allocates a new buffer with an arbitrary initial capacity and unlimited maximum capacity.
+   * <p>
+   * The buffer will be allocated via the {@link net.kuujo.copycat.io.BufferAllocator} provided to this instance's constructor.
+   * If no {@code BufferAllocator} was provided, the default {@link net.kuujo.copycat.io.UnpooledHeapAllocator} will
+   * be used.
+   *
+   * @return The allocated buffer. This will have an initial capacity that is dependent on the underlying {@link BufferAllocator}.
+   */
+  public Buffer allocate() {
+    return allocator.allocate();
+  }
+
+  /**
+   * Allocates a new buffer with an initial and an unlimited maximum capacity.
    * <p>
    * The buffer will be allocated via the {@link net.kuujo.copycat.io.BufferAllocator} provided to this instance's constructor.
    * If no {@code BufferAllocator} was provided, the default {@link net.kuujo.copycat.io.UnpooledHeapAllocator} will
    * be used.
    *
    * @param capacity The buffer capacity.
-   * @return The allocated buffer. This will have an initial capacity and maximum capacity of the given {@code capacity}
+   * @return The allocated buffer. This will have an initial capacity of the given {@code capacity}
    */
   public Buffer allocate(long capacity) {
-    return allocator.allocate(capacity, capacity);
+    return allocator.allocate(capacity);
   }
 
   /**
@@ -423,7 +444,7 @@ public class Serializer implements Cloneable {
    * @see Serializer#writeObject(Object, net.kuujo.copycat.io.Buffer)
    */
   public <T> Buffer writeObject(T object) {
-    return writeObject(object, allocator.allocate(32, HeapMemory.MAX_SIZE));
+    return writeObject(object, allocator.allocate());
   }
 
   /**
@@ -756,7 +777,7 @@ public class Serializer implements Cloneable {
    * @return The read buffer.
    */
   private Buffer readBuffer(BufferInput buffer) {
-    Buffer object = allocator.allocate(32, HeapMemory.MAX_SIZE);
+    Buffer object = allocator.allocate();
     buffer.read(object);
     return object;
   }

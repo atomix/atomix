@@ -27,4 +27,9 @@ public class UnpooledDirectAllocator extends UnpooledAllocator {
     return DirectBuffer.allocate(initialCapacity, maxCapacity);
   }
 
+  @Override
+  protected long maxCapacity() {
+    return Long.MAX_VALUE;
+  }
+
 }

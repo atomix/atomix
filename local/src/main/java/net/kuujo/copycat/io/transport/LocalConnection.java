@@ -19,6 +19,7 @@ import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.Listener;
 import net.kuujo.copycat.util.Listeners;
+import net.kuujo.copycat.util.ReferenceCounted;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.Futures;
 
@@ -76,19 +77,25 @@ public class LocalConnection implements Connection {
   }
 
   @Override
-  public <T, U> CompletableFuture<U> send(T message) {
-    Assert.notNull(message, "message");
+  public <T, U> CompletableFuture<U> send(T request) {
+    Assert.notNull(request, "message");
     Context context = getContext();
     CompletableFuture<U> future = new CompletableFuture<>();
-    Buffer buffer = context.serializer().writeObject(message);
-    connection.<U>receive(buffer.flip()).whenCompleteAsync((result, error) -> {
-      if (error == null) {
-        future.complete(result);
+
+    Buffer requestBuffer = context.serializer().writeObject(request);
+    connection.<U>receive(requestBuffer.flip()).whenCompleteAsync((responseBuffer, error) -> {
+      int status = responseBuffer.readByte();
+      if (status == 1) {
+        future.complete(context.serializer().readObject(responseBuffer));
       } else {
-        future.completeExceptionally(error);
+        future.completeExceptionally(context.serializer().readObject(responseBuffer));
       }
-      buffer.release();
+      responseBuffer.release();
     }, context.executor());
+
+    if (request instanceof ReferenceCounted) {
+      ((ReferenceCounted) request).release();
+    }
     return future;
   }
 
@@ -96,21 +103,34 @@ public class LocalConnection implements Connection {
    * Receives a message.
    */
   @SuppressWarnings("unchecked")
-  private <U> CompletableFuture<U> receive(Buffer buffer) {
+  private CompletableFuture<Buffer> receive(Buffer requestBuffer) {
     Context context = getContext();
-    Object message = context.serializer().readObject(buffer);
-    HandlerHolder holder = handlers.get(message.getClass());
+
+    Object request = context.serializer().readObject(requestBuffer);
+    requestBuffer.release();
+
+    HandlerHolder holder = handlers.get(request.getClass());
     if (holder != null) {
-      MessageHandler<Object, U> handler = holder.handler;
-      CompletableFuture<U> future = new CompletableFuture<>();
+      MessageHandler<Object, Object> handler = holder.handler;
+      CompletableFuture<Buffer> future = new CompletableFuture<>();
+
       holder.context.executor().execute(() -> {
-        handler.handle(message).whenComplete((result, error) -> {
+        handler.handle(request).whenCompleteAsync((response, error) -> {
+          Buffer responseBuffer = context.serializer().allocate();
           if (error == null) {
-            future.complete(result);
+            responseBuffer.writeByte(1);
+            context.serializer().writeObject(response, responseBuffer);
           } else {
-            future.completeExceptionally(error);
+            responseBuffer.writeByte(0);
+            context.serializer().writeObject(error, responseBuffer);
           }
-        });
+
+          future.complete(responseBuffer.flip());
+
+          if (response instanceof ReferenceCounted) {
+            ((ReferenceCounted) response).release();
+          }
+        }, context.executor());
       });
       return future;
     }

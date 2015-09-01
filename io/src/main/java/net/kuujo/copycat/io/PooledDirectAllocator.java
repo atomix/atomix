@@ -29,4 +29,8 @@ public class PooledDirectAllocator extends PooledAllocator {
     super((ReferencePool) new DirectBufferPool());
   }
 
+  @Override
+  protected long maxCapacity() {
+    return Long.MAX_VALUE;
+  }
 }
