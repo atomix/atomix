@@ -19,6 +19,7 @@ package net.kuujo.copycat.raft;
 import net.kuujo.copycat.raft.session.Sessions;
 
 import java.time.Clock;
+import java.time.Instant;
 
 /**
  * State machine context.
@@ -28,18 +29,25 @@ import java.time.Clock;
 public interface StateMachineContext {
 
   /**
-   * Returns the current state version.
+   * Returns the current state machine version.
    *
-   * @return The current state version.
+   * @return The current state machine version.
    */
   long version();
 
   /**
-   * Returns the deterministic state machine time.
+   * Returns the state machine executor clock.
    *
-   * @return The deterministic state machine time.
+   * @return The state machine executor clock.
    */
-  Clock time();
+  Clock clock();
+
+  /**
+   * Returns the current state machine executor time.
+   *
+   * @return The current state machine executor time.
+   */
+  Instant now();
 
   /**
    * Returns the state machine sessions.

@@ -45,8 +45,13 @@ class ServerStateMachineContext implements StateMachineContext {
   }
 
   @Override
-  public Clock time() {
+  public Clock clock() {
     return clock;
+  }
+
+  @Override
+  public Instant now() {
+    return clock.instant();
   }
 
   @Override

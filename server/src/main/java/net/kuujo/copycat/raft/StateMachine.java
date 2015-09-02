@@ -19,7 +19,11 @@ import net.kuujo.copycat.raft.protocol.Command;
 import net.kuujo.copycat.raft.protocol.Operation;
 import net.kuujo.copycat.raft.protocol.Query;
 import net.kuujo.copycat.raft.session.Session;
+import net.kuujo.copycat.raft.session.Sessions;
 import net.kuujo.copycat.util.Assert;
+
+import java.time.Clock;
+import java.time.Instant;
 
 /**
  * Base class for user-provided Raft state machines.
@@ -57,20 +61,38 @@ public abstract class StateMachine implements AutoCloseable {
   }
 
   /**
-   * Returns the state machine context.
-   *
-   * @return The state machine context.
-   */
-  public StateMachineContext context() {
-    return context;
-  }
-
-  /**
    * Configures the state machine.
    *
    * @param executor The state machine executor.
    */
   public abstract void configure(StateMachineExecutor executor);
+
+  /**
+   * Returns the state machine sessions.
+   *
+   * @return The state machine sessions.
+   */
+  protected Sessions sessions() {
+    return context.sessions();
+  }
+
+  /**
+   * Returns the state machine's deterministic clock.
+   *
+   * @return The state machine's deterministic clock.
+   */
+  protected Clock clock() {
+    return context.clock();
+  }
+
+  /**
+   * Returns the current state machine time.
+   *
+   * @return The current state machine time.
+   */
+  protected Instant now() {
+    return context.now();
+  }
 
   /**
    * Called when a new session is registered.

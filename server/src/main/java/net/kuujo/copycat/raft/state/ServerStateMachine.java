@@ -40,6 +40,7 @@ class ServerStateMachine implements AutoCloseable {
   private final StateMachine stateMachine;
   private final ServerStateMachineExecutor executor;
   private final ServerCommitPool commits;
+  private long timestamp;
   private long lastApplied;
 
   ServerStateMachine(StateMachine stateMachine, ServerCommitCleaner cleaner, Context context) {
@@ -306,7 +307,8 @@ class ServerStateMachine implements AutoCloseable {
       // Get the caller's context.
       Context context = getContext();
 
-      ServerCommit commit = commits.acquire(entry);
+      // Override the configured query timestamp with the deterministic executor timestamp.
+      ServerCommit commit = commits.acquire(entry.setTimestamp(executor.timestamp()));
       session.registerQuery(entry.getVersion(), () -> {
         context.checkThread();
         executeQuery(commit, future, context);
@@ -315,7 +317,7 @@ class ServerStateMachine implements AutoCloseable {
     }
     // Execute the query immediately if the state is caught up.
     else {
-      return executeQuery(commits.acquire(entry), new CompletableFuture<>(), getContext());
+      return executeQuery(commits.acquire(entry.setTimestamp(executor.timestamp())), new CompletableFuture<>(), getContext());
     }
   }
 

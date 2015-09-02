@@ -63,16 +63,14 @@ public class TopicState extends StateMachine {
    * Handles a publish commit.
    */
   protected void publish(Commit<TopicCommands.Publish> commit) {
-    if (commit.index() >= context().version()) {
-      Iterator<Map.Entry<Long, Commit<TopicCommands.Listen>>> iterator = listeners.entrySet().iterator();
-      while (iterator.hasNext()) {
-        Commit<TopicCommands.Listen> listener = iterator.next().getValue();
-        if (listener.session().isOpen()) {
-          listener.session().publish(commit.operation().message());
-        } else {
-          iterator.remove();
-          listener.clean();
-        }
+    Iterator<Map.Entry<Long, Commit<TopicCommands.Listen>>> iterator = listeners.entrySet().iterator();
+    while (iterator.hasNext()) {
+      Commit<TopicCommands.Listen> listener = iterator.next().getValue();
+      if (listener.session().isOpen()) {
+        listener.session().publish(commit.operation().message());
+      } else {
+        iterator.remove();
+        listener.clean();
       }
     }
     commit.clean();

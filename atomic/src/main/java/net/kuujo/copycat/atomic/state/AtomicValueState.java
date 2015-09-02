@@ -16,10 +16,10 @@
 package net.kuujo.copycat.atomic.state;
 
 import net.kuujo.copycat.PersistenceMode;
-import net.kuujo.copycat.raft.session.Session;
 import net.kuujo.copycat.raft.Commit;
 import net.kuujo.copycat.raft.StateMachine;
 import net.kuujo.copycat.raft.StateMachineExecutor;
+import net.kuujo.copycat.raft.session.Session;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -132,7 +132,7 @@ public class AtomicValueState extends StateMachine {
    * Applies a set commit.
    */
   protected void set(Commit<AtomicValueCommands.Set> commit) {
-    if (!isActive(commit, context().time().instant())) {
+    if (!isActive(commit, now())) {
       commit.clean();
     } else {
       if (current != null) {
@@ -148,7 +148,7 @@ public class AtomicValueState extends StateMachine {
    * Handles a compare and set commit.
    */
   protected boolean compareAndSet(Commit<AtomicValueCommands.CompareAndSet> commit) {
-    if (!isActive(commit, context().time().instant())) {
+    if (!isActive(commit, now())) {
       commit.clean();
       return false;
     } else if (isActive(current, commit.time())) {
@@ -178,9 +178,8 @@ public class AtomicValueState extends StateMachine {
    * Handles a get and set commit.
    */
   protected Object getAndSet(Commit<AtomicValueCommands.GetAndSet> commit) {
-    if (!isActive(commit, context().time().instant())) {
+    if (!isActive(commit, now())) {
       commit.clean();
-
     }
 
     if (isActive(current, commit.time())) {

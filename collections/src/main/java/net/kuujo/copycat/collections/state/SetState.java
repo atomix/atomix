@@ -16,10 +16,10 @@
 package net.kuujo.copycat.collections.state;
 
 import net.kuujo.copycat.PersistenceMode;
-import net.kuujo.copycat.raft.session.Session;
 import net.kuujo.copycat.raft.Commit;
 import net.kuujo.copycat.raft.StateMachine;
 import net.kuujo.copycat.raft.StateMachineExecutor;
+import net.kuujo.copycat.raft.session.Session;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -104,7 +104,7 @@ public class SetState extends StateMachine {
     }
 
     Commit<? extends SetCommands.TtlCommand> previous = map.get(commit.operation().value());
-    if (!isActive(commit, context().time().instant())) {
+    if (!isActive(commit, now())) {
       commit.clean();
       return false;
     } else if (!isActive(previous, commit.time())) {

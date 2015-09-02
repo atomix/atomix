@@ -28,6 +28,7 @@ import net.kuujo.copycat.util.concurrent.Scheduled;
 import org.slf4j.Logger;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -48,10 +49,18 @@ class ServerStateMachineExecutor implements StateMachineExecutor {
   private final List<ServerScheduledTask> complete = new ArrayList<>();
   private final Map<Class, Function> operations = new HashMap<>();
   private Function allOperation;
+  private long timestamp;
 
   ServerStateMachineExecutor(Context context) {
     this.executor = context;
     this.context = new ServerStateMachineContext();
+  }
+
+  /**
+   * Returns the executor timestamp.
+   */
+  long timestamp() {
+    return timestamp;
   }
 
   @Override
@@ -137,6 +146,8 @@ class ServerStateMachineExecutor implements StateMachineExecutor {
    * Executes scheduled callbacks based on the provided time.
    */
   void tick(long timestamp) {
+    this.timestamp = Math.max(this.timestamp, timestamp);
+
     // Only create an iterator if there are actually tasks scheduled.
     if (!tasks.isEmpty()) {
 
@@ -145,8 +156,11 @@ class ServerStateMachineExecutor implements StateMachineExecutor {
       Iterator<ServerScheduledTask> iterator = tasks.iterator();
       while (iterator.hasNext()) {
         ServerScheduledTask task = iterator.next();
-        if (task.complete(timestamp)) {
-          executor.executor().execute(task::execute);
+        if (task.complete(this.timestamp)) {
+          executor.executor().execute(() -> {
+            context.update(context.version(), Instant.ofEpochMilli(task.time));
+            task.execute();
+          });
           complete.add(task);
           iterator.remove();
         } else {
@@ -229,7 +243,7 @@ class ServerStateMachineExecutor implements StateMachineExecutor {
       this.delay = delay;
       this.interval = interval;
       this.callback = callback;
-      this.time = context.time().instant().toEpochMilli() + delay;
+      this.time = context.now().toEpochMilli() + delay;
     }
 
     /**
@@ -272,7 +286,7 @@ class ServerStateMachineExecutor implements StateMachineExecutor {
      */
     private void reschedule() {
       if (interval > 0) {
-        time = context.time().instant().toEpochMilli() + delay;
+        time = timestamp + delay;
         schedule();
       }
     }
