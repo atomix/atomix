@@ -58,7 +58,6 @@ public abstract class BufferTest {
     assertEquals(buffer.capacity(), 8);
     assertEquals(buffer.limit(), -1);
     assertEquals(buffer.capacity(), 8);
-    assertEquals(buffer.remaining(), 4);
     buffer.flip();
     assertEquals(buffer.limit(), 4);
     assertEquals(buffer.position(), 0);
@@ -86,7 +85,6 @@ public abstract class BufferTest {
     buffer.clear();
     assertEquals(buffer.limit(), -1);
     assertEquals(buffer.capacity(), 8);
-    assertEquals(buffer.maxCapacity(), 8);
     assertEquals(buffer.position(), 0);
   }
 
@@ -96,34 +94,34 @@ public abstract class BufferTest {
 
   @Test(expectedExceptions=BufferUnderflowException.class)
   public void testReadIntThrowsBufferUnderflowWithNoRemainingBytesRelative() {
-    createBuffer(4)
+    createBuffer(4, 4)
       .writeInt(10)
       .readInt();
   }
 
   @Test(expectedExceptions=BufferUnderflowException.class)
   public void testReadIntThrowsBufferUnderflowWithNoRemainingBytesAbsolute() {
-    createBuffer(4).readInt(2);
+    createBuffer(4, 4).readInt(2);
   }
 
   @Test(expectedExceptions=BufferOverflowException.class)
   public void testWriteIntThrowsBufferOverflowWithNoRemainingBytesRelative() {
-    createBuffer(4).writeInt(10).writeInt(20);
+    createBuffer(4, 4).writeInt(10).writeInt(20);
   }
 
   @Test(expectedExceptions=BufferOverflowException.class)
   public void testReadIntThrowsBufferOverflowWithNoRemainingBytesAbsolute() {
-    createBuffer(4).writeInt(4, 10);
+    createBuffer(4, 4).writeInt(4, 10);
   }
 
   @Test(expectedExceptions=IndexOutOfBoundsException.class)
   public void testReadIntThrowsIndexOutOfBounds() {
-    createBuffer(4).readInt(10);
+    createBuffer(4, 4).readInt(10);
   }
 
   @Test(expectedExceptions=IndexOutOfBoundsException.class)
   public void testWriteIntThrowsIndexOutOfBounds() {
-    createBuffer(4).writeInt(10, 10);
+    createBuffer(4, 4).writeInt(10, 10);
   }
 
   public void testWriteReadByteRelative() {
@@ -230,7 +228,7 @@ public abstract class BufferTest {
   }
 
   public void testRelativeSliceWithoutLength() {
-    Buffer buffer = createBuffer(1024);
+    Buffer buffer = createBuffer(1024, 1024);
     buffer.writeLong(10).writeLong(11).writeLong(12).rewind();
     assertEquals(buffer.readLong(), 10);
     Buffer slice = buffer.slice();
