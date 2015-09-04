@@ -25,7 +25,6 @@ import net.kuujo.copycat.raft.storage.RaftEntry;
 
 import java.util.ArrayDeque;
 import java.util.Queue;
-import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -35,7 +34,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 class PassiveState extends AbstractState {
-  private final Random random = new Random();
   private final Queue<AtomicInteger> counterPool = new ArrayDeque<>();
 
   public PassiveState(ServerContext context) {
@@ -219,6 +217,7 @@ class PassiveState extends AbstractState {
             if (isOpen() && error != null) {
               LOGGER.info("{} - An application error occurred: {}", context.getMember().id(), error.getMessage());
             }
+
             if (counter.incrementAndGet() == entriesToApply) {
               future.complete(null);
               recycleCounter(counter);

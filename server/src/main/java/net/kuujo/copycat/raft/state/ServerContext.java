@@ -359,6 +359,7 @@ public class ServerContext implements Managed<Void> {
     if (globalIndex < 0)
       throw new IllegalArgumentException("global index must be positive");
     this.globalIndex = Math.max(this.globalIndex, globalIndex);
+    log.commit(this.globalIndex);
     return this;
   }
 

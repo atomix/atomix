@@ -45,6 +45,15 @@ public class Cleaner implements AutoCloseable {
   }
 
   /**
+   * Returns the cleaner index.
+   *
+   * @return The cleaner index.
+   */
+  public long index() {
+    return manager.commitIndex();
+  }
+
+  /**
    * Cleans the log.
    *
    * @return A completable future to be completed once the log has been cleaned.
@@ -133,7 +142,7 @@ public class Cleaner implements AutoCloseable {
     List<Segment> segments = new ArrayList<>();
     for (Segment segment : manager.segments()) {
       // Only allow compaction of segments that are full.
-      if (segment.isFull()) {
+      if (segment.lastIndex() < index() && segment.isFull()) {
 
         // Calculate the percentage of entries that have been marked for cleaning in the segment.
         double cleanPercentage = (segment.length() - segment.count()) / (double) segment.length();

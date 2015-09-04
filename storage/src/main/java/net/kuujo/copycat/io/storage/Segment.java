@@ -27,31 +27,23 @@ import net.kuujo.copycat.util.Assert;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 class Segment implements AutoCloseable {
-
-  /**
-   * Opens a new segment.
-   * 
-   * @throws NullPointerException if any argument is null
-   */
-  static Segment open(Buffer buffer, SegmentDescriptor descriptor, OffsetIndex offsetIndex, Serializer serializer) {
-    return new Segment(buffer, descriptor, offsetIndex, serializer);
-  }
-
   private final SegmentDescriptor descriptor;
   private final Serializer serializer;
   private final Buffer buffer;
   private final OffsetIndex offsetIndex;
+  private final SegmentManager manager;
   private int skip = 0;
   private boolean open = true;
 
   /**
    * @throws NullPointerException if any argument is null
    */
-  Segment(Buffer buffer, SegmentDescriptor descriptor, OffsetIndex offsetIndex, Serializer serializer) {
+  Segment(Buffer buffer, SegmentDescriptor descriptor, OffsetIndex offsetIndex, Serializer serializer, SegmentManager manager) {
     this.serializer = Assert.notNull(serializer, "serializer");
     this.buffer = Assert.notNull(buffer, "buffer");
     this.descriptor = Assert.notNull(descriptor, "descriptor");
     this.offsetIndex = Assert.notNull(offsetIndex, "offsetIndex");
+    this.manager = Assert.notNull(manager, "manager");
 
     // Rebuild the index from the segment data.
     long position = buffer.mark().position();
@@ -255,8 +247,9 @@ class Segment implements AutoCloseable {
     // Get the offset of the index within this segment.
     int offset = offset(index);
 
-    // Return null if the offset has been deleted from the segment.
-    if (offsetIndex.deleted(offset)) {
+    // Return null if the offset has been committed and has been marked for deletion from the segment.
+    // Offsets that are not committed can still be read regardless of whether they've been marked for deletion.
+    if (index <= manager.commitIndex() && offsetIndex.deleted(offset)) {
       return null;
     }
 
@@ -348,6 +341,7 @@ class Segment implements AutoCloseable {
    */
   public Segment truncate(long index) {
     assertSegmentOpen();
+    Assert.index(index >= manager.commitIndex(), "cannot truncate committed index");
 
     int offset = offset(index);
     int lastOffset = offsetIndex.lastOffset();

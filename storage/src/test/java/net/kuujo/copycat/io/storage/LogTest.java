@@ -271,7 +271,7 @@ public class LogTest extends AbstractLogTest {
         assertFalse(log.contains(i));
       }
     }
-    log.cleaner().clean().join();
+    log.commit(2049).cleaner().clean().join();
 
     try (Log log = createLog()) {
       assertEquals(log.length(), 2048);

@@ -321,6 +321,7 @@ public class Log implements AutoCloseable {
     assertIsOpen();
     if (index > 0)
       assertValidIndex(index);
+    Assert.index(index >= segments.commitIndex(), "cannot truncate committed entries");
 
     if (lastIndex() == index)
       return this;
@@ -332,6 +333,21 @@ public class Log implements AutoCloseable {
         segments.removeSegment(segment);
       }
     }
+    return this;
+  }
+
+  /**
+   * Sets the log commit index.
+   * <p>
+   * The commit index indicates the index before which entries can be cleaned from the log. Entries that have
+   * been {@link #clean(long) cleaned} but whose index is not less than or equal to the commit index will still
+   * be visible to log readers.
+   *
+   * @param index The log commit index.
+   * @return The log.
+   */
+  public Log commit(long index) {
+    segments.commitIndex(index);
     return this;
   }
 

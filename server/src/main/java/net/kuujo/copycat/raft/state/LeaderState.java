@@ -118,6 +118,7 @@ final class LeaderState extends ActiveState {
         }
         count++;
       }
+
       LOGGER.debug("{} - Applied {} entries to log", context.getMember().id(), count);
     }
   }
@@ -353,7 +354,7 @@ final class LeaderState extends ActiveState {
       if (isOpen()) {
         if (commitError == null) {
           CommandEntry entry = context.getLog().get(index);
-          applyEntry(entry).whenCompleteAsync((result, error) -> {
+          applyEntry(entry).whenComplete((result, error) -> {
             if (isOpen()) {
               if (error == null) {
                 future.complete(logResponse(CommandResponse.builder()
@@ -375,7 +376,7 @@ final class LeaderState extends ActiveState {
               }
             }
             entry.release();
-          }, context.getContext().executor());
+          });
         } else {
           future.complete(logResponse(CommandResponse.builder()
             .withStatus(Response.Status.ERROR)
@@ -474,7 +475,7 @@ final class LeaderState extends ActiveState {
    */
   private CompletableFuture<QueryResponse> applyQuery(QueryEntry entry, CompletableFuture<QueryResponse> future) {
     long version = context.getLastApplied();
-    context.getStateMachine().apply(entry).whenCompleteAsync((result, error) -> {
+    applyEntry(entry).whenComplete((result, error) -> {
       if (isOpen()) {
         if (error == null) {
           future.complete(logResponse(QueryResponse.builder()
@@ -496,7 +497,7 @@ final class LeaderState extends ActiveState {
         }
       }
       entry.release();
-    }, context.getContext().executor());
+    });
     return future;
   }
 
@@ -528,7 +529,7 @@ final class LeaderState extends ActiveState {
       if (isOpen()) {
         if (commitError == null) {
           RegisterEntry entry = context.getLog().get(index);
-          applyEntry(entry).whenCompleteAsync((sessionId, sessionError) -> {
+          applyEntry(entry).whenComplete((sessionId, sessionError) -> {
             if (isOpen()) {
               if (sessionError == null) {
                 future.complete(logResponse(RegisterResponse.builder()
@@ -550,7 +551,7 @@ final class LeaderState extends ActiveState {
               }
             }
             entry.release();
-          }, context.getContext().executor());
+          });
         } else {
           future.complete(logResponse(RegisterResponse.builder()
             .withStatus(Response.Status.ERROR)

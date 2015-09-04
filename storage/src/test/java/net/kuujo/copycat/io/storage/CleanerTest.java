@@ -15,17 +15,13 @@
  */
 package net.kuujo.copycat.io.storage;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertNull;
-import static org.testng.Assert.assertTrue;
+import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.io.serializer.ServiceLoaderTypeResolver;
+import org.testng.annotations.Test;
 
 import java.util.concurrent.CountDownLatch;
 
-import org.testng.annotations.Test;
-
-import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.io.serializer.ServiceLoaderTypeResolver;
+import static org.testng.Assert.*;
 
 /**
  * Minor compaction test.
@@ -54,6 +50,7 @@ public class CleanerTest extends AbstractLogTest {
     for (long index = 21; index < 28; index++) {
       log.clean(index);
     }
+    log.commit(30);
 
     CountDownLatch latch = new CountDownLatch(1);
     log.cleaner().clean().thenRun(latch::countDown);

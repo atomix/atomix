@@ -20,15 +20,11 @@ import net.kuujo.copycat.io.FileBuffer;
 import net.kuujo.copycat.io.HeapBuffer;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.util.Assert;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.util.Collection;
-import java.util.Map;
-import java.util.NavigableMap;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
@@ -44,6 +40,7 @@ class SegmentManager implements AutoCloseable {
   private final Storage storage;
   private final NavigableMap<Long, Segment> segments = new ConcurrentSkipListMap<>();
   private Segment currentSegment;
+  private volatile long commitIndex;
 
   /**
    * @throws NullPointerException if {@code segments} is null
@@ -60,6 +57,26 @@ class SegmentManager implements AutoCloseable {
    */
   public Serializer serializer() {
     return storage.serializer();
+  }
+
+  /**
+   * Sets the log commit index.
+   *
+   * @param index The log commit index.
+   * @return The segment manager.
+   */
+  SegmentManager commitIndex(long index) {
+    this.commitIndex = Math.max(this.commitIndex, index);
+    return this;
+  }
+
+  /**
+   * Returns the log commit index.
+   *
+   * @return The log commit index.
+   */
+  public long commitIndex() {
+    return commitIndex;
   }
 
   /**
@@ -250,7 +267,7 @@ class SegmentManager implements AutoCloseable {
     File segmentFile = SegmentFile.createSegmentFile(storage.directory(), descriptor.id(), descriptor.version());
     Buffer buffer = FileBuffer.allocate(segmentFile, 1024 * 1024, descriptor.maxSegmentSize() + SegmentDescriptor.BYTES);
     descriptor.copyTo(buffer);
-    Segment segment = Segment.open(buffer.position(SegmentDescriptor.BYTES).slice(), descriptor, createIndex(descriptor), storage.serializer().clone());
+    Segment segment = new Segment(buffer.position(SegmentDescriptor.BYTES).slice(), descriptor, createIndex(descriptor), storage.serializer().clone(), this);
     LOGGER.debug("Created segment: {}", segment);
     return segment;
   }
@@ -262,7 +279,7 @@ class SegmentManager implements AutoCloseable {
     File file = SegmentFile.createSegmentFile(storage.directory(), segmentId, segmentVersion);
     Buffer buffer = FileBuffer.allocate(file, Math.min(1024 * 1024, storage.maxSegmentSize() + storage.maxEntrySize() + SegmentDescriptor.BYTES), storage.maxSegmentSize() + storage.maxEntrySize() + SegmentDescriptor.BYTES);
     SegmentDescriptor descriptor = new SegmentDescriptor(buffer);
-    Segment segment = Segment.open(buffer.position(SegmentDescriptor.BYTES).slice(), descriptor, createIndex(descriptor), storage.serializer().clone());
+    Segment segment = new Segment(buffer.position(SegmentDescriptor.BYTES).slice(), descriptor, createIndex(descriptor), storage.serializer().clone(), this);
     LOGGER.debug("Loaded segment: {} ({})", descriptor.id(), file.getName());
     return segment;
   }
@@ -340,6 +357,17 @@ class SegmentManager implements AutoCloseable {
         else {
           descriptor.close();
           descriptor.delete();
+        }
+      }
+    }
+
+    for (Long segmentId : new HashSet<>(segments.keySet())) {
+      Segment segment = segments.get(segmentId);
+      Map.Entry<Long, Segment> previousEntry = segments.floorEntry(segmentId - 1);
+      if (previousEntry != null) {
+        Segment previousSegment = previousEntry.getValue();
+        if (previousSegment.index() + previousSegment.length() + 1 < segment.index()) {
+          previousSegment.skip(segment.index() - (previousSegment.index() + previousSegment.length()));
         }
       }
     }
