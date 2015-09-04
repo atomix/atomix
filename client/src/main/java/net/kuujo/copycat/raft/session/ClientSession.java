@@ -133,6 +133,9 @@ public class ClientSession implements Session, Managed<Session> {
    * @return A completable future to be completed with the command output.
    */
   public <T> CompletableFuture<T> submit(Command<T> command) {
+    if (!isOpen())
+      return Futures.exceptionalFuture(new IllegalStateException("session not open"));
+
     CompletableFuture<T> future = new CompletableFuture<>();
     context.executor().execute(() -> {
 
@@ -185,6 +188,9 @@ public class ClientSession implements Session, Managed<Session> {
    * @return A completable future to be completed with the query output.
    */
   public <T> CompletableFuture<T> submit(Query<T> query) {
+    if (!isOpen())
+      return Futures.exceptionalFuture(new IllegalStateException("session not open"));
+
     CompletableFuture<T> future = new CompletableFuture<>();
     context.executor().execute(() -> {
 
