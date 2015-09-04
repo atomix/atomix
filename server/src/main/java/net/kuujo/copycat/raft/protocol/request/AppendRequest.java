@@ -15,13 +15,13 @@
  */
 package net.kuujo.copycat.raft.protocol.request;
 
-import net.kuujo.copycat.util.Assert;
-import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.storage.Entry;
+import net.kuujo.copycat.util.Assert;
+import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.util.ReferenceManager;
 
 import java.util.ArrayList;
@@ -179,6 +179,17 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
       entry.setIndex(index);
       entries.add(entry);
     }
+  }
+
+  @Override
+  public boolean release() {
+    if (super.release()) {
+      for (Entry entry : entries) {
+        entry.release();
+      }
+      return true;
+    }
+    return false;
   }
 
   @Override

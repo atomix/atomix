@@ -174,9 +174,6 @@ class PassiveState extends AbstractState {
             }
           }
         }
-
-        // Release the entry back to the pool.
-        entry.release();
       }
     }
 
