@@ -319,6 +319,18 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
     }
 
     /**
+     * Adds an entry to the request.
+     *
+     * @param entry The entry to add.
+     * @return The request builder.
+     * @throws NullPointerException if {@code entry} is {@code null}
+     */
+    public Builder addEntry(Entry entry) {
+      request.entries.add(Assert.notNull(entry, "entry"));
+      return this;
+    }
+
+    /**
      * Sets the request commit index.
      *
      * @param index The request commit index.

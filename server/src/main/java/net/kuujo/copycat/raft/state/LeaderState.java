@@ -836,7 +836,16 @@ final class LeaderState extends ActiveState {
     private void emptyCommit(MemberState member) {
       long prevIndex = getPrevIndex(member);
       RaftEntry prevEntry = getPrevEntry(member, prevIndex);
-      commit(member, prevIndex, prevEntry, Collections.EMPTY_LIST);
+
+      AppendRequest.Builder builder = AppendRequest.builder()
+        .withTerm(context.getTerm())
+        .withLeader(context.getMember().id())
+        .withLogIndex(prevIndex)
+        .withLogTerm(prevEntry != null ? prevEntry.getTerm() : 0)
+        .withCommitIndex(context.getCommitIndex())
+        .withGlobalIndex(context.getGlobalIndex());
+
+      commit(member, builder.build(), false);
     }
 
     /**
@@ -845,24 +854,40 @@ final class LeaderState extends ActiveState {
     private void entriesCommit(MemberState member) {
       long prevIndex = getPrevIndex(member);
       RaftEntry prevEntry = getPrevEntry(member, prevIndex);
-      List<RaftEntry> entries = getEntries(member, prevIndex);
-      commit(member, prevIndex, prevEntry, entries);
+
+      AppendRequest.Builder builder = AppendRequest.builder()
+        .withTerm(context.getTerm())
+        .withLeader(context.getMember().id())
+        .withLogIndex(prevIndex)
+        .withLogTerm(prevEntry != null ? prevEntry.getTerm() : 0)
+        .withCommitIndex(context.getCommitIndex())
+        .withGlobalIndex(context.getGlobalIndex());
+
+      if (!context.getLog().isEmpty()) {
+        long index = prevIndex != 0 ? prevIndex + 1 : context.getLog().firstIndex();
+
+        int size = 0;
+        while (size < MAX_BATCH_SIZE && index <= context.getLog().lastIndex()) {
+          RaftEntry entry = context.getLog().get(index);
+          if (entry != null && size + entry.size() <= MAX_BATCH_SIZE) {
+            size += entry.size();
+            builder.addEntry(entry);
+          }
+          index++;
+        }
+      }
+
+      if (prevEntry != null) {
+        prevEntry.release();
+      }
+
+      commit(member, builder.build(), true);
     }
 
     /**
      * Sends a commit message.
      */
-    private void commit(MemberState member, long prevIndex, RaftEntry prevEntry, List<RaftEntry> entries) {
-      AppendRequest request = AppendRequest.builder()
-        .withTerm(context.getTerm())
-        .withLeader(context.getMember().id())
-        .withLogIndex(prevIndex)
-        .withLogTerm(prevEntry != null ? prevEntry.getTerm() : 0)
-        .withEntries(entries)
-        .withCommitIndex(context.getCommitIndex())
-        .withGlobalIndex(context.getGlobalIndex())
-        .build();
-
+    private void commit(MemberState member, AppendRequest request, boolean recursive) {
       committing.add(member);
 
       LOGGER.debug("{} - Sent {} to {}", context.getMember().id(), request, member.getMember());
@@ -885,7 +910,7 @@ final class LeaderState extends ActiveState {
                   updateConfiguration(member);
 
                   // If entries were committed to the replica then check commit indexes.
-                  if (!entries.isEmpty()) {
+                  if (recursive) {
                     commitEntries();
                   }
 
@@ -930,10 +955,6 @@ final class LeaderState extends ActiveState {
           }
         });
       });
-
-      if (prevEntry != null) {
-        prevEntry.release();
-      }
     }
 
     /**
