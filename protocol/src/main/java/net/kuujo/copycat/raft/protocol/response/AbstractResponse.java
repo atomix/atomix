@@ -57,14 +57,16 @@ abstract class AbstractResponse<T extends Response<T>> implements Response<T> {
 
   @Override
   @SuppressWarnings("unchecked")
-  public void release() {
+  public boolean release() {
     int refs = references.decrementAndGet();
     if (refs == 0) {
       referenceManager.release((T) this);
+      return true;
     } else if (refs < 0) {
       references.set(0);
       throw new IllegalStateException("cannot dereference non-referenced object");
     }
+    return false;
   }
 
   @Override

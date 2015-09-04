@@ -86,13 +86,15 @@ public abstract class AbstractBuffer implements Buffer {
   }
 
   @Override
-  public void release() {
+  public boolean release() {
     if (references.decrementAndGet() == 0) {
       if (referenceManager != null)
         referenceManager.release(this);
       else
         bytes.close();
+      return true;
     }
+    return false;
   }
 
   @Override

@@ -34,8 +34,10 @@ public interface ReferenceCounted<T> extends AutoCloseable {
 
   /**
    * Releases a reference.
+   *
+   * @return Indicates whether all references to the object have been released.
    */
-  void release();
+  boolean release();
 
   /**
    * Returns the number of open references.

@@ -65,8 +65,8 @@ public class ReadOnlyBuffer extends AbstractBuffer {
   }
 
   @Override
-  public void release() {
-    root.release();
+  public boolean release() {
+    return root.release();
   }
 
   @Override

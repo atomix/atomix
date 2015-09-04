@@ -110,15 +110,17 @@ public abstract class Entry<T extends Entry<T>> implements ReferenceCounted<Entr
   }
 
   @Override
-  public void release() {
+  public boolean release() {
     int refs = references.decrementAndGet();
     if (refs == 0) {
       if (referenceManager != null)
         referenceManager.release(this);
+      return true;
     } else if (refs < 0) {
       references.set(0);
       throw new IllegalStateException("cannot dereference non-referenced object");
     }
+    return false;
   }
 
   @Override
