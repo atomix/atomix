@@ -29,7 +29,7 @@ import java.time.Instant;
 class ServerStateMachineContext implements StateMachineContext {
   private long version;
   private final ServerClock clock = new ServerClock();
-  private final ServerSessionManager sessions = new ServerSessionManager();
+  private final ServerSessionManager sessions = new ServerSessionManager(this);
 
   /**
    * Updates the state machine context.

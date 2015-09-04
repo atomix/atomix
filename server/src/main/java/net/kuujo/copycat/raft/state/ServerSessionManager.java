@@ -30,8 +30,13 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 class ServerSessionManager implements Sessions {
+  private final ServerStateMachineContext context;
   private final Map<UUID, Connection> connections = new ConcurrentHashMap<>();
   final Map<Long, ServerSession> sessions = new ConcurrentHashMap<>();
+
+  ServerSessionManager(ServerStateMachineContext context) {
+    this.context = context;
+  }
 
   @Override
   public Session session(long sessionId) {
@@ -68,7 +73,7 @@ class ServerSessionManager implements Sessions {
    * Registers a session.
    */
   ServerSession registerSession(long sessionId, UUID connectionId, long timeout) {
-    ServerSession session = new ServerSession(sessionId, connectionId, timeout).setConnection(connections.get(connectionId));
+    ServerSession session = new ServerSession(sessionId, connectionId, context, timeout).setConnection(connections.get(connectionId));
     sessions.put(sessionId, session);
     return session;
   }

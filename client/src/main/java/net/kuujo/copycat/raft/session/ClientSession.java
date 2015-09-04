@@ -83,6 +83,7 @@ public class ClientSession implements Session, Managed<Session> {
   private final Listeners<Session> closeListeners = new Listeners<>();
   private long requestSequence;
   private long responseSequence;
+  private long eventVersion;
   private long eventSequence;
   private long version;
 
@@ -516,6 +517,7 @@ public class ClientSession implements Session, Managed<Session> {
         KeepAliveRequest request = KeepAliveRequest.builder()
           .withSession(id)
           .withCommandSequence(responseSequence)
+          .withEventVersion(eventVersion)
           .withEventSequence(eventSequence)
           .build();
 
@@ -595,14 +597,16 @@ public class ClientSession implements Session, Managed<Session> {
     if (request.session() != id)
       return Futures.exceptionalFuture(new UnknownSessionException("incorrect session ID"));
 
-    if (request.sequence() < eventSequence || request.sequence() > eventSequence + 1) {
+    if (request.previousVersion() != eventVersion || request.previousSequence() != eventSequence) {
       return CompletableFuture.completedFuture(PublishResponse.builder()
         .withStatus(Response.Status.ERROR)
+        .withVersion(eventVersion)
         .withSequence(eventSequence)
         .build());
     }
 
-    eventSequence = request.sequence();
+    eventVersion = request.eventVersion();
+    eventSequence = request.eventSequence();
 
     for (Consumer listener : receiveListeners) {
       listener.accept(request.message());
@@ -612,6 +616,7 @@ public class ClientSession implements Session, Managed<Session> {
 
     return CompletableFuture.completedFuture(PublishResponse.builder()
       .withStatus(Response.Status.OK)
+      .withVersion(eventVersion)
       .withSequence(eventSequence)
       .build());
   }

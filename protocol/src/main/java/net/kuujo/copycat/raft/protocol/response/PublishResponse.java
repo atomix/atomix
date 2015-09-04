@@ -61,6 +61,7 @@ public class PublishResponse extends SessionResponse<PublishResponse> {
     return POOL.acquire(Assert.notNull(response, "response"));
   }
 
+  private long version;
   private long sequence;
 
   /**
@@ -73,6 +74,15 @@ public class PublishResponse extends SessionResponse<PublishResponse> {
   @Override
   public byte type() {
     return TYPE;
+  }
+
+  /**
+   * Returns the event version number.
+   *
+   * @return The event version number.
+   */
+  public long version() {
+    return version;
   }
 
   /**
@@ -89,6 +99,7 @@ public class PublishResponse extends SessionResponse<PublishResponse> {
     status = Status.forId(buffer.readByte());
     if (status == Status.OK) {
       error = null;
+      version = buffer.readLong();
       sequence = buffer.readLong();
     } else {
       error = RaftError.forId(buffer.readByte());
@@ -99,6 +110,7 @@ public class PublishResponse extends SessionResponse<PublishResponse> {
   public void writeObject(BufferOutput buffer, Serializer serializer) {
     buffer.writeByte(status.id());
     if (status == Status.OK) {
+      buffer.writeLong(version);
       buffer.writeLong(sequence);
     } else {
       buffer.writeByte(error.id());
@@ -115,6 +127,7 @@ public class PublishResponse extends SessionResponse<PublishResponse> {
     if (object instanceof PublishResponse) {
       PublishResponse response = (PublishResponse) object;
       return response.status == status
+        && response.version == version
         && response.sequence == sequence;
     }
     return false;
@@ -122,7 +135,7 @@ public class PublishResponse extends SessionResponse<PublishResponse> {
 
   @Override
   public String toString() {
-    return String.format("%s[status=%s]", getClass().getSimpleName(), status);
+    return String.format("%s[status=%s, version=%d, sequence=%d]", getClass().getSimpleName(), status, version, sequence);
   }
 
   /**
@@ -137,18 +150,31 @@ public class PublishResponse extends SessionResponse<PublishResponse> {
     @Override
     protected void reset() {
       super.reset();
+      response.version = 0;
       response.sequence = 0;
+    }
+
+    /**
+     * Sets the event version number.
+     *
+     * @param version The event version number.
+     * @return The response builder.
+     * @throws IllegalArgumentException if {@code version} is less than {@code 1}
+     */
+    public Builder withVersion(long version) {
+      response.version = Assert.argNot(version, version < 1, "version cannot be less than 1");
+      return this;
     }
 
     /**
      * Sets the event sequence number.
      *
-     * @param eventSequence The event sequence number.
-     * @return The request builder.
-     * @throws IllegalArgumentException if {@code eventSequence} is less than 1
+     * @param sequence The event sequence number.
+     * @return The response builder.
+     * @throws IllegalArgumentException if {@code sequence} is less than {@code 1}
      */
-    public Builder withSequence(long eventSequence) {
-      response.sequence = Assert.argNot(eventSequence, eventSequence < 1, "eventSequence cannot be less than 1");
+    public Builder withSequence(long sequence) {
+      response.sequence = Assert.argNot(sequence, sequence < 1, "sequence cannot be less than 1");
       return this;
     }
 
@@ -158,6 +184,7 @@ public class PublishResponse extends SessionResponse<PublishResponse> {
     @Override
     public PublishResponse build() {
       super.build();
+      Assert.stateNot(response.version < 1, "version cannot be less than 1");
       Assert.stateNot(response.sequence < 1, "sequence cannot be less than 1");
       return response;
     }

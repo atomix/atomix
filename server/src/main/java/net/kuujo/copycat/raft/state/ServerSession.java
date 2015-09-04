@@ -37,31 +37,35 @@ class ServerSession implements Session {
   protected final Listeners<Object> listeners = new Listeners<>();
   private final long id;
   private final UUID connectionId;
+  private final ServerStateMachineContext context;
   private final long timeout;
   private Connection connection;
   private long version;
   private long command;
   private long commandLowWaterMark;
-  private long event;
-  private long eventLowWaterMark;
+  private long eventVersion;
+  private long eventSequence;
+  private long eventAckVersion;
   private long timestamp;
   private final Queue<List<Runnable>> queriesPool = new ArrayDeque<>();
   private final Map<Long, List<Runnable>> queries = new HashMap<>();
   private final Map<Long, Runnable> commands = new HashMap<>();
   private final Map<Long, Object> responses = new HashMap<>();
-  private final Map<Long, Object> events = new HashMap<>();
+  private final Queue<EventHolder> events = new ArrayDeque<>();
+  private final Queue<EventHolder> eventsPool = new ArrayDeque<>();
   private boolean expired;
   private boolean closed;
   private final Listeners<Session> openListeners = new Listeners<>();
   private final Listeners<Session> closeListeners = new Listeners<>();
 
-  ServerSession(long id, UUID connectionId, long timeout) {
+  ServerSession(long id, UUID connectionId, ServerStateMachineContext context, long timeout) {
     if (connectionId == null)
       throw new NullPointerException("connection cannot be null");
 
     this.id = id;
     this.version = id;
     this.connectionId = connectionId;
+    this.context = context;
     this.timeout = timeout;
   }
 
@@ -234,16 +238,6 @@ class ServerSession implements Session {
   }
 
   /**
-   * Returns a boolean value indicating whether the session has a response for the given version.
-   *
-   * @param sequence The response sequence number.
-   * @return Indicates whether the session has a response for the given version.
-   */
-  boolean hasResponse(long sequence) {
-    return responses.containsKey(sequence);
-  }
-
-  /**
    * Returns the session response for the given version.
    *
    * @param sequence The response sequence.
@@ -269,23 +263,56 @@ class ServerSession implements Session {
 
   @Override
   public CompletableFuture<Void> publish(Object event) {
-    long eventSequence = ++this.event;
-    events.put(eventSequence, event);
-    sendEvent(eventSequence, event);
+    // If the client acked a version greater than the current state machine version then immediately return.
+    if (eventAckVersion > context.version())
+      return CompletableFuture.completedFuture(null);
+
+    // The previous event version and sequence are the current event version and sequence.
+    long previousVersion = eventVersion;
+    long previousSequence = eventSequence;
+
+    if (eventVersion != context.version()) {
+      eventVersion = context.version();
+      eventSequence = 1;
+    } else {
+      eventSequence++;
+    }
+
+    // Get a holder from the event holder pool.
+    EventHolder holder = eventsPool.poll();
+    if (holder == null)
+      holder = new EventHolder();
+
+    // Populate the event holder and add it to the events queue.
+    holder.eventVersion = eventVersion;
+    holder.eventSequence = eventSequence;
+    holder.previousVersion = previousVersion;
+    holder.previousSequence = previousSequence;
+    holder.event = event;
+
+    events.add(holder);
+
+    // Send the event.
+    sendEvent(holder);
+
     return CompletableFuture.completedFuture(null);
   }
 
   /**
    * Clears events up to the given sequence.
    *
+   * @param version The version to clear.
    * @param sequence The sequence to clear.
    * @return The server session.
    */
-  ServerSession clearEvents(long sequence) {
-    if (sequence > eventLowWaterMark) {
-      for (long i = eventLowWaterMark + 1; i <= sequence; i++) {
-        events.remove(i);
-        eventLowWaterMark = i;
+  ServerSession clearEvents(long version, long sequence) {
+    if (version >= eventAckVersion) {
+      eventAckVersion = version;
+
+      EventHolder holder = events.peek();
+      while (holder != null && (holder.eventVersion < version || (holder.eventVersion == version && holder.eventSequence <= sequence))){
+        events.remove();
+        eventsPool.add(holder);
       }
     }
     return this;
@@ -294,13 +321,15 @@ class ServerSession implements Session {
   /**
    * Resends events from the given sequence.
    *
+   * @param version The version from which to resend events.
    * @param sequence The sequence from which to resend events.
    * @return The server session.
    */
-  private ServerSession resendEvents(long sequence) {
-    for (long i = sequence + 1; i <= event; i++) {
-      if (events.containsKey(i)) {
-        sendEvent(i, events.get(i));
+  private ServerSession resendEvents(long version, long sequence) {
+    if (version > eventAckVersion) {
+      clearEvents(version, sequence);
+      for (EventHolder holder : events) {
+        sendEvent(holder);
       }
     }
     return this;
@@ -308,23 +337,23 @@ class ServerSession implements Session {
 
   /**
    * Sends an event to the session.
-   *
-   * @param eventSequence The event sequence number.
-   * @param event The event to send.
    */
-  private void sendEvent(long eventSequence, Object event) {
+  private void sendEvent(EventHolder event) {
     if (connection != null) {
       connection.<PublishRequest, PublishResponse>send(PublishRequest.builder()
         .withSession(id())
-        .withSequence(eventSequence)
-        .withMessage(event)
+        .withEventVersion(event.eventVersion)
+        .withEventSequence(event.eventSequence)
+        .withPreviousVersion(event.previousVersion)
+        .withPreviousSequence(event.previousSequence)
+        .withMessage(event.event)
         .build()).whenComplete((response, error) -> {
         if (isOpen() && error == null) {
           if (response.status() == Response.Status.OK) {
-            clearEvents(response.sequence());
+            clearEvents(response.version(), response.sequence());
           } else {
-            clearEvents(response.sequence());
-            resendEvents(response.sequence());
+            clearEvents(response.version(), response.sequence());
+            resendEvents(response.version(), response.sequence());
           }
         }
       });
@@ -407,6 +436,17 @@ class ServerSession implements Session {
   @Override
   public String toString() {
     return String.format("Session[id=%d]", id);
+  }
+
+  /**
+   * Event holder.
+   */
+  private static class EventHolder {
+    private long eventVersion;
+    private long eventSequence;
+    private long previousVersion;
+    private long previousSequence;
+    private Object event;
   }
 
 }

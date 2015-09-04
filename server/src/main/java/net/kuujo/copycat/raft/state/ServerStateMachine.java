@@ -40,7 +40,6 @@ class ServerStateMachine implements AutoCloseable {
   private final StateMachine stateMachine;
   private final ServerStateMachineExecutor executor;
   private final ServerCommitPool commits;
-  private long timestamp;
   private long lastApplied;
 
   ServerStateMachine(StateMachine stateMachine, ServerCommitCleaner cleaner, Context context) {
@@ -180,7 +179,7 @@ class ServerStateMachine implements AutoCloseable {
       // The keep alive request contains the
       session.setTimestamp(entry.getTimestamp())
         .clearResponses(entry.getCommandSequence())
-        .clearEvents(entry.getEventSequence());
+        .clearEvents(entry.getEventVersion(), entry.getEventSequence());
 
       future = new CompletableFuture<>();
       context.execute(() -> future.complete(null));

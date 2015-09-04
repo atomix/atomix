@@ -78,7 +78,7 @@ public class LocalConnection implements Connection {
 
   @Override
   public <T, U> CompletableFuture<U> send(T request) {
-    Assert.notNull(request, "message");
+    Assert.notNull(request, "request");
     Context context = getContext();
     CompletableFuture<U> future = new CompletableFuture<>();
 
