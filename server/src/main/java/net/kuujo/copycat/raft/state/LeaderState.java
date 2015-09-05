@@ -803,33 +803,6 @@ final class LeaderState extends ActiveState {
     }
 
     /**
-     * Gets a list of entries to send.
-     */
-    @SuppressWarnings("unchecked")
-    private List<RaftEntry> getEntries(MemberState member, long prevIndex) {
-      long index;
-      if (context.getLog().isEmpty()) {
-        return Collections.EMPTY_LIST;
-      } else if (prevIndex != 0) {
-        index = prevIndex + 1;
-      } else {
-        index = context.getLog().firstIndex();
-      }
-
-      List<RaftEntry> entries = new ArrayList<>(1024);
-      int size = 0;
-      while (size < MAX_BATCH_SIZE && index <= context.getLog().lastIndex()) {
-        RaftEntry entry = context.getLog().get(index);
-        if (entry != null && size + entry.size() <= MAX_BATCH_SIZE) {
-          size += entry.size();
-          entries.add(entry);
-        }
-        index++;
-      }
-      return entries;
-    }
-
-    /**
      * Performs an empty commit.
      */
     @SuppressWarnings("unchecked")
