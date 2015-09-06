@@ -144,8 +144,8 @@ class OffsetIndex implements AutoCloseable {
    * @param offset The offset to check.
    * @return Indicates whether the index contains the given offset.
    */
-  public boolean contains(int offset) {
-    return position(offset) != -1;
+  public boolean contains(int offset, boolean committed) {
+    return !committed ? offset <= lastOffset : position(offset, true) != -1;
   }
 
   /**
@@ -154,10 +154,14 @@ class OffsetIndex implements AutoCloseable {
    * @param offset The offset to look up.
    * @return The starting position of the given offset.
    */
-  public long position(int offset) {
+  public long position(int offset, boolean committed) {
     // Perform a binary search to get the index of the offset in the index buffer.
-    int index = search(offset);
-    return index == -1 ? -1 : buffer.readUnsignedInt(index + OFFSET_SIZE);
+    if (!committed) {
+      return buffer.readUnsignedInt(offset * ENTRY_SIZE + OFFSET_SIZE);
+    } else {
+      int index = search(offset);
+      return index == -1 ? -1 : buffer.readUnsignedInt(index + OFFSET_SIZE);
+    }
   }
 
   /**
@@ -262,7 +266,7 @@ class OffsetIndex implements AutoCloseable {
 
     int lastOffset = lastOffset();
     for (int i = lastOffset; i > offset; i--) {
-      if (position(i) != -1) {
+      if (position(i, false) != -1) {
         size--;
       }
     }

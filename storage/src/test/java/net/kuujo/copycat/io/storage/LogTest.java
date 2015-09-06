@@ -165,7 +165,7 @@ public class LogTest extends AbstractLogTest {
     assertEquals(log.lastIndex(), 210);
     log.truncate(105);
     assertEquals(log.lastIndex(), 105);
-    assertNull(log.get(105));
+    assertNull(log.commit(105).get(105));
   }
 
   /**
@@ -197,7 +197,7 @@ public class LogTest extends AbstractLogTest {
 
     assertEquals(log.length(), 111);
 
-    try (TestEntry entry = log.get(101)) {
+    try (TestEntry entry = log.commit(111).get(101)) {
       assertNull(entry);
     }
 
@@ -226,7 +226,7 @@ public class LogTest extends AbstractLogTest {
 
     assertEquals(log.length(), 1031);
 
-    try (TestEntry entry = log.get(1021)) {
+    try (TestEntry entry = log.commit(1031).get(1021)) {
       assertNull(entry);
     }
 
