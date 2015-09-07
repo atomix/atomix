@@ -1,13 +1,11 @@
-Copycat
+[Copycat][Website]
 =======
 
 **Persistent • Consistent • Fault-tolerant • Database • Coordination • Framework**
 
-### [Website][Website] • [Google Group][Google group] • [User Manual][User manual] • [Javadoc][Javadoc]
+### [Getting started][Getting started] • [User Manual][User manual] • [Google Group][Google group] • [Javadoc][Javadoc]
 
 [![Build Status](https://travis-ci.org/kuujo/copycat.png)](https://travis-ci.org/kuujo/copycat)
-
-#### [Getting started][Getting started]
 
 Copycat is both a low-level implementation of the [Raft consensus algorithm][Raft] and a high-level distributed
 coordination framework that combines the consistency of [ZooKeeper](https://zookeeper.apache.org/) with the
