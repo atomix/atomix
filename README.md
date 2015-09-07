@@ -3,7 +3,7 @@ Copycat
 
 **Persistent • Consistent • Fault-tolerant • Database • Coordination • Framework**
 
-#### [Website][Website] | [Google Group][Google group] | [User Manual][User manual] | [Javadocs][Javadocs]
+#### [Website][Website] | [Google Group][Google group] | [User Manual][User manual] | [Javadoc][Javadoc]
 
 [![Build Status](https://travis-ci.org/kuujo/copycat.png)](https://travis-ci.org/kuujo/copycat)
 
