@@ -69,14 +69,14 @@ class ServerStateMachine implements AutoCloseable {
   /**
    * Returns the last applied index.
    *
-   * @return The last applied inex.
+   * @return The last applied index.
    */
   long getLastApplied() {
     return lastApplied;
   }
 
   /**
-   * Sets the last applied inex.
+   * Sets the last applied index.
    *
    * @param lastApplied The last applied index.
    */

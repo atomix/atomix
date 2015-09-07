@@ -18,7 +18,7 @@ package net.kuujo.copycat.util;
 /**
  * Reference counting interface.
  * <p>
- * Types that implement {@code Referenceable} can be counted for references and thus used to clean up resources once
+ * Types that implement {@code ReferenceCounted} can be counted for references and thus used to clean up resources once
  * a given instance of an object is no longer in use.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>

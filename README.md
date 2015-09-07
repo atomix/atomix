@@ -2361,7 +2361,7 @@ from any log. If, for instance, a server is partitioned when the `delete` is com
 log prior to the partition healing, that server will never receive the tombstone and thus not clean all prior `put` commands.
 
 Some systems like [Kafka](http://kafka.apache.org/) handle tombstones by aging them out of the log after a large interval
-of time, meaning tombstones must be handled within a bounded timeframe. Copycat opts to ensure that tombstones have been
+of time, meaning tombstones must be handled within a bounded time frame. Copycat opts to ensure that tombstones have been
 persisted on all servers prior to cleaning them from the log.
 
 In order to handle log cleaning for tombstones, Copycat extends the Raft protocol to keep track of the highest index in the

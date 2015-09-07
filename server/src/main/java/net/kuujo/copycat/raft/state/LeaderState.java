@@ -55,7 +55,7 @@ final class LeaderState extends ActiveState {
   public synchronized CompletableFuture<AbstractState> open() {
     // Schedule the initial entries commit to occur after the state is opened. Attempting any communication
     // within the open() method will result in a deadlock since RaftProtocol calls this method synchronously.
-    // What is critical about this logic is that the heartbeat timer not be started until a NOOP entry has been committed.
+    // What is critical about this logic is that the heartbeat timer not be started until a no-op entry has been committed.
     context.getContext().execute(this::commitEntries).whenComplete((result, error) -> {
       if (isOpen() && error == null) {
         startHeartbeatTimer();

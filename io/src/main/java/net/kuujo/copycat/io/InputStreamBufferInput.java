@@ -106,7 +106,7 @@ public class InputStreamBufferInput implements BufferInput {
       try {
         long position = offset;
         long remaining = length;
-        int read = -1;
+        int read;
         while ((read = is.read(buffer)) != -1) {
           bytes.write(position, buffer, 0, Math.min(read, remaining));
           position += read;
@@ -140,7 +140,7 @@ public class InputStreamBufferInput implements BufferInput {
     } else {
       byte[] bytes = new byte[1024];
       try {
-        int read = -1;
+        int read;
         while ((read = is.read(bytes)) != -1) {
           buffer.write(bytes, 0, read);
         }

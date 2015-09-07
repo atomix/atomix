@@ -38,7 +38,6 @@ import java.util.function.Function;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class ResourceManager extends StateMachine {
-  private static final String PATH_SEPARATOR = "/";
   private final ScheduledExecutorService scheduler;
   private StateMachineExecutor executor;
   private final Map<String, Long> paths = new HashMap<>();

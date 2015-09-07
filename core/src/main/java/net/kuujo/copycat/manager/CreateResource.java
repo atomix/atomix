@@ -15,8 +15,6 @@
  */
 package net.kuujo.copycat.manager;
 
-import java.nio.file.Path;
-
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.SerializationException;

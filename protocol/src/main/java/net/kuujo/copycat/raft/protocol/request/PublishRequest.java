@@ -196,7 +196,7 @@ public class PublishRequest extends SessionRequest<PublishRequest> {
      * @throws IllegalArgumentException if {@code version} is less than 1
      */
     public Builder withEventVersion(long version) {
-      request.eventVersion = Assert.argNot(version, version < 1, "version cannot be less than 1");;
+      request.eventVersion = Assert.argNot(version, version < 1, "version cannot be less than 1");
       return this;
     }
 
@@ -208,7 +208,7 @@ public class PublishRequest extends SessionRequest<PublishRequest> {
      * @throws IllegalArgumentException if {@code sequence} is less than 1
      */
     public Builder withEventSequence(long sequence) {
-      request.eventSequence = Assert.argNot(sequence, sequence < 1, "sequence cannot be less than 1");;
+      request.eventSequence = Assert.argNot(sequence, sequence < 1, "sequence cannot be less than 1");
       return this;
     }
 
@@ -220,7 +220,7 @@ public class PublishRequest extends SessionRequest<PublishRequest> {
      * @throws IllegalArgumentException if {@code version} is less than 1
      */
     public Builder withPreviousVersion(long version) {
-      request.previousVersion = Assert.argNot(version, version < 0, "version cannot be less than 0");;
+      request.previousVersion = Assert.argNot(version, version < 0, "version cannot be less than 0");
       return this;
     }
 
@@ -232,7 +232,7 @@ public class PublishRequest extends SessionRequest<PublishRequest> {
      * @throws IllegalArgumentException if {@code sequence} is less than 1
      */
     public Builder withPreviousSequence(long sequence) {
-      request.previousSequence = Assert.argNot(sequence, sequence < 0, "sequence cannot be less than 0");;
+      request.previousSequence = Assert.argNot(sequence, sequence < 0, "sequence cannot be less than 0");
       return this;
     }
 

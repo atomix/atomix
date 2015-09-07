@@ -72,6 +72,7 @@ class ServerCommit implements Commit<Operation> {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public Class type() {
     return operation.getClass();
   }

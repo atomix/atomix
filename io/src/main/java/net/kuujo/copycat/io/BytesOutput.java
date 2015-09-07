@@ -27,7 +27,7 @@ public interface BytesOutput<T extends BytesOutput<T>> {
   /**
    * Zeros out all bytes in the array.
    *
-   * @return The writen bytes.
+   * @return The written bytes.
    */
   T zero();
 

@@ -59,7 +59,7 @@ public abstract class Copycat implements Managed<Copycat> {
    * @throws NullPointerException if {@code client} is null
    */
   protected Copycat(RaftClient client) {
-    this.client = Assert.notNull(client, "cient");
+    this.client = Assert.notNull(client, "client");
   }
 
   /**
