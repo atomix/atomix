@@ -35,7 +35,7 @@ will not be fully released until significant testing is done both via normal tes
 Copycat snapshots will be pushed, and a beta release of Copycat is expected within the coming weeks. Follow the project for
 updates!
 
-#### [Website][Website] | [Google Group][Google group] | [User Manual][User manual] | [Javadocs][Javadocs]
+#### [Website][Website] | [Google Group][Google group] | [User Manual][User manual] | [Javadoc][Javadoc]
 
 [Website]: http://kuujo.github.io/copycat/
 [Getting started]: http://kuujo.github.io/copycat/getting-started/
