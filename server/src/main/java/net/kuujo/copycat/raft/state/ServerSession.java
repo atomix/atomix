@@ -298,6 +298,12 @@ class ServerSession implements Session {
     return CompletableFuture.completedFuture(null);
   }
 
+  @Override
+  @SuppressWarnings("unchecked")
+  public Listener onEvent(Consumer listener) {
+    return listeners.add(Assert.notNull(listener, "listener"));
+  }
+
   /**
    * Clears events up to the given sequence.
    *
@@ -385,12 +391,6 @@ class ServerSession implements Session {
   @Override
   public Listener<Session> onOpen(Consumer<Session> listener) {
     return openListeners.add(Assert.notNull(listener, "listener"));
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public Listener<?> onReceive(Consumer listener) {
-    return listeners.add(Assert.notNull(listener, "listener"));
   }
 
   /**

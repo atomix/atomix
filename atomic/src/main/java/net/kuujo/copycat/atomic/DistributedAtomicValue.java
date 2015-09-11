@@ -47,7 +47,7 @@ public class DistributedAtomicValue<T> extends Resource {
   @Override
   protected void open(ResourceContext context) {
     super.open(context);
-    context.session().<T>onReceive(event -> {
+    context.session().<T>onEvent(event -> {
       for (Consumer<T> listener : changeListeners) {
         listener.accept(event);
       }

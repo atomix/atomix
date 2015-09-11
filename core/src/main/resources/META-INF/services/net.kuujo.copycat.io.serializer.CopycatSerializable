@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 net.kuujo.copycat.resource.ResourceCommand
-net.kuujo.copycat.resource.ResourceMessage
+net.kuujo.copycat.resource.ResourceEvent
 net.kuujo.copycat.resource.ResourceQuery
 
 net.kuujo.copycat.manager.GetResource

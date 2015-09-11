@@ -22,23 +22,23 @@ import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.util.Assert;
 
 /**
- * Resource message.
+ * Resource event.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ResourceMessage<T> implements CopycatSerializable {
+public class ResourceEvent<T> implements CopycatSerializable {
   private long resource;
-  private T message;
+  private T event;
 
-  public ResourceMessage() {
+  public ResourceEvent() {
   }
 
   /**
    * @throws NullPointerException if {@code message} is null
    */
-  public ResourceMessage(long resource, T message) {
+  public ResourceEvent(long resource, T event) {
     this.resource = resource;
-    this.message = Assert.notNull(message, "message");
+    this.event = Assert.notNull(event, "event");
   }
 
   /**
@@ -51,29 +51,29 @@ public class ResourceMessage<T> implements CopycatSerializable {
   }
 
   /**
-   * Returns the message body.
+   * Returns the event body.
    *
-   * @return The message body.
+   * @return The meeventssage body.
    */
-  public T message() {
-    return message;
+  public T event() {
+    return event;
   }
 
   @Override
   public void writeObject(BufferOutput buffer, Serializer serializer) {
     buffer.writeLong(resource);
-    serializer.writeObject(message, buffer);
+    serializer.writeObject(event, buffer);
   }
 
   @Override
   public void readObject(BufferInput buffer, Serializer serializer) {
     resource = buffer.readLong();
-    message = serializer.readObject(buffer);
+    event = serializer.readObject(buffer);
   }
 
   @Override
   public String toString() {
-    return String.format("%s[resource=%d, message=%s]", getClass().getSimpleName(), resource, message);
+    return String.format("%s[resource=%d, message=%s]", getClass().getSimpleName(), resource, event);
   }
 
 }

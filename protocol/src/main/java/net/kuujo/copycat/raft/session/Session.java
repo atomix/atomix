@@ -27,7 +27,7 @@ import java.util.function.Consumer;
  * Sessions can be used by both clients and servers to monitor the connection status of another client or server. When
  * a client first connects to a server, it must register a new session. Once the session has been registered, listeners
  * registered via {@link #onOpen(Consumer)} will be called on <em>both the client and server side</em>. Thereafter, the
- * session can be used to {@link #publish(Object)} and {@link #onReceive(Consumer) receive} messages between client and
+ * session can be used to {@link #publish(Object)} and {@link #onEvent(Consumer) receive} events between client and
  * server.
  * <p>
  * Sessions represent a connection between a single client and all servers in a Raft cluster. Session information
@@ -48,10 +48,10 @@ import java.util.function.Consumer;
  * When the message is published, it will be queued to be sent to the other side of the connection. Copycat guarantees
  * that the message will arrive within the session timeout unless the session itself times out.
  * <p>
- * To listen for messages on a session register a {@link Consumer} via {@link #onReceive(Consumer)}:
+ * To listen for events on a session register a {@link Consumer} via {@link #onEvent(Consumer)}:
  * <pre>
  *   {@code
- *     session.onReceive(message -> System.out.println("Received: " + message));
+ *     session.onEvent(message -> System.out.println("Received: " + message));
  *   }
  * </pre>
  * Messages will always be received in the same thread and in the order in which they were sent by the other side of
@@ -92,38 +92,37 @@ public interface Session {
   Listener<Session> onOpen(Consumer<Session> listener);
 
   /**
-   * Publishes a message to the session.
+   * Publishes an event to the session.
    * <p>
-   * When a message is published via the {@link Session}, it is sent to the other side of the session's
-   * connection. If the message is sent from the client-side of the session, the message will be sent to
-   * a single Raft server and vice-versa. Sessions guarantee linearizability. If a message is sent from
-   * a Raft server to a client that is disconnected or otherwise can't receive the message, the message
-   * will be resent once the client connects to another server as long as the session has not
-   * {@link #isExpired() expired}.
+   * When an event is published via the {@link Session}, it is sent to the other side of the session's
+   * connection. If the event is sent from the client-side of the session, the event will be handled on
+   * the client side as well. Sessions guarantee serializable consistency. If an event is sent from a Raft
+   * server to a client that is disconnected or otherwise can't receive the event, the event will be resent
+   * once the client connects to another server as long as its session has not {@link #isExpired() expired}.
    * <p>
-   * The returned {@link CompletableFuture} will be completed once the {@code message} has been sent
+   * The returned {@link CompletableFuture} will be completed once the {@code event} has been sent
    * but not necessarily received by the other side of the connection. In the event of a network or other
    * failure, the message may be resent.
    *
-   * @param message The message to publish.
-   * @return A completable future to be called once the message has been published.
-   * @throws NullPointerException if {@code message} is null
+   * @param event The event to publish.
+   * @return A completable future to be called once the event has been published.
    */
-  CompletableFuture<Void> publish(Object message);
+  CompletableFuture<Void> publish(Object event);
 
   /**
-   * Registers a message receive listener.
+   * Registers an event listener.
    * <p>
-   * The registered {@link Consumer} will be {@link Consumer#accept(Object) called} when a message is received
+   * The registered {@link Consumer} will be {@link Consumer#accept(Object) called} when an event is received
    * from the Raft cluster for the session. {@link Session} implementations must guarantee that consumers are
-   * always called in the same thread for the session. Therefore, no two messages will be received concurrently
+   * always called in the same thread for the session. Therefore, no two events will be received concurrently
    * by the session.
    *
    * @param listener The session receive listener.
+   * @param <T> The session event type.
    * @return The listener context.
    * @throws NullPointerException if {@code listener} is null
    */
-  <T> Listener<T> onReceive(Consumer<T> listener);
+  <T> Listener<T> onEvent(Consumer<T> listener);
 
   /**
    * Sets a session close listener.

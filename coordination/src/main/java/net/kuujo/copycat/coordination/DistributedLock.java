@@ -43,13 +43,13 @@ public class DistributedLock extends Resource {
   @Override
   protected void open(ResourceContext context) {
     super.open(context);
-    context.session().onReceive(this::receive);
+    context.session().onEvent(this::handleEvent);
   }
 
   /**
-   * Handles a received session message.
+   * Handles a received session event.
    */
-  private void receive(boolean locked) {
+  private void handleEvent(boolean locked) {
     Consumer<Boolean> consumer = queue.poll();
     if (consumer != null) {
       consumer.accept(locked);

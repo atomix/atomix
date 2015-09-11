@@ -44,9 +44,9 @@ public class DistributedTopic<T> extends Resource {
   @SuppressWarnings("unchecked")
   protected void open(ResourceContext context) {
     super.open(context);
-    context.session().onReceive(message -> {
+    context.session().onEvent(event -> {
       for (Consumer<T> listener : listeners) {
-        listener.accept((T) message);
+        listener.accept((T) event);
       }
     });
   }

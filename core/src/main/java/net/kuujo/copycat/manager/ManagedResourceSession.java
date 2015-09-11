@@ -16,7 +16,7 @@
 package net.kuujo.copycat.manager;
 
 import net.kuujo.copycat.raft.session.Session;
-import net.kuujo.copycat.resource.ResourceMessage;
+import net.kuujo.copycat.resource.ResourceEvent;
 import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.Listener;
 import net.kuujo.copycat.util.Listeners;
@@ -52,7 +52,7 @@ class ManagedResourceSession implements Session {
     this.parent = parent;
     parent.onOpen(this::handleOpen);
     parent.onClose(this::handleClose);
-    parent.onReceive(this::handleReceive);
+    parent.onEvent(this::handleEvent);
   }
 
   @Override
@@ -62,24 +62,24 @@ class ManagedResourceSession implements Session {
 
   @Override
   public CompletableFuture<Void> publish(Object message) {
-    return parent.publish(new ResourceMessage<>(resource, Assert.notNull(message, "message")));
+    return parent.publish(new ResourceEvent<>(resource, Assert.notNull(message, "message")));
   }
 
   /**
-   * handles receiving a message.
+   * handles receiving an event.
    */
   @SuppressWarnings("unchecked")
-  private void handleReceive(ResourceMessage message) {
-    if (message.resource() == resource) {
+  private void handleEvent(ResourceEvent event) {
+    if (event.resource() == resource) {
       for (Consumer listener : receiveListeners) {
-        listener.accept(message);
+        listener.accept(event);
       }
     }
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T> Listener onReceive(Consumer<T> listener) {
+  public <T> Listener onEvent(Consumer<T> listener) {
     return receiveListeners.add((Consumer) Assert.notNull(listener, "listener"));
   }
 

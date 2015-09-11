@@ -36,7 +36,7 @@ public class ResourceSession implements Session {
   private final Session parent;
   private final Context context;
   private final Set<Consumer> receiveListeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
-  private Listener<ResourceMessage<?>> listener;
+  private Listener<ResourceEvent<?>> listener;
 
   /**
    * @throws NullPointerException if {@code parent} or {@code context} are null
@@ -64,12 +64,12 @@ public class ResourceSession implements Session {
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<Void> publish(Object message) {
-    ResourceMessage resourceMessage = (ResourceMessage) Assert.notNull(message, "message");
-    if (resourceMessage.resource() == resource) {
+  public CompletableFuture<Void> publish(Object event) {
+    ResourceEvent resourceEvent = (ResourceEvent) Assert.notNull(event, "message");
+    if (resourceEvent.resource() == resource) {
       return CompletableFuture.runAsync(() -> {
         for (Consumer<Object> listener : receiveListeners) {
-          listener.accept(resourceMessage.message());
+          listener.accept(resourceEvent.event());
         }
       }, context.executor());
     }
@@ -77,10 +77,10 @@ public class ResourceSession implements Session {
   }
 
   @Override
-  public synchronized <T> Listener<T> onReceive(Consumer<T> listener) {
+  public synchronized <T> Listener<T> onEvent(Consumer<T> listener) {
     Assert.notNull(listener, "listener");
     if (receiveListeners.isEmpty()) {
-      this.listener = parent.onReceive(this::handleReceive);
+      this.listener = parent.onEvent(this::handleEvent);
     }
     receiveListeners.add(listener);
     return new ReceiveListener<>(listener);
@@ -90,10 +90,10 @@ public class ResourceSession implements Session {
    * Handles receiving a resource message.
    */
   @SuppressWarnings("unchecked")
-  private void handleReceive(ResourceMessage<?> message) {
-    if (message.resource() == resource) {
+  private void handleEvent(ResourceEvent<?> event) {
+    if (event.resource() == resource) {
       for (Consumer listener : receiveListeners) {
-        listener.accept(message.message());
+        listener.accept(event.event());
       }
     }
   }

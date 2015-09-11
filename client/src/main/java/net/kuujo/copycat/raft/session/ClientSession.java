@@ -579,11 +579,11 @@ public class ClientSession implements Session, Managed<Session> {
   }
 
   @Override
-  public CompletableFuture<Void> publish(Object message) {
-    Assert.notNull(message, "message");
+  public CompletableFuture<Void> publish(Object event) {
+    Assert.notNull(event, "event");
     return CompletableFuture.runAsync(() -> {
       for (Consumer<Object> listener : receiveListeners) {
-        listener.accept(message);
+        listener.accept(event);
       }
     }, context.executor());
   }
@@ -625,7 +625,7 @@ public class ClientSession implements Session, Managed<Session> {
 
   @Override
   @SuppressWarnings("unchecked")
-  public Listener<?> onReceive(Consumer listener) {
+  public Listener<?> onEvent(Consumer listener) {
     return receiveListeners.add(Assert.notNull(listener, "listener"));
   }
 
