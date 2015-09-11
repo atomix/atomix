@@ -19,15 +19,14 @@ import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.ServiceLoaderTypeResolver;
 import net.kuujo.copycat.io.storage.Log;
 import net.kuujo.copycat.io.storage.Storage;
+import net.kuujo.copycat.io.transport.Address;
 import net.kuujo.copycat.io.transport.Connection;
 import net.kuujo.copycat.io.transport.Server;
 import net.kuujo.copycat.io.transport.Transport;
-import net.kuujo.copycat.raft.Member;
-import net.kuujo.copycat.raft.Members;
 import net.kuujo.copycat.raft.RaftServer;
 import net.kuujo.copycat.raft.StateMachine;
 import net.kuujo.copycat.raft.protocol.request.*;
-import net.kuujo.copycat.util.ConfigurationException;
+import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.Listener;
 import net.kuujo.copycat.util.Listeners;
 import net.kuujo.copycat.util.Managed;
@@ -39,7 +38,7 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
@@ -55,10 +54,10 @@ public class ServerContext implements Managed<Void> {
   private final Serializer serializer;
   private Context context;
   private final StateMachine userStateMachine;
-  private final Member member;
+  private final Address address;
   private final Storage storage;
   private final ClusterState cluster;
-  private final Members members;
+  private final Map<Integer, Address> members;
   private final Transport transport;
   private Log log;
   private ServerStateMachine stateMachine;
@@ -76,36 +75,20 @@ public class ServerContext implements Managed<Void> {
   private volatile boolean open;
   private volatile CompletableFuture<Void> openFuture;
 
-  public ServerContext(int memberId, Members members, Transport transport, Storage storage, StateMachine stateMachine, Serializer serializer) {
-    if (memberId <= 0)
-      throw new IllegalArgumentException("memberId must be positive");
-    if (members == null)
-      throw new NullPointerException("members cannot be null");
-    if (transport == null)
-      throw new NullPointerException("transport cannot be null");
-    if (storage == null)
-      throw new NullPointerException("storage cannot be null");
-    if (stateMachine == null)
-      throw new NullPointerException("stateMachine cannot be null");
-    if (serializer == null)
-      throw new NullPointerException("serializer cannot be null");
-
-    Member member = members.member(memberId);
-    if (member == null) {
-      throw new ConfigurationException("active member must be listed in members list");
-    }
-
-    this.transport = transport;
-    this.cluster = new ClusterState(this, member);
-    this.members = members;
-    this.member = member;
-    this.serializer = serializer;
+  public ServerContext(Address address, Collection<Address> members, Transport transport, Storage storage, StateMachine stateMachine, Serializer serializer) {
+    this.address = Assert.notNull(address, "address");
+    this.members = new HashMap<>();
+    members.forEach(m -> this.members.put(m.hashCode(), m));
+    this.members.put(address.hashCode(), address);
+    this.transport = Assert.notNull(transport, "transport");
+    this.cluster = new ClusterState(this, address);
+    this.serializer = Assert.notNull(serializer, "serializer");
 
     storage.serializer().resolve(new ServiceLoaderTypeResolver());
     serializer.resolve(new ServiceLoaderTypeResolver());
 
-    this.storage = storage;
-    this.userStateMachine = stateMachine;
+    this.storage = Assert.notNull(storage, "storage");
+    this.userStateMachine = Assert.notNull(stateMachine, "stateMachine");
   }
 
   /**
@@ -119,12 +102,12 @@ public class ServerContext implements Managed<Void> {
   }
 
   /**
-   * Returns the server member.
+   * Returns the server address.
    *
-   * @return The local server member.
+   * @return The server address.
    */
-  public Member getMember() {
-    return member;
+  public Address getAddress() {
+    return address;
   }
 
   /**
@@ -223,9 +206,12 @@ public class ServerContext implements Managed<Void> {
   ServerContext setLeader(int leader) {
     if (this.leader == 0) {
       if (leader != 0) {
+        Address address = members.get(leader);
+        if (address == null)
+          throw new IllegalStateException("unknown leader: " + leader);
         this.leader = leader;
         this.lastVotedFor = 0;
-        LOGGER.debug("{} - Found leader {}", member.id(), leader);
+        LOGGER.debug("{} - Found leader {}", this.address, address);
         if (openFuture != null) {
           openFuture.complete(null);
           openFuture = null;
@@ -233,9 +219,12 @@ public class ServerContext implements Managed<Void> {
       }
     } else if (leader != 0) {
       if (this.leader != leader) {
+        Address address = members.get(leader);
+        if (address == null)
+          throw new IllegalStateException("unknown leader: " + leader);
         this.leader = leader;
         this.lastVotedFor = 0;
-        LOGGER.debug("{} - Found leader {}", member.id(), leader);
+        LOGGER.debug("{} - Found leader {}", this.address, address);
       }
     } else {
       this.leader = 0;
@@ -257,15 +246,15 @@ public class ServerContext implements Managed<Void> {
    *
    * @return The state leader.
    */
-  public Member getLeader() {
+  public Address getLeader() {
     if (leader == 0) {
       return null;
-    } else if (leader == member.id()) {
-      return member;
+    } else if (leader == address.hashCode()) {
+      return address;
     }
 
     MemberState member = cluster.getMember(leader);
-    return member != null ? member.getMember() : null;
+    return member != null ? member.getAddress() : null;
   }
 
   /**
@@ -279,7 +268,7 @@ public class ServerContext implements Managed<Void> {
       this.term = term;
       this.leader = 0;
       this.lastVotedFor = 0;
-      LOGGER.debug("{} - Incremented term {}", member.id(), term);
+      LOGGER.debug("{} - Incremented term {}", address, term);
     }
     return this;
   }
@@ -307,11 +296,17 @@ public class ServerContext implements Managed<Void> {
     if (leader != 0 && candidate != 0) {
       throw new IllegalStateException("Cannot cast vote - leader already exists");
     }
+    Address address = members.get(candidate);
+    if (address == null) {
+      throw new IllegalStateException("unknown candidate: " + candidate);
+    }
+
     this.lastVotedFor = candidate;
+
     if (candidate != 0) {
-      LOGGER.debug("{} - Voted for {}", member.id(), candidate);
+      LOGGER.debug("{} - Voted for {}", this.address, address);
     } else {
-      LOGGER.debug("{} - Reset last voted for", member.id());
+      LOGGER.debug("{} - Reset last voted for", this.address);
     }
     return this;
   }
@@ -425,7 +420,7 @@ public class ServerContext implements Managed<Void> {
       return CompletableFuture.completedFuture(this.state.type());
     }
 
-    LOGGER.info("{} - Transitioning to {}", member.id(), state.getSimpleName());
+    LOGGER.info("{} - Transitioning to {}", address, state.getSimpleName());
 
     // Force state transitions to occur synchronously in order to prevent race conditions.
     if (this.state != null) {
@@ -485,7 +480,7 @@ public class ServerContext implements Managed<Void> {
     if (open)
       return CompletableFuture.completedFuture(null);
 
-    context = new SingleThreadContext("copycat-server-" + member.id(), serializer);
+    context = new SingleThreadContext("copycat-server-" + address, serializer);
 
     openFuture = new CompletableFuture<>();
     context.executor().execute(() -> {
@@ -494,10 +489,10 @@ public class ServerContext implements Managed<Void> {
       log = storage.open();
 
       // Configure the cluster.
-      cluster.configure(0, members, Members.builder().build());
+      cluster.configure(0, members.values(), Collections.EMPTY_LIST);
 
       // Create a state machine executor and configure the state machine.
-      Context stateContext = new SingleThreadContext("copycat-server-" + member.id() + "-state-%d", serializer.clone());
+      Context stateContext = new SingleThreadContext("copycat-server-" + address + "-state-%d", serializer.clone());
       stateMachine = new ServerStateMachine(userStateMachine, log::clean, stateContext);
 
       // Setup the server and connection manager.
@@ -505,13 +500,13 @@ public class ServerContext implements Managed<Void> {
       server = transport.server(id);
       connections = new ConnectionManager(transport.client(id));
 
-      server.listen(member.address(), this::handleConnect).thenRun(() -> {
+      server.listen(address, this::handleConnect).thenRun(() -> {
         // Transition to the JOIN state. This will cause the server to attempt to join an existing cluster.
         transition(JoinState.class);
         open = true;
       });
     });
-    return openFuture.thenRun(() -> LOGGER.info("{} - Started successfully!", member.id()));
+    return openFuture.thenRun(() -> LOGGER.info("{} - Started successfully!", address));
   }
 
   @Override

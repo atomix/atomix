@@ -65,7 +65,7 @@ final class JoinState extends InactiveState {
   private void join() {
     List<MemberState> votingMembers = context.getCluster().getActiveMembers();
     if (votingMembers.isEmpty()) {
-      LOGGER.debug("{} - Single member cluster. Transitioning directly to leader.", context.getMember().id());
+      LOGGER.debug("{} - Single member cluster. Transitioning directly to leader.", context.getAddress());
       transition(RaftServer.State.LEADER);
     } else {
       join(context.getCluster().getActiveMembers().iterator());
@@ -78,17 +78,17 @@ final class JoinState extends InactiveState {
   private void join(Iterator<MemberState> iterator) {
     if (iterator.hasNext()) {
       MemberState member = iterator.next();
-      LOGGER.debug("{} - Attempting to join via {}", context.getMember().id(), member.getMember());
+      LOGGER.debug("{} - Attempting to join via {}", context.getAddress(), member.getAddress());
 
-      context.getConnections().getConnection(member.getMember()).thenCompose(connection -> {
+      context.getConnections().getConnection(member.getAddress()).thenCompose(connection -> {
         JoinRequest request = JoinRequest.builder()
-          .withMember(context.getMember())
+          .withMember(context.getAddress())
           .build();
         return connection.<JoinRequest, JoinResponse>send(request);
       }).whenComplete((response, error) -> {
         if (error == null) {
           if (response.status() == Response.Status.OK) {
-            LOGGER.info("{} - Successfully joined via {}", context.getMember().id(), member.getMember());
+            LOGGER.info("{} - Successfully joined via {}", context.getAddress(), member.getAddress());
 
             context.getCluster().configure(response.version(), response.activeMembers(), response.passiveMembers());
 
@@ -100,17 +100,17 @@ final class JoinState extends InactiveState {
               throw new IllegalStateException("not a member of the cluster");
             }
           } else {
-            LOGGER.debug("{} - Failed to join {}", context.getMember().id(), member.getMember());
+            LOGGER.debug("{} - Failed to join {}", context.getAddress(), member.getAddress());
             join(iterator);
           }
           response.release();
         } else {
-          LOGGER.debug("{} - Failed to join {}", context.getMember().id(), member.getMember());
+          LOGGER.debug("{} - Failed to join {}", context.getAddress(), member.getAddress());
           join(iterator);
         }
       });
     } else {
-      LOGGER.info("{} - Failed to join existing cluster", context.getMember().id());
+      LOGGER.info("{} - Failed to join existing cluster", context.getAddress());
       context.getCluster().setActive(true);
       transition(RaftServer.State.FOLLOWER);
     }
@@ -121,7 +121,7 @@ final class JoinState extends InactiveState {
    */
   private void cancelJoinTimeout() {
     if (joinFuture != null) {
-      LOGGER.info("{} - Cancelling join timeout", context.getMember().id());
+      LOGGER.info("{} - Cancelling join timeout", context.getAddress());
       joinFuture.cancel();
       joinFuture = null;
     }

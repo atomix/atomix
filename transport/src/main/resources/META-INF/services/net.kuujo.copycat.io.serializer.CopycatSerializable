@@ -13,13 +13,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-net.kuujo.copycat.raft.protocol.request.CommandRequest
-net.kuujo.copycat.raft.protocol.response.CommandResponse
-net.kuujo.copycat.raft.protocol.request.KeepAliveRequest
-net.kuujo.copycat.raft.protocol.response.KeepAliveResponse
-net.kuujo.copycat.raft.protocol.request.PublishRequest
-net.kuujo.copycat.raft.protocol.response.PublishResponse
-net.kuujo.copycat.raft.protocol.request.QueryRequest
-net.kuujo.copycat.raft.protocol.response.QueryResponse
-net.kuujo.copycat.raft.protocol.request.RegisterRequest
-net.kuujo.copycat.raft.protocol.response.RegisterResponse
+net.kuujo.copycat.io.transport.Address

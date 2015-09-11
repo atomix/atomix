@@ -118,7 +118,7 @@ abstract class ActiveState extends PassiveState {
     // vote for the candidate. We want to vote for candidates that are at least
     // as up to date as us.
     if (request.term() < context.getTerm()) {
-      LOGGER.debug("{} - Rejected {}: candidate's term is less than the current term", context.getMember().id(), request);
+      LOGGER.debug("{} - Rejected {}: candidate's term is less than the current term", context.getAddress(), request);
       return VoteResponse.builder()
         .withStatus(Response.Status.OK)
         .withTerm(context.getTerm())
@@ -127,8 +127,8 @@ abstract class ActiveState extends PassiveState {
     }
     // If the requesting candidate is not a known member of the cluster (to this
     // node) then don't vote for it. Only vote for candidates that we know about.
-    else if (!context.getCluster().getActiveMembers().stream().<Integer>map(m -> m.getMember().id()).collect(Collectors.toSet()).contains(request.candidate())) {
-      LOGGER.debug("{} - Rejected {}: candidate is not known to the local member", context.getMember().id(), request);
+    else if (!context.getCluster().getActiveMembers().stream().<Integer>map(m -> m.getAddress().hashCode()).collect(Collectors.toSet()).contains(request.candidate())) {
+      LOGGER.debug("{} - Rejected {}: candidate is not known to the local member", context.getAddress(), request);
       return VoteResponse.builder()
         .withStatus(Response.Status.OK)
         .withTerm(context.getTerm())
@@ -154,7 +154,7 @@ abstract class ActiveState extends PassiveState {
     }
     // In this case, we've already voted for someone else.
     else {
-      LOGGER.debug("{} - Rejected {}: already voted for {}", context.getMember().id(), request, context.getLastVotedFor());
+      LOGGER.debug("{} - Rejected {}: already voted for {}", context.getAddress(), request, context.getLastVotedFor());
       return VoteResponse.builder()
         .withStatus(Response.Status.OK)
         .withTerm(context.getTerm())
@@ -169,7 +169,7 @@ abstract class ActiveState extends PassiveState {
   private boolean logUpToDate(long index, long term, Request request) {
     // If the log is empty then vote for the candidate.
     if (context.getLog().isEmpty()) {
-      LOGGER.debug("{} - Accepted {}: candidate's log is up-to-date", context.getMember().id(), request);
+      LOGGER.debug("{} - Accepted {}: candidate's log is up-to-date", context.getAddress(), request);
       return true;
     } else {
       // Otherwise, load the last entry in the log. The last entry should be
@@ -177,21 +177,21 @@ abstract class ActiveState extends PassiveState {
       long lastIndex = context.getLog().lastIndex();
       RaftEntry entry = context.getLog().get(lastIndex);
       if (entry == null) {
-        LOGGER.debug("{} - Accepted {}: candidate's log is up-to-date", context.getMember().id(), request);
+        LOGGER.debug("{} - Accepted {}: candidate's log is up-to-date", context.getAddress(), request);
         return true;
       }
 
       try {
         if (index != 0 && index >= lastIndex) {
           if (term >= entry.getTerm()) {
-            LOGGER.debug("{} - Accepted {}: candidate's log is up-to-date", context.getMember().id(), request);
+            LOGGER.debug("{} - Accepted {}: candidate's log is up-to-date", context.getAddress(), request);
             return true;
           } else {
-            LOGGER.debug("{} - Rejected {}: candidate's last log term ({}) is in conflict with local log ({})", context.getMember().id(), request, term, entry.getTerm());
+            LOGGER.debug("{} - Rejected {}: candidate's last log term ({}) is in conflict with local log ({})", context.getAddress(), request, term, entry.getTerm());
             return false;
           }
         } else {
-          LOGGER.debug("{} - Rejected {}: candidate's last log entry ({}) is at a lower index than the local log ({})", context.getMember().id(), request, index, lastIndex);
+          LOGGER.debug("{} - Rejected {}: candidate's last log entry ({}) is at a lower index than the local log ({})", context.getAddress(), request, index, lastIndex);
           return false;
         }
       } finally {
@@ -246,7 +246,7 @@ abstract class ActiveState extends PassiveState {
         .build()));
     }
 
-    LOGGER.debug("{} - Forwarded {}", context.getMember().id(), request);
+    LOGGER.debug("{} - Forwarded {}", context.getAddress(), request);
     return this.<QueryRequest, QueryResponse>forward(request).thenApply(this::logResponse);
   }
 

@@ -19,10 +19,9 @@ import net.jodah.concurrentunit.ConcurrentTestCase;
 import net.kuujo.copycat.Copycat;
 import net.kuujo.copycat.CopycatReplica;
 import net.kuujo.copycat.io.storage.Storage;
+import net.kuujo.copycat.io.transport.Address;
 import net.kuujo.copycat.io.transport.LocalServerRegistry;
 import net.kuujo.copycat.io.transport.LocalTransport;
-import net.kuujo.copycat.raft.Member;
-import net.kuujo.copycat.raft.Members;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -32,6 +31,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -159,15 +159,13 @@ public class DistributedMapTest extends ConcurrentTestCase {
 
     List<Copycat> copycats = new ArrayList<>();
 
-    Members.Builder builder = Members.builder();
+    Collection<Address> members = new ArrayList<>();
     for (int i = 1; i <= nodes; i++) {
-      builder.addMember(new Member(i, "localhost", 5000 + i));
+      members.add(new Address("localhost", 5000 + i));
     }
 
-    Members members = builder.build();
-
     for (int i = 1; i <= nodes; i++) {
-      Copycat copycat = CopycatReplica.builder(i, members)
+      Copycat copycat = CopycatReplica.builder(new Address("localhost", 5000 + i), members)
         .withTransport(new LocalTransport(registry))
         .withStorage(Storage.builder()
           .withDirectory(new File(directory, "" + i))

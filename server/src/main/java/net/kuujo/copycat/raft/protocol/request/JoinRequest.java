@@ -15,13 +15,13 @@
  */
 package net.kuujo.copycat.raft.protocol.request;
 
-import net.kuujo.copycat.util.Assert;
-import net.kuujo.copycat.util.BuilderPool;
-import net.kuujo.copycat.raft.Member;
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.io.transport.Address;
+import net.kuujo.copycat.util.Assert;
+import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.util.ReferenceManager;
 
 import java.util.Objects;
@@ -60,7 +60,7 @@ public class JoinRequest extends AbstractRequest<JoinRequest> {
     return POOL.acquire(request);
   }
 
-  private Member member;
+  private Address member;
 
   /**
    * @throws NullPointerException if {@code referenceManager} is null
@@ -79,7 +79,7 @@ public class JoinRequest extends AbstractRequest<JoinRequest> {
    *
    * @return The joining member.
    */
-  public Member member() {
+  public Address member() {
     return member;
   }
 
@@ -134,7 +134,7 @@ public class JoinRequest extends AbstractRequest<JoinRequest> {
      * @return The request builder.
      * @throws NullPointerException if {@code member} is null
      */
-    public Builder withMember(Member member) {
+    public Builder withMember(Address member) {
       request.member = Assert.notNull(member, "member");
       return this;
     }

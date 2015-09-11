@@ -35,7 +35,6 @@ import net.kuujo.copycat.util.concurrent.Context;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -82,7 +81,7 @@ public class NettyServer implements Server {
   }
 
   @Override
-  public CompletableFuture<Void> listen(InetSocketAddress address, Consumer<Connection> listener) {
+  public CompletableFuture<Void> listen(Address address, Consumer<Connection> listener) {
     Assert.notNull(address, "address");
     Assert.notNull(listener, "listener");
     if (listening)
@@ -101,7 +100,7 @@ public class NettyServer implements Server {
   /**
    * Starts listening for the given member.
    */
-  private void listen(InetSocketAddress address, Consumer<Connection> listener, Context context) {
+  private void listen(Address address, Consumer<Connection> listener, Context context) {
     channelGroup = new DefaultChannelGroup("copycat-acceptor-channels", GlobalEventExecutor.INSTANCE);
 
     handler = new ServerHandler(connections, listener, context);
@@ -127,7 +126,7 @@ public class NettyServer implements Server {
 
     LOGGER.info("Binding to {}", address);
 
-    ChannelFuture bindFuture = bootstrap.bind(address);
+    ChannelFuture bindFuture = bootstrap.bind(address.socketAddress());
     bindFuture.addListener((ChannelFutureListener) channelFuture -> {
       if (channelFuture.isSuccess()) {
         listening = true;

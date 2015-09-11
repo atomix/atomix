@@ -19,6 +19,7 @@ import net.kuujo.copycat.io.PooledDirectAllocator;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.ServiceLoaderTypeResolver;
 import net.kuujo.copycat.io.storage.Storage;
+import net.kuujo.copycat.io.transport.Address;
 import net.kuujo.copycat.io.transport.Transport;
 import net.kuujo.copycat.raft.state.ServerContext;
 import net.kuujo.copycat.util.Assert;
@@ -27,7 +28,10 @@ import net.kuujo.copycat.util.Managed;
 import net.kuujo.copycat.util.concurrent.Context;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -87,12 +91,12 @@ public class RaftServer implements Managed<RaftServer> {
    * The provided set of members will be used to connect to the other members in the Raft cluster. The {@code memberId}
    * must be the {@link Member#id()} of a member listed in the provided members list.
    *
-   * @param memberId The local server member ID. This must be the ID of a member listed in the provided members list.
-   * @param members The cluster members to which to connect.
+   * @param address The local server member ID. This must be the ID of a member listed in the provided members list.
+   * @param cluster The cluster members to which to connect.
    * @return The server builder.
    */
-  public static Builder builder(int memberId, Member... members) {
-    return builder(memberId, Members.builder().withMembers(members).build());
+  public static Builder builder(Address address, Address... cluster) {
+    return builder(address, Arrays.asList(cluster));
   }
 
   /**
@@ -101,26 +105,12 @@ public class RaftServer implements Managed<RaftServer> {
    * The provided set of members will be used to connect to the other members in the Raft cluster. The {@code memberId}
    * must be the {@link Member#id()} of a member listed in the provided members list.
    *
-   * @param memberId The local server member ID. This must be the ID of a member listed in the provided members list.
-   * @param members The cluster members to which to connect.
+   * @param address The local server member ID. This must be the ID of a member listed in the provided members list.
+   * @param cluster The cluster members to which to connect.
    * @return The server builder.
    */
-  public static Builder builder(int memberId, Collection<Member> members) {
-    return builder(memberId, Members.builder().withMembers(members).build());
-  }
-
-  /**
-   * Returns a new Raft server builder.
-   * <p>
-   * The provided set of members will be used to connect to the other members in the Raft cluster. The {@code memberId}
-   * must be the {@link Member#id()} of a member listed in the provided members list.
-   *
-   * @param memberId The local server member ID. This must be the ID of a member listed in the provided members list.
-   * @param members The cluster members to which to connect.
-   * @return The server builder.
-   */
-  public static Builder builder(int memberId, Members members) {
-    return new Builder(memberId, members);
+  public static Builder builder(Address address, Collection<Address> cluster) {
+    return new Builder(address, cluster);
   }
 
   private final ServerContext context;
@@ -146,7 +136,7 @@ public class RaftServer implements Managed<RaftServer> {
    *
    * @return The current Raft leader.
    */
-  public Member leader() {
+  public Address leader() {
     return context.getLeader();
   }
 
@@ -258,16 +248,16 @@ public class RaftServer implements Managed<RaftServer> {
     private Storage storage;
     private Serializer serializer;
     private StateMachine stateMachine;
-    private int memberId;
-    private Members members;
+    private Address address;
+    private Set<Address> cluster;
     private Duration electionTimeout = DEFAULT_RAFT_ELECTION_TIMEOUT;
     private Duration heartbeatInterval = DEFAULT_RAFT_HEARTBEAT_INTERVAL;
     private Duration sessionTimeout = DEFAULT_RAFT_SESSION_TIMEOUT;
 
-    private Builder(int memberId, Members members) {
-      Assert.arg(members.member(memberId) != null, "memberId must be listed in the members list");
-      this.memberId = Assert.argNot(memberId, memberId <= 0, "member ID must be positive");
-      this.members = Assert.notNull(members, "members");
+    private Builder(Address address, Collection<Address> cluster) {
+      this.address = Assert.notNull(address, "address");
+      this.cluster = new HashSet<>(Assert.notNull(cluster, "cluster"));
+      this.cluster.add(address);
     }
 
     /**
@@ -370,8 +360,6 @@ public class RaftServer implements Managed<RaftServer> {
     public RaftServer build() {
       if (stateMachine == null)
         throw new ConfigurationException("state machine not configured");
-      if (members == null)
-        throw new ConfigurationException("members not configured");
 
       // If the transport is not configured, attempt to use the default Netty transport.
       if (transport == null) {
@@ -397,7 +385,7 @@ public class RaftServer implements Managed<RaftServer> {
           .build();
       }
 
-      ServerContext context = new ServerContext(memberId, members, transport, storage, stateMachine, serializer)
+      ServerContext context = new ServerContext(address, cluster, transport, storage, stateMachine, serializer)
         .setHeartbeatInterval(heartbeatInterval)
         .setElectionTimeout(electionTimeout)
         .setSessionTimeout(sessionTimeout);

@@ -15,17 +15,18 @@
  */
 package net.kuujo.copycat.raft.protocol.response;
 
-import java.util.Objects;
-
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.raft.Members;
+import net.kuujo.copycat.io.transport.Address;
 import net.kuujo.copycat.raft.protocol.error.RaftError;
 import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.util.ReferenceManager;
+
+import java.util.Collection;
+import java.util.Objects;
 
 /**
  * Protocol join response.
@@ -62,8 +63,8 @@ public class JoinResponse extends AbstractResponse<JoinResponse> {
   }
 
   private long version;
-  private Members activeMembers;
-  private Members passiveMembers;
+  private Collection<Address> activeMembers;
+  private Collection<Address> passiveMembers;
 
   /**
    * @throws NullPointerException if {@code referenceManager} is null
@@ -91,7 +92,7 @@ public class JoinResponse extends AbstractResponse<JoinResponse> {
    *
    * @return The join members list.
    */
-  public Members activeMembers() {
+  public Collection<Address> activeMembers() {
     return activeMembers;
   }
 
@@ -100,7 +101,7 @@ public class JoinResponse extends AbstractResponse<JoinResponse> {
    *
    * @return The join members list.
    */
-  public Members passiveMembers() {
+  public Collection<Address> passiveMembers() {
     return passiveMembers;
   }
 
@@ -187,7 +188,7 @@ public class JoinResponse extends AbstractResponse<JoinResponse> {
      * @return The response builder.
      * @throws NullPointerException if {@code members} is null
      */
-    public Builder withActiveMembers(Members members) {
+    public Builder withActiveMembers(Collection<Address> members) {
       response.activeMembers = Assert.notNull(members, "members");
       return this;
     }
@@ -199,7 +200,7 @@ public class JoinResponse extends AbstractResponse<JoinResponse> {
      * @return The response builder.
      * @throws NullPointerException if {@code members} is null
      */
-    public Builder withPassiveMembers(Members members) {
+    public Builder withPassiveMembers(Collection<Address> members) {
       response.passiveMembers = Assert.notNull(members, "members");
       return this;
     }

@@ -52,7 +52,7 @@ public class LocalTransportTest extends ConcurrentTestCase {
 
     context.executor().execute(() -> {
       try {
-        server.listen(new InetSocketAddress(InetAddress.getByName("localhost"), 5555), connection -> {
+        server.listen(new Address(new InetSocketAddress(InetAddress.getByName("localhost"), 5555)), connection -> {
           connection.<String, String>handler(String.class, message -> {
             threadAssertEquals("Hello world!", message);
             return CompletableFuture.completedFuture("Hello world back!");
@@ -66,7 +66,7 @@ public class LocalTransportTest extends ConcurrentTestCase {
 
     context.executor().execute(() -> {
       try {
-        client.connect(new InetSocketAddress(InetAddress.getByName("localhost"), 5555)).thenAccept(connection -> {
+        client.connect(new Address(new InetSocketAddress(InetAddress.getByName("localhost"), 5555))).thenAccept(connection -> {
           connection.send("Hello world!").thenAccept(response -> {
             threadAssertEquals("Hello world back!", response);
             resume();

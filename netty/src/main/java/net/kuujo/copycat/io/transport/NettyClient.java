@@ -32,7 +32,6 @@ import net.kuujo.copycat.util.concurrent.Context;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.UUID;
@@ -77,7 +76,7 @@ public class NettyClient implements Client {
   }
 
   @Override
-  public CompletableFuture<Connection> connect(InetSocketAddress address) {
+  public CompletableFuture<Connection> connect(Address address) {
     Assert.notNull(address, "address");
     Context context = getContext();
     CompletableFuture<Connection> future = new ComposableFuture<>();
@@ -102,7 +101,7 @@ public class NettyClient implements Client {
     bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000);
     bootstrap.option(ChannelOption.ALLOCATOR, ALLOCATOR);
 
-    bootstrap.connect(address).addListener(channelFuture -> {
+    bootstrap.connect(address.socketAddress()).addListener(channelFuture -> {
       if (channelFuture.isSuccess()) {
         LOGGER.info("Connected to {}", address);
       } else {

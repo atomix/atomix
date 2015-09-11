@@ -15,12 +15,12 @@
  */
 package net.kuujo.copycat.raft.protocol.request;
 
-import net.kuujo.copycat.util.Assert;
-import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.util.Assert;
+import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.util.ReferenceManager;
 
 import java.util.Objects;
@@ -188,7 +188,7 @@ public class PollRequest extends AbstractRequest<PollRequest> {
      * @throws IllegalArgumentException if {@code candidate} is not positive
      */
     public Builder withCandidate(int candidate) {
-      request.candidate = Assert.argNot(candidate, candidate <= 0, "candidate must be positive");
+      request.candidate = candidate;
       return this;
     }
 
@@ -223,7 +223,6 @@ public class PollRequest extends AbstractRequest<PollRequest> {
     public PollRequest build() {
       super.build();
       Assert.stateNot(request.term < 0, "term must not be negative");
-      Assert.stateNot(request.candidate <= 0, "candidate must be positive");
       Assert.stateNot(request.logIndex < 0, "log index must not be negative");
       Assert.stateNot(request.logTerm < 0, "log term must not be negative");
       return request;

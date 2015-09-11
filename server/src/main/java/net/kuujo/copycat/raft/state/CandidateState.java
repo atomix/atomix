@@ -60,7 +60,7 @@ final class CandidateState extends ActiveState {
    * Starts the election.
    */
   private void startElection() {
-    LOGGER.info("{} - Starting election", context.getMember().id());
+    LOGGER.info("{} - Starting election", context.getAddress());
     sendVoteRequests();
   }
 
@@ -87,13 +87,13 @@ final class CandidateState extends ActiveState {
     currentTimer = context.getContext().schedule(() -> {
       // When the election times out, clear the previous majority vote
       // check and restart the election.
-      LOGGER.debug("{} - Election timed out", context.getMember().id());
+      LOGGER.debug("{} - Election timed out", context.getAddress());
       if (quorum != null) {
         quorum.cancel();
         quorum = null;
       }
       sendVoteRequests();
-      LOGGER.debug("{} - Restarted election", context.getMember().id());
+      LOGGER.debug("{} - Restarted election", context.getAddress());
     }, delay);
 
     final AtomicBoolean complete = new AtomicBoolean();
@@ -101,7 +101,7 @@ final class CandidateState extends ActiveState {
 
     // If there are no other members in the cluster, immediately transition to leader.
     if (votingMembers.isEmpty()) {
-      LOGGER.debug("{} - Single member cluster. Transitioning directly to leader.", context.getMember().id());
+      LOGGER.debug("{} - Single member cluster. Transitioning directly to leader.", context.getAddress());
       transition(RaftServer.State.LEADER);
       return;
     }
@@ -130,20 +130,20 @@ final class CandidateState extends ActiveState {
       lastTerm = 0;
     }
 
-    LOGGER.debug("{} - Requesting votes from {}", context.getMember().id(), votingMembers);
+    LOGGER.debug("{} - Requesting votes from {}", context.getAddress(), votingMembers);
 
     // Once we got the last log term, iterate through each current member
     // of the cluster and vote each member for a vote.
     for (MemberState member : votingMembers) {
-      LOGGER.debug("{} - Requesting vote from {} for term {}", context.getMember().id(), member, context.getTerm());
+      LOGGER.debug("{} - Requesting vote from {} for term {}", context.getAddress(), member, context.getTerm());
       VoteRequest request = VoteRequest.builder()
         .withTerm(context.getTerm())
-        .withCandidate(context.getMember().id())
+        .withCandidate(context.getAddress().hashCode())
         .withLogIndex(lastIndex)
         .withLogTerm(lastTerm)
         .build();
 
-      context.getConnections().getConnection(member.getMember()).thenAccept(connection -> {
+      context.getConnections().getConnection(member.getAddress()).thenAccept(connection -> {
         connection.<VoteRequest, VoteResponse>send(request).whenCompleteAsync((response, error) -> {
           context.checkThread();
           if (isOpen() && !complete.get()) {
@@ -152,18 +152,18 @@ final class CandidateState extends ActiveState {
               quorum.fail();
             } else {
               if (response.term() > context.getTerm()) {
-                LOGGER.debug("{} - Received greater term from {}", context.getMember().id(), member);
+                LOGGER.debug("{} - Received greater term from {}", context.getAddress(), member);
                 context.setTerm(response.term());
                 complete.set(true);
                 transition(RaftServer.State.FOLLOWER);
               } else if (!response.voted()) {
-                LOGGER.debug("{} - Received rejected vote from {}", context.getMember().id(), member);
+                LOGGER.debug("{} - Received rejected vote from {}", context.getAddress(), member);
                 quorum.fail();
               } else if (response.term() != context.getTerm()) {
-                LOGGER.debug("{} - Received successful vote for a different term from {}", context.getMember().id(), member);
+                LOGGER.debug("{} - Received successful vote for a different term from {}", context.getAddress(), member);
                 quorum.fail();
               } else {
-                LOGGER.debug("{} - Received successful vote from {}", context.getMember().id(), member);
+                LOGGER.debug("{} - Received successful vote from {}", context.getAddress(), member);
                 quorum.succeed();
               }
               response.release();
@@ -203,7 +203,7 @@ final class CandidateState extends ActiveState {
 
     // If the vote request is not for this candidate then reject the vote.
     request.release();
-    if (request.candidate() == context.getMember().id()) {
+    if (request.candidate() == context.getAddress().hashCode()) {
       return CompletableFuture.completedFuture(logResponse(VoteResponse.builder()
         .withStatus(Response.Status.OK)
         .withTerm(context.getTerm())
@@ -224,7 +224,7 @@ final class CandidateState extends ActiveState {
   private void cancelElection() {
     context.checkThread();
     if (currentTimer != null) {
-      LOGGER.debug("{} - Cancelling election", context.getMember().id());
+      LOGGER.debug("{} - Cancelling election", context.getAddress());
       currentTimer.cancel();
     }
     if (quorum != null) {

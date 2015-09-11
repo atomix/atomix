@@ -17,20 +17,24 @@ package net.kuujo.copycat.raft.storage;
 
 import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
+import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.storage.Entry;
-import net.kuujo.copycat.raft.Members;
+import net.kuujo.copycat.io.transport.Address;
 import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.ReferenceManager;
+
+import java.util.Collection;
 
 /**
  * Configuration entry.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
+@SerializeWith(id=308)
 public class ConfigurationEntry extends RaftEntry<ConfigurationEntry> {
-  private Members active;
-  private Members passive;
+  private Collection<Address> active;
+  private Collection<Address> passive;
 
   public ConfigurationEntry() {
   }
@@ -44,7 +48,7 @@ public class ConfigurationEntry extends RaftEntry<ConfigurationEntry> {
    *
    * @return The active members.
    */
-  public Members getActive() {
+  public Collection<Address> getActive() {
     return active;
   }
 
@@ -55,7 +59,7 @@ public class ConfigurationEntry extends RaftEntry<ConfigurationEntry> {
    * @return The configuration entry.
    * @throws NullPointerException if {@code members} is null
    */
-  public ConfigurationEntry setActive(Members members) {
+  public ConfigurationEntry setActive(Collection<Address> members) {
     this.active = Assert.notNull(members, "members");
     return this;
   }
@@ -65,7 +69,7 @@ public class ConfigurationEntry extends RaftEntry<ConfigurationEntry> {
    *
    * @return The passive members.
    */
-  public Members getPassive() {
+  public Collection<Address> getPassive() {
     return passive;
   }
 
@@ -76,7 +80,7 @@ public class ConfigurationEntry extends RaftEntry<ConfigurationEntry> {
    * @return The configuration entry.
    * @throws NullPointerException if {@code members} is null
    */
-  public ConfigurationEntry setPassive(Members members) {
+  public ConfigurationEntry setPassive(Collection<Address> members) {
     this.passive = Assert.notNull(members, "members");
     return this;
   }

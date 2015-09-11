@@ -18,11 +18,12 @@ package net.kuujo.copycat.examples.server;
 import net.kuujo.copycat.Copycat;
 import net.kuujo.copycat.CopycatReplica;
 import net.kuujo.copycat.io.storage.Storage;
+import net.kuujo.copycat.io.transport.Address;
 import net.kuujo.copycat.io.transport.NettyTransport;
-import net.kuujo.copycat.raft.Member;
-import net.kuujo.copycat.raft.Members;
 
 import java.net.InetAddress;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -39,19 +40,17 @@ public class ServerExample {
     if (args.length < 2)
       throw new IllegalArgumentException("must supply a serverId:port and at least one remoteId:host:port triple");
 
-    String[] parts = args[0].split(":");
-    int serverId = Integer.valueOf(parts[0]);
-    int port = Integer.valueOf(parts[1]);
+    int port = Integer.valueOf(args[0]);
 
-    Members.Builder builder = Members.builder()
-        .addMember(new Member(serverId, InetAddress.getLocalHost().getHostName(), port));
+    Address address = new Address(InetAddress.getLocalHost().getHostName(), port);
 
+    List<Address> members = new ArrayList<>();
     for (int i = 1; i < args.length; i++) {
-      parts = args[i].split(":");
-      builder.addMember(new Member(Integer.valueOf(parts[0]), parts[1], Integer.valueOf(parts[2])));
+      String[] parts = args[i].split(":");
+      members.add(new Address(parts[0], Integer.valueOf(parts[1])));
     }
 
-    Copycat copycat = CopycatReplica.builder(serverId, builder.build())
+    Copycat copycat = CopycatReplica.builder(address, members)
         .withTransport(new NettyTransport())
         .withStorage(Storage.builder()
           .withDirectory(System.getProperty("user.dir") + "/logs/" + UUID.randomUUID().toString())

@@ -15,11 +15,12 @@
  */
 package net.kuujo.copycat;
 
-import net.kuujo.copycat.raft.Member;
-import net.kuujo.copycat.raft.Members;
+import net.kuujo.copycat.io.transport.Address;
 import net.kuujo.copycat.raft.RaftClient;
+import net.kuujo.copycat.util.Assert;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Collection;
 
 /**
@@ -41,8 +42,8 @@ public final class CopycatClient extends Copycat {
    * @param members The cluster members to which to connect.
    * @return The client builder.
    */
-  public static Builder builder(Member... members) {
-    return new Builder(Members.builder().withMembers(members).build());
+  public static Builder builder(Address... members) {
+    return new Builder(Arrays.asList(Assert.notNull(members, "members")));
   }
 
   /**
@@ -54,20 +55,7 @@ public final class CopycatClient extends Copycat {
    * @param members The cluster members to which to connect.
    * @return The client builder.
    */
-  public static Builder builder(Collection<Member> members) {
-    return new Builder(Members.builder().withMembers(members).build());
-  }
-
-  /**
-   * Returns a new Copycat client builder.
-   * <p>
-   * The provided set of members will be used to connect to the Raft cluster. The members list does not have to represent
-   * the complete list of servers in the cluster, but it must have at least one reachable member.
-   *
-   * @param members The cluster members to which to connect.
-   * @return The client builder.
-   */
-  public static Builder builder(Members members) {
+  public static Builder builder(Collection<Address> members) {
     return new Builder(members);
   }
 
@@ -82,7 +70,7 @@ public final class CopycatClient extends Copycat {
    * Client builder.
    */
   public static class Builder extends Copycat.Builder {
-    private Builder(Members members) {
+    private Builder(Collection<Address> members) {
       super(members);
     }
 

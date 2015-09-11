@@ -15,7 +15,6 @@
  */
 package net.kuujo.copycat.io.transport;
 
-import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -25,7 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class LocalServerRegistry {
-  private final Map<InetSocketAddress, LocalServer> registry = new ConcurrentHashMap<>();
+  private final Map<Address, LocalServer> registry = new ConcurrentHashMap<>();
 
   /**
    * Registers a server.
@@ -33,7 +32,7 @@ public class LocalServerRegistry {
    * @param address The server address.
    * @param server The server.
    */
-  void register(InetSocketAddress address, LocalServer server) {
+  void register(Address address, LocalServer server) {
     registry.put(address, server);
   }
 
@@ -42,7 +41,7 @@ public class LocalServerRegistry {
    *
    * @param address The server address.
    */
-  void unregister(InetSocketAddress address) {
+  void unregister(Address address) {
     registry.remove(address);
   }
 
@@ -52,7 +51,7 @@ public class LocalServerRegistry {
    * @param address The server address.
    * @return The server or {@code null} if no server is registered at that address.
    */
-  LocalServer get(InetSocketAddress address) {
+  LocalServer get(Address address) {
     return registry.get(address);
   }
 

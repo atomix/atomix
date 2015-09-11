@@ -16,11 +16,10 @@
 package net.kuujo.copycat.raft.session;
 
 import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.io.transport.Address;
 import net.kuujo.copycat.io.transport.Client;
 import net.kuujo.copycat.io.transport.Connection;
 import net.kuujo.copycat.io.transport.Transport;
-import net.kuujo.copycat.raft.Member;
-import net.kuujo.copycat.raft.Members;
 import net.kuujo.copycat.raft.protocol.Command;
 import net.kuujo.copycat.raft.protocol.Query;
 import net.kuujo.copycat.raft.protocol.error.RaftError;
@@ -39,10 +38,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
@@ -65,10 +61,10 @@ public class ClientSession implements Session, Managed<Session> {
 
   private final Random random = new Random();
   private final Client client;
-  private Members members;
+  private Set<Address> members;
   private final Duration keepAliveInterval;
   private final Context context;
-  private List<Member> connectMembers;
+  private List<Address> connectMembers;
   private Connection connection;
   private volatile State state = State.CLOSED;
   private volatile long id;
@@ -87,13 +83,13 @@ public class ClientSession implements Session, Managed<Session> {
   private long eventSequence;
   private long version;
 
-  public ClientSession(Transport transport, Members members, Duration keepAliveInterval, Serializer serializer) {
+  public ClientSession(Transport transport, Collection<Address> members, Duration keepAliveInterval, Serializer serializer) {
     UUID id = UUID.randomUUID();
-    this.client = transport.client(id);
-    this.members = members;
+    this.client = Assert.notNull(transport, "transport").client(id);
+    this.members = new HashSet<>(Assert.notNull(members, "members"));
     this.keepAliveInterval = keepAliveInterval;
-    this.context = new SingleThreadContext("copycat-client-" + id.toString(), serializer.clone());
-    this.connectMembers = new ArrayList<>(members.members());
+    this.context = new SingleThreadContext("copycat-client-" + id.toString(), Assert.notNull(serializer, "serializer").clone());
+    this.connectMembers = new ArrayList<>(members);
   }
 
   @Override
@@ -113,9 +109,9 @@ public class ClientSession implements Session, Managed<Session> {
   /**
    * Sets the client remote members.
    */
-  private void setMembers(Members members) {
-    this.members = members;
-    this.connectMembers = new ArrayList<>(this.members.members());
+  private void setMembers(Collection<Address> members) {
+    this.members = new HashSet<>(members);
+    this.connectMembers = new ArrayList<>(this.members);
   }
 
   /**
@@ -307,21 +303,21 @@ public class ClientSession implements Session, Managed<Session> {
     }
 
     // Remove the next random member from the members list.
-    Member member = connectMembers.remove(random.nextInt(connectMembers.size()));
+    Address member = connectMembers.remove(random.nextInt(connectMembers.size()));
 
     // Connect to the server. If the connection fails, recursively attempt to connect to the next server,
     // otherwise setup the connection and send the request.
     if (connectFuture == null) {
       // If there's no existing connect future, create a new one.
-      LOGGER.info("Connecting: {}", member.address());
-      connectFuture = client.connect(member.address()).whenComplete((connection, error) -> {
+      LOGGER.info("Connecting: {}", member.socketAddress());
+      connectFuture = client.connect(member).whenComplete((connection, error) -> {
         connectFuture = null;
         if (!checkOpen || isOpen()) {
           if (error == null) {
             setupConnection(connection);
             request(request, connection, future, checkOpen, recordFailures);
           } else {
-            LOGGER.info("Failed to connect: {}", member.address());
+            LOGGER.info("Failed to connect: {}", member.socketAddress());
             resetConnection().request(request, future, checkOpen, recordFailures);
           }
         } else {
@@ -436,8 +432,8 @@ public class ClientSession implements Session, Managed<Session> {
    * Resets the members to which to connect.
    */
   private ClientSession resetMembers() {
-    if (connectMembers.isEmpty() || connectMembers.size() < members.members().size() - 1) {
-      connectMembers = new ArrayList<>(members.members());
+    if (connectMembers.isEmpty() || connectMembers.size() < members.size() - 1) {
+      connectMembers = new ArrayList<>(members);
     }
     return this;
   }

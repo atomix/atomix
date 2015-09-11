@@ -15,7 +15,6 @@
  */
 package net.kuujo.copycat.io.transport;
 
-import java.net.InetSocketAddress;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -54,13 +53,13 @@ public interface Client {
    * @throws NullPointerException if {@code address} is null
    * @throws IllegalStateException if not called from a Copycat thread
    */
-  CompletableFuture<Connection> connect(InetSocketAddress address);
+  CompletableFuture<Connection> connect(Address address);
 
   /**
    * Closes the client.
    * <p>
    * Before the client is closed, all {@link Connection}s opened by the client will be closed
-   * and any registered {@link Connection#closeListener(Listener)}s will be invoked.
+   * and any registered {@link Connection#closeListener(java.util.function.Consumer)}s will be invoked.
    *
    * @return A completable future to be called once the client is closed.
    * @throws IllegalStateException if not called from a Copycat thread

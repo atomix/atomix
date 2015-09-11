@@ -16,7 +16,7 @@
 package net.kuujo.copycat.raft.state;
 
 import net.kuujo.copycat.io.storage.Entry;
-import net.kuujo.copycat.raft.Members;
+import net.kuujo.copycat.io.transport.Address;
 import net.kuujo.copycat.raft.RaftServer;
 import net.kuujo.copycat.raft.protocol.Command;
 import net.kuujo.copycat.raft.protocol.ConsistencyLevel;
@@ -71,7 +71,7 @@ final class LeaderState extends ActiveState {
    * Sets the current node as the cluster leader.
    */
   private void takeLeadership() {
-    context.setLeader(context.getMember().id());
+    context.setLeader(context.getAddress().hashCode());
   }
 
   /**
@@ -111,7 +111,7 @@ final class LeaderState extends ActiveState {
         if (entry != null) {
           context.getStateMachine().apply(entry).whenComplete((result, error) -> {
             if (isOpen() && error != null) {
-              LOGGER.info("{} - An application error occurred: {}", context.getMember().id(), error.getMessage());
+              LOGGER.info("{} - An application error occurred: {}", context.getAddress(), error.getMessage());
             }
             entry.release();
           });
@@ -119,7 +119,7 @@ final class LeaderState extends ActiveState {
         count++;
       }
 
-      LOGGER.debug("{} - Applied {} entries to log", context.getMember().id(), count);
+      LOGGER.debug("{} - Applied {} entries to log", context.getAddress(), count);
     }
   }
 
@@ -130,7 +130,7 @@ final class LeaderState extends ActiveState {
     // Set a timer that will be used to periodically synchronize with other nodes
     // in the cluster. This timer acts as a heartbeat to ensure this node remains
     // the leader.
-    LOGGER.debug("{} - Starting heartbeat timer", context.getMember().id());
+    LOGGER.debug("{} - Starting heartbeat timer", context.getAddress());
     currentTimer = context.getContext().schedule(this::heartbeatMembers, Duration.ZERO, context.getHeartbeatInterval());
   }
 
@@ -150,7 +150,7 @@ final class LeaderState extends ActiveState {
       context.checkThread();
       logRequest(request);
 
-      if (context.getCluster().getMember(request.member().id()) != null) {
+      if (context.getCluster().getMember(request.member().hashCode()) != null) {
         return CompletableFuture.completedFuture(logResponse(JoinResponse.builder()
           .withStatus(Response.Status.OK)
           .withVersion(context.getCluster().getVersion())
@@ -162,17 +162,16 @@ final class LeaderState extends ActiveState {
       final long term = context.getTerm();
       final long index;
 
-      Members activeMembers = context.getCluster().buildActiveMembers();
-      Members passiveMembers = Members.builder(context.getCluster().buildPassiveMembers())
-        .addMember(request.member())
-        .build();
+      Collection<Address> activeMembers = context.getCluster().buildActiveMembers();
+      Collection<Address> passiveMembers = context.getCluster().buildPassiveMembers();
+      passiveMembers.add(request.member());
 
       try (ConfigurationEntry entry = context.getLog().create(ConfigurationEntry.class)) {
         entry.setTerm(term)
           .setActive(activeMembers)
           .setPassive(passiveMembers);
         index = context.getLog().append(entry);
-        LOGGER.debug("{} - Appended {} to log at index {}", context.getMember().id(), entry, index);
+        LOGGER.debug("{} - Appended {} to log at index {}", context.getAddress(), entry, index);
 
         // Immediately apply the configuration change. No need to validate whether this node was changed
         // to PASSIVE since it's the leader and would have already transitioned to the LEAVE state if
@@ -211,7 +210,7 @@ final class LeaderState extends ActiveState {
       context.checkThread();
       logRequest(request);
 
-      if (context.getCluster().getMember(request.member().id()) == null) {
+      if (context.getCluster().getMember(request.member().hashCode()) == null) {
         return CompletableFuture.completedFuture(logResponse(LeaveResponse.builder()
           .withStatus(Response.Status.OK)
           .build()));
@@ -220,19 +219,18 @@ final class LeaderState extends ActiveState {
       final long term = context.getTerm();
       final long index;
 
-      Members activeMembers = Members.builder(context.getCluster().buildActiveMembers())
-        .removeMember(request.member())
-        .build();
-      Members passiveMembers = Members.builder(context.getCluster().buildPassiveMembers())
-        .removeMember(request.member())
-        .build();
+      Collection<Address> activeMembers = context.getCluster().buildActiveMembers();
+      activeMembers.remove(request.member());
+
+      Collection<Address> passiveMembers = context.getCluster().buildPassiveMembers();
+      passiveMembers.remove(request.member());
 
       try (ConfigurationEntry entry = context.getLog().create(ConfigurationEntry.class)) {
         entry.setTerm(term)
           .setActive(activeMembers)
           .setPassive(passiveMembers);
         index = context.getLog().append(entry);
-        LOGGER.debug("{} - Appended {} to log at index {}", context.getMember().id(), entry, index);
+        LOGGER.debug("{} - Appended {} to log at index {}", context.getAddress(), entry, index);
 
         // Immediately apply the configuration change. No need to validate whether this node was changed
         // to PASSIVE since it's the leader and would have already transitioned to the LEAVE state if
@@ -279,7 +277,7 @@ final class LeaderState extends ActiveState {
   public CompletableFuture<VoteResponse> vote(final VoteRequest request) {
     try {
       if (request.term() > context.getTerm()) {
-        LOGGER.debug("{} - Received greater term", context.getMember().id());
+        LOGGER.debug("{} - Received greater term", context.getAddress());
         context.setLeader(0);
         transition(RaftServer.State.FOLLOWER);
         request.acquire();
@@ -343,7 +341,7 @@ final class LeaderState extends ActiveState {
           .setSequence(request.sequence())
           .setCommand(command);
         index = context.getLog().append(entry);
-        LOGGER.debug("{} - Appended entry to log at index {}", context.getMember().id(), index);
+        LOGGER.debug("{} - Appended entry to log at index {}", context.getAddress(), index);
       }
     } finally {
       request.release();
@@ -517,7 +515,7 @@ final class LeaderState extends ActiveState {
         entry.setConnection(request.connection());
         entry.setTimeout(timeout);
         index = context.getLog().append(entry);
-        LOGGER.debug("{} - Appended {}", context.getMember().id(), entry);
+        LOGGER.debug("{} - Appended {}", context.getAddress(), entry);
       }
     } finally {
       request.release();
@@ -580,7 +578,7 @@ final class LeaderState extends ActiveState {
           .setEventSequence(request.eventSequence())
           .setTimestamp(timestamp);
         index = context.getLog().append(entry);
-        LOGGER.debug("{} - Appended {}", context.getMember().id(), entry);
+        LOGGER.debug("{} - Appended {}", context.getAddress(), entry);
       }
     } finally {
       request.release();
@@ -629,7 +627,7 @@ final class LeaderState extends ActiveState {
    */
   private void cancelPingTimer() {
     if (currentTimer != null) {
-      LOGGER.debug("{} - Cancelling heartbeat timer", context.getMember().id());
+      LOGGER.debug("{} - Cancelling heartbeat timer", context.getAddress());
       currentTimer.cancel();
     }
   }
@@ -812,7 +810,7 @@ final class LeaderState extends ActiveState {
 
       AppendRequest.Builder builder = AppendRequest.builder()
         .withTerm(context.getTerm())
-        .withLeader(context.getMember().id())
+        .withLeader(context.getAddress().hashCode())
         .withLogIndex(prevIndex)
         .withLogTerm(prevEntry != null ? prevEntry.getTerm() : 0)
         .withCommitIndex(context.getCommitIndex())
@@ -830,7 +828,7 @@ final class LeaderState extends ActiveState {
 
       AppendRequest.Builder builder = AppendRequest.builder()
         .withTerm(context.getTerm())
-        .withLeader(context.getMember().id())
+        .withLeader(context.getAddress().hashCode())
         .withLogIndex(prevIndex)
         .withLogTerm(prevEntry != null ? prevEntry.getTerm() : 0)
         .withCommitIndex(context.getCommitIndex())
@@ -863,15 +861,15 @@ final class LeaderState extends ActiveState {
     private void commit(MemberState member, AppendRequest request, boolean recursive) {
       committing.add(member);
 
-      LOGGER.debug("{} - Sent {} to {}", context.getMember().id(), request, member.getMember());
-      context.getConnections().getConnection(member.getMember()).thenAccept(connection -> {
+      LOGGER.debug("{} - Sent {} to {}", context.getAddress(), request, member.getAddress());
+      context.getConnections().getConnection(member.getAddress()).thenAccept(connection -> {
         connection.<AppendRequest, AppendResponse>send(request).whenComplete((response, error) -> {
           committing.remove(member);
           context.checkThread();
 
           if (isOpen()) {
             if (error == null) {
-              LOGGER.debug("{} - Received {} from {}", context.getMember().id(), response, member.getMember());
+              LOGGER.debug("{} - Received {} from {}", context.getAddress(), response, member.getAddress());
               if (response.status() == Response.Status.OK) {
                 // Update the commit time for the replica. This will cause heartbeat futures to be triggered.
                 commitTime(member);
@@ -904,21 +902,21 @@ final class LeaderState extends ActiveState {
                   }
                 }
               } else if (response.term() > context.getTerm()) {
-                LOGGER.debug("{} - Received higher term from {}", context.getMember().id(), member.getMember());
+                LOGGER.debug("{} - Received higher term from {}", context.getAddress(), member.getAddress());
                 context.setLeader(0);
                 transition(RaftServer.State.FOLLOWER);
               } else {
-                LOGGER.warn("{} - {}", context.getMember().id(), response.error() != null ? response.error() : "");
+                LOGGER.warn("{} - {}", context.getAddress(), response.error() != null ? response.error() : "");
               }
               response.release();
             } else {
-              LOGGER.warn("{} - {}", context.getMember().id(), error.getMessage());
+              LOGGER.warn("{} - {}", context.getAddress(), error.getMessage());
 
               // Verify that the leader has contacted a majority of the cluster within the last two election timeouts.
               // If the leader is not able to contact a majority of the cluster within two election timeouts, assume
               // that a partition occurred and transition back to the FOLLOWER state.
               if (System.currentTimeMillis() - commitTime() > context.getElectionTimeout().toMillis() * 2) {
-                LOGGER.warn("{} - Suspected network partition. Stepping down", context.getMember().id());
+                LOGGER.warn("{} - Suspected network partition. Stepping down", context.getAddress());
                 context.setLeader(0);
                 transition(RaftServer.State.FOLLOWER);
               }
@@ -961,19 +959,18 @@ final class LeaderState extends ActiveState {
      */
     private void updateConfiguration(MemberState member) {
       if (context.getCluster().isPassiveMember(member) && member.getMatchIndex() >= context.getCommitIndex()) {
-        Members activeMembers = Members.builder(context.getCluster().buildActiveMembers())
-          .addMember(member.getMember())
-          .build();
-        Members passiveMembers = Members.builder(context.getCluster().buildPassiveMembers())
-          .removeMember(member.getMember())
-          .build();
+        Collection<Address> activeMembers = context.getCluster().buildActiveMembers();
+        activeMembers.add(member.getAddress());
+
+        Collection<Address> passiveMembers = context.getCluster().buildPassiveMembers();
+        passiveMembers.remove(member.getAddress());
 
         try (ConfigurationEntry entry = context.getLog().create(ConfigurationEntry.class)) {
           entry.setTerm(context.getTerm())
             .setActive(activeMembers)
             .setPassive(passiveMembers);
           long index = context.getLog().append(entry);
-          LOGGER.debug("{} - Appended {} to log at index {}", context.getMember().id(), entry, index);
+          LOGGER.debug("{} - Appended {} to log at index {}", context.getAddress(), entry, index);
 
           // Immediately apply the configuration upon appending the configuration entry.
           context.getCluster().configure(entry.getIndex(), entry.getActive(), entry.getPassive());
@@ -986,7 +983,7 @@ final class LeaderState extends ActiveState {
      */
     private void resetMatchIndex(MemberState member, AppendResponse response) {
       member.setMatchIndex(response.logIndex());
-      LOGGER.debug("{} - Reset match index for {} to {}", context.getMember().id(), member, member.getMatchIndex());
+      LOGGER.debug("{} - Reset match index for {} to {}", context.getAddress(), member, member.getMatchIndex());
     }
 
     /**
@@ -998,7 +995,7 @@ final class LeaderState extends ActiveState {
       } else {
         member.setNextIndex(context.getLog().firstIndex());
       }
-      LOGGER.debug("{} - Reset next index for {} to {}", context.getMember().id(), member, member.getNextIndex());
+      LOGGER.debug("{} - Reset next index for {} to {}", context.getAddress(), member, member.getNextIndex());
     }
   }
 

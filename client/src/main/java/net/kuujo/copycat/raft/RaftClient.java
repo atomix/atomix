@@ -17,6 +17,7 @@ package net.kuujo.copycat.raft;
 
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.ServiceLoaderTypeResolver;
+import net.kuujo.copycat.io.transport.Address;
 import net.kuujo.copycat.io.transport.Transport;
 import net.kuujo.copycat.raft.protocol.Command;
 import net.kuujo.copycat.raft.protocol.ConsistencyLevel;
@@ -31,7 +32,10 @@ import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.Futures;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -50,8 +54,8 @@ public class RaftClient implements Managed<RaftClient> {
    * @param members The cluster members to which to connect.
    * @return The client builder.
    */
-  public static Builder builder(Member... members) {
-    return builder(Members.builder().withMembers(members).build());
+  public static Builder builder(Address... members) {
+    return builder(Arrays.asList(Assert.notNull(members, "members")));
   }
 
   /**
@@ -63,36 +67,23 @@ public class RaftClient implements Managed<RaftClient> {
    * @param members The cluster members to which to connect.
    * @return The client builder.
    */
-  public static Builder builder(Collection<Member> members) {
-    return builder(Members.builder().withMembers(members).build());
-  }
-
-  /**
-   * Returns a new Raft client builder.
-   * <p>
-   * The provided set of members will be used to connect to the Raft cluster. The members list does not have to represent
-   * the complete list of servers in the cluster, but it must have at least one reachable member.
-   *
-   * @param members The cluster members to which to connect.
-   * @return The client builder.
-   */
-  public static Builder builder(Members members) {
+  public static Builder builder(Collection<Address> members) {
     return new Builder(members);
   }
 
   private final Transport transport;
-  private final Members members;
+  private final Collection<Address> members;
   private final Serializer serializer;
   private final Duration keepAliveInterval;
   private ClientSession session;
   private CompletableFuture<RaftClient> openFuture;
   private CompletableFuture<Void> closeFuture;
 
-  protected RaftClient(Transport transport, Members members, Serializer serializer, Duration keepAliveInterval) {
+  protected RaftClient(Transport transport, Collection<Address> members, Serializer serializer, Duration keepAliveInterval) {
     serializer.resolve(new ServiceLoaderTypeResolver());
-    this.transport = transport;
-    this.members = members;
-    this.serializer = serializer;
+    this.transport = Assert.notNull(transport, "transport");
+    this.members = Assert.notNull(members, "members");
+    this.serializer = Assert.notNull(serializer, "serializer");
     this.keepAliveInterval = keepAliveInterval;
   }
 
@@ -278,10 +269,10 @@ public class RaftClient implements Managed<RaftClient> {
     private Transport transport;
     private Serializer serializer;
     private Duration keepAliveInterval = Duration.ofMillis(1000);
-    private Members members;
+    private Set<Address> members;
 
-    private Builder(Members members) {
-      this.members = Assert.notNull(members, "members");
+    private Builder(Collection<Address> members) {
+      this.members = new HashSet<>(Assert.notNull(members, "members"));
     }
 
     @Override

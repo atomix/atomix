@@ -15,7 +15,8 @@
  */
 package net.kuujo.copycat.raft.state;
 
-import net.kuujo.copycat.raft.Member;
+import net.kuujo.copycat.io.transport.Address;
+import net.kuujo.copycat.util.Assert;
 
 /**
  * Cluster member state.
@@ -23,25 +24,25 @@ import net.kuujo.copycat.raft.Member;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 class MemberState {
-  private final Member member;
+  private final Address address;
   private int index;
   private long matchIndex;
   private long nextIndex;
   private long time;
 
-  public MemberState(Member member) {
-    if (member == null)
+  public MemberState(Address address) {
+    if (address == null)
       throw new NullPointerException("member cannot be null");
-    this.member = member;
+    this.address = Assert.notNull(address, "address");
   }
 
   /**
-   * Returns the member configuration.
+   * Returns the member address.
    *
-   * @return The member configuration.
+   * @return The member address.
    */
-  public Member getMember() {
-    return member;
+  public Address getAddress() {
+    return address;
   }
 
   /**

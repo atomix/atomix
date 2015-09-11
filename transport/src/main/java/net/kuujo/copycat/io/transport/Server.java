@@ -15,7 +15,6 @@
  */
 package net.kuujo.copycat.io.transport;
 
-import java.net.InetSocketAddress;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -55,7 +54,7 @@ public interface Server {
    * @return A completable future to be called once the server has started listening for connections.
    * @throws NullPointerException if {@code address} ir {@code listener} are null
    */
-  CompletableFuture<Void> listen(InetSocketAddress address, Consumer<Connection> listener);
+  CompletableFuture<Void> listen(Address address, Consumer<Connection> listener);
 
   /**
    * Closes the server.

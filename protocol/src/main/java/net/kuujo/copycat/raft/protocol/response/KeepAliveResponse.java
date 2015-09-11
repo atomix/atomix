@@ -19,12 +19,13 @@ import net.kuujo.copycat.io.BufferInput;
 import net.kuujo.copycat.io.BufferOutput;
 import net.kuujo.copycat.io.serializer.SerializeWith;
 import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.raft.Members;
+import net.kuujo.copycat.io.transport.Address;
 import net.kuujo.copycat.raft.protocol.error.RaftError;
 import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.BuilderPool;
 import net.kuujo.copycat.util.ReferenceManager;
 
+import java.util.Collection;
 import java.util.Objects;
 
 /**
@@ -62,7 +63,7 @@ public class KeepAliveResponse extends SessionResponse<KeepAliveResponse> {
     return POOL.acquire(Assert.notNull(response, "response"));
   }
 
-  private Members members;
+  private Collection<Address> members;
 
   /**
    * @throws NullPointerException if {@code referenceManager} is null
@@ -81,7 +82,7 @@ public class KeepAliveResponse extends SessionResponse<KeepAliveResponse> {
    *
    * @return The cluster members.
    */
-  public Members members() {
+  public Collection<Address> members() {
     return members;
   }
 
@@ -149,7 +150,7 @@ public class KeepAliveResponse extends SessionResponse<KeepAliveResponse> {
      * @return The response builder.
      * @throws NullPointerException if {@code members} is null
      */
-    public Builder withMembers(Members members) {
+    public Builder withMembers(Collection<Address> members) {
       response.members = Assert.notNull(members, "members");
       return this;
     }

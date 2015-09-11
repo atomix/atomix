@@ -17,10 +17,6 @@ package net.kuujo.copycat.io.transport;
 
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.io.transport.Client;
-import net.kuujo.copycat.io.transport.NettyTransport;
-import net.kuujo.copycat.io.transport.Server;
-import net.kuujo.copycat.io.transport.Transport;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.SingleThreadContext;
 import org.testng.annotations.Test;
@@ -52,7 +48,7 @@ public class NettyTransportTest extends ConcurrentTestCase {
 
     context.executor().execute(() -> {
       try {
-        server.listen(new InetSocketAddress(InetAddress.getByName("localhost"), 5555), connection -> {
+        server.listen(new Address(new InetSocketAddress(InetAddress.getByName("localhost"), 5555)), connection -> {
           connection.<String, String>handler(String.class, message -> {
             threadAssertEquals("Hello world!", message);
             return CompletableFuture.completedFuture("Hello world back!");
@@ -66,7 +62,7 @@ public class NettyTransportTest extends ConcurrentTestCase {
 
     context.executor().execute(() -> {
       try {
-        client.connect(new InetSocketAddress(InetAddress.getByName("localhost"), 5555)).thenAccept(connection -> {
+        client.connect(new Address(new InetSocketAddress(InetAddress.getByName("localhost"), 5555))).thenAccept(connection -> {
           connection.send("Hello world!").thenAccept(response -> {
             threadAssertEquals("Hello world back!", response);
             resume();

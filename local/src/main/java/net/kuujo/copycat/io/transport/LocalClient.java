@@ -21,7 +21,6 @@ import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.Futures;
 import net.kuujo.copycat.util.concurrent.SingleThreadContext;
 
-import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.Set;
 import java.util.UUID;
@@ -60,7 +59,7 @@ public class LocalClient implements Client {
   }
 
   @Override
-  public CompletableFuture<Connection> connect(InetSocketAddress address) {
+  public CompletableFuture<Connection> connect(Address address) {
     Assert.notNull(address, "address");
     Context context = getContext();
     LocalServer server = registry.get(address);

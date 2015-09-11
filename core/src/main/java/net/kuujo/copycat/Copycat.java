@@ -16,11 +16,11 @@
 package net.kuujo.copycat;
 
 import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.copycat.io.transport.Address;
 import net.kuujo.copycat.io.transport.Transport;
 import net.kuujo.copycat.manager.CreateResource;
 import net.kuujo.copycat.manager.GetResource;
 import net.kuujo.copycat.manager.ResourceExists;
-import net.kuujo.copycat.raft.Members;
 import net.kuujo.copycat.raft.RaftClient;
 import net.kuujo.copycat.raft.StateMachine;
 import net.kuujo.copycat.raft.protocol.Command;
@@ -29,6 +29,7 @@ import net.kuujo.copycat.resource.ResourceContext;
 import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.Managed;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -159,7 +160,7 @@ public abstract class Copycat implements Managed<Copycat> {
   public static abstract class Builder extends net.kuujo.copycat.util.Builder<Copycat> {
     protected RaftClient.Builder clientBuilder;
 
-    protected Builder(Members members) {
+    protected Builder(Collection<Address> members) {
       clientBuilder = RaftClient.builder(members);
     }
 

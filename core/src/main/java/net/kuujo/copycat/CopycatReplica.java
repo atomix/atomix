@@ -19,19 +19,14 @@ import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.storage.Storage;
 import net.kuujo.copycat.io.transport.*;
 import net.kuujo.copycat.manager.ResourceManager;
-import net.kuujo.copycat.raft.Member;
-import net.kuujo.copycat.raft.Members;
 import net.kuujo.copycat.raft.RaftClient;
 import net.kuujo.copycat.raft.RaftServer;
 import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.ConfigurationException;
 import net.kuujo.copycat.util.concurrent.CopycatThreadFactory;
 
-import java.net.InetSocketAddress;
 import java.time.Duration;
-import java.util.Collection;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
 
@@ -51,12 +46,12 @@ public final class CopycatReplica extends Copycat {
    * The provided set of members will be used to connect to the other members in the Raft cluster. The {@code memberId}
    * must be the {@link Member#id()} of a member listed in the provided members list.
    *
-   * @param memberId The local server member ID. This must be the ID of a member listed in the provided members list.
+   * @param address The local server member address.
    * @param members The cluster members to which to connect.
    * @return The replica builder.
    */
-  public static Builder builder(int memberId, Member... members) {
-    return builder(memberId, Members.builder().withMembers(members).build());
+  public static Builder builder(Address address, Address... members) {
+    return builder(address, Arrays.asList(Assert.notNull(members, "members")));
   }
 
   /**
@@ -65,26 +60,12 @@ public final class CopycatReplica extends Copycat {
    * The provided set of members will be used to connect to the other members in the Raft cluster. The {@code memberId}
    * must be the {@link Member#id()} of a member listed in the provided members list.
    *
-   * @param memberId The local server member ID. This must be the ID of a member listed in the provided members list.
+   * @param address The local server member address.
    * @param members The cluster members to which to connect.
    * @return The replica builder.
    */
-  public static Builder builder(int memberId, Collection<Member> members) {
-    return builder(memberId, Members.builder().withMembers(members).build());
-  }
-
-  /**
-   * Returns a new Copycat replica builder.
-   * <p>
-   * The provided set of members will be used to connect to the other members in the Raft cluster. The {@code memberId}
-   * must be the {@link Member#id()} of a member listed in the provided members list.
-   *
-   * @param memberId The local server member ID. This must be the ID of a member listed in the provided members list.
-   * @param members The cluster members to which to connect.
-   * @return The replica builder.
-   */
-  public static Builder builder(int memberId, Members members) {
-    return new Builder(memberId, members);
+  public static Builder builder(Address address, Collection<Address> members) {
+    return new Builder(address, members);
   }
 
   private final RaftServer server;
@@ -154,7 +135,7 @@ public final class CopycatReplica extends Copycat {
     }
 
     @Override
-    public CompletableFuture<Void> listen(InetSocketAddress address, Consumer<Connection> listener) {
+    public CompletableFuture<Void> listen(Address address, Consumer<Connection> listener) {
       Assert.notNull(address, "address");
       Assert.notNull(listener, "listener");
       return local.listen(address, listener).thenCompose(v -> remote.listen(address, listener));
@@ -174,10 +155,9 @@ public final class CopycatReplica extends Copycat {
     private Transport transport;
     private LocalServerRegistry localRegistry = new LocalServerRegistry();
 
-    private Builder(int memberId, Members members) {
-      super(Members.builder().addMember(members.member(memberId)).build());
-      Assert.arg(members.member(memberId) != null, "memberId must be listed in the members list");
-      this.serverBuilder = RaftServer.builder(memberId, members);
+    private Builder(Address address, Collection<Address> members) {
+      super(Collections.singleton(address));
+      this.serverBuilder = RaftServer.builder(address, members);
     }
 
     /**

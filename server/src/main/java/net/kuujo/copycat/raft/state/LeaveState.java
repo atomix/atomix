@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.raft.state;
 
-import net.kuujo.copycat.raft.Member;
+import net.kuujo.copycat.io.transport.Address;
 import net.kuujo.copycat.raft.RaftServer;
 import net.kuujo.copycat.raft.protocol.request.LeaveRequest;
 import net.kuujo.copycat.raft.protocol.response.LeaveResponse;
@@ -53,7 +53,7 @@ final class LeaveState extends InactiveState {
   private void startLeaveTimeout() {
     leaveFuture = context.getContext().schedule(() -> {
       if (isOpen()) {
-        LOGGER.warn("{} - Failed to leave the cluster in {} milliseconds", context.getMember().id(), context.getElectionTimeout());
+        LOGGER.warn("{} - Failed to leave the cluster in {} milliseconds", context.getAddress(), context.getElectionTimeout());
         transition(RaftServer.State.INACTIVE);
       }
     }, context.getElectionTimeout());
@@ -68,9 +68,9 @@ final class LeaveState extends InactiveState {
     } else {
       Iterator<MemberState> iterator = context.getCluster().getActiveMembers().iterator();
       if (iterator.hasNext()) {
-        leave(iterator.next().getMember(), iterator);
+        leave(iterator.next().getAddress(), iterator);
       } else {
-        LOGGER.debug("{} - Failed to leave the cluster", context.getMember().id());
+        LOGGER.debug("{} - Failed to leave the cluster", context.getAddress());
         transition(RaftServer.State.INACTIVE);
       }
     }
@@ -79,32 +79,32 @@ final class LeaveState extends InactiveState {
   /**
    * Recursively attempts to leave the cluster.
    */
-  private void leave(Member member, Iterator<MemberState> iterator) {
-    LOGGER.debug("{} - Attempting to leave via {}", context.getMember().id(), member);
+  private void leave(Address member, Iterator<MemberState> iterator) {
+    LOGGER.debug("{} - Attempting to leave via {}", context.getAddress(), member);
 
     context.getConnections().getConnection(member).thenAccept(connection -> {
       if (isOpen()) {
         LeaveRequest request = LeaveRequest.builder()
-          .withMember(context.getMember())
+          .withMember(context.getAddress())
           .build();
         connection.<LeaveRequest, LeaveResponse>send(request).whenComplete((response, error) -> {
           if (isOpen()) {
             if (error == null) {
               if (response.status() == Response.Status.OK) {
-                LOGGER.info("{} - Successfully left via {}", context.getMember().id(), member);
+                LOGGER.info("{} - Successfully left via {}", context.getAddress(), member);
                 transition(RaftServer.State.INACTIVE);
               } else {
-                LOGGER.debug("{} - Failed to leave {}", context.getMember().id(), member);
+                LOGGER.debug("{} - Failed to leave {}", context.getAddress(), member);
                 if (iterator.hasNext()) {
-                  leave(iterator.next().getMember(), iterator);
+                  leave(iterator.next().getAddress(), iterator);
                 } else {
                   transition(RaftServer.State.INACTIVE);
                 }
               }
             } else {
-              LOGGER.debug("{} - Failed to leave {}", context.getMember().id(), member);
+              LOGGER.debug("{} - Failed to leave {}", context.getAddress(), member);
               if (iterator.hasNext()) {
-                leave(iterator.next().getMember(), iterator);
+                leave(iterator.next().getAddress(), iterator);
               } else {
                 transition(RaftServer.State.INACTIVE);
               }
@@ -120,7 +120,7 @@ final class LeaveState extends InactiveState {
    */
   private void cancelLeaveTimer() {
     if (leaveFuture != null) {
-      LOGGER.info("{} - Cancelling leave timeout", context.getMember().id());
+      LOGGER.info("{} - Cancelling leave timeout", context.getAddress());
       leaveFuture.cancel();
       leaveFuture = null;
     }

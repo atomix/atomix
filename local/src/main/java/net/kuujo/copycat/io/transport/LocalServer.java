@@ -20,7 +20,6 @@ import net.kuujo.copycat.util.Assert;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.SingleThreadContext;
 
-import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.Set;
 import java.util.UUID;
@@ -38,7 +37,7 @@ public class LocalServer implements Server {
   private final LocalServerRegistry registry;
   private final Context context;
   private final Set<LocalConnection> connections = Collections.newSetFromMap(new ConcurrentHashMap<>());
-  private volatile InetSocketAddress address;
+  private volatile Address address;
   private volatile ListenerHolder listener;
 
   public LocalServer(UUID id, LocalServerRegistry registry, Serializer serializer) {
@@ -74,7 +73,7 @@ public class LocalServer implements Server {
   }
 
   @Override
-  public synchronized CompletableFuture<Void> listen(InetSocketAddress address, Consumer<Connection> listener) {
+  public synchronized CompletableFuture<Void> listen(Address address, Consumer<Connection> listener) {
     Assert.notNull(address, "address");
     Assert.notNull(listener, "listener");
     if (this.address != null) {

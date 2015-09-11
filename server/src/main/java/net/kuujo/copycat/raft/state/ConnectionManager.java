@@ -15,9 +15,9 @@
  */
 package net.kuujo.copycat.raft.state;
 
+import net.kuujo.copycat.io.transport.Address;
 import net.kuujo.copycat.io.transport.Client;
 import net.kuujo.copycat.io.transport.Connection;
-import net.kuujo.copycat.raft.Member;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -39,23 +39,23 @@ class ConnectionManager {
   /**
    * Returns the connection for the given member.
    *
-   * @param member The member for which to get the connection.
+   * @param address The member for which to get the connection.
    * @return A completable future to be called once the connection is received.
    */
-  public CompletableFuture<Connection> getConnection(Member member) {
-    Connection connection = connections.get(member.id());
-    return connection == null ? createConnection(member) : CompletableFuture.completedFuture(connection);
+  public CompletableFuture<Connection> getConnection(Address address) {
+    Connection connection = connections.get(address.hashCode());
+    return connection == null ? createConnection(address) : CompletableFuture.completedFuture(connection);
   }
 
   /**
    * Creates a connection for the given member.
    *
-   * @param member The member for which to create the connection.
+   * @param address The member for which to create the connection.
    * @return A completable future to be called once the connection has been created.
    */
-  private CompletableFuture<Connection> createConnection(Member member) {
-    return client.connect(member.address()).thenApply(connection -> {
-      connections.put(member.id(), connection);
+  private CompletableFuture<Connection> createConnection(Address address) {
+    return client.connect(address).thenApply(connection -> {
+      connections.put(address.hashCode(), connection);
       return connection;
     });
   }

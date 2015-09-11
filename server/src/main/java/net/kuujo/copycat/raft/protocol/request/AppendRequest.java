@@ -266,7 +266,7 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
      * @throws IllegalArgumentException if the {@code leader} is not positive
      */
     public Builder withLeader(int leader) {
-      request.leader = Assert.arg(leader, leader > 0, "leader must be positive");
+      request.leader = leader;
       return this;
     }
 
