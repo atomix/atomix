@@ -165,8 +165,8 @@ public class Storage {
    *
    * @return The opened log.
    */
-  public Log open() {
-    return new Log(this);
+  public Log open(String name) {
+    return new Log(name, this);
   }
 
   @Override

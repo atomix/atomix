@@ -35,8 +35,8 @@ public class Log implements AutoCloseable {
   /**
    * @throws NullPointerException if {@code storage} is null
    */
-  protected Log(Storage storage) {
-    this.segments = new SegmentManager(storage);
+  protected Log(String name, Storage storage) {
+    this.segments = new SegmentManager(name, storage);
     this.cleaner = new Cleaner(segments, Executors.newScheduledThreadPool(storage.cleanerThreads(), new CopycatThreadFactory("copycat-log-cleaner-%d")));
   }
 

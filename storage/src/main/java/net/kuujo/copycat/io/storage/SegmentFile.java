@@ -15,9 +15,9 @@
  */
 package net.kuujo.copycat.io.storage;
 
-import java.io.File;
-
 import net.kuujo.copycat.util.Assert;
+
+import java.io.File;
 
 /**
  * Segment file utility.
@@ -32,30 +32,42 @@ class SegmentFile {
    * 
    * @throws NullPointerException if {@code file} is null
    */
-  static boolean isSegmentFile(File file) {
-    return isFile(file, "log");
-  }
-
-  private static boolean isFile(File file, String extension) {
+  static boolean isSegmentFile(String name, File file) {
+    Assert.notNull(name, "name");
     Assert.notNull(file, "file");
-    return file.getName().indexOf('-') != -1
-      && file.getName().indexOf('-', file.getName().indexOf('-') + 1) != -1
-      && file.getName().lastIndexOf('.') > file.getName().lastIndexOf('-')
-      && file.getName().endsWith("." + extension);
+    String fileName = file.getName();
+    if (fileName.lastIndexOf('.') == -1 || fileName.lastIndexOf('-') == -1 || fileName.lastIndexOf('.') < fileName.lastIndexOf('-') || !fileName.endsWith(".log"))
+      return false;
+
+    for (int i = fileName.lastIndexOf('-') + 1; i < fileName.lastIndexOf('.'); i++) {
+      if (!Character.isDigit(fileName.charAt(i))) {
+        return false;
+      }
+    }
+
+    if (fileName.lastIndexOf('-', fileName.lastIndexOf('-') - 1) == -1)
+      return false;
+
+    for (int i = fileName.lastIndexOf('-', fileName.lastIndexOf('-') - 1) + 1; i < fileName.lastIndexOf('-'); i++) {
+      if (!Character.isDigit(fileName.charAt(i))) {
+        return false;
+      }
+    }
+
+    return fileName.substring(0, fileName.lastIndexOf('-', fileName.lastIndexOf('-') - 1)).equals(name);
   }
 
   /**
    * Creates a segment file for the given directory, log name, segment ID, and segment version.
    */
-  static File createSegmentFile(File directory, long id, long version) {
-    return new File(directory, String.format("copycat-%d-%d.log", id, version));
+  static File createSegmentFile(String name, File directory, long id, long version) {
+    return new File(directory, String.format("%s-%d-%d.log", Assert.notNull(name, "name"), id, version));
   }
 
   /**
    * @throws IllegalArgumentException if {@code file} is not a valid segment file
    */
   SegmentFile(File file) {
-    Assert.arg(isSegmentFile(file), "Not a valid segment file: %s", file.getName());
     this.file = file;
   }
 

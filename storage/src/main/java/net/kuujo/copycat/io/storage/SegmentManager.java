@@ -37,6 +37,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
  */
 class SegmentManager implements AutoCloseable {
   private static final Logger LOGGER = LoggerFactory.getLogger(SegmentManager.class);
+  private final String name;
   private final Storage storage;
   private final NavigableMap<Long, Segment> segments = new ConcurrentSkipListMap<>();
   private Segment currentSegment;
@@ -45,7 +46,8 @@ class SegmentManager implements AutoCloseable {
   /**
    * @throws NullPointerException if {@code segments} is null
    */
-  public SegmentManager(Storage storage) {
+  public SegmentManager(String name, Storage storage) {
+    this.name = Assert.notNull(name, "name");
     this.storage = Assert.notNull(storage, "storage");
     open();
   }
@@ -264,7 +266,7 @@ class SegmentManager implements AutoCloseable {
    * Create a new segment.
    */
   public Segment createSegment(SegmentDescriptor descriptor) {
-    File segmentFile = SegmentFile.createSegmentFile(storage.directory(), descriptor.id(), descriptor.version());
+    File segmentFile = SegmentFile.createSegmentFile(name, storage.directory(), descriptor.id(), descriptor.version());
     Buffer buffer = FileBuffer.allocate(segmentFile, 1024 * 1024, descriptor.maxSegmentSize() + SegmentDescriptor.BYTES);
     descriptor.copyTo(buffer);
     Segment segment = new Segment(buffer.position(SegmentDescriptor.BYTES).slice(), descriptor, createIndex(descriptor), storage.serializer().clone(), this);
@@ -276,7 +278,7 @@ class SegmentManager implements AutoCloseable {
    * Loads a segment.
    */
   public Segment loadSegment(long segmentId, long segmentVersion) {
-    File file = SegmentFile.createSegmentFile(storage.directory(), segmentId, segmentVersion);
+    File file = SegmentFile.createSegmentFile(name, storage.directory(), segmentId, segmentVersion);
     Buffer buffer = FileBuffer.allocate(file, Math.min(1024 * 1024, storage.maxSegmentSize() + storage.maxEntrySize() + SegmentDescriptor.BYTES), storage.maxSegmentSize() + storage.maxEntrySize() + SegmentDescriptor.BYTES);
     SegmentDescriptor descriptor = new SegmentDescriptor(buffer);
     Segment segment = new Segment(buffer.position(SegmentDescriptor.BYTES).slice(), descriptor, createIndex(descriptor), storage.serializer().clone(), this);
@@ -306,7 +308,7 @@ class SegmentManager implements AutoCloseable {
     for (File file : storage.directory().listFiles(File::isFile)) {
 
       // If the file looks like a segment file, attempt to load the segment.
-      if (SegmentFile.isSegmentFile(file)) {
+      if (SegmentFile.isSegmentFile(name, file)) {
         SegmentFile segmentFile = new SegmentFile(file);
         SegmentDescriptor descriptor = new SegmentDescriptor(FileBuffer.allocate(file, SegmentDescriptor.BYTES));
 

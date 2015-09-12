@@ -36,7 +36,7 @@ public class CleanerTest extends AbstractLogTest {
         .withMaxEntriesPerSegment(10)
         .withSerializer(new Serializer(new ServiceLoaderTypeResolver()))
         .build()
-        .open();
+        .open("copycat");
   }
   
   /**

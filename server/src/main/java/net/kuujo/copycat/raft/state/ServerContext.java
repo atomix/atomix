@@ -486,7 +486,7 @@ public class ServerContext implements Managed<Void> {
     context.executor().execute(() -> {
 
       // Open the log.
-      log = storage.open();
+      log = storage.open("copycat");
 
       // Configure the cluster.
       cluster.configure(0, members.values(), Collections.EMPTY_LIST);

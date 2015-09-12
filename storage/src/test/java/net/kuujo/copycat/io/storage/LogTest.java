@@ -50,7 +50,7 @@ public class LogTest extends AbstractLogTest {
         .withMaxEntriesPerSegment(1024)
         .withSerializer(new Serializer(new ServiceLoaderTypeResolver()))
         .build()
-        .open();
+        .open("copycat");
   }
 
   /**
