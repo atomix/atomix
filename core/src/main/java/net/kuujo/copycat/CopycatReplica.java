@@ -43,8 +43,7 @@ public final class CopycatReplica extends Copycat {
   /**
    * Returns a new Copycat replica builder.
    * <p>
-   * The provided set of members will be used to connect to the other members in the Raft cluster. The {@code memberId}
-   * must be the {@link Member#id()} of a member listed in the provided members list.
+   * The provided set of members will be used to connect to the other members in the Raft cluster.
    *
    * @param address The local server member address.
    * @param members The cluster members to which to connect.
@@ -57,8 +56,7 @@ public final class CopycatReplica extends Copycat {
   /**
    * Returns a new Copycat replica builder.
    * <p>
-   * The provided set of members will be used to connect to the other members in the Raft cluster. The {@code memberId}
-   * must be the {@link Member#id()} of a member listed in the provided members list.
+   * The provided set of members will be used to connect to the other members in the Raft cluster.
    *
    * @param address The local server member address.
    * @param members The cluster members to which to connect.
@@ -233,19 +231,6 @@ public final class CopycatReplica extends Copycat {
      */
     public Builder withSessionTimeout(Duration sessionTimeout) {
       serverBuilder.withSessionTimeout(sessionTimeout);
-      return this;
-    }
-
-    /**
-     * Sets the Raft keep alive interval, returning the Raft configuration for method chaining.
-     *
-     * @param keepAliveInterval The Raft keep alive interval in milliseconds.
-     * @return The Raft configuration.
-     * @throws IllegalArgumentException If the keep alive interval is not positive
-     * @throws NullPointerException if {@code command} is null
-     */
-    public Builder withKeepAliveInterval(Duration keepAliveInterval) {
-      clientBuilder.withKeepAliveInterval(keepAliveInterval);
       return this;
     }
 

@@ -49,6 +49,7 @@ import java.util.function.Consumer;
  */
 public class ClientSession implements Session, Managed<Session> {
   private static final Logger LOGGER = LoggerFactory.getLogger(ClientSession.class);
+  private static final double KEEP_ALIVE_RATIO = 0.4;
 
   /**
    * Client session state.
@@ -62,7 +63,6 @@ public class ClientSession implements Session, Managed<Session> {
   private final Random random = new Random();
   private final Client client;
   private Set<Address> members;
-  private final Duration keepAliveInterval;
   private final Context context;
   private List<Address> connectMembers;
   private Connection connection;
@@ -83,11 +83,10 @@ public class ClientSession implements Session, Managed<Session> {
   private long eventSequence;
   private long version;
 
-  public ClientSession(Transport transport, Collection<Address> members, Duration keepAliveInterval, Serializer serializer) {
+  public ClientSession(Transport transport, Collection<Address> members, Serializer serializer) {
     UUID id = UUID.randomUUID();
     this.client = Assert.notNull(transport, "transport").client(id);
     this.members = new HashSet<>(Assert.notNull(members, "members"));
-    this.keepAliveInterval = keepAliveInterval;
     this.context = new SingleThreadContext("copycat-client-" + id.toString(), Assert.notNull(serializer, "serializer").clone());
     this.connectMembers = new ArrayList<>(members);
   }
@@ -495,7 +494,7 @@ public class ClientSession implements Session, Managed<Session> {
           setTimeout(response.timeout());
           onOpen(response.session());
           future.complete(null);
-          resetMembers().keepAlive();
+          resetMembers().keepAlive(Duration.ofMillis(Math.round(response.timeout() * KEEP_ALIVE_RATIO)));
         } else {
           future.completeExceptionally(response.error().createException());
         }
@@ -511,7 +510,7 @@ public class ClientSession implements Session, Managed<Session> {
   /**
    * Sends and reschedules keep alive request.
    */
-  private void keepAlive() {
+  private void keepAlive(Duration interval) {
     keepAliveFuture = context.schedule(() -> {
       if (isOpen()) {
         context.checkThread();
@@ -528,18 +527,18 @@ public class ClientSession implements Session, Managed<Session> {
           if (error == null) {
             if (response.status() == Response.Status.OK) {
               setMembers(response.members());
-              resetMembers().keepAlive();
+              resetMembers().keepAlive(interval);
             } else if (isOpen()) {
-              keepAlive();
+              keepAlive(interval);
             }
             response.release();
           } else if (isOpen()) {
-            keepAlive();
+            keepAlive(interval);
           }
           request.release();
         });
       }
-    }, keepAliveInterval);
+    }, interval);
   }
 
   /**

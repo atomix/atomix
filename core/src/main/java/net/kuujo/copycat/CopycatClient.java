@@ -19,7 +19,6 @@ import net.kuujo.copycat.io.transport.Address;
 import net.kuujo.copycat.raft.RaftClient;
 import net.kuujo.copycat.util.Assert;
 
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -72,17 +71,6 @@ public final class CopycatClient extends Copycat {
   public static class Builder extends Copycat.Builder {
     private Builder(Collection<Address> members) {
       super(members);
-    }
-
-    /**
-     * Sets the interval at which to send keep alive requests.
-     *
-     * @param keepAliveInterval The interval at which to send keep alive requests.
-     * @return The client builder.
-     */
-    public Builder withKeepAliveInterval(Duration keepAliveInterval) {
-      clientBuilder.withKeepAliveInterval(keepAliveInterval);
-      return this;
     }
 
     @Override

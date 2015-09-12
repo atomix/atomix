@@ -31,7 +31,6 @@ import net.kuujo.copycat.util.Managed;
 import net.kuujo.copycat.util.concurrent.Context;
 import net.kuujo.copycat.util.concurrent.Futures;
 
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -74,17 +73,15 @@ public class RaftClient implements Managed<RaftClient> {
   private final Transport transport;
   private final Collection<Address> members;
   private final Serializer serializer;
-  private final Duration keepAliveInterval;
   private ClientSession session;
   private CompletableFuture<RaftClient> openFuture;
   private CompletableFuture<Void> closeFuture;
 
-  protected RaftClient(Transport transport, Collection<Address> members, Serializer serializer, Duration keepAliveInterval) {
+  protected RaftClient(Transport transport, Collection<Address> members, Serializer serializer) {
     serializer.resolve(new ServiceLoaderTypeResolver());
     this.transport = Assert.notNull(transport, "transport");
     this.members = Assert.notNull(members, "members");
     this.serializer = Assert.notNull(serializer, "serializer");
-    this.keepAliveInterval = keepAliveInterval;
   }
 
   /**
@@ -195,7 +192,7 @@ public class RaftClient implements Managed<RaftClient> {
     if (openFuture == null) {
       synchronized (this) {
         if (openFuture == null) {
-          ClientSession session = new ClientSession(transport, members, keepAliveInterval, serializer);
+          ClientSession session = new ClientSession(transport, members, serializer);
           if (closeFuture == null) {
             openFuture = session.open().thenApply(s -> {
               synchronized (this) {
@@ -268,7 +265,6 @@ public class RaftClient implements Managed<RaftClient> {
   public static class Builder extends net.kuujo.copycat.util.Builder<RaftClient> {
     private Transport transport;
     private Serializer serializer;
-    private Duration keepAliveInterval = Duration.ofMillis(1000);
     private Set<Address> members;
 
     private Builder(Collection<Address> members) {
@@ -279,7 +275,6 @@ public class RaftClient implements Managed<RaftClient> {
     protected void reset() {
       transport = null;
       serializer = null;
-      keepAliveInterval = Duration.ofMillis(1000);
       members = null;
     }
 
@@ -308,20 +303,6 @@ public class RaftClient implements Managed<RaftClient> {
     }
 
     /**
-     * Sets the interval at which to send keep alive requests.
-     *
-     * @param keepAliveInterval The interval at which to send keep alive requests.
-     * @return The client builder.
-     * @throws NullPointerException if {@code keepAliveInterval} is null
-     * @throws IllegalArgumentException if {@code keepAliveInterval} is not positive
-     */
-    public Builder withKeepAliveInterval(Duration keepAliveInterval) {
-      Assert.argNot(keepAliveInterval.isNegative() || keepAliveInterval.isZero(), "keepAliveInterval must be positive");
-      this.keepAliveInterval = Assert.notNull(keepAliveInterval, "keepAliveInterval");
-      return this;
-    }
-
-    /**
      * @throws ConfigurationException if transport is not configured
      */
     @Override
@@ -339,7 +320,7 @@ public class RaftClient implements Managed<RaftClient> {
       if (serializer == null) {
         serializer = new Serializer();
       }
-      return new RaftClient(transport, members, serializer, keepAliveInterval);
+      return new RaftClient(transport, members, serializer);
     }
   }
 
