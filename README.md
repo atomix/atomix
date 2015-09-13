@@ -1,6 +1,8 @@
 [Copycat][Website]
 =======
 
+![Copycat](https://github.com/kuujo/copycat/blob/gh-pages/assets/img/copycat.png)
+
 **Persistent • Consistent • Fault-tolerant • Database • Coordination • Framework**
 
 ### [Getting started][Getting started] • [User Manual][User manual] • [Google Group][Google group] • [Javadoc][Javadoc]
