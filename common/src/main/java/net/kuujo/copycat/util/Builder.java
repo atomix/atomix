@@ -34,9 +34,6 @@ public abstract class Builder<T> implements AutoCloseable {
     this(null);
   }
 
-  /**
-   * @throws NullPointerException if {@code pool} is null
-   */
   protected Builder(BuilderPool pool) {
     this.pool = pool;
   }

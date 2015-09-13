@@ -99,7 +99,7 @@ abstract class AbstractResponse<T extends Response<T>> implements Response<T> {
     protected U response;
 
     /**
-     * @throws NullPointerException if {@code pool} or {@code factory} are null
+     * @throws NullPointerException if {@code factory} is null
      */
     protected Builder(BuilderPool<T, U> pool, ReferenceFactory<U> factory) {
       super(pool);

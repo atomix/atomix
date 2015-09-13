@@ -105,9 +105,6 @@ public interface Response<T extends Response<T>> extends ReferenceCounted<T>, Co
    */
   abstract class Builder<T extends Builder<T, U>, U extends Response> extends net.kuujo.copycat.util.Builder<U> {
 
-    /**
-     * @throws NullPointerException if {@code pool} is null
-     */
     protected Builder(BuilderPool pool) {
       super(pool);
     }
