@@ -19,8 +19,8 @@ import net.kuujo.copycat.PersistenceMode;
 import net.kuujo.copycat.Resource;
 import net.kuujo.copycat.collections.state.SetCommands;
 import net.kuujo.copycat.collections.state.SetState;
-import net.kuujo.copycat.raft.protocol.ConsistencyLevel;
-import net.kuujo.copycat.raft.StateMachine;
+import net.kuujo.catalog.client.ConsistencyLevel;
+import net.kuujo.catalog.server.StateMachine;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;

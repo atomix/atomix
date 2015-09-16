@@ -15,11 +15,11 @@
  */
 package net.kuujo.copycat.manager;
 
-import net.kuujo.copycat.raft.session.Session;
+import net.kuujo.catalog.client.session.Session;
+import net.kuujo.catalyst.util.Assert;
+import net.kuujo.catalyst.util.Listener;
+import net.kuujo.catalyst.util.Listeners;
 import net.kuujo.copycat.resource.ResourceEvent;
-import net.kuujo.copycat.util.Assert;
-import net.kuujo.copycat.util.Listener;
-import net.kuujo.copycat.util.Listeners;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;

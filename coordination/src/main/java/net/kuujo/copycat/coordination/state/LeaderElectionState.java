@@ -15,10 +15,10 @@
  */
 package net.kuujo.copycat.coordination.state;
 
-import net.kuujo.copycat.raft.Commit;
-import net.kuujo.copycat.raft.StateMachine;
-import net.kuujo.copycat.raft.StateMachineExecutor;
-import net.kuujo.copycat.raft.session.Session;
+import net.kuujo.catalog.client.session.Session;
+import net.kuujo.catalog.server.Commit;
+import net.kuujo.catalog.server.StateMachine;
+import net.kuujo.catalog.server.StateMachineExecutor;
 
 import java.util.ArrayList;
 import java.util.List;

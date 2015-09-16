@@ -19,6 +19,8 @@
   <properties>
     <slf4j.version>1.7.7</slf4j.version>
     <logback.version>1.1.2</logback.version>
+    <catalyst.version>1.0.0-beta1</catalyst.version>
+    <catalog.version>1.0.0-SNAPSHOT</catalog.version>
 
     <maven.source.plugin.version>2.2.1</maven.source.plugin.version>
     <maven.compiler.plugin.version>3.0</maven.compiler.plugin.version>
@@ -68,23 +70,12 @@
   </distributionManagement>
 
   <modules>
-    <module>io</module>
-    <module>common</module>
-    <module>transport</module>
-    <module>local</module>
-    <module>netty</module>
-    <module>storage</module>
-    <module>protocol</module>
-    <module>client</module>
-    <module>server</module>
-    <module>raft</module>
     <module>core</module>
     <module>collections</module>
     <module>coordination</module>
     <module>atomic</module>
     <module>examples</module>
     <module>all</module>
-    <module>test</module>
   </modules>
 
   <dependencies>
@@ -221,7 +212,7 @@
             <version>${maven.javadoc.plugin.version}</version>
             <configuration>
               <show>public</show>
-              <excludePackageNames>*.state:net.kuujo.copycat.resource:net.kuujo.copycat.manager:net.kuujo.copycat.raft.storage:net.kuujo.copycat.raft.util:net.kuujo.copycat.raft.protocol.request:net.kuujo.copycat.raft.protocol.response:net.kuujo.copycat.io.serializer.*</excludePackageNames>
+              <excludePackageNames>*.state:net.kuujo.copycat.resource:net.kuujo.copycat.manager</excludePackageNames>
               <doctitle>Copycat API Reference (${jv})</doctitle>
               <windowtitle>Copycat API Reference (${jv})</windowtitle>
               <reportOutputDirectory>target/docs</reportOutputDirectory>
@@ -230,12 +221,6 @@
               <additionalparam>
                 -Xdoclint:none
                 -link http://docs.oracle.com/javase/8/docs/api/
-
-                -group "High-level resource API" net.kuujo.copycat
-                -group "Distributed resources" net.kuujo.copycat.atomic:net.kuujo.copycat.collections:net.kuujo.copycat.coordination
-                -group "I/O &amp; Serialization" net.kuujo.copycat.io*
-                -group "Raft Consensus Algorithm" net.kuujo.copycat.raft*
-                -group "Miscellaneous" net.kuujo.copycat.util*
               </additionalparam>
             </configuration>
           </plugin>

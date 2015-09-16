@@ -15,11 +15,11 @@
  */
 package net.kuujo.copycat.resource;
 
-import net.kuujo.copycat.io.serializer.SerializeWith;
-import net.kuujo.copycat.raft.protocol.Command;
-import net.kuujo.copycat.raft.protocol.Operation;
-import net.kuujo.copycat.util.Assert;
-import net.kuujo.copycat.util.BuilderPool;
+import net.kuujo.catalyst.serializer.SerializeWith;
+import net.kuujo.catalog.client.Command;
+import net.kuujo.catalog.client.Operation;
+import net.kuujo.catalyst.util.Assert;
+import net.kuujo.catalyst.util.BuilderPool;
 
 /**
  * Resource command.

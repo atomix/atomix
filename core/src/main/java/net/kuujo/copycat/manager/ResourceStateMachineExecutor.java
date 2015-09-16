@@ -16,16 +16,16 @@
 
 package net.kuujo.copycat.manager;
 
-import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.raft.Commit;
-import net.kuujo.copycat.raft.StateMachineContext;
-import net.kuujo.copycat.raft.StateMachineExecutor;
-import net.kuujo.copycat.raft.protocol.Operation;
-import net.kuujo.copycat.raft.protocol.error.ApplicationException;
-import net.kuujo.copycat.util.Assert;
-import net.kuujo.copycat.util.concurrent.ComposableFuture;
-import net.kuujo.copycat.util.concurrent.Context;
-import net.kuujo.copycat.util.concurrent.Scheduled;
+import net.kuujo.catalog.client.Operation;
+import net.kuujo.catalog.client.error.ApplicationException;
+import net.kuujo.catalog.server.Commit;
+import net.kuujo.catalog.server.StateMachineContext;
+import net.kuujo.catalog.server.StateMachineExecutor;
+import net.kuujo.catalyst.serializer.Serializer;
+import net.kuujo.catalyst.util.Assert;
+import net.kuujo.catalyst.util.concurrent.ComposableFuture;
+import net.kuujo.catalyst.util.concurrent.Context;
+import net.kuujo.catalyst.util.concurrent.Scheduled;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -15,9 +15,9 @@
  */
 package net.kuujo.copycat.coordination.state;
 
-import net.kuujo.copycat.raft.Commit;
-import net.kuujo.copycat.raft.StateMachine;
-import net.kuujo.copycat.raft.StateMachineExecutor;
+import net.kuujo.catalog.server.Commit;
+import net.kuujo.catalog.server.StateMachine;
+import net.kuujo.catalog.server.StateMachineExecutor;
 
 import java.util.HashMap;
 import java.util.Iterator;

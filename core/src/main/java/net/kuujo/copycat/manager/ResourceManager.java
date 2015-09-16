@@ -15,15 +15,15 @@
  */
 package net.kuujo.copycat.manager;
 
-import net.kuujo.copycat.raft.Commit;
-import net.kuujo.copycat.raft.StateMachine;
-import net.kuujo.copycat.raft.StateMachineExecutor;
-import net.kuujo.copycat.raft.session.Session;
+import net.kuujo.catalog.client.session.Session;
+import net.kuujo.catalog.server.Commit;
+import net.kuujo.catalog.server.StateMachine;
+import net.kuujo.catalog.server.StateMachineExecutor;
+import net.kuujo.catalyst.util.Assert;
+import net.kuujo.catalyst.util.concurrent.ComposableFuture;
+import net.kuujo.catalyst.util.concurrent.Context;
+import net.kuujo.catalyst.util.concurrent.ThreadPoolContext;
 import net.kuujo.copycat.resource.ResourceOperation;
-import net.kuujo.copycat.util.Assert;
-import net.kuujo.copycat.util.concurrent.ComposableFuture;
-import net.kuujo.copycat.util.concurrent.Context;
-import net.kuujo.copycat.util.concurrent.ThreadPoolContext;
 
 import java.util.HashMap;
 import java.util.Map;

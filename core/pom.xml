@@ -13,19 +13,19 @@
 
   <dependencies>
     <dependency>
-      <groupId>net.kuujo.copycat</groupId>
-      <artifactId>copycat-client</artifactId>
-      <version>${project.version}</version>
+      <groupId>net.kuujo.catalog</groupId>
+      <artifactId>catalog-client</artifactId>
+      <version>${catalog.version}</version>
     </dependency>
     <dependency>
-      <groupId>net.kuujo.copycat</groupId>
-      <artifactId>copycat-server</artifactId>
-      <version>${project.version}</version>
+      <groupId>net.kuujo.catalog</groupId>
+      <artifactId>catalog-server</artifactId>
+      <version>${catalog.version}</version>
     </dependency>
     <dependency>
-      <groupId>net.kuujo.copycat</groupId>
-      <artifactId>copycat-local</artifactId>
-      <version>${project.version}</version>
+      <groupId>net.kuujo.catalyst</groupId>
+      <artifactId>catalyst-local</artifactId>
+      <version>${catalyst.version}</version>
     </dependency>
   </dependencies>
 

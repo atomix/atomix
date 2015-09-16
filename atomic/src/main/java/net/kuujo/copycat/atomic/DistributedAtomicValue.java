@@ -15,14 +15,14 @@
  */
 package net.kuujo.copycat.atomic;
 
+import net.kuujo.catalog.client.ConsistencyLevel;
+import net.kuujo.catalog.server.StateMachine;
+import net.kuujo.catalyst.util.Listener;
 import net.kuujo.copycat.PersistenceMode;
 import net.kuujo.copycat.Resource;
 import net.kuujo.copycat.atomic.state.AtomicValueCommands;
 import net.kuujo.copycat.atomic.state.AtomicValueState;
-import net.kuujo.copycat.raft.StateMachine;
-import net.kuujo.copycat.raft.protocol.ConsistencyLevel;
 import net.kuujo.copycat.resource.ResourceContext;
-import net.kuujo.copycat.util.Listener;
 
 import java.time.Duration;
 import java.util.Collections;

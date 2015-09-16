@@ -15,16 +15,16 @@
  */
 package net.kuujo.copycat.coordination.state;
 
-import net.kuujo.copycat.io.BufferInput;
-import net.kuujo.copycat.io.BufferOutput;
-import net.kuujo.copycat.io.serializer.CopycatSerializable;
-import net.kuujo.copycat.io.serializer.SerializeWith;
-import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.raft.protocol.Command;
-import net.kuujo.copycat.raft.protocol.ConsistencyLevel;
-import net.kuujo.copycat.raft.protocol.Operation;
-import net.kuujo.copycat.raft.protocol.Query;
-import net.kuujo.copycat.util.BuilderPool;
+import net.kuujo.catalyst.buffer.BufferInput;
+import net.kuujo.catalyst.buffer.BufferOutput;
+import net.kuujo.catalyst.serializer.CatalystSerializable;
+import net.kuujo.catalyst.serializer.SerializeWith;
+import net.kuujo.catalyst.serializer.Serializer;
+import net.kuujo.catalog.client.Command;
+import net.kuujo.catalog.client.ConsistencyLevel;
+import net.kuujo.catalog.client.Operation;
+import net.kuujo.catalog.client.Query;
+import net.kuujo.catalyst.util.BuilderPool;
 
 /**
  * Leader election commands.
@@ -39,7 +39,7 @@ public class LeaderElectionCommands {
   /**
    * Abstract election query.
    */
-  public static abstract class ElectionQuery<V> implements Query<V>, CopycatSerializable {
+  public static abstract class ElectionQuery<V> implements Query<V>, CatalystSerializable {
     @Override
     public void writeObject(BufferOutput buffer, Serializer serializer) {
     }
@@ -61,7 +61,7 @@ public class LeaderElectionCommands {
   /**
    * Abstract election command.
    */
-  public static abstract class ElectionCommand<V> implements Command<V>, CopycatSerializable {
+  public static abstract class ElectionCommand<V> implements Command<V>, CatalystSerializable {
     @Override
     public void writeObject(BufferOutput buffer, Serializer serializer) {
     }

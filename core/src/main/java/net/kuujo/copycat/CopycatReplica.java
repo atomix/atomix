@@ -15,15 +15,15 @@
  */
 package net.kuujo.copycat;
 
-import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.io.storage.Storage;
-import net.kuujo.copycat.io.transport.*;
+import net.kuujo.catalog.client.RaftClient;
+import net.kuujo.catalog.server.RaftServer;
+import net.kuujo.catalog.server.storage.Storage;
+import net.kuujo.catalyst.serializer.Serializer;
+import net.kuujo.catalyst.transport.*;
+import net.kuujo.catalyst.util.Assert;
+import net.kuujo.catalyst.util.ConfigurationException;
+import net.kuujo.catalyst.util.concurrent.CatalystThreadFactory;
 import net.kuujo.copycat.manager.ResourceManager;
-import net.kuujo.copycat.raft.RaftClient;
-import net.kuujo.copycat.raft.RaftServer;
-import net.kuujo.copycat.util.Assert;
-import net.kuujo.copycat.util.ConfigurationException;
-import net.kuujo.copycat.util.concurrent.CopycatThreadFactory;
 
 import java.time.Duration;
 import java.util.*;
@@ -236,13 +236,13 @@ public final class CopycatReplica extends Copycat {
 
     @Override
     public CopycatReplica build() {
-      ThreadFactory threadFactory = new CopycatThreadFactory("copycat-resource-%d");
+      ThreadFactory threadFactory = new CatalystThreadFactory("copycat-resource-%d");
       ScheduledExecutorService executor = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), threadFactory);
 
       // If no transport was configured by the user, attempt to load the Netty transport.
       if (transport == null) {
         try {
-          transport = (Transport) Class.forName("net.kuujo.copycat.io.transport.NettyTransport").newInstance();
+          transport = (Transport) Class.forName("net.kuujo.catalyst.transport.NettyTransport").newInstance();
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
           throw new ConfigurationException("transport not configured");
         }

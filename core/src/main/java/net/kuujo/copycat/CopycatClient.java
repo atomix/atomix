@@ -15,9 +15,9 @@
  */
 package net.kuujo.copycat;
 
-import net.kuujo.copycat.io.transport.Address;
-import net.kuujo.copycat.raft.RaftClient;
-import net.kuujo.copycat.util.Assert;
+import net.kuujo.catalog.client.RaftClient;
+import net.kuujo.catalyst.transport.Address;
+import net.kuujo.catalyst.util.Assert;
 
 import java.util.Arrays;
 import java.util.Collection;

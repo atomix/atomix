@@ -15,13 +15,13 @@
  */
 package net.kuujo.copycat.collections.state;
 
+import net.kuujo.catalog.client.session.Session;
+import net.kuujo.catalog.server.Commit;
+import net.kuujo.catalog.server.StateMachine;
+import net.kuujo.catalog.server.StateMachineExecutor;
+import net.kuujo.catalyst.util.Listener;
+import net.kuujo.catalyst.util.concurrent.Scheduled;
 import net.kuujo.copycat.PersistenceMode;
-import net.kuujo.copycat.raft.Commit;
-import net.kuujo.copycat.raft.StateMachine;
-import net.kuujo.copycat.raft.StateMachineExecutor;
-import net.kuujo.copycat.raft.session.Session;
-import net.kuujo.copycat.util.Listener;
-import net.kuujo.copycat.util.concurrent.Scheduled;
 
 import java.time.Duration;
 import java.time.Instant;

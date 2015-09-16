@@ -15,16 +15,16 @@
  */
 package net.kuujo.copycat.manager;
 
-import net.kuujo.copycat.io.BufferInput;
-import net.kuujo.copycat.io.BufferOutput;
-import net.kuujo.copycat.io.serializer.SerializationException;
-import net.kuujo.copycat.io.serializer.SerializeWith;
-import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.raft.StateMachine;
-import net.kuujo.copycat.raft.protocol.Command;
-import net.kuujo.copycat.raft.protocol.Operation;
-import net.kuujo.copycat.util.Assert;
-import net.kuujo.copycat.util.BuilderPool;
+import net.kuujo.catalyst.buffer.BufferInput;
+import net.kuujo.catalyst.buffer.BufferOutput;
+import net.kuujo.catalyst.serializer.SerializationException;
+import net.kuujo.catalyst.serializer.SerializeWith;
+import net.kuujo.catalyst.serializer.Serializer;
+import net.kuujo.catalog.server.StateMachine;
+import net.kuujo.catalog.client.Command;
+import net.kuujo.catalog.client.Operation;
+import net.kuujo.catalyst.util.Assert;
+import net.kuujo.catalyst.util.BuilderPool;
 
 /**
  * Create resource command.

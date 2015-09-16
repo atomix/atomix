@@ -16,16 +16,16 @@
 package net.kuujo.copycat.collections.state;
 
 import net.kuujo.copycat.*;
-import net.kuujo.copycat.io.BufferInput;
-import net.kuujo.copycat.io.BufferOutput;
-import net.kuujo.copycat.io.serializer.CopycatSerializable;
-import net.kuujo.copycat.io.serializer.SerializeWith;
-import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.raft.protocol.Command;
-import net.kuujo.copycat.raft.protocol.ConsistencyLevel;
-import net.kuujo.copycat.raft.protocol.Operation;
-import net.kuujo.copycat.raft.protocol.Query;
-import net.kuujo.copycat.util.BuilderPool;
+import net.kuujo.catalyst.buffer.BufferInput;
+import net.kuujo.catalyst.buffer.BufferOutput;
+import net.kuujo.catalyst.serializer.CatalystSerializable;
+import net.kuujo.catalyst.serializer.SerializeWith;
+import net.kuujo.catalyst.serializer.Serializer;
+import net.kuujo.catalog.client.Command;
+import net.kuujo.catalog.client.ConsistencyLevel;
+import net.kuujo.catalog.client.Operation;
+import net.kuujo.catalog.client.Query;
+import net.kuujo.catalyst.util.BuilderPool;
 
 import java.util.concurrent.TimeUnit;
 
@@ -42,7 +42,7 @@ public class SetCommands {
   /**
    * Abstract set command.
    */
-  private static abstract class SetCommand<V> implements Command<V>, CopycatSerializable {
+  private static abstract class SetCommand<V> implements Command<V>, CatalystSerializable {
 
     /**
      * Base set command builder.
@@ -57,7 +57,7 @@ public class SetCommands {
   /**
    * Abstract set query.
    */
-  private static abstract class SetQuery<V> implements Query<V>, CopycatSerializable {
+  private static abstract class SetQuery<V> implements Query<V>, CatalystSerializable {
     protected ConsistencyLevel consistency = ConsistencyLevel.LINEARIZABLE_LEASE;
 
     @Override

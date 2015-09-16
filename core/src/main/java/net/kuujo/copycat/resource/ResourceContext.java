@@ -15,13 +15,13 @@
  */
 package net.kuujo.copycat.resource;
 
+import net.kuujo.catalog.client.RaftClient;
+import net.kuujo.catalog.client.session.Session;
+import net.kuujo.catalyst.util.Assert;
+import net.kuujo.catalyst.util.concurrent.Context;
 import net.kuujo.copycat.manager.DeleteResource;
-import net.kuujo.copycat.raft.RaftClient;
-import net.kuujo.copycat.raft.protocol.Command;
-import net.kuujo.copycat.raft.protocol.Query;
-import net.kuujo.copycat.raft.session.Session;
-import net.kuujo.copycat.util.Assert;
-import net.kuujo.copycat.util.concurrent.Context;
+import net.kuujo.catalog.client.Command;
+import net.kuujo.catalog.client.Query;
 
 import java.util.concurrent.CompletableFuture;
 

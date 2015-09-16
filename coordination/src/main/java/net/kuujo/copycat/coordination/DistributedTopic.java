@@ -15,12 +15,12 @@
  */
 package net.kuujo.copycat.coordination;
 
+import net.kuujo.catalog.server.StateMachine;
+import net.kuujo.catalyst.util.Listener;
 import net.kuujo.copycat.Resource;
 import net.kuujo.copycat.coordination.state.TopicCommands;
 import net.kuujo.copycat.coordination.state.TopicState;
-import net.kuujo.copycat.raft.StateMachine;
 import net.kuujo.copycat.resource.ResourceContext;
-import net.kuujo.copycat.util.Listener;
 
 import java.util.HashSet;
 import java.util.Set;

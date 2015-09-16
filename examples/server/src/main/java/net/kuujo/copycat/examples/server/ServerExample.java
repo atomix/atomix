@@ -15,11 +15,11 @@
  */
 package net.kuujo.copycat.examples.server;
 
+import net.kuujo.catalog.server.storage.Storage;
+import net.kuujo.catalyst.transport.Address;
+import net.kuujo.catalyst.transport.NettyTransport;
 import net.kuujo.copycat.Copycat;
 import net.kuujo.copycat.CopycatReplica;
-import net.kuujo.copycat.io.storage.Storage;
-import net.kuujo.copycat.io.transport.Address;
-import net.kuujo.copycat.io.transport.NettyTransport;
 
 import java.net.InetAddress;
 import java.util.ArrayList;

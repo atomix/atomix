@@ -15,19 +15,16 @@
  */
 package net.kuujo.copycat;
 
-import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.io.transport.Address;
-import net.kuujo.copycat.io.transport.Transport;
+import net.kuujo.catalog.client.RaftClient;
+import net.kuujo.catalyst.serializer.Serializer;
+import net.kuujo.catalyst.transport.Address;
+import net.kuujo.catalyst.transport.Transport;
+import net.kuujo.catalyst.util.Assert;
+import net.kuujo.catalyst.util.Managed;
 import net.kuujo.copycat.manager.CreateResource;
 import net.kuujo.copycat.manager.GetResource;
 import net.kuujo.copycat.manager.ResourceExists;
-import net.kuujo.copycat.raft.RaftClient;
-import net.kuujo.copycat.raft.StateMachine;
-import net.kuujo.copycat.raft.protocol.Command;
-import net.kuujo.copycat.raft.protocol.Query;
 import net.kuujo.copycat.resource.ResourceContext;
-import net.kuujo.copycat.util.Assert;
-import net.kuujo.copycat.util.Managed;
 
 import java.util.Collection;
 import java.util.Map;
@@ -42,12 +39,12 @@ import java.util.concurrent.ConcurrentHashMap;
  * one-to-one relationship between paths and resources, so each path can be associated with one and only one resource.
  * <p>
  * To create a resource, pass the resource {@link java.lang.Class} to the {@link Copycat#create(String, Class)} method.
- * When a resource is created, the {@link StateMachine} associated with the resource will be created on each Raft server
+ * When a resource is created, the {@link net.kuujo.catalog.server.StateMachine} associated with the resource will be created on each Raft server
  * and future operations submitted for that resource will be applied to the state machine. Internally, resource state
  * machines are multiplexed across a shared Raft log.
  * <p>
  * {@link net.kuujo.copycat.Resource} implementations serve as a user-friendly interface through which to submit
- * {@link Command commands} and {@link Query queries} to the underlying
+ * {@link net.kuujo.catalog.client.Command commands} and {@link net.kuujo.catalog.client.Query queries} to the underlying
  * {@link RaftClient} client.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
@@ -157,7 +154,7 @@ public abstract class Copycat implements Managed<Copycat> {
   /**
    * Copycat builder.
    */
-  public static abstract class Builder extends net.kuujo.copycat.util.Builder<Copycat> {
+  public static abstract class Builder extends net.kuujo.catalyst.util.Builder<Copycat> {
     protected RaftClient.Builder clientBuilder;
 
     protected Builder(Collection<Address> members) {

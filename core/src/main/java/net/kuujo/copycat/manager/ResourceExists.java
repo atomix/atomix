@@ -15,11 +15,11 @@
  */
 package net.kuujo.copycat.manager;
 
-import net.kuujo.copycat.util.BuilderPool;
-import net.kuujo.copycat.raft.protocol.ConsistencyLevel;
-import net.kuujo.copycat.raft.protocol.Operation;
-import net.kuujo.copycat.raft.protocol.Query;
-import net.kuujo.copycat.io.serializer.SerializeWith;
+import net.kuujo.catalyst.util.BuilderPool;
+import net.kuujo.catalog.client.ConsistencyLevel;
+import net.kuujo.catalog.client.Operation;
+import net.kuujo.catalog.client.Query;
+import net.kuujo.catalyst.serializer.SerializeWith;
 
 /**
  * Resource exists command.

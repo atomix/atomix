@@ -15,10 +15,10 @@
  */
 package net.kuujo.copycat.collections.state;
 
+import net.kuujo.catalog.client.session.Session;
+import net.kuujo.catalog.server.StateMachine;
+import net.kuujo.catalog.server.state.StateMachineTestCase;
 import net.kuujo.copycat.PersistenceMode;
-import net.kuujo.copycat.raft.StateMachine;
-import net.kuujo.copycat.raft.session.Session;
-import net.kuujo.copycat.raft.state.StateMachineTestCase;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.*;

@@ -15,18 +15,18 @@
  */
 package net.kuujo.copycat.resource;
 
-import net.kuujo.copycat.raft.protocol.Operation;
-import net.kuujo.copycat.io.BufferInput;
-import net.kuujo.copycat.io.BufferOutput;
-import net.kuujo.copycat.io.serializer.CopycatSerializable;
-import net.kuujo.copycat.io.serializer.Serializer;
+import net.kuujo.catalog.client.Operation;
+import net.kuujo.catalyst.buffer.BufferInput;
+import net.kuujo.catalyst.buffer.BufferOutput;
+import net.kuujo.catalyst.serializer.CatalystSerializable;
+import net.kuujo.catalyst.serializer.Serializer;
 
 /**
  * Resource operation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class ResourceOperation<T extends Operation<U>, U> implements Operation<U>, CopycatSerializable {
+public abstract class ResourceOperation<T extends Operation<U>, U> implements Operation<U>, CatalystSerializable {
   protected long resource;
   protected T operation;
 

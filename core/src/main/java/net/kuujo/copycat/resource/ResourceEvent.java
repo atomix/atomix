@@ -15,18 +15,18 @@
  */
 package net.kuujo.copycat.resource;
 
-import net.kuujo.copycat.io.BufferInput;
-import net.kuujo.copycat.io.BufferOutput;
-import net.kuujo.copycat.io.serializer.CopycatSerializable;
-import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.util.Assert;
+import net.kuujo.catalyst.buffer.BufferInput;
+import net.kuujo.catalyst.buffer.BufferOutput;
+import net.kuujo.catalyst.serializer.CatalystSerializable;
+import net.kuujo.catalyst.serializer.Serializer;
+import net.kuujo.catalyst.util.Assert;
 
 /**
  * Resource event.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ResourceEvent<T> implements CopycatSerializable {
+public class ResourceEvent<T> implements CatalystSerializable {
   private long resource;
   private T event;
 

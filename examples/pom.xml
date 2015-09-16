@@ -25,6 +25,7 @@
 
   <properties>
     <logback.version>1.1.2</logback.version>
+    <catalyst.version>1.0.0-beta1</catalyst.version>
 
     <maven.source.plugin.version>2.2.1</maven.source.plugin.version>
     <maven.compiler.plugin.version>3.0</maven.compiler.plugin.version>

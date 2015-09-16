@@ -13,19 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package net.kuujo.copycat.util.concurrent;
+package net.kuujo.copycat;
 
 /**
- * Scheduled task.
+ * Copycat exception.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public interface Scheduled {
+public class CopycatException extends RuntimeException {
 
-  /**
-   * Cancels the scheduled task.
-   */
-  void cancel();
+  public CopycatException() {
+  }
+
+  public CopycatException(String message) {
+    super(message);
+  }
+
+  public CopycatException(String message, Throwable cause) {
+    super(message, cause);
+  }
+
+  public CopycatException(Throwable cause) {
+    super(cause);
+  }
 
 }

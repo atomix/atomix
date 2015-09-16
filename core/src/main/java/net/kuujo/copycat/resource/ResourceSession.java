@@ -15,10 +15,10 @@
  */
 package net.kuujo.copycat.resource;
 
-import net.kuujo.copycat.raft.session.Session;
-import net.kuujo.copycat.util.Assert;
-import net.kuujo.copycat.util.Listener;
-import net.kuujo.copycat.util.concurrent.Context;
+import net.kuujo.catalog.client.session.Session;
+import net.kuujo.catalyst.util.Assert;
+import net.kuujo.catalyst.util.Listener;
+import net.kuujo.catalyst.util.concurrent.Context;
 
 import java.util.Collections;
 import java.util.Set;

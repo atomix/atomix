@@ -15,14 +15,14 @@
  */
 package net.kuujo.copycat.coordination.state;
 
-import net.kuujo.copycat.io.BufferInput;
-import net.kuujo.copycat.io.BufferOutput;
-import net.kuujo.copycat.io.serializer.CopycatSerializable;
-import net.kuujo.copycat.io.serializer.SerializeWith;
-import net.kuujo.copycat.io.serializer.Serializer;
-import net.kuujo.copycat.raft.protocol.Command;
-import net.kuujo.copycat.raft.protocol.Operation;
-import net.kuujo.copycat.util.BuilderPool;
+import net.kuujo.catalyst.buffer.BufferInput;
+import net.kuujo.catalyst.buffer.BufferOutput;
+import net.kuujo.catalyst.serializer.CatalystSerializable;
+import net.kuujo.catalyst.serializer.SerializeWith;
+import net.kuujo.catalyst.serializer.Serializer;
+import net.kuujo.catalog.client.Command;
+import net.kuujo.catalog.client.Operation;
+import net.kuujo.catalyst.util.BuilderPool;
 
 /**
  * Topic commands.
@@ -37,7 +37,7 @@ public class TopicCommands {
   /**
    * Abstract topic command.
    */
-  public static abstract class TopicCommand<V> implements Command<V>, CopycatSerializable {
+  public static abstract class TopicCommand<V> implements Command<V>, CatalystSerializable {
     @Override
     public void writeObject(BufferOutput buffer, Serializer serializer) {
 

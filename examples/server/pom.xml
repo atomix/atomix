@@ -19,9 +19,9 @@
 
   <dependencies>
     <dependency>
-      <groupId>net.kuujo.copycat</groupId>
-      <artifactId>copycat-netty</artifactId>
-      <version>${project.version}</version>
+      <groupId>net.kuujo.catalyst</groupId>
+      <artifactId>catalyst-netty</artifactId>
+      <version>${catalyst.version}</version>
     </dependency>
     <dependency>
       <groupId>net.kuujo.copycat</groupId>

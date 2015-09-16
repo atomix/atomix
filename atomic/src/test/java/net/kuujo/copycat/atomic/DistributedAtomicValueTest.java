@@ -16,12 +16,12 @@
 package net.kuujo.copycat.atomic;
 
 import net.jodah.concurrentunit.ConcurrentTestCase;
+import net.kuujo.catalog.server.storage.Storage;
+import net.kuujo.catalyst.transport.Address;
+import net.kuujo.catalyst.transport.LocalServerRegistry;
+import net.kuujo.catalyst.transport.LocalTransport;
 import net.kuujo.copycat.Copycat;
 import net.kuujo.copycat.CopycatReplica;
-import net.kuujo.copycat.io.storage.Storage;
-import net.kuujo.copycat.io.transport.Address;
-import net.kuujo.copycat.io.transport.LocalServerRegistry;
-import net.kuujo.copycat.io.transport.LocalTransport;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
