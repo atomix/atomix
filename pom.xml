@@ -221,6 +221,9 @@
               <additionalparam>
                 -Xdoclint:none
                 -link http://docs.oracle.com/javase/8/docs/api/
+
+                -group "Copycat core" net.kuujo.copycat
+                -group "Distributed resources" net.kuujo.copycat.atomic:net.kuujo.copycat.collections:net.kuujo.copycat.coordination
               </additionalparam>
             </configuration>
           </plugin>
