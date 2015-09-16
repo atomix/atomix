@@ -37,7 +37,7 @@ updates!
 [Getting started]: http://kuujo.github.io/copycat/getting-started/
 [User manual]: http://kuujo.github.io/copycat/user-manual/
 [Google group]: https://groups.google.com/forum/#!forum/copycat
-[Javadoc]: http://kuujo.github.io/copycat/api/1.0.0/
+[Javadoc]: http://kuujo.github.io/copycat/api/0.1.0/
 [Raft]: https://raft.github.io/
 [Catalog]: http://github.com/kuujo/catalog
 [Catalyst]: http://github.com/kuujo/catalyst
