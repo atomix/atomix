@@ -212,7 +212,7 @@
             <version>${maven.javadoc.plugin.version}</version>
             <configuration>
               <show>public</show>
-              <excludePackageNames>*.state:net.kuujo.copycat.resource:net.kuujo.copycat.manager</excludePackageNames>
+              <excludePackageNames>*.state:net.kuujo.copycat.resource:net.kuujo.copycat.manager:net.kuujo.copycat.examples*</excludePackageNames>
               <doctitle>Copycat API Reference (${jv})</doctitle>
               <windowtitle>Copycat API Reference (${jv})</windowtitle>
               <reportOutputDirectory>target/docs</reportOutputDirectory>
