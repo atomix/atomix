@@ -16,7 +16,7 @@
 
   <groupId>net.kuujo.copycat</groupId>
   <artifactId>copycat-examples-parent</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
+  <version>0.1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Copycat Examples</name>
   <description>Example projects for Copycat.</description>

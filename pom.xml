@@ -9,7 +9,7 @@
 
   <groupId>net.kuujo.copycat</groupId>
   <artifactId>copycat-parent</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
+  <version>0.1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Copycat</name>
   <description>Replicated state machine framework based on the Raft consensus algorithm.</description>
