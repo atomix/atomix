@@ -7,20 +7,20 @@
     <version>7</version>
   </parent>
 
-  <groupId>net.kuujo.copycat</groupId>
+  <groupId>io.atomix.copycat</groupId>
   <artifactId>copycat-parent</artifactId>
   <version>0.1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Copycat</name>
   <description>Replicated state machine framework based on the Raft consensus algorithm.</description>
-  <url>http://github.com/kuujo/copycat</url>
+  <url>http://github.com/atomix/copycat</url>
   <inceptionYear>2013</inceptionYear>
 
   <properties>
     <slf4j.version>1.7.7</slf4j.version>
     <logback.version>1.1.2</logback.version>
-    <catalyst.version>1.0.0-beta1</catalyst.version>
-    <catalog.version>1.0.0-alpha1</catalog.version>
+    <catalyst.version>1.0.0-SNAPSHOT</catalyst.version>
+    <catalog.version>1.0.0-SNAPSHOT</catalog.version>
 
     <maven.source.plugin.version>2.2.1</maven.source.plugin.version>
     <maven.compiler.plugin.version>3.0</maven.compiler.plugin.version>
@@ -48,14 +48,14 @@
   </developers>
 
   <scm>
-    <connection>scm:git:git@github.com:kuujo/copycat.git</connection>
-    <developerConnection>scm:git:git@github.com:kuujo/copycat.git</developerConnection>
-    <url>git@github.com:kuujo/copycat.git</url>
+    <connection>scm:git:git@github.com:atomix/copycat.git</connection>
+    <developerConnection>scm:git:git@github.com:atomix/copycat.git</developerConnection>
+    <url>git@github.com:atomix/copycat.git</url>
   </scm>
 
   <issueManagement>
     <system>GitHub</system>
-    <url>http://github.com/kuujo/copycat/issues</url>
+    <url>http://github.com/atomix/copycat/issues</url>
   </issueManagement>
 
   <distributionManagement>
@@ -212,7 +212,7 @@
             <version>${maven.javadoc.plugin.version}</version>
             <configuration>
               <show>public</show>
-              <excludePackageNames>*.state:net.kuujo.copycat.resource:net.kuujo.copycat.manager:net.kuujo.copycat.examples*</excludePackageNames>
+              <excludePackageNames>*.state:io.atomix.copycat.resource:io.atomix.copycat.manager:io.atomix.copycat.examples*</excludePackageNames>
               <doctitle>Copycat API Reference (${jv})</doctitle>
               <windowtitle>Copycat API Reference (${jv})</windowtitle>
               <reportOutputDirectory>target/docs</reportOutputDirectory>
@@ -222,8 +222,8 @@
                 -Xdoclint:none
                 -link http://docs.oracle.com/javase/8/docs/api/
 
-                -group "Copycat core" net.kuujo.copycat
-                -group "Distributed resources" net.kuujo.copycat.atomic:net.kuujo.copycat.collections:net.kuujo.copycat.coordination
+                -group "Copycat core" io.atomix.copycat
+                -group "Distributed resources" io.atomix.copycat.atomic:io.atomix.copycat.collections:io.atomix.copycat.coordination
               </additionalparam>
             </configuration>
           </plugin>

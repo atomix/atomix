@@ -14,7 +14,7 @@
     <version>7</version>
   </parent>
 
-  <groupId>net.kuujo.copycat</groupId>
+  <groupId>io.atomix.copycat</groupId>
   <artifactId>copycat-examples-parent</artifactId>
   <version>0.1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
@@ -25,7 +25,7 @@
 
   <properties>
     <logback.version>1.1.2</logback.version>
-    <catalyst.version>1.0.0-beta1</catalyst.version>
+    <catalyst.version>1.0.0-SNAPSHOT</catalyst.version>
 
     <maven.source.plugin.version>2.2.1</maven.source.plugin.version>
     <maven.compiler.plugin.version>3.0</maven.compiler.plugin.version>
@@ -74,7 +74,7 @@
 
   <dependencies>
     <dependency>
-      <groupId>net.kuujo.copycat</groupId>
+      <groupId>io.atomix.copycat</groupId>
       <artifactId>copycat</artifactId>
       <version>${project.version}</version>
     </dependency>

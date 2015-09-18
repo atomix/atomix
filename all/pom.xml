@@ -18,7 +18,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>net.kuujo.copycat</groupId>
+    <groupId>io.atomix.copycat</groupId>
     <artifactId>copycat-parent</artifactId>
     <version>0.1.0-SNAPSHOT</version>
   </parent>
@@ -28,22 +28,22 @@
 
   <dependencies>
     <dependency>
-      <groupId>net.kuujo.copycat</groupId>
+      <groupId>io.atomix.copycat</groupId>
       <artifactId>copycat</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>net.kuujo.copycat</groupId>
+      <groupId>io.atomix.copycat</groupId>
       <artifactId>copycat-atomic</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>net.kuujo.copycat</groupId>
+      <groupId>io.atomix.copycat</groupId>
       <artifactId>copycat-collections</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>net.kuujo.copycat</groupId>
+      <groupId>io.atomix.copycat</groupId>
       <artifactId>copycat-coordination</artifactId>
       <version>${project.version}</version>
     </dependency>
