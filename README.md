@@ -31,7 +31,7 @@ updates!
 
 #### [Website][Website] • [User Manual][User manual] • [Raft Algorithm][Catalog] • [Google Group][Google group] • [Javadoc][Javadoc]
 
-[Website]: http://atomix.github.io/copycat/
+[Website]: http://atomix.github.io/
 [Getting started]: http://atomix.io/getting-started/
 [User manual]: http://atomix.io/user-manual/
 [Google group]: https://groups.google.com/forum/#!forum/copycat
