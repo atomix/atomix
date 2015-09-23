@@ -18,8 +18,12 @@ package io.atomix.copycat.coordination.state;
 import io.atomix.catalog.server.Commit;
 import io.atomix.catalog.server.StateMachine;
 import io.atomix.catalog.server.StateMachineExecutor;
+import io.atomix.catalyst.util.concurrent.Scheduled;
 
+import java.time.Duration;
 import java.util.ArrayDeque;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Queue;
 
 /**
@@ -30,6 +34,7 @@ import java.util.Queue;
 public class LockState extends StateMachine {
   private Commit<LockCommands.Lock> lock;
   private final Queue<Commit<LockCommands.Lock>> queue = new ArrayDeque<>();
+  private final Map<Long, Scheduled> timers = new HashMap<>();
 
   @Override
   public void configure(StateMachineExecutor executor) {
@@ -43,11 +48,18 @@ public class LockState extends StateMachine {
   protected void lock(Commit<LockCommands.Lock> commit) {
     if (lock == null) {
       lock = commit;
-      commit.session().publish(true);
+      commit.session().publish("lock", true);
     } else if (commit.operation().timeout() == 0) {
-      commit.session().publish(false);
+      commit.session().publish("lock", false);
     } else {
       queue.add(commit);
+      if (commit.operation().timeout() > 0) {
+        timers.put(commit.index(), executor().schedule(Duration.ofMillis(commit.operation().timeout()), () -> {
+          timers.remove(commit.index());
+          queue.remove(commit);
+          commit.clean();
+        }));
+      }
     }
   }
 
@@ -55,23 +67,23 @@ public class LockState extends StateMachine {
    * Applies an unlock commit.
    */
   protected void unlock(Commit<LockCommands.Unlock> commit) {
-    if (lock == null) {
-      commit.clean();
-    } else {
-      lock.clean();
-
-      if (!lock.session().equals(commit.session()))
-        throw new IllegalStateException("not the lock holder");
-
-      lock = queue.poll();
-      while (lock != null && (lock.operation().timeout() != -1 && lock.time().toEpochMilli() + lock.operation().timeout() < now().toEpochMilli())) {
-        lock.clean();
-        lock = queue.poll();
-      }
-
+    try {
       if (lock != null) {
-        lock.session().publish(true);
+        if (!lock.session().equals(commit.session()))
+          throw new IllegalStateException("not the lock holder");
+
+        lock.clean();
+
+        lock = queue.poll();
+        if (lock != null) {
+          Scheduled timer = timers.remove(lock.index());
+          if (timer != null)
+            timer.cancel();
+          lock.session().publish("lock", true);
+        }
       }
+    } finally {
+      commit.clean();
     }
   }
 

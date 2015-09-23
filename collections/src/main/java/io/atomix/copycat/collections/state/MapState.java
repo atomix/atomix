@@ -15,17 +15,14 @@
  */
 package io.atomix.copycat.collections.state;
 
-import io.atomix.copycat.PersistenceMode;
-import io.atomix.catalog.client.session.Session;
 import io.atomix.catalog.server.Commit;
 import io.atomix.catalog.server.StateMachine;
 import io.atomix.catalog.server.StateMachineExecutor;
-import io.atomix.catalyst.util.Listener;
 import io.atomix.catalyst.util.concurrent.Scheduled;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -34,14 +31,10 @@ import java.util.Map;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class MapState extends StateMachine {
-  private StateMachineExecutor executor;
-  private Map<Object, Commit<? extends MapCommands.TtlCommand>> map;
-  private final Map<Object, Scheduled> timers = new HashMap<>();
-  private final Map<Object, Listener<Session>> listeners = new HashMap<>();
+  private final Map<Object, Value> map = new HashMap<>();
 
   @Override
-  public void configure(StateMachineExecutor executor) {
-    this.executor = executor;
+  protected void configure(StateMachineExecutor executor) {
     executor.register(MapCommands.ContainsKey.class, this::containsKey);
     executor.register(MapCommands.Get.class, this::get);
     executor.register(MapCommands.GetOrDefault.class, this::getOrDefault);
@@ -54,30 +47,11 @@ public class MapState extends StateMachine {
   }
 
   /**
-   * Returns a boolean value indicating whether the given commit is active.
-   */
-  private boolean isActive(Commit<? extends MapCommands.TtlCommand> commit, Instant instant) {
-    if (commit == null) {
-      return false;
-    } else if (commit.operation().mode() == PersistenceMode.EPHEMERAL && sessions().session(commit.session().id()) == null) {
-      return false;
-    } else if (commit.operation().ttl() != 0 && commit.operation().ttl() < instant.toEpochMilli() - commit.time().toEpochMilli()) {
-      return false;
-    }
-    return true;
-  }
-
-  /**
    * Handles a contains key commit.
    */
   protected boolean containsKey(Commit<MapCommands.ContainsKey> commit) {
     try {
-      if (map == null) {
-        return false;
-      }
-
-      Commit<? extends MapCommands.TtlCommand> command = map.get(commit.operation().key());
-      return isActive(command, commit.time());
+      return map.containsKey(commit.operation().key());
     } finally {
       commit.close();
     }
@@ -87,13 +61,9 @@ public class MapState extends StateMachine {
    * Handles a get commit.
    */
   protected Object get(Commit<MapCommands.Get> commit) {
-    if (map == null) {
-      return null;
-    }
-
     try {
-      Commit<? extends MapCommands.TtlCommand> command = map.get(commit.operation().key());
-      return isActive(command, commit.time()) ? command.operation().value() : null;
+      Value value = map.get(commit.operation().key());
+      return value != null ? value.commit.operation().value() : null;
     } finally {
       commit.close();
     }
@@ -103,13 +73,9 @@ public class MapState extends StateMachine {
    * Handles a get or default commit.
    */
   protected Object getOrDefault(Commit<MapCommands.GetOrDefault> commit) {
-    if (map == null) {
-      return commit.operation().defaultValue();
-    }
-
     try {
-      Commit<? extends MapCommands.TtlCommand> previous = map.get(commit.operation().key());
-      return isActive(previous, commit.time()) ? previous.operation().value() : commit.operation().defaultValue();
+      Value value = map.get(commit.operation().key());
+      return value != null ? value.commit.operation().value() : commit.operation().defaultValue();
     } finally {
       commit.close();
     }
@@ -119,134 +85,86 @@ public class MapState extends StateMachine {
    * Handles a put commit.
    */
   protected Object put(Commit<MapCommands.Put> commit) {
-    if (map == null) {
-      map = new HashMap<>();
+    try {
+      Scheduled timer = commit.operation().ttl() > 0 ? executor().schedule(Duration.ofMillis(commit.operation().ttl()), () -> {
+        map.remove(commit.operation().key()).commit.clean();
+      }) : null;
+
+      Value value = map.put(commit.operation().key(), new Value(commit, timer));
+      if (value != null) {
+        try {
+          if (value.timer != null)
+            value.timer.cancel();
+          return value.commit.operation().value();
+        } finally {
+          value.commit.clean();
+        }
+      }
+      return null;
+    } catch (Exception e) {
+      commit.clean();
+      throw e;
     }
-
-    Commit<? extends MapCommands.TtlCommand> previous = map.get(commit.operation().key());
-    if (previous == null) {
-      if (commit.operation().ttl() > 0) {
-        timers.put(commit.operation().key(), executor.schedule(() -> {
-          map.remove(commit.operation().key());
-          Listener<Session> listener = listeners.remove(commit.operation().key());
-          if (listener != null)
-            listener.close();
-          commit.clean();
-        }, Duration.ofMillis(commit.operation().ttl())));
-      }
-
-      if (commit.operation().mode() == PersistenceMode.EPHEMERAL) {
-        listeners.put(commit.operation().key(), commit.session().onClose(s -> {
-          map.remove(commit.operation().key());
-          Scheduled scheduled = timers.remove(commit.operation().key());
-          if (scheduled != null)
-            scheduled.cancel();
-          commit.clean();
-        }));
-      }
-    } else {
-      previous.clean();
-
-      if (commit.operation().ttl() > 0) {
-        timers.put(commit.operation().key(), executor.schedule(() -> {
-          map.remove(commit.operation().key());
-          Listener<Session> listener = listeners.remove(commit.operation().key());
-          if (listener != null)
-            listener.close();
-          commit.close();
-        }, Duration.ofMillis(commit.operation().ttl())));
-      }
-
-      if (commit.operation().mode() == PersistenceMode.EPHEMERAL) {
-        listeners.put(commit.operation().key(), commit.session().onClose(s -> {
-          map.remove(commit.operation().key());
-          Scheduled scheduled = timers.remove(commit.operation().key());
-          if (scheduled != null)
-            scheduled.cancel();
-          commit.close();
-        }));
-      }
-    }
-
-    map.put(commit.operation().key(), commit);
-    return isActive(previous, commit.time()) ? previous.operation().value() : null;
   }
 
   /**
    * Handles a put if absent commit.
    */
   protected Object putIfAbsent(Commit<MapCommands.PutIfAbsent> commit) {
-    if (map == null) {
-      map = new HashMap<>();
-    }
+    try {
+      Value value = map.get(commit.operation().key());
+      if (value == null) {
+        Scheduled timer = commit.operation().ttl() > 0 ? executor().schedule(Duration.ofMillis(commit.operation().ttl()), () -> {
+          map.remove(commit.operation().key()).commit.clean();
+        }) : null;
 
-    Commit<? extends MapCommands.TtlCommand> previous = map.get(commit.operation().key());
-    if (!isActive(previous, commit.time())) {
-      if (previous == null) {
-        if (commit.operation().ttl() > 0) {
-          timers.put(commit.operation().key(), executor.schedule(() -> {
-            map.remove(commit.operation().key());
-            Listener<Session> listener = listeners.remove(commit.operation().key());
-            if (listener != null)
-              listener.close();
-            commit.clean();
-          }, Duration.ofMillis(commit.operation().ttl())));
-        }
-
-        if (commit.operation().mode() == PersistenceMode.EPHEMERAL) {
-          listeners.put(commit.operation().key(), commit.session().onClose(s -> {
-            map.remove(commit.operation().key());
-            Scheduled scheduled = timers.remove(commit.operation().key());
-            if (scheduled != null)
-              scheduled.cancel();
-            commit.clean();
-          }));
-        }
+        map.put(commit.operation().key(), new Value(commit, timer));
+        return commit.operation().value();
+      } else {
+        commit.clean();
+        return value.commit.operation().value();
       }
-
-      map.put(commit.operation().key(), commit);
-      return null;
+    } catch (Exception e) {
+      commit.clean();
+      throw e;
     }
-    return previous.operation().value();
   }
 
   /**
    * Handles a remove commit.
    */
   protected Object remove(Commit<MapCommands.Remove> commit) {
-    if (map == null) {
-      commit.clean();
-      return null;
-    } else if (commit.operation().value() != null) {
-      Commit<? extends MapCommands.TtlCommand> previous = map.get(commit.operation().key());
-      if (previous == null) {
-        commit.clean();
-        return true;
-      } else if (!isActive(previous, commit.time())) {
-        map.remove(commit.operation().key());
-        previous.clean();
-        commit.close();
+    if (commit.operation().value() != null) {
+      Value value = map.get(commit.operation().key());
+      if (value == null || !value.equals(commit.operation().value())) {
+        commit.clean(false);
+        return null;
       } else {
-        Object value = previous.operation().value();
-        if ((value == null && commit.operation().value() == null) || (value != null && commit.operation().value() != null && value.equals(commit.operation().value()))) {
+        try {
           map.remove(commit.operation().key());
-          previous.clean();
-          commit.close();
-          return true;
+          if (value.timer != null)
+            value.timer.cancel();
+          return value.commit.operation().value();
+        } finally {
+          value.commit.clean();
+          commit.clean();
         }
-        commit.clean();
-        return false;
       }
-      return false;
     } else {
-      Commit<? extends MapCommands.TtlCommand> previous = map.remove(commit.operation().key());
-      if (previous == null) {
+      try {
+        Value value = map.remove(commit.operation().key());
+        if (value != null) {
+          try {
+            if (value.timer != null)
+              value.timer.cancel();
+            return value.commit.operation().value();
+          } finally {
+            value.commit.clean();
+          }
+        }
+        return null;
+      } finally {
         commit.clean();
-        return true;
-      } else {
-        previous.clean();
-        commit.close();
-        return isActive(previous, commit.time()) ? previous.operation().value() : null;
       }
     }
   }
@@ -256,7 +174,7 @@ public class MapState extends StateMachine {
    */
   protected int size(Commit<MapCommands.Size> commit) {
     try {
-      return map != null ? map.size() : 0;
+      return map.size();
     } finally {
       commit.close();
     }
@@ -277,10 +195,31 @@ public class MapState extends StateMachine {
    * Handles a clear commit.
    */
   protected void clear(Commit<MapCommands.Clear> commit) {
-    if (map == null) {
+    try {
+      Iterator<Map.Entry<Object, Value>> iterator = map.entrySet().iterator();
+      while (iterator.hasNext()) {
+        Map.Entry<Object, Value> entry = iterator.next();
+        Value value = entry.getValue();
+        if (value.timer != null)
+          value.timer.cancel();
+        value.commit.clean(true);
+        iterator.remove();
+      }
+    } finally {
       commit.clean();
-    } else {
-      map.clear();
+    }
+  }
+
+  /**
+   * Map value.
+   */
+  private static class Value {
+    private final Commit<? extends MapCommands.TtlCommand> commit;
+    private final Scheduled timer;
+
+    private Value(Commit<? extends MapCommands.TtlCommand> commit, Scheduled timer) {
+      this.commit = commit;
+      this.timer = timer;
     }
   }
 

@@ -18,9 +18,10 @@ package io.atomix.copycat.resource;
 import io.atomix.catalog.client.session.Session;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.Listener;
-import io.atomix.catalyst.util.concurrent.Context;
+import io.atomix.catalyst.util.concurrent.ThreadContext;
 
-import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,14 +35,14 @@ import java.util.function.Consumer;
 public class ResourceSession implements Session {
   private final long resource;
   private final Session parent;
-  private final Context context;
-  private final Set<Consumer> receiveListeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
-  private Listener<ResourceEvent<?>> listener;
+  private final ThreadContext context;
+  private final Map<String, Set<EventListener>> eventListeners = new ConcurrentHashMap<>();
+  private final Map<String, Listener<ResourceEvent<?>>> listeners = new ConcurrentHashMap<>();
 
   /**
    * @throws NullPointerException if {@code parent} or {@code context} are null
    */
-  public ResourceSession(long resource, Session parent, Context context) {
+  public ResourceSession(long resource, Session parent, ThreadContext context) {
     this.resource = resource;
     this.parent = Assert.notNull(parent, "parent");
     this.context = Assert.notNull(context, "context");
@@ -64,36 +65,50 @@ public class ResourceSession implements Session {
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<Void> publish(Object event) {
-    ResourceEvent resourceEvent = (ResourceEvent) Assert.notNull(event, "message");
+  public CompletableFuture<Void> publish(String event, Object message) {
+    ResourceEvent resourceEvent = (ResourceEvent) Assert.notNull(message, "message");
     if (resourceEvent.resource() == resource) {
-      return CompletableFuture.runAsync(() -> {
-        for (Consumer<Object> listener : receiveListeners) {
-          listener.accept(resourceEvent.event());
-        }
-      }, context.executor());
+      Set<EventListener> listeners = eventListeners.get(event);
+      if (listeners != null) {
+        return CompletableFuture.runAsync(() -> {
+          for (Consumer<Object> listener : listeners) {
+            listener.accept(resourceEvent.event());
+          }
+        }, context.executor());
+      }
     }
     return CompletableFuture.completedFuture(null);
   }
 
   @Override
-  public synchronized <T> Listener<T> onEvent(Consumer<T> listener) {
+  @SuppressWarnings("unchecked")
+  public synchronized <T> Listener<T> onEvent(String event, Consumer<T> listener) {
+    Assert.notNull(event, "event");
     Assert.notNull(listener, "listener");
-    if (receiveListeners.isEmpty()) {
-      this.listener = parent.onEvent(this::handleEvent);
+
+    Set<EventListener> listeners = eventListeners.get(event);
+    if (listeners == null) {
+      listeners = new HashSet<>();
+      eventListeners.put(event, listeners);
+      this.listeners.put(event, parent.onEvent(event, message -> handleEvent(event, message)));
     }
-    receiveListeners.add(listener);
-    return new ReceiveListener<>(listener);
+
+    EventListener context = new EventListener(event, listener);
+    listeners.add(context);
+    return context;
   }
 
   /**
    * Handles receiving a resource message.
    */
   @SuppressWarnings("unchecked")
-  private void handleEvent(ResourceEvent<?> event) {
-    if (event.resource() == resource) {
-      for (Consumer listener : receiveListeners) {
-        listener.accept(event.event());
+  private void handleEvent(String event, ResourceEvent<?> message) {
+    if (message.resource() == resource) {
+      Set<EventListener> listeners = eventListeners.get(event);
+      if (listeners != null) {
+        for (EventListener listener : listeners) {
+          listener.accept(message.event());
+        }
       }
     }
   }
@@ -121,10 +136,12 @@ public class ResourceSession implements Session {
   /**
    * Receive listener context.
    */
-  private class ReceiveListener<T> implements Listener<T> {
+  private class EventListener<T> implements Listener<T> {
+    private final String event;
     private final Consumer<T> listener;
 
-    private ReceiveListener(Consumer<T> listener) {
+    private EventListener(String event, Consumer<T> listener) {
+      this.event = event;
       this.listener = listener;
     }
 
@@ -136,10 +153,16 @@ public class ResourceSession implements Session {
     @Override
     public void close() {
       synchronized (ResourceSession.this) {
-        receiveListeners.remove(listener);
-        if (receiveListeners.isEmpty()) {
-          ResourceSession.this.listener.close();
-          ResourceSession.this.listener = null;
+        Set<EventListener> listeners = eventListeners.get(event);
+        if (listeners != null) {
+          listeners.remove(this);
+          if (listeners.isEmpty()) {
+            eventListeners.remove(event);
+            Listener listener = ResourceSession.this.listeners.remove(event);
+            if (listener != null) {
+              listener.close();
+            }
+          }
         }
       }
     }

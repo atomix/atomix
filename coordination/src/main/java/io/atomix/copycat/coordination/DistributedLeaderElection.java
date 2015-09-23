@@ -44,7 +44,7 @@ public class DistributedLeaderElection extends Resource {
   @Override
   protected void open(ResourceContext context) {
     super.open(context);
-    context.session().<Long>onEvent(epoch -> {
+    context.session().<Long>onEvent("elect", epoch -> {
       for (Consumer<Long> listener : listeners) {
         listener.accept(epoch);
       }

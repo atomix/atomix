@@ -15,10 +15,11 @@
  */
 package io.atomix.copycat.manager;
 
-import io.atomix.copycat.resource.ResourceOperation;
 import io.atomix.catalog.client.Operation;
 import io.atomix.catalog.client.session.Session;
 import io.atomix.catalog.server.Commit;
+import io.atomix.catalyst.util.Assert;
+import io.atomix.copycat.resource.ResourceOperation;
 
 import java.time.Instant;
 
@@ -76,9 +77,15 @@ class ResourceCommit implements Commit {
 
   @Override
   public void clean() {
-    if (!open)
-      throw new IllegalStateException("commit closed");
+    Assert.state(open, "commit closed");
     commit.clean();
+    close();
+  }
+
+  @Override
+  public void clean(boolean tombstone) {
+    Assert.state(open, "commit closed");
+    commit.clean(tombstone);
     close();
   }
 

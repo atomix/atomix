@@ -15,17 +15,14 @@
  */
 package io.atomix.copycat.collections.state;
 
-import io.atomix.copycat.PersistenceMode;
-import io.atomix.copycat.*;
+import io.atomix.catalog.client.Command;
+import io.atomix.catalog.client.Operation;
+import io.atomix.catalog.client.Query;
 import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
 import io.atomix.catalyst.serializer.SerializeWith;
 import io.atomix.catalyst.serializer.Serializer;
-import io.atomix.catalog.client.Command;
-import io.atomix.catalog.client.ConsistencyLevel;
-import io.atomix.catalog.client.Operation;
-import io.atomix.catalog.client.Query;
 import io.atomix.catalyst.util.BuilderPool;
 
 import java.util.concurrent.TimeUnit;
@@ -44,6 +41,22 @@ public class SetCommands {
    * Abstract set command.
    */
   private static abstract class SetCommand<V> implements Command<V>, CatalystSerializable {
+    protected ConsistencyLevel consistency = ConsistencyLevel.LINEARIZABLE;
+
+    @Override
+    public ConsistencyLevel consistency() {
+      return consistency;
+    }
+
+    @Override
+    public void writeObject(BufferOutput buffer, Serializer serializer) {
+      buffer.writeByte(consistency.ordinal());
+    }
+
+    @Override
+    public void readObject(BufferInput buffer, Serializer serializer) {
+      consistency = ConsistencyLevel.values()[buffer.readByte()];
+    }
 
     /**
      * Base set command builder.
@@ -52,6 +65,18 @@ public class SetCommands {
       protected Builder(BuilderPool<T, U> pool) {
         super(pool);
       }
+
+      /**
+       * Sets the command consistency level.
+       *
+       * @param consistency The query consistency level.
+       * @return The query builder.
+       */
+      @SuppressWarnings("unchecked")
+      public T withConsistency(ConsistencyLevel consistency) {
+        command.consistency = consistency;
+        return (T) this;
+      }
     }
   }
 
@@ -59,7 +84,7 @@ public class SetCommands {
    * Abstract set query.
    */
   private static abstract class SetQuery<V> implements Query<V>, CatalystSerializable {
-    protected ConsistencyLevel consistency = ConsistencyLevel.LINEARIZABLE_LEASE;
+    protected ConsistencyLevel consistency = ConsistencyLevel.LINEARIZABLE;
 
     @Override
     public ConsistencyLevel consistency() {
@@ -223,7 +248,11 @@ public class SetCommands {
    */
   public static abstract class TtlCommand<V> extends ValueCommand<V> {
     protected long ttl;
-    protected PersistenceMode mode = PersistenceMode.PERSISTENT;
+
+    @Override
+    public PersistenceLevel persistence() {
+      return ttl > 0 ? PersistenceLevel.PERSISTENT : PersistenceLevel.EPHEMERAL;
+    }
 
     /**
      * Returns the time to live in milliseconds.
@@ -234,25 +263,15 @@ public class SetCommands {
       return ttl;
     }
 
-    /**
-     * Returns the persistence mode.
-     *
-     * @return The persistence mode.
-     */
-    public PersistenceMode mode() {
-      return mode;
-    }
-
     @Override
     public void writeObject(BufferOutput buffer, Serializer serializer) {
       super.writeObject(buffer, serializer);
-      buffer.writeByte(mode.ordinal()).writeLong(ttl);
+      buffer.writeLong(ttl);
     }
 
     @Override
     public void readObject(BufferInput buffer, Serializer serializer) {
       super.readObject(buffer, serializer);
-      mode = PersistenceMode.values()[buffer.readByte()];
       ttl = buffer.readLong();
     }
 
@@ -284,17 +303,6 @@ public class SetCommands {
        */
       public Builder withTtl(long ttl, TimeUnit unit) {
         command.ttl = unit.toMillis(ttl);
-        return this;
-      }
-
-      /**
-       * Sets the persistence mode.
-       *
-       * @param mode The persistence mode.
-       * @return The command builder.
-       */
-      public Builder withPersistence(PersistenceMode mode) {
-        command.mode = mode;
         return this;
       }
     }
@@ -339,6 +347,11 @@ public class SetCommands {
      */
     public static Builder builder() {
       return Operation.builder(Builder.class, Builder::new);
+    }
+
+    @Override
+    public PersistenceLevel persistence() {
+      return PersistenceLevel.PERSISTENT;
     }
 
     /**
@@ -426,13 +439,8 @@ public class SetCommands {
     }
 
     @Override
-    public void writeObject(BufferOutput buffer, Serializer serializer) {
-
-    }
-
-    @Override
-    public void readObject(BufferInput buffer, Serializer serializer) {
-
+    public PersistenceLevel persistence() {
+      return PersistenceLevel.PERSISTENT;
     }
 
     /**

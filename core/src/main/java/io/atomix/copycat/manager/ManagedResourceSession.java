@@ -21,7 +21,9 @@ import io.atomix.catalyst.util.Listener;
 import io.atomix.catalyst.util.Listeners;
 import io.atomix.copycat.resource.ResourceEvent;
 
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 /**
@@ -45,14 +47,13 @@ class ManagedResourceSession implements Session {
   private final Session parent;
   private final Listeners<Session> openListeners = new Listeners<>();
   private final Listeners<Session> closeListeners = new Listeners<>();
-  private final Listeners<?> receiveListeners = new Listeners();
+  private final Map<String, Listeners<Object>> eventListeners = new ConcurrentHashMap<>();
 
   public ManagedResourceSession(long resource, Session parent) {
     this.resource = resource;
     this.parent = parent;
     parent.onOpen(this::handleOpen);
     parent.onClose(this::handleClose);
-    parent.onEvent(this::handleEvent);
   }
 
   @Override
@@ -61,26 +62,35 @@ class ManagedResourceSession implements Session {
   }
 
   @Override
-  public CompletableFuture<Void> publish(Object message) {
-    return parent.publish(new ResourceEvent<>(resource, Assert.notNull(message, "message")));
+  public CompletableFuture<Void> publish(String event, Object message) {
+    return parent.publish(event, new ResourceEvent<>(resource, Assert.notNull(message, "message")));
   }
 
   /**
    * handles receiving an event.
    */
   @SuppressWarnings("unchecked")
-  private void handleEvent(ResourceEvent event) {
-    if (event.resource() == resource) {
-      for (Consumer listener : receiveListeners) {
-        listener.accept(event);
+  private void handleEvent(String event, ResourceEvent message) {
+    if (message.resource() == resource) {
+      Listeners<Object> listeners = eventListeners.get(event);
+      if (listeners != null) {
+        for (Consumer listener : listeners) {
+          listener.accept(message.event());
+        }
       }
     }
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T> Listener onEvent(Consumer<T> listener) {
-    return receiveListeners.add((Consumer) Assert.notNull(listener, "listener"));
+  public synchronized Listener onEvent(String event, Consumer listener) {
+    Listeners listeners = eventListeners.get(event);
+    if (listeners == null) {
+      listeners = new Listeners();
+      eventListeners.put(event, listeners);
+      parent.onEvent(event, message -> handleEvent(event, (ResourceEvent) message));
+    }
+    return listeners.add(listener);
   }
 
   @Override

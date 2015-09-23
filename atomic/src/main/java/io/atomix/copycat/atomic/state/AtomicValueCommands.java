@@ -16,7 +16,6 @@
 package io.atomix.copycat.atomic.state;
 
 import io.atomix.catalog.client.Command;
-import io.atomix.catalog.client.ConsistencyLevel;
 import io.atomix.catalog.client.Operation;
 import io.atomix.catalog.client.Query;
 import io.atomix.catalyst.buffer.BufferInput;
@@ -25,7 +24,6 @@ import io.atomix.catalyst.serializer.CatalystSerializable;
 import io.atomix.catalyst.serializer.SerializeWith;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.util.BuilderPool;
-import io.atomix.copycat.PersistenceMode;
 
 /**
  * Atomic reference commands.
@@ -38,19 +36,24 @@ public class AtomicValueCommands {
   }
 
   /**
-   * Abstract reference command.
+   * Abstract value command.
    */
-  public static abstract class ReferenceCommand<V> implements Command<V>, CatalystSerializable {
-    protected PersistenceMode mode = PersistenceMode.PERSISTENT;
+  public static abstract class ValueCommand<V> implements Command<V>, CatalystSerializable {
+    protected ConsistencyLevel consistency = ConsistencyLevel.LINEARIZABLE;
     protected long ttl;
 
+    @Override
+    public PersistenceLevel persistence() {
+      return ttl > 0 ? PersistenceLevel.PERSISTENT : PersistenceLevel.EPHEMERAL;
+    }
+
     /**
-     * Returns the persistence mode.
+     * Returns the consistency level.
      *
-     * @return The persistence mode.
+     * @return The consistency level.
      */
-    public PersistenceMode mode() {
-      return mode;
+    public ConsistencyLevel consistency() {
+      return consistency;
     }
 
     /**
@@ -64,35 +67,35 @@ public class AtomicValueCommands {
 
     @Override
     public void writeObject(BufferOutput buffer, Serializer serializer) {
-      buffer.writeByte(mode.ordinal())
+      buffer.writeByte(consistency.ordinal())
         .writeLong(ttl);
     }
 
     @Override
     public void readObject(BufferInput buffer, Serializer serializer) {
-      mode = PersistenceMode.values()[buffer.readByte()];
+      consistency = ConsistencyLevel.values()[buffer.readByte()];
       ttl = buffer.readLong();
     }
 
     /**
      * Base reference command builder.
      */
-    public static abstract class Builder<T extends Builder<T, U, V>, U extends ReferenceCommand<V>, V> extends Command.Builder<T, U, V> {
+    public static abstract class Builder<T extends Builder<T, U, V>, U extends ValueCommand<V>, V> extends Command.Builder<T, U, V> {
       protected Builder(BuilderPool<T, U> pool) {
         super(pool);
       }
 
       /**
-       * Sets the persistence mode.
+       * Sets the consistency level.
        *
-       * @param mode The persistence mode.
+       * @param consistency The consistency level.
        * @return The command builder.
        */
       @SuppressWarnings("unchecked")
-      public T withPersistence(PersistenceMode mode) {
-        if (mode == null)
-          throw new NullPointerException("mode cannot be null");
-        command.mode = mode;
+      public T withConsistency(ConsistencyLevel consistency) {
+        if (consistency == null)
+          throw new NullPointerException("consistency cannot be null");
+        command.consistency = consistency;
         return (T) this;
       }
 
@@ -111,10 +114,10 @@ public class AtomicValueCommands {
   }
 
   /**
-   * Abstract reference query.
+   * Abstract value query.
    */
-  public static abstract class ReferenceQuery<V> implements Query<V>, CatalystSerializable {
-    protected ConsistencyLevel consistency = ConsistencyLevel.LINEARIZABLE_LEASE;
+  public static abstract class ValueQuery<V> implements Query<V>, CatalystSerializable {
+    protected ConsistencyLevel consistency = ConsistencyLevel.LINEARIZABLE;
 
     @Override
     public ConsistencyLevel consistency() {
@@ -134,7 +137,7 @@ public class AtomicValueCommands {
     /**
      * Base reference query builder.
      */
-    public static abstract class Builder<T extends Builder<T, U, V>, U extends ReferenceQuery<V>, V> extends Query.Builder<T, U, V> {
+    public static abstract class Builder<T extends Builder<T, U, V>, U extends ValueQuery<V>, V> extends Query.Builder<T, U, V> {
       protected Builder(BuilderPool<T, U> pool) {
         super(pool);
       }
@@ -159,7 +162,7 @@ public class AtomicValueCommands {
    * Get query.
    */
   @SerializeWith(id=460)
-  public static class Get<T> extends ReferenceQuery<T> {
+  public static class Get<T> extends ValueQuery<T> {
 
     /**
      * Returns a new get query builder.
@@ -174,7 +177,7 @@ public class AtomicValueCommands {
     /**
      * Get query builder.
      */
-    public static class Builder<T> extends ReferenceQuery.Builder<Builder<T>, Get<T>, T> {
+    public static class Builder<T> extends ValueQuery.Builder<Builder<T>, Get<T>, T> {
       public Builder(BuilderPool<Builder<T>, Get<T>> pool) {
         super(pool);
       }
@@ -190,7 +193,7 @@ public class AtomicValueCommands {
    * Set command.
    */
   @SerializeWith(id=461)
-  public static class Set extends ReferenceCommand<Void> {
+  public static class Set extends ValueCommand<Void> {
 
     /**
      * Returns a new set command builder.
@@ -230,7 +233,7 @@ public class AtomicValueCommands {
     /**
      * Put command builder.
      */
-    public static class Builder extends ReferenceCommand.Builder<Builder, Set, Void> {
+    public static class Builder extends ValueCommand.Builder<Builder, Set, Void> {
       public Builder(BuilderPool<Builder, Set> pool) {
         super(pool);
       }
@@ -257,7 +260,7 @@ public class AtomicValueCommands {
    * Compare and set command.
    */
   @SerializeWith(id=462)
-  public static class CompareAndSet extends ReferenceCommand<Boolean> {
+  public static class CompareAndSet extends ValueCommand<Boolean> {
 
     /**
      * Returns a new compare and set command builder.
@@ -309,7 +312,7 @@ public class AtomicValueCommands {
     /**
      * Compare and set command builder.
      */
-    public static class Builder extends ReferenceCommand.Builder<Builder, CompareAndSet, Boolean> {
+    public static class Builder extends ValueCommand.Builder<Builder, CompareAndSet, Boolean> {
       public Builder(BuilderPool<Builder, CompareAndSet> pool) {
         super(pool);
       }
@@ -347,7 +350,7 @@ public class AtomicValueCommands {
    * Get and set command.
    */
   @SerializeWith(id=463)
-  public static class GetAndSet<T> extends ReferenceCommand<T> {
+  public static class GetAndSet<T> extends ValueCommand<T> {
 
     /**
      * Returns a new get and set command builder.
@@ -388,7 +391,7 @@ public class AtomicValueCommands {
     /**
      * Put command builder.
      */
-    public static class Builder<T> extends ReferenceCommand.Builder<Builder<T>, GetAndSet<T>, T> {
+    public static class Builder<T> extends ValueCommand.Builder<Builder<T>, GetAndSet<T>, T> {
       public Builder(BuilderPool<Builder<T>, GetAndSet<T>> pool) {
         super(pool);
       }

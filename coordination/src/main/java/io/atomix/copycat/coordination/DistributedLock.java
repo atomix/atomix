@@ -43,7 +43,7 @@ public class DistributedLock extends Resource {
   @Override
   protected void open(ResourceContext context) {
     super.open(context);
-    context.session().onEvent(this::handleEvent);
+    context.session().onEvent("lock", this::handleEvent);
   }
 
   /**

@@ -15,12 +15,11 @@
  */
 package io.atomix.copycat.resource;
 
-import io.atomix.catalyst.util.Assert;
-import io.atomix.catalyst.util.BuilderPool;
-import io.atomix.catalog.client.ConsistencyLevel;
 import io.atomix.catalog.client.Operation;
 import io.atomix.catalog.client.Query;
 import io.atomix.catalyst.serializer.SerializeWith;
+import io.atomix.catalyst.util.Assert;
+import io.atomix.catalyst.util.BuilderPool;
 
 /**
  * Resource query.

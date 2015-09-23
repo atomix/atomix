@@ -15,17 +15,15 @@
  */
 package io.atomix.copycat.collections.state;
 
-import io.atomix.catalog.client.session.Session;
 import io.atomix.catalog.server.Commit;
-import io.atomix.copycat.PersistenceMode;
 import io.atomix.catalog.server.StateMachine;
 import io.atomix.catalog.server.StateMachineExecutor;
+import io.atomix.catalyst.util.concurrent.Scheduled;
 
-import java.time.Instant;
+import java.time.Duration;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Distributed set state machine.
@@ -33,11 +31,10 @@ import java.util.Set;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class SetState extends StateMachine {
-  private Map<Integer, Commit<? extends SetCommands.TtlCommand>> map;
-  private final Set<Long> sessions = new HashSet<>();
+  private final Map<Integer, Value> map = new HashMap<>();
 
   @Override
-  public void configure(StateMachineExecutor executor) {
+  protected void configure(StateMachineExecutor executor) {
     executor.register(SetCommands.Add.class, this::add);
     executor.register(SetCommands.Contains.class, this::contains);
     executor.register(SetCommands.Remove.class, this::remove);
@@ -46,50 +43,12 @@ public class SetState extends StateMachine {
     executor.register(SetCommands.Clear.class, this::clear);
   }
 
-  @Override
-  public void register(Session session) {
-    sessions.add(session.id());
-  }
-
-  @Override
-  public void expire(Session session) {
-    sessions.remove(session.id());
-  }
-
-  @Override
-  public void close(Session session) {
-    sessions.remove(session.id());
-  }
-
-  /**
-   * Returns a boolean value indicating whether the given commit is active.
-   */
-  private boolean isActive(Commit<? extends SetCommands.TtlCommand> commit, Instant instant) {
-    if (commit == null) {
-      return false;
-    } else if (commit.operation().mode() == PersistenceMode.EPHEMERAL && !sessions.contains(commit.session().id())) {
-      return false;
-    } else if (commit.operation().ttl() != 0 && commit.operation().ttl() < instant.toEpochMilli() - commit.time().toEpochMilli()) {
-      return false;
-    }
-    return true;
-  }
-
   /**
    * Handles a contains commit.
    */
   protected boolean contains(Commit<SetCommands.Contains> commit) {
     try {
-      if (map == null) {
-        return false;
-      }
-
-      Commit<? extends SetCommands.TtlCommand> command = map.get(commit.operation().value());
-      if (!isActive(command, commit.time())) {
-        map.remove(commit.operation().value());
-        return false;
-      }
-      return true;
+      return map.containsKey(commit.operation().value());
     } finally {
       commit.close();
     }
@@ -99,41 +58,42 @@ public class SetState extends StateMachine {
    * Handles an add commit.
    */
   protected boolean add(Commit<SetCommands.Add> commit) {
-    if (map == null) {
-      map = new HashMap<>();
-    }
-
-    Commit<? extends SetCommands.TtlCommand> previous = map.get(commit.operation().value());
-    if (!isActive(commit, now())) {
+    try {
+      Value value = map.get(commit.operation().value());
+      if (value == null) {
+        Scheduled timer = commit.operation().ttl() > 0 ? executor().schedule(Duration.ofMillis(commit.operation().ttl()), () -> {
+          map.remove(commit.operation().value()).commit.clean();
+        }) : null;
+        map.put(commit.operation().value(), new Value(commit, timer));
+      } else {
+        commit.clean();
+      }
+    } catch (Exception e) {
       commit.clean();
-      return false;
-    } else if (!isActive(previous, commit.time())) {
-      if (previous != null)
-        previous.clean();
-      map.put(commit.operation().value(), commit);
-      return true;
-    } else {
-      commit.clean();
-      return false;
+      throw e;
     }
+    return false;
   }
 
   /**
    * Handles a remove commit.
    */
   protected boolean remove(Commit<SetCommands.Remove> commit) {
-    if (map == null) {
-      commit.clean();
-      return false;
-    } else {
-      Commit<? extends SetCommands.TtlCommand> previous = map.remove(commit.operation().value());
-      if (previous == null) {
-        commit.clean();
-        return false;
-      } else {
-        previous.clean();
-        return isActive(previous, commit.time());
+    try {
+      Value value = map.remove(commit.operation().value());
+      if (value != null) {
+        try {
+          if (value.timer != null) {
+            value.timer.cancel();
+          }
+          return true;
+        } finally {
+          value.commit.clean();
+        }
       }
+      return false;
+    } finally {
+      commit.clean();
     }
   }
 
@@ -163,10 +123,31 @@ public class SetState extends StateMachine {
    * Handles a clear commit.
    */
   protected void clear(Commit<SetCommands.Clear> commit) {
-    if (map == null) {
+    try {
+      Iterator<Map.Entry<Integer, Value>> iterator = map.entrySet().iterator();
+      while (iterator.hasNext()) {
+        Map.Entry<Integer, Value> entry = iterator.next();
+        Value value = entry.getValue();
+        if (value.timer != null)
+          value.timer.cancel();
+        value.commit.clean(true);
+        iterator.remove();
+      }
+    } finally {
       commit.clean();
-    } else {
-      map.clear();
+    }
+  }
+
+  /**
+   * Set value.
+   */
+  private static class Value {
+    private final Commit<? extends SetCommands.TtlCommand> commit;
+    private final Scheduled timer;
+
+    private Value(Commit<? extends SetCommands.TtlCommand> commit, Scheduled timer) {
+      this.commit = commit;
+      this.timer = timer;
     }
   }
 

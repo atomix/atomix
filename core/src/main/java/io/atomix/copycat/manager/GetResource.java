@@ -15,15 +15,14 @@
  */
 package io.atomix.copycat.manager;
 
+import io.atomix.catalog.client.Operation;
+import io.atomix.catalog.client.Query;
+import io.atomix.catalog.server.StateMachine;
 import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.SerializationException;
 import io.atomix.catalyst.serializer.SerializeWith;
 import io.atomix.catalyst.serializer.Serializer;
-import io.atomix.catalog.server.StateMachine;
-import io.atomix.catalog.client.ConsistencyLevel;
-import io.atomix.catalog.client.Operation;
-import io.atomix.catalog.client.Query;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.BuilderPool;
 

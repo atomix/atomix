@@ -15,12 +15,12 @@
  */
 package io.atomix.copycat.collections;
 
-import io.atomix.copycat.PersistenceMode;
+import io.atomix.catalog.client.Command;
+import io.atomix.catalog.client.Query;
+import io.atomix.catalog.server.StateMachine;
 import io.atomix.copycat.Resource;
 import io.atomix.copycat.collections.state.MapCommands;
 import io.atomix.copycat.collections.state.MapState;
-import io.atomix.catalog.client.ConsistencyLevel;
-import io.atomix.catalog.server.StateMachine;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
@@ -54,7 +54,7 @@ public class DistributedMap<K, V> extends Resource {
    * @param consistency The query consistency level.
    * @return A completable future to be completed with a boolean value indicating whether the map is empty.
    */
-  public CompletableFuture<Boolean> isEmpty(ConsistencyLevel consistency) {
+  public CompletableFuture<Boolean> isEmpty(Query.ConsistencyLevel consistency) {
     return submit(MapCommands.IsEmpty.builder().withConsistency(consistency).build());
   }
 
@@ -73,7 +73,7 @@ public class DistributedMap<K, V> extends Resource {
    * @param consistency The query consistency level.
    * @return A completable future to be completed with the number of entries in the map.
    */
-  public CompletableFuture<Integer> size(ConsistencyLevel consistency) {
+  public CompletableFuture<Integer> size(Query.ConsistencyLevel consistency) {
     return submit(MapCommands.Size.builder().withConsistency(consistency).build());
   }
 
@@ -96,7 +96,7 @@ public class DistributedMap<K, V> extends Resource {
    * @param consistency The query consistency level.
    * @return A completable future to be completed with the result once complete.
    */
-  public CompletableFuture<Boolean> containsKey(Object key, ConsistencyLevel consistency) {
+  public CompletableFuture<Boolean> containsKey(Object key, Query.ConsistencyLevel consistency) {
     return submit(MapCommands.ContainsKey.builder()
       .withKey(key)
       .withConsistency(consistency)
@@ -125,7 +125,7 @@ public class DistributedMap<K, V> extends Resource {
    * @return A completable future to be completed with the result once complete.
    */
   @SuppressWarnings("unchecked")
-  public CompletableFuture<V> get(Object key, ConsistencyLevel consistency) {
+  public CompletableFuture<V> get(Object key, Query.ConsistencyLevel consistency) {
     return submit(MapCommands.Get.builder()
       .withKey(key)
       .withConsistency(consistency)
@@ -154,15 +154,15 @@ public class DistributedMap<K, V> extends Resource {
    *
    * @param key The key to set.
    * @param value The value to set.
-   * @param persistence The persistence in which to set the key.
+   * @param consistency The command consistency level.
    * @return A completable future to be completed with the result once complete.
    */
   @SuppressWarnings("unchecked")
-  public CompletableFuture<V> put(K key, V value, PersistenceMode persistence) {
+  public CompletableFuture<V> put(K key, V value, Command.ConsistencyLevel consistency) {
     return submit(MapCommands.Put.builder()
       .withKey(key)
       .withValue(value)
-      .withPersistence(persistence)
+      .withConsistency(consistency)
       .build())
       .thenApply(result -> result);
   }
@@ -191,16 +191,16 @@ public class DistributedMap<K, V> extends Resource {
    * @param key The key to set.
    * @param value The value to set.
    * @param ttl The time to live duration.
-   * @param persistence The persistence in which to set the key.
+   * @param consistency The command consistency level.
    * @return A completable future to be completed with the result once complete.
    */
   @SuppressWarnings("unchecked")
-  public CompletableFuture<V> put(K key, V value, Duration ttl, PersistenceMode persistence) {
+  public CompletableFuture<V> put(K key, V value, Duration ttl, Command.ConsistencyLevel consistency) {
     return submit(MapCommands.Put.builder()
       .withKey(key)
       .withValue(value)
       .withTtl(ttl.toMillis())
-      .withPersistence(persistence)
+      .withConsistency(consistency)
       .build())
       .thenApply(result -> result);
   }
@@ -215,6 +215,22 @@ public class DistributedMap<K, V> extends Resource {
   public CompletableFuture<V> remove(Object key) {
     return submit(MapCommands.Remove.builder()
       .withKey(key)
+      .build())
+      .thenApply(result -> (V) result);
+  }
+
+  /**
+   * Removes a value from the map.
+   *
+   * @param key The key to remove.
+   * @param consistency The consistency level.
+   * @return A completable future to be completed with the result once complete.
+   */
+  @SuppressWarnings("unchecked")
+  public CompletableFuture<V> remove(Object key, Command.ConsistencyLevel consistency) {
+    return submit(MapCommands.Remove.builder()
+      .withKey(key)
+      .withConsistency(consistency)
       .build())
       .thenApply(result -> (V) result);
   }
@@ -244,7 +260,7 @@ public class DistributedMap<K, V> extends Resource {
    * @return A completable future to be completed with the result once complete.
    */
   @SuppressWarnings("unchecked")
-  public CompletableFuture<V> getOrDefault(Object key, V defaultValue, ConsistencyLevel consistency) {
+  public CompletableFuture<V> getOrDefault(Object key, V defaultValue, Query.ConsistencyLevel consistency) {
     return submit(MapCommands.GetOrDefault.builder()
       .withKey(key)
       .withDefaultValue(defaultValue)
@@ -292,17 +308,35 @@ public class DistributedMap<K, V> extends Resource {
    *
    * @param key   The key to set.
    * @param value The value to set if the given key does not exist.
-   * @param ttl The time to live duration.
-   * @param persistence The persistence in which to set the key.
+   * @param consistency The consistency level.
    * @return A completable future to be completed with the result once complete.
    */
   @SuppressWarnings("unchecked")
-  public CompletableFuture<V> putIfAbsent(K key, V value, Duration ttl, PersistenceMode persistence) {
+  public CompletableFuture<V> putIfAbsent(K key, V value, Command.ConsistencyLevel consistency) {
+    return submit(MapCommands.PutIfAbsent.builder()
+      .withKey(key)
+      .withValue(value)
+      .withConsistency(consistency)
+      .build())
+      .thenApply(result -> (V) result);
+  }
+
+  /**
+   * Puts a value in the map if the given key does not exist.
+   *
+   * @param key   The key to set.
+   * @param value The value to set if the given key does not exist.
+   * @param ttl The time to live duration.
+   * @param consistency The consistency level.
+   * @return A completable future to be completed with the result once complete.
+   */
+  @SuppressWarnings("unchecked")
+  public CompletableFuture<V> putIfAbsent(K key, V value, Duration ttl, Command.ConsistencyLevel consistency) {
     return submit(MapCommands.PutIfAbsent.builder()
       .withKey(key)
       .withValue(value)
       .withTtl(ttl.toMillis())
-      .withPersistence(persistence)
+      .withConsistency(consistency)
       .build())
       .thenApply(result -> result);
   }
@@ -323,12 +357,43 @@ public class DistributedMap<K, V> extends Resource {
   }
 
   /**
+   * Removes a key and value from the map.
+   *
+   * @param key   The key to remove.
+   * @param value The value to remove.
+   * @param consistency The consistency level.
+   * @return A completable future to be completed with the result once complete.
+   */
+  @SuppressWarnings("unchecked")
+  public CompletableFuture<Boolean> remove(Object key, Object value, Command.ConsistencyLevel consistency) {
+    return submit(MapCommands.Remove.builder()
+      .withKey(key)
+      .withValue(value)
+      .withConsistency(consistency)
+      .build())
+      .thenApply(result -> (boolean) result);
+  }
+
+  /**
    * Removes all entries from the map.
    *
    * @return A completable future to be completed once the operation is complete.
    */
   public CompletableFuture<Void> clear() {
     return submit(MapCommands.Clear.builder().build());
+  }
+
+  /**
+   * Removes all entries from the map.
+   *
+   * @param consistency The consistency level.
+   * @return A completable future to be completed once the operation is complete.
+   */
+  @SuppressWarnings("unchecked")
+  public CompletableFuture<Void> clear(Command.ConsistencyLevel consistency) {
+    return submit(MapCommands.Clear.builder()
+      .withConsistency(consistency)
+      .build());
   }
 
 }

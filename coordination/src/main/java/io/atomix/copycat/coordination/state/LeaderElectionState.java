@@ -48,7 +48,7 @@ public class LeaderElectionState extends StateMachine {
         Commit<LeaderElectionCommands.Listen> leader = listeners.remove(0);
         this.leader = leader.session();
         this.epoch = leader.index();
-        this.leader.publish(true);
+        this.leader.publish("elect", true);
       }
     }
   }
@@ -60,7 +60,7 @@ public class LeaderElectionState extends StateMachine {
     if (leader == null) {
       leader = commit.session();
       epoch = commit.index();
-      leader.publish(epoch);
+      leader.publish("elect", epoch);
       commit.clean();
     } else {
       listeners.add(commit);
@@ -77,7 +77,7 @@ public class LeaderElectionState extends StateMachine {
         Commit<LeaderElectionCommands.Listen> leader = listeners.remove(0);
         this.leader = leader.session();
         this.epoch = commit.index();
-        this.leader.publish(epoch);
+        this.leader.publish("elect", epoch);
         leader.clean();
       }
     } else {

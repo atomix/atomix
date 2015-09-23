@@ -15,6 +15,7 @@
  */
 package io.atomix.copycat.coordination.state;
 
+import io.atomix.catalog.client.session.Session;
 import io.atomix.catalog.server.Commit;
 import io.atomix.catalog.server.StateMachine;
 import io.atomix.catalog.server.StateMachineExecutor;
@@ -33,28 +34,33 @@ public class TopicState extends StateMachine {
 
   @Override
   public void configure(StateMachineExecutor executor) {
+    executor.register(TopicCommands.Listen.class, this::listen);
+    executor.register(TopicCommands.Unlisten.class, this::unlisten);
     executor.register(TopicCommands.Publish.class, this::publish);
+  }
+
+  @Override
+  public void close(Session session) {
+    listeners.remove(session.id());
   }
 
   /**
    * Applies listen commits.
    */
   protected void listen(Commit<TopicCommands.Listen> commit) {
-    if (commit.session().isOpen() && !listeners.containsKey(commit.session().id())) {
-      listeners.put(commit.session().id(), commit);
-    } else {
-      commit.clean();
-    }
+    listeners.put(commit.session().id(), commit);
   }
 
   /**
    * Applies listen commits.
    */
-  protected void unlisten(Commit<LeaderElectionCommands.Unlisten> commit) {
-    Commit<TopicCommands.Listen> listener = listeners.remove(commit.session().id());
-    if (listener != null) {
-      listener.clean();
-    } else {
+  protected void unlisten(Commit<TopicCommands.Unlisten> commit) {
+    try {
+      Commit<TopicCommands.Listen> listener = listeners.remove(commit.session().id());
+      if (listener != null) {
+        listener.clean();
+      }
+    } finally {
       commit.clean();
     }
   }
@@ -63,17 +69,20 @@ public class TopicState extends StateMachine {
    * Handles a publish commit.
    */
   protected void publish(Commit<TopicCommands.Publish> commit) {
-    Iterator<Map.Entry<Long, Commit<TopicCommands.Listen>>> iterator = listeners.entrySet().iterator();
-    while (iterator.hasNext()) {
-      Commit<TopicCommands.Listen> listener = iterator.next().getValue();
-      if (listener.session().isOpen()) {
-        listener.session().publish(commit.operation().message());
-      } else {
-        iterator.remove();
-        listener.clean();
+    try {
+      Iterator<Map.Entry<Long, Commit<TopicCommands.Listen>>> iterator = listeners.entrySet().iterator();
+      while (iterator.hasNext()) {
+        Commit<TopicCommands.Listen> listener = iterator.next().getValue();
+        if (listener.session().isOpen()) {
+          listener.session().publish("message", commit.operation().message());
+        } else {
+          iterator.remove();
+          listener.clean();
+        }
       }
+    } finally {
+      commit.clean();
     }
-    commit.clean();
   }
 
 }

@@ -24,8 +24,8 @@ import io.atomix.catalog.server.StateMachineExecutor;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.concurrent.ComposableFuture;
-import io.atomix.catalyst.util.concurrent.Context;
 import io.atomix.catalyst.util.concurrent.Scheduled;
+import io.atomix.catalyst.util.concurrent.ThreadContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,13 +48,13 @@ import java.util.function.Supplier;
  */
 class ResourceStateMachineExecutor implements StateMachineExecutor {
   private final StateMachineExecutor parent;
-  private final Context context;
+  private final ThreadContext context;
   private final Logger logger;
   private final Map<Class, Function> operations = new HashMap<>();
   private final Set<Scheduled> tasks = new HashSet<>();
   private Function allOperation;
 
-  ResourceStateMachineExecutor(long resource, StateMachineExecutor parent, Context context) {
+  ResourceStateMachineExecutor(long resource, StateMachineExecutor parent, ThreadContext context) {
     this.parent = parent;
     this.context = context;
     this.logger = LoggerFactory.getLogger(String.format("%s-%d", getClass().getName(), resource));
@@ -128,15 +128,15 @@ class ResourceStateMachineExecutor implements StateMachineExecutor {
   }
 
   @Override
-  public Scheduled schedule(Runnable callback, Duration delay) {
-    Scheduled task = parent.schedule(() -> context.executor().execute(callback), delay);
+  public Scheduled schedule(Duration delay, Runnable callback) {
+    Scheduled task = parent.schedule(delay, () -> context.executor().execute(callback));
     tasks.add(task);
     return task;
   }
 
   @Override
-  public Scheduled schedule(Runnable callback, Duration initialDelay, Duration interval) {
-    Scheduled task = parent.schedule(() -> context.executor().execute(callback), initialDelay, interval);
+  public Scheduled schedule(Duration initialDelay, Duration interval, Runnable callback) {
+    Scheduled task = parent.schedule(initialDelay, interval, () -> context.executor().execute(callback));
     tasks.add(task);
     return task;
   }

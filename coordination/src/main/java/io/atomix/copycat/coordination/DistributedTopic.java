@@ -15,12 +15,12 @@
  */
 package io.atomix.copycat.coordination;
 
+import io.atomix.catalog.server.StateMachine;
+import io.atomix.catalyst.util.Listener;
 import io.atomix.copycat.Resource;
 import io.atomix.copycat.coordination.state.TopicCommands;
 import io.atomix.copycat.coordination.state.TopicState;
 import io.atomix.copycat.resource.ResourceContext;
-import io.atomix.catalog.server.StateMachine;
-import io.atomix.catalyst.util.Listener;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -44,7 +44,7 @@ public class DistributedTopic<T> extends Resource {
   @SuppressWarnings("unchecked")
   protected void open(ResourceContext context) {
     super.open(context);
-    context.session().onEvent(event -> {
+    context.session().onEvent("message", event -> {
       for (Consumer<T> listener : listeners) {
         listener.accept((T) event);
       }

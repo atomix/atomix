@@ -15,16 +15,14 @@
  */
 package io.atomix.copycat.collections.state;
 
-import io.atomix.copycat.PersistenceMode;
+import io.atomix.catalog.client.Command;
+import io.atomix.catalog.client.Operation;
+import io.atomix.catalog.client.Query;
 import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
 import io.atomix.catalyst.serializer.SerializeWith;
 import io.atomix.catalyst.serializer.Serializer;
-import io.atomix.catalog.client.Command;
-import io.atomix.catalog.client.ConsistencyLevel;
-import io.atomix.catalog.client.Operation;
-import io.atomix.catalog.client.Query;
 import io.atomix.catalyst.util.BuilderPool;
 
 /**
@@ -41,6 +39,26 @@ public class MapCommands {
    * Abstract map command.
    */
   public static abstract class MapCommand<V> implements Command<V>, CatalystSerializable {
+    protected ConsistencyLevel consistency = ConsistencyLevel.LINEARIZABLE;
+
+    /**
+     * Returns the consistency level.
+     *
+     * @return The consistency level.
+     */
+    public ConsistencyLevel consistency() {
+      return consistency;
+    }
+
+    @Override
+    public void writeObject(BufferOutput buffer, Serializer serializer) {
+      buffer.writeByte(consistency.ordinal());
+    }
+
+    @Override
+    public void readObject(BufferInput buffer, Serializer serializer) {
+      consistency = ConsistencyLevel.values()[buffer.readByte()];
+    }
 
     /**
      * Base map command builder.
@@ -49,6 +67,17 @@ public class MapCommands {
       protected Builder(BuilderPool<T, U> pool) {
         super(pool);
       }
+
+      /**
+       * Sets the consistency level.
+       *
+       * @param consistency The consistency level.
+       * @return The command builder.
+       */
+      public Builder withConsistency(ConsistencyLevel consistency) {
+        command.consistency = consistency;
+        return this;
+      }
     }
   }
 
@@ -56,7 +85,7 @@ public class MapCommands {
    * Abstract map query.
    */
   public static abstract class MapQuery<V> implements Query<V>, CatalystSerializable {
-    protected ConsistencyLevel consistency = ConsistencyLevel.LINEARIZABLE_LEASE;
+    protected ConsistencyLevel consistency = ConsistencyLevel.BOUNDED_LINEARIZABLE;
 
     @Override
     public ConsistencyLevel consistency() {
@@ -268,16 +297,11 @@ public class MapCommands {
    * TTL command.
    */
   public static abstract class TtlCommand<V> extends KeyValueCommand<V> {
-    protected PersistenceMode mode = PersistenceMode.PERSISTENT;
     protected long ttl;
 
-    /**
-     * Returns the persistence mode.
-     *
-     * @return The persistence mode.
-     */
-    public PersistenceMode mode() {
-      return mode;
+    @Override
+    public PersistenceLevel persistence() {
+      return ttl > 0 ? PersistenceLevel.PERSISTENT : PersistenceLevel.EPHEMERAL;
     }
 
     /**
@@ -292,13 +316,12 @@ public class MapCommands {
     @Override
     public void writeObject(BufferOutput buffer, Serializer serializer) {
       super.writeObject(buffer, serializer);
-      buffer.writeByte(mode.ordinal()).writeLong(ttl);
+      buffer.writeLong(ttl);
     }
 
     @Override
     public void readObject(BufferInput buffer, Serializer serializer) {
       super.readObject(buffer, serializer);
-      mode = PersistenceMode.values()[buffer.readByte()];
       ttl = buffer.readLong();
     }
 
@@ -308,17 +331,6 @@ public class MapCommands {
     public static abstract class Builder<T extends Builder<T, U, V>, U extends TtlCommand<V>, V> extends KeyValueCommand.Builder<T, U, V> {
       protected Builder(BuilderPool<T, U> pool) {
         super(pool);
-      }
-
-      /**
-       * Sets the persistence mode.
-       *
-       * @param mode The persistence mode.
-       * @return The command builder.
-       */
-      public Builder withPersistence(PersistenceMode mode) {
-        command.mode = mode;
-        return this;
       }
 
       /**
@@ -493,6 +505,11 @@ public class MapCommands {
       return Operation.builder(Builder.class, Builder::new);
     }
 
+    @Override
+    public PersistenceLevel persistence() {
+      return PersistenceLevel.PERSISTENT;
+    }
+
     /**
      * Get command builder.
      */
@@ -578,13 +595,8 @@ public class MapCommands {
     }
 
     @Override
-    public void writeObject(BufferOutput buffer, Serializer serializer) {
-
-    }
-
-    @Override
-    public void readObject(BufferInput buffer, Serializer serializer) {
-
+    public PersistenceLevel persistence() {
+      return PersistenceLevel.PERSISTENT;
     }
 
     /**

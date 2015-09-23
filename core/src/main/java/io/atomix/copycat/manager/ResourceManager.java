@@ -21,7 +21,7 @@ import io.atomix.catalog.server.StateMachine;
 import io.atomix.catalog.server.StateMachineExecutor;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.concurrent.ComposableFuture;
-import io.atomix.catalyst.util.concurrent.Context;
+import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.catalyst.util.concurrent.ThreadPoolContext;
 import io.atomix.copycat.resource.ResourceOperation;
 
@@ -130,14 +130,13 @@ public class ResourceManager extends StateMachine {
 
     try {
       StateMachine resource = commit.operation().type().newInstance();
-      Context context = new ThreadPoolContext(scheduler, Context.currentContext().serializer().clone());
+      ThreadContext context = new ThreadPoolContext(scheduler, ThreadContext.currentContext().serializer().clone());
       ResourceStateMachineExecutor executor = new ResourceStateMachineExecutor(id, this.executor, context);
 
       paths.put(path, id);
       resources.put(id, new ResourceHolder(path, resource, executor));
 
-      resource.init(executor.context());
-      resource.configure(executor);
+      resource.init(executor);
       return id;
     } catch (InstantiationException | IllegalAccessException e) {
       throw new ResourceManagerException("failed to instantiate state machine", e);

@@ -15,11 +15,10 @@
  */
 package io.atomix.copycat.manager;
 
-import io.atomix.catalyst.util.BuilderPool;
-import io.atomix.catalog.client.ConsistencyLevel;
 import io.atomix.catalog.client.Operation;
 import io.atomix.catalog.client.Query;
 import io.atomix.catalyst.serializer.SerializeWith;
+import io.atomix.catalyst.util.BuilderPool;
 
 /**
  * Resource exists command.
