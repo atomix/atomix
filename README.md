@@ -1,8 +1,6 @@
 [Copycat][Website]
 =======
 
-![Copycat](https://github.com/atomix/copycat/blob/gh-pages/assets/img/copycat.png)
-
 **Persistent • Consistent • Fault-tolerant • Database • Coordination • Framework**
 
 #### [Getting started][Getting started] • [User Manual][User manual] • [Raft Algorithm][Catalog] • [Google Group][Google group] • [Javadoc][Javadoc]
