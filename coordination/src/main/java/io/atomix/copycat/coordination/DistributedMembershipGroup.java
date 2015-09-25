@@ -20,8 +20,8 @@ import io.atomix.catalog.server.StateMachine;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.catalyst.util.Listeners;
 import io.atomix.copycat.Resource;
-import io.atomix.copycat.coordination.state.GroupCommands;
-import io.atomix.copycat.coordination.state.GroupState;
+import io.atomix.copycat.coordination.state.MembershipGroupCommands;
+import io.atomix.copycat.coordination.state.MembershipGroupState;
 import io.atomix.copycat.resource.ResourceContext;
 
 import java.util.Collection;
@@ -36,25 +36,25 @@ import java.util.function.Consumer;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class DistributedMembershipGroup extends Resource {
-  private final Listeners<Member> joinListeners = new Listeners<>();
-  private final Listeners<Member> leaveListeners = new Listeners<>();
-  private final Map<Long, Member> members = new ConcurrentHashMap<>();
+  private final Listeners<GroupMember> joinListeners = new Listeners<>();
+  private final Listeners<GroupMember> leaveListeners = new Listeners<>();
+  private final Map<Long, GroupMember> members = new ConcurrentHashMap<>();
 
   @Override
   protected void open(ResourceContext context) {
     super.open(context);
 
     context.session().<Long>onEvent("join", memberId -> {
-      Member member = members.computeIfAbsent(memberId, m -> new Member(m, this));
-      for (Listener<Member> listener : joinListeners) {
+      GroupMember member = members.computeIfAbsent(memberId, m -> new GroupMember(m, this));
+      for (Listener<GroupMember> listener : joinListeners) {
         listener.accept(member);
       }
     });
 
     context.session().onEvent("leave", memberId -> {
-      Member member = members.remove(memberId);
+      GroupMember member = members.remove(memberId);
       if (member != null) {
-        for (Listener<Member> listener : leaveListeners) {
+        for (Listener<GroupMember> listener : leaveListeners) {
           listener.accept(member);
         }
       }
@@ -65,7 +65,7 @@ public class DistributedMembershipGroup extends Resource {
 
   @Override
   protected Class<? extends StateMachine> stateMachine() {
-    return GroupState.class;
+    return MembershipGroupState.class;
   }
 
   /**
@@ -74,7 +74,7 @@ public class DistributedMembershipGroup extends Resource {
    * @param memberId The member ID.
    * @return The member.
    */
-  public Member member(long memberId) {
+  public GroupMember member(long memberId) {
     return members.get(memberId);
   }
 
@@ -83,7 +83,7 @@ public class DistributedMembershipGroup extends Resource {
    *
    * @return The collection of members in the group.
    */
-  public Collection<Member> members() {
+  public Collection<GroupMember> members() {
     return members.values();
   }
 
@@ -93,7 +93,7 @@ public class DistributedMembershipGroup extends Resource {
    * @return A completable future to be completed once the member has joined.
    */
   public CompletableFuture<Void> join() {
-    return submit(GroupCommands.Join.builder().build());
+    return submit(MembershipGroupCommands.Join.builder().build());
   }
 
   /**
@@ -102,7 +102,7 @@ public class DistributedMembershipGroup extends Resource {
    * @param listener The join listener.
    * @return The listener context.
    */
-  public Listener<Member> onJoin(Consumer<Member> listener) {
+  public Listener<GroupMember> onJoin(Consumer<GroupMember> listener) {
     return joinListeners.add(listener);
   }
 
@@ -112,7 +112,7 @@ public class DistributedMembershipGroup extends Resource {
    * @return A completable future to be completed once the member has left.
    */
   public CompletableFuture<Void> leave() {
-    return submit(GroupCommands.Leave.builder().build());
+    return submit(MembershipGroupCommands.Leave.builder().build());
   }
 
   /**
@@ -121,7 +121,7 @@ public class DistributedMembershipGroup extends Resource {
    * @param listener The leave listener.
    * @return The listener context.
    */
-  public Listener<Member> onLeave(Consumer<Member> listener) {
+  public Listener<GroupMember> onLeave(Consumer<GroupMember> listener) {
     return leaveListeners.add(listener);
   }
 

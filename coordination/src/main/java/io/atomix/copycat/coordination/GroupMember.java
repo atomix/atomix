@@ -16,8 +16,10 @@
 package io.atomix.copycat.coordination;
 
 import io.atomix.catalyst.util.Assert;
-import io.atomix.copycat.coordination.state.GroupCommands;
+import io.atomix.copycat.coordination.state.MembershipGroupCommands;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -25,11 +27,11 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class Member {
+public class GroupMember {
   private final long memberId;
   private final DistributedMembershipGroup group;
 
-  Member(long memberId, DistributedMembershipGroup group) {
+  GroupMember(long memberId, DistributedMembershipGroup group) {
     this.memberId = memberId;
     this.group = Assert.notNull(group, "group");
   }
@@ -44,13 +46,40 @@ public class Member {
   }
 
   /**
+   * Schedules a callback to run at the given instant.
+   *
+   * @param instant The instant at which to run the callback.
+   * @param callback The callback to run.
+   * @return A completable future to be completed once the callback has been scheduled.
+   */
+  public CompletableFuture<Void> schedule(Instant instant, Runnable callback) {
+    return schedule(instant.minusMillis(System.currentTimeMillis()), callback);
+  }
+
+  /**
+   * Schedules a callback to run after the given delay on the member.
+   *
+   * @param delay The delay after which to run the callback.
+   * @param callback The callback to run.
+   * @return A completable future to be completed once the callback has been scheduled.
+   */
+  public CompletableFuture<Void> schedule(Duration delay, Runnable callback) {
+    return group.submit(MembershipGroupCommands.Schedule.builder()
+      .withMember(memberId)
+      .withDelay(delay.toMillis())
+      .withCallback(callback)
+      .build());
+  }
+
+  /**
    * Executes a callback on the group member.
    *
    * @param callback The callback to execute.
    * @return A completable future to be completed once the callback has completed.
    */
   public CompletableFuture<Void> execute(Runnable callback) {
-    return group.submit(GroupCommands.Execute.builder()
+    return group.submit(MembershipGroupCommands.Execute.builder()
+      .withMember(memberId)
       .withCallback(callback)
       .build());
   }

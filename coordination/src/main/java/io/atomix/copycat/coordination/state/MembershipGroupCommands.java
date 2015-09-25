@@ -22,6 +22,7 @@ import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
 import io.atomix.catalyst.serializer.SerializeWith;
 import io.atomix.catalyst.serializer.Serializer;
+import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.BuilderPool;
 
 /**
@@ -29,9 +30,9 @@ import io.atomix.catalyst.util.BuilderPool;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class GroupCommands {
+public class MembershipGroupCommands {
 
-  private GroupCommands() {
+  private MembershipGroupCommands() {
   }
 
   /**
@@ -121,9 +122,118 @@ public class GroupCommands {
   }
 
   /**
-   * Execute command.
+   * Schedule command.
    */
   @SerializeWith(id=522)
+  public static class Schedule extends GroupCommand<Void> {
+
+    /**
+     * Returns a new schedule command builder.
+     *
+     * @return The schedule command builder.
+     */
+    @SuppressWarnings("unchecked")
+    public static Builder builder() {
+      return Operation.builder(Builder.class, Builder::new);
+    }
+
+    private long member;
+    private long delay;
+    private Runnable callback;
+
+    /**
+     * Returns the member on which to execute the callback.
+     *
+     * @return The member on which to execute the callback.
+     */
+    public long member() {
+      return member;
+    }
+
+    /**
+     * Returns the delay after which to execute the callback.
+     *
+     * @return The delay after which to execute the callback.
+     */
+    public long delay() {
+      return delay;
+    }
+
+    /**
+     * Returns the callback to execute.
+     *
+     * @return The callback to execute.
+     */
+    public Runnable callback() {
+      return callback;
+    }
+
+    @Override
+    public void writeObject(BufferOutput buffer, Serializer serializer) {
+      buffer.writeLong(member).writeLong(delay);
+      serializer.writeObject(callback, buffer);
+    }
+
+    @Override
+    public void readObject(BufferInput buffer, Serializer serializer) {
+      member = buffer.readLong();
+      delay = buffer.readLong();
+      callback = serializer.readObject(buffer);
+    }
+
+    /**
+     * Schedule command builder.
+     */
+    public static class Builder extends GroupCommand.Builder<Builder, Schedule, Void> {
+
+      public Builder(BuilderPool<Builder, Schedule> pool) {
+        super(pool);
+      }
+
+      /**
+       * Sets the member on which to execute the callback.
+       *
+       * @param member The member on which to execute the callback.
+       * @return The command builder.
+       */
+      public Builder withMember(long member) {
+        command.member = member;
+        return this;
+      }
+
+      /**
+       * Sets the delay after which to execute the callback.
+       *
+       * @param delay The delay after which to execute the callback.
+       * @return The command builder.
+       */
+      public Builder withDelay(long delay) {
+        command.delay = delay;
+        return this;
+      }
+
+      /**
+       * Sets the schedule command message.
+       *
+       * @param callback The callback.
+       * @return The schedule command builder.
+       */
+      public Builder withCallback(Runnable callback) {
+        command.callback = Assert.notNull(callback, "callback");
+        return this;
+      }
+
+      @Override
+      protected Schedule create() {
+        return new Schedule();
+      }
+    }
+  }
+
+  /**
+   * Execute command.
+   */
+  @SerializeWith(id=523)
   public static class Execute extends GroupCommand<Void> {
 
     /**
@@ -136,7 +246,17 @@ public class GroupCommands {
       return Operation.builder(Builder.class, Builder::new);
     }
 
+    private long member;
     private Runnable callback;
+
+    /**
+     * Returns the member on which to execute the callback.
+     *
+     * @return The member on which to execute the callback.
+     */
+    public long member() {
+      return member;
+    }
 
     /**
      * Returns the execute callback.
@@ -149,11 +269,13 @@ public class GroupCommands {
 
     @Override
     public void writeObject(BufferOutput buffer, Serializer serializer) {
+      buffer.writeLong(member);
       serializer.writeObject(callback, buffer);
     }
 
     @Override
     public void readObject(BufferInput buffer, Serializer serializer) {
+      member = buffer.readLong();
       callback = serializer.readObject(buffer);
     }
 
@@ -167,13 +289,24 @@ public class GroupCommands {
       }
 
       /**
+       * Sets the member on which to execute the callback.
+       *
+       * @param member The member on which to execute the callback.
+       * @return The command builder.
+       */
+      public Builder withMember(long member) {
+        command.member = member;
+        return this;
+      }
+
+      /**
        * Sets the execute command message.
        *
        * @param callback The callback.
        * @return The execute command builder.
        */
       public Builder withCallback(Runnable callback) {
-        command.callback = callback;
+        command.callback = Assert.notNull(callback, "callback");
         return this;
       }
 

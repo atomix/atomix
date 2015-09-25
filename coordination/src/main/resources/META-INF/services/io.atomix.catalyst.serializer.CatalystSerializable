@@ -24,6 +24,11 @@ io.atomix.copycat.coordination.state.TopicCommands$Publish
 io.atomix.copycat.coordination.state.TopicCommands$Listen
 io.atomix.copycat.coordination.state.TopicCommands$Unlisten
 
+io.atomix.copycat.coordination.state.MembershipGroupCommands$Join
+io.atomix.copycat.coordination.state.MembershipGroupCommands$Leave
+io.atomix.copycat.coordination.state.MembershipGroupCommands$Schedule
+io.atomix.copycat.coordination.state.MembershipGroupCommands$Execute
+
 io.atomix.copycat.coordination.state.MessageBusCommands$Join
 io.atomix.copycat.coordination.state.MessageBusCommands$Leave
 io.atomix.copycat.coordination.state.MessageBusCommands$Register
