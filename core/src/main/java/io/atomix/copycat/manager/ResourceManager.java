@@ -20,16 +20,15 @@ import io.atomix.catalog.server.Commit;
 import io.atomix.catalog.server.StateMachine;
 import io.atomix.catalog.server.StateMachineExecutor;
 import io.atomix.catalyst.util.Assert;
-import io.atomix.catalyst.util.concurrent.ComposableFuture;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.catalyst.util.concurrent.ThreadPoolContext;
 import io.atomix.copycat.resource.ResourceOperation;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 /**
@@ -42,6 +41,7 @@ public class ResourceManager extends StateMachine {
   private StateMachineExecutor executor;
   private final Map<String, Long> paths = new HashMap<>();
   private final Map<Long, ResourceHolder> resources = new HashMap<>();
+  private final Map<Long, SessionHolder> sessions = new HashMap<>();
   private final ResourceCommitPool commits = new ResourceCommitPool();
 
   /**
@@ -62,25 +62,34 @@ public class ResourceManager extends StateMachine {
   }
 
   /**
-   * Applies resource commands.
+   * Performs an operation on a resource.
    */
   @SuppressWarnings("unchecked")
-  protected CompletableFuture<Object> operateResource(Commit<? extends ResourceOperation> commit) {
-    final ResourceHolder resource = resources.get(commit.operation().resource());
-    if (resource != null) {
-      CompletableFuture<Object> future = new ComposableFuture<>();
-      ResourceCommit resourceCommit = commits.acquire(commit, resource.sessions.computeIfAbsent(commit.session().id(),
-        id -> new ManagedResourceSession(commit.operation().resource(), commit.session())));
-      resource.executor.execute(resourceCommit).whenComplete((BiConsumer<Object, Throwable>) (result, error) -> {
-        if (error == null) {
-          future.complete(result);
-        } else {
-          future.completeExceptionally(error);
-        }
-      });
-      return future;
+  private CompletableFuture<Object> operateResource(Commit<ResourceOperation> commit) {
+    ResourceHolder resource;
+    ManagedResourceSession session = null;
+
+    SessionHolder client = sessions.get(commit.operation().resource());
+    if (client != null) {
+      resource = resources.get(client.resource);
+      session = client.session;
+    } else {
+      resource = resources.get(commit.operation().resource());
     }
-    throw new IllegalArgumentException("unknown resource: " + commit.operation().resource());
+
+    if (resource == null) {
+      throw new ResourceManagerException("unknown resource: " + commit.operation().resource());
+    }
+
+    if (session == null) {
+      session = resource.sessions.get(commit.session().id());
+      if (session == null) {
+        throw new ResourceManagerException("unknown resource session: " + commit.session().id());
+      }
+    }
+
+    ResourceCommit resourceCommit = commits.acquire(commit, session);
+    return resource.executor.execute(resourceCommit);
   }
 
   /**
@@ -89,58 +98,68 @@ public class ResourceManager extends StateMachine {
   protected long getResource(Commit<GetResource> commit) {
     String path = commit.operation().path();
 
-    Long id = paths.get(path);
-    if (id == null) {
-      throw new ResourceManagerException("unknown path: " + path);
-    }
+    Long resourceId = paths.get(path);
 
-    ResourceHolder resource = resources.get(id);
-    if (resource == null) {
-      throw new ResourceManagerException("unknown resource: " + path);
-    }
+    if (resourceId == null) {
+      resourceId = commit.index();
+      paths.put(path, commit.index());
 
-    if (resource.stateMachine.getClass() != commit.operation().type()) {
-      throw new ResourceManagerException("inconsistent resource type: " + commit.operation().type());
+      try {
+        StateMachine stateMachine = commit.operation().type().newInstance();
+        ThreadContext context = new ThreadPoolContext(scheduler, ThreadContext.currentContext().serializer().clone());
+        ResourceStateMachineExecutor executor = new ResourceStateMachineExecutor(commit.index(), this.executor, context);
+        ResourceHolder resource = new ResourceHolder(path, stateMachine, executor);
+        resources.put(resourceId, resource);
+        stateMachine.init(executor);
+        resource.sessions.put(commit.session().id(), new ManagedResourceSession(resourceId, commit.session()));
+      } catch (InstantiationException | IllegalAccessException e) {
+        throw new ResourceManagerException("failed to instantiate state machine", e);
+      }
+    } else {
+      ResourceHolder resource = resources.get(resourceId);
+      if (resource == null || resource.stateMachine.getClass() != commit.operation().type()) {
+        throw new ResourceManagerException("inconsistent resource type: " + commit.operation().type());
+      }
     }
-
-    return id;
+    return resourceId;
   }
 
   /**
    * Applies a create resource commit.
    */
-  protected long createResource(Commit<CreateResource> commit) {
+  private long createResource(Commit<CreateResource> commit) {
     String path = commit.operation().path();
 
-    // Check for an existing instance of a resource at this path.
-    Long id = paths.get(path);
+    Long resourceId = paths.get(path);
 
-    // If a resource already exists, verify that it is of the same type.
-    if (id != null) {
-      ResourceHolder resource = resources.get(id);
-      if (resource != null) {
-        if (resource.stateMachine.getClass() != commit.operation().type()) {
-          throw new ResourceManagerException("inconsistent resource type: " + commit.operation().type());
-        }
-        return id;
+    long id;
+    ResourceHolder resource;
+    if (resourceId == null) {
+      resourceId = commit.index();
+      paths.put(path, commit.index());
+
+      try {
+        StateMachine stateMachine = commit.operation().type().newInstance();
+        ThreadContext context = new ThreadPoolContext(scheduler, ThreadContext.currentContext().serializer().clone());
+        ResourceStateMachineExecutor executor = new ResourceStateMachineExecutor(commit.index(), this.executor, context);
+        resource = new ResourceHolder(path, stateMachine, executor);
+        resources.put(resourceId, resource);
+        stateMachine.init(executor);
+      } catch (InstantiationException | IllegalAccessException e) {
+        throw new ResourceManagerException("failed to instantiate state machine", e);
+      }
+    } else {
+      resource = resources.get(resourceId);
+      if (resource == null || resource.stateMachine.getClass() != commit.operation().type()) {
+        throw new ResourceManagerException("inconsistent resource type: " + commit.operation().type());
       }
     }
 
     id = commit.index();
-
-    try {
-      StateMachine resource = commit.operation().type().newInstance();
-      ThreadContext context = new ThreadPoolContext(scheduler, ThreadContext.currentContext().serializer().clone());
-      ResourceStateMachineExecutor executor = new ResourceStateMachineExecutor(id, this.executor, context);
-
-      paths.put(path, id);
-      resources.put(id, new ResourceHolder(path, resource, executor));
-
-      resource.init(executor);
-      return id;
-    } catch (InstantiationException | IllegalAccessException e) {
-      throw new ResourceManagerException("failed to instantiate state machine", e);
-    }
+    ManagedResourceSession session = new ManagedResourceSession(id, commit.session());
+    sessions.put(id, new SessionHolder(resourceId, session));
+    resource.executor.execute(() -> resource.stateMachine.register(session));
+    return id;
   }
 
   /**
@@ -161,14 +180,32 @@ public class ResourceManager extends StateMachine {
 
     resource.executor.close();
     paths.remove(resource.path);
+
+    Iterator<Map.Entry<Long, SessionHolder>> iterator = sessions.entrySet().iterator();
+    while (iterator.hasNext()) {
+      if (iterator.next().getValue().resource == commit.operation().resource()) {
+        iterator.remove();
+      }
+    }
     return true;
   }
 
   @Override
-  public void register(Session session) {
-    for (Map.Entry<Long, ResourceHolder> entry : resources.entrySet()) {
-      ResourceHolder resource = entry.getValue();
-      resource.executor.execute(() -> resource.stateMachine.register(resource.sessions.computeIfAbsent(session.id(), id -> new ManagedResourceSession(entry.getKey(), session))));
+  public void expire(Session session) {
+    for (ResourceHolder resource : resources.values()) {
+      ManagedResourceSession resourceSession = resource.sessions.get(session.id());
+      if (resourceSession != null) {
+        resource.executor.execute(() -> resource.stateMachine.expire(resourceSession));
+      }
+    }
+
+    for (SessionHolder sessionHolder : sessions.values()) {
+      if (sessionHolder.session.id() == session.id()) {
+        ResourceHolder resource = resources.get(sessionHolder.resource);
+        if (resource != null) {
+          resource.executor.execute(() -> resource.stateMachine.expire(sessionHolder.session));
+        }
+      }
     }
   }
 
@@ -180,14 +217,16 @@ public class ResourceManager extends StateMachine {
         resource.executor.execute(() -> resource.stateMachine.close(resourceSession));
       }
     }
-  }
 
-  @Override
-  public void expire(Session session) {
-    for (ResourceHolder resource : resources.values()) {
-      ManagedResourceSession resourceSession = resource.sessions.get(session.id());
-      if (resourceSession != null) {
-        resource.executor.execute(() -> resource.stateMachine.expire(resourceSession));
+    Iterator<Map.Entry<Long, SessionHolder>> iterator = sessions.entrySet().iterator();
+    while (iterator.hasNext()) {
+      SessionHolder sessionHolder = iterator.next().getValue();
+      if (sessionHolder.session.id() == session.id()) {
+        ResourceHolder resource = resources.get(sessionHolder.resource);
+        if (resource != null) {
+          resource.executor.execute(() -> resource.stateMachine.close(sessionHolder.session));
+        }
+        iterator.remove();
       }
     }
   }
@@ -202,14 +241,27 @@ public class ResourceManager extends StateMachine {
    */
   private static class ResourceHolder {
     private final String path;
-    private final Map<Long, ManagedResourceSession> sessions = new HashMap<>();
     private final StateMachine stateMachine;
     private final ResourceStateMachineExecutor executor;
+    private final Map<Long, ManagedResourceSession> sessions = new HashMap<>();
 
     private ResourceHolder(String path, StateMachine stateMachine, ResourceStateMachineExecutor executor) {
       this.path = path;
       this.stateMachine = stateMachine;
       this.executor = executor;
+    }
+  }
+
+  /**
+   * Session holder.
+   */
+  private static class SessionHolder {
+    private final long resource;
+    private final ManagedResourceSession session;
+
+    private SessionHolder(long resource, ManagedResourceSession session) {
+      this.resource = resource;
+      this.session = session;
     }
   }
 
