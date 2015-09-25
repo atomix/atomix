@@ -43,12 +43,14 @@ public class DistributedGroup extends Resource {
   @Override
   protected void open(ResourceContext context) {
     super.open(context);
+
     context.session().<Long>onEvent("join", memberId -> {
       Member member = members.computeIfAbsent(memberId, m -> new Member(m, this));
       for (Listener<Member> listener : joinListeners) {
         listener.accept(member);
       }
     });
+
     context.session().onEvent("leave", memberId -> {
       Member member = members.remove(memberId);
       if (member != null) {
@@ -57,6 +59,8 @@ public class DistributedGroup extends Resource {
         }
       }
     });
+
+    context.session().onEvent("execute", Runnable::run);
   }
 
   @Override
