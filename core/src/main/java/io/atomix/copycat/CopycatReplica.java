@@ -71,8 +71,8 @@ public final class CopycatReplica extends Copycat {
   /**
    * @throws NullPointerException if {@code client} or {@code server} are null
    */
-  public CopycatReplica(RaftClient client, RaftServer server) {
-    super(client);
+  public CopycatReplica(RaftClient client, RaftServer server, Transport transport) {
+    super(client, transport);
     this.server = server;
   }
 
@@ -258,7 +258,7 @@ public final class CopycatReplica extends Copycat {
       RaftServer server = serverBuilder.withTransport(new CombinedTransport(new LocalTransport(localRegistry), transport))
         .withStateMachine(new ResourceManager(executor)).build();
 
-      return new CopycatReplica(client, server);
+      return new CopycatReplica(client, server, transport);
     }
   }
 

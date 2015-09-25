@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.copycat.coordination.bus;
+package io.atomix.copycat.coordination;
 
 import io.atomix.catalog.server.StateMachine;
 import io.atomix.catalyst.transport.Address;
@@ -28,7 +28,6 @@ import io.atomix.copycat.coordination.state.MessageBusState;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -36,12 +35,12 @@ import java.util.function.Function;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class MessageBus extends Resource {
+public class DistributedMessageBus extends Resource {
   private final UUID id = UUID.randomUUID();
   private Client client;
   private Server server;
   private final Map<Integer, Connection> connections = new HashMap<>();
-  private volatile CompletableFuture<MessageBus> openFuture;
+  private volatile CompletableFuture<DistributedMessageBus> openFuture;
   private volatile CompletableFuture<Void> closeFuture;
   private final Map<String, RemoteConsumers> remotes = new ConcurrentHashMap<>();
   private final Map<String, InternalMessageConsumer> consumers = new ConcurrentHashMap<>();
@@ -58,26 +57,27 @@ public class MessageBus extends Resource {
    * @param address The address on which to listen.
    * @return A completable future to be completed once the message bus is started.
    */
-  public synchronized CompletableFuture<MessageBus> open(Address address) {
+  public synchronized CompletableFuture<DistributedMessageBus> open(Address address) {
     if (openFuture != null)
       return openFuture;
 
     client = context.transport().client(id);
     server = context.transport().server(id);
 
+    openFuture = new CompletableFuture<>();
     context.context().execute(() -> {
       server.listen(address, this::connectListener).whenComplete((result, error) -> {
         synchronized (this) {
           if (error == null) {
             open = true;
-            CompletableFuture<MessageBus> future = openFuture;
+            CompletableFuture<DistributedMessageBus> future = openFuture;
             if (future != null) {
               openFuture = null;
               future.complete(null);
             }
           } else {
             open = false;
-            CompletableFuture<MessageBus> future = openFuture;
+            CompletableFuture<DistributedMessageBus> future = openFuture;
             if (future != null) {
               openFuture = null;
               future.completeExceptionally(error);
@@ -90,14 +90,19 @@ public class MessageBus extends Resource {
     return openFuture.thenCompose(v -> {
       CompletableFuture<Void> future = new CompletableFuture<>();
       context.submit(MessageBusCommands.Join.builder()
-        .withAddress(address)
-        .build()).thenAccept(topics -> {
-        for (Map.Entry<String, Set<Address>> entry : topics.entrySet()) {
-          remotes.put(entry.getKey(), new RemoteConsumers(entry.getValue()));
-        }
+        .withMember(address)
+        .build()).whenComplete((topics, error) -> {
+        if (error == null) {
+          for (Map.Entry<String, Set<Address>> entry : topics.entrySet()) {
+            remotes.put(entry.getKey(), new RemoteConsumers(entry.getValue()));
+          }
 
-        context.session().onEvent("register", this::registerConsumer);
-        context.session().onEvent("unregister", this::unregisterConsumer);
+          context.session().onEvent("register", this::registerConsumer);
+          context.session().onEvent("unregister", this::unregisterConsumer);
+          future.complete(null);
+        } else {
+          future.completeExceptionally(error);
+        }
       });
       return future;
     }).thenApply(v -> this);
@@ -147,21 +152,36 @@ public class MessageBus extends Resource {
     return consumer.consume(message.body());
   }
 
+  /**
+   * Creates a message producer.
+   *
+   * @param topic The topic to which to produce.
+   * @param <T> The message type.
+   * @return A completable future to be completed once the producer has been created.
+   */
   public <T> CompletableFuture<MessageProducer<T>> producer(String topic) {
     return CompletableFuture.completedFuture(new InternalMessageProducer<>(topic));
   }
 
+  /**
+   * Creates a message consumer.
+   *
+   * @param topic The topic from which to consume.
+   * @param <T> The message type.
+   * @return A completable future to be completed once the consumer has been registered.
+   */
   public <T> CompletableFuture<MessageConsumer<T>> consumer(String topic) {
     return consumer(topic, (Function<T, ?>) null);
   }
 
-  public <T> CompletableFuture<MessageConsumer<T>> consumer(String topic, Consumer<T> consumer) {
-    return consumer(topic, message -> {
-      consumer.accept(message);
-      return null;
-    });
-  }
-
+  /**
+   * Creates a message consumer.
+   *
+   * @param topic The topic from which to consume.
+   * @param consumer The message consumer.
+   * @param <T> The message type.
+   * @return A completable future to be completed once the consumer has been registered.
+   */
   public <T> CompletableFuture<MessageConsumer<T>> consumer(String topic, Function<T, ?> consumer) {
     CompletableFuture<MessageConsumer<T>> future = new CompletableFuture<>();
     context.submit(MessageBusCommands.Register.builder()
@@ -229,6 +249,7 @@ public class MessageBus extends Resource {
     if (server == null)
       return Futures.exceptionalFuture(new IllegalStateException("message bus not open"));
 
+    closeFuture = new CompletableFuture<>();
     context.context().execute(() -> {
       server.close().whenComplete((result, error) -> {
         synchronized (this) {
@@ -263,15 +284,6 @@ public class MessageBus extends Resource {
     private InternalMessageConsumer(String topic, Function<T, ?> consumer) {
       this.topic = topic;
       this.consumer = consumer;
-    }
-
-    @Override
-    public MessageConsumer<T> onMessage(Consumer<T> consumer) {
-      this.consumer = message -> {
-        consumer.accept(message);
-        return null;
-      };
-      return this;
     }
 
     @Override
@@ -312,7 +324,7 @@ public class MessageBus extends Resource {
       return next(topic).thenCompose(c -> {
         if (c == null)
           return Futures.exceptionalFuture(new IllegalStateException("no handlers"));
-        return c.send(message);
+        return c.send(new Message(topic, message));
       });
     }
 

@@ -17,7 +17,9 @@ package io.atomix.copycat;
 
 import io.atomix.catalog.client.RaftClient;
 import io.atomix.catalyst.transport.Address;
+import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.Assert;
+import io.atomix.catalyst.util.ConfigurationException;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -61,21 +63,36 @@ public final class CopycatClient extends Copycat {
   /**
    * @throws NullPointerException if {@code client} is null
    */
-  public CopycatClient(RaftClient client) {
-    super(client);
+  public CopycatClient(RaftClient client, Transport transport) {
+    super(client, transport);
   }
 
   /**
    * Client builder.
    */
   public static class Builder extends Copycat.Builder {
+    private Transport transport;
+
     private Builder(Collection<Address> members) {
       super(members);
     }
 
     @Override
+    public Copycat.Builder withTransport(Transport transport) {
+      this.transport = transport;
+      return super.withTransport(transport);
+    }
+
+    @Override
     public CopycatClient build() {
-      return new CopycatClient(clientBuilder.build());
+      if (transport == null) {
+        try {
+          transport = (Transport) Class.forName("io.atomix.catalyst.transport.NettyTransport").newInstance();
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+          throw new ConfigurationException("transport not configured");
+        }
+      }
+      return new CopycatClient(clientBuilder.build(), transport);
     }
   }
 

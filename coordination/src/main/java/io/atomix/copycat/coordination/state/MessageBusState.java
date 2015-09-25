@@ -19,9 +19,9 @@ import io.atomix.catalog.client.session.Session;
 import io.atomix.catalog.server.Commit;
 import io.atomix.catalog.server.StateMachine;
 import io.atomix.catalog.server.StateMachineExecutor;
+import io.atomix.catalyst.transport.Address;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Message bus state machine.
@@ -30,12 +30,14 @@ import java.util.Map;
  */
 public class MessageBusState extends StateMachine {
   private final Map<Long, Commit<MessageBusCommands.Join>> members = new HashMap<>();
+  private final Map<String, Map<Long, Commit<MessageBusCommands.Register>>> topics = new HashMap<>();
 
   @Override
   public void configure(StateMachineExecutor executor) {
     executor.register(MessageBusCommands.Join.class, this::join);
     executor.register(MessageBusCommands.Leave.class, this::leave);
-    executor.register(MessageBusCommands.Execute.class, this::publish);
+    executor.register(MessageBusCommands.Register.class, this::registerConsumer);
+    executor.register(MessageBusCommands.Unregister.class, this::unregisterConsumer);
   }
 
   @Override
@@ -49,18 +51,22 @@ public class MessageBusState extends StateMachine {
   /**
    * Applies join commits.
    */
-  protected void join(Commit<MessageBusCommands.Join> commit) {
+  protected Map<String, Set<Address>> join(Commit<MessageBusCommands.Join> commit) {
     try {
-      Commit<MessageBusCommands.Join> previous = members.put(commit.session().id(), commit);
-      if (previous != null) {
-        previous.clean();
-      } else {
-        for (Commit<MessageBusCommands.Join> member : members.values()) {
-          if (member.index() != commit.index()) {
-            member.session().publish("join", commit.session().id());
+      members.put(commit.session().id(), commit);
+
+      Map<String, Set<Address>> topics = new HashMap<>();
+      for (Map.Entry<String, Map<Long, Commit<MessageBusCommands.Register>>> entry : this.topics.entrySet()) {
+        Set<Address> addresses = new HashSet<>();
+        for (Map.Entry<Long, Commit<MessageBusCommands.Register>> subEntry : entry.getValue().entrySet()) {
+          Commit<MessageBusCommands.Join> member = members.get(subEntry.getKey());
+          if (member != null) {
+            addresses.add(member.operation().member());
           }
         }
+        topics.put(entry.getKey(), addresses);
       }
+      return topics;
     } catch (Exception e) {
       commit.clean();
       throw e;
@@ -75,8 +81,23 @@ public class MessageBusState extends StateMachine {
       Commit<MessageBusCommands.Join> previous = members.remove(commit.session().id());
       if (previous != null) {
         previous.clean();
-        for (Commit<MessageBusCommands.Join> member : members.values()) {
-          member.session().publish("leave", commit.session().id());
+
+        Iterator<Map.Entry<String, Map<Long, Commit<MessageBusCommands.Register>>>> iterator = topics.entrySet().iterator();
+        while (iterator.hasNext()) {
+          Map.Entry<String, Map<Long, Commit<MessageBusCommands.Register>>> entry = iterator.next();
+          String topic = entry.getKey();
+          Map<Long, Commit<MessageBusCommands.Register>> registrations = entry.getValue();
+
+          Commit<MessageBusCommands.Register> registration = registrations.remove(commit.session().id());
+          if (registration != null) {
+            for (Commit<MessageBusCommands.Join> member : members.values()) {
+              member.session().publish("unregister", new MessageBusCommands.ConsumerInfo(topic, previous.operation().member()));
+            }
+
+            if (registrations.isEmpty()) {
+              iterator.remove();
+            }
+          }
         }
       }
     } finally {
@@ -85,15 +106,49 @@ public class MessageBusState extends StateMachine {
   }
 
   /**
-   * Handles a publish commit.
+   * Registers a topic consumer.
    */
-  protected void publish(Commit<MessageBusCommands.Execute> commit) {
+  private void registerConsumer(Commit<MessageBusCommands.Register> commit) {
     try {
-      for (Commit<MessageBusCommands.Join> member : members.values()) {
-        member.session().publish("execute", commit.operation().callback());
+      Commit<MessageBusCommands.Join> parent = members.get(commit.session().id());
+      if (parent == null) {
+        throw new IllegalStateException("unknown session: " + commit.session().id());
       }
-    } finally {
+
+      Map<Long, Commit<MessageBusCommands.Register>> registrations = topics.computeIfAbsent(commit.operation().topic(), t -> new HashMap<>());
+      registrations.put(commit.session().id(), commit);
+
+      for (Commit<MessageBusCommands.Join> member : members.values()) {
+        member.session().publish("register", new MessageBusCommands.ConsumerInfo(commit.operation().topic(), parent.operation().member()));
+      }
+    } catch (Exception e) {
       commit.clean();
+      throw e;
+    }
+  }
+
+  /**
+   * Unregisters a topic consumer.
+   */
+  private void unregisterConsumer(Commit<MessageBusCommands.Unregister> commit) {
+    try {
+      Map<Long, Commit<MessageBusCommands.Register>> registrations = topics.get(commit.operation().topic());
+      if (registrations != null) {
+        Commit<MessageBusCommands.Register> registration = registrations.remove(commit.session().id());
+        if (registration != null) {
+          registration.clean();
+
+          Commit<MessageBusCommands.Join> parent = members.get(registration.session().id());
+          if (parent != null) {
+            for (Commit<MessageBusCommands.Join> member : members.values()) {
+              member.session().publish("unregister", new MessageBusCommands.ConsumerInfo(commit.operation().topic(), parent.operation().member()));
+            }
+          }
+        }
+      }
+    } catch (Exception e) {
+      commit.clean();
+      throw e;
     }
   }
 

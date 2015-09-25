@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.copycat.coordination.bus;
+package io.atomix.copycat.coordination;
 
 import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
 import io.atomix.catalyst.serializer.Serializer;
+import io.atomix.catalyst.util.Assert;
 
 /**
  * Message.
@@ -28,6 +29,14 @@ import io.atomix.catalyst.serializer.Serializer;
 public class Message implements CatalystSerializable {
   private String topic;
   private Object body;
+
+  public Message() {
+  }
+
+  public Message(String topic, Object body) {
+    this.topic = Assert.notNull(topic, "topic");
+    this.body = body;
+  }
 
   /**
    * Returns the message topic.

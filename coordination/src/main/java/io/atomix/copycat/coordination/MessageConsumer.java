@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.copycat.coordination.bus;
+package io.atomix.copycat.coordination;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -26,10 +26,19 @@ import java.util.function.Function;
  */
 public interface MessageConsumer<T> {
 
-  MessageConsumer<T> onMessage(Consumer<T> consumer);
-
+  /**
+   * Sets a message consumer callback.
+   *
+   * @param consumer The consumer callback.
+   * @return The message consumer.
+   */
   MessageConsumer<T> onMessage(Function<T, ?> consumer);
 
+  /**
+   * Closes the consumer.
+   *
+   * @return A completable future to be completed once the consumer has been closed.
+   */
   CompletableFuture<Void> close();
 
 }

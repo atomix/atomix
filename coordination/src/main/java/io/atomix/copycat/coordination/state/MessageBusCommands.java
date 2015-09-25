@@ -23,6 +23,7 @@ import io.atomix.catalyst.serializer.CatalystSerializable;
 import io.atomix.catalyst.serializer.SerializeWith;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.transport.Address;
+import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.BuilderPool;
 
 import java.util.Map;
@@ -67,6 +68,26 @@ public class MessageBusCommands {
    */
   @SerializeWith(id=525)
   public static class Join extends MessageBusCommand<Map<String, Set<Address>>> {
+    protected Address address;
+
+    /**
+     * Returns the join member.
+     *
+     * @return The join member.
+     */
+    public Address member() {
+      return address;
+    }
+
+    @Override
+    public void readObject(BufferInput buffer, Serializer serializer) {
+      address = serializer.readObject(buffer);
+    }
+
+    @Override
+    public void writeObject(BufferOutput buffer, Serializer serializer) {
+      serializer.writeObject(address, buffer);
+    }
 
     /**
      * Returns a new join command builder.
@@ -89,6 +110,17 @@ public class MessageBusCommands {
       @Override
       protected Join create() {
         return new Join();
+      }
+
+      /**
+       * Sets the join member.
+       *
+       * @param address The member address.
+       * @return The join builder.
+       */
+      public Builder withMember(Address address) {
+        command.address = Assert.notNull(address, "address");
+        return this;
       }
     }
   }
@@ -267,10 +299,20 @@ public class MessageBusCommands {
       this.address = address;
     }
 
+    /**
+     * Returns the consumer topic.
+     *
+     * @return The consumer topic.
+     */
     public String topic() {
       return topic;
     }
 
+    /**
+     * Returns the consumer address.
+     *
+     * @return The consumer address.
+     */
     public Address address() {
       return address;
     }
