@@ -88,6 +88,8 @@ public class ResourceManager extends StateMachine {
       }
     }
 
+    CompletableFuture<Object> future = new CompletableFuture<>();
+
     ResourceCommit resourceCommit = commits.acquire(commit, session);
     return resource.executor.execute(resourceCommit);
   }

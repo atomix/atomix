@@ -22,6 +22,8 @@ import io.atomix.catalog.server.StateMachineExecutor;
 import io.atomix.catalyst.transport.Address;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 
 /**
  * Message bus state machine.
@@ -36,7 +38,7 @@ public class MessageBusState extends StateMachine {
   public void configure(StateMachineExecutor executor) {
     executor.register(MessageBusCommands.Join.class, this::join);
     executor.register(MessageBusCommands.Leave.class, this::leave);
-    executor.register(MessageBusCommands.Register.class, this::registerConsumer);
+    executor.register(MessageBusCommands.Register.class, (Function<Commit<MessageBusCommands.Register>, CompletableFuture>) this::registerConsumer);
     executor.register(MessageBusCommands.Unregister.class, this::unregisterConsumer);
   }
 
@@ -108,7 +110,7 @@ public class MessageBusState extends StateMachine {
   /**
    * Registers a topic consumer.
    */
-  private void registerConsumer(Commit<MessageBusCommands.Register> commit) {
+  private CompletableFuture registerConsumer(Commit<MessageBusCommands.Register> commit) {
     try {
       Commit<MessageBusCommands.Join> parent = members.get(commit.session().id());
       if (parent == null) {
@@ -118,9 +120,12 @@ public class MessageBusState extends StateMachine {
       Map<Long, Commit<MessageBusCommands.Register>> registrations = topics.computeIfAbsent(commit.operation().topic(), t -> new HashMap<>());
       registrations.put(commit.session().id(), commit);
 
+      int i = 0;
+      CompletableFuture[] futures = new CompletableFuture[members.size()];
       for (Commit<MessageBusCommands.Join> member : members.values()) {
-        member.session().publish("register", new MessageBusCommands.ConsumerInfo(commit.operation().topic(), parent.operation().member()));
+        futures[i++] = member.session().publish("register", new MessageBusCommands.ConsumerInfo(commit.operation().topic(), parent.operation().member()));
       }
+      return CompletableFuture.allOf(futures);
     } catch (Exception e) {
       commit.clean();
       throw e;

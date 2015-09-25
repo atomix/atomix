@@ -17,7 +17,6 @@
 package io.atomix.copycat.manager;
 
 import io.atomix.catalog.client.Operation;
-import io.atomix.catalog.client.error.ApplicationException;
 import io.atomix.catalog.server.Commit;
 import io.atomix.catalog.server.StateMachineContext;
 import io.atomix.catalog.server.StateMachineExecutor;
@@ -35,6 +34,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
@@ -95,6 +95,8 @@ class ResourceStateMachineExecutor implements StateMachineExecutor {
    */
   @SuppressWarnings("unchecked")
   <T extends Operation<U>, U> CompletableFuture<U> execute(Commit<T> commit) {
+    ThreadContext parent = ThreadContext.currentContext();
+
     ComposableFuture<U> future = new ComposableFuture<>();
     context.executor().execute(() -> {
       // Get the function registered for the operation. If no function is registered, attempt to
@@ -105,21 +107,23 @@ class ResourceStateMachineExecutor implements StateMachineExecutor {
       }
 
       if (function == null) {
-        future.completeExceptionally(new IllegalStateException("unknown state machine operation: " + commit.type()));
+        parent.executor().execute(() -> future.completeExceptionally(new IllegalStateException("unknown state machine operation: " + commit.type())));
       } else {
         // Execute the operation. If the operation return value is a Future, await the result,
         // otherwise immediately complete the execution future.
-        try {
-          Object result = function.apply(commit);
-          if (result instanceof CompletableFuture) {
-            ((CompletableFuture<U>) result).whenCompleteAsync(future, context.executor());
-          } else if (result instanceof Future) {
-            future.complete(((Future<U>) result).get());
-          } else {
-            future.complete((U) result);
-          }
-        } catch (Exception e) {
-          future.completeExceptionally(new ApplicationException("An application error occurred", e));
+        Object result = function.apply(commit);
+        if (result instanceof CompletableFuture) {
+          ((CompletableFuture<U>) result).whenCompleteAsync(future, parent.executor());
+        } else if (result instanceof Future) {
+          parent.executor().execute(() -> {
+            try {
+              future.complete(((Future<U>) result).get());
+            } catch (ExecutionException | InterruptedException e) {
+              throw new RuntimeException(e);
+            }
+          });
+        } else {
+          parent.executor().execute(() -> future.complete((U) result));
         }
       }
     });
@@ -159,7 +163,7 @@ class ResourceStateMachineExecutor implements StateMachineExecutor {
   }
 
   @Override
-  public <T extends Operation<U>, U> StateMachineExecutor register(Class<T> type, Function<Commit<T>, U> callback) {
+  public <T extends Operation<?>> StateMachineExecutor register(Class<T> type, Function<Commit<T>, ?> callback) {
     Assert.notNull(type, "type");
     Assert.notNull(callback, "callback");
     operations.put(type, callback);
