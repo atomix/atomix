@@ -27,9 +27,9 @@ import java.util.concurrent.CompletableFuture;
  */
 public class Member {
   private final long memberId;
-  private final DistributedGroup group;
+  private final DistributedMembershipGroup group;
 
-  Member(long memberId, DistributedGroup group) {
+  Member(long memberId, DistributedMembershipGroup group) {
     this.memberId = memberId;
     this.group = Assert.notNull(group, "group");
   }

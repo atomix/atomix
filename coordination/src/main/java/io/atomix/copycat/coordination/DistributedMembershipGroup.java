@@ -35,7 +35,7 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class DistributedGroup extends Resource {
+public class DistributedMembershipGroup extends Resource {
   private final Listeners<Member> joinListeners = new Listeners<>();
   private final Listeners<Member> leaveListeners = new Listeners<>();
   private final Map<Long, Member> members = new ConcurrentHashMap<>();

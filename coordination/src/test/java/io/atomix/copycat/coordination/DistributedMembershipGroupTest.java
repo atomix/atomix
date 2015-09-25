@@ -39,7 +39,7 @@ import java.util.List;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class DistributedGroupTest extends ConcurrentTestCase {
+public class DistributedMembershipGroupTest extends ConcurrentTestCase {
   private static final File directory = new File("test-logs");
 
   /**
@@ -49,10 +49,10 @@ public class DistributedGroupTest extends ConcurrentTestCase {
     List<Copycat> servers = createCopycats(3);
 
     Copycat copycat1 = servers.get(0);
-    DistributedGroup group1 = copycat1.create("test", DistributedGroup.class).get();
+    DistributedMembershipGroup group1 = copycat1.create("test", DistributedMembershipGroup.class).get();
 
     Copycat copycat2 = servers.get(1);
-    DistributedGroup group2 = copycat2.create("test", DistributedGroup.class).get();
+    DistributedMembershipGroup group2 = copycat2.create("test", DistributedMembershipGroup.class).get();
 
     group2.join().join();
     group2.onJoin(member -> {
