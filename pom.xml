@@ -24,7 +24,7 @@
     <slf4j.version>1.7.7</slf4j.version>
     <logback.version>1.1.2</logback.version>
     <catalyst.version>1.0.0-SNAPSHOT</catalyst.version>
-    <catalog.version>1.0.0-SNAPSHOT</catalog.version>
+    <catalogue.version>1.0.0-SNAPSHOT</catalogue.version>
 
     <maven.source.plugin.version>2.2.1</maven.source.plugin.version>
     <maven.compiler.plugin.version>3.0</maven.compiler.plugin.version>
@@ -61,17 +61,6 @@
     <system>GitHub</system>
     <url>http://github.com/atomix/copycat/issues</url>
   </issueManagement>
-
-  <distributionManagement>
-    <snapshotRepository>
-      <id>ossrh</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-    </snapshotRepository>
-    <repository>
-      <id>ossrh</id>
-      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-    </repository>
-  </distributionManagement>
 
   <modules>
     <module>core</module>
@@ -124,14 +113,6 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
         <version>${maven.javadoc.plugin.version}</version>
-        <executions>
-          <execution>
-            <id>attach-javadocs</id>
-            <goals>
-              <goal>jar</goal>
-            </goals>
-          </execution>
-        </executions>
         <configuration>
           <show>public</show>
           <excludePackageNames>*.state:io.atomix.copycat.resource:io.atomix.copycat.manager:io.atomix.copycat.examples*</excludePackageNames>
