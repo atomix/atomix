@@ -36,7 +36,7 @@ updates!
 [Getting started]: http://atomix.io/getting-started/
 [User manual]: http://atomix.io/user-manual/
 [Google group]: https://groups.google.com/forum/#!forum/copycat
-[Javadoc]: http://atomix.github.io/copycat/api/0.1.0/
+[Javadoc]: http://atomix.github.io/copycat/api/0.1.0-SNAPSHOT/
 [Raft]: https://raft.github.io/
 [Catalog]: http://github.com/atomix/catalog
 [Catalyst]: http://github.com/atomix/catalyst
