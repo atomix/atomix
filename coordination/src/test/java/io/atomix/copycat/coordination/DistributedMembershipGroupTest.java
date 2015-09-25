@@ -15,7 +15,7 @@
  */
 package io.atomix.copycat.coordination;
 
-import io.atomix.catalog.server.storage.Storage;
+import io.atomix.catalogue.server.storage.Storage;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.LocalServerRegistry;
 import io.atomix.catalyst.transport.LocalTransport;

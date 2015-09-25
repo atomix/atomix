@@ -13,13 +13,13 @@
 
   <dependencies>
     <dependency>
-      <groupId>io.atomix.catalog</groupId>
-      <artifactId>catalog-client</artifactId>
+      <groupId>io.atomix.catalogue</groupId>
+      <artifactId>catalogue-client</artifactId>
       <version>${catalog.version}</version>
     </dependency>
     <dependency>
-      <groupId>io.atomix.catalog</groupId>
-      <artifactId>catalog-server</artifactId>
+      <groupId>io.atomix.catalogue</groupId>
+      <artifactId>catalogue-server</artifactId>
       <version>${catalog.version}</version>
     </dependency>
     <dependency>

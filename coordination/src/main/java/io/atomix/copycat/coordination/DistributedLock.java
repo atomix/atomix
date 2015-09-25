@@ -19,7 +19,7 @@ import io.atomix.copycat.Resource;
 import io.atomix.copycat.coordination.state.LockCommands;
 import io.atomix.copycat.coordination.state.LockState;
 import io.atomix.copycat.resource.ResourceContext;
-import io.atomix.catalog.server.StateMachine;
+import io.atomix.catalogue.server.StateMachine;
 
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;

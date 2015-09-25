@@ -15,9 +15,9 @@
  */
 package io.atomix.copycat;
 
-import io.atomix.catalog.client.RaftClient;
-import io.atomix.catalog.server.RaftServer;
-import io.atomix.catalog.server.storage.Storage;
+import io.atomix.catalogue.client.RaftClient;
+import io.atomix.catalogue.server.RaftServer;
+import io.atomix.catalogue.server.storage.Storage;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.transport.*;
 import io.atomix.catalyst.util.Assert;

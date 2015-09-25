@@ -15,10 +15,10 @@
  */
 package io.atomix.copycat.resource;
 
-import io.atomix.catalog.client.Command;
-import io.atomix.catalog.client.Query;
-import io.atomix.catalog.client.RaftClient;
-import io.atomix.catalog.client.session.Session;
+import io.atomix.catalogue.client.Command;
+import io.atomix.catalogue.client.Query;
+import io.atomix.catalogue.client.RaftClient;
+import io.atomix.catalogue.client.session.Session;
 import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.concurrent.ThreadContext;

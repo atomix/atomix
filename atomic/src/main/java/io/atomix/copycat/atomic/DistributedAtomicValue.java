@@ -15,9 +15,9 @@
  */
 package io.atomix.copycat.atomic;
 
-import io.atomix.catalog.client.Command;
-import io.atomix.catalog.client.Query;
-import io.atomix.catalog.server.StateMachine;
+import io.atomix.catalogue.client.Command;
+import io.atomix.catalogue.client.Query;
+import io.atomix.catalogue.server.StateMachine;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.copycat.Resource;

@@ -15,7 +15,7 @@
  */
 package io.atomix.copycat.resource;
 
-import io.atomix.catalog.client.session.Session;
+import io.atomix.catalogue.client.session.Session;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.catalyst.util.concurrent.ThreadContext;

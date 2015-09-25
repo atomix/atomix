@@ -15,74 +15,69 @@
  */
 package io.atomix.copycat.resource;
 
-import io.atomix.catalogue.client.Operation;
-import io.atomix.catalogue.client.Query;
 import io.atomix.catalyst.serializer.SerializeWith;
+import io.atomix.catalogue.client.Command;
+import io.atomix.catalogue.client.Operation;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.BuilderPool;
 
 /**
- * Resource query.
+ * Resource command.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=401)
-public class ResourceQuery<T extends Query<U>, U> extends ResourceOperation<T, U> implements Query<U> {
+@SerializeWith(id=400)
+public class ResourceCommand<T extends Command<U>, U> extends ResourceOperation<T, U> implements Command<U> {
 
   /**
-   * Returns a new resource query builder.
+   * Returns a new resource command builder.
    *
-   * @return A new resource query builder.
+   * @return A new resource command builder.
    */
   @SuppressWarnings("unchecked")
-  public static <T extends Query<U>, U> Builder<T, U> builder() {
+  public static <T extends Command<U>, U> Builder<T, U> builder() {
     return Operation.builder(Builder.class, Builder::new);
   }
 
   @Override
-  public ConsistencyLevel consistency() {
-    return operation.consistency();
-  }
-
-  @Override
   public String toString() {
-    return String.format("%s[resource=%d, query=%s, consistency=%s]", getClass().getSimpleName(), resource, operation, consistency());
+    return String.format("%s[resource=%d, command=%s]", getClass().getSimpleName(), resource, operation);
   }
 
   /**
    * Resource command builder.
    */
-  public static class Builder<T extends Query<U>, U> extends Query.Builder<Builder<T, U>, ResourceQuery<T, U>, U> {
+  public static class Builder<T extends Command<U>, U> extends Command.Builder<Builder<T, U>, ResourceCommand<T, U>, U> {
 
-    private Builder(BuilderPool<Builder<T, U>, ResourceQuery<T, U>> pool) {
+    private Builder(BuilderPool<Builder<T, U>, ResourceCommand<T, U>> pool) {
       super(pool);
     }
 
     @Override
-    protected ResourceQuery<T, U> create() {
-      return new ResourceQuery<>();
+    protected ResourceCommand<T, U> create() {
+      return new ResourceCommand<>();
     }
 
     /**
      * Sets the resource ID.
      *
      * @param resource The resource ID.
-     * @return The resource query builder.
+     * @return The resource command builder.
      */
     public Builder withResource(long resource) {
-      query.resource = resource;
+      command.resource = resource;
       return this;
     }
 
     /**
      * Sets the resource command.
      *
-     * @param query The resource command.
+     * @param command The resource command.
      * @return The resource command builder.
-     * @throws NullPointerException if {@code query} is null
+     * @throws NullPointerException if {@code command} is null
      */
-    public Builder withQuery(T query) {
-      this.query.operation = Assert.notNull(query, "query");
+    public Builder withCommand(T command) {
+      this.command.operation = Assert.notNull(command, "command");
       return this;
     }
   }

@@ -15,9 +15,9 @@
  */
 package io.atomix.copycat.collections.state;
 
-import io.atomix.catalog.client.Command;
-import io.atomix.catalog.client.Operation;
-import io.atomix.catalog.client.Query;
+import io.atomix.catalogue.client.Command;
+import io.atomix.catalogue.client.Operation;
+import io.atomix.catalogue.client.Query;
 import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;

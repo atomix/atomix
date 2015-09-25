@@ -15,9 +15,9 @@
  */
 package io.atomix.copycat.coordination.state;
 
-import io.atomix.catalog.server.Commit;
-import io.atomix.catalog.server.StateMachine;
-import io.atomix.catalog.server.StateMachineExecutor;
+import io.atomix.catalogue.server.Commit;
+import io.atomix.catalogue.server.StateMachine;
+import io.atomix.catalogue.server.StateMachineExecutor;
 import io.atomix.catalyst.util.concurrent.Scheduled;
 
 import java.time.Duration;

@@ -15,7 +15,7 @@
  */
 package io.atomix.copycat.coordination;
 
-import io.atomix.catalog.server.StateMachine;
+import io.atomix.catalogue.server.StateMachine;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.Client;
 import io.atomix.catalyst.transport.Connection;

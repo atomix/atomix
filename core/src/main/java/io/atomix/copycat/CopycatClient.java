@@ -15,7 +15,7 @@
  */
 package io.atomix.copycat;
 
-import io.atomix.catalog.client.RaftClient;
+import io.atomix.catalogue.client.RaftClient;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.Assert;

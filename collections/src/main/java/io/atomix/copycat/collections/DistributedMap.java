@@ -15,9 +15,9 @@
  */
 package io.atomix.copycat.collections;
 
-import io.atomix.catalog.client.Command;
-import io.atomix.catalog.client.Query;
-import io.atomix.catalog.server.StateMachine;
+import io.atomix.catalogue.client.Command;
+import io.atomix.catalogue.client.Query;
+import io.atomix.catalogue.server.StateMachine;
 import io.atomix.copycat.Resource;
 import io.atomix.copycat.collections.state.MapCommands;
 import io.atomix.copycat.collections.state.MapState;

@@ -16,7 +16,7 @@
 package io.atomix.copycat.examples.server;
 
 import io.atomix.copycat.CopycatReplica;
-import io.atomix.catalog.server.storage.Storage;
+import io.atomix.catalogue.server.storage.Storage;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.NettyTransport;
 import io.atomix.copycat.Copycat;

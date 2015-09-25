@@ -16,7 +16,7 @@
 package io.atomix.copycat.collections;
 
 import net.jodah.concurrentunit.ConcurrentTestCase;
-import io.atomix.catalog.server.storage.Storage;
+import io.atomix.catalogue.server.storage.Storage;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.copycat.Copycat;
 import io.atomix.copycat.CopycatReplica;

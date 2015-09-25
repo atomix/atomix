@@ -15,45 +15,50 @@
  */
 package io.atomix.copycat.manager;
 
+import io.atomix.catalogue.client.Operation;
+import io.atomix.catalogue.client.Query;
+import io.atomix.catalogue.server.StateMachine;
 import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.SerializationException;
 import io.atomix.catalyst.serializer.SerializeWith;
 import io.atomix.catalyst.serializer.Serializer;
-import io.atomix.catalogue.server.StateMachine;
-import io.atomix.catalogue.client.Command;
-import io.atomix.catalogue.client.Operation;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.BuilderPool;
 
 /**
- * Create resource command.
+ * Get resource command.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=414)
-public class CreateResource extends PathOperation<Long> implements Command<Long> {
+@SerializeWith(id=416)
+public class GetResource extends PathOperation<Long> implements Query<Long> {
 
   /**
-   * Returns a new CreateResource builder.
+   * Returns a new GetResource builder.
    *
-   * @return A new CreateResource command builder.
+   * @return A new GetResource command builder.
    */
   public static Builder builder() {
-    return Operation.builder(CreateResource.Builder.class, CreateResource.Builder::new);
+    return Operation.builder(GetResource.Builder.class, GetResource.Builder::new);
   }
 
   private Class<? extends StateMachine> type;
 
-  public CreateResource() {
+  public GetResource() {
   }
 
   /**
    * @throws NullPointerException if {@code path} or {@code type} are null
    */
-  public CreateResource(String path, Class<? extends StateMachine> type) {
+  public GetResource(String path, Class<? extends StateMachine> type) {
     super(path);
     this.type = Assert.notNull(type, "type");
+  }
+
+  @Override
+  public ConsistencyLevel consistency() {
+    return ConsistencyLevel.LINEARIZABLE;
   }
 
   /**
@@ -88,14 +93,14 @@ public class CreateResource extends PathOperation<Long> implements Command<Long>
   /**
    * Create resource builder.
    */
-  public static class Builder extends PathOperation.Builder<Builder, CreateResource, Long> {
-    public Builder(BuilderPool<Builder, CreateResource> pool) {
+  public static class Builder extends PathOperation.Builder<Builder, GetResource, Long> {
+    public Builder(BuilderPool<Builder, GetResource> pool) {
       super(pool);
     }
 
     @Override
-    protected CreateResource create() {
-      return new CreateResource();
+    protected GetResource create() {
+      return new GetResource();
     }
 
     /**
