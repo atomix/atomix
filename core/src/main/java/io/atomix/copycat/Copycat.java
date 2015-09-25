@@ -15,16 +15,16 @@
  */
 package io.atomix.copycat;
 
-import io.atomix.copycat.manager.CreateResource;
-import io.atomix.copycat.manager.GetResource;
-import io.atomix.copycat.manager.ResourceExists;
-import io.atomix.copycat.resource.ResourceContext;
 import io.atomix.catalog.client.RaftClient;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.Managed;
+import io.atomix.copycat.manager.CreateResource;
+import io.atomix.copycat.manager.GetResource;
+import io.atomix.copycat.manager.ResourceExists;
+import io.atomix.copycat.resource.ResourceContext;
 
 import java.util.Collection;
 import java.util.Map;
@@ -51,13 +51,15 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public abstract class Copycat implements Managed<Copycat> {
   protected final RaftClient client;
+  protected final Transport transport;
   private final Map<Long, ResourceContext> resources = new ConcurrentHashMap<>();
 
   /**
    * @throws NullPointerException if {@code client} is null
    */
-  protected Copycat(RaftClient client) {
+  protected Copycat(RaftClient client, Transport transport) {
     this.client = Assert.notNull(client, "client");
+    this.transport = Assert.notNull(transport, "transport");
   }
 
   /**
@@ -73,6 +75,9 @@ public abstract class Copycat implements Managed<Copycat> {
 
   /**
    * Gets the resource at the given path.
+   * <p>
+   * If a resource at the given path already exists, the existing resource will be returned, otherwise a new
+   * resource of the given {@code type} will be created.
    *
    * @param path The path at which to get the resource.
    * @param type The expected resource type.
@@ -89,7 +94,7 @@ public abstract class Copycat implements Managed<Copycat> {
         .withType(resource.stateMachine())
         .build())
         .thenApply(id -> {
-          resource.open(resources.computeIfAbsent(id, i -> new ResourceContext(id, client)));
+          resource.open(resources.computeIfAbsent(id, i -> new ResourceContext(id, client, transport)));
           return resource;
         });
     } catch (InstantiationException | IllegalAccessException e) {
@@ -100,8 +105,8 @@ public abstract class Copycat implements Managed<Copycat> {
   /**
    * Creates a resource at the given path.
    * <p>
-   * If a resource at the given path already exists, the existing resource will be returned, otherwise a new
-   * resource of the given {@code type} will be created.
+   * If the resource at the given path already exists, a new {@link Resource} object will be returned with
+   * a reference to the existing resource state in the cluster.
    *
    * @param path The path at which to create the resource.
    * @param type The resource type to create.
@@ -118,7 +123,7 @@ public abstract class Copycat implements Managed<Copycat> {
         .withType(resource.stateMachine())
         .build())
         .thenApply(id -> {
-          resource.open(resources.computeIfAbsent(id, i -> new ResourceContext(id, client)));
+          resource.open(resources.computeIfAbsent(id, i -> new ResourceContext(id, client, transport)));
           return resource;
         });
     } catch (InstantiationException | IllegalAccessException e) {

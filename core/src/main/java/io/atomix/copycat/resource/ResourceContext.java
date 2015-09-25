@@ -19,6 +19,7 @@ import io.atomix.catalog.client.Command;
 import io.atomix.catalog.client.Query;
 import io.atomix.catalog.client.RaftClient;
 import io.atomix.catalog.client.session.Session;
+import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.copycat.manager.DeleteResource;
@@ -33,14 +34,16 @@ import java.util.concurrent.CompletableFuture;
 public class ResourceContext {
   private final long resource;
   private final RaftClient client;
+  private final Transport transport;
   private final ResourceSession session;
 
   /**
    * @throws NullPointerException if {@code client} is null
    */
-  public ResourceContext(long resource, RaftClient client) {
+  public ResourceContext(long resource, RaftClient client, Transport transport) {
     this.resource = resource;
     this.client = Assert.notNull(client, "client");
+    this.transport = Assert.notNull(transport, "transport");
     this.session = new ResourceSession(resource, client.session(), client.context());
   }
 
@@ -51,6 +54,15 @@ public class ResourceContext {
    */
   public ThreadContext context() {
     return client.context();
+  }
+
+  /**
+   * Returns the client transport.
+   *
+   * @return The client transport.
+   */
+  public Transport transport() {
+    return transport;
   }
 
   /**
