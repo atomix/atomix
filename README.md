@@ -7,15 +7,16 @@
 
 [![Build Status](https://travis-ci.org/atomix/copycat.png)](https://travis-ci.org/atomix/copycat)
 
-Copycat is a high-level asynchronous distributed coordination and consensus framework. It combines the consistency of
+Copycat is a high-level asynchronous framework for building fault-tolerant distributed systems. It combines the consistency of
 [ZooKeeper](https://zookeeper.apache.org/) with the usability of [Hazelcast](http://hazelcast.org/) to provide tools for managing
 and coordinating stateful resources in a distributed system. Its strongly consistent, fault-tolerant data store is designed for
-such use cases as configuration management, service discovery, and distributed synchronization.
+such use cases as configuration management, service discovery, group membership, scheduling, messaging, and synchronizing distributed
+processes.
 
 Copycat exposes a set of high level APIs with tools to solve a variety of distributed systems problems including:
-* [Distributed coordination tools](http://atomix.github.io/copycat/user-manual/distributed-resources/#distributed-coordination)
-* [Distributed collections](http://atomix.github.io/copycat/user-manual/distributed-resources/#distributed-collections)
-* [Distributed atomic variables](http://atomix.github.io/copycat/user-manual/distributed-resources/#distributed-atomic-variables)
+* [Distributed coordination tools](http://atomix.io/user-manual/distributed-resources/#distributed-coordination)
+* [Distributed collections](http://atomix.io/user-manual/distributed-resources/#distributed-collections)
+* [Distributed atomic variables](http://atomix.io/user-manual/distributed-resources/#distributed-atomic-variables)
 
 Additionally, Copycat is built on a series of low-level libraries that form its consensus algorithm:
 * [Catalog][Catalog] is Copycat's progressive, feature-complete implementation of the [Raft consensus algorithm][Raft]
