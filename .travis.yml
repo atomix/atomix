@@ -6,7 +6,14 @@ jdk:
 notifications:
   email: false
 
-# whitelist
 branches:
   only:
     - master
+
+after_success:
+  - bin/ci-push-javadoc.sh
+
+env:
+  global:
+    secure: QBVbxRWAoXVkRxawlo9Uuav8Q2wozBK6drmPShpSl2ikLnkrV75ddBcZgVXzjHEwXBxykflV6nNfXXSg/3BlRiK5ysK/tDusHZTeOKiZuP/228mLyDUIgztLFCJ8tAy5rtSZUqUsNZiO3+NAAL3BM1VXSBGb/gYpkYWO+DxPvYbj2GVe+6MNzYBLC65bfIqtnY/MAAw6yQKC/j5NICbmzsfjWM1NqAj1x17kyovAgbizInVHnKqjPYTSDjGqQJb3q8rS+z+wM/jY3TL6lGljc46lAwkoU4tVjdmecY85iIqaV7wNFyPh5anCVUVCgYFM4BOF7M/KNd3t3NdqYU5WRsOIMajL3L1xktr3Q9kF5UW1VyAY4fDl91vIhP1Kush5TaUXLYTSiI875RdqMal21j/yijcVy6GQKpPNi2joXDicGCNRtn38nx0zdx6G/GlTdoPs5UgkCgXpF68HPH3oZXOoBI9A9ASwiq9n91xrbvI2T361eQ4TodTPz1wqaqf15PlvK7E78BTiCCmzJeQyLeKAnCMy1rIXR9Ygck2kQakmDrgJcynL+SspT+VyLDsnm2c4Zey//Yu88aw1Z9wglTqDe8lLu56tNEoHrhT3bH1cO5kC7q9rfquCorlI8jW9qSeTzxtmGVKku3Og7u6SqsX8AFarNaMRXZP2vwdZSuk=
+    
