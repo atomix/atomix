@@ -3,7 +3,7 @@
 
 **Persistent • Consistent • Fault-tolerant • Database • Coordination • Framework**
 
-#### [Getting started][Getting started] • [User Manual][User manual] • [Raft Algorithm][Catalog] • [Google Group][Google group] • [Javadoc][Javadoc]
+#### [Getting started][Getting started] • [User Manual][User manual] • [Raft Implementation][Catalog] • [Google Group][Google group] • [Javadoc][Javadoc]
 
 [![Build Status](https://travis-ci.org/atomix/copycat.png)](https://travis-ci.org/atomix/copycat)
 
@@ -19,7 +19,7 @@ Copycat exposes a set of high level APIs with tools to solve a variety of distri
 * [Distributed atomic variables](http://atomix.io/user-manual/distributed-resources/#distributed-atomic-variables)
 
 Additionally, Copycat is built on a series of low-level libraries that form its consensus algorithm:
-* [Catalog][Catalog] is Copycat's progressive, feature-complete implementation of the [Raft consensus algorithm][Raft]
+* [Catalogue][Catalog] is Copycat's progressive, feature-complete implementation of the [Raft consensus algorithm][Raft]
 * [Catalyst][Catalyst] is Copycat's extensible asynchronous I/O, serialization, and networking framework
 
 **Copycat is still undergoing heavy development and testing and is therefore not recommended for production!**
@@ -38,5 +38,5 @@ updates!
 [Google group]: https://groups.google.com/forum/#!forum/copycat
 [Javadoc]: http://atomix.github.io/copycat/api/0.1.0-SNAPSHOT/
 [Raft]: https://raft.github.io/
-[Catalog]: http://github.com/atomix/catalog
+[Catalog]: http://github.com/atomix/catalogue
 [Catalyst]: http://github.com/atomix/catalyst
