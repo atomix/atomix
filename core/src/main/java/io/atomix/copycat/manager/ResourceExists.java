@@ -15,8 +15,8 @@
  */
 package io.atomix.copycat.manager;
 
-import io.atomix.catalog.client.Operation;
-import io.atomix.catalog.client.Query;
+import io.atomix.catalogue.client.Operation;
+import io.atomix.catalogue.client.Query;
 import io.atomix.catalyst.serializer.SerializeWith;
 import io.atomix.catalyst.util.BuilderPool;
 

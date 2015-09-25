@@ -16,8 +16,8 @@
 package io.atomix.copycat.resource;
 
 import io.atomix.catalyst.serializer.SerializeWith;
-import io.atomix.catalog.client.Command;
-import io.atomix.catalog.client.Operation;
+import io.atomix.catalogue.client.Command;
+import io.atomix.catalogue.client.Operation;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.BuilderPool;
 

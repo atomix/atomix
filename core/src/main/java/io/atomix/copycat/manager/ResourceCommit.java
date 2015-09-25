@@ -15,9 +15,9 @@
  */
 package io.atomix.copycat.manager;
 
-import io.atomix.catalog.client.Operation;
-import io.atomix.catalog.client.session.Session;
-import io.atomix.catalog.server.Commit;
+import io.atomix.catalogue.client.Operation;
+import io.atomix.catalogue.client.session.Session;
+import io.atomix.catalogue.server.Commit;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.copycat.resource.ResourceOperation;
 

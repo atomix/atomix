@@ -16,8 +16,8 @@
 package io.atomix.copycat.manager;
 
 import io.atomix.catalyst.util.BuilderPool;
-import io.atomix.catalog.client.Command;
-import io.atomix.catalog.client.Operation;
+import io.atomix.catalogue.client.Command;
+import io.atomix.catalogue.client.Operation;
 import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
