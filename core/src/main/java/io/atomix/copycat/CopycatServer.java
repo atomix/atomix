@@ -23,15 +23,11 @@ import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.ConfigurationException;
 import io.atomix.catalyst.util.Managed;
-import io.atomix.catalyst.util.concurrent.CatalystThreadFactory;
 import io.atomix.copycat.manager.ResourceManager;
 
 import java.time.Duration;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
 
 /**
  * Standalone Copycat server.
@@ -153,9 +149,6 @@ public class CopycatServer implements Managed<CopycatServer> {
 
     @Override
     public CopycatServer build() {
-      ThreadFactory threadFactory = new CatalystThreadFactory("copycat-resource-%d");
-      ScheduledExecutorService executor = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), threadFactory);
-
       // If no transport was configured by the user, attempt to load the Netty transport.
       if (transport == null) {
         try {
@@ -168,7 +161,7 @@ public class CopycatServer implements Managed<CopycatServer> {
       // Construct the underlying RaftServer. The server should have been configured with a CombinedTransport
       // that facilitates the local client connecting directly to the server.
       RaftServer server = builder.withTransport(transport)
-        .withStateMachine(new ResourceManager(executor)).build();
+        .withStateMachine(new ResourceManager()).build();
 
       return new CopycatServer(server);
     }

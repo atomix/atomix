@@ -22,7 +22,6 @@ import io.atomix.catalyst.util.Listeners;
 import io.atomix.copycat.resource.ResourceEvent;
 
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
@@ -62,7 +61,7 @@ class ManagedResourceSession implements Session {
   }
 
   @Override
-  public CompletableFuture<Void> publish(String event, Object message) {
+  public Session publish(String event, Object message) {
     return parent.publish(event, new ResourceEvent<>(resource, Assert.notNull(message, "message")));
   }
 

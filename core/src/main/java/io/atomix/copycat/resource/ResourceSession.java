@@ -23,7 +23,6 @@ import io.atomix.catalyst.util.concurrent.ThreadContext;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
@@ -65,19 +64,19 @@ public class ResourceSession implements Session {
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<Void> publish(String event, Object message) {
+  public Session publish(String event, Object message) {
     ResourceEvent resourceEvent = (ResourceEvent) Assert.notNull(message, "message");
     if (resourceEvent.resource() == resource) {
       Set<EventListener> listeners = eventListeners.get(event);
       if (listeners != null) {
-        return CompletableFuture.runAsync(() -> {
+        context.executor().execute(() -> {
           for (Consumer<Object> listener : listeners) {
             listener.accept(resourceEvent.event());
           }
-        }, context.executor());
+        });
       }
     }
-    return CompletableFuture.completedFuture(null);
+    return this;
   }
 
   @Override
