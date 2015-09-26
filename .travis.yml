@@ -13,7 +13,4 @@ branches:
 
 after_success:
   - bin/ci-push-javadoc.sh
-
-env:
-  global:
-    secure: qlxhJbsmdvGnjHJxg2858Urqxi+eakE0t+pqXwx+ORP4v289MijFhs0h9B0FwDCWiYam1dRmf8qVTC6x0OUf6lo6WHpndWVQlwkKwhU78VqxJLwJ1EK4lONVSg5DaeVatV6Km89pEp9+WxEzB/ZWvntet1pQGVDufxHpTo/nOXI=
+  - bin/ci-deploy-snapshot.sh
