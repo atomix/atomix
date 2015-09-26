@@ -46,6 +46,11 @@ public class DeleteResource implements Command<Boolean>, CatalystSerializable {
   public DeleteResource() {
   }
 
+  @Override
+  public PersistenceLevel persistence() {
+    return PersistenceLevel.PERSISTENT;
+  }
+
   /**
    * Returns the resource ID.
    *
