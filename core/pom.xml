@@ -15,12 +15,12 @@
     <dependency>
       <groupId>io.atomix.catalogue</groupId>
       <artifactId>catalogue-client</artifactId>
-      <version>${catalog.version}</version>
+      <version>${catalogue.version}</version>
     </dependency>
     <dependency>
       <groupId>io.atomix.catalogue</groupId>
       <artifactId>catalogue-server</artifactId>
-      <version>${catalog.version}</version>
+      <version>${catalogue.version}</version>
     </dependency>
     <dependency>
       <groupId>io.atomix.catalyst</groupId>
