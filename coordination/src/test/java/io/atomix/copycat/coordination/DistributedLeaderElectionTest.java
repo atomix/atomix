@@ -15,13 +15,13 @@
  */
 package io.atomix.copycat.coordination;
 
-import net.jodah.concurrentunit.ConcurrentTestCase;
 import io.atomix.catalogue.server.storage.Storage;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.LocalServerRegistry;
 import io.atomix.catalyst.transport.LocalTransport;
 import io.atomix.copycat.Copycat;
 import io.atomix.copycat.CopycatReplica;
+import net.jodah.concurrentunit.ConcurrentTestCase;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -32,6 +32,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Async leader election test.
@@ -54,6 +55,38 @@ public class DistributedLeaderElectionTest extends ConcurrentTestCase {
 
     election.onElection(v -> resume()).thenRun(this::resume);
     await(0, 2);
+  }
+
+  /**
+   * Tests stepping down leadership.
+   */
+  public void testNextElection() throws Throwable {
+    List<Copycat> servers = createCopycats(3);
+
+    Copycat copycat1 = servers.get(0);
+    Copycat copycat2 = servers.get(1);
+
+    DistributedLeaderElection election1 = copycat1.create("test", DistributedLeaderElection.class).get();
+    DistributedLeaderElection election2 = copycat2.create("test", DistributedLeaderElection.class).get();
+
+    AtomicLong lastEpoch = new AtomicLong(0);
+    election1.onElection(epoch -> {
+      threadAssertTrue(epoch > lastEpoch.get());
+      lastEpoch.set(epoch);
+      resume();
+    }).join();
+
+    await();
+
+    election2.onElection(epoch -> {
+      threadAssertTrue(epoch > lastEpoch.get());
+      lastEpoch.set(epoch);
+      resume();
+    }).join();
+
+    copycat1.close();
+
+    await();
   }
 
   /**

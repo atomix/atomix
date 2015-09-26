@@ -22,12 +22,12 @@ import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.transport.*;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.ConfigurationException;
-import io.atomix.catalyst.util.concurrent.CatalystThreadFactory;
 import io.atomix.copycat.manager.ResourceManager;
 
 import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 /**
@@ -236,9 +236,6 @@ public final class CopycatReplica extends Copycat {
 
     @Override
     public CopycatReplica build() {
-      ThreadFactory threadFactory = new CatalystThreadFactory("copycat-resource-%d");
-      ScheduledExecutorService executor = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), threadFactory);
-
       // If no transport was configured by the user, attempt to load the Netty transport.
       if (transport == null) {
         try {
@@ -256,7 +253,7 @@ public final class CopycatReplica extends Copycat {
       // Construct the underlying RaftServer. The server should have been configured with a CombinedTransport
       // that facilitates the local client connecting directly to the server.
       RaftServer server = serverBuilder.withTransport(new CombinedTransport(new LocalTransport(localRegistry), transport))
-        .withStateMachine(new ResourceManager(executor)).build();
+        .withStateMachine(new ResourceManager()).build();
 
       return new CopycatReplica(client, server, transport);
     }

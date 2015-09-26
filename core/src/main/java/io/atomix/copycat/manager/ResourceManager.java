@@ -19,16 +19,11 @@ import io.atomix.catalogue.client.session.Session;
 import io.atomix.catalogue.server.Commit;
 import io.atomix.catalogue.server.StateMachine;
 import io.atomix.catalogue.server.StateMachineExecutor;
-import io.atomix.catalyst.util.Assert;
-import io.atomix.catalyst.util.concurrent.ThreadContext;
-import io.atomix.catalyst.util.concurrent.ThreadPoolContext;
 import io.atomix.copycat.resource.ResourceOperation;
 
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Function;
 
 /**
@@ -37,24 +32,16 @@ import java.util.function.Function;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class ResourceManager extends StateMachine {
-  private final ScheduledExecutorService scheduler;
   private StateMachineExecutor executor;
   private final Map<String, Long> paths = new HashMap<>();
   private final Map<Long, ResourceHolder> resources = new HashMap<>();
   private final Map<Long, SessionHolder> sessions = new HashMap<>();
   private final ResourceCommitPool commits = new ResourceCommitPool();
 
-  /**
-   * @throws NullPointerException if {@code scheduler} is null
-   */
-  public ResourceManager(ScheduledExecutorService scheduler) {
-    this.scheduler = Assert.notNull(scheduler, "scheduler");
-  }
-
   @Override
   public void configure(StateMachineExecutor executor) {
     this.executor = executor;
-    executor.register(ResourceOperation.class, (Function<Commit<ResourceOperation>, CompletableFuture<Object>>) this::operateResource);
+    executor.register(ResourceOperation.class, (Function<Commit<ResourceOperation>, Object>) this::operateResource);
     executor.register(GetResource.class, this::getResource);
     executor.register(CreateResource.class, this::createResource);
     executor.register(DeleteResource.class, this::deleteResource);
@@ -65,14 +52,11 @@ public class ResourceManager extends StateMachine {
    * Performs an operation on a resource.
    */
   @SuppressWarnings("unchecked")
-  private CompletableFuture<Object> operateResource(Commit<ResourceOperation> commit) {
+  private Object operateResource(Commit<ResourceOperation> commit) {
     ResourceHolder resource;
-    ManagedResourceSession session = null;
-
-    SessionHolder client = sessions.get(commit.operation().resource());
-    if (client != null) {
-      resource = resources.get(client.resource);
-      session = client.session;
+    SessionHolder session = sessions.get(commit.operation().resource());
+    if (session != null) {
+      resource = resources.get(session.resource);
     } else {
       resource = resources.get(commit.operation().resource());
     }
@@ -88,9 +72,7 @@ public class ResourceManager extends StateMachine {
       }
     }
 
-    CompletableFuture<Object> future = new CompletableFuture<>();
-
-    ResourceCommit resourceCommit = commits.acquire(commit, session);
+    ResourceCommit resourceCommit = commits.acquire(commit, session.session);
     return resource.executor.execute(resourceCommit);
   }
 
@@ -108,12 +90,11 @@ public class ResourceManager extends StateMachine {
 
       try {
         StateMachine stateMachine = commit.operation().type().newInstance();
-        ThreadContext context = new ThreadPoolContext(scheduler, ThreadContext.currentContext().serializer().clone());
-        ResourceStateMachineExecutor executor = new ResourceStateMachineExecutor(commit.index(), this.executor, context);
+        ResourceStateMachineExecutor executor = new ResourceStateMachineExecutor(commit.index(), this.executor);
         ResourceHolder resource = new ResourceHolder(path, stateMachine, executor);
         resources.put(resourceId, resource);
         stateMachine.init(executor);
-        resource.sessions.put(commit.session().id(), new ManagedResourceSession(resourceId, commit.session()));
+        resource.sessions.put(commit.session().id(), new SessionHolder(resourceId, commit, new ManagedResourceSession(resourceId, commit.session())));
       } catch (InstantiationException | IllegalAccessException e) {
         throw new ResourceManagerException("failed to instantiate state machine", e);
       }
@@ -122,6 +103,7 @@ public class ResourceManager extends StateMachine {
       if (resource == null || resource.stateMachine.getClass() != commit.operation().type()) {
         throw new ResourceManagerException("inconsistent resource type: " + commit.operation().type());
       }
+      commit.clean();
     }
     return resourceId;
   }
@@ -142,8 +124,7 @@ public class ResourceManager extends StateMachine {
 
       try {
         StateMachine stateMachine = commit.operation().type().newInstance();
-        ThreadContext context = new ThreadPoolContext(scheduler, ThreadContext.currentContext().serializer().clone());
-        ResourceStateMachineExecutor executor = new ResourceStateMachineExecutor(commit.index(), this.executor, context);
+        ResourceStateMachineExecutor executor = new ResourceStateMachineExecutor(commit.index(), this.executor);
         resource = new ResourceHolder(path, stateMachine, executor);
         resources.put(resourceId, resource);
         stateMachine.init(executor);
@@ -159,8 +140,8 @@ public class ResourceManager extends StateMachine {
 
     id = commit.index();
     ManagedResourceSession session = new ManagedResourceSession(id, commit.session());
-    sessions.put(id, new SessionHolder(resourceId, session));
-    resource.executor.execute(() -> resource.stateMachine.register(session));
+    sessions.put(id, new SessionHolder(resourceId, commit, session));
+    resource.stateMachine.register(session);
     return id;
   }
 
@@ -185,8 +166,10 @@ public class ResourceManager extends StateMachine {
 
     Iterator<Map.Entry<Long, SessionHolder>> iterator = sessions.entrySet().iterator();
     while (iterator.hasNext()) {
-      if (iterator.next().getValue().resource == commit.operation().resource()) {
+      SessionHolder session = iterator.next().getValue();
+      if (session.resource == commit.operation().resource()) {
         iterator.remove();
+        session.commit.clean();
       }
     }
     return true;
@@ -195,9 +178,9 @@ public class ResourceManager extends StateMachine {
   @Override
   public void expire(Session session) {
     for (ResourceHolder resource : resources.values()) {
-      ManagedResourceSession resourceSession = resource.sessions.get(session.id());
+      SessionHolder resourceSession = resource.sessions.get(session.id());
       if (resourceSession != null) {
-        resource.executor.execute(() -> resource.stateMachine.expire(resourceSession));
+        resource.stateMachine.expire(resourceSession.session);
       }
     }
 
@@ -205,7 +188,7 @@ public class ResourceManager extends StateMachine {
       if (sessionHolder.session.id() == session.id()) {
         ResourceHolder resource = resources.get(sessionHolder.resource);
         if (resource != null) {
-          resource.executor.execute(() -> resource.stateMachine.expire(sessionHolder.session));
+          resource.stateMachine.expire(sessionHolder.session);
         }
       }
     }
@@ -214,9 +197,10 @@ public class ResourceManager extends StateMachine {
   @Override
   public void close(Session session) {
     for (ResourceHolder resource : resources.values()) {
-      ManagedResourceSession resourceSession = resource.sessions.get(session.id());
+      SessionHolder resourceSession = resource.sessions.remove(session.id());
       if (resourceSession != null) {
-        resource.executor.execute(() -> resource.stateMachine.close(resourceSession));
+        resource.stateMachine.close(resourceSession.session);
+        resourceSession.commit.clean();
       }
     }
 
@@ -226,16 +210,12 @@ public class ResourceManager extends StateMachine {
       if (sessionHolder.session.id() == session.id()) {
         ResourceHolder resource = resources.get(sessionHolder.resource);
         if (resource != null) {
-          resource.executor.execute(() -> resource.stateMachine.close(sessionHolder.session));
+          resource.stateMachine.close(sessionHolder.session);
         }
+        sessionHolder.commit.clean();
         iterator.remove();
       }
     }
-  }
-
-  @Override
-  public void close() {
-    scheduler.shutdown();
   }
 
   /**
@@ -245,7 +225,7 @@ public class ResourceManager extends StateMachine {
     private final String path;
     private final StateMachine stateMachine;
     private final ResourceStateMachineExecutor executor;
-    private final Map<Long, ManagedResourceSession> sessions = new HashMap<>();
+    private final Map<Long, SessionHolder> sessions = new HashMap<>();
 
     private ResourceHolder(String path, StateMachine stateMachine, ResourceStateMachineExecutor executor) {
       this.path = path;
@@ -259,10 +239,12 @@ public class ResourceManager extends StateMachine {
    */
   private static class SessionHolder {
     private final long resource;
+    private final Commit commit;
     private final ManagedResourceSession session;
 
-    private SessionHolder(long resource, ManagedResourceSession session) {
+    private SessionHolder(long resource, Commit commit, ManagedResourceSession session) {
       this.resource = resource;
+      this.commit = commit;
       this.session = session;
     }
   }

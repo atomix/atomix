@@ -22,9 +22,7 @@ import io.atomix.catalogue.server.StateMachineContext;
 import io.atomix.catalogue.server.StateMachineExecutor;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.util.Assert;
-import io.atomix.catalyst.util.concurrent.ComposableFuture;
 import io.atomix.catalyst.util.concurrent.Scheduled;
-import io.atomix.catalyst.util.concurrent.ThreadContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,9 +32,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -48,15 +44,13 @@ import java.util.function.Supplier;
  */
 class ResourceStateMachineExecutor implements StateMachineExecutor {
   private final StateMachineExecutor parent;
-  private final ThreadContext context;
   private final Logger logger;
   private final Map<Class, Function> operations = new HashMap<>();
   private final Set<Scheduled> tasks = new HashSet<>();
   private Function allOperation;
 
-  ResourceStateMachineExecutor(long resource, StateMachineExecutor parent, ThreadContext context) {
+  ResourceStateMachineExecutor(long resource, StateMachineExecutor parent) {
     this.parent = parent;
-    this.context = context;
     this.logger = LoggerFactory.getLogger(String.format("%s-%d", getClass().getName(), resource));
   }
 
@@ -72,75 +66,55 @@ class ResourceStateMachineExecutor implements StateMachineExecutor {
 
   @Override
   public Serializer serializer() {
-    return context.serializer();
+    return parent.serializer();
   }
 
   @Override
   public Executor executor() {
-    return context.executor();
+    return parent.executor();
   }
 
   @Override
   public CompletableFuture<Void> execute(Runnable callback) {
-    return context.execute(callback);
+    return parent.execute(callback);
   }
 
   @Override
   public <T> CompletableFuture<T> execute(Supplier<T> callback) {
-    return context.execute(callback);
+    return parent.execute(callback);
   }
 
   /**
    * Executes the given commit on the state machine.
    */
   @SuppressWarnings("unchecked")
-  <T extends Operation<U>, U> CompletableFuture<U> execute(Commit<T> commit) {
-    ThreadContext parent = ThreadContext.currentContext();
+  <T extends Operation<U>, U> U execute(Commit<T> commit) {
+    // Get the function registered for the operation. If no function is registered, attempt to
+    // use a global function if available.
+    Function function = operations.get(commit.type());
+    if (function == null) {
+      function = allOperation;
+    }
 
-    ComposableFuture<U> future = new ComposableFuture<>();
-    context.executor().execute(() -> {
-      // Get the function registered for the operation. If no function is registered, attempt to
-      // use a global function if available.
-      Function function = operations.get(commit.type());
-      if (function == null) {
-        function = allOperation;
-      }
-
-      if (function == null) {
-        parent.executor().execute(() -> future.completeExceptionally(new IllegalStateException("unknown state machine operation: " + commit.type())));
-      } else {
-        // Execute the operation. If the operation return value is a Future, await the result,
-        // otherwise immediately complete the execution future.
-        Object result = function.apply(commit);
-        if (result instanceof CompletableFuture) {
-          ((CompletableFuture<U>) result).whenCompleteAsync(future, parent.executor());
-        } else if (result instanceof Future) {
-          parent.executor().execute(() -> {
-            try {
-              future.complete(((Future<U>) result).get());
-            } catch (ExecutionException | InterruptedException e) {
-              throw new RuntimeException(e);
-            }
-          });
-        } else {
-          parent.executor().execute(() -> future.complete((U) result));
-        }
-      }
-    });
-
-    return future;
+    if (function == null) {
+      throw new IllegalStateException("unknown state machine operation: " + commit.type());
+    } else {
+      // Execute the operation. If the operation return value is a Future, await the result,
+      // otherwise immediately complete the execution future.
+      return (U) function.apply(commit);
+    }
   }
 
   @Override
   public Scheduled schedule(Duration delay, Runnable callback) {
-    Scheduled task = parent.schedule(delay, () -> context.executor().execute(callback));
+    Scheduled task = parent.schedule(delay, () -> parent.executor().execute(callback));
     tasks.add(task);
     return task;
   }
 
   @Override
   public Scheduled schedule(Duration initialDelay, Duration interval, Runnable callback) {
-    Scheduled task = parent.schedule(initialDelay, interval, () -> context.executor().execute(callback));
+    Scheduled task = parent.schedule(initialDelay, interval, () -> parent.executor().execute(callback));
     tasks.add(task);
     return task;
   }
@@ -163,7 +137,7 @@ class ResourceStateMachineExecutor implements StateMachineExecutor {
   }
 
   @Override
-  public <T extends Operation<?>> StateMachineExecutor register(Class<T> type, Function<Commit<T>, ?> callback) {
+  public <T extends Operation<U>, U> StateMachineExecutor register(Class<T> type, Function<Commit<T>, U> callback) {
     Assert.notNull(type, "type");
     Assert.notNull(callback, "callback");
     operations.put(type, callback);
