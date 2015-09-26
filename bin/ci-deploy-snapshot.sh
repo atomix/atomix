@@ -8,8 +8,7 @@ if [ "$TRAVIS_REPO_SLUG" == "$REPO" ] && \
    [ "$TRAVIS_BRANCH" == "master" ]; then
   echo -e "Publishing maven snapshot...\n"
 
-  wget https://raw.githubusercontent.com/$REPO/master/bin/settings.xml
-  mvn clean source:jar deploy --settings=settings.xml -DskipTests=true -Dmaven.javadoc.skip=true
+  mvn clean source:jar deploy --settings="bin/settings.xml" -DskipTests=true -Dmaven.javadoc.skip=true
 
   echo -e "Published maven snapshot"
 fi
