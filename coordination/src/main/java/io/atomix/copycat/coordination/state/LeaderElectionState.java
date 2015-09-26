@@ -48,7 +48,7 @@ public class LeaderElectionState extends StateMachine {
         Commit<LeaderElectionCommands.Listen> leader = listeners.remove(0);
         this.leader = leader.session();
         this.epoch = leader.index();
-        this.leader.publish("elect", true);
+        this.leader.publish("elect", this.epoch);
       }
     }
   }
