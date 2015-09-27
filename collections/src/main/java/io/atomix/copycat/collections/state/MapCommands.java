@@ -140,6 +140,16 @@ public class MapCommands {
     }
 
     @Override
+    public int groupCode() {
+      return key.hashCode();
+    }
+
+    @Override
+    public boolean groupEquals(Command command) {
+      return command instanceof KeyCommand && ((KeyCommand) command).key.equals(key);
+    }
+
+    @Override
     public void writeObject(BufferOutput buffer, Serializer serializer) {
       serializer.writeObject(key, buffer);
     }
@@ -165,6 +175,8 @@ public class MapCommands {
        */
       @SuppressWarnings("unchecked")
       public T withKey(Object key) {
+        if (key == null)
+          throw new NullPointerException("key cannot be null");
         command.key = key;
         return (T) this;
       }
@@ -212,6 +224,8 @@ public class MapCommands {
        */
       @SuppressWarnings("unchecked")
       public T withKey(Object key) {
+        if (key == null)
+          throw new NullPointerException("key cannot be null");
         query.key = key;
         return (T) this;
       }
@@ -301,7 +315,7 @@ public class MapCommands {
 
     @Override
     public PersistenceLevel persistence() {
-      return ttl > 0 ? PersistenceLevel.PERSISTENT : PersistenceLevel.EPHEMERAL;
+      return ttl > 0 ? PersistenceLevel.EPHEMERAL : PersistenceLevel.PERSISTENT;
     }
 
     /**
@@ -597,6 +611,11 @@ public class MapCommands {
     @Override
     public PersistenceLevel persistence() {
       return PersistenceLevel.PERSISTENT;
+    }
+
+    @Override
+    public boolean groupEquals(Command command) {
+      return command instanceof Clear;
     }
 
     /**

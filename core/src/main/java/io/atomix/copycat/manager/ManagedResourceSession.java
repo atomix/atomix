@@ -61,8 +61,13 @@ class ManagedResourceSession implements Session {
   }
 
   @Override
+  public Session publish(String event) {
+    return parent.publish(event, new ResourceEvent<>(resource, null));
+  }
+
+  @Override
   public Session publish(String event, Object message) {
-    return parent.publish(event, new ResourceEvent<>(resource, Assert.notNull(message, "message")));
+    return parent.publish(event, new ResourceEvent<>(resource, message));
   }
 
   /**
@@ -74,10 +79,16 @@ class ManagedResourceSession implements Session {
       Listeners<Object> listeners = eventListeners.get(event);
       if (listeners != null) {
         for (Consumer listener : listeners) {
-          listener.accept(message.event());
+          listener.accept(message.message());
         }
       }
     }
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public Listener<Void> onEvent(String event, Runnable callback) {
+    return onEvent(event, v -> callback.run());
   }
 
   @Override
