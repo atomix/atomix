@@ -22,7 +22,7 @@ if [ "$TRAVIS_REPO_SLUG" == "atomix/$PROJECT" ] && \
   mkdir -p $PROJECT/api/latest
   mv ${TARGET}/site/apidocs/api/latest $PROJECT/api
   git add -A -f $PROJECT/api/latest
-  git commit -m "Javadoc generated from $PROJECT travis build $TRAVIS_BUILD_NUMBER"
+  git commit -m "Travis generated Javadoc for $PROJECT build $TRAVIS_BUILD_NUMBER"
   git push -fq origin > /dev/null
 
   echo -e "Published Javadoc to atomix.github.io.\n"
