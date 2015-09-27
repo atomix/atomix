@@ -127,13 +127,23 @@ public class SetCommands {
    * Abstract value command.
    */
   private static abstract class ValueCommand<V> extends SetCommand<V> {
-    protected int value;
+    protected Object value;
 
     /**
      * Returns the value.
      */
-    public int value() {
+    public Object value() {
       return value;
+    }
+
+    @Override
+    public int groupCode() {
+      return value.hashCode();
+    }
+
+    @Override
+    public boolean groupEquals(Command command) {
+      return command instanceof ValueCommand && ((ValueCommand) command).value.equals(value);
     }
 
     @Override
@@ -161,7 +171,9 @@ public class SetCommands {
        * @return The command builder.
        */
       @SuppressWarnings("unchecked")
-      public T withValue(int value) {
+      public T withValue(Object value) {
+        if (value == null)
+          throw new NullPointerException("value cannot be null");
         command.value = value;
         return (T) this;
       }
@@ -172,12 +184,12 @@ public class SetCommands {
    * Abstract value query.
    */
   private static abstract class ValueQuery<V> extends SetQuery<V> {
-    protected int value;
+    protected Object value;
 
     /**
      * Returns the value.
      */
-    public int value() {
+    public Object value() {
       return value;
     }
 
@@ -208,7 +220,9 @@ public class SetCommands {
        * @return The query builder.
        */
       @SuppressWarnings("unchecked")
-      public T withValue(int value) {
+      public T withValue(Object value) {
+        if (value == null)
+          throw new NullPointerException("value cannot be null");
         query.value = value;
         return (T) this;
       }
@@ -251,7 +265,7 @@ public class SetCommands {
 
     @Override
     public PersistenceLevel persistence() {
-      return ttl > 0 ? PersistenceLevel.PERSISTENT : PersistenceLevel.EPHEMERAL;
+      return ttl > 0 ? PersistenceLevel.EPHEMERAL : PersistenceLevel.PERSISTENT;
     }
 
     /**
@@ -441,6 +455,11 @@ public class SetCommands {
     @Override
     public PersistenceLevel persistence() {
       return PersistenceLevel.PERSISTENT;
+    }
+
+    @Override
+    public boolean groupEquals(Command command) {
+      return command instanceof Clear;
     }
 
     /**

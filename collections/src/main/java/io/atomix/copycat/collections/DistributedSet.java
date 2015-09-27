@@ -46,7 +46,7 @@ public class DistributedSet<T> extends Resource {
    */
   public CompletableFuture<Boolean> add(T value) {
     return submit(SetCommands.Add.builder()
-      .withValue(value.hashCode())
+      .withValue(value)
       .build());
   }
 
@@ -59,7 +59,7 @@ public class DistributedSet<T> extends Resource {
    */
   public CompletableFuture<Boolean> add(T value, Command.ConsistencyLevel consistency) {
     return submit(SetCommands.Add.builder()
-      .withValue(value.hashCode())
+      .withValue(value)
       .withConsistency(consistency)
       .build());
   }
@@ -74,7 +74,7 @@ public class DistributedSet<T> extends Resource {
   @SuppressWarnings("unchecked")
   public CompletableFuture<Boolean> add(T value, Duration ttl) {
     return submit(SetCommands.Add.builder()
-      .withValue(value.hashCode())
+      .withValue(value)
       .withTtl(ttl.toMillis())
       .build());
   }
@@ -90,7 +90,7 @@ public class DistributedSet<T> extends Resource {
   @SuppressWarnings("unchecked")
   public CompletableFuture<Boolean> add(T value, Duration ttl, Command.ConsistencyLevel consistency) {
     return submit(SetCommands.Add.builder()
-      .withValue(value.hashCode())
+      .withValue(value)
       .withTtl(ttl.toMillis())
       .withConsistency(consistency)
       .build());
@@ -104,7 +104,7 @@ public class DistributedSet<T> extends Resource {
    */
   public CompletableFuture<Boolean> remove(T value) {
     return submit(SetCommands.Remove.builder()
-      .withValue(value.hashCode())
+      .withValue(value)
       .build());
   }
 
@@ -117,7 +117,7 @@ public class DistributedSet<T> extends Resource {
    */
   public CompletableFuture<Boolean> remove(T value, Command.ConsistencyLevel consistency) {
     return submit(SetCommands.Remove.builder()
-      .withValue(value.hashCode())
+      .withValue(value)
       .withConsistency(consistency)
       .build());
   }
@@ -130,7 +130,7 @@ public class DistributedSet<T> extends Resource {
    */
   public CompletableFuture<Boolean> contains(Object value) {
     return submit(SetCommands.Contains.builder()
-      .withValue(value.hashCode())
+      .withValue(value)
       .build());
   }
 
@@ -143,7 +143,7 @@ public class DistributedSet<T> extends Resource {
    */
   public CompletableFuture<Boolean> contains(Object value, Query.ConsistencyLevel consistency) {
     return submit(SetCommands.Contains.builder()
-      .withValue(value.hashCode())
+      .withValue(value)
       .withConsistency(consistency)
       .build());
   }
