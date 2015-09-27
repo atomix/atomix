@@ -15,9 +15,9 @@
  */
 package io.atomix.copycat.resource;
 
-import io.atomix.catalyst.serializer.SerializeWith;
 import io.atomix.catalogue.client.Command;
 import io.atomix.catalogue.client.Operation;
+import io.atomix.catalyst.serializer.SerializeWith;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.BuilderPool;
 
@@ -37,6 +37,31 @@ public class ResourceCommand<T extends Command<U>, U> extends ResourceOperation<
   @SuppressWarnings("unchecked")
   public static <T extends Command<U>, U> Builder<T, U> builder() {
     return Operation.builder(Builder.class, Builder::new);
+  }
+
+  @Override
+  public ConsistencyLevel consistency() {
+    return operation.consistency();
+  }
+
+  @Override
+  public PersistenceLevel persistence() {
+    return operation.persistence();
+  }
+
+  @Override
+  public int groupCode() {
+    return 37 * (int)(resource ^ (resource >>> 32)) + operation.groupCode();
+  }
+
+  @Override
+  public boolean groupEquals(Command command) {
+    if (command instanceof ResourceCommand) {
+      ResourceCommand<?, ?> resourceCommand = (ResourceCommand<?, ?>) command;
+      return resourceCommand.resource == resource
+        && resourceCommand.operation.groupEquals(operation);
+    }
+    return false;
   }
 
   @Override
