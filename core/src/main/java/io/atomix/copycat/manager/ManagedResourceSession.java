@@ -87,6 +87,12 @@ class ManagedResourceSession implements Session {
 
   @Override
   @SuppressWarnings("unchecked")
+  public Listener<Void> onEvent(String event, Runnable callback) {
+    return onEvent(event, v -> callback.run());
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
   public synchronized Listener onEvent(String event, Consumer listener) {
     Listeners listeners = eventListeners.get(event);
     if (listeners == null) {

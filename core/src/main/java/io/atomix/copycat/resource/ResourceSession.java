@@ -82,6 +82,11 @@ public class ResourceSession implements Session {
   }
 
   @Override
+  public Listener<Void> onEvent(String event, Runnable callback) {
+    return onEvent(event, v -> callback.run());
+  }
+
+  @Override
   @SuppressWarnings("unchecked")
   public synchronized <T> Listener<T> onEvent(String event, Consumer<T> listener) {
     Assert.notNull(event, "event");
