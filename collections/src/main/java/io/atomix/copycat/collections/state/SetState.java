@@ -31,7 +31,7 @@ import java.util.Map;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class SetState extends StateMachine {
-  private final Map<Integer, Value> map = new HashMap<>();
+  private final Map<Object, Value> map = new HashMap<>();
 
   @Override
   protected void configure(StateMachineExecutor executor) {
@@ -124,9 +124,9 @@ public class SetState extends StateMachine {
    */
   protected void clear(Commit<SetCommands.Clear> commit) {
     try {
-      Iterator<Map.Entry<Integer, Value>> iterator = map.entrySet().iterator();
+      Iterator<Map.Entry<Object, Value>> iterator = map.entrySet().iterator();
       while (iterator.hasNext()) {
-        Map.Entry<Integer, Value> entry = iterator.next();
+        Map.Entry<Object, Value> entry = iterator.next();
         Value value = entry.getValue();
         if (value.timer != null)
           value.timer.cancel();
