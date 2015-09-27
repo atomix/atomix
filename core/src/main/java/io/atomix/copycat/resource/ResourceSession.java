@@ -63,18 +63,20 @@ public class ResourceSession implements Session {
   }
 
   @Override
+  public Session publish(String event) {
+    return publish(event, null);
+  }
+
+  @Override
   @SuppressWarnings("unchecked")
   public Session publish(String event, Object message) {
-    ResourceEvent resourceEvent = (ResourceEvent) Assert.notNull(message, "message");
-    if (resourceEvent.resource() == resource) {
-      Set<EventListener> listeners = eventListeners.get(event);
-      if (listeners != null) {
-        context.executor().execute(() -> {
-          for (Consumer<Object> listener : listeners) {
-            listener.accept(resourceEvent.event());
-          }
-        });
-      }
+    Set<EventListener> listeners = eventListeners.get(event);
+    if (listeners != null) {
+      context.executor().execute(() -> {
+        for (Consumer<Object> listener : listeners) {
+          listener.accept(message);
+        }
+      });
     }
     return this;
   }
@@ -106,7 +108,7 @@ public class ResourceSession implements Session {
       Set<EventListener> listeners = eventListeners.get(event);
       if (listeners != null) {
         for (EventListener listener : listeners) {
-          listener.accept(message.event());
+          listener.accept(message.message());
         }
       }
     }

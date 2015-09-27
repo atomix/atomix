@@ -19,7 +19,6 @@ import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
 import io.atomix.catalyst.serializer.Serializer;
-import io.atomix.catalyst.util.Assert;
 
 /**
  * Resource event.
@@ -28,7 +27,7 @@ import io.atomix.catalyst.util.Assert;
  */
 public class ResourceEvent<T> implements CatalystSerializable {
   private long resource;
-  private T event;
+  private T message;
 
   public ResourceEvent() {
   }
@@ -36,9 +35,9 @@ public class ResourceEvent<T> implements CatalystSerializable {
   /**
    * @throws NullPointerException if {@code message} is null
    */
-  public ResourceEvent(long resource, T event) {
+  public ResourceEvent(long resource, T message) {
     this.resource = resource;
-    this.event = Assert.notNull(event, "event");
+    this.message = message;
   }
 
   /**
@@ -51,29 +50,29 @@ public class ResourceEvent<T> implements CatalystSerializable {
   }
 
   /**
-   * Returns the event body.
+   * Returns the message body.
    *
-   * @return The meeventssage body.
+   * @return The message body.
    */
-  public T event() {
-    return event;
+  public T message() {
+    return message;
   }
 
   @Override
   public void writeObject(BufferOutput buffer, Serializer serializer) {
     buffer.writeLong(resource);
-    serializer.writeObject(event, buffer);
+    serializer.writeObject(message, buffer);
   }
 
   @Override
   public void readObject(BufferInput buffer, Serializer serializer) {
     resource = buffer.readLong();
-    event = serializer.readObject(buffer);
+    message = serializer.readObject(buffer);
   }
 
   @Override
   public String toString() {
-    return String.format("%s[resource=%d, message=%s]", getClass().getSimpleName(), resource, event);
+    return String.format("%s[resource=%d, message=%s]", getClass().getSimpleName(), resource, message);
   }
 
 }
