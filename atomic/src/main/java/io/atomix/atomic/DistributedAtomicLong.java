@@ -15,8 +15,7 @@
  */
 package io.atomix.atomic;
 
-import io.atomix.copycat.client.Command;
-import io.atomix.copycat.client.Query;
+import io.atomix.Consistency;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
@@ -30,14 +29,8 @@ public class DistributedAtomicLong extends DistributedAtomicValue<Long> {
   private Long value;
 
   @Override
-  public DistributedAtomicLong withDefaultCommandConsistency(Command.ConsistencyLevel consistency) {
-    super.setDefaultCommandConsistency(consistency);
-    return this;
-  }
-
-  @Override
-  public DistributedAtomicLong withDefaultQueryConsistency(Query.ConsistencyLevel consistency) {
-    super.setDefaultQueryConsistency(consistency);
+  public DistributedAtomicLong with(Consistency consistency) {
+    super.with(consistency);
     return this;
   }
 

@@ -18,8 +18,6 @@ package io.atomix.collections;
 import io.atomix.Resource;
 import io.atomix.collections.state.SetCommands;
 import io.atomix.collections.state.SetState;
-import io.atomix.copycat.client.Command;
-import io.atomix.copycat.client.Query;
 import io.atomix.copycat.server.StateMachine;
 
 import java.time.Duration;
@@ -51,20 +49,6 @@ public class DistributedSet<T> extends Resource<DistributedSet<T>> {
   }
 
   /**
-   * Adds a value to the set.
-   *
-   * @param value The value to add.
-   * @param consistency The command consistency level.
-   * @return A completable future to be completed with the result once complete.
-   */
-  public CompletableFuture<Boolean> add(T value, Command.ConsistencyLevel consistency) {
-    return submit(SetCommands.Add.builder()
-      .withValue(value)
-      .withConsistency(consistency)
-      .build());
-  }
-
-  /**
    * Adds a value to the set with a TTL.
    *
    * @param value The value to add.
@@ -76,23 +60,6 @@ public class DistributedSet<T> extends Resource<DistributedSet<T>> {
     return submit(SetCommands.Add.builder()
       .withValue(value)
       .withTtl(ttl.toMillis())
-      .build());
-  }
-
-  /**
-   * Adds a value to the set with a TTL.
-   *
-   * @param value The value to add.
-   * @param ttl The time to live duration.
-   * @param consistency The command consistency level.
-   * @return A completable future to be completed with the result once complete.
-   */
-  @SuppressWarnings("unchecked")
-  public CompletableFuture<Boolean> add(T value, Duration ttl, Command.ConsistencyLevel consistency) {
-    return submit(SetCommands.Add.builder()
-      .withValue(value)
-      .withTtl(ttl.toMillis())
-      .withConsistency(consistency)
       .build());
   }
 
@@ -109,20 +76,6 @@ public class DistributedSet<T> extends Resource<DistributedSet<T>> {
   }
 
   /**
-   * Removes a value from the set.
-   *
-   * @param value The value to remove.
-   * @param consistency The command consistency level.
-   * @return A completable future to be completed with the result once complete.
-   */
-  public CompletableFuture<Boolean> remove(T value, Command.ConsistencyLevel consistency) {
-    return submit(SetCommands.Remove.builder()
-      .withValue(value)
-      .withConsistency(consistency)
-      .build());
-  }
-
-  /**
    * Checks whether the set contains a value.
    *
    * @param value The value to check.
@@ -131,20 +84,6 @@ public class DistributedSet<T> extends Resource<DistributedSet<T>> {
   public CompletableFuture<Boolean> contains(Object value) {
     return submit(SetCommands.Contains.builder()
       .withValue(value)
-      .build());
-  }
-
-  /**
-   * Checks whether the set contains a value.
-   *
-   * @param value The value to check.
-   * @param consistency The query consistency level.
-   * @return A completable future to be completed with the result once complete.
-   */
-  public CompletableFuture<Boolean> contains(Object value, Query.ConsistencyLevel consistency) {
-    return submit(SetCommands.Contains.builder()
-      .withValue(value)
-      .withConsistency(consistency)
       .build());
   }
 
@@ -158,16 +97,6 @@ public class DistributedSet<T> extends Resource<DistributedSet<T>> {
   }
 
   /**
-   * Gets the set count.
-   *
-   * @param consistency The query consistency level.
-   * @return A completable future to be completed with the set count.
-   */
-  public CompletableFuture<Integer> size(Query.ConsistencyLevel consistency) {
-    return submit(SetCommands.Size.builder().withConsistency(consistency).build());
-  }
-
-  /**
    * Checks whether the set is empty.
    *
    * @return A completable future to be completed with a boolean value indicating whether the set is empty.
@@ -177,34 +106,12 @@ public class DistributedSet<T> extends Resource<DistributedSet<T>> {
   }
 
   /**
-   * Checks whether the set is empty.
-   *
-   * @param consistency The query consistency level.
-   * @return A completable future to be completed with a boolean value indicating whether the set is empty.
-   */
-  public CompletableFuture<Boolean> isEmpty(Query.ConsistencyLevel consistency) {
-    return submit(SetCommands.IsEmpty.builder().withConsistency(consistency).build());
-  }
-
-  /**
    * Removes all values from the set.
    *
    * @return A completable future to be completed once the operation is complete.
    */
   public CompletableFuture<Void> clear() {
     return submit(SetCommands.Clear.builder().build());
-  }
-
-  /**
-   * Removes all values from the set.
-   *
-   * @param consistency The command consistency level.
-   * @return A completable future to be completed once the operation is complete.
-   */
-  public CompletableFuture<Void> clear(Command.ConsistencyLevel consistency) {
-    return submit(SetCommands.Clear.builder()
-      .withConsistency(consistency)
-      .build());
   }
 
 }

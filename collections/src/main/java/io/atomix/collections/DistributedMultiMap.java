@@ -109,17 +109,7 @@ public class DistributedMultiMap<K, V> extends Resource<DistributedMultiMap<K, V
    * @return A completable future to be completed with a boolean value indicating whether the map is empty.
    */
   public CompletableFuture<Boolean> isEmpty() {
-    return isEmpty(queryConsistency);
-  }
-
-  /**
-   * Checks whether the map is empty.
-   *
-   * @param consistency The query consistency level.
-   * @return A completable future to be completed with a boolean value indicating whether the map is empty.
-   */
-  public CompletableFuture<Boolean> isEmpty(Query.ConsistencyLevel consistency) {
-    return submit(MultiMapCommands.IsEmpty.builder().withConsistency(consistency).build());
+    return submit(MultiMapCommands.IsEmpty.builder().build());
   }
 
   /**
@@ -128,18 +118,7 @@ public class DistributedMultiMap<K, V> extends Resource<DistributedMultiMap<K, V
    * @return A completable future to be completed with the number of entries in the map.
    */
   public CompletableFuture<Integer> size() {
-    return size(queryConsistency);
-  }
-
-  /**
-   * Gets the number of key-value pairs in the map.
-   *
-   * @param consistency The query consistency level.
-   * @return A completable future to be completed with the number of entries in the map.
-   */
-  public CompletableFuture<Integer> size(Query.ConsistencyLevel consistency) {
     return submit(MultiMapCommands.Size.builder()
-      .withConsistency(consistency)
       .build());
   }
 
@@ -150,20 +129,8 @@ public class DistributedMultiMap<K, V> extends Resource<DistributedMultiMap<K, V
    * @return A completable future to be completed with the number of entries in the map.
    */
   public CompletableFuture<Integer> size(K key) {
-    return size(key, queryConsistency);
-  }
-
-  /**
-   * Gets the number of values for the given key.
-   *
-   * @param key The key to check.
-   * @param consistency The query consistency level.
-   * @return A completable future to be completed with the number of entries in the map.
-   */
-  public CompletableFuture<Integer> size(K key, Query.ConsistencyLevel consistency) {
     return submit(MultiMapCommands.Size.builder()
       .withKey(key)
-      .withConsistency(consistency)
       .build());
   }
 
@@ -174,20 +141,8 @@ public class DistributedMultiMap<K, V> extends Resource<DistributedMultiMap<K, V
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Boolean> containsKey(K key) {
-    return containsKey(key, queryConsistency);
-  }
-
-  /**
-   * Checks whether the map contains a key.
-   *
-   * @param key The key to check.
-   * @param consistency The query consistency level.
-   * @return A completable future to be completed with the result once complete.
-   */
-  public CompletableFuture<Boolean> containsKey(K key, Query.ConsistencyLevel consistency) {
     return submit(MultiMapCommands.ContainsKey.builder()
       .withKey(key)
-      .withConsistency(consistency)
       .build());
   }
 
@@ -199,22 +154,9 @@ public class DistributedMultiMap<K, V> extends Resource<DistributedMultiMap<K, V
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Boolean> containsEntry(K key, V value) {
-    return containsEntry(key, value, queryConsistency);
-  }
-
-  /**
-   * Checks whether the map contains an entry.
-   *
-   * @param key The key to check.
-   * @param value The value to check.
-   * @param consistency The query consistency level.
-   * @return A completable future to be completed with the result once complete.
-   */
-  public CompletableFuture<Boolean> containsEntry(K key, V value, Query.ConsistencyLevel consistency) {
     return submit(MultiMapCommands.ContainsEntry.builder()
       .withKey(key)
       .withValue(value)
-      .withConsistency(consistency)
       .build());
   }
 
@@ -225,20 +167,8 @@ public class DistributedMultiMap<K, V> extends Resource<DistributedMultiMap<K, V
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Boolean> containsValue(V value) {
-    return containsValue(value, queryConsistency);
-  }
-
-  /**
-   * Checks whether the map contains a value.
-   *
-   * @param value The value to check.
-   * @param consistency The query consistency level.
-   * @return A completable future to be completed with the result once complete.
-   */
-  public CompletableFuture<Boolean> containsValue(V value, Query.ConsistencyLevel consistency) {
     return submit(MultiMapCommands.ContainsValue.builder()
       .withValue(value)
-      .withConsistency(consistency)
       .build());
   }
 
@@ -250,21 +180,8 @@ public class DistributedMultiMap<K, V> extends Resource<DistributedMultiMap<K, V
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<Collection<V>> get(K key) {
-    return get(key, queryConsistency);
-  }
-
-  /**
-   * Gets a value from the map.
-   *
-   * @param key The key to get.
-   * @param consistency The query consistency level.
-   * @return A completable future to be completed with the result once complete.
-   */
-  @SuppressWarnings("unchecked")
-  public CompletableFuture<Collection<V>> get(K key, Query.ConsistencyLevel consistency) {
     return submit(MultiMapCommands.Get.builder()
       .withKey(key)
-      .withConsistency(consistency)
       .build())
       .thenApply(result -> result);
   }
@@ -277,23 +194,9 @@ public class DistributedMultiMap<K, V> extends Resource<DistributedMultiMap<K, V
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Boolean> put(K key, V value) {
-    return put(key, value, commandConsistency);
-  }
-
-  /**
-   * Puts a value in the map.
-   *
-   * @param key The key to set.
-   * @param value The value to set.
-   * @param consistency The command consistency level.
-   * @return A completable future to be completed with the result once complete.
-   */
-  @SuppressWarnings("unchecked")
-  public CompletableFuture<Boolean> put(K key, V value, Command.ConsistencyLevel consistency) {
     return submit(MultiMapCommands.Put.builder()
       .withKey(key)
       .withValue(value)
-      .withConsistency(consistency)
       .build())
       .thenApply(result -> result);
   }
@@ -306,28 +209,13 @@ public class DistributedMultiMap<K, V> extends Resource<DistributedMultiMap<K, V
    * @param ttl The duration after which to expire the key.
    * @return A completable future to be completed with the result once complete.
    */
-  public CompletableFuture<Boolean> put(K key, V value, Duration ttl) {
-    return put(key, value, ttl, commandConsistency);
-  }
-
-  /**
-   * Puts a value in the map.
-   *
-   * @param key The key to set.
-   * @param value The value to set.
-   * @param ttl The time to live duration.
-   * @param consistency The command consistency level.
-   * @return A completable future to be completed with the result once complete.
-   */
   @SuppressWarnings("unchecked")
-  public CompletableFuture<Boolean> put(K key, V value, Duration ttl, Command.ConsistencyLevel consistency) {
+  public CompletableFuture<Boolean> put(K key, V value, Duration ttl) {
     return submit(MultiMapCommands.Put.builder()
       .withKey(key)
       .withValue(value)
       .withTtl(ttl.toMillis())
-      .withConsistency(consistency)
-      .build())
-      .thenApply(result -> result);
+      .build());
   }
 
   /**
@@ -337,23 +225,10 @@ public class DistributedMultiMap<K, V> extends Resource<DistributedMultiMap<K, V
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Collection<V>> remove(Object key) {
-    return remove(key, commandConsistency);
-  }
-
-  /**
-   * Removes a value from the map.
-   *
-   * @param key The key to remove.
-   * @param consistency The consistency level.
-   * @return A completable future to be completed with the result once complete.
-   */
-  @SuppressWarnings("unchecked")
-  public CompletableFuture<Collection<V>> remove(Object key, Command.ConsistencyLevel consistency) {
     return submit(MultiMapCommands.Remove.builder()
       .withKey(key)
-      .withConsistency(consistency)
       .build())
-      .thenApply(result -> result);
+      .thenApply(result -> (Collection) result);
   }
 
   /**
@@ -364,25 +239,11 @@ public class DistributedMultiMap<K, V> extends Resource<DistributedMultiMap<K, V
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Boolean> remove(Object key, Object value) {
-    return remove(key, value, commandConsistency);
-  }
-
-  /**
-   * Removes a key and value from the map.
-   *
-   * @param key   The key to remove.
-   * @param value The value to remove.
-   * @param consistency The consistency level.
-   * @return A completable future to be completed with the result once complete.
-   */
-  @SuppressWarnings("unchecked")
-  public CompletableFuture<Boolean> remove(Object key, Object value, Command.ConsistencyLevel consistency) {
     return submit(MultiMapCommands.Remove.builder()
       .withKey(key)
       .withValue(value)
-      .withConsistency(consistency)
       .build())
-      .thenApply(result -> result);
+      .thenApply(result -> (boolean) result);
   }
 
   /**
@@ -391,20 +252,7 @@ public class DistributedMultiMap<K, V> extends Resource<DistributedMultiMap<K, V
    * @return A completable future to be completed once the operation is complete.
    */
   public CompletableFuture<Void> clear() {
-    return clear(commandConsistency);
-  }
-
-  /**
-   * Removes all entries from the map.
-   *
-   * @param consistency The consistency level.
-   * @return A completable future to be completed once the operation is complete.
-   */
-  @SuppressWarnings("unchecked")
-  public CompletableFuture<Void> clear(Command.ConsistencyLevel consistency) {
-    return submit(MultiMapCommands.Clear.builder()
-      .withConsistency(consistency)
-      .build());
+    return submit(MultiMapCommands.Clear.builder().build());
   }
 
 }

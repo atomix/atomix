@@ -18,8 +18,6 @@ package io.atomix.collections;
 import io.atomix.Resource;
 import io.atomix.collections.state.MapCommands;
 import io.atomix.collections.state.MapState;
-import io.atomix.copycat.client.Command;
-import io.atomix.copycat.client.Query;
 import io.atomix.copycat.server.StateMachine;
 
 import java.time.Duration;
@@ -49,32 +47,12 @@ public class DistributedMap<K, V> extends Resource<DistributedMap<K, V>> {
   }
 
   /**
-   * Checks whether the map is empty.
-   *
-   * @param consistency The query consistency level.
-   * @return A completable future to be completed with a boolean value indicating whether the map is empty.
-   */
-  public CompletableFuture<Boolean> isEmpty(Query.ConsistencyLevel consistency) {
-    return submit(MapCommands.IsEmpty.builder().withConsistency(consistency).build());
-  }
-
-  /**
    * Gets the count of the map.
    *
    * @return A completable future to be completed with the number of entries in the map.
    */
   public CompletableFuture<Integer> size() {
     return submit(MapCommands.Size.builder().build());
-  }
-
-  /**
-   * Gets the count of the map.
-   *
-   * @param consistency The query consistency level.
-   * @return A completable future to be completed with the number of entries in the map.
-   */
-  public CompletableFuture<Integer> size(Query.ConsistencyLevel consistency) {
-    return submit(MapCommands.Size.builder().withConsistency(consistency).build());
   }
 
   /**
@@ -90,20 +68,6 @@ public class DistributedMap<K, V> extends Resource<DistributedMap<K, V>> {
   }
 
   /**
-   * Checks whether the map contains a key.
-   *
-   * @param key The key to check.
-   * @param consistency The query consistency level.
-   * @return A completable future to be completed with the result once complete.
-   */
-  public CompletableFuture<Boolean> containsKey(Object key, Query.ConsistencyLevel consistency) {
-    return submit(MapCommands.ContainsKey.builder()
-      .withKey(key)
-      .withConsistency(consistency)
-      .build());
-  }
-
-  /**
    * Gets a value from the map.
    *
    * @param key The key to get.
@@ -113,22 +77,6 @@ public class DistributedMap<K, V> extends Resource<DistributedMap<K, V>> {
   public CompletableFuture<V> get(Object key) {
     return submit(MapCommands.Get.builder()
       .withKey(key)
-      .build())
-      .thenApply(result -> (V) result);
-  }
-
-  /**
-   * Gets a value from the map.
-   *
-   * @param key The key to get.
-   * @param consistency The query consistency level.
-   * @return A completable future to be completed with the result once complete.
-   */
-  @SuppressWarnings("unchecked")
-  public CompletableFuture<V> get(Object key, Query.ConsistencyLevel consistency) {
-    return submit(MapCommands.Get.builder()
-      .withKey(key)
-      .withConsistency(consistency)
       .build())
       .thenApply(result -> (V) result);
   }
@@ -154,24 +102,6 @@ public class DistributedMap<K, V> extends Resource<DistributedMap<K, V>> {
    *
    * @param key The key to set.
    * @param value The value to set.
-   * @param consistency The command consistency level.
-   * @return A completable future to be completed with the result once complete.
-   */
-  @SuppressWarnings("unchecked")
-  public CompletableFuture<V> put(K key, V value, Command.ConsistencyLevel consistency) {
-    return submit(MapCommands.Put.builder()
-      .withKey(key)
-      .withValue(value)
-      .withConsistency(consistency)
-      .build())
-      .thenApply(result -> result);
-  }
-
-  /**
-   * Puts a value in the map.
-   *
-   * @param key The key to set.
-   * @param value The value to set.
    * @param ttl The duration after which to expire the key.
    * @return A completable future to be completed with the result once complete.
    */
@@ -181,26 +111,6 @@ public class DistributedMap<K, V> extends Resource<DistributedMap<K, V>> {
       .withKey(key)
       .withValue(value)
       .withTtl(ttl.toMillis())
-      .build())
-      .thenApply(result -> result);
-  }
-
-  /**
-   * Puts a value in the map.
-   *
-   * @param key The key to set.
-   * @param value The value to set.
-   * @param ttl The time to live duration.
-   * @param consistency The command consistency level.
-   * @return A completable future to be completed with the result once complete.
-   */
-  @SuppressWarnings("unchecked")
-  public CompletableFuture<V> put(K key, V value, Duration ttl, Command.ConsistencyLevel consistency) {
-    return submit(MapCommands.Put.builder()
-      .withKey(key)
-      .withValue(value)
-      .withTtl(ttl.toMillis())
-      .withConsistency(consistency)
       .build())
       .thenApply(result -> result);
   }
@@ -220,22 +130,6 @@ public class DistributedMap<K, V> extends Resource<DistributedMap<K, V>> {
   }
 
   /**
-   * Removes a value from the map.
-   *
-   * @param key The key to remove.
-   * @param consistency The consistency level.
-   * @return A completable future to be completed with the result once complete.
-   */
-  @SuppressWarnings("unchecked")
-  public CompletableFuture<V> remove(Object key, Command.ConsistencyLevel consistency) {
-    return submit(MapCommands.Remove.builder()
-      .withKey(key)
-      .withConsistency(consistency)
-      .build())
-      .thenApply(result -> (V) result);
-  }
-
-  /**
    * Gets the value of a key or the given default value if the key does not exist.
    *
    * @param key          The key to get.
@@ -247,24 +141,6 @@ public class DistributedMap<K, V> extends Resource<DistributedMap<K, V>> {
     return submit(MapCommands.GetOrDefault.builder()
       .withKey(key)
       .withDefaultValue(defaultValue)
-      .build())
-      .thenApply(result -> (V) result);
-  }
-
-  /**
-   * Gets the value of a key or the given default value if the key does not exist.
-   *
-   * @param key          The key to get.
-   * @param defaultValue The default value to return if the key does not exist.
-   * @param consistency The query consistency level.
-   * @return A completable future to be completed with the result once complete.
-   */
-  @SuppressWarnings("unchecked")
-  public CompletableFuture<V> getOrDefault(Object key, V defaultValue, Query.ConsistencyLevel consistency) {
-    return submit(MapCommands.GetOrDefault.builder()
-      .withKey(key)
-      .withDefaultValue(defaultValue)
-      .withConsistency(consistency)
       .build())
       .thenApply(result -> (V) result);
   }
@@ -304,44 +180,6 @@ public class DistributedMap<K, V> extends Resource<DistributedMap<K, V>> {
   }
 
   /**
-   * Puts a value in the map if the given key does not exist.
-   *
-   * @param key   The key to set.
-   * @param value The value to set if the given key does not exist.
-   * @param consistency The consistency level.
-   * @return A completable future to be completed with the result once complete.
-   */
-  @SuppressWarnings("unchecked")
-  public CompletableFuture<V> putIfAbsent(K key, V value, Command.ConsistencyLevel consistency) {
-    return submit(MapCommands.PutIfAbsent.builder()
-      .withKey(key)
-      .withValue(value)
-      .withConsistency(consistency)
-      .build())
-      .thenApply(result -> (V) result);
-  }
-
-  /**
-   * Puts a value in the map if the given key does not exist.
-   *
-   * @param key   The key to set.
-   * @param value The value to set if the given key does not exist.
-   * @param ttl The time to live duration.
-   * @param consistency The consistency level.
-   * @return A completable future to be completed with the result once complete.
-   */
-  @SuppressWarnings("unchecked")
-  public CompletableFuture<V> putIfAbsent(K key, V value, Duration ttl, Command.ConsistencyLevel consistency) {
-    return submit(MapCommands.PutIfAbsent.builder()
-      .withKey(key)
-      .withValue(value)
-      .withTtl(ttl.toMillis())
-      .withConsistency(consistency)
-      .build())
-      .thenApply(result -> result);
-  }
-
-  /**
    * Removes a key and value from the map.
    *
    * @param key   The key to remove.
@@ -357,43 +195,12 @@ public class DistributedMap<K, V> extends Resource<DistributedMap<K, V>> {
   }
 
   /**
-   * Removes a key and value from the map.
-   *
-   * @param key   The key to remove.
-   * @param value The value to remove.
-   * @param consistency The consistency level.
-   * @return A completable future to be completed with the result once complete.
-   */
-  @SuppressWarnings("unchecked")
-  public CompletableFuture<Boolean> remove(Object key, Object value, Command.ConsistencyLevel consistency) {
-    return submit(MapCommands.Remove.builder()
-      .withKey(key)
-      .withValue(value)
-      .withConsistency(consistency)
-      .build())
-      .thenApply(result -> (boolean) result);
-  }
-
-  /**
    * Removes all entries from the map.
    *
    * @return A completable future to be completed once the operation is complete.
    */
   public CompletableFuture<Void> clear() {
     return submit(MapCommands.Clear.builder().build());
-  }
-
-  /**
-   * Removes all entries from the map.
-   *
-   * @param consistency The consistency level.
-   * @return A completable future to be completed once the operation is complete.
-   */
-  @SuppressWarnings("unchecked")
-  public CompletableFuture<Void> clear(Command.ConsistencyLevel consistency) {
-    return submit(MapCommands.Clear.builder()
-      .withConsistency(consistency)
-      .build());
   }
 
 }

@@ -39,21 +39,13 @@ public class QueueCommands {
    * Abstract set command.
    */
   private static abstract class SetCommand<V> implements Command<V>, CatalystSerializable {
-    protected ConsistencyLevel consistency = ConsistencyLevel.LINEARIZABLE;
-
-    @Override
-    public ConsistencyLevel consistency() {
-      return consistency;
-    }
 
     @Override
     public void writeObject(BufferOutput buffer, Serializer serializer) {
-      buffer.writeByte(consistency.ordinal());
     }
 
     @Override
     public void readObject(BufferInput buffer, Serializer serializer) {
-      consistency = ConsistencyLevel.values()[buffer.readByte()];
     }
 
     /**
@@ -63,18 +55,6 @@ public class QueueCommands {
       protected Builder(BuilderPool<T, U> pool) {
         super(pool);
       }
-
-      /**
-       * Sets the command consistency level.
-       *
-       * @param consistency The query consistency level.
-       * @return The query builder.
-       */
-      @SuppressWarnings("unchecked")
-      public T withConsistency(ConsistencyLevel consistency) {
-        command.consistency = consistency;
-        return (T) this;
-      }
     }
   }
 
@@ -82,21 +62,13 @@ public class QueueCommands {
    * Abstract set query.
    */
   private static abstract class SetQuery<V> implements Query<V>, CatalystSerializable {
-    protected ConsistencyLevel consistency = ConsistencyLevel.LINEARIZABLE;
-
-    @Override
-    public ConsistencyLevel consistency() {
-      return consistency;
-    }
 
     @Override
     public void writeObject(BufferOutput buffer, Serializer serializer) {
-      buffer.writeByte(consistency.ordinal());
     }
 
     @Override
     public void readObject(BufferInput buffer, Serializer serializer) {
-      consistency = ConsistencyLevel.values()[buffer.readByte()];
     }
 
     /**
@@ -105,18 +77,6 @@ public class QueueCommands {
     public static abstract class Builder<T extends Builder<T, U, V>, U extends SetQuery<V>, V> extends Query.Builder<T, U, V> {
       protected Builder(BuilderPool<T, U> pool) {
         super(pool);
-      }
-
-      /**
-       * Sets the query consistency level.
-       *
-       * @param consistency The query consistency level.
-       * @return The query builder.
-       */
-      @SuppressWarnings("unchecked")
-      public T withConsistency(ConsistencyLevel consistency) {
-        query.consistency = consistency;
-        return (T) this;
       }
     }
   }

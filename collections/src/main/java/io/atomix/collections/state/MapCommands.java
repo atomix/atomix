@@ -39,25 +39,13 @@ public class MapCommands {
    * Abstract map command.
    */
   public static abstract class MapCommand<V> implements Command<V>, CatalystSerializable {
-    protected ConsistencyLevel consistency = ConsistencyLevel.LINEARIZABLE;
-
-    /**
-     * Returns the consistency level.
-     *
-     * @return The consistency level.
-     */
-    public ConsistencyLevel consistency() {
-      return consistency;
-    }
 
     @Override
     public void writeObject(BufferOutput buffer, Serializer serializer) {
-      buffer.writeByte(consistency.ordinal());
     }
 
     @Override
     public void readObject(BufferInput buffer, Serializer serializer) {
-      consistency = ConsistencyLevel.values()[buffer.readByte()];
     }
 
     /**
@@ -67,17 +55,6 @@ public class MapCommands {
       protected Builder(BuilderPool<T, U> pool) {
         super(pool);
       }
-
-      /**
-       * Sets the consistency level.
-       *
-       * @param consistency The consistency level.
-       * @return The command builder.
-       */
-      public Builder withConsistency(ConsistencyLevel consistency) {
-        command.consistency = consistency;
-        return this;
-      }
     }
   }
 
@@ -85,21 +62,13 @@ public class MapCommands {
    * Abstract map query.
    */
   public static abstract class MapQuery<V> implements Query<V>, CatalystSerializable {
-    protected ConsistencyLevel consistency = ConsistencyLevel.BOUNDED_LINEARIZABLE;
-
-    @Override
-    public ConsistencyLevel consistency() {
-      return consistency;
-    }
 
     @Override
     public void writeObject(BufferOutput buffer, Serializer serializer) {
-      buffer.writeByte(consistency.ordinal());
     }
 
     @Override
     public void readObject(BufferInput buffer, Serializer serializer) {
-      consistency = ConsistencyLevel.values()[buffer.readByte()];
     }
 
     /**
@@ -108,20 +77,6 @@ public class MapCommands {
     public static abstract class Builder<T extends Builder<T, U, V>, U extends MapQuery<V>, V> extends Query.Builder<T, U, V> {
       protected Builder(BuilderPool<T, U> pool) {
         super(pool);
-      }
-
-      /**
-       * Sets the query consistency level.
-       *
-       * @param consistency The query consistency level.
-       * @return The query builder.
-       */
-      @SuppressWarnings("unchecked")
-      public T withConsistency(ConsistencyLevel consistency) {
-        if (consistency == null)
-          throw new NullPointerException("consistency cannot be null");
-        query.consistency = consistency;
-        return (T) this;
       }
     }
   }

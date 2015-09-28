@@ -15,6 +15,7 @@
  */
 package io.atomix.resource;
 
+import io.atomix.Consistency;
 import io.atomix.catalyst.serializer.SerializeWith;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.BuilderPool;
@@ -41,7 +42,8 @@ public class ResourceCommand<T extends Command<U>, U> extends ResourceOperation<
 
   @Override
   public ConsistencyLevel consistency() {
-    return operation.consistency();
+    ConsistencyLevel consistency = operation.consistency();
+    return consistency != null ? consistency : this.consistency.writeConsistency();
   }
 
   @Override
@@ -103,6 +105,17 @@ public class ResourceCommand<T extends Command<U>, U> extends ResourceOperation<
      */
     public Builder withCommand(T command) {
       this.command.operation = Assert.notNull(command, "command");
+      return this;
+    }
+
+    /**
+     * Sets the command consistency.
+     *
+     * @param consistency The command consistency.
+     * @return The resource command builder.
+     */
+    public Builder withConsistency(Consistency consistency) {
+      command.consistency = Assert.notNull(consistency, "consistency");
       return this;
     }
   }

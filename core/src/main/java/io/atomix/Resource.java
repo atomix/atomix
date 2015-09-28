@@ -30,6 +30,7 @@ import java.util.concurrent.CompletableFuture;
  */
 public abstract class Resource<T extends Resource<T>> {
   protected ResourceContext context;
+  private Consistency consistency = Consistency.STRONG;
 
   /**
    * Initializes the resource.
@@ -39,6 +40,18 @@ public abstract class Resource<T extends Resource<T>> {
    */
   protected void open(ResourceContext context) {
     this.context = Assert.notNull(context, "context");
+  }
+
+  /**
+   * Sets the resource consistency level.
+   *
+   * @param consistency The resource consistency level.
+   * @return The resource.
+   */
+  @SuppressWarnings("unchecked")
+  public T with(Consistency consistency) {
+    this.consistency = Assert.notNull(consistency, "consistency");
+    return (T) this;
   }
 
   /**
@@ -57,7 +70,7 @@ public abstract class Resource<T extends Resource<T>> {
    * @throws NullPointerException if {@code command} is null
    */
   protected <T> CompletableFuture<T> submit(Command<T> command) {
-    return context.submit(Assert.notNull(command, "command"));
+    return context.submit(Assert.notNull(command, "command"), consistency);
   }
 
   /**
@@ -69,7 +82,7 @@ public abstract class Resource<T extends Resource<T>> {
    * @throws NullPointerException if {@code query} is null
    */
   protected <T> CompletableFuture<T> submit(Query<T> query) {
-    return context.submit(Assert.notNull(query, "query"));
+    return context.submit(Assert.notNull(query, "query"), consistency);
   }
 
   /**

@@ -18,10 +18,7 @@ package io.atomix.atomic;
 import io.atomix.Resource;
 import io.atomix.atomic.state.AtomicValueCommands;
 import io.atomix.atomic.state.AtomicValueState;
-import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.Listener;
-import io.atomix.copycat.client.Command;
-import io.atomix.copycat.client.Query;
 import io.atomix.copycat.server.StateMachine;
 import io.atomix.resource.ResourceContext;
 
@@ -37,8 +34,6 @@ import java.util.function.Consumer;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class DistributedAtomicValue<T> extends Resource<DistributedAtomicValue<T>> {
-  private Command.ConsistencyLevel commandConsistency = Command.ConsistencyLevel.LINEARIZABLE;
-  private Query.ConsistencyLevel queryConsistency = Query.ConsistencyLevel.LINEARIZABLE;
   private final java.util.Set<Consumer<T>> changeListeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
   @Override
@@ -57,87 +52,12 @@ public class DistributedAtomicValue<T> extends Resource<DistributedAtomicValue<T
   }
 
   /**
-   * Sets the default write consistency level.
-   *
-   * @param consistency The default write consistency level.
-   * @throws java.lang.NullPointerException If the consistency level is {@code null}
-   */
-  public void setDefaultCommandConsistency(Command.ConsistencyLevel consistency) {
-    this.commandConsistency = Assert.notNull(consistency, "consistency");
-  }
-
-  /**
-   * Sets the default write consistency level, returning the resource for method chaining.
-   *
-   * @param consistency The default write consistency level.
-   * @return The reference.
-   * @throws java.lang.NullPointerException If the consistency level is {@code null}
-   */
-  public DistributedAtomicValue<T> withDefaultCommandConsistency(Command.ConsistencyLevel consistency) {
-    setDefaultCommandConsistency(consistency);
-    return this;
-  }
-
-  /**
-   * Returns the default write consistency level.
-   *
-   * @return The default write consistency level.
-   */
-  public Command.ConsistencyLevel getDefaultCommandConsistency() {
-    return commandConsistency;
-  }
-
-  /**
-   * Sets the default read consistency level.
-   *
-   * @param consistency The default read consistency level.
-   * @throws java.lang.NullPointerException If the consistency level is {@code null}
-   */
-  public void setDefaultQueryConsistency(Query.ConsistencyLevel consistency) {
-    this.queryConsistency = Assert.notNull(consistency, "consistency");
-  }
-
-  /**
-   * Sets the default read consistency level, returning the resource for method chaining.
-   *
-   * @param consistency The default read consistency level.
-   * @return The reference.
-   * @throws java.lang.NullPointerException If the consistency level is {@code null}
-   */
-  public DistributedAtomicValue<T> withDefaultQueryConsistency(Query.ConsistencyLevel consistency) {
-    setDefaultQueryConsistency(consistency);
-    return this;
-  }
-
-  /**
-   * Returns the default read consistency level.
-   *
-   * @return The default read consistency level.
-   */
-  public Query.ConsistencyLevel getDefaultQueryConsistency() {
-    return queryConsistency;
-  }
-
-  /**
    * Gets the current value.
    *
    * @return A completable future to be completed with the current value.
    */
   public CompletableFuture<T> get() {
-    return get(queryConsistency);
-  }
-
-  /**
-   * Gets the current value.
-   *
-   * @param consistency The read consistency level.
-   * @return A completable future to be completed with the current value.
-   */
-  @SuppressWarnings("unchecked")
-  public CompletableFuture<T> get(Query.ConsistencyLevel consistency) {
-    return submit(AtomicValueCommands.Get.<T>builder()
-      .withConsistency(consistency)
-      .build());
+    return submit(AtomicValueCommands.Get.<T>builder().build());
   }
 
   /**
@@ -147,7 +67,9 @@ public class DistributedAtomicValue<T> extends Resource<DistributedAtomicValue<T
    * @return A completable future to be completed once the value has been set.
    */
   public CompletableFuture<Void> set(T value) {
-    return set(value, commandConsistency);
+    return submit(AtomicValueCommands.Set.builder()
+      .withValue(value)
+      .build());
   }
 
   /**
@@ -158,38 +80,9 @@ public class DistributedAtomicValue<T> extends Resource<DistributedAtomicValue<T
    * @return A completable future to be completed once the value has been set.
    */
   public CompletableFuture<Void> set(T value, Duration ttl) {
-    return set(value, ttl, commandConsistency);
-  }
-
-  /**
-   * Sets the current value.
-   *
-   * @param value The current value.
-   * @param consistency The write consistency level.
-   * @return A completable future to be completed once the value has been set.
-   */
-  @SuppressWarnings("unchecked")
-  public CompletableFuture<Void> set(T value, Command.ConsistencyLevel consistency) {
-    return submit(AtomicValueCommands.Set.builder()
-      .withValue(value)
-      .withConsistency(consistency)
-      .build());
-  }
-
-  /**
-   * Sets the value with a write persistence.
-   *
-   * @param value The value to set.
-   * @param ttl The time after which to expire the value.
-   * @param consistency The write consistency level.
-   * @return A completable future to be completed once the value has been set.
-   */
-  @SuppressWarnings("unchecked")
-  public CompletableFuture<Void> set(T value, Duration ttl, Command.ConsistencyLevel consistency) {
     return submit(AtomicValueCommands.Set.builder()
       .withValue(value)
       .withTtl(ttl.toMillis())
-      .withConsistency(consistency)
       .build());
   }
 
@@ -200,7 +93,9 @@ public class DistributedAtomicValue<T> extends Resource<DistributedAtomicValue<T
    * @return A completable future to be completed with the previous value.
    */
   public CompletableFuture<T> getAndSet(T value) {
-    return getAndSet(value, commandConsistency);
+    return submit(AtomicValueCommands.GetAndSet.<T>builder()
+      .withValue(value)
+      .build());
   }
 
   /**
@@ -211,38 +106,9 @@ public class DistributedAtomicValue<T> extends Resource<DistributedAtomicValue<T
    * @return A completable future to be completed with the previous value.
    */
   public CompletableFuture<T> getAndSet(T value, Duration ttl) {
-    return getAndSet(value, ttl, commandConsistency);
-  }
-
-  /**
-   * Gets the current value and updates it.
-   *
-   * @param value The updated value.
-   * @param consistency The write consistency level.
-   * @return A completable future to be completed with the previous value.
-   */
-  @SuppressWarnings("unchecked")
-  public CompletableFuture<T> getAndSet(T value, Command.ConsistencyLevel consistency) {
-    return submit(AtomicValueCommands.GetAndSet.<T>builder()
-      .withValue(value)
-      .withConsistency(consistency)
-      .build());
-  }
-
-  /**
-   * Gets the current value and updates it.
-   *
-   * @param value The updated value.
-   * @param ttl The time after which to expire the value.
-   * @param consistency The write consistency level.
-   * @return A completable future to be completed with the previous value.
-   */
-  @SuppressWarnings("unchecked")
-  public CompletableFuture<T> getAndSet(T value, Duration ttl, Command.ConsistencyLevel consistency) {
     return submit(AtomicValueCommands.GetAndSet.<T>builder()
       .withValue(value)
       .withTtl(ttl.toMillis())
-      .withConsistency(consistency)
       .build());
   }
 
@@ -254,7 +120,10 @@ public class DistributedAtomicValue<T> extends Resource<DistributedAtomicValue<T
    * @return A completable future to be completed with a boolean value indicating whether the value was updated.
    */
   public CompletableFuture<Boolean> compareAndSet(T expect, T update) {
-    return compareAndSet(expect, update, commandConsistency);
+    return submit(AtomicValueCommands.CompareAndSet.builder()
+      .withExpect(expect)
+      .withUpdate(update)
+      .build());
   }
 
   /**
@@ -266,40 +135,10 @@ public class DistributedAtomicValue<T> extends Resource<DistributedAtomicValue<T
    * @return A completable future to be completed with a boolean value indicating whether the value was updated.
    */
   public CompletableFuture<Boolean> compareAndSet(T expect, T update, Duration ttl) {
-    return compareAndSet(expect, update, ttl, commandConsistency);
-  }
-
-  /**
-   * Compares the current value and updated it if expected value == the current value.
-   *
-   * @param expect The expected value.
-   * @param update The updated value.
-   * @param consistency The write consistency level.
-   * @return A completable future to be completed with a boolean value indicating whether the value was updated.
-   */
-  public CompletableFuture<Boolean> compareAndSet(T expect, T update, Command.ConsistencyLevel consistency) {
-    return submit(AtomicValueCommands.CompareAndSet.builder()
-      .withExpect(expect)
-      .withUpdate(update)
-      .withConsistency(consistency)
-      .build());
-  }
-
-  /**
-   * Compares the current value and updated it if expected value == the current value.
-   *
-   * @param expect The expected value.
-   * @param update The updated value.
-   * @param ttl The time after which to expire the value.
-   * @param consistency The write consistency level.
-   * @return A completable future to be completed with a boolean value indicating whether the value was updated.
-   */
-  public CompletableFuture<Boolean> compareAndSet(T expect, T update, Duration ttl, Command.ConsistencyLevel consistency) {
     return submit(AtomicValueCommands.CompareAndSet.builder()
       .withExpect(expect)
       .withUpdate(update)
       .withTtl(ttl.toMillis())
-      .withConsistency(consistency)
       .build());
   }
 

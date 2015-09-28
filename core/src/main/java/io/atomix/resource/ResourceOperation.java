@@ -15,6 +15,7 @@
  */
 package io.atomix.resource;
 
+import io.atomix.Consistency;
 import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
@@ -29,6 +30,7 @@ import io.atomix.copycat.client.Operation;
 public abstract class ResourceOperation<T extends Operation<U>, U> implements Operation<U>, CatalystSerializable {
   protected long resource;
   protected T operation;
+  protected Consistency consistency;
 
   /**
    * Returns the resource ID.
@@ -52,17 +54,19 @@ public abstract class ResourceOperation<T extends Operation<U>, U> implements Op
   public void writeObject(BufferOutput buffer, Serializer serializer) {
     buffer.writeLong(resource);
     serializer.writeObject(operation, buffer);
+    buffer.writeByte(consistency.ordinal());
   }
 
   @Override
   public void readObject(BufferInput buffer, Serializer serializer) {
     resource = buffer.readLong();
     operation = serializer.readObject(buffer);
+    consistency = Consistency.values()[buffer.readByte()];
   }
 
   @Override
   public String toString() {
-    return String.format("%s[resource=%s, operation=%s]", getClass().getSimpleName(), resource, operation.getClass().getSimpleName());
+    return String.format("%s[resource=%s, consistency=%s, operation=%s]", getClass().getSimpleName(), resource, consistency, operation.getClass().getSimpleName());
   }
 
 }

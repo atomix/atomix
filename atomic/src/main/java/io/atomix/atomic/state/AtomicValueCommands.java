@@ -39,21 +39,11 @@ public class AtomicValueCommands {
    * Abstract value command.
    */
   public static abstract class ValueCommand<V> implements Command<V>, CatalystSerializable {
-    protected ConsistencyLevel consistency = ConsistencyLevel.LINEARIZABLE;
     protected long ttl;
 
     @Override
     public PersistenceLevel persistence() {
       return ttl > 0 ? PersistenceLevel.EPHEMERAL : PersistenceLevel.PERSISTENT;
-    }
-
-    /**
-     * Returns the consistency level.
-     *
-     * @return The consistency level.
-     */
-    public ConsistencyLevel consistency() {
-      return consistency;
     }
 
     /**
@@ -67,13 +57,11 @@ public class AtomicValueCommands {
 
     @Override
     public void writeObject(BufferOutput buffer, Serializer serializer) {
-      buffer.writeByte(consistency.ordinal())
-        .writeLong(ttl);
+      buffer.writeLong(ttl);
     }
 
     @Override
     public void readObject(BufferInput buffer, Serializer serializer) {
-      consistency = ConsistencyLevel.values()[buffer.readByte()];
       ttl = buffer.readLong();
     }
 
@@ -83,20 +71,6 @@ public class AtomicValueCommands {
     public static abstract class Builder<T extends Builder<T, U, V>, U extends ValueCommand<V>, V> extends Command.Builder<T, U, V> {
       protected Builder(BuilderPool<T, U> pool) {
         super(pool);
-      }
-
-      /**
-       * Sets the consistency level.
-       *
-       * @param consistency The consistency level.
-       * @return The command builder.
-       */
-      @SuppressWarnings("unchecked")
-      public T withConsistency(ConsistencyLevel consistency) {
-        if (consistency == null)
-          throw new NullPointerException("consistency cannot be null");
-        command.consistency = consistency;
-        return (T) this;
       }
 
       /**
@@ -117,21 +91,15 @@ public class AtomicValueCommands {
    * Abstract value query.
    */
   public static abstract class ValueQuery<V> implements Query<V>, CatalystSerializable {
-    protected ConsistencyLevel consistency = ConsistencyLevel.LINEARIZABLE;
 
     @Override
-    public ConsistencyLevel consistency() {
-      return consistency;
+    public void writeObject(BufferOutput bufferOutput, Serializer serializer) {
+
     }
 
     @Override
-    public void writeObject(BufferOutput buffer, Serializer serializer) {
-      buffer.writeByte(consistency.ordinal());
-    }
+    public void readObject(BufferInput bufferInput, Serializer serializer) {
 
-    @Override
-    public void readObject(BufferInput buffer, Serializer serializer) {
-      consistency = ConsistencyLevel.values()[buffer.readByte()];
     }
 
     /**
@@ -140,20 +108,6 @@ public class AtomicValueCommands {
     public static abstract class Builder<T extends Builder<T, U, V>, U extends ValueQuery<V>, V> extends Query.Builder<T, U, V> {
       protected Builder(BuilderPool<T, U> pool) {
         super(pool);
-      }
-
-      /**
-       * Sets the query consistency level.
-       *
-       * @param consistency The query consistency level.
-       * @return The query builder.
-       */
-      @SuppressWarnings("unchecked")
-      public T withConsistency(ConsistencyLevel consistency) {
-        if (consistency == null)
-          throw new NullPointerException("consistency cannot be null");
-        query.consistency = consistency;
-        return (T) this;
       }
     }
   }

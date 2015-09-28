@@ -15,6 +15,7 @@
  */
 package io.atomix.resource;
 
+import io.atomix.Consistency;
 import io.atomix.catalyst.serializer.SerializeWith;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.BuilderPool;
@@ -41,7 +42,8 @@ public class ResourceQuery<T extends Query<U>, U> extends ResourceOperation<T, U
 
   @Override
   public ConsistencyLevel consistency() {
-    return operation.consistency();
+    ConsistencyLevel consistency = operation.consistency();
+    return consistency != null ? consistency : this.consistency.readConsistency();
   }
 
   @Override
@@ -83,6 +85,17 @@ public class ResourceQuery<T extends Query<U>, U> extends ResourceOperation<T, U
      */
     public Builder withQuery(T query) {
       this.query.operation = Assert.notNull(query, "query");
+      return this;
+    }
+
+    /**
+     * Sets the query consistency.
+     *
+     * @param consistency The query consistency.
+     * @return The resource query builder.
+     */
+    public Builder withConsistency(Consistency consistency) {
+      query.consistency = Assert.notNull(consistency, "consistency");
       return this;
     }
   }

@@ -89,7 +89,7 @@ public class DistributedMessageBus extends Resource<DistributedMessageBus> {
 
     return openFuture.thenCompose(v -> {
       CompletableFuture<Void> future = new CompletableFuture<>();
-      context.submit(MessageBusCommands.Join.builder()
+      submit(MessageBusCommands.Join.builder()
         .withMember(address)
         .build()).whenComplete((topics, error) -> {
         if (error == null) {
@@ -184,7 +184,7 @@ public class DistributedMessageBus extends Resource<DistributedMessageBus> {
    */
   public <T> CompletableFuture<MessageConsumer<T>> consumer(String topic, Function<T, ?> consumer) {
     CompletableFuture<MessageConsumer<T>> future = new CompletableFuture<>();
-    context.submit(MessageBusCommands.Register.builder()
+    submit(MessageBusCommands.Register.builder()
       .withTopic(topic)
       .build()).whenComplete((result, error) -> {
       if (error == null) {
@@ -303,7 +303,7 @@ public class DistributedMessageBus extends Resource<DistributedMessageBus> {
 
     @Override
     public CompletableFuture<Void> close() {
-      return context.submit(MessageBusCommands.Unregister.builder()
+      return submit(MessageBusCommands.Unregister.builder()
         .withTopic(topic)
         .build());
     }

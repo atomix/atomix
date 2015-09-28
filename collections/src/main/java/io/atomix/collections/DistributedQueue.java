@@ -109,20 +109,8 @@ public class DistributedQueue<T> extends Resource<DistributedQueue<T>> {
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Boolean> add(T value) {
-    return add(value, commandConsistency);
-  }
-
-  /**
-   * Adds a value to the queue.
-   *
-   * @param value The value to add.
-   * @param consistency The command consistency level.
-   * @return A completable future to be completed with the result once complete.
-   */
-  public CompletableFuture<Boolean> add(T value, Command.ConsistencyLevel consistency) {
     return submit(QueueCommands.Add.builder()
       .withValue(value)
-      .withConsistency(consistency)
       .build());
   }
 
@@ -133,20 +121,8 @@ public class DistributedQueue<T> extends Resource<DistributedQueue<T>> {
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Boolean> offer(T value) {
-    return offer(value, commandConsistency);
-  }
-
-  /**
-   * Adds a value to the queue.
-   *
-   * @param value The value to add.
-   * @param consistency The command consistency level.
-   * @return A completable future to be completed with the result once complete.
-   */
-  public CompletableFuture<Boolean> offer(T value, Command.ConsistencyLevel consistency) {
     return submit(QueueCommands.Offer.builder()
       .withValue(value)
-      .withConsistency(consistency)
       .build());
   }
 
@@ -156,22 +132,10 @@ public class DistributedQueue<T> extends Resource<DistributedQueue<T>> {
    * @param value The value to remove.
    * @return A completable future to be completed with the result once complete.
    */
-  public CompletableFuture<T> peek(T value) {
-    return peek(value, commandConsistency);
-  }
-
-  /**
-   * Removes a value from the queue.
-   *
-   * @param value The value to remove.
-   * @param consistency The command consistency level.
-   * @return A completable future to be completed with the result once complete.
-   */
   @SuppressWarnings("unchecked")
-  public CompletableFuture<T> peek(T value, Command.ConsistencyLevel consistency) {
+  public CompletableFuture<T> peek(T value) {
     return submit(QueueCommands.Peek.builder()
       .withValue(value)
-      .withConsistency(consistency)
       .build()).thenApply(v -> (T) v);
   }
 
@@ -181,22 +145,10 @@ public class DistributedQueue<T> extends Resource<DistributedQueue<T>> {
    * @param value The value to remove.
    * @return A completable future to be completed with the result once complete.
    */
-  public CompletableFuture<T> poll(T value) {
-    return poll(value, commandConsistency);
-  }
-
-  /**
-   * Removes a value from the queue.
-   *
-   * @param value The value to remove.
-   * @param consistency The command consistency level.
-   * @return A completable future to be completed with the result once complete.
-   */
   @SuppressWarnings("unchecked")
-  public CompletableFuture<T> poll(T value, Command.ConsistencyLevel consistency) {
+  public CompletableFuture<T> poll(T value) {
     return submit(QueueCommands.Poll.builder()
       .withValue(value)
-      .withConsistency(consistency)
       .build()).thenApply(v -> (T) v);
   }
 
@@ -206,22 +158,10 @@ public class DistributedQueue<T> extends Resource<DistributedQueue<T>> {
    * @param value The value to remove.
    * @return A completable future to be completed with the result once complete.
    */
-  public CompletableFuture<T> element(T value) {
-    return element(value, commandConsistency);
-  }
-
-  /**
-   * Removes a value from the queue.
-   *
-   * @param value The value to remove.
-   * @param consistency The command consistency level.
-   * @return A completable future to be completed with the result once complete.
-   */
   @SuppressWarnings("unchecked")
-  public CompletableFuture<T> element(T value, Command.ConsistencyLevel consistency) {
+  public CompletableFuture<T> element(T value) {
     return submit(QueueCommands.Element.builder()
       .withValue(value)
-      .withConsistency(consistency)
       .build()).thenApply(v -> (T) v);
   }
 
@@ -230,20 +170,9 @@ public class DistributedQueue<T> extends Resource<DistributedQueue<T>> {
    *
    * @return A completable future to be completed with the result once complete.
    */
-  public CompletableFuture<T> remove() {
-    return remove(commandConsistency);
-  }
-
-  /**
-   * Removes a value from the queue.
-   *
-   * @param consistency The command consistency level.
-   * @return A completable future to be completed with the result once complete.
-   */
   @SuppressWarnings("unchecked")
-  public CompletableFuture<T> remove(Command.ConsistencyLevel consistency) {
+  public CompletableFuture<T> remove() {
     return submit(QueueCommands.Remove.builder()
-      .withConsistency(consistency)
       .build()).thenApply(v -> (T) v);
   }
 
@@ -254,20 +183,8 @@ public class DistributedQueue<T> extends Resource<DistributedQueue<T>> {
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Boolean> remove(T value) {
-    return remove(value, commandConsistency);
-  }
-
-  /**
-   * Removes a value from the queue.
-   *
-   * @param value The value to remove.
-   * @param consistency The command consistency level.
-   * @return A completable future to be completed with the result once complete.
-   */
-  public CompletableFuture<Boolean> remove(T value, Command.ConsistencyLevel consistency) {
     return submit(QueueCommands.Remove.builder()
       .withValue(value)
-      .withConsistency(consistency)
       .build()).thenApply(v -> (boolean) v);
   }
 
@@ -284,36 +201,12 @@ public class DistributedQueue<T> extends Resource<DistributedQueue<T>> {
   }
 
   /**
-   * Checks whether the queue contains a value.
-   *
-   * @param value The value to check.
-   * @param consistency The query consistency level.
-   * @return A completable future to be completed with the result once complete.
-   */
-  public CompletableFuture<Boolean> contains(Object value, Query.ConsistencyLevel consistency) {
-    return submit(QueueCommands.Contains.builder()
-      .withValue(value)
-      .withConsistency(consistency)
-      .build());
-  }
-
-  /**
    * Gets the set count.
    *
    * @return A completable future to be completed with the set count.
    */
   public CompletableFuture<Integer> size() {
     return submit(QueueCommands.Size.builder().build());
-  }
-
-  /**
-   * Gets the queue count.
-   *
-   * @param consistency The query consistency level.
-   * @return A completable future to be completed with the queue count.
-   */
-  public CompletableFuture<Integer> size(Query.ConsistencyLevel consistency) {
-    return submit(QueueCommands.Size.builder().withConsistency(consistency).build());
   }
 
   /**
@@ -326,34 +219,12 @@ public class DistributedQueue<T> extends Resource<DistributedQueue<T>> {
   }
 
   /**
-   * Checks whether the queue is empty.
-   *
-   * @param consistency The query consistency level.
-   * @return A completable future to be completed with a boolean value indicating whether the queue is empty.
-   */
-  public CompletableFuture<Boolean> isEmpty(Query.ConsistencyLevel consistency) {
-    return submit(QueueCommands.IsEmpty.builder().withConsistency(consistency).build());
-  }
-
-  /**
    * Removes all values from the set.
    *
    * @return A completable future to be completed once the operation is complete.
    */
   public CompletableFuture<Void> clear() {
     return submit(QueueCommands.Clear.builder().build());
-  }
-
-  /**
-   * Removes all values from the queue.
-   *
-   * @param consistency The command consistency level.
-   * @return A completable future to be completed once the operation is complete.
-   */
-  public CompletableFuture<Void> clear(Command.ConsistencyLevel consistency) {
-    return submit(QueueCommands.Clear.builder()
-      .withConsistency(consistency)
-      .build());
   }
 
 }

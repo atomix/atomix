@@ -159,7 +159,7 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
      * @return A completable future to be completed once the callback has been scheduled.
      */
     public CompletableFuture<Void> schedule(Instant instant, Runnable callback) {
-      return schedule(instant.minusMillis(System.currentTimeMillis()), callback);
+      return schedule(Duration.ofMillis(instant.toEpochMilli() - System.currentTimeMillis()), callback);
     }
 
     /**

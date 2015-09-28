@@ -15,6 +15,7 @@
  */
 package io.atomix.resource;
 
+import io.atomix.Consistency;
 import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
@@ -78,15 +79,17 @@ public class ResourceContext {
    * Submits a resource command.
    *
    * @param command The command to submit.
+   * @param consistency The command consistency.
    * @param <T> The command output type.
    * @return A completable future to be completed with the command result.
    * @throws NullPointerException if {@code command} is null
    */
   @SuppressWarnings("unchecked")
-  public <T> CompletableFuture<T> submit(Command<T> command) {
+  public <T> CompletableFuture<T> submit(Command<T> command, Consistency consistency) {
     return client.submit(ResourceCommand.builder()
       .withResource(resource)
       .withCommand(command)
+      .withConsistency(consistency)
       .build());
   }
 
@@ -94,14 +97,16 @@ public class ResourceContext {
    * Submits a resource query.
    *
    * @param query The query to submit.
+   * @param consistency The query consistency.
    * @param <T> The query output type.
    * @return A completable future to be completed with the query result.
    */
   @SuppressWarnings("unchecked")
-  public <T> CompletableFuture<T> submit(Query<T> query) {
+  public <T> CompletableFuture<T> submit(Query<T> query, Consistency consistency) {
     return client.submit(ResourceQuery.builder()
       .withResource(resource)
       .withQuery(query)
+      .withConsistency(consistency)
       .build());
   }
 
