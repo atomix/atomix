@@ -13,19 +13,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-io.atomix.copycat.collections.state.MapCommands$Clear
-io.atomix.copycat.collections.state.MapCommands$ContainsKey
-io.atomix.copycat.collections.state.MapCommands$Get
-io.atomix.copycat.collections.state.MapCommands$GetOrDefault
-io.atomix.copycat.collections.state.MapCommands$IsEmpty
-io.atomix.copycat.collections.state.MapCommands$Put
-io.atomix.copycat.collections.state.MapCommands$PutIfAbsent
-io.atomix.copycat.collections.state.MapCommands$Remove
-io.atomix.copycat.collections.state.MapCommands$Size
+io.atomix.collections.state.MapCommands$Clear
+io.atomix.collections.state.MapCommands$ContainsKey
+io.atomix.collections.state.MapCommands$Get
+io.atomix.collections.state.MapCommands$GetOrDefault
+io.atomix.collections.state.MapCommands$IsEmpty
+io.atomix.collections.state.MapCommands$Put
+io.atomix.collections.state.MapCommands$PutIfAbsent
+io.atomix.collections.state.MapCommands$Remove
+io.atomix.collections.state.MapCommands$Size
 
-io.atomix.copycat.collections.state.SetCommands$Add
-io.atomix.copycat.collections.state.SetCommands$Clear
-io.atomix.copycat.collections.state.SetCommands$Contains
-io.atomix.copycat.collections.state.SetCommands$IsEmpty
-io.atomix.copycat.collections.state.SetCommands$Remove
-io.atomix.copycat.collections.state.SetCommands$Size
+io.atomix.collections.state.SetCommands$Add
+io.atomix.collections.state.SetCommands$Clear
+io.atomix.collections.state.SetCommands$Contains
+io.atomix.collections.state.SetCommands$IsEmpty
+io.atomix.collections.state.SetCommands$Remove
+io.atomix.collections.state.SetCommands$Size

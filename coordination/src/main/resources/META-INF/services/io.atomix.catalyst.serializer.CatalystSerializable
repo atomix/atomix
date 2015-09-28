@@ -13,25 +13,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-io.atomix.copycat.coordination.state.LeaderElectionCommands$Listen
-io.atomix.copycat.coordination.state.LeaderElectionCommands$Unlisten
-io.atomix.copycat.coordination.state.LeaderElectionCommands$IsLeader
+io.atomix.coordination.state.LeaderElectionCommands$Listen
+io.atomix.coordination.state.LeaderElectionCommands$Unlisten
+io.atomix.coordination.state.LeaderElectionCommands$IsLeader
 
-io.atomix.copycat.coordination.state.LockCommands$Lock
-io.atomix.copycat.coordination.state.LockCommands$Unlock
+io.atomix.coordination.state.LockCommands$Lock
+io.atomix.coordination.state.LockCommands$Unlock
 
-io.atomix.copycat.coordination.state.TopicCommands$Publish
-io.atomix.copycat.coordination.state.TopicCommands$Listen
-io.atomix.copycat.coordination.state.TopicCommands$Unlisten
+io.atomix.coordination.state.TopicCommands$Publish
+io.atomix.coordination.state.TopicCommands$Listen
+io.atomix.coordination.state.TopicCommands$Unlisten
 
-io.atomix.copycat.coordination.state.MembershipGroupCommands$Join
-io.atomix.copycat.coordination.state.MembershipGroupCommands$Leave
-io.atomix.copycat.coordination.state.MembershipGroupCommands$Schedule
-io.atomix.copycat.coordination.state.MembershipGroupCommands$Execute
+io.atomix.coordination.state.MembershipGroupCommands$Join
+io.atomix.coordination.state.MembershipGroupCommands$Leave
+io.atomix.coordination.state.MembershipGroupCommands$Schedule
+io.atomix.coordination.state.MembershipGroupCommands$Execute
 
-io.atomix.copycat.coordination.state.MessageBusCommands$Join
-io.atomix.copycat.coordination.state.MessageBusCommands$Leave
-io.atomix.copycat.coordination.state.MessageBusCommands$Register
-io.atomix.copycat.coordination.state.MessageBusCommands$Unregister
-io.atomix.copycat.coordination.state.MessageBusCommands$ConsumerInfo
-io.atomix.copycat.coordination.Message
+io.atomix.coordination.state.MessageBusCommands$Join
+io.atomix.coordination.state.MessageBusCommands$Leave
+io.atomix.coordination.state.MessageBusCommands$Register
+io.atomix.coordination.state.MessageBusCommands$Unregister
+io.atomix.coordination.state.MessageBusCommands$ConsumerInfo
+io.atomix.coordination.Message

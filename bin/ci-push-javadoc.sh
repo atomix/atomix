@@ -1,7 +1,7 @@
 # Called by Travis CI to push latest javadoc
 # From http://benlimmer.com/2013/12/26/automatically-publish-javadoc-to-gh-pages-with-travis-ci/
 
-PROJECT="copycat"
+PROJECT="atomix"
 
 if [ "$TRAVIS_REPO_SLUG" == "atomix/$PROJECT" ] && \
    [ "$TRAVIS_JDK_VERSION" == "oraclejdk8" ] && \

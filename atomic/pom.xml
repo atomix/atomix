@@ -18,18 +18,18 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>io.atomix.copycat</groupId>
-    <artifactId>copycat-parent</artifactId>
+    <groupId>io.atomix</groupId>
+    <artifactId>atomix-parent</artifactId>
     <version>0.1.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>copycat-atomic</artifactId>
-  <name>Copycat Atomic Variables</name>
+  <artifactId>atomix-atomic</artifactId>
+  <name>Atomix Atomic Variables</name>
 
   <dependencies>
     <dependency>
-      <groupId>io.atomix.copycat</groupId>
-      <artifactId>copycat</artifactId>
+      <groupId>io.atomix</groupId>
+      <artifactId>atomix</artifactId>
       <version>${project.version}</version>
     </dependency>
   </dependencies>

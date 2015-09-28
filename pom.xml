@@ -8,13 +8,13 @@
     <version>7</version>
   </parent>
 
-  <groupId>io.atomix.copycat</groupId>
-  <artifactId>copycat-parent</artifactId>
+  <groupId>io.atomix</groupId>
+  <artifactId>atomix-parent</artifactId>
   <version>0.1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
-  <name>Copycat</name>
-  <description>Replicated state machine framework based on the Raft consensus algorithm.</description>
-  <url>http://github.com/atomix/copycat</url>
+  <name>Atomix</name>
+  <description>Distributed coordination framework based on the Raft consensus algorithm.</description>
+  <url>http://github.com/atomix/atomix</url>
   <inceptionYear>2013</inceptionYear>
 
   <properties>
@@ -24,7 +24,7 @@
     <slf4j.version>1.7.7</slf4j.version>
     <logback.version>1.1.2</logback.version>
     <catalyst.version>1.0.0-SNAPSHOT</catalyst.version>
-    <catalogue.version>1.0.0-SNAPSHOT</catalogue.version>
+    <copycat.version>1.0.0-SNAPSHOT</copycat.version>
 
     <maven.source.plugin.version>2.2.1</maven.source.plugin.version>
     <maven.compiler.plugin.version>3.0</maven.compiler.plugin.version>
@@ -52,14 +52,14 @@
   </developers>
 
   <scm>
-    <connection>scm:git:git@github.com:atomix/copycat.git</connection>
-    <developerConnection>scm:git:git@github.com:atomix/copycat.git</developerConnection>
-    <url>git@github.com:atomix/copycat.git</url>
+    <connection>scm:git:git@github.com:atomix/atomix.git</connection>
+    <developerConnection>scm:git:git@github.com:atomix/atomix.git</developerConnection>
+    <url>git@github.com:atomix/atomix.git</url>
   </scm>
 
   <issueManagement>
     <system>GitHub</system>
-    <url>http://github.com/atomix/copycat/issues</url>
+    <url>http://github.com/atomix/atomix/issues</url>
   </issueManagement>
 
   <modules>
@@ -115,9 +115,9 @@
         <version>${maven.javadoc.plugin.version}</version>
         <configuration>
           <show>public</show>
-          <excludePackageNames>*.state:io.atomix.copycat.resource:io.atomix.copycat.manager:io.atomix.copycat.examples*</excludePackageNames>
-          <doctitle>Copycat API Reference (${jv})</doctitle>
-          <windowtitle>Copycat API Reference (${jv})</windowtitle>
+          <excludePackageNames>*.state:io.atomix.resource:io.atomix.manager:io.atomix.examples*</excludePackageNames>
+          <doctitle>Atomix API Reference (${jv})</doctitle>
+          <windowtitle>Atomix API Reference (${jv})</windowtitle>
           <outputDirectory>${project.build.directory}/api</outputDirectory>
           <destDir>api/${jv}</destDir>
           <aggregate>true</aggregate>
@@ -125,9 +125,9 @@
             -Xdoclint:none
             -link http://docs.oracle.com/javase/8/docs/api/
             -link http://atomix.io/catalyst/api/latest/
-            -link http://atomix.io/catalogue/api/latest/
-            -group "Copycat core" io.atomix.copycat
-            -group "Distributed resources" io.atomix.copycat.atomic:io.atomix.copycat.collections:io.atomix.copycat.coordination
+            -link http://atomix.io/copycat/api/latest/
+            -group "Atomix core" io.atomix
+            -group "Distributed resources" io.atomix.atomic:io.atomix.collections:io.atomix.coordination
           </additionalparam>
         </configuration>
       </plugin>

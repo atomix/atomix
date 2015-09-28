@@ -14,13 +14,13 @@
     <version>7</version>
   </parent>
 
-  <groupId>io.atomix.copycat</groupId>
-  <artifactId>copycat-examples-parent</artifactId>
+  <groupId>io.atomix</groupId>
+  <artifactId>atomix-examples-parent</artifactId>
   <version>0.1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
-  <name>Copycat Examples</name>
-  <description>Example projects for Copycat.</description>
-  <url>http://github.com/kuujo/copycat</url>
+  <name>Atomix Examples</name>
+  <description>Example projects for Atomix.</description>
+  <url>http://github.com/atomix/atomix</url>
   <inceptionYear>2013</inceptionYear>
 
   <properties>
@@ -56,7 +56,7 @@
 
   <issueManagement>
     <system>GitHub</system>
-    <url>http://github.com/kuujo/copycat/issues</url>
+    <url>http://github.com/atomix/atomix/issues</url>
   </issueManagement>
 
   <modules>
@@ -65,8 +65,8 @@
 
   <dependencies>
     <dependency>
-      <groupId>io.atomix.copycat</groupId>
-      <artifactId>copycat</artifactId>
+      <groupId>io.atomix</groupId>
+      <artifactId>atomix</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

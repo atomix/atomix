@@ -13,11 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-io.atomix.copycat.resource.ResourceCommand
-io.atomix.copycat.resource.ResourceEvent
-io.atomix.copycat.resource.ResourceQuery
+io.atomix.resource.ResourceCommand
+io.atomix.resource.ResourceEvent
+io.atomix.resource.ResourceQuery
 
-io.atomix.copycat.manager.GetResource
-io.atomix.copycat.manager.CreateResource
-io.atomix.copycat.manager.DeleteResource
-io.atomix.copycat.manager.ResourceExists
+io.atomix.manager.GetResource
+io.atomix.manager.CreateResource
+io.atomix.manager.DeleteResource
+io.atomix.manager.ResourceExists

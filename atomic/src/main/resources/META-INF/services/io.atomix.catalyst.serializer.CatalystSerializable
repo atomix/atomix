@@ -13,9 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-io.atomix.copycat.atomic.state.AtomicValueCommands$CompareAndSet
-io.atomix.copycat.atomic.state.AtomicValueCommands$Get
-io.atomix.copycat.atomic.state.AtomicValueCommands$GetAndSet
-io.atomix.copycat.atomic.state.AtomicValueCommands$Set
-io.atomix.copycat.atomic.state.AtomicValueCommands$Listen
-io.atomix.copycat.atomic.state.AtomicValueCommands$Unlisten
+io.atomix.atomic.state.AtomicValueCommands$CompareAndSet
+io.atomix.atomic.state.AtomicValueCommands$Get
+io.atomix.atomic.state.AtomicValueCommands$GetAndSet
+io.atomix.atomic.state.AtomicValueCommands$Set
+io.atomix.atomic.state.AtomicValueCommands$Listen
+io.atomix.atomic.state.AtomicValueCommands$Unlisten
