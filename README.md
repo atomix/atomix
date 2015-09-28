@@ -30,7 +30,7 @@ will not be fully released until significant testing is done both via normal tes
 Atomix snapshots will be pushed, and a beta release of Atomix is expected within the coming weeks. Follow the project for
 updates!
 
-#### [Website][Website] • [User Manual][User manual] • [Raft Algorithm][Catalog] • [Google Group][Google group] • [Javadoc][Javadoc]
+#### [Website][Website] • [User Manual][User manual] • [Raft Algorithm][Copycat] • [Google Group][Google group] • [Javadoc][Javadoc]
 
 [Website]: http://atomix.github.io/
 [Getting started]: http://atomix.io/getting-started/
