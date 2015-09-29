@@ -25,9 +25,10 @@ import io.atomix.copycat.server.storage.Storage;
 import io.atomix.manager.ResourceManager;
 
 import java.time.Duration;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 /**
@@ -92,7 +93,6 @@ public final class AtomixReplica extends Atomix {
   private static class CombinedTransport implements Transport {
     private final Transport local;
     private final Transport remote;
-    private final Map<UUID, Server> servers = new ConcurrentHashMap<>();
 
     private CombinedTransport(Transport local, Transport remote) {
       this.local = local;
@@ -100,18 +100,13 @@ public final class AtomixReplica extends Atomix {
     }
 
     @Override
-    public Client client(UUID id) {
-      return remote.client(Assert.notNull(id, "id"));
+    public Client client() {
+      return remote.client();
     }
 
     @Override
-    public Server server(UUID id) {
-      return servers.computeIfAbsent(Assert.notNull(id, "id"), i -> new CombinedServer(local.server(i), remote.server(i)));
-    }
-
-    @Override
-    public CompletableFuture<Void> close() {
-      return local.close().thenCompose(v -> remote.close());
+    public Server server() {
+      return new CombinedServer(local.server(), remote.server());
     }
   }
 
@@ -125,11 +120,6 @@ public final class AtomixReplica extends Atomix {
     private CombinedServer(Server local, Server remote) {
       this.local = local;
       this.remote = remote;
-    }
-
-    @Override
-    public UUID id() {
-      return local.id();
     }
 
     @Override

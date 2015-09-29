@@ -61,8 +61,8 @@ public class DistributedMessageBus extends Resource<DistributedMessageBus> {
     if (openFuture != null)
       return openFuture;
 
-    client = context.transport().client(id);
-    server = context.transport().server(id);
+    client = context.transport().client();
+    server = context.transport().server();
 
     openFuture = new CompletableFuture<>();
     context.context().execute(() -> {
