@@ -41,12 +41,12 @@ public enum Consistency {
   },
 
   /**
-   * Client consistency level.
+   * Process consistency level.
    */
-  CLIENT {
+  PROCESS {
     @Override
     public Command.ConsistencyLevel writeConsistency() {
-      return Command.ConsistencyLevel.SEQUENTIAL;
+      return Command.ConsistencyLevel.LINEARIZABLE;
     }
 
     @Override
@@ -56,12 +56,12 @@ public enum Consistency {
   },
 
   /**
-   * Ordered consistency level.
+   * Sequential consistency level.
    */
-  ORDERED {
+  SEQUENTIAL {
     @Override
     public Command.ConsistencyLevel writeConsistency() {
-      return Command.ConsistencyLevel.SEQUENTIAL;
+      return Command.ConsistencyLevel.LINEARIZABLE;
     }
 
     @Override
@@ -71,9 +71,9 @@ public enum Consistency {
   },
 
   /**
-   * Strong consistency level.
+   * Atomic consistency level.
    */
-  STRONG {
+  ATOMIC {
     @Override
     public Command.ConsistencyLevel writeConsistency() {
       return Command.ConsistencyLevel.LINEARIZABLE;

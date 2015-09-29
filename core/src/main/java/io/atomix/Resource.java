@@ -30,7 +30,7 @@ import java.util.concurrent.CompletableFuture;
  */
 public abstract class Resource<T extends Resource<T>> {
   protected ResourceContext context;
-  private Consistency consistency = Consistency.STRONG;
+  private Consistency consistency = Consistency.ATOMIC;
 
   /**
    * Initializes the resource.
