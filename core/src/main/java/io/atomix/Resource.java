@@ -33,6 +33,15 @@ public abstract class Resource<T extends Resource<T>> {
   private Consistency consistency = Consistency.ATOMIC;
 
   /**
+   * Returns the resource ID.
+   *
+   * @return The resource ID.
+   */
+  public long id() {
+    return context.id();
+  }
+
+  /**
    * Initializes the resource.
    *
    * @param context The resource context.
@@ -92,6 +101,16 @@ public abstract class Resource<T extends Resource<T>> {
    */
   public CompletableFuture<Void> delete() {
     return context.delete();
+  }
+
+  @Override
+  public int hashCode() {
+    return 37 * 23 + (int)(id() ^ (id() >>> 32));
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    return getClass().isAssignableFrom(object.getClass()) && ((Resource) object).id() == id();
   }
 
 }

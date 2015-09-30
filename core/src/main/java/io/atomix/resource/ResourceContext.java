@@ -49,6 +49,15 @@ public class ResourceContext {
   }
 
   /**
+   * Returns the resource ID.
+   *
+   * @return The unique resource ID.
+   */
+  public long id() {
+    return resource;
+  }
+
+  /**
    * Returns the resource execution context.
    *
    * @return The resource execution context.
