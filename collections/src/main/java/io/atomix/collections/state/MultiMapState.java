@@ -57,7 +57,6 @@ public class MultiMapState extends StateMachine {
   /**
    * Handles a get commit.
    */
-  @SuppressWarnings("unchecked")
   protected Collection get(Commit<MultiMapCommands.Get> commit) {
     try {
       Map<Object, Commit<? extends MultiMapCommands.TtlCommand>> values = map.get(commit.operation().key());

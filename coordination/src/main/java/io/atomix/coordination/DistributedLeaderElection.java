@@ -57,7 +57,6 @@ public class DistributedLeaderElection extends Resource<DistributedLeaderElectio
    * @param listener The listener to register.
    * @return A completable future to be completed with the listener context.
    */
-  @SuppressWarnings("unchecked")
   public CompletableFuture<Listener<Long>> onElection(Consumer<Long> listener) {
     if (!listeners.isEmpty()) {
       listeners.add(listener);
@@ -76,7 +75,6 @@ public class DistributedLeaderElection extends Resource<DistributedLeaderElectio
    * @return A completable future to be completed with a boolean value indicating whether the
    *         client is the current leader.
    */
-  @SuppressWarnings("unchecked")
   public CompletableFuture<Boolean> isLeader(long epoch) {
     return submit(LeaderElectionCommands.IsLeader.builder().withEpoch(epoch).build());
   }

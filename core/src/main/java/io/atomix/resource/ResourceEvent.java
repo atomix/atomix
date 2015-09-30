@@ -59,13 +59,13 @@ public class ResourceEvent<T> implements CatalystSerializable {
   }
 
   @Override
-  public void writeObject(BufferOutput buffer, Serializer serializer) {
+  public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
     buffer.writeLong(resource);
     serializer.writeObject(message, buffer);
   }
 
   @Override
-  public void readObject(BufferInput buffer, Serializer serializer) {
+  public void readObject(BufferInput<?> buffer, Serializer serializer) {
     resource = buffer.readLong();
     message = serializer.readObject(buffer);
   }

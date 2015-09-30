@@ -51,12 +51,12 @@ public abstract class PathOperation<T> implements Operation<T>, CatalystSerializ
   }
 
   @Override
-  public void writeObject(BufferOutput buffer, Serializer serializer) {
+  public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
     buffer.writeInt(path.getBytes().length).write(path.getBytes());
   }
 
   @Override
-  public void readObject(BufferInput buffer, Serializer serializer) {
+  public void readObject(BufferInput<?> buffer, Serializer serializer) {
     byte[] bytes = new byte[buffer.readInt()];
     buffer.read(bytes);
     path = new String(bytes);

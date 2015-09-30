@@ -30,7 +30,7 @@ import java.time.Instant;
  */
 class ResourceCommit implements Commit {
   private final ResourceCommitPool pool;
-  private Commit<ResourceOperation> commit;
+  private Commit<ResourceOperation<?, ?>> commit;
   private Session session;
   private volatile boolean open;
 
@@ -44,7 +44,7 @@ class ResourceCommit implements Commit {
    * @param commit The parent commit.
    * @param session The resource session.
    */
-  void reset(Commit<ResourceOperation> commit, Session session) {
+  void reset(Commit<ResourceOperation<?, ?>> commit, Session session) {
     this.commit = commit;
     this.session = session;
     open = true;
@@ -66,12 +66,12 @@ class ResourceCommit implements Commit {
   }
 
   @Override
-  public Class type() {
+  public Class<?> type() {
     return commit.operation().operation().getClass();
   }
 
   @Override
-  public Operation operation() {
+  public Operation<?> operation() {
     return commit.operation().operation();
   }
 

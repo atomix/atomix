@@ -41,11 +41,11 @@ public class QueueCommands {
   private static abstract class SetCommand<V> implements Command<V>, CatalystSerializable {
 
     @Override
-    public void writeObject(BufferOutput buffer, Serializer serializer) {
+    public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
     }
 
     @Override
-    public void readObject(BufferInput buffer, Serializer serializer) {
+    public void readObject(BufferInput<?> buffer, Serializer serializer) {
     }
 
     /**
@@ -64,11 +64,11 @@ public class QueueCommands {
   private static abstract class SetQuery<V> implements Query<V>, CatalystSerializable {
 
     @Override
-    public void writeObject(BufferOutput buffer, Serializer serializer) {
+    public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
     }
 
     @Override
-    public void readObject(BufferInput buffer, Serializer serializer) {
+    public void readObject(BufferInput<?> buffer, Serializer serializer) {
     }
 
     /**
@@ -105,12 +105,12 @@ public class QueueCommands {
     }
 
     @Override
-    public void writeObject(BufferOutput buffer, Serializer serializer) {
+    public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
       serializer.writeObject(value, buffer);
     }
 
     @Override
-    public void readObject(BufferInput buffer, Serializer serializer) {
+    public void readObject(BufferInput<?> buffer, Serializer serializer) {
       value = serializer.readObject(buffer);
     }
 
@@ -152,13 +152,13 @@ public class QueueCommands {
     }
 
     @Override
-    public void writeObject(BufferOutput buffer, Serializer serializer) {
+    public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
       super.writeObject(buffer, serializer);
       serializer.writeObject(value, buffer);
     }
 
     @Override
-    public void readObject(BufferInput buffer, Serializer serializer) {
+    public void readObject(BufferInput<?> buffer, Serializer serializer) {
       super.readObject(buffer, serializer);
       value = serializer.readObject(buffer);
     }

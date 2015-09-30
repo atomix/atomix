@@ -41,11 +41,11 @@ public class MapCommands {
   public static abstract class MapCommand<V> implements Command<V>, CatalystSerializable {
 
     @Override
-    public void writeObject(BufferOutput buffer, Serializer serializer) {
+    public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
     }
 
     @Override
-    public void readObject(BufferInput buffer, Serializer serializer) {
+    public void readObject(BufferInput<?> buffer, Serializer serializer) {
     }
 
     /**
@@ -64,11 +64,11 @@ public class MapCommands {
   public static abstract class MapQuery<V> implements Query<V>, CatalystSerializable {
 
     @Override
-    public void writeObject(BufferOutput buffer, Serializer serializer) {
+    public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
     }
 
     @Override
-    public void readObject(BufferInput buffer, Serializer serializer) {
+    public void readObject(BufferInput<?> buffer, Serializer serializer) {
     }
 
     /**
@@ -105,12 +105,12 @@ public class MapCommands {
     }
 
     @Override
-    public void writeObject(BufferOutput buffer, Serializer serializer) {
+    public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
       serializer.writeObject(key, buffer);
     }
 
     @Override
-    public void readObject(BufferInput buffer, Serializer serializer) {
+    public void readObject(BufferInput<?> buffer, Serializer serializer) {
       key = serializer.readObject(buffer);
     }
 
@@ -152,13 +152,13 @@ public class MapCommands {
     }
 
     @Override
-    public void writeObject(BufferOutput buffer, Serializer serializer) {
+    public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
       super.writeObject(buffer, serializer);
       serializer.writeObject(key, buffer);
     }
 
     @Override
-    public void readObject(BufferInput buffer, Serializer serializer) {
+    public void readObject(BufferInput<?> buffer, Serializer serializer) {
       super.readObject(buffer, serializer);
       key = serializer.readObject(buffer);
     }
@@ -229,13 +229,13 @@ public class MapCommands {
     }
 
     @Override
-    public void writeObject(BufferOutput buffer, Serializer serializer) {
+    public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
       super.writeObject(buffer, serializer);
       serializer.writeObject(value, buffer);
     }
 
     @Override
-    public void readObject(BufferInput buffer, Serializer serializer) {
+    public void readObject(BufferInput<?> buffer, Serializer serializer) {
       super.readObject(buffer, serializer);
       value = serializer.readObject(buffer);
     }
@@ -283,13 +283,13 @@ public class MapCommands {
     }
 
     @Override
-    public void writeObject(BufferOutput buffer, Serializer serializer) {
+    public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
       super.writeObject(buffer, serializer);
       buffer.writeLong(ttl);
     }
 
     @Override
-    public void readObject(BufferInput buffer, Serializer serializer) {
+    public void readObject(BufferInput<?> buffer, Serializer serializer) {
       super.readObject(buffer, serializer);
       ttl = buffer.readLong();
     }
@@ -424,13 +424,13 @@ public class MapCommands {
     }
 
     @Override
-    public void readObject(BufferInput buffer, Serializer serializer) {
+    public void readObject(BufferInput<?> buffer, Serializer serializer) {
       super.readObject(buffer, serializer);
       defaultValue = serializer.readObject(buffer);
     }
 
     @Override
-    public void writeObject(BufferOutput buffer, Serializer serializer) {
+    public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
       super.writeObject(buffer, serializer);
       serializer.writeObject(defaultValue, buffer);
     }

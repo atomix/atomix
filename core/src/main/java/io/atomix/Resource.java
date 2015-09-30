@@ -74,11 +74,11 @@ public abstract class Resource<T extends Resource<T>> {
    * Submits a command to the Raft protocol.
    *
    * @param command The command to submit.
-   * @param <T> The command result type.
+   * @param <R> The command result type.
    * @return A completable future to be completed with the command result.
    * @throws NullPointerException if {@code command} is null
    */
-  protected <T> CompletableFuture<T> submit(Command<T> command) {
+  protected <R> CompletableFuture<R> submit(Command<R> command) {
     return context.submit(Assert.notNull(command, "command"), consistency);
   }
 
@@ -86,11 +86,11 @@ public abstract class Resource<T extends Resource<T>> {
    * Submits a query to the Raft protocol.
    *
    * @param query The query to submit.
-   * @param <T> The query result type.
+   * @param <R> The query result type.
    * @return A completable future to be completed with the query result.
    * @throws NullPointerException if {@code query} is null
    */
-  protected <T> CompletableFuture<T> submit(Query<T> query) {
+  protected <R> CompletableFuture<R> submit(Query<R> query) {
     return context.submit(Assert.notNull(query, "query"), consistency);
   }
 
@@ -110,7 +110,7 @@ public abstract class Resource<T extends Resource<T>> {
 
   @Override
   public boolean equals(Object object) {
-    return getClass().isAssignableFrom(object.getClass()) && ((Resource) object).id() == id();
+    return getClass().isAssignableFrom(object.getClass()) && ((Resource<?>) object).id() == id();
   }
 
 }

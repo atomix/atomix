@@ -52,19 +52,18 @@ public class Message implements CatalystSerializable {
    *
    * @return The message body.
    */
-  @SuppressWarnings("unchecked")
   public Object body() {
     return body;
   }
 
   @Override
-  public void writeObject(BufferOutput buffer, Serializer serializer) {
+  public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
     buffer.writeString(topic);
     serializer.writeObject(body, buffer);
   }
 
   @Override
-  public void readObject(BufferInput buffer, Serializer serializer) {
+  public void readObject(BufferInput<?> buffer, Serializer serializer) {
     topic = buffer.readString();
     body = serializer.readObject(buffer);
   }

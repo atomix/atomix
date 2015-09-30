@@ -51,14 +51,14 @@ public abstract class ResourceOperation<T extends Operation<U>, U> implements Op
   }
 
   @Override
-  public void writeObject(BufferOutput buffer, Serializer serializer) {
+  public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
     buffer.writeLong(resource);
     serializer.writeObject(operation, buffer);
     buffer.writeByte(consistency.ordinal());
   }
 
   @Override
-  public void readObject(BufferInput buffer, Serializer serializer) {
+  public void readObject(BufferInput<?> buffer, Serializer serializer) {
     resource = buffer.readLong();
     operation = serializer.readObject(buffer);
     consistency = Consistency.values()[buffer.readByte()];

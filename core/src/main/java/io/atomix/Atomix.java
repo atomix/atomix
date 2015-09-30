@@ -100,7 +100,7 @@ public abstract class Atomix implements Managed<Atomix> {
    * @throws NullPointerException if {@code path} or {@code type} are null
    */
   @SuppressWarnings("unchecked")
-  public <T extends Resource> CompletableFuture<T> get(String path, Class<? super T> type) {
+  public <T extends Resource<?>> CompletableFuture<T> get(String path, Class<? super T> type) {
     return get(path, () -> {
       try {
         return (T) type.newInstance();
@@ -122,8 +122,7 @@ public abstract class Atomix implements Managed<Atomix> {
    * @return A completable future to be completed once the resource has been loaded.
    * @throws NullPointerException if {@code path} or {@code factory} are null
    */
-  @SuppressWarnings("unchecked")
-  public <T extends Resource> CompletableFuture<T> get(String path, Supplier<T> factory) {
+  public <T extends Resource<?>> CompletableFuture<T> get(String path, Supplier<T> factory) {
     T resource = Assert.notNull(factory, "factory").get();
     return client.submit(GetResource.builder()
       .withPath(Assert.notNull(path, "path"))
@@ -148,7 +147,7 @@ public abstract class Atomix implements Managed<Atomix> {
    * @throws NullPointerException if {@code path} or {@code type} are null
    */
   @SuppressWarnings("unchecked")
-  public <T extends Resource> CompletableFuture<T> create(String path, Class<? super T> type) {
+  public <T extends Resource<?>> CompletableFuture<T> create(String path, Class<? super T> type) {
     return create(path, () -> {
       try {
         return (T) type.newInstance();
@@ -170,8 +169,7 @@ public abstract class Atomix implements Managed<Atomix> {
    * @return A completable future to be completed once the resource has been created.
    * @throws NullPointerException if {@code path} or {@code factory} are null
    */
-  @SuppressWarnings("unchecked")
-  public <T extends Resource> CompletableFuture<T> create(String path, Supplier<T> factory) {
+  public <T extends Resource<?>> CompletableFuture<T> create(String path, Supplier<T> factory) {
     T resource = Assert.notNull(factory, "factory").get();
     return client.submit(CreateResource.builder()
       .withPath(Assert.notNull(path, "path"))

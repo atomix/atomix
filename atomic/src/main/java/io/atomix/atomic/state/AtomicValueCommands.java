@@ -56,12 +56,12 @@ public class AtomicValueCommands {
     }
 
     @Override
-    public void writeObject(BufferOutput buffer, Serializer serializer) {
+    public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
       buffer.writeLong(ttl);
     }
 
     @Override
-    public void readObject(BufferInput buffer, Serializer serializer) {
+    public void readObject(BufferInput<?> buffer, Serializer serializer) {
       ttl = buffer.readLong();
     }
 
@@ -93,13 +93,11 @@ public class AtomicValueCommands {
   public static abstract class ValueQuery<V> implements Query<V>, CatalystSerializable {
 
     @Override
-    public void writeObject(BufferOutput bufferOutput, Serializer serializer) {
-
+    public void writeObject(BufferOutput<?> bufferOutput, Serializer serializer) {
     }
 
     @Override
-    public void readObject(BufferInput bufferInput, Serializer serializer) {
-
+    public void readObject(BufferInput<?> bufferInput, Serializer serializer) {
     }
 
     /**
@@ -170,12 +168,12 @@ public class AtomicValueCommands {
     }
 
     @Override
-    public void writeObject(BufferOutput buffer, Serializer serializer) {
+    public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
       serializer.writeObject(value, buffer);
     }
 
     @Override
-    public void readObject(BufferInput buffer, Serializer serializer) {
+    public void readObject(BufferInput<?> buffer, Serializer serializer) {
       value = serializer.readObject(buffer);
     }
 
@@ -247,13 +245,13 @@ public class AtomicValueCommands {
     }
 
     @Override
-    public void writeObject(BufferOutput buffer, Serializer serializer) {
+    public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
       serializer.writeObject(expect, buffer);
       serializer.writeObject(update, buffer);
     }
 
     @Override
-    public void readObject(BufferInput buffer, Serializer serializer) {
+    public void readObject(BufferInput<?> buffer, Serializer serializer) {
       expect = serializer.readObject(buffer);
       update = serializer.readObject(buffer);
     }
@@ -328,12 +326,12 @@ public class AtomicValueCommands {
     }
 
     @Override
-    public void writeObject(BufferOutput buffer, Serializer serializer) {
+    public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
       serializer.writeObject(value, buffer);
     }
 
     @Override
-    public void readObject(BufferInput buffer, Serializer serializer) {
+    public void readObject(BufferInput<?> buffer, Serializer serializer) {
       value = serializer.readObject(buffer);
     }
 
@@ -384,12 +382,12 @@ public class AtomicValueCommands {
     }
 
     @Override
-    public void writeObject(BufferOutput buffer, Serializer serializer) {
+    public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
 
     }
 
     @Override
-    public void readObject(BufferInput buffer, Serializer serializer) {
+    public void readObject(BufferInput<?> buffer, Serializer serializer) {
 
     }
 
@@ -424,12 +422,12 @@ public class AtomicValueCommands {
     }
 
     @Override
-    public void writeObject(BufferOutput buffer, Serializer serializer) {
+    public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
 
     }
 
     @Override
-    public void readObject(BufferInput buffer, Serializer serializer) {
+    public void readObject(BufferInput<?> buffer, Serializer serializer) {
 
     }
 

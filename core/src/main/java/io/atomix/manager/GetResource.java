@@ -71,14 +71,14 @@ public class GetResource extends PathOperation<Long> implements Query<Long> {
   }
 
   @Override
-  public void writeObject(BufferOutput buffer, Serializer serializer) {
+  public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
     super.writeObject(buffer, serializer);
     buffer.writeInt(type.getName().getBytes().length).write(type.getName().getBytes());
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public void readObject(BufferInput buffer, Serializer serializer) {
+  public void readObject(BufferInput<?> buffer, Serializer serializer) {
     super.readObject(buffer, serializer);
     byte[] bytes = new byte[buffer.readInt()];
     buffer.read(bytes);
