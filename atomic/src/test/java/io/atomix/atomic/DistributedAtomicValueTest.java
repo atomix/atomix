@@ -69,13 +69,6 @@ public class DistributedAtomicValueTest extends ConcurrentTestCase {
   /**
    * Tests setting and getting a value.
    */
-  public void testManyClientAtomicSetGet() throws Throwable {
-    testAtomic(100, 5, atomicSetGet());
-  }
-
-  /**
-   * Tests setting and getting a value.
-   */
   public void testAllReplicaSequentialSetGet() throws Throwable {
     testSequential(0, 3, sequentialSetGet());
   }
@@ -92,13 +85,6 @@ public class DistributedAtomicValueTest extends ConcurrentTestCase {
    */
   public void testThreeClientFiveReplicaSequentialSetGet() throws Throwable {
     testSequential(3, 5, sequentialSetGet());
-  }
-
-  /**
-   * Tests setting and getting a value.
-   */
-  public void testManyClientSequentialSetGet() throws Throwable {
-    testSequential(100, 5, sequentialSetGet());
   }
 
   /**
@@ -129,13 +115,6 @@ public class DistributedAtomicValueTest extends ConcurrentTestCase {
         });
       });
     };
-  }
-
-  /**
-   * Tests detecting a value change.
-   */
-  public void testManyClientChangeEvent() throws Throwable {
-    testAtomic(100, 5, changeEvent());
   }
 
   /**
@@ -177,13 +156,6 @@ public class DistributedAtomicValueTest extends ConcurrentTestCase {
   /**
    * Tests setting and getting a value.
    */
-  public void testManyClientAtomicCompareAndSet() throws Throwable {
-    testAtomic(100, 5, atomicCompareAndSet());
-  }
-
-  /**
-   * Tests setting and getting a value.
-   */
   public void testAllReplicaSequentialCompareAndSet() throws Throwable {
     testSequential(0, 3, sequentialCompareAndSet());
   }
@@ -200,13 +172,6 @@ public class DistributedAtomicValueTest extends ConcurrentTestCase {
    */
   public void testThreeClientFiveReplicaSequentialCompareAndSet() throws Throwable {
     testSequential(3, 5, sequentialCompareAndSet());
-  }
-
-  /**
-   * Tests setting and getting a value.
-   */
-  public void testManyClientSequentialCompareAndSet() throws Throwable {
-    testSequential(100, 5, sequentialCompareAndSet());
   }
 
   /**
@@ -264,6 +229,7 @@ public class DistributedAtomicValueTest extends ConcurrentTestCase {
       await();
       atomix = next;
     }
+    atomixes.forEach(a -> a.close().join());
   }
 
   /**
@@ -277,6 +243,7 @@ public class DistributedAtomicValueTest extends ConcurrentTestCase {
       });
       await();
     }
+    atomixes.forEach(a -> a.close().join());
   }
 
   /**

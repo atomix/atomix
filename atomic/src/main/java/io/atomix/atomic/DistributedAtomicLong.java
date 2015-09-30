@@ -34,6 +34,11 @@ public class DistributedAtomicLong extends DistributedAtomicValue<Long> {
     return this;
   }
 
+  @Override
+  public CompletableFuture<Long> get() {
+    return super.get().thenApply(l -> l != null ? l : 0);
+  }
+
   /**
    * Adds a delta to the long and returns the updated value.
    *
@@ -98,7 +103,7 @@ public class DistributedAtomicLong extends DistributedAtomicValue<Long> {
   private CompletableFuture<Long> getValue() {
     if (value != null)
       return CompletableFuture.completedFuture(value);
-    return get();
+    return super.get();
   }
 
   /**
@@ -114,7 +119,7 @@ public class DistributedAtomicLong extends DistributedAtomicValue<Long> {
   private CompletableFuture<Long> updateValue(Function<Long, Long> updater, CompletableFuture<Long> future) {
     getValue().whenComplete((expectedResult, expectedError) -> {
       if (expectedError == null) {
-        long updatedValue = updater.apply(expectedResult);
+        long updatedValue = updater.apply(expectedResult != null ? expectedResult : 0);
         compareAndSet(expectedResult, updatedValue).whenComplete((updateResult, updateError) -> {
           if (updateError == null) {
             if (updateResult) {
