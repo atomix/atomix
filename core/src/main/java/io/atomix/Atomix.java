@@ -20,6 +20,7 @@ import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.Managed;
+import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.manager.CreateResource;
 import io.atomix.manager.GetResource;
@@ -61,6 +62,18 @@ public abstract class Atomix implements Managed<Atomix> {
   protected Atomix(CopycatClient client, Transport transport) {
     this.client = Assert.notNull(client, "client");
     this.transport = Assert.notNull(transport, "transport");
+  }
+
+  /**
+   * Returns the Atomix thread context.
+   * <p>
+   * This context is representative of the thread on which asynchronous callbacks will be executed for this
+   * Atomix instance.
+   *
+   * @return The Atomix thread context.
+   */
+  public ThreadContext context() {
+    return client.context();
   }
 
   /**

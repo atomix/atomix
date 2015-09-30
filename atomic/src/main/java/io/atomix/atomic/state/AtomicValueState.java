@@ -24,7 +24,6 @@ import io.atomix.copycat.server.StateMachineExecutor;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 /**
@@ -34,7 +33,7 @@ import java.util.function.Function;
  */
 public class AtomicValueState extends StateMachine {
   private final Map<Session, Commit<AtomicValueCommands.Listen>> listeners = new HashMap<>();
-  private final AtomicReference<Object> value = new AtomicReference<>();
+  private Object value;
   private Commit<? extends AtomicValueCommands.ValueCommand> current;
   private Scheduled timer;
 
@@ -89,7 +88,7 @@ public class AtomicValueState extends StateMachine {
    */
   protected Object get(Commit<AtomicValueCommands.Get> commit) {
     try {
-      return current != null ? value.get() : null;
+      return current != null ? value : null;
     } finally {
       commit.close();
     }
@@ -113,12 +112,12 @@ public class AtomicValueState extends StateMachine {
    */
   private void setCurrent(Commit<? extends AtomicValueCommands.ValueCommand> commit) {
     timer = commit.operation().ttl() > 0 ? executor().schedule(Duration.ofMillis(commit.operation().ttl()), () -> {
-      value.set(null);
+      value = null;
       current.clean();
       current = null;
     }) : null;
     current = commit;
-    change(value.get());
+    change(value);
   }
 
   /**
@@ -126,7 +125,7 @@ public class AtomicValueState extends StateMachine {
    */
   protected void set(Commit<AtomicValueCommands.Set> commit) {
     cleanCurrent();
-    value.set(commit.operation().value());
+    value = commit.operation().value();
     setCurrent(commit);
   }
 
@@ -134,7 +133,8 @@ public class AtomicValueState extends StateMachine {
    * Handles a compare and set commit.
    */
   protected boolean compareAndSet(Commit<AtomicValueCommands.CompareAndSet> commit) {
-    if (value.compareAndSet(commit.operation().expect(), commit.operation().update())) {
+    if ((value == null && commit.operation().expect() == null) || (value != null && commit.operation().expect() != null && value.equals(commit.operation().expect()))) {
+      value = commit.operation().update();
       cleanCurrent();
       setCurrent(commit);
       return true;
@@ -146,7 +146,8 @@ public class AtomicValueState extends StateMachine {
    * Handles a get and set commit.
    */
   protected Object getAndSet(Commit<AtomicValueCommands.GetAndSet> commit) {
-    Object result = value.getAndSet(commit.operation().value());
+    Object result = value;
+    value = commit.operation().value();
     cleanCurrent();
     setCurrent(commit);
     return result;

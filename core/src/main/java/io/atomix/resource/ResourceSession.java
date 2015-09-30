@@ -135,6 +135,16 @@ public class ResourceSession implements Session {
   }
 
   @Override
+  public int hashCode() {
+    return parent.hashCode();
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    return parent.equals(object);
+  }
+
+  @Override
   public String toString() {
     return String.format("%s[id=%d, resource=%d]", getClass().getSimpleName(), id(), resource);
   }

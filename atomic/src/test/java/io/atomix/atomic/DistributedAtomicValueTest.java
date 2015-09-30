@@ -16,7 +16,9 @@
 package io.atomix.atomic;
 
 import io.atomix.Atomix;
+import io.atomix.AtomixClient;
 import io.atomix.AtomixReplica;
+import io.atomix.Consistency;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.LocalServerRegistry;
 import io.atomix.catalyst.transport.LocalTransport;
@@ -29,9 +31,9 @@ import org.testng.annotations.Test;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 /**
  * Distributed atomic value test.
@@ -46,102 +48,277 @@ public class DistributedAtomicValueTest extends ConcurrentTestCase {
   /**
    * Tests setting and getting a value.
    */
-  public void testSetGet() throws Throwable {
-    List<Atomix> servers = createAtomixes(3);
-
-    Atomix atomix = servers.get(0);
-
-    DistributedAtomicValue<String> reference = atomix.create("test", DistributedAtomicValue.class).get();
-
-    reference.set("Hello world!").thenRun(this::resume);
-    await();
-
-    reference.get().thenAccept(result -> {
-      threadAssertEquals(result, "Hello world!");
-      resume();
-    });
-    await();
+  public void testAllReplicaAtomicSetGet() throws Throwable {
+    testAtomic(0, 3, atomicSetGet());
   }
 
   /**
-   * Tests setting and getting a value with a change event.
+   * Tests setting and getting a value.
    */
-  public void testChangeEvent() throws Throwable {
-    List<Atomix> servers = createAtomixes(3);
-
-    Atomix atomix = servers.get(0);
-
-    DistributedAtomicValue<String> reference = atomix.create("test", DistributedAtomicValue.class).get();
-
-    reference.onChange(value -> {
-      threadAssertEquals("Hello world!", value);
-      resume();
-    }).thenRun(this::resume);
-    await();
-
-    reference.set("Hello world!").thenRun(this::resume);
-    await(0, 2);
-
-    reference.get().thenAccept(result -> {
-      threadAssertEquals(result, "Hello world!");
-      resume();
-    });
-    await();
+  public void testOneClientThreeReplicaAtomicSetGet() throws Throwable {
+    testAtomic(1, 3, atomicSetGet());
   }
 
   /**
-   * Tests compare-and-set.
+   * Tests setting and getting a value.
    */
-  public void testCompareAndSet() throws Throwable {
-    List<Atomix> servers = createAtomixes(3);
-
-    DistributedAtomicValue<Integer> reference1 = servers.get(0).create("test", DistributedAtomicValue.class).get();
-
-    reference1.set(1).thenRun(this::resume);
-    await();
-
-    DistributedAtomicValue<Integer> reference2 = servers.get(0).create("test", DistributedAtomicValue.class).get();
-
-    reference2.compareAndSet(1, 2).thenAccept(result -> {
-      threadAssertTrue(result);
-      resume();
-    });
-    await();
-
-    reference2.compareAndSet(1, 3).thenAccept(result -> {
-      threadAssertFalse(result);
-      resume();
-    });
-    await();
+  public void testThreeClientFiveReplicaAtomicSetGet() throws Throwable {
+    testAtomic(3, 5, atomicSetGet());
   }
 
   /**
-   * Creates a Atomix instance.
+   * Tests setting and getting a value.
    */
-  private List<Atomix> createAtomixes(int nodes) throws Throwable {
+  public void testManyClientAtomicSetGet() throws Throwable {
+    testAtomic(100, 5, atomicSetGet());
+  }
+
+  /**
+   * Tests setting and getting a value.
+   */
+  public void testAllReplicaSequentialSetGet() throws Throwable {
+    testSequential(0, 3, sequentialSetGet());
+  }
+
+  /**
+   * Tests setting and getting a value.
+   */
+  public void testOneClientThreeReplicaSequentialSetGet() throws Throwable {
+    testSequential(1, 3, sequentialSetGet());
+  }
+
+  /**
+   * Tests setting and getting a value.
+   */
+  public void testThreeClientFiveReplicaSequentialSetGet() throws Throwable {
+    testSequential(3, 5, sequentialSetGet());
+  }
+
+  /**
+   * Tests setting and getting a value.
+   */
+  public void testManyClientSequentialSetGet() throws Throwable {
+    testSequential(100, 5, sequentialSetGet());
+  }
+
+  /**
+   * Returns a sequential get/set test callback.
+   */
+  private Consumer<DistributedAtomicValue<String>> sequentialSetGet() {
+    return resource -> {
+      String value = UUID.randomUUID().toString();
+      resource.set(value).thenRun(() -> {
+        resource.get().thenAccept(result -> {
+          threadAssertEquals(result, value);
+          resume();
+        });
+      });
+    };
+  }
+
+  /**
+   * Returns an atomic set/get test callback.
+   */
+  private BiConsumer<DistributedAtomicValue<String>, DistributedAtomicValue<String>> atomicSetGet() {
+    return (a1, a2) -> {
+      String value = UUID.randomUUID().toString();
+      a1.set(value).thenRun(() -> {
+        a2.get().thenAccept(result -> {
+          threadAssertEquals(result, value);
+          resume();
+        });
+      });
+    };
+  }
+
+  /**
+   * Tests detecting a value change.
+   */
+  public void testManyClientChangeEvent() throws Throwable {
+    testAtomic(100, 5, changeEvent());
+  }
+
+  /**
+   * Returns a change event test callback.
+   */
+  private BiConsumer<DistributedAtomicValue<String>, DistributedAtomicValue<String>> changeEvent() {
+    return (a1, a2) -> {
+      String value = UUID.randomUUID().toString();
+      a1.onChange(result -> {
+        threadAssertEquals(result, value);
+        resume();
+      }).thenAccept(listener -> {
+        a2.set(value).thenRun(listener::close);
+      });
+    };
+  }
+
+  /**
+   * Tests setting and getting a value.
+   */
+  public void testAllReplicaAtomicCompareAndSet() throws Throwable {
+    testAtomic(0, 3, atomicCompareAndSet());
+  }
+
+  /**
+   * Tests setting and getting a value.
+   */
+  public void testOneClientThreeReplicaAtomicCompareAndSet() throws Throwable {
+    testAtomic(1, 3, atomicCompareAndSet());
+  }
+
+  /**
+   * Tests setting and getting a value.
+   */
+  public void testThreeClientFiveReplicaAtomicCompareAndSet() throws Throwable {
+    testAtomic(3, 5, atomicCompareAndSet());
+  }
+
+  /**
+   * Tests setting and getting a value.
+   */
+  public void testManyClientAtomicCompareAndSet() throws Throwable {
+    testAtomic(100, 5, atomicCompareAndSet());
+  }
+
+  /**
+   * Tests setting and getting a value.
+   */
+  public void testAllReplicaSequentialCompareAndSet() throws Throwable {
+    testSequential(0, 3, sequentialCompareAndSet());
+  }
+
+  /**
+   * Tests setting and getting a value.
+   */
+  public void testOneClientThreeReplicaSequentialCompareAndSet() throws Throwable {
+    testSequential(1, 3, sequentialCompareAndSet());
+  }
+
+  /**
+   * Tests setting and getting a value.
+   */
+  public void testThreeClientFiveReplicaSequentialCompareAndSet() throws Throwable {
+    testSequential(3, 5, sequentialCompareAndSet());
+  }
+
+  /**
+   * Tests setting and getting a value.
+   */
+  public void testManyClientSequentialCompareAndSet() throws Throwable {
+    testSequential(100, 5, sequentialCompareAndSet());
+  }
+
+  /**
+   * Returns an atomic compare and set test callback.
+   */
+  private BiConsumer<DistributedAtomicValue<String>, DistributedAtomicValue<String>> atomicCompareAndSet() {
+    return (a1, a2) -> {
+      String value1 = UUID.randomUUID().toString();
+      String value2 = UUID.randomUUID().toString();
+      a1.set(value1).thenRun(() -> {
+        a2.compareAndSet(value1, value2).thenAccept(succeeded -> {
+          threadAssertTrue(succeeded);
+          a1.get().thenAccept(result -> {
+            threadAssertEquals(result, value2);
+            resume();
+          });
+        });
+      });
+    };
+  }
+
+  /**
+   * Returns a sequential compare and set test callback.
+   */
+  private Consumer<DistributedAtomicValue<String>> sequentialCompareAndSet() {
+    return resource -> {
+      String value1 = UUID.randomUUID().toString();
+      String value2 = UUID.randomUUID().toString();
+      resource.set(value1).thenRun(() -> {
+        resource.compareAndSet(value1, value2).thenAccept(succeeded -> {
+          threadAssertTrue(succeeded);
+          resource.get().thenAccept(result -> {
+            threadAssertEquals(result, value2);
+            resume();
+          });
+        });
+      });
+    };
+  }
+
+  /**
+   * Tests a set of atomic operations.
+   */
+  private void testAtomic(int clients, int replicas, BiConsumer<DistributedAtomicValue<String>, DistributedAtomicValue<String>> consumer) throws Throwable {
+    Set<Atomix> atomixes = createAtomixes(clients, replicas);
+    Iterator<Atomix> iterator = atomixes.iterator();
+    Atomix atomix = iterator.next();
+    while (iterator.hasNext()) {
+      Atomix next = iterator.next();
+      atomix.<DistributedAtomicValue<String>>create("test", DistributedAtomicValue::new).thenAccept(atomixValue -> {
+        next.<DistributedAtomicValue<String>>create("test", DistributedAtomicValue::new).thenAccept(nextValue -> {
+          consumer.accept(atomixValue, nextValue);
+        });
+      });
+      await();
+      atomix = next;
+    }
+  }
+
+  /**
+   * Tests a set of sequential operations.
+   */
+  private void testSequential(int clients, int replicas, Consumer<DistributedAtomicValue<String>> consumer) throws Throwable {
+    Set<Atomix> atomixes = createAtomixes(clients, replicas);
+    for (Atomix atomix : atomixes) {
+      atomix.<DistributedAtomicValue<String>>create("test", DistributedAtomicValue::new).thenAccept(value -> {
+        consumer.accept(value.with(Consistency.SEQUENTIAL));
+      });
+      await();
+    }
+  }
+
+  /**
+   * Creates a set of clients.
+   */
+  private Set<Atomix> createAtomixes(int clients, int replicas) throws Throwable {
     LocalServerRegistry registry = new LocalServerRegistry();
 
-    List<Atomix> atomixes = new ArrayList<>();
+    Set<Atomix> atomixes = new HashSet<>();
 
     Collection<Address> members = new ArrayList<>();
-    for (int i = 1; i <= nodes; i++) {
+    for (int i = 0; i < replicas; i++) {
       members.add(new Address("localhost", 5000 + i));
     }
 
-    for (int i = 1; i <= nodes; i++) {
-      Atomix atomix = AtomixReplica.builder(new Address("localhost", 5000 + i), members)
+    for (int i = 0; i < replicas; i++) {
+      Atomix replica = AtomixReplica.builder(new Address("localhost", 5000 + i), members)
         .withTransport(new LocalTransport(registry))
         .withStorage(Storage.builder()
           .withDirectory(new File(directory, "" + i))
           .build())
         .build();
 
-      atomix.open().thenRun(this::resume);
+      replica.open().thenRun(this::resume);
 
-      atomixes.add(atomix);
+      atomixes.add(replica);
     }
 
-    await(0, nodes);
+    await(0, replicas);
+
+    for (int i = 0; i < clients; i++) {
+      Atomix client = AtomixClient.builder(members)
+        .withTransport(new LocalTransport(registry))
+        .build();
+
+      client.open().thenRun(this::resume);
+
+      atomixes.add(client);
+    }
+
+    if (clients > 0)
+      await(0, clients);
 
     return atomixes;
   }
