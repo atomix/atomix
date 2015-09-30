@@ -35,7 +35,7 @@ import java.util.List;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public abstract class AbstractServerTest extends ConcurrentTestCase {
-  private static final File directory = new File("test-logs");
+  private static final File directory = new File("target/test-logs");
   protected LocalServerRegistry registry;
   protected int port;
   protected List<Address> members;
