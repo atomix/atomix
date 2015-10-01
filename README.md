@@ -14,9 +14,9 @@ such use cases as configuration management, service discovery, group membership,
 processes.
 
 Atomix exposes a set of high level APIs with tools to solve a variety of distributed systems problems including:
-* [Distributed coordination tools](http://atomix.io/user-manual/distributed-resources/#distributed-coordination)
-* [Distributed collections](http://atomix.io/user-manual/distributed-resources/#distributed-collections)
-* [Distributed atomic variables](http://atomix.io/user-manual/distributed-resources/#distributed-atomic-variables)
+* [Distributed coordination tools](http://atomix.io/atomix/user-manual/coordination/)
+* [Distributed collections](http://atomix.io/atomix/user-manual/collections/)
+* [Distributed atomic variables](http://atomix.io/atomix/user-manual/atomics/)
 
 Additionally, Atomix is built on a series of low-level libraries that form its consensus algorithm:
 * [Copycat][Copycat] is Atomix's progressive, feature-complete implementation of the [Raft consensus algorithm][Raft]

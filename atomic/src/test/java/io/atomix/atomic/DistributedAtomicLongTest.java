@@ -336,8 +336,8 @@ public class DistributedAtomicLongTest extends ConcurrentTestCase {
     Atomix atomix = iterator.next();
     while (iterator.hasNext()) {
       Atomix next = iterator.next();
-      atomix.<DistributedAtomicLong>create("test", DistributedAtomicLong::new).thenAccept(atomixValue -> {
-        next.<DistributedAtomicLong>create("test", DistributedAtomicLong::new).thenAccept(nextValue -> {
+      atomix.create("test", DistributedAtomicLong::new).thenAccept(atomixValue -> {
+        next.create("test", DistributedAtomicLong::new).thenAccept(nextValue -> {
           consumer.accept(atomixValue, nextValue);
         });
       });
