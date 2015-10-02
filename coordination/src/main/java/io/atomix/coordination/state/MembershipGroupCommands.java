@@ -25,6 +25,8 @@ import io.atomix.catalyst.util.BuilderPool;
 import io.atomix.copycat.client.Command;
 import io.atomix.copycat.client.Operation;
 
+import java.util.Set;
+
 /**
  * Group commands.
  *
@@ -63,7 +65,7 @@ public class MembershipGroupCommands {
    * Join command.
    */
   @SerializeWith(id=520)
-  public static class Join extends GroupCommand<Void> {
+  public static class Join extends GroupCommand<Set<Long>> {
 
     /**
      * Returns a new join command builder.
@@ -78,7 +80,7 @@ public class MembershipGroupCommands {
     /**
      * Join command builder.
      */
-    public static class Builder extends GroupCommand.Builder<Builder, Join, Void> {
+    public static class Builder extends GroupCommand.Builder<Builder, Join, Set<Long>> {
       public Builder(BuilderPool<Builder, Join> pool) {
         super(pool);
       }

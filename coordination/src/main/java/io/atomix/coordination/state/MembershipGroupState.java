@@ -22,7 +22,9 @@ import io.atomix.copycat.server.StateMachineExecutor;
 
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Group state machine.
@@ -51,7 +53,7 @@ public class MembershipGroupState extends StateMachine {
   /**
    * Applies join commits.
    */
-  protected void join(Commit<MembershipGroupCommands.Join> commit) {
+  protected Set<Long> join(Commit<MembershipGroupCommands.Join> commit) {
     try {
       Commit<MembershipGroupCommands.Join> previous = members.put(commit.session().id(), commit);
       if (previous != null) {
@@ -63,6 +65,7 @@ public class MembershipGroupState extends StateMachine {
           }
         }
       }
+      return new HashSet<>(members.keySet());
     } catch (Exception e) {
       commit.clean();
       throw e;

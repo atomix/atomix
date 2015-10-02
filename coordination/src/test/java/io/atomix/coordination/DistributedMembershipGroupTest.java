@@ -28,10 +28,13 @@ import org.testng.annotations.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Async group test.
@@ -54,13 +57,77 @@ public class DistributedMembershipGroupTest extends ConcurrentTestCase {
     Atomix atomix2 = servers.get(1);
     DistributedMembershipGroup group2 = atomix2.create("test", DistributedMembershipGroup.class).get();
 
+    AtomicBoolean joined = new AtomicBoolean();
     group2.join().join();
     group2.onJoin(member -> {
+      joined.set(true);
       resume();
     });
 
-    group1.join();
+    group1.join().thenRun(() -> {
+      threadAssertTrue(joined.get());
+      resume();
+    });
+
+    await(0, 2);
+  }
+
+  /**
+   * Tests leaving a group.
+   */
+  public void testLeave() throws Throwable {
+    List<Atomix> servers = createAtomixes(3);
+
+    Atomix atomix1 = servers.get(0);
+    DistributedMembershipGroup group1 = atomix1.create("test", DistributedMembershipGroup.class).get();
+
+    Atomix atomix2 = servers.get(1);
+    DistributedMembershipGroup group2 = atomix2.create("test", DistributedMembershipGroup.class).get();
+
+    group2.join().thenRun(() -> {
+      threadAssertEquals(group2.members().size(), 1);
+      resume();
+    });
+
     await();
+
+    group1.join().thenRun(() -> {
+      threadAssertEquals(group1.members().size(), 2);
+      threadAssertEquals(group2.members().size(), 2);
+      group1.onLeave(member -> resume());
+      group2.leave().thenRun(this::resume);
+    });
+
+    await(0, 2);
+  }
+
+  /**
+   * Tests executing an immediate callback.
+   */
+  public void testRemoteExecute() throws Throwable {
+    List<Atomix> servers = createAtomixes(3);
+
+    Atomix atomix1 = servers.get(0);
+    DistributedMembershipGroup group1 = atomix1.create("test", DistributedMembershipGroup.class).get();
+
+    Atomix atomix2 = servers.get(1);
+    DistributedMembershipGroup group2 = atomix2.create("test", DistributedMembershipGroup.class).get();
+
+    group2.join().thenRun(() -> {
+      threadAssertEquals(group2.members().size(), 1);
+      resume();
+    });
+
+    await();
+
+    AtomicInteger counter = new AtomicInteger();
+    group1.join().thenRun(() -> {
+      for (GroupMember member : group1.members()) {
+        member.execute((Runnable & Serializable) counter::incrementAndGet).thenRun(this::resume);
+      }
+    });
+
+    await(0, 2);
   }
 
   /**

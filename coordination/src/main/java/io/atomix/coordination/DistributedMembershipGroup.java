@@ -47,13 +47,13 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
     super.open(context);
 
     context.session().<Long>onEvent("join", memberId -> {
-      GroupMember member = members.computeIfAbsent(memberId, m -> new InternalGroupMember(m));
+      GroupMember member = members.computeIfAbsent(memberId, InternalGroupMember::new);
       for (Listener<GroupMember> listener : joinListeners) {
         listener.accept(member);
       }
     });
 
-    context.session().onEvent("leave", memberId -> {
+    context.session().<Long>onEvent("leave", memberId -> {
       GroupMember member = members.remove(memberId);
       if (member != null) {
         for (Listener<GroupMember> listener : leaveListeners) {
@@ -95,7 +95,11 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
    * @return A completable future to be completed once the member has joined.
    */
   public CompletableFuture<Void> join() {
-    return submit(MembershipGroupCommands.Join.builder().build());
+    return submit(MembershipGroupCommands.Join.builder().build()).thenAccept(members -> {
+      for (long memberId : members) {
+        this.members.computeIfAbsent(memberId, InternalGroupMember::new);
+      }
+    });
   }
 
   /**
