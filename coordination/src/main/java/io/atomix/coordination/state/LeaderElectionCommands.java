@@ -39,6 +39,12 @@ public class LeaderElectionCommands {
    * Abstract election query.
    */
   public static abstract class ElectionQuery<V> implements Query<V>, CatalystSerializable {
+
+    @Override
+    public ConsistencyLevel consistency() {
+      return ConsistencyLevel.LINEARIZABLE;
+    }
+
     @Override
     public void writeObject(BufferOutput buffer, Serializer serializer) {
     }
@@ -61,6 +67,12 @@ public class LeaderElectionCommands {
    * Abstract election command.
    */
   public static abstract class ElectionCommand<V> implements Command<V>, CatalystSerializable {
+
+    @Override
+    public ConsistencyLevel consistency() {
+      return ConsistencyLevel.LINEARIZABLE;
+    }
+
     @Override
     public void writeObject(BufferOutput buffer, Serializer serializer) {
     }

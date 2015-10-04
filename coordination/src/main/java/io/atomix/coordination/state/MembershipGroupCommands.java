@@ -41,14 +41,18 @@ public class MembershipGroupCommands {
    * Abstract topic command.
    */
   public static abstract class GroupCommand<V> implements Command<V>, CatalystSerializable {
+
+    @Override
+    public ConsistencyLevel consistency() {
+      return ConsistencyLevel.LINEARIZABLE;
+    }
+
     @Override
     public void writeObject(BufferOutput buffer, Serializer serializer) {
-
     }
 
     @Override
     public void readObject(BufferInput buffer, Serializer serializer) {
-
     }
 
     /**

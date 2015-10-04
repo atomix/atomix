@@ -43,14 +43,18 @@ public class MessageBusCommands {
    * Abstract message bus command.
    */
   public static abstract class MessageBusCommand<V> implements Command<V>, CatalystSerializable {
+
+    @Override
+    public ConsistencyLevel consistency() {
+      return ConsistencyLevel.LINEARIZABLE;
+    }
+
     @Override
     public void writeObject(BufferOutput buffer, Serializer serializer) {
-
     }
 
     @Override
     public void readObject(BufferInput buffer, Serializer serializer) {
-
     }
 
     /**
@@ -139,6 +143,11 @@ public class MessageBusCommands {
     @SuppressWarnings("unchecked")
     public static Builder builder() {
       return Operation.builder(Builder.class, Builder::new);
+    }
+
+    @Override
+    public PersistenceLevel persistence() {
+      return PersistenceLevel.EPHEMERAL;
     }
 
     /**

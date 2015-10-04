@@ -40,12 +40,10 @@ public class TopicCommands {
   public static abstract class TopicCommand<V> implements Command<V>, CatalystSerializable {
     @Override
     public void writeObject(BufferOutput buffer, Serializer serializer) {
-
     }
 
     @Override
     public void readObject(BufferInput buffer, Serializer serializer) {
-
     }
 
     /**
@@ -72,6 +70,11 @@ public class TopicCommands {
     @SuppressWarnings("unchecked")
     public static Builder builder() {
       return Operation.builder(Builder.class, Builder::new);
+    }
+
+    @Override
+    public ConsistencyLevel consistency() {
+      return ConsistencyLevel.LINEARIZABLE;
     }
 
     /**
@@ -103,6 +106,11 @@ public class TopicCommands {
     @SuppressWarnings("unchecked")
     public static Builder builder() {
       return Operation.builder(Builder.class, Builder::new);
+    }
+
+    @Override
+    public ConsistencyLevel consistency() {
+      return ConsistencyLevel.LINEARIZABLE;
     }
 
     /**

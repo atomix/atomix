@@ -40,6 +40,12 @@ public class LockCommands {
    * Abstract lock command.
    */
   public static abstract class LockCommand<V> implements Command<V>, CatalystSerializable {
+
+    @Override
+    public ConsistencyLevel consistency() {
+      return ConsistencyLevel.LINEARIZABLE;
+    }
+
     @Override
     public void writeObject(BufferOutput buffer, Serializer serializer) {
     }
@@ -154,6 +160,11 @@ public class LockCommands {
     @SuppressWarnings("unchecked")
     public static Builder builder() {
       return Operation.builder(Builder.class, Builder::new);
+    }
+
+    @Override
+    public PersistenceLevel persistence() {
+      return PersistenceLevel.EPHEMERAL;
     }
 
     /**
