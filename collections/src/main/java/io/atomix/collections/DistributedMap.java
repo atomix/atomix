@@ -186,12 +186,78 @@ public class DistributedMap<K, V> extends Resource<DistributedMap<K, V>> {
    * @param value The value to remove.
    * @return A completable future to be completed with the result once complete.
    */
-  public CompletableFuture<Boolean> remove(Object key, Object value) {
-    return submit(MapCommands.Remove.builder()
+  public CompletableFuture<Boolean> remove(K key, V value) {
+    return submit(MapCommands.RemoveIfPresent.builder()
       .withKey(key)
       .withValue(value)
       .build())
       .thenApply(result -> (boolean) result);
+  }
+
+  /**
+   * Replaces a value in the map.
+   *
+   * @param key The key to replace.
+   * @param value The value with which to replace the key if it exists.
+   * @return A completable future to be completed with the result once complete.
+   */
+  public CompletableFuture<Object> replace(K key, V value) {
+    return submit(MapCommands.Replace.builder()
+      .withKey(key)
+      .withValue(value)
+      .build());
+  }
+
+  /**
+   * Replaces a value in the map.
+   *
+   * @param key The key to replace.
+   * @param value The value with which to replace the key if it exists.
+   * @param ttl The duration after which to expire the key/value.
+   * @return A completable future to be completed with the result once complete.
+   */
+  @SuppressWarnings("unchecked")
+  public CompletableFuture<Object> replace(K key, V value, Duration ttl) {
+    return submit(MapCommands.Replace.builder()
+      .withKey(key)
+      .withValue(value)
+      .withTtl(ttl.toMillis())
+      .build());
+  }
+
+  /**
+   * Replaces a value in the map.
+   *
+   * @param key The key to replace.
+   * @param oldValue The value to check.
+   * @param newValue The value to replace.
+   * @return A completable future to be completed with the result once complete.
+   */
+  public CompletableFuture<Boolean> replace(K key, V oldValue, V newValue) {
+    return submit(MapCommands.ReplaceIfPresent.builder()
+      .withKey(key)
+      .withValue(oldValue)
+      .withReplace(newValue)
+      .build());
+  }
+
+  /**
+   * Replaces a value in the map.
+   *
+   * @param key The key to replace.
+   * @param oldValue The value to check.
+   * @param newValue The value to replace.
+   * @param ttl The duration after which to expire the key/value.
+   * @return A completable future to be completed with the result once complete.
+   */
+  @SuppressWarnings("unchecked")
+  public CompletableFuture<Boolean> replace(K key, V oldValue, V newValue, Duration ttl) {
+    return submit(MapCommands.ReplaceIfPresent.builder()
+      .withKey(key)
+      .withValue(oldValue)
+      .withReplace(newValue)
+      .withTtl(ttl.toMillis())
+      .build());
   }
 
   /**

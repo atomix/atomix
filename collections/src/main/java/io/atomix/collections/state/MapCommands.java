@@ -465,7 +465,7 @@ public class MapCommands {
    * Remove command.
    */
   @SerializeWith(id=445)
-  public static class Remove extends KeyValueCommand<Object> {
+  public static class Remove extends KeyCommand<Object> {
 
     /**
      * Returns a builder for this command.
@@ -482,7 +482,7 @@ public class MapCommands {
     /**
      * Get command builder.
      */
-    public static class Builder extends KeyValueCommand.Builder<Builder, Remove, Object> {
+    public static class Builder extends KeyCommand.Builder<Builder, Remove, Object> {
       public Builder(BuilderPool<Builder, Remove> pool) {
         super(pool);
       }
@@ -490,6 +490,138 @@ public class MapCommands {
       @Override
       protected Remove create() {
         return new Remove();
+      }
+    }
+  }
+
+  /**
+   * Remove if absent command.
+   */
+  @SerializeWith(id=449)
+  public static class RemoveIfPresent extends KeyValueCommand<Boolean> {
+
+    /**
+     * Returns a builder for this command.
+     */
+    public static Builder builder() {
+      return Operation.builder(Builder.class, Builder::new);
+    }
+
+    @Override
+    public PersistenceLevel persistence() {
+      return PersistenceLevel.PERSISTENT;
+    }
+
+    /**
+     * Remove if absent command builder.
+     */
+    public static class Builder extends KeyValueCommand.Builder<Builder, RemoveIfPresent, Boolean> {
+      public Builder(BuilderPool<Builder, RemoveIfPresent> pool) {
+        super(pool);
+      }
+
+      @Override
+      protected RemoveIfPresent create() {
+        return new RemoveIfPresent();
+      }
+    }
+  }
+
+  /**
+   * Remove command.
+   */
+  @SerializeWith(id=450)
+  public static class Replace extends TtlCommand<Object> {
+
+    /**
+     * Returns a builder for this command.
+     */
+    public static Builder builder() {
+      return Operation.builder(Builder.class, Builder::new);
+    }
+
+    @Override
+    public PersistenceLevel persistence() {
+      return PersistenceLevel.PERSISTENT;
+    }
+
+    /**
+     * Get command builder.
+     */
+    public static class Builder extends TtlCommand.Builder<Builder, Replace, Object> {
+      public Builder(BuilderPool<Builder, Replace> pool) {
+        super(pool);
+      }
+
+      @Override
+      protected Replace create() {
+        return new Replace();
+      }
+    }
+  }
+
+  /**
+   * Remove if absent command.
+   */
+  @SerializeWith(id=451)
+  public static class ReplaceIfPresent extends TtlCommand<Boolean> {
+    private Object replace;
+
+    /**
+     * Returns a builder for this command.
+     */
+    public static Builder builder() {
+      return Operation.builder(Builder.class, Builder::new);
+    }
+
+    @Override
+    public PersistenceLevel persistence() {
+      return PersistenceLevel.PERSISTENT;
+    }
+
+    /**
+     * Returns the replace value.
+     *
+     * @return The replace value.
+     */
+    public Object replace() {
+      return replace;
+    }
+
+    @Override
+    public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
+      super.writeObject(buffer, serializer);
+      serializer.writeObject(replace, buffer);
+    }
+
+    @Override
+    public void readObject(BufferInput<?> buffer, Serializer serializer) {
+      super.readObject(buffer, serializer);
+      replace = serializer.readObject(buffer);
+    }
+
+    /**
+     * Get command builder.
+     */
+    public static class Builder extends TtlCommand.Builder<Builder, ReplaceIfPresent, Boolean> {
+      public Builder(BuilderPool<Builder, ReplaceIfPresent> pool) {
+        super(pool);
+      }
+
+      /**
+       * Sets the map replace value.
+       *
+       * @param replace The map replace value.
+       * @return The builder.
+       */
+      public Builder withReplace(Object replace) {
+        command.replace = replace;
+        return this;
+      }
+
+      @Override
+      protected ReplaceIfPresent create() {
+        return new ReplaceIfPresent();
       }
     }
   }

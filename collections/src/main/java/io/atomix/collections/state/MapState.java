@@ -41,6 +41,9 @@ public class MapState extends StateMachine {
     executor.register(MapCommands.Put.class, this::put);
     executor.register(MapCommands.PutIfAbsent.class, this::putIfAbsent);
     executor.register(MapCommands.Remove.class, this::remove);
+    executor.register(MapCommands.RemoveIfPresent.class, this::removeIfPresent);
+    executor.register(MapCommands.Replace.class, this::replace);
+    executor.register(MapCommands.ReplaceIfPresent.class, this::replaceIfPresent);
     executor.register(MapCommands.Size.class, this::size);
     executor.register(MapCommands.IsEmpty.class, this::isEmpty);
     executor.register(MapCommands.Clear.class, this::clear);
@@ -134,39 +137,90 @@ public class MapState extends StateMachine {
    * Handles a remove commit.
    */
   protected Object remove(Commit<MapCommands.Remove> commit) {
-    if (commit.operation().value() != null) {
-      Value value = map.get(commit.operation().key());
-      if (value == null || !value.equals(commit.operation().value())) {
-        commit.clean(false);
-        return null;
-      } else {
+    try {
+      Value value = map.remove(commit.operation().key());
+      if (value != null) {
         try {
-          map.remove(commit.operation().key());
           if (value.timer != null)
             value.timer.cancel();
           return value.commit.operation().value();
         } finally {
           value.commit.clean();
-          commit.clean();
         }
       }
+      return null;
+    } finally {
+      commit.clean();
+    }
+  }
+
+  /**
+   * Handles a remove if present commit.
+   */
+  protected boolean removeIfPresent(Commit<MapCommands.RemoveIfPresent> commit) {
+    Value value = map.get(commit.operation().key());
+    if (value == null || ((value.commit.operation().value() == null && commit.operation().value() != null)
+      || (value.commit.operation().value() != null && !value.commit.operation().value().equals(commit.operation().value())))) {
+      commit.clean(false);
+      return false;
     } else {
       try {
-        Value value = map.remove(commit.operation().key());
-        if (value != null) {
-          try {
-            if (value.timer != null)
-              value.timer.cancel();
-            return value.commit.operation().value();
-          } finally {
-            value.commit.clean();
-          }
-        }
-        return null;
+        map.remove(commit.operation().key());
+        if (value.timer != null)
+          value.timer.cancel();
+        return true;
       } finally {
+        value.commit.clean();
         commit.clean();
       }
     }
+  }
+
+  /**
+   * Handles a replace commit.
+   */
+  protected Object replace(Commit<MapCommands.Replace> commit) {
+    Value value = map.get(commit.operation().key());
+    if (value != null) {
+      try {
+        if (value.timer != null)
+          value.timer.cancel();
+        Scheduled timer = commit.operation().ttl() > 0 ? executor().schedule(Duration.ofMillis(commit.operation().ttl()), () -> {
+          map.remove(commit.operation().key()).commit.clean();
+        }) : null;
+        map.put(commit.operation().key(), new Value(commit, timer));
+        return value.commit.operation().value();
+      } finally {
+        value.commit.clean();
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Handles a replace if present commit.
+   */
+  protected boolean replaceIfPresent(Commit<MapCommands.ReplaceIfPresent> commit) {
+    Value value = map.get(commit.operation().key());
+    if (value == null) {
+      commit.clean();
+      return false;
+    }
+
+    if ((value.commit.operation().value() == null && commit.operation().value() == null)
+      || (value.commit.operation().value() != null && value.commit.operation().value().equals(commit.operation().value()))) {
+      if (value.timer != null)
+        value.timer.cancel();
+      Scheduled timer = commit.operation().ttl() > 0 ? executor().schedule(Duration.ofMillis(commit.operation().ttl()), () -> {
+        map.remove(commit.operation().key()).commit.clean();
+      }) : null;
+      map.put(commit.operation().key(), new Value(commit, timer));
+      value.commit.clean();
+      return true;
+    } else {
+      commit.clean();
+    }
+    return false;
   }
 
   /**
