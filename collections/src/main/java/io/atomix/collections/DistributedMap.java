@@ -175,8 +175,7 @@ public class DistributedMap<K, V> extends Resource<DistributedMap<K, V>> {
       .withKey(key)
       .withValue(value)
       .withTtl(ttl.toMillis())
-      .build())
-      .thenApply(result -> result);
+      .build());
   }
 
   /**
@@ -190,8 +189,7 @@ public class DistributedMap<K, V> extends Resource<DistributedMap<K, V>> {
     return submit(MapCommands.RemoveIfPresent.builder()
       .withKey(key)
       .withValue(value)
-      .build())
-      .thenApply(result -> (boolean) result);
+      .build());
   }
 
   /**
@@ -201,11 +199,13 @@ public class DistributedMap<K, V> extends Resource<DistributedMap<K, V>> {
    * @param value The value with which to replace the key if it exists.
    * @return A completable future to be completed with the result once complete.
    */
-  public CompletableFuture<Object> replace(K key, V value) {
+  @SuppressWarnings("unchecked")
+  public CompletableFuture<V> replace(K key, V value) {
     return submit(MapCommands.Replace.builder()
       .withKey(key)
       .withValue(value)
-      .build());
+      .build())
+      .thenApply(result -> (V) result);
   }
 
   /**
@@ -217,7 +217,7 @@ public class DistributedMap<K, V> extends Resource<DistributedMap<K, V>> {
    * @return A completable future to be completed with the result once complete.
    */
   @SuppressWarnings("unchecked")
-  public CompletableFuture<Object> replace(K key, V value, Duration ttl) {
+  public CompletableFuture<V> replace(K key, V value, Duration ttl) {
     return submit(MapCommands.Replace.builder()
       .withKey(key)
       .withValue(value)
