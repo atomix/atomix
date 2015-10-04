@@ -47,7 +47,7 @@ public class DistributedMapTest extends ConcurrentTestCase {
    * Tests putting and getting a value.
    */
   @SuppressWarnings("unchecked")
-  public void testPutGetRemove() throws Throwable {
+  public void testMapPutGetRemove() throws Throwable {
     List<Atomix> atomixes = createAtomixes(3);
 
     Atomix atomix = atomixes.get(0);
@@ -76,6 +76,109 @@ public class DistributedMapTest extends ConcurrentTestCase {
     await();
 
     atomixes.forEach(c -> c.close().join());
+  }
+
+  /**
+   * Tests the put if absent command.
+   */
+  @SuppressWarnings("unchecked")
+  public void testMapPutIfAbsent() throws Throwable {
+    List<Atomix> atomixes = createAtomixes(3);
+
+    Atomix atomix = atomixes.get(0);
+
+    DistributedMap<String, String> map = atomix.create("test", DistributedMap.class).get();
+
+    map.put("foo", "Hello world!").join();
+
+    map.putIfAbsent("foo", "something else").thenAccept(result -> {
+      threadAssertEquals(result, "Hello world!");
+      resume();
+    });
+    await();
+
+    map.putIfAbsent("bar", "something").thenAccept(result -> {
+      threadAssertNull(result);
+      resume();
+    });
+    await();
+  }
+
+  /**
+   * Tests put if absent with a TTL.
+   */
+  @SuppressWarnings("unchecked")
+  public void testMapPutIfAbsentTtl() throws Throwable {
+    List<Atomix> atomixes = createAtomixes(3);
+
+    Atomix atomix = atomixes.get(0);
+
+    DistributedMap<String, String> map = atomix.create("test", DistributedMap.class).get();
+
+    map.putIfAbsent("foo", "Hello world!", Duration.ofMillis(100)).join();
+
+    Thread.sleep(1000);
+
+    map.put("bar", "Hello world again!").join();
+    map.containsKey("foo").thenAccept(result -> {
+      threadAssertFalse(result);
+      resume();
+    });
+    await();
+  }
+
+  /**
+   * Tests get or default.
+   */
+  @SuppressWarnings("unchecked")
+  public void testMapGetOrDefault() throws Throwable {
+    List<Atomix> atomixes = createAtomixes(3);
+
+    Atomix atomix = atomixes.get(0);
+
+    DistributedMap<String, String> map = atomix.create("test", DistributedMap.class).get();
+
+    map.put("foo", "Hello world!").thenRun(this::resume);
+    await();
+
+    map.getOrDefault("foo", "something else").thenAccept(result -> {
+      threadAssertEquals(result, "Hello world!");
+      resume();
+    });
+    await();
+
+    map.getOrDefault("bar", "something").thenAccept(result -> {
+      threadAssertEquals(result, "something");
+      resume();
+    });
+    await();
+  }
+
+  /**
+   * Tests the contains key command.
+   */
+  @SuppressWarnings("unchecked")
+  public void testMapContainsKey() throws Throwable {
+    List<Atomix> atomixes = createAtomixes(3);
+
+    Atomix atomix = atomixes.get(0);
+
+    DistributedMap<String, String> map = atomix.create("test", DistributedMap.class).get();
+
+    map.containsKey("foo").thenAccept(result -> {
+      threadAssertFalse(result);
+      resume();
+    });
+    await();
+
+    map.put("foo", "Hello world!").thenAccept(value -> {
+      threadAssertNull(value);
+      map.containsKey("foo").thenAccept(result -> {
+        threadAssertTrue(result);
+        resume();
+      });
+    });
+    await();
   }
 
   /**
@@ -120,7 +223,7 @@ public class DistributedMapTest extends ConcurrentTestCase {
    * Tests TTL.
    */
   @SuppressWarnings("unchecked")
-  public void testMapTtl() throws Throwable {
+  public void testMapPutTtl() throws Throwable {
     List<Atomix> atomixes = createAtomixes(3);
 
     Atomix atomix = atomixes.get(0);
@@ -147,6 +250,41 @@ public class DistributedMapTest extends ConcurrentTestCase {
     map.size().thenAccept(size -> {
       threadAssertEquals(size, 0);
       resume();
+    });
+    await();
+  }
+
+  /**
+   * Tests clearing a map.
+   */
+  public void testMapClear() throws Throwable {
+    List<Atomix> atomixes = createAtomixes(3);
+
+    Atomix atomix = atomixes.get(0);
+
+    DistributedMap<String, String> map = atomix.create("test", DistributedMap.class).get();
+
+    map.put("foo", "Hello world!").thenRun(this::resume);
+    map.put("bar", "Hello world again!").thenRun(this::resume);
+    await(0, 2);
+
+    map.size().thenAccept(size -> {
+      threadAssertEquals(size, 2);
+      map.isEmpty().thenAccept(empty -> {
+        threadAssertFalse(empty);
+        resume();
+      });
+    });
+    await();
+
+    map.clear().thenRun(() -> {
+      map.size().thenAccept(size -> {
+        threadAssertEquals(size, 0);
+        map.isEmpty().thenAccept(empty -> {
+          threadAssertTrue(empty);
+          resume();
+        });
+      });
     });
     await();
   }

@@ -122,7 +122,7 @@ public class DistributedMap<K, V> extends Resource<DistributedMap<K, V>> {
    * @return A completable future to be completed with the result once complete.
    */
   @SuppressWarnings("unchecked")
-  public CompletableFuture<V> remove(Object key) {
+  public CompletableFuture<V> remove(K key) {
     return submit(MapCommands.Remove.builder()
       .withKey(key)
       .build())

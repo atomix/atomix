@@ -122,7 +122,7 @@ public class MapState extends StateMachine {
         }) : null;
 
         map.put(commit.operation().key(), new Value(commit, timer));
-        return commit.operation().value();
+        return null;
       } else {
         commit.clean();
         return value.commit.operation().value();
