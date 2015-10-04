@@ -20,8 +20,8 @@ import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.StateMachine;
 import io.atomix.copycat.server.StateMachineExecutor;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * Leader election state machine.
@@ -29,9 +29,8 @@ import java.util.List;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class LeaderElectionState extends StateMachine {
-  private Session leader;
-  private long epoch;
-  private final List<Commit<LeaderElectionCommands.Listen>> listeners = new ArrayList<>();
+  private Commit<LeaderElectionCommands.Listen> leader;
+  private final Map<Long, Commit<LeaderElectionCommands.Listen>> listeners = new LinkedHashMap<>();
 
   @Override
   public void configure(StateMachineExecutor executor) {
@@ -42,13 +41,17 @@ public class LeaderElectionState extends StateMachine {
 
   @Override
   public void close(Session session) {
-    if (leader != null && leader.equals(session)) {
+    if (leader != null && leader.session().equals(session)) {
+      leader.clean();
       leader = null;
       if (!listeners.isEmpty()) {
-        Commit<LeaderElectionCommands.Listen> leader = listeners.remove(0);
-        this.leader = leader.session();
-        this.epoch = leader.index();
-        this.leader.publish("elect", this.epoch);
+        leader = listeners.entrySet().iterator().next().getValue();
+        this.leader.session().publish("elect", this.leader.index());
+      }
+    } else {
+      Commit<LeaderElectionCommands.Listen> listener = listeners.remove(session.id());
+      if (listener != null) {
+        listener.clean();
       }
     }
   }
@@ -58,12 +61,10 @@ public class LeaderElectionState extends StateMachine {
    */
   protected void listen(Commit<LeaderElectionCommands.Listen> commit) {
     if (leader == null) {
-      leader = commit.session();
-      epoch = commit.index();
-      leader.publish("elect", epoch);
-      commit.clean();
-    } else {
-      listeners.add(commit);
+      leader = commit;
+      leader.session().publish("elect", leader.index());
+    } else if (!listeners.containsKey(commit.session().id())) {
+      listeners.put(commit.session().id(), commit);
     }
   }
 
@@ -71,16 +72,20 @@ public class LeaderElectionState extends StateMachine {
    * Applies listen commits.
    */
   protected void unlisten(Commit<LeaderElectionCommands.Unlisten> commit) {
-    if (leader != null && leader.equals(commit.session())) {
-      leader = null;
-      if (!listeners.isEmpty()) {
-        Commit<LeaderElectionCommands.Listen> leader = listeners.remove(0);
-        this.leader = leader.session();
-        this.epoch = commit.index();
-        this.leader.publish("elect", epoch);
-        leader.clean();
+    try {
+      if (leader != null && leader.session().equals(commit.session())) {
+        leader = null;
+        if (!listeners.isEmpty()) {
+          leader = listeners.entrySet().iterator().next().getValue();
+          leader.session().publish("elect", leader.index());
+        }
+      } else {
+        Commit<LeaderElectionCommands.Listen> listener = listeners.remove(commit.session().id());
+        if (listener != null) {
+          listener.clean();
+        }
       }
-    } else {
+    } finally {
       commit.clean();
     }
   }
@@ -89,7 +94,7 @@ public class LeaderElectionState extends StateMachine {
    * Applies an isLeader query.
    */
   protected boolean isLeader(Commit<LeaderElectionCommands.IsLeader> commit) {
-    return leader != null && leader.equals(commit.session()) && epoch == commit.operation().epoch();
+    return leader != null && leader.session().equals(commit.session()) && leader.index() == commit.operation().epoch();
   }
 
 }
