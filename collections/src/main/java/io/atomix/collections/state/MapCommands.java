@@ -476,7 +476,7 @@ public class MapCommands {
 
     @Override
     public PersistenceLevel persistence() {
-      return PersistenceLevel.PERSISTENT;
+      return PersistenceLevel.EPHEMERAL;
     }
 
     /**
@@ -509,7 +509,7 @@ public class MapCommands {
 
     @Override
     public PersistenceLevel persistence() {
-      return PersistenceLevel.PERSISTENT;
+      return PersistenceLevel.EPHEMERAL;
     }
 
     /**
@@ -540,11 +540,6 @@ public class MapCommands {
       return Operation.builder(Builder.class, Builder::new);
     }
 
-    @Override
-    public PersistenceLevel persistence() {
-      return PersistenceLevel.PERSISTENT;
-    }
-
     /**
      * Get command builder.
      */
@@ -572,11 +567,6 @@ public class MapCommands {
      */
     public static Builder builder() {
       return Operation.builder(Builder.class, Builder::new);
-    }
-
-    @Override
-    public PersistenceLevel persistence() {
-      return PersistenceLevel.PERSISTENT;
     }
 
     /**
@@ -697,7 +687,7 @@ public class MapCommands {
 
     @Override
     public PersistenceLevel persistence() {
-      return PersistenceLevel.PERSISTENT;
+      return PersistenceLevel.EPHEMERAL;
     }
 
     @Override

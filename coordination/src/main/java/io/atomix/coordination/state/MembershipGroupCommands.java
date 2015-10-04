@@ -112,6 +112,11 @@ public class MembershipGroupCommands {
       return Operation.builder(Builder.class, Builder::new);
     }
 
+    @Override
+    public PersistenceLevel persistence() {
+      return PersistenceLevel.EPHEMERAL;
+    }
+
     /**
      * Leave command builder.
      */

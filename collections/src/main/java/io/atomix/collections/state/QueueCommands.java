@@ -370,7 +370,7 @@ public class QueueCommands {
 
     @Override
     public PersistenceLevel persistence() {
-      return PersistenceLevel.PERSISTENT;
+      return PersistenceLevel.EPHEMERAL;
     }
 
     /**
@@ -459,7 +459,7 @@ public class QueueCommands {
 
     @Override
     public PersistenceLevel persistence() {
-      return PersistenceLevel.PERSISTENT;
+      return PersistenceLevel.EPHEMERAL;
     }
 
     @Override

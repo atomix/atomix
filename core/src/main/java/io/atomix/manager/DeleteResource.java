@@ -48,7 +48,7 @@ public class DeleteResource implements Command<Boolean>, CatalystSerializable {
 
   @Override
   public PersistenceLevel persistence() {
-    return PersistenceLevel.PERSISTENT;
+    return PersistenceLevel.EPHEMERAL;
   }
 
   /**

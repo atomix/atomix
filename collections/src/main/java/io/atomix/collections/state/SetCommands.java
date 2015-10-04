@@ -325,7 +325,7 @@ public class SetCommands {
 
     @Override
     public PersistenceLevel persistence() {
-      return PersistenceLevel.PERSISTENT;
+      return PersistenceLevel.EPHEMERAL;
     }
 
     /**
@@ -414,7 +414,7 @@ public class SetCommands {
 
     @Override
     public PersistenceLevel persistence() {
-      return PersistenceLevel.PERSISTENT;
+      return PersistenceLevel.EPHEMERAL;
     }
 
     @Override

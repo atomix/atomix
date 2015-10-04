@@ -542,7 +542,7 @@ public class MultiMapCommands {
 
     @Override
     public PersistenceLevel persistence() {
-      return PersistenceLevel.PERSISTENT;
+      return PersistenceLevel.EPHEMERAL;
     }
 
     /**
@@ -631,7 +631,7 @@ public class MultiMapCommands {
 
     @Override
     public PersistenceLevel persistence() {
-      return PersistenceLevel.PERSISTENT;
+      return PersistenceLevel.EPHEMERAL;
     }
 
     @Override
