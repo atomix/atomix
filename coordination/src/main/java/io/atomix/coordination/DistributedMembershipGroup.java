@@ -40,6 +40,7 @@ import java.util.function.Consumer;
 public class DistributedMembershipGroup extends Resource<DistributedMembershipGroup> {
   private final Listeners<GroupMember> joinListeners = new Listeners<>();
   private final Listeners<GroupMember> leaveListeners = new Listeners<>();
+  private GroupMember member;
   private final Map<Long, GroupMember> members = new ConcurrentHashMap<>();
 
   @Override
@@ -71,6 +72,15 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
   }
 
   /**
+   * Returns the local group member.
+   *
+   * @return The local group member or {@code null} if the member has not joined the group.
+   */
+  public GroupMember member() {
+    return member;
+  }
+
+  /**
    * Returns a member by ID.
    *
    * @param memberId The member ID.
@@ -96,6 +106,7 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
    */
   public CompletableFuture<Void> join() {
     return submit(MembershipGroupCommands.Join.builder().build()).thenAccept(members -> {
+      member = new InternalGroupMember(context.session().id());
       for (long memberId : members) {
         this.members.computeIfAbsent(memberId, InternalGroupMember::new);
       }
@@ -118,7 +129,10 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
    * @return A completable future to be completed once the member has left.
    */
   public CompletableFuture<Void> leave() {
-    return submit(MembershipGroupCommands.Leave.builder().build());
+    return submit(MembershipGroupCommands.Leave.builder().build()).whenComplete((result, error) -> {
+      member = null;
+      members.clear();
+    });
   }
 
   /**
