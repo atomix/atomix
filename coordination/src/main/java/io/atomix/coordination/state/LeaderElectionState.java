@@ -74,6 +74,7 @@ public class LeaderElectionState extends StateMachine {
   protected void unlisten(Commit<LeaderElectionCommands.Unlisten> commit) {
     try {
       if (leader != null && leader.session().equals(commit.session())) {
+        leader.clean();
         leader = null;
         if (!listeners.isEmpty()) {
           leader = listeners.entrySet().iterator().next().getValue();
