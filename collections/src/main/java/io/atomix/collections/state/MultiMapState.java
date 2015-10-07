@@ -110,13 +110,11 @@ public class MultiMapState extends StateMachine {
       if (commit.operation().value() != null) {
         Map<Object, Commit<? extends MultiMapCommands.TtlCommand>> values = map.get(commit.operation().key());
         if (values == null) {
-          commit.clean(false);
           return false;
         }
 
         Commit<? extends MultiMapCommands.TtlCommand> previous = values.remove(commit.operation().value());
         if (previous == null) {
-          commit.clean(false);
           return false;
         } else {
           previous.clean();

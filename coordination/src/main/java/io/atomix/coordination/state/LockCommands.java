@@ -67,7 +67,7 @@ public class LockCommands {
   /**
    * Lock command.
    */
-  @SerializeWith(id=512)
+  @SerializeWith(id=513)
   public static class Lock extends LockCommand<Void> {
 
     /**
@@ -149,7 +149,7 @@ public class LockCommands {
   /**
    * Unlock command.
    */
-  @SerializeWith(id=513)
+  @SerializeWith(id=514)
   public static class Unlock extends LockCommand<Void> {
 
     /**
@@ -164,7 +164,7 @@ public class LockCommands {
 
     @Override
     public PersistenceLevel persistence() {
-      return PersistenceLevel.EPHEMERAL;
+      return PersistenceLevel.PERSISTENT;
     }
 
     /**

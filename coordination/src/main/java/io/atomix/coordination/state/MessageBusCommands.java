@@ -147,7 +147,7 @@ public class MessageBusCommands {
 
     @Override
     public PersistenceLevel persistence() {
-      return PersistenceLevel.EPHEMERAL;
+      return PersistenceLevel.PERSISTENT;
     }
 
     /**
@@ -254,6 +254,11 @@ public class MessageBusCommands {
      */
     public String topic() {
       return topic;
+    }
+
+    @Override
+    public PersistenceLevel persistence() {
+      return PersistenceLevel.PERSISTENT;
     }
 
     @Override

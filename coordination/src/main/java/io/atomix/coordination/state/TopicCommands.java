@@ -113,6 +113,11 @@ public class TopicCommands {
       return ConsistencyLevel.LINEARIZABLE;
     }
 
+    @Override
+    public PersistenceLevel persistence() {
+      return PersistenceLevel.PERSISTENT;
+    }
+
     /**
      * Unlisten command builder.
      */

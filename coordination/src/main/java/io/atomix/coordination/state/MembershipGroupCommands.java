@@ -114,7 +114,7 @@ public class MembershipGroupCommands {
 
     @Override
     public PersistenceLevel persistence() {
-      return PersistenceLevel.EPHEMERAL;
+      return PersistenceLevel.PERSISTENT;
     }
 
     /**

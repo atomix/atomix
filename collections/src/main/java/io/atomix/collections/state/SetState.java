@@ -130,7 +130,7 @@ public class SetState extends StateMachine {
         Value value = entry.getValue();
         if (value.timer != null)
           value.timer.cancel();
-        value.commit.clean(true);
+        value.commit.clean();
         iterator.remove();
       }
     } finally {

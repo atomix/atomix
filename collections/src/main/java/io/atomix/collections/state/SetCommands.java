@@ -97,16 +97,6 @@ public class SetCommands {
     }
 
     @Override
-    public int groupCode() {
-      return value.hashCode();
-    }
-
-    @Override
-    public boolean groupEquals(Command command) {
-      return command instanceof ValueCommand && ((ValueCommand) command).value.equals(value);
-    }
-
-    @Override
     public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
       serializer.writeObject(value, buffer);
     }
@@ -225,7 +215,7 @@ public class SetCommands {
 
     @Override
     public PersistenceLevel persistence() {
-      return ttl > 0 ? PersistenceLevel.EPHEMERAL : PersistenceLevel.PERSISTENT;
+      return ttl > 0 ? PersistenceLevel.PERSISTENT : PersistenceLevel.EPHEMERAL;
     }
 
     /**
@@ -325,7 +315,7 @@ public class SetCommands {
 
     @Override
     public PersistenceLevel persistence() {
-      return PersistenceLevel.EPHEMERAL;
+      return PersistenceLevel.PERSISTENT;
     }
 
     /**
@@ -414,12 +404,7 @@ public class SetCommands {
 
     @Override
     public PersistenceLevel persistence() {
-      return PersistenceLevel.EPHEMERAL;
-    }
-
-    @Override
-    public boolean groupEquals(Command command) {
-      return command instanceof Clear;
+      return PersistenceLevel.PERSISTENT;
     }
 
     /**

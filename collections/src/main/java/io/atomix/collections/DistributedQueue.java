@@ -129,39 +129,33 @@ public class DistributedQueue<T> extends Resource<DistributedQueue<T>> {
   /**
    * Removes a value from the queue.
    *
-   * @param value The value to remove.
    * @return A completable future to be completed with the result once complete.
    */
   @SuppressWarnings("unchecked")
-  public CompletableFuture<T> peek(T value) {
+  public CompletableFuture<T> peek() {
     return submit(QueueCommands.Peek.builder()
-      .withValue(value)
       .build()).thenApply(v -> (T) v);
   }
 
   /**
    * Removes a value from the queue.
    *
-   * @param value The value to remove.
    * @return A completable future to be completed with the result once complete.
    */
   @SuppressWarnings("unchecked")
-  public CompletableFuture<T> poll(T value) {
+  public CompletableFuture<T> poll() {
     return submit(QueueCommands.Poll.builder()
-      .withValue(value)
       .build()).thenApply(v -> (T) v);
   }
 
   /**
    * Removes a value from the queue.
    *
-   * @param value The value to remove.
    * @return A completable future to be completed with the result once complete.
    */
   @SuppressWarnings("unchecked")
-  public CompletableFuture<T> element(T value) {
+  public CompletableFuture<T> element() {
     return submit(QueueCommands.Element.builder()
-      .withValue(value)
       .build()).thenApply(v -> (T) v);
   }
 

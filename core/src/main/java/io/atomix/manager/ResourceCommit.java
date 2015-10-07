@@ -83,13 +83,6 @@ class ResourceCommit implements Commit {
   }
 
   @Override
-  public void clean(boolean tombstone) {
-    Assert.state(open, "commit closed");
-    commit.clean(tombstone);
-    close();
-  }
-
-  @Override
   public void close() {
     if (open) {
       commit.close();

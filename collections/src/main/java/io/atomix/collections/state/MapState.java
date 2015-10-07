@@ -158,21 +158,23 @@ public class MapState extends StateMachine {
    * Handles a remove if present commit.
    */
   protected boolean removeIfPresent(Commit<MapCommands.RemoveIfPresent> commit) {
-    Value value = map.get(commit.operation().key());
-    if (value == null || ((value.commit.operation().value() == null && commit.operation().value() != null)
-      || (value.commit.operation().value() != null && !value.commit.operation().value().equals(commit.operation().value())))) {
-      commit.clean(false);
-      return false;
-    } else {
-      try {
-        map.remove(commit.operation().key());
-        if (value.timer != null)
-          value.timer.cancel();
-        return true;
-      } finally {
-        value.commit.clean();
-        commit.clean();
+    try {
+      Value value = map.get(commit.operation().key());
+      if (value == null || ((value.commit.operation().value() == null && commit.operation().value() != null)
+        || (value.commit.operation().value() != null && !value.commit.operation().value().equals(commit.operation().value())))) {
+        return false;
+      } else {
+        try {
+          map.remove(commit.operation().key());
+          if (value.timer != null)
+            value.timer.cancel();
+          return true;
+        } finally {
+          value.commit.clean();
+        }
       }
+    } finally {
+      commit.clean();
     }
   }
 
@@ -186,13 +188,16 @@ public class MapState extends StateMachine {
         if (value.timer != null)
           value.timer.cancel();
         Scheduled timer = commit.operation().ttl() > 0 ? executor().schedule(Duration.ofMillis(commit.operation().ttl()), () -> {
-          map.remove(commit.operation().key()).commit.clean();
+          map.remove(commit.operation().key());
+          commit.clean();
         }) : null;
         map.put(commit.operation().key(), new Value(commit, timer));
         return value.commit.operation().value();
       } finally {
         value.commit.clean();
       }
+    } else {
+      commit.clean();
     }
     return null;
   }
@@ -256,7 +261,7 @@ public class MapState extends StateMachine {
         Value value = entry.getValue();
         if (value.timer != null)
           value.timer.cancel();
-        value.commit.clean(true);
+        value.commit.clean();
         iterator.remove();
       }
     } finally {

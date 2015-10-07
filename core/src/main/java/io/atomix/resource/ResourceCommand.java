@@ -52,21 +52,6 @@ public class ResourceCommand<T extends Command<U>, U> extends ResourceOperation<
   }
 
   @Override
-  public int groupCode() {
-    return 37 * (int)(resource ^ (resource >>> 32)) + operation.groupCode();
-  }
-
-  @Override
-  public boolean groupEquals(Command command) {
-    if (command instanceof ResourceCommand) {
-      ResourceCommand<?, ?> resourceCommand = (ResourceCommand<?, ?>) command;
-      return resourceCommand.resource == resource
-        && resourceCommand.operation.groupEquals(operation);
-    }
-    return false;
-  }
-
-  @Override
   public String toString() {
     return String.format("%s[resource=%d, command=%s]", getClass().getSimpleName(), resource, operation);
   }

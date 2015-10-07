@@ -126,6 +126,69 @@ public class AtomixClientServerTest extends AbstractServerTest {
   }
 
   /**
+   * Tests getting a resource and submitting commands.
+   */
+  public void testGetConcurrency() throws Throwable {
+    createServers(5);
+
+    Atomix client1 = createClient();
+    Atomix client2 = createClient();
+
+    ValueResource resource1 = client1.get("test", ValueResource::new).get();
+    ValueResource resource2 = client2.get("test", ValueResource::new).get();
+
+    resource1.set("Hello world!").join();
+
+    resource2.get().thenAccept(result -> {
+      threadAssertEquals("Hello world!", result);
+      resume();
+    });
+    await();
+  }
+
+  /**
+   * Tests creating a resource and submitting commands.
+   */
+  public void testCreateConcurrency() throws Throwable {
+    createServers(5);
+
+    Atomix client1 = createClient();
+    Atomix client2 = createClient();
+
+    ValueResource resource1 = client1.create("test", ValueResource::new).get();
+    ValueResource resource2 = client2.create("test", ValueResource::new).get();
+
+    resource1.set("Hello world!").join();
+
+    resource2.get().thenAccept(result -> {
+      threadAssertEquals("Hello world!", result);
+      resume();
+    });
+    await();
+  }
+
+  /**
+   * Tests getting and creating a resource and submitting commands.
+   */
+  public void testGetCreateConcurrency() throws Throwable {
+    createServers(5);
+
+    Atomix client1 = createClient();
+    Atomix client2 = createClient();
+
+    ValueResource resource1 = client1.get("test", ValueResource::new).get();
+    ValueResource resource2 = client2.create("test", ValueResource::new).get();
+
+    resource1.set("Hello world!").join();
+
+    resource2.get().thenAccept(result -> {
+      threadAssertEquals("Hello world!", result);
+      resume();
+    });
+    await();
+  }
+
+  /**
    * Creates a client.
    */
   private Atomix createClient() throws Throwable {
@@ -185,16 +248,6 @@ public class AtomixClientServerTest extends AbstractServerTest {
     public String value() {
       return value;
     }
-
-    @Override
-    public int groupCode() {
-      return value.hashCode();
-    }
-
-    @Override
-    public boolean groupEquals(Command command) {
-      return command instanceof TestCommand && ((TestCommand) command).value.equals(value);
-    }
   }
 
   /**
@@ -210,6 +263,73 @@ public class AtomixClientServerTest extends AbstractServerTest {
     public String value() {
       return value;
     }
+  }
+
+  /**
+   * Value resource.
+   */
+  public static class ValueResource extends Resource<ValueResource> {
+    @Override
+    protected Class<? extends StateMachine> stateMachine() {
+      return ValueStateMachine.class;
+    }
+
+    public CompletableFuture<Void> set(String value) {
+      return submit(new SetCommand(value));
+    }
+
+    public CompletableFuture<String> get() {
+      return submit(new GetQuery());
+    }
+  }
+
+  /**
+   * Value state machine.
+   */
+  public static class ValueStateMachine extends StateMachine {
+    private Commit<SetCommand> value;
+
+    @Override
+    protected void configure(StateMachineExecutor executor) {
+      executor.register(SetCommand.class, this::set);
+      executor.register(GetQuery.class, this::get);
+    }
+
+    private void set(Commit<SetCommand> commit) {
+      Commit<SetCommand> oldValue = value;
+      value = commit;
+      if (oldValue != null)
+        oldValue.clean();
+    }
+
+    private String get(Commit<GetQuery> commit) {
+      try {
+        return value != null ? value.operation().value() : null;
+      } finally {
+        commit.close();
+      }
+    }
+  }
+
+  /**
+   * Set command.
+   */
+  public static class SetCommand implements Command<Void> {
+    private String value;
+
+    public SetCommand(String value) {
+      this.value = value;
+    }
+
+    public String value() {
+      return value;
+    }
+  }
+
+  /**
+   * Get query.
+   */
+  public static class GetQuery implements Query<String> {
   }
 
 }

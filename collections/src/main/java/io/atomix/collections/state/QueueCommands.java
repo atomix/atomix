@@ -36,9 +36,9 @@ public class QueueCommands {
   }
 
   /**
-   * Abstract set command.
+   * Abstract queue command.
    */
-  private static abstract class SetCommand<V> implements Command<V>, CatalystSerializable {
+  private static abstract class QueueCommand<V> implements Command<V>, CatalystSerializable {
 
     @Override
     public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
@@ -49,9 +49,9 @@ public class QueueCommands {
     }
 
     /**
-     * Base set command builder.
+     * Base queue command builder.
      */
-    public static abstract class Builder<T extends Builder<T, U, V>, U extends SetCommand<V>, V> extends Command.Builder<T, U, V> {
+    public static abstract class Builder<T extends Builder<T, U, V>, U extends QueueCommand<V>, V> extends Command.Builder<T, U, V> {
       protected Builder(BuilderPool<T, U> pool) {
         super(pool);
       }
@@ -59,9 +59,9 @@ public class QueueCommands {
   }
 
   /**
-   * Abstract set query.
+   * Abstract queue query.
    */
-  private static abstract class SetQuery<V> implements Query<V>, CatalystSerializable {
+  private static abstract class QueueQuery<V> implements Query<V>, CatalystSerializable {
 
     @Override
     public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
@@ -72,9 +72,9 @@ public class QueueCommands {
     }
 
     /**
-     * Base set query builder.
+     * Base queue query builder.
      */
-    public static abstract class Builder<T extends Builder<T, U, V>, U extends SetQuery<V>, V> extends Query.Builder<T, U, V> {
+    public static abstract class Builder<T extends Builder<T, U, V>, U extends QueueQuery<V>, V> extends Query.Builder<T, U, V> {
       protected Builder(BuilderPool<T, U> pool) {
         super(pool);
       }
@@ -84,7 +84,7 @@ public class QueueCommands {
   /**
    * Abstract value command.
    */
-  public static abstract class ValueCommand<V> extends SetCommand<V> {
+  public static abstract class ValueCommand<V> extends QueueCommand<V> {
     protected Object value;
 
     /**
@@ -92,16 +92,6 @@ public class QueueCommands {
      */
     public Object value() {
       return value;
-    }
-
-    @Override
-    public int groupCode() {
-      return value.hashCode();
-    }
-
-    @Override
-    public boolean groupEquals(Command command) {
-      return command instanceof ValueCommand && ((ValueCommand) command).value.equals(value);
     }
 
     @Override
@@ -117,7 +107,7 @@ public class QueueCommands {
     /**
      * Base key command builder.
      */
-    public static abstract class Builder<T extends Builder<T, U, V>, U extends ValueCommand<V>, V> extends SetCommand.Builder<T, U, V> {
+    public static abstract class Builder<T extends Builder<T, U, V>, U extends ValueCommand<V>, V> extends QueueCommand.Builder<T, U, V> {
       protected Builder(BuilderPool<T, U> pool) {
         super(pool);
       }
@@ -141,7 +131,7 @@ public class QueueCommands {
   /**
    * Abstract value query.
    */
-  public static abstract class ValueQuery<V> extends SetQuery<V> {
+  public static abstract class ValueQuery<V> extends QueueQuery<V> {
     protected Object value;
 
     /**
@@ -166,7 +156,7 @@ public class QueueCommands {
     /**
      * Base value query builder.
      */
-    public static abstract class Builder<T extends Builder<T, U, V>, U extends ValueQuery<V>, V> extends SetQuery.Builder<T, U, V> {
+    public static abstract class Builder<T extends Builder<T, U, V>, U extends ValueQuery<V>, V> extends QueueQuery.Builder<T, U, V> {
       protected Builder(BuilderPool<T, U> pool) {
         super(pool);
       }
@@ -272,22 +262,22 @@ public class QueueCommands {
   }
 
   /**
-   * Peek command.
+   * Peek query.
    */
   @SerializeWith(id=473)
-  public static class Peek extends ValueCommand<Object> {
+  public static class Peek extends QueueQuery<Object> {
 
     /**
-     * Returns a builder for this command.
+     * Returns a builder for this query.
      */
     public static Builder builder() {
       return Operation.builder(Builder.class, Builder::new);
     }
 
     /**
-     * Peek command builder.
+     * Peek query builder.
      */
-    public static class Builder extends ValueCommand.Builder<Builder, Peek, Object> {
+    public static class Builder extends QueueQuery.Builder<Builder, Peek, Object> {
       public Builder(BuilderPool<Builder, Peek> pool) {
         super(pool);
       }
@@ -303,7 +293,7 @@ public class QueueCommands {
    * Poll command.
    */
   @SerializeWith(id=474)
-  public static class Poll extends ValueCommand<Object> {
+  public static class Poll extends QueueCommand<Object> {
 
     /**
      * Returns a builder for this command.
@@ -312,10 +302,15 @@ public class QueueCommands {
       return Operation.builder(Builder.class, Builder::new);
     }
 
+    @Override
+    public PersistenceLevel persistence() {
+      return PersistenceLevel.PERSISTENT;
+    }
+
     /**
      * Poll command builder.
      */
-    public static class Builder extends ValueCommand.Builder<Builder, Poll, Object> {
+    public static class Builder extends QueueCommand.Builder<Builder, Poll, Object> {
       public Builder(BuilderPool<Builder, Poll> pool) {
         super(pool);
       }
@@ -331,7 +326,7 @@ public class QueueCommands {
    * Element command.
    */
   @SerializeWith(id=475)
-  public static class Element extends ValueCommand<Object> {
+  public static class Element extends QueueCommand<Object> {
 
     /**
      * Returns a builder for this command.
@@ -340,10 +335,15 @@ public class QueueCommands {
       return Operation.builder(Builder.class, Builder::new);
     }
 
+    @Override
+    public PersistenceLevel persistence() {
+      return PersistenceLevel.PERSISTENT;
+    }
+
     /**
      * Element command builder.
      */
-    public static class Builder extends ValueCommand.Builder<Builder, Element, Object> {
+    public static class Builder extends QueueCommand.Builder<Builder, Element, Object> {
       public Builder(BuilderPool<Builder, Element> pool) {
         super(pool);
       }
@@ -370,7 +370,7 @@ public class QueueCommands {
 
     @Override
     public PersistenceLevel persistence() {
-      return PersistenceLevel.EPHEMERAL;
+      return PersistenceLevel.PERSISTENT;
     }
 
     /**
@@ -392,7 +392,7 @@ public class QueueCommands {
    * Size query.
    */
   @SerializeWith(id=477)
-  public static class Size extends SetQuery<Integer> {
+  public static class Size extends QueueQuery<Integer> {
 
     /**
      * Returns a builder for this query.
@@ -404,7 +404,7 @@ public class QueueCommands {
     /**
      * Size query builder.
      */
-    public static class Builder extends SetQuery.Builder<Builder, Size, Integer> {
+    public static class Builder extends QueueQuery.Builder<Builder, Size, Integer> {
       public Builder(BuilderPool<Builder, Size> pool) {
         super(pool);
       }
@@ -420,7 +420,7 @@ public class QueueCommands {
    * Is empty query.
    */
   @SerializeWith(id=478)
-  public static class IsEmpty extends SetQuery<Boolean> {
+  public static class IsEmpty extends QueueQuery<Boolean> {
 
     /**
      * Returns a builder for this query.
@@ -432,7 +432,7 @@ public class QueueCommands {
     /**
      * Is empty query builder.
      */
-    public static class Builder extends SetQuery.Builder<Builder, IsEmpty, Boolean> {
+    public static class Builder extends QueueQuery.Builder<Builder, IsEmpty, Boolean> {
       public Builder(BuilderPool<Builder, IsEmpty> pool) {
         super(pool);
       }
@@ -448,7 +448,7 @@ public class QueueCommands {
    * Clear command.
    */
   @SerializeWith(id=479)
-  public static class Clear extends SetCommand<Void> {
+  public static class Clear extends QueueCommand<Void> {
 
     /**
      * Returns a builder for this command.
@@ -459,18 +459,13 @@ public class QueueCommands {
 
     @Override
     public PersistenceLevel persistence() {
-      return PersistenceLevel.EPHEMERAL;
-    }
-
-    @Override
-    public boolean groupEquals(Command command) {
-      return command instanceof Clear;
+      return PersistenceLevel.PERSISTENT;
     }
 
     /**
      * Get command builder.
      */
-    public static class Builder extends SetCommand.Builder<Builder, Clear, Void> {
+    public static class Builder extends QueueCommand.Builder<Builder, Clear, Void> {
       public Builder(BuilderPool<Builder, Clear> pool) {
         super(pool);
       }

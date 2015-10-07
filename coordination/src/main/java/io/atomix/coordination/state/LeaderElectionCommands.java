@@ -138,6 +138,11 @@ public class LeaderElectionCommands {
       return Operation.builder(Builder.class, Builder::new);
     }
 
+    @Override
+    public PersistenceLevel persistence() {
+      return PersistenceLevel.PERSISTENT;
+    }
+
     /**
      * Unlisten command builder.
      */

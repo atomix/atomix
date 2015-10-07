@@ -95,16 +95,6 @@ public class MapCommands {
     }
 
     @Override
-    public int groupCode() {
-      return key.hashCode();
-    }
-
-    @Override
-    public boolean groupEquals(Command command) {
-      return command instanceof KeyCommand && ((KeyCommand) command).key.equals(key);
-    }
-
-    @Override
     public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
       serializer.writeObject(key, buffer);
     }
@@ -270,7 +260,7 @@ public class MapCommands {
 
     @Override
     public PersistenceLevel persistence() {
-      return ttl > 0 ? PersistenceLevel.EPHEMERAL : PersistenceLevel.PERSISTENT;
+      return ttl > 0 ? PersistenceLevel.PERSISTENT : PersistenceLevel.EPHEMERAL;
     }
 
     /**
@@ -476,7 +466,7 @@ public class MapCommands {
 
     @Override
     public PersistenceLevel persistence() {
-      return PersistenceLevel.EPHEMERAL;
+      return PersistenceLevel.PERSISTENT;
     }
 
     /**
@@ -509,7 +499,7 @@ public class MapCommands {
 
     @Override
     public PersistenceLevel persistence() {
-      return PersistenceLevel.EPHEMERAL;
+      return PersistenceLevel.PERSISTENT;
     }
 
     /**
@@ -687,12 +677,7 @@ public class MapCommands {
 
     @Override
     public PersistenceLevel persistence() {
-      return PersistenceLevel.EPHEMERAL;
-    }
-
-    @Override
-    public boolean groupEquals(Command command) {
-      return command instanceof Clear;
+      return PersistenceLevel.PERSISTENT;
     }
 
     /**

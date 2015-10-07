@@ -138,8 +138,10 @@ public class AtomicValueState extends StateMachine {
       cleanCurrent();
       setCurrent(commit);
       return true;
+    } else {
+      commit.clean();
+      return false;
     }
-    return false;
   }
 
   /**

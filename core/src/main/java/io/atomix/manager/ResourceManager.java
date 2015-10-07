@@ -54,26 +54,17 @@ public class ResourceManager extends StateMachine {
   @SuppressWarnings("unchecked")
   private Object operateResource(Commit<ResourceOperation> commit) {
     ResourceHolder resource;
+
+    // Get the session and resource associated with the commit.
     SessionHolder session = sessions.get(commit.operation().resource());
     if (session != null) {
       resource = resources.get(session.resource);
     } else {
-      resource = resources.get(commit.operation().resource());
+      commit.clean();
+      throw new ResourceManagerException("unknown resource session: " + commit.operation().resource());
     }
 
-    if (resource == null) {
-      throw new ResourceManagerException("unknown resource: " + commit.operation().resource());
-    }
-
-    if (session == null) {
-      session = resource.sessions.get(commit.session().id());
-      if (session == null) {
-        throw new ResourceManagerException("unknown resource session: " + commit.session().id());
-      }
-    }
-
-    ResourceCommit resourceCommit = commits.acquire(commit, session.session);
-    return resource.executor.execute(resourceCommit);
+    return resource.executor.execute(commits.acquire(commit, session.session));
   }
 
   /**
@@ -82,30 +73,69 @@ public class ResourceManager extends StateMachine {
   protected long getResource(Commit<GetResource> commit) {
     String path = commit.operation().path();
 
+    // Lookup the resource ID for the resource path.
     Long resourceId = paths.get(path);
 
+    // If no resource ID was found, create the resource.
     if (resourceId == null) {
+
+      // The first time a resource is created, the resource ID is the index of the commit that created it.
       resourceId = commit.index();
-      paths.put(path, commit.index());
+      paths.put(path, resourceId);
 
       try {
+        // For the new resource, construct a state machine and store the resource info.
         StateMachine stateMachine = commit.operation().type().newInstance();
-        ResourceStateMachineExecutor executor = new ResourceStateMachineExecutor(commit.index(), this.executor);
+        ResourceStateMachineExecutor executor = new ResourceStateMachineExecutor(resourceId, this.executor);
+
+        // Store the resource to be referenced by its resource ID.
         ResourceHolder resource = new ResourceHolder(path, stateMachine, executor);
         resources.put(resourceId, resource);
+
+        // Initialize the resource state machine.
         stateMachine.init(executor);
-        resource.sessions.put(commit.session().id(), new SessionHolder(resourceId, commit, new ManagedResourceSession(resourceId, commit.session())));
+
+        // Create a resource session for the client resource instance.
+        ManagedResourceSession session = new ManagedResourceSession(commit.index(), commit.session());
+        SessionHolder holder = new SessionHolder(resourceId, commit, session);
+        sessions.put(session.id(), holder);
+        resource.sessions.put(commit.session().id(), holder);
+
+        // Register the newly created session with the resource state machine.
+        stateMachine.register(session);
+
+        // Returns the session ID for the resource client session.
+        return session.id();
       } catch (InstantiationException | IllegalAccessException e) {
         throw new ResourceManagerException("failed to instantiate state machine", e);
       }
     } else {
+      // If a resource was found, validate that the resource type matches.
       ResourceHolder resource = resources.get(resourceId);
       if (resource == null || resource.stateMachine.getClass() != commit.operation().type()) {
         throw new ResourceManagerException("inconsistent resource type: " + commit.operation().type());
       }
-      commit.clean();
+
+      // If the session is not already associated with the resource, attach the session to the resource.
+      // Otherwise, if the session already has a multiton instance of the resource open, clean the commit.
+      SessionHolder holder = resource.sessions.get(commit.session().id());
+      if (holder == null) {
+        // Crete a resource session for the client resource instance.
+        ManagedResourceSession session = new ManagedResourceSession(commit.index(), commit.session());
+        holder = new SessionHolder(resourceId, commit, session);
+        sessions.put(session.id(), holder);
+        resource.sessions.put(commit.session().id(), holder);
+
+        // Register the newly created session with the resource state machine.
+        resource.stateMachine.register(session);
+
+        return session.id();
+      } else {
+        // Return the resource client session ID and clean the commit since no new resource or session was created.
+        commit.clean();
+        return holder.session.id();
+      }
     }
-    return resourceId;
   }
 
   /**
@@ -114,34 +144,50 @@ public class ResourceManager extends StateMachine {
   private long createResource(Commit<CreateResource> commit) {
     String path = commit.operation().path();
 
+    // Get the resource ID for the path.
     Long resourceId = paths.get(path);
 
-    long id;
     ResourceHolder resource;
+
+    // If no resource yet exists, create a new resource state machine with the commit index as the resource ID.
     if (resourceId == null) {
+
+      // The first time a resource is created, the resource ID is the index of the commit that created it.
       resourceId = commit.index();
-      paths.put(path, commit.index());
+      paths.put(path, resourceId);
 
       try {
+        // For the new resource, construct a state machine and store the resource info.
         StateMachine stateMachine = commit.operation().type().newInstance();
-        ResourceStateMachineExecutor executor = new ResourceStateMachineExecutor(commit.index(), this.executor);
+        ResourceStateMachineExecutor executor = new ResourceStateMachineExecutor(resourceId, this.executor);
+
+        // Store the resource to be referenced by its resource ID.
         resource = new ResourceHolder(path, stateMachine, executor);
         resources.put(resourceId, resource);
+
+        // Initialize the resource state machine.
         stateMachine.init(executor);
       } catch (InstantiationException | IllegalAccessException e) {
         throw new ResourceManagerException("failed to instantiate state machine", e);
       }
     } else {
+      // If a resource was found, validate that the resource type matches.
       resource = resources.get(resourceId);
       if (resource == null || resource.stateMachine.getClass() != commit.operation().type()) {
         throw new ResourceManagerException("inconsistent resource type: " + commit.operation().type());
       }
     }
 
-    id = commit.index();
+    // The resource ID for the unique resource session is the commit index.
+    long id = commit.index();
+
+    // Create the resource session and register the session with the resource state machine.
     ManagedResourceSession session = new ManagedResourceSession(id, commit.session());
     sessions.put(id, new SessionHolder(resourceId, commit, session));
+
+    // Register the newly created session with the resource state machine.
     resource.stateMachine.register(session);
+
     return id;
   }
 
@@ -149,43 +195,44 @@ public class ResourceManager extends StateMachine {
    * Checks if a resource exists.
    */
   protected boolean resourceExists(Commit<ResourceExists> commit) {
-    return paths.containsKey(commit.operation().path());
+    try {
+      return paths.containsKey(commit.operation().path());
+    } finally {
+      commit.close();
+    }
   }
 
   /**
    * Applies a delete resource commit.
    */
   protected boolean deleteResource(Commit<DeleteResource> commit) {
-    ResourceHolder resource = resources.remove(commit.operation().resource());
-    if (resource == null) {
-      throw new ResourceManagerException("unknown resource: " + commit.operation().resource());
-    }
-
-    resource.executor.close();
-    paths.remove(resource.path);
-
-    Iterator<Map.Entry<Long, SessionHolder>> iterator = sessions.entrySet().iterator();
-    while (iterator.hasNext()) {
-      SessionHolder session = iterator.next().getValue();
-      if (session.resource == commit.operation().resource()) {
-        iterator.remove();
-        session.commit.clean();
+    try {
+      ResourceHolder resource = resources.remove(commit.operation().resource());
+      if (resource == null) {
+        throw new ResourceManagerException("unknown resource: " + commit.operation().resource());
       }
+
+      resource.executor.close();
+      paths.remove(resource.path);
+
+      Iterator<Map.Entry<Long, SessionHolder>> iterator = sessions.entrySet().iterator();
+      while (iterator.hasNext()) {
+        SessionHolder session = iterator.next().getValue();
+        if (session.resource == commit.operation().resource()) {
+          iterator.remove();
+          session.commit.clean();
+        }
+      }
+      return true;
+    } finally {
+      commit.clean();
     }
-    return true;
   }
 
   @Override
   public void expire(Session session) {
-    for (ResourceHolder resource : resources.values()) {
-      SessionHolder resourceSession = resource.sessions.get(session.id());
-      if (resourceSession != null) {
-        resource.stateMachine.expire(resourceSession.session);
-      }
-    }
-
     for (SessionHolder sessionHolder : sessions.values()) {
-      if (sessionHolder.session.id() == session.id()) {
+      if (sessionHolder.commit.session().id() == session.id()) {
         ResourceHolder resource = resources.get(sessionHolder.resource);
         if (resource != null) {
           resource.stateMachine.expire(sessionHolder.session);
@@ -196,20 +243,13 @@ public class ResourceManager extends StateMachine {
 
   @Override
   public void close(Session session) {
-    for (ResourceHolder resource : resources.values()) {
-      SessionHolder resourceSession = resource.sessions.remove(session.id());
-      if (resourceSession != null) {
-        resource.stateMachine.close(resourceSession.session);
-        resourceSession.commit.clean();
-      }
-    }
-
     Iterator<Map.Entry<Long, SessionHolder>> iterator = sessions.entrySet().iterator();
     while (iterator.hasNext()) {
       SessionHolder sessionHolder = iterator.next().getValue();
-      if (sessionHolder.session.id() == session.id()) {
+      if (sessionHolder.commit.session().id() == session.id()) {
         ResourceHolder resource = resources.get(sessionHolder.resource);
         if (resource != null) {
+          resource.sessions.remove(sessionHolder.commit.session().id());
           resource.stateMachine.close(sessionHolder.session);
         }
         sessionHolder.commit.clean();

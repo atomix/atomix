@@ -93,12 +93,11 @@ public class QueueState extends StateMachine {
     try {
       Commit<? extends QueueCommands.ValueCommand> value = queue.peek();
       if (value != null) {
-        value.clean();
         return value.operation().value();
       }
       return null;
     } finally {
-      commit.clean();
+      commit.close();
     }
   }
 
@@ -109,8 +108,11 @@ public class QueueState extends StateMachine {
     try {
       Commit<? extends QueueCommands.ValueCommand> value = queue.poll();
       if (value != null) {
-        value.clean();
-        return value.operation().value();
+        try {
+          return value.operation().value();
+        } finally {
+          value.clean();
+        }
       }
       return null;
     } finally {
@@ -125,8 +127,11 @@ public class QueueState extends StateMachine {
     try {
       Commit<? extends QueueCommands.ValueCommand> value = queue.element();
       if (value != null) {
-        value.clean();
-        return value.operation().value();
+        try {
+          return value.operation().value();
+        } finally {
+          value.clean();
+        }
       }
       return null;
     } finally {
@@ -153,8 +158,11 @@ public class QueueState extends StateMachine {
       } else {
         Commit<? extends QueueCommands.ValueCommand> value = queue.remove();
         if (value != null) {
-          value.clean();
-          return value.operation().value();
+          try {
+            return value.operation().value();
+          } finally {
+            value.clean();
+          }
         }
         return null;
       }

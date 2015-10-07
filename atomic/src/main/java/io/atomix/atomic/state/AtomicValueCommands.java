@@ -43,7 +43,7 @@ public class AtomicValueCommands {
 
     @Override
     public PersistenceLevel persistence() {
-      return ttl > 0 ? PersistenceLevel.EPHEMERAL : PersistenceLevel.PERSISTENT;
+      return ttl > 0 ? PersistenceLevel.PERSISTENT : PersistenceLevel.EPHEMERAL;
     }
 
     /**

@@ -48,7 +48,11 @@ public class TopicState extends StateMachine {
    * Applies listen commits.
    */
   protected void listen(Commit<TopicCommands.Listen> commit) {
-    listeners.put(commit.session().id(), commit);
+    if (!listeners.containsKey(commit.session().id())) {
+      listeners.put(commit.session().id(), commit);
+    } else {
+      commit.clean();
+    }
   }
 
   /**

@@ -20,6 +20,7 @@ import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.StateMachine;
 import io.atomix.copycat.server.StateMachineExecutor;
 
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -45,8 +46,10 @@ public class LeaderElectionState extends StateMachine {
       leader.clean();
       leader = null;
       if (!listeners.isEmpty()) {
-        leader = listeners.entrySet().iterator().next().getValue();
-        this.leader.session().publish("elect", this.leader.index());
+        Iterator<Map.Entry<Long, Commit<LeaderElectionCommands.Listen>>> iterator = listeners.entrySet().iterator();
+        leader = iterator.next().getValue();
+        iterator.remove();
+        leader.session().publish("elect", leader.index());
       }
     } else {
       Commit<LeaderElectionCommands.Listen> listener = listeners.remove(session.id());
@@ -65,6 +68,8 @@ public class LeaderElectionState extends StateMachine {
       leader.session().publish("elect", leader.index());
     } else if (!listeners.containsKey(commit.session().id())) {
       listeners.put(commit.session().id(), commit);
+    } else {
+      commit.clean();
     }
   }
 
@@ -77,7 +82,9 @@ public class LeaderElectionState extends StateMachine {
         leader.clean();
         leader = null;
         if (!listeners.isEmpty()) {
-          leader = listeners.entrySet().iterator().next().getValue();
+          Iterator<Map.Entry<Long, Commit<LeaderElectionCommands.Listen>>> iterator = listeners.entrySet().iterator();
+          leader = iterator.next().getValue();
+          iterator.remove();
           leader.session().publish("elect", leader.index());
         }
       } else {
