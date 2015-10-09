@@ -38,7 +38,7 @@ public class ServerExample {
    */
   public static void main(String[] args) throws Exception {
     if (args.length < 2)
-      throw new IllegalArgumentException("must supply a serverId:port and at least one remoteId:host:port triple");
+      throw new IllegalArgumentException("must supply a local port and at least one remote host:port tuple");
 
     int port = Integer.valueOf(args[0]);
 
