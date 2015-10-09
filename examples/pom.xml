@@ -61,6 +61,7 @@
 
   <modules>
     <module>standalone-server</module>
+    <module>leader-election</module>
   </modules>
 
   <dependencies>
