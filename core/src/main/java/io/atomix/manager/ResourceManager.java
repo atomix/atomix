@@ -33,7 +33,7 @@ import java.util.function.Function;
  */
 public class ResourceManager extends StateMachine {
   private StateMachineExecutor executor;
-  private final Map<String, Long> paths = new HashMap<>();
+  private final Map<String, Long> keys = new HashMap<>();
   private final Map<Long, ResourceHolder> resources = new HashMap<>();
   private final Map<Long, SessionHolder> sessions = new HashMap<>();
   private final ResourceCommitPool commits = new ResourceCommitPool();
@@ -71,17 +71,17 @@ public class ResourceManager extends StateMachine {
    * Gets a resource.
    */
   protected long getResource(Commit<GetResource> commit) {
-    String path = commit.operation().path();
+    String key = commit.operation().key();
 
-    // Lookup the resource ID for the resource path.
-    Long resourceId = paths.get(path);
+    // Lookup the resource ID for the resource key.
+    Long resourceId = keys.get(key);
 
     // If no resource ID was found, create the resource.
     if (resourceId == null) {
 
       // The first time a resource is created, the resource ID is the index of the commit that created it.
       resourceId = commit.index();
-      paths.put(path, resourceId);
+      keys.put(key, resourceId);
 
       try {
         // For the new resource, construct a state machine and store the resource info.
@@ -89,7 +89,7 @@ public class ResourceManager extends StateMachine {
         ResourceStateMachineExecutor executor = new ResourceStateMachineExecutor(resourceId, this.executor);
 
         // Store the resource to be referenced by its resource ID.
-        ResourceHolder resource = new ResourceHolder(path, stateMachine, executor);
+        ResourceHolder resource = new ResourceHolder(key, stateMachine, executor);
         resources.put(resourceId, resource);
 
         // Initialize the resource state machine.
@@ -142,10 +142,10 @@ public class ResourceManager extends StateMachine {
    * Applies a create resource commit.
    */
   private long createResource(Commit<CreateResource> commit) {
-    String path = commit.operation().path();
+    String key = commit.operation().key();
 
-    // Get the resource ID for the path.
-    Long resourceId = paths.get(path);
+    // Get the resource ID for the key.
+    Long resourceId = keys.get(key);
 
     ResourceHolder resource;
 
@@ -154,7 +154,7 @@ public class ResourceManager extends StateMachine {
 
       // The first time a resource is created, the resource ID is the index of the commit that created it.
       resourceId = commit.index();
-      paths.put(path, resourceId);
+      keys.put(key, resourceId);
 
       try {
         // For the new resource, construct a state machine and store the resource info.
@@ -162,7 +162,7 @@ public class ResourceManager extends StateMachine {
         ResourceStateMachineExecutor executor = new ResourceStateMachineExecutor(resourceId, this.executor);
 
         // Store the resource to be referenced by its resource ID.
-        resource = new ResourceHolder(path, stateMachine, executor);
+        resource = new ResourceHolder(key, stateMachine, executor);
         resources.put(resourceId, resource);
 
         // Initialize the resource state machine.
@@ -196,7 +196,7 @@ public class ResourceManager extends StateMachine {
    */
   protected boolean resourceExists(Commit<ResourceExists> commit) {
     try {
-      return paths.containsKey(commit.operation().path());
+      return keys.containsKey(commit.operation().key());
     } finally {
       commit.close();
     }
@@ -213,7 +213,7 @@ public class ResourceManager extends StateMachine {
       }
 
       resource.executor.close();
-      paths.remove(resource.path);
+      keys.remove(resource.key);
 
       Iterator<Map.Entry<Long, SessionHolder>> iterator = sessions.entrySet().iterator();
       while (iterator.hasNext()) {
@@ -262,13 +262,13 @@ public class ResourceManager extends StateMachine {
    * Resource holder.
    */
   private static class ResourceHolder {
-    private final String path;
+    private final String key;
     private final StateMachine stateMachine;
     private final ResourceStateMachineExecutor executor;
     private final Map<Long, SessionHolder> sessions = new HashMap<>();
 
-    private ResourceHolder(String path, StateMachine stateMachine, ResourceStateMachineExecutor executor) {
-      this.path = path;
+    private ResourceHolder(String key, StateMachine stateMachine, ResourceStateMachineExecutor executor) {
+      this.key = key;
       this.stateMachine = stateMachine;
       this.executor = executor;
     }

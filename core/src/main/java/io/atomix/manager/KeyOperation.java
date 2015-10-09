@@ -24,63 +24,61 @@ import io.atomix.catalyst.util.BuilderPool;
 import io.atomix.copycat.client.Operation;
 
 /**
- * Base path operation.
+ * Base key operation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class PathOperation<T> implements Operation<T>, CatalystSerializable {
-  protected String path;
+public abstract class KeyOperation<T> implements Operation<T>, CatalystSerializable {
+  protected String key;
 
-  protected PathOperation() {
+  protected KeyOperation() {
   }
 
   /**
-   * @throws NullPointerException if {@code path} is null
+   * @throws NullPointerException if {@code key} is null
    */
-  protected PathOperation(String path) {
-    this.path = Assert.notNull(path, "path");
+  protected KeyOperation(String key) {
+    this.key = Assert.notNull(key, "key");
   }
 
   /**
-   * Returns the path.
+   * Returns the key.
    *
-   * @return The path.
+   * @return The key.
    */
-  public String path() {
-    return path;
+  public String key() {
+    return key;
   }
 
   @Override
   public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
-    buffer.writeInt(path.getBytes().length).write(path.getBytes());
+    buffer.writeUTF8(key);
   }
 
   @Override
   public void readObject(BufferInput<?> buffer, Serializer serializer) {
-    byte[] bytes = new byte[buffer.readInt()];
-    buffer.read(bytes);
-    path = new String(bytes);
+    key = buffer.readUTF8();
   }
 
   /**
-   * Path command builder.
+   * Key command builder.
    */
-  public static abstract class Builder<T extends Builder<T, U, V>, U extends PathOperation<V>, V> extends Operation.Builder<T, U, V> {
+  public static abstract class Builder<T extends Builder<T, U, V>, U extends KeyOperation<V>, V> extends Operation.Builder<T, U, V> {
 
     protected Builder(BuilderPool<T, U> pool) {
       super(pool);
     }
 
     /**
-     * Sets the command path.
+     * Sets the command key.
      *
-     * @param path The command path.
+     * @param key The command key.
      * @return The command builder.
-     * @throws NullPointerException if {@code path} is null
+     * @throws NullPointerException if {@code key} is null
      */
     @SuppressWarnings("unchecked")
-    public T withPath(String path) {
-      operation.path = Assert.notNull(path, "path");
+    public T withKey(String key) {
+      operation.key = Assert.notNull(key, "key");
       return (T) this;
     }
   }

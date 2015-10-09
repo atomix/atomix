@@ -32,7 +32,7 @@ import io.atomix.copycat.server.StateMachine;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @SerializeWith(id=414)
-public class CreateResource extends PathOperation<Long> implements Command<Long> {
+public class CreateResource extends KeyOperation<Long> implements Command<Long> {
 
   /**
    * Returns a new CreateResource builder.
@@ -88,7 +88,7 @@ public class CreateResource extends PathOperation<Long> implements Command<Long>
   /**
    * Create resource builder.
    */
-  public static class Builder extends PathOperation.Builder<Builder, CreateResource, Long> {
+  public static class Builder extends KeyOperation.Builder<Builder, CreateResource, Long> {
     public Builder(BuilderPool<Builder, CreateResource> pool) {
       super(pool);
     }

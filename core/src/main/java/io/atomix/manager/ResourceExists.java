@@ -26,7 +26,7 @@ import io.atomix.copycat.client.Query;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @SerializeWith(id=417)
-public class ResourceExists extends PathOperation<Boolean> implements Query<Boolean> {
+public class ResourceExists extends KeyOperation<Boolean> implements Query<Boolean> {
 
   /**
    * Returns a new ResourceExists builder.
@@ -55,7 +55,7 @@ public class ResourceExists extends PathOperation<Boolean> implements Query<Bool
   /**
    * Resource exists builder.
    */
-  public static class Builder extends PathOperation.Builder<Builder, ResourceExists, Boolean> {
+  public static class Builder extends KeyOperation.Builder<Builder, ResourceExists, Boolean> {
     public Builder(BuilderPool<Builder, ResourceExists> pool) {
       super(pool);
     }

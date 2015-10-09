@@ -68,7 +68,9 @@ public abstract class Atomix implements Managed<Atomix> {
    * Returns the Atomix thread context.
    * <p>
    * This context is representative of the thread on which asynchronous callbacks will be executed for this
-   * Atomix instance.
+   * Atomix instance. Atomix guarantees that all {@link CompletableFuture}s supplied by this instance will
+   * be executed via the returned context. Users can use the context to access the thread-local
+   * {@link Serializer}.
    *
    * @return The Atomix thread context.
    */
@@ -77,14 +79,43 @@ public abstract class Atomix implements Managed<Atomix> {
   }
 
   /**
-   * Checks whether a path exists.
+   * Checks whether a resource exists with the given key.
+   * <p>
+   * If no resource with the given {@code key} exists in the cluster, the returned {@link CompletableFuture} will
+   * be completed {@code false}. Note, however, that users should not significantly rely upon the existence or
+   * non-existence of a resource due to race conditions. While a resource may not exist when the returned future is
+   * completed, it may be created by another node shortly thereafter.
+   * <p>
+   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
+   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
+   * use the {@link CompletableFuture#get()} method:
+   * <pre>
+   *   {@code
+   *   if (!atomix.exists("lock").get()) {
+   *     DistributedLock lock = atomix.create("lock", DistributedLock::new).get();
+   *   }
+   *   }
+   * </pre>
+   * Alternatively, to execute the operation asynchronous and be notified once the result is received in a different
+   * thread, use one of the many completable future callbacks:
+   * <pre>
+   *   {@code
+   *   atomix.exists("lock").thenAccept(exists -> {
+   *     if (!exists) {
+   *       atomix.create("lock", DistributedLock::new).thenAccept(lock -> {
+   *         ...
+   *       });
+   *     }
+   *   });
+   *   }
+   * </pre>
    *
-   * @param path The path to check.
-   * @return A completable future indicating whether the given path exists.
-   * @throws NullPointerException if {@code path} is null
+   * @param key The key to check.
+   * @return A completable future indicating whether the given key exists.
+   * @throws NullPointerException if {@code key} is null
    */
-  public CompletableFuture<Boolean> exists(String path) {
-    return client.submit(new ResourceExists(path));
+  public CompletableFuture<Boolean> exists(String key) {
+    return client.submit(new ResourceExists(key));
   }
 
   /**
@@ -125,7 +156,7 @@ public abstract class Atomix implements Managed<Atomix> {
   public <T extends Resource<?>> CompletableFuture<T> get(String path, Supplier<T> factory) {
     T resource = Assert.notNull(factory, "factory").get();
     return client.submit(GetResource.builder()
-      .withPath(Assert.notNull(path, "path"))
+      .withKey(Assert.notNull(path, "path"))
       .withType(resource.stateMachine())
       .build())
       .thenApply(id -> {
@@ -135,44 +166,60 @@ public abstract class Atomix implements Managed<Atomix> {
   }
 
   /**
-   * Creates a resource at the given path.
+   * Creates a new instance for the given resource.
    * <p>
-   * If the resource at the given path already exists, a new {@link Resource} object will be returned with
-   * a reference to the existing resource state in the cluster.
+   * If a resource at the given key already exists, the resource will be validated to verify that its type
+   * matches the given type. If no resource yet exists, a new resource will be created in the cluster. Once
+   * the session for the resource has been opened, a new resource instance will be returned.
+   * <p>
+   * The returned {@link Resource} instance will have a unique logical connection to the resource state. This
+   * means that operations and events submitted or received by this instance related to this instance only,
+   * even if multiple instances of the resource are open on this node. For instance, a lock resource created
+   * via this method will behave as a unique reference to the distributed state. Locking a lock acquired via this
+   * method will lock <em>only</em> that lock instance and not other instance of the lock on this node.
+   * <p>
+   * To acquire a singleton reference to a resource that is global to this node, use the {@link #get(String, Class)}
+   * method.
    *
-   * @param path The path at which to create the resource.
+   * @param key The key at which to create the resource.
    * @param type The resource type to create.
    * @param <T> The resource type.
    * @return A completable future to be completed once the resource has been created.
-   * @throws NullPointerException if {@code path} or {@code type} are null
+   * @throws NullPointerException if {@code key} or {@code type} are null
+   * @throws ResourceException if the resource could not be instantiated
    */
   @SuppressWarnings("unchecked")
-  public <T extends Resource<?>> CompletableFuture<T> create(String path, Class<? super T> type) {
-    return create(path, () -> {
+  public <T extends Resource<?>> CompletableFuture<T> create(String key, Class<? super T> type) {
+    return create(key, () -> {
       try {
         return (T) type.newInstance();
       } catch (InstantiationException | IllegalAccessException e) {
-        throw new RuntimeException(e);
+        throw new ResourceException(e);
       }
     });
   }
 
   /**
-   * Creates a resource at the given path.
+   * Creates a resource at the given key.
    * <p>
-   * If the resource at the given path already exists, a new {@link Resource} object will be returned with
-   * a reference to the existing resource state in the cluster.
+   * If a resource at the given key already exists, the resource will be validated to verify that its type
+   * matches the given type. If no resource yet exists, a new resource will be created in the cluster. Once
+   * the session for the resource has been opened, a resource instance will be returned.
+   * <p>
+   * The returned {@link Resource} instance will be a singleton reference to an global instance for this node.
+   * That is, multiple calls to this method for the same resource will result in the same {@link Resource}
+   * instance being returned.
    *
-   * @param path The path at which to create the resource.
+   * @param key The key at which to create the resource.
    * @param factory The resource factory.
    * @param <T> The resource type.
    * @return A completable future to be completed once the resource has been created.
-   * @throws NullPointerException if {@code path} or {@code factory} are null
+   * @throws NullPointerException if {@code key} or {@code factory} are null
    */
-  public <T extends Resource<?>> CompletableFuture<T> create(String path, Supplier<T> factory) {
+  public <T extends Resource<?>> CompletableFuture<T> create(String key, Supplier<T> factory) {
     T resource = Assert.notNull(factory, "factory").get();
     return client.submit(CreateResource.builder()
-      .withPath(Assert.notNull(path, "path"))
+      .withKey(Assert.notNull(key, "key"))
       .withType(resource.stateMachine())
       .build())
       .thenApply(id -> {
@@ -181,21 +228,41 @@ public abstract class Atomix implements Managed<Atomix> {
       });
   }
 
+  /**
+   * Opens the instance.
+   *
+   * @return A completable future to be completed once the instance is open.
+   */
   @Override
   public CompletableFuture<Atomix> open() {
     return client.open().thenApply(v -> this);
   }
 
+  /**
+   * Returns a boolean value indicating whether the instance is open.
+   *
+   * @return Indicates whether the instance is open.
+   */
   @Override
   public boolean isOpen() {
     return client.isOpen();
   }
 
+  /**
+   * Closes the instance.
+   *
+   * @return A completable future to be completed once the instance is closed.
+   */
   @Override
   public CompletableFuture<Void> close() {
     return client.close();
   }
 
+  /**
+   * Returns a boolean value indicating whether the instance is closed.
+   *
+   * @return Indicates whether the instance is closed.
+   */
   @Override
   public boolean isClosed() {
     return client.isClosed();
