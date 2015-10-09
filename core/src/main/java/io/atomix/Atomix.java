@@ -102,7 +102,7 @@ public abstract class Atomix implements Managed<Atomix> {
    *   {@code
    *   atomix.exists("lock").thenAccept(exists -> {
    *     if (!exists) {
-   *       atomix.create("lock", DistributedLock::new).thenAccept(lock -> {
+   *       atomix.<DistributedLock>create("lock", DistributedLock::new).thenAccept(lock -> {
    *         ...
    *       });
    *     }
@@ -119,10 +119,33 @@ public abstract class Atomix implements Managed<Atomix> {
   }
 
   /**
-   * Gets the resource at the given path.
+   * Gets or creates the given resource and acquires a singleton reference to it.
    * <p>
-   * If a resource at the given path already exists, the existing resource will be returned, otherwise a new
-   * resource of the given {@code type} will be created.
+   * If a resource at the given key already exists, the resource will be validated to verify that its type
+   * matches the given type. If no resource yet exists, a new resource will be created in the cluster. Once
+   * the session for the resource has been opened, a resource instance will be returned.
+   * <p>
+   * The returned {@link Resource} instance will be a singleton reference to an global instance for this node.
+   * That is, multiple calls to this method for the same resource will result in the same {@link Resource}
+   * instance being returned.
+   * <p>
+   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
+   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
+   * use the {@link CompletableFuture#get()} method:
+   * <pre>
+   *   {@code
+   *   DistributedLock lock = atomix.get("lock", DistributedLock.class).get();
+   *   }
+   * </pre>
+   * Alternatively, to execute the operation asynchronous and be notified once the result is received in a different
+   * thread, use one of the many completable future callbacks:
+   * <pre>
+   *   {@code
+   *   atomix.<DistributedLock>get("lock", DistributedLock.class).thenAccept(lock -> {
+   *     ...
+   *   });
+   *   }
+   * </pre>
    *
    * @param path The path at which to get the resource.
    * @param type The expected resource type.
@@ -142,10 +165,33 @@ public abstract class Atomix implements Managed<Atomix> {
   }
 
   /**
-   * Gets the resource at the given path.
+   * Gets or creates the given resource and acquires a singleton reference to it.
    * <p>
-   * If a resource at the given path already exists, the existing resource will be returned, otherwise a new
-   * resource of the given {@code type} will be created.
+   * If a resource at the given key already exists, the resource will be validated to verify that its type
+   * matches the given type. If no resource yet exists, a new resource will be created in the cluster. Once
+   * the session for the resource has been opened, a resource instance will be returned.
+   * <p>
+   * The returned {@link Resource} instance will be a singleton reference to an global instance for this node.
+   * That is, multiple calls to this method for the same resource will result in the same {@link Resource}
+   * instance being returned.
+   * <p>
+   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
+   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
+   * use the {@link CompletableFuture#get()} method:
+   * <pre>
+   *   {@code
+   *   DistributedLock lock = atomix.get("lock", DistributedLock::new).get();
+   *   }
+   * </pre>
+   * Alternatively, to execute the operation asynchronous and be notified once the result is received in a different
+   * thread, use one of the many completable future callbacks:
+   * <pre>
+   *   {@code
+   *   atomix.<DistributedLock>get("lock", DistributedLock::new).thenAccept(lock -> {
+   *     ...
+   *   });
+   *   }
+   * </pre>
    *
    * @param path The path at which to get the resource.
    * @param factory The resource factory.
@@ -180,6 +226,24 @@ public abstract class Atomix implements Managed<Atomix> {
    * <p>
    * To acquire a singleton reference to a resource that is global to this node, use the {@link #get(String, Class)}
    * method.
+   * <p>
+   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
+   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
+   * use the {@link CompletableFuture#get()} method:
+   * <pre>
+   *   {@code
+   *   DistributedLock lock = atomix.create("lock", DistributedLock.class).get();
+   *   }
+   * </pre>
+   * Alternatively, to execute the operation asynchronous and be notified once the result is received in a different
+   * thread, use one of the many completable future callbacks:
+   * <pre>
+   *   {@code
+   *   atomix.<DistributedLock>create("lock", DistributedLock.class).thenAccept(lock -> {
+   *     ...
+   *   });
+   *   }
+   * </pre>
    *
    * @param key The key at which to create the resource.
    * @param type The resource type to create.
@@ -200,15 +264,38 @@ public abstract class Atomix implements Managed<Atomix> {
   }
 
   /**
-   * Creates a resource at the given key.
+   * Creates a new instance for the given resource.
    * <p>
    * If a resource at the given key already exists, the resource will be validated to verify that its type
    * matches the given type. If no resource yet exists, a new resource will be created in the cluster. Once
-   * the session for the resource has been opened, a resource instance will be returned.
+   * the session for the resource has been opened, a new resource instance will be returned.
    * <p>
-   * The returned {@link Resource} instance will be a singleton reference to an global instance for this node.
-   * That is, multiple calls to this method for the same resource will result in the same {@link Resource}
-   * instance being returned.
+   * The returned {@link Resource} instance will have a unique logical connection to the resource state. This
+   * means that operations and events submitted or received by this instance related to this instance only,
+   * even if multiple instances of the resource are open on this node. For instance, a lock resource created
+   * via this method will behave as a unique reference to the distributed state. Locking a lock acquired via this
+   * method will lock <em>only</em> that lock instance and not other instance of the lock on this node.
+   * <p>
+   * To acquire a singleton reference to a resource that is global to this node, use the {@link #get(String, Class)}
+   * method.
+   * <p>
+   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
+   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
+   * use the {@link CompletableFuture#get()} method:
+   * <pre>
+   *   {@code
+   *   DistributedLock lock = atomix.create("lock", DistributedLock::new).get();
+   *   }
+   * </pre>
+   * Alternatively, to execute the operation asynchronous and be notified once the result is received in a different
+   * thread, use one of the many completable future callbacks:
+   * <pre>
+   *   {@code
+   *   atomix.<DistributedLock>create("lock", DistributedLock::new).thenAccept(lock -> {
+   *     ...
+   *   });
+   *   }
+   * </pre>
    *
    * @param key The key at which to create the resource.
    * @param factory The resource factory.
