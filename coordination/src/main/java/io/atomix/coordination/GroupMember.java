@@ -20,7 +20,13 @@ import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Group member.
+ * Provides an interface to interacting with members of a {@link DistributedMembershipGroup}.
+ * <p>
+ * A {@code GroupMember} represents a reference to a single instance of a resource which has
+ * {@link DistributedMembershipGroup#join() joined} a membership group. Each member is guaranteed to
+ * have a unique {@link #id()} throughout the lifetime of the distributed resource. Group members
+ * can {@link #schedule(Duration, Runnable) schedule} or {@link #execute(Runnable) execute} callbacks
+ * remotely on member nodes.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */

@@ -33,7 +33,60 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 /**
- * Distributed member group.
+ * Provides a mechanism for managing group membership in a distributed system.
+ * <p>
+ * The distributed membership group resource facilitates managing group membership within the Atomix cluster.
+ * Each instance of a {@code DistributedMembershipGroup} resource represents a single {@link GroupMember}.
+ * Members can {@link #join()} and {@link #leave()} the group and be notified of other members {@link #onJoin(Consumer) joining}
+ * and {@link #onLeave(Consumer) leaving} the group. Members may leave the group either voluntarily or due to
+ * a failure or other disconnection from the cluster.
+ * <p>
+ * To create a membership group resource, use the {@code DistributedMembershipGroup} class or constructor:
+ * <pre>
+ *   {@code
+ *   atomix.create("group", DistributedMembershipGroup.class).thenAccept(group -> {
+ *     ...
+ *   });
+ *   }
+ * </pre>
+ * <b>Joining the group</b>
+ * <p>
+ * When a new instance of the resource is created, it is initialized with an empty {@link #members()} list and
+ * {@link #member()} as it is not yet a member of the group. Once the instance has been created, the instance must
+ * join the group via {@link #join()}:
+ * <pre>
+ *   {@code
+ *   group.join().thenAccept(member -> {
+ *     System.out.println("Joined with member ID: " + member.id());
+ *   });
+ *   }
+ * </pre>
+ * Once the group has been joined, the {@link #members()} list provides an up-to-date view of the group which will
+ * be automatically updated as members join and leave the group. To be explicitly notified when a member joins or
+ * leaves the group, use the {@link #onJoin(Consumer)} or {@link #onLeave(Consumer)} event consumers respectively:
+ * <pre>
+ *   {@code
+ *   group.onJoin(member -> {
+ *     System.out.println(member.id() + " joined the group!");
+ *   });
+ *   }
+ * </pre>
+ * <b>Remote execution</b>
+ * <p>
+ * Once members of the group, any member can {@link GroupMember#execute(Runnable) execute} immediate callbacks or
+ * {@link GroupMember#schedule(Duration, Runnable) schedule} delayed callbacks to be run on any other member of the
+ * group. Submitting a {@link Runnable} callback to a member will cause it to be serialized and sent to that node
+ * to be executed.
+ * <pre>
+ *   {@code
+ *   group.onJoin(member -> {
+ *     long memberId = member.id();
+ *     member.execute((Serializable & Runnable) () -> System.out.println("Executing on " + memberId));
+ *   });
+ *   }
+ * </pre>
+ *
+ * @see GroupMember
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
@@ -73,6 +126,10 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
 
   /**
    * Returns the local group member.
+   * <p>
+   * The local {@link GroupMember} is constructed when this instance {@link #join() joins} the group.
+   * The {@link GroupMember#id()} is guaranteed to be unique to this instance throughout the lifetime of
+   * this distributed resource.
    *
    * @return The local group member or {@code null} if the member has not joined the group.
    */
@@ -81,26 +138,49 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
   }
 
   /**
-   * Returns a member by ID.
+   * Returns a group member by ID.
    *
-   * @param memberId The member ID.
-   * @return The member.
+   * @param memberId The member ID for which to return a {@link GroupMember}.
+   * @return The member with the given {@code memberId} or {@code null} if it is not a known member of the group.
    */
   public GroupMember member(long memberId) {
     return members.get(memberId);
   }
 
   /**
-   * Returns the collection of members in the group.
+   * Returns the collection of all members in the group.
+   * <p>
+   * The returned members collection is guaranteed to be representative of the current group state.
    *
-   * @return The collection of members in the group.
+   * @return The collection of all members in the group.
    */
   public Collection<GroupMember> members() {
     return members.values();
   }
 
   /**
-   * Joins the member to the membership group.
+   * Joins the instance to the membership group.
+   * <p>
+   * When this instance joins the membership group, the membership lists of this and all other instances
+   * in the group are guaranteed to be updated <em>before</em> the {@link CompletableFuture} returned by
+   * this method is completed. Once this instance has joined the group, the returned future will be completed
+   * with the {@link GroupMember} instance for this member.
+   * <p>
+   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
+   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
+   * use the {@link CompletableFuture#join()} method to block the calling thread:
+   * <pre>
+   *   {@code
+   *   group.join().join();
+   *   }
+   * </pre>
+   * Alternatively, to execute the operation asynchronous and be notified once the lock is acquired in a different
+   * thread, use one of the many completable future callbacks:
+   * <pre>
+   *   {@code
+   *   group.join().thenAccept(thisMember -> System.out.println("This member is: " + thisMember.id()));
+   *   }
+   * </pre>
    *
    * @return A completable future to be completed once the member has joined.
    */
@@ -115,7 +195,13 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
   }
 
   /**
-   * Adds a join listener.
+   * Adds a listener for members joining the group.
+   * <p>
+   * The provided {@link Consumer} will be called each time a member joins the group. Note that
+   * the join consumer will be called before the joining member's {@link #join()} completes.
+   * <p>
+   * The returned {@link Listener} can be used to {@link Listener#close() unregister} the listener
+   * when its use if finished.
    *
    * @param listener The join listener.
    * @return The listener context.
@@ -125,7 +211,27 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
   }
 
   /**
-   * Leaves the member from the membership group.
+   * Leaves the membership group.
+   * <p>
+   * When this instance leaves the membership group, the membership lists of this and all other instances
+   * in the group are guaranteed to be updated <em>before</em> the {@link CompletableFuture} returned by
+   * this method is completed. Once this instance has left the group, the returned future will be completed.
+   * <p>
+   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
+   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
+   * use the {@link CompletableFuture#join()} method to block the calling thread:
+   * <pre>
+   *   {@code
+   *   group.leave().join();
+   *   }
+   * </pre>
+   * Alternatively, to execute the operation asynchronous and be notified once the lock is acquired in a different
+   * thread, use one of the many completable future callbacks:
+   * <pre>
+   *   {@code
+   *   group.leave().thenRun(() -> System.out.println("Left the group!")));
+   *   }
+   * </pre>
    *
    * @return A completable future to be completed once the member has left.
    */
@@ -137,7 +243,15 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
   }
 
   /**
-   * Adds a leave listener.
+   * Adds a listener for members leaving the group.
+   * <p>
+   * The provided {@link Consumer} will be called each time a member leaves the group. Members can
+   * leave the group either voluntarily or by crashing or otherwise becoming disconnected from the
+   * cluster for longer than their session timeout. Note that the leave consumer will be called before
+   * the leaving member's {@link #leave()} completes.
+   * <p>
+   * The returned {@link Listener} can be used to {@link Listener#close() unregister} the listener
+   * when its use if finished.
    *
    * @param listener The leave listener.
    * @return The listener context.
@@ -161,33 +275,17 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
       this.memberId = memberId;
     }
 
-    /**
-     * Returns the member ID.
-     *
-     * @return The member ID.
-     */
+    @Override
     public long id() {
       return memberId;
     }
 
-    /**
-     * Schedules a callback to run at the given instant.
-     *
-     * @param instant The instant at which to run the callback.
-     * @param callback The callback to run.
-     * @return A completable future to be completed once the callback has been scheduled.
-     */
+    @Override
     public CompletableFuture<Void> schedule(Instant instant, Runnable callback) {
       return schedule(Duration.ofMillis(instant.toEpochMilli() - System.currentTimeMillis()), callback);
     }
 
-    /**
-     * Schedules a callback to run after the given delay on the member.
-     *
-     * @param delay The delay after which to run the callback.
-     * @param callback The callback to run.
-     * @return A completable future to be completed once the callback has been scheduled.
-     */
+    @Override
     public CompletableFuture<Void> schedule(Duration delay, Runnable callback) {
       return submit(MembershipGroupCommands.Schedule.builder()
         .withMember(memberId)
@@ -196,12 +294,7 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
         .build());
     }
 
-    /**
-     * Executes a callback on the group member.
-     *
-     * @param callback The callback to execute.
-     * @return A completable future to be completed once the callback has completed.
-     */
+    @Override
     public CompletableFuture<Void> execute(Runnable callback) {
       return submit(MembershipGroupCommands.Execute.builder()
         .withMember(memberId)
