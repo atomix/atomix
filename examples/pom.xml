@@ -62,6 +62,7 @@
   <modules>
     <module>standalone-server</module>
     <module>leader-election</module>
+    <module>group-membership</module>
   </modules>
 
   <dependencies>

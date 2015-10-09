@@ -104,12 +104,13 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
    *
    * @return A completable future to be completed once the member has joined.
    */
-  public CompletableFuture<Void> join() {
-    return submit(MembershipGroupCommands.Join.builder().build()).thenAccept(members -> {
+  public CompletableFuture<GroupMember> join() {
+    return submit(MembershipGroupCommands.Join.builder().build()).thenApply(members -> {
       member = new InternalGroupMember(context.session().id());
       for (long memberId : members) {
         this.members.computeIfAbsent(memberId, InternalGroupMember::new);
       }
+      return member;
     });
   }
 
