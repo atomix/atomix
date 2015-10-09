@@ -14,7 +14,7 @@
     <version>0.1.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>atomix-server-example</artifactId>
+  <artifactId>atomix-standalone-server-example</artifactId>
   <name>Atomix Resources Example</name>
 
   <dependencies>
@@ -79,7 +79,7 @@
               <transformers>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                  <mainClass>io.atomix.examples.server.ServerExample</mainClass>
+                  <mainClass>io.atomix.examples.server.StandaloneServerExample</mainClass>
                 </transformer>
               </transformers>
             </configuration>

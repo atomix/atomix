@@ -60,7 +60,7 @@
   </issueManagement>
 
   <modules>
-    <module>server</module>
+    <module>standalone-server</module>
   </modules>
 
   <dependencies>

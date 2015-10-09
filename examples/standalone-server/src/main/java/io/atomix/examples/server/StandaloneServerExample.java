@@ -15,8 +15,7 @@
  */
 package io.atomix.examples.server;
 
-import io.atomix.Atomix;
-import io.atomix.AtomixReplica;
+import io.atomix.AtomixServer;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.NettyTransport;
 import io.atomix.copycat.server.storage.Storage;
@@ -31,7 +30,7 @@ import java.util.UUID;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ServerExample {
+public class StandaloneServerExample {
 
   /**
    * Starts the server.
@@ -50,16 +49,16 @@ public class ServerExample {
       members.add(new Address(parts[0], Integer.valueOf(parts[1])));
     }
 
-    Atomix atomix = AtomixReplica.builder(address, members)
+    AtomixServer server = AtomixServer.builder(address, members)
         .withTransport(new NettyTransport())
         .withStorage(Storage.builder()
           .withDirectory(System.getProperty("user.dir") + "/logs/" + UUID.randomUUID().toString())
           .build())
         .build();
 
-    atomix.open().join();
+    server.open().join();
 
-    while (atomix.isOpen()) {
+    while (server.isOpen()) {
       Thread.sleep(1000);
     }
   }
