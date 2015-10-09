@@ -35,7 +35,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class AtomixServer implements Managed<AtomixServer> {
+public final class AtomixServer implements Managed<AtomixServer> {
 
   /**
    * Returns a new Atomix server builder.
