@@ -50,7 +50,11 @@ public class LockState extends StateMachine {
       lock = commit;
       commit.session().publish("lock", true);
     } else if (commit.operation().timeout() == 0) {
-      commit.session().publish("lock", false);
+      try {
+        commit.session().publish("lock", false);
+      } finally {
+        commit.clean();
+      }
     } else {
       queue.add(commit);
       if (commit.operation().timeout() > 0) {
