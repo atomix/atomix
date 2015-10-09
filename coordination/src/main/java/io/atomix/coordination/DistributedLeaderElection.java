@@ -29,7 +29,35 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 /**
- * Asynchronous leader election resource.
+ * Provides a mechanism for coordinating cluster-wide resources with a strong leader.
+ * <p>
+ * Leader election allows a set of distributed processes to coordinate access to and control over resources by
+ * electing a single process to do work. This leader election implementation uses a consensus-based state machine
+ * to automatically rotate leaders as necessary.
+ * <p>
+ * To create a leader election, use the {@code DistributedLeaderElection} resource class when constructing a resource
+ * instance:
+ * <pre>
+ *   {@code
+ *   DistributedLeaderElection election = atomix.create("election", DistributedLeaderElection::new);
+ *   }
+ * </pre>
+ * Leaders are elected by simply registering an election callback on a leader election resource instance:
+ * <pre>
+ *   {@code
+ *   election.onElection(epoch -> {
+ *     // do stuff...
+ *   });
+ *   }
+ * </pre>
+ * The first election instance that registers an election callback will automatically be elected the leader.
+ * If the elected leader becomes disconnected from the cluster or crashes, a new leader will automatically be
+ * elected by selecting the next available listener. Thus, the oldest instance is always guaranteed to be
+ * the leader.
+ * <p>
+ * When a leader is elected, the election callback will be supplied with a monotonically increasing election
+ * number known commonly as an <em>epoch</em>. The epoch is guaranteed to be unique across the entire cluster
+ * and over the full lifetime of a resource for any given election.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -52,7 +80,32 @@ public class DistributedLeaderElection extends Resource<DistributedLeaderElectio
   }
 
   /**
-   * Registers a listener to be called when this client is elected.
+   * Registers a listener to be called when this instance is elected.
+   * <p>
+   * If no leader currently exists for this resource, this instance will be elected leader and the provided
+   * {@code listener} will be completed <em>before</em> the returned {@link CompletableFuture}. If a leader
+   * already exists for the resource, this resource's listener will be queued until all prior listeners
+   * have failed or otherwise been lost.
+   * <p>
+   * This method returns a {@link CompletableFuture} which can be used to block until the listener has been registered
+   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
+   * use the {@link CompletableFuture#join()} method to block the calling thread:
+   * <pre>
+   *   {@code
+   *   election.onElection(epoch -> {
+   *     ...
+   *   }).join();
+   *   }
+   * </pre>
+   * Alternatively, to execute the operation asynchronous and be notified once the lock is acquired in a different
+   * thread, use one of the many completable future callbacks:
+   * <pre>
+   *   {@code
+   *   election.onElection(epoch -> {
+   *     ...
+   *   }).thenRun(() -> System.out.println("Waiting for election..."));
+   *   }
+   * </pre>
    *
    * @param listener The listener to register.
    * @return A completable future to be completed with the listener context.
@@ -69,18 +122,18 @@ public class DistributedLeaderElection extends Resource<DistributedLeaderElectio
   }
 
   /**
-   * Verifies that the client is the current leader.
+   * Verifies that this instance is the current leader.
    *
-   * @param epoch The epoch for which to check if this client is the leader.
+   * @param epoch The epoch for which to check if this instance is the leader.
    * @return A completable future to be completed with a boolean value indicating whether the
-   *         client is the current leader.
+   *         instance is the current leader.
    */
   public CompletableFuture<Boolean> isLeader(long epoch) {
     return submit(LeaderElectionCommands.IsLeader.builder().withEpoch(epoch).build());
   }
 
   /**
-   * Change listener context.
+   * Election listener context.
    */
   private class ElectionListener implements Listener<Long> {
     private final Consumer<Long> listener;

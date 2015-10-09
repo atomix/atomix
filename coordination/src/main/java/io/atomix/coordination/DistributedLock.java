@@ -31,7 +31,7 @@ import java.util.function.Consumer;
  * Provides a mechanism for synchronizing access to cluster-wide shared resources.
  * <p>
  * The distributed lock resource provides a mechanism for nodes to synchronize access to cluster-wide shared resources.
- * The distributed lock interface is an asynchronous version of Java's {@link java.util.concurrent.locks.Lock}.
+ * This interface is an asynchronous version of Java's {@link java.util.concurrent.locks.Lock}.
  * <pre>
  *   {@code
  *   atomix.create("lock", DistributedLock::new).thenAccept(lock -> {
