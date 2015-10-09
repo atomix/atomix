@@ -47,5 +47,10 @@
       <artifactId>atomix-coordination</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>io.atomix</groupId>
+      <artifactId>catalyst-netty</artifactId>
+      <version>${catalyst.version}</version>
+    </dependency>
   </dependencies>
 </project>

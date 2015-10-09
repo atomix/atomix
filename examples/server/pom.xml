@@ -19,7 +19,7 @@
 
   <dependencies>
     <dependency>
-      <groupId>io.atomix.catalyst</groupId>
+      <groupId>io.atomix</groupId>
       <artifactId>catalyst-netty</artifactId>
       <version>${catalyst.version}</version>
     </dependency>
