@@ -19,17 +19,35 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 /**
- * Message consumer.
+ * Message bus topic consumer.
+ * <p>
+ * Message consumers listen for messages from {@link MessageProducer}s for a {@link #topic()}.
+ * Multiple consumers may listen to the same topic from the same or different nodes within the cluster.
+ * Producers route messages to consumers in round-robin order, so if multiple consumers are registered
+ * for the same topic, messages will be evenly split among them.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public interface MessageConsumer<T> {
 
   /**
-   * Sets a message consumer callback.
+   * Returns the topic for which the consumer consumes messages.
    *
-   * @param consumer The consumer callback.
+   * @return The topic for which the consumer consumes messages.
+   */
+  String topic();
+
+  /**
+   * Sets a message consumer callback.
+   * <p>
+   * The provided {@link Function} will be called when a message is received from a {@link MessageProducer}.
+   * Function return values are sent back to the producer as response values. The function can return a synchronous
+   * value or a {@link CompletableFuture}. Consumer return values are handled transparently. If a consumer returns
+   * a future, the message bus will wait for the future to be completed before sending a response.
+   *
+   * @param consumer The callback to call when a message is received by the consumer.
    * @return The message consumer.
+   * @throws NullPointerException if {@code consumer} is {@code null}
    */
   MessageConsumer<T> onMessage(Function<T, ?> consumer);
 

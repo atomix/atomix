@@ -31,12 +31,44 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 /**
- * Distributed message bus.
+ * Provides a light-weight asynchronous messaging layer over Atomix's {@link io.atomix.catalyst.transport.Transport}.
+ * <p>
+ * The distributed message bus resource provides a simple interface for asynchronous messaging in an Atomix cluster.
+ * Message buses handle management of location information and connections and use Atomix's underlying
+ * {@link io.atomix.catalyst.transport.Transport} to communicate across the cluster.
+ * <p>
+ * To create a message bus resource, use the {@code DistribtuedMessageBus} class or constructor:
+ * <pre>
+ *   {@code
+ *   atomix.get("bus", DistributedMessageBus.class).thenAccept(bus -> {
+ *     ...
+ *   });
+ *   }
+ * </pre>
+ * Once a message bus instance has been created, it's not immediately opened. The message bus instance must be explicitly
+ * opened by calling {@link #open(Address)}, providing an {@link Address} to which to bind the message bus server. Because
+ * each message bus instance runs on a separate server, it's recommended that nodes use a singleton instance of this
+ * resource by using {@link io.atomix.Atomix#get(String, Class)} rather than {@link io.atomix.Atomix#create(String, Class)}
+ * to get a reference to the resource.
+ * <p>
+ * Messages are produced and consumed by {@link MessageProducer producers} and {@link MessageConsumer consumers} respectively.
+ * Each producer and consumer is associated with a string message bus topic.
+ * <pre>
+ *   {@code
+ *   bus.consumer("test", message -> {
+ *     return "world!";
+ *   });
+ *
+ *   bus.producer("test").send("Hello");
+ *   }
+ * </pre>
+ * The distributed message bus does <em>not</em> provide reliability guarantees. Messaging is implemented directly on
+ * top of the {@link io.atomix.catalyst.transport.Transport} layer with no additional coordination aside from managing
+ * a distributed list of topics and their consumers.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class DistributedMessageBus extends DistributedResource<DistributedMessageBus> {
-  private final UUID id = UUID.randomUUID();
   private Client client;
   private Server server;
   private final Map<Integer, Connection> connections = new HashMap<>();
@@ -53,6 +85,8 @@ public class DistributedMessageBus extends DistributedResource<DistributedMessag
 
   /**
    * Opens the message bus.
+   * <p>
+   * When the message bus is opened, this instance will bind to the provided {@link Address}.
    *
    * @param address The address on which to listen.
    * @return A completable future to be completed once the message bus is started.
@@ -109,6 +143,15 @@ public class DistributedMessageBus extends DistributedResource<DistributedMessag
   }
 
   /**
+   * Returns a boolean value indicating whether the message bus is open.
+   *
+   * @return Indicates whether the message bus is open.
+   */
+  public boolean isOpen() {
+    return open;
+  }
+
+  /**
    * Handles server connections.
    */
   private void connectListener(Connection connection) {
@@ -154,6 +197,12 @@ public class DistributedMessageBus extends DistributedResource<DistributedMessag
 
   /**
    * Creates a message producer.
+   * <p>
+   * The {@code topic} is a cluster-wide identifier. Messages will be distributed to {@link MessageConsumer}s
+   * registered for the given {@code topic} in round-robin order.
+   * <p>
+   * The producer will be created asynchronously. Once the returned {@link CompletableFuture} is
+   * completed, the producer will be prepared to send messages.
    *
    * @param topic The topic to which to produce.
    * @param <T> The message type.
@@ -165,6 +214,10 @@ public class DistributedMessageBus extends DistributedResource<DistributedMessag
 
   /**
    * Creates a message consumer.
+   * <p>
+   * The consumer will be created asynchronously. Once the consumer has been registered and all other
+   * instances of the message bus across the cluster have been notified of the consumer, the returned
+   * {@link CompletableFuture} will be completed.
    *
    * @param topic The topic from which to consume.
    * @param <T> The message type.
@@ -176,6 +229,10 @@ public class DistributedMessageBus extends DistributedResource<DistributedMessag
 
   /**
    * Creates a message consumer.
+   * <p>
+   * The consumer will be created asynchronously. Once the consumer has been registered and all other
+   * instances of the message bus across the cluster have been notified of the consumer, the returned
+   * {@link CompletableFuture} will be completed.
    *
    * @param topic The topic from which to consume.
    * @param consumer The message consumer.
@@ -241,6 +298,7 @@ public class DistributedMessageBus extends DistributedResource<DistributedMessag
    * Closes the message bus.
    *
    * @return A completable future to be completed once the message bus is closed.
+   * @throws IllegalStateException if the message bus is not open
    */
   public synchronized CompletableFuture<Void> close() {
     if (closeFuture != null)
@@ -275,6 +333,15 @@ public class DistributedMessageBus extends DistributedResource<DistributedMessag
   }
 
   /**
+   * Returns a boolean value indicating whether the message bus is closed.
+   *
+   * @return Indicates whether the message bus is closed.
+   */
+  public boolean isClosed() {
+    return !open;
+  }
+
+  /**
    * Internal message consumer.
    */
   private class InternalMessageConsumer<T> implements MessageConsumer<T> {
@@ -284,6 +351,11 @@ public class DistributedMessageBus extends DistributedResource<DistributedMessag
     private InternalMessageConsumer(String topic, Function<T, ?> consumer) {
       this.topic = topic;
       this.consumer = consumer;
+    }
+
+    @Override
+    public String topic() {
+      return topic;
     }
 
     @Override
@@ -317,6 +389,11 @@ public class DistributedMessageBus extends DistributedResource<DistributedMessag
 
     private InternalMessageProducer(String topic) {
       this.topic = topic;
+    }
+
+    @Override
+    public String topic() {
+      return topic;
     }
 
     @Override

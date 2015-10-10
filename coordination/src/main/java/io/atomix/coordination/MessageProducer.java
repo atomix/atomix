@@ -18,14 +18,30 @@ package io.atomix.coordination;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Message producer.
+ * Message bus topic producer.
+ * <p>
+ * Message producers are responsible for producing messages to a {@link DistributedMessageBus}
+ * topic. Producers are created via {@link DistributedMessageBus#producer(String)}. Messages produced
+ * by the producer are sent in round-robin order to listening {@link MessageConsumer}s. If more than
+ * one consumer is listening on the topic, only one consumer will receive any given message.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public interface MessageProducer<T> {
 
   /**
-   * Sends a message.
+   * Returns the topic for which the producer produces messages.
+   *
+   * @return The topic for which the producer produces messages.
+   */
+  String topic();
+
+  /**
+   * Sends a message to a consumer for the topic.
+   * <p>
+   * If no consumers are listening to the {@link #topic()}, the returned {@link CompletableFuture}
+   * will be immediately completed. If multiple consumers are listening to the topic, the message will
+   * be sent to only one consumer. Consumers are rotated in round-robin order.
    *
    * @param message The message to send.
    * @param <U> The message response type.
