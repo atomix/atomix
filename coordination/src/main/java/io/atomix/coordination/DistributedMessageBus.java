@@ -15,7 +15,7 @@
  */
 package io.atomix.coordination;
 
-import io.atomix.Resource;
+import io.atomix.DistributedResource;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.Client;
 import io.atomix.catalyst.transport.Connection;
@@ -35,7 +35,7 @@ import java.util.function.Function;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class DistributedMessageBus extends Resource<DistributedMessageBus> {
+public class DistributedMessageBus extends DistributedResource<DistributedMessageBus> {
   private final UUID id = UUID.randomUUID();
   private Client client;
   private Server server;

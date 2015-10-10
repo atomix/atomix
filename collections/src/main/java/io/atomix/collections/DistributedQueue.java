@@ -15,7 +15,7 @@
  */
 package io.atomix.collections;
 
-import io.atomix.Resource;
+import io.atomix.DistributedResource;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.collections.state.QueueCommands;
 import io.atomix.collections.state.QueueState;
@@ -31,7 +31,7 @@ import java.util.concurrent.CompletableFuture;
  * @param <T> The queue value type.
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DistributedQueue<T> extends Resource<DistributedQueue<T>> {
+public class DistributedQueue<T> extends DistributedResource<DistributedQueue<T>> {
   private Command.ConsistencyLevel commandConsistency = Command.ConsistencyLevel.LINEARIZABLE;
   private Query.ConsistencyLevel queryConsistency = Query.ConsistencyLevel.LINEARIZABLE;
 

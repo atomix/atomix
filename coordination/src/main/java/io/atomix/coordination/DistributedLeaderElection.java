@@ -15,7 +15,7 @@
  */
 package io.atomix.coordination;
 
-import io.atomix.Resource;
+import io.atomix.DistributedResource;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.coordination.state.LeaderElectionCommands;
 import io.atomix.coordination.state.LeaderElectionState;
@@ -61,7 +61,7 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DistributedLeaderElection extends Resource<DistributedLeaderElection> {
+public class DistributedLeaderElection extends DistributedResource<DistributedLeaderElection> {
   private final Set<Consumer<Long>> listeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
   @Override

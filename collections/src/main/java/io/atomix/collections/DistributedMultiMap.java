@@ -15,7 +15,7 @@
  */
 package io.atomix.collections;
 
-import io.atomix.Resource;
+import io.atomix.DistributedResource;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.collections.state.MultiMapCommands;
 import io.atomix.collections.state.MultiMapState;
@@ -32,7 +32,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class DistributedMultiMap<K, V> extends Resource<DistributedMultiMap<K, V>> {
+public class DistributedMultiMap<K, V> extends DistributedResource<DistributedMultiMap<K, V>> {
   private Command.ConsistencyLevel commandConsistency = Command.ConsistencyLevel.LINEARIZABLE;
   private Query.ConsistencyLevel queryConsistency = Query.ConsistencyLevel.LINEARIZABLE;
 

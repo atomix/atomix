@@ -35,7 +35,7 @@ import java.util.function.Consumer;
  * Server-side {@link Atomix} implementation.
  * <p>
  * This is a {@link Atomix} implementation that manages state for resources and executes all
- * {@link Resource} operations locally via a {@link CopycatServer}.
+ * {@link DistributedResource} operations locally via a {@link CopycatServer}.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

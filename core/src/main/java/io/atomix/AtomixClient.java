@@ -27,7 +27,7 @@ import java.util.Collection;
 /**
  * Client-side {@link Atomix} implementation.
  * <p>
- * This is a {@link Atomix} implementation that executes all {@link Resource} operations
+ * This is a {@link Atomix} implementation that executes all {@link DistributedResource} operations
  * remotely via a {@link CopycatClient}.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>

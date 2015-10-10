@@ -34,10 +34,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 /**
- * Base type for creating and managing distributed {@link Resource resources} in a Atomix cluster.
+ * Base type for creating and managing distributed {@link DistributedResource resources} in a Atomix cluster.
  * <p>
  * Resources are user provided stateful objects backed by a distributed state machine. This class facilitates the
- * creation and management of {@link Resource} objects via a filesystem like interface. There is a
+ * creation and management of {@link DistributedResource} objects via a filesystem like interface. There is a
  * one-to-one relationship between paths and resources, so each path can be associated with one and only one resource.
  * <p>
  * To create a resource, pass the resource {@link java.lang.Class} to the {@link Atomix#create(String, Class)} method.
@@ -45,7 +45,7 @@ import java.util.function.Supplier;
  * and future operations submitted for that resource will be applied to the state machine. Internally, resource state
  * machines are multiplexed across a shared Raft log.
  * <p>
- * {@link Resource} implementations serve as a user-friendly interface through which to submit
+ * {@link DistributedResource} implementations serve as a user-friendly interface through which to submit
  * {@link io.atomix.copycat.client.Command commands} and {@link io.atomix.copycat.client.Query queries} to the underlying
  * {@link CopycatClient} client.
  *
@@ -125,8 +125,8 @@ public abstract class Atomix implements Managed<Atomix> {
    * matches the given type. If no resource yet exists, a new resource will be created in the cluster. Once
    * the session for the resource has been opened, a resource instance will be returned.
    * <p>
-   * The returned {@link Resource} instance will be a singleton reference to an global instance for this node.
-   * That is, multiple calls to this method for the same resource will result in the same {@link Resource}
+   * The returned {@link DistributedResource} instance will be a singleton reference to an global instance for this node.
+   * That is, multiple calls to this method for the same resource will result in the same {@link DistributedResource}
    * instance being returned.
    * <p>
    * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
@@ -154,7 +154,7 @@ public abstract class Atomix implements Managed<Atomix> {
    * @throws NullPointerException if {@code path} or {@code type} are null
    */
   @SuppressWarnings("unchecked")
-  public <T extends Resource<?>> CompletableFuture<T> get(String path, Class<? super T> type) {
+  public <T extends DistributedResource<?>> CompletableFuture<T> get(String path, Class<? super T> type) {
     return get(path, () -> {
       try {
         return (T) type.newInstance();
@@ -171,8 +171,8 @@ public abstract class Atomix implements Managed<Atomix> {
    * matches the given type. If no resource yet exists, a new resource will be created in the cluster. Once
    * the session for the resource has been opened, a resource instance will be returned.
    * <p>
-   * The returned {@link Resource} instance will be a singleton reference to an global instance for this node.
-   * That is, multiple calls to this method for the same resource will result in the same {@link Resource}
+   * The returned {@link DistributedResource} instance will be a singleton reference to an global instance for this node.
+   * That is, multiple calls to this method for the same resource will result in the same {@link DistributedResource}
    * instance being returned.
    * <p>
    * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
@@ -199,7 +199,7 @@ public abstract class Atomix implements Managed<Atomix> {
    * @return A completable future to be completed once the resource has been loaded.
    * @throws NullPointerException if {@code path} or {@code factory} are null
    */
-  public <T extends Resource<?>> CompletableFuture<T> get(String path, Supplier<T> factory) {
+  public <T extends DistributedResource<?>> CompletableFuture<T> get(String path, Supplier<T> factory) {
     T resource = Assert.notNull(factory, "factory").get();
     return client.submit(GetResource.builder()
       .withKey(Assert.notNull(path, "path"))
@@ -218,7 +218,7 @@ public abstract class Atomix implements Managed<Atomix> {
    * matches the given type. If no resource yet exists, a new resource will be created in the cluster. Once
    * the session for the resource has been opened, a new resource instance will be returned.
    * <p>
-   * The returned {@link Resource} instance will have a unique logical connection to the resource state. This
+   * The returned {@link DistributedResource} instance will have a unique logical connection to the resource state. This
    * means that operations and events submitted or received by this instance related to this instance only,
    * even if multiple instances of the resource are open on this node. For instance, a lock resource created
    * via this method will behave as a unique reference to the distributed state. Locking a lock acquired via this
@@ -253,7 +253,7 @@ public abstract class Atomix implements Managed<Atomix> {
    * @throws ResourceException if the resource could not be instantiated
    */
   @SuppressWarnings("unchecked")
-  public <T extends Resource<?>> CompletableFuture<T> create(String key, Class<? super T> type) {
+  public <T extends DistributedResource<?>> CompletableFuture<T> create(String key, Class<? super T> type) {
     return create(key, () -> {
       try {
         return (T) type.newInstance();
@@ -270,7 +270,7 @@ public abstract class Atomix implements Managed<Atomix> {
    * matches the given type. If no resource yet exists, a new resource will be created in the cluster. Once
    * the session for the resource has been opened, a new resource instance will be returned.
    * <p>
-   * The returned {@link Resource} instance will have a unique logical connection to the resource state. This
+   * The returned {@link DistributedResource} instance will have a unique logical connection to the resource state. This
    * means that operations and events submitted or received by this instance related to this instance only,
    * even if multiple instances of the resource are open on this node. For instance, a lock resource created
    * via this method will behave as a unique reference to the distributed state. Locking a lock acquired via this
@@ -303,7 +303,7 @@ public abstract class Atomix implements Managed<Atomix> {
    * @return A completable future to be completed once the resource has been created.
    * @throws NullPointerException if {@code key} or {@code factory} are null
    */
-  public <T extends Resource<?>> CompletableFuture<T> create(String key, Supplier<T> factory) {
+  public <T extends DistributedResource<?>> CompletableFuture<T> create(String key, Supplier<T> factory) {
     T resource = Assert.notNull(factory, "factory").get();
     return client.submit(CreateResource.builder()
       .withKey(Assert.notNull(key, "key"))

@@ -15,7 +15,7 @@
  */
 package io.atomix.coordination;
 
-import io.atomix.Resource;
+import io.atomix.DistributedResource;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.catalyst.util.Listeners;
 import io.atomix.coordination.state.MembershipGroupCommands;
@@ -90,7 +90,7 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class DistributedMembershipGroup extends Resource<DistributedMembershipGroup> {
+public class DistributedMembershipGroup extends DistributedResource<DistributedMembershipGroup> {
   private final Listeners<GroupMember> joinListeners = new Listeners<>();
   private final Listeners<GroupMember> leaveListeners = new Listeners<>();
   private GroupMember member;

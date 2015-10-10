@@ -15,7 +15,7 @@
  */
 package io.atomix.collections;
 
-import io.atomix.Resource;
+import io.atomix.DistributedResource;
 import io.atomix.collections.state.MapCommands;
 import io.atomix.collections.state.MapState;
 import io.atomix.copycat.server.StateMachine;
@@ -30,7 +30,7 @@ import java.util.concurrent.CompletableFuture;
  * @param <V> The map entry type.
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DistributedMap<K, V> extends Resource<DistributedMap<K, V>> {
+public class DistributedMap<K, V> extends DistributedResource<DistributedMap<K, V>> {
 
   @Override
   protected Class<? extends StateMachine> stateMachine() {

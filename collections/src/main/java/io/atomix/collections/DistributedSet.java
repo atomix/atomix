@@ -15,7 +15,7 @@
  */
 package io.atomix.collections;
 
-import io.atomix.Resource;
+import io.atomix.DistributedResource;
 import io.atomix.collections.state.SetCommands;
 import io.atomix.collections.state.SetState;
 import io.atomix.copycat.server.StateMachine;
@@ -29,7 +29,7 @@ import java.util.concurrent.CompletableFuture;
  * @param <T> The set value type.
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DistributedSet<T> extends Resource<DistributedSet<T>> {
+public class DistributedSet<T> extends DistributedResource<DistributedSet<T>> {
 
   @Override
   protected Class<? extends StateMachine> stateMachine() {

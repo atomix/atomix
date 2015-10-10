@@ -201,7 +201,7 @@ public class AtomixClientServerTest extends AbstractServerTest {
   /**
    * Test resource.
    */
-  public static class TestResource extends Resource<TestResource> {
+  public static class TestResource extends DistributedResource<TestResource> {
     @Override
     protected Class<? extends StateMachine> stateMachine() {
       return TestStateMachine.class;
@@ -268,7 +268,7 @@ public class AtomixClientServerTest extends AbstractServerTest {
   /**
    * Value resource.
    */
-  public static class ValueResource extends Resource<ValueResource> {
+  public static class ValueResource extends DistributedResource<ValueResource> {
     @Override
     protected Class<? extends StateMachine> stateMachine() {
       return ValueStateMachine.class;

@@ -28,7 +28,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class Resource<T extends Resource<T>> {
+public abstract class DistributedResource<T extends DistributedResource<T>> {
   protected ResourceContext context;
   private Consistency consistency = Consistency.ATOMIC;
 
@@ -110,7 +110,7 @@ public abstract class Resource<T extends Resource<T>> {
 
   @Override
   public boolean equals(Object object) {
-    return getClass().isAssignableFrom(object.getClass()) && ((Resource<?>) object).id() == id();
+    return getClass().isAssignableFrom(object.getClass()) && ((DistributedResource<?>) object).id() == id();
   }
 
 }

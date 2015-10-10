@@ -15,7 +15,7 @@
  */
 package io.atomix.coordination;
 
-import io.atomix.Resource;
+import io.atomix.DistributedResource;
 import io.atomix.coordination.state.LockCommands;
 import io.atomix.coordination.state.LockState;
 import io.atomix.copycat.server.StateMachine;
@@ -53,7 +53,7 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DistributedLock extends Resource<DistributedLock> {
+public class DistributedLock extends DistributedResource<DistributedLock> {
   private final Queue<Consumer<Boolean>> queue = new ConcurrentLinkedQueue<>();
 
   @Override

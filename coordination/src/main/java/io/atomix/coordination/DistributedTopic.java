@@ -15,7 +15,7 @@
  */
 package io.atomix.coordination;
 
-import io.atomix.Resource;
+import io.atomix.DistributedResource;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.coordination.state.TopicCommands;
 import io.atomix.coordination.state.TopicState;
@@ -32,7 +32,7 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DistributedTopic<T> extends Resource<DistributedTopic<T>> {
+public class DistributedTopic<T> extends DistributedResource<DistributedTopic<T>> {
   private final Set<Consumer<T>> listeners = new HashSet<>();
 
   @Override

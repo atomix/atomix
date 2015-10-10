@@ -15,7 +15,7 @@
  */
 package io.atomix.atomic;
 
-import io.atomix.Resource;
+import io.atomix.DistributedResource;
 import io.atomix.atomic.state.AtomicValueCommands;
 import io.atomix.atomic.state.AtomicValueState;
 import io.atomix.catalyst.util.Listener;
@@ -33,7 +33,7 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DistributedAtomicValue<T> extends Resource<DistributedAtomicValue<T>> {
+public class DistributedAtomicValue<T> extends DistributedResource<DistributedAtomicValue<T>> {
   private final java.util.Set<Consumer<T>> changeListeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
   @Override
