@@ -29,6 +29,9 @@ import java.util.Collection;
  * <p>
  * This is a {@link Atomix} implementation that executes all {@link DistributedResource} operations
  * remotely via a {@link CopycatClient}.
+ * <p>
+ * <b>Client lifecycle</b>
+ * <p>
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
