@@ -3,7 +3,7 @@
 
 **Persistent • Consistent • Fault-tolerant • Database • Coordination • Framework**
 
-#### [Getting started][Getting started] • [User Manual][User manual] • [Raft Implementation][Copycat] • [Google Group][Google group] • [Javadoc][Javadoc]
+#### [Getting started][Getting started] • [User Manual][User manual] • [Raft Algorithm][Copycat] • [Google Group][Google group] • [Javadoc][Javadoc]
 
 [![Build Status](https://travis-ci.org/atomix/atomix.png)](https://travis-ci.org/atomix/atomix)
 
