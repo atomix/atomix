@@ -25,13 +25,49 @@ import java.util.Arrays;
 import java.util.Collection;
 
 /**
- * Client-side {@link Atomix} implementation.
+ * Provides an interface for creating and operating on {@link DistributedResource}s remotely.
  * <p>
- * This is a {@link Atomix} implementation that executes all {@link DistributedResource} operations
- * remotely via a {@link CopycatClient}.
+ * This {@link Atomix} implementation facilitates working with {@link DistributedResource}s remotely as
+ * a client of the Atomix cluster. To create a client, construct a client builder via {@link #builder(Address...)}.
+ * The builder requires a list of {@link Address}es to which to connect.
+ * <pre>
+ *   {@code
+ *   List<Address> servers = Arrays.asList(
+ *     new Address("123.456.789.0", 5000),
+ *     new Address("123.456.789.1", 5000)
+ *   );
+ *   Atomix atomix = AtomixClient.builder(servers)
+ *     .withTransport(new NettyTransport())
+ *     .build();
+ *   }
+ * </pre>
+ * The {@link Address} list does not have to include all servers in the cluster, but must include at least one live
+ * server in order for the client to connect. Once the client connects to the cluster and opens a session, the client
+ * will receive an updated list of servers to which to connect.
+ * <p>
+ * Clients communicate with the cluster via a {@link Transport}. By default, the {@code NettyTransport} is used if
+ * no transport is explicitly configured. Thus, if no transport is configured then the Netty transport is expected
+ * to be available on the classpath.
  * <p>
  * <b>Client lifecycle</b>
  * <p>
+ * When a client is {@link #open() started}, the client will attempt to contact random servers in the provided
+ * {@link Address} list to open a new session. Opening a client session requires only that the client be able to
+ * communicate with at least one server which can communicate with the leader. Once a session has been opened,
+ * the client will periodically send keep-alive requests to the cluster to maintain its session. In the event
+ * that the client crashes or otherwise becomes disconnected from the cluster, the client's session will expire
+ * after a configured session timeout and the client will have to open a new session to reconnect.
+ * <p>
+ * Clients may connect to and communicate with any server in the cluster. Typically, once a client connects to a
+ * server, the client will attempt to remain connected to that server until some exceptional case occurs. Exceptional
+ * cases may include a failure of the server, a network partition, or the server falling too far out of sync with
+ * the rest of the cluster. When a failure in the cluster occurs and the client becomes disconnected from the cluster,
+ * it will transparently reconnect to random servers until it finds a reachable server.
+ * <p>
+ * During certain cluster events such as leadership changes, the client may not be able to communicate with the
+ * cluster for some arbitrary (but typically short) period of time. During that time, Atomix guarantees that the
+ * client's session will not expire even if its timeout elapses. Once a new leader is elected, the client's session
+ * timeout is reset.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
