@@ -7,11 +7,12 @@ PROJECT=atomix
 echo "Enter the API version to generate docs for: "
 read apiVersion
 
+mvn javadoc:javadoc -Djv=$apiVersion
 rm -rf target/docs
 git clone git@github.com:atomix/atomix.github.io.git target/docs > /dev/null
-mvn javadoc:javadoc -Djv=$apiVersion
 git rm -rf target/docs/$PROJECT/api/$apiVersion
-mv target/site/apidocs/api/$apiVersion target/docs/$PROJECT/api
+mkdir -p target/docs/$PROJECT/api/$apiVersion
+mv -v target/site/apidocs/* target/docs/$PROJECT/api/$apiVersion
 cd target/docs
 git add -A -f $PROJECT/api/$apiVersion
 git commit -m "Updated JavaDocs for $apiVersion"
