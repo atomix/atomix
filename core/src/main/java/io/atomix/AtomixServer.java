@@ -57,6 +57,9 @@ import java.util.concurrent.CompletableFuture;
  * Similarly, if no storage module is configured, replicated commit logs will be written to
  * {@code System.getProperty("user.dir")} with a default log name.
  * <p>
+ * Atomix clusters are not restricted solely to {@link AtomixServer}s or {@link AtomixReplica}s. Clusters may be
+ * composed from a mixture of each type of server.
+ * <p>
  * <b>Server lifecycle</b>
  * <p>
  * When the server is {@link #open() started}, the server will attempt to contact members in the configured

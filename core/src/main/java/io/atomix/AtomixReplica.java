@@ -32,10 +32,47 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 /**
- * Server-side {@link Atomix} implementation.
+ * Provides an interface for creating and operating on {@link DistributedResource}s as a stateful node.
  * <p>
- * This is a {@link Atomix} implementation that manages state for resources and executes all
- * {@link DistributedResource} operations locally via a {@link CopycatServer}.
+ * Replicas serve as a hybrid {@link AtomixClient} and {@link AtomixServer} to allow a server to be embedded
+ * in an application. From the perspective of state, replicas behave like {@link AtomixServer}s in that they
+ * maintain a replicated state machine for {@link DistributedResource}s and fully participate in the underlying
+ * consensus algorithm. From the perspective of resources, replicas behave like {@link AtomixClient}s in that
+ * they may themselves create and modify distributed resources.
+ * <p>
+ * To create a replica, use the {@link #builder(Address, Address...)} builder factory. Each replica must
+ * be initially configured with a server {@link Address} and a list of addresses for other members of the
+ * core cluster. Note that the list of member addresses does not have to include the local server nor does
+ * it have to include all the servers in the cluster. As long as the replica can reach one live member of
+ * the cluster, it can join.
+ * <pre>
+ *   {@code
+ *   List<Address> members = Arrays.asList(new Address("123.456.789.0", 5000), new Address("123.456.789.1", 5000));
+ *   Atomix atomix = AtomixReplica.builder(address, members)
+ *     .withTransport(new NettyTransport())
+ *     .withStorage(new Storage(StorageLevel.MEMORY))
+ *     .build();
+ *   }
+ * </pre>
+ * Replicas must be configured with a {@link Transport} and {@link Storage}. By default, if no transport is
+ * configured, the {@code NettyTransport} will be used and will thus be expected to be available on the classpath.
+ * Similarly, if no storage module is configured, replicated commit logs will be written to
+ * {@code System.getProperty("user.dir")} with a default log name.
+ * <p>
+ * Atomix clusters are not restricted solely to {@link AtomixServer}s or {@link AtomixReplica}s. Clusters may be
+ * composed from a mixture of each type of server.
+ * <p>
+ * <b>Replica lifecycle</b>
+ * <p>
+ * When the replica is {@link #open() started}, the replica will attempt to contact members in the configured
+ * startup {@link Address} list. If any of the members are already in an active state, the replica will request
+ * to join the cluster. During the process of joining the cluster, the replica will notify the current cluster
+ * leader of its existence. If the leader already knows about the joining replica, the replica will immediately
+ * join and become a full voting member. If the joining replica is not yet known to the rest of the cluster,
+ * it will join the cluster in a <em>passive</em> state in which it receives replicated state from other
+ * servers in the cluster but does not participate in elections or other quorum-based aspects of the
+ * underlying consensus algorithm. Once the joining replica is caught up with the rest of the cluster, the
+ * leader will promote it to a full voting member.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
