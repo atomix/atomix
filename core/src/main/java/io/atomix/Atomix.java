@@ -38,7 +38,7 @@ import java.util.function.Supplier;
  * <p>
  * Resources are user provided stateful objects backed by a distributed state machine. This class facilitates the
  * creation and management of {@link DistributedResource} objects via a filesystem like interface. There is a
- * one-to-one relationship between paths and resources, so each path can be associated with one and only one resource.
+ * one-to-one relationship between keys and resources, so each key can be associated with one and only one resource.
  * <p>
  * To create a resource, pass the resource {@link java.lang.Class} to the {@link Atomix#create(String, Class)} method.
  * When a resource is created, the {@link io.atomix.copycat.server.StateMachine} associated with the resource will be created on each Raft server
@@ -147,15 +147,15 @@ public abstract class Atomix implements Managed<Atomix> {
    *   }
    * </pre>
    *
-   * @param path The path at which to get the resource.
+   * @param key The key at which to get the resource.
    * @param type The expected resource type.
    * @param <T> The resource type.
    * @return A completable future to be completed once the resource has been loaded.
-   * @throws NullPointerException if {@code path} or {@code type} are null
+   * @throws NullPointerException if {@code key} or {@code type} are null
    */
   @SuppressWarnings("unchecked")
-  public <T extends DistributedResource<?>> CompletableFuture<T> get(String path, Class<? super T> type) {
-    return get(path, () -> {
+  public <T extends DistributedResource<?>> CompletableFuture<T> get(String key, Class<? super T> type) {
+    return get(key, () -> {
       try {
         return (T) type.newInstance();
       } catch (InstantiationException | IllegalAccessException e) {
@@ -193,20 +193,20 @@ public abstract class Atomix implements Managed<Atomix> {
    *   }
    * </pre>
    *
-   * @param path The path at which to get the resource.
+   * @param key The key at which to get the resource.
    * @param factory The resource factory.
    * @param <T> The resource type.
    * @return A completable future to be completed once the resource has been loaded.
-   * @throws NullPointerException if {@code path} or {@code factory} are null
+   * @throws NullPointerException if {@code key} or {@code factory} are null
    */
-  public <T extends DistributedResource<?>> CompletableFuture<T> get(String path, Supplier<T> factory) {
+  public <T extends DistributedResource<?>> CompletableFuture<T> get(String key, Supplier<T> factory) {
     T resource = Assert.notNull(factory, "factory").get();
     return client.submit(GetResource.builder()
-      .withKey(Assert.notNull(path, "path"))
+      .withKey(Assert.notNull(key, "key"))
       .withType(resource.stateMachine())
       .build())
       .thenApply(id -> {
-        resource.open(resources.computeIfAbsent(id, i -> new ResourceContext(id, client, transport)));
+        resource.open(resources.computeIfAbsent(id, i -> new ResourceContext(id, key, client, transport)));
         return resource;
       });
   }
@@ -310,7 +310,7 @@ public abstract class Atomix implements Managed<Atomix> {
       .withType(resource.stateMachine())
       .build())
       .thenApply(id -> {
-        resource.open(resources.computeIfAbsent(id, i -> new ResourceContext(id, client, transport)));
+        resource.open(resources.computeIfAbsent(id, i -> new ResourceContext(id, key, client, transport)));
         return resource;
       });
   }

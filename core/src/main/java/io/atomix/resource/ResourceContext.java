@@ -34,6 +34,7 @@ import java.util.concurrent.CompletableFuture;
  */
 public class ResourceContext {
   private final long resource;
+  private final String key;
   private final CopycatClient client;
   private final Transport transport;
   private final ResourceSession session;
@@ -41,8 +42,9 @@ public class ResourceContext {
   /**
    * @throws NullPointerException if {@code client} is null
    */
-  public ResourceContext(long resource, CopycatClient client, Transport transport) {
+  public ResourceContext(long resource, String key, CopycatClient client, Transport transport) {
     this.resource = resource;
+    this.key = Assert.notNull(key, "key");
     this.client = Assert.notNull(client, "client");
     this.transport = Assert.notNull(transport, "transport");
     this.session = new ResourceSession(resource, client.session(), client.context());
@@ -55,6 +57,15 @@ public class ResourceContext {
    */
   public long id() {
     return resource;
+  }
+
+  /**
+   * Returns the resource key.
+   *
+   * @return The resource key.
+   */
+  public String key() {
+    return key;
   }
 
   /**
