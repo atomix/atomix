@@ -1,11 +1,11 @@
 [Atomix][Website]
 =======
 
+[![Build Status](https://travis-ci.org/atomix/atomix.png)](https://travis-ci.org/atomix/atomix)
+
 **Persistent • Consistent • Fault-tolerant • Database • Coordination • Framework**
 
 #### [Getting started][Getting started] • [User Manual][User manual] • [Raft Algorithm][Copycat] • [Google Group][Google group] • [Javadoc][Javadoc]
-
-[![Build Status](https://travis-ci.org/atomix/atomix.png)](https://travis-ci.org/atomix/atomix)
 
 Atomix is a high-level asynchronous framework for building fault-tolerant distributed systems. It combines the consistency of
 [ZooKeeper](https://zookeeper.apache.org/) with the usability of [Hazelcast](http://hazelcast.org/) to provide tools for managing
