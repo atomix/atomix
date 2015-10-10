@@ -60,6 +60,10 @@ public class DistributedMembershipGroupTest extends ConcurrentTestCase {
     AtomicBoolean joined = new AtomicBoolean();
     group2.join().join();
     group2.onJoin(member -> {
+      try {
+        Thread.sleep(1000);
+      } catch (InterruptedException e) {
+      }
       joined.set(true);
       resume();
     });
