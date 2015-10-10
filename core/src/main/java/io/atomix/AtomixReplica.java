@@ -173,7 +173,27 @@ public final class AtomixReplica extends Atomix {
   }
 
   /**
-   * Atomix builder.
+   * Builds an {@link AtomixReplica}.
+   * <p>
+   * The replica builder configures an {@link AtomixReplica} to listen for connections from clients and other
+   * servers/replica, connect to other servers in a cluster, and manage a replicated log. To create a replica builder,
+   * use the {@link #builder(Address, Address...)} method:
+   * <pre>
+   *   {@code
+   *   Atomix replica = AtomixReplica.builder(address, members)
+   *     .withTransport(new NettyTransport())
+   *     .withStorage(Storage.builder()
+   *       .withDirectory("logs")
+   *       .withStorageLevel(StorageLevel.MAPPED)
+   *       .build())
+   *     .build();
+   *   }
+   * </pre>
+   * The two most essential components of the builder are the {@link Transport} and {@link Storage}. The
+   * transport provides the mechanism for the replica to communicate with clients and other replicas in the
+   * cluster. All servers, clients, and replicas must implement the same {@link Transport} type. The {@link Storage}
+   * module configures how the replica manages the replicated log. Logs can be written to disk or held in
+   * memory or memory-mapped files.
    */
   public static class Builder extends Atomix.Builder {
     private CopycatServer.Builder serverBuilder;
@@ -186,11 +206,15 @@ public final class AtomixReplica extends Atomix {
     }
 
     /**
-     * Sets the server transport.
+     * Sets the replica transport, returning the replica builder for method chaining.
+     * <p>
+     * The configured transport should be the same transport as all other nodes in the cluster.
+     * If no transport is explicitly provided, the instance will default to the {@code NettyTransport}
+     * if available on the classpath.
      *
-     * @param transport The client server.
-     * @return The client builder.
-     * @throws NullPointerException if {@code command} is null
+     * @param transport The replica transport.
+     * @return The replica builder.
+     * @throws NullPointerException if {@code transport} is null
      */
     public Builder withTransport(Transport transport) {
       this.transport = Assert.notNull(transport, "transport");
@@ -198,11 +222,13 @@ public final class AtomixReplica extends Atomix {
     }
 
     /**
-     * Sets the Raft serializer.
+     * Sets the serializer, returning the replica builder for method chaining.
+     * <p>
+     * The serializer will be used to serialize and deserialize operations that are sent over the wire.
      *
-     * @param serializer The Raft serializer.
-     * @return The Raft builder.
-     * @throws NullPointerException if {@code command} is null
+     * @param serializer The serializer.
+     * @return The replica builder.
+     * @throws NullPointerException if {@code serializer} is null
      */
     public Builder withSerializer(Serializer serializer) {
       clientBuilder.withSerializer(serializer);
@@ -211,11 +237,33 @@ public final class AtomixReplica extends Atomix {
     }
 
     /**
-     * Sets the server storage module.
+     * Sets the replica storage module, returning the replica builder for method chaining.
+     * <p>
+     * The storage module is the interface the replica will use to store the persistent replicated log.
+     * For simple configurations, users can simply construct a {@link Storage} object:
+     * <pre>
+     *   {@code
+     *   Atomix replica = AtomixReplica.builder(address, members)
+     *     .withStorage(new Storage("logs"))
+     *     .build();
+     *   }
+     * </pre>
+     * For more complex storage configurations, use the {@link io.atomix.copycat.replica.storage.Storage.Builder}:
+     * <pre>
+     *   {@code
+     *   Atomix replica = AtomixReplica.builder(address, members)
+     *     .withStorage(Storage.builder()
+     *       .withDirectory("logs")
+     *       .withStorageLevel(StorageLevel.MAPPED)
+     *       .withCompactionThreads(2)
+     *       .build())
+     *     .build();
+     *   }
+     * </pre>
      *
-     * @param storage The server storage module.
-     * @return The Atomix server builder.
-     * @throws NullPointerException if {@code command} is null
+     * @param storage The replica storage module.
+     * @return The replica builder.
+     * @throws NullPointerException if {@code storage} is null
      */
     public Builder withStorage(Storage storage) {
       serverBuilder.withStorage(storage);
@@ -223,12 +271,15 @@ public final class AtomixReplica extends Atomix {
     }
 
     /**
-     * Sets the Raft election timeout, returning the Raft configuration for method chaining.
+     * Sets the replica election timeout, returning the replica builder for method chaining.
+     * <p>
+     * The election timeout is the duration since last contact with the cluster leader after which
+     * the replica should start a new election. The election timeout should always be significantly
+     * larger than {@link #withHeartbeatInterval(Duration)} in order to prevent unnecessary elections.
      *
-     * @param electionTimeout The Raft election timeout in milliseconds.
-     * @return The Raft configuration.
-     * @throws IllegalArgumentException If the election timeout is not positive
-     * @throws NullPointerException if {@code command} is null
+     * @param electionTimeout The replica election timeout in milliseconds.
+     * @return The replica builder.
+     * @throws NullPointerException if {@code electionTimeout} is null
      */
     public Builder withElectionTimeout(Duration electionTimeout) {
       serverBuilder.withElectionTimeout(electionTimeout);
@@ -236,12 +287,15 @@ public final class AtomixReplica extends Atomix {
     }
 
     /**
-     * Sets the Raft heartbeat interval, returning the Raft configuration for method chaining.
+     * Sets the replica heartbeat interval, returning the replica builder for method chaining.
+     * <p>
+     * The heartbeat interval is the interval at which the replica, if elected leader, should contact
+     * other replicas within the cluster to maintain its leadership. The heartbeat interval should
+     * always be some fraction of {@link #withElectionTimeout(Duration)}.
      *
-     * @param heartbeatInterval The Raft heartbeat interval in milliseconds.
-     * @return The Raft configuration.
-     * @throws IllegalArgumentException If the heartbeat interval is not positive
-     * @throws NullPointerException if {@code command} is null
+     * @param heartbeatInterval The replica heartbeat interval in milliseconds.
+     * @return The replica builder.
+     * @throws NullPointerException if {@code heartbeatInterval} is null
      */
     public Builder withHeartbeatInterval(Duration heartbeatInterval) {
       serverBuilder.withHeartbeatInterval(heartbeatInterval);
@@ -249,18 +303,35 @@ public final class AtomixReplica extends Atomix {
     }
 
     /**
-     * Sets the Raft session timeout, returning the Raft configuration for method chaining.
+     * Sets the replica session timeout, returning the replica builder for method chaining.
+     * <p>
+     * The session timeout is assigned by the replica to a client which opens a new session. The session timeout
+     * dictates the interval at which the client must send keep-alive requests to the cluster to maintain its
+     * session. If a client fails to communicate with the cluster for larger than the configured session
+     * timeout, its session may be expired.
      *
-     * @param sessionTimeout The Raft session timeout in milliseconds.
-     * @return The Raft configuration.
-     * @throws IllegalArgumentException If the session timeout is not positive
-     * @throws NullPointerException if {@code command} is null
+     * @param sessionTimeout The replica session timeout in milliseconds.
+     * @return The replica builder.
+     * @throws NullPointerException if {@code sessionTimeout} is null
      */
     public Builder withSessionTimeout(Duration sessionTimeout) {
       serverBuilder.withSessionTimeout(sessionTimeout);
       return this;
     }
 
+    /**
+     * Builds the replica.
+     * <p>
+     * If no {@link Transport} was configured for the replica, the builder will attempt to create a
+     * {@code NettyTransport} instance. If {@code io.atomix.catalyst.transport.NettyTransport} is not available
+     * on the classpath, a {@link ConfigurationException} will be thrown.
+     * <p>
+     * Once the replica is built, it is not yet connected to the cluster. To connect the replica to the cluster,
+     * call the asynchronous {@link #open()} method.
+     *
+     * @return The built replica.
+     * @throws ConfigurationException if the replica is misconfigured
+     */
     @Override
     public AtomixReplica build() {
       // If no transport was configured by the user, attempt to load the Netty transport.

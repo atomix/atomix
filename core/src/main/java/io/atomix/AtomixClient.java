@@ -107,7 +107,17 @@ public final class AtomixClient extends Atomix {
   }
 
   /**
-   * Client builder.
+   * Builds an {@link AtomixClient}.
+   * <p>
+   * The client builder configures an {@link AtomixClient} to connect to a cluster of {@link AtomixServer}s
+   * or {@link AtomixReplica}. To create a client builder, use the {@link #builder(Address...)} method.
+   * <pre>
+   *   {@code
+   *   Atomix client = AtomixClient.builder(servers)
+   *     .withTransport(new NettyTransport())
+   *     .build();
+   *   }
+   * </pre>
    */
   public static class Builder extends Atomix.Builder {
     private Transport transport;

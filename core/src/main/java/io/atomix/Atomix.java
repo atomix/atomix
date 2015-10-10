@@ -361,7 +361,7 @@ public abstract class Atomix implements Managed<Atomix> {
   }
 
   /**
-   * Atomix builder.
+   * Builds an {@link Atomix} object.
    */
   public static abstract class Builder extends io.atomix.catalyst.util.Builder<Atomix> {
     protected CopycatClient.Builder clientBuilder;
@@ -372,9 +372,14 @@ public abstract class Atomix implements Managed<Atomix> {
 
     /**
      * Sets the Atomix transport.
+     * <p>
+     * The configured transport should be the same transport as all other nodes in the cluster.
+     * If no transport is explicitly provided, the instance will default to the {@code NettyTransport}
+     * if available on the classpath.
      *
      * @param transport The Atomix transport.
      * @return The Atomix builder.
+     * @throws NullPointerException if {@code transport} is {@code null}
      */
     public Builder withTransport(Transport transport) {
       clientBuilder.withTransport(transport);
@@ -383,6 +388,8 @@ public abstract class Atomix implements Managed<Atomix> {
 
     /**
      * Sets the Atomix serializer.
+     * <p>
+     * The serializer will be used to serialize and deserialize operations that are sent over the wire.
      *
      * @param serializer The Atomix serializer.
      * @return The Atomix builder.

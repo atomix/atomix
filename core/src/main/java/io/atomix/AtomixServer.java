@@ -131,7 +131,27 @@ public final class AtomixServer implements Managed<AtomixServer> {
   }
 
   /**
-   * Atomix server builder.
+   * Builds an {@link AtomixServer}.
+   * <p>
+   * The server builder configures an {@link AtomixServer} to listen for connections from clients and other
+   * servers, connect to other servers in a cluster, and manage a replicated log. To create a server builder,
+   * use the {@link #builder(Address, Address...)} method:
+   * <pre>
+   *   {@code
+   *   AtomixServer server = AtomixServer.builder(address, servers)
+   *     .withTransport(new NettyTransport())
+   *     .withStorage(Storage.builder()
+   *       .withDirectory("logs")
+   *       .withStorageLevel(StorageLevel.MAPPED)
+   *       .build())
+   *     .build();
+   *   }
+   * </pre>
+   * The two most essential components of the builder are the {@link Transport} and {@link Storage}. The
+   * transport provides the mechanism for the server to communicate with clients and other servers in the
+   * cluster. All servers, clients, and replicas must implement the same {@link Transport} type. The {@link Storage}
+   * module configures how the server manages the replicated log. Logs can be written to disk or held in
+   * memory or memory-mapped files.
    */
   public static class Builder extends io.atomix.catalyst.util.Builder<AtomixServer> {
     private final CopycatServer.Builder builder;
@@ -142,11 +162,15 @@ public final class AtomixServer implements Managed<AtomixServer> {
     }
 
     /**
-     * Sets the server transport.
+     * Sets the server transport, returning the server builder for method chaining.
+     * <p>
+     * The configured transport should be the same transport as all other nodes in the cluster.
+     * If no transport is explicitly provided, the instance will default to the {@code NettyTransport}
+     * if available on the classpath.
      *
-     * @param transport The client server.
-     * @return The client builder.
-     * @throws NullPointerException if {@code command} is null
+     * @param transport The server transport.
+     * @return The server builder.
+     * @throws NullPointerException if {@code transport} is null
      */
     public Builder withTransport(Transport transport) {
       this.transport = Assert.notNull(transport, "transport");
@@ -154,11 +178,13 @@ public final class AtomixServer implements Managed<AtomixServer> {
     }
 
     /**
-     * Sets the Raft serializer.
+     * Sets the serializer, returning the server builder for method chaining.
+     * <p>
+     * The serializer will be used to serialize and deserialize operations that are sent over the wire.
      *
-     * @param serializer The Raft serializer.
-     * @return The Raft builder.
-     * @throws NullPointerException if {@code command} is null
+     * @param serializer The serializer.
+     * @return The server builder.
+     * @throws NullPointerException if {@code serializer} is null
      */
     public Builder withSerializer(Serializer serializer) {
       builder.withSerializer(serializer);
@@ -166,11 +192,33 @@ public final class AtomixServer implements Managed<AtomixServer> {
     }
 
     /**
-     * Sets the server storage module.
+     * Sets the server storage module, returning the server builder for method chaining.
+     * <p>
+     * The storage module is the interface the server will use to store the persistent replicated log.
+     * For simple configurations, users can simply construct a {@link Storage} object:
+     * <pre>
+     *   {@code
+     *   AtomixServer server = AtomixServer.builder(address, members)
+     *     .withStorage(new Storage("logs"))
+     *     .build();
+     *   }
+     * </pre>
+     * For more complex storage configurations, use the {@link io.atomix.copycat.server.storage.Storage.Builder}:
+     * <pre>
+     *   {@code
+     *   AtomixServer server = AtomixServer.builder(address, members)
+     *     .withStorage(Storage.builder()
+     *       .withDirectory("logs")
+     *       .withStorageLevel(StorageLevel.MAPPED)
+     *       .withCompactionThreads(2)
+     *       .build())
+     *     .build();
+     *   }
+     * </pre>
      *
      * @param storage The server storage module.
-     * @return The Atomix server builder.
-     * @throws NullPointerException if {@code command} is null
+     * @return The server builder.
+     * @throws NullPointerException if {@code storage} is null
      */
     public Builder withStorage(Storage storage) {
       builder.withStorage(storage);
@@ -178,12 +226,15 @@ public final class AtomixServer implements Managed<AtomixServer> {
     }
 
     /**
-     * Sets the Raft election timeout, returning the Raft configuration for method chaining.
+     * Sets the server election timeout, returning the server builder for method chaining.
+     * <p>
+     * The election timeout is the duration since last contact with the cluster leader after which
+     * the server should start a new election. The election timeout should always be significantly
+     * larger than {@link #withHeartbeatInterval(Duration)} in order to prevent unnecessary elections.
      *
-     * @param electionTimeout The Raft election timeout in milliseconds.
-     * @return The Raft configuration.
-     * @throws IllegalArgumentException If the election timeout is not positive
-     * @throws NullPointerException if {@code command} is null
+     * @param electionTimeout The server election timeout in milliseconds.
+     * @return The server builder.
+     * @throws NullPointerException if {@code electionTimeout} is null
      */
     public Builder withElectionTimeout(Duration electionTimeout) {
       builder.withElectionTimeout(electionTimeout);
@@ -191,12 +242,15 @@ public final class AtomixServer implements Managed<AtomixServer> {
     }
 
     /**
-     * Sets the Raft heartbeat interval, returning the Raft configuration for method chaining.
+     * Sets the server heartbeat interval, returning the server builder for method chaining.
+     * <p>
+     * The heartbeat interval is the interval at which the server, if elected leader, should contact
+     * other servers within the cluster to maintain its leadership. The heartbeat interval should
+     * always be some fraction of {@link #withElectionTimeout(Duration)}.
      *
-     * @param heartbeatInterval The Raft heartbeat interval in milliseconds.
-     * @return The Raft configuration.
-     * @throws IllegalArgumentException If the heartbeat interval is not positive
-     * @throws NullPointerException if {@code command} is null
+     * @param heartbeatInterval The server heartbeat interval in milliseconds.
+     * @return The server builder.
+     * @throws NullPointerException if {@code heartbeatInterval} is null
      */
     public Builder withHeartbeatInterval(Duration heartbeatInterval) {
       builder.withHeartbeatInterval(heartbeatInterval);
@@ -204,18 +258,35 @@ public final class AtomixServer implements Managed<AtomixServer> {
     }
 
     /**
-     * Sets the Raft session timeout, returning the Raft configuration for method chaining.
+     * Sets the server session timeout, returning the server builder for method chaining.
+     * <p>
+     * The session timeout is assigned by the server to a client which opens a new session. The session timeout
+     * dictates the interval at which the client must send keep-alive requests to the cluster to maintain its
+     * session. If a client fails to communicate with the cluster for larger than the configured session
+     * timeout, its session may be expired.
      *
-     * @param sessionTimeout The Raft session timeout in milliseconds.
-     * @return The Raft configuration.
-     * @throws IllegalArgumentException If the session timeout is not positive
-     * @throws NullPointerException if {@code command} is null
+     * @param sessionTimeout The server session timeout in milliseconds.
+     * @return The server builder.
+     * @throws NullPointerException if {@code sessionTimeout} is null
      */
     public Builder withSessionTimeout(Duration sessionTimeout) {
       builder.withSessionTimeout(sessionTimeout);
       return this;
     }
 
+    /**
+     * Builds the server.
+     * <p>
+     * If no {@link Transport} was configured for the server, the builder will attempt to create a
+     * {@code NettyTransport} instance. If {@code io.atomix.catalyst.transport.NettyTransport} is not available
+     * on the classpath, a {@link ConfigurationException} will be thrown.
+     * <p>
+     * Once the server is built, it is not yet connected to the cluster. To connect the server to the cluster,
+     * call the asynchronous {@link #open()} method.
+     *
+     * @return The built server.
+     * @throws ConfigurationException if the server is misconfigured
+     */
     @Override
     public AtomixServer build() {
       // If no transport was configured by the user, attempt to load the Netty transport.
