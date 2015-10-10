@@ -33,7 +33,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 /**
- * Provides a mechanism for managing group membership in a distributed system.
+ * Provides a mechanism for managing group membership and remote scheduling and execution.
  * <p>
  * The distributed membership group resource facilitates managing group membership within the Atomix cluster.
  * Each instance of a {@code DistributedMembershipGroup} resource represents a single {@link GroupMember}.

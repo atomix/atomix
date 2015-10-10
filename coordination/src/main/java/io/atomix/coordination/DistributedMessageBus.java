@@ -87,6 +87,22 @@ public class DistributedMessageBus extends DistributedResource<DistributedMessag
    * Opens the message bus.
    * <p>
    * When the message bus is opened, this instance will bind to the provided {@link Address}.
+   * <p>
+   * This method returns a {@link CompletableFuture} which can be used to block until the server is opened
+   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
+   * use the {@link CompletableFuture#join()} method to block the calling thread:
+   * <pre>
+   *   {@code
+   *   bus.open(new Address("123.456.789.0", 5000)).join();
+   *   }
+   * </pre>
+   * Alternatively, to execute the operation asynchronous and be notified once the lock is acquired in a different
+   * thread, use one of the many completable future callbacks:
+   * <pre>
+   *   {@code
+   *   bus.open(new Address("123.456.789.0", 5000)).thenRun(() -> System.out.println("Message bus open!"));
+   *   }
+   * </pre>
    *
    * @param address The address on which to listen.
    * @return A completable future to be completed once the message bus is started.
