@@ -32,6 +32,44 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * Standalone Atomix server.
+ * <p>
+ * The {@code AtomixServer} provides a standalone node that can server as a member of a cluster to
+ * service operations on {@link DistributedResource}s from an {@link AtomixClient}. Servers do not expose
+ * an interface for managing resources directly. Users can only access server resources through an
+ * {@link Atomix} implementation.
+ * <p>
+ * To create a server, use the {@link #builder(Address, Address...)} builder factory. Each server must
+ * be initially configured with a server {@link Address} and a list of addresses for other members of the
+ * core cluster. Note that the list of member addresses does not have to include the local server nor does
+ * it have to include all the servers in the cluster. As long as the server can reach one live member of
+ * the cluster, it can join.
+ * <pre>
+ *   {@code
+ *   List<Address> members = Arrays.asList(new Address("123.456.789.0", 5000), new Address("123.456.789.1", 5000));
+ *   AtomixServer server = AtomixServer.builder(address, members)
+ *     .withTransport(new NettyTransport())
+ *     .withStorage(new Storage(StorageLevel.MEMORY))
+ *     .build();
+ *   }
+ * </pre>
+ * Servers must be configured with a {@link Transport} and {@link Storage}. By default, if no transport is
+ * configured, the {@code NettyTransport} will be used and will thus be expected to be available on the classpath.
+ * Similarly, if no storage module is configured, replicated commit logs will be written to
+ * {@code System.getProperty("user.dir")} with a default log name.
+ * <p>
+ * <b>Server lifecycle</b>
+ * <p>
+ * When the server is {@link #open() started}, the server will attempt to contact members in the configured
+ * startup {@link Address} list. If any of the members are already in an active state, the server will request
+ * to join the cluster. During the process of joining the cluster, the server will notify the current cluster
+ * leader of its existence. If the leader already knows about the joining server, the server will immediately
+ * join and become a full voting member. If the joining server is not yet known to the rest of the cluster,
+ * it will join the cluster in a <em>passive</em> state in which it receives replicated state from other
+ * servers in the cluster but does not participate in elections or other quorum-based aspects of the
+ * underlying consensus algorithm. Once the joining server is caught up with the rest of the cluster, the
+ * leader will promote it to a full voting member.
+ *
+ * {@code AtomixServer}s and {@link AtomixReplica}s can safely be members of the same cluster.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
