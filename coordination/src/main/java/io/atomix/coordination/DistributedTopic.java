@@ -77,6 +77,35 @@ public class DistributedTopic<T> extends DistributedResource<DistributedTopic<T>
   }
 
   /**
+   * Sets the topic to synchronous mode.
+   * <p>
+   * Setting the topic to synchronous mode effectively configures the topic's {@link Consistency} to
+   * {@link Consistency#ATOMIC}. Atomic consistency means that messages {@link #publish(Object) published} to the
+   * topic will be received by all {@link #subscribe(Consumer) subscribers} some time between the invocation of
+   * the publish operation and its completion.
+   *
+   * @return The distributed topic.
+   */
+  public DistributedTopic<T> sync() {
+    return with(Consistency.ATOMIC);
+  }
+
+  /**
+   * Sets the topic to asynchronous mode.
+   * <p>
+   * Setting the topic to asynchronous mode effectively configures the topic's {@link Consistency} to
+   * {@link Consistency#SEQUENTIAL}. Sequential consistency means that once a message is {@link #publish(Object) published}
+   * to the topic, the message will be persisted in the cluster but may be delivered to {@link #subscribe(Consumer) subscribers}
+   * after some arbitrary delay. Messages are guaranteed to be delivered to subscribers in the order in which they were sent
+   * (sequential consistency) but different subscribers may receive different messages at different points in time.
+   *
+   * @return The distributed topic.
+   */
+  public DistributedTopic<T> async() {
+    return with(Consistency.SEQUENTIAL);
+  }
+
+  /**
    * Publishes a message to the topic.
    * <p>
    * The message will be published according to the {@link #with(Consistency) configured consistency level}.

@@ -248,7 +248,7 @@ public final class AtomixReplica extends Atomix {
      *     .build();
      *   }
      * </pre>
-     * For more complex storage configurations, use the {@link io.atomix.copycat.replica.storage.Storage.Builder}:
+     * For more complex storage configurations, use the {@link io.atomix.copycat.server.storage.Storage.Builder}:
      * <pre>
      *   {@code
      *   Atomix replica = AtomixReplica.builder(address, members)
