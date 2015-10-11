@@ -21,9 +21,7 @@ import io.atomix.catalyst.serializer.CatalystSerializable;
 import io.atomix.catalyst.serializer.SerializeWith;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.util.Assert;
-import io.atomix.catalyst.util.BuilderPool;
 import io.atomix.copycat.client.Command;
-import io.atomix.copycat.client.Operation;
 
 import java.util.Set;
 
@@ -54,15 +52,6 @@ public class MembershipGroupCommands {
     @Override
     public void readObject(BufferInput buffer, Serializer serializer) {
     }
-
-    /**
-     * Base map command builder.
-     */
-    public static abstract class Builder<T extends Builder<T, U, V>, U extends GroupCommand<V>, V> extends Command.Builder<T, U, V> {
-      protected Builder(BuilderPool<T, U> pool) {
-        super(pool);
-      }
-    }
   }
 
   /**
@@ -70,30 +59,6 @@ public class MembershipGroupCommands {
    */
   @SerializeWith(id=520)
   public static class Join extends GroupCommand<Set<Long>> {
-
-    /**
-     * Returns a new join command builder.
-     *
-     * @return A new join command builder.
-     */
-    @SuppressWarnings("unchecked")
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
-    }
-
-    /**
-     * Join command builder.
-     */
-    public static class Builder extends GroupCommand.Builder<Builder, Join, Set<Long>> {
-      public Builder(BuilderPool<Builder, Join> pool) {
-        super(pool);
-      }
-
-      @Override
-      protected Join create() {
-        return new Join();
-      }
-    }
   }
 
   /**
@@ -102,33 +67,9 @@ public class MembershipGroupCommands {
   @SerializeWith(id=521)
   public static class Leave extends GroupCommand<Void> {
 
-    /**
-     * Returns a new leave command builder.
-     *
-     * @return A new leave command builder.
-     */
-    @SuppressWarnings("unchecked")
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
-    }
-
     @Override
     public PersistenceLevel persistence() {
       return PersistenceLevel.PERSISTENT;
-    }
-
-    /**
-     * Leave command builder.
-     */
-    public static class Builder extends GroupCommand.Builder<Builder, Leave, Void> {
-      public Builder(BuilderPool<Builder, Leave> pool) {
-        super(pool);
-      }
-
-      @Override
-      protected Leave create() {
-        return new Leave();
-      }
     }
   }
 
@@ -137,20 +78,18 @@ public class MembershipGroupCommands {
    */
   @SerializeWith(id=522)
   public static class Schedule extends GroupCommand<Void> {
-
-    /**
-     * Returns a new schedule command builder.
-     *
-     * @return The schedule command builder.
-     */
-    @SuppressWarnings("unchecked")
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
-    }
-
     private long member;
     private long delay;
     private Runnable callback;
+
+    public Schedule() {
+    }
+
+    public Schedule(long member, long delay, Runnable callback) {
+      this.member = Assert.argNot(member, member <= 0, "member must be positive");
+      this.delay = Assert.argNot(delay, delay <= 0, "delay must be positive");
+      this.callback = Assert.notNull(callback, "callback");
+    }
 
     /**
      * Returns the member on which to execute the callback.
@@ -191,54 +130,6 @@ public class MembershipGroupCommands {
       delay = buffer.readLong();
       callback = serializer.readObject(buffer);
     }
-
-    /**
-     * Schedule command builder.
-     */
-    public static class Builder extends GroupCommand.Builder<Builder, Schedule, Void> {
-
-      public Builder(BuilderPool<Builder, Schedule> pool) {
-        super(pool);
-      }
-
-      /**
-       * Sets the member on which to execute the callback.
-       *
-       * @param member The member on which to execute the callback.
-       * @return The command builder.
-       */
-      public Builder withMember(long member) {
-        command.member = member;
-        return this;
-      }
-
-      /**
-       * Sets the delay after which to execute the callback.
-       *
-       * @param delay The delay after which to execute the callback.
-       * @return The command builder.
-       */
-      public Builder withDelay(long delay) {
-        command.delay = delay;
-        return this;
-      }
-
-      /**
-       * Sets the schedule command message.
-       *
-       * @param callback The callback.
-       * @return The schedule command builder.
-       */
-      public Builder withCallback(Runnable callback) {
-        command.callback = Assert.notNull(callback, "callback");
-        return this;
-      }
-
-      @Override
-      protected Schedule create() {
-        return new Schedule();
-      }
-    }
   }
 
   /**
@@ -246,19 +137,16 @@ public class MembershipGroupCommands {
    */
   @SerializeWith(id=523)
   public static class Execute extends GroupCommand<Void> {
-
-    /**
-     * Returns a new execute command builder.
-     *
-     * @return The execute command builder.
-     */
-    @SuppressWarnings("unchecked")
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
-    }
-
     private long member;
     private Runnable callback;
+
+    public Execute() {
+    }
+
+    public Execute(long member, Runnable callback) {
+      this.member = Assert.argNot(member, member <= 0, "member must be positive");
+      this.callback = Assert.notNull(callback, "callback");
+    }
 
     /**
      * Returns the member on which to execute the callback.
@@ -288,43 +176,6 @@ public class MembershipGroupCommands {
     public void readObject(BufferInput buffer, Serializer serializer) {
       member = buffer.readLong();
       callback = serializer.readObject(buffer);
-    }
-
-    /**
-     * Execute command builder.
-     */
-    public static class Builder extends GroupCommand.Builder<Builder, Execute, Void> {
-
-      public Builder(BuilderPool<Builder, Execute> pool) {
-        super(pool);
-      }
-
-      /**
-       * Sets the member on which to execute the callback.
-       *
-       * @param member The member on which to execute the callback.
-       * @return The command builder.
-       */
-      public Builder withMember(long member) {
-        command.member = member;
-        return this;
-      }
-
-      /**
-       * Sets the execute command message.
-       *
-       * @param callback The callback.
-       * @return The execute command builder.
-       */
-      public Builder withCallback(Runnable callback) {
-        command.callback = Assert.notNull(callback, "callback");
-        return this;
-      }
-
-      @Override
-      protected Execute create() {
-        return new Execute();
-      }
     }
   }
 

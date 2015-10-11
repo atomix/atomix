@@ -109,9 +109,7 @@ public class DistributedQueue<T> extends DistributedResource<DistributedQueue<T>
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Boolean> add(T value) {
-    return submit(QueueCommands.Add.builder()
-      .withValue(value)
-      .build());
+    return submit(new QueueCommands.Add(value));
   }
 
   /**
@@ -121,9 +119,7 @@ public class DistributedQueue<T> extends DistributedResource<DistributedQueue<T>
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Boolean> offer(T value) {
-    return submit(QueueCommands.Offer.builder()
-      .withValue(value)
-      .build());
+    return submit(new QueueCommands.Offer(value));
   }
 
   /**
@@ -133,8 +129,7 @@ public class DistributedQueue<T> extends DistributedResource<DistributedQueue<T>
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<T> peek() {
-    return submit(QueueCommands.Peek.builder()
-      .build()).thenApply(v -> (T) v);
+    return submit(new QueueCommands.Peek()).thenApply(v -> (T) v);
   }
 
   /**
@@ -144,8 +139,7 @@ public class DistributedQueue<T> extends DistributedResource<DistributedQueue<T>
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<T> poll() {
-    return submit(QueueCommands.Poll.builder()
-      .build()).thenApply(v -> (T) v);
+    return submit(new QueueCommands.Poll()).thenApply(v -> (T) v);
   }
 
   /**
@@ -155,8 +149,7 @@ public class DistributedQueue<T> extends DistributedResource<DistributedQueue<T>
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<T> element() {
-    return submit(QueueCommands.Element.builder()
-      .build()).thenApply(v -> (T) v);
+    return submit(new QueueCommands.Element()).thenApply(v -> (T) v);
   }
 
   /**
@@ -166,8 +159,7 @@ public class DistributedQueue<T> extends DistributedResource<DistributedQueue<T>
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<T> remove() {
-    return submit(QueueCommands.Remove.builder()
-      .build()).thenApply(v -> (T) v);
+    return submit(new QueueCommands.Remove()).thenApply(v -> (T) v);
   }
 
   /**
@@ -177,9 +169,7 @@ public class DistributedQueue<T> extends DistributedResource<DistributedQueue<T>
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Boolean> remove(T value) {
-    return submit(QueueCommands.Remove.builder()
-      .withValue(value)
-      .build()).thenApply(v -> (boolean) v);
+    return submit(new QueueCommands.Remove(value)).thenApply(v -> (boolean) v);
   }
 
   /**
@@ -189,9 +179,7 @@ public class DistributedQueue<T> extends DistributedResource<DistributedQueue<T>
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Boolean> contains(Object value) {
-    return submit(QueueCommands.Contains.builder()
-      .withValue(value)
-      .build());
+    return submit(new QueueCommands.Contains(value));
   }
 
   /**
@@ -200,7 +188,7 @@ public class DistributedQueue<T> extends DistributedResource<DistributedQueue<T>
    * @return A completable future to be completed with the set count.
    */
   public CompletableFuture<Integer> size() {
-    return submit(QueueCommands.Size.builder().build());
+    return submit(new QueueCommands.Size());
   }
 
   /**
@@ -209,7 +197,7 @@ public class DistributedQueue<T> extends DistributedResource<DistributedQueue<T>
    * @return A completable future to be completed with a boolean value indicating whether the set is empty.
    */
   public CompletableFuture<Boolean> isEmpty() {
-    return submit(QueueCommands.IsEmpty.builder().build());
+    return submit(new QueueCommands.IsEmpty());
   }
 
   /**
@@ -218,7 +206,7 @@ public class DistributedQueue<T> extends DistributedResource<DistributedQueue<T>
    * @return A completable future to be completed once the operation is complete.
    */
   public CompletableFuture<Void> clear() {
-    return submit(QueueCommands.Clear.builder().build());
+    return submit(new QueueCommands.Clear());
   }
 
 }

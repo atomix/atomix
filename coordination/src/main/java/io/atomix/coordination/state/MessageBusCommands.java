@@ -22,9 +22,7 @@ import io.atomix.catalyst.serializer.SerializeWith;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.util.Assert;
-import io.atomix.catalyst.util.BuilderPool;
 import io.atomix.copycat.client.Command;
-import io.atomix.copycat.client.Operation;
 
 import java.util.Map;
 import java.util.Set;
@@ -56,15 +54,6 @@ public class MessageBusCommands {
     @Override
     public void readObject(BufferInput buffer, Serializer serializer) {
     }
-
-    /**
-     * Base message bus command builder.
-     */
-    public static abstract class Builder<T extends Builder<T, U, V>, U extends MessageBusCommand<V>, V> extends Command.Builder<T, U, V> {
-      protected Builder(BuilderPool<T, U> pool) {
-        super(pool);
-      }
-    }
   }
 
   /**
@@ -73,6 +62,13 @@ public class MessageBusCommands {
   @SerializeWith(id=525)
   public static class Join extends MessageBusCommand<Map<String, Set<Address>>> {
     protected Address address;
+
+    public Join() {
+    }
+
+    public Join(Address address) {
+      this.address = Assert.notNull(address, "address");
+    }
 
     /**
      * Returns the join member.
@@ -92,41 +88,6 @@ public class MessageBusCommands {
     public void writeObject(BufferOutput buffer, Serializer serializer) {
       serializer.writeObject(address, buffer);
     }
-
-    /**
-     * Returns a new join command builder.
-     *
-     * @return A new join command builder.
-     */
-    @SuppressWarnings("unchecked")
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
-    }
-
-    /**
-     * Join command builder.
-     */
-    public static class Builder extends MessageBusCommand.Builder<Builder, Join, Map<String, Set<Address>>> {
-      public Builder(BuilderPool<Builder, Join> pool) {
-        super(pool);
-      }
-
-      @Override
-      protected Join create() {
-        return new Join();
-      }
-
-      /**
-       * Sets the join member.
-       *
-       * @param address The member address.
-       * @return The join builder.
-       */
-      public Builder withMember(Address address) {
-        command.address = Assert.notNull(address, "address");
-        return this;
-      }
-    }
   }
 
   /**
@@ -135,33 +96,9 @@ public class MessageBusCommands {
   @SerializeWith(id=526)
   public static class Leave extends MessageBusCommand<Void> {
 
-    /**
-     * Returns a new leave command builder.
-     *
-     * @return A new leave command builder.
-     */
-    @SuppressWarnings("unchecked")
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
-    }
-
     @Override
     public PersistenceLevel persistence() {
       return PersistenceLevel.PERSISTENT;
-    }
-
-    /**
-     * Leave command builder.
-     */
-    public static class Builder extends MessageBusCommand.Builder<Builder, Leave, Void> {
-      public Builder(BuilderPool<Builder, Leave> pool) {
-        super(pool);
-      }
-
-      @Override
-      protected Leave create() {
-        return new Leave();
-      }
     }
   }
 
@@ -170,18 +107,14 @@ public class MessageBusCommands {
    */
   @SerializeWith(id=527)
   public static class Register extends MessageBusCommand<Void> {
+    private String topic;
 
-    /**
-     * Returns a new register command builder.
-     *
-     * @return The register command builder.
-     */
-    @SuppressWarnings("unchecked")
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
+    public Register() {
     }
 
-    private String topic;
+    public Register(String topic) {
+      this.topic = Assert.notNull(topic, "topic");
+    }
 
     /**
      * Returns the register topic.
@@ -201,32 +134,6 @@ public class MessageBusCommands {
     public void readObject(BufferInput buffer, Serializer serializer) {
       topic = buffer.readString();
     }
-
-    /**
-     * Register command builder.
-     */
-    public static class Builder extends MessageBusCommand.Builder<Builder, Register, Void> {
-
-      public Builder(BuilderPool<Builder, Register> pool) {
-        super(pool);
-      }
-
-      /**
-       * Sets the register command message.
-       *
-       * @param topic The topic.
-       * @return The register command builder.
-       */
-      public Builder withTopic(String topic) {
-        command.topic = topic;
-        return this;
-      }
-
-      @Override
-      protected Register create() {
-        return new Register();
-      }
-    }
   }
 
   /**
@@ -234,18 +141,14 @@ public class MessageBusCommands {
    */
   @SerializeWith(id=528)
   public static class Unregister extends MessageBusCommand<Void> {
+    private String topic;
 
-    /**
-     * Returns a new unregister command builder.
-     *
-     * @return The unregister command builder.
-     */
-    @SuppressWarnings("unchecked")
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
+    public Unregister() {
     }
 
-    private String topic;
+    public Unregister(String topic) {
+      this.topic = Assert.notNull(topic, "topic");
+    }
 
     /**
      * Returns the unregister topic.
@@ -269,32 +172,6 @@ public class MessageBusCommands {
     @Override
     public void readObject(BufferInput buffer, Serializer serializer) {
       topic = buffer.readString();
-    }
-
-    /**
-     * Unregister command builder.
-     */
-    public static class Builder extends MessageBusCommand.Builder<Builder, Register, Void> {
-
-      public Builder(BuilderPool<Builder, Register> pool) {
-        super(pool);
-      }
-
-      /**
-       * Sets the unregister command message.
-       *
-       * @param topic The topic.
-       * @return The unregister command builder.
-       */
-      public Builder withTopic(String topic) {
-        command.topic = topic;
-        return this;
-      }
-
-      @Override
-      protected Register create() {
-        return new Register();
-      }
     }
   }
 

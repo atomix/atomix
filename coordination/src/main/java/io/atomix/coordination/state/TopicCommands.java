@@ -20,9 +20,7 @@ import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
 import io.atomix.catalyst.serializer.SerializeWith;
 import io.atomix.catalyst.serializer.Serializer;
-import io.atomix.catalyst.util.BuilderPool;
 import io.atomix.copycat.client.Command;
-import io.atomix.copycat.client.Operation;
 
 /**
  * Topic commands.
@@ -45,15 +43,6 @@ public class TopicCommands {
     @Override
     public void readObject(BufferInput buffer, Serializer serializer) {
     }
-
-    /**
-     * Base map command builder.
-     */
-    public static abstract class Builder<T extends Builder<T, U, V>, U extends TopicCommand<V>, V> extends Command.Builder<T, U, V> {
-      protected Builder(BuilderPool<T, U> pool) {
-        super(pool);
-      }
-    }
   }
 
   /**
@@ -61,34 +50,9 @@ public class TopicCommands {
    */
   @SerializeWith(id=515)
   public static class Listen extends TopicCommand<Void> {
-
-    /**
-     * Returns a new listen command builder.
-     *
-     * @return A new listen command builder.
-     */
-    @SuppressWarnings("unchecked")
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
-    }
-
     @Override
     public ConsistencyLevel consistency() {
       return ConsistencyLevel.LINEARIZABLE;
-    }
-
-    /**
-     * Listen command builder.
-     */
-    public static class Builder extends TopicCommand.Builder<Builder, Listen, Void> {
-      public Builder(BuilderPool<Builder, Listen> pool) {
-        super(pool);
-      }
-
-      @Override
-      protected Listen create() {
-        return new Listen();
-      }
     }
   }
 
@@ -97,17 +61,6 @@ public class TopicCommands {
    */
   @SerializeWith(id=516)
   public static class Unlisten extends TopicCommand<Void> {
-
-    /**
-     * Returns a new unlisten command builder.
-     *
-     * @return A new unlisten command builder.
-     */
-    @SuppressWarnings("unchecked")
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
-    }
-
     @Override
     public ConsistencyLevel consistency() {
       return ConsistencyLevel.LINEARIZABLE;
@@ -117,20 +70,6 @@ public class TopicCommands {
     public PersistenceLevel persistence() {
       return PersistenceLevel.PERSISTENT;
     }
-
-    /**
-     * Unlisten command builder.
-     */
-    public static class Builder extends TopicCommand.Builder<Builder, Unlisten, Void> {
-      public Builder(BuilderPool<Builder, Unlisten> pool) {
-        super(pool);
-      }
-
-      @Override
-      protected Unlisten create() {
-        return new Unlisten();
-      }
-    }
   }
 
   /**
@@ -138,19 +77,14 @@ public class TopicCommands {
    */
   @SerializeWith(id=517)
   public static class Publish<T> extends TopicCommand<Void> {
+    private T message;
 
-    /**
-     * Returns a new publish command builder.
-     *
-     * @param <T> The message type.
-     * @return The publish command builder.
-     */
-    @SuppressWarnings("unchecked")
-    public static <T> Builder<T> builder() {
-      return Operation.builder(Builder.class, Builder::new);
+    public Publish() {
     }
 
-    private T message;
+    public Publish(T message) {
+      this.message = message;
+    }
 
     /**
      * Returns the publish message.
@@ -169,32 +103,6 @@ public class TopicCommands {
     @Override
     public void readObject(BufferInput buffer, Serializer serializer) {
       message = serializer.readObject(buffer);
-    }
-
-    /**
-     * Publish command builder.
-     */
-    public static class Builder<T> extends TopicCommand.Builder<Builder<T>, Publish<T>, Void> {
-
-      public Builder(BuilderPool<Builder<T>, Publish<T>> pool) {
-        super(pool);
-      }
-
-      /**
-       * Sets the publish command message.
-       *
-       * @param message The message.
-       * @return The publish command builder.
-       */
-      public Builder<T> withMessage(T message) {
-        command.message = message;
-        return this;
-      }
-
-      @Override
-      protected Publish<T> create() {
-        return new Publish<>();
-      }
     }
   }
 

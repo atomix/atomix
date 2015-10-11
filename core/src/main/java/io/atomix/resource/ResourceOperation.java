@@ -32,6 +32,15 @@ public abstract class ResourceOperation<T extends Operation<U>, U> implements Op
   protected T operation;
   protected Consistency consistency;
 
+  protected ResourceOperation() {
+  }
+
+  protected ResourceOperation(long resource, T operation, Consistency consistency) {
+    this.resource = resource;
+    this.operation = operation;
+    this.consistency = consistency;
+  }
+
   /**
    * Returns the resource ID.
    *

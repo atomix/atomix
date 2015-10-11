@@ -43,7 +43,7 @@ public class DistributedMap<K, V> extends DistributedResource<DistributedMap<K, 
    * @return A completable future to be completed with a boolean value indicating whether the map is empty.
    */
   public CompletableFuture<Boolean> isEmpty() {
-    return submit(MapCommands.IsEmpty.builder().build());
+    return submit(new MapCommands.IsEmpty());
   }
 
   /**
@@ -52,7 +52,7 @@ public class DistributedMap<K, V> extends DistributedResource<DistributedMap<K, 
    * @return A completable future to be completed with the number of entries in the map.
    */
   public CompletableFuture<Integer> size() {
-    return submit(MapCommands.Size.builder().build());
+    return submit(new MapCommands.Size());
   }
 
   /**
@@ -62,9 +62,7 @@ public class DistributedMap<K, V> extends DistributedResource<DistributedMap<K, 
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Boolean> containsKey(Object key) {
-    return submit(MapCommands.ContainsKey.builder()
-      .withKey(key)
-      .build());
+    return submit(new MapCommands.ContainsKey(key));
   }
 
   /**
@@ -75,9 +73,7 @@ public class DistributedMap<K, V> extends DistributedResource<DistributedMap<K, 
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<V> get(Object key) {
-    return submit(MapCommands.Get.builder()
-      .withKey(key)
-      .build())
+    return submit(new MapCommands.Get(key))
       .thenApply(result -> (V) result);
   }
 
@@ -90,10 +86,7 @@ public class DistributedMap<K, V> extends DistributedResource<DistributedMap<K, 
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<V> put(K key, V value) {
-    return submit(MapCommands.Put.builder()
-      .withKey(key)
-      .withValue(value)
-      .build())
+    return submit(new MapCommands.Put(key, value))
       .thenApply(result -> (V) result);
   }
 
@@ -107,12 +100,8 @@ public class DistributedMap<K, V> extends DistributedResource<DistributedMap<K, 
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<V> put(K key, V value, Duration ttl) {
-    return submit(MapCommands.Put.builder()
-      .withKey(key)
-      .withValue(value)
-      .withTtl(ttl.toMillis())
-      .build())
-      .thenApply(result -> result);
+    return submit(new MapCommands.Put(key, value, ttl.toMillis()))
+      .thenApply(result -> (V) result);
   }
 
   /**
@@ -123,9 +112,7 @@ public class DistributedMap<K, V> extends DistributedResource<DistributedMap<K, 
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<V> remove(K key) {
-    return submit(MapCommands.Remove.builder()
-      .withKey(key)
-      .build())
+    return submit(new MapCommands.Remove(key))
       .thenApply(result -> (V) result);
   }
 
@@ -138,10 +125,7 @@ public class DistributedMap<K, V> extends DistributedResource<DistributedMap<K, 
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<V> getOrDefault(Object key, V defaultValue) {
-    return submit(MapCommands.GetOrDefault.builder()
-      .withKey(key)
-      .withDefaultValue(defaultValue)
-      .build())
+    return submit(new MapCommands.GetOrDefault(key, defaultValue))
       .thenApply(result -> (V) result);
   }
 
@@ -154,10 +138,7 @@ public class DistributedMap<K, V> extends DistributedResource<DistributedMap<K, 
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<V> putIfAbsent(K key, V value) {
-    return submit(MapCommands.PutIfAbsent.builder()
-      .withKey(key)
-      .withValue(value)
-      .build())
+    return submit(new MapCommands.PutIfAbsent(key, value))
       .thenApply(result -> (V) result);
   }
 
@@ -171,11 +152,7 @@ public class DistributedMap<K, V> extends DistributedResource<DistributedMap<K, 
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<V> putIfAbsent(K key, V value, Duration ttl) {
-    return submit(MapCommands.PutIfAbsent.builder()
-      .withKey(key)
-      .withValue(value)
-      .withTtl(ttl.toMillis())
-      .build());
+    return submit(new MapCommands.PutIfAbsent(key, value, ttl.toMillis())).thenApply(result -> (V) result);
   }
 
   /**
@@ -186,10 +163,7 @@ public class DistributedMap<K, V> extends DistributedResource<DistributedMap<K, 
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Boolean> remove(K key, V value) {
-    return submit(MapCommands.RemoveIfPresent.builder()
-      .withKey(key)
-      .withValue(value)
-      .build());
+    return submit(new MapCommands.RemoveIfPresent(key, value));
   }
 
   /**
@@ -201,10 +175,7 @@ public class DistributedMap<K, V> extends DistributedResource<DistributedMap<K, 
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<V> replace(K key, V value) {
-    return submit(MapCommands.Replace.builder()
-      .withKey(key)
-      .withValue(value)
-      .build())
+    return submit(new MapCommands.Replace(key, value))
       .thenApply(result -> (V) result);
   }
 
@@ -218,11 +189,7 @@ public class DistributedMap<K, V> extends DistributedResource<DistributedMap<K, 
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<V> replace(K key, V value, Duration ttl) {
-    return submit(MapCommands.Replace.builder()
-      .withKey(key)
-      .withValue(value)
-      .withTtl(ttl.toMillis())
-      .build());
+    return submit(new MapCommands.Replace(key, value, ttl.toMillis())).thenApply(result -> (V) result);
   }
 
   /**
@@ -234,11 +201,7 @@ public class DistributedMap<K, V> extends DistributedResource<DistributedMap<K, 
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Boolean> replace(K key, V oldValue, V newValue) {
-    return submit(MapCommands.ReplaceIfPresent.builder()
-      .withKey(key)
-      .withValue(oldValue)
-      .withReplace(newValue)
-      .build());
+    return submit(new MapCommands.ReplaceIfPresent(key, oldValue, newValue));
   }
 
   /**
@@ -252,12 +215,7 @@ public class DistributedMap<K, V> extends DistributedResource<DistributedMap<K, 
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<Boolean> replace(K key, V oldValue, V newValue, Duration ttl) {
-    return submit(MapCommands.ReplaceIfPresent.builder()
-      .withKey(key)
-      .withValue(oldValue)
-      .withReplace(newValue)
-      .withTtl(ttl.toMillis())
-      .build());
+    return submit(new MapCommands.ReplaceIfPresent(key, oldValue, newValue, ttl.toMillis()));
   }
 
   /**
@@ -266,7 +224,7 @@ public class DistributedMap<K, V> extends DistributedResource<DistributedMap<K, 
    * @return A completable future to be completed once the operation is complete.
    */
   public CompletableFuture<Void> clear() {
-    return submit(MapCommands.Clear.builder().build());
+    return submit(new MapCommands.Clear());
   }
 
 }

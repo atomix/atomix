@@ -16,8 +16,6 @@
 package io.atomix.manager;
 
 import io.atomix.catalyst.serializer.SerializeWith;
-import io.atomix.catalyst.util.BuilderPool;
-import io.atomix.copycat.client.Operation;
 import io.atomix.copycat.client.Query;
 
 /**
@@ -27,15 +25,6 @@ import io.atomix.copycat.client.Query;
  */
 @SerializeWith(id=417)
 public class ResourceExists extends KeyOperation<Boolean> implements Query<Boolean> {
-
-  /**
-   * Returns a new ResourceExists builder.
-   *
-   * @return A new ResourceExists command builder.
-   */
-  public static Builder builder() {
-    return Operation.builder(ResourceExists.Builder.class, ResourceExists.Builder::new);
-  }
 
   public ResourceExists() {
   }
@@ -50,20 +39,6 @@ public class ResourceExists extends KeyOperation<Boolean> implements Query<Boole
   @Override
   public ConsistencyLevel consistency() {
     return ConsistencyLevel.LINEARIZABLE;
-  }
-
-  /**
-   * Resource exists builder.
-   */
-  public static class Builder extends KeyOperation.Builder<Builder, ResourceExists, Boolean> {
-    public Builder(BuilderPool<Builder, ResourceExists> pool) {
-      super(pool);
-    }
-
-    @Override
-    protected ResourceExists create() {
-      return new ResourceExists();
-    }
   }
 
 }

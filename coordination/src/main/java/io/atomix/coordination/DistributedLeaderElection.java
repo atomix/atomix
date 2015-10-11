@@ -117,7 +117,7 @@ public class DistributedLeaderElection extends DistributedResource<DistributedLe
     }
 
     listeners.add(listener);
-    return submit(LeaderElectionCommands.Listen.builder().build())
+    return submit(new LeaderElectionCommands.Listen())
       .thenApply(v -> new ElectionListener(listener));
   }
 
@@ -129,7 +129,7 @@ public class DistributedLeaderElection extends DistributedResource<DistributedLe
    *         instance is the current leader.
    */
   public CompletableFuture<Boolean> isLeader(long epoch) {
-    return submit(LeaderElectionCommands.IsLeader.builder().withEpoch(epoch).build());
+    return submit(new LeaderElectionCommands.IsLeader(epoch));
   }
 
   /**
@@ -152,7 +152,7 @@ public class DistributedLeaderElection extends DistributedResource<DistributedLe
       synchronized (DistributedLeaderElection.this) {
         listeners.remove(listener);
         if (listeners.isEmpty()) {
-          submit(LeaderElectionCommands.Unlisten.builder().build());
+          submit(new LeaderElectionCommands.Unlisten());
         }
       }
     }

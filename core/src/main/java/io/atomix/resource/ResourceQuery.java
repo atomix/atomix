@@ -17,9 +17,6 @@ package io.atomix.resource;
 
 import io.atomix.Consistency;
 import io.atomix.catalyst.serializer.SerializeWith;
-import io.atomix.catalyst.util.Assert;
-import io.atomix.catalyst.util.BuilderPool;
-import io.atomix.copycat.client.Operation;
 import io.atomix.copycat.client.Query;
 
 /**
@@ -30,14 +27,11 @@ import io.atomix.copycat.client.Query;
 @SerializeWith(id=401)
 public class ResourceQuery<T extends Query<U>, U> extends ResourceOperation<T, U> implements Query<U> {
 
-  /**
-   * Returns a new resource query builder.
-   *
-   * @return A new resource query builder.
-   */
-  @SuppressWarnings("unchecked")
-  public static <T extends Query<U>, U> Builder<T, U> builder() {
-    return Operation.builder(Builder.class, Builder::new);
+  public ResourceQuery() {
+  }
+
+  public ResourceQuery(long resource, T query, Consistency consistency) {
+    super(resource, query, consistency);
   }
 
   @Override
@@ -49,55 +43,6 @@ public class ResourceQuery<T extends Query<U>, U> extends ResourceOperation<T, U
   @Override
   public String toString() {
     return String.format("%s[resource=%d, query=%s, consistency=%s]", getClass().getSimpleName(), resource, operation, consistency());
-  }
-
-  /**
-   * Resource command builder.
-   */
-  public static class Builder<T extends Query<U>, U> extends Query.Builder<Builder<T, U>, ResourceQuery<T, U>, U> {
-
-    private Builder(BuilderPool<Builder<T, U>, ResourceQuery<T, U>> pool) {
-      super(pool);
-    }
-
-    @Override
-    protected ResourceQuery<T, U> create() {
-      return new ResourceQuery<>();
-    }
-
-    /**
-     * Sets the resource ID.
-     *
-     * @param resource The resource ID.
-     * @return The resource query builder.
-     */
-    public Builder withResource(long resource) {
-      query.resource = resource;
-      return this;
-    }
-
-    /**
-     * Sets the resource command.
-     *
-     * @param query The resource command.
-     * @return The resource command builder.
-     * @throws NullPointerException if {@code query} is null
-     */
-    public Builder withQuery(T query) {
-      this.query.operation = Assert.notNull(query, "query");
-      return this;
-    }
-
-    /**
-     * Sets the query consistency.
-     *
-     * @param consistency The query consistency.
-     * @return The resource query builder.
-     */
-    public Builder withConsistency(Consistency consistency) {
-      query.consistency = Assert.notNull(consistency, "consistency");
-      return this;
-    }
   }
 
 }

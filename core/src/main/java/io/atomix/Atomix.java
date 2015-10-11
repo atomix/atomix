@@ -201,14 +201,10 @@ public abstract class Atomix implements Managed<Atomix> {
    */
   public <T extends DistributedResource<?>> CompletableFuture<T> get(String key, Supplier<T> factory) {
     T resource = Assert.notNull(factory, "factory").get();
-    return client.submit(GetResource.builder()
-      .withKey(Assert.notNull(key, "key"))
-      .withType(resource.stateMachine())
-      .build())
-      .thenApply(id -> {
-        resource.open(resources.computeIfAbsent(id, i -> new ResourceContext(id, key, client, transport)));
-        return resource;
-      });
+    return client.submit(new GetResource(Assert.notNull(key, "key"), resource.stateMachine())).thenApply(id -> {
+      resource.open(resources.computeIfAbsent(id, i -> new ResourceContext(id, key, client, transport)));
+      return resource;
+    });
   }
 
   /**
@@ -305,11 +301,7 @@ public abstract class Atomix implements Managed<Atomix> {
    */
   public <T extends DistributedResource<?>> CompletableFuture<T> create(String key, Supplier<T> factory) {
     T resource = Assert.notNull(factory, "factory").get();
-    return client.submit(CreateResource.builder()
-      .withKey(Assert.notNull(key, "key"))
-      .withType(resource.stateMachine())
-      .build())
-      .thenApply(id -> {
+    return client.submit(new CreateResource(Assert.notNull(key, "key"), resource.stateMachine())).thenApply(id -> {
         resource.open(resources.computeIfAbsent(id, i -> new ResourceContext(id, key, client, transport)));
         return resource;
       });

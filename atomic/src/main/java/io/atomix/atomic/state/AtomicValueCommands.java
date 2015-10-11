@@ -20,9 +20,7 @@ import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
 import io.atomix.catalyst.serializer.SerializeWith;
 import io.atomix.catalyst.serializer.Serializer;
-import io.atomix.catalyst.util.BuilderPool;
 import io.atomix.copycat.client.Command;
-import io.atomix.copycat.client.Operation;
 import io.atomix.copycat.client.Query;
 
 /**
@@ -40,6 +38,13 @@ public class AtomicValueCommands {
    */
   public static abstract class ValueCommand<V> implements Command<V>, CatalystSerializable {
     protected long ttl;
+
+    protected ValueCommand() {
+    }
+
+    protected ValueCommand(long ttl) {
+      this.ttl = ttl;
+    }
 
     @Override
     public PersistenceLevel persistence() {
@@ -64,27 +69,6 @@ public class AtomicValueCommands {
     public void readObject(BufferInput<?> buffer, Serializer serializer) {
       ttl = buffer.readLong();
     }
-
-    /**
-     * Base reference command builder.
-     */
-    public static abstract class Builder<T extends Builder<T, U, V>, U extends ValueCommand<V>, V> extends Command.Builder<T, U, V> {
-      protected Builder(BuilderPool<T, U> pool) {
-        super(pool);
-      }
-
-      /**
-       * Sets the time to live.
-       *
-       * @param ttl The time to live in milliseconds..
-       * @return The command builder.
-       */
-      @SuppressWarnings("unchecked")
-      public T withTtl(long ttl) {
-        command.ttl = ttl;
-        return (T) this;
-      }
-    }
   }
 
   /**
@@ -99,15 +83,6 @@ public class AtomicValueCommands {
     @Override
     public void readObject(BufferInput<?> bufferInput, Serializer serializer) {
     }
-
-    /**
-     * Base reference query builder.
-     */
-    public static abstract class Builder<T extends Builder<T, U, V>, U extends ValueQuery<V>, V> extends Query.Builder<T, U, V> {
-      protected Builder(BuilderPool<T, U> pool) {
-        super(pool);
-      }
-    }
   }
 
   /**
@@ -115,30 +90,6 @@ public class AtomicValueCommands {
    */
   @SerializeWith(id=460)
   public static class Get<T> extends ValueQuery<T> {
-
-    /**
-     * Returns a new get query builder.
-     *
-     * @return A new get query builder.
-     */
-    @SuppressWarnings("unchecked")
-    public static <T> Builder<T> builder() {
-      return Operation.builder(Builder.class, Builder::new);
-    }
-
-    /**
-     * Get query builder.
-     */
-    public static class Builder<T> extends ValueQuery.Builder<Builder<T>, Get<T>, T> {
-      public Builder(BuilderPool<Builder<T>, Get<T>> pool) {
-        super(pool);
-      }
-
-      @Override
-      protected Get<T> create() {
-        return new Get<>();
-      }
-    }
   }
 
   /**
@@ -146,17 +97,19 @@ public class AtomicValueCommands {
    */
   @SerializeWith(id=461)
   public static class Set extends ValueCommand<Void> {
+    private Object value;
 
-    /**
-     * Returns a new set command builder.
-     *
-     * @return A new set command builder.
-     */
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
+    public Set() {
     }
 
-    private Object value;
+    public Set(Object value) {
+      this.value = value;
+    }
+
+    public Set(Object value, long ttl) {
+      super(ttl);
+      this.value = value;
+    }
 
     /**
      * Returns the command value.
@@ -181,31 +134,6 @@ public class AtomicValueCommands {
     public String toString() {
       return String.format("%s[value=%s]", getClass().getSimpleName(), value);
     }
-
-    /**
-     * Put command builder.
-     */
-    public static class Builder extends ValueCommand.Builder<Builder, Set, Void> {
-      public Builder(BuilderPool<Builder, Set> pool) {
-        super(pool);
-      }
-
-      @Override
-      protected Set create() {
-        return new Set();
-      }
-
-      /**
-       * Sets the command value.
-       *
-       * @param value The command value.
-       * @return The command builder.
-       */
-      public Builder withValue(Object value) {
-        command.value = value;
-        return this;
-      }
-    }
   }
 
   /**
@@ -213,18 +141,22 @@ public class AtomicValueCommands {
    */
   @SerializeWith(id=462)
   public static class CompareAndSet extends ValueCommand<Boolean> {
-
-    /**
-     * Returns a new compare and set command builder.
-     *
-     * @return A new compare and set command builder.
-     */
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
-    }
-
     private Object expect;
     private Object update;
+
+    public CompareAndSet() {
+    }
+
+    public CompareAndSet(Object expect, Object update) {
+      this.expect = expect;
+      this.update = update;
+    }
+
+    public CompareAndSet(Object expect, Object update, long ttl) {
+      super(ttl);
+      this.expect = expect;
+      this.update = update;
+    }
 
     /**
      * Returns the expected value.
@@ -260,42 +192,6 @@ public class AtomicValueCommands {
     public String toString() {
       return String.format("%s[expect=%s, update=%s]", getClass().getSimpleName(), expect, update);
     }
-
-    /**
-     * Compare and set command builder.
-     */
-    public static class Builder extends ValueCommand.Builder<Builder, CompareAndSet, Boolean> {
-      public Builder(BuilderPool<Builder, CompareAndSet> pool) {
-        super(pool);
-      }
-
-      @Override
-      protected CompareAndSet create() {
-        return new CompareAndSet();
-      }
-
-      /**
-       * Sets the expected value.
-       *
-       * @param expect The expected value.
-       * @return The command builder.
-       */
-      public Builder withExpect(Object expect) {
-        command.expect = expect;
-        return this;
-      }
-
-      /**
-       * Sets the updated value.
-       *
-       * @param update The updated value.
-       * @return The command builder.
-       */
-      public Builder withUpdate(Object update) {
-        command.update = update;
-        return this;
-      }
-    }
   }
 
   /**
@@ -303,18 +199,19 @@ public class AtomicValueCommands {
    */
   @SerializeWith(id=463)
   public static class GetAndSet<T> extends ValueCommand<T> {
+    private Object value;
 
-    /**
-     * Returns a new get and set command builder.
-     *
-     * @return A new get and set command builder.
-     */
-    @SuppressWarnings("unchecked")
-    public static <T> Builder<T> builder() {
-      return Operation.builder(Builder.class, Builder::new);
+    public GetAndSet() {
     }
 
-    private Object value;
+    public GetAndSet(Object value) {
+      this.value = value;
+    }
+
+    public GetAndSet(Object value, long ttl) {
+      super(ttl);
+      this.value = value;
+    }
 
     /**
      * Returns the command value.
@@ -339,31 +236,6 @@ public class AtomicValueCommands {
     public String toString() {
       return String.format("%s[value=%s]", getClass().getSimpleName(), value);
     }
-
-    /**
-     * Put command builder.
-     */
-    public static class Builder<T> extends ValueCommand.Builder<Builder<T>, GetAndSet<T>, T> {
-      public Builder(BuilderPool<Builder<T>, GetAndSet<T>> pool) {
-        super(pool);
-      }
-
-      @Override
-      protected GetAndSet<T> create() {
-        return new GetAndSet<>();
-      }
-
-      /**
-       * Sets the command value.
-       *
-       * @param value The command value.
-       * @return The command builder.
-       */
-      public Builder<T> withValue(Object value) {
-        command.value = value;
-        return this;
-      }
-    }
   }
 
   /**
@@ -371,38 +243,12 @@ public class AtomicValueCommands {
    */
   @SerializeWith(id=464)
   public static class Listen implements Command<Void>, CatalystSerializable {
-
-    /**
-     * Returns a new change listen builder.
-     *
-     * @return A new change listen builder.
-     */
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
-    }
-
     @Override
     public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
-
     }
 
     @Override
     public void readObject(BufferInput<?> buffer, Serializer serializer) {
-
-    }
-
-    /**
-     * Change listen builder.
-     */
-    public static class Builder extends Command.Builder<Builder, Listen, Void> {
-      public Builder(BuilderPool<Builder, Listen> pool) {
-        super(pool);
-      }
-
-      @Override
-      protected Listen create() {
-        return new Listen();
-      }
     }
   }
 
@@ -411,38 +257,12 @@ public class AtomicValueCommands {
    */
   @SerializeWith(id=465)
   public static class Unlisten implements Command<Void>, CatalystSerializable {
-
-    /**
-     * Returns a new change unlisten builder.
-     *
-     * @return A new change unlisten builder.
-     */
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
-    }
-
     @Override
     public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
-
     }
 
     @Override
     public void readObject(BufferInput<?> buffer, Serializer serializer) {
-
-    }
-
-    /**
-     * Change unlisten builder.
-     */
-    public static class Builder extends Command.Builder<Builder, Unlisten, Void> {
-      public Builder(BuilderPool<Builder, Unlisten> pool) {
-        super(pool);
-      }
-
-      @Override
-      protected Unlisten create() {
-        return new Unlisten();
-      }
     }
   }
 

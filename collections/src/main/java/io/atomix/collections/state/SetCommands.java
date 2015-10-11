@@ -20,12 +20,8 @@ import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
 import io.atomix.catalyst.serializer.SerializeWith;
 import io.atomix.catalyst.serializer.Serializer;
-import io.atomix.catalyst.util.BuilderPool;
 import io.atomix.copycat.client.Command;
-import io.atomix.copycat.client.Operation;
 import io.atomix.copycat.client.Query;
-
-import java.util.concurrent.TimeUnit;
 
 /**
  * Distributed set commands.
@@ -49,15 +45,6 @@ public class SetCommands {
     @Override
     public void readObject(BufferInput<?> buffer, Serializer serializer) {
     }
-
-    /**
-     * Base set command builder.
-     */
-    public static abstract class Builder<T extends Builder<T, U, V>, U extends SetCommand<V>, V> extends Command.Builder<T, U, V> {
-      protected Builder(BuilderPool<T, U> pool) {
-        super(pool);
-      }
-    }
   }
 
   /**
@@ -72,15 +59,6 @@ public class SetCommands {
     @Override
     public void readObject(BufferInput<?> buffer, Serializer serializer) {
     }
-
-    /**
-     * Base set query builder.
-     */
-    public static abstract class Builder<T extends Builder<T, U, V>, U extends SetQuery<V>, V> extends Query.Builder<T, U, V> {
-      protected Builder(BuilderPool<T, U> pool) {
-        super(pool);
-      }
-    }
   }
 
   /**
@@ -88,6 +66,13 @@ public class SetCommands {
    */
   private static abstract class ValueCommand<V> extends SetCommand<V> {
     protected Object value;
+
+    public ValueCommand() {
+    }
+
+    public ValueCommand(Object value) {
+      this.value = value;
+    }
 
     /**
      * Returns the value.
@@ -105,29 +90,6 @@ public class SetCommands {
     public void readObject(BufferInput<?> buffer, Serializer serializer) {
       value = serializer.readObject(buffer);
     }
-
-    /**
-     * Base key command builder.
-     */
-    public static abstract class Builder<T extends Builder<T, U, V>, U extends ValueCommand<V>, V> extends SetCommand.Builder<T, U, V> {
-      protected Builder(BuilderPool<T, U> pool) {
-        super(pool);
-      }
-
-      /**
-       * Sets the command value.
-       *
-       * @param value The command value
-       * @return The command builder.
-       */
-      @SuppressWarnings("unchecked")
-      public T withValue(Object value) {
-        if (value == null)
-          throw new NullPointerException("value cannot be null");
-        command.value = value;
-        return (T) this;
-      }
-    }
   }
 
   /**
@@ -135,6 +97,13 @@ public class SetCommands {
    */
   private static abstract class ValueQuery<V> extends SetQuery<V> {
     protected Object value;
+
+    public ValueQuery() {
+    }
+
+    public ValueQuery(Object value) {
+      this.value = value;
+    }
 
     /**
      * Returns the value.
@@ -154,29 +123,6 @@ public class SetCommands {
       super.readObject(buffer, serializer);
       value = serializer.readObject(buffer);
     }
-
-    /**
-     * Base value query builder.
-     */
-    public static abstract class Builder<T extends Builder<T, U, V>, U extends ValueQuery<V>, V> extends SetQuery.Builder<T, U, V> {
-      protected Builder(BuilderPool<T, U> pool) {
-        super(pool);
-      }
-
-      /**
-       * Sets the query value.
-       *
-       * @param value The query value
-       * @return The query builder.
-       */
-      @SuppressWarnings("unchecked")
-      public T withValue(Object value) {
-        if (value == null)
-          throw new NullPointerException("value cannot be null");
-        query.value = value;
-        return (T) this;
-      }
-    }
   }
 
   /**
@@ -184,26 +130,11 @@ public class SetCommands {
    */
   @SerializeWith(id=450)
   public static class Contains extends ValueQuery<Boolean> {
-
-    /**
-     * Returns a builder for this command.
-     */
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
+    public Contains() {
     }
 
-    /**
-     * Contains key builder.
-     */
-    public static class Builder extends ValueQuery.Builder<Builder, Contains, Boolean> {
-      public Builder(BuilderPool<Builder, Contains> pool) {
-        super(pool);
-      }
-
-      @Override
-      protected Contains create() {
-        return new Contains();
-      }
+    public Contains(Object value) {
+      super(value);
     }
   }
 
@@ -212,6 +143,14 @@ public class SetCommands {
    */
   public static abstract class TtlCommand<V> extends ValueCommand<V> {
     protected long ttl;
+
+    protected TtlCommand() {
+    }
+
+    protected TtlCommand(Object value, long ttl) {
+      super(value);
+      this.ttl = ttl;
+    }
 
     @Override
     public PersistenceLevel persistence() {
@@ -238,38 +177,6 @@ public class SetCommands {
       super.readObject(buffer, serializer);
       ttl = buffer.readLong();
     }
-
-    /**
-     * TTL command builder.
-     */
-    public static abstract class Builder<T extends Builder<T, U, V>, U extends TtlCommand<V>, V> extends ValueCommand.Builder<T, U, V> {
-      protected Builder(BuilderPool<T, U> pool) {
-        super(pool);
-      }
-
-      /**
-       * Sets the time to live.
-       *
-       * @param ttl The time to live in milliseconds..
-       * @return The command builder.
-       */
-      public Builder withTtl(long ttl) {
-        command.ttl = ttl;
-        return this;
-      }
-
-      /**
-       * Sets the time to live.
-       *
-       * @param ttl The time to live.
-       * @param unit The time to live unit.
-       * @return The command builder.
-       */
-      public Builder withTtl(long ttl, TimeUnit unit) {
-        command.ttl = unit.toMillis(ttl);
-        return this;
-      }
-    }
   }
 
   /**
@@ -277,26 +184,15 @@ public class SetCommands {
    */
   @SerializeWith(id=451)
   public static class Add extends TtlCommand<Boolean> {
-
-    /**
-     * Returns a builder for this command.
-     */
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
+    public Add() {
     }
 
-    /**
-     * Add command builder.
-     */
-    public static class Builder extends TtlCommand.Builder<Builder, Add, Boolean> {
-      public Builder(BuilderPool<Builder, Add> pool) {
-        super(pool);
-      }
+    public Add(Object value) {
+      super(value, 0);
+    }
 
-      @Override
-      protected Add create() {
-        return new Add();
-      }
+    public Add(Object value, long ttl) {
+      super(value, ttl);
     }
   }
 
@@ -306,30 +202,16 @@ public class SetCommands {
   @SerializeWith(id=452)
   public static class Remove extends ValueCommand<Boolean> {
 
-    /**
-     * Returns a builder for this command.
-     */
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
+    public Remove() {
+    }
+
+    public Remove(Object value) {
+      super(value);
     }
 
     @Override
     public PersistenceLevel persistence() {
       return PersistenceLevel.PERSISTENT;
-    }
-
-    /**
-     * Remove command builder.
-     */
-    public static class Builder extends ValueCommand.Builder<Builder, Remove, Boolean> {
-      public Builder(BuilderPool<Builder, Remove> pool) {
-        super(pool);
-      }
-
-      @Override
-      protected Remove create() {
-        return new Remove();
-      }
     }
   }
 
@@ -338,27 +220,6 @@ public class SetCommands {
    */
   @SerializeWith(id=453)
   public static class Size extends SetQuery<Integer> {
-
-    /**
-     * Returns a builder for this query.
-     */
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
-    }
-
-    /**
-     * Size query builder.
-     */
-    public static class Builder extends SetQuery.Builder<Builder, Size, Integer> {
-      public Builder(BuilderPool<Builder, Size> pool) {
-        super(pool);
-      }
-
-      @Override
-      protected Size create() {
-        return new Size();
-      }
-    }
   }
 
   /**
@@ -366,27 +227,6 @@ public class SetCommands {
    */
   @SerializeWith(id=454)
   public static class IsEmpty extends SetQuery<Boolean> {
-
-    /**
-     * Returns a builder for this query.
-     */
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
-    }
-
-    /**
-     * Is empty query builder.
-     */
-    public static class Builder extends SetQuery.Builder<Builder, IsEmpty, Boolean> {
-      public Builder(BuilderPool<Builder, IsEmpty> pool) {
-        super(pool);
-      }
-
-      @Override
-      protected IsEmpty create() {
-        return new IsEmpty();
-      }
-    }
   }
 
   /**
@@ -395,30 +235,9 @@ public class SetCommands {
   @SerializeWith(id=455)
   public static class Clear extends SetCommand<Void> {
 
-    /**
-     * Returns a builder for this command.
-     */
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
-    }
-
     @Override
     public PersistenceLevel persistence() {
       return PersistenceLevel.PERSISTENT;
-    }
-
-    /**
-     * Get command builder.
-     */
-    public static class Builder extends SetCommand.Builder<Builder, Clear, Void> {
-      public Builder(BuilderPool<Builder, Clear> pool) {
-        super(pool);
-      }
-
-      @Override
-      protected Clear create() {
-        return new Clear();
-      }
     }
   }
 

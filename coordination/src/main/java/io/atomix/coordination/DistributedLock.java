@@ -106,7 +106,7 @@ public class DistributedLock extends DistributedResource<DistributedLock> {
     CompletableFuture<Void> future = new CompletableFuture<>();
     Consumer<Boolean> consumer = locked -> future.complete(null);
     queue.add(consumer);
-    submit(LockCommands.Lock.builder().withTimeout(-1).build()).whenComplete((result, error) -> {
+    submit(new LockCommands.Lock(-1)).whenComplete((result, error) -> {
       if (error != null) {
         queue.remove(consumer);
       }
@@ -155,7 +155,7 @@ public class DistributedLock extends DistributedResource<DistributedLock> {
     CompletableFuture<Boolean> future = new CompletableFuture<>();
     Consumer<Boolean> consumer = future::complete;
     queue.add(consumer);
-    submit(LockCommands.Lock.builder().build()).whenComplete((result, error) -> {
+    submit(new LockCommands.Lock()).whenComplete((result, error) -> {
       if (error != null) {
         queue.remove(consumer);
       }
@@ -212,7 +212,7 @@ public class DistributedLock extends DistributedResource<DistributedLock> {
     CompletableFuture<Boolean> future = new CompletableFuture<>();
     Consumer<Boolean> consumer = future::complete;
     queue.add(consumer);
-    submit(LockCommands.Lock.builder().withTimeout(timeout.toMillis()).build()).whenComplete((result, error) -> {
+    submit(new LockCommands.Lock(timeout.toMillis())).whenComplete((result, error) -> {
       if (error != null) {
         queue.remove(consumer);
       }
@@ -247,7 +247,7 @@ public class DistributedLock extends DistributedResource<DistributedLock> {
    * @return A completable future to be completed once the lock has been released.
    */
   public CompletableFuture<Void> unlock() {
-    return submit(LockCommands.Unlock.builder().build());
+    return submit(new LockCommands.Unlock());
   }
 
 }

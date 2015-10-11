@@ -106,11 +106,7 @@ public class ResourceContext {
    */
   @SuppressWarnings("unchecked")
   public <T> CompletableFuture<T> submit(Command<T> command, Consistency consistency) {
-    return client.submit(ResourceCommand.builder()
-      .withResource(resource)
-      .withCommand(command)
-      .withConsistency(consistency)
-      .build());
+    return client.submit(new ResourceCommand<>(resource, command, consistency));
   }
 
   /**
@@ -123,11 +119,7 @@ public class ResourceContext {
    */
   @SuppressWarnings("unchecked")
   public <T> CompletableFuture<T> submit(Query<T> query, Consistency consistency) {
-    return client.submit(ResourceQuery.builder()
-      .withResource(resource)
-      .withQuery(query)
-      .withConsistency(consistency)
-      .build());
+    return client.submit(new ResourceQuery<>(resource, query, consistency));
   }
 
   /**
@@ -136,10 +128,7 @@ public class ResourceContext {
    * @return A completable future to be called once the resource has been deleted.
    */
   public CompletableFuture<Void> delete() {
-    return client.submit(DeleteResource.builder()
-      .withResource(resource)
-      .build())
-      .thenApply(deleted -> null);
+    return client.submit(new DeleteResource(resource)).thenApply(result -> null);
   }
 
   @Override

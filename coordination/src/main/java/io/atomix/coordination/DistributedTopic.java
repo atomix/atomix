@@ -133,9 +133,7 @@ public class DistributedTopic<T> extends DistributedResource<DistributedTopic<T>
    * @return A completable future to be completed once the message has been published.
    */
   public CompletableFuture<Void> publish(T message) {
-    return submit(TopicCommands.Publish.builder()
-      .withMessage(message)
-      .build());
+    return submit(new TopicCommands.Publish<>(message));
   }
 
   /**
@@ -176,7 +174,7 @@ public class DistributedTopic<T> extends DistributedResource<DistributedTopic<T>
     }
 
     listeners.add(listener);
-    return submit(TopicCommands.Listen.builder().build())
+    return submit(new TopicCommands.Listen())
       .thenApply(v -> new TopicListener(listener));
   }
 
@@ -200,7 +198,7 @@ public class DistributedTopic<T> extends DistributedResource<DistributedTopic<T>
       synchronized (DistributedTopic.this) {
         listeners.remove(listener);
         if (listeners.isEmpty()) {
-          submit(TopicCommands.Unlisten.builder().build());
+          submit(new TopicCommands.Unlisten());
         }
       }
     }

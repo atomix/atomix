@@ -109,7 +109,7 @@ public class DistributedMultiMap<K, V> extends DistributedResource<DistributedMu
    * @return A completable future to be completed with a boolean value indicating whether the map is empty.
    */
   public CompletableFuture<Boolean> isEmpty() {
-    return submit(MultiMapCommands.IsEmpty.builder().build());
+    return submit(new MultiMapCommands.IsEmpty());
   }
 
   /**
@@ -118,8 +118,7 @@ public class DistributedMultiMap<K, V> extends DistributedResource<DistributedMu
    * @return A completable future to be completed with the number of entries in the map.
    */
   public CompletableFuture<Integer> size() {
-    return submit(MultiMapCommands.Size.builder()
-      .build());
+    return submit(new MultiMapCommands.Size());
   }
 
   /**
@@ -129,9 +128,7 @@ public class DistributedMultiMap<K, V> extends DistributedResource<DistributedMu
    * @return A completable future to be completed with the number of entries in the map.
    */
   public CompletableFuture<Integer> size(K key) {
-    return submit(MultiMapCommands.Size.builder()
-      .withKey(key)
-      .build());
+    return submit(new MultiMapCommands.Size(key));
   }
 
   /**
@@ -141,9 +138,7 @@ public class DistributedMultiMap<K, V> extends DistributedResource<DistributedMu
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Boolean> containsKey(K key) {
-    return submit(MultiMapCommands.ContainsKey.builder()
-      .withKey(key)
-      .build());
+    return submit(new MultiMapCommands.ContainsKey(key));
   }
 
   /**
@@ -154,10 +149,7 @@ public class DistributedMultiMap<K, V> extends DistributedResource<DistributedMu
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Boolean> containsEntry(K key, V value) {
-    return submit(MultiMapCommands.ContainsEntry.builder()
-      .withKey(key)
-      .withValue(value)
-      .build());
+    return submit(new MultiMapCommands.ContainsEntry(key, value));
   }
 
   /**
@@ -167,9 +159,7 @@ public class DistributedMultiMap<K, V> extends DistributedResource<DistributedMu
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Boolean> containsValue(V value) {
-    return submit(MultiMapCommands.ContainsValue.builder()
-      .withValue(value)
-      .build());
+    return submit(new MultiMapCommands.ContainsValue(value));
   }
 
   /**
@@ -180,9 +170,7 @@ public class DistributedMultiMap<K, V> extends DistributedResource<DistributedMu
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<Collection<V>> get(K key) {
-    return submit(MultiMapCommands.Get.builder()
-      .withKey(key)
-      .build())
+    return submit(new MultiMapCommands.Get(key))
       .thenApply(result -> result);
   }
 
@@ -194,10 +182,7 @@ public class DistributedMultiMap<K, V> extends DistributedResource<DistributedMu
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Boolean> put(K key, V value) {
-    return submit(MultiMapCommands.Put.builder()
-      .withKey(key)
-      .withValue(value)
-      .build())
+    return submit(new MultiMapCommands.Put(key, value))
       .thenApply(result -> result);
   }
 
@@ -211,11 +196,7 @@ public class DistributedMultiMap<K, V> extends DistributedResource<DistributedMu
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<Boolean> put(K key, V value, Duration ttl) {
-    return submit(MultiMapCommands.Put.builder()
-      .withKey(key)
-      .withValue(value)
-      .withTtl(ttl.toMillis())
-      .build());
+    return submit(new MultiMapCommands.Put(key, value, ttl.toMillis()));
   }
 
   /**
@@ -225,9 +206,7 @@ public class DistributedMultiMap<K, V> extends DistributedResource<DistributedMu
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Collection<V>> remove(Object key) {
-    return submit(MultiMapCommands.Remove.builder()
-      .withKey(key)
-      .build())
+    return submit(new MultiMapCommands.Remove(key))
       .thenApply(result -> (Collection) result);
   }
 
@@ -239,10 +218,7 @@ public class DistributedMultiMap<K, V> extends DistributedResource<DistributedMu
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Boolean> remove(Object key, Object value) {
-    return submit(MultiMapCommands.Remove.builder()
-      .withKey(key)
-      .withValue(value)
-      .build())
+    return submit(new MultiMapCommands.Remove(key, value))
       .thenApply(result -> (boolean) result);
   }
 
@@ -252,7 +228,7 @@ public class DistributedMultiMap<K, V> extends DistributedResource<DistributedMu
    * @return A completable future to be completed once the operation is complete.
    */
   public CompletableFuture<Void> clear() {
-    return submit(MultiMapCommands.Clear.builder().build());
+    return submit(new MultiMapCommands.Clear());
   }
 
 }

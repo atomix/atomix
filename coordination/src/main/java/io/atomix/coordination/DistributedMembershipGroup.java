@@ -185,7 +185,7 @@ public class DistributedMembershipGroup extends DistributedResource<DistributedM
    * @return A completable future to be completed once the member has joined.
    */
   public CompletableFuture<GroupMember> join() {
-    return submit(MembershipGroupCommands.Join.builder().build()).thenApply(members -> {
+    return submit(new MembershipGroupCommands.Join()).thenApply(members -> {
       member = new InternalGroupMember(context.session().id());
       for (long memberId : members) {
         this.members.computeIfAbsent(memberId, InternalGroupMember::new);
@@ -236,7 +236,7 @@ public class DistributedMembershipGroup extends DistributedResource<DistributedM
    * @return A completable future to be completed once the member has left.
    */
   public CompletableFuture<Void> leave() {
-    return submit(MembershipGroupCommands.Leave.builder().build()).whenComplete((result, error) -> {
+    return submit(new MembershipGroupCommands.Leave()).whenComplete((result, error) -> {
       member = null;
       members.clear();
     });
@@ -287,19 +287,12 @@ public class DistributedMembershipGroup extends DistributedResource<DistributedM
 
     @Override
     public CompletableFuture<Void> schedule(Duration delay, Runnable callback) {
-      return submit(MembershipGroupCommands.Schedule.builder()
-        .withMember(memberId)
-        .withDelay(delay.toMillis())
-        .withCallback(callback)
-        .build());
+      return submit(new MembershipGroupCommands.Schedule(memberId, delay.toMillis(), callback));
     }
 
     @Override
     public CompletableFuture<Void> execute(Runnable callback) {
-      return submit(MembershipGroupCommands.Execute.builder()
-        .withMember(memberId)
-        .withCallback(callback)
-        .build());
+      return submit(new MembershipGroupCommands.Execute(memberId, callback));
     }
   }
 

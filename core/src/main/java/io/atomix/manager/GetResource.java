@@ -21,8 +21,6 @@ import io.atomix.catalyst.serializer.SerializationException;
 import io.atomix.catalyst.serializer.SerializeWith;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.util.Assert;
-import io.atomix.catalyst.util.BuilderPool;
-import io.atomix.copycat.client.Operation;
 import io.atomix.copycat.client.Query;
 import io.atomix.copycat.server.StateMachine;
 
@@ -33,16 +31,6 @@ import io.atomix.copycat.server.StateMachine;
  */
 @SerializeWith(id=416)
 public class GetResource extends KeyOperation<Long> implements Query<Long> {
-
-  /**
-   * Returns a new GetResource builder.
-   *
-   * @return A new GetResource command builder.
-   */
-  public static Builder builder() {
-    return Operation.builder(GetResource.Builder.class, GetResource.Builder::new);
-  }
-
   private Class<? extends StateMachine> type;
 
   public GetResource() {
@@ -87,32 +75,6 @@ public class GetResource extends KeyOperation<Long> implements Query<Long> {
       type = (Class<? extends StateMachine>) Class.forName(typeName);
     } catch (ClassNotFoundException e) {
       throw new SerializationException(e);
-    }
-  }
-
-  /**
-   * Create resource builder.
-   */
-  public static class Builder extends KeyOperation.Builder<Builder, GetResource, Long> {
-    public Builder(BuilderPool<Builder, GetResource> pool) {
-      super(pool);
-    }
-
-    @Override
-    protected GetResource create() {
-      return new GetResource();
-    }
-
-    /**
-     * Sets the resource state machine type.
-     *
-     * @param type The resource state machine type.
-     * @return The create resource command builder.
-     * @throws NullPointerException if {@code type} is null
-     */
-    public Builder withType(Class<? extends StateMachine> type) {
-      operation.type = Assert.notNull(type, "type");
-      return this;
     }
   }
 

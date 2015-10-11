@@ -20,9 +20,8 @@ import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
 import io.atomix.catalyst.serializer.SerializeWith;
 import io.atomix.catalyst.serializer.Serializer;
-import io.atomix.catalyst.util.BuilderPool;
+import io.atomix.catalyst.util.Assert;
 import io.atomix.copycat.client.Command;
-import io.atomix.copycat.client.Operation;
 import io.atomix.copycat.client.Query;
 
 /**
@@ -52,15 +51,6 @@ public class LeaderElectionCommands {
     @Override
     public void readObject(BufferInput buffer, Serializer serializer) {
     }
-
-    /**
-     * Base reference command builder.
-     */
-    public static abstract class Builder<T extends Builder<T, U, V>, U extends ElectionQuery<V>, V> extends Query.Builder<T, U, V> {
-      protected Builder(BuilderPool<T, U> pool) {
-        super(pool);
-      }
-    }
   }
 
   /**
@@ -80,15 +70,6 @@ public class LeaderElectionCommands {
     @Override
     public void readObject(BufferInput buffer, Serializer serializer) {
     }
-
-    /**
-     * Base reference command builder.
-     */
-    public static abstract class Builder<T extends Builder<T, U, V>, U extends ElectionCommand<V>, V> extends Command.Builder<T, U, V> {
-      protected Builder(BuilderPool<T, U> pool) {
-        super(pool);
-      }
-    }
   }
 
   /**
@@ -96,30 +77,6 @@ public class LeaderElectionCommands {
    */
   @SerializeWith(id=510)
   public static class Listen extends ElectionCommand<Void> {
-
-    /**
-     * Returns a new listen command builder.
-     *
-     * @return A new listen command builder.
-     */
-    @SuppressWarnings("unchecked")
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
-    }
-
-    /**
-     * Listen command builder.
-     */
-    public static class Builder extends ElectionCommand.Builder<Builder, Listen, Void> {
-      public Builder(BuilderPool<Builder, Listen> pool) {
-        super(pool);
-      }
-
-      @Override
-      protected Listen create() {
-        return new Listen();
-      }
-    }
   }
 
   /**
@@ -128,33 +85,9 @@ public class LeaderElectionCommands {
   @SerializeWith(id=511)
   public static class Unlisten extends ElectionCommand<Void> {
 
-    /**
-     * Returns a new unlisten command builder.
-     *
-     * @return A new unlisten command builder.
-     */
-    @SuppressWarnings("unchecked")
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
-    }
-
     @Override
     public PersistenceLevel persistence() {
       return PersistenceLevel.PERSISTENT;
-    }
-
-    /**
-     * Unlisten command builder.
-     */
-    public static class Builder extends ElectionCommand.Builder<Builder, Unlisten, Void> {
-      public Builder(BuilderPool<Builder, Unlisten> pool) {
-        super(pool);
-      }
-
-      @Override
-      protected Unlisten create() {
-        return new Unlisten();
-      }
     }
   }
 
@@ -163,17 +96,14 @@ public class LeaderElectionCommands {
    */
   @SerializeWith(id=512)
   public static class IsLeader extends ElectionQuery<Boolean> {
+    private long epoch;
 
-    /**
-     * Returns a new is leader query builder.
-     *
-     * @return A new is leader query builder.
-     */
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
+    public IsLeader() {
     }
 
-    private long epoch;
+    public IsLeader(long epoch) {
+      this.epoch = Assert.argNot(epoch, epoch < 0, "epoch cannot be negative");
+    }
 
     /**
      * Returns the epoch to check.
@@ -187,33 +117,6 @@ public class LeaderElectionCommands {
     @Override
     public ConsistencyLevel consistency() {
       return ConsistencyLevel.LINEARIZABLE;
-    }
-
-    /**
-     * Is leader query builder.
-     */
-    public static class Builder extends ElectionQuery.Builder<Builder, IsLeader, Boolean> {
-      public Builder(BuilderPool<Builder, IsLeader> pool) {
-        super(pool);
-      }
-
-      @Override
-      protected IsLeader create() {
-        return new IsLeader();
-      }
-
-      /**
-       * Sets the epoch to check.
-       *
-       * @param epoch The epoch to check.
-       * @return The query builder.
-       */
-      public Builder withEpoch(long epoch) {
-        if (epoch <= 0)
-          throw new IllegalArgumentException("epoch must be positive");
-        query.epoch = epoch;
-        return this;
-      }
     }
   }
 

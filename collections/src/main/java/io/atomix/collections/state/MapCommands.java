@@ -20,9 +20,8 @@ import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
 import io.atomix.catalyst.serializer.SerializeWith;
 import io.atomix.catalyst.serializer.Serializer;
-import io.atomix.catalyst.util.BuilderPool;
+import io.atomix.catalyst.util.Assert;
 import io.atomix.copycat.client.Command;
-import io.atomix.copycat.client.Operation;
 import io.atomix.copycat.client.Query;
 
 /**
@@ -47,15 +46,6 @@ public class MapCommands {
     @Override
     public void readObject(BufferInput<?> buffer, Serializer serializer) {
     }
-
-    /**
-     * Base map command builder.
-     */
-    public static abstract class Builder<T extends Builder<T, U, V>, U extends MapCommand<V>, V> extends Command.Builder<T, U, V> {
-      protected Builder(BuilderPool<T, U> pool) {
-        super(pool);
-      }
-    }
   }
 
   /**
@@ -70,15 +60,6 @@ public class MapCommands {
     @Override
     public void readObject(BufferInput<?> buffer, Serializer serializer) {
     }
-
-    /**
-     * Base map query builder.
-     */
-    public static abstract class Builder<T extends Builder<T, U, V>, U extends MapQuery<V>, V> extends Query.Builder<T, U, V> {
-      protected Builder(BuilderPool<T, U> pool) {
-        super(pool);
-      }
-    }
   }
 
   /**
@@ -86,6 +67,13 @@ public class MapCommands {
    */
   public static abstract class KeyCommand<V> extends MapCommand<V> {
     protected Object key;
+
+    public KeyCommand() {
+    }
+
+    public KeyCommand(Object key) {
+      this.key = Assert.notNull(key, "key");
+    }
 
     /**
      * Returns the key.
@@ -103,29 +91,6 @@ public class MapCommands {
     public void readObject(BufferInput<?> buffer, Serializer serializer) {
       key = serializer.readObject(buffer);
     }
-
-    /**
-     * Base key command builder.
-     */
-    public static abstract class Builder<T extends Builder<T, U, V>, U extends KeyCommand<V>, V> extends MapCommand.Builder<T, U, V> {
-      protected Builder(BuilderPool<T, U> pool) {
-        super(pool);
-      }
-
-      /**
-       * Sets the command key.
-       *
-       * @param key The command key
-       * @return The command builder.
-       */
-      @SuppressWarnings("unchecked")
-      public T withKey(Object key) {
-        if (key == null)
-          throw new NullPointerException("key cannot be null");
-        command.key = key;
-        return (T) this;
-      }
-    }
   }
 
   /**
@@ -133,6 +98,13 @@ public class MapCommands {
    */
   public static abstract class KeyQuery<V> extends MapQuery<V> {
     protected Object key;
+
+    public KeyQuery() {
+    }
+
+    public KeyQuery(Object key) {
+      this.key = Assert.notNull(key, "key");
+    }
 
     /**
      * Returns the key.
@@ -152,29 +124,6 @@ public class MapCommands {
       super.readObject(buffer, serializer);
       key = serializer.readObject(buffer);
     }
-
-    /**
-     * Base key query builder.
-     */
-    public static abstract class Builder<T extends Builder<T, U, V>, U extends KeyQuery<V>, V> extends MapQuery.Builder<T, U, V> {
-      protected Builder(BuilderPool<T, U> pool) {
-        super(pool);
-      }
-
-      /**
-       * Sets the query key.
-       *
-       * @param key The query key
-       * @return The query builder.
-       */
-      @SuppressWarnings("unchecked")
-      public T withKey(Object key) {
-        if (key == null)
-          throw new NullPointerException("key cannot be null");
-        query.key = key;
-        return (T) this;
-      }
-    }
   }
 
   /**
@@ -182,26 +131,11 @@ public class MapCommands {
    */
   @SerializeWith(id=440)
   public static class ContainsKey extends KeyQuery<Boolean> {
-
-    /**
-     * Returns a builder for this command.
-     */
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
+    public ContainsKey() {
     }
 
-    /**
-     * Contains key builder.
-     */
-    public static class Builder extends KeyQuery.Builder<Builder, ContainsKey, Boolean> {
-      public Builder(BuilderPool<Builder, ContainsKey> pool) {
-        super(pool);
-      }
-
-      @Override
-      protected ContainsKey create() {
-        return new ContainsKey();
-      }
+    public ContainsKey(Object key) {
+      super(key);
     }
   }
 
@@ -210,6 +144,14 @@ public class MapCommands {
    */
   public static abstract class KeyValueCommand<V> extends KeyCommand<V> {
     protected Object value;
+
+    public KeyValueCommand() {
+    }
+
+    public KeyValueCommand(Object key, Object value) {
+      super(key);
+      this.value = value;
+    }
 
     /**
      * Returns the command value.
@@ -229,27 +171,6 @@ public class MapCommands {
       super.readObject(buffer, serializer);
       value = serializer.readObject(buffer);
     }
-
-    /**
-     * Key/value command builder.
-     */
-    public static abstract class Builder<T extends Builder<T, U, V>, U extends KeyValueCommand<V>, V> extends KeyCommand.Builder<T, U, V> {
-      protected Builder(BuilderPool<T, U> pool) {
-        super(pool);
-      }
-
-      /**
-       * Sets the command value.
-       *
-       * @param value The command value.
-       * @return The command builder.
-       */
-      @SuppressWarnings("unchecked")
-      public T withValue(Object value) {
-        command.value = value;
-        return (T) this;
-      }
-    }
   }
 
   /**
@@ -257,6 +178,14 @@ public class MapCommands {
    */
   public static abstract class TtlCommand<V> extends KeyValueCommand<V> {
     protected long ttl;
+
+    public TtlCommand() {
+    }
+
+    public TtlCommand(Object key, Object value, long ttl) {
+      super(key, value);
+      this.ttl = ttl;
+    }
 
     @Override
     public PersistenceLevel persistence() {
@@ -283,26 +212,6 @@ public class MapCommands {
       super.readObject(buffer, serializer);
       ttl = buffer.readLong();
     }
-
-    /**
-     * TTL command builder.
-     */
-    public static abstract class Builder<T extends Builder<T, U, V>, U extends TtlCommand<V>, V> extends KeyValueCommand.Builder<T, U, V> {
-      protected Builder(BuilderPool<T, U> pool) {
-        super(pool);
-      }
-
-      /**
-       * Sets the time to live.
-       *
-       * @param ttl The time to live in milliseconds..
-       * @return The command builder.
-       */
-      public Builder withTtl(long ttl) {
-        command.ttl = ttl;
-        return this;
-      }
-    }
   }
 
   /**
@@ -310,26 +219,15 @@ public class MapCommands {
    */
   @SerializeWith(id=441)
   public static class Put extends TtlCommand<Object> {
-
-    /**
-     * Returns a builder for this command.
-     */
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
+    public Put() {
     }
 
-    /**
-     * Put command builder.
-     */
-    public static class Builder extends TtlCommand.Builder<Builder, Put, Object> {
-      public Builder(BuilderPool<Builder, Put> pool) {
-        super(pool);
-      }
+    public Put(Object key, Object value) {
+      this(key, value, 0);
+    }
 
-      @Override
-      protected Put create() {
-        return new Put();
-      }
+    public Put(Object key, Object value, long ttl) {
+      super(key, value, ttl);
     }
   }
 
@@ -338,26 +236,15 @@ public class MapCommands {
    */
   @SerializeWith(id=442)
   public static class PutIfAbsent extends TtlCommand<Object> {
-
-    /**
-     * Returns a builder for this command.
-     */
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
+    public PutIfAbsent() {
     }
 
-    /**
-     * Put command builder.
-     */
-    public static class Builder extends TtlCommand.Builder<Builder, PutIfAbsent, Object> {
-      public Builder(BuilderPool<Builder, PutIfAbsent> pool) {
-        super(pool);
-      }
+    public PutIfAbsent(Object key, Object value) {
+      this(key, value, 0);
+    }
 
-      @Override
-      protected PutIfAbsent create() {
-        return new PutIfAbsent();
-      }
+    public PutIfAbsent(Object key, Object value, long ttl) {
+      super(key, value, ttl);
     }
   }
 
@@ -366,26 +253,11 @@ public class MapCommands {
    */
   @SerializeWith(id=443)
   public static class Get extends KeyQuery<Object> {
-
-    /**
-     * Returns a builder for this query.
-     */
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
+    public Get() {
     }
 
-    /**
-     * Get query builder.
-     */
-    public static class Builder extends KeyQuery.Builder<Builder, Get, Object> {
-      public Builder(BuilderPool<Builder, Get> pool) {
-        super(pool);
-      }
-
-      @Override
-      protected Get create() {
-        return new Get();
-      }
+    public Get(Object key) {
+      super(key);
     }
   }
 
@@ -394,15 +266,15 @@ public class MapCommands {
    */
   @SerializeWith(id=444)
   public static class GetOrDefault extends KeyQuery<Object> {
+    private Object defaultValue;
 
-    /**
-     * Returns a builder for this query.
-     */
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
+    public GetOrDefault() {
     }
 
-    private Object defaultValue;
+    public GetOrDefault(Object key, Object defaultValue) {
+      super(key);
+      this.defaultValue = defaultValue;
+    }
 
     /**
      * Returns the default value.
@@ -424,31 +296,6 @@ public class MapCommands {
       super.writeObject(buffer, serializer);
       serializer.writeObject(defaultValue, buffer);
     }
-
-    /**
-     * Get command builder.
-     */
-    public static class Builder extends KeyQuery.Builder<Builder, GetOrDefault, Object> {
-      public Builder(BuilderPool<Builder, GetOrDefault> pool) {
-        super(pool);
-      }
-
-      @Override
-      protected GetOrDefault create() {
-        return new GetOrDefault();
-      }
-
-      /**
-       * Sets the default value.
-       *
-       * @param defaultValue The default value.
-       * @return The query builder.
-       */
-      public Builder withDefaultValue(Object defaultValue) {
-        query.defaultValue = defaultValue;
-        return this;
-      }
-    }
   }
 
   /**
@@ -457,30 +304,16 @@ public class MapCommands {
   @SerializeWith(id=445)
   public static class Remove extends KeyCommand<Object> {
 
-    /**
-     * Returns a builder for this command.
-     */
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
+    public Remove() {
+    }
+
+    public Remove(Object key) {
+      super(key);
     }
 
     @Override
     public PersistenceLevel persistence() {
       return PersistenceLevel.PERSISTENT;
-    }
-
-    /**
-     * Get command builder.
-     */
-    public static class Builder extends KeyCommand.Builder<Builder, Remove, Object> {
-      public Builder(BuilderPool<Builder, Remove> pool) {
-        super(pool);
-      }
-
-      @Override
-      protected Remove create() {
-        return new Remove();
-      }
     }
   }
 
@@ -490,30 +323,16 @@ public class MapCommands {
   @SerializeWith(id=449)
   public static class RemoveIfPresent extends KeyValueCommand<Boolean> {
 
-    /**
-     * Returns a builder for this command.
-     */
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
+    public RemoveIfPresent() {
+    }
+
+    public RemoveIfPresent(Object key, Object value) {
+      super(key, value);
     }
 
     @Override
     public PersistenceLevel persistence() {
       return PersistenceLevel.PERSISTENT;
-    }
-
-    /**
-     * Remove if absent command builder.
-     */
-    public static class Builder extends KeyValueCommand.Builder<Builder, RemoveIfPresent, Boolean> {
-      public Builder(BuilderPool<Builder, RemoveIfPresent> pool) {
-        super(pool);
-      }
-
-      @Override
-      protected RemoveIfPresent create() {
-        return new RemoveIfPresent();
-      }
     }
   }
 
@@ -522,26 +341,15 @@ public class MapCommands {
    */
   @SerializeWith(id=450)
   public static class Replace extends TtlCommand<Object> {
-
-    /**
-     * Returns a builder for this command.
-     */
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
+    public Replace() {
     }
 
-    /**
-     * Get command builder.
-     */
-    public static class Builder extends TtlCommand.Builder<Builder, Replace, Object> {
-      public Builder(BuilderPool<Builder, Replace> pool) {
-        super(pool);
-      }
+    public Replace(Object key, Object value) {
+      this(key, value, 0);
+    }
 
-      @Override
-      protected Replace create() {
-        return new Replace();
-      }
+    public Replace(Object key, Object value, long ttl) {
+      super(key, value, ttl);
     }
   }
 
@@ -552,11 +360,16 @@ public class MapCommands {
   public static class ReplaceIfPresent extends TtlCommand<Boolean> {
     private Object replace;
 
-    /**
-     * Returns a builder for this command.
-     */
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
+    public ReplaceIfPresent() {
+    }
+
+    public ReplaceIfPresent(Object key, Object value, Object replace) {
+      this(key, value, replace, 0);
+    }
+
+    public ReplaceIfPresent(Object key, Object value, Object replace, long ttl) {
+      super(key, value, ttl);
+      this.replace = replace;
     }
 
     /**
@@ -579,31 +392,6 @@ public class MapCommands {
       super.readObject(buffer, serializer);
       replace = serializer.readObject(buffer);
     }
-
-    /**
-     * Get command builder.
-     */
-    public static class Builder extends TtlCommand.Builder<Builder, ReplaceIfPresent, Boolean> {
-      public Builder(BuilderPool<Builder, ReplaceIfPresent> pool) {
-        super(pool);
-      }
-
-      /**
-       * Sets the map replace value.
-       *
-       * @param replace The map replace value.
-       * @return The builder.
-       */
-      public Builder withReplace(Object replace) {
-        command.replace = replace;
-        return this;
-      }
-
-      @Override
-      protected ReplaceIfPresent create() {
-        return new ReplaceIfPresent();
-      }
-    }
   }
 
   /**
@@ -611,27 +399,6 @@ public class MapCommands {
    */
   @SerializeWith(id=446)
   public static class IsEmpty extends MapQuery<Boolean> {
-
-    /**
-     * Returns a builder for this command.
-     */
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
-    }
-
-    /**
-     * Is empty command builder.
-     */
-    public static class Builder extends MapQuery.Builder<Builder, IsEmpty, Boolean> {
-      public Builder(BuilderPool<Builder, IsEmpty> pool) {
-        super(pool);
-      }
-
-      @Override
-      protected IsEmpty create() {
-        return new IsEmpty();
-      }
-    }
   }
 
   /**
@@ -639,27 +406,6 @@ public class MapCommands {
    */
   @SerializeWith(id=447)
   public static class Size extends MapQuery<Integer> {
-
-    /**
-     * Returns a builder for this command.
-     */
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
-    }
-
-    /**
-     * Is empty command builder.
-     */
-    public static class Builder extends MapQuery.Builder<Builder, Size, Integer> {
-      public Builder(BuilderPool<Builder, Size> pool) {
-        super(pool);
-      }
-
-      @Override
-      protected Size create() {
-        return new Size();
-      }
-    }
   }
 
   /**
@@ -668,30 +414,9 @@ public class MapCommands {
   @SerializeWith(id=448)
   public static class Clear extends MapCommand<Void> {
 
-    /**
-     * Returns a builder for this command.
-     */
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
-    }
-
     @Override
     public PersistenceLevel persistence() {
       return PersistenceLevel.PERSISTENT;
-    }
-
-    /**
-     * Get command builder.
-     */
-    public static class Builder extends MapCommand.Builder<Builder, Clear, Void> {
-      public Builder(BuilderPool<Builder, Clear> pool) {
-        super(pool);
-      }
-
-      @Override
-      protected Clear create() {
-        return new Clear();
-      }
     }
   }
 

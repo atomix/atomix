@@ -139,9 +139,7 @@ public class DistributedMessageBus extends DistributedResource<DistributedMessag
 
     return openFuture.thenCompose(v -> {
       CompletableFuture<Void> future = new CompletableFuture<>();
-      submit(MessageBusCommands.Join.builder()
-        .withMember(address)
-        .build()).whenComplete((topics, error) -> {
+      submit(new MessageBusCommands.Join(address)).whenComplete((topics, error) -> {
         if (error == null) {
           for (Map.Entry<String, Set<Address>> entry : topics.entrySet()) {
             remotes.put(entry.getKey(), new RemoteConsumers(entry.getValue()));
@@ -257,9 +255,7 @@ public class DistributedMessageBus extends DistributedResource<DistributedMessag
    */
   public <T> CompletableFuture<MessageConsumer<T>> consumer(String topic, Function<T, ?> consumer) {
     CompletableFuture<MessageConsumer<T>> future = new CompletableFuture<>();
-    submit(MessageBusCommands.Register.builder()
-      .withTopic(topic)
-      .build()).whenComplete((result, error) -> {
+    submit(new MessageBusCommands.Register(topic)).whenComplete((result, error) -> {
       if (error == null) {
         InternalMessageConsumer<T> internalConsumer = new InternalMessageConsumer<>(topic, consumer);
         this.consumers.put(topic, internalConsumer);
@@ -391,9 +387,7 @@ public class DistributedMessageBus extends DistributedResource<DistributedMessag
 
     @Override
     public CompletableFuture<Void> close() {
-      return submit(MessageBusCommands.Unregister.builder()
-        .withTopic(topic)
-        .build());
+      return submit(new MessageBusCommands.Unregister(topic));
     }
   }
 

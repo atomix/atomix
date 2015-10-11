@@ -43,9 +43,7 @@ public class DistributedSet<T> extends DistributedResource<DistributedSet<T>> {
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Boolean> add(T value) {
-    return submit(SetCommands.Add.builder()
-      .withValue(value)
-      .build());
+    return submit(new SetCommands.Add(value));
   }
 
   /**
@@ -57,10 +55,7 @@ public class DistributedSet<T> extends DistributedResource<DistributedSet<T>> {
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<Boolean> add(T value, Duration ttl) {
-    return submit(SetCommands.Add.builder()
-      .withValue(value)
-      .withTtl(ttl.toMillis())
-      .build());
+    return submit(new SetCommands.Add(value, ttl.toMillis()));
   }
 
   /**
@@ -70,9 +65,7 @@ public class DistributedSet<T> extends DistributedResource<DistributedSet<T>> {
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Boolean> remove(T value) {
-    return submit(SetCommands.Remove.builder()
-      .withValue(value)
-      .build());
+    return submit(new SetCommands.Remove(value));
   }
 
   /**
@@ -82,9 +75,7 @@ public class DistributedSet<T> extends DistributedResource<DistributedSet<T>> {
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Boolean> contains(Object value) {
-    return submit(SetCommands.Contains.builder()
-      .withValue(value)
-      .build());
+    return submit(new SetCommands.Contains(value));
   }
 
   /**
@@ -93,7 +84,7 @@ public class DistributedSet<T> extends DistributedResource<DistributedSet<T>> {
    * @return A completable future to be completed with the set count.
    */
   public CompletableFuture<Integer> size() {
-    return submit(SetCommands.Size.builder().build());
+    return submit(new SetCommands.Size());
   }
 
   /**
@@ -102,7 +93,7 @@ public class DistributedSet<T> extends DistributedResource<DistributedSet<T>> {
    * @return A completable future to be completed with a boolean value indicating whether the set is empty.
    */
   public CompletableFuture<Boolean> isEmpty() {
-    return submit(SetCommands.IsEmpty.builder().build());
+    return submit(new SetCommands.IsEmpty());
   }
 
   /**
@@ -111,7 +102,7 @@ public class DistributedSet<T> extends DistributedResource<DistributedSet<T>> {
    * @return A completable future to be completed once the operation is complete.
    */
   public CompletableFuture<Void> clear() {
-    return submit(SetCommands.Clear.builder().build());
+    return submit(new SetCommands.Clear());
   }
 
 }

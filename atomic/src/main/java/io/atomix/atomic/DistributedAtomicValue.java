@@ -57,7 +57,7 @@ public class DistributedAtomicValue<T> extends DistributedResource<DistributedAt
    * @return A completable future to be completed with the current value.
    */
   public CompletableFuture<T> get() {
-    return submit(AtomicValueCommands.Get.<T>builder().build());
+    return submit(new AtomicValueCommands.Get<>());
   }
 
   /**
@@ -67,9 +67,7 @@ public class DistributedAtomicValue<T> extends DistributedResource<DistributedAt
    * @return A completable future to be completed once the value has been set.
    */
   public CompletableFuture<Void> set(T value) {
-    return submit(AtomicValueCommands.Set.builder()
-      .withValue(value)
-      .build());
+    return submit(new AtomicValueCommands.Set(value));
   }
 
   /**
@@ -80,10 +78,7 @@ public class DistributedAtomicValue<T> extends DistributedResource<DistributedAt
    * @return A completable future to be completed once the value has been set.
    */
   public CompletableFuture<Void> set(T value, Duration ttl) {
-    return submit(AtomicValueCommands.Set.builder()
-      .withValue(value)
-      .withTtl(ttl.toMillis())
-      .build());
+    return submit(new AtomicValueCommands.Set(value, ttl.toMillis()));
   }
 
   /**
@@ -93,9 +88,7 @@ public class DistributedAtomicValue<T> extends DistributedResource<DistributedAt
    * @return A completable future to be completed with the previous value.
    */
   public CompletableFuture<T> getAndSet(T value) {
-    return submit(AtomicValueCommands.GetAndSet.<T>builder()
-      .withValue(value)
-      .build());
+    return submit(new AtomicValueCommands.GetAndSet<>(value));
   }
 
   /**
@@ -106,10 +99,7 @@ public class DistributedAtomicValue<T> extends DistributedResource<DistributedAt
    * @return A completable future to be completed with the previous value.
    */
   public CompletableFuture<T> getAndSet(T value, Duration ttl) {
-    return submit(AtomicValueCommands.GetAndSet.<T>builder()
-      .withValue(value)
-      .withTtl(ttl.toMillis())
-      .build());
+    return submit(new AtomicValueCommands.GetAndSet<>(value, ttl.toMillis()));
   }
 
   /**
@@ -120,10 +110,7 @@ public class DistributedAtomicValue<T> extends DistributedResource<DistributedAt
    * @return A completable future to be completed with a boolean value indicating whether the value was updated.
    */
   public CompletableFuture<Boolean> compareAndSet(T expect, T update) {
-    return submit(AtomicValueCommands.CompareAndSet.builder()
-      .withExpect(expect)
-      .withUpdate(update)
-      .build());
+    return submit(new AtomicValueCommands.CompareAndSet(expect, update));
   }
 
   /**
@@ -135,11 +122,7 @@ public class DistributedAtomicValue<T> extends DistributedResource<DistributedAt
    * @return A completable future to be completed with a boolean value indicating whether the value was updated.
    */
   public CompletableFuture<Boolean> compareAndSet(T expect, T update, Duration ttl) {
-    return submit(AtomicValueCommands.CompareAndSet.builder()
-      .withExpect(expect)
-      .withUpdate(update)
-      .withTtl(ttl.toMillis())
-      .build());
+    return submit(new AtomicValueCommands.CompareAndSet(expect, update, ttl.toMillis()));
   }
 
   /**
@@ -155,7 +138,7 @@ public class DistributedAtomicValue<T> extends DistributedResource<DistributedAt
     }
 
     changeListeners.add(listener);
-    return submit(AtomicValueCommands.Listen.builder().build())
+    return submit(new AtomicValueCommands.Listen())
       .thenApply(v -> new ChangeListener(listener));
   }
 
@@ -179,7 +162,7 @@ public class DistributedAtomicValue<T> extends DistributedResource<DistributedAt
       synchronized (DistributedAtomicValue.this) {
         changeListeners.remove(listener);
         if (changeListeners.isEmpty()) {
-          submit(AtomicValueCommands.Unlisten.builder().build());
+          submit(new AtomicValueCommands.Unlisten());
         }
       }
     }

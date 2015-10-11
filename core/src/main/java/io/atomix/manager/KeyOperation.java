@@ -20,7 +20,6 @@ import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.util.Assert;
-import io.atomix.catalyst.util.BuilderPool;
 import io.atomix.copycat.client.Operation;
 
 /**
@@ -31,13 +30,13 @@ import io.atomix.copycat.client.Operation;
 public abstract class KeyOperation<T> implements Operation<T>, CatalystSerializable {
   protected String key;
 
-  protected KeyOperation() {
+  public KeyOperation() {
   }
 
   /**
    * @throws NullPointerException if {@code key} is null
    */
-  protected KeyOperation(String key) {
+  public KeyOperation(String key) {
     this.key = Assert.notNull(key, "key");
   }
 
@@ -58,29 +57,6 @@ public abstract class KeyOperation<T> implements Operation<T>, CatalystSerializa
   @Override
   public void readObject(BufferInput<?> buffer, Serializer serializer) {
     key = buffer.readUTF8();
-  }
-
-  /**
-   * Key command builder.
-   */
-  public static abstract class Builder<T extends Builder<T, U, V>, U extends KeyOperation<V>, V> extends Operation.Builder<T, U, V> {
-
-    protected Builder(BuilderPool<T, U> pool) {
-      super(pool);
-    }
-
-    /**
-     * Sets the command key.
-     *
-     * @param key The command key.
-     * @return The command builder.
-     * @throws NullPointerException if {@code key} is null
-     */
-    @SuppressWarnings("unchecked")
-    public T withKey(String key) {
-      operation.key = Assert.notNull(key, "key");
-      return (T) this;
-    }
   }
 
 }

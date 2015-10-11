@@ -20,11 +20,7 @@ import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
 import io.atomix.catalyst.serializer.SerializeWith;
 import io.atomix.catalyst.serializer.Serializer;
-import io.atomix.catalyst.util.BuilderPool;
 import io.atomix.copycat.client.Command;
-import io.atomix.copycat.client.Operation;
-
-import java.util.concurrent.TimeUnit;
 
 /**
  * Lock commands.
@@ -53,15 +49,6 @@ public class LockCommands {
     @Override
     public void readObject(BufferInput buffer, Serializer serializer) {
     }
-
-    /**
-     * Base reference command builder.
-     */
-    public static abstract class Builder<T extends Builder<T, U, V>, U extends LockCommand<V>, V> extends Command.Builder<T, U, V> {
-      protected Builder(BuilderPool<T, U> pool) {
-        super(pool);
-      }
-    }
   }
 
   /**
@@ -69,18 +56,14 @@ public class LockCommands {
    */
   @SerializeWith(id=513)
   public static class Lock extends LockCommand<Void> {
+    private long timeout;
 
-    /**
-     * Returns a new lock command builder.
-     *
-     * @return A new lock command builder.
-     */
-    @SuppressWarnings("unchecked")
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
+    public Lock() {
     }
 
-    private long timeout;
+    public Lock(long timeout) {
+      this.timeout = timeout;
+    }
 
     /**
      * Returns the try lock timeout.
@@ -100,50 +83,6 @@ public class LockCommands {
     public void readObject(BufferInput buffer, Serializer serializer) {
       timeout = buffer.readLong();
     }
-
-    /**
-     * Try lock builder.
-     */
-    public static class Builder extends LockCommand.Builder<Builder, Lock, Void> {
-      public Builder(BuilderPool<Builder, Lock> pool) {
-        super(pool);
-      }
-
-      @Override
-      protected void reset(Lock command) {
-        super.reset(command);
-        command.timeout = 0;
-      }
-
-      /**
-       * Sets the lock timeout.
-       *
-       * @param timeout The lock timeout in milliseconds.
-       * @return The command builder.
-       */
-      public Builder withTimeout(long timeout) {
-        if (timeout < -1)
-          throw new IllegalArgumentException("timeout cannot be less than -1");
-        command.timeout = timeout;
-        return this;
-      }
-
-      /**
-       * Sets the lock timeout.
-       *
-       * @param timeout The lock timeout.
-       * @param unit The lock timeout time unit.
-       * @return The command builder.
-       */
-      public Builder withTimeout(long timeout, TimeUnit unit) {
-        return withTimeout(unit.toMillis(timeout));
-      }
-
-      @Override
-      protected Lock create() {
-        return new Lock();
-      }
-    }
   }
 
   /**
@@ -152,34 +91,11 @@ public class LockCommands {
   @SerializeWith(id=514)
   public static class Unlock extends LockCommand<Void> {
 
-    /**
-     * Returns a new unlock command builder.
-     *
-     * @return A new unlock command builder.
-     */
-    @SuppressWarnings("unchecked")
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
-    }
-
     @Override
     public PersistenceLevel persistence() {
       return PersistenceLevel.PERSISTENT;
     }
 
-    /**
-     * Unlock command builder.
-     */
-    public static class Builder extends LockCommand.Builder<Builder, Unlock, Void> {
-      public Builder(BuilderPool<Builder, Unlock> pool) {
-        super(pool);
-      }
-
-      @Override
-      protected Unlock create() {
-        return new Unlock();
-      }
-    }
   }
 
 }

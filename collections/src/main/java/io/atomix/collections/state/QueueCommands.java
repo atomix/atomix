@@ -20,9 +20,7 @@ import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
 import io.atomix.catalyst.serializer.SerializeWith;
 import io.atomix.catalyst.serializer.Serializer;
-import io.atomix.catalyst.util.BuilderPool;
 import io.atomix.copycat.client.Command;
-import io.atomix.copycat.client.Operation;
 import io.atomix.copycat.client.Query;
 
 /**
@@ -47,15 +45,6 @@ public class QueueCommands {
     @Override
     public void readObject(BufferInput<?> buffer, Serializer serializer) {
     }
-
-    /**
-     * Base queue command builder.
-     */
-    public static abstract class Builder<T extends Builder<T, U, V>, U extends QueueCommand<V>, V> extends Command.Builder<T, U, V> {
-      protected Builder(BuilderPool<T, U> pool) {
-        super(pool);
-      }
-    }
   }
 
   /**
@@ -70,15 +59,6 @@ public class QueueCommands {
     @Override
     public void readObject(BufferInput<?> buffer, Serializer serializer) {
     }
-
-    /**
-     * Base queue query builder.
-     */
-    public static abstract class Builder<T extends Builder<T, U, V>, U extends QueueQuery<V>, V> extends Query.Builder<T, U, V> {
-      protected Builder(BuilderPool<T, U> pool) {
-        super(pool);
-      }
-    }
   }
 
   /**
@@ -86,6 +66,13 @@ public class QueueCommands {
    */
   public static abstract class ValueCommand<V> extends QueueCommand<V> {
     protected Object value;
+
+    protected ValueCommand() {
+    }
+
+    protected ValueCommand(Object value) {
+      this.value = value;
+    }
 
     /**
      * Returns the value.
@@ -103,29 +90,6 @@ public class QueueCommands {
     public void readObject(BufferInput<?> buffer, Serializer serializer) {
       value = serializer.readObject(buffer);
     }
-
-    /**
-     * Base key command builder.
-     */
-    public static abstract class Builder<T extends Builder<T, U, V>, U extends ValueCommand<V>, V> extends QueueCommand.Builder<T, U, V> {
-      protected Builder(BuilderPool<T, U> pool) {
-        super(pool);
-      }
-
-      /**
-       * Sets the command value.
-       *
-       * @param value The command value
-       * @return The command builder.
-       */
-      @SuppressWarnings("unchecked")
-      public T withValue(Object value) {
-        if (value == null)
-          throw new NullPointerException("value cannot be null");
-        command.value = value;
-        return (T) this;
-      }
-    }
   }
 
   /**
@@ -133,6 +97,13 @@ public class QueueCommands {
    */
   public static abstract class ValueQuery<V> extends QueueQuery<V> {
     protected Object value;
+
+    protected ValueQuery() {
+    }
+
+    protected ValueQuery(Object value) {
+      this.value = value;
+    }
 
     /**
      * Returns the value.
@@ -152,29 +123,6 @@ public class QueueCommands {
       super.readObject(buffer, serializer);
       value = serializer.readObject(buffer);
     }
-
-    /**
-     * Base value query builder.
-     */
-    public static abstract class Builder<T extends Builder<T, U, V>, U extends ValueQuery<V>, V> extends QueueQuery.Builder<T, U, V> {
-      protected Builder(BuilderPool<T, U> pool) {
-        super(pool);
-      }
-
-      /**
-       * Sets the query value.
-       *
-       * @param value The query value
-       * @return The query builder.
-       */
-      @SuppressWarnings("unchecked")
-      public T withValue(Object value) {
-        if (value == null)
-          throw new NullPointerException("value cannot be null");
-        query.value = value;
-        return (T) this;
-      }
-    }
   }
 
   /**
@@ -182,26 +130,11 @@ public class QueueCommands {
    */
   @SerializeWith(id=470)
   public static class Contains extends ValueQuery<Boolean> {
-
-    /**
-     * Returns a builder for this command.
-     */
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
+    public Contains() {
     }
 
-    /**
-     * Contains key builder.
-     */
-    public static class Builder extends ValueQuery.Builder<Builder, Contains, Boolean> {
-      public Builder(BuilderPool<Builder, Contains> pool) {
-        super(pool);
-      }
-
-      @Override
-      protected Contains create() {
-        return new Contains();
-      }
+    public Contains(Object value) {
+      super(value);
     }
   }
 
@@ -210,26 +143,11 @@ public class QueueCommands {
    */
   @SerializeWith(id=471)
   public static class Add extends ValueCommand<Boolean> {
-
-    /**
-     * Returns a builder for this command.
-     */
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
+    public Add() {
     }
 
-    /**
-     * Add command builder.
-     */
-    public static class Builder extends ValueCommand.Builder<Builder, Add, Boolean> {
-      public Builder(BuilderPool<Builder, Add> pool) {
-        super(pool);
-      }
-
-      @Override
-      protected Add create() {
-        return new Add();
-      }
+    public Add(Object value) {
+      super(value);
     }
   }
 
@@ -238,26 +156,11 @@ public class QueueCommands {
    */
   @SerializeWith(id=472)
   public static class Offer extends ValueCommand<Boolean> {
-
-    /**
-     * Returns a builder for this command.
-     */
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
+    public Offer() {
     }
 
-    /**
-     * Offer command builder.
-     */
-    public static class Builder extends ValueCommand.Builder<Builder, Offer, Boolean> {
-      public Builder(BuilderPool<Builder, Offer> pool) {
-        super(pool);
-      }
-
-      @Override
-      protected Offer create() {
-        return new Offer();
-      }
+    public Offer(Object value) {
+      super(value);
     }
   }
 
@@ -266,27 +169,6 @@ public class QueueCommands {
    */
   @SerializeWith(id=473)
   public static class Peek extends QueueQuery<Object> {
-
-    /**
-     * Returns a builder for this query.
-     */
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
-    }
-
-    /**
-     * Peek query builder.
-     */
-    public static class Builder extends QueueQuery.Builder<Builder, Peek, Object> {
-      public Builder(BuilderPool<Builder, Peek> pool) {
-        super(pool);
-      }
-
-      @Override
-      protected Peek create() {
-        return new Peek();
-      }
-    }
   }
 
   /**
@@ -295,30 +177,9 @@ public class QueueCommands {
   @SerializeWith(id=474)
   public static class Poll extends QueueCommand<Object> {
 
-    /**
-     * Returns a builder for this command.
-     */
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
-    }
-
     @Override
     public PersistenceLevel persistence() {
       return PersistenceLevel.PERSISTENT;
-    }
-
-    /**
-     * Poll command builder.
-     */
-    public static class Builder extends QueueCommand.Builder<Builder, Poll, Object> {
-      public Builder(BuilderPool<Builder, Poll> pool) {
-        super(pool);
-      }
-
-      @Override
-      protected Poll create() {
-        return new Poll();
-      }
     }
   }
 
@@ -328,30 +189,9 @@ public class QueueCommands {
   @SerializeWith(id=475)
   public static class Element extends QueueCommand<Object> {
 
-    /**
-     * Returns a builder for this command.
-     */
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
-    }
-
     @Override
     public PersistenceLevel persistence() {
       return PersistenceLevel.PERSISTENT;
-    }
-
-    /**
-     * Element command builder.
-     */
-    public static class Builder extends QueueCommand.Builder<Builder, Element, Object> {
-      public Builder(BuilderPool<Builder, Element> pool) {
-        super(pool);
-      }
-
-      @Override
-      protected Element create() {
-        return new Element();
-      }
     }
   }
 
@@ -360,31 +200,16 @@ public class QueueCommands {
    */
   @SerializeWith(id=476)
   public static class Remove extends ValueCommand<Object> {
+    public Remove() {
+    }
 
-    /**
-     * Returns a builder for this command.
-     */
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
+    public Remove(Object value) {
+      super(value);
     }
 
     @Override
     public PersistenceLevel persistence() {
       return PersistenceLevel.PERSISTENT;
-    }
-
-    /**
-     * Remove command builder.
-     */
-    public static class Builder extends ValueCommand.Builder<Builder, Remove, Object> {
-      public Builder(BuilderPool<Builder, Remove> pool) {
-        super(pool);
-      }
-
-      @Override
-      protected Remove create() {
-        return new Remove();
-      }
     }
   }
 
@@ -393,27 +218,6 @@ public class QueueCommands {
    */
   @SerializeWith(id=477)
   public static class Size extends QueueQuery<Integer> {
-
-    /**
-     * Returns a builder for this query.
-     */
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
-    }
-
-    /**
-     * Size query builder.
-     */
-    public static class Builder extends QueueQuery.Builder<Builder, Size, Integer> {
-      public Builder(BuilderPool<Builder, Size> pool) {
-        super(pool);
-      }
-
-      @Override
-      protected Size create() {
-        return new Size();
-      }
-    }
   }
 
   /**
@@ -421,27 +225,6 @@ public class QueueCommands {
    */
   @SerializeWith(id=478)
   public static class IsEmpty extends QueueQuery<Boolean> {
-
-    /**
-     * Returns a builder for this query.
-     */
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
-    }
-
-    /**
-     * Is empty query builder.
-     */
-    public static class Builder extends QueueQuery.Builder<Builder, IsEmpty, Boolean> {
-      public Builder(BuilderPool<Builder, IsEmpty> pool) {
-        super(pool);
-      }
-
-      @Override
-      protected IsEmpty create() {
-        return new IsEmpty();
-      }
-    }
   }
 
   /**
@@ -450,30 +233,9 @@ public class QueueCommands {
   @SerializeWith(id=479)
   public static class Clear extends QueueCommand<Void> {
 
-    /**
-     * Returns a builder for this command.
-     */
-    public static Builder builder() {
-      return Operation.builder(Builder.class, Builder::new);
-    }
-
     @Override
     public PersistenceLevel persistence() {
       return PersistenceLevel.PERSISTENT;
-    }
-
-    /**
-     * Get command builder.
-     */
-    public static class Builder extends QueueCommand.Builder<Builder, Clear, Void> {
-      public Builder(BuilderPool<Builder, Clear> pool) {
-        super(pool);
-      }
-
-      @Override
-      protected Clear create() {
-        return new Clear();
-      }
     }
   }
 

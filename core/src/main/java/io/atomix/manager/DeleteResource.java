@@ -20,9 +20,7 @@ import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
 import io.atomix.catalyst.serializer.SerializeWith;
 import io.atomix.catalyst.serializer.Serializer;
-import io.atomix.catalyst.util.BuilderPool;
 import io.atomix.copycat.client.Command;
-import io.atomix.copycat.client.Operation;
 
 /**
  * Delete resource command.
@@ -31,19 +29,13 @@ import io.atomix.copycat.client.Operation;
  */
 @SerializeWith(id=415)
 public class DeleteResource implements Command<Boolean>, CatalystSerializable {
-
-  /**
-   * Returns a new DeleteResource builder.
-   *
-   * @return A new DeleteResource command builder.
-   */
-  public static Builder builder() {
-    return Operation.builder(DeleteResource.Builder.class, DeleteResource.Builder::new);
-  }
-
   private long resource;
 
   public DeleteResource() {
+  }
+
+  public DeleteResource(long resource) {
+    this.resource = resource;
   }
 
   @Override
@@ -68,31 +60,6 @@ public class DeleteResource implements Command<Boolean>, CatalystSerializable {
   @Override
   public void readObject(BufferInput<?> buffer, Serializer serializer) {
     resource = buffer.readLong();
-  }
-
-  /**
-   * Delete resource builder.
-   */
-  public static class Builder extends Command.Builder<Builder, DeleteResource, Boolean> {
-    public Builder(BuilderPool<Builder, DeleteResource> pool) {
-      super(pool);
-    }
-
-    @Override
-    protected DeleteResource create() {
-      return new DeleteResource();
-    }
-
-    /**
-     * Sets the delete resource ID.
-     *
-     * @param resource The resource ID.
-     * @return The command builder.
-     */
-    public Builder withResource(long resource) {
-      command.resource = resource;
-      return this;
-    }
   }
 
 }
