@@ -16,6 +16,7 @@
 package io.atomix;
 
 import io.atomix.catalyst.util.Assert;
+import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.copycat.client.Command;
 import io.atomix.copycat.client.Query;
 import io.atomix.copycat.server.StateMachine;
@@ -68,6 +69,15 @@ public abstract class DistributedResource<T extends DistributedResource<T>> {
    */
   public String key() {
     return context.key();
+  }
+
+  /**
+   * Returns the resource thread context.
+   *
+   * @return The resource thread context.
+   */
+  public ThreadContext context() {
+    return context.context();
   }
 
   /**

@@ -63,6 +63,7 @@
     <module>standalone-server</module>
     <module>leader-election</module>
     <module>group-membership</module>
+    <module>atomic-value</module>
   </modules>
 
   <dependencies>
