@@ -141,6 +141,7 @@
           <doctitle>Atomix API Reference (${jv})</doctitle>
           <windowtitle>Atomix API Reference (${jv})</windowtitle>
           <aggregate>true</aggregate>
+          <excludePackageNames>io.atomix.examples*</excludePackageNames>
           <additionalparam>
             -Xdoclint:none
             -notimestamp
