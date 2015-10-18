@@ -36,6 +36,7 @@ public class MapState extends ResourceStateMachine {
   @Override
   protected void configure(StateMachineExecutor executor) {
     executor.register(MapCommands.ContainsKey.class, this::containsKey);
+    executor.register(MapCommands.ContainsValue.class, this::containsValue);
     executor.register(MapCommands.Get.class, this::get);
     executor.register(MapCommands.GetOrDefault.class, this::getOrDefault);
     executor.register(MapCommands.Put.class, this::put);
@@ -55,6 +56,22 @@ public class MapState extends ResourceStateMachine {
   protected boolean containsKey(Commit<MapCommands.ContainsKey> commit) {
     try {
       return map.containsKey(commit.operation().key());
+    } finally {
+      commit.close();
+    }
+  }
+
+  /**
+   * Handles a contains value commit.
+   */
+  protected boolean containsValue(Commit<MapCommands.ContainsValue> commit) {
+    try {
+      for (Value value : map.values()) {
+        if (value.commit.operation().value().equals(commit.operation().value())) {
+          return true;
+        }
+      }
+      return false;
     } finally {
       commit.close();
     }

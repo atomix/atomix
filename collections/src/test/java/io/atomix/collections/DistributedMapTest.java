@@ -161,6 +161,31 @@ public class DistributedMapTest extends AbstractCollectionsTest {
   }
 
   /**
+   * Tests the contains value command.
+   */
+  @SuppressWarnings("unchecked")
+  public void testMapContainsValue() throws Throwable {
+    createServers(3);
+
+    DistributedMap<String, String> map = new DistributedMap<>(createClient());
+
+    map.containsValue("Hello world!").thenAccept(result -> {
+      threadAssertFalse(result);
+      resume();
+    });
+    await();
+
+    map.put("foo", "Hello world!").thenAccept(value -> {
+      threadAssertNull(value);
+      map.containsValue("Hello world!").thenAccept(result -> {
+        threadAssertTrue(result);
+        resume();
+      });
+    });
+    await();
+  }
+
+  /**
    * Tests the map count.
    */
   @SuppressWarnings("unchecked")

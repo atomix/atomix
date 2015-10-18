@@ -15,6 +15,7 @@
 #
 io.atomix.collections.state.MapCommands$Clear
 io.atomix.collections.state.MapCommands$ContainsKey
+io.atomix.collections.state.MapCommands$ContainsValue
 io.atomix.collections.state.MapCommands$Get
 io.atomix.collections.state.MapCommands$GetOrDefault
 io.atomix.collections.state.MapCommands$IsEmpty

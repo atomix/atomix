@@ -190,6 +190,50 @@ public class DistributedMap<K, V> extends AbstractResource {
   }
 
   /**
+   * Returns {@code true} if the map contains a key with the given value.
+   * <p>
+   * Note that depending on the configured {@link Consistency} of the map instance, checks
+   * may return stale results. To perform a fully consistent check, configure the map with
+   * {@link Consistency#ATOMIC} consistency (the default).
+   * <pre>
+   *   {@code
+   *   map.with(Consistency.ATOMIC).containsValue("foo").thenAccept(contains -> {
+   *     ...
+   *   });
+   *   }
+   * </pre>
+   * For better performance with potentially stale results, use a lower consistency level. See the
+   * {@link Consistency} documentation for specific consistency guarantees.
+   * <p>
+   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
+   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
+   * use the {@link CompletableFuture#get()} method to block the calling thread:
+   * <pre>
+   *   {@code
+   *   if (map.containsValue("foo").get()) {
+   *     ...
+   *   }
+   *   }
+   * </pre>
+   * Alternatively, to execute the operation asynchronous and be notified once the operation is complete in a different
+   * thread, use one of the many completable future callbacks:
+   * <pre>
+   *   {@code
+   *   map.containsValue("foo").thenAccept(contains -> {
+   *     ...
+   *   });
+   *   }
+   * </pre>
+   *
+   * @param value The value for which to search keys.
+   * @return A completable future to be completed with a boolean indicating whether {@code key} is present in the map.
+   * @throws NullPointerException if {@code key} is {@code null}
+   */
+  public CompletableFuture<Boolean> containsValue(Object value) {
+    return submit(new MapCommands.ContainsValue(value));
+  }
+
+  /**
    * Gets a value from the map.
    * <p>
    * Note that depending on the configured {@link Consistency} of the map instance, queries
@@ -459,7 +503,7 @@ public class DistributedMap<K, V> extends AbstractResource {
    * @throws NullPointerException if {@code key} is {@code null}
    */
   @SuppressWarnings("unchecked")
-  public CompletableFuture<V> remove(K key) {
+  public CompletableFuture<V> remove(Object key) {
     return submit(new MapCommands.Remove(key))
       .thenApply(result -> (V) result);
   }
