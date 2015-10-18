@@ -27,6 +27,8 @@ import java.util.Set;
 
 /**
  * Group commands.
+ * <p>
+ * This class reserves serializable type IDs {@code 120} through {@code 124}
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -57,14 +59,14 @@ public class MembershipGroupCommands {
   /**
    * Join command.
    */
-  @SerializeWith(id=520)
+  @SerializeWith(id=120)
   public static class Join extends GroupCommand<Set<Long>> {
   }
 
   /**
    * Leave command.
    */
-  @SerializeWith(id=521)
+  @SerializeWith(id=121)
   public static class Leave extends GroupCommand<Void> {
 
     @Override
@@ -76,7 +78,7 @@ public class MembershipGroupCommands {
   /**
    * Schedule command.
    */
-  @SerializeWith(id=522)
+  @SerializeWith(id=122)
   public static class Schedule extends GroupCommand<Void> {
     private long member;
     private long delay;
@@ -135,7 +137,7 @@ public class MembershipGroupCommands {
   /**
    * Execute command.
    */
-  @SerializeWith(id=523)
+  @SerializeWith(id=123)
   public static class Execute extends GroupCommand<Void> {
     private long member;
     private Runnable callback;

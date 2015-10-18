@@ -26,6 +26,8 @@ import io.atomix.copycat.client.Query;
 
 /**
  * Leader election commands.
+ * <p>
+ * This class reserves serializable type IDs {@code 110} through {@code 114}
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -75,14 +77,14 @@ public class LeaderElectionCommands {
   /**
    * Listen command.
    */
-  @SerializeWith(id=510)
+  @SerializeWith(id=110)
   public static class Listen extends ElectionCommand<Void> {
   }
 
   /**
    * Unlisten command.
    */
-  @SerializeWith(id=511)
+  @SerializeWith(id=111)
   public static class Unlisten extends ElectionCommand<Void> {
 
     @Override
@@ -94,7 +96,7 @@ public class LeaderElectionCommands {
   /**
    * Is leader query.
    */
-  @SerializeWith(id=512)
+  @SerializeWith(id=112)
   public static class IsLeader extends ElectionQuery<Boolean> {
     private long epoch;
 

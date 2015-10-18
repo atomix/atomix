@@ -24,6 +24,8 @@ import io.atomix.copycat.client.Command;
 
 /**
  * Topic commands.
+ * <p>
+ * This class reserves serializable type IDs {@code 125} through {@code 127}
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -48,7 +50,7 @@ public class TopicCommands {
   /**
    * Listen command.
    */
-  @SerializeWith(id=515)
+  @SerializeWith(id=125)
   public static class Listen extends TopicCommand<Void> {
     @Override
     public ConsistencyLevel consistency() {
@@ -59,7 +61,7 @@ public class TopicCommands {
   /**
    * Unlisten command.
    */
-  @SerializeWith(id=516)
+  @SerializeWith(id=126)
   public static class Unlisten extends TopicCommand<Void> {
     @Override
     public ConsistencyLevel consistency() {
@@ -75,7 +77,7 @@ public class TopicCommands {
   /**
    * Publish command.
    */
-  @SerializeWith(id=517)
+  @SerializeWith(id=127)
   public static class Publish<T> extends TopicCommand<Void> {
     private T message;
 

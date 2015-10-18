@@ -23,7 +23,7 @@ import io.atomix.copycat.client.Query;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=417)
+@SerializeWith(id=38)
 public class ResourceExists extends KeyOperation<Boolean> implements Query<Boolean> {
 
   public ResourceExists() {

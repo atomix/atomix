@@ -25,6 +25,8 @@ import io.atomix.copycat.client.Query;
 
 /**
  * Atomic reference commands.
+ * <p>
+ * This class reserves serializable type IDs {@code 50} through {@code 59}
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -88,14 +90,14 @@ public class AtomicValueCommands {
   /**
    * Get query.
    */
-  @SerializeWith(id=460)
+  @SerializeWith(id=50)
   public static class Get<T> extends ValueQuery<T> {
   }
 
   /**
    * Set command.
    */
-  @SerializeWith(id=461)
+  @SerializeWith(id=51)
   public static class Set extends ValueCommand<Void> {
     private Object value;
 
@@ -139,7 +141,7 @@ public class AtomicValueCommands {
   /**
    * Compare and set command.
    */
-  @SerializeWith(id=462)
+  @SerializeWith(id=52)
   public static class CompareAndSet extends ValueCommand<Boolean> {
     private Object expect;
     private Object update;
@@ -197,7 +199,7 @@ public class AtomicValueCommands {
   /**
    * Get and set command.
    */
-  @SerializeWith(id=463)
+  @SerializeWith(id=53)
   public static class GetAndSet<T> extends ValueCommand<T> {
     private Object value;
 
@@ -241,7 +243,7 @@ public class AtomicValueCommands {
   /**
    * Change listen.
    */
-  @SerializeWith(id=464)
+  @SerializeWith(id=54)
   public static class Listen implements Command<Void>, CatalystSerializable {
     @Override
     public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
@@ -255,7 +257,7 @@ public class AtomicValueCommands {
   /**
    * Change unlisten.
    */
-  @SerializeWith(id=465)
+  @SerializeWith(id=55)
   public static class Unlisten implements Command<Void>, CatalystSerializable {
     @Override
     public void writeObject(BufferOutput<?> buffer, Serializer serializer) {

@@ -25,6 +25,8 @@ import io.atomix.copycat.client.Query;
 
 /**
  * Distributed set commands.
+ * <p>
+ * This class reserves serializable type IDs {@code 100} through {@code 109}
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -128,7 +130,7 @@ public class SetCommands {
   /**
    * Contains value command.
    */
-  @SerializeWith(id=450)
+  @SerializeWith(id=100)
   public static class Contains extends ValueQuery<Boolean> {
     public Contains() {
     }
@@ -182,7 +184,7 @@ public class SetCommands {
   /**
    * Add command.
    */
-  @SerializeWith(id=451)
+  @SerializeWith(id=101)
   public static class Add extends TtlCommand<Boolean> {
     public Add() {
     }
@@ -199,7 +201,7 @@ public class SetCommands {
   /**
    * Remove command.
    */
-  @SerializeWith(id=452)
+  @SerializeWith(id=102)
   public static class Remove extends ValueCommand<Boolean> {
 
     public Remove() {
@@ -218,21 +220,21 @@ public class SetCommands {
   /**
    * Size query.
    */
-  @SerializeWith(id=453)
+  @SerializeWith(id=103)
   public static class Size extends SetQuery<Integer> {
   }
 
   /**
    * Is empty query.
    */
-  @SerializeWith(id=454)
+  @SerializeWith(id=104)
   public static class IsEmpty extends SetQuery<Boolean> {
   }
 
   /**
    * Clear command.
    */
-  @SerializeWith(id=455)
+  @SerializeWith(id=105)
   public static class Clear extends SetCommand<Void> {
 
     @Override

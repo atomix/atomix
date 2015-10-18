@@ -29,7 +29,7 @@ import io.atomix.resource.ResourceStateMachine;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=416)
+@SerializeWith(id=35)
 public class GetResource extends KeyOperation<Long> implements Query<Long> {
   private Class<? extends ResourceStateMachine> type;
 

@@ -23,7 +23,7 @@ import io.atomix.copycat.client.Command;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=402)
+@SerializeWith(id=30)
 public final class InstanceCommand<T extends Command<U>, U> extends InstanceOperation<T, U> implements Command<U> {
 
   public InstanceCommand() {

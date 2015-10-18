@@ -23,7 +23,7 @@ import io.atomix.copycat.client.Query;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=403)
+@SerializeWith(id=31)
 public final class InstanceQuery<T extends Query<U>, U> extends InstanceOperation<T, U> implements Query<U> {
 
   public InstanceQuery() {

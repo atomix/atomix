@@ -27,7 +27,7 @@ import io.atomix.copycat.client.Command;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=415)
+@SerializeWith(id=37)
 public class DeleteResource implements Command<Boolean>, CatalystSerializable {
   private long resource;
 

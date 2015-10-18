@@ -23,7 +23,7 @@ import io.atomix.copycat.client.Query;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=401)
+@SerializeWith(id=29)
 public final class ResourceQuery<T extends Query<U>, U> extends ResourceOperation<T, U> implements Query<U> {
   private ConsistencyLevel consistency;
 

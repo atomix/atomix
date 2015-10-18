@@ -26,7 +26,7 @@ import io.atomix.catalyst.serializer.Serializer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=404)
+@SerializeWith(id=32)
 public final class InstanceEvent<T> implements CatalystSerializable {
   private long resource;
   private T message;

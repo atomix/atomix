@@ -29,6 +29,8 @@ import java.util.Set;
 
 /**
  * Message bus commands.
+ * <p>
+ * This class reserves serializable type IDs {@code 85} through {@code 89}
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -59,7 +61,7 @@ public class MessageBusCommands {
   /**
    * Join command.
    */
-  @SerializeWith(id=525)
+  @SerializeWith(id=85)
   public static class Join extends MessageBusCommand<Map<String, Set<Address>>> {
     protected Address address;
 
@@ -93,7 +95,7 @@ public class MessageBusCommands {
   /**
    * Leave command.
    */
-  @SerializeWith(id=526)
+  @SerializeWith(id=86)
   public static class Leave extends MessageBusCommand<Void> {
 
     @Override
@@ -105,7 +107,7 @@ public class MessageBusCommands {
   /**
    * Register command.
    */
-  @SerializeWith(id=527)
+  @SerializeWith(id=87)
   public static class Register extends MessageBusCommand<Void> {
     private String topic;
 
@@ -139,7 +141,7 @@ public class MessageBusCommands {
   /**
    * Unregister command.
    */
-  @SerializeWith(id=528)
+  @SerializeWith(id=88)
   public static class Unregister extends MessageBusCommand<Void> {
     private String topic;
 
@@ -178,6 +180,7 @@ public class MessageBusCommands {
   /**
    * Consumer info.
    */
+  @SerializeWith(id=89)
   public static class ConsumerInfo implements CatalystSerializable {
     private String topic;
     private Address address;

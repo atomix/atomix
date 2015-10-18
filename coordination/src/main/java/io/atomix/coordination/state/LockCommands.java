@@ -24,6 +24,8 @@ import io.atomix.copycat.client.Command;
 
 /**
  * Lock commands.
+ * <p>
+ * This class reserves serializable type IDs {@code 115} through {@code 119}
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -54,7 +56,7 @@ public class LockCommands {
   /**
    * Lock command.
    */
-  @SerializeWith(id=513)
+  @SerializeWith(id=115)
   public static class Lock extends LockCommand<Void> {
     private long timeout;
 
@@ -88,7 +90,7 @@ public class LockCommands {
   /**
    * Unlock command.
    */
-  @SerializeWith(id=514)
+  @SerializeWith(id=116)
   public static class Unlock extends LockCommand<Void> {
 
     @Override

@@ -25,6 +25,8 @@ import io.atomix.copycat.client.Query;
 
 /**
  * Distributed queue commands.
+ * <p>
+ * This class reserves serializable type IDs {@code 90} through {@code 99}
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -128,7 +130,7 @@ public class QueueCommands {
   /**
    * Contains value command.
    */
-  @SerializeWith(id=470)
+  @SerializeWith(id=90)
   public static class Contains extends ValueQuery<Boolean> {
     public Contains() {
     }
@@ -141,7 +143,7 @@ public class QueueCommands {
   /**
    * Add command.
    */
-  @SerializeWith(id=471)
+  @SerializeWith(id=91)
   public static class Add extends ValueCommand<Boolean> {
     public Add() {
     }
@@ -154,7 +156,7 @@ public class QueueCommands {
   /**
    * Offer
    */
-  @SerializeWith(id=472)
+  @SerializeWith(id=92)
   public static class Offer extends ValueCommand<Boolean> {
     public Offer() {
     }
@@ -167,14 +169,14 @@ public class QueueCommands {
   /**
    * Peek query.
    */
-  @SerializeWith(id=473)
+  @SerializeWith(id=93)
   public static class Peek extends QueueQuery<Object> {
   }
 
   /**
    * Poll command.
    */
-  @SerializeWith(id=474)
+  @SerializeWith(id=94)
   public static class Poll extends QueueCommand<Object> {
 
     @Override
@@ -186,7 +188,7 @@ public class QueueCommands {
   /**
    * Element command.
    */
-  @SerializeWith(id=475)
+  @SerializeWith(id=95)
   public static class Element extends QueueCommand<Object> {
 
     @Override
@@ -198,7 +200,7 @@ public class QueueCommands {
   /**
    * Remove command.
    */
-  @SerializeWith(id=476)
+  @SerializeWith(id=96)
   public static class Remove extends ValueCommand<Object> {
     public Remove() {
     }
@@ -216,21 +218,21 @@ public class QueueCommands {
   /**
    * Size query.
    */
-  @SerializeWith(id=477)
+  @SerializeWith(id=97)
   public static class Size extends QueueQuery<Integer> {
   }
 
   /**
    * Is empty query.
    */
-  @SerializeWith(id=478)
+  @SerializeWith(id=98)
   public static class IsEmpty extends QueueQuery<Boolean> {
   }
 
   /**
    * Clear command.
    */
-  @SerializeWith(id=479)
+  @SerializeWith(id=99)
   public static class Clear extends QueueCommand<Void> {
 
     @Override

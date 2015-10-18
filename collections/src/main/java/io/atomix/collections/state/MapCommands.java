@@ -26,6 +26,8 @@ import io.atomix.copycat.client.Query;
 
 /**
  * Map commands.
+ * <p>
+ * This class reserves serializable type IDs {@code 60} through {@code 74}
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -129,7 +131,7 @@ public class MapCommands {
   /**
    * Contains key command.
    */
-  @SerializeWith(id=440)
+  @SerializeWith(id=60)
   public static class ContainsKey extends KeyQuery<Boolean> {
     public ContainsKey() {
     }
@@ -217,7 +219,7 @@ public class MapCommands {
   /**
    * Put command.
    */
-  @SerializeWith(id=441)
+  @SerializeWith(id=61)
   public static class Put extends TtlCommand<Object> {
     public Put() {
     }
@@ -234,7 +236,7 @@ public class MapCommands {
   /**
    * Put if absent command.
    */
-  @SerializeWith(id=442)
+  @SerializeWith(id=62)
   public static class PutIfAbsent extends TtlCommand<Object> {
     public PutIfAbsent() {
     }
@@ -251,7 +253,7 @@ public class MapCommands {
   /**
    * Get query.
    */
-  @SerializeWith(id=443)
+  @SerializeWith(id=63)
   public static class Get extends KeyQuery<Object> {
     public Get() {
     }
@@ -264,7 +266,7 @@ public class MapCommands {
   /**
    * Get or default query.
    */
-  @SerializeWith(id=444)
+  @SerializeWith(id=64)
   public static class GetOrDefault extends KeyQuery<Object> {
     private Object defaultValue;
 
@@ -301,7 +303,7 @@ public class MapCommands {
   /**
    * Remove command.
    */
-  @SerializeWith(id=445)
+  @SerializeWith(id=65)
   public static class Remove extends KeyCommand<Object> {
 
     public Remove() {
@@ -320,7 +322,7 @@ public class MapCommands {
   /**
    * Remove if absent command.
    */
-  @SerializeWith(id=449)
+  @SerializeWith(id=66)
   public static class RemoveIfPresent extends KeyValueCommand<Boolean> {
 
     public RemoveIfPresent() {
@@ -339,7 +341,7 @@ public class MapCommands {
   /**
    * Remove command.
    */
-  @SerializeWith(id=450)
+  @SerializeWith(id=67)
   public static class Replace extends TtlCommand<Object> {
     public Replace() {
     }
@@ -356,7 +358,7 @@ public class MapCommands {
   /**
    * Remove if absent command.
    */
-  @SerializeWith(id=451)
+  @SerializeWith(id=68)
   public static class ReplaceIfPresent extends TtlCommand<Boolean> {
     private Object replace;
 
@@ -397,21 +399,21 @@ public class MapCommands {
   /**
    * Is empty query.
    */
-  @SerializeWith(id=446)
+  @SerializeWith(id=69)
   public static class IsEmpty extends MapQuery<Boolean> {
   }
 
   /**
    * Size query.
    */
-  @SerializeWith(id=447)
+  @SerializeWith(id=70)
   public static class Size extends MapQuery<Integer> {
   }
 
   /**
    * Clear command.
    */
-  @SerializeWith(id=448)
+  @SerializeWith(id=71)
   public static class Clear extends MapCommand<Void> {
 
     @Override

@@ -28,6 +28,8 @@ import java.util.Collection;
 
 /**
  * Map commands.
+ * <p>
+ * This class reserves serializable type IDs {@code 75} through {@code 84}
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -200,7 +202,7 @@ public class MultiMapCommands {
   /**
    * Contains key query.
    */
-  @SerializeWith(id=460)
+  @SerializeWith(id=75)
   public static class ContainsKey extends KeyQuery<Boolean> {
     public ContainsKey() {
     }
@@ -213,7 +215,7 @@ public class MultiMapCommands {
   /**
    * Contains entry query.
    */
-  @SerializeWith(id=461)
+  @SerializeWith(id=76)
   public static class ContainsEntry extends EntryQuery<Boolean> {
     public ContainsEntry() {
     }
@@ -226,7 +228,7 @@ public class MultiMapCommands {
   /**
    * Contains value query.
    */
-  @SerializeWith(id=462)
+  @SerializeWith(id=77)
   public static class ContainsValue extends ValueQuery<Boolean> {
     public ContainsValue() {
     }
@@ -318,7 +320,7 @@ public class MultiMapCommands {
   /**
    * Put command.
    */
-  @SerializeWith(id=463)
+  @SerializeWith(id=78)
   public static class Put extends TtlCommand<Boolean> {
     public Put() {
     }
@@ -335,7 +337,7 @@ public class MultiMapCommands {
   /**
    * Get query.
    */
-  @SerializeWith(id=464)
+  @SerializeWith(id=79)
   public static class Get extends KeyQuery<Collection> {
     public Get() {
     }
@@ -348,7 +350,7 @@ public class MultiMapCommands {
   /**
    * Remove command.
    */
-  @SerializeWith(id=465)
+  @SerializeWith(id=80)
   public static class Remove extends EntryCommand<Object> {
     public Remove() {
     }
@@ -370,14 +372,14 @@ public class MultiMapCommands {
   /**
    * Is empty query.
    */
-  @SerializeWith(id=466)
+  @SerializeWith(id=81)
   public static class IsEmpty extends MapQuery<Boolean> {
   }
 
   /**
    * Size query.
    */
-  @SerializeWith(id=467)
+  @SerializeWith(id=82)
   public static class Size extends KeyQuery<Integer> {
     public Size() {
     }
@@ -390,7 +392,7 @@ public class MultiMapCommands {
   /**
    * Clear command.
    */
-  @SerializeWith(id=468)
+  @SerializeWith(id=83)
   public static class Clear extends MapCommand<Void> {
 
     @Override
