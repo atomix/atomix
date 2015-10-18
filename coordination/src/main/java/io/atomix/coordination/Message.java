@@ -18,6 +18,7 @@ package io.atomix.coordination;
 import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
+import io.atomix.catalyst.serializer.SerializeWith;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.util.Assert;
 
@@ -26,6 +27,7 @@ import io.atomix.catalyst.util.Assert;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
+@SerializeWith(id=119)
 public class Message implements CatalystSerializable {
   private String topic;
   private Object body;

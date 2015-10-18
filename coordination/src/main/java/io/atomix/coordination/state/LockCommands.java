@@ -25,7 +25,7 @@ import io.atomix.copycat.client.Command;
 /**
  * Lock commands.
  * <p>
- * This class reserves serializable type IDs {@code 115} through {@code 119}
+ * This class reserves serializable type IDs {@code 115} through {@code 118}
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
