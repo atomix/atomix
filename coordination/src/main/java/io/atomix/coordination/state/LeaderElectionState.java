@@ -17,8 +17,8 @@ package io.atomix.coordination.state;
 
 import io.atomix.copycat.client.session.Session;
 import io.atomix.copycat.server.Commit;
-import io.atomix.copycat.server.StateMachine;
 import io.atomix.copycat.server.StateMachineExecutor;
+import io.atomix.resource.ResourceStateMachine;
 
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -29,7 +29,7 @@ import java.util.Map;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class LeaderElectionState extends StateMachine {
+public class LeaderElectionState extends ResourceStateMachine {
   private Commit<LeaderElectionCommands.Listen> leader;
   private final Map<Long, Commit<LeaderElectionCommands.Listen>> listeners = new LinkedHashMap<>();
 
@@ -103,6 +103,16 @@ public class LeaderElectionState extends StateMachine {
    */
   protected boolean isLeader(Commit<LeaderElectionCommands.IsLeader> commit) {
     return leader != null && leader.session().equals(commit.session()) && leader.index() == commit.operation().epoch();
+  }
+
+  @Override
+  public void delete() {
+    if (leader != null) {
+      leader.clean();
+    }
+
+    listeners.values().forEach(Commit::clean);
+    listeners.clear();
   }
 
 }

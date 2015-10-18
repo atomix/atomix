@@ -15,10 +15,12 @@
  */
 package io.atomix.collections;
 
-import io.atomix.DistributedResource;
 import io.atomix.collections.state.MapCommands;
 import io.atomix.collections.state.MapState;
-import io.atomix.copycat.server.StateMachine;
+import io.atomix.copycat.client.RaftClient;
+import io.atomix.resource.AbstractResource;
+import io.atomix.resource.Consistency;
+import io.atomix.resource.ResourceInfo;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
@@ -48,19 +50,25 @@ import java.util.concurrent.CompletableFuture;
  * @param <V> The map entry type.
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DistributedMap<K, V> extends DistributedResource<DistributedMap<K, V>> {
+@ResourceInfo(stateMachine=MapState.class)
+public class DistributedMap<K, V> extends AbstractResource {
+
+  public DistributedMap(RaftClient client) {
+    super(client);
+  }
 
   @Override
-  protected Class<? extends StateMachine> stateMachine() {
-    return MapState.class;
+  public DistributedMap<K, V> with(Consistency consistency) {
+    super.with(consistency);
+    return this;
   }
 
   /**
    * Returns {@code true} if the map is empty.
    * <p>
-   * Note that depending on the configured {@link io.atomix.Consistency} of the map instance, empty checks
+   * Note that depending on the configured {@link Consistency} of the map instance, empty checks
    * may return stale results. To perform a fully consistent empty check, configure the map with
-   * {@link io.atomix.Consistency#ATOMIC} consistency (the default).
+   * {@link Consistency#ATOMIC} consistency (the default).
    * <pre>
    *   {@code
    *   map.with(Consistency.ATOMIC).isEmpty().thenAccept(isEmpty -> {
@@ -69,7 +77,7 @@ public class DistributedMap<K, V> extends DistributedResource<DistributedMap<K, 
    *   }
    * </pre>
    * For better performance with potentially stale results, use a lower consistency level. See the
-   * {@link io.atomix.Consistency} documentation for specific consistency guarantees.
+   * {@link Consistency} documentation for specific consistency guarantees.
    * <p>
    * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
    * or to be notified in a separate thread once the operation completes. To block until the operation completes,
@@ -100,9 +108,9 @@ public class DistributedMap<K, V> extends DistributedResource<DistributedMap<K, 
   /**
    * Gets the number of key-value pairs in the map.
    * <p>
-   * Note that depending on the configured {@link io.atomix.Consistency} of the map instance, size checks
+   * Note that depending on the configured {@link Consistency} of the map instance, size checks
    * may return stale results. To perform a fully consistent size check, configure the map with
-   * {@link io.atomix.Consistency#ATOMIC} consistency (the default).
+   * {@link Consistency#ATOMIC} consistency (the default).
    * <pre>
    *   {@code
    *   map.with(Consistency.ATOMIC).size().thenAccept(size -> {
@@ -111,7 +119,7 @@ public class DistributedMap<K, V> extends DistributedResource<DistributedMap<K, 
    *   }
    * </pre>
    * For better performance with potentially stale results, use a lower consistency level. See the
-   * {@link io.atomix.Consistency} documentation for specific consistency guarantees.
+   * {@link Consistency} documentation for specific consistency guarantees.
    * <p>
    * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
    * or to be notified in a separate thread once the operation completes. To block until the operation completes,
@@ -140,9 +148,9 @@ public class DistributedMap<K, V> extends DistributedResource<DistributedMap<K, 
   /**
    * Returns {@code true} if the given key is present in the map.
    * <p>
-   * Note that depending on the configured {@link io.atomix.Consistency} of the map instance, checks
+   * Note that depending on the configured {@link Consistency} of the map instance, checks
    * may return stale results. To perform a fully consistent check, configure the map with
-   * {@link io.atomix.Consistency#ATOMIC} consistency (the default).
+   * {@link Consistency#ATOMIC} consistency (the default).
    * <pre>
    *   {@code
    *   map.with(Consistency.ATOMIC).containsKey("foo").thenAccept(contains -> {
@@ -151,7 +159,7 @@ public class DistributedMap<K, V> extends DistributedResource<DistributedMap<K, 
    *   }
    * </pre>
    * For better performance with potentially stale results, use a lower consistency level. See the
-   * {@link io.atomix.Consistency} documentation for specific consistency guarantees.
+   * {@link Consistency} documentation for specific consistency guarantees.
    * <p>
    * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
    * or to be notified in a separate thread once the operation completes. To block until the operation completes,
@@ -184,9 +192,9 @@ public class DistributedMap<K, V> extends DistributedResource<DistributedMap<K, 
   /**
    * Gets a value from the map.
    * <p>
-   * Note that depending on the configured {@link io.atomix.Consistency} of the map instance, queries
+   * Note that depending on the configured {@link Consistency} of the map instance, queries
    * may return stale results. To perform a fully consistent query, configure the map with
-   * {@link io.atomix.Consistency#ATOMIC} consistency (the default).
+   * {@link Consistency#ATOMIC} consistency (the default).
    * <pre>
    *   {@code
    *   map.with(Consistency.ATOMIC).get("key").thenAccept(value -> {
@@ -195,7 +203,7 @@ public class DistributedMap<K, V> extends DistributedResource<DistributedMap<K, 
    *   }
    * </pre>
    * For better performance with potentially stale results, use a lower consistency level. See the
-   * {@link io.atomix.Consistency} documentation for specific consistency guarantees.
+   * {@link Consistency} documentation for specific consistency guarantees.
    * <p>
    * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
    * or to be notified in a separate thread once the operation completes. To block until the operation completes,
@@ -231,9 +239,9 @@ public class DistributedMap<K, V> extends DistributedResource<DistributedMap<K, 
    * If no value for the given {@code key} is present in the map, the returned {@link CompletableFuture} will
    * be completed {@code null}. If a value is present, the returned future will be completed with that value.
    * <p>
-   * Note that depending on the configured {@link io.atomix.Consistency} of the map instance, queries
+   * Note that depending on the configured {@link Consistency} of the map instance, queries
    * may return stale results. To perform a fully consistent query, configure the map with
-   * {@link io.atomix.Consistency#ATOMIC} consistency (the default).
+   * {@link Consistency#ATOMIC} consistency (the default).
    * <pre>
    *   {@code
    *   map.with(Consistency.ATOMIC).getOrDefault("key", "Hello world!").thenAccept(value -> {
@@ -242,7 +250,7 @@ public class DistributedMap<K, V> extends DistributedResource<DistributedMap<K, 
    *   }
    * </pre>
    * For better performance with potentially stale results, use a lower consistency level. See the
-   * {@link io.atomix.Consistency} documentation for specific consistency guarantees.
+   * {@link Consistency} documentation for specific consistency guarantees.
    * <p>
    * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
    * or to be notified in a separate thread once the operation completes. To block until the operation completes,

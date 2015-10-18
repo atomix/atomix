@@ -23,7 +23,6 @@ import io.atomix.copycat.server.storage.Storage;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Server example.
@@ -52,7 +51,8 @@ public class StandaloneServerExample {
     AtomixServer server = AtomixServer.builder(address, members)
         .withTransport(new NettyTransport())
         .withStorage(Storage.builder()
-          .withDirectory(System.getProperty("user.dir") + "/logs/" + UUID.randomUUID().toString())
+          .withDirectory(System.getProperty("user.dir") + "/logs/" + port)
+          .withMaxEntriesPerSegment(16)
           .build())
         .build();
 

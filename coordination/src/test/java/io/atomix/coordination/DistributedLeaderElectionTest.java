@@ -15,23 +15,11 @@
  */
 package io.atomix.coordination;
 
-import io.atomix.Atomix;
-import io.atomix.AtomixReplica;
-import io.atomix.catalyst.transport.Address;
-import io.atomix.catalyst.transport.LocalServerRegistry;
-import io.atomix.catalyst.transport.LocalTransport;
-import io.atomix.copycat.server.storage.Storage;
-import net.jodah.concurrentunit.ConcurrentTestCase;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
+import io.atomix.coordination.state.LeaderElectionState;
+import io.atomix.copycat.client.RaftClient;
+import io.atomix.resource.ResourceStateMachine;
 import org.testng.annotations.Test;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -40,18 +28,20 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class DistributedLeaderElectionTest extends ConcurrentTestCase {
-  private static final File directory = new File("test-logs");
+public class DistributedLeaderElectionTest extends AbstractCoordinationTest {
+
+  @Override
+  protected ResourceStateMachine createStateMachine() {
+    return new LeaderElectionState();
+  }
 
   /**
    * Tests winning leadership.
    */
   public void testElection() throws Throwable {
-    List<Atomix> servers = createAtomixes(3);
+    createServers(3);
 
-    Atomix atomix = servers.get(0);
-
-    DistributedLeaderElection election = atomix.create("test", DistributedLeaderElection.class).get();
+    DistributedLeaderElection election = new DistributedLeaderElection(createClient());
 
     election.onElection(v -> resume()).thenRun(this::resume);
     await(0, 2);
@@ -61,13 +51,13 @@ public class DistributedLeaderElectionTest extends ConcurrentTestCase {
    * Tests stepping down leadership.
    */
   public void testNextElection() throws Throwable {
-    List<Atomix> servers = createAtomixes(3);
+    createServers(3);
 
-    Atomix atomix1 = servers.get(0);
-    Atomix atomix2 = servers.get(1);
+    RaftClient client1 = createClient();
+    RaftClient client2 = createClient();
 
-    DistributedLeaderElection election1 = atomix1.create("test", DistributedLeaderElection.class).get();
-    DistributedLeaderElection election2 = atomix2.create("test", DistributedLeaderElection.class).get();
+    DistributedLeaderElection election1 = new DistributedLeaderElection(client1);
+    DistributedLeaderElection election2 = new DistributedLeaderElection(client2);
 
     AtomicLong lastEpoch = new AtomicLong(0);
     election1.onElection(epoch -> {
@@ -84,63 +74,9 @@ public class DistributedLeaderElectionTest extends ConcurrentTestCase {
       resume();
     }).join();
 
-    atomix1.close();
+    client1.close();
 
     await();
-  }
-
-  /**
-   * Creates a Atomix instance.
-   */
-  private List<Atomix> createAtomixes(int nodes) throws Throwable {
-    LocalServerRegistry registry = new LocalServerRegistry();
-
-    List<Atomix> active = new ArrayList<>();
-
-    Collection<Address> members = new ArrayList<>();
-    for (int i = 1; i <= nodes; i++) {
-      members.add(new Address("localhost", 5000 + i));
-    }
-
-    for (int i = 1; i <= nodes; i++) {
-      Atomix atomix = AtomixReplica.builder(new Address("localhost", 5000 + i), members)
-        .withTransport(new LocalTransport(registry))
-        .withStorage(new Storage(new File(directory, "" + i)))
-        .build();
-
-      atomix.open().thenRun(this::resume);
-
-      active.add(atomix);
-    }
-
-    await(0, nodes);
-
-    return active;
-  }
-
-  @BeforeMethod
-  @AfterMethod
-  public void clearTests() throws IOException {
-    deleteDirectory(directory);
-  }
-
-  /**
-   * Deletes a directory recursively.
-   */
-  private void deleteDirectory(File directory) throws IOException {
-    if (directory.exists()) {
-      File[] files = directory.listFiles();
-      if (files != null) {
-        for (File file : files) {
-          if (file.isDirectory()) {
-            deleteDirectory(file);
-          } else {
-            Files.delete(file.toPath());
-          }
-        }
-      }
-      Files.delete(directory.toPath());
-    }
   }
 
 }

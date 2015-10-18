@@ -63,7 +63,8 @@
   </issueManagement>
 
   <modules>
-    <module>core</module>
+    <module>resource</module>
+    <module>manager</module>
     <module>collections</module>
     <module>coordination</module>
     <module>atomic</module>

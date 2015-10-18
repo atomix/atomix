@@ -49,7 +49,7 @@ public class AtomicValueExample {
 
     atomix.open().join();
 
-    atomix.<DistributedAtomicValue<String>>create("atomic", DistributedAtomicValue::new).thenAccept(AtomicValueExample::recursiveSet);
+    atomix.<DistributedAtomicValue<String>>create("atomic", DistributedAtomicValue.class).thenAccept(AtomicValueExample::recursiveSet);
 
     while (atomix.isOpen()) {
       Thread.sleep(1000);

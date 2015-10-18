@@ -15,12 +15,13 @@
  */
 package io.atomix.coordination;
 
-import io.atomix.DistributedResource;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.coordination.state.LeaderElectionCommands;
 import io.atomix.coordination.state.LeaderElectionState;
-import io.atomix.copycat.server.StateMachine;
-import io.atomix.resource.ResourceContext;
+import io.atomix.copycat.client.RaftClient;
+import io.atomix.resource.AbstractResource;
+import io.atomix.resource.Consistency;
+import io.atomix.resource.ResourceInfo;
 
 import java.util.Collections;
 import java.util.Set;
@@ -61,22 +62,23 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DistributedLeaderElection extends DistributedResource<DistributedLeaderElection> {
+@ResourceInfo(stateMachine=LeaderElectionState.class)
+public class DistributedLeaderElection extends AbstractResource {
   private final Set<Consumer<Long>> listeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
-  @Override
-  protected Class<? extends StateMachine> stateMachine() {
-    return LeaderElectionState.class;
-  }
-
-  @Override
-  protected void open(ResourceContext context) {
-    super.open(context);
-    context.session().<Long>onEvent("elect", epoch -> {
+  public DistributedLeaderElection(RaftClient client) {
+    super(client);
+    client.session().<Long>onEvent("elect", epoch -> {
       for (Consumer<Long> listener : listeners) {
         listener.accept(epoch);
       }
     });
+  }
+
+  @Override
+  public DistributedLeaderElection with(Consistency consistency) {
+    super.with(consistency);
+    return this;
   }
 
   /**

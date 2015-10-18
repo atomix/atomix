@@ -17,8 +17,8 @@ package io.atomix.collections.state;
 
 import io.atomix.catalyst.util.concurrent.Scheduled;
 import io.atomix.copycat.server.Commit;
-import io.atomix.copycat.server.StateMachine;
 import io.atomix.copycat.server.StateMachineExecutor;
+import io.atomix.resource.ResourceStateMachine;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -30,7 +30,7 @@ import java.util.Map;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class SetState extends StateMachine {
+public class SetState extends ResourceStateMachine {
   private final Map<Object, Value> map = new HashMap<>();
 
   @Override
@@ -124,17 +124,22 @@ public class SetState extends StateMachine {
    */
   protected void clear(Commit<SetCommands.Clear> commit) {
     try {
-      Iterator<Map.Entry<Object, Value>> iterator = map.entrySet().iterator();
-      while (iterator.hasNext()) {
-        Map.Entry<Object, Value> entry = iterator.next();
-        Value value = entry.getValue();
-        if (value.timer != null)
-          value.timer.cancel();
-        value.commit.clean();
-        iterator.remove();
-      }
+      delete();
     } finally {
       commit.clean();
+    }
+  }
+
+  @Override
+  public void delete() {
+    Iterator<Map.Entry<Object, Value>> iterator = map.entrySet().iterator();
+    while (iterator.hasNext()) {
+      Map.Entry<Object, Value> entry = iterator.next();
+      Value value = entry.getValue();
+      if (value.timer != null)
+        value.timer.cancel();
+      value.commit.clean();
+      iterator.remove();
     }
   }
 

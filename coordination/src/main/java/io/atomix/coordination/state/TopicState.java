@@ -17,8 +17,8 @@ package io.atomix.coordination.state;
 
 import io.atomix.copycat.client.session.Session;
 import io.atomix.copycat.server.Commit;
-import io.atomix.copycat.server.StateMachine;
 import io.atomix.copycat.server.StateMachineExecutor;
+import io.atomix.resource.ResourceStateMachine;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -29,7 +29,7 @@ import java.util.Map;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class TopicState extends StateMachine {
+public class TopicState extends ResourceStateMachine {
   private final Map<Long, Commit<TopicCommands.Listen>> listeners = new HashMap<>();
 
   @Override
@@ -87,6 +87,12 @@ public class TopicState extends StateMachine {
     } finally {
       commit.clean();
     }
+  }
+
+  @Override
+  public void delete() {
+    listeners.values().forEach(Commit::clean);
+    listeners.clear();
   }
 
 }

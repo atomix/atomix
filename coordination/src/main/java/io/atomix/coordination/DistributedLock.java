@@ -15,11 +15,12 @@
  */
 package io.atomix.coordination;
 
-import io.atomix.DistributedResource;
 import io.atomix.coordination.state.LockCommands;
 import io.atomix.coordination.state.LockState;
-import io.atomix.copycat.server.StateMachine;
-import io.atomix.resource.ResourceContext;
+import io.atomix.copycat.client.RaftClient;
+import io.atomix.resource.AbstractResource;
+import io.atomix.resource.Consistency;
+import io.atomix.resource.ResourceInfo;
 
 import java.time.Duration;
 import java.util.Queue;
@@ -53,18 +54,19 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DistributedLock extends DistributedResource<DistributedLock> {
+@ResourceInfo(stateMachine=LockState.class)
+public class DistributedLock extends AbstractResource {
   private final Queue<Consumer<Boolean>> queue = new ConcurrentLinkedQueue<>();
 
-  @Override
-  protected Class<? extends StateMachine> stateMachine() {
-    return LockState.class;
+  public DistributedLock(RaftClient client) {
+    super(client);
+    client.session().onEvent("lock", this::handleEvent);
   }
 
   @Override
-  protected void open(ResourceContext context) {
-    super.open(context);
-    context.session().onEvent("lock", this::handleEvent);
+  public DistributedLock with(Consistency consistency) {
+    super.with(consistency);
+    return this;
   }
 
   /**

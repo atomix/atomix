@@ -15,13 +15,12 @@
  */
 package io.atomix.collections;
 
-import io.atomix.DistributedResource;
-import io.atomix.catalyst.util.Assert;
 import io.atomix.collections.state.QueueCommands;
 import io.atomix.collections.state.QueueState;
-import io.atomix.copycat.client.Command;
-import io.atomix.copycat.client.Query;
-import io.atomix.copycat.server.StateMachine;
+import io.atomix.copycat.client.RaftClient;
+import io.atomix.resource.AbstractResource;
+import io.atomix.resource.Consistency;
+import io.atomix.resource.ResourceInfo;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -31,75 +30,17 @@ import java.util.concurrent.CompletableFuture;
  * @param <T> The queue value type.
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DistributedQueue<T> extends DistributedResource<DistributedQueue<T>> {
-  private Command.ConsistencyLevel commandConsistency = Command.ConsistencyLevel.LINEARIZABLE;
-  private Query.ConsistencyLevel queryConsistency = Query.ConsistencyLevel.LINEARIZABLE;
+@ResourceInfo(stateMachine=QueueState.class)
+public class DistributedQueue<T> extends AbstractResource {
+
+  public DistributedQueue(RaftClient client) {
+    super(client);
+  }
 
   @Override
-  protected Class<? extends StateMachine> stateMachine() {
-    return QueueState.class;
-  }
-
-  /**
-   * Sets the default write consistency level.
-   *
-   * @param consistency The default write consistency level.
-   * @throws java.lang.NullPointerException If the consistency level is {@code null}
-   */
-  public void setDefaultCommandConsistency(Command.ConsistencyLevel consistency) {
-    this.commandConsistency = Assert.notNull(consistency, "consistency");
-  }
-
-  /**
-   * Sets the default write consistency level, returning the resource for method chaining.
-   *
-   * @param consistency The default write consistency level.
-   * @return The queue.
-   * @throws java.lang.NullPointerException If the consistency level is {@code null}
-   */
-  public DistributedQueue<T> withDefaultCommandConsistency(Command.ConsistencyLevel consistency) {
-    setDefaultCommandConsistency(consistency);
+  public DistributedQueue<T> with(Consistency consistency) {
+    super.with(consistency);
     return this;
-  }
-
-  /**
-   * Returns the default write consistency level.
-   *
-   * @return The default write consistency level.
-   */
-  public Command.ConsistencyLevel getDefaultCommandConsistency() {
-    return commandConsistency;
-  }
-
-  /**
-   * Sets the default read consistency level.
-   *
-   * @param consistency The default read consistency level.
-   * @throws java.lang.NullPointerException If the consistency level is {@code null}
-   */
-  public void setDefaultQueryConsistency(Query.ConsistencyLevel consistency) {
-    this.queryConsistency = Assert.notNull(consistency, "consistency");
-  }
-
-  /**
-   * Sets the default read consistency level, returning the resource for method chaining.
-   *
-   * @param consistency The default read consistency level.
-   * @return The queue.
-   * @throws java.lang.NullPointerException If the consistency level is {@code null}
-   */
-  public DistributedQueue<T> withDefaultQueryConsistency(Query.ConsistencyLevel consistency) {
-    setDefaultQueryConsistency(consistency);
-    return this;
-  }
-
-  /**
-   * Returns the default read consistency level.
-   *
-   * @return The default read consistency level.
-   */
-  public Query.ConsistencyLevel getDefaultQueryConsistency() {
-    return queryConsistency;
   }
 
   /**

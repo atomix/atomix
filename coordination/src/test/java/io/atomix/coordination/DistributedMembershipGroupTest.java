@@ -15,24 +15,11 @@
  */
 package io.atomix.coordination;
 
-import io.atomix.Atomix;
-import io.atomix.AtomixReplica;
-import io.atomix.catalyst.transport.Address;
-import io.atomix.catalyst.transport.LocalServerRegistry;
-import io.atomix.catalyst.transport.LocalTransport;
-import io.atomix.copycat.server.storage.Storage;
-import net.jodah.concurrentunit.ConcurrentTestCase;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
+import io.atomix.coordination.state.MembershipGroupState;
+import io.atomix.resource.ResourceStateMachine;
 import org.testng.annotations.Test;
 
-import java.io.File;
-import java.io.IOException;
 import java.io.Serializable;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -42,20 +29,21 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class DistributedMembershipGroupTest extends ConcurrentTestCase {
-  private static final File directory = new File("test-logs");
+public class DistributedMembershipGroupTest extends AbstractCoordinationTest {
+
+  @Override
+  protected ResourceStateMachine createStateMachine() {
+    return new MembershipGroupState();
+  }
 
   /**
    * Tests joining a group.
    */
   public void testJoin() throws Throwable {
-    List<Atomix> servers = createAtomixes(3);
+    createServers(3);
 
-    Atomix atomix1 = servers.get(0);
-    DistributedMembershipGroup group1 = atomix1.create("test", DistributedMembershipGroup.class).get();
-
-    Atomix atomix2 = servers.get(1);
-    DistributedMembershipGroup group2 = atomix2.create("test", DistributedMembershipGroup.class).get();
+    DistributedMembershipGroup group1 = new DistributedMembershipGroup(createClient());
+    DistributedMembershipGroup group2 = new DistributedMembershipGroup(createClient());
 
     AtomicBoolean joined = new AtomicBoolean();
     group2.join().join();
@@ -80,13 +68,10 @@ public class DistributedMembershipGroupTest extends ConcurrentTestCase {
    * Tests leaving a group.
    */
   public void testLeave() throws Throwable {
-    List<Atomix> servers = createAtomixes(3);
+    createServers(3);
 
-    Atomix atomix1 = servers.get(0);
-    DistributedMembershipGroup group1 = atomix1.create("test", DistributedMembershipGroup.class).get();
-
-    Atomix atomix2 = servers.get(1);
-    DistributedMembershipGroup group2 = atomix2.create("test", DistributedMembershipGroup.class).get();
+    DistributedMembershipGroup group1 = new DistributedMembershipGroup(createClient());
+    DistributedMembershipGroup group2 = new DistributedMembershipGroup(createClient());
 
     group2.join().thenRun(() -> {
       threadAssertEquals(group2.members().size(), 1);
@@ -109,13 +94,10 @@ public class DistributedMembershipGroupTest extends ConcurrentTestCase {
    * Tests executing an immediate callback.
    */
   public void testRemoteExecute() throws Throwable {
-    List<Atomix> servers = createAtomixes(3);
+    createServers(3);
 
-    Atomix atomix1 = servers.get(0);
-    DistributedMembershipGroup group1 = atomix1.create("test", DistributedMembershipGroup.class).get();
-
-    Atomix atomix2 = servers.get(1);
-    DistributedMembershipGroup group2 = atomix2.create("test", DistributedMembershipGroup.class).get();
+    DistributedMembershipGroup group1 = new DistributedMembershipGroup(createClient());
+    DistributedMembershipGroup group2 = new DistributedMembershipGroup(createClient());
 
     group2.join().thenRun(() -> {
       threadAssertEquals(group2.members().size(), 1);
@@ -132,60 +114,6 @@ public class DistributedMembershipGroupTest extends ConcurrentTestCase {
     });
 
     await(0, 2);
-  }
-
-  /**
-   * Creates a Atomix instance.
-   */
-  private List<Atomix> createAtomixes(int nodes) throws Throwable {
-    LocalServerRegistry registry = new LocalServerRegistry();
-
-    List<Atomix> active = new ArrayList<>();
-
-    Collection<Address> members = new ArrayList<>();
-    for (int i = 1; i <= nodes; i++) {
-      members.add(new Address("localhost", 5000 + i));
-    }
-
-    for (int i = 1; i <= nodes; i++) {
-      Atomix atomix = AtomixReplica.builder(new Address("localhost", 5000 + i), members)
-        .withTransport(new LocalTransport(registry))
-        .withStorage(new Storage(new File(directory, "" + i)))
-        .build();
-
-      atomix.open().thenRun(this::resume);
-
-      active.add(atomix);
-    }
-
-    await(0, nodes);
-
-    return active;
-  }
-
-  @BeforeMethod
-  @AfterMethod
-  public void clearTests() throws IOException {
-    deleteDirectory(directory);
-  }
-
-  /**
-   * Deletes a directory recursively.
-   */
-  private void deleteDirectory(File directory) throws IOException {
-    if (directory.exists()) {
-      File[] files = directory.listFiles();
-      if (files != null) {
-        for (File file : files) {
-          if (file.isDirectory()) {
-            deleteDirectory(file);
-          } else {
-            Files.delete(file.toPath());
-          }
-        }
-      }
-      Files.delete(directory.toPath());
-    }
   }
 
 }

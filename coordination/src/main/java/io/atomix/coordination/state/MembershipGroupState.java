@@ -17,8 +17,8 @@ package io.atomix.coordination.state;
 
 import io.atomix.copycat.client.session.Session;
 import io.atomix.copycat.server.Commit;
-import io.atomix.copycat.server.StateMachine;
 import io.atomix.copycat.server.StateMachineExecutor;
+import io.atomix.resource.ResourceStateMachine;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -31,7 +31,7 @@ import java.util.Set;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class MembershipGroupState extends StateMachine {
+public class MembershipGroupState extends ResourceStateMachine {
   private final Map<Long, Commit<MembershipGroupCommands.Join>> members = new HashMap<>();
 
   @Override
@@ -125,6 +125,12 @@ public class MembershipGroupState extends StateMachine {
     } finally {
       commit.clean();
     }
+  }
+
+  @Override
+  public void delete() {
+    members.values().forEach(Commit::clean);
+    members.clear();
   }
 
 }

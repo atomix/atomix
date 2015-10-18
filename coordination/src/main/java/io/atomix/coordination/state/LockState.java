@@ -17,8 +17,8 @@ package io.atomix.coordination.state;
 
 import io.atomix.catalyst.util.concurrent.Scheduled;
 import io.atomix.copycat.server.Commit;
-import io.atomix.copycat.server.StateMachine;
 import io.atomix.copycat.server.StateMachineExecutor;
+import io.atomix.resource.ResourceStateMachine;
 
 import java.time.Duration;
 import java.util.ArrayDeque;
@@ -31,7 +31,7 @@ import java.util.Queue;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class LockState extends StateMachine {
+public class LockState extends ResourceStateMachine {
   private Commit<LockCommands.Lock> lock;
   private final Queue<Commit<LockCommands.Lock>> queue = new ArrayDeque<>();
   private final Map<Long, Scheduled> timers = new HashMap<>();
@@ -89,6 +89,19 @@ public class LockState extends StateMachine {
     } finally {
       commit.clean();
     }
+  }
+
+  @Override
+  public void delete() {
+    if (lock != null) {
+      lock.clean();
+    }
+
+    queue.forEach(Commit::clean);
+    queue.clear();
+
+    timers.values().forEach(Scheduled::cancel);
+    timers.clear();
   }
 
 }

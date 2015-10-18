@@ -15,7 +15,8 @@
  */
 package io.atomix.atomic;
 
-import io.atomix.Consistency;
+import io.atomix.copycat.client.RaftClient;
+import io.atomix.resource.Consistency;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
@@ -27,6 +28,10 @@ import java.util.function.Function;
  */
 public class DistributedAtomicLong extends DistributedAtomicValue<Long> {
   private Long value;
+
+  public DistributedAtomicLong(RaftClient client) {
+    super(client);
+  }
 
   @Override
   public DistributedAtomicLong with(Consistency consistency) {

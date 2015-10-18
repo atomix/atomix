@@ -15,12 +15,13 @@
  */
 package io.atomix.atomic;
 
-import io.atomix.DistributedResource;
 import io.atomix.atomic.state.AtomicValueCommands;
 import io.atomix.atomic.state.AtomicValueState;
 import io.atomix.catalyst.util.Listener;
-import io.atomix.copycat.server.StateMachine;
-import io.atomix.resource.ResourceContext;
+import io.atomix.copycat.client.RaftClient;
+import io.atomix.resource.AbstractResource;
+import io.atomix.resource.Consistency;
+import io.atomix.resource.ResourceInfo;
 
 import java.time.Duration;
 import java.util.Collections;
@@ -33,22 +34,23 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DistributedAtomicValue<T> extends DistributedResource<DistributedAtomicValue<T>> {
+@ResourceInfo(stateMachine=AtomicValueState.class)
+public class DistributedAtomicValue<T> extends AbstractResource {
   private final java.util.Set<Consumer<T>> changeListeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
-  @Override
-  protected Class<? extends StateMachine> stateMachine() {
-    return AtomicValueState.class;
-  }
-
-  @Override
-  protected void open(ResourceContext context) {
-    super.open(context);
-    context.session().<T>onEvent("change", event -> {
+  public DistributedAtomicValue(RaftClient client) {
+    super(client);
+    client.session().<T>onEvent("change", event -> {
       for (Consumer<T> listener : changeListeners) {
         listener.accept(event);
       }
     });
+  }
+
+  @Override
+  public DistributedAtomicValue<T> with(Consistency consistency) {
+    super.with(consistency);
+    return this;
   }
 
   /**

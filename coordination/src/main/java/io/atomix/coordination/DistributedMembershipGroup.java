@@ -15,14 +15,15 @@
  */
 package io.atomix.coordination;
 
-import io.atomix.DistributedResource;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.catalyst.util.Listeners;
 import io.atomix.coordination.state.MembershipGroupCommands;
 import io.atomix.coordination.state.MembershipGroupState;
 import io.atomix.copycat.client.Command;
-import io.atomix.copycat.server.StateMachine;
-import io.atomix.resource.ResourceContext;
+import io.atomix.copycat.client.RaftClient;
+import io.atomix.resource.AbstractResource;
+import io.atomix.resource.Consistency;
+import io.atomix.resource.ResourceInfo;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -90,24 +91,24 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class DistributedMembershipGroup extends DistributedResource<DistributedMembershipGroup> {
+@ResourceInfo(stateMachine=MembershipGroupState.class)
+public class DistributedMembershipGroup extends AbstractResource {
   private final Listeners<GroupMember> joinListeners = new Listeners<>();
   private final Listeners<GroupMember> leaveListeners = new Listeners<>();
   private GroupMember member;
   private final Map<Long, GroupMember> members = new ConcurrentHashMap<>();
 
-  @Override
-  protected void open(ResourceContext context) {
-    super.open(context);
+  public DistributedMembershipGroup(RaftClient client) {
+    super(client);
 
-    context.session().<Long>onEvent("join", memberId -> {
+    client.session().<Long>onEvent("join", memberId -> {
       GroupMember member = members.computeIfAbsent(memberId, InternalGroupMember::new);
       for (Listener<GroupMember> listener : joinListeners) {
         listener.accept(member);
       }
     });
 
-    context.session().<Long>onEvent("leave", memberId -> {
+    client.session().<Long>onEvent("leave", memberId -> {
       GroupMember member = members.remove(memberId);
       if (member != null) {
         for (Listener<GroupMember> listener : leaveListeners) {
@@ -116,12 +117,13 @@ public class DistributedMembershipGroup extends DistributedResource<DistributedM
       }
     });
 
-    context.session().onEvent("execute", Runnable::run);
+    client.session().onEvent("execute", Runnable::run);
   }
 
   @Override
-  protected Class<? extends StateMachine> stateMachine() {
-    return MembershipGroupState.class;
+  public DistributedMembershipGroup with(Consistency consistency) {
+    super.with(consistency);
+    return this;
   }
 
   /**
@@ -186,7 +188,7 @@ public class DistributedMembershipGroup extends DistributedResource<DistributedM
    */
   public CompletableFuture<GroupMember> join() {
     return submit(new MembershipGroupCommands.Join()).thenApply(members -> {
-      member = new InternalGroupMember(context.session().id());
+      member = new InternalGroupMember(client.session().id());
       for (long memberId : members) {
         this.members.computeIfAbsent(memberId, InternalGroupMember::new);
       }

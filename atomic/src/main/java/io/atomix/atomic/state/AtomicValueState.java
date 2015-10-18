@@ -18,8 +18,8 @@ package io.atomix.atomic.state;
 import io.atomix.catalyst.util.concurrent.Scheduled;
 import io.atomix.copycat.client.session.Session;
 import io.atomix.copycat.server.Commit;
-import io.atomix.copycat.server.StateMachine;
 import io.atomix.copycat.server.StateMachineExecutor;
+import io.atomix.resource.ResourceStateMachine;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -31,7 +31,7 @@ import java.util.function.Function;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class AtomicValueState extends StateMachine {
+public class AtomicValueState extends ResourceStateMachine {
   private final Map<Session, Commit<AtomicValueCommands.Listen>> listeners = new HashMap<>();
   private Object value;
   private Commit<? extends AtomicValueCommands.ValueCommand> current;
@@ -153,6 +153,19 @@ public class AtomicValueState extends StateMachine {
     cleanCurrent();
     setCurrent(commit);
     return result;
+  }
+
+  @Override
+  public void delete() {
+    if (current != null) {
+      current.clean();
+      current = null;
+      value = null;
+    }
+    if (timer != null) {
+      timer.cancel();
+      timer = null;
+    }
   }
 
 }

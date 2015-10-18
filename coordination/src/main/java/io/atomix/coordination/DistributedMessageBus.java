@@ -15,7 +15,6 @@
  */
 package io.atomix.coordination;
 
-import io.atomix.DistributedResource;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.Client;
 import io.atomix.catalyst.transport.Connection;
@@ -23,7 +22,10 @@ import io.atomix.catalyst.transport.Server;
 import io.atomix.catalyst.util.concurrent.Futures;
 import io.atomix.coordination.state.MessageBusCommands;
 import io.atomix.coordination.state.MessageBusState;
-import io.atomix.copycat.server.StateMachine;
+import io.atomix.copycat.client.RaftClient;
+import io.atomix.resource.AbstractResource;
+import io.atomix.resource.Consistency;
+import io.atomix.resource.ResourceInfo;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -68,7 +70,8 @@ import java.util.function.Function;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class DistributedMessageBus extends DistributedResource<DistributedMessageBus> {
+@ResourceInfo(stateMachine=MessageBusState.class)
+public class DistributedMessageBus extends AbstractResource {
   private Client client;
   private Server server;
   private final Map<Integer, Connection> connections = new HashMap<>();
@@ -78,9 +81,14 @@ public class DistributedMessageBus extends DistributedResource<DistributedMessag
   private final Map<String, InternalMessageConsumer> consumers = new ConcurrentHashMap<>();
   private volatile boolean open;
 
+  public DistributedMessageBus(RaftClient client) {
+    super(client);
+  }
+
   @Override
-  protected Class<? extends StateMachine> stateMachine() {
-    return MessageBusState.class;
+  public DistributedMessageBus with(Consistency consistency) {
+    super.with(consistency);
+    return this;
   }
 
   /**
@@ -111,11 +119,11 @@ public class DistributedMessageBus extends DistributedResource<DistributedMessag
     if (openFuture != null)
       return openFuture;
 
-    client = context.transport().client();
-    server = context.transport().server();
+    client = super.client.transport().client();
+    server = super.client.transport().server();
 
     openFuture = new CompletableFuture<>();
-    context.context().execute(() -> {
+    super.client.context().execute(() -> {
       server.listen(address, this::connectListener).whenComplete((result, error) -> {
         synchronized (this) {
           if (error == null) {
@@ -145,8 +153,8 @@ public class DistributedMessageBus extends DistributedResource<DistributedMessag
             remotes.put(entry.getKey(), new RemoteConsumers(entry.getValue()));
           }
 
-          context.session().onEvent("register", this::registerConsumer);
-          context.session().onEvent("unregister", this::unregisterConsumer);
+          super.client.session().onEvent("register", this::registerConsumer);
+          super.client.session().onEvent("unregister", this::unregisterConsumer);
           future.complete(null);
         } else {
           future.completeExceptionally(error);
@@ -320,7 +328,7 @@ public class DistributedMessageBus extends DistributedResource<DistributedMessag
       return Futures.exceptionalFuture(new IllegalStateException("message bus not open"));
 
     closeFuture = new CompletableFuture<>();
-    context.context().execute(() -> {
+    super.client.context().execute(() -> {
       server.close().whenComplete((result, error) -> {
         synchronized (this) {
           open = false;

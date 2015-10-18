@@ -15,13 +15,13 @@
  */
 package io.atomix.coordination;
 
-import io.atomix.Consistency;
-import io.atomix.DistributedResource;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.coordination.state.TopicCommands;
 import io.atomix.coordination.state.TopicState;
-import io.atomix.copycat.server.StateMachine;
-import io.atomix.resource.ResourceContext;
+import io.atomix.copycat.client.RaftClient;
+import io.atomix.resource.AbstractResource;
+import io.atomix.resource.Consistency;
+import io.atomix.resource.ResourceInfo;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -57,23 +57,24 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DistributedTopic<T> extends DistributedResource<DistributedTopic<T>> {
+@ResourceInfo(stateMachine=TopicState.class)
+public class DistributedTopic<T> extends AbstractResource {
   private final Set<Consumer<T>> listeners = new HashSet<>();
 
-  @Override
-  protected Class<? extends StateMachine> stateMachine() {
-    return TopicState.class;
-  }
-
-  @Override
   @SuppressWarnings("unchecked")
-  protected void open(ResourceContext context) {
-    super.open(context);
-    context.session().onEvent("message", event -> {
+  public DistributedTopic(RaftClient client) {
+    super(client);
+    client.session().onEvent("message", event -> {
       for (Consumer<T> listener : listeners) {
         listener.accept((T) event);
       }
     });
+  }
+
+  @Override
+  public DistributedTopic<T> with(Consistency consistency) {
+    super.with(consistency);
+    return this;
   }
 
   /**

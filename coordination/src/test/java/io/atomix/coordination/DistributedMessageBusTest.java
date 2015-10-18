@@ -15,23 +15,10 @@
  */
 package io.atomix.coordination;
 
-import io.atomix.Atomix;
-import io.atomix.AtomixReplica;
 import io.atomix.catalyst.transport.Address;
-import io.atomix.catalyst.transport.LocalServerRegistry;
-import io.atomix.catalyst.transport.LocalTransport;
-import io.atomix.copycat.server.storage.Storage;
-import net.jodah.concurrentunit.ConcurrentTestCase;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
+import io.atomix.coordination.state.MessageBusState;
+import io.atomix.resource.ResourceStateMachine;
 import org.testng.annotations.Test;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 
 /**
  * Distributed message bus test.
@@ -39,20 +26,21 @@ import java.util.List;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class DistributedMessageBusTest extends ConcurrentTestCase {
-  private static final File directory = new File("test-logs");
+public class DistributedMessageBusTest extends AbstractCoordinationTest {
+
+  @Override
+  protected ResourceStateMachine createStateMachine() {
+    return new MessageBusState();
+  }
 
   /**
    * Tests sending a message.
    */
   public void testSend() throws Throwable {
-    List<Atomix> servers = createAtomixes(3);
+    createServers(3);
 
-    Atomix atomix1 = servers.get(0);
-    DistributedMessageBus bus1 = atomix1.create("test", DistributedMessageBus.class).get();
-
-    Atomix atomix2 = servers.get(1);
-    DistributedMessageBus bus2 = atomix2.create("test", DistributedMessageBus.class).get();
+    DistributedMessageBus bus1 = new DistributedMessageBus(createClient());
+    DistributedMessageBus bus2 = new DistributedMessageBus(createClient());
 
     bus1.open(new Address("localhost", 6000)).join();
     bus2.open(new Address("localhost", 6001)).join();
@@ -68,60 +56,6 @@ public class DistributedMessageBusTest extends ConcurrentTestCase {
     });
 
     await();
-  }
-
-  /**
-   * Creates a Atomix instance.
-   */
-  private List<Atomix> createAtomixes(int nodes) throws Throwable {
-    LocalServerRegistry registry = new LocalServerRegistry();
-
-    List<Atomix> active = new ArrayList<>();
-
-    Collection<Address> members = new ArrayList<>();
-    for (int i = 1; i <= nodes; i++) {
-      members.add(new Address("localhost", 5000 + i));
-    }
-
-    for (int i = 1; i <= nodes; i++) {
-      Atomix atomix = AtomixReplica.builder(new Address("localhost", 5000 + i), members)
-        .withTransport(new LocalTransport(registry))
-        .withStorage(new Storage(new File(directory, "" + i)))
-        .build();
-
-      atomix.open().thenRun(this::resume);
-
-      active.add(atomix);
-    }
-
-    await(0, nodes);
-
-    return active;
-  }
-
-  @BeforeMethod
-  @AfterMethod
-  public void clearTests() throws IOException {
-    deleteDirectory(directory);
-  }
-
-  /**
-   * Deletes a directory recursively.
-   */
-  private void deleteDirectory(File directory) throws IOException {
-    if (directory.exists()) {
-      File[] files = directory.listFiles();
-      if (files != null) {
-        for (File file : files) {
-          if (file.isDirectory()) {
-            deleteDirectory(file);
-          } else {
-            Files.delete(file.toPath());
-          }
-        }
-      }
-      Files.delete(directory.toPath());
-    }
   }
 
 }

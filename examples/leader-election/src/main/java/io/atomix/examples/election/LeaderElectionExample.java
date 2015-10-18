@@ -60,7 +60,7 @@ public class LeaderElectionExample {
 
     atomix.open().join();
 
-    DistributedLeaderElection election = atomix.create("election", DistributedLeaderElection::new).get();
+    DistributedLeaderElection election = atomix.create("election", DistributedLeaderElection.class).get();
     election.onElection(epoch -> {
       System.out.println("Elected leader!");
     }).join();

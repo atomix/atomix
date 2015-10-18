@@ -18,8 +18,8 @@ package io.atomix.coordination.state;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.copycat.client.session.Session;
 import io.atomix.copycat.server.Commit;
-import io.atomix.copycat.server.StateMachine;
 import io.atomix.copycat.server.StateMachineExecutor;
+import io.atomix.resource.ResourceStateMachine;
 
 import java.util.*;
 
@@ -28,7 +28,7 @@ import java.util.*;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class MessageBusState extends StateMachine {
+public class MessageBusState extends ResourceStateMachine {
   private final Map<Long, Commit<MessageBusCommands.Join>> members = new HashMap<>();
   private final Map<String, Map<Long, Commit<MessageBusCommands.Register>>> topics = new HashMap<>();
 
@@ -150,6 +150,13 @@ public class MessageBusState extends StateMachine {
       commit.clean();
       throw e;
     }
+  }
+
+  @Override
+  public void delete() {
+    members.values().forEach(Commit::clean);
+    topics.values().forEach(m -> m.values().forEach(Commit::clean));
+    topics.clear();
   }
 
 }

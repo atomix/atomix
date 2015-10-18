@@ -15,23 +15,9 @@
  */
 package io.atomix.collections;
 
-import io.atomix.Atomix;
-import io.atomix.AtomixReplica;
-import io.atomix.catalyst.transport.Address;
-import io.atomix.catalyst.transport.LocalServerRegistry;
-import io.atomix.catalyst.transport.LocalTransport;
-import io.atomix.copycat.server.storage.Storage;
-import net.jodah.concurrentunit.ConcurrentTestCase;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
+import io.atomix.collections.state.SetState;
+import io.atomix.resource.ResourceStateMachine;
 import org.testng.annotations.Test;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
@@ -42,23 +28,24 @@ import static org.testng.Assert.assertTrue;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class DistributedSetTest extends ConcurrentTestCase {
-  private static final File directory = new File("test-logs");
+public class DistributedSetTest extends AbstractCollectionsTest {
+
+  @Override
+  protected ResourceStateMachine createStateMachine() {
+    return new SetState();
+  }
 
   /**
    * Tests adding and removing members from a set.
    */
   @SuppressWarnings("unchecked")
   public void testSetAddRemove() throws Throwable {
-    List<Atomix> atomixes = createAtomixes(3);
+    createServers(3);
 
-    Atomix atomix1 = atomixes.get(0);
-    Atomix atomix2 = atomixes.get(1);
-
-    DistributedSet<String> set1 = atomix1.create("test", DistributedSet.class).get();
+    DistributedSet<String> set1 = new DistributedSet<>(createClient());
     assertFalse(set1.contains("Hello world!").get());
 
-    DistributedSet<String> set2 = atomix2.create("test", DistributedSet.class).get();
+    DistributedSet<String> set2 = new DistributedSet<>(createClient());
     assertFalse(set2.contains("Hello world!").get());
 
     set1.add("Hello world!").join();
@@ -68,62 +55,6 @@ public class DistributedSetTest extends ConcurrentTestCase {
     set2.remove("Hello world!").join();
     assertFalse(set1.contains("Hello world!").get());
     assertFalse(set2.contains("Hello world!").get());
-  }
-
-  /**
-   * Creates a Atomix instance.
-   */
-  private List<Atomix> createAtomixes(int nodes) throws Throwable {
-    LocalServerRegistry registry = new LocalServerRegistry();
-
-    List<Atomix> atomixes = new ArrayList<>();
-
-    Collection<Address> members = new ArrayList<>();
-    for (int i = 1; i <= nodes; i++) {
-      members.add(new Address("localhost", 5000 + i));
-    }
-
-    for (int i = 1; i <= nodes; i++) {
-      Atomix atomix = AtomixReplica.builder(new Address("localhost", 5000 + i), members)
-        .withTransport(new LocalTransport(registry))
-        .withStorage(Storage.builder()
-          .withDirectory(new File(directory, "" + i))
-          .build())
-        .build();
-
-      atomix.open().thenRun(this::resume);
-
-      atomixes.add(atomix);
-    }
-
-    await(0, nodes);
-
-    return atomixes;
-  }
-
-  @BeforeMethod
-  @AfterMethod
-  public void clearTests() throws IOException {
-    deleteDirectory(directory);
-  }
-
-  /**
-   * Deletes a directory recursively.
-   */
-  private void deleteDirectory(File directory) throws IOException {
-    if (directory.exists()) {
-      File[] files = directory.listFiles();
-      if (files != null) {
-        for (File file : files) {
-          if (file.isDirectory()) {
-            deleteDirectory(file);
-          } else {
-            Files.delete(file.toPath());
-          }
-        }
-      }
-      Files.delete(directory.toPath());
-    }
   }
 
 }

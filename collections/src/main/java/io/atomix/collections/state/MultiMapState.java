@@ -17,8 +17,8 @@ package io.atomix.collections.state;
 
 import io.atomix.catalyst.util.concurrent.Scheduled;
 import io.atomix.copycat.server.Commit;
-import io.atomix.copycat.server.StateMachine;
 import io.atomix.copycat.server.StateMachineExecutor;
+import io.atomix.resource.ResourceStateMachine;
 
 import java.time.Duration;
 import java.util.*;
@@ -28,7 +28,7 @@ import java.util.*;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class MultiMapState extends StateMachine {
+public class MultiMapState extends ResourceStateMachine {
   private final Map<Object, Map<Object, Commit<? extends MultiMapCommands.TtlCommand>>> map = new HashMap<>();
   private final Map<Long, Scheduled> timers = new HashMap<>();
 
@@ -182,19 +182,24 @@ public class MultiMapState extends StateMachine {
    */
   protected void clear(Commit<MultiMapCommands.Clear> commit) {
     try {
-      Iterator<Map.Entry<Object, Map<Object, Commit<? extends MultiMapCommands.TtlCommand>>>> iterator = map.entrySet().iterator();
-      while (iterator.hasNext()) {
-        Map.Entry<Object, Map<Object, Commit<? extends MultiMapCommands.TtlCommand>>> entry = iterator.next();
-        for (Commit<? extends MultiMapCommands.TtlCommand> value : entry.getValue().values()) {
-          Scheduled timer = timers.remove(value.index());
-          if (timer != null)
-            timer.cancel();
-          value.clean();
-        }
-        iterator.remove();
-      }
+      delete();
     } finally {
       commit.clean();
+    }
+  }
+
+  @Override
+  public void delete() {
+    Iterator<Map.Entry<Object, Map<Object, Commit<? extends MultiMapCommands.TtlCommand>>>> iterator = map.entrySet().iterator();
+    while (iterator.hasNext()) {
+      Map.Entry<Object, Map<Object, Commit<? extends MultiMapCommands.TtlCommand>>> entry = iterator.next();
+      for (Commit<? extends MultiMapCommands.TtlCommand> value : entry.getValue().values()) {
+        Scheduled timer = timers.remove(value.index());
+        if (timer != null)
+          timer.cancel();
+        value.clean();
+      }
+      iterator.remove();
     }
   }
 

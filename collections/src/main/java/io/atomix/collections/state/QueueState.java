@@ -16,8 +16,8 @@
 package io.atomix.collections.state;
 
 import io.atomix.copycat.server.Commit;
-import io.atomix.copycat.server.StateMachine;
 import io.atomix.copycat.server.StateMachineExecutor;
+import io.atomix.resource.ResourceStateMachine;
 
 import java.util.ArrayDeque;
 import java.util.Iterator;
@@ -28,7 +28,7 @@ import java.util.Queue;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class QueueState extends StateMachine {
+public class QueueState extends ResourceStateMachine {
   private final Queue<Commit<? extends QueueCommands.ValueCommand>> queue = new ArrayDeque<>();
 
   @Override
@@ -198,14 +198,19 @@ public class QueueState extends StateMachine {
    */
   protected void clear(Commit<QueueCommands.Clear> commit) {
     try {
-      Iterator<Commit<? extends QueueCommands.ValueCommand>> iterator = queue.iterator();
-      while (iterator.hasNext()) {
-        Commit<? extends QueueCommands.ValueCommand> value = iterator.next();
-        value.clean();
-        iterator.remove();
-      }
+      delete();
     } finally {
       commit.clean();
+    }
+  }
+
+  @Override
+  public void delete() {
+    Iterator<Commit<? extends QueueCommands.ValueCommand>> iterator = queue.iterator();
+    while (iterator.hasNext()) {
+      Commit<? extends QueueCommands.ValueCommand> value = iterator.next();
+      value.clean();
+      iterator.remove();
     }
   }
 
