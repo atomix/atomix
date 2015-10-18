@@ -229,8 +229,8 @@ public class MapState extends ResourceStateMachine {
       return false;
     }
 
-    if ((value.commit.operation().value() == null && commit.operation().value() == null)
-      || (value.commit.operation().value() != null && value.commit.operation().value().equals(commit.operation().value()))) {
+    if ((value.commit.operation().value() == null && commit.operation().replace() == null)
+      || (value.commit.operation().value() != null && value.commit.operation().value().equals(commit.operation().replace()))) {
       if (value.timer != null)
         value.timer.cancel();
       Scheduled timer = commit.operation().ttl() > 0 ? executor().schedule(Duration.ofMillis(commit.operation().ttl()), () -> {
