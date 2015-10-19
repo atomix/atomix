@@ -18,12 +18,16 @@ Atomix exposes a set of high level APIs with tools to solve a variety of distrib
 * [Distributed collections](http://atomix.io/atomix/user-manual/collections/)
 * [Distributed atomic variables](http://atomix.io/atomix/user-manual/atomics/)
 
-Atomix is built on [Copycat][Copycat], a well tested, [Jepsen](https://github.com/atomix/atomix-jepsen) verified
-implementation of the [Raft consensus algorithm](https://raft.github.io/).
+#### Project status
 
-Early Jepsen testing of both Copycat and Atomix is now complete, and an early release of both projects will be
-pushed to Maven Central in the coming days. In the meantime, snapshots are frequently pushed. Documentation is
-still under development, and the website will continue to be updated until and after a release.
+Atomix is a fault-tolerant framework that provides strong consistency guarantees, and as such we take the responsibility
+to test these claims and document the implementation very seriously. Atomix is built on [Copycat][Copycat], a well tested,
+well documented, [Jepsen](https://github.com/atomix/atomix-jepsen) verified implementation of the
+[Raft consensus algorithm](https://raft.github.io/). Early Jepsen testing of both Copycat and Atomix is now complete,
+and an early release of both projects will be pushed to Maven Central in the coming days. In the meantime, snapshots
+are frequently pushed. Documentation is for most of Copycat's implementation of the Raft algorithm is available on the
+Copycat website but remains under development. The websites for both projects will continue to be updated until and
+after a release.
 
 ##### [Getting started][Getting started] • [User Manual][User manual] • [Javadoc][Javadoc] • [Raft Algorithm][Copycat] • [Jepsen Tests](https://github.com/atomix/atomix-jepsen) • [Google Group][Google group]
 
