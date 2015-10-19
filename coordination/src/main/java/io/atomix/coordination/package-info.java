@@ -16,8 +16,9 @@
 
 /**
  * Provides distributed coordination resources such as {@link io.atomix.coordination.DistributedLock} and
- * {@link io.atomix.coordination.DistributedLeaderElection} and {@link io.atomix.coordination.DistributedTopic}
- * for publish-subscribe messaging.
+ * {@link io.atomix.coordination.DistributedLeaderElection}, {@link io.atomix.coordination.DistributedMembershipGroup},
+ * {@link io.atomix.coordination.DistributedMessageBus} for unreliable messaging, and
+ * {@link io.atomix.coordination.DistributedTopic} for publish-subscribe messaging.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

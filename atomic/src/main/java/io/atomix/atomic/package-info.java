@@ -15,7 +15,8 @@
  */
 
 /**
- * Provides distributed atomic variables such as {@link io.atomix.atomic.DistributedAtomicValue}.
+ * Provides distributed atomic variables such as {@link io.atomix.atomic.DistributedAtomicValue}
+ * and {@link io.atomix.atomic.DistributedAtomicLong}.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

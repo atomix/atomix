@@ -11,14 +11,17 @@
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
- * limitations under the License.
+ * limitations under the License
  */
 
 /**
- * Provides distributed collections such as {@link io.atomix.collections.DistributedMap}
- * {@link io.atomix.collections.DistributedMultiMap}, {@link io.atomix.collections.DistributedQueue}, and
- * {@link io.atomix.collections.DistributedSet}.
+ * Provides classes and interfaces for creating and operating on Raft replicated state machines.
+ * <p>
+ * This package provides base classes for Atomix distributed resources. At their core, distributed resources are standalone
+ * Copycat {@link io.atomix.copycat.server.StateMachine} implementations which can be accessed by a high-level proxy API.
+ * All resources can be run as state machines in a Copycat cluster or multiple state machines in a single cluster can be
+ * managed by the Atomix resource manager.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-package io.atomix.collections;
+package io.atomix.resource;
