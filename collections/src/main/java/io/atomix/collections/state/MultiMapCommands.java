@@ -41,7 +41,7 @@ public class MultiMapCommands {
   /**
    * Abstract map command.
    */
-  public static abstract class MapCommand<V> implements Command<V>, CatalystSerializable {
+  public static abstract class MultiMapCommand<V> implements Command<V>, CatalystSerializable {
 
     @Override
     public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
@@ -55,7 +55,7 @@ public class MultiMapCommands {
   /**
    * Abstract map query.
    */
-  public static abstract class MapQuery<V> implements Query<V>, CatalystSerializable {
+  public static abstract class MultiMapQuery<V> implements Query<V>, CatalystSerializable {
 
     @Override
     public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
@@ -69,7 +69,7 @@ public class MultiMapCommands {
   /**
    * Abstract key-based command.
    */
-  public static abstract class KeyCommand<V> extends MapCommand<V> {
+  public static abstract class KeyCommand<V> extends MultiMapCommand<V> {
     protected Object key;
 
     protected KeyCommand() {
@@ -100,7 +100,7 @@ public class MultiMapCommands {
   /**
    * Abstract key-based query.
    */
-  public static abstract class KeyQuery<V> extends MapQuery<V> {
+  public static abstract class KeyQuery<V> extends MultiMapQuery<V> {
     protected Object key;
 
     protected KeyQuery() {
@@ -133,7 +133,7 @@ public class MultiMapCommands {
   /**
    * Abstract value-based query.
    */
-  public static abstract class ValueQuery<V> extends MapQuery<V> {
+  public static abstract class ValueQuery<V> extends MultiMapQuery<V> {
     protected Object value;
 
     protected ValueQuery() {
@@ -370,16 +370,53 @@ public class MultiMapCommands {
   }
 
   /**
-   * Is empty query.
+   * Remove command.
    */
   @SerializeWith(id=81)
-  public static class IsEmpty extends MapQuery<Boolean> {
+  public static class RemoveValue extends MultiMapCommand<Void> {
+    private Object value;
+
+    public RemoveValue() {
+    }
+
+    public RemoveValue(Object value) {
+      this.value = value;
+    }
+
+    /**
+     * Returns the value.
+     */
+    public Object value() {
+      return value;
+    }
+
+    @Override
+    public PersistenceLevel persistence() {
+      return PersistenceLevel.PERSISTENT;
+    }
+
+    @Override
+    public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
+      serializer.writeObject(value, buffer);
+    }
+
+    @Override
+    public void readObject(BufferInput<?> buffer, Serializer serializer) {
+      value = serializer.readObject(buffer);
+    }
+  }
+
+  /**
+   * Is empty query.
+   */
+  @SerializeWith(id=82)
+  public static class IsEmpty extends MultiMapQuery<Boolean> {
   }
 
   /**
    * Size query.
    */
-  @SerializeWith(id=82)
+  @SerializeWith(id=83)
   public static class Size extends KeyQuery<Integer> {
     public Size() {
     }
@@ -392,8 +429,8 @@ public class MultiMapCommands {
   /**
    * Clear command.
    */
-  @SerializeWith(id=83)
-  public static class Clear extends MapCommand<Void> {
+  @SerializeWith(id=84)
+  public static class Clear extends MultiMapCommand<Void> {
 
     @Override
     public PersistenceLevel persistence() {

@@ -164,6 +164,16 @@ public class DistributedMultiMap<K, V> extends AbstractResource {
   }
 
   /**
+   * Removes all instances of a value from the map.
+   *
+   * @param value The value to remove.
+   * @return A completable future to be completed once the value has been removed.
+   */
+  public CompletableFuture<Void> removeValue(Object value) {
+    return submit(new MultiMapCommands.RemoveValue(value));
+  }
+
+  /**
    * Removes all entries from the map.
    *
    * @return A completable future to be completed once the operation is complete.

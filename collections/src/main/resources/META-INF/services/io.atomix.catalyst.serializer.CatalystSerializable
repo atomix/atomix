@@ -33,6 +33,7 @@ io.atomix.collections.state.MultiMapCommands$ContainsValue
 io.atomix.collections.state.MultiMapCommands$Put
 io.atomix.collections.state.MultiMapCommands$Get
 io.atomix.collections.state.MultiMapCommands$Remove
+io.atomix.collections.state.MultiMapCommands$RemoveValue
 io.atomix.collections.state.MultiMapCommands$IsEmpty
 io.atomix.collections.state.MultiMapCommands$Size
 io.atomix.collections.state.MultiMapCommands$Clear

@@ -38,6 +38,7 @@ public class MultiMapState extends ResourceStateMachine {
     executor.register(MultiMapCommands.Get.class, this::get);
     executor.register(MultiMapCommands.Put.class, this::put);
     executor.register(MultiMapCommands.Remove.class, this::remove);
+    executor.register(MultiMapCommands.RemoveValue.class, this::removeValue);
     executor.register(MultiMapCommands.Size.class, this::size);
     executor.register(MultiMapCommands.IsEmpty.class, this::isEmpty);
     executor.register(MultiMapCommands.Clear.class, this::clear);
@@ -147,7 +148,37 @@ public class MultiMapState extends ResourceStateMachine {
   }
 
   /**
-   * Handles a count commit.
+   * Handles a remove value commit.
+   */
+  protected void removeValue(Commit<MultiMapCommands.RemoveValue> commit) {
+    try {
+      Iterator<Map.Entry<Object, Map<Object, Commit<? extends MultiMapCommands.TtlCommand>>>> outerIterator = map.entrySet().iterator();
+      while (outerIterator.hasNext()) {
+        Map<Object, Commit<? extends MultiMapCommands.TtlCommand>> map = outerIterator.next().getValue();
+        Iterator<Map.Entry<Object, Commit<? extends MultiMapCommands.TtlCommand>>> innerIterator = map.entrySet().iterator();
+        while (innerIterator.hasNext()) {
+          Map.Entry<Object, Commit<? extends MultiMapCommands.TtlCommand>> entry = innerIterator.next();
+          if ((entry.getValue().operation().value() == null && commit.operation().value() == null)
+            || (entry.getValue().operation().value() != null && commit.operation().value() != null && entry.getValue().operation().value().equals(commit.operation().value()))) {
+            Scheduled timer = timers.remove(entry.getValue().index());
+            if (timer != null)
+              timer.cancel();
+            entry.getValue().clean();
+            innerIterator.remove();
+          }
+        }
+
+        if (map.isEmpty()) {
+          outerIterator.remove();
+        }
+      }
+    } finally {
+      commit.clean();
+    }
+  }
+
+  /**
+   * Handles a size commit.
    */
   protected int size(Commit<MultiMapCommands.Size> commit) {
     try {
