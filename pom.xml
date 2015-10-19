@@ -138,7 +138,6 @@
         </executions>
         <configuration>
           <show>public</show>
-          <excludePackageNames>*.state:io.atomix.resource:io.atomix.manager:io.atomix.examples*</excludePackageNames>
           <doctitle>Atomix API Reference (${jv})</doctitle>
           <windowtitle>Atomix API Reference (${jv})</windowtitle>
           <aggregate>true</aggregate>
