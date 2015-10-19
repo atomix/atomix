@@ -38,11 +38,11 @@ java -jar examples/leader-election/target/atomix-leader-election.jar logs/server
 ```
 
 Each instance of the leader election example starts an [AtomixReplica](http://atomix.io/atomix/api/latest/io/atomix/AtomixReplica.html),
-connects to the other replicas in the cluster, creates a [DistributedLeaderElection](http://atomix.io/atomix/api/latest/),
+connects to the other replicas in the cluster, creates a [DistributedLeaderElection](http://atomix.io/atomix/api/latest/io/atomix/coordination/DistributedLeaderElection.html),
 and awaits an election. The first time a node is elected leader it will print the message: `"Elected leader!"`. When one of
 the processes is crashed, a new process will be elected a few seconds later and again print the message: `"Elected leader!"`.
 
-Note that the same election process can be done with [AtomixClient](http://atomix.io/atomix/api/latest/)s as well. Atomix
+Note that the same election process can be done with [AtomixClient](http://atomix.io/atomix/api/latest/io/atomix/AtomixClient.html)s as well. Atomix
 provides the concept of stateful nodes (replicas) which store resource state changes on disk and replicate changes to other
 replicas, and stateless nodes (clients) which operate on resources remotely. Both types of nodes can use the same resources
 in the same ways. This makes Atomix particularly well suited for embedding in server-side technologies without the overhead
