@@ -22,10 +22,9 @@ import io.atomix.catalyst.transport.NettyTransport;
 import io.atomix.coordination.DistributedLeaderElection;
 import io.atomix.copycat.server.storage.Storage;
 
-import java.net.InetAddress;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Leader election example.
@@ -39,32 +38,38 @@ public class LeaderElectionExample {
    */
   public static void main(String[] args) throws Exception {
     if (args.length < 2)
-      throw new IllegalArgumentException("must supply a local port and at least one remote host:port tuple");
+      throw new IllegalArgumentException("must supply a path and set of host:port tuples");
 
-    int port = Integer.valueOf(args[0]);
+    // Parse the address to which to bind the server.
+    String[] mainParts = args[1].split(":");
+    Address address = new Address(mainParts[0], Integer.valueOf(mainParts[1]));
 
-    Address address = new Address(InetAddress.getLocalHost().getHostName(), port);
-
+    // Build a list of all member addresses to which to connect.
     List<Address> members = new ArrayList<>();
-    for (int i = 1; i < args.length; i++) {
+    for (int i = 2; i < args.length; i++) {
       String[] parts = args[i].split(":");
       members.add(new Address(parts[0], Integer.valueOf(parts[1])));
     }
 
+    // Create a stateful Atomix replica. The replica communicates with other replicas in the cluster
+    // to replicate state changes.
     Atomix atomix = AtomixReplica.builder(address, members)
       .withTransport(new NettyTransport())
-      .withStorage(Storage.builder()
-        .withDirectory(System.getProperty("user.dir") + "/logs/" + UUID.randomUUID().toString())
-        .build())
+      .withStorage(new Storage(new File(args[0])))
       .build();
 
+    // Open the replica. Once this operation completes resources can be created and managed.
     atomix.open().join();
 
+    // Create a leader election resource.
     DistributedLeaderElection election = atomix.create("election", DistributedLeaderElection.class).get();
+
+    // Register a callback to be called when this election instance is elected the leader
     election.onElection(epoch -> {
       System.out.println("Elected leader!");
     }).join();
 
+    // Block while the replica is open.
     while (atomix.isOpen()) {
       Thread.sleep(1000);
     }
