@@ -5,7 +5,7 @@
 
 **Persistent • Consistent • Fault-tolerant • Database • Coordination • Framework**
 
-#### [Getting started][Getting started] • [User Manual][User manual] • [Raft Algorithm][Copycat] • [Google Group][Google group] • [Javadoc][Javadoc]
+##### [Getting started][Getting started] • [User Manual][User manual] • [Javadoc][Javadoc] • [Raft Algorithm][Copycat] • [Jepsen Tests](https://github.com/atomix/atomix-jepsen) • [Google Group][Google group]
 
 Atomix is a high-level asynchronous framework for building fault-tolerant distributed systems. It combines the consistency of
 [ZooKeeper](https://zookeeper.apache.org/) with the usability of [Hazelcast](http://hazelcast.org/) to provide tools for managing
@@ -18,19 +18,14 @@ Atomix exposes a set of high level APIs with tools to solve a variety of distrib
 * [Distributed collections](http://atomix.io/atomix/user-manual/collections/)
 * [Distributed atomic variables](http://atomix.io/atomix/user-manual/atomics/)
 
-Additionally, Atomix is built on a series of low-level libraries that form its consensus algorithm:
-* [Copycat][Copycat] is Atomix's progressive, feature-complete implementation of the [Raft consensus algorithm][Raft]
-* [Catalyst][Catalyst] is Atomix's extensible asynchronous I/O, serialization, and networking framework
+Atomix is built on [Copycat][Copycat], a well tested, [Jepsen](https://github.com/atomix/atomix-jepsen) verified
+implementation of the [Raft consensus algorithm](https://raft.github.io/).
 
-**Atomix is still undergoing heavy development and testing and is therefore not recommended for production!**
+Early Jepsen testing of both Copycat and Atomix is now complete, and an early release of both projects will be
+pushed to Maven Central in the coming days. In the meantime, snapshots are frequently pushed. Documentation is
+still under development, and the website will continue to be updated until and after a release.
 
-[Jepsen](https://github.com/aphyr/jepsen) tests are [currently being developed](http://github.com/jhalterman/atomix-jepsen)
-to verify the stability of Atomix in an unreliable distributed environment. There is still work to be done, and Atomix
-will not be fully released until significant testing is done both via normal testing frameworks and Jepsen. In the meantime,
-Atomix snapshots will be pushed, and a beta release of Atomix is expected within the coming weeks. Follow the project for
-updates!
-
-#### [Website][Website] • [User Manual][User manual] • [Raft Algorithm][Copycat] • [Google Group][Google group] • [Javadoc][Javadoc]
+##### [Getting started][Getting started] • [User Manual][User manual] • [Javadoc][Javadoc] • [Raft Algorithm][Copycat] • [Jepsen Tests](https://github.com/atomix/atomix-jepsen) • [Google Group][Google group]
 
 [Website]: http://atomix.github.io/atomix/
 [Getting started]: http://atomix.io/atomix/getting-started/
