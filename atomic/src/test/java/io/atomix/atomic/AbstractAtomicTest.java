@@ -143,11 +143,21 @@ public abstract class AbstractAtomicTest extends ConcurrentTestCase {
     port = 5000;
 
     if (!clients.isEmpty()) {
-      clients.forEach(c -> c.close().join());
+      clients.forEach(c -> {
+        try {
+          c.close().join();
+        } catch (Exception e) {
+        }
+      });
     }
 
     if (!servers.isEmpty()) {
-      servers.forEach(s -> s.close().join());
+      servers.forEach(s -> {
+        try {
+          s.close().join();
+        } catch (Exception e) {
+        }
+      });
     }
 
     clients = new ArrayList<>();
