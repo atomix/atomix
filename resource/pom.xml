@@ -28,12 +28,12 @@
 
   <dependencies>
     <dependency>
-      <groupId>io.atomix</groupId>
+      <groupId>io.atomix.copycat</groupId>
       <artifactId>copycat-client</artifactId>
       <version>${copycat.version}</version>
     </dependency>
     <dependency>
-      <groupId>io.atomix</groupId>
+      <groupId>io.atomix.copycat</groupId>
       <artifactId>copycat-server</artifactId>
       <version>${copycat.version}</version>
     </dependency>

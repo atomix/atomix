@@ -33,7 +33,7 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>io.atomix</groupId>
+      <groupId>io.atomix.catalyst</groupId>
       <artifactId>catalyst-local</artifactId>
       <version>${catalyst.version}</version>
       <scope>test</scope>
