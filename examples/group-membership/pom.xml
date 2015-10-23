@@ -19,7 +19,7 @@
   <parent>
     <groupId>io.atomix</groupId>
     <artifactId>atomix-examples-parent</artifactId>
-    <version>0.1.0-beta2</version>
+    <version>0.1.0-SNAPSHOT</version>
   </parent>
 
   <artifactId>atomix-group-membership-example</artifactId>
