@@ -1,7 +1,7 @@
-[Atomix][Website]
-=======
+# [Atomix][Website]
 
-[![Build Status](https://travis-ci.org/atomix/atomix.png)](https://travis-ci.org/atomix/atomix)
+[![Build Status](https://travis-ci.org/atomix/atomix.svg)](https://travis-ci.org/atomix/atomix)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.atomix/atomix/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.atomix/atomix) 
 
 **Persistent • Consistent • Fault-tolerant • Database • Coordination • Framework**
 
