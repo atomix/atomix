@@ -21,7 +21,7 @@ import io.atomix.catalyst.serializer.SerializationException;
 import io.atomix.catalyst.serializer.SerializeWith;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.util.Assert;
-import io.atomix.copycat.client.Query;
+import io.atomix.copycat.client.Command;
 import io.atomix.resource.ResourceStateMachine;
 
 /**
@@ -30,7 +30,7 @@ import io.atomix.resource.ResourceStateMachine;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @SerializeWith(id=35)
-public class GetResource extends KeyOperation<Long> implements Query<Long> {
+public class GetResource extends KeyOperation<Long> implements Command<Long> {
   private Class<? extends ResourceStateMachine> type;
 
   public GetResource() {

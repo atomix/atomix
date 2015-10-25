@@ -61,8 +61,11 @@ public class ResourceManager extends StateMachine {
     if (session != null) {
       resource = resources.get(session.resource);
     } else {
-      commit.clean();
-      throw new ResourceManagerException("unknown resource session: " + commit.operation().resource());
+      try {
+        throw new ResourceManagerException("unknown resource session: " + commit.operation().resource());
+      } finally {
+        commit.clean();
+      }
     }
 
     return resource.executor.execute(commits.acquire(commit, session.session));

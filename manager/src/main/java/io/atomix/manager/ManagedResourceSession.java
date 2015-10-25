@@ -57,7 +57,7 @@ class ManagedResourceSession implements Session {
 
   @Override
   public long id() {
-    return parent.id();
+    return resource;
   }
 
   @Override
