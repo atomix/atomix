@@ -29,6 +29,8 @@ import org.testng.annotations.Test;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import static org.testng.Assert.assertEquals;
+
 /**
  * Replica test.
  *
@@ -186,6 +188,30 @@ public class AtomixReplicaTest extends AbstractReplicaTest {
       resume();
     });
     await();
+  }
+
+  /**
+   * Tests operating many separate resources from the same clients.
+   */
+  public void testOperateMany() throws Throwable {
+    List<Atomix> replicas = createReplicas(5);
+
+    Atomix replica1 = replicas.get(0);
+    Atomix replica2 = replicas.get(1);
+
+    ValueResource resource11 = replica1.get("test1", ValueResource.class, ValueResource::new).get();
+    ValueResource resource12 = replica2.create("test1", ValueResource.class, ValueResource::new).get();
+    ValueResource resource21 = replica1.get("test2", ValueResource.class, ValueResource::new).get();
+    ValueResource resource22 = replica2.create("test2", ValueResource.class, ValueResource::new).get();
+
+    resource11.set("foo").join();
+    assertEquals(resource12.get().get(), "foo");
+
+    resource21.set("bar").join();
+    assertEquals(resource22.get().get(), "bar");
+
+    assertEquals(resource11.get().get(), "foo");
+    assertEquals(resource21.get().get(), "bar");
   }
 
   /**
