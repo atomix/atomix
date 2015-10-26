@@ -17,7 +17,6 @@ package io.atomix.collections.state;
 
 import io.atomix.catalyst.util.concurrent.Scheduled;
 import io.atomix.copycat.server.Commit;
-import io.atomix.copycat.server.StateMachineExecutor;
 import io.atomix.resource.ResourceStateMachine;
 
 import java.time.Duration;
@@ -33,27 +32,10 @@ import java.util.Map;
 public class MapState extends ResourceStateMachine {
   private final Map<Object, Value> map = new HashMap<>();
 
-  @Override
-  protected void configure(StateMachineExecutor executor) {
-    executor.register(MapCommands.ContainsKey.class, this::containsKey);
-    executor.register(MapCommands.ContainsValue.class, this::containsValue);
-    executor.register(MapCommands.Get.class, this::get);
-    executor.register(MapCommands.GetOrDefault.class, this::getOrDefault);
-    executor.register(MapCommands.Put.class, this::put);
-    executor.register(MapCommands.PutIfAbsent.class, this::putIfAbsent);
-    executor.register(MapCommands.Remove.class, this::remove);
-    executor.register(MapCommands.RemoveIfPresent.class, this::removeIfPresent);
-    executor.register(MapCommands.Replace.class, this::replace);
-    executor.register(MapCommands.ReplaceIfPresent.class, this::replaceIfPresent);
-    executor.register(MapCommands.Size.class, this::size);
-    executor.register(MapCommands.IsEmpty.class, this::isEmpty);
-    executor.register(MapCommands.Clear.class, this::clear);
-  }
-
   /**
    * Handles a contains key commit.
    */
-  protected boolean containsKey(Commit<MapCommands.ContainsKey> commit) {
+  public boolean containsKey(Commit<MapCommands.ContainsKey> commit) {
     try {
       return map.containsKey(commit.operation().key());
     } finally {
@@ -64,7 +46,7 @@ public class MapState extends ResourceStateMachine {
   /**
    * Handles a contains value commit.
    */
-  protected boolean containsValue(Commit<MapCommands.ContainsValue> commit) {
+  public boolean containsValue(Commit<MapCommands.ContainsValue> commit) {
     try {
       for (Value value : map.values()) {
         if (value.commit.operation().value().equals(commit.operation().value())) {
@@ -80,7 +62,7 @@ public class MapState extends ResourceStateMachine {
   /**
    * Handles a get commit.
    */
-  protected Object get(Commit<MapCommands.Get> commit) {
+  public Object get(Commit<MapCommands.Get> commit) {
     try {
       Value value = map.get(commit.operation().key());
       return value != null ? value.commit.operation().value() : null;
@@ -92,7 +74,7 @@ public class MapState extends ResourceStateMachine {
   /**
    * Handles a get or default commit.
    */
-  protected Object getOrDefault(Commit<MapCommands.GetOrDefault> commit) {
+  public Object getOrDefault(Commit<MapCommands.GetOrDefault> commit) {
     try {
       Value value = map.get(commit.operation().key());
       return value != null ? value.commit.operation().value() : commit.operation().defaultValue();
@@ -104,7 +86,7 @@ public class MapState extends ResourceStateMachine {
   /**
    * Handles a put commit.
    */
-  protected Object put(Commit<MapCommands.Put> commit) {
+  public Object put(Commit<MapCommands.Put> commit) {
     try {
       Scheduled timer = commit.operation().ttl() > 0 ? executor().schedule(Duration.ofMillis(commit.operation().ttl()), () -> {
         map.remove(commit.operation().key()).commit.clean();
@@ -130,7 +112,7 @@ public class MapState extends ResourceStateMachine {
   /**
    * Handles a put if absent commit.
    */
-  protected Object putIfAbsent(Commit<MapCommands.PutIfAbsent> commit) {
+  public Object putIfAbsent(Commit<MapCommands.PutIfAbsent> commit) {
     try {
       Value value = map.get(commit.operation().key());
       if (value == null) {
@@ -153,7 +135,7 @@ public class MapState extends ResourceStateMachine {
   /**
    * Handles a remove commit.
    */
-  protected Object remove(Commit<MapCommands.Remove> commit) {
+  public Object remove(Commit<MapCommands.Remove> commit) {
     try {
       Value value = map.remove(commit.operation().key());
       if (value != null) {
@@ -174,7 +156,7 @@ public class MapState extends ResourceStateMachine {
   /**
    * Handles a remove if present commit.
    */
-  protected boolean removeIfPresent(Commit<MapCommands.RemoveIfPresent> commit) {
+  public boolean removeIfPresent(Commit<MapCommands.RemoveIfPresent> commit) {
     try {
       Value value = map.get(commit.operation().key());
       if (value == null || ((value.commit.operation().value() == null && commit.operation().value() != null)
@@ -198,7 +180,7 @@ public class MapState extends ResourceStateMachine {
   /**
    * Handles a replace commit.
    */
-  protected Object replace(Commit<MapCommands.Replace> commit) {
+  public Object replace(Commit<MapCommands.Replace> commit) {
     Value value = map.get(commit.operation().key());
     if (value != null) {
       try {
@@ -222,7 +204,7 @@ public class MapState extends ResourceStateMachine {
   /**
    * Handles a replace if present commit.
    */
-  protected boolean replaceIfPresent(Commit<MapCommands.ReplaceIfPresent> commit) {
+  public boolean replaceIfPresent(Commit<MapCommands.ReplaceIfPresent> commit) {
     Value value = map.get(commit.operation().key());
     if (value == null) {
       commit.clean();
@@ -248,7 +230,7 @@ public class MapState extends ResourceStateMachine {
   /**
    * Handles a count commit.
    */
-  protected int size(Commit<MapCommands.Size> commit) {
+  public int size(Commit<MapCommands.Size> commit) {
     try {
       return map.size();
     } finally {
@@ -259,7 +241,7 @@ public class MapState extends ResourceStateMachine {
   /**
    * Handles an is empty commit.
    */
-  protected boolean isEmpty(Commit<MapCommands.IsEmpty> commit) {
+  public boolean isEmpty(Commit<MapCommands.IsEmpty> commit) {
     try {
       return map == null || map.isEmpty();
     } finally {
@@ -270,7 +252,7 @@ public class MapState extends ResourceStateMachine {
   /**
    * Handles a clear commit.
    */
-  protected void clear(Commit<MapCommands.Clear> commit) {
+  public void clear(Commit<MapCommands.Clear> commit) {
     try {
       delete();
     } finally {

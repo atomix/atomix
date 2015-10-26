@@ -230,17 +230,11 @@ public class AtomixClientServerTest extends AbstractServerTest {
    * Test state machine.
    */
   public static class TestStateMachine extends ResourceStateMachine {
-    @Override
-    protected void configure(StateMachineExecutor executor) {
-      executor.register(TestCommand.class, this::command);
-      executor.register(TestQuery.class, this::query);
-    }
-
-    private String command(Commit<TestCommand> commit) {
+    public String command(Commit<TestCommand> commit) {
       return commit.operation().value();
     }
 
-    private String query(Commit<TestQuery> commit) {
+    public String query(Commit<TestQuery> commit) {
       return commit.operation().value();
     }
   }
@@ -299,20 +293,14 @@ public class AtomixClientServerTest extends AbstractServerTest {
   public static class ValueStateMachine extends ResourceStateMachine {
     private Commit<SetCommand> value;
 
-    @Override
-    protected void configure(StateMachineExecutor executor) {
-      executor.register(SetCommand.class, this::set);
-      executor.register(GetQuery.class, this::get);
-    }
-
-    private void set(Commit<SetCommand> commit) {
+    public void set(Commit<SetCommand> commit) {
       Commit<SetCommand> oldValue = value;
       value = commit;
       if (oldValue != null)
         oldValue.clean();
     }
 
-    private String get(Commit<GetQuery> commit) {
+    public String get(Commit<GetQuery> commit) {
       try {
         return value != null ? value.operation().value() : null;
       } finally {

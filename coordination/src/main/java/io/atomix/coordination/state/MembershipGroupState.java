@@ -17,7 +17,6 @@ package io.atomix.coordination.state;
 
 import io.atomix.copycat.client.session.Session;
 import io.atomix.copycat.server.Commit;
-import io.atomix.copycat.server.StateMachineExecutor;
 import io.atomix.resource.ResourceStateMachine;
 
 import java.time.Duration;
@@ -35,14 +34,6 @@ public class MembershipGroupState extends ResourceStateMachine {
   private final Map<Long, Commit<MembershipGroupCommands.Join>> members = new HashMap<>();
 
   @Override
-  public void configure(StateMachineExecutor executor) {
-    executor.register(MembershipGroupCommands.Join.class, this::join);
-    executor.register(MembershipGroupCommands.Leave.class, this::leave);
-    executor.register(MembershipGroupCommands.Schedule.class, this::schedule);
-    executor.register(MembershipGroupCommands.Execute.class, this::execute);
-  }
-
-  @Override
   public void close(Session session) {
     members.remove(session.id());
     for (Commit<MembershipGroupCommands.Join> member : members.values()) {
@@ -53,7 +44,7 @@ public class MembershipGroupState extends ResourceStateMachine {
   /**
    * Applies join commits.
    */
-  protected Set<Long> join(Commit<MembershipGroupCommands.Join> commit) {
+  public Set<Long> join(Commit<MembershipGroupCommands.Join> commit) {
     try {
       Commit<MembershipGroupCommands.Join> previous = members.put(commit.session().id(), commit);
       if (previous != null) {
@@ -75,7 +66,7 @@ public class MembershipGroupState extends ResourceStateMachine {
   /**
    * Applies leave commits.
    */
-  protected void leave(Commit<MembershipGroupCommands.Leave> commit) {
+  public void leave(Commit<MembershipGroupCommands.Leave> commit) {
     try {
       Commit<MembershipGroupCommands.Join> previous = members.remove(commit.session().id());
       if (previous != null) {
@@ -92,7 +83,7 @@ public class MembershipGroupState extends ResourceStateMachine {
   /**
    * Handles a schedule commit.
    */
-  protected void schedule(Commit<MembershipGroupCommands.Schedule> commit) {
+  public void schedule(Commit<MembershipGroupCommands.Schedule> commit) {
     try {
       if (!members.containsKey(commit.operation().member())) {
         throw new IllegalArgumentException("unknown member: " + commit.operation().member());
@@ -114,7 +105,7 @@ public class MembershipGroupState extends ResourceStateMachine {
   /**
    * Handles an execute commit.
    */
-  protected void execute(Commit<MembershipGroupCommands.Execute> commit) {
+  public void execute(Commit<MembershipGroupCommands.Execute> commit) {
     try {
       Commit<MembershipGroupCommands.Join> member = members.get(commit.operation().member());
       if (member == null) {

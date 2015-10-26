@@ -18,7 +18,6 @@ package io.atomix.coordination.state;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.copycat.client.session.Session;
 import io.atomix.copycat.server.Commit;
-import io.atomix.copycat.server.StateMachineExecutor;
 import io.atomix.resource.ResourceStateMachine;
 
 import java.util.*;
@@ -33,14 +32,6 @@ public class MessageBusState extends ResourceStateMachine {
   private final Map<String, Map<Long, Commit<MessageBusCommands.Register>>> topics = new HashMap<>();
 
   @Override
-  public void configure(StateMachineExecutor executor) {
-    executor.register(MessageBusCommands.Join.class, this::join);
-    executor.register(MessageBusCommands.Leave.class, this::leave);
-    executor.register(MessageBusCommands.Register.class, this::registerConsumer);
-    executor.register(MessageBusCommands.Unregister.class, this::unregisterConsumer);
-  }
-
-  @Override
   public void close(Session session) {
     members.remove(session.id());
     for (Commit<MessageBusCommands.Join> member : members.values()) {
@@ -51,7 +42,7 @@ public class MessageBusState extends ResourceStateMachine {
   /**
    * Applies join commits.
    */
-  protected Map<String, Set<Address>> join(Commit<MessageBusCommands.Join> commit) {
+  public Map<String, Set<Address>> join(Commit<MessageBusCommands.Join> commit) {
     try {
       members.put(commit.session().id(), commit);
 
@@ -76,7 +67,7 @@ public class MessageBusState extends ResourceStateMachine {
   /**
    * Applies leave commits.
    */
-  protected void leave(Commit<MessageBusCommands.Leave> commit) {
+  public void leave(Commit<MessageBusCommands.Leave> commit) {
     try {
       Commit<MessageBusCommands.Join> previous = members.remove(commit.session().id());
       if (previous != null) {
@@ -108,7 +99,7 @@ public class MessageBusState extends ResourceStateMachine {
   /**
    * Registers a topic consumer.
    */
-  private void registerConsumer(Commit<MessageBusCommands.Register> commit) {
+  public void registerConsumer(Commit<MessageBusCommands.Register> commit) {
     try {
       Commit<MessageBusCommands.Join> parent = members.get(commit.session().id());
       if (parent == null) {
@@ -130,7 +121,7 @@ public class MessageBusState extends ResourceStateMachine {
   /**
    * Unregisters a topic consumer.
    */
-  private void unregisterConsumer(Commit<MessageBusCommands.Unregister> commit) {
+  public void unregisterConsumer(Commit<MessageBusCommands.Unregister> commit) {
     try {
       Map<Long, Commit<MessageBusCommands.Register>> registrations = topics.get(commit.operation().topic());
       if (registrations != null) {

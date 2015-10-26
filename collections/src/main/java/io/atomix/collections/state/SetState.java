@@ -17,7 +17,6 @@ package io.atomix.collections.state;
 
 import io.atomix.catalyst.util.concurrent.Scheduled;
 import io.atomix.copycat.server.Commit;
-import io.atomix.copycat.server.StateMachineExecutor;
 import io.atomix.resource.ResourceStateMachine;
 
 import java.time.Duration;
@@ -33,20 +32,10 @@ import java.util.Map;
 public class SetState extends ResourceStateMachine {
   private final Map<Object, Value> map = new HashMap<>();
 
-  @Override
-  protected void configure(StateMachineExecutor executor) {
-    executor.register(SetCommands.Add.class, this::add);
-    executor.register(SetCommands.Contains.class, this::contains);
-    executor.register(SetCommands.Remove.class, this::remove);
-    executor.register(SetCommands.Size.class, this::size);
-    executor.register(SetCommands.IsEmpty.class, this::isEmpty);
-    executor.register(SetCommands.Clear.class, this::clear);
-  }
-
   /**
    * Handles a contains commit.
    */
-  protected boolean contains(Commit<SetCommands.Contains> commit) {
+  public boolean contains(Commit<SetCommands.Contains> commit) {
     try {
       return map.containsKey(commit.operation().value());
     } finally {
@@ -57,7 +46,7 @@ public class SetState extends ResourceStateMachine {
   /**
    * Handles an add commit.
    */
-  protected boolean add(Commit<SetCommands.Add> commit) {
+  public boolean add(Commit<SetCommands.Add> commit) {
     try {
       Value value = map.get(commit.operation().value());
       if (value == null) {
@@ -78,7 +67,7 @@ public class SetState extends ResourceStateMachine {
   /**
    * Handles a remove commit.
    */
-  protected boolean remove(Commit<SetCommands.Remove> commit) {
+  public boolean remove(Commit<SetCommands.Remove> commit) {
     try {
       Value value = map.remove(commit.operation().value());
       if (value != null) {
@@ -100,7 +89,7 @@ public class SetState extends ResourceStateMachine {
   /**
    * Handles a count commit.
    */
-  protected int size(Commit<SetCommands.Size> commit) {
+  public int size(Commit<SetCommands.Size> commit) {
     try {
       return map != null ? map.size() : 0;
     } finally {
@@ -111,7 +100,7 @@ public class SetState extends ResourceStateMachine {
   /**
    * Handles an is empty commit.
    */
-  protected boolean isEmpty(Commit<SetCommands.IsEmpty> commit) {
+  public boolean isEmpty(Commit<SetCommands.IsEmpty> commit) {
     try {
       return map == null || map.isEmpty();
     } finally {
@@ -122,7 +111,7 @@ public class SetState extends ResourceStateMachine {
   /**
    * Handles a clear commit.
    */
-  protected void clear(Commit<SetCommands.Clear> commit) {
+  public void clear(Commit<SetCommands.Clear> commit) {
     try {
       delete();
     } finally {

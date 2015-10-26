@@ -17,7 +17,6 @@ package io.atomix.coordination.state;
 
 import io.atomix.copycat.client.session.Session;
 import io.atomix.copycat.server.Commit;
-import io.atomix.copycat.server.StateMachineExecutor;
 import io.atomix.resource.ResourceStateMachine;
 
 import java.util.Iterator;
@@ -32,13 +31,6 @@ import java.util.Map;
 public class LeaderElectionState extends ResourceStateMachine {
   private Commit<LeaderElectionCommands.Listen> leader;
   private final Map<Long, Commit<LeaderElectionCommands.Listen>> listeners = new LinkedHashMap<>();
-
-  @Override
-  public void configure(StateMachineExecutor executor) {
-    executor.register(LeaderElectionCommands.Listen.class, this::listen);
-    executor.register(LeaderElectionCommands.Unlisten.class, this::unlisten);
-    executor.register(LeaderElectionCommands.IsLeader.class, this::isLeader);
-  }
 
   @Override
   public void close(Session session) {
@@ -62,7 +54,7 @@ public class LeaderElectionState extends ResourceStateMachine {
   /**
    * Applies listen commits.
    */
-  protected void listen(Commit<LeaderElectionCommands.Listen> commit) {
+  public void listen(Commit<LeaderElectionCommands.Listen> commit) {
     if (leader == null) {
       leader = commit;
       leader.session().publish("elect", leader.index());
@@ -76,7 +68,7 @@ public class LeaderElectionState extends ResourceStateMachine {
   /**
    * Applies listen commits.
    */
-  protected void unlisten(Commit<LeaderElectionCommands.Unlisten> commit) {
+  public void unlisten(Commit<LeaderElectionCommands.Unlisten> commit) {
     try {
       if (leader != null && leader.session().equals(commit.session())) {
         leader.clean();
@@ -101,7 +93,7 @@ public class LeaderElectionState extends ResourceStateMachine {
   /**
    * Applies an isLeader query.
    */
-  protected boolean isLeader(Commit<LeaderElectionCommands.IsLeader> commit) {
+  public boolean isLeader(Commit<LeaderElectionCommands.IsLeader> commit) {
     return leader != null && leader.session().equals(commit.session()) && leader.index() == commit.operation().epoch();
   }
 

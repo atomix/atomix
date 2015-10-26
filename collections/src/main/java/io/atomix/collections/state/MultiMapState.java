@@ -17,7 +17,6 @@ package io.atomix.collections.state;
 
 import io.atomix.catalyst.util.concurrent.Scheduled;
 import io.atomix.copycat.server.Commit;
-import io.atomix.copycat.server.StateMachineExecutor;
 import io.atomix.resource.ResourceStateMachine;
 
 import java.time.Duration;
@@ -32,22 +31,10 @@ public class MultiMapState extends ResourceStateMachine {
   private final Map<Object, Map<Object, Commit<? extends MultiMapCommands.TtlCommand>>> map = new HashMap<>();
   private final Map<Long, Scheduled> timers = new HashMap<>();
 
-  @Override
-  protected void configure(StateMachineExecutor executor) {
-    executor.register(MultiMapCommands.ContainsKey.class, this::containsKey);
-    executor.register(MultiMapCommands.Get.class, this::get);
-    executor.register(MultiMapCommands.Put.class, this::put);
-    executor.register(MultiMapCommands.Remove.class, this::remove);
-    executor.register(MultiMapCommands.RemoveValue.class, this::removeValue);
-    executor.register(MultiMapCommands.Size.class, this::size);
-    executor.register(MultiMapCommands.IsEmpty.class, this::isEmpty);
-    executor.register(MultiMapCommands.Clear.class, this::clear);
-  }
-
   /**
    * Handles a contains key commit.
    */
-  protected boolean containsKey(Commit<MultiMapCommands.ContainsKey> commit) {
+  public boolean containsKey(Commit<MultiMapCommands.ContainsKey> commit) {
     try {
       return map.containsKey(commit.operation().key());
     } finally {
@@ -58,7 +45,7 @@ public class MultiMapState extends ResourceStateMachine {
   /**
    * Handles a get commit.
    */
-  protected Collection get(Commit<MultiMapCommands.Get> commit) {
+  public Collection get(Commit<MultiMapCommands.Get> commit) {
     try {
       Map<Object, Commit<? extends MultiMapCommands.TtlCommand>> values = map.get(commit.operation().key());
       if (values == null) {
@@ -78,7 +65,7 @@ public class MultiMapState extends ResourceStateMachine {
   /**
    * Handles a put commit.
    */
-  protected boolean put(Commit<MultiMapCommands.Put> commit) {
+  public boolean put(Commit<MultiMapCommands.Put> commit) {
     try {
       Map<Object, Commit<? extends MultiMapCommands.TtlCommand>> values = map.get(commit.operation().key());
       if (values == null) {
@@ -106,7 +93,7 @@ public class MultiMapState extends ResourceStateMachine {
   /**
    * Handles a remove commit.
    */
-  protected Object remove(Commit<MultiMapCommands.Remove> commit) {
+  public Object remove(Commit<MultiMapCommands.Remove> commit) {
     try {
       if (commit.operation().value() != null) {
         Map<Object, Commit<? extends MultiMapCommands.TtlCommand>> values = map.get(commit.operation().key());
@@ -150,7 +137,7 @@ public class MultiMapState extends ResourceStateMachine {
   /**
    * Handles a remove value commit.
    */
-  protected void removeValue(Commit<MultiMapCommands.RemoveValue> commit) {
+  public void removeValue(Commit<MultiMapCommands.RemoveValue> commit) {
     try {
       Iterator<Map.Entry<Object, Map<Object, Commit<? extends MultiMapCommands.TtlCommand>>>> outerIterator = map.entrySet().iterator();
       while (outerIterator.hasNext()) {
@@ -180,7 +167,7 @@ public class MultiMapState extends ResourceStateMachine {
   /**
    * Handles a size commit.
    */
-  protected int size(Commit<MultiMapCommands.Size> commit) {
+  public int size(Commit<MultiMapCommands.Size> commit) {
     try {
       if (commit.operation().key() != null) {
         Map<Object, Commit<? extends MultiMapCommands.TtlCommand>> values = map.get(commit.operation().key());
@@ -200,7 +187,7 @@ public class MultiMapState extends ResourceStateMachine {
   /**
    * Handles an is empty commit.
    */
-  protected boolean isEmpty(Commit<MultiMapCommands.IsEmpty> commit) {
+  public boolean isEmpty(Commit<MultiMapCommands.IsEmpty> commit) {
     try {
       return map == null || map.isEmpty();
     } finally {
@@ -211,7 +198,7 @@ public class MultiMapState extends ResourceStateMachine {
   /**
    * Handles a clear commit.
    */
-  protected void clear(Commit<MultiMapCommands.Clear> commit) {
+  public void clear(Commit<MultiMapCommands.Clear> commit) {
     try {
       delete();
     } finally {

@@ -18,13 +18,11 @@ package io.atomix.atomic.state;
 import io.atomix.catalyst.util.concurrent.Scheduled;
 import io.atomix.copycat.client.session.Session;
 import io.atomix.copycat.server.Commit;
-import io.atomix.copycat.server.StateMachineExecutor;
 import io.atomix.resource.ResourceStateMachine;
 
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Function;
 
 /**
  * Atomic reference state machine.
@@ -37,20 +35,10 @@ public class AtomicValueState extends ResourceStateMachine {
   private Commit<? extends AtomicValueCommands.ValueCommand> current;
   private Scheduled timer;
 
-  @Override
-  public void configure(StateMachineExecutor executor) {
-    executor.register(AtomicValueCommands.Listen.class, this::listen);
-    executor.register(AtomicValueCommands.Unlisten.class, this::unlisten);
-    executor.register(AtomicValueCommands.Get.class, (Function<Commit<AtomicValueCommands.Get>, Object>) this::get);
-    executor.register(AtomicValueCommands.Set.class, this::set);
-    executor.register(AtomicValueCommands.CompareAndSet.class, this::compareAndSet);
-    executor.register(AtomicValueCommands.GetAndSet.class, (Function<Commit<AtomicValueCommands.GetAndSet>, Object>) this::getAndSet);
-  }
-
   /**
    * Handles a listen commit.
    */
-  protected void listen(Commit<AtomicValueCommands.Listen> commit) {
+  public void listen(Commit<AtomicValueCommands.Listen> commit) {
     listeners.put(commit.session(), commit);
     commit.session().onClose(s -> {
       Commit<AtomicValueCommands.Listen> listener = listeners.remove(commit.session());
@@ -63,7 +51,7 @@ public class AtomicValueState extends ResourceStateMachine {
   /**
    * Handles an unlisten commit.
    */
-  protected void unlisten(Commit<AtomicValueCommands.Unlisten> commit) {
+  public void unlisten(Commit<AtomicValueCommands.Unlisten> commit) {
     try {
       Commit<AtomicValueCommands.Listen> listener = listeners.remove(commit.session());
       if (listener != null) {
@@ -86,7 +74,7 @@ public class AtomicValueState extends ResourceStateMachine {
   /**
    * Handles a get commit.
    */
-  protected Object get(Commit<AtomicValueCommands.Get> commit) {
+  public Object get(Commit<AtomicValueCommands.Get> commit) {
     try {
       return current != null ? value : null;
     } finally {
@@ -123,7 +111,7 @@ public class AtomicValueState extends ResourceStateMachine {
   /**
    * Applies a set commit.
    */
-  protected void set(Commit<AtomicValueCommands.Set> commit) {
+  public void set(Commit<AtomicValueCommands.Set> commit) {
     cleanCurrent();
     value = commit.operation().value();
     setCurrent(commit);
@@ -132,7 +120,7 @@ public class AtomicValueState extends ResourceStateMachine {
   /**
    * Handles a compare and set commit.
    */
-  protected boolean compareAndSet(Commit<AtomicValueCommands.CompareAndSet> commit) {
+  public boolean compareAndSet(Commit<AtomicValueCommands.CompareAndSet> commit) {
     if ((value == null && commit.operation().expect() == null) || (value != null && commit.operation().expect() != null && value.equals(commit.operation().expect()))) {
       value = commit.operation().update();
       cleanCurrent();
@@ -147,7 +135,7 @@ public class AtomicValueState extends ResourceStateMachine {
   /**
    * Handles a get and set commit.
    */
-  protected Object getAndSet(Commit<AtomicValueCommands.GetAndSet> commit) {
+  public Object getAndSet(Commit<AtomicValueCommands.GetAndSet> commit) {
     Object result = value;
     value = commit.operation().value();
     cleanCurrent();

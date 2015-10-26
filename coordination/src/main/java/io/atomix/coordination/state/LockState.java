@@ -17,7 +17,6 @@ package io.atomix.coordination.state;
 
 import io.atomix.catalyst.util.concurrent.Scheduled;
 import io.atomix.copycat.server.Commit;
-import io.atomix.copycat.server.StateMachineExecutor;
 import io.atomix.resource.ResourceStateMachine;
 
 import java.time.Duration;
@@ -36,16 +35,10 @@ public class LockState extends ResourceStateMachine {
   private final Queue<Commit<LockCommands.Lock>> queue = new ArrayDeque<>();
   private final Map<Long, Scheduled> timers = new HashMap<>();
 
-  @Override
-  public void configure(StateMachineExecutor executor) {
-    executor.register(LockCommands.Lock.class, this::lock);
-    executor.register(LockCommands.Unlock.class, this::unlock);
-  }
-
   /**
    * Applies a lock commit.
    */
-  protected void lock(Commit<LockCommands.Lock> commit) {
+  public void lock(Commit<LockCommands.Lock> commit) {
     if (lock == null) {
       lock = commit;
       commit.session().publish("lock", true);
@@ -70,7 +63,7 @@ public class LockState extends ResourceStateMachine {
   /**
    * Applies an unlock commit.
    */
-  protected void unlock(Commit<LockCommands.Unlock> commit) {
+  public void unlock(Commit<LockCommands.Unlock> commit) {
     try {
       if (lock != null) {
         if (!lock.session().equals(commit.session()))

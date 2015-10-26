@@ -16,7 +16,6 @@
 package io.atomix.collections.state;
 
 import io.atomix.copycat.server.Commit;
-import io.atomix.copycat.server.StateMachineExecutor;
 import io.atomix.resource.ResourceStateMachine;
 
 import java.util.ArrayDeque;
@@ -31,24 +30,10 @@ import java.util.Queue;
 public class QueueState extends ResourceStateMachine {
   private final Queue<Commit<? extends QueueCommands.ValueCommand>> queue = new ArrayDeque<>();
 
-  @Override
-  protected void configure(StateMachineExecutor executor) {
-    executor.register(QueueCommands.Add.class, this::add);
-    executor.register(QueueCommands.Offer.class, this::offer);
-    executor.register(QueueCommands.Contains.class, this::contains);
-    executor.register(QueueCommands.Peek.class, this::peek);
-    executor.register(QueueCommands.Poll.class, this::poll);
-    executor.register(QueueCommands.Element.class, this::element);
-    executor.register(QueueCommands.Remove.class, this::remove);
-    executor.register(QueueCommands.Size.class, this::size);
-    executor.register(QueueCommands.IsEmpty.class, this::isEmpty);
-    executor.register(QueueCommands.Clear.class, this::clear);
-  }
-
   /**
    * Handles a contains commit.
    */
-  protected boolean contains(Commit<QueueCommands.Contains> commit) {
+  public boolean contains(Commit<QueueCommands.Contains> commit) {
     try {
       for (Commit<? extends QueueCommands.ValueCommand> value : queue) {
         if (value.operation().value().equals(commit.operation().value()))
@@ -63,7 +48,7 @@ public class QueueState extends ResourceStateMachine {
   /**
    * Handles an add commit.
    */
-  protected boolean add(Commit<QueueCommands.Add> commit) {
+  public boolean add(Commit<QueueCommands.Add> commit) {
     try {
       queue.add(commit);
     } catch (Exception e) {
@@ -76,7 +61,7 @@ public class QueueState extends ResourceStateMachine {
   /**
    * Handles an offer commit.
    */
-  protected boolean offer(Commit<QueueCommands.Offer> commit) {
+  public boolean offer(Commit<QueueCommands.Offer> commit) {
     try {
       queue.offer(commit);
     } catch (Exception e) {
@@ -89,7 +74,7 @@ public class QueueState extends ResourceStateMachine {
   /**
    * Handles a peek commit.
    */
-  protected Object peek(Commit<QueueCommands.Peek> commit) {
+  public Object peek(Commit<QueueCommands.Peek> commit) {
     try {
       Commit<? extends QueueCommands.ValueCommand> value = queue.peek();
       if (value != null) {
@@ -104,7 +89,7 @@ public class QueueState extends ResourceStateMachine {
   /**
    * Handles a poll commit.
    */
-  protected Object poll(Commit<QueueCommands.Poll> commit) {
+  public Object poll(Commit<QueueCommands.Poll> commit) {
     try {
       Commit<? extends QueueCommands.ValueCommand> value = queue.poll();
       if (value != null) {
@@ -123,7 +108,7 @@ public class QueueState extends ResourceStateMachine {
   /**
    * Handles an element commit.
    */
-  protected Object element(Commit<QueueCommands.Element> commit) {
+  public Object element(Commit<QueueCommands.Element> commit) {
     try {
       Commit<? extends QueueCommands.ValueCommand> value = queue.element();
       if (value != null) {
@@ -142,7 +127,7 @@ public class QueueState extends ResourceStateMachine {
   /**
    * Handles a remove commit.
    */
-  protected Object remove(Commit<QueueCommands.Remove> commit) {
+  public Object remove(Commit<QueueCommands.Remove> commit) {
     try {
       if (commit.operation().value() != null) {
         Iterator<Commit<? extends QueueCommands.ValueCommand>> iterator = queue.iterator();
@@ -174,7 +159,7 @@ public class QueueState extends ResourceStateMachine {
   /**
    * Handles a count commit.
    */
-  protected int size(Commit<QueueCommands.Size> commit) {
+  public int size(Commit<QueueCommands.Size> commit) {
     try {
       return queue.size();
     } finally {
@@ -185,7 +170,7 @@ public class QueueState extends ResourceStateMachine {
   /**
    * Handles an is empty commit.
    */
-  protected boolean isEmpty(Commit<QueueCommands.IsEmpty> commit) {
+  public boolean isEmpty(Commit<QueueCommands.IsEmpty> commit) {
     try {
       return queue.isEmpty();
     } finally {
@@ -196,7 +181,7 @@ public class QueueState extends ResourceStateMachine {
   /**
    * Handles a clear commit.
    */
-  protected void clear(Commit<QueueCommands.Clear> commit) {
+  public void clear(Commit<QueueCommands.Clear> commit) {
     try {
       delete();
     } finally {

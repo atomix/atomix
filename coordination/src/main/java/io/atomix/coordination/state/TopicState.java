@@ -17,7 +17,6 @@ package io.atomix.coordination.state;
 
 import io.atomix.copycat.client.session.Session;
 import io.atomix.copycat.server.Commit;
-import io.atomix.copycat.server.StateMachineExecutor;
 import io.atomix.resource.ResourceStateMachine;
 
 import java.util.HashMap;
@@ -33,13 +32,6 @@ public class TopicState extends ResourceStateMachine {
   private final Map<Long, Commit<TopicCommands.Listen>> listeners = new HashMap<>();
 
   @Override
-  public void configure(StateMachineExecutor executor) {
-    executor.register(TopicCommands.Listen.class, this::listen);
-    executor.register(TopicCommands.Unlisten.class, this::unlisten);
-    executor.register(TopicCommands.Publish.class, this::publish);
-  }
-
-  @Override
   public void close(Session session) {
     listeners.remove(session.id());
   }
@@ -47,7 +39,7 @@ public class TopicState extends ResourceStateMachine {
   /**
    * Applies listen commits.
    */
-  protected void listen(Commit<TopicCommands.Listen> commit) {
+  public void listen(Commit<TopicCommands.Listen> commit) {
     if (!listeners.containsKey(commit.session().id())) {
       listeners.put(commit.session().id(), commit);
     } else {
@@ -58,7 +50,7 @@ public class TopicState extends ResourceStateMachine {
   /**
    * Applies listen commits.
    */
-  protected void unlisten(Commit<TopicCommands.Unlisten> commit) {
+  public void unlisten(Commit<TopicCommands.Unlisten> commit) {
     try {
       Commit<TopicCommands.Listen> listener = listeners.remove(commit.session().id());
       if (listener != null) {
@@ -72,7 +64,7 @@ public class TopicState extends ResourceStateMachine {
   /**
    * Handles a publish commit.
    */
-  protected void publish(Commit<TopicCommands.Publish> commit) {
+  public void publish(Commit<TopicCommands.Publish> commit) {
     try {
       Iterator<Map.Entry<Long, Commit<TopicCommands.Listen>>> iterator = listeners.entrySet().iterator();
       while (iterator.hasNext()) {
