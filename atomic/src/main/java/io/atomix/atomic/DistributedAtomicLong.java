@@ -15,8 +15,10 @@
  */
 package io.atomix.atomic;
 
+import io.atomix.atomic.state.AtomicValueState;
 import io.atomix.copycat.client.RaftClient;
 import io.atomix.resource.Consistency;
+import io.atomix.resource.ResourceInfo;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
@@ -26,6 +28,7 @@ import java.util.function.Function;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
+@ResourceInfo(stateMachine=AtomicValueState.class)
 public class DistributedAtomicLong extends DistributedAtomicValue<Long> {
   private Long value;
 
