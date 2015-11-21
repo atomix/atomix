@@ -354,7 +354,7 @@ public abstract class Atomix implements Managed<Atomix> {
    * Builds an {@link Atomix} object.
    */
   public static abstract class Builder extends io.atomix.catalyst.util.Builder<Atomix> {
-    protected CopycatClient.Builder clientBuilder;
+    protected final CopycatClient.Builder clientBuilder;
 
     protected Builder(Collection<Address> members) {
       clientBuilder = CopycatClient.builder(members);

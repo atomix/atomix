@@ -216,9 +216,9 @@ public final class AtomixReplica extends Atomix {
    */
   public static class Builder extends Atomix.Builder {
     private final Address clientAddress;
-    private CopycatServer.Builder serverBuilder;
+    private final CopycatServer.Builder serverBuilder;
     private Transport transport;
-    private LocalServerRegistry localRegistry = new LocalServerRegistry();
+    private final LocalServerRegistry localRegistry = new LocalServerRegistry();
 
     private Builder(Address clientAddress, Address serverAddress, Collection<Address> members) {
       super(Collections.singleton(Assert.notNull(clientAddress, "clientAddress")));
