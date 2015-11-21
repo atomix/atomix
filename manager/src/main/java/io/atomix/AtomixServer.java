@@ -34,11 +34,11 @@ import java.util.concurrent.CompletableFuture;
  * Standalone Atomix server.
  * <p>
  * The {@code AtomixServer} provides a standalone node that can server as a member of a cluster to
- * service operations on {@link DistributedResource}s from an {@link AtomixClient}. Servers do not expose
+ * service operations on {@link io.atomix.resource.Resource}s from an {@link AtomixClient}. Servers do not expose
  * an interface for managing resources directly. Users can only access server resources through an
  * {@link Atomix} implementation.
  * <p>
- * To create a server, use the {@link #builder(Address, Address...)} builder factory. Each server must
+ * To create a server, use the {@link #builder(Address, Address, Address...)} builder factory. Each server must
  * be initially configured with a server {@link Address} and a list of addresses for other members of the
  * core cluster. Note that the list of member addresses does not have to include the local server nor does
  * it have to include all the servers in the cluster. As long as the server can reach one live member of
@@ -83,12 +83,13 @@ public final class AtomixServer implements Managed<AtomixServer> {
    * <p>
    * The provided set of members will be used to connect to the other members in the Raft cluster.
    *
-   * @param address The local server member address.
+   * @param clientAddress The address through which clients connect to the server.
+   * @param serverAddress The local server member address.
    * @param members The cluster members to which to connect.
    * @return The replica builder.
    */
-  public static Builder builder(Address address, Address... members) {
-    return builder(address, Arrays.asList(Assert.notNull(members, "members")));
+  public static Builder builder(Address clientAddress, Address serverAddress, Address... members) {
+    return builder(clientAddress, serverAddress, Arrays.asList(Assert.notNull(members, "members")));
   }
 
   /**
@@ -96,12 +97,13 @@ public final class AtomixServer implements Managed<AtomixServer> {
    * <p>
    * The provided set of members will be used to connect to the other members in the Raft cluster.
    *
-   * @param address The local server member address.
+   * @param clientAddress The address through which clients connect to the server.
+   * @param serverAddress The local server member address.
    * @param members The cluster members to which to connect.
    * @return The replica builder.
    */
-  public static Builder builder(Address address, Collection<Address> members) {
-    return new Builder(address, members);
+  public static Builder builder(Address clientAddress, Address serverAddress, Collection<Address> members) {
+    return new Builder(clientAddress, serverAddress, members);
   }
 
   private final CopycatServer server;
@@ -135,7 +137,7 @@ public final class AtomixServer implements Managed<AtomixServer> {
    * <p>
    * The server builder configures an {@link AtomixServer} to listen for connections from clients and other
    * servers, connect to other servers in a cluster, and manage a replicated log. To create a server builder,
-   * use the {@link #builder(Address, Address...)} method:
+   * use the {@link #builder(Address, Address, Address...)} method:
    * <pre>
    *   {@code
    *   AtomixServer server = AtomixServer.builder(address, servers)
@@ -157,8 +159,8 @@ public final class AtomixServer implements Managed<AtomixServer> {
     private final CopycatServer.Builder builder;
     private Transport transport;
 
-    private Builder(Address address, Collection<Address> members) {
-      this.builder = CopycatServer.builder(address, members);
+    private Builder(Address clientAddress, Address serverAddress, Collection<Address> members) {
+      this.builder = CopycatServer.builder(clientAddress, serverAddress, members);
     }
 
     /**
@@ -222,6 +224,46 @@ public final class AtomixServer implements Managed<AtomixServer> {
      */
     public Builder withStorage(Storage storage) {
       builder.withStorage(storage);
+      return this;
+    }
+
+    /**
+     * Sets the server quorum hint.
+     * <p>
+     * The quorum hint is the number of servers that should participate in the Raft consensus algorithm
+     * as full voting members. If the number of servers and {@link AtomixReplica replicas} in the cluster
+     * is less than the quorum hint, all servers will be voting members, otherwise the system will attempt
+     * to promote and demote servers as necessary to maintain the configured quorum size.
+     * <p>
+     * The quorum hint should always be an odd number for the greatest fault tolerance. Increasing the quorum
+     * hint will result in higher latency for operations committed to the cluster. Decreasing the quorum hint
+     * will result in lower tolerance for failures but also lower latency for writes.
+     *
+     * @param quorumHint The number of servers to participate in the Raft consensus algorithm.
+     * @return The server builder.
+     * @throws IllegalArgumentException If the quorum hint is not positive
+     */
+    public Builder withQuorumHint(int quorumHint) {
+      builder.withQuorumHint(quorumHint);
+      return this;
+    }
+
+    /**
+     * Sets the server backup count.
+     * <p>
+     * The backup count is the <em>maximum</em> number of backup servers per active voting member of the
+     * Raft cluster. Backup servers are kept up to date by Raft followers and will be promoted to active
+     * Raft voting members in the event of a failure of a voting member. Increasing the number of backup
+     * servers will increase the load on the cluster, but note that it should not increase the latency of
+     * updates since backups do not participate in commitment of operations to the Raft cluster. Decreasing
+     * the number of backup servers may increase the amount of time necessary to replace a failed server
+     * and regain increased availability.
+     *
+     * @param backupCount The number of backup servers per active server.
+     * @return The server builder.
+     */
+    public Builder withBackupCount(int backupCount) {
+      builder.withBackupCount(backupCount);
       return this;
     }
 

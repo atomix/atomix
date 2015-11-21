@@ -18,6 +18,7 @@ package io.atomix;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.LocalServerRegistry;
 import io.atomix.catalyst.transport.LocalTransport;
+import io.atomix.copycat.server.state.Member;
 import io.atomix.copycat.server.storage.Storage;
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import org.testng.annotations.AfterMethod;
@@ -28,6 +29,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Abstract server test.
@@ -38,17 +40,19 @@ public abstract class AbstractServerTest extends ConcurrentTestCase {
   private static final File directory = new File("target/test-logs");
   protected LocalServerRegistry registry;
   protected int port;
-  protected List<Address> members;
+  protected List<Member> members;
 
   /**
    * Returns the next server address.
    *
    * @return The next server address.
    */
-  protected Address nextAddress() {
-    Address address = new Address("localhost", port++);
-    members.add(address);
-    return address;
+  protected Member nextMember() {
+    Address serverAddress = new Address("localhost", port + 1000);
+    Address clientAddress = new Address("localhost", port++);
+    Member member = new Member(serverAddress, clientAddress);
+    members.add(member);
+    return member;
   }
 
   /**
@@ -57,9 +61,9 @@ public abstract class AbstractServerTest extends ConcurrentTestCase {
   protected List<AtomixServer> createServers(int nodes) throws Throwable {
     List<AtomixServer> servers = new ArrayList<>();
 
-    List<Address> members = new ArrayList<>();
+    List<Member> members = new ArrayList<>();
     for (int i = 1; i <= nodes; i++) {
-      members.add(nextAddress());
+      members.add(nextMember());
     }
 
     for (int i = 0; i < nodes; i++) {
@@ -76,11 +80,11 @@ public abstract class AbstractServerTest extends ConcurrentTestCase {
   /**
    * Creates an Atomix server.
    */
-  protected AtomixServer createServer(Address address) {
-    return AtomixServer.builder(address, members)
+  protected AtomixServer createServer(Member member) {
+    return AtomixServer.builder(member.clientAddress(), member.serverAddress(), members.stream().map(Member::serverAddress).collect(Collectors.toList()))
       .withTransport(new LocalTransport(registry))
       .withStorage(Storage.builder()
-        .withDirectory(new File(directory, address.toString()))
+        .withDirectory(new File(directory, member.serverAddress().toString()))
         .build())
       .build();
   }

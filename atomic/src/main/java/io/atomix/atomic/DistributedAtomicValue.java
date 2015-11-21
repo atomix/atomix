@@ -18,7 +18,7 @@ package io.atomix.atomic;
 import io.atomix.atomic.state.AtomicValueCommands;
 import io.atomix.atomic.state.AtomicValueState;
 import io.atomix.catalyst.util.Listener;
-import io.atomix.copycat.client.RaftClient;
+import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.AbstractResource;
 import io.atomix.resource.Consistency;
 import io.atomix.resource.ResourceInfo;
@@ -38,7 +38,7 @@ import java.util.function.Consumer;
 public class DistributedAtomicValue<T> extends AbstractResource {
   private final java.util.Set<Consumer<T>> changeListeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
-  public DistributedAtomicValue(RaftClient client) {
+  public DistributedAtomicValue(CopycatClient client) {
     super(client);
     client.session().<T>onEvent("change", event -> {
       for (Consumer<T> listener : changeListeners) {

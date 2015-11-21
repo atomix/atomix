@@ -16,10 +16,9 @@
 package io.atomix;
 
 import io.atomix.copycat.client.Command;
+import io.atomix.copycat.client.CopycatClient;
 import io.atomix.copycat.client.Query;
-import io.atomix.copycat.client.RaftClient;
 import io.atomix.copycat.server.Commit;
-import io.atomix.copycat.server.StateMachineExecutor;
 import io.atomix.resource.AbstractResource;
 import io.atomix.resource.Consistency;
 import io.atomix.resource.ResourceInfo;
@@ -219,7 +218,7 @@ public class AtomixReplicaTest extends AbstractReplicaTest {
    */
   @ResourceInfo(stateMachine=TestStateMachine.class)
   public static class TestResource extends AbstractResource {
-    public TestResource(RaftClient client) {
+    public TestResource(CopycatClient client) {
       super(client);
     }
 
@@ -286,7 +285,7 @@ public class AtomixReplicaTest extends AbstractReplicaTest {
    */
   @ResourceInfo(stateMachine=ValueStateMachine.class)
   public static class ValueResource extends AbstractResource {
-    public ValueResource(RaftClient client) {
+    public ValueResource(CopycatClient client) {
       super(client);
     }
 

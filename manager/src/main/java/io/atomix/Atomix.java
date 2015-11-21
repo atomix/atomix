@@ -22,7 +22,6 @@ import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.Managed;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.copycat.client.CopycatClient;
-import io.atomix.copycat.client.RaftClient;
 import io.atomix.manager.CreateResource;
 import io.atomix.manager.GetResource;
 import io.atomix.manager.ResourceExists;
@@ -159,7 +158,7 @@ public abstract class Atomix implements Managed<Atomix> {
   public <T extends Resource> CompletableFuture<T> get(String key, Class<? super T> type) {
     return get(key, type, (client) -> {
       try {
-        return (T) type.getConstructor(RaftClient.class).newInstance(client);
+        return (T) type.getConstructor(CopycatClient.class).newInstance(client);
       } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
         throw new RuntimeException(e);
       }
@@ -202,7 +201,7 @@ public abstract class Atomix implements Managed<Atomix> {
    * @throws NullPointerException if {@code key} or {@code factory} are null
    */
   @SuppressWarnings("unchecked")
-  public <T extends Resource> CompletableFuture<T> get(String key, Class<? super T> type, Function<RaftClient, T> factory) {
+  public <T extends Resource> CompletableFuture<T> get(String key, Class<? super T> type, Function<CopycatClient, T> factory) {
     ResourceInfo info = Resources.getInfo(type);
     return client.submit(new GetResource(Assert.notNull(key, "key"), info.stateMachine()))
       .thenApply(id -> (T) resources.computeIfAbsent(id, i -> factory.apply(new InstanceClient(id, client, transport))));
@@ -253,7 +252,7 @@ public abstract class Atomix implements Managed<Atomix> {
   public <T extends Resource> CompletableFuture<T> create(String key, Class<? super T> type) {
     return create(key, type, client -> {
       try {
-        return (T) type.getConstructor(RaftClient.class).newInstance(client);
+        return (T) type.getConstructor(CopycatClient.class).newInstance(client);
       } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
         throw new ResourceException(e);
       }
@@ -300,7 +299,7 @@ public abstract class Atomix implements Managed<Atomix> {
    * @return A completable future to be completed once the resource has been created.
    * @throws NullPointerException if {@code key} or {@code factory} are null
    */
-  public <T extends Resource> CompletableFuture<T> create(String key, Class<? super T> type, Function<RaftClient, T> factory) {
+  public <T extends Resource> CompletableFuture<T> create(String key, Class<? super T> type, Function<CopycatClient, T> factory) {
     ResourceInfo info = Resources.getInfo(type);
     return client.submit(new CreateResource(Assert.notNull(key, "key"), info.stateMachine()))
       .thenApply(id -> factory.apply(new InstanceClient(id, client, transport)));

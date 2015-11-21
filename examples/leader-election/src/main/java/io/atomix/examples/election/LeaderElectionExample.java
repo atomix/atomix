@@ -42,7 +42,8 @@ public class LeaderElectionExample {
 
     // Parse the address to which to bind the server.
     String[] mainParts = args[1].split(":");
-    Address address = new Address(mainParts[0], Integer.valueOf(mainParts[1]));
+    Address serverAddress = new Address(mainParts[0], Integer.valueOf(mainParts[1]));
+    Address clientAddress = new Address(mainParts[0], Integer.valueOf(mainParts[2]));
 
     // Build a list of all member addresses to which to connect.
     List<Address> members = new ArrayList<>();
@@ -53,7 +54,7 @@ public class LeaderElectionExample {
 
     // Create a stateful Atomix replica. The replica communicates with other replicas in the cluster
     // to replicate state changes.
-    Atomix atomix = AtomixReplica.builder(address, members)
+    Atomix atomix = AtomixReplica.builder(clientAddress, serverAddress, members)
       .withTransport(new NettyTransport())
       .withStorage(new Storage(new File(args[0])))
       .build();

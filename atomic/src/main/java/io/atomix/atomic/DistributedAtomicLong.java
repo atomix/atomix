@@ -16,7 +16,7 @@
 package io.atomix.atomic;
 
 import io.atomix.atomic.state.AtomicValueState;
-import io.atomix.copycat.client.RaftClient;
+import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.Consistency;
 import io.atomix.resource.ResourceInfo;
 
@@ -32,7 +32,7 @@ import java.util.function.Function;
 public class DistributedAtomicLong extends DistributedAtomicValue<Long> {
   private Long value;
 
-  public DistributedAtomicLong(RaftClient client) {
+  public DistributedAtomicLong(CopycatClient client) {
     super(client);
   }
 

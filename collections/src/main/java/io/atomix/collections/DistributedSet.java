@@ -17,7 +17,7 @@ package io.atomix.collections;
 
 import io.atomix.collections.state.SetCommands;
 import io.atomix.collections.state.SetState;
-import io.atomix.copycat.client.RaftClient;
+import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.AbstractResource;
 import io.atomix.resource.Consistency;
 import io.atomix.resource.ResourceInfo;
@@ -34,7 +34,7 @@ import java.util.concurrent.CompletableFuture;
 @ResourceInfo(stateMachine=SetState.class)
 public class DistributedSet<T> extends AbstractResource {
 
-  public DistributedSet(RaftClient client) {
+  public DistributedSet(CopycatClient client) {
     super(client);
   }
 

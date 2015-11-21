@@ -23,7 +23,6 @@ import io.atomix.coordination.DistributedMembershipGroup;
 import io.atomix.copycat.server.storage.Storage;
 
 import java.io.Serializable;
-import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -42,9 +41,9 @@ public class GroupMembershipExample {
     if (args.length < 2)
       throw new IllegalArgumentException("must supply a local port and at least one remote host:port tuple");
 
-    int port = Integer.valueOf(args[0]);
-
-    Address address = new Address(InetAddress.getLocalHost().getHostName(), port);
+    String[] mainParts = args[1].split(":");
+    Address serverAddress = new Address(mainParts[0], Integer.valueOf(mainParts[1]));
+    Address clientAddress = new Address(mainParts[0], Integer.valueOf(mainParts[2]));
 
     List<Address> members = new ArrayList<>();
     for (int i = 1; i < args.length; i++) {
@@ -52,7 +51,7 @@ public class GroupMembershipExample {
       members.add(new Address(parts[0], Integer.valueOf(parts[1])));
     }
 
-    Atomix atomix = AtomixReplica.builder(address, members)
+    Atomix atomix = AtomixReplica.builder(clientAddress, serverAddress, members)
       .withTransport(new NettyTransport())
       .withStorage(Storage.builder()
         .withDirectory(System.getProperty("user.dir") + "/logs/" + UUID.randomUUID().toString())

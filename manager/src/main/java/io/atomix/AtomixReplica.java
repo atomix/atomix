@@ -26,20 +26,22 @@ import io.atomix.copycat.server.storage.Storage;
 import io.atomix.manager.ResourceManager;
 
 import java.time.Duration;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 /**
- * Provides an interface for creating and operating on {@link DistributedResource}s as a stateful node.
+ * Provides an interface for creating and operating on {@link io.atomix.resource.Resource}s as a stateful node.
  * <p>
  * Replicas serve as a hybrid {@link AtomixClient} and {@link AtomixServer} to allow a server to be embedded
  * in an application. From the perspective of state, replicas behave like {@link AtomixServer}s in that they
- * maintain a replicated state machine for {@link DistributedResource}s and fully participate in the underlying
+ * maintain a replicated state machine for {@link io.atomix.resource.Resource}s and fully participate in the underlying
  * consensus algorithm. From the perspective of resources, replicas behave like {@link AtomixClient}s in that
  * they may themselves create and modify distributed resources.
  * <p>
- * To create a replica, use the {@link #builder(Address, Address...)} builder factory. Each replica must
+ * To create a replica, use the {@link #builder(Address, Address, Address...)} builder factory. Each replica must
  * be initially configured with a server {@link Address} and a list of addresses for other members of the
  * core cluster. Note that the list of member addresses does not have to include the local server nor does
  * it have to include all the servers in the cluster. As long as the replica can reach one live member of
@@ -82,12 +84,13 @@ public final class AtomixReplica extends Atomix {
    * <p>
    * The provided set of members will be used to connect to the other members in the Raft cluster.
    *
-   * @param address The local server member address.
+   * @param clientAddress The address through which clients connect to the server.
+   * @param serverAddress The local server member address.
    * @param members The cluster members to which to connect.
    * @return The replica builder.
    */
-  public static Builder builder(Address address, Address... members) {
-    return builder(address, Arrays.asList(Assert.notNull(members, "members")));
+  public static Builder builder(Address clientAddress, Address serverAddress, Address... members) {
+    return builder(clientAddress, serverAddress, Arrays.asList(Assert.notNull(members, "members")));
   }
 
   /**
@@ -95,12 +98,13 @@ public final class AtomixReplica extends Atomix {
    * <p>
    * The provided set of members will be used to connect to the other members in the Raft cluster.
    *
-   * @param address The local server member address.
+   * @param clientAddress The address through which clients connect to the server.
+   * @param serverAddress The local server member address.
    * @param members The cluster members to which to connect.
    * @return The replica builder.
    */
-  public static Builder builder(Address address, Collection<Address> members) {
-    return new Builder(address, members);
+  public static Builder builder(Address clientAddress, Address serverAddress, Collection<Address> members) {
+    return new Builder(clientAddress, serverAddress, members);
   }
 
   private final CopycatServer server;
@@ -134,10 +138,8 @@ public final class AtomixReplica extends Atomix {
     }
 
     @Override
-    public List<Address> getConnections(Address leader, List<Address> servers) {
-      List<Address> addresses = new ArrayList<>(1);
-      addresses.add(address);
-      return addresses;
+    public boolean connect(Address server, Address leader) {
+      return server.equals(address);
     }
   }
 
@@ -194,7 +196,7 @@ public final class AtomixReplica extends Atomix {
    * <p>
    * The replica builder configures an {@link AtomixReplica} to listen for connections from clients and other
    * servers/replica, connect to other servers in a cluster, and manage a replicated log. To create a replica builder,
-   * use the {@link #builder(Address, Address...)} method:
+   * use the {@link #builder(Address, Address, Address...)} method:
    * <pre>
    *   {@code
    *   Atomix replica = AtomixReplica.builder(address, members)
@@ -213,15 +215,15 @@ public final class AtomixReplica extends Atomix {
    * memory or memory-mapped files.
    */
   public static class Builder extends Atomix.Builder {
-    private final Address address;
+    private final Address clientAddress;
     private CopycatServer.Builder serverBuilder;
     private Transport transport;
     private LocalServerRegistry localRegistry = new LocalServerRegistry();
 
-    private Builder(Address address, Collection<Address> members) {
-      super(Collections.singleton(address));
-      this.address = address;
-      this.serverBuilder = CopycatServer.builder(address, members);
+    private Builder(Address clientAddress, Address serverAddress, Collection<Address> members) {
+      super(Collections.singleton(Assert.notNull(clientAddress, "clientAddress")));
+      this.clientAddress = clientAddress;
+      this.serverBuilder = CopycatServer.builder(clientAddress, serverAddress, members);
     }
 
     /**
@@ -286,6 +288,46 @@ public final class AtomixReplica extends Atomix {
      */
     public Builder withStorage(Storage storage) {
       serverBuilder.withStorage(storage);
+      return this;
+    }
+
+    /**
+     * Sets the replica quorum hint.
+     * <p>
+     * The quorum hint is the number of servers that should participate in the Raft consensus algorithm
+     * as full voting members. If the number of {@link AtomixServer servers} and replicas in the cluster
+     * is less than the quorum hint, all servers will be voting members, otherwise the system will attempt
+     * to promote and demote servers as necessary to maintain the configured quorum size.
+     * <p>
+     * The quorum hint should always be an odd number for the greatest fault tolerance. Increasing the quorum
+     * hint will result in higher latency for operations committed to the cluster. Decreasing the quorum hint
+     * will result in lower tolerance for failures but also lower latency for writes.
+     *
+     * @param quorumHint The number of servers to participate in the Raft consensus algorithm.
+     * @return The server builder.
+     * @throws IllegalArgumentException If the quorum hint is not positive
+     */
+    public Builder withQuorumHint(int quorumHint) {
+      serverBuilder.withQuorumHint(quorumHint);
+      return this;
+    }
+
+    /**
+     * Sets the server backup count.
+     * <p>
+     * The backup count is the <em>maximum</em> number of backup servers per active voting member of the
+     * Raft cluster. Backup servers are kept up to date by Raft followers and will be promoted to active
+     * Raft voting members in the event of a failure of a voting member. Increasing the number of backup
+     * servers will increase the load on the cluster, but note that it should not increase the latency of
+     * updates since backups do not participate in commitment of operations to the Raft cluster. Decreasing
+     * the number of backup servers may increase the amount of time necessary to replace a failed server
+     * and regain increased availability.
+     *
+     * @param backupCount The number of backup servers per active server.
+     * @return The server builder.
+     */
+    public Builder withBackupCount(int backupCount) {
+      serverBuilder.withBackupCount(backupCount);
       return this;
     }
 
@@ -366,9 +408,9 @@ public final class AtomixReplica extends Atomix {
       // directly through the local server, ensuring we don't incur unnecessary network traffic by
       // sending operations to a remote server when a local server is already available in the same JVM.
       CopycatClient client = clientBuilder.withTransport(new LocalTransport(localRegistry))
-        .withConnectionStrategy(new CombinedConnectionStrategy(address)).build();
+        .withConnectionStrategy(new CombinedConnectionStrategy(clientAddress)).build();
 
-      // Construct the underlying CopycatServer. The server should have been configured with a CombinedTransport
+      // Construct the underlying CopycatServer. The server is configured with a CombinedTransport
       // that facilitates the local client connecting directly to the server.
       CopycatServer server = serverBuilder.withTransport(new CombinedTransport(new LocalTransport(localRegistry), transport))
         .withStateMachine(new ResourceManager()).build();

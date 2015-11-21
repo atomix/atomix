@@ -17,7 +17,7 @@ package io.atomix.collections;
 
 import io.atomix.collections.state.MultiMapCommands;
 import io.atomix.collections.state.MultiMapState;
-import io.atomix.copycat.client.RaftClient;
+import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.AbstractResource;
 import io.atomix.resource.Consistency;
 import io.atomix.resource.ResourceInfo;
@@ -34,7 +34,7 @@ import java.util.concurrent.CompletableFuture;
 @ResourceInfo(stateMachine=MultiMapState.class)
 public class DistributedMultiMap<K, V> extends AbstractResource {
 
-  public DistributedMultiMap(RaftClient client) {
+  public DistributedMultiMap(CopycatClient client) {
     super(client);
   }
 

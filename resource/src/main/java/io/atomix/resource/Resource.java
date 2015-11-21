@@ -24,7 +24,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Fault-tolerant stateful distributed object.
  * <p>
- * Resources are stateful distributed objects that run across a set of {@link io.atomix.copycat.server.RaftServer}s
+ * Resources are stateful distributed objects that run across a set of {@link io.atomix.copycat.server.CopycatServer}s
  * in a cluster.
  * <p>
  * Resources can be created either as standalone {@link io.atomix.copycat.server.StateMachine}s in
