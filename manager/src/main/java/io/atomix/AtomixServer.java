@@ -183,10 +183,41 @@ public final class AtomixServer implements Managed<AtomixServer> {
    */
   public static class Builder extends io.atomix.catalyst.util.Builder<AtomixServer> {
     private final CopycatServer.Builder builder;
-    private Transport transport;
 
     private Builder(Address clientAddress, Address serverAddress, Collection<Address> members) {
-      this.builder = CopycatServer.builder(clientAddress, serverAddress, members);
+      this.builder = CopycatServer.builder(clientAddress, serverAddress, members).withStateMachine(new ResourceManager());
+    }
+
+    /**
+     * Sets the client and server transport, returning the server builder for method chaining.
+     * <p>
+     * The configured transport should be the same transport as all other nodes in the cluster.
+     * If no transport is explicitly provided, the instance will default to the {@code NettyTransport}
+     * if available on the classpath.
+     *
+     * @param transport The transport.
+     * @return The server builder.
+     * @throws NullPointerException if {@code transport} is null
+     */
+    public Builder withTransport(Transport transport) {
+      builder.withTransport(transport);
+      return this;
+    }
+
+    /**
+     * Sets the client transport, returning the server builder for method chaining.
+     * <p>
+     * The configured transport should be the transport through which clients connect to the cluster.
+     * Client transports on all nodes must be identical. If no client transport is provided, the server
+     * transport will be shared for clients.
+     *
+     * @param transport The client transport.
+     * @return The server builder.
+     * @throws NullPointerException if {@code transport} is null
+     */
+    public Builder withClientTransport(Transport transport) {
+      builder.withClientTransport(transport);
+      return this;
     }
 
     /**
@@ -200,8 +231,8 @@ public final class AtomixServer implements Managed<AtomixServer> {
      * @return The server builder.
      * @throws NullPointerException if {@code transport} is null
      */
-    public Builder withTransport(Transport transport) {
-      this.transport = Assert.notNull(transport, "transport");
+    public Builder withServerTransport(Transport transport) {
+      builder.withServerTransport(transport);
       return this;
     }
 
@@ -357,21 +388,7 @@ public final class AtomixServer implements Managed<AtomixServer> {
      */
     @Override
     public AtomixServer build() {
-      // If no transport was configured by the user, attempt to load the Netty transport.
-      if (transport == null) {
-        try {
-          transport = (Transport) Class.forName("io.atomix.catalyst.transport.NettyTransport").newInstance();
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-          throw new ConfigurationException("transport not configured");
-        }
-      }
-
-      // Construct the underlying CopycatServer. The server should have been configured with a CombinedTransport
-      // that facilitates the local client connecting directly to the server.
-      CopycatServer server = builder.withTransport(transport)
-        .withStateMachine(new ResourceManager()).build();
-
-      return new AtomixServer(server);
+      return new AtomixServer(builder.build());
     }
   }
 
