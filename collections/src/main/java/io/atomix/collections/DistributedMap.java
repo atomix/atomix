@@ -18,8 +18,8 @@ package io.atomix.collections;
 import io.atomix.collections.state.MapCommands;
 import io.atomix.collections.state.MapState;
 import io.atomix.copycat.client.RaftClient;
-import io.atomix.resource.AbstractResource;
 import io.atomix.resource.Consistency;
+import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceInfo;
 
 import java.time.Duration;
@@ -29,10 +29,6 @@ import java.util.concurrent.CompletableFuture;
  * Distributed map.
  * <p>
  * The distributed map resource provides an interface and behavior similar to {@link java.util.Map}.
- * <p>
- * To create a distributed map, use the {@link io.atomix.Atomix#create(String, Class)} or
- * {@link io.atomix.Atomix#get(String, Class)} method. Map instances are stateless and so there
- * is no effective difference between instances.
  * <pre>
  *   {@code
  *   DistributedMap<String, String> map = atomix.<DistributedMap<String, String>>create("map", DistributedMap.class).get();
@@ -51,7 +47,7 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @ResourceInfo(stateMachine=MapState.class)
-public class DistributedMap<K, V> extends AbstractResource {
+public class DistributedMap<K, V> extends Resource {
 
   public DistributedMap(RaftClient client) {
     super(client);

@@ -18,8 +18,8 @@ package io.atomix.collections;
 import io.atomix.collections.state.SetCommands;
 import io.atomix.collections.state.SetState;
 import io.atomix.copycat.client.RaftClient;
-import io.atomix.resource.AbstractResource;
 import io.atomix.resource.Consistency;
+import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceInfo;
 
 import java.time.Duration;
@@ -32,7 +32,7 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @ResourceInfo(stateMachine=SetState.class)
-public class DistributedSet<T> extends AbstractResource {
+public class DistributedSet<T> extends Resource {
 
   public DistributedSet(RaftClient client) {
     super(client);

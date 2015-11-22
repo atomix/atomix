@@ -19,8 +19,8 @@ import io.atomix.catalyst.util.Listener;
 import io.atomix.coordination.state.TopicCommands;
 import io.atomix.coordination.state.TopicState;
 import io.atomix.copycat.client.RaftClient;
-import io.atomix.resource.AbstractResource;
 import io.atomix.resource.Consistency;
+import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceInfo;
 
 import java.util.HashSet;
@@ -58,7 +58,7 @@ import java.util.function.Consumer;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @ResourceInfo(stateMachine=TopicState.class)
-public class DistributedTopic<T> extends AbstractResource {
+public class DistributedTopic<T> extends Resource {
   private final Set<Consumer<T>> listeners = new HashSet<>();
 
   @SuppressWarnings("unchecked")

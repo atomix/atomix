@@ -19,15 +19,15 @@ import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.ConfigurationException;
-import io.atomix.copycat.client.CopycatClient;
+import io.atomix.resource.InstanceFactory;
 
 import java.util.Arrays;
 import java.util.Collection;
 
 /**
- * Provides an interface for creating and operating on {@link DistributedResource}s remotely.
+ * Provides an interface for creating and operating on {@link io.atomix.resource.Resource}s remotely.
  * <p>
- * This {@link Atomix} implementation facilitates working with {@link DistributedResource}s remotely as
+ * This {@link Atomix} implementation facilitates working with {@link io.atomix.resource.Resource}s remotely as
  * a client of the Atomix cluster. To create a client, construct a client builder via {@link #builder(Address...)}.
  * The builder requires a list of {@link Address}es to which to connect.
  * <pre>
@@ -100,10 +100,10 @@ public final class AtomixClient extends Atomix {
   }
 
   /**
-   * @throws NullPointerException if {@code client} is null
+   * @throws NullPointerException if {@code factory} is null
    */
-  public AtomixClient(CopycatClient client, Transport transport) {
-    super(client, transport);
+  private AtomixClient(InstanceFactory factory) {
+    super(factory);
   }
 
   /**
@@ -141,7 +141,7 @@ public final class AtomixClient extends Atomix {
           throw new ConfigurationException("transport not configured");
         }
       }
-      return new AtomixClient(clientBuilder.build(), transport);
+      return new AtomixClient(new InstanceFactory(clientBuilder, transport));
     }
   }
 

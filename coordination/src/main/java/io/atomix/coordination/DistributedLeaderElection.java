@@ -19,8 +19,8 @@ import io.atomix.catalyst.util.Listener;
 import io.atomix.coordination.state.LeaderElectionCommands;
 import io.atomix.coordination.state.LeaderElectionState;
 import io.atomix.copycat.client.RaftClient;
-import io.atomix.resource.AbstractResource;
 import io.atomix.resource.Consistency;
+import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceInfo;
 
 import java.util.Collections;
@@ -63,7 +63,7 @@ import java.util.function.Consumer;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @ResourceInfo(stateMachine=LeaderElectionState.class)
-public class DistributedLeaderElection extends AbstractResource {
+public class DistributedLeaderElection extends Resource {
   private final Set<Consumer<Long>> listeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
   public DistributedLeaderElection(RaftClient client) {
