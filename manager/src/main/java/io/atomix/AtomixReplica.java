@@ -84,6 +84,32 @@ public final class AtomixReplica extends Atomix {
    * <p>
    * The provided set of members will be used to connect to the other members in the Raft cluster.
    *
+   * @param address The address through which clients and servers connect to the replica.
+   * @param members The cluster members to which to connect.
+   * @return The replica builder.
+   */
+  public static Builder builder(Address address, Address... members) {
+    return builder(address, address, Arrays.asList(Assert.notNull(members, "members")));
+  }
+
+  /**
+   * Returns a new Atomix replica builder.
+   * <p>
+   * The provided set of members will be used to connect to the other members in the Raft cluster.
+   *
+   * @param address The address through which clients and servers connect to the replica.
+   * @param members The cluster members to which to connect.
+   * @return The replica builder.
+   */
+  public static Builder builder(Address address, Collection<Address> members) {
+    return new Builder(address, address, members);
+  }
+
+  /**
+   * Returns a new Atomix replica builder.
+   * <p>
+   * The provided set of members will be used to connect to the other members in the Raft cluster.
+   *
    * @param clientAddress The address through which clients connect to the server.
    * @param serverAddress The local server member address.
    * @param members The cluster members to which to connect.
