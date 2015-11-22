@@ -48,11 +48,7 @@ public abstract class AbstractReplicaTest extends ConcurrentTestCase {
    * @return The next server address.
    */
   protected Member nextMember() {
-    Address serverAddress = new Address("localhost", port + 1000);
-    Address clientAddress = new Address("localhost", port++);
-    Member member = new Member(serverAddress, clientAddress);
-    members.add(member);
-    return member;
+    return new Member(new Address("localhost", ++port), new Address("localhost", port + 1000));
   }
 
   /**
@@ -61,7 +57,6 @@ public abstract class AbstractReplicaTest extends ConcurrentTestCase {
   protected List<Atomix> createReplicas(int nodes) throws Throwable {
     List<Atomix> replicas = new ArrayList<>();
 
-    List<Member> members = new ArrayList<>();
     for (int i = 1; i <= nodes; i++) {
       members.add(nextMember());
     }

@@ -48,11 +48,7 @@ public abstract class AbstractServerTest extends ConcurrentTestCase {
    * @return The next server address.
    */
   protected Member nextMember() {
-    Address serverAddress = new Address("localhost", port + 1000);
-    Address clientAddress = new Address("localhost", port++);
-    Member member = new Member(serverAddress, clientAddress);
-    members.add(member);
-    return member;
+    return new Member(new Address("localhost", ++port), new Address("localhost", port + 1000));
   }
 
   /**
@@ -61,13 +57,12 @@ public abstract class AbstractServerTest extends ConcurrentTestCase {
   protected List<AtomixServer> createServers(int nodes) throws Throwable {
     List<AtomixServer> servers = new ArrayList<>();
 
-    List<Member> members = new ArrayList<>();
     for (int i = 1; i <= nodes; i++) {
       members.add(nextMember());
     }
 
     for (int i = 0; i < nodes; i++) {
-      AtomixServer server = createServer(members.get(i));
+      AtomixServer server = createServer(members, members.get(i));
       server.open().thenRun(this::resume);
       servers.add(server);
     }
@@ -80,7 +75,7 @@ public abstract class AbstractServerTest extends ConcurrentTestCase {
   /**
    * Creates an Atomix server.
    */
-  protected AtomixServer createServer(Member member) {
+  protected AtomixServer createServer(List<Member> members, Member member) {
     return AtomixServer.builder(member.clientAddress(), member.serverAddress(), members.stream().map(Member::serverAddress).collect(Collectors.toList()))
       .withTransport(new LocalTransport(registry))
       .withStorage(Storage.builder()

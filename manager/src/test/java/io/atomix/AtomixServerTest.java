@@ -32,7 +32,7 @@ public class AtomixServerTest extends AbstractServerTest {
    */
   public void testServerJoin() throws Throwable {
     createServers(3);
-    AtomixServer joiner = createServer(nextMember());
+    AtomixServer joiner = createServer(members, nextMember());
     joiner.open().thenRun(this::resume);
     await();
   }
