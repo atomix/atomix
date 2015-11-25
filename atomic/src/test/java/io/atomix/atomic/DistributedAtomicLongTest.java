@@ -102,6 +102,7 @@ public class DistributedAtomicLongTest extends AbstractAtomicTest {
     RaftClient client = createClient();
     DistributedAtomicLong atomic = new DistributedAtomicLong(client);
     consumer.accept(atomic);
+    await();
   }
 
 }
