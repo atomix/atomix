@@ -16,6 +16,7 @@
 package io.atomix.coordination.state;
 
 import io.atomix.catalyst.util.concurrent.Scheduled;
+import io.atomix.copycat.client.session.Session;
 import io.atomix.copycat.server.Commit;
 import io.atomix.resource.ResourceStateMachine;
 
@@ -34,6 +35,20 @@ public class LockState extends ResourceStateMachine {
   private Commit<LockCommands.Lock> lock;
   private final Queue<Commit<LockCommands.Lock>> queue = new ArrayDeque<>();
   private final Map<Long, Scheduled> timers = new HashMap<>();
+
+  @Override
+  public void close(Session session) {
+    if (lock != null && lock.session().id() == session.id()) {
+      lock.clean();
+      lock = queue.poll();
+      if (lock != null) {
+        Scheduled timer = timers.remove(lock.index());
+        if (timer != null)
+          timer.cancel();
+        lock.session().publish("lock", true);
+      }
+    }
+  }
 
   /**
    * Applies a lock commit.

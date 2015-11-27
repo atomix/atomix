@@ -16,6 +16,7 @@
 package io.atomix.coordination;
 
 import io.atomix.coordination.state.LockState;
+import io.atomix.copycat.client.RaftClient;
 import io.atomix.resource.ResourceStateMachine;
 import org.testng.annotations.Test;
 
@@ -44,6 +45,26 @@ public class DistributedLockTest extends AbstractCoordinationTest {
     await();
 
     lock.unlock().thenRun(this::resume);
+    await();
+  }
+
+  /**
+   * Tests releasing a lock when the client's session is closed.
+   */
+  public void testReleaseOnClose() throws Throwable {
+    createServers(3);
+
+    RaftClient client1 = createClient();
+    RaftClient client2 = createClient();
+
+    DistributedLock lock1 = new DistributedLock(client1);
+    DistributedLock lock2 = new DistributedLock(client2);
+
+    lock1.lock().thenRun(this::resume);
+    await();
+
+    lock2.lock().thenRun(this::resume);
+    client1.close();
     await();
   }
 
