@@ -17,10 +17,10 @@ package io.atomix;
 
 import io.atomix.catalyst.transport.LocalTransport;
 import io.atomix.copycat.client.Command;
+import io.atomix.copycat.client.CopycatClient;
 import io.atomix.copycat.client.Query;
-import io.atomix.copycat.client.RaftClient;
 import io.atomix.copycat.server.Commit;
-import io.atomix.copycat.server.StateMachineExecutor;
+import io.atomix.copycat.server.state.Member;
 import io.atomix.resource.AbstractResource;
 import io.atomix.resource.Consistency;
 import io.atomix.resource.ResourceInfo;
@@ -28,6 +28,7 @@ import io.atomix.resource.ResourceStateMachine;
 import org.testng.annotations.Test;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 /**
  * Client server test.
@@ -196,7 +197,7 @@ public class AtomixClientServerTest extends AbstractServerTest {
    * Creates a client.
    */
   private Atomix createClient() throws Throwable {
-    Atomix client = AtomixClient.builder(members).withTransport(new LocalTransport(registry)).build();
+    Atomix client = AtomixClient.builder(members.stream().map(Member::clientAddress).collect(Collectors.toList())).withTransport(new LocalTransport(registry)).build();
     client.open().thenRun(this::resume);
     await();
     return client;
@@ -207,7 +208,7 @@ public class AtomixClientServerTest extends AbstractServerTest {
    */
   @ResourceInfo(stateMachine=TestStateMachine.class)
   public static class TestResource extends AbstractResource {
-    public TestResource(RaftClient client) {
+    public TestResource(CopycatClient client) {
       super(client);
     }
 
@@ -274,7 +275,7 @@ public class AtomixClientServerTest extends AbstractServerTest {
    */
   @ResourceInfo(stateMachine=ValueStateMachine.class)
   public static class ValueResource extends AbstractResource {
-    public ValueResource(RaftClient client) {
+    public ValueResource(CopycatClient client) {
       super(client);
     }
 

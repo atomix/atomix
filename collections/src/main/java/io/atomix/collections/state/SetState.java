@@ -54,6 +54,7 @@ public class SetState extends ResourceStateMachine {
           map.remove(commit.operation().value()).commit.clean();
         }) : null;
         map.put(commit.operation().value(), new Value(commit, timer));
+        return true;
       } else {
         commit.clean();
       }

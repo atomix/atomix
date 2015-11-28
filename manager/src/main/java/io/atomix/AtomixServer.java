@@ -34,11 +34,11 @@ import java.util.concurrent.CompletableFuture;
  * Standalone Atomix server.
  * <p>
  * The {@code AtomixServer} provides a standalone node that can server as a member of a cluster to
- * service operations on {@link DistributedResource}s from an {@link AtomixClient}. Servers do not expose
+ * service operations on {@link io.atomix.resource.Resource}s from an {@link AtomixClient}. Servers do not expose
  * an interface for managing resources directly. Users can only access server resources through an
  * {@link Atomix} implementation.
  * <p>
- * To create a server, use the {@link #builder(Address, Address...)} builder factory. Each server must
+ * To create a server, use the {@link #builder(Address, Address, Address...)} builder factory. Each server must
  * be initially configured with a server {@link Address} and a list of addresses for other members of the
  * core cluster. Note that the list of member addresses does not have to include the local server nor does
  * it have to include all the servers in the cluster. As long as the server can reach one live member of
@@ -83,12 +83,12 @@ public final class AtomixServer implements Managed<AtomixServer> {
    * <p>
    * The provided set of members will be used to connect to the other members in the Raft cluster.
    *
-   * @param address The local server member address.
+   * @param address The address through which clients and servers connect to the server.
    * @param members The cluster members to which to connect.
    * @return The replica builder.
    */
   public static Builder builder(Address address, Address... members) {
-    return builder(address, Arrays.asList(Assert.notNull(members, "members")));
+    return builder(address, address, Arrays.asList(Assert.notNull(members, "members")));
   }
 
   /**
@@ -96,12 +96,40 @@ public final class AtomixServer implements Managed<AtomixServer> {
    * <p>
    * The provided set of members will be used to connect to the other members in the Raft cluster.
    *
-   * @param address The local server member address.
+   * @param address The address through which clients and servers connect to the server.
    * @param members The cluster members to which to connect.
    * @return The replica builder.
    */
   public static Builder builder(Address address, Collection<Address> members) {
-    return new Builder(address, members);
+    return new Builder(address, address, members);
+  }
+
+  /**
+   * Returns a new Atomix server builder.
+   * <p>
+   * The provided set of members will be used to connect to the other members in the Raft cluster.
+   *
+   * @param clientAddress The address through which clients connect to the server.
+   * @param serverAddress The local server member address.
+   * @param members The cluster members to which to connect.
+   * @return The replica builder.
+   */
+  public static Builder builder(Address clientAddress, Address serverAddress, Address... members) {
+    return builder(clientAddress, serverAddress, Arrays.asList(Assert.notNull(members, "members")));
+  }
+
+  /**
+   * Returns a new Atomix server builder.
+   * <p>
+   * The provided set of members will be used to connect to the other members in the Raft cluster.
+   *
+   * @param clientAddress The address through which clients connect to the server.
+   * @param serverAddress The local server member address.
+   * @param members The cluster members to which to connect.
+   * @return The replica builder.
+   */
+  public static Builder builder(Address clientAddress, Address serverAddress, Collection<Address> members) {
+    return new Builder(clientAddress, serverAddress, members);
   }
 
   private final CopycatServer server;
@@ -135,7 +163,7 @@ public final class AtomixServer implements Managed<AtomixServer> {
    * <p>
    * The server builder configures an {@link AtomixServer} to listen for connections from clients and other
    * servers, connect to other servers in a cluster, and manage a replicated log. To create a server builder,
-   * use the {@link #builder(Address, Address...)} method:
+   * use the {@link #builder(Address, Address, Address...)} method:
    * <pre>
    *   {@code
    *   AtomixServer server = AtomixServer.builder(address, servers)
@@ -155,10 +183,41 @@ public final class AtomixServer implements Managed<AtomixServer> {
    */
   public static class Builder extends io.atomix.catalyst.util.Builder<AtomixServer> {
     private final CopycatServer.Builder builder;
-    private Transport transport;
 
-    private Builder(Address address, Collection<Address> members) {
-      this.builder = CopycatServer.builder(address, members);
+    private Builder(Address clientAddress, Address serverAddress, Collection<Address> members) {
+      this.builder = CopycatServer.builder(clientAddress, serverAddress, members).withStateMachine(new ResourceManager());
+    }
+
+    /**
+     * Sets the client and server transport, returning the server builder for method chaining.
+     * <p>
+     * The configured transport should be the same transport as all other nodes in the cluster.
+     * If no transport is explicitly provided, the instance will default to the {@code NettyTransport}
+     * if available on the classpath.
+     *
+     * @param transport The transport.
+     * @return The server builder.
+     * @throws NullPointerException if {@code transport} is null
+     */
+    public Builder withTransport(Transport transport) {
+      builder.withTransport(transport);
+      return this;
+    }
+
+    /**
+     * Sets the client transport, returning the server builder for method chaining.
+     * <p>
+     * The configured transport should be the transport through which clients connect to the cluster.
+     * Client transports on all nodes must be identical. If no client transport is provided, the server
+     * transport will be shared for clients.
+     *
+     * @param transport The client transport.
+     * @return The server builder.
+     * @throws NullPointerException if {@code transport} is null
+     */
+    public Builder withClientTransport(Transport transport) {
+      builder.withClientTransport(transport);
+      return this;
     }
 
     /**
@@ -172,8 +231,8 @@ public final class AtomixServer implements Managed<AtomixServer> {
      * @return The server builder.
      * @throws NullPointerException if {@code transport} is null
      */
-    public Builder withTransport(Transport transport) {
-      this.transport = Assert.notNull(transport, "transport");
+    public Builder withServerTransport(Transport transport) {
+      builder.withServerTransport(transport);
       return this;
     }
 
@@ -222,6 +281,46 @@ public final class AtomixServer implements Managed<AtomixServer> {
      */
     public Builder withStorage(Storage storage) {
       builder.withStorage(storage);
+      return this;
+    }
+
+    /**
+     * Sets the server quorum hint.
+     * <p>
+     * The quorum hint is the number of servers that should participate in the Raft consensus algorithm
+     * as full voting members. If the number of servers and {@link AtomixReplica replicas} in the cluster
+     * is less than the quorum hint, all servers will be voting members, otherwise the system will attempt
+     * to promote and demote servers as necessary to maintain the configured quorum size.
+     * <p>
+     * The quorum hint should always be an odd number for the greatest fault tolerance. Increasing the quorum
+     * hint will result in higher latency for operations committed to the cluster. Decreasing the quorum hint
+     * will result in lower tolerance for failures but also lower latency for writes.
+     *
+     * @param quorumHint The number of servers to participate in the Raft consensus algorithm.
+     * @return The server builder.
+     * @throws IllegalArgumentException If the quorum hint is not positive
+     */
+    public Builder withQuorumHint(int quorumHint) {
+      builder.withQuorumHint(quorumHint);
+      return this;
+    }
+
+    /**
+     * Sets the server backup count.
+     * <p>
+     * The backup count is the <em>maximum</em> number of backup servers per active voting member of the
+     * Raft cluster. Backup servers are kept up to date by Raft followers and will be promoted to active
+     * Raft voting members in the event of a failure of a voting member. Increasing the number of backup
+     * servers will increase the load on the cluster, but note that it should not increase the latency of
+     * updates since backups do not participate in commitment of operations to the Raft cluster. Decreasing
+     * the number of backup servers may increase the amount of time necessary to replace a failed server
+     * and regain increased availability.
+     *
+     * @param backupCount The number of backup servers per active server.
+     * @return The server builder.
+     */
+    public Builder withBackupCount(int backupCount) {
+      builder.withBackupCount(backupCount);
       return this;
     }
 
@@ -289,21 +388,7 @@ public final class AtomixServer implements Managed<AtomixServer> {
      */
     @Override
     public AtomixServer build() {
-      // If no transport was configured by the user, attempt to load the Netty transport.
-      if (transport == null) {
-        try {
-          transport = (Transport) Class.forName("io.atomix.catalyst.transport.NettyTransport").newInstance();
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-          throw new ConfigurationException("transport not configured");
-        }
-      }
-
-      // Construct the underlying CopycatServer. The server should have been configured with a CombinedTransport
-      // that facilitates the local client connecting directly to the server.
-      CopycatServer server = builder.withTransport(transport)
-        .withStateMachine(new ResourceManager()).build();
-
-      return new AtomixServer(server);
+      return new AtomixServer(builder.build());
     }
   }
 

@@ -25,9 +25,9 @@ import java.util.Arrays;
 import java.util.Collection;
 
 /**
- * Provides an interface for creating and operating on {@link DistributedResource}s remotely.
+ * Provides an interface for creating and operating on {@link io.atomix.resource.Resource}s remotely.
  * <p>
- * This {@link Atomix} implementation facilitates working with {@link DistributedResource}s remotely as
+ * This {@link Atomix} implementation facilitates working with {@link io.atomix.resource.Resource}s remotely as
  * a client of the Atomix cluster. To create a client, construct a client builder via {@link #builder(Address...)}.
  * The builder requires a list of {@link Address}es to which to connect.
  * <pre>

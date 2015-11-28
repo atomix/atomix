@@ -50,12 +50,11 @@ public class QueueState extends ResourceStateMachine {
    */
   public boolean add(Commit<QueueCommands.Add> commit) {
     try {
-      queue.add(commit);
+      return queue.add(commit);
     } catch (Exception e) {
       commit.clean();
       throw e;
     }
-    return false;
   }
 
   /**
@@ -63,12 +62,11 @@ public class QueueState extends ResourceStateMachine {
    */
   public boolean offer(Commit<QueueCommands.Offer> commit) {
     try {
-      queue.offer(commit);
+      return queue.offer(commit);
     } catch (Exception e) {
       commit.clean();
       throw e;
     }
-    return false;
   }
 
   /**

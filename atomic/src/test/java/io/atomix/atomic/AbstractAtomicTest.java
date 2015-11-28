@@ -19,9 +19,8 @@ import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.LocalServerRegistry;
 import io.atomix.catalyst.transport.LocalTransport;
 import io.atomix.copycat.client.CopycatClient;
-import io.atomix.copycat.client.RaftClient;
 import io.atomix.copycat.server.CopycatServer;
-import io.atomix.copycat.server.RaftServer;
+import io.atomix.copycat.server.state.Member;
 import io.atomix.copycat.server.storage.Storage;
 import io.atomix.copycat.server.storage.StorageLevel;
 import io.atomix.resource.ResourceStateMachine;
@@ -34,6 +33,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Abstract atomix tests.
@@ -44,9 +44,9 @@ public abstract class AbstractAtomicTest extends ConcurrentTestCase {
   private static final File directory = new File("target/test-logs");
   protected LocalServerRegistry registry;
   protected int port;
-  protected List<Address> members;
-  protected List<RaftClient> clients = new ArrayList<>();
-  protected List<RaftServer> servers = new ArrayList<>();
+  protected List<Member> members;
+  protected List<CopycatClient> clients = new ArrayList<>();
+  protected List<CopycatServer> servers = new ArrayList<>();
 
   /**
    * Creates a new resource state machine.
@@ -56,29 +56,26 @@ public abstract class AbstractAtomicTest extends ConcurrentTestCase {
   protected abstract ResourceStateMachine createStateMachine();
 
   /**
-   * Returns the next server address.
+   * Returns the next server member.
    *
-   * @return The next server address.
+   * @return The next server member.
    */
-  private Address nextAddress() {
-    Address address = new Address("localhost", port++);
-    members.add(address);
-    return address;
+  private Member nextMember() {
+    return new Member(new Address("localhost", ++port), new Address("localhost", port + 1000));
   }
 
   /**
    * Creates a set of Raft servers.
    */
-  protected List<RaftServer> createServers(int nodes) throws Throwable {
-    List<RaftServer> servers = new ArrayList<>();
+  protected List<CopycatServer> createServers(int nodes) throws Throwable {
+    List<CopycatServer> servers = new ArrayList<>();
 
-    List<Address> members = new ArrayList<>();
     for (int i = 0; i < nodes; i++) {
-      members.add(nextAddress());
+      members.add(nextMember());
     }
 
     for (int i = 0; i < nodes; i++) {
-      RaftServer server = createServer(members.get(i));
+      CopycatServer server = createServer(members.get(i));
       server.open().thenRun(this::resume);
       servers.add(server);
     }
@@ -89,32 +86,10 @@ public abstract class AbstractAtomicTest extends ConcurrentTestCase {
   }
 
   /**
-   * Creates a set of Raft servers.
-   */
-  protected List<RaftServer> createServers(int live, int total) throws Throwable {
-    List<RaftServer> servers = new ArrayList<>();
-
-    List<Address> members = new ArrayList<>();
-    for (int i = 0; i < total; i++) {
-      members.add(nextAddress());
-    }
-
-    for (int i = 0; i < live; i++) {
-      RaftServer server = createServer(members.get(i));
-      server.open().thenRun(this::resume);
-      servers.add(server);
-    }
-
-    await(0, live);
-
-    return servers;
-  }
-
-  /**
    * Creates a Raft server.
    */
-  protected RaftServer createServer(Address address) {
-    RaftServer server = CopycatServer.builder(address, members)
+  protected CopycatServer createServer(Member member) {
+    CopycatServer server = CopycatServer.builder(member.clientAddress(), member.serverAddress(), members.stream().map(Member::serverAddress).collect(Collectors.toList()))
       .withTransport(new LocalTransport(registry))
       .withStorage(new Storage(StorageLevel.MEMORY))
       .withStateMachine(createStateMachine())
@@ -126,8 +101,8 @@ public abstract class AbstractAtomicTest extends ConcurrentTestCase {
   /**
    * Creates a Copycat client.
    */
-  protected RaftClient createClient() throws Throwable {
-    RaftClient client = CopycatClient.builder(members).withTransport(new LocalTransport(registry)).build();
+  protected CopycatClient createClient() throws Throwable {
+    CopycatClient client = CopycatClient.builder(members.stream().map(Member::clientAddress).collect(Collectors.toList())).withTransport(new LocalTransport(registry)).build();
     client.open().thenRun(this::resume);
     await();
     clients.add(client);

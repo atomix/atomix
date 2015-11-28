@@ -18,7 +18,7 @@ package io.atomix.coordination;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.coordination.state.TopicCommands;
 import io.atomix.coordination.state.TopicState;
-import io.atomix.copycat.client.RaftClient;
+import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.AbstractResource;
 import io.atomix.resource.Consistency;
 import io.atomix.resource.ResourceInfo;
@@ -62,7 +62,7 @@ public class DistributedTopic<T> extends AbstractResource {
   private final Set<Consumer<T>> listeners = new HashSet<>();
 
   @SuppressWarnings("unchecked")
-  public DistributedTopic(RaftClient client) {
+  public DistributedTopic(CopycatClient client) {
     super(client);
     client.session().onEvent("message", event -> {
       for (Consumer<T> listener : listeners) {

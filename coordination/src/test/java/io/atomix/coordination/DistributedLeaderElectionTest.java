@@ -16,7 +16,7 @@
 package io.atomix.coordination;
 
 import io.atomix.coordination.state.LeaderElectionState;
-import io.atomix.copycat.client.RaftClient;
+import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.ResourceStateMachine;
 import org.testng.annotations.Test;
 
@@ -53,8 +53,8 @@ public class DistributedLeaderElectionTest extends AbstractCoordinationTest {
   public void testNextElection() throws Throwable {
     createServers(3);
 
-    RaftClient client1 = createClient();
-    RaftClient client2 = createClient();
+    CopycatClient client1 = createClient();
+    CopycatClient client2 = createClient();
 
     DistributedLeaderElection election1 = new DistributedLeaderElection(client1);
     DistributedLeaderElection election2 = new DistributedLeaderElection(client2);

@@ -38,9 +38,9 @@ public class StandaloneServerExample {
     if (args.length < 2)
       throw new IllegalArgumentException("must supply a local port and at least one remote host:port tuple");
 
-    int port = Integer.valueOf(args[0]);
-
-    Address address = new Address(InetAddress.getLocalHost().getHostName(), port);
+    String[] mainParts = args[1].split(":");
+    Address serverAddress = new Address(mainParts[0], Integer.valueOf(mainParts[1]));
+    Address clientAddress = new Address(mainParts[0], Integer.valueOf(mainParts[2]));
 
     List<Address> members = new ArrayList<>();
     for (int i = 1; i < args.length; i++) {
@@ -48,10 +48,10 @@ public class StandaloneServerExample {
       members.add(new Address(parts[0], Integer.valueOf(parts[1])));
     }
 
-    AtomixServer server = AtomixServer.builder(address, members)
+    AtomixServer server = AtomixServer.builder(clientAddress, serverAddress, members)
         .withTransport(new NettyTransport())
         .withStorage(Storage.builder()
-          .withDirectory(System.getProperty("user.dir") + "/logs/" + port)
+          .withDirectory(System.getProperty("user.dir") + "/logs/" + mainParts[1])
           .withMaxEntriesPerSegment(16)
           .build())
         .build();
