@@ -23,8 +23,8 @@ import io.atomix.catalyst.util.concurrent.Futures;
 import io.atomix.coordination.state.MessageBusCommands;
 import io.atomix.coordination.state.MessageBusState;
 import io.atomix.copycat.client.RaftClient;
-import io.atomix.resource.AbstractResource;
 import io.atomix.resource.Consistency;
+import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceInfo;
 
 import java.util.*;
@@ -39,7 +39,7 @@ import java.util.function.Function;
  * Message buses handle management of location information and connections and use Atomix's underlying
  * {@link io.atomix.catalyst.transport.Transport} to communicate across the cluster.
  * <p>
- * To create a message bus resource, use the {@code DistribtuedMessageBus} class or constructor:
+ * To create a message bus resource, use the {@code DistributedMessageBus} class or constructor:
  * <pre>
  *   {@code
  *   atomix.get("bus", DistributedMessageBus.class).thenAccept(bus -> {
@@ -50,8 +50,7 @@ import java.util.function.Function;
  * Once a message bus instance has been created, it's not immediately opened. The message bus instance must be explicitly
  * opened by calling {@link #open(Address)}, providing an {@link Address} to which to bind the message bus server. Because
  * each message bus instance runs on a separate server, it's recommended that nodes use a singleton instance of this
- * resource by using {@link io.atomix.Atomix#get(String, Class)} rather than {@link io.atomix.Atomix#create(String, Class)}
- * to get a reference to the resource.
+ * resource by using {@code get(...)} rather than {@code create(...)} to get a reference to the resource.
  * <p>
  * Messages are produced and consumed by {@link MessageProducer producers} and {@link MessageConsumer consumers} respectively.
  * Each producer and consumer is associated with a string message bus topic.
@@ -71,7 +70,7 @@ import java.util.function.Function;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 @ResourceInfo(stateMachine=MessageBusState.class)
-public class DistributedMessageBus extends AbstractResource {
+public class DistributedMessageBus extends Resource {
   private Client client;
   private Server server;
   private final Map<Integer, Connection> connections = new HashMap<>();

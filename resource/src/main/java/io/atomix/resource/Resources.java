@@ -34,7 +34,7 @@ public final class Resources {
    */
   public static ResourceInfo getInfo(Class<?> type) {
     Class<?> clazz = type;
-    while (AbstractResource.class.isAssignableFrom(clazz)) {
+    while (Resource.class.isAssignableFrom(clazz)) {
       ResourceInfo info = type.getAnnotation(ResourceInfo.class);
       if (info != null)
         return info;

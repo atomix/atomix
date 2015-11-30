@@ -44,7 +44,9 @@ public class ResourceManager extends StateMachine {
     this.executor = executor;
     executor.register(InstanceOperation.class, (Function<Commit<InstanceOperation>, Object>) this::operateResource);
     executor.register(GetResource.class, this::getResource);
+    executor.register(GetResourceIfExists.class, this::getResourceIfExists);
     executor.register(CreateResource.class, this::createResource);
+    executor.register(CreateResourceIfExists.class, this::createResourceIfExists);
     executor.register(DeleteResource.class, this::deleteResource);
     executor.register(ResourceExists.class, this::resourceExists);
   }
@@ -74,7 +76,7 @@ public class ResourceManager extends StateMachine {
   /**
    * Gets a resource.
    */
-  protected long getResource(Commit<GetResource> commit) {
+  protected long getResource(Commit<? extends GetResource> commit) {
     String key = commit.operation().key();
 
     // Lookup the resource ID for the resource key.
@@ -143,9 +145,24 @@ public class ResourceManager extends StateMachine {
   }
 
   /**
+   * Applies a get resource if exists commit.
+   */
+  @SuppressWarnings("unchecked")
+  private long getResourceIfExists(Commit<GetResourceIfExists> commit) {
+    String key = commit.operation().key();
+
+    // Lookup the resource ID for the resource key.
+    Long resourceId = keys.get(key);
+    if (resourceId != null) {
+      return getResource(commit);
+    }
+    return 0;
+  }
+
+  /**
    * Applies a create resource commit.
    */
-  private long createResource(Commit<CreateResource> commit) {
+  private long createResource(Commit<? extends CreateResource> commit) {
     String key = commit.operation().key();
 
     // Get the resource ID for the key.
@@ -193,6 +210,21 @@ public class ResourceManager extends StateMachine {
     resource.stateMachine.register(session);
 
     return id;
+  }
+
+  /**
+   * Applies a create resource if exists commit.
+   */
+  @SuppressWarnings("unchecked")
+  private long createResourceIfExists(Commit<CreateResourceIfExists> commit) {
+    String key = commit.operation().key();
+
+    // Lookup the resource ID for the resource key.
+    Long resourceId = keys.get(key);
+    if (resourceId != null) {
+      return createResource(commit);
+    }
+    return 0;
   }
 
   /**

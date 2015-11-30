@@ -21,8 +21,8 @@ import io.atomix.coordination.state.MembershipGroupCommands;
 import io.atomix.coordination.state.MembershipGroupState;
 import io.atomix.copycat.client.Command;
 import io.atomix.copycat.client.RaftClient;
-import io.atomix.resource.AbstractResource;
 import io.atomix.resource.Consistency;
+import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceInfo;
 
 import java.time.Duration;
@@ -92,7 +92,7 @@ import java.util.function.Consumer;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 @ResourceInfo(stateMachine=MembershipGroupState.class)
-public class DistributedMembershipGroup extends AbstractResource {
+public class DistributedMembershipGroup extends Resource {
   private final Listeners<GroupMember> joinListeners = new Listeners<>();
   private final Listeners<GroupMember> leaveListeners = new Listeners<>();
   private GroupMember member;

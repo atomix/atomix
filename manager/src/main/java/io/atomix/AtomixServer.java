@@ -34,7 +34,7 @@ import java.util.concurrent.CompletableFuture;
  * Standalone Atomix server.
  * <p>
  * The {@code AtomixServer} provides a standalone node that can server as a member of a cluster to
- * service operations on {@link DistributedResource}s from an {@link AtomixClient}. Servers do not expose
+ * service operations on {@link io.atomix.resource.Resource}s from an {@link AtomixClient}. Servers do not expose
  * an interface for managing resources directly. Users can only access server resources through an
  * {@link Atomix} implementation.
  * <p>
