@@ -35,6 +35,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -198,6 +199,64 @@ public abstract class Atomix implements Managed<Atomix> {
    */
   public <T extends Resource> CompletableFuture<T> get(String key, Class<? super T> type, Function<RaftClient, T> factory) {
     return this.factory.get(key, type, factory);
+  }
+
+  /**
+   * Returns keys of all existing resources.
+   *
+   * <p>
+   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
+   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
+   * use the {@link CompletableFuture#get()} method:
+   * <pre>
+   *   {@code
+   *   Collection<String> resourceKeys = atomix.keys().get();
+   *   }
+   * </pre>
+   * Alternatively, to execute the operation asynchronous and be notified once the result is received in a different
+   * thread, use one of the many completable future callbacks:
+   * <pre>
+   *   {@code
+   *   atomix.<Collection<String>>keys().thenAccept(resourceKeys -> {
+   *     ...
+   *   });
+   *   }
+   * </pre>
+   *
+   * @return A completable future to be completed with the keys of all existing resources.
+   */
+  public CompletableFuture<Set<String>> keys() {
+    return this.factory.keys();
+  }
+
+  /**
+   * Returns the keys of existing resources belonging to a resource type.
+   *
+   * <p>
+   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
+   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
+   * use the {@link CompletableFuture#get()} method:
+   * <pre>
+   *   {@code
+   *   Set<String> resourceKeys = atomix.keys(DistributedLock.class).get();
+   *   }
+   * </pre>
+   * Alternatively, to execute the operation asynchronous and be notified once the result is received in a different
+   * thread, use one of the many completable future callbacks:
+   * <pre>
+   *   {@code
+   *   atomix.<Set<String>>keys().thenAccept(resourceKeys -> {
+   *     ...
+   *   });
+   *   }
+   * </pre>
+   *
+   * @param type The resource type by which to filter resources.
+   * @param <T> The resource type.
+   * @return A completable future to be completed with the set of resource keys.
+   */
+  public <T extends Resource> CompletableFuture<Set<String>> keys(Class<? super T> type) {
+    return this.factory.keys(type);
   }
 
   /**

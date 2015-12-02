@@ -25,7 +25,9 @@ import io.atomix.resource.ResourceStateMachine;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Resource manager.
@@ -49,6 +51,7 @@ public class ResourceManager extends StateMachine {
     executor.register(CreateResourceIfExists.class, this::createResourceIfExists);
     executor.register(DeleteResource.class, this::deleteResource);
     executor.register(ResourceExists.class, this::resourceExists);
+    executor.register(GetResourceKeys.class, this::getResourceKeys);
   }
 
   /**
@@ -263,6 +266,25 @@ public class ResourceManager extends StateMachine {
       return true;
     } finally {
       commit.clean();
+    }
+  }
+
+  /**
+   * Handles get resource keys commit.
+   */
+  protected Set<String> getResourceKeys(Commit<GetResourceKeys> commit) {
+    try {
+      Class<? extends ResourceStateMachine> stateMachineType = commit.operation().type();
+      if (stateMachineType == null) {
+        return keys.keySet();
+      }
+      return resources.entrySet()
+               .stream()
+               .filter(e -> e.getValue().stateMachine.getClass().equals(stateMachineType))
+               .map(e -> e.getValue().key)
+               .collect(Collectors.toSet());
+    } finally {
+      commit.close();
     }
   }
 

@@ -23,3 +23,4 @@ io.atomix.manager.CreateResource
 io.atomix.manager.CreateResourceIfExists
 io.atomix.manager.DeleteResource
 io.atomix.manager.ResourceExists
+io.atomix.manager.GetResourceKeys

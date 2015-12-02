@@ -26,12 +26,15 @@ import io.atomix.copycat.client.RaftClient;
 import io.atomix.copycat.client.RecoveryStrategy;
 import io.atomix.copycat.client.session.Session;
 import io.atomix.manager.*;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
@@ -145,6 +148,28 @@ public class InstanceFactory implements Managed<InstanceFactory> {
         T instance = factory.apply(new InstanceClient(id, client, transport));
         return new Instance<>(key, type, Instance.Method.GET, instance);
       })).thenApply(instance -> (T) instance.instance);
+  }
+
+  /**
+   * Returns the keys of all existing resources.
+   *
+   * @return A completable future to be completed with the set of resource keys.
+   */
+  @SuppressWarnings("unchecked")
+  public CompletableFuture<Set<String>> keys() {
+    return client.submit(new GetResourceKeys());
+  }
+
+  /**
+   * Returns the keys of resources belonging to a resource type.
+   *
+   * @param <T> The resource type.
+   * @return A completable future to be completed with the set of resource keys.
+   */
+  @SuppressWarnings("unchecked")
+  public <T extends Resource> CompletableFuture<Set<String>> keys(Class<? super T> type) {
+    ResourceInfo info = Resources.getInfo(Assert.notNull(type, "type"));
+    return client.submit(new GetResourceKeys(info.stateMachine()));
   }
 
   /**
