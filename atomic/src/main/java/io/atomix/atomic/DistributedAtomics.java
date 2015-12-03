@@ -13,27 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.resource;
+package io.atomix.atomic;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import io.atomix.resource.ResourceType;
 
 /**
- * Annotation for defining information about a resource.
+ * Distributed atomic resource types.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface ResourceInfo {
+public final class DistributedAtomics {
+
+  private DistributedAtomics() {
+  }
 
   /**
-   * Returns the resource state machine class.
-   *
-   * @return The resource state machine chass.
+   * Distributed atomic value type.
    */
-  Class<? extends ResourceStateMachine> stateMachine();
+  public static final ResourceType<DistributedAtomicValue> VALUE = DistributedAtomicValue.TYPE;
+
+  /**
+   * Distributed atomic long type.
+   */
+  public static final ResourceType<DistributedAtomicLong> LONG = DistributedAtomicLong.TYPE;
 
 }

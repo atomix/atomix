@@ -18,7 +18,8 @@ package io.atomix.atomic;
 import io.atomix.atomic.state.AtomicValueState;
 import io.atomix.copycat.client.RaftClient;
 import io.atomix.resource.Consistency;
-import io.atomix.resource.ResourceInfo;
+import io.atomix.resource.ResourceType;
+import io.atomix.resource.ResourceTypeInfo;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
@@ -28,12 +29,19 @@ import java.util.function.Function;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-@ResourceInfo(stateMachine=AtomicValueState.class)
+@ResourceTypeInfo(id=-2, stateMachine=AtomicValueState.class)
 public class DistributedAtomicLong extends DistributedAtomicValue<Long> {
+  public static final ResourceType<DistributedAtomicLong> TYPE = new ResourceType<>(DistributedAtomicLong.class);
+
   private Long value;
 
   public DistributedAtomicLong(RaftClient client) {
     super(client);
+  }
+
+  @Override
+  public ResourceType type() {
+    return TYPE;
   }
 
   @Override

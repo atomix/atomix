@@ -57,6 +57,13 @@ public abstract class Resource {
   }
 
   /**
+   * Returns the resource type.
+   *
+   * @return The resource type.
+   */
+  public abstract ResourceType type();
+
+  /**
    * Returns the resource thread context.
    *
    * @return The resource thread context.

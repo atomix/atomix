@@ -21,7 +21,8 @@ import io.atomix.coordination.state.TopicState;
 import io.atomix.copycat.client.RaftClient;
 import io.atomix.resource.Consistency;
 import io.atomix.resource.Resource;
-import io.atomix.resource.ResourceInfo;
+import io.atomix.resource.ResourceType;
+import io.atomix.resource.ResourceTypeInfo;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -57,8 +58,10 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@ResourceInfo(stateMachine=TopicState.class)
+@ResourceTypeInfo(id=-25, stateMachine=TopicState.class)
 public class DistributedTopic<T> extends Resource {
+  public static final ResourceType<DistributedTopic> TYPE = new ResourceType<>(DistributedTopic.class);
+
   private final Set<Consumer<T>> listeners = new HashSet<>();
 
   @SuppressWarnings("unchecked")
@@ -69,6 +72,11 @@ public class DistributedTopic<T> extends Resource {
         listener.accept((T) event);
       }
     });
+  }
+
+  @Override
+  public ResourceType type() {
+    return TYPE;
   }
 
   @Override

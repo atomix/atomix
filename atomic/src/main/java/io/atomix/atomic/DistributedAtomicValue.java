@@ -21,7 +21,8 @@ import io.atomix.catalyst.util.Listener;
 import io.atomix.copycat.client.RaftClient;
 import io.atomix.resource.Consistency;
 import io.atomix.resource.Resource;
-import io.atomix.resource.ResourceInfo;
+import io.atomix.resource.ResourceType;
+import io.atomix.resource.ResourceTypeInfo;
 
 import java.time.Duration;
 import java.util.Collections;
@@ -34,8 +35,10 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@ResourceInfo(stateMachine=AtomicValueState.class)
+@ResourceTypeInfo(id=-1, stateMachine=AtomicValueState.class)
 public class DistributedAtomicValue<T> extends Resource {
+  public static final ResourceType<DistributedAtomicValue> TYPE = new ResourceType<>(DistributedAtomicValue.class);
+
   private final java.util.Set<Consumer<T>> changeListeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
   public DistributedAtomicValue(RaftClient client) {
@@ -45,6 +48,11 @@ public class DistributedAtomicValue<T> extends Resource {
         listener.accept(event);
       }
     });
+  }
+
+  @Override
+  public ResourceType type() {
+    return TYPE;
   }
 
   @Override

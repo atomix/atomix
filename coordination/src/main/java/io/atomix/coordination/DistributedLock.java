@@ -20,7 +20,8 @@ import io.atomix.coordination.state.LockState;
 import io.atomix.copycat.client.RaftClient;
 import io.atomix.resource.Consistency;
 import io.atomix.resource.Resource;
-import io.atomix.resource.ResourceInfo;
+import io.atomix.resource.ResourceType;
+import io.atomix.resource.ResourceTypeInfo;
 
 import java.time.Duration;
 import java.util.Queue;
@@ -54,13 +55,20 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@ResourceInfo(stateMachine=LockState.class)
+@ResourceTypeInfo(id=-21, stateMachine=LockState.class)
 public class DistributedLock extends Resource {
+  public static final ResourceType<DistributedLock> TYPE = new ResourceType<DistributedLock>(DistributedLock.class);
+
   private final Queue<Consumer<Boolean>> queue = new ConcurrentLinkedQueue<>();
 
   public DistributedLock(RaftClient client) {
     super(client);
     client.session().onEvent("lock", this::handleEvent);
+  }
+
+  @Override
+  public ResourceType type() {
+    return TYPE;
   }
 
   @Override

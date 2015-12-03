@@ -21,7 +21,8 @@ import io.atomix.coordination.state.LeaderElectionState;
 import io.atomix.copycat.client.RaftClient;
 import io.atomix.resource.Consistency;
 import io.atomix.resource.Resource;
-import io.atomix.resource.ResourceInfo;
+import io.atomix.resource.ResourceType;
+import io.atomix.resource.ResourceTypeInfo;
 
 import java.util.Collections;
 import java.util.Set;
@@ -62,8 +63,10 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@ResourceInfo(stateMachine=LeaderElectionState.class)
+@ResourceTypeInfo(id=-22, stateMachine=LeaderElectionState.class)
 public class DistributedLeaderElection extends Resource {
+  public static final ResourceType<DistributedLeaderElection> TYPE = new ResourceType<>(DistributedLeaderElection.class);
+
   private final Set<Consumer<Long>> listeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
   public DistributedLeaderElection(RaftClient client) {
@@ -73,6 +76,11 @@ public class DistributedLeaderElection extends Resource {
         listener.accept(epoch);
       }
     });
+  }
+
+  @Override
+  public ResourceType type() {
+    return TYPE;
   }
 
   @Override

@@ -17,12 +17,10 @@ package io.atomix.manager;
 
 import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
-import io.atomix.catalyst.serializer.SerializationException;
 import io.atomix.catalyst.serializer.SerializeWith;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.copycat.client.Command;
-import io.atomix.resource.ResourceStateMachine;
 
 /**
  * Create resource command.
@@ -31,7 +29,7 @@ import io.atomix.resource.ResourceStateMachine;
  */
 @SerializeWith(id=36)
 public class CreateResource extends KeyOperation<Long> implements Command<Long> {
-  private Class<? extends ResourceStateMachine> type;
+  private int type;
 
   public CreateResource() {
   }
@@ -39,7 +37,7 @@ public class CreateResource extends KeyOperation<Long> implements Command<Long> 
   /**
    * @throws NullPointerException if {@code path} or {@code type} are null
    */
-  public CreateResource(String key, Class<? extends ResourceStateMachine> type) {
+  public CreateResource(String key, int type) {
     super(key);
     this.type = Assert.notNull(type, "type");
   }
@@ -49,28 +47,21 @@ public class CreateResource extends KeyOperation<Long> implements Command<Long> 
    *
    * @return The resource state machine class.
    */
-  public Class<? extends ResourceStateMachine> type() {
+  public int type() {
     return type;
   }
 
   @Override
   public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
     super.writeObject(buffer, serializer);
-    buffer.writeInt(type.getName().getBytes().length).write(type.getName().getBytes());
+    buffer.writeShort((short) type);
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public void readObject(BufferInput<?> buffer, Serializer serializer) {
     super.readObject(buffer, serializer);
-    byte[] bytes = new byte[buffer.readInt()];
-    buffer.read(bytes);
-    String typeName = new String(bytes);
-    try {
-      type = (Class<? extends ResourceStateMachine>) Class.forName(typeName);
-    } catch (ClassNotFoundException e) {
-      throw new SerializationException(e);
-    }
+    type = buffer.readShort();
   }
 
 }

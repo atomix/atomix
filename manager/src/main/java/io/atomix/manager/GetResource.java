@@ -17,12 +17,10 @@ package io.atomix.manager;
 
 import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
-import io.atomix.catalyst.serializer.SerializationException;
 import io.atomix.catalyst.serializer.SerializeWith;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.copycat.client.Command;
-import io.atomix.resource.ResourceStateMachine;
 
 /**
  * Get resource command.
@@ -31,7 +29,7 @@ import io.atomix.resource.ResourceStateMachine;
  */
 @SerializeWith(id=35)
 public class GetResource extends KeyOperation<Long> implements Command<Long> {
-  private Class<? extends ResourceStateMachine> type;
+  private int type;
 
   public GetResource() {
   }
@@ -39,9 +37,9 @@ public class GetResource extends KeyOperation<Long> implements Command<Long> {
   /**
    * @throws NullPointerException if {@code path} or {@code type} are null
    */
-  public GetResource(String key, Class<? extends ResourceStateMachine> type) {
+  public GetResource(String key, int type) {
     super(key);
-    this.type = Assert.notNull(type, "type");
+    this.type = Assert.argNot(type, type == 0, "type cannot be 0");
   }
 
   @Override
@@ -50,32 +48,25 @@ public class GetResource extends KeyOperation<Long> implements Command<Long> {
   }
 
   /**
-   * Returns the resource state machine class.
+   * Returns the resource type.
    *
-   * @return The resource state machine class.
+   * @return The resource type.
    */
-  public Class<? extends ResourceStateMachine> type() {
+  public int type() {
     return type;
   }
 
   @Override
   public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
     super.writeObject(buffer, serializer);
-    buffer.writeInt(type.getName().getBytes().length).write(type.getName().getBytes());
+    buffer.writeShort((short) type);
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public void readObject(BufferInput<?> buffer, Serializer serializer) {
     super.readObject(buffer, serializer);
-    byte[] bytes = new byte[buffer.readInt()];
-    buffer.read(bytes);
-    String typeName = new String(bytes);
-    try {
-      type = (Class<? extends ResourceStateMachine>) Class.forName(typeName);
-    } catch (ClassNotFoundException e) {
-      throw new SerializationException(e);
-    }
+    type = buffer.readShort();
   }
 
 }

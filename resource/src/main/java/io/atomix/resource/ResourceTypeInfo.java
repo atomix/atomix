@@ -13,26 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.manager;
+package io.atomix.resource;
 
-import io.atomix.catalyst.serializer.SerializeWith;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * Create resource if exists command.
+ * Resource type info.
  *
- * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
+ * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-@SerializeWith(id=39)
-public class CreateResourceIfExists extends CreateResource {
-
-  public CreateResourceIfExists() {
-  }
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface ResourceTypeInfo {
 
   /**
-   * @throws NullPointerException if {@code path} or {@code type} are null
+   * The resource type ID.
    */
-  public CreateResourceIfExists(String key, int type) {
-    super(key, type);
-  }
+  int id();
+
+  /**
+   * The resource state machine class.
+   */
+  Class<? extends ResourceStateMachine> stateMachine();
 
 }
