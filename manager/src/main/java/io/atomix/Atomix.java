@@ -23,21 +23,14 @@ import io.atomix.catalyst.util.Managed;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.copycat.client.RaftClient;
-import io.atomix.copycat.client.RecoveryStrategy;
-import io.atomix.manager.CreateResource;
-import io.atomix.manager.GetResource;
 import io.atomix.resource.InstanceFactory;
 import io.atomix.resource.Resource;
-import io.atomix.resource.ResourceInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
-import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 /**
@@ -391,99 +384,6 @@ public abstract class Atomix implements Managed<Atomix> {
   @Override
   public String toString() {
     return String.format("%s[session=%s]", getClass().getSimpleName(), factory.session());
-  }
-
-  /**
-   * Resource recovery strategy.
-   */
-  private static class ResourceRecoveryStrategy implements RecoveryStrategy {
-    private Map<Long, ResourceHolder> resources = new ConcurrentHashMap<>();
-
-    /**
-     * Registers a resource.
-     */
-    private void register(long resourceId, ResourceHolder resource) {
-      resources.put(resourceId, resource);
-    }
-
-    @Override
-    public void recover(RaftClient client) {
-      client.open().whenComplete((result, error) -> {
-        recoverResources(client);
-      });
-    }
-
-    /**
-     * Recovers resources.
-     */
-    private void recoverResources(RaftClient client) {
-      Iterator<Map.Entry<Long, ResourceHolder>> iterator = resources.entrySet().iterator();
-      recoverResources(client, iterator, new ConcurrentHashMap<>(), new CompletableFuture<>()).whenComplete((resources, error) -> {
-        this.resources = resources;
-      });
-    }
-
-    /**
-     * Recursively recovers resources.
-     */
-    private CompletableFuture<Map<Long, ResourceHolder>> recoverResources(RaftClient client, Iterator<Map.Entry<Long, ResourceHolder>> iterator, Map<Long, ResourceHolder> resources, CompletableFuture<Map<Long, ResourceHolder>> future) {
-      if (iterator.hasNext()) {
-        ResourceHolder resource = iterator.next().getValue();
-        LOGGER.debug("Recovering resource: {}", resource.path);
-        if (resource.method == ResourceHolder.Method.GET) {
-          client.submit(new GetResource(resource.path, resource.info.stateMachine())).whenComplete((result, error) -> {
-            if (error == null) {
-              resources.put(result, resource);
-              recoverResources(client, iterator, resources, future);
-            } else {
-              LOGGER.warn("Failed to recover resource: {}", resource.path);
-            }
-          });
-        } else if (resource.method == ResourceHolder.Method.CREATE) {
-          client.submit(new CreateResource(resource.path, resource.info.stateMachine())).whenComplete((result, error) -> {
-            if (error == null) {
-              resources.put(result, resource);
-              recoverResources(client, iterator, resources, future);
-            } else {
-              LOGGER.warn("Failed to recover resource: {}", resource.path);
-            }
-          });
-        }
-      } else {
-        future.complete(null);
-      }
-      return future;
-    }
-  }
-
-  /**
-   * Resource holder.
-   */
-  private static class ResourceHolder {
-
-    /**
-     * The method with which the resource was opened.
-     */
-    private static enum Method {
-      GET,
-      CREATE
-    }
-
-    private final String path;
-    private final Class<? extends Resource> type;
-    private final ResourceInfo info;
-    private final Function<RaftClient, Resource> factory;
-    private final Method method;
-    private final Resource instance;
-
-    private ResourceHolder(String path, Class<? extends Resource> type, ResourceInfo info, Function<RaftClient, Resource> factory, Method method, Resource instance) {
-      this.path = path;
-      this.type = type;
-      this.info = info;
-      this.factory = factory;
-      this.method = method;
-      this.instance = instance;
-    }
   }
 
   /**
