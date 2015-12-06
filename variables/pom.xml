@@ -22,34 +22,20 @@
     <version>0.1.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>atomix-all</artifactId>
-  <name>Atomix All</name>
+  <artifactId>atomix-variables</artifactId>
+  <name>Atomix Variables</name>
 
   <dependencies>
     <dependency>
       <groupId>io.atomix</groupId>
-      <artifactId>atomix</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>io.atomix</groupId>
-      <artifactId>atomix-variables</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>io.atomix</groupId>
-      <artifactId>atomix-collections</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>io.atomix</groupId>
-      <artifactId>atomix-coordination</artifactId>
+      <artifactId>atomix-resource</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>io.atomix.catalyst</groupId>
-      <artifactId>catalyst-netty</artifactId>
+      <artifactId>catalyst-local</artifactId>
       <version>${catalyst.version}</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 </project>

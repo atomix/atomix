@@ -83,12 +83,12 @@ public final class AtomixReplica extends Atomix {
    * <p>
    * The provided set of members will be used to connect to the other members in the Raft cluster.
    *
-   * @param address The local server member address.
+   * @param address The address through which clients and servers connect to the replica.
    * @param members The cluster members to which to connect.
    * @return The replica builder.
    */
   public static Builder builder(Address address, Address... members) {
-    return builder(address, Arrays.asList(Assert.notNull(members, "members")));
+    return builder(address, address, Arrays.asList(Assert.notNull(members, "members")));
   }
 
   /**
@@ -96,12 +96,40 @@ public final class AtomixReplica extends Atomix {
    * <p>
    * The provided set of members will be used to connect to the other members in the Raft cluster.
    *
-   * @param address The local server member address.
+   * @param address The address through which clients and servers connect to the replica.
    * @param members The cluster members to which to connect.
    * @return The replica builder.
    */
   public static Builder builder(Address address, Collection<Address> members) {
-    return new Builder(address, members);
+    return new Builder(address, address, members);
+  }
+
+  /**
+   * Returns a new Atomix replica builder.
+   * <p>
+   * The provided set of members will be used to connect to the other members in the Raft cluster.
+   *
+   * @param clientAddress The address through which clients connect to the server.
+   * @param serverAddress The local server member address.
+   * @param members The cluster members to which to connect.
+   * @return The replica builder.
+   */
+  public static Builder builder(Address clientAddress, Address serverAddress, Address... members) {
+    return builder(clientAddress, serverAddress, Arrays.asList(Assert.notNull(members, "members")));
+  }
+
+  /**
+   * Returns a new Atomix replica builder.
+   * <p>
+   * The provided set of members will be used to connect to the other members in the Raft cluster.
+   *
+   * @param clientAddress The address through which clients connect to the server.
+   * @param serverAddress The local server member address.
+   * @param members The cluster members to which to connect.
+   * @return The replica builder.
+   */
+  public static Builder builder(Address clientAddress, Address serverAddress, Collection<Address> members) {
+    return new Builder(clientAddress, serverAddress, members);
   }
 
   private final CopycatServer server;
@@ -214,15 +242,16 @@ public final class AtomixReplica extends Atomix {
    * memory or memory-mapped files.
    */
   public static class Builder extends Atomix.Builder {
-    private final Address address;
-    private CopycatServer.Builder serverBuilder;
-    private Transport transport;
+    private final Address clientAddress;
+    private final CopycatServer.Builder serverBuilder;
+    private Transport clientTransport;
+    private Transport serverTransport;
     private LocalServerRegistry localRegistry = new LocalServerRegistry();
 
-    private Builder(Address address, Collection<Address> members) {
-      super(Collections.singleton(address));
-      this.address = address;
-      this.serverBuilder = CopycatServer.builder(address, members);
+    private Builder(Address clientAddress, Address serverAddress, Collection<Address> members) {
+      super(Collections.singleton(Assert.notNull(clientAddress, "clientAddress")));
+      this.clientAddress = clientAddress;
+      this.serverBuilder = CopycatServer.builder(clientAddress, serverAddress, members);
     }
 
     /**
@@ -237,7 +266,41 @@ public final class AtomixReplica extends Atomix {
      * @throws NullPointerException if {@code transport} is null
      */
     public Builder withTransport(Transport transport) {
-      this.transport = Assert.notNull(transport, "transport");
+      Assert.notNull(transport, "transport");
+      this.clientTransport = transport;
+      this.serverTransport = transport;
+      return this;
+    }
+
+    /**
+     * Sets the client transport, returning the server builder for method chaining.
+     * <p>
+     * The configured transport should be the same transport as all clients.
+     * If no transport is explicitly provided, the instance will default to the {@code NettyTransport}
+     * if available on the classpath.
+     *
+     * @param transport The server transport.
+     * @return The server builder.
+     * @throws NullPointerException if {@code transport} is null
+     */
+    public Builder withClientTransport(Transport transport) {
+      this.clientTransport = Assert.notNull(transport, "transport");
+      return this;
+    }
+
+    /**
+     * Sets the server transport, returning the server builder for method chaining.
+     * <p>
+     * The configured transport should be the same transport as all other servers in the cluster.
+     * If no transport is explicitly provided, the instance will default to the {@code NettyTransport}
+     * if available on the classpath.
+     *
+     * @param transport The server transport.
+     * @return The server builder.
+     * @throws NullPointerException if {@code transport} is null
+     */
+    public Builder withServerTransport(Transport transport) {
+      this.serverTransport = Assert.notNull(transport, "transport");
       return this;
     }
 
@@ -355,9 +418,9 @@ public final class AtomixReplica extends Atomix {
     @Override
     public AtomixReplica build() {
       // If no transport was configured by the user, attempt to load the Netty transport.
-      if (transport == null) {
+      if (serverTransport == null) {
         try {
-          transport = (Transport) Class.forName("io.atomix.catalyst.transport.NettyTransport").newInstance();
+          serverTransport = (Transport) Class.forName("io.atomix.catalyst.transport.NettyTransport").newInstance();
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
           throw new ConfigurationException("transport not configured");
         }
@@ -367,18 +430,24 @@ public final class AtomixReplica extends Atomix {
       ResourceRegistry registry = new ResourceRegistry();
       resourceResolver.resolve(registry);
 
+      // If no client transport was configured, default it to the server transport.
+      if (clientTransport == null) {
+        clientTransport = serverTransport;
+      }
+
       // Configure the client and server with a transport that routes all local client communication
       // directly through the local server, ensuring we don't incur unnecessary network traffic by
-      // sending operations to a remote server when a local server is already available in the same JVM.
+      // sending operations to a remote server when a local server is already available in the same JVM.=
       clientBuilder.withTransport(new LocalTransport(localRegistry))
-        .withConnectionStrategy(new CombinedConnectionStrategy(address)).build();
+        .withConnectionStrategy(new CombinedConnectionStrategy(clientAddress)).build();
 
       // Construct the underlying CopycatServer. The server should have been configured with a CombinedTransport
       // that facilitates the local client connecting directly to the server.
-      CopycatServer server = serverBuilder.withTransport(new CombinedTransport(new LocalTransport(localRegistry), transport))
+      CopycatServer server = serverBuilder.withClientTransport(new CombinedTransport(new LocalTransport(localRegistry), clientTransport))
+        .withServerTransport(serverTransport)
         .withStateMachine(new ResourceManager(registry)).build();
 
-      return new AtomixReplica(new InstanceFactory(clientBuilder, transport), server);
+      return new AtomixReplica(new InstanceFactory(clientBuilder, serverTransport), server);
     }
   }
 
