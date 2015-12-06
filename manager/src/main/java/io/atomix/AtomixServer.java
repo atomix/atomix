@@ -101,7 +101,35 @@ public final class AtomixServer implements Managed<AtomixServer> {
    * @return The replica builder.
    */
   public static Builder builder(Address address, Collection<Address> members) {
-    return new Builder(address, members);
+    return new Builder(address, address, members);
+  }
+
+  /**
+   * Returns a new Atomix server builder.
+   * <p>
+   * The provided set of members will be used to connect to the other members in the Raft cluster.
+   *
+   * @param clientAddress The address through which clients connect to the server.
+   * @param serverAddress The address through which servers connect to each other.
+   * @param members The cluster members to which to connect.
+   * @return The replica builder.
+   */
+  public static Builder builder(Address clientAddress, Address serverAddress, Address... members) {
+    return builder(clientAddress, serverAddress, Arrays.asList(Assert.notNull(members, "members")));
+  }
+
+  /**
+   * Returns a new Atomix server builder.
+   * <p>
+   * The provided set of members will be used to connect to the other members in the Raft cluster.
+   *
+   * @param clientAddress The address through which clients connect to the server.
+   * @param serverAddress The address through which servers connect to each other.
+   * @param members The cluster members to which to connect.
+   * @return The replica builder.
+   */
+  public static Builder builder(Address clientAddress, Address serverAddress, Collection<Address> members) {
+    return new Builder(clientAddress, serverAddress, members);
   }
 
   private final CopycatServer server;
@@ -155,10 +183,9 @@ public final class AtomixServer implements Managed<AtomixServer> {
    */
   public static class Builder extends io.atomix.catalyst.util.Builder<AtomixServer> {
     private final CopycatServer.Builder builder;
-    private Transport transport;
 
-    private Builder(Address address, Collection<Address> members) {
-      this.builder = CopycatServer.builder(address, members);
+    private Builder(Address clientAddress, Address serverAddress, Collection<Address> members) {
+      this.builder = CopycatServer.builder(clientAddress, serverAddress, members).withStateMachine(new ResourceManager());
     }
 
     /**
@@ -173,7 +200,39 @@ public final class AtomixServer implements Managed<AtomixServer> {
      * @throws NullPointerException if {@code transport} is null
      */
     public Builder withTransport(Transport transport) {
-      this.transport = Assert.notNull(transport, "transport");
+      builder.withTransport(transport);
+      return this;
+    }
+
+    /**
+     * Sets the client transport, returning the server builder for method chaining.
+     * <p>
+     * The configured transport should be the same transport as all clients.
+     * If no transport is explicitly provided, the instance will default to the {@code NettyTransport}
+     * if available on the classpath.
+     *
+     * @param transport The server transport.
+     * @return The server builder.
+     * @throws NullPointerException if {@code transport} is null
+     */
+    public Builder withClientTransport(Transport transport) {
+      builder.withClientTransport(transport);
+      return this;
+    }
+
+    /**
+     * Sets the server transport, returning the server builder for method chaining.
+     * <p>
+     * The configured transport should be the same transport as all other servers in the cluster.
+     * If no transport is explicitly provided, the instance will default to the {@code NettyTransport}
+     * if available on the classpath.
+     *
+     * @param transport The server transport.
+     * @return The server builder.
+     * @throws NullPointerException if {@code transport} is null
+     */
+    public Builder withServerTransport(Transport transport) {
+      builder.withServerTransport(transport);
       return this;
     }
 
@@ -289,21 +348,7 @@ public final class AtomixServer implements Managed<AtomixServer> {
      */
     @Override
     public AtomixServer build() {
-      // If no transport was configured by the user, attempt to load the Netty transport.
-      if (transport == null) {
-        try {
-          transport = (Transport) Class.forName("io.atomix.catalyst.transport.NettyTransport").newInstance();
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-          throw new ConfigurationException("transport not configured");
-        }
-      }
-
-      // Construct the underlying CopycatServer. The server should have been configured with a CombinedTransport
-      // that facilitates the local client connecting directly to the server.
-      CopycatServer server = builder.withTransport(transport)
-        .withStateMachine(new ResourceManager()).build();
-
-      return new AtomixServer(server);
+      return new AtomixServer(builder.build());
     }
   }
 
