@@ -27,7 +27,7 @@ import io.atomix.resource.ResourceStateMachine;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class DistributedValueTest extends AbstractPrimitiveTest {
+public class DistributedValueTest extends AbstractVariableTest {
 
   @Override
   protected ResourceStateMachine createStateMachine() {

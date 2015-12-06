@@ -30,7 +30,7 @@ import java.util.function.Function;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class DistributedLongTest extends AbstractPrimitiveTest {
+public class DistributedLongTest extends AbstractVariableTest {
 
   @Override
   protected ResourceStateMachine createStateMachine() {
