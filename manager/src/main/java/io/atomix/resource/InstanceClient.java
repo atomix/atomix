@@ -21,7 +21,7 @@ import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.copycat.client.Command;
 import io.atomix.copycat.client.Query;
-import io.atomix.copycat.client.RaftClient;
+import io.atomix.copycat.client.CopycatClient;
 import io.atomix.copycat.client.session.Session;
 import io.atomix.manager.DeleteResource;
 
@@ -32,16 +32,16 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class InstanceClient implements RaftClient {
+public class InstanceClient implements CopycatClient {
   private final long resource;
-  private final RaftClient client;
+  private final CopycatClient client;
   private final Transport transport;
   private final InstanceSession session;
 
   /**
    * @throws NullPointerException if {@code client} is null
    */
-  public InstanceClient(long resource, RaftClient client, Transport transport) {
+  public InstanceClient(long resource, CopycatClient client, Transport transport) {
     this.resource = resource;
     this.client = Assert.notNull(client, "client");
     this.transport = transport;
@@ -82,7 +82,7 @@ public class InstanceClient implements RaftClient {
   }
 
   @Override
-  public CompletableFuture<RaftClient> open() {
+  public CompletableFuture<CopycatClient> open() {
     return CompletableFuture.completedFuture(this);
   }
 

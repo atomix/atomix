@@ -19,7 +19,7 @@ import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.transport.*;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.ConfigurationException;
-import io.atomix.copycat.client.ConnectionStrategy;
+import io.atomix.copycat.client.SubmissionStrategy;
 import io.atomix.copycat.server.CopycatServer;
 import io.atomix.copycat.server.storage.Storage;
 import io.atomix.manager.ResourceManager;
@@ -153,12 +153,12 @@ public final class AtomixReplica extends Atomix {
   }
 
   /**
-   * Combined connection strategy.
+   * Combined submission strategy.
    */
-  private static class CombinedConnectionStrategy implements ConnectionStrategy {
+  private static class CombinedSubmissionStrategy implements SubmissionStrategy {
     private final Address address;
 
-    private CombinedConnectionStrategy(Address address) {
+    private CombinedSubmissionStrategy(Address address) {
       this.address = address;
     }
 
@@ -439,7 +439,7 @@ public final class AtomixReplica extends Atomix {
       // directly through the local server, ensuring we don't incur unnecessary network traffic by
       // sending operations to a remote server when a local server is already available in the same JVM.=
       clientBuilder.withTransport(new LocalTransport(localRegistry))
-        .withConnectionStrategy(new CombinedConnectionStrategy(clientAddress)).build();
+        .withSubmissionStrategy(new CombinedSubmissionStrategy(clientAddress)).build();
 
       // Construct the underlying CopycatServer. The server should have been configured with a CombinedTransport
       // that facilitates the local client connecting directly to the server.

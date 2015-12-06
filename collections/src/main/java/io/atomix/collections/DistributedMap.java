@@ -17,7 +17,7 @@ package io.atomix.collections;
 
 import io.atomix.collections.state.MapCommands;
 import io.atomix.collections.state.MapState;
-import io.atomix.copycat.client.RaftClient;
+import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.Consistency;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceType;
@@ -51,7 +51,7 @@ import java.util.concurrent.CompletableFuture;
 public class DistributedMap<K, V> extends Resource {
   public static final ResourceType<DistributedMap> TYPE = new ResourceType<>(DistributedMap.class);
 
-  public DistributedMap(RaftClient client) {
+  public DistributedMap(CopycatClient client) {
     super(client);
   }
 

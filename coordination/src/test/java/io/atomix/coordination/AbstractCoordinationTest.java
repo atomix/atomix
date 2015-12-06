@@ -19,9 +19,9 @@ import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.LocalServerRegistry;
 import io.atomix.catalyst.transport.LocalTransport;
 import io.atomix.copycat.client.CopycatClient;
-import io.atomix.copycat.client.RaftClient;
+import io.atomix.copycat.client.CopycatClient;
 import io.atomix.copycat.server.CopycatServer;
-import io.atomix.copycat.server.RaftServer;
+import io.atomix.copycat.server.CopycatServer;
 import io.atomix.copycat.server.storage.Storage;
 import io.atomix.copycat.server.storage.StorageLevel;
 import io.atomix.resource.ResourceStateMachine;
@@ -45,8 +45,8 @@ public abstract class AbstractCoordinationTest extends ConcurrentTestCase {
   protected LocalServerRegistry registry;
   protected int port;
   protected List<Address> members;
-  protected List<RaftClient> clients = new ArrayList<>();
-  protected List<RaftServer> servers = new ArrayList<>();
+  protected List<CopycatClient> clients = new ArrayList<>();
+  protected List<CopycatServer> servers = new ArrayList<>();
 
   /**
    * Creates a new resource state machine.
@@ -69,8 +69,8 @@ public abstract class AbstractCoordinationTest extends ConcurrentTestCase {
   /**
    * Creates a set of Raft servers.
    */
-  protected List<RaftServer> createServers(int nodes) throws Throwable {
-    List<RaftServer> servers = new ArrayList<>();
+  protected List<CopycatServer> createServers(int nodes) throws Throwable {
+    List<CopycatServer> servers = new ArrayList<>();
 
     List<Address> members = new ArrayList<>();
     for (int i = 0; i < nodes; i++) {
@@ -78,7 +78,7 @@ public abstract class AbstractCoordinationTest extends ConcurrentTestCase {
     }
 
     for (int i = 0; i < nodes; i++) {
-      RaftServer server = createServer(members.get(i));
+      CopycatServer server = createServer(members.get(i));
       server.open().thenRun(this::resume);
       servers.add(server);
     }
@@ -91,8 +91,8 @@ public abstract class AbstractCoordinationTest extends ConcurrentTestCase {
   /**
    * Creates a set of Raft servers.
    */
-  protected List<RaftServer> createServers(int live, int total) throws Throwable {
-    List<RaftServer> servers = new ArrayList<>();
+  protected List<CopycatServer> createServers(int live, int total) throws Throwable {
+    List<CopycatServer> servers = new ArrayList<>();
 
     List<Address> members = new ArrayList<>();
     for (int i = 0; i < total; i++) {
@@ -100,7 +100,7 @@ public abstract class AbstractCoordinationTest extends ConcurrentTestCase {
     }
 
     for (int i = 0; i < live; i++) {
-      RaftServer server = createServer(members.get(i));
+      CopycatServer server = createServer(members.get(i));
       server.open().thenRun(this::resume);
       servers.add(server);
     }
@@ -113,8 +113,8 @@ public abstract class AbstractCoordinationTest extends ConcurrentTestCase {
   /**
    * Creates a Raft server.
    */
-  protected RaftServer createServer(Address address) {
-    RaftServer server = CopycatServer.builder(address, members)
+  protected CopycatServer createServer(Address address) {
+    CopycatServer server = CopycatServer.builder(address, members)
       .withTransport(new LocalTransport(registry))
       .withStorage(new Storage(StorageLevel.MEMORY))
       .withStateMachine(createStateMachine())
@@ -126,8 +126,8 @@ public abstract class AbstractCoordinationTest extends ConcurrentTestCase {
   /**
    * Creates a Copycat client.
    */
-  protected RaftClient createClient() throws Throwable {
-    RaftClient client = CopycatClient.builder(members).withTransport(new LocalTransport(registry)).build();
+  protected CopycatClient createClient() throws Throwable {
+    CopycatClient client = CopycatClient.builder(members).withTransport(new LocalTransport(registry)).build();
     client.open().thenRun(this::resume);
     await();
     clients.add(client);

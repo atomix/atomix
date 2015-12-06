@@ -18,15 +18,15 @@ package io.atomix.resource;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.copycat.client.Command;
+import io.atomix.copycat.client.CopycatClient;
 import io.atomix.copycat.client.Query;
-import io.atomix.copycat.client.RaftClient;
 
 import java.util.concurrent.CompletableFuture;
 
 /**
  * Fault-tolerant stateful distributed object.
  * <p>
- * Resources are stateful distributed objects that run across a set of {@link io.atomix.copycat.server.RaftServer}s
+ * Resources are stateful distributed objects that run across a set of {@link io.atomix.copycat.server.CopycatServer}s
  * in a cluster.
  * <p>
  * Resources can be created either as standalone {@link io.atomix.copycat.server.StateMachine}s in
@@ -40,10 +40,10 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class Resource {
-  protected RaftClient client;
+  protected CopycatClient client;
   private Consistency consistency = Consistency.ATOMIC;
 
-  protected Resource(RaftClient client) {
+  protected Resource(CopycatClient client) {
     this.client = Assert.notNull(client, "client");
   }
 
@@ -52,7 +52,7 @@ public abstract class Resource {
    *
    * @param client The internal Raft client.
    */
-  final void reset(RaftClient client) {
+  final void reset(CopycatClient client) {
     this.client = Assert.notNull(client, "client");
   }
 

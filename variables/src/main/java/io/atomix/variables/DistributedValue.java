@@ -16,7 +16,7 @@
 package io.atomix.variables;
 
 import io.atomix.catalyst.util.Listener;
-import io.atomix.copycat.client.RaftClient;
+import io.atomix.copycat.client.CopycatClient;
 import io.atomix.variables.state.ValueCommands;
 import io.atomix.variables.state.ValueState;
 import io.atomix.resource.Consistency;
@@ -40,7 +40,7 @@ public class DistributedValue<T> extends Resource {
   public static final ResourceType<DistributedValue> TYPE = new ResourceType<>(DistributedValue.class);
   private final java.util.Set<Consumer<T>> changeListeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
-  public DistributedValue(RaftClient client) {
+  public DistributedValue(CopycatClient client) {
     super(client);
     client.session().<T>onEvent("change", event -> {
       for (Consumer<T> listener : changeListeners) {

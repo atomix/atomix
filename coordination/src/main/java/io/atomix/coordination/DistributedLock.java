@@ -17,7 +17,7 @@ package io.atomix.coordination;
 
 import io.atomix.coordination.state.LockCommands;
 import io.atomix.coordination.state.LockState;
-import io.atomix.copycat.client.RaftClient;
+import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.Consistency;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceType;
@@ -61,7 +61,7 @@ public class DistributedLock extends Resource {
 
   private final Queue<Consumer<Boolean>> queue = new ConcurrentLinkedQueue<>();
 
-  public DistributedLock(RaftClient client) {
+  public DistributedLock(CopycatClient client) {
     super(client);
     client.session().onEvent("lock", this::handleEvent);
   }
