@@ -17,7 +17,7 @@ package io.atomix.collections;
 
 import io.atomix.collections.state.QueueCommands;
 import io.atomix.collections.state.QueueState;
-import io.atomix.copycat.client.RaftClient;
+import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.Consistency;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceType;
@@ -35,7 +35,7 @@ import java.util.concurrent.CompletableFuture;
 public class DistributedQueue<T> extends Resource {
   public static final ResourceType<DistributedQueue> TYPE = new ResourceType<>(DistributedQueue.class);
 
-  public DistributedQueue(RaftClient client) {
+  public DistributedQueue(CopycatClient client) {
     super(client);
   }
 

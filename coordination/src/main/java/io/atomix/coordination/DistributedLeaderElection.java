@@ -18,7 +18,7 @@ package io.atomix.coordination;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.coordination.state.LeaderElectionCommands;
 import io.atomix.coordination.state.LeaderElectionState;
-import io.atomix.copycat.client.RaftClient;
+import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.Consistency;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceType;
@@ -69,7 +69,7 @@ public class DistributedLeaderElection extends Resource {
 
   private final Set<Consumer<Long>> listeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
-  public DistributedLeaderElection(RaftClient client) {
+  public DistributedLeaderElection(CopycatClient client) {
     super(client);
     client.session().<Long>onEvent("elect", epoch -> {
       for (Consumer<Long> listener : listeners) {

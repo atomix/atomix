@@ -15,7 +15,7 @@
  */
 package io.atomix.variables;
 
-import io.atomix.copycat.client.RaftClient;
+import io.atomix.copycat.client.CopycatClient;
 import io.atomix.variables.state.ValueState;
 import io.atomix.resource.ResourceStateMachine;
 import org.testng.annotations.Test;
@@ -98,7 +98,7 @@ public class DistributedLongTest extends AbstractVariableTest {
    */
   private void testAtomic(int servers, Consumer<DistributedLong> consumer) throws Throwable {
     createServers(servers);
-    RaftClient client = createClient();
+    CopycatClient client = createClient();
     DistributedLong atomic = new DistributedLong(client);
     consumer.accept(atomic);
     await();

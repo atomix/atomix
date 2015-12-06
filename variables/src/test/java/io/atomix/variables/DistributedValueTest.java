@@ -17,7 +17,7 @@ package io.atomix.variables;
 
 import org.testng.annotations.Test;
 
-import io.atomix.copycat.client.RaftClient;
+import io.atomix.copycat.client.CopycatClient;
 import io.atomix.variables.state.ValueState;
 import io.atomix.resource.ResourceStateMachine;
 
@@ -39,7 +39,7 @@ public class DistributedValueTest extends AbstractVariableTest {
    */
   public void testAtomicSetGet() throws Throwable {
     createServers(3);
-    RaftClient client = createClient();
+    CopycatClient client = createClient();
     DistributedValue<String> atomic = new DistributedValue<>(client);
     atomic.set("Hello world!").thenRun(() -> {
       atomic.get().thenAccept(value -> {

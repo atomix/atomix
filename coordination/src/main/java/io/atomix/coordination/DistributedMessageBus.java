@@ -22,7 +22,7 @@ import io.atomix.catalyst.transport.Server;
 import io.atomix.catalyst.util.concurrent.Futures;
 import io.atomix.coordination.state.MessageBusCommands;
 import io.atomix.coordination.state.MessageBusState;
-import io.atomix.copycat.client.RaftClient;
+import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.Consistency;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceType;
@@ -83,7 +83,7 @@ public class DistributedMessageBus extends Resource {
   private final Map<String, InternalMessageConsumer> consumers = new ConcurrentHashMap<>();
   private volatile boolean open;
 
-  public DistributedMessageBus(RaftClient client) {
+  public DistributedMessageBus(CopycatClient client) {
     super(client);
   }
 

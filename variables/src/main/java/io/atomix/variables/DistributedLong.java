@@ -15,7 +15,7 @@
  */
 package io.atomix.variables;
 
-import io.atomix.copycat.client.RaftClient;
+import io.atomix.copycat.client.CopycatClient;
 import io.atomix.variables.state.ValueState;
 import io.atomix.resource.Consistency;
 import io.atomix.resource.ResourceType;
@@ -34,7 +34,7 @@ public class DistributedLong extends DistributedValue<Long> {
   public static final ResourceType<DistributedLong> TYPE = new ResourceType<>(DistributedLong.class);
   private Long value;
 
-  public DistributedLong(RaftClient client) {
+  public DistributedLong(CopycatClient client) {
     super(client);
   }
 

@@ -22,7 +22,7 @@ import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.Managed;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.copycat.client.CopycatClient;
-import io.atomix.copycat.client.RaftClient;
+import io.atomix.copycat.client.CopycatClient;
 import io.atomix.copycat.client.RecoveryStrategy;
 import io.atomix.copycat.client.session.Session;
 import io.atomix.manager.*;
@@ -44,7 +44,7 @@ import java.util.function.BiConsumer;
  */
 public class InstanceFactory implements Managed<InstanceFactory> {
   private static final Logger LOGGER = LoggerFactory.getLogger(InstanceFactory.class);
-  private final RaftClient client;
+  private final CopycatClient client;
   private final Transport transport;
   private final Map<Long, Instance> instances = new ConcurrentHashMap<>();
 
@@ -112,7 +112,7 @@ public class InstanceFactory implements Managed<InstanceFactory> {
   @SuppressWarnings("unchecked")
   public <T extends Resource> CompletableFuture<Set<String>> keys(Class<? super T> type) {
     try {
-      T instance = (T) type.getConstructor(RaftClient.class).newInstance(client);
+      T instance = (T) type.getConstructor(CopycatClient.class).newInstance(client);
       return keys(instance.type());
     } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
       throw new RuntimeException(e);
@@ -151,7 +151,7 @@ public class InstanceFactory implements Managed<InstanceFactory> {
   @SuppressWarnings("unchecked")
   public <T extends Resource> CompletableFuture<T> get(String key, Class<? super T> type) {
     try {
-      T instance = (T) type.getConstructor(RaftClient.class).newInstance(client);
+      T instance = (T) type.getConstructor(CopycatClient.class).newInstance(client);
       return get(key, instance.type());
     } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
       throw new RuntimeException(e);
@@ -180,7 +180,7 @@ public class InstanceFactory implements Managed<InstanceFactory> {
     return client.submit(new GetResource(Assert.notNull(key, "key"), Assert.notNull(type, "type").id()))
       .thenApply(id -> instances.computeIfAbsent(id, i -> {
         try {
-          T instance = type.resource().getConstructor(RaftClient.class).newInstance(new InstanceClient(id, client, transport));
+          T instance = type.resource().getConstructor(CopycatClient.class).newInstance(new InstanceClient(id, client, transport));
           return new Instance<>(key, type, Instance.Method.GET, instance);
         } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
           throw new RuntimeException(e);
@@ -214,7 +214,7 @@ public class InstanceFactory implements Managed<InstanceFactory> {
   @SuppressWarnings("unchecked")
   public <T extends Resource> CompletableFuture<T> create(String key, Class<? super T> type) {
     try {
-      T instance = (T) type.getConstructor(RaftClient.class).newInstance(client);
+      T instance = (T) type.getConstructor(CopycatClient.class).newInstance(client);
       return create(key, instance.type());
     } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
       throw new RuntimeException(e);
@@ -249,7 +249,7 @@ public class InstanceFactory implements Managed<InstanceFactory> {
     return client.submit(new CreateResource(Assert.notNull(key, "key"), Assert.notNull(type, "type").id()))
       .thenApply(id -> instances.computeIfAbsent(id, i -> {
         try {
-          T instance = type.resource().getConstructor(RaftClient.class).newInstance(new InstanceClient(id, client, transport));
+          T instance = type.resource().getConstructor(CopycatClient.class).newInstance(new InstanceClient(id, client, transport));
           return new Instance<>(key, type, Instance.Method.CREATE, instance);
         } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
           throw new ResourceException(e);
@@ -302,7 +302,7 @@ public class InstanceFactory implements Managed<InstanceFactory> {
    */
   private class InstanceRecoveryStrategy implements RecoveryStrategy {
     @Override
-    public void recover(RaftClient client) {
+    public void recover(CopycatClient client) {
       client.open().whenComplete((result, error) -> {
         if (error == null) {
           recoverResources(client);
@@ -315,7 +315,7 @@ public class InstanceFactory implements Managed<InstanceFactory> {
     /**
      * Recovers resources.
      */
-    private void recoverResources(RaftClient client) {
+    private void recoverResources(CopycatClient client) {
       recoverResources(client, instances.entrySet().iterator(), new CompletableFuture<>()).whenComplete((result, error) -> {
         if (error == null) {
           LOGGER.info("Recovered {} resources", instances.size());
@@ -328,7 +328,7 @@ public class InstanceFactory implements Managed<InstanceFactory> {
     /**
      * Recursively recovers resources.
      */
-    private CompletableFuture<Void> recoverResources(RaftClient client, Iterator<Map.Entry<Long, Instance>> iterator, CompletableFuture<Void> future) {
+    private CompletableFuture<Void> recoverResources(CopycatClient client, Iterator<Map.Entry<Long, Instance>> iterator, CompletableFuture<Void> future) {
       if (iterator.hasNext()) {
         recoverResource(client, iterator, future);
       } else {
@@ -340,7 +340,7 @@ public class InstanceFactory implements Managed<InstanceFactory> {
     /**
      * Recovers a single resource.
      */
-    private void recoverResource(RaftClient client, Iterator<Map.Entry<Long, Instance>> iterator, CompletableFuture<Void> future) {
+    private void recoverResource(CopycatClient client, Iterator<Map.Entry<Long, Instance>> iterator, CompletableFuture<Void> future) {
       Instance instance = iterator.next().getValue();
       iterator.remove();
       LOGGER.debug("Recovering resource: {}", instance.key);
@@ -354,7 +354,7 @@ public class InstanceFactory implements Managed<InstanceFactory> {
     /**
      * Recovers a resource created via the get method.
      */
-    private void recoverGet(Instance instance, RaftClient client, Iterator<Map.Entry<Long, Instance>> iterator, CompletableFuture<Void> future) {
+    private void recoverGet(Instance instance, CopycatClient client, Iterator<Map.Entry<Long, Instance>> iterator, CompletableFuture<Void> future) {
       client.submit(new GetResourceIfExists(instance.key, instance.type.id()))
         .whenComplete(recoverComplete(instance, client, iterator, future));
     }
@@ -362,7 +362,7 @@ public class InstanceFactory implements Managed<InstanceFactory> {
     /**
      * Recovers a resource created via the create method.
      */
-    private void recoverCreate(Instance instance, RaftClient client, Iterator<Map.Entry<Long, Instance>> iterator, CompletableFuture<Void> future) {
+    private void recoverCreate(Instance instance, CopycatClient client, Iterator<Map.Entry<Long, Instance>> iterator, CompletableFuture<Void> future) {
       client.submit(new CreateResourceIfExists(instance.key, instance.type.id()))
         .whenComplete(recoverComplete(instance, client, iterator, future));
     }
@@ -370,7 +370,7 @@ public class InstanceFactory implements Managed<InstanceFactory> {
     /**
      * Returns a function to complete the recovery of a resource.
      */
-    private BiConsumer<Long, Throwable> recoverComplete(Instance instance, RaftClient client, Iterator<Map.Entry<Long, Instance>> iterator, CompletableFuture<Void> future) {
+    private BiConsumer<Long, Throwable> recoverComplete(Instance instance, CopycatClient client, Iterator<Map.Entry<Long, Instance>> iterator, CompletableFuture<Void> future) {
       return (result, error) -> {
         if (error == null) {
           if (result > 0) {

@@ -17,7 +17,7 @@ package io.atomix;
 
 import io.atomix.copycat.client.Command;
 import io.atomix.copycat.client.Query;
-import io.atomix.copycat.client.RaftClient;
+import io.atomix.copycat.client.CopycatClient;
 import io.atomix.copycat.server.Commit;
 import io.atomix.resource.*;
 import org.testng.annotations.Test;
@@ -217,7 +217,7 @@ public class AtomixReplicaTest extends AbstractReplicaTest {
   public static class TestResource extends Resource {
     public static final ResourceType<TestResource> TYPE = new ResourceType<>(TestResource.class);
 
-    public TestResource(RaftClient client) {
+    public TestResource(CopycatClient client) {
       super(client);
     }
 
@@ -291,7 +291,7 @@ public class AtomixReplicaTest extends AbstractReplicaTest {
   public static class ValueResource extends Resource {
     public static final ResourceType<ValueResource> TYPE = new ResourceType<ValueResource>(ValueResource.class);
 
-    public ValueResource(RaftClient client) {
+    public ValueResource(CopycatClient client) {
       super(client);
     }
 

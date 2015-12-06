@@ -20,7 +20,7 @@ import io.atomix.catalyst.util.Listeners;
 import io.atomix.coordination.state.MembershipGroupCommands;
 import io.atomix.coordination.state.MembershipGroupState;
 import io.atomix.copycat.client.Command;
-import io.atomix.copycat.client.RaftClient;
+import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.Consistency;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceType;
@@ -101,7 +101,7 @@ public class DistributedMembershipGroup extends Resource {
   private GroupMember member;
   private final Map<Long, GroupMember> members = new ConcurrentHashMap<>();
 
-  public DistributedMembershipGroup(RaftClient client) {
+  public DistributedMembershipGroup(CopycatClient client) {
     super(client);
 
     client.session().<Long>onEvent("join", memberId -> {
