@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.atomic;
+package io.atomix.variables;
 
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.LocalServerRegistry;
@@ -40,7 +40,7 @@ import java.util.List;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public abstract class AbstractPrimitiveTest extends ConcurrentTestCase {
+public abstract class AbstractVariableTest extends ConcurrentTestCase {
   private static final File directory = new File("target/test-logs");
   protected LocalServerRegistry registry;
   protected int port;

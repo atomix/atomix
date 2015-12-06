@@ -25,7 +25,8 @@ import io.atomix.coordination.state.MessageBusState;
 import io.atomix.copycat.client.RaftClient;
 import io.atomix.resource.Consistency;
 import io.atomix.resource.Resource;
-import io.atomix.resource.ResourceInfo;
+import io.atomix.resource.ResourceType;
+import io.atomix.resource.ResourceTypeInfo;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -69,8 +70,10 @@ import java.util.function.Function;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-@ResourceInfo(stateMachine=MessageBusState.class)
+@ResourceTypeInfo(id=-24, stateMachine=MessageBusState.class)
 public class DistributedMessageBus extends Resource {
+  public static final ResourceType<DistributedMessageBus> TYPE = new ResourceType<>(DistributedMessageBus.class);
+
   private Client client;
   private Server server;
   private final Map<Integer, Connection> connections = new HashMap<>();
@@ -82,6 +85,11 @@ public class DistributedMessageBus extends Resource {
 
   public DistributedMessageBus(RaftClient client) {
     super(client);
+  }
+
+  @Override
+  public ResourceType type() {
+    return TYPE;
   }
 
   @Override

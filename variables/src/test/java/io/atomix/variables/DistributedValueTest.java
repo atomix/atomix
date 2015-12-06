@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitives;
+package io.atomix.variables;
 
 import org.testng.annotations.Test;
 
 import io.atomix.copycat.client.RaftClient;
-import io.atomix.primitives.DistributedValue;
-import io.atomix.primitives.state.ValueState;
+import io.atomix.variables.state.ValueState;
 import io.atomix.resource.ResourceStateMachine;
 
 /**
@@ -28,7 +27,7 @@ import io.atomix.resource.ResourceStateMachine;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class DistributedValueTest extends AbstractPrimitiveTest {
+public class DistributedValueTest extends AbstractVariableTest {
 
   @Override
   protected ResourceStateMachine createStateMachine() {

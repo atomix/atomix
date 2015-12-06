@@ -20,10 +20,7 @@ import io.atomix.copycat.client.Command;
 import io.atomix.copycat.client.Query;
 import io.atomix.copycat.client.RaftClient;
 import io.atomix.copycat.server.Commit;
-import io.atomix.resource.Consistency;
-import io.atomix.resource.Resource;
-import io.atomix.resource.ResourceInfo;
-import io.atomix.resource.ResourceStateMachine;
+import io.atomix.resource.*;
 import org.testng.annotations.Test;
 
 import java.util.concurrent.CompletableFuture;
@@ -72,7 +69,7 @@ public class AtomixClientServerTest extends AbstractServerTest {
 
     Atomix client = createClient();
 
-    TestResource resource = client.create("test", TestResource.class).get();
+    TestResource resource = client.create("test", TestResource.TYPE).get();
 
     resource.with(consistency).command("Hello world!").thenAccept(result -> {
       threadAssertEquals(result, "Hello world!");
@@ -118,7 +115,7 @@ public class AtomixClientServerTest extends AbstractServerTest {
 
     Atomix client = createClient();
 
-    TestResource resource = client.create("test", TestResource.class, TestResource::new).get();
+    TestResource resource = client.create("test", TestResource.TYPE).get();
 
     resource.with(consistency).query("Hello world!").thenAccept(result -> {
       threadAssertEquals(result, "Hello world!");
@@ -137,8 +134,8 @@ public class AtomixClientServerTest extends AbstractServerTest {
     Atomix client1 = createClient();
     Atomix client2 = createClient();
 
-    ValueResource resource1 = client1.get("test", ValueResource.class, ValueResource::new).get();
-    ValueResource resource2 = client2.get("test", ValueResource.class, ValueResource::new).get();
+    ValueResource resource1 = client1.get("test", ValueResource.TYPE).get();
+    ValueResource resource2 = client2.get("test", ValueResource.TYPE).get();
 
     resource1.set("Hello world!").join();
 
@@ -158,8 +155,8 @@ public class AtomixClientServerTest extends AbstractServerTest {
     Atomix client1 = createClient();
     Atomix client2 = createClient();
 
-    ValueResource resource1 = client1.create("test", ValueResource.class).get();
-    ValueResource resource2 = client2.create("test", ValueResource.class).get();
+    ValueResource resource1 = client1.create("test", ValueResource.TYPE).get();
+    ValueResource resource2 = client2.create("test", ValueResource.TYPE).get();
 
     resource1.set("Hello world!").join();
 
@@ -179,8 +176,8 @@ public class AtomixClientServerTest extends AbstractServerTest {
     Atomix client1 = createClient();
     Atomix client2 = createClient();
 
-    ValueResource resource1 = client1.get("test", ValueResource.class, ValueResource::new).get();
-    ValueResource resource2 = client2.create("test", ValueResource.class, ValueResource::new).get();
+    ValueResource resource1 = client1.get("test", ValueResource.TYPE).get();
+    ValueResource resource2 = client2.create("test", ValueResource.TYPE).get();
 
     resource1.set("Hello world!").join();
 
@@ -204,27 +201,27 @@ public class AtomixClientServerTest extends AbstractServerTest {
     });
     await();
 
-    client.create("test", TestResource.class).get();
+    client.create("test", TestResource.TYPE).get();
     client.keys().thenAccept(result -> {
       threadAssertTrue(result.size() == 1 && result.contains("test"));
       resume();
     });
     await();
 
-    client.create("value", ValueResource.class).get();
+    client.create("value", ValueResource.TYPE).get();
     client.keys().thenAccept(result -> {
       threadAssertTrue(result.size() == 2 && result.contains("test") && result.contains("value"));
       resume();
     });
     await();
 
-    client.keys(TestResource.class).thenAccept(result -> {
+    client.keys(TestResource.TYPE).thenAccept(result -> {
       threadAssertTrue(result.size() == 1 && result.contains("test"));
       resume();
     });
     await();
 
-    client.keys(ValueResource.class).thenAccept(result -> {
+    client.keys(ValueResource.TYPE).thenAccept(result -> {
       threadAssertTrue(result.size() == 1 && result.contains("value"));
       resume();
     });
@@ -244,10 +241,17 @@ public class AtomixClientServerTest extends AbstractServerTest {
   /**
    * Test resource.
    */
-  @ResourceInfo(stateMachine=TestStateMachine.class)
+  @ResourceTypeInfo(id=1, stateMachine=TestStateMachine.class)
   public static class TestResource extends Resource {
+    public static final ResourceType<TestResource> TYPE = new ResourceType<>(TestResource.class);
+
     public TestResource(RaftClient client) {
       super(client);
+    }
+
+    @Override
+    public ResourceType type() {
+      return TYPE;
     }
 
     @Override
@@ -311,10 +315,17 @@ public class AtomixClientServerTest extends AbstractServerTest {
   /**
    * Value resource.
    */
-  @ResourceInfo(stateMachine=ValueStateMachine.class)
+  @ResourceTypeInfo(id=2, stateMachine=ValueStateMachine.class)
   public static class ValueResource extends Resource {
+    public static final ResourceType<ValueResource> TYPE = new ResourceType<ValueResource>(ValueResource.class);
+
     public ValueResource(RaftClient client) {
       super(client);
+    }
+
+    @Override
+    public ResourceType type() {
+      return TYPE;
     }
 
     public CompletableFuture<Void> set(String value) {

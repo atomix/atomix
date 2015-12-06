@@ -16,7 +16,6 @@
 package io.atomix.manager;
 
 import io.atomix.catalyst.serializer.SerializeWith;
-import io.atomix.resource.ResourceStateMachine;
 
 /**
  * Get resource if exists command.
@@ -32,7 +31,7 @@ public class GetResourceIfExists extends GetResource {
   /**
    * @throws NullPointerException if {@code path} or {@code type} are null
    */
-  public GetResourceIfExists(String key, Class<? extends ResourceStateMachine> type) {
+  public GetResourceIfExists(String key, int type) {
     super(key, type);
   }
 

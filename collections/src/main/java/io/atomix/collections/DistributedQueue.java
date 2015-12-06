@@ -20,7 +20,8 @@ import io.atomix.collections.state.QueueState;
 import io.atomix.copycat.client.RaftClient;
 import io.atomix.resource.Consistency;
 import io.atomix.resource.Resource;
-import io.atomix.resource.ResourceInfo;
+import io.atomix.resource.ResourceType;
+import io.atomix.resource.ResourceTypeInfo;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -30,11 +31,17 @@ import java.util.concurrent.CompletableFuture;
  * @param <T> The queue value type.
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@ResourceInfo(stateMachine=QueueState.class)
+@ResourceTypeInfo(id=-14, stateMachine=QueueState.class)
 public class DistributedQueue<T> extends Resource {
+  public static final ResourceType<DistributedQueue> TYPE = new ResourceType<>(DistributedQueue.class);
 
   public DistributedQueue(RaftClient client) {
     super(client);
+  }
+
+  @Override
+  public ResourceType type() {
+    return TYPE;
   }
 
   @Override

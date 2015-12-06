@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitives;
+package io.atomix.variables;
 
 import io.atomix.copycat.client.RaftClient;
-import io.atomix.primitives.state.ValueState;
+import io.atomix.variables.state.ValueState;
 import io.atomix.resource.Consistency;
-import io.atomix.resource.ResourceInfo;
+import io.atomix.resource.ResourceType;
+import io.atomix.resource.ResourceTypeInfo;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
@@ -28,12 +29,18 @@ import java.util.function.Function;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-@ResourceInfo(stateMachine=ValueState.class)
+@ResourceTypeInfo(id=-2, stateMachine=ValueState.class)
 public class DistributedLong extends DistributedValue<Long> {
+  public static final ResourceType<DistributedLong> TYPE = new ResourceType<>(DistributedLong.class);
   private Long value;
 
   public DistributedLong(RaftClient client) {
     super(client);
+  }
+
+  @Override
+  public ResourceType type() {
+    return TYPE;
   }
 
   @Override

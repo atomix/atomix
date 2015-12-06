@@ -15,9 +15,9 @@
  */
 
 /**
- * Provides distributed variables such as {@link io.atomix.primitives.DistributedValue}
- * and {@link io.atomix.primitives.DistributedLong}.
+ * Provides distributed variables such as {@link io.atomix.variables.DistributedValue}
+ * and {@link io.atomix.variables.DistributedLong}.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-package io.atomix.primitives;
+package io.atomix.variables;

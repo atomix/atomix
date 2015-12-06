@@ -26,19 +26,16 @@ import io.atomix.copycat.client.RaftClient;
 import io.atomix.copycat.client.RecoveryStrategy;
 import io.atomix.copycat.client.session.Session;
 import io.atomix.manager.*;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
-import java.util.function.Function;
 
 /**
  * Resource instance factory.
@@ -96,6 +93,45 @@ public class InstanceFactory implements Managed<InstanceFactory> {
   }
 
   /**
+   * Returns the keys of all existing resources.
+   *
+   * @return A completable future to be completed with the set of resource keys.
+   */
+  @SuppressWarnings("unchecked")
+  public CompletableFuture<Set<String>> keys() {
+    return client.submit(new GetResourceKeys());
+  }
+
+  /**
+   * Returns the keys of resources belonging to a resource type.
+   *
+   * @param type The resource type.
+   * @param <T> The resource type.
+   * @return A completable future to be completed with the set of resource keys.
+   */
+  @SuppressWarnings("unchecked")
+  public <T extends Resource> CompletableFuture<Set<String>> keys(Class<? super T> type) {
+    try {
+      T instance = (T) type.getConstructor(RaftClient.class).newInstance(client);
+      return keys(instance.type());
+    } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  /**
+   * Returns the keys of resources belonging to a resource type.
+   *
+   * @param type The resource type.
+   * @param <T> The resource type.
+   * @return A completable future to be completed with the set of resource keys.
+   */
+  @SuppressWarnings("unchecked")
+  public <T extends Resource> CompletableFuture<Set<String>> keys(ResourceType<T> type) {
+    return client.submit(new GetResourceKeys(Assert.notNull(type, "type").id()));
+  }
+
+  /**
    * Gets or creates the given resource and acquires a singleton reference to it.
    * <p>
    * If a resource at the given key already exists, the resource will be validated to verify that its type
@@ -114,13 +150,12 @@ public class InstanceFactory implements Managed<InstanceFactory> {
    */
   @SuppressWarnings("unchecked")
   public <T extends Resource> CompletableFuture<T> get(String key, Class<? super T> type) {
-    return get(key, type, (client) -> {
-      try {
-        return (T) type.getConstructor(RaftClient.class).newInstance(client);
-      } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
-        throw new RuntimeException(e);
-      }
-    });
+    try {
+      T instance = (T) type.getConstructor(RaftClient.class).newInstance(client);
+      return get(key, instance.type());
+    } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   /**
@@ -135,41 +170,22 @@ public class InstanceFactory implements Managed<InstanceFactory> {
    * instance being returned.
    *
    * @param key The key at which to get the resource.
-   * @param factory The resource factory.
+   * @param type The expected resource type.
    * @param <T> The resource type.
    * @return A completable future to be completed once the resource has been loaded.
-   * @throws NullPointerException if {@code key} or {@code factory} are null
+   * @throws NullPointerException if {@code key} or {@code type} are null
    */
   @SuppressWarnings("unchecked")
-  public <T extends Resource> CompletableFuture<T> get(String key, Class<? super T> type, Function<RaftClient, T> factory) {
-    ResourceInfo info = Resources.getInfo(type);
-    return client.submit(new GetResource(Assert.notNull(key, "key"), info.stateMachine()))
+  public <T extends Resource> CompletableFuture<T> get(String key, ResourceType<T> type) {
+    return client.submit(new GetResource(Assert.notNull(key, "key"), Assert.notNull(type, "type").id()))
       .thenApply(id -> instances.computeIfAbsent(id, i -> {
-        T instance = factory.apply(new InstanceClient(id, client, transport));
-        return new Instance<>(key, type, Instance.Method.GET, instance);
+        try {
+          T instance = type.resource().getConstructor(RaftClient.class).newInstance(new InstanceClient(id, client, transport));
+          return new Instance<>(key, type, Instance.Method.GET, instance);
+        } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
+          throw new RuntimeException(e);
+        }
       })).thenApply(instance -> (T) instance.instance);
-  }
-
-  /**
-   * Returns the keys of all existing resources.
-   *
-   * @return A completable future to be completed with the set of resource keys.
-   */
-  @SuppressWarnings("unchecked")
-  public CompletableFuture<Set<String>> keys() {
-    return client.submit(new GetResourceKeys());
-  }
-
-  /**
-   * Returns the keys of resources belonging to a resource type.
-   *
-   * @param <T> The resource type.
-   * @return A completable future to be completed with the set of resource keys.
-   */
-  @SuppressWarnings("unchecked")
-  public <T extends Resource> CompletableFuture<Set<String>> keys(Class<? super T> type) {
-    ResourceInfo info = Resources.getInfo(Assert.notNull(type, "type"));
-    return client.submit(new GetResourceKeys(info.stateMachine()));
   }
 
   /**
@@ -185,7 +201,7 @@ public class InstanceFactory implements Managed<InstanceFactory> {
    * via this method will behave as a unique reference to the distributed state. Locking a lock acquired via this
    * method will lock <em>only</em> that lock instance and not other instance of the lock on this node.
    * <p>
-   * To acquire a singleton reference to a resource that is global to this node, use the {@link #get(String, Class)}
+   * To acquire a singleton reference to a resource that is global to this node, use the {@link #get(String, ResourceType)}
    * method.
    *
    * @param key The key at which to create the resource.
@@ -197,13 +213,12 @@ public class InstanceFactory implements Managed<InstanceFactory> {
    */
   @SuppressWarnings("unchecked")
   public <T extends Resource> CompletableFuture<T> create(String key, Class<? super T> type) {
-    return create(key, type, client -> {
-      try {
-        return (T) type.getConstructor(RaftClient.class).newInstance(client);
-      } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
-        throw new ResourceException(e);
-      }
-    });
+    try {
+      T instance = (T) type.getConstructor(RaftClient.class).newInstance(client);
+      return create(key, instance.type());
+    } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   /**
@@ -219,22 +234,26 @@ public class InstanceFactory implements Managed<InstanceFactory> {
    * via this method will behave as a unique reference to the distributed state. Locking a lock acquired via this
    * method will lock <em>only</em> that lock instance and not other instance of the lock on this node.
    * <p>
-   * To acquire a singleton reference to a resource that is global to this node, use the {@link #get(String, Class)}
+   * To acquire a singleton reference to a resource that is global to this node, use the {@link #get(String, ResourceType)}
    * method.
    *
    * @param key The key at which to create the resource.
-   * @param factory The resource factory.
+   * @param type The resource type to create.
    * @param <T> The resource type.
    * @return A completable future to be completed once the resource has been created.
-   * @throws NullPointerException if {@code key} or {@code factory} are null
+   * @throws NullPointerException if {@code key} or {@code type} are null
+   * @throws ResourceException if the resource could not be instantiated
    */
   @SuppressWarnings("unchecked")
-  public <T extends Resource> CompletableFuture<T> create(String key, Class<? super T> type, Function<RaftClient, T> factory) {
-    ResourceInfo info = Resources.getInfo(type);
-    return client.submit(new CreateResource(Assert.notNull(key, "key"), info.stateMachine()))
+  public <T extends Resource> CompletableFuture<T> create(String key, ResourceType<T> type) {
+    return client.submit(new CreateResource(Assert.notNull(key, "key"), Assert.notNull(type, "type").id()))
       .thenApply(id -> instances.computeIfAbsent(id, i -> {
-        T instance = factory.apply(new InstanceClient(id, client, transport));
-        return new Instance<>(key, type, Instance.Method.CREATE, instance);
+        try {
+          T instance = type.resource().getConstructor(RaftClient.class).newInstance(new InstanceClient(id, client, transport));
+          return new Instance<>(key, type, Instance.Method.CREATE, instance);
+        } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
+          throw new ResourceException(e);
+        }
       })).thenApply(instance -> (T) instance.instance);
   }
 
@@ -336,8 +355,7 @@ public class InstanceFactory implements Managed<InstanceFactory> {
      * Recovers a resource created via the get method.
      */
     private void recoverGet(Instance instance, RaftClient client, Iterator<Map.Entry<Long, Instance>> iterator, CompletableFuture<Void> future) {
-      ResourceInfo info = Resources.getInfo(instance.type);
-      client.submit(new GetResourceIfExists(instance.key, info.stateMachine()))
+      client.submit(new GetResourceIfExists(instance.key, instance.type.id()))
         .whenComplete(recoverComplete(instance, client, iterator, future));
     }
 
@@ -345,8 +363,7 @@ public class InstanceFactory implements Managed<InstanceFactory> {
      * Recovers a resource created via the create method.
      */
     private void recoverCreate(Instance instance, RaftClient client, Iterator<Map.Entry<Long, Instance>> iterator, CompletableFuture<Void> future) {
-      ResourceInfo info = Resources.getInfo(instance.type);
-      client.submit(new CreateResourceIfExists(instance.key, info.stateMachine()))
+      client.submit(new CreateResourceIfExists(instance.key, instance.type.id()))
         .whenComplete(recoverComplete(instance, client, iterator, future));
     }
 
@@ -383,11 +400,11 @@ public class InstanceFactory implements Managed<InstanceFactory> {
     }
 
     private final String key;
-    private final Class<? super T> type;
+    private final ResourceType type;
     private final Method method;
     private final T instance;
 
-    private Instance(String key, Class<? super T> type, Method method, T instance) {
+    private Instance(String key, ResourceType type, Method method, T instance) {
       this.key = key;
       this.type = type;
       this.method = method;

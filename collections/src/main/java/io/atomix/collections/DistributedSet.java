@@ -20,7 +20,8 @@ import io.atomix.collections.state.SetState;
 import io.atomix.copycat.client.RaftClient;
 import io.atomix.resource.Consistency;
 import io.atomix.resource.Resource;
-import io.atomix.resource.ResourceInfo;
+import io.atomix.resource.ResourceType;
+import io.atomix.resource.ResourceTypeInfo;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
@@ -31,11 +32,17 @@ import java.util.concurrent.CompletableFuture;
  * @param <T> The set value type.
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@ResourceInfo(stateMachine=SetState.class)
+@ResourceTypeInfo(id=-13, stateMachine=SetState.class)
 public class DistributedSet<T> extends Resource {
+  public static final ResourceType<DistributedSet> TYPE = new ResourceType<>(DistributedSet.class);
 
   public DistributedSet(RaftClient client) {
     super(client);
+  }
+
+  @Override
+  public ResourceType type() {
+    return TYPE;
   }
 
   @Override

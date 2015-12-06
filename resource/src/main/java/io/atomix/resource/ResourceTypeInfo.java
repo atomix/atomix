@@ -21,18 +21,21 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation for defining information about a resource.
+ * Resource type info.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface ResourceInfo {
+public @interface ResourceTypeInfo {
 
   /**
-   * Returns the resource state machine class.
-   *
-   * @return The resource state machine chass.
+   * The resource type ID.
+   */
+  int id();
+
+  /**
+   * The resource state machine class.
    */
   Class<? extends ResourceStateMachine> stateMachine();
 

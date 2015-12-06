@@ -18,7 +18,7 @@ package io.atomix.examples.variables;
 import io.atomix.Atomix;
 import io.atomix.AtomixClient;
 import io.atomix.catalyst.transport.Address;
-import io.atomix.primitives.DistributedValue;
+import io.atomix.variables.DistributedValue;
 
 import java.time.Duration;
 import java.util.ArrayList;

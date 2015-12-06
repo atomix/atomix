@@ -15,30 +15,27 @@
  */
 package io.atomix.manager;
 
-import java.util.Set;
-
 import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
-import io.atomix.catalyst.serializer.SerializationException;
 import io.atomix.catalyst.serializer.SerializeWith;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.copycat.client.Query;
-import io.atomix.resource.ResourceStateMachine;
+
+import java.util.Set;
 
 /**
  * Get resource keys query.
  */
 @SerializeWith(id=41)
 public class GetResourceKeys implements Query<Set<String>>, CatalystSerializable {
-
-  Class<? extends ResourceStateMachine> type;
+  private int type;
 
   public GetResourceKeys() {
-    type = null;
+    type = 0;
   }
 
-  public GetResourceKeys(Class<? extends ResourceStateMachine> type) {
+  public GetResourceKeys(int type) {
     this.type = type;
   }
 
@@ -47,33 +44,18 @@ public class GetResourceKeys implements Query<Set<String>>, CatalystSerializable
    *
    * @return The resource state machine class
    */
-  public Class<? extends ResourceStateMachine> type() {
+  public int type() {
     return type;
   }
 
   @Override
   public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
-    if (type == null) {
-      buffer.writeInt(0);
-    } else {
-      buffer.writeInt(type.getName().getBytes().length).write(type.getName().getBytes());
-    }
+    buffer.writeShort((short) type);
   }
 
   @Override
   public void readObject(BufferInput<?> buffer, Serializer serializer) {
-    int classNameSize = buffer.readInt();
-    if (classNameSize == 0) {
-      type = null;
-      return;
-    }
-    byte[] bytes = new byte[classNameSize];
-    buffer.read(bytes);
-    String typeName = new String(bytes);
-    try {
-      type = (Class<? extends ResourceStateMachine>) Class.forName(typeName);
-    } catch (ClassNotFoundException e) {
-      throw new SerializationException(e);
-    }
+    type = buffer.readShort();
   }
+
 }

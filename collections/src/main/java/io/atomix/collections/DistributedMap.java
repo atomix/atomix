@@ -20,7 +20,8 @@ import io.atomix.collections.state.MapState;
 import io.atomix.copycat.client.RaftClient;
 import io.atomix.resource.Consistency;
 import io.atomix.resource.Resource;
-import io.atomix.resource.ResourceInfo;
+import io.atomix.resource.ResourceType;
+import io.atomix.resource.ResourceTypeInfo;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
@@ -46,11 +47,17 @@ import java.util.concurrent.CompletableFuture;
  * @param <V> The map entry type.
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@ResourceInfo(stateMachine=MapState.class)
+@ResourceTypeInfo(id=-11, stateMachine=MapState.class)
 public class DistributedMap<K, V> extends Resource {
+  public static final ResourceType<DistributedMap> TYPE = new ResourceType<>(DistributedMap.class);
 
   public DistributedMap(RaftClient client) {
     super(client);
+  }
+
+  @Override
+  public ResourceType type() {
+    return TYPE;
   }
 
   @Override

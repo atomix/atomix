@@ -13,26 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.manager;
+package io.atomix.variables;
 
-import io.atomix.catalyst.serializer.SerializeWith;
+import io.atomix.resource.ResourceType;
 
 /**
- * Create resource if exists command.
+ * Distributed atomic resource types.
  *
- * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
+ * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-@SerializeWith(id=39)
-public class CreateResourceIfExists extends CreateResource {
+public final class DistributedVariables {
 
-  public CreateResourceIfExists() {
+  private DistributedVariables() {
   }
 
   /**
-   * @throws NullPointerException if {@code path} or {@code type} are null
+   * Distributed atomic value type.
    */
-  public CreateResourceIfExists(String key, int type) {
-    super(key, type);
-  }
+  public static final ResourceType<DistributedValue> VALUE = DistributedValue.TYPE;
+
+  /**
+   * Distributed atomic long type.
+   */
+  public static final ResourceType<DistributedLong> LONG = DistributedLong.TYPE;
 
 }

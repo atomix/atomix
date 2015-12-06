@@ -13,15 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.primitives;
+package io.atomix.variables;
 
 import io.atomix.catalyst.util.Listener;
 import io.atomix.copycat.client.RaftClient;
-import io.atomix.primitives.state.ValueCommands;
-import io.atomix.primitives.state.ValueState;
+import io.atomix.variables.state.ValueCommands;
+import io.atomix.variables.state.ValueState;
 import io.atomix.resource.Consistency;
 import io.atomix.resource.Resource;
-import io.atomix.resource.ResourceInfo;
+import io.atomix.resource.ResourceType;
+import io.atomix.resource.ResourceTypeInfo;
 
 import java.time.Duration;
 import java.util.Collections;
@@ -34,8 +35,9 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@ResourceInfo(stateMachine=ValueState.class)
+@ResourceTypeInfo(id=-1, stateMachine=ValueState.class)
 public class DistributedValue<T> extends Resource {
+  public static final ResourceType<DistributedValue> TYPE = new ResourceType<>(DistributedValue.class);
   private final java.util.Set<Consumer<T>> changeListeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
   public DistributedValue(RaftClient client) {
@@ -45,6 +47,11 @@ public class DistributedValue<T> extends Resource {
         listener.accept(event);
       }
     });
+  }
+
+  @Override
+  public ResourceType type() {
+    return TYPE;
   }
 
   @Override

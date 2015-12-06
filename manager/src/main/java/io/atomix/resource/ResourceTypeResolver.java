@@ -11,28 +11,25 @@
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
- * limitations under the License
+ * limitations under the License.
  */
-package io.atomix.manager;
-
-import io.atomix.catalyst.serializer.SerializeWith;
+package io.atomix.resource;
 
 /**
- * Create resource if exists command.
+ * The resource type resolver is responsible for locating resource types.
+ * <p>
+ * Users can implement custom resource type resolvers to automatically register serializers. See
+ * {@link ServiceLoaderResourceResolver} for an example implementation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=39)
-public class CreateResourceIfExists extends CreateResource {
-
-  public CreateResourceIfExists() {
-  }
+public interface ResourceTypeResolver {
 
   /**
-   * @throws NullPointerException if {@code path} or {@code type} are null
+   * Registers resource types on the given {@link ResourceRegistry} instance.
+   *
+   * @param registry The serializer registry.
    */
-  public CreateResourceIfExists(String key, int type) {
-    super(key, type);
-  }
+  void resolve(ResourceRegistry registry);
 
 }

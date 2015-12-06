@@ -23,7 +23,8 @@ import io.atomix.copycat.client.Command;
 import io.atomix.copycat.client.RaftClient;
 import io.atomix.resource.Consistency;
 import io.atomix.resource.Resource;
-import io.atomix.resource.ResourceInfo;
+import io.atomix.resource.ResourceType;
+import io.atomix.resource.ResourceTypeInfo;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -91,8 +92,10 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-@ResourceInfo(stateMachine=MembershipGroupState.class)
+@ResourceTypeInfo(id=-23, stateMachine=MembershipGroupState.class)
 public class DistributedMembershipGroup extends Resource {
+  public static final ResourceType<DistributedMembershipGroup> TYPE = new ResourceType<>(DistributedMembershipGroup.class);
+
   private final Listeners<GroupMember> joinListeners = new Listeners<>();
   private final Listeners<GroupMember> leaveListeners = new Listeners<>();
   private GroupMember member;
@@ -118,6 +121,11 @@ public class DistributedMembershipGroup extends Resource {
     });
 
     client.session().onEvent("execute", Runnable::run);
+  }
+
+  @Override
+  public ResourceType type() {
+    return TYPE;
   }
 
   @Override

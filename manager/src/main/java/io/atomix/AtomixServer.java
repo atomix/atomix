@@ -24,6 +24,9 @@ import io.atomix.catalyst.util.Managed;
 import io.atomix.copycat.server.CopycatServer;
 import io.atomix.copycat.server.storage.Storage;
 import io.atomix.manager.ResourceManager;
+import io.atomix.resource.ResourceRegistry;
+import io.atomix.resource.ResourceTypeResolver;
+import io.atomix.resource.ServiceLoaderResourceResolver;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -183,9 +186,11 @@ public final class AtomixServer implements Managed<AtomixServer> {
    */
   public static class Builder extends io.atomix.catalyst.util.Builder<AtomixServer> {
     private final CopycatServer.Builder builder;
+    private Transport transport;
+    private ResourceTypeResolver resourceResolver = new ServiceLoaderResourceResolver();
 
     private Builder(Address clientAddress, Address serverAddress, Collection<Address> members) {
-      this.builder = CopycatServer.builder(clientAddress, serverAddress, members).withStateMachine(new ResourceManager());
+      this.builder = CopycatServer.builder(clientAddress, serverAddress, members);
     }
 
     /**
@@ -247,6 +252,17 @@ public final class AtomixServer implements Managed<AtomixServer> {
      */
     public Builder withSerializer(Serializer serializer) {
       builder.withSerializer(serializer);
+      return this;
+    }
+
+    /**
+     * Sets the Atomix resource type resolver.
+     *
+     * @param resolver The resource type resolver.
+     * @return The Atomix builder.
+     */
+    public Builder withResourceResolver(ResourceTypeResolver resolver) {
+      this.resourceResolver = Assert.notNull(resolver, "resolver");
       return this;
     }
 
@@ -348,7 +364,25 @@ public final class AtomixServer implements Managed<AtomixServer> {
      */
     @Override
     public AtomixServer build() {
-      return new AtomixServer(builder.build());
+      // Create a resource registry and resolve resources with the configured resolver.
+      ResourceRegistry registry = new ResourceRegistry();
+      resourceResolver.resolve(registry);
+
+      // If no transport was configured by the user, attempt to load the Netty transport.
+      if (transport == null) {
+        try {
+          transport = (Transport) Class.forName("io.atomix.catalyst.transport.NettyTransport").newInstance();
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+          throw new ConfigurationException("transport not configured");
+        }
+      }
+
+      // Construct the underlying CopycatServer. The server should have been configured with a CombinedTransport
+      // that facilitates the local client connecting directly to the server.
+      CopycatServer server = builder.withTransport(transport)
+        .withStateMachine(new ResourceManager(registry)).build();
+
+      return new AtomixServer(server);
     }
   }
 

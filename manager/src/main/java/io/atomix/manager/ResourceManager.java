@@ -15,12 +15,15 @@
  */
 package io.atomix.manager;
 
+import io.atomix.catalyst.util.Assert;
 import io.atomix.copycat.client.session.Session;
 import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.StateMachine;
 import io.atomix.copycat.server.StateMachineExecutor;
 import io.atomix.resource.InstanceOperation;
+import io.atomix.resource.ResourceRegistry;
 import io.atomix.resource.ResourceStateMachine;
+import io.atomix.resource.ResourceType;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -35,11 +38,16 @@ import java.util.stream.Collectors;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class ResourceManager extends StateMachine {
+  private final ResourceRegistry registry;
   private StateMachineExecutor executor;
   private final Map<String, Long> keys = new HashMap<>();
   private final Map<Long, ResourceHolder> resources = new HashMap<>();
   private final Map<Long, SessionHolder> sessions = new HashMap<>();
   private final ResourceManagerCommitPool commits = new ResourceManagerCommitPool();
+
+  public ResourceManager(ResourceRegistry registry) {
+    this.registry = Assert.notNull(registry, "registry");
+  }
 
   @Override
   public void configure(StateMachineExecutor executor) {
@@ -81,6 +89,13 @@ public class ResourceManager extends StateMachine {
    */
   protected long getResource(Commit<? extends GetResource> commit) {
     String key = commit.operation().key();
+    ResourceType<?> type = registry.lookup(commit.operation().type());
+
+    // If the resource type is not known, fail the get.
+    if (type == null) {
+      commit.clean();
+      throw new IllegalArgumentException("unknown resource type: " + commit.operation().type());
+    }
 
     // Lookup the resource ID for the resource key.
     Long resourceId = keys.get(key);
@@ -94,11 +109,11 @@ public class ResourceManager extends StateMachine {
 
       try {
         // For the new resource, construct a state machine and store the resource info.
-        ResourceStateMachine stateMachine = commit.operation().type().newInstance();
+        ResourceStateMachine stateMachine = type.stateMachine().newInstance();
         ResourceManagerStateMachineExecutor executor = new ResourceManagerStateMachineExecutor(resourceId, this.executor);
 
         // Store the resource to be referenced by its resource ID.
-        ResourceHolder resource = new ResourceHolder(key, stateMachine, executor);
+        ResourceHolder resource = new ResourceHolder(key, type, stateMachine, executor);
         resources.put(resourceId, resource);
 
         // Initialize the resource state machine.
@@ -121,7 +136,7 @@ public class ResourceManager extends StateMachine {
     } else {
       // If a resource was found, validate that the resource type matches.
       ResourceHolder resource = resources.get(resourceId);
-      if (resource == null || resource.stateMachine.getClass() != commit.operation().type()) {
+      if (resource == null || !resource.type.equals(type)) {
         throw new ResourceManagerException("inconsistent resource type: " + commit.operation().type());
       }
 
@@ -167,6 +182,13 @@ public class ResourceManager extends StateMachine {
    */
   private long createResource(Commit<? extends CreateResource> commit) {
     String key = commit.operation().key();
+    ResourceType<?> type = registry.lookup(commit.operation().type());
+
+    // If the resource type is not known, fail the get.
+    if (type == null) {
+      commit.clean();
+      throw new IllegalArgumentException("unknown resource type: " + commit.operation().type());
+    }
 
     // Get the resource ID for the key.
     Long resourceId = keys.get(key);
@@ -182,11 +204,11 @@ public class ResourceManager extends StateMachine {
 
       try {
         // For the new resource, construct a state machine and store the resource info.
-        ResourceStateMachine stateMachine = commit.operation().type().newInstance();
+        ResourceStateMachine stateMachine = type.stateMachine().newInstance();
         ResourceManagerStateMachineExecutor executor = new ResourceManagerStateMachineExecutor(resourceId, this.executor);
 
         // Store the resource to be referenced by its resource ID.
-        resource = new ResourceHolder(key, stateMachine, executor);
+        resource = new ResourceHolder(key, type, stateMachine, executor);
         resources.put(resourceId, resource);
 
         // Initialize the resource state machine.
@@ -197,7 +219,7 @@ public class ResourceManager extends StateMachine {
     } else {
       // If a resource was found, validate that the resource type matches.
       resource = resources.get(resourceId);
-      if (resource == null || resource.stateMachine.getClass() != commit.operation().type()) {
+      if (resource == null || !resource.type.equals(type)) {
         throw new ResourceManagerException("inconsistent resource type: " + commit.operation().type());
       }
     }
@@ -274,15 +296,20 @@ public class ResourceManager extends StateMachine {
    */
   protected Set<String> getResourceKeys(Commit<GetResourceKeys> commit) {
     try {
-      Class<? extends ResourceStateMachine> stateMachineType = commit.operation().type();
-      if (stateMachineType == null) {
+      if (commit.operation().type() == 0) {
         return keys.keySet();
       }
+
+      ResourceType resourceType = registry.lookup(commit.operation().type());
+      if (resourceType == null) {
+        throw new IllegalArgumentException("unknown resource type: " + commit.operation().type());
+      }
+
       return resources.entrySet()
-               .stream()
-               .filter(e -> e.getValue().stateMachine.getClass().equals(stateMachineType))
-               .map(e -> e.getValue().key)
-               .collect(Collectors.toSet());
+        .stream()
+        .filter(e -> e.getValue().type.equals(resourceType))
+        .map(e -> e.getValue().key)
+        .collect(Collectors.toSet());
     } finally {
       commit.close();
     }
@@ -322,12 +349,14 @@ public class ResourceManager extends StateMachine {
    */
   private static class ResourceHolder {
     private final String key;
+    private final ResourceType type;
     private final ResourceStateMachine stateMachine;
     private final ResourceManagerStateMachineExecutor executor;
     private final Map<Long, SessionHolder> sessions = new HashMap<>();
 
-    private ResourceHolder(String key, ResourceStateMachine stateMachine, ResourceManagerStateMachineExecutor executor) {
+    private ResourceHolder(String key, ResourceType type, ResourceStateMachine stateMachine, ResourceManagerStateMachineExecutor executor) {
       this.key = key;
+      this.type = type;
       this.stateMachine = stateMachine;
       this.executor = executor;
     }

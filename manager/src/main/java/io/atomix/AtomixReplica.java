@@ -24,6 +24,7 @@ import io.atomix.copycat.server.CopycatServer;
 import io.atomix.copycat.server.storage.Storage;
 import io.atomix.manager.ResourceManager;
 import io.atomix.resource.InstanceFactory;
+import io.atomix.resource.ResourceRegistry;
 
 import java.time.Duration;
 import java.util.*;
@@ -425,6 +426,10 @@ public final class AtomixReplica extends Atomix {
         }
       }
 
+      // Create a resource registry and resolve resources with the configured resolver.
+      ResourceRegistry registry = new ResourceRegistry();
+      resourceResolver.resolve(registry);
+
       // If no client transport was configured, default it to the server transport.
       if (clientTransport == null) {
         clientTransport = serverTransport;
@@ -440,7 +445,7 @@ public final class AtomixReplica extends Atomix {
       // that facilitates the local client connecting directly to the server.
       CopycatServer server = serverBuilder.withClientTransport(new CombinedTransport(new LocalTransport(localRegistry), clientTransport))
         .withServerTransport(serverTransport)
-        .withStateMachine(new ResourceManager()).build();
+        .withStateMachine(new ResourceManager(registry)).build();
 
       return new AtomixReplica(new InstanceFactory(clientBuilder, serverTransport), server);
     }
