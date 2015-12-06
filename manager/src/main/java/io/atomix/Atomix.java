@@ -23,23 +23,21 @@ import io.atomix.catalyst.util.Managed;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.copycat.client.RaftClient;
-import io.atomix.manager.CreateResource;
-import io.atomix.manager.GetResource;
-import io.atomix.manager.ResourceExists;
-import io.atomix.resource.*;
+import io.atomix.resource.InstanceFactory;
+import io.atomix.resource.Resource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
-import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 /**
- * Base type for creating and managing distributed {@link AbstractResource resources} in a Atomix cluster.
+ * Base type for creating and managing distributed {@link Resource resources} in a Atomix cluster.
  * <p>
  * Resources are user provided stateful objects backed by a distributed state machine. This class facilitates the
- * creation and management of {@link AbstractResource} objects via a filesystem like interface. There is a
+ * creation and management of {@link Resource} objects via a filesystem like interface. There is a
  * one-to-one relationship between keys and resources, so each key can be associated with one and only one resource.
  * <p>
  * To create a resource, pass the resource {@link java.lang.Class} to the {@link Atomix#create(String, Class)} method.
@@ -47,23 +45,21 @@ import java.util.function.Function;
  * and future operations submitted for that resource will be applied to the state machine. Internally, resource state
  * machines are multiplexed across a shared Raft log.
  * <p>
- * {@link AbstractResource} implementations serve as a user-friendly interface through which to submit
+ * {@link Resource} implementations serve as a user-friendly interface through which to submit
  * {@link io.atomix.copycat.client.Command commands} and {@link io.atomix.copycat.client.Query queries} to the underlying
  * {@link CopycatClient} client.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class Atomix implements Managed<Atomix> {
-  protected final CopycatClient client;
-  protected final Transport transport;
-  private final Map<Long, Resource> resources = new ConcurrentHashMap<>();
+  protected static final Logger LOGGER = LoggerFactory.getLogger(Atomix.class);
+  private final InstanceFactory factory;
 
   /**
    * @throws NullPointerException if {@code client} is null
    */
-  protected Atomix(CopycatClient client, Transport transport) {
-    this.client = Assert.notNull(client, "client");
-    this.transport = Assert.notNull(transport, "transport");
+  protected Atomix(InstanceFactory factory) {
+    this.factory = Assert.notNull(factory, "factory");
   }
 
   /**
@@ -77,7 +73,7 @@ public abstract class Atomix implements Managed<Atomix> {
    * @return The Atomix thread context.
    */
   public ThreadContext context() {
-    return client.context();
+    return factory.context();
   }
 
   /**
@@ -117,7 +113,7 @@ public abstract class Atomix implements Managed<Atomix> {
    * @throws NullPointerException if {@code key} is null
    */
   public CompletableFuture<Boolean> exists(String key) {
-    return client.submit(new ResourceExists(key));
+    return factory.exists(key);
   }
 
   /**
@@ -127,8 +123,8 @@ public abstract class Atomix implements Managed<Atomix> {
    * matches the given type. If no resource yet exists, a new resource will be created in the cluster. Once
    * the session for the resource has been opened, a resource instance will be returned.
    * <p>
-   * The returned {@link AbstractResource} instance will be a singleton reference to an global instance for this node.
-   * That is, multiple calls to this method for the same resource will result in the same {@link AbstractResource}
+   * The returned {@link Resource} instance will be a singleton reference to an global instance for this node.
+   * That is, multiple calls to this method for the same resource will result in the same {@link Resource}
    * instance being returned.
    * <p>
    * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
@@ -155,15 +151,8 @@ public abstract class Atomix implements Managed<Atomix> {
    * @return A completable future to be completed once the resource has been loaded.
    * @throws NullPointerException if {@code key} or {@code type} are null
    */
-  @SuppressWarnings("unchecked")
   public <T extends Resource> CompletableFuture<T> get(String key, Class<? super T> type) {
-    return get(key, type, (client) -> {
-      try {
-        return (T) type.getConstructor(RaftClient.class).newInstance(client);
-      } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
-        throw new RuntimeException(e);
-      }
-    });
+    return factory.get(key, type);
   }
 
   /**
@@ -173,8 +162,8 @@ public abstract class Atomix implements Managed<Atomix> {
    * matches the given type. If no resource yet exists, a new resource will be created in the cluster. Once
    * the session for the resource has been opened, a resource instance will be returned.
    * <p>
-   * The returned {@link AbstractResource} instance will be a singleton reference to an global instance for this node.
-   * That is, multiple calls to this method for the same resource will result in the same {@link AbstractResource}
+   * The returned {@link Resource} instance will be a singleton reference to an global instance for this node.
+   * That is, multiple calls to this method for the same resource will result in the same {@link Resource}
    * instance being returned.
    * <p>
    * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
@@ -201,11 +190,66 @@ public abstract class Atomix implements Managed<Atomix> {
    * @return A completable future to be completed once the resource has been loaded.
    * @throws NullPointerException if {@code key} or {@code factory} are null
    */
-  @SuppressWarnings("unchecked")
   public <T extends Resource> CompletableFuture<T> get(String key, Class<? super T> type, Function<RaftClient, T> factory) {
-    ResourceInfo info = Resources.getInfo(type);
-    return client.submit(new GetResource(Assert.notNull(key, "key"), info.stateMachine()))
-      .thenApply(id -> (T) resources.computeIfAbsent(id, i -> factory.apply(new InstanceClient(id, client, transport))));
+    return this.factory.get(key, type, factory);
+  }
+
+  /**
+   * Returns keys of all existing resources.
+   *
+   * <p>
+   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
+   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
+   * use the {@link CompletableFuture#get()} method:
+   * <pre>
+   *   {@code
+   *   Collection<String> resourceKeys = atomix.keys().get();
+   *   }
+   * </pre>
+   * Alternatively, to execute the operation asynchronous and be notified once the result is received in a different
+   * thread, use one of the many completable future callbacks:
+   * <pre>
+   *   {@code
+   *   atomix.<Collection<String>>keys().thenAccept(resourceKeys -> {
+   *     ...
+   *   });
+   *   }
+   * </pre>
+   *
+   * @return A completable future to be completed with the keys of all existing resources.
+   */
+  public CompletableFuture<Set<String>> keys() {
+    return this.factory.keys();
+  }
+
+  /**
+   * Returns the keys of existing resources belonging to a resource type.
+   *
+   * <p>
+   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
+   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
+   * use the {@link CompletableFuture#get()} method:
+   * <pre>
+   *   {@code
+   *   Set<String> resourceKeys = atomix.keys(DistributedLock.class).get();
+   *   }
+   * </pre>
+   * Alternatively, to execute the operation asynchronous and be notified once the result is received in a different
+   * thread, use one of the many completable future callbacks:
+   * <pre>
+   *   {@code
+   *   atomix.<Set<String>>keys().thenAccept(resourceKeys -> {
+   *     ...
+   *   });
+   *   }
+   * </pre>
+   *
+   * @param type The resource type by which to filter resources.
+   * @param <T> The resource type.
+   * @return A completable future to be completed with the set of resource keys.
+   */
+  public <T extends Resource> CompletableFuture<Set<String>> keys(Class<? super T> type) {
+    return this.factory.keys(type);
   }
 
   /**
@@ -215,7 +259,7 @@ public abstract class Atomix implements Managed<Atomix> {
    * matches the given type. If no resource yet exists, a new resource will be created in the cluster. Once
    * the session for the resource has been opened, a new resource instance will be returned.
    * <p>
-   * The returned {@link AbstractResource} instance will have a unique logical connection to the resource state. This
+   * The returned {@link Resource} instance will have a unique logical connection to the resource state. This
    * means that operations and events submitted or received by this instance related to this instance only,
    * even if multiple instances of the resource are open on this node. For instance, a lock resource created
    * via this method will behave as a unique reference to the distributed state. Locking a lock acquired via this
@@ -249,15 +293,8 @@ public abstract class Atomix implements Managed<Atomix> {
    * @throws NullPointerException if {@code key} or {@code type} are null
    * @throws ResourceException if the resource could not be instantiated
    */
-  @SuppressWarnings("unchecked")
   public <T extends Resource> CompletableFuture<T> create(String key, Class<? super T> type) {
-    return create(key, type, client -> {
-      try {
-        return (T) type.getConstructor(RaftClient.class).newInstance(client);
-      } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
-        throw new ResourceException(e);
-      }
-    });
+    return factory.create(key, type);
   }
 
   /**
@@ -267,7 +304,7 @@ public abstract class Atomix implements Managed<Atomix> {
    * matches the given type. If no resource yet exists, a new resource will be created in the cluster. Once
    * the session for the resource has been opened, a new resource instance will be returned.
    * <p>
-   * The returned {@link AbstractResource} instance will have a unique logical connection to the resource state. This
+   * The returned {@link Resource} instance will have a unique logical connection to the resource state. This
    * means that operations and events submitted or received by this instance related to this instance only,
    * even if multiple instances of the resource are open on this node. For instance, a lock resource created
    * via this method will behave as a unique reference to the distributed state. Locking a lock acquired via this
@@ -301,9 +338,7 @@ public abstract class Atomix implements Managed<Atomix> {
    * @throws NullPointerException if {@code key} or {@code factory} are null
    */
   public <T extends Resource> CompletableFuture<T> create(String key, Class<? super T> type, Function<RaftClient, T> factory) {
-    ResourceInfo info = Resources.getInfo(type);
-    return client.submit(new CreateResource(Assert.notNull(key, "key"), info.stateMachine()))
-      .thenApply(id -> factory.apply(new InstanceClient(id, client, transport)));
+    return this.factory.create(key, type, factory);
   }
 
   /**
@@ -313,7 +348,7 @@ public abstract class Atomix implements Managed<Atomix> {
    */
   @Override
   public CompletableFuture<Atomix> open() {
-    return client.open().thenApply(v -> this);
+    return factory.open().thenApply(v -> this);
   }
 
   /**
@@ -323,7 +358,7 @@ public abstract class Atomix implements Managed<Atomix> {
    */
   @Override
   public boolean isOpen() {
-    return client.isOpen();
+    return factory.isOpen();
   }
 
   /**
@@ -333,7 +368,7 @@ public abstract class Atomix implements Managed<Atomix> {
    */
   @Override
   public CompletableFuture<Void> close() {
-    return client.close();
+    return factory.close();
   }
 
   /**
@@ -343,12 +378,12 @@ public abstract class Atomix implements Managed<Atomix> {
    */
   @Override
   public boolean isClosed() {
-    return client.isClosed();
+    return factory.isClosed();
   }
 
   @Override
   public String toString() {
-    return String.format("%s[session=%s]", getClass().getSimpleName(), client.session());
+    return String.format("%s[session=%s]", getClass().getSimpleName(), factory.session());
   }
 
   /**

@@ -15,9 +15,11 @@
  */
 package io.atomix.resource;
 
+import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.copycat.client.Command;
 import io.atomix.copycat.client.Query;
+import io.atomix.copycat.client.RaftClient;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -37,14 +39,31 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Resource {
+public abstract class Resource {
+  protected RaftClient client;
+  private Consistency consistency = Consistency.ATOMIC;
+
+  protected Resource(RaftClient client) {
+    this.client = Assert.notNull(client, "client");
+  }
+
+  /**
+   * Resets the internal Raft client.
+   *
+   * @param client The internal Raft client.
+   */
+  final void reset(RaftClient client) {
+    this.client = Assert.notNull(client, "client");
+  }
 
   /**
    * Returns the resource thread context.
    *
    * @return The resource thread context.
    */
-  ThreadContext context();
+  public ThreadContext context() {
+    return client.context();
+  }
 
   /**
    * Sets the resource consistency level.
@@ -67,13 +86,63 @@ public interface Resource {
    * @param consistency The resource consistency level.
    * @return The resource instance.
    */
-  Resource with(Consistency consistency);
+  public Resource with(Consistency consistency) {
+    this.consistency = Assert.notNull(consistency, "consistency");
+    return this;
+  }
+
+  /**
+   * Submits a write operation for this resource to the cluster.
+   * <p>
+   * The read operation will be submitted with the configured {@link Consistency#writeConsistency()} if
+   * it does not explicitly override {@link Command#consistency()} to provide a static consistency level.
+   *
+   * @param command The command to submit.
+   * @param <R> The command result type.
+   * @return A completable future to be completed with the command result.
+   * @throws NullPointerException if {@code command} is null
+   */
+  protected <R> CompletableFuture<R> submit(Command<R> command) {
+    return client.submit(new ResourceCommand<>(Assert.notNull(command, "command"), consistency.writeConsistency()));
+  }
+
+  /**
+   * Submits a read operation for this resource to the cluster.
+   * <p>
+   * The read operation will be submitted with the configured {@link Consistency#readConsistency()} if
+   * it does not explicitly override {@link Query#consistency()} to provide a static consistency level.
+   *
+   * @param query The query to submit.
+   * @param <R> The query result type.
+   * @return A completable future to be completed with the query result.
+   * @throws NullPointerException if {@code query} is null
+   */
+  protected <R> CompletableFuture<R> submit(Query<R> query) {
+    return client.submit(new ResourceQuery<>(Assert.notNull(query, "query"), consistency.readConsistency()));
+  }
 
   /**
    * Deletes the resource state.
    *
    * @return A completable future to be completed once the resource has been deleted.
    */
-  CompletableFuture<Void> delete();
+  public CompletableFuture<Void> delete() {
+    return client.submit(new ResourceStateMachine.DeleteCommand());
+  }
+
+  @Override
+  public int hashCode() {
+    return 37 * 23 + (int)(client.session().id() ^ (client.session().id() >>> 32));
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    return object instanceof Resource && ((Resource) object).client.session().id() == client.session().id();
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[id=%s]", getClass().getSimpleName(), client.session().id());
+  }
 
 }

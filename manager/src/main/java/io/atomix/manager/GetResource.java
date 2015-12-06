@@ -39,8 +39,8 @@ public class GetResource extends KeyOperation<Long> implements Command<Long> {
   /**
    * @throws NullPointerException if {@code path} or {@code type} are null
    */
-  public GetResource(String path, Class<? extends ResourceStateMachine> type) {
-    super(path);
+  public GetResource(String key, Class<? extends ResourceStateMachine> type) {
+    super(key);
     this.type = Assert.notNull(type, "type");
   }
 

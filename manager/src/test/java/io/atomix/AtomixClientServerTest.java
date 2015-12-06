@@ -20,9 +20,8 @@ import io.atomix.copycat.client.Command;
 import io.atomix.copycat.client.Query;
 import io.atomix.copycat.client.RaftClient;
 import io.atomix.copycat.server.Commit;
-import io.atomix.copycat.server.StateMachineExecutor;
-import io.atomix.resource.AbstractResource;
 import io.atomix.resource.Consistency;
+import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceInfo;
 import io.atomix.resource.ResourceStateMachine;
 import org.testng.annotations.Test;
@@ -193,6 +192,46 @@ public class AtomixClientServerTest extends AbstractServerTest {
   }
 
   /**
+   * Tests getting resource keys.
+   */
+  public void testGetResourceKeys() throws Throwable {
+    createServers(5);
+    Atomix client = createClient();
+
+    client.keys().thenAccept(result -> {
+      threadAssertTrue(result.isEmpty());
+      resume();
+    });
+    await();
+
+    client.create("test", TestResource.class).get();
+    client.keys().thenAccept(result -> {
+      threadAssertTrue(result.size() == 1 && result.contains("test"));
+      resume();
+    });
+    await();
+
+    client.create("value", ValueResource.class).get();
+    client.keys().thenAccept(result -> {
+      threadAssertTrue(result.size() == 2 && result.contains("test") && result.contains("value"));
+      resume();
+    });
+    await();
+
+    client.keys(TestResource.class).thenAccept(result -> {
+      threadAssertTrue(result.size() == 1 && result.contains("test"));
+      resume();
+    });
+    await();
+
+    client.keys(ValueResource.class).thenAccept(result -> {
+      threadAssertTrue(result.size() == 1 && result.contains("value"));
+      resume();
+    });
+    await();
+  }
+
+  /**
    * Creates a client.
    */
   private Atomix createClient() throws Throwable {
@@ -206,7 +245,7 @@ public class AtomixClientServerTest extends AbstractServerTest {
    * Test resource.
    */
   @ResourceInfo(stateMachine=TestStateMachine.class)
-  public static class TestResource extends AbstractResource {
+  public static class TestResource extends Resource {
     public TestResource(RaftClient client) {
       super(client);
     }
@@ -273,7 +312,7 @@ public class AtomixClientServerTest extends AbstractServerTest {
    * Value resource.
    */
   @ResourceInfo(stateMachine=ValueStateMachine.class)
-  public static class ValueResource extends AbstractResource {
+  public static class ValueResource extends Resource {
     public ValueResource(RaftClient client) {
       super(client);
     }

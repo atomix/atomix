@@ -20,10 +20,10 @@ import io.atomix.catalyst.transport.*;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.ConfigurationException;
 import io.atomix.copycat.client.ConnectionStrategy;
-import io.atomix.copycat.client.CopycatClient;
 import io.atomix.copycat.server.CopycatServer;
 import io.atomix.copycat.server.storage.Storage;
 import io.atomix.manager.ResourceManager;
+import io.atomix.resource.InstanceFactory;
 
 import java.time.Duration;
 import java.util.*;
@@ -136,8 +136,8 @@ public final class AtomixReplica extends Atomix {
   /**
    * @throws NullPointerException if {@code client} or {@code server} are null
    */
-  public AtomixReplica(CopycatClient client, CopycatServer server, Transport transport) {
-    super(client, transport);
+  private AtomixReplica(InstanceFactory factory, CopycatServer server) {
+    super(factory);
     this.server = server;
   }
 
@@ -432,8 +432,8 @@ public final class AtomixReplica extends Atomix {
 
       // Configure the client and server with a transport that routes all local client communication
       // directly through the local server, ensuring we don't incur unnecessary network traffic by
-      // sending operations to a remote server when a local server is already available in the same JVM.
-      CopycatClient client = clientBuilder.withTransport(new LocalTransport(localRegistry))
+      // sending operations to a remote server when a local server is already available in the same JVM.=
+      clientBuilder.withTransport(new LocalTransport(localRegistry))
         .withConnectionStrategy(new CombinedConnectionStrategy(clientAddress)).build();
 
       // Construct the underlying CopycatServer. The server should have been configured with a CombinedTransport
@@ -442,7 +442,7 @@ public final class AtomixReplica extends Atomix {
         .withServerTransport(serverTransport)
         .withStateMachine(new ResourceManager()).build();
 
-      return new AtomixReplica(client, server, serverTransport);
+      return new AtomixReplica(new InstanceFactory(clientBuilder, serverTransport), server);
     }
   }
 

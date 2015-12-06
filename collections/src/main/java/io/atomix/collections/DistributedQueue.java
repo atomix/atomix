@@ -18,8 +18,8 @@ package io.atomix.collections;
 import io.atomix.collections.state.QueueCommands;
 import io.atomix.collections.state.QueueState;
 import io.atomix.copycat.client.RaftClient;
-import io.atomix.resource.AbstractResource;
 import io.atomix.resource.Consistency;
+import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceInfo;
 
 import java.util.concurrent.CompletableFuture;
@@ -31,7 +31,7 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @ResourceInfo(stateMachine=QueueState.class)
-public class DistributedQueue<T> extends AbstractResource {
+public class DistributedQueue<T> extends Resource {
 
   public DistributedQueue(RaftClient client) {
     super(client);

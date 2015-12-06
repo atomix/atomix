@@ -25,7 +25,9 @@ import io.atomix.resource.ResourceStateMachine;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Resource manager.
@@ -44,9 +46,12 @@ public class ResourceManager extends StateMachine {
     this.executor = executor;
     executor.register(InstanceOperation.class, (Function<Commit<InstanceOperation>, Object>) this::operateResource);
     executor.register(GetResource.class, this::getResource);
+    executor.register(GetResourceIfExists.class, this::getResourceIfExists);
     executor.register(CreateResource.class, this::createResource);
+    executor.register(CreateResourceIfExists.class, this::createResourceIfExists);
     executor.register(DeleteResource.class, this::deleteResource);
     executor.register(ResourceExists.class, this::resourceExists);
+    executor.register(GetResourceKeys.class, this::getResourceKeys);
   }
 
   /**
@@ -74,7 +79,7 @@ public class ResourceManager extends StateMachine {
   /**
    * Gets a resource.
    */
-  protected long getResource(Commit<GetResource> commit) {
+  protected long getResource(Commit<? extends GetResource> commit) {
     String key = commit.operation().key();
 
     // Lookup the resource ID for the resource key.
@@ -143,9 +148,24 @@ public class ResourceManager extends StateMachine {
   }
 
   /**
+   * Applies a get resource if exists commit.
+   */
+  @SuppressWarnings("unchecked")
+  private long getResourceIfExists(Commit<GetResourceIfExists> commit) {
+    String key = commit.operation().key();
+
+    // Lookup the resource ID for the resource key.
+    Long resourceId = keys.get(key);
+    if (resourceId != null) {
+      return getResource(commit);
+    }
+    return 0;
+  }
+
+  /**
    * Applies a create resource commit.
    */
-  private long createResource(Commit<CreateResource> commit) {
+  private long createResource(Commit<? extends CreateResource> commit) {
     String key = commit.operation().key();
 
     // Get the resource ID for the key.
@@ -196,6 +216,21 @@ public class ResourceManager extends StateMachine {
   }
 
   /**
+   * Applies a create resource if exists commit.
+   */
+  @SuppressWarnings("unchecked")
+  private long createResourceIfExists(Commit<CreateResourceIfExists> commit) {
+    String key = commit.operation().key();
+
+    // Lookup the resource ID for the resource key.
+    Long resourceId = keys.get(key);
+    if (resourceId != null) {
+      return createResource(commit);
+    }
+    return 0;
+  }
+
+  /**
    * Checks if a resource exists.
    */
   protected boolean resourceExists(Commit<ResourceExists> commit) {
@@ -231,6 +266,25 @@ public class ResourceManager extends StateMachine {
       return true;
     } finally {
       commit.clean();
+    }
+  }
+
+  /**
+   * Handles get resource keys commit.
+   */
+  protected Set<String> getResourceKeys(Commit<GetResourceKeys> commit) {
+    try {
+      Class<? extends ResourceStateMachine> stateMachineType = commit.operation().type();
+      if (stateMachineType == null) {
+        return keys.keySet();
+      }
+      return resources.entrySet()
+               .stream()
+               .filter(e -> e.getValue().stateMachine.getClass().equals(stateMachineType))
+               .map(e -> e.getValue().key)
+               .collect(Collectors.toSet());
+    } finally {
+      commit.close();
     }
   }
 

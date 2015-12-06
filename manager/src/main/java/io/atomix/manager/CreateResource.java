@@ -39,8 +39,8 @@ public class CreateResource extends KeyOperation<Long> implements Command<Long> 
   /**
    * @throws NullPointerException if {@code path} or {@code type} are null
    */
-  public CreateResource(String path, Class<? extends ResourceStateMachine> type) {
-    super(path);
+  public CreateResource(String key, Class<? extends ResourceStateMachine> type) {
+    super(key);
     this.type = Assert.notNull(type, "type");
   }
 
