@@ -22,8 +22,8 @@
     <version>0.1.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>atomix-primitives</artifactId>
-  <name>Atomix Primitives</name>
+  <artifactId>atomix-variables</artifactId>
+  <name>Atomix Variables</name>
 
   <dependencies>
     <dependency>
