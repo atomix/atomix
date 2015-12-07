@@ -20,6 +20,7 @@ import io.atomix.copycat.client.session.Session;
 import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.StateMachine;
 import io.atomix.copycat.server.StateMachineExecutor;
+import io.atomix.copycat.server.session.SessionListener;
 import io.atomix.resource.InstanceOperation;
 import io.atomix.resource.ResourceRegistry;
 import io.atomix.resource.ResourceStateMachine;
@@ -37,7 +38,7 @@ import java.util.stream.Collectors;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ResourceManager extends StateMachine {
+public class ResourceManager extends StateMachine implements SessionListener {
   private final ResourceRegistry registry;
   private StateMachineExecutor executor;
   private final Map<String, Long> keys = new HashMap<>();
@@ -126,7 +127,9 @@ public class ResourceManager extends StateMachine {
         resource.sessions.put(commit.session().id(), holder);
 
         // Register the newly created session with the resource state machine.
-        stateMachine.register(session);
+        if (stateMachine instanceof SessionListener) {
+          ((SessionListener) stateMachine).register(session);
+        }
 
         // Returns the session ID for the resource client session.
         return session.id();
@@ -151,7 +154,9 @@ public class ResourceManager extends StateMachine {
         resource.sessions.put(commit.session().id(), holder);
 
         // Register the newly created session with the resource state machine.
-        resource.stateMachine.register(session);
+        if (resource.stateMachine instanceof SessionListener) {
+          ((SessionListener) resource.stateMachine).register(session);
+        }
 
         return session.id();
       } else {
@@ -232,7 +237,9 @@ public class ResourceManager extends StateMachine {
     sessions.put(id, new SessionHolder(resourceId, commit, session));
 
     // Register the newly created session with the resource state machine.
-    resource.stateMachine.register(session);
+    if (resource.stateMachine instanceof SessionListener) {
+      ((SessionListener) resource.stateMachine).register(session);
+    }
 
     return id;
   }
@@ -316,12 +323,33 @@ public class ResourceManager extends StateMachine {
   }
 
   @Override
+  public void register(Session session) {
+
+  }
+
+  @Override
   public void expire(Session session) {
     for (SessionHolder sessionHolder : sessions.values()) {
       if (sessionHolder.commit.session().id() == session.id()) {
         ResourceHolder resource = resources.get(sessionHolder.resource);
         if (resource != null) {
-          resource.stateMachine.expire(sessionHolder.session);
+          if (resource.stateMachine instanceof SessionListener) {
+            ((SessionListener) resource.stateMachine).expire(sessionHolder.session);
+          }
+        }
+      }
+    }
+  }
+
+  @Override
+  public void unregister(Session session) {
+    for (SessionHolder sessionHolder : sessions.values()) {
+      if (sessionHolder.commit.session().id() == session.id()) {
+        ResourceHolder resource = resources.get(sessionHolder.resource);
+        if (resource != null) {
+          if (resource.stateMachine instanceof SessionListener) {
+            ((SessionListener) resource.stateMachine).unregister(sessionHolder.session);
+          }
         }
       }
     }
@@ -336,7 +364,9 @@ public class ResourceManager extends StateMachine {
         ResourceHolder resource = resources.get(sessionHolder.resource);
         if (resource != null) {
           resource.sessions.remove(sessionHolder.commit.session().id());
-          resource.stateMachine.close(sessionHolder.session);
+          if (resource.stateMachine instanceof SessionListener) {
+            ((SessionListener) resource.stateMachine).close(sessionHolder.session);
+          }
         }
         sessionHolder.commit.clean();
         iterator.remove();
