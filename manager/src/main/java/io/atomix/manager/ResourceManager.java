@@ -18,18 +18,18 @@ package io.atomix.manager;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.copycat.client.session.Session;
 import io.atomix.copycat.server.Commit;
+import io.atomix.copycat.server.Snapshottable;
 import io.atomix.copycat.server.StateMachine;
 import io.atomix.copycat.server.StateMachineExecutor;
 import io.atomix.copycat.server.session.SessionListener;
+import io.atomix.copycat.server.storage.snapshot.SnapshotReader;
+import io.atomix.copycat.server.storage.snapshot.SnapshotWriter;
 import io.atomix.resource.InstanceOperation;
 import io.atomix.resource.ResourceRegistry;
 import io.atomix.resource.ResourceStateMachine;
 import io.atomix.resource.ResourceType;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ResourceManager extends StateMachine implements SessionListener {
+public class ResourceManager extends StateMachine implements SessionListener, Snapshottable {
   private final ResourceRegistry registry;
   private StateMachineExecutor executor;
   private final Map<String, Long> keys = new HashMap<>();
@@ -61,6 +61,28 @@ public class ResourceManager extends StateMachine implements SessionListener {
     executor.register(DeleteResource.class, this::deleteResource);
     executor.register(ResourceExists.class, this::resourceExists);
     executor.register(GetResourceKeys.class, this::getResourceKeys);
+  }
+
+  @Override
+  public void snapshot(SnapshotWriter writer) {
+    List<ResourceHolder> resources = new ArrayList<>(this.resources.values());
+    Collections.sort(resources, (r1, r2) -> (int)(r1.id - r2.id));
+    for (ResourceHolder resource : resources) {
+      if (resource.stateMachine instanceof Snapshottable) {
+        ((Snapshottable) resource.stateMachine).snapshot(writer);
+      }
+    }
+  }
+
+  @Override
+  public void install(SnapshotReader reader) {
+    List<ResourceHolder> resources = new ArrayList<>(this.resources.values());
+    Collections.sort(resources, (r1, r2) -> (int)(r1.id - r2.id));
+    for (ResourceHolder resource : resources) {
+      if (resource.stateMachine instanceof Snapshottable) {
+        ((Snapshottable) resource.stateMachine).install(reader);
+      }
+    }
   }
 
   /**
@@ -114,7 +136,7 @@ public class ResourceManager extends StateMachine implements SessionListener {
         ResourceManagerStateMachineExecutor executor = new ResourceManagerStateMachineExecutor(resourceId, this.executor);
 
         // Store the resource to be referenced by its resource ID.
-        ResourceHolder resource = new ResourceHolder(key, type, stateMachine, executor);
+        ResourceHolder resource = new ResourceHolder(resourceId, key, type, stateMachine, executor);
         resources.put(resourceId, resource);
 
         // Initialize the resource state machine.
@@ -213,7 +235,7 @@ public class ResourceManager extends StateMachine implements SessionListener {
         ResourceManagerStateMachineExecutor executor = new ResourceManagerStateMachineExecutor(resourceId, this.executor);
 
         // Store the resource to be referenced by its resource ID.
-        resource = new ResourceHolder(key, type, stateMachine, executor);
+        resource = new ResourceHolder(resourceId, key, type, stateMachine, executor);
         resources.put(resourceId, resource);
 
         // Initialize the resource state machine.
@@ -378,13 +400,15 @@ public class ResourceManager extends StateMachine implements SessionListener {
    * Resource holder.
    */
   private static class ResourceHolder {
+    private final long id;
     private final String key;
     private final ResourceType type;
     private final ResourceStateMachine stateMachine;
     private final ResourceManagerStateMachineExecutor executor;
     private final Map<Long, SessionHolder> sessions = new HashMap<>();
 
-    private ResourceHolder(String key, ResourceType type, ResourceStateMachine stateMachine, ResourceManagerStateMachineExecutor executor) {
+    private ResourceHolder(long id, String key, ResourceType type, ResourceStateMachine stateMachine, ResourceManagerStateMachineExecutor executor) {
+      this.id = id;
       this.key = key;
       this.type = type;
       this.stateMachine = stateMachine;
