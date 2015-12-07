@@ -39,6 +39,10 @@ public class QueueCommands {
    * Abstract queue command.
    */
   private static abstract class QueueCommand<V> implements Command<V>, CatalystSerializable {
+    @Override
+    public CompactionMode compaction() {
+      return CompactionMode.QUORUM_CLEAN;
+    }
 
     @Override
     public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
@@ -180,8 +184,8 @@ public class QueueCommands {
   public static class Poll extends QueueCommand<Object> {
 
     @Override
-    public PersistenceLevel persistence() {
-      return PersistenceLevel.PERSISTENT;
+    public CompactionMode compaction() {
+      return CompactionMode.FULL_SEQUENTIAL_COMMIT;
     }
   }
 
@@ -192,8 +196,8 @@ public class QueueCommands {
   public static class Element extends QueueCommand<Object> {
 
     @Override
-    public PersistenceLevel persistence() {
-      return PersistenceLevel.PERSISTENT;
+    public CompactionMode compaction() {
+      return CompactionMode.FULL_SEQUENTIAL_COMMIT;
     }
   }
 
@@ -210,8 +214,8 @@ public class QueueCommands {
     }
 
     @Override
-    public PersistenceLevel persistence() {
-      return PersistenceLevel.PERSISTENT;
+    public CompactionMode compaction() {
+      return CompactionMode.FULL_SEQUENTIAL_COMMIT;
     }
   }
 
@@ -236,8 +240,8 @@ public class QueueCommands {
   public static class Clear extends QueueCommand<Void> {
 
     @Override
-    public PersistenceLevel persistence() {
-      return PersistenceLevel.PERSISTENT;
+    public CompactionMode compaction() {
+      return CompactionMode.FULL_SEQUENTIAL_COMMIT;
     }
   }
 

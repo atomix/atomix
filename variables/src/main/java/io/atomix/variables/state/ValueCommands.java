@@ -49,8 +49,8 @@ public class ValueCommands {
     }
 
     @Override
-    public PersistenceLevel persistence() {
-      return ttl > 0 ? PersistenceLevel.PERSISTENT : PersistenceLevel.EPHEMERAL;
+    public CompactionMode compaction() {
+      return ttl > 0 ? CompactionMode.FULL_SEQUENTIAL_CLEAN : CompactionMode.QUORUM_CLEAN;
     }
 
     /**
@@ -246,6 +246,11 @@ public class ValueCommands {
   @SerializeWith(id=54)
   public static class Listen implements Command<Void>, CatalystSerializable {
     @Override
+    public CompactionMode compaction() {
+      return CompactionMode.QUORUM_CLEAN;
+    }
+
+    @Override
     public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
     }
 
@@ -259,6 +264,11 @@ public class ValueCommands {
    */
   @SerializeWith(id=55)
   public static class Unlisten implements Command<Void>, CatalystSerializable {
+    @Override
+    public CompactionMode compaction() {
+      return CompactionMode.FULL_SEQUENTIAL_COMMIT;
+    }
+
     @Override
     public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
     }

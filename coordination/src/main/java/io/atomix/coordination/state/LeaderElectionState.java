@@ -17,6 +17,7 @@ package io.atomix.coordination.state;
 
 import io.atomix.copycat.client.session.Session;
 import io.atomix.copycat.server.Commit;
+import io.atomix.copycat.server.session.SessionListener;
 import io.atomix.resource.ResourceStateMachine;
 
 import java.util.Iterator;
@@ -28,9 +29,24 @@ import java.util.Map;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class LeaderElectionState extends ResourceStateMachine {
+public class LeaderElectionState extends ResourceStateMachine implements SessionListener {
   private Commit<LeaderElectionCommands.Listen> leader;
   private final Map<Long, Commit<LeaderElectionCommands.Listen>> listeners = new LinkedHashMap<>();
+
+  @Override
+  public void register(Session session) {
+
+  }
+
+  @Override
+  public void unregister(Session session) {
+
+  }
+
+  @Override
+  public void expire(Session session) {
+
+  }
 
   @Override
   public void close(Session session) {

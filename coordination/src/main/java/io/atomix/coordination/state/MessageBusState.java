@@ -18,6 +18,7 @@ package io.atomix.coordination.state;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.copycat.client.session.Session;
 import io.atomix.copycat.server.Commit;
+import io.atomix.copycat.server.session.SessionListener;
 import io.atomix.resource.ResourceStateMachine;
 
 import java.util.*;
@@ -27,9 +28,24 @@ import java.util.*;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class MessageBusState extends ResourceStateMachine {
+public class MessageBusState extends ResourceStateMachine implements SessionListener {
   private final Map<Long, Commit<MessageBusCommands.Join>> members = new HashMap<>();
   private final Map<String, Map<Long, Commit<MessageBusCommands.Register>>> topics = new HashMap<>();
+
+  @Override
+  public void register(Session session) {
+
+  }
+
+  @Override
+  public void unregister(Session session) {
+
+  }
+
+  @Override
+  public void expire(Session session) {
+
+  }
 
   @Override
   public void close(Session session) {

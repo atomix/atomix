@@ -42,6 +42,10 @@ public class MultiMapCommands {
    * Abstract map command.
    */
   public static abstract class MultiMapCommand<V> implements Command<V>, CatalystSerializable {
+    @Override
+    public CompactionMode compaction() {
+      return CompactionMode.QUORUM_CLEAN;
+    }
 
     @Override
     public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
@@ -291,8 +295,8 @@ public class MultiMapCommands {
     }
 
     @Override
-    public PersistenceLevel persistence() {
-      return ttl > 0 ? PersistenceLevel.PERSISTENT : PersistenceLevel.EPHEMERAL;
+    public CompactionMode compaction() {
+      return ttl > 0 ? CompactionMode.FULL_SEQUENTIAL_CLEAN : CompactionMode.FULL_CLEAN;
     }
 
     /**
@@ -364,8 +368,8 @@ public class MultiMapCommands {
     }
 
     @Override
-    public PersistenceLevel persistence() {
-      return PersistenceLevel.PERSISTENT;
+    public CompactionMode compaction() {
+      return CompactionMode.FULL_SEQUENTIAL_COMMIT;
     }
   }
 
@@ -391,8 +395,8 @@ public class MultiMapCommands {
     }
 
     @Override
-    public PersistenceLevel persistence() {
-      return PersistenceLevel.PERSISTENT;
+    public CompactionMode compaction() {
+      return CompactionMode.FULL_SEQUENTIAL_COMMIT;
     }
 
     @Override
@@ -433,8 +437,8 @@ public class MultiMapCommands {
   public static class Clear extends MultiMapCommand<Void> {
 
     @Override
-    public PersistenceLevel persistence() {
-      return PersistenceLevel.PERSISTENT;
+    public CompactionMode compaction() {
+      return CompactionMode.FULL_SEQUENTIAL_COMMIT;
     }
   }
 
