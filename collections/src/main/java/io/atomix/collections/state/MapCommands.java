@@ -229,7 +229,7 @@ public class MapCommands {
 
     @Override
     public CompactionMode compaction() {
-      return ttl > 0 ? CompactionMode.FULL_SEQUENTIAL_CLEAN : CompactionMode.FULL_CLEAN;
+      return ttl > 0 ? CompactionMode.FULL_SEQUENTIAL_CLEAN : CompactionMode.QUORUM_CLEAN;
     }
 
     /**
