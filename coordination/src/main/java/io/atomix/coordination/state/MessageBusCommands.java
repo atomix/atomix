@@ -34,7 +34,7 @@ import java.util.Set;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class MessageBusCommands {
+public final class MessageBusCommands {
 
   private MessageBusCommands() {
   }
@@ -47,6 +47,11 @@ public class MessageBusCommands {
     @Override
     public ConsistencyLevel consistency() {
       return ConsistencyLevel.LINEARIZABLE;
+    }
+
+    @Override
+    public CompactionMode compaction() {
+      return CompactionMode.QUORUM_CLEAN;
     }
 
     @Override
@@ -97,10 +102,9 @@ public class MessageBusCommands {
    */
   @SerializeWith(id=86)
   public static class Leave extends MessageBusCommand<Void> {
-
     @Override
-    public PersistenceLevel persistence() {
-      return PersistenceLevel.PERSISTENT;
+    public CompactionMode compaction() {
+      return CompactionMode.FULL_SEQUENTIAL_CLEAN;
     }
   }
 
@@ -162,8 +166,8 @@ public class MessageBusCommands {
     }
 
     @Override
-    public PersistenceLevel persistence() {
-      return PersistenceLevel.PERSISTENT;
+    public CompactionMode compaction() {
+      return CompactionMode.FULL_SEQUENTIAL_CLEAN;
     }
 
     @Override

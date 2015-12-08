@@ -31,7 +31,7 @@ import io.atomix.copycat.client.Query;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class LeaderElectionCommands {
+public final class LeaderElectionCommands {
 
   private LeaderElectionCommands() {
   }
@@ -59,6 +59,10 @@ public class LeaderElectionCommands {
    * Abstract election command.
    */
   public static abstract class ElectionCommand<V> implements Command<V>, CatalystSerializable {
+    @Override
+    public CompactionMode compaction() {
+      return CompactionMode.QUORUM_CLEAN;
+    }
 
     @Override
     public ConsistencyLevel consistency() {
@@ -79,6 +83,10 @@ public class LeaderElectionCommands {
    */
   @SerializeWith(id=110)
   public static class Listen extends ElectionCommand<Void> {
+    @Override
+    public CompactionMode compaction() {
+      return CompactionMode.QUORUM_CLEAN;
+    }
   }
 
   /**
@@ -86,10 +94,9 @@ public class LeaderElectionCommands {
    */
   @SerializeWith(id=111)
   public static class Unlisten extends ElectionCommand<Void> {
-
     @Override
-    public PersistenceLevel persistence() {
-      return PersistenceLevel.PERSISTENT;
+    public CompactionMode compaction() {
+      return CompactionMode.FULL_SEQUENTIAL_COMMIT;
     }
   }
 

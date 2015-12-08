@@ -32,7 +32,7 @@ import java.util.Set;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class MembershipGroupCommands {
+public final class MembershipGroupCommands {
 
   private MembershipGroupCommands() {
   }
@@ -45,6 +45,11 @@ public class MembershipGroupCommands {
     @Override
     public ConsistencyLevel consistency() {
       return ConsistencyLevel.LINEARIZABLE;
+    }
+
+    @Override
+    public CompactionMode compaction() {
+      return CompactionMode.QUORUM_CLEAN;
     }
 
     @Override
@@ -68,10 +73,9 @@ public class MembershipGroupCommands {
    */
   @SerializeWith(id=121)
   public static class Leave extends GroupCommand<Void> {
-
     @Override
-    public PersistenceLevel persistence() {
-      return PersistenceLevel.PERSISTENT;
+    public CompactionMode compaction() {
+      return CompactionMode.FULL_SEQUENTIAL_CLEAN;
     }
   }
 

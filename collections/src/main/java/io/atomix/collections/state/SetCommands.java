@@ -39,6 +39,10 @@ public class SetCommands {
    * Abstract set command.
    */
   private static abstract class SetCommand<V> implements Command<V>, CatalystSerializable {
+    @Override
+    public CompactionMode compaction() {
+      return CompactionMode.QUORUM_CLEAN;
+    }
 
     @Override
     public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
@@ -155,8 +159,8 @@ public class SetCommands {
     }
 
     @Override
-    public PersistenceLevel persistence() {
-      return ttl > 0 ? PersistenceLevel.PERSISTENT : PersistenceLevel.EPHEMERAL;
+    public CompactionMode compaction() {
+      return ttl > 0 ? CompactionMode.FULL_SEQUENTIAL_CLEAN : CompactionMode.QUORUM_CLEAN;
     }
 
     /**
@@ -212,8 +216,8 @@ public class SetCommands {
     }
 
     @Override
-    public PersistenceLevel persistence() {
-      return PersistenceLevel.PERSISTENT;
+    public CompactionMode compaction() {
+      return CompactionMode.FULL_SEQUENTIAL_COMMIT;
     }
   }
 
@@ -238,8 +242,8 @@ public class SetCommands {
   public static class Clear extends SetCommand<Void> {
 
     @Override
-    public PersistenceLevel persistence() {
-      return PersistenceLevel.PERSISTENT;
+    public CompactionMode compaction() {
+      return CompactionMode.FULL_SEQUENTIAL_COMMIT;
     }
   }
 

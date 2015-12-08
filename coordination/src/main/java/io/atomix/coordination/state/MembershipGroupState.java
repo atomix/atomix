@@ -17,6 +17,7 @@ package io.atomix.coordination.state;
 
 import io.atomix.copycat.client.session.Session;
 import io.atomix.copycat.server.Commit;
+import io.atomix.copycat.server.session.SessionListener;
 import io.atomix.resource.ResourceStateMachine;
 
 import java.time.Duration;
@@ -30,8 +31,23 @@ import java.util.Set;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class MembershipGroupState extends ResourceStateMachine {
+public class MembershipGroupState extends ResourceStateMachine implements SessionListener {
   private final Map<Long, Commit<MembershipGroupCommands.Join>> members = new HashMap<>();
+
+  @Override
+  public void register(Session session) {
+
+  }
+
+  @Override
+  public void unregister(Session session) {
+
+  }
+
+  @Override
+  public void expire(Session session) {
+
+  }
 
   @Override
   public void close(Session session) {

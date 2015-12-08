@@ -18,6 +18,7 @@ package io.atomix.coordination.state;
 import io.atomix.catalyst.util.concurrent.Scheduled;
 import io.atomix.copycat.client.session.Session;
 import io.atomix.copycat.server.Commit;
+import io.atomix.copycat.server.session.SessionListener;
 import io.atomix.resource.ResourceStateMachine;
 
 import java.time.Duration;
@@ -31,10 +32,25 @@ import java.util.Queue;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class LockState extends ResourceStateMachine {
+public class LockState extends ResourceStateMachine implements SessionListener {
   private Commit<LockCommands.Lock> lock;
   private final Queue<Commit<LockCommands.Lock>> queue = new ArrayDeque<>();
   private final Map<Long, Scheduled> timers = new HashMap<>();
+
+  @Override
+  public void register(Session session) {
+
+  }
+
+  @Override
+  public void unregister(Session session) {
+
+  }
+
+  @Override
+  public void expire(Session session) {
+
+  }
 
   @Override
   public void close(Session session) {

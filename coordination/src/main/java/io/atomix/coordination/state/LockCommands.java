@@ -29,7 +29,7 @@ import io.atomix.copycat.client.Command;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class LockCommands {
+public final class LockCommands {
 
   private LockCommands() {
   }
@@ -42,6 +42,11 @@ public class LockCommands {
     @Override
     public ConsistencyLevel consistency() {
       return ConsistencyLevel.LINEARIZABLE;
+    }
+
+    @Override
+    public CompactionMode compaction() {
+      return CompactionMode.QUORUM_CLEAN;
     }
 
     @Override
@@ -77,6 +82,11 @@ public class LockCommands {
     }
 
     @Override
+    public CompactionMode compaction() {
+      return timeout > 0 ? CompactionMode.FULL_SEQUENTIAL_CLEAN : CompactionMode.QUORUM_CLEAN;
+    }
+
+    @Override
     public void writeObject(BufferOutput buffer, Serializer serializer) {
       buffer.writeLong(timeout);
     }
@@ -92,12 +102,10 @@ public class LockCommands {
    */
   @SerializeWith(id=116)
   public static class Unlock extends LockCommand<Void> {
-
     @Override
-    public PersistenceLevel persistence() {
-      return PersistenceLevel.PERSISTENT;
+    public CompactionMode compaction() {
+      return CompactionMode.FULL_SEQUENTIAL_CLEAN;
     }
-
   }
 
 }

@@ -29,7 +29,7 @@ import io.atomix.copycat.client.Command;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class TopicCommands {
+public final class TopicCommands {
 
   private TopicCommands() {
   }
@@ -38,6 +38,11 @@ public class TopicCommands {
    * Abstract topic command.
    */
   public static abstract class TopicCommand<V> implements Command<V>, CatalystSerializable {
+    @Override
+    public CompactionMode compaction() {
+      return CompactionMode.QUORUM_CLEAN;
+    }
+
     @Override
     public void writeObject(BufferOutput buffer, Serializer serializer) {
     }
@@ -52,6 +57,11 @@ public class TopicCommands {
    */
   @SerializeWith(id=125)
   public static class Listen extends TopicCommand<Void> {
+    @Override
+    public CompactionMode compaction() {
+      return CompactionMode.QUORUM_CLEAN;
+    }
+
     @Override
     public ConsistencyLevel consistency() {
       return ConsistencyLevel.LINEARIZABLE;
@@ -69,8 +79,8 @@ public class TopicCommands {
     }
 
     @Override
-    public PersistenceLevel persistence() {
-      return PersistenceLevel.PERSISTENT;
+    public CompactionMode compaction() {
+      return CompactionMode.FULL_SEQUENTIAL_CLEAN;
     }
   }
 
@@ -95,6 +105,11 @@ public class TopicCommands {
      */
     public T message() {
       return message;
+    }
+
+    @Override
+    public CompactionMode compaction() {
+      return CompactionMode.QUORUM_COMMIT;
     }
 
     @Override
