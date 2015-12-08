@@ -266,9 +266,7 @@ public final class AtomixReplica extends Atomix {
      * @throws NullPointerException if {@code transport} is null
      */
     public Builder withTransport(Transport transport) {
-      Assert.notNull(transport, "transport");
-      this.clientTransport = transport;
-      this.serverTransport = transport;
+      this.serverTransport = Assert.notNull(transport, "transport");
       return this;
     }
 
@@ -430,11 +428,6 @@ public final class AtomixReplica extends Atomix {
       ResourceRegistry registry = new ResourceRegistry();
       resourceResolver.resolve(registry);
 
-      // If no client transport was configured, default it to the server transport.
-      if (clientTransport == null) {
-        clientTransport = serverTransport;
-      }
-
       // Configure the client and server with a transport that routes all local client communication
       // directly through the local server, ensuring we don't incur unnecessary network traffic by
       // sending operations to a remote server when a local server is already available in the same JVM.=
@@ -443,9 +436,14 @@ public final class AtomixReplica extends Atomix {
 
       // Construct the underlying CopycatServer. The server should have been configured with a CombinedTransport
       // that facilitates the local client connecting directly to the server.
-      CopycatServer server = serverBuilder.withClientTransport(new CombinedTransport(new LocalTransport(localRegistry), clientTransport))
-        .withServerTransport(serverTransport)
-        .withStateMachine(new ResourceManager(registry)).build();
+      if (clientTransport != null) {
+        serverBuilder.withClientTransport(new CombinedTransport(new LocalTransport(localRegistry), clientTransport))
+          .withServerTransport(serverTransport);
+      } else {
+        serverBuilder.withTransport(new CombinedTransport(new LocalTransport(localRegistry), serverTransport));
+      }
+
+      CopycatServer server = serverBuilder.withStateMachine(new ResourceManager(registry)).build();
 
       return new AtomixReplica(new InstanceFactory(clientBuilder, serverTransport), server);
     }

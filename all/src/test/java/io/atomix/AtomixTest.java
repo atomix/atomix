@@ -22,17 +22,19 @@ import io.atomix.collections.DistributedMap;
 import io.atomix.collections.DistributedMultiMap;
 import io.atomix.collections.DistributedQueue;
 import io.atomix.collections.DistributedSet;
+import io.atomix.copycat.server.CopycatServer;
+import io.atomix.copycat.server.state.Member;
 import io.atomix.copycat.server.storage.Storage;
+import io.atomix.copycat.server.storage.StorageLevel;
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Tests for all resource types.
@@ -42,10 +44,78 @@ import java.util.List;
 @Test
 @SuppressWarnings("unchecked")
 public class AtomixTest extends ConcurrentTestCase {
-  private static final File directory = new File("target/test-logs");
-  protected LocalServerRegistry registry;
-  protected int port;
-  protected List<Address> members;
+  protected volatile LocalServerRegistry registry;
+  protected volatile int port;
+  protected volatile List<Member> members;
+  protected volatile List<Atomix> clients = new ArrayList<>();
+  protected volatile List<AtomixServer> servers = new ArrayList<>();
+  private int count;
+
+  /**
+   * Tests setting many keys in a map.
+   */
+  public void testMany() throws Throwable {
+    List<AtomixServer> servers = createServers(3);
+    Atomix atomix = createClient();
+
+    // Create a test map.
+    DistributedMap<Integer, Integer> map = atomix.create("test-map", DistributedMap.TYPE).get();
+
+    // Put a thousand values in the map.
+    for (int i = 0; i < 1000; i++) {
+      map.put(i, i).thenRun(this::resume);
+    }
+    await(10000, 1000);
+
+    // Sleep for 10 seconds to allow log compaction to take place.
+    Thread.sleep(10000);
+
+    // Verify that all values are present.
+    for (int i = 0; i < 1000; i++) {
+      int value = i;
+      map.get(value).thenAccept(result -> {
+        threadAssertEquals(result, value);
+        resume();
+      });
+    }
+    await(10000, 1000);
+
+    // Create and join additional servers to the cluster.
+    AtomixServer s1 = createServer(members, nextMember()).open().get();
+    AtomixServer s2 = createServer(members, nextMember()).open().get();
+    AtomixServer s3 = createServer(members, nextMember()).open().get();
+
+    // Iterate through the old servers and shut them down one by one.
+    for (AtomixServer server : servers) {
+      server.close().join();
+
+      // Create a new client each time a server is removed and verify that all values are present.
+      Atomix client = createClient();
+      DistributedMap<Integer, Integer> clientMap = client.create("test-map", DistributedMap.TYPE).get();
+      for (int i = 0; i < 1000; i++) {
+        int value = i;
+        clientMap.get(value).thenAccept(result -> {
+          threadAssertEquals(result, value);
+          resume();
+        });
+      }
+      await(10000, 1000);
+    }
+
+    // Verify that all values are present with the original client.
+    for (int i = 0; i < 1000; i++) {
+      int value = i;
+      map.get(value).thenAccept(result -> {
+        threadAssertEquals(result, value);
+        resume();
+      });
+    }
+    await(10000, 1000);
+
+    s1.close().join();
+    s2.close().join();
+    s3.close().join();
+  }
 
   /**
    * Tests creating a distributed map.
@@ -115,9 +185,11 @@ public class AtomixTest extends ConcurrentTestCase {
    * Creates a client.
    */
   private Atomix createClient() throws Throwable {
-    Atomix client = AtomixClient.builder(members).withTransport(new LocalTransport(registry)).build();
+    Atomix client = AtomixClient.builder(members.stream().map(Member::clientAddress).collect(Collectors.toList()))
+      .withTransport(new LocalTransport(registry))
+      .build();
     client.open().thenRun(this::resume);
-    await();
+    await(10000);
     return client;
   }
 
@@ -126,30 +198,28 @@ public class AtomixTest extends ConcurrentTestCase {
    *
    * @return The next server address.
    */
-  protected Address nextAddress() {
-    Address address = new Address("localhost", port++);
-    members.add(address);
-    return address;
+  private Member nextMember() {
+    return new Member(CopycatServer.Type.INACTIVE, new Address("localhost", ++port), new Address("localhost", port + 1000));
   }
 
   /**
    * Creates a set of Atomix servers.
    */
-  protected List<AtomixServer> createServers(int nodes) throws Throwable {
+  private List<AtomixServer> createServers(int nodes) throws Throwable {
     List<AtomixServer> servers = new ArrayList<>();
 
-    List<Address> members = new ArrayList<>();
-    for (int i = 1; i <= nodes; i++) {
-      members.add(nextAddress());
+    for (int i = 0; i < nodes; i++) {
+      members.add(nextMember());
     }
 
     for (int i = 0; i < nodes; i++) {
-      AtomixServer server = createServer(members.get(i));
+      AtomixServer server = createServer(members, members.get(i));
       server.open().thenRun(this::resume);
       servers.add(server);
     }
 
-    await(0, nodes);
+    await(10000, nodes);
+    count = nodes;
 
     return servers;
   }
@@ -157,41 +227,51 @@ public class AtomixTest extends ConcurrentTestCase {
   /**
    * Creates an Atomix server.
    */
-  protected AtomixServer createServer(Address address) {
-    return AtomixServer.builder(address, members)
+  private AtomixServer createServer(List<Member> members, Member member) {
+    AtomixServer server = AtomixServer.builder(member.clientAddress(), member.serverAddress(), members.stream().map(Member::serverAddress).collect(Collectors.toList()))
       .withTransport(new LocalTransport(registry))
       .withStorage(Storage.builder()
-        .withDirectory(new File(directory, address.toString()))
+        .withStorageLevel(StorageLevel.MEMORY)
+        .withMaxSegmentSize(1024 * 1024)
+        .withMaxEntriesPerSegment(8)
+        .withMinorCompactionInterval(Duration.ofSeconds(3))
+        .withMajorCompactionInterval(Duration.ofSeconds(7))
         .build())
       .build();
+    servers.add(server);
+    return server;
   }
 
   @BeforeMethod
   @AfterMethod
-  public void clearTests() throws IOException {
-    deleteDirectory(directory);
-    port = 5000;
+  public void clearTests() throws Exception {
+    clients.forEach(c -> {
+      try {
+        c.close().join();
+      } catch (Exception e) {
+      }
+    });
+
+    if (servers.size() < count) {
+      for (int i = servers.size() + 1; i <= count; i++) {
+        Member member = new Member(CopycatServer.Type.INACTIVE, new Address("localhost", 5000 + i), new Address("localhost", 6000 + i));
+        createServer(members, member).open().join();
+      }
+    }
+
+    servers.forEach(s -> {
+      try {
+        s.close().join();
+      } catch (Exception e) {
+      }
+    });
+
     registry = new LocalServerRegistry();
     members = new ArrayList<>();
-  }
-
-  /**
-   * Deletes a directory recursively.
-   */
-  private void deleteDirectory(File directory) throws IOException {
-    if (directory.exists()) {
-      File[] files = directory.listFiles();
-      if (files != null) {
-        for (File file : files) {
-          if (file.isDirectory()) {
-            deleteDirectory(file);
-          } else {
-            Files.delete(file.toPath());
-          }
-        }
-      }
-      Files.delete(directory.toPath());
-    }
+    port = 5000;
+    count = 0;
+    clients = new ArrayList<>();
+    servers = new ArrayList<>();
   }
 
 }
