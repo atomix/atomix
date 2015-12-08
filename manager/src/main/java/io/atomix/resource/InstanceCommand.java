@@ -39,8 +39,8 @@ public final class InstanceCommand<T extends Command<U>, U> extends InstanceOper
   }
 
   @Override
-  public PersistenceLevel persistence() {
-    return operation.persistence();
+  public CompactionMode compaction() {
+    return operation.compaction();
   }
 
   @Override

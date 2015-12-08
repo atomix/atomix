@@ -39,8 +39,8 @@ public class DeleteResource implements Command<Boolean>, CatalystSerializable {
   }
 
   @Override
-  public PersistenceLevel persistence() {
-    return PersistenceLevel.PERSISTENT;
+  public CompactionMode compaction() {
+    return CompactionMode.FULL_SEQUENTIAL_COMMIT;
   }
 
   /**
