@@ -78,6 +78,7 @@ public class MultiMapState extends ResourceStateMachine {
         Scheduled timer = commit.operation().ttl() > 0 ? executor().schedule(Duration.ofMillis(commit.operation().ttl()), () -> {
           keyValues.remove(commit.operation().value()).clean();
         }) : null;
+        values.put(commit.operation().value(), commit);
         timers.put(commit.index(), timer);
         return true;
       } else {
