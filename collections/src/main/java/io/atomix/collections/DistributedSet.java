@@ -18,7 +18,6 @@ package io.atomix.collections;
 import io.atomix.collections.state.SetCommands;
 import io.atomix.collections.state.SetState;
 import io.atomix.copycat.client.CopycatClient;
-import io.atomix.resource.Consistency;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceType;
 import io.atomix.resource.ResourceTypeInfo;
@@ -33,7 +32,7 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @ResourceTypeInfo(id=-13, stateMachine=SetState.class)
-public class DistributedSet<T> extends Resource {
+public class DistributedSet<T> extends Resource<DistributedSet<T>> {
   public static final ResourceType<DistributedSet> TYPE = new ResourceType<>(DistributedSet.class);
 
   public DistributedSet(CopycatClient client) {
@@ -41,14 +40,9 @@ public class DistributedSet<T> extends Resource {
   }
 
   @Override
-  public ResourceType type() {
-    return TYPE;
-  }
-
-  @Override
-  public DistributedSet<T> with(Consistency consistency) {
-    super.with(consistency);
-    return this;
+  @SuppressWarnings("unchecked")
+  public ResourceType<DistributedSet<T>> type() {
+    return (ResourceType) TYPE;
   }
 
   /**

@@ -23,7 +23,6 @@ import io.atomix.catalyst.util.concurrent.Futures;
 import io.atomix.coordination.state.MessageBusCommands;
 import io.atomix.coordination.state.MessageBusState;
 import io.atomix.copycat.client.CopycatClient;
-import io.atomix.resource.Consistency;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceType;
 import io.atomix.resource.ResourceTypeInfo;
@@ -71,7 +70,7 @@ import java.util.function.Function;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 @ResourceTypeInfo(id=-24, stateMachine=MessageBusState.class)
-public class DistributedMessageBus extends Resource {
+public class DistributedMessageBus extends Resource<DistributedMessageBus> {
   public static final ResourceType<DistributedMessageBus> TYPE = new ResourceType<>(DistributedMessageBus.class);
 
   private Client client;
@@ -88,14 +87,8 @@ public class DistributedMessageBus extends Resource {
   }
 
   @Override
-  public ResourceType type() {
+  public ResourceType<DistributedMessageBus> type() {
     return TYPE;
-  }
-
-  @Override
-  public DistributedMessageBus with(Consistency consistency) {
-    super.with(consistency);
-    return this;
   }
 
   /**

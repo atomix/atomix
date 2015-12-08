@@ -18,7 +18,6 @@ package io.atomix.coordination;
 import io.atomix.coordination.state.LockCommands;
 import io.atomix.coordination.state.LockState;
 import io.atomix.copycat.client.CopycatClient;
-import io.atomix.resource.Consistency;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceType;
 import io.atomix.resource.ResourceTypeInfo;
@@ -56,7 +55,7 @@ import java.util.function.Consumer;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @ResourceTypeInfo(id=-21, stateMachine=LockState.class)
-public class DistributedLock extends Resource {
+public class DistributedLock extends Resource<DistributedLock> {
   public static final ResourceType<DistributedLock> TYPE = new ResourceType<DistributedLock>(DistributedLock.class);
 
   private final Queue<Consumer<Boolean>> queue = new ConcurrentLinkedQueue<>();
@@ -67,14 +66,8 @@ public class DistributedLock extends Resource {
   }
 
   @Override
-  public ResourceType type() {
+  public ResourceType<DistributedLock> type() {
     return TYPE;
-  }
-
-  @Override
-  public DistributedLock with(Consistency consistency) {
-    super.with(consistency);
-    return this;
   }
 
   /**

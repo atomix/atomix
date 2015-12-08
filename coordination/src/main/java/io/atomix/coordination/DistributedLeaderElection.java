@@ -19,7 +19,6 @@ import io.atomix.catalyst.util.Listener;
 import io.atomix.coordination.state.LeaderElectionCommands;
 import io.atomix.coordination.state.LeaderElectionState;
 import io.atomix.copycat.client.CopycatClient;
-import io.atomix.resource.Consistency;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceType;
 import io.atomix.resource.ResourceTypeInfo;
@@ -64,7 +63,7 @@ import java.util.function.Consumer;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @ResourceTypeInfo(id=-22, stateMachine=LeaderElectionState.class)
-public class DistributedLeaderElection extends Resource {
+public class DistributedLeaderElection extends Resource<DistributedLeaderElection> {
   public static final ResourceType<DistributedLeaderElection> TYPE = new ResourceType<>(DistributedLeaderElection.class);
 
   private final Set<Consumer<Long>> listeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
@@ -79,14 +78,8 @@ public class DistributedLeaderElection extends Resource {
   }
 
   @Override
-  public ResourceType type() {
+  public ResourceType<DistributedLeaderElection> type() {
     return TYPE;
-  }
-
-  @Override
-  public DistributedLeaderElection with(Consistency consistency) {
-    super.with(consistency);
-    return this;
   }
 
   /**

@@ -16,10 +16,9 @@
 package io.atomix.variables;
 
 import io.atomix.copycat.client.CopycatClient;
-import io.atomix.variables.state.ValueState;
-import io.atomix.resource.Consistency;
 import io.atomix.resource.ResourceType;
 import io.atomix.resource.ResourceTypeInfo;
+import io.atomix.variables.state.ValueState;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
@@ -30,7 +29,7 @@ import java.util.function.Function;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 @ResourceTypeInfo(id=-2, stateMachine=ValueState.class)
-public class DistributedLong extends DistributedValue<Long> {
+public class DistributedLong extends AbstractDistributedValue<DistributedLong, Long> {
   public static final ResourceType<DistributedLong> TYPE = new ResourceType<>(DistributedLong.class);
   private Long value;
 
@@ -39,14 +38,8 @@ public class DistributedLong extends DistributedValue<Long> {
   }
 
   @Override
-  public ResourceType type() {
+  public ResourceType<DistributedLong> type() {
     return TYPE;
-  }
-
-  @Override
-  public DistributedLong with(Consistency consistency) {
-    super.with(consistency);
-    return this;
   }
 
   @Override

@@ -18,7 +18,6 @@ package io.atomix.collections;
 import io.atomix.collections.state.QueueCommands;
 import io.atomix.collections.state.QueueState;
 import io.atomix.copycat.client.CopycatClient;
-import io.atomix.resource.Consistency;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceType;
 import io.atomix.resource.ResourceTypeInfo;
@@ -32,7 +31,7 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @ResourceTypeInfo(id=-14, stateMachine=QueueState.class)
-public class DistributedQueue<T> extends Resource {
+public class DistributedQueue<T> extends Resource<DistributedQueue<T>> {
   public static final ResourceType<DistributedQueue> TYPE = new ResourceType<>(DistributedQueue.class);
 
   public DistributedQueue(CopycatClient client) {
@@ -40,14 +39,9 @@ public class DistributedQueue<T> extends Resource {
   }
 
   @Override
-  public ResourceType type() {
-    return TYPE;
-  }
-
-  @Override
-  public DistributedQueue<T> with(Consistency consistency) {
-    super.with(consistency);
-    return this;
+  @SuppressWarnings("unchecked")
+  public ResourceType<DistributedQueue<T>> type() {
+    return (ResourceType) TYPE;
   }
 
   /**

@@ -186,7 +186,6 @@ public final class AtomixServer implements Managed<AtomixServer> {
    */
   public static class Builder extends io.atomix.catalyst.util.Builder<AtomixServer> {
     private final CopycatServer.Builder builder;
-    private Transport transport;
     private ResourceTypeResolver resourceResolver = new ServiceLoaderResourceResolver();
 
     private Builder(Address clientAddress, Address serverAddress, Collection<Address> members) {
@@ -368,19 +367,9 @@ public final class AtomixServer implements Managed<AtomixServer> {
       ResourceRegistry registry = new ResourceRegistry();
       resourceResolver.resolve(registry);
 
-      // If no transport was configured by the user, attempt to load the Netty transport.
-      if (transport == null) {
-        try {
-          transport = (Transport) Class.forName("io.atomix.catalyst.transport.NettyTransport").newInstance();
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-          throw new ConfigurationException("transport not configured");
-        }
-      }
-
       // Construct the underlying CopycatServer. The server should have been configured with a CombinedTransport
       // that facilitates the local client connecting directly to the server.
-      CopycatServer server = builder.withTransport(transport)
-        .withStateMachine(new ResourceManager(registry)).build();
+      CopycatServer server = builder.withStateMachine(new ResourceManager(registry)).build();
 
       return new AtomixServer(server);
     }

@@ -48,7 +48,7 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @ResourceTypeInfo(id=-11, stateMachine=MapState.class)
-public class DistributedMap<K, V> extends Resource {
+public class DistributedMap<K, V> extends Resource<DistributedMap<K, V>> {
   public static final ResourceType<DistributedMap> TYPE = new ResourceType<>(DistributedMap.class);
 
   public DistributedMap(CopycatClient client) {
@@ -56,14 +56,9 @@ public class DistributedMap<K, V> extends Resource {
   }
 
   @Override
-  public ResourceType type() {
-    return TYPE;
-  }
-
-  @Override
-  public DistributedMap<K, V> with(Consistency consistency) {
-    super.with(consistency);
-    return this;
+  @SuppressWarnings("unchecked")
+  public ResourceType<DistributedMap<K, V>> type() {
+    return (ResourceType) TYPE;
   }
 
   /**

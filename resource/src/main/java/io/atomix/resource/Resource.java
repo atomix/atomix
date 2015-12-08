@@ -39,7 +39,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class Resource {
+public abstract class Resource<T extends Resource<T>> {
   protected CopycatClient client;
   private Consistency consistency = Consistency.ATOMIC;
 
@@ -61,7 +61,7 @@ public abstract class Resource {
    *
    * @return The resource type.
    */
-  public abstract ResourceType type();
+  public abstract ResourceType<T> type();
 
   /**
    * Returns the resource thread context.
@@ -93,9 +93,10 @@ public abstract class Resource {
    * @param consistency The resource consistency level.
    * @return The resource instance.
    */
-  public Resource with(Consistency consistency) {
+  @SuppressWarnings("unchecked")
+  public T with(Consistency consistency) {
     this.consistency = Assert.notNull(consistency, "consistency");
-    return this;
+    return (T) this;
   }
 
   /**

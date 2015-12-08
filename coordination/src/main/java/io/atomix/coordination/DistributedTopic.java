@@ -59,7 +59,7 @@ import java.util.function.Consumer;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @ResourceTypeInfo(id=-25, stateMachine=TopicState.class)
-public class DistributedTopic<T> extends Resource {
+public class DistributedTopic<T> extends Resource<DistributedTopic<T>> {
   public static final ResourceType<DistributedTopic> TYPE = new ResourceType<>(DistributedTopic.class);
 
   private final Set<Consumer<T>> listeners = new HashSet<>();
@@ -75,14 +75,9 @@ public class DistributedTopic<T> extends Resource {
   }
 
   @Override
-  public ResourceType type() {
-    return TYPE;
-  }
-
-  @Override
-  public DistributedTopic<T> with(Consistency consistency) {
-    super.with(consistency);
-    return this;
+  @SuppressWarnings("unchecked")
+  public ResourceType<DistributedTopic<T>> type() {
+    return (ResourceType) TYPE;
   }
 
   /**

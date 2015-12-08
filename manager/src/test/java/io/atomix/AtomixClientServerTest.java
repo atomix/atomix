@@ -122,7 +122,7 @@ public class AtomixClientServerTest extends AbstractServerTest {
       resume();
     });
 
-    await();
+    await(10000);
   }
 
   /**
@@ -143,7 +143,7 @@ public class AtomixClientServerTest extends AbstractServerTest {
       threadAssertEquals("Hello world!", result);
       resume();
     });
-    await();
+    await(10000);
   }
 
   /**
@@ -164,7 +164,7 @@ public class AtomixClientServerTest extends AbstractServerTest {
       threadAssertEquals("Hello world!", result);
       resume();
     });
-    await();
+    await(10000);
   }
 
   /**
@@ -185,7 +185,7 @@ public class AtomixClientServerTest extends AbstractServerTest {
       threadAssertEquals("Hello world!", result);
       resume();
     });
-    await();
+    await(10000);
   }
 
   /**
@@ -199,33 +199,33 @@ public class AtomixClientServerTest extends AbstractServerTest {
       threadAssertTrue(result.isEmpty());
       resume();
     });
-    await();
+    await(10000);
 
     client.create("test", TestResource.TYPE).get();
     client.keys().thenAccept(result -> {
       threadAssertTrue(result.size() == 1 && result.contains("test"));
       resume();
     });
-    await();
+    await(10000);
 
     client.create("value", ValueResource.TYPE).get();
     client.keys().thenAccept(result -> {
       threadAssertTrue(result.size() == 2 && result.contains("test") && result.contains("value"));
       resume();
     });
-    await();
+    await(10000);
 
     client.keys(TestResource.TYPE).thenAccept(result -> {
       threadAssertTrue(result.size() == 1 && result.contains("test"));
       resume();
     });
-    await();
+    await(10000);
 
     client.keys(ValueResource.TYPE).thenAccept(result -> {
       threadAssertTrue(result.size() == 1 && result.contains("value"));
       resume();
     });
-    await();
+    await(10000);
   }
 
   /**
@@ -234,7 +234,7 @@ public class AtomixClientServerTest extends AbstractServerTest {
   private Atomix createClient() throws Throwable {
     Atomix client = AtomixClient.builder(members).withTransport(new LocalTransport(registry)).build();
     client.open().thenRun(this::resume);
-    await();
+    await(10000);
     return client;
   }
 
