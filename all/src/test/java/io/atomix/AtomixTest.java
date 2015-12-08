@@ -22,6 +22,7 @@ import io.atomix.collections.DistributedMap;
 import io.atomix.collections.DistributedMultiMap;
 import io.atomix.collections.DistributedQueue;
 import io.atomix.collections.DistributedSet;
+import io.atomix.coordination.DistributedLeaderElection;
 import io.atomix.copycat.server.CopycatServer;
 import io.atomix.copycat.server.state.Member;
 import io.atomix.copycat.server.storage.Storage;
@@ -179,6 +180,19 @@ public class AtomixTest extends ConcurrentTestCase {
       resume();
     });
     await(1000);
+  }
+
+  /**
+   * Tests a leader election.
+   */
+  public void testLeaderElection() throws Throwable {
+    createServers(3);
+    Atomix atomix = createClient();
+    DistributedLeaderElection election = atomix.create("test-election", DistributedLeaderElection.TYPE).get();
+    election.onElection(epoch -> {
+      resume();
+    });
+    await(10000);
   }
 
   /**

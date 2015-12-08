@@ -22,7 +22,6 @@ import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.Managed;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.copycat.client.CopycatClient;
-import io.atomix.copycat.client.CopycatClient;
 import io.atomix.copycat.client.RecoveryStrategy;
 import io.atomix.copycat.client.session.Session;
 import io.atomix.manager.*;
@@ -150,12 +149,7 @@ public class InstanceFactory implements Managed<InstanceFactory> {
    */
   @SuppressWarnings("unchecked")
   public <T extends Resource> CompletableFuture<T> get(String key, Class<? super T> type) {
-    try {
-      T instance = (T) type.getConstructor(CopycatClient.class).newInstance(client);
-      return get(key, instance.type());
-    } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
-      throw new RuntimeException(e);
-    }
+    return get(key, new ResourceType<>((Class<T>) type));
   }
 
   /**
@@ -213,12 +207,7 @@ public class InstanceFactory implements Managed<InstanceFactory> {
    */
   @SuppressWarnings("unchecked")
   public <T extends Resource> CompletableFuture<T> create(String key, Class<? super T> type) {
-    try {
-      T instance = (T) type.getConstructor(CopycatClient.class).newInstance(client);
-      return create(key, instance.type());
-    } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
-      throw new RuntimeException(e);
-    }
+    return create(key, new ResourceType<>((Class<T>) type));
   }
 
   /**
