@@ -42,8 +42,8 @@ public final class ResourceCommand<T extends Command<U>, U> extends ResourceOper
   }
 
   @Override
-  public PersistenceLevel persistence() {
-    return operation.persistence();
+  public CompactionMode compaction() {
+    return operation.compaction();
   }
 
   @Override
