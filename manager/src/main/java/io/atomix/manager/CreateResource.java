@@ -42,6 +42,11 @@ public class CreateResource extends KeyOperation<Long> implements Command<Long> 
     this.type = Assert.notNull(type, "type");
   }
 
+  @Override
+  public CompactionMode compaction() {
+    return CompactionMode.QUORUM_CLEAN;
+  }
+
   /**
    * Returns the resource state machine class.
    *

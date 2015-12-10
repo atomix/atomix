@@ -35,4 +35,9 @@ public class CreateResourceIfExists extends CreateResource {
     super(key, type);
   }
 
+  @Override
+  public CompactionMode compaction() {
+    return CompactionMode.QUORUM_CLEAN;
+  }
+
 }
