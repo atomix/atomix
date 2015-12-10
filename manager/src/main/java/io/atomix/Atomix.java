@@ -21,7 +21,10 @@ import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.Managed;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
+import io.atomix.copycat.client.ConnectionStrategies;
 import io.atomix.copycat.client.CopycatClient;
+import io.atomix.copycat.client.RecoveryStrategies;
+import io.atomix.copycat.client.SubmissionStrategies;
 import io.atomix.resource.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -422,7 +425,10 @@ public abstract class Atomix implements Managed<Atomix> {
     protected ResourceTypeResolver resourceResolver = new ServiceLoaderResourceResolver();
 
     protected Builder(Collection<Address> members) {
-      clientBuilder = CopycatClient.builder(members);
+      clientBuilder = CopycatClient.builder(members)
+        .withConnectionStrategy(ConnectionStrategies.BACKOFF)
+        .withRecoveryStrategy(RecoveryStrategies.RECOVER)
+        .withSubmissionStrategy(SubmissionStrategies.ANY);
     }
 
     /**
