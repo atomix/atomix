@@ -55,7 +55,7 @@ public class AtomixTest extends ConcurrentTestCase {
   /**
    * Tests setting many keys in a map.
    */
-  public void testMany() throws Throwable {
+  public void testReconfigureOperations() throws Throwable {
     List<AtomixServer> servers = createServers(3);
     Atomix atomix = createClient();
 
@@ -75,6 +75,7 @@ public class AtomixTest extends ConcurrentTestCase {
     for (int i = 0; i < 1000; i++) {
       int value = i;
       map.get(value).thenAccept(result -> {
+        System.out.println(result + " " + value);
         threadAssertEquals(result, value);
         resume();
       });
@@ -82,16 +83,24 @@ public class AtomixTest extends ConcurrentTestCase {
     await(10000, 1000);
 
     // Create and join additional servers to the cluster.
-    AtomixServer s1 = createServer(members, nextMember()).open().get();
-    AtomixServer s2 = createServer(members, nextMember()).open().get();
-    AtomixServer s3 = createServer(members, nextMember()).open().get();
+    Member m1 = nextMember();
+    AtomixServer s1 = createServer(members, m1).open().get();
+    Member m2 = nextMember();
+    AtomixServer s2 = createServer(members, m2).open().get();
+    Member m3 = nextMember();
+    AtomixServer s3 = createServer(members, m3).open().get();
 
     // Iterate through the old servers and shut them down one by one.
     for (AtomixServer server : servers) {
       server.close().join();
 
       // Create a new client each time a server is removed and verify that all values are present.
-      Atomix client = createClient();
+      Atomix client = AtomixClient.builder(m1.clientAddress(), m2.clientAddress(), m3.clientAddress())
+        .withTransport(new LocalTransport(registry))
+        .build();
+      client.open().thenRun(this::resume);
+      await(10000);
+
       DistributedMap<Integer, Integer> clientMap = client.create("test-map", DistributedMap.TYPE).get();
       for (int i = 0; i < 1000; i++) {
         int value = i;
