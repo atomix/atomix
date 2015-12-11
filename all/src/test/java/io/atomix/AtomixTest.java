@@ -75,7 +75,6 @@ public class AtomixTest extends ConcurrentTestCase {
     for (int i = 0; i < 1000; i++) {
       int value = i;
       map.get(value).thenAccept(result -> {
-        System.out.println(result + " " + value);
         threadAssertEquals(result, value);
         resume();
       });
