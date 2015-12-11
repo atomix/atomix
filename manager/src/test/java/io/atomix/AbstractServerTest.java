@@ -18,6 +18,7 @@ package io.atomix;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
@@ -26,6 +27,8 @@ import org.testng.annotations.Test;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.LocalServerRegistry;
 import io.atomix.catalyst.transport.LocalTransport;
+import io.atomix.copycat.server.CopycatServer;
+import io.atomix.copycat.server.state.Member;
 import io.atomix.copycat.server.storage.Storage;
 import io.atomix.copycat.server.storage.StorageLevel;
 import net.jodah.concurrentunit.ConcurrentTestCase;
@@ -39,7 +42,7 @@ import net.jodah.concurrentunit.ConcurrentTestCase;
 public abstract class AbstractServerTest extends ConcurrentTestCase {
   protected LocalServerRegistry registry;
   protected int port;
-  protected List<Address> members;
+  protected List<Member> members;
   protected List<Atomix> clients;
   protected List<AtomixServer> servers;
 
@@ -59,27 +62,39 @@ public abstract class AbstractServerTest extends ConcurrentTestCase {
   }
 
   /**
-   * Returns the next server address.
+   * Returns the next server member.
    *
-   * @return The next server address.
+   * @return The next server member.
    */
-  protected Address nextAddress() {
-    Address address = new Address("localhost", port++);
-    members.add(address);
-    return address;
+  protected Member nextMember() {
+    return new Member(CopycatServer.Type.INACTIVE, new Address("localhost", ++port),
+        new Address("localhost", port + 1000));
+  }
+
+  /**
+   * Creates a client.
+   */
+  protected Atomix createClient() throws Throwable {
+    Atomix client = AtomixClient.builder(members.stream().map(Member::clientAddress).collect(Collectors.toList()))
+        .withTransport(new LocalTransport(registry))
+        .build();
+    client.open().thenRun(this::resume);
+    await(10000);
+    return client;
   }
 
   /**
    * Creates a set of Atomix servers.
    */
   protected List<AtomixServer> createServers(int nodes) throws Throwable {
-    List<Address> members = new ArrayList<>();
-    for (int i = 1; i <= nodes; i++) {
-      members.add(nextAddress());
+    List<AtomixServer> servers = new ArrayList<>();
+
+    for (int i = 0; i < nodes; i++) {
+      members.add(nextMember());
     }
 
     for (int i = 0; i < nodes; i++) {
-      AtomixServer server = createServer(members.get(i));
+      AtomixServer server = createServer(members, members.get(i));
       server.open().thenRun(this::resume);
       servers.add(server);
     }
@@ -90,29 +105,23 @@ public abstract class AbstractServerTest extends ConcurrentTestCase {
   }
 
   /**
-   * Creates a client.
-   */
-  protected Atomix createClient() throws Throwable {
-    Atomix client = AtomixClient.builder(members).withTransport(new LocalTransport(registry)).build();
-    client.open().thenRun(this::resume);
-    await(10000);
-    clients.add(client);
-    return client;
-  }
-  
-  /**
    * Creates an Atomix server.
    */
-  protected AtomixServer createServer(Address address) {
-    return AtomixServer.builder(address, members)
+  protected AtomixServer createServer(List<Member> members, Member member) {
+    AtomixServer server = AtomixServer
+        .builder(member.clientAddress(), member.serverAddress(),
+            members.stream().map(Member::serverAddress).collect(Collectors.toList()))
         .withTransport(new LocalTransport(registry))
         .withStorage(Storage.builder()
             .withStorageLevel(StorageLevel.MEMORY)
+            .withMaxSegmentSize(1024 * 1024)
             .withMaxEntriesPerSegment(8)
-            .withMinorCompactionInterval(Duration.ofSeconds(5))
-            .withMajorCompactionInterval(Duration.ofSeconds(10))
+            .withMinorCompactionInterval(Duration.ofSeconds(3))
+            .withMajorCompactionInterval(Duration.ofSeconds(7))
             .build())
         .build();
+    servers.add(server);
+    return server;
   }
 
 }
