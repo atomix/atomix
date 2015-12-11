@@ -18,6 +18,9 @@ package io.atomix.atomix.testing;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.LocalServerRegistry;
 import io.atomix.catalyst.transport.LocalTransport;
@@ -37,8 +40,8 @@ public abstract class AbstractAtomixTest extends ConcurrentTestCase {
   protected LocalServerRegistry registry;
   protected int port;
   protected List<Address> members;
-  protected List<CopycatClient> clients = new ArrayList<>();
-  protected List<CopycatServer> servers = new ArrayList<>();
+  protected List<CopycatClient> clients;
+  protected List<CopycatServer> servers;
 
   /**
    * Creates a new resource state machine.
@@ -47,6 +50,21 @@ public abstract class AbstractAtomixTest extends ConcurrentTestCase {
    */
   protected abstract ResourceStateMachine createStateMachine();
 
+  @BeforeMethod
+  protected void init() {
+    port = 5000;
+    registry = new LocalServerRegistry();
+    members = new ArrayList<>();
+    clients = new ArrayList<>();
+    servers = new ArrayList<>();
+  }
+
+  @AfterMethod
+  protected void cleanup() {
+    clients.stream().forEach(c -> c.close().join());
+    servers.stream().forEach(s -> s.close().join());
+  }
+  
   /**
    * Returns the next server address.
    *
