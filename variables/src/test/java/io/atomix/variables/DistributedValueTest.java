@@ -17,9 +17,10 @@ package io.atomix.variables;
 
 import org.testng.annotations.Test;
 
+import io.atomix.atomix.testing.AbstractAtomixTest;
 import io.atomix.copycat.client.CopycatClient;
-import io.atomix.variables.state.ValueState;
 import io.atomix.resource.ResourceStateMachine;
+import io.atomix.variables.state.ValueState;
 
 /**
  * Distributed atomic value test.
@@ -27,7 +28,7 @@ import io.atomix.resource.ResourceStateMachine;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class DistributedValueTest extends AbstractVariableTest {
+public class DistributedValueTest extends AbstractAtomixTest {
 
   @Override
   protected ResourceStateMachine createStateMachine() {

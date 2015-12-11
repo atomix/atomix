@@ -34,7 +34,7 @@ public class AtomixServerTest extends AbstractServerTest {
     createServers(3);
     AtomixServer joiner = createServer(members, nextMember());
     joiner.open().thenRun(this::resume);
-    await();
+    await(30000);
   }
 
   /**
@@ -44,7 +44,7 @@ public class AtomixServerTest extends AbstractServerTest {
     List<AtomixServer> servers = createServers(3);
     AtomixServer server = servers.get(0);
     server.close().thenRun(this::resume);
-    await();
+    await(30000);
   }
 
 }

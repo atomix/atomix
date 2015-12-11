@@ -15,12 +15,14 @@
  */
 package io.atomix.collections;
 
-import io.atomix.collections.state.SetState;
-import io.atomix.resource.ResourceStateMachine;
-import org.testng.annotations.Test;
-
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
+
+import org.testng.annotations.Test;
+
+import io.atomix.atomix.testing.AbstractAtomixTest;
+import io.atomix.collections.state.SetState;
+import io.atomix.resource.ResourceStateMachine;
 
 /**
  * Distributed map test.
@@ -28,7 +30,7 @@ import static org.testng.Assert.assertTrue;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class DistributedSetTest extends AbstractCollectionsTest {
+public class DistributedSetTest extends AbstractAtomixTest {
 
   @Override
   protected ResourceStateMachine createStateMachine() {
@@ -38,7 +40,6 @@ public class DistributedSetTest extends AbstractCollectionsTest {
   /**
    * Tests adding and removing members from a set.
    */
-  @SuppressWarnings("unchecked")
   public void testSetAddRemove() throws Throwable {
     createServers(3);
 

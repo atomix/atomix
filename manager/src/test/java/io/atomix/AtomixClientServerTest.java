@@ -15,17 +15,19 @@
  */
 package io.atomix;
 
-import io.atomix.catalyst.transport.LocalTransport;
-import io.atomix.copycat.client.Command;
-import io.atomix.copycat.client.Query;
-import io.atomix.copycat.client.CopycatClient;
-import io.atomix.copycat.server.Commit;
-import io.atomix.copycat.server.state.Member;
-import io.atomix.resource.*;
+import java.util.concurrent.CompletableFuture;
+
 import org.testng.annotations.Test;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
+import io.atomix.copycat.client.Command;
+import io.atomix.copycat.client.CopycatClient;
+import io.atomix.copycat.client.Query;
+import io.atomix.copycat.server.Commit;
+import io.atomix.resource.Consistency;
+import io.atomix.resource.Resource;
+import io.atomix.resource.ResourceStateMachine;
+import io.atomix.resource.ResourceType;
+import io.atomix.resource.ResourceTypeInfo;
 
 /**
  * Client server test.
@@ -228,18 +230,6 @@ public class AtomixClientServerTest extends AbstractServerTest {
       resume();
     });
     await(10000);
-  }
-
-  /**
-   * Creates a client.
-   */
-  private Atomix createClient() throws Throwable {
-    Atomix client = AtomixClient.builder(members.stream().map(Member::clientAddress).collect(Collectors.toList()))
-      .withTransport(new LocalTransport(registry))
-      .build();
-    client.open().thenRun(this::resume);
-    await(10000);
-    return client;
   }
 
   /**

@@ -15,11 +15,13 @@
  */
 package io.atomix.collections;
 
-import io.atomix.collections.state.MapState;
-import io.atomix.resource.ResourceStateMachine;
+import java.time.Duration;
+
 import org.testng.annotations.Test;
 
-import java.time.Duration;
+import io.atomix.atomix.testing.AbstractAtomixTest;
+import io.atomix.collections.state.MapState;
+import io.atomix.resource.ResourceStateMachine;
 
 /**
  * Distributed map test.
@@ -27,7 +29,7 @@ import java.time.Duration;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class DistributedMapTest extends AbstractCollectionsTest {
+public class DistributedMapTest extends AbstractAtomixTest {
 
   @Override
   protected ResourceStateMachine createStateMachine() {
@@ -37,7 +39,6 @@ public class DistributedMapTest extends AbstractCollectionsTest {
   /**
    * Tests putting and getting a value.
    */
-  @SuppressWarnings("unchecked")
   public void testMapPutGetRemove() throws Throwable {
     createServers(3);
 
@@ -68,7 +69,6 @@ public class DistributedMapTest extends AbstractCollectionsTest {
   /**
    * Tests the put if absent command.
    */
-  @SuppressWarnings("unchecked")
   public void testMapPutIfAbsent() throws Throwable {
     createServers(3);
 
@@ -92,7 +92,6 @@ public class DistributedMapTest extends AbstractCollectionsTest {
   /**
    * Tests put if absent with a TTL.
    */
-  @SuppressWarnings("unchecked")
   public void testMapPutIfAbsentTtl() throws Throwable {
     createServers(3);
 
@@ -113,7 +112,6 @@ public class DistributedMapTest extends AbstractCollectionsTest {
   /**
    * Tests get or default.
    */
-  @SuppressWarnings("unchecked")
   public void testMapGetOrDefault() throws Throwable {
     createServers(3);
 
@@ -138,7 +136,6 @@ public class DistributedMapTest extends AbstractCollectionsTest {
   /**
    * Tests the contains key command.
    */
-  @SuppressWarnings("unchecked")
   public void testMapContainsKey() throws Throwable {
     createServers(3);
 
@@ -163,7 +160,6 @@ public class DistributedMapTest extends AbstractCollectionsTest {
   /**
    * Tests the contains value command.
    */
-  @SuppressWarnings("unchecked")
   public void testMapContainsValue() throws Throwable {
     createServers(3);
 
@@ -188,7 +184,6 @@ public class DistributedMapTest extends AbstractCollectionsTest {
   /**
    * Tests the map count.
    */
-  @SuppressWarnings("unchecked")
   public void testMapSize() throws Throwable {
     createServers(3);
 
@@ -222,7 +217,6 @@ public class DistributedMapTest extends AbstractCollectionsTest {
   /**
    * Tests TTL.
    */
-  @SuppressWarnings("unchecked")
   public void testMapPutTtl() throws Throwable {
     createServers(3);
 

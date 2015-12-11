@@ -15,13 +15,15 @@
  */
 package io.atomix.coordination;
 
-import io.atomix.coordination.state.MembershipGroupState;
-import io.atomix.resource.ResourceStateMachine;
-import org.testng.annotations.Test;
-
 import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.testng.annotations.Test;
+
+import io.atomix.atomix.testing.AbstractAtomixTest;
+import io.atomix.coordination.state.MembershipGroupState;
+import io.atomix.resource.ResourceStateMachine;
 
 /**
  * Async group test.
@@ -29,7 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class DistributedMembershipGroupTest extends AbstractCoordinationTest {
+public class DistributedMembershipGroupTest extends AbstractAtomixTest {
 
   @Override
   protected ResourceStateMachine createStateMachine() {

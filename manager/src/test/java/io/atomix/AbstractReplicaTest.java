@@ -15,19 +15,19 @@
  */
 package io.atomix;
 
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.LocalServerRegistry;
 import io.atomix.catalyst.transport.LocalTransport;
 import io.atomix.copycat.server.storage.Storage;
 import io.atomix.copycat.server.storage.StorageLevel;
 import net.jodah.concurrentunit.ConcurrentTestCase;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-
-import java.io.IOException;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Abstract server test.
@@ -38,7 +38,21 @@ public abstract class AbstractReplicaTest extends ConcurrentTestCase {
   protected LocalServerRegistry registry;
   protected int port;
   protected List<Address> members;
+  protected List<Atomix> replicas;
 
+  @BeforeMethod
+  protected void init() {
+    port = 5000;
+    registry = new LocalServerRegistry();
+    members = new ArrayList<>();
+    replicas = new ArrayList<>();
+  }
+
+  @AfterMethod
+  protected void cleanup() {
+    replicas.stream().forEach(s -> s.close().join());
+  }
+  
   /**
    * Returns the next server address.
    *
@@ -54,8 +68,6 @@ public abstract class AbstractReplicaTest extends ConcurrentTestCase {
    * Creates a set of Atomix servers.
    */
   protected List<Atomix> createReplicas(int nodes) throws Throwable {
-    List<Atomix> replicas = new ArrayList<>();
-
     List<Address> members = new ArrayList<>();
     for (int i = 1; i <= nodes; i++) {
       members.add(nextAddress());
@@ -86,13 +98,5 @@ public abstract class AbstractReplicaTest extends ConcurrentTestCase {
         .build())
       .build();
   }
-
-  @BeforeMethod
-  @AfterMethod
-  public void clearTests() throws IOException {
-    port = 5000;
-    registry = new LocalServerRegistry();
-    members = new ArrayList<>();
-  }
-
+  
 }

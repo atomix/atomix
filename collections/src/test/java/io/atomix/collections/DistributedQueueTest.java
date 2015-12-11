@@ -15,12 +15,14 @@
  */
 package io.atomix.collections;
 
-import io.atomix.collections.state.QueueState;
-import io.atomix.resource.ResourceStateMachine;
-import org.testng.annotations.Test;
-
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
+
+import org.testng.annotations.Test;
+
+import io.atomix.atomix.testing.AbstractAtomixTest;
+import io.atomix.collections.state.QueueState;
+import io.atomix.resource.ResourceStateMachine;
 
 /**
  * Distributed queue test.
@@ -28,7 +30,7 @@ import static org.testng.Assert.assertTrue;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class DistributedQueueTest extends AbstractCollectionsTest {
+public class DistributedQueueTest extends AbstractAtomixTest {
 
   @Override
   protected ResourceStateMachine createStateMachine() {
@@ -154,7 +156,6 @@ public class DistributedQueueTest extends AbstractCollectionsTest {
   /**
    * Tests adding and removing members from a queue.
    */
-  @SuppressWarnings("unchecked")
   public void testQueueAddRemove() throws Throwable {
     createServers(3);
 
