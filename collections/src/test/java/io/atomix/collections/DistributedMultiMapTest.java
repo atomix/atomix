@@ -15,9 +15,11 @@
  */
 package io.atomix.collections;
 
+import org.testng.annotations.Test;
+
+import io.atomix.atomix.testing.AbstractAtomixTest;
 import io.atomix.collections.state.MultiMapState;
 import io.atomix.resource.ResourceStateMachine;
-import org.testng.annotations.Test;
 
 /**
  * Distributed multi map test.
@@ -25,7 +27,7 @@ import org.testng.annotations.Test;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class DistributedMultiMapTest extends AbstractCollectionsTest {
+public class DistributedMultiMapTest extends AbstractAtomixTest {
 
   @Override
   protected ResourceStateMachine createStateMachine() {
@@ -35,7 +37,6 @@ public class DistributedMultiMapTest extends AbstractCollectionsTest {
   /**
    * Tests putting and getting a value.
    */
-  @SuppressWarnings("unchecked")
   public void testMapPutGetRemove() throws Throwable {
     createServers(3);
 

@@ -13,35 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.coordination;
+package io.atomix.atomix.testing;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.LocalServerRegistry;
 import io.atomix.catalyst.transport.LocalTransport;
 import io.atomix.copycat.client.CopycatClient;
-import io.atomix.copycat.client.CopycatClient;
-import io.atomix.copycat.server.CopycatServer;
 import io.atomix.copycat.server.CopycatServer;
 import io.atomix.copycat.server.storage.Storage;
 import io.atomix.copycat.server.storage.StorageLevel;
 import io.atomix.resource.ResourceStateMachine;
 import net.jodah.concurrentunit.ConcurrentTestCase;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
- * Abstract coordination tests.
+ * Abstract atomix test.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public abstract class AbstractCoordinationTest extends ConcurrentTestCase {
-  private static final File directory = new File("target/test-logs");
+public abstract class AbstractAtomixTest extends ConcurrentTestCase {
   protected LocalServerRegistry registry;
   protected int port;
   protected List<Address> members;
@@ -132,55 +124,6 @@ public abstract class AbstractCoordinationTest extends ConcurrentTestCase {
     await();
     clients.add(client);
     return client;
-  }
-
-  @BeforeMethod
-  @AfterMethod
-  public void clearTests() throws Exception {
-    deleteDirectory(directory);
-    registry = new LocalServerRegistry();
-    members = new ArrayList<>();
-    port = 5000;
-
-    if (!clients.isEmpty()) {
-      clients.forEach(c -> {
-        try {
-          c.close().join();
-        } catch (Exception e) {
-        }
-      });
-    }
-
-    if (!servers.isEmpty()) {
-      servers.forEach(s -> {
-        try {
-          s.close().join();
-        } catch (Exception e) {
-        }
-      });
-    }
-
-    clients = new ArrayList<>();
-    servers = new ArrayList<>();
-  }
-
-  /**
-   * Deletes a directory recursively.
-   */
-  private void deleteDirectory(File directory) throws IOException {
-    if (directory.exists()) {
-      File[] files = directory.listFiles();
-      if (files != null) {
-        for (File file : files) {
-          if (file.isDirectory()) {
-            deleteDirectory(file);
-          } else {
-            Files.delete(file.toPath());
-          }
-        }
-      }
-      Files.delete(directory.toPath());
-    }
   }
 
 }

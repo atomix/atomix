@@ -15,10 +15,12 @@
  */
 package io.atomix.coordination;
 
+import org.testng.annotations.Test;
+
+import io.atomix.atomix.testing.AbstractAtomixTest;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.coordination.state.MessageBusState;
 import io.atomix.resource.ResourceStateMachine;
-import org.testng.annotations.Test;
 
 /**
  * Distributed message bus test.
@@ -26,7 +28,7 @@ import org.testng.annotations.Test;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class DistributedMessageBusTest extends AbstractCoordinationTest {
+public class DistributedMessageBusTest extends AbstractAtomixTest {
 
   @Override
   protected ResourceStateMachine createStateMachine() {
