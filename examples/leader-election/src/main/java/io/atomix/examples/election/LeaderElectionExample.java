@@ -22,7 +22,6 @@ import io.atomix.catalyst.transport.NettyTransport;
 import io.atomix.coordination.DistributedLeaderElection;
 import io.atomix.copycat.server.storage.Storage;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,12 +40,12 @@ public class LeaderElectionExample {
       throw new IllegalArgumentException("must supply a path and set of host:port tuples");
 
     // Parse the address to which to bind the server.
-    String[] mainParts = args[0].split(":");
+    String[] mainParts = args[1].split(":");
     Address address = new Address(mainParts[0], Integer.valueOf(mainParts[1]));
 
     // Build a list of all member addresses to which to connect.
     List<Address> members = new ArrayList<>();
-    for (int i = 0; i < args.length; i++) {
+    for (int i = 1; i < args.length; i++) {
       String[] parts = args[i].split(":");
       members.add(new Address(parts[0], Integer.valueOf(parts[1])));
     }
@@ -55,7 +54,7 @@ public class LeaderElectionExample {
     // to replicate state changes.
     Atomix atomix = AtomixReplica.builder(address, members)
       .withTransport(new NettyTransport())
-      .withStorage(new Storage(new File("logs", args[0])))
+      .withStorage(new Storage(args[0]))
       .build();
 
     // Open the replica. Once this operation completes resources can be created and managed.
