@@ -19,11 +19,11 @@ import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.transport.*;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.ConfigurationException;
+import io.atomix.copycat.client.CopycatClient;
 import io.atomix.copycat.client.SubmissionStrategy;
 import io.atomix.copycat.server.CopycatServer;
 import io.atomix.copycat.server.storage.Storage;
 import io.atomix.manager.ResourceManager;
-import io.atomix.resource.InstanceFactory;
 import io.atomix.resource.ResourceRegistry;
 
 import java.time.Duration;
@@ -137,9 +137,9 @@ public final class AtomixReplica extends Atomix {
   /**
    * @throws NullPointerException if {@code client} or {@code server} are null
    */
-  private AtomixReplica(InstanceFactory factory, CopycatServer server) {
-    super(factory);
-    this.server = server;
+  private AtomixReplica(CopycatClient.Builder clientBuilder, CopycatServer.Builder serverBuilder, Transport transport) {
+    super(clientBuilder, transport);
+    this.server = serverBuilder.build();
   }
 
   @Override
@@ -443,9 +443,10 @@ public final class AtomixReplica extends Atomix {
         serverBuilder.withTransport(new CombinedTransport(new LocalTransport(localRegistry), serverTransport));
       }
 
-      CopycatServer server = serverBuilder.withStateMachine(new ResourceManager(registry)).build();
+      // Set the server resource state machine.
+      serverBuilder.withStateMachine(new ResourceManager(registry));
 
-      return new AtomixReplica(new InstanceFactory(clientBuilder, serverTransport), server);
+      return new AtomixReplica(clientBuilder, serverBuilder, serverTransport);
     }
   }
 

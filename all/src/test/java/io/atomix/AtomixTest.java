@@ -573,6 +573,50 @@ public class AtomixTest extends ConcurrentTestCase {
     await(10000);
   }
 
+  public void testRecoverClientResources() throws Throwable {
+    createServers(3);
+    testRecoverResources(createClient());
+  }
+
+  public void testRecoverReplicaResources() throws Throwable {
+    testRecoverResources(createReplicas(3).get(0));
+  }
+
+  /**
+   * Tests recovering resources.
+   */
+  private void testRecoverResources(Atomix atomix) throws Throwable {
+    DistributedMap<String, String> map = atomix.create("test-map", DistributedMap.TYPE).get();
+    map.put("foo", "Hello world!").join();
+    map.put("bar", "Hello world again!").join();
+    map.get("foo").thenAccept(result -> {
+      threadAssertEquals(result, "Hello world!");
+      resume();
+    });
+    await(1000);
+
+    DistributedSet<String> set = atomix.get("test-set", DistributedSet.TYPE).get();
+    set.add("Hello world!").join();
+
+    atomix.factory.recover().whenComplete((result, error) -> {
+      threadAssertNull(error);
+      resume();
+    });
+    await(10000);
+
+    map.get("foo").thenAccept(result -> {
+      threadAssertEquals(result, "Hello world!");
+      resume();
+    });
+    await(1000);
+
+    set.contains("Hello world!").thenAccept(result -> {
+      threadAssertTrue(result);
+      resume();
+    });
+    await(1000);
+  }
+
   /**
    * Creates a client.
    */

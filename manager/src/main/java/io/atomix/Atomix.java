@@ -21,13 +21,8 @@ import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.Managed;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
-import io.atomix.copycat.client.ConnectionStrategies;
-import io.atomix.copycat.client.CopycatClient;
-import io.atomix.copycat.client.RecoveryStrategies;
-import io.atomix.copycat.client.SubmissionStrategies;
+import io.atomix.copycat.client.*;
 import io.atomix.resource.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.Set;
@@ -52,14 +47,13 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class Atomix implements Managed<Atomix> {
-  protected static final Logger LOGGER = LoggerFactory.getLogger(Atomix.class);
-  private final InstanceFactory factory;
+  final InstanceFactory factory;
 
   /**
    * @throws NullPointerException if {@code client} is null
    */
-  protected Atomix(InstanceFactory factory) {
-    this.factory = Assert.notNull(factory, "factory");
+  protected Atomix(CopycatClient.Builder builder, Transport transport) {
+    this.factory = new InstanceFactory(builder.withRecoveryStrategy(new AtomixRecoveryStrategy()).build(), transport);
   }
 
   /**
@@ -415,6 +409,16 @@ public abstract class Atomix implements Managed<Atomix> {
   @Override
   public String toString() {
     return String.format("%s[session=%s]", getClass().getSimpleName(), factory.session());
+  }
+
+  /**
+   * Atomix recovery strategy.
+   */
+  protected class AtomixRecoveryStrategy implements RecoveryStrategy {
+    @Override
+    public void recover(CopycatClient client) {
+      factory.recover();
+    }
   }
 
   /**
