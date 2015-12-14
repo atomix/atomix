@@ -57,7 +57,7 @@ public class DistributedMessageBusTest extends AbstractAtomixTest {
       });
     });
 
-    await();
+    await(10000);
   }
 
 }
