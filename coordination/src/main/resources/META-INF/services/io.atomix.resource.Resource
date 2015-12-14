@@ -17,4 +17,3 @@ io.atomix.coordination.DistributedLeaderElection
 io.atomix.coordination.DistributedLock
 io.atomix.coordination.DistributedMembershipGroup
 io.atomix.coordination.DistributedMessageBus
-io.atomix.coordination.DistributedTopic

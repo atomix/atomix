@@ -97,7 +97,7 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
 
   private final Listeners<GroupMember> joinListeners = new Listeners<>();
   private final Listeners<GroupMember> leaveListeners = new Listeners<>();
-  private GroupMember member;
+  private InternalLocalGroupMember member;
   private final Map<Long, GroupMember> members = new ConcurrentHashMap<>();
 
   public DistributedMembershipGroup(CopycatClient client) {
@@ -119,12 +119,29 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
       }
     });
 
+    client.session().<Message>onEvent("message", message -> {
+      if (member != null) {
+        member.handle(message);
+      }
+    });
+
     client.session().onEvent("execute", Runnable::run);
   }
 
   @Override
   public ResourceType<DistributedMembershipGroup> type() {
     return TYPE;
+  }
+
+  /**
+   * Synchronizes the membership group.
+   */
+  private CompletableFuture<Void> sync() {
+    return submit(new MembershipGroupCommands.List()).thenAccept(members -> {
+      for (long memberId : members) {
+        this.members.computeIfAbsent(memberId, InternalGroupMember::new);
+      }
+    });
   }
 
   /**
@@ -136,29 +153,57 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
    *
    * @return The local group member or {@code null} if the member has not joined the group.
    */
-  public GroupMember member() {
+  public LocalGroupMember member() {
     return member;
   }
 
   /**
-   * Returns a group member by ID.
+   * Gets a group member by ID.
+   * <p>
+   * The group member is fetched from the cluster by member ID. If the member with the given ID has not
+   * {@link #join() joined} the membership group, the resulting {@link GroupMember} will be {@code null}.
    *
    * @param memberId The member ID for which to return a {@link GroupMember}.
    * @return The member with the given {@code memberId} or {@code null} if it is not a known member of the group.
    */
-  public GroupMember member(long memberId) {
-    return members.get(memberId);
+  public CompletableFuture<GroupMember> member(long memberId) {
+    GroupMember member = members.get(memberId);
+    if (member != null) {
+      return CompletableFuture.completedFuture(member);
+    }
+    return sync().thenApply(v -> members.get(memberId));
   }
 
   /**
-   * Returns the collection of all members in the group.
+   * Gets the collection of all members in the group.
    * <p>
-   * The returned members collection is guaranteed to be representative of the current group state.
+   * The group members are fetched from the cluster. If any {@link GroupMember} instances have been referenced
+   * by this membership group instance, the same object will be returned for that member.
+   * <p>
+   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
+   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
+   * use the {@link CompletableFuture#join()} method to block the calling thread:
+   * <pre>
+   *   {@code
+   *   Collection<GroupMember> members = group.members().get();
+   *   }
+   * </pre>
+   * Alternatively, to execute the operation asynchronous and be notified once the lock is acquired in a different
+   * thread, use one of the many completable future callbacks:
+   * <pre>
+   *   {@code
+   *   group.members().thenAccept(members -> {
+   *     members.forEach(member -> {
+   *       member.send("test", "Hello world!");
+   *     });
+   *   });
+   *   }
+   * </pre>
    *
    * @return The collection of all members in the group.
    */
-  public Collection<GroupMember> members() {
-    return members.values();
+  public CompletableFuture<Collection<GroupMember>> members() {
+    return sync().thenApply(v -> members.values());
   }
 
   /**
@@ -187,9 +232,9 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
    *
    * @return A completable future to be completed once the member has joined.
    */
-  public CompletableFuture<GroupMember> join() {
+  public CompletableFuture<LocalGroupMember> join() {
     return submit(new MembershipGroupCommands.Join()).thenApply(members -> {
-      member = new InternalGroupMember(client.session().id());
+      member = new InternalLocalGroupMember(client.session().id());
       for (long memberId : members) {
         this.members.computeIfAbsent(memberId, InternalGroupMember::new);
       }
@@ -269,10 +314,71 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
   }
 
   /**
+   * Internal local group member.
+   */
+  private class InternalLocalGroupMember extends InternalGroupMember implements LocalGroupMember {
+    private final Map<String, ListenerHolder> listeners = new ConcurrentHashMap<>();
+
+    InternalLocalGroupMember(long memberId) {
+      super(memberId);
+    }
+
+    @Override
+    public CompletableFuture<Void> set(String property, Object value) {
+      return submit(new MembershipGroupCommands.SetProperty(property, value));
+    }
+
+    @Override
+    public CompletableFuture<Void> remove(String property) {
+      return submit(new MembershipGroupCommands.RemoveProperty(property));
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T> Listener<T> onMessage(String topic, Consumer<T> consumer) {
+      ListenerHolder listener = new ListenerHolder(consumer);
+      listeners.put(topic, listener);
+      return listener;
+    }
+
+    /**
+     * Handles a message to the member.
+     */
+    private void handle(Message message) {
+      ListenerHolder listener = listeners.get(message.topic());
+      if (listener != null) {
+        listener.accept(message.body());
+      }
+    }
+
+    /**
+     * Listener holder.
+     */
+    @SuppressWarnings("unchecked")
+    private class ListenerHolder implements Listener {
+      private final Consumer consumer;
+
+      private ListenerHolder(Consumer consumer) {
+        this.consumer = consumer;
+      }
+
+      @Override
+      public void accept(Object message) {
+        consumer.accept(message);
+      }
+
+      @Override
+      public void close() {
+        listeners.remove(this);
+      }
+    }
+  }
+
+  /**
    * Internal group member.
    */
   private class InternalGroupMember implements GroupMember {
-    private final long memberId;
+    protected final long memberId;
 
     InternalGroupMember(long memberId) {
       this.memberId = memberId;
@@ -281,6 +387,17 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
     @Override
     public long id() {
       return memberId;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T> CompletableFuture<T> get(String property) {
+      return submit(new MembershipGroupCommands.GetProperty(memberId, property)).thenApply(result -> (T) result);
+    }
+
+    @Override
+    public CompletableFuture<Void> send(String topic, Object message) {
+      return submit(new MembershipGroupCommands.Send(memberId, topic, message));
     }
 
     @Override
