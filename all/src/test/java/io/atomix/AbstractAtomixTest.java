@@ -131,7 +131,7 @@ public abstract class AbstractAtomixTest extends ConcurrentTestCase {
       replicas.add(replica);
     }
 
-    await(10000, nodes);
+    await(30000, nodes);
     return replicas;
   }
 
