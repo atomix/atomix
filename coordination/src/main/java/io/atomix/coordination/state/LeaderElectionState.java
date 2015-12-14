@@ -51,7 +51,7 @@ public class LeaderElectionState extends ResourceStateMachine implements Session
   @Override
   public void close(Session session) {
     if (leader != null && leader.session().equals(session)) {
-      leader.clean();
+      leader.close();
       leader = null;
       if (!listeners.isEmpty()) {
         Iterator<Map.Entry<Long, Commit<LeaderElectionCommands.Listen>>> iterator = listeners.entrySet().iterator();
@@ -62,7 +62,7 @@ public class LeaderElectionState extends ResourceStateMachine implements Session
     } else {
       Commit<LeaderElectionCommands.Listen> listener = listeners.remove(session.id());
       if (listener != null) {
-        listener.clean();
+        listener.close();
       }
     }
   }
@@ -77,7 +77,7 @@ public class LeaderElectionState extends ResourceStateMachine implements Session
     } else if (!listeners.containsKey(commit.session().id())) {
       listeners.put(commit.session().id(), commit);
     } else {
-      commit.clean();
+      commit.close();
     }
   }
 
@@ -87,7 +87,7 @@ public class LeaderElectionState extends ResourceStateMachine implements Session
   public void unlisten(Commit<LeaderElectionCommands.Unlisten> commit) {
     try {
       if (leader != null && leader.session().equals(commit.session())) {
-        leader.clean();
+        leader.close();
         leader = null;
         if (!listeners.isEmpty()) {
           Iterator<Map.Entry<Long, Commit<LeaderElectionCommands.Listen>>> iterator = listeners.entrySet().iterator();
@@ -98,11 +98,11 @@ public class LeaderElectionState extends ResourceStateMachine implements Session
       } else {
         Commit<LeaderElectionCommands.Listen> listener = listeners.remove(commit.session().id());
         if (listener != null) {
-          listener.clean();
+          listener.close();
         }
       }
     } finally {
-      commit.clean();
+      commit.close();
     }
   }
 
@@ -116,10 +116,10 @@ public class LeaderElectionState extends ResourceStateMachine implements Session
   @Override
   public void delete() {
     if (leader != null) {
-      leader.clean();
+      leader.close();
     }
 
-    listeners.values().forEach(Commit::clean);
+    listeners.values().forEach(Commit::close);
     listeners.clear();
   }
 

@@ -46,7 +46,7 @@ public final class LockCommands {
 
     @Override
     public CompactionMode compaction() {
-      return CompactionMode.QUORUM_CLEAN;
+      return CompactionMode.QUORUM;
     }
 
     @Override
@@ -83,7 +83,7 @@ public final class LockCommands {
 
     @Override
     public CompactionMode compaction() {
-      return timeout > 0 ? CompactionMode.FULL_SEQUENTIAL_CLEAN : CompactionMode.QUORUM_CLEAN;
+      return timeout > 0 ? CompactionMode.SEQUENTIAL : CompactionMode.QUORUM;
     }
 
     @Override
@@ -104,7 +104,7 @@ public final class LockCommands {
   public static class Unlock extends LockCommand<Void> {
     @Override
     public CompactionMode compaction() {
-      return CompactionMode.FULL_SEQUENTIAL_CLEAN;
+      return CompactionMode.SEQUENTIAL;
     }
   }
 

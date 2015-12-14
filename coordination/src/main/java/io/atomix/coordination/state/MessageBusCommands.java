@@ -51,7 +51,7 @@ public final class MessageBusCommands {
 
     @Override
     public CompactionMode compaction() {
-      return CompactionMode.QUORUM_CLEAN;
+      return CompactionMode.QUORUM;
     }
 
     @Override
@@ -104,7 +104,7 @@ public final class MessageBusCommands {
   public static class Leave extends MessageBusCommand<Void> {
     @Override
     public CompactionMode compaction() {
-      return CompactionMode.FULL_SEQUENTIAL_CLEAN;
+      return CompactionMode.SEQUENTIAL;
     }
   }
 
@@ -167,7 +167,7 @@ public final class MessageBusCommands {
 
     @Override
     public CompactionMode compaction() {
-      return CompactionMode.FULL_SEQUENTIAL_CLEAN;
+      return CompactionMode.SEQUENTIAL;
     }
 
     @Override

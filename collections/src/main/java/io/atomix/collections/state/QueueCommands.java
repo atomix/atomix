@@ -41,7 +41,7 @@ public class QueueCommands {
   private static abstract class QueueCommand<V> implements Command<V>, CatalystSerializable {
     @Override
     public CompactionMode compaction() {
-      return CompactionMode.QUORUM_CLEAN;
+      return CompactionMode.QUORUM;
     }
 
     @Override
@@ -185,7 +185,7 @@ public class QueueCommands {
 
     @Override
     public CompactionMode compaction() {
-      return CompactionMode.FULL_SEQUENTIAL_COMMIT;
+      return CompactionMode.SEQUENTIAL;
     }
   }
 
@@ -197,7 +197,7 @@ public class QueueCommands {
 
     @Override
     public CompactionMode compaction() {
-      return CompactionMode.FULL_SEQUENTIAL_COMMIT;
+      return CompactionMode.SEQUENTIAL;
     }
   }
 
@@ -215,7 +215,7 @@ public class QueueCommands {
 
     @Override
     public CompactionMode compaction() {
-      return CompactionMode.FULL_SEQUENTIAL_COMMIT;
+      return CompactionMode.SEQUENTIAL;
     }
   }
 
@@ -241,7 +241,7 @@ public class QueueCommands {
 
     @Override
     public CompactionMode compaction() {
-      return CompactionMode.FULL_SEQUENTIAL_COMMIT;
+      return CompactionMode.SEQUENTIAL;
     }
   }
 

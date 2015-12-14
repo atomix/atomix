@@ -341,7 +341,7 @@ public class AtomixClientServerTest extends AbstractServerTest {
       Commit<SetCommand> oldValue = value;
       value = commit;
       if (oldValue != null)
-        oldValue.clean();
+        oldValue.close();
     }
 
     public String get(Commit<GetQuery> commit) {

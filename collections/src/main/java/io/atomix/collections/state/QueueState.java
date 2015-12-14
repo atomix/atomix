@@ -52,7 +52,7 @@ public class QueueState extends ResourceStateMachine {
     try {
       queue.add(commit);
     } catch (Exception e) {
-      commit.clean();
+      commit.close();
       throw e;
     }
     return false;
@@ -65,7 +65,7 @@ public class QueueState extends ResourceStateMachine {
     try {
       queue.offer(commit);
     } catch (Exception e) {
-      commit.clean();
+      commit.close();
       throw e;
     }
     return false;
@@ -96,12 +96,12 @@ public class QueueState extends ResourceStateMachine {
         try {
           return value.operation().value();
         } finally {
-          value.clean();
+          value.close();
         }
       }
       return null;
     } finally {
-      commit.clean();
+      commit.close();
     }
   }
 
@@ -115,12 +115,12 @@ public class QueueState extends ResourceStateMachine {
         try {
           return value.operation().value();
         } finally {
-          value.clean();
+          value.close();
         }
       }
       return null;
     } finally {
-      commit.clean();
+      commit.close();
     }
   }
 
@@ -135,7 +135,7 @@ public class QueueState extends ResourceStateMachine {
           Commit<? extends QueueCommands.ValueCommand> value = iterator.next();
           if (value.operation().value().equals(commit.operation().value())) {
             iterator.remove();
-            value.clean();
+            value.close();
             return true;
           }
         }
@@ -146,13 +146,13 @@ public class QueueState extends ResourceStateMachine {
           try {
             return value.operation().value();
           } finally {
-            value.clean();
+            value.close();
           }
         }
         return null;
       }
     } finally {
-      commit.clean();
+      commit.close();
     }
   }
 
@@ -185,7 +185,7 @@ public class QueueState extends ResourceStateMachine {
     try {
       delete();
     } finally {
-      commit.clean();
+      commit.close();
     }
   }
 
@@ -194,7 +194,7 @@ public class QueueState extends ResourceStateMachine {
     Iterator<Commit<? extends QueueCommands.ValueCommand>> iterator = queue.iterator();
     while (iterator.hasNext()) {
       Commit<? extends QueueCommands.ValueCommand> value = iterator.next();
-      value.clean();
+      value.close();
       iterator.remove();
     }
   }

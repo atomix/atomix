@@ -75,18 +75,18 @@ public class MultiMapState extends ResourceStateMachine {
 
       final Map<Object, Commit<? extends MultiMapCommands.TtlCommand>> keyValues = values;
       if (!values.containsKey(commit.operation().value())) {
-        Scheduled timer = commit.operation().ttl() > 0 ? executor().schedule(Duration.ofMillis(commit.operation().ttl()), () -> {
-          keyValues.remove(commit.operation().value()).clean();
+        Scheduled timer = commit.operation().ttl() > 0 ? executor.schedule(Duration.ofMillis(commit.operation().ttl()), () -> {
+          keyValues.remove(commit.operation().value()).close();
         }) : null;
         values.put(commit.operation().value(), commit);
         timers.put(commit.index(), timer);
         return true;
       } else {
-        commit.clean();
+        commit.close();
         return false;
       }
     } catch (Exception e) {
-      commit.clean();
+      commit.close();
       throw e;
     }
   }
@@ -106,7 +106,7 @@ public class MultiMapState extends ResourceStateMachine {
         if (previous == null) {
           return false;
         } else {
-          previous.clean();
+          previous.close();
         }
 
         Scheduled timer = timers.remove(previous.index());
@@ -131,7 +131,7 @@ public class MultiMapState extends ResourceStateMachine {
         return Collections.EMPTY_LIST;
       }
     } finally {
-      commit.clean();
+      commit.close();
     }
   }
 
@@ -151,7 +151,7 @@ public class MultiMapState extends ResourceStateMachine {
             Scheduled timer = timers.remove(entry.getValue().index());
             if (timer != null)
               timer.cancel();
-            entry.getValue().clean();
+            entry.getValue().close();
             innerIterator.remove();
           }
         }
@@ -161,7 +161,7 @@ public class MultiMapState extends ResourceStateMachine {
         }
       }
     } finally {
-      commit.clean();
+      commit.close();
     }
   }
 
@@ -203,7 +203,7 @@ public class MultiMapState extends ResourceStateMachine {
     try {
       delete();
     } finally {
-      commit.clean();
+      commit.close();
     }
   }
 
@@ -216,7 +216,7 @@ public class MultiMapState extends ResourceStateMachine {
         Scheduled timer = timers.remove(value.index());
         if (timer != null)
           timer.cancel();
-        value.clean();
+        value.close();
       }
       iterator.remove();
     }

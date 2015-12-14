@@ -43,7 +43,7 @@ public class ValueState extends ResourceStateMachine {
     commit.session().onClose(s -> {
       Commit<ValueCommands.Listen> listener = listeners.remove(commit.session());
       if (listener != null) {
-        listener.clean();
+        listener.close();
       }
     });
   }
@@ -55,10 +55,10 @@ public class ValueState extends ResourceStateMachine {
     try {
       Commit<ValueCommands.Listen> listener = listeners.remove(commit.session());
       if (listener != null) {
-        listener.clean();
+        listener.close();
       }
     } finally {
-      commit.clean();
+      commit.close();
     }
   }
 
@@ -91,7 +91,7 @@ public class ValueState extends ResourceStateMachine {
         timer.cancel();
         timer = null;
       }
-      current.clean();
+      current.close();
     }
   }
 
@@ -99,9 +99,9 @@ public class ValueState extends ResourceStateMachine {
    * Sets the current commit.
    */
   private void setCurrent(Commit<? extends ValueCommands.ValueCommand> commit) {
-    timer = commit.operation().ttl() > 0 ? executor().schedule(Duration.ofMillis(commit.operation().ttl()), () -> {
+    timer = commit.operation().ttl() > 0 ? executor.schedule(Duration.ofMillis(commit.operation().ttl()), () -> {
       value = null;
-      current.clean();
+      current.close();
       current = null;
     }) : null;
     current = commit;
@@ -127,7 +127,7 @@ public class ValueState extends ResourceStateMachine {
       setCurrent(commit);
       return true;
     } else {
-      commit.clean();
+      commit.close();
       return false;
     }
   }
@@ -146,7 +146,7 @@ public class ValueState extends ResourceStateMachine {
   @Override
   public void delete() {
     if (current != null) {
-      current.clean();
+      current.close();
       current = null;
       value = null;
     }

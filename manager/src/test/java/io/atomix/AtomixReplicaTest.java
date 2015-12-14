@@ -319,7 +319,7 @@ public class AtomixReplicaTest extends AbstractReplicaTest {
       Commit<SetCommand> oldValue = value;
       value = commit;
       if (oldValue != null)
-        oldValue.clean();
+        oldValue.close();
     }
 
     public String get(Commit<GetQuery> commit) {

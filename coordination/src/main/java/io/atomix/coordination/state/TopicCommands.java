@@ -40,7 +40,7 @@ public final class TopicCommands {
   public static abstract class TopicCommand<V> implements Command<V>, CatalystSerializable {
     @Override
     public CompactionMode compaction() {
-      return CompactionMode.QUORUM_CLEAN;
+      return CompactionMode.QUORUM;
     }
 
     @Override
@@ -59,7 +59,7 @@ public final class TopicCommands {
   public static class Listen extends TopicCommand<Void> {
     @Override
     public CompactionMode compaction() {
-      return CompactionMode.QUORUM_CLEAN;
+      return CompactionMode.QUORUM;
     }
 
     @Override
@@ -80,7 +80,7 @@ public final class TopicCommands {
 
     @Override
     public CompactionMode compaction() {
-      return CompactionMode.FULL_SEQUENTIAL_CLEAN;
+      return CompactionMode.SEQUENTIAL;
     }
   }
 
@@ -109,7 +109,7 @@ public final class TopicCommands {
 
     @Override
     public CompactionMode compaction() {
-      return CompactionMode.QUORUM_COMMIT;
+      return CompactionMode.QUORUM;
     }
 
     @Override

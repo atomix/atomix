@@ -50,7 +50,7 @@ public class ValueCommands {
 
     @Override
     public CompactionMode compaction() {
-      return ttl > 0 ? CompactionMode.FULL_SEQUENTIAL_CLEAN : CompactionMode.QUORUM_CLEAN;
+      return ttl > 0 ? CompactionMode.SEQUENTIAL : CompactionMode.QUORUM;
     }
 
     /**
@@ -247,7 +247,7 @@ public class ValueCommands {
   public static class Listen implements Command<Void>, CatalystSerializable {
     @Override
     public CompactionMode compaction() {
-      return CompactionMode.QUORUM_CLEAN;
+      return CompactionMode.QUORUM;
     }
 
     @Override
@@ -266,7 +266,7 @@ public class ValueCommands {
   public static class Unlisten implements Command<Void>, CatalystSerializable {
     @Override
     public CompactionMode compaction() {
-      return CompactionMode.FULL_SEQUENTIAL_COMMIT;
+      return CompactionMode.SEQUENTIAL;
     }
 
     @Override

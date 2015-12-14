@@ -50,15 +50,15 @@ public class SetState extends ResourceStateMachine {
     try {
       Value value = map.get(commit.operation().value());
       if (value == null) {
-        Scheduled timer = commit.operation().ttl() > 0 ? executor().schedule(Duration.ofMillis(commit.operation().ttl()), () -> {
-          map.remove(commit.operation().value()).commit.clean();
+        Scheduled timer = commit.operation().ttl() > 0 ? executor.schedule(Duration.ofMillis(commit.operation().ttl()), () -> {
+          map.remove(commit.operation().value()).commit.close();
         }) : null;
         map.put(commit.operation().value(), new Value(commit, timer));
       } else {
-        commit.clean();
+        commit.close();
       }
     } catch (Exception e) {
-      commit.clean();
+      commit.close();
       throw e;
     }
     return false;
@@ -77,12 +77,12 @@ public class SetState extends ResourceStateMachine {
           }
           return true;
         } finally {
-          value.commit.clean();
+          value.commit.close();
         }
       }
       return false;
     } finally {
-      commit.clean();
+      commit.close();
     }
   }
 
@@ -115,7 +115,7 @@ public class SetState extends ResourceStateMachine {
     try {
       delete();
     } finally {
-      commit.clean();
+      commit.close();
     }
   }
 
@@ -127,7 +127,7 @@ public class SetState extends ResourceStateMachine {
       Value value = entry.getValue();
       if (value.timer != null)
         value.timer.cancel();
-      value.commit.clean();
+      value.commit.close();
       iterator.remove();
     }
   }

@@ -40,7 +40,7 @@ public class DeleteResource implements Command<Boolean>, CatalystSerializable {
 
   @Override
   public CompactionMode compaction() {
-    return CompactionMode.FULL_SEQUENTIAL_COMMIT;
+    return CompactionMode.SEQUENTIAL;
   }
 
   /**

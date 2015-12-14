@@ -88,8 +88,8 @@ public class MapState extends ResourceStateMachine {
    */
   public Object put(Commit<MapCommands.Put> commit) {
     try {
-      Scheduled timer = commit.operation().ttl() > 0 ? executor().schedule(Duration.ofMillis(commit.operation().ttl()), () -> {
-        map.remove(commit.operation().key()).commit.clean();
+      Scheduled timer = commit.operation().ttl() > 0 ? executor.schedule(Duration.ofMillis(commit.operation().ttl()), () -> {
+        map.remove(commit.operation().key()).commit.close();
       }) : null;
 
       Value value = map.put(commit.operation().key(), new Value(commit, timer));
@@ -99,12 +99,12 @@ public class MapState extends ResourceStateMachine {
             value.timer.cancel();
           return value.commit.operation().value();
         } finally {
-          value.commit.clean();
+          value.commit.close();
         }
       }
       return null;
     } catch (Exception e) {
-      commit.clean();
+      commit.close();
       throw e;
     }
   }
@@ -116,18 +116,18 @@ public class MapState extends ResourceStateMachine {
     try {
       Value value = map.get(commit.operation().key());
       if (value == null) {
-        Scheduled timer = commit.operation().ttl() > 0 ? executor().schedule(Duration.ofMillis(commit.operation().ttl()), () -> {
-          map.remove(commit.operation().key()).commit.clean();
+        Scheduled timer = commit.operation().ttl() > 0 ? executor.schedule(Duration.ofMillis(commit.operation().ttl()), () -> {
+          map.remove(commit.operation().key()).commit.close();
         }) : null;
 
         map.put(commit.operation().key(), new Value(commit, timer));
         return null;
       } else {
-        commit.clean();
+        commit.close();
         return value.commit.operation().value();
       }
     } catch (Exception e) {
-      commit.clean();
+      commit.close();
       throw e;
     }
   }
@@ -144,12 +144,12 @@ public class MapState extends ResourceStateMachine {
             value.timer.cancel();
           return value.commit.operation().value();
         } finally {
-          value.commit.clean();
+          value.commit.close();
         }
       }
       return null;
     } finally {
-      commit.clean();
+      commit.close();
     }
   }
 
@@ -169,11 +169,11 @@ public class MapState extends ResourceStateMachine {
             value.timer.cancel();
           return true;
         } finally {
-          value.commit.clean();
+          value.commit.close();
         }
       }
     } finally {
-      commit.clean();
+      commit.close();
     }
   }
 
@@ -186,17 +186,17 @@ public class MapState extends ResourceStateMachine {
       try {
         if (value.timer != null)
           value.timer.cancel();
-        Scheduled timer = commit.operation().ttl() > 0 ? executor().schedule(Duration.ofMillis(commit.operation().ttl()), () -> {
+        Scheduled timer = commit.operation().ttl() > 0 ? executor.schedule(Duration.ofMillis(commit.operation().ttl()), () -> {
           map.remove(commit.operation().key());
-          commit.clean();
+          commit.close();
         }) : null;
         map.put(commit.operation().key(), new Value(commit, timer));
         return value.commit.operation().value();
       } finally {
-        value.commit.clean();
+        value.commit.close();
       }
     } else {
-      commit.clean();
+      commit.close();
     }
     return null;
   }
@@ -207,7 +207,7 @@ public class MapState extends ResourceStateMachine {
   public boolean replaceIfPresent(Commit<MapCommands.ReplaceIfPresent> commit) {
     Value value = map.get(commit.operation().key());
     if (value == null) {
-      commit.clean();
+      commit.close();
       return false;
     }
 
@@ -215,14 +215,14 @@ public class MapState extends ResourceStateMachine {
       || (value.commit.operation().value() != null && value.commit.operation().value().equals(commit.operation().replace()))) {
       if (value.timer != null)
         value.timer.cancel();
-      Scheduled timer = commit.operation().ttl() > 0 ? executor().schedule(Duration.ofMillis(commit.operation().ttl()), () -> {
-        map.remove(commit.operation().key()).commit.clean();
+      Scheduled timer = commit.operation().ttl() > 0 ? executor.schedule(Duration.ofMillis(commit.operation().ttl()), () -> {
+        map.remove(commit.operation().key()).commit.close();
       }) : null;
       map.put(commit.operation().key(), new Value(commit, timer));
-      value.commit.clean();
+      value.commit.close();
       return true;
     } else {
-      commit.clean();
+      commit.close();
     }
     return false;
   }
@@ -256,7 +256,7 @@ public class MapState extends ResourceStateMachine {
     try {
       delete();
     } finally {
-      commit.clean();
+      commit.close();
     }
   }
 
@@ -268,7 +268,7 @@ public class MapState extends ResourceStateMachine {
       Value value = entry.getValue();
       if (value.timer != null)
         value.timer.cancel();
-      value.commit.clean();
+      value.commit.close();
       iterator.remove();
     }
   }

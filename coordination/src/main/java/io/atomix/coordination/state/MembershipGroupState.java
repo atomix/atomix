@@ -64,7 +64,7 @@ public class MembershipGroupState extends ResourceStateMachine implements Sessio
     try {
       Commit<MembershipGroupCommands.Join> previous = members.put(commit.session().id(), commit);
       if (previous != null) {
-        previous.clean();
+        previous.close();
       } else {
         for (Commit<MembershipGroupCommands.Join> member : members.values()) {
           if (member.index() != commit.index()) {
@@ -74,7 +74,7 @@ public class MembershipGroupState extends ResourceStateMachine implements Sessio
       }
       return new HashSet<>(members.keySet());
     } catch (Exception e) {
-      commit.clean();
+      commit.close();
       throw e;
     }
   }
@@ -86,13 +86,13 @@ public class MembershipGroupState extends ResourceStateMachine implements Sessio
     try {
       Commit<MembershipGroupCommands.Join> previous = members.remove(commit.session().id());
       if (previous != null) {
-        previous.clean();
+        previous.close();
         for (Commit<MembershipGroupCommands.Join> member : members.values()) {
           member.session().publish("leave", commit.session().id());
         }
       }
     } finally {
-      commit.clean();
+      commit.close();
     }
   }
 
@@ -105,15 +105,15 @@ public class MembershipGroupState extends ResourceStateMachine implements Sessio
         throw new IllegalArgumentException("unknown member: " + commit.operation().member());
       }
 
-      executor().schedule(Duration.ofMillis(commit.operation().delay()), () -> {
+      executor.schedule(Duration.ofMillis(commit.operation().delay()), () -> {
         Commit<MembershipGroupCommands.Join> member = members.get(commit.operation().member());
         if (member != null) {
           member.session().publish("execute", commit.operation().callback());
         }
-        commit.clean();
+        commit.close();
       });
     } catch (Exception e){
-      commit.clean();
+      commit.close();
       throw e;
     }
   }
@@ -130,13 +130,13 @@ public class MembershipGroupState extends ResourceStateMachine implements Sessio
 
       member.session().publish("execute", commit.operation().callback());
     } finally {
-      commit.clean();
+      commit.close();
     }
   }
 
   @Override
   public void delete() {
-    members.values().forEach(Commit::clean);
+    members.values().forEach(Commit::close);
     members.clear();
   }
 
