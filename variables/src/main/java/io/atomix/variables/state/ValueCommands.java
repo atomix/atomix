@@ -240,42 +240,4 @@ public class ValueCommands {
     }
   }
 
-  /**
-   * Change listen.
-   */
-  @SerializeWith(id=54)
-  public static class Listen implements Command<Void>, CatalystSerializable {
-    @Override
-    public CompactionMode compaction() {
-      return CompactionMode.QUORUM;
-    }
-
-    @Override
-    public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
-    }
-
-    @Override
-    public void readObject(BufferInput<?> buffer, Serializer serializer) {
-    }
-  }
-
-  /**
-   * Change unlisten.
-   */
-  @SerializeWith(id=55)
-  public static class Unlisten implements Command<Void>, CatalystSerializable {
-    @Override
-    public CompactionMode compaction() {
-      return CompactionMode.SEQUENTIAL;
-    }
-
-    @Override
-    public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
-    }
-
-    @Override
-    public void readObject(BufferInput<?> buffer, Serializer serializer) {
-    }
-  }
-
 }

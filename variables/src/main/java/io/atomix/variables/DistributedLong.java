@@ -18,20 +18,19 @@ package io.atomix.variables;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.ResourceType;
 import io.atomix.resource.ResourceTypeInfo;
-import io.atomix.variables.state.ValueState;
+import io.atomix.variables.state.LongCommands;
+import io.atomix.variables.state.LongState;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
 
 /**
  * Distributed long.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-@ResourceTypeInfo(id=-2, stateMachine=ValueState.class)
+@ResourceTypeInfo(id=-2, stateMachine=LongState.class)
 public class DistributedLong extends AbstractDistributedValue<DistributedLong, Long> {
   public static final ResourceType<DistributedLong> TYPE = new ResourceType<>(DistributedLong.class);
-  private Long value;
 
   public DistributedLong(CopycatClient client) {
     super(client);
@@ -54,7 +53,7 @@ public class DistributedLong extends AbstractDistributedValue<DistributedLong, L
    * @return A completable future to be completed with the result.
    */
   public CompletableFuture<Long> addAndGet(long delta) {
-    return updateValue(v -> v + delta);
+    return submit(new LongCommands.AddAndGet(delta));
   }
 
   /**
@@ -64,7 +63,7 @@ public class DistributedLong extends AbstractDistributedValue<DistributedLong, L
    * @return A completable future to be completed with the result.
    */
   public CompletableFuture<Long> getAndAdd(long delta) {
-    return updateValue(v -> v + delta).thenApply(v -> v - delta);
+    return submit(new LongCommands.GetAndAdd(delta));
   }
 
   /**
@@ -73,7 +72,7 @@ public class DistributedLong extends AbstractDistributedValue<DistributedLong, L
    * @return A completable future to be completed with the result.
    */
   public CompletableFuture<Long> incrementAndGet() {
-    return updateValue(v -> v + 1);
+    return submit(new LongCommands.IncrementAndGet());
   }
 
   /**
@@ -82,7 +81,7 @@ public class DistributedLong extends AbstractDistributedValue<DistributedLong, L
    * @return A completable future to be completed with the result.
    */
   public CompletableFuture<Long> decrementAndGet() {
-    return updateValue(v -> v - 1);
+    return submit(new LongCommands.DecrementAndGet());
   }
 
   /**
@@ -91,7 +90,7 @@ public class DistributedLong extends AbstractDistributedValue<DistributedLong, L
    * @return A completable future to be completed with the result.
    */
   public CompletableFuture<Long> getAndIncrement() {
-    return updateValue(v -> v + 1).thenApply(v -> v - 1);
+    return submit(new LongCommands.GetAndIncrement());
   }
 
   /**
@@ -100,52 +99,7 @@ public class DistributedLong extends AbstractDistributedValue<DistributedLong, L
    * @return A completable future to be completed with the result.
    */
   public CompletableFuture<Long> getAndDecrement() {
-    return updateValue(v -> v - 1).thenApply(v -> v + 1);
-  }
-
-  /**
-   * Returns the current value.
-   *
-   * @return A completable future to be completed with the current value.
-   */
-  private CompletableFuture<Long> getValue() {
-    if (value != null)
-      return CompletableFuture.completedFuture(value);
-    return super.get();
-  }
-
-  /**
-   * Recursively attempts to update the atomic value.
-   */
-  private CompletableFuture<Long> updateValue(Function<Long, Long> updater) {
-    return updateValue(updater, new CompletableFuture<>());
-  }
-
-  /**
-   * Recursively attempts to update the atomic value.
-   */
-  private CompletableFuture<Long> updateValue(Function<Long, Long> updater, CompletableFuture<Long> future) {
-    getValue().whenComplete((expectedResult, expectedError) -> {
-      if (expectedError == null) {
-        long updatedValue = updater.apply(expectedResult != null ? expectedResult : 0);
-        compareAndSet(expectedResult, updatedValue).whenComplete((updateResult, updateError) -> {
-          if (updateError == null) {
-            if (updateResult) {
-              value = updatedValue;
-              future.complete(updatedValue);
-            } else {
-              value = null;
-              updateValue(updater, future);
-            }
-          } else {
-            future.completeExceptionally(updateError);
-          }
-        });
-      } else {
-        future.completeExceptionally(expectedError);
-      }
-    });
-    return future;
+    return submit(new LongCommands.GetAndDecrement());
   }
 
 }

@@ -17,5 +17,9 @@ io.atomix.variables.state.ValueCommands$CompareAndSet
 io.atomix.variables.state.ValueCommands$Get
 io.atomix.variables.state.ValueCommands$GetAndSet
 io.atomix.variables.state.ValueCommands$Set
-io.atomix.variables.state.ValueCommands$Listen
-io.atomix.variables.state.ValueCommands$Unlisten
+io.atomix.variables.state.LongCommands$IncrementAndGet
+io.atomix.variables.state.LongCommands$DecrementAndGet
+io.atomix.variables.state.LongCommands$GetAndIncrement
+io.atomix.variables.state.LongCommands$GetAndDecrement
+io.atomix.variables.state.LongCommands$AddAndGet
+io.atomix.variables.state.LongCommands$GetAndAdd

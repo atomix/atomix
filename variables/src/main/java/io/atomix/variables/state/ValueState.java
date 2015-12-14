@@ -16,13 +16,10 @@
 package io.atomix.variables.state;
 
 import io.atomix.catalyst.util.concurrent.Scheduled;
-import io.atomix.copycat.client.session.Session;
 import io.atomix.copycat.server.Commit;
 import io.atomix.resource.ResourceStateMachine;
 
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Distributed value state machine.
@@ -30,46 +27,9 @@ import java.util.Map;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class ValueState extends ResourceStateMachine {
-  private final Map<Session, Commit<ValueCommands.Listen>> listeners = new HashMap<>();
-  private Object value;
-  private Commit<? extends ValueCommands.ValueCommand> current;
-  private Scheduled timer;
-
-  /**
-   * Handles a listen commit.
-   */
-  public void listen(Commit<ValueCommands.Listen> commit) {
-    listeners.put(commit.session(), commit);
-    commit.session().onClose(s -> {
-      Commit<ValueCommands.Listen> listener = listeners.remove(commit.session());
-      if (listener != null) {
-        listener.close();
-      }
-    });
-  }
-
-  /**
-   * Handles an unlisten commit.
-   */
-  public void unlisten(Commit<ValueCommands.Unlisten> commit) {
-    try {
-      Commit<ValueCommands.Listen> listener = listeners.remove(commit.session());
-      if (listener != null) {
-        listener.close();
-      }
-    } finally {
-      commit.close();
-    }
-  }
-
-  /**
-   * Triggers a change event.
-   */
-  private void change(Object value) {
-    for (Session session : listeners.keySet()) {
-      session.publish("change", value);
-    }
-  }
+  protected Object value;
+  protected Commit<? extends ValueCommands.ValueCommand> current;
+  protected Scheduled timer;
 
   /**
    * Handles a get commit.
@@ -105,7 +65,6 @@ public class ValueState extends ResourceStateMachine {
       current = null;
     }) : null;
     current = commit;
-    change(value);
   }
 
   /**
