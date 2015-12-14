@@ -15,7 +15,6 @@
  */
 package io.atomix.manager;
 
-import io.atomix.catalyst.util.Assert;
 import io.atomix.copycat.client.Operation;
 import io.atomix.copycat.client.session.Session;
 import io.atomix.copycat.server.Commit;
@@ -73,13 +72,6 @@ class ResourceManagerCommit implements Commit {
   @Override
   public Operation<?> operation() {
     return commit.operation().operation();
-  }
-
-  @Override
-  public void clean() {
-    Assert.state(open, "commit closed");
-    commit.clean();
-    close();
   }
 
   @Override

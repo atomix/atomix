@@ -44,7 +44,7 @@ public class MultiMapCommands {
   public static abstract class MultiMapCommand<V> implements Command<V>, CatalystSerializable {
     @Override
     public CompactionMode compaction() {
-      return CompactionMode.QUORUM_CLEAN;
+      return CompactionMode.QUORUM;
     }
 
     @Override
@@ -296,7 +296,7 @@ public class MultiMapCommands {
 
     @Override
     public CompactionMode compaction() {
-      return ttl > 0 ? CompactionMode.FULL_SEQUENTIAL_CLEAN : CompactionMode.QUORUM_CLEAN;
+      return ttl > 0 ? CompactionMode.SEQUENTIAL : CompactionMode.QUORUM;
     }
 
     /**
@@ -369,7 +369,7 @@ public class MultiMapCommands {
 
     @Override
     public CompactionMode compaction() {
-      return CompactionMode.FULL_SEQUENTIAL_COMMIT;
+      return CompactionMode.SEQUENTIAL;
     }
   }
 
@@ -396,7 +396,7 @@ public class MultiMapCommands {
 
     @Override
     public CompactionMode compaction() {
-      return CompactionMode.FULL_SEQUENTIAL_COMMIT;
+      return CompactionMode.SEQUENTIAL;
     }
 
     @Override
@@ -438,7 +438,7 @@ public class MultiMapCommands {
 
     @Override
     public CompactionMode compaction() {
-      return CompactionMode.FULL_SEQUENTIAL_COMMIT;
+      return CompactionMode.SEQUENTIAL;
     }
   }
 

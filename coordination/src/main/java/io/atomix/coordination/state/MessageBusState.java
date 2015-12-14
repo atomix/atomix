@@ -75,7 +75,7 @@ public class MessageBusState extends ResourceStateMachine implements SessionList
       }
       return topics;
     } catch (Exception e) {
-      commit.clean();
+      commit.close();
       throw e;
     }
   }
@@ -87,7 +87,7 @@ public class MessageBusState extends ResourceStateMachine implements SessionList
     try {
       Commit<MessageBusCommands.Join> previous = members.remove(commit.session().id());
       if (previous != null) {
-        previous.clean();
+        previous.close();
 
         Iterator<Map.Entry<String, Map<Long, Commit<MessageBusCommands.Register>>>> iterator = topics.entrySet().iterator();
         while (iterator.hasNext()) {
@@ -108,7 +108,7 @@ public class MessageBusState extends ResourceStateMachine implements SessionList
         }
       }
     } finally {
-      commit.clean();
+      commit.close();
     }
   }
 
@@ -129,7 +129,7 @@ public class MessageBusState extends ResourceStateMachine implements SessionList
         member.session().publish("register", new MessageBusCommands.ConsumerInfo(commit.operation().topic(), parent.operation().member()));
       }
     } catch (Exception e) {
-      commit.clean();
+      commit.close();
       throw e;
     }
   }
@@ -143,7 +143,7 @@ public class MessageBusState extends ResourceStateMachine implements SessionList
       if (registrations != null) {
         Commit<MessageBusCommands.Register> registration = registrations.remove(commit.session().id());
         if (registration != null) {
-          registration.clean();
+          registration.close();
 
           Commit<MessageBusCommands.Join> parent = members.get(registration.session().id());
           if (parent != null) {
@@ -154,15 +154,15 @@ public class MessageBusState extends ResourceStateMachine implements SessionList
         }
       }
     } catch (Exception e) {
-      commit.clean();
+      commit.close();
       throw e;
     }
   }
 
   @Override
   public void delete() {
-    members.values().forEach(Commit::clean);
-    topics.values().forEach(m -> m.values().forEach(Commit::clean));
+    members.values().forEach(Commit::close);
+    topics.values().forEach(m -> m.values().forEach(Commit::close));
     topics.clear();
   }
 

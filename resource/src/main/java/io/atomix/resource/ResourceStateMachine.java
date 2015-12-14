@@ -35,7 +35,7 @@ public abstract class ResourceStateMachine extends StateMachine {
       try {
         delete();
       } finally {
-        c.clean();
+        c.close();
       }
     });
     super.init(new ResourceStateMachineExecutor(executor));

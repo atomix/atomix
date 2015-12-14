@@ -59,7 +59,7 @@ public class TopicState extends ResourceStateMachine implements SessionListener 
     if (!listeners.containsKey(commit.session().id())) {
       listeners.put(commit.session().id(), commit);
     } else {
-      commit.clean();
+      commit.close();
     }
   }
 
@@ -70,10 +70,10 @@ public class TopicState extends ResourceStateMachine implements SessionListener 
     try {
       Commit<TopicCommands.Listen> listener = listeners.remove(commit.session().id());
       if (listener != null) {
-        listener.clean();
+        listener.close();
       }
     } finally {
-      commit.clean();
+      commit.close();
     }
   }
 
@@ -89,17 +89,17 @@ public class TopicState extends ResourceStateMachine implements SessionListener 
           listener.session().publish("message", commit.operation().message());
         } else {
           iterator.remove();
-          listener.clean();
+          listener.close();
         }
       }
     } finally {
-      commit.clean();
+      commit.close();
     }
   }
 
   @Override
   public void delete() {
-    listeners.values().forEach(Commit::clean);
+    listeners.values().forEach(Commit::close);
     listeners.clear();
   }
 

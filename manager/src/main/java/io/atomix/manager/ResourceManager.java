@@ -100,7 +100,7 @@ public class ResourceManager extends StateMachine implements SessionListener, Sn
       try {
         throw new ResourceManagerException("unknown resource session: " + commit.operation().resource());
       } finally {
-        commit.clean();
+        commit.close();
       }
     }
 
@@ -116,7 +116,7 @@ public class ResourceManager extends StateMachine implements SessionListener, Sn
 
     // If the resource type is not known, fail the get.
     if (type == null) {
-      commit.clean();
+      commit.close();
       throw new IllegalArgumentException("unknown resource type: " + commit.operation().type());
     }
 
@@ -183,7 +183,7 @@ public class ResourceManager extends StateMachine implements SessionListener, Sn
         return session.id();
       } else {
         // Return the resource client session ID and clean the commit since no new resource or session was created.
-        commit.clean();
+        commit.close();
         return holder.session.id();
       }
     }
@@ -213,7 +213,7 @@ public class ResourceManager extends StateMachine implements SessionListener, Sn
 
     // If the resource type is not known, fail the get.
     if (type == null) {
-      commit.clean();
+      commit.close();
       throw new IllegalArgumentException("unknown resource type: " + commit.operation().type());
     }
 
@@ -311,12 +311,12 @@ public class ResourceManager extends StateMachine implements SessionListener, Sn
         SessionHolder session = iterator.next().getValue();
         if (session.resource == commit.operation().resource()) {
           iterator.remove();
-          session.commit.clean();
+          session.commit.close();
         }
       }
       return true;
     } finally {
-      commit.clean();
+      commit.close();
     }
   }
 
@@ -390,7 +390,7 @@ public class ResourceManager extends StateMachine implements SessionListener, Sn
             ((SessionListener) resource.stateMachine).close(sessionHolder.session);
           }
         }
-        sessionHolder.commit.clean();
+        sessionHolder.commit.close();
         iterator.remove();
       }
     }

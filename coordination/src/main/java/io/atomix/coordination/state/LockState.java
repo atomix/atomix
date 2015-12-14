@@ -55,7 +55,7 @@ public class LockState extends ResourceStateMachine implements SessionListener {
   @Override
   public void close(Session session) {
     if (lock != null && lock.session().id() == session.id()) {
-      lock.clean();
+      lock.close();
       lock = queue.poll();
       if (lock != null) {
         Scheduled timer = timers.remove(lock.index());
@@ -77,15 +77,15 @@ public class LockState extends ResourceStateMachine implements SessionListener {
       try {
         commit.session().publish("lock", false);
       } finally {
-        commit.clean();
+        commit.close();
       }
     } else {
       queue.add(commit);
       if (commit.operation().timeout() > 0) {
-        timers.put(commit.index(), executor().schedule(Duration.ofMillis(commit.operation().timeout()), () -> {
+        timers.put(commit.index(), executor.schedule(Duration.ofMillis(commit.operation().timeout()), () -> {
           timers.remove(commit.index());
           queue.remove(commit);
-          commit.clean();
+          commit.close();
         }));
       }
     }
@@ -100,7 +100,7 @@ public class LockState extends ResourceStateMachine implements SessionListener {
         if (!lock.session().equals(commit.session()))
           throw new IllegalStateException("not the lock holder");
 
-        lock.clean();
+        lock.close();
 
         lock = queue.poll();
         if (lock != null) {
@@ -111,17 +111,17 @@ public class LockState extends ResourceStateMachine implements SessionListener {
         }
       }
     } finally {
-      commit.clean();
+      commit.close();
     }
   }
 
   @Override
   public void delete() {
     if (lock != null) {
-      lock.clean();
+      lock.close();
     }
 
-    queue.forEach(Commit::clean);
+    queue.forEach(Commit::close);
     queue.clear();
 
     timers.values().forEach(Scheduled::cancel);

@@ -62,11 +62,6 @@ public class ResourceCommit<T extends Operation> implements Commit<T> {
   }
 
   @Override
-  public void clean() {
-    parent.clean();
-  }
-
-  @Override
   public void close() {
     parent.close();
   }

@@ -61,7 +61,7 @@ public final class LeaderElectionCommands {
   public static abstract class ElectionCommand<V> implements Command<V>, CatalystSerializable {
     @Override
     public CompactionMode compaction() {
-      return CompactionMode.QUORUM_CLEAN;
+      return CompactionMode.QUORUM;
     }
 
     @Override
@@ -85,7 +85,7 @@ public final class LeaderElectionCommands {
   public static class Listen extends ElectionCommand<Void> {
     @Override
     public CompactionMode compaction() {
-      return CompactionMode.QUORUM_CLEAN;
+      return CompactionMode.QUORUM;
     }
   }
 
@@ -96,7 +96,7 @@ public final class LeaderElectionCommands {
   public static class Unlisten extends ElectionCommand<Void> {
     @Override
     public CompactionMode compaction() {
-      return CompactionMode.FULL_SEQUENTIAL_COMMIT;
+      return CompactionMode.SEQUENTIAL;
     }
   }
 

@@ -44,7 +44,7 @@ public class CreateResource extends KeyOperation<Long> implements Command<Long> 
 
   @Override
   public CompactionMode compaction() {
-    return CompactionMode.QUORUM_CLEAN;
+    return CompactionMode.QUORUM;
   }
 
   /**

@@ -49,7 +49,7 @@ public final class MembershipGroupCommands {
 
     @Override
     public CompactionMode compaction() {
-      return CompactionMode.QUORUM_CLEAN;
+      return CompactionMode.QUORUM;
     }
 
     @Override
@@ -75,7 +75,7 @@ public final class MembershipGroupCommands {
   public static class Leave extends GroupCommand<Void> {
     @Override
     public CompactionMode compaction() {
-      return CompactionMode.FULL_SEQUENTIAL_CLEAN;
+      return CompactionMode.SEQUENTIAL;
     }
   }
 

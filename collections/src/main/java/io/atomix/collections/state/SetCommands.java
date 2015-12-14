@@ -41,7 +41,7 @@ public class SetCommands {
   private static abstract class SetCommand<V> implements Command<V>, CatalystSerializable {
     @Override
     public CompactionMode compaction() {
-      return CompactionMode.QUORUM_CLEAN;
+      return CompactionMode.QUORUM;
     }
 
     @Override
@@ -160,7 +160,7 @@ public class SetCommands {
 
     @Override
     public CompactionMode compaction() {
-      return ttl > 0 ? CompactionMode.FULL_SEQUENTIAL_CLEAN : CompactionMode.QUORUM_CLEAN;
+      return ttl > 0 ? CompactionMode.SEQUENTIAL : CompactionMode.QUORUM;
     }
 
     /**
@@ -217,7 +217,7 @@ public class SetCommands {
 
     @Override
     public CompactionMode compaction() {
-      return CompactionMode.FULL_SEQUENTIAL_COMMIT;
+      return CompactionMode.SEQUENTIAL;
     }
   }
 
@@ -243,7 +243,7 @@ public class SetCommands {
 
     @Override
     public CompactionMode compaction() {
-      return CompactionMode.FULL_SEQUENTIAL_COMMIT;
+      return CompactionMode.SEQUENTIAL;
     }
   }
 
