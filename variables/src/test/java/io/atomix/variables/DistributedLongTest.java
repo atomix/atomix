@@ -15,16 +15,15 @@
  */
 package io.atomix.variables;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
-import java.util.function.Function;
-
-import org.testng.annotations.Test;
-
 import io.atomix.atomix.testing.AbstractAtomixTest;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.ResourceStateMachine;
-import io.atomix.variables.state.ValueState;
+import io.atomix.variables.state.LongState;
+import org.testng.annotations.Test;
+
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * Distributed atomic long test.
@@ -36,7 +35,7 @@ public class DistributedLongTest extends AbstractAtomixTest {
 
   @Override
   protected ResourceStateMachine createStateMachine() {
-    return new ValueState();
+    return new LongState();
   }
 
   /**

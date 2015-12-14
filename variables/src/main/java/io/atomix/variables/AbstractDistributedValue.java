@@ -15,16 +15,12 @@
  */
 package io.atomix.variables;
 
-import io.atomix.catalyst.util.Listener;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.Resource;
 import io.atomix.variables.state.ValueCommands;
 
 import java.time.Duration;
-import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Consumer;
 
 /**
  * Abstract distributed value.
@@ -32,15 +28,9 @@ import java.util.function.Consumer;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public abstract class AbstractDistributedValue<T extends AbstractDistributedValue<T, U>, U> extends Resource<T> {
-  private final java.util.Set<Consumer<U>> changeListeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
   protected AbstractDistributedValue(CopycatClient client) {
     super(client);
-    client.session().<U>onEvent("change", event -> {
-      for (Consumer<U> listener : changeListeners) {
-        listener.accept(event);
-      }
-    });
   }
 
   /**
@@ -115,49 +105,6 @@ public abstract class AbstractDistributedValue<T extends AbstractDistributedValu
    */
   public CompletableFuture<Boolean> compareAndSet(U expect, U update, Duration ttl) {
     return submit(new ValueCommands.CompareAndSet(expect, update, ttl.toMillis()));
-  }
-
-  /**
-   * Registers a change listener.
-   *
-   * @param listener The change listener.
-   * @return A completable future to be completed once the change listener has been registered.
-   */
-  public synchronized CompletableFuture<Listener<U>> onChange(Consumer<U> listener) {
-    if (!changeListeners.isEmpty()) {
-      changeListeners.add(listener);
-      return CompletableFuture.completedFuture(new ChangeListener(listener));
-    }
-
-    changeListeners.add(listener);
-    return submit(new ValueCommands.Listen())
-      .thenApply(v -> new ChangeListener(listener));
-  }
-
-  /**
-   * Change listener context.
-   */
-  private class ChangeListener implements Listener<U> {
-    private final Consumer<U> listener;
-
-    private ChangeListener(Consumer<U> listener) {
-      this.listener = listener;
-    }
-
-    @Override
-    public void accept(U event) {
-      listener.accept(event);
-    }
-
-    @Override
-    public void close() {
-      synchronized (AbstractDistributedValue.this) {
-        changeListeners.remove(listener);
-        if (changeListeners.isEmpty()) {
-          submit(new ValueCommands.Unlisten());
-        }
-      }
-    }
   }
 
 }
