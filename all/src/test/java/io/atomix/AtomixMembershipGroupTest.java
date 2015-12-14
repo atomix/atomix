@@ -61,20 +61,31 @@ public class AtomixMembershipGroupTest extends AbstractAtomixTest {
     DistributedMembershipGroup group2 = factory.apply(client2);
 
     group2.join().thenRun(() -> {
-      threadAssertEquals(group2.members().size(), 1);
-      resume();
+      group2.members().thenAccept(members -> {
+        threadAssertEquals(members.size(), 1);
+        resume();
+      });
     });
 
-    await();
+    await(5000);
 
     group1.join().thenRun(() -> {
-      threadAssertEquals(group1.members().size(), 2);
-      threadAssertEquals(group2.members().size(), 2);
-      group1.onLeave(member -> resume());
-      group2.leave().thenRun(this::resume);
+      group1.members().thenAccept(members -> {
+        threadAssertEquals(members.size(), 2);
+        resume();
+      });
+      group2.members().thenAccept(members -> {
+        threadAssertEquals(members.size(), 2);
+        resume();
+      });
     });
 
-    await(0, 2);
+    await(5000, 2);
+
+    group1.onLeave(member -> resume());
+    group2.leave().thenRun(this::resume);
+
+    await(5000, 2);
   }
 
 }
