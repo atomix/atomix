@@ -40,6 +40,35 @@ public interface GroupMember {
   long id();
 
   /**
+   * Gets the value of a property of the member.
+   * <p>
+   * Properties are identified by a {@link String} name. Properties may only be set by the local member but
+   * can be accessed by any instance of the {@link DistributedMembershipGroup}.
+   *
+   * @param property The property to get.
+   * @param <T> The property type.
+   * @return A completable future to be completed with the value of the property.
+   */
+  <T> CompletableFuture<T> get(String property);
+
+  /**
+   * Sends a message to the member.
+   * <p>
+   * Group messaging guarantees sequential consistency such that members are guaranteed to receive messages
+   * in the order in which they were sent. Messages will be sent according to the parent {@link DistributedMembershipGroup}'s
+   * {@link io.atomix.resource.Consistency consistency} level. If the consistency level is
+   * {@link io.atomix.resource.Consistency#ATOMIC} (the default), the returned {@link CompletableFuture} will
+   * be completed once the member has received the message or has left the group. Note that the completion of
+   * the returned future does not necessarily guarantee that the message was received and processed, only that
+   * it was <em>either</em> received and processed <em>or</em> the member left the group or disconnected.
+   *
+   * @param topic The message topic.
+   * @param message The message to send.
+   * @return A completable future to be completed once the message has been received by the member.
+   */
+  CompletableFuture<Void> send(String topic, Object message);
+
+  /**
    * Schedules a callback to run at the given instant.
    *
    * @param instant The instant at which to run the callback.

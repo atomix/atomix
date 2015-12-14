@@ -20,14 +20,15 @@ io.atomix.coordination.state.LeaderElectionCommands$IsLeader
 io.atomix.coordination.state.LockCommands$Lock
 io.atomix.coordination.state.LockCommands$Unlock
 
-io.atomix.coordination.state.TopicCommands$Publish
-io.atomix.coordination.state.TopicCommands$Listen
-io.atomix.coordination.state.TopicCommands$Unlisten
-
 io.atomix.coordination.state.MembershipGroupCommands$Join
 io.atomix.coordination.state.MembershipGroupCommands$Leave
+io.atomix.coordination.state.MembershipGroupCommands$List
 io.atomix.coordination.state.MembershipGroupCommands$Schedule
 io.atomix.coordination.state.MembershipGroupCommands$Execute
+io.atomix.coordination.state.MembershipGroupCommands$SetProperty
+io.atomix.coordination.state.MembershipGroupCommands$GetProperty
+io.atomix.coordination.state.MembershipGroupCommands$RemoveProperty
+io.atomix.coordination.state.MembershipGroupCommands$Send
 
 io.atomix.coordination.state.MessageBusCommands$Join
 io.atomix.coordination.state.MessageBusCommands$Leave

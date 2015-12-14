@@ -15,6 +15,7 @@
  */
 package io.atomix.coordination.state;
 
+import io.atomix.coordination.Message;
 import io.atomix.copycat.client.session.Session;
 import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.session.SessionListener;
@@ -33,6 +34,7 @@ import java.util.Set;
  */
 public class MembershipGroupState extends ResourceStateMachine implements SessionListener {
   private final Map<Long, Commit<MembershipGroupCommands.Join>> members = new HashMap<>();
+  private final Map<Long, Map<String, Commit<MembershipGroupCommands.SetProperty>>> properties = new HashMap<>();
 
   @Override
   public void register(Session session) {
@@ -51,7 +53,16 @@ public class MembershipGroupState extends ResourceStateMachine implements Sessio
 
   @Override
   public void close(Session session) {
-    members.remove(session.id());
+    Commit<MembershipGroupCommands.Join> commit = members.remove(session.id());
+    if (commit != null) {
+      commit.close();
+    }
+
+    Map<String, Commit<MembershipGroupCommands.SetProperty>> properties = this.properties.remove(session.id());
+    if (properties != null) {
+      properties.values().forEach(Commit::close);
+    }
+
     for (Commit<MembershipGroupCommands.Join> member : members.values()) {
       member.session().publish("leave", session.id());
     }
@@ -87,10 +98,92 @@ public class MembershipGroupState extends ResourceStateMachine implements Sessio
       Commit<MembershipGroupCommands.Join> previous = members.remove(commit.session().id());
       if (previous != null) {
         previous.close();
+
+        Map<String, Commit<MembershipGroupCommands.SetProperty>> properties = this.properties.remove(commit.session().id());
+        if (properties != null) {
+          properties.values().forEach(Commit::close);
+        }
+
         for (Commit<MembershipGroupCommands.Join> member : members.values()) {
           member.session().publish("leave", commit.session().id());
         }
       }
+    } finally {
+      commit.close();
+    }
+  }
+
+  /**
+   * Handles a list commit.
+   */
+  public Set<Long> list(Commit<MembershipGroupCommands.List> commit) {
+    try {
+      return new HashSet<>(members.keySet());
+    } finally {
+      commit.close();
+    }
+  }
+
+  /**
+   * Handles a set property commit.
+   */
+  public void setProperty(Commit<MembershipGroupCommands.SetProperty> commit) {
+    Map<String, Commit<MembershipGroupCommands.SetProperty>> properties = this.properties.get(commit.session().id());
+    if (properties == null) {
+      properties = new HashMap<>();
+      this.properties.put(commit.session().id(), properties);
+    }
+    properties.put(commit.operation().property(), commit);
+  }
+
+  /**
+   * Handles a set property commit.
+   */
+  public Object getProperty(Commit<MembershipGroupCommands.GetProperty> commit) {
+    try {
+      Map<String, Commit<MembershipGroupCommands.SetProperty>> properties = this.properties.get(commit.operation().member());
+      if (properties != null) {
+        Commit<MembershipGroupCommands.SetProperty> value = properties.get(commit.operation().property());
+        return value != null ? value.operation().value() : null;
+      }
+      return null;
+    } finally {
+      commit.close();
+    }
+  }
+
+  /**
+   * Handles a set property commit.
+   */
+  public void removeProperty(Commit<MembershipGroupCommands.RemoveProperty> commit) {
+    try {
+      Map<String, Commit<MembershipGroupCommands.SetProperty>> properties = this.properties.get(commit.session().id());
+      if (properties != null) {
+        Commit<MembershipGroupCommands.SetProperty> previous = properties.remove(commit.operation().property());
+        if (previous != null) {
+          previous.close();
+        }
+
+        if (properties.isEmpty()) {
+          this.properties.remove(commit.session().id());
+        }
+      }
+    } finally {
+      commit.close();
+    }
+  }
+
+  /**
+   * Handles a send commit.
+   */
+  public void send(Commit<MembershipGroupCommands.Send> commit) {
+    try {
+      Commit<MembershipGroupCommands.Join> join = members.get(commit.operation().member());
+      if (join == null) {
+        throw new IllegalArgumentException("unknown member: " + commit.operation().member());
+      }
+
+      join.session().publish("message", new Message(commit.operation().topic(), commit.operation().message()));
     } finally {
       commit.close();
     }

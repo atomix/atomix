@@ -47,9 +47,4 @@ public final class DistributedCoordination {
    */
   public static final ResourceType<DistributedMessageBus> MESSAGE_BUS = DistributedMessageBus.TYPE;
 
-  /**
-   * Distributed topic resource.
-   */
-  public static final ResourceType<DistributedTopic> TOPIC = DistributedTopic.TYPE;
-
 }

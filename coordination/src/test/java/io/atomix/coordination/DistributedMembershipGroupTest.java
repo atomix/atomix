@@ -15,15 +15,14 @@
  */
 package io.atomix.coordination;
 
-import java.io.Serializable;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import org.testng.annotations.Test;
-
 import io.atomix.atomix.testing.AbstractAtomixTest;
 import io.atomix.coordination.state.MembershipGroupState;
 import io.atomix.resource.ResourceStateMachine;
+import org.testng.annotations.Test;
+
+import java.io.Serializable;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Async group test.
@@ -76,20 +75,97 @@ public class DistributedMembershipGroupTest extends AbstractAtomixTest {
     DistributedMembershipGroup group2 = new DistributedMembershipGroup(createClient());
 
     group2.join().thenRun(() -> {
-      threadAssertEquals(group2.members().size(), 1);
+      group2.members().thenAccept(members -> {
+        threadAssertEquals(members.size(), 1);
+        resume();
+      });
+    });
+
+    await(5000);
+
+    group1.join().thenRun(() -> {
+      group1.members().thenAccept(members -> {
+        threadAssertEquals(members.size(), 2);
+        resume();
+      });
+      group2.members().thenAccept(members -> {
+        threadAssertEquals(members.size(), 2);
+        resume();
+      });
+    });
+
+    await(10000, 2);
+
+    group1.onLeave(member -> resume());
+    group2.leave().thenRun(this::resume);
+
+    await(10000, 2);
+  }
+
+  /**
+   * Tests setting and getting member properties.
+   */
+  public void testProperties() throws Throwable {
+    createServers(3);
+
+    DistributedMembershipGroup group1 = new DistributedMembershipGroup(createClient());
+    DistributedMembershipGroup group2 = new DistributedMembershipGroup(createClient());
+
+    group1.join().thenAccept(member -> {
+      member.set("foo", "Hello world!").thenRun(this::resume);
+    });
+
+    await(5000);
+
+    group2.members().thenAccept(members -> {
+      threadAssertEquals(members.size(), 1);
+      members.iterator().next().get("foo").thenAccept(result -> {
+        threadAssertEquals(result, "Hello world!");
+        resume();
+      });
+    });
+
+    await(5000);
+
+    group1.member().remove("foo").thenRun(this::resume);
+    await(5000);
+
+    group2.members().thenAccept(members -> {
+      threadAssertEquals(members.size(), 1);
+      members.iterator().next().get("foo").thenAccept(result -> {
+        threadAssertNull(result);
+        resume();
+      });
+    });
+
+    await(5000);
+  }
+
+  /**
+   * Tests sending message between members.
+   */
+  public void testSend() throws Throwable {
+    createServers(3);
+
+    DistributedMembershipGroup group1 = new DistributedMembershipGroup(createClient());
+    DistributedMembershipGroup group2 = new DistributedMembershipGroup(createClient());
+
+    group1.join().thenAccept(member -> {
+      member.onMessage("foo", message -> {
+        threadAssertEquals(message, "Hello world!");
+        resume();
+      });
       resume();
     });
 
-    await();
+    await(5000);
 
-    group1.join().thenRun(() -> {
-      threadAssertEquals(group1.members().size(), 2);
-      threadAssertEquals(group2.members().size(), 2);
-      group1.onLeave(member -> resume());
-      group2.leave().thenRun(this::resume);
+    group2.members().thenAccept(members -> {
+      threadAssertEquals(members.size(), 1);
+      members.iterator().next().send("foo", "Hello world!").thenRun(this::resume);
     });
 
-    await(0, 2);
+    await(10000, 2);
   }
 
   /**
@@ -102,20 +178,24 @@ public class DistributedMembershipGroupTest extends AbstractAtomixTest {
     DistributedMembershipGroup group2 = new DistributedMembershipGroup(createClient());
 
     group2.join().thenRun(() -> {
-      threadAssertEquals(group2.members().size(), 1);
-      resume();
+      group2.members().thenAccept(members -> {
+        threadAssertEquals(members.size(), 1);
+        resume();
+      });
     });
 
-    await();
+    await(5000);
 
     AtomicInteger counter = new AtomicInteger();
     group1.join().thenRun(() -> {
-      for (GroupMember member : group1.members()) {
-        member.execute((Runnable & Serializable) counter::incrementAndGet).thenRun(this::resume);
-      }
+      group1.members().thenAccept(members -> {
+        for (GroupMember member : members) {
+          member.execute((Runnable & Serializable) counter::incrementAndGet).thenRun(this::resume);
+        }
+      });
     });
 
-    await(0, 2);
+    await(10000, 2);
   }
 
 }
