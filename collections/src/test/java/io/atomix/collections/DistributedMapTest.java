@@ -19,7 +19,7 @@ import java.time.Duration;
 
 import org.testng.annotations.Test;
 
-import io.atomix.atomix.testing.AbstractAtomixTest;
+import io.atomix.atomix.testing.AbstractCopycatTest;
 import io.atomix.collections.state.MapState;
 import io.atomix.resource.ResourceStateMachine;
 
@@ -29,7 +29,7 @@ import io.atomix.resource.ResourceStateMachine;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class DistributedMapTest extends AbstractAtomixTest {
+public class DistributedMapTest extends AbstractCopycatTest {
 
   @Override
   protected ResourceStateMachine createStateMachine() {
@@ -45,25 +45,25 @@ public class DistributedMapTest extends AbstractAtomixTest {
     DistributedMap<String, String> map = new DistributedMap<>(createClient());
 
     map.put("foo", "Hello world!").thenRun(this::resume);
-    await();
+    await(10000);
 
     map.get("foo").thenAccept(result -> {
       threadAssertEquals(result, "Hello world!");
       resume();
     });
-    await();
+    await(10000);
 
     map.remove("foo").thenAccept(result -> {
       threadAssertEquals(result, "Hello world!");
       resume();
     });
-    await();
+    await(10000);
 
     map.get("foo").thenAccept(result -> {
       threadAssertNull(result);
       resume();
     });
-    await();
+    await(10000);
   }
 
   /**
@@ -80,13 +80,13 @@ public class DistributedMapTest extends AbstractAtomixTest {
       threadAssertEquals(result, "Hello world!");
       resume();
     });
-    await();
+    await(10000);
 
     map.putIfAbsent("bar", "something").thenAccept(result -> {
       threadAssertNull(result);
       resume();
     });
-    await();
+    await(10000);
   }
 
   /**
@@ -106,7 +106,7 @@ public class DistributedMapTest extends AbstractAtomixTest {
       threadAssertFalse(result);
       resume();
     });
-    await();
+    await(10000);
   }
 
   /**
@@ -118,19 +118,19 @@ public class DistributedMapTest extends AbstractAtomixTest {
     DistributedMap<String, String> map = new DistributedMap<>(createClient());
 
     map.put("foo", "Hello world!").thenRun(this::resume);
-    await();
+    await(10000);
 
     map.getOrDefault("foo", "something else").thenAccept(result -> {
       threadAssertEquals(result, "Hello world!");
       resume();
     });
-    await();
+    await(10000);
 
     map.getOrDefault("bar", "something").thenAccept(result -> {
       threadAssertEquals(result, "something");
       resume();
     });
-    await();
+    await(10000);
   }
 
   /**
@@ -145,7 +145,7 @@ public class DistributedMapTest extends AbstractAtomixTest {
       threadAssertFalse(result);
       resume();
     });
-    await();
+    await(10000);
 
     map.put("foo", "Hello world!").thenAccept(value -> {
       threadAssertNull(value);
@@ -154,7 +154,7 @@ public class DistributedMapTest extends AbstractAtomixTest {
         resume();
       });
     });
-    await();
+    await(10000);
   }
 
   /**
@@ -169,7 +169,7 @@ public class DistributedMapTest extends AbstractAtomixTest {
       threadAssertFalse(result);
       resume();
     });
-    await();
+    await(10000);
 
     map.put("foo", "Hello world!").thenAccept(value -> {
       threadAssertNull(value);
@@ -178,7 +178,7 @@ public class DistributedMapTest extends AbstractAtomixTest {
         resume();
       });
     });
-    await();
+    await(10000);
   }
 
   /**
@@ -193,25 +193,25 @@ public class DistributedMapTest extends AbstractAtomixTest {
       threadAssertEquals(size, 0);
       resume();
     });
-    await();
+    await(10000);
 
     map.put("foo", "Hello world!").thenRun(this::resume);
-    await();
+    await(10000);
 
     map.size().thenAccept(size -> {
       threadAssertEquals(size, 1);
       resume();
     });
-    await();
+    await(10000);
 
     map.put("bar", "Hello world again!").thenRun(this::resume);
-    await();
+    await(10000);
 
     map.size().thenAccept(size -> {
       threadAssertEquals(size, 2);
       resume();
     });
-    await();
+    await(10000);
   }
 
   /**
@@ -223,13 +223,13 @@ public class DistributedMapTest extends AbstractAtomixTest {
     DistributedMap<String, String> map = new DistributedMap<>(createClient());
 
     map.put("foo", "Hello world!", Duration.ofSeconds(1)).thenRun(this::resume);
-    await();
+    await(10000);
 
     map.get("foo").thenAccept(result -> {
       threadAssertEquals(result, "Hello world!");
       resume();
     });
-    await();
+    await(10000);
 
     Thread.sleep(3000);
 
@@ -237,13 +237,13 @@ public class DistributedMapTest extends AbstractAtomixTest {
       threadAssertNull(result);
       resume();
     });
-    await();
+    await(10000);
 
     map.size().thenAccept(size -> {
       threadAssertEquals(size, 0);
       resume();
     });
-    await();
+    await(10000);
   }
 
   /**
@@ -265,7 +265,7 @@ public class DistributedMapTest extends AbstractAtomixTest {
         resume();
       });
     });
-    await();
+    await(10000);
 
     map.clear().thenRun(() -> {
       map.size().thenAccept(size -> {
@@ -276,7 +276,7 @@ public class DistributedMapTest extends AbstractAtomixTest {
         });
       });
     });
-    await();
+    await(10000);
   }
 
 }

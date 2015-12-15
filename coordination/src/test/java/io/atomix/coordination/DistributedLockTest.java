@@ -17,7 +17,7 @@ package io.atomix.coordination;
 
 import org.testng.annotations.Test;
 
-import io.atomix.atomix.testing.AbstractAtomixTest;
+import io.atomix.atomix.testing.AbstractCopycatTest;
 import io.atomix.coordination.state.LockState;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.ResourceStateMachine;
@@ -28,7 +28,7 @@ import io.atomix.resource.ResourceStateMachine;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class DistributedLockTest extends AbstractAtomixTest {
+public class DistributedLockTest extends AbstractCopycatTest {
 
   @Override
   protected ResourceStateMachine createStateMachine() {
@@ -44,10 +44,10 @@ public class DistributedLockTest extends AbstractAtomixTest {
     DistributedLock lock = new DistributedLock(createClient());
 
     lock.lock().thenRun(this::resume);
-    await();
+    await(10000);
 
     lock.unlock().thenRun(this::resume);
-    await();
+    await(10000);
   }
 
   /**
@@ -63,11 +63,11 @@ public class DistributedLockTest extends AbstractAtomixTest {
     DistributedLock lock2 = new DistributedLock(client2);
 
     lock1.lock().thenRun(this::resume);
-    await();
+    await(10000);
 
     lock2.lock().thenRun(this::resume);
     client1.close();
-    await();
+    await(10000);
   }
 
 }

@@ -15,7 +15,7 @@
  */
 package io.atomix.variables;
 
-import io.atomix.atomix.testing.AbstractAtomixTest;
+import io.atomix.atomix.testing.AbstractCopycatTest;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.ResourceStateMachine;
 import io.atomix.variables.state.LongState;
@@ -31,7 +31,7 @@ import java.util.function.Function;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class DistributedLongTest extends AbstractAtomixTest {
+public class DistributedLongTest extends AbstractCopycatTest {
 
   @Override
   protected ResourceStateMachine createStateMachine() {
@@ -102,7 +102,7 @@ public class DistributedLongTest extends AbstractAtomixTest {
     CopycatClient client = createClient();
     DistributedLong atomic = new DistributedLong(client);
     consumer.accept(atomic);
-    await();
+    await(10000);
   }
 
 }
