@@ -63,14 +63,14 @@ public class AtomixLongTest extends AbstractAtomixTest {
       threadAssertEquals(result, 10L);
       resume();
     });
-    await(1000);
+    await(5000);
 
     DistributedLong value2 = factory.apply(client2);
     value2.incrementAndGet().thenAccept(result -> {
       threadAssertEquals(result, 12L);
       resume();
     });
-    await(1000);
+    await(5000);
   }
 
 }

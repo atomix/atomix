@@ -65,7 +65,7 @@ public class AtomixMultiMapTest extends AbstractAtomixTest {
       threadAssertTrue(result.contains("Hello world again!"));
       resume();
     });
-    await(1000);
+    await(5000);
 
     DistributedMultiMap<String, String> map2 = factory.apply(client2);
     map2.get("foo").thenAccept(result -> {
@@ -73,7 +73,7 @@ public class AtomixMultiMapTest extends AbstractAtomixTest {
       threadAssertTrue(result.contains("Hello world again!"));
       resume();
     });
-    await(1000);
+    await(5000);
   }
 
 }

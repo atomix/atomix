@@ -76,7 +76,7 @@ public class AtomixReplicaTest extends AbstractReplicaTest {
       resume();
     });
 
-    await();
+    await(10000);
   }
 
   /**
@@ -120,7 +120,7 @@ public class AtomixReplicaTest extends AbstractReplicaTest {
       resume();
     });
 
-    await();
+    await(10000);
   }
 
   /**
@@ -141,7 +141,7 @@ public class AtomixReplicaTest extends AbstractReplicaTest {
       threadAssertEquals("Hello world!", result);
       resume();
     });
-    await();
+    await(10000);
   }
 
   /**
@@ -162,7 +162,7 @@ public class AtomixReplicaTest extends AbstractReplicaTest {
       threadAssertEquals("Hello world!", result);
       resume();
     });
-    await();
+    await(10000);
   }
 
   /**
@@ -183,7 +183,7 @@ public class AtomixReplicaTest extends AbstractReplicaTest {
       threadAssertEquals("Hello world!", result);
       resume();
     });
-    await();
+    await(10000);
   }
 
   /**

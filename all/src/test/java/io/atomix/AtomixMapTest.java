@@ -63,14 +63,14 @@ public class AtomixMapTest extends AbstractAtomixTest {
       threadAssertEquals(result, "Hello world!");
       resume();
     });
-    await(1000);
+    await(5000);
 
     DistributedMap<String, String> map2 = factory.apply(client2);
     map2.get("foo").thenAccept(result -> {
       threadAssertEquals(result, "Hello world!");
       resume();
     });
-    await(1000);
+    await(5000);
   }
 
 }

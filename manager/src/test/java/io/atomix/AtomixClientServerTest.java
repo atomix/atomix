@@ -80,7 +80,7 @@ public class AtomixClientServerTest extends AbstractServerTest {
       resume();
     });
 
-    await();
+    await(10000);
   }
 
   /**

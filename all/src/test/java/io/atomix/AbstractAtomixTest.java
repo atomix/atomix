@@ -83,7 +83,7 @@ public abstract class AbstractAtomixTest extends ConcurrentTestCase {
       .withTransport(new LocalTransport(registry))
       .build();
     client.open().thenRun(this::resume);
-    await(10000);
+    await(30000);
     return client;
   }
 

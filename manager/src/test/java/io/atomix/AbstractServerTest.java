@@ -79,6 +79,7 @@ public abstract class AbstractServerTest extends ConcurrentTestCase {
         .withTransport(new LocalTransport(registry))
         .build();
     client.open().thenRun(this::resume);
+    clients.add(client);
     await(10000);
     return client;
   }
