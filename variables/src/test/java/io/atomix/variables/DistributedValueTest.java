@@ -17,7 +17,7 @@ package io.atomix.variables;
 
 import org.testng.annotations.Test;
 
-import io.atomix.atomix.testing.AbstractAtomixTest;
+import io.atomix.atomix.testing.AbstractCopycatTest;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.ResourceStateMachine;
 import io.atomix.variables.state.ValueState;
@@ -28,7 +28,7 @@ import io.atomix.variables.state.ValueState;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class DistributedValueTest extends AbstractAtomixTest {
+public class DistributedValueTest extends AbstractCopycatTest {
 
   @Override
   protected ResourceStateMachine createStateMachine() {
@@ -48,7 +48,7 @@ public class DistributedValueTest extends AbstractAtomixTest {
         resume();
       });
     });
-    await();
+    await(10000);
   }
 
 }

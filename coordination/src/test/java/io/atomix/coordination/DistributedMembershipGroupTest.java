@@ -15,7 +15,7 @@
  */
 package io.atomix.coordination;
 
-import io.atomix.atomix.testing.AbstractAtomixTest;
+import io.atomix.atomix.testing.AbstractCopycatTest;
 import io.atomix.coordination.state.MembershipGroupState;
 import io.atomix.resource.ResourceStateMachine;
 import org.testng.annotations.Test;
@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class DistributedMembershipGroupTest extends AbstractAtomixTest {
+public class DistributedMembershipGroupTest extends AbstractCopycatTest {
 
   @Override
   protected ResourceStateMachine createStateMachine() {

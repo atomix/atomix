@@ -15,10 +15,16 @@
  */
 package io.atomix;
 
+import static org.testng.Assert.assertEquals;
+
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import io.atomix.atomix.testing.AbstractAtomixTest;
 import io.atomix.copycat.client.Command;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.copycat.client.Query;
@@ -30,12 +36,21 @@ import io.atomix.resource.ResourceType;
 import io.atomix.resource.ResourceTypeInfo;
 
 /**
- * Client server test.
+ * Replica test.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 @Test
-public class AtomixClientServerTest extends AbstractServerTest {
+public class AtomixReplicaTest extends AbstractAtomixTest {
+  @BeforeMethod
+  protected void beforeMethod() {
+    init();
+  }
+
+  @AfterMethod
+  protected void afterMethod() {
+    cleanup();
+  }
 
   /**
    * Tests submitting a command.
@@ -69,11 +84,9 @@ public class AtomixClientServerTest extends AbstractServerTest {
    * Tests submitting a command with a configured consistency level.
    */
   private void testSubmitCommand(Consistency consistency) throws Throwable {
-    createServers(5);
+    Atomix replica = createReplicas(5).iterator().next();
 
-    Atomix client = createClient();
-
-    TestResource resource = client.create("test", TestResource.TYPE).get();
+    TestResource resource = replica.create("test", TestResource.TYPE).get();
 
     resource.with(consistency).command("Hello world!").thenAccept(result -> {
       threadAssertEquals(result, "Hello world!");
@@ -115,11 +128,9 @@ public class AtomixClientServerTest extends AbstractServerTest {
    * Tests submitting a query with a configured consistency level.
    */
   private void testSubmitQuery(Consistency consistency) throws Throwable {
-    createServers(5);
+    Atomix replica = createReplicas(5).iterator().next();
 
-    Atomix client = createClient();
-
-    TestResource resource = client.create("test", TestResource.TYPE).get();
+    TestResource resource = replica.create("test", TestResource.TYPE).get();
 
     resource.with(consistency).query("Hello world!").thenAccept(result -> {
       threadAssertEquals(result, "Hello world!");
@@ -133,13 +144,13 @@ public class AtomixClientServerTest extends AbstractServerTest {
    * Tests getting a resource and submitting commands.
    */
   public void testGetConcurrency() throws Throwable {
-    createServers(5);
+    List<Atomix> replicas = createReplicas(5);
 
-    Atomix client1 = createClient();
-    Atomix client2 = createClient();
+    Atomix replica1 = replicas.get(0);
+    Atomix replica2 = replicas.get(1);
 
-    ValueResource resource1 = client1.get("test", ValueResource.TYPE).get();
-    ValueResource resource2 = client2.get("test", ValueResource.TYPE).get();
+    ValueResource resource1 = replica1.get("test", ValueResource.TYPE).get();
+    ValueResource resource2 = replica2.get("test", ValueResource.TYPE).get();
 
     resource1.set("Hello world!").join();
 
@@ -154,13 +165,13 @@ public class AtomixClientServerTest extends AbstractServerTest {
    * Tests creating a resource and submitting commands.
    */
   public void testCreateConcurrency() throws Throwable {
-    createServers(5);
+    List<Atomix> replicas = createReplicas(5);
 
-    Atomix client1 = createClient();
-    Atomix client2 = createClient();
+    Atomix replica1 = replicas.get(0);
+    Atomix replica2 = replicas.get(1);
 
-    ValueResource resource1 = client1.create("test", ValueResource.TYPE).get();
-    ValueResource resource2 = client2.create("test", ValueResource.TYPE).get();
+    ValueResource resource1 = replica1.create("test", ValueResource.TYPE).get();
+    ValueResource resource2 = replica2.create("test", ValueResource.TYPE).get();
 
     resource1.set("Hello world!").join();
 
@@ -175,13 +186,13 @@ public class AtomixClientServerTest extends AbstractServerTest {
    * Tests getting and creating a resource and submitting commands.
    */
   public void testGetCreateConcurrency() throws Throwable {
-    createServers(5);
+    List<Atomix> replicas = createReplicas(5);
 
-    Atomix client1 = createClient();
-    Atomix client2 = createClient();
+    Atomix replica1 = replicas.get(0);
+    Atomix replica2 = replicas.get(1);
 
-    ValueResource resource1 = client1.get("test", ValueResource.TYPE).get();
-    ValueResource resource2 = client2.create("test", ValueResource.TYPE).get();
+    ValueResource resource1 = replica1.get("test", ValueResource.TYPE).get();
+    ValueResource resource2 = replica2.create("test", ValueResource.TYPE).get();
 
     resource1.set("Hello world!").join();
 
@@ -193,49 +204,33 @@ public class AtomixClientServerTest extends AbstractServerTest {
   }
 
   /**
-   * Tests getting resource keys.
+   * Tests operating many separate resources from the same clients.
    */
-  public void testGetResourceKeys() throws Throwable {
-    createServers(5);
-    Atomix client = createClient();
+  public void testOperateMany() throws Throwable {
+    List<Atomix> replicas = createReplicas(5);
 
-    client.keys().thenAccept(result -> {
-      threadAssertTrue(result.isEmpty());
-      resume();
-    });
-    await(10000);
+    Atomix replica1 = replicas.get(0);
+    Atomix replica2 = replicas.get(1);
 
-    client.create("test", TestResource.TYPE).get();
-    client.keys().thenAccept(result -> {
-      threadAssertTrue(result.size() == 1 && result.contains("test"));
-      resume();
-    });
-    await(10000);
+    ValueResource resource11 = replica1.get("test1", ValueResource.TYPE).get();
+    ValueResource resource12 = replica2.create("test1", ValueResource.TYPE).get();
+    ValueResource resource21 = replica1.get("test2", ValueResource.TYPE).get();
+    ValueResource resource22 = replica2.create("test2", ValueResource.TYPE).get();
 
-    client.create("value", ValueResource.TYPE).get();
-    client.keys().thenAccept(result -> {
-      threadAssertTrue(result.size() == 2 && result.contains("test") && result.contains("value"));
-      resume();
-    });
-    await(10000);
+    resource11.set("foo").join();
+    assertEquals(resource12.get().get(), "foo");
 
-    client.keys(TestResource.TYPE).thenAccept(result -> {
-      threadAssertTrue(result.size() == 1 && result.contains("test"));
-      resume();
-    });
-    await(10000);
+    resource21.set("bar").join();
+    assertEquals(resource22.get().get(), "bar");
 
-    client.keys(ValueResource.TYPE).thenAccept(result -> {
-      threadAssertTrue(result.size() == 1 && result.contains("value"));
-      resume();
-    });
-    await(10000);
+    assertEquals(resource11.get().get(), "foo");
+    assertEquals(resource21.get().get(), "bar");
   }
 
   /**
    * Test resource.
    */
-  @ResourceTypeInfo(id=1, stateMachine=TestStateMachine.class)
+  @ResourceTypeInfo(id = 3, stateMachine = TestStateMachine.class)
   public static class TestResource extends Resource {
     public static final ResourceType<TestResource> TYPE = new ResourceType<>(TestResource.class);
 
@@ -309,7 +304,7 @@ public class AtomixClientServerTest extends AbstractServerTest {
   /**
    * Value resource.
    */
-  @ResourceTypeInfo(id=2, stateMachine=ValueStateMachine.class)
+  @ResourceTypeInfo(id = 4, stateMachine = ValueStateMachine.class)
   public static class ValueResource extends Resource {
     public static final ResourceType<ValueResource> TYPE = new ResourceType<ValueResource>(ValueResource.class);
 

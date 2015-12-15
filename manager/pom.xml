@@ -21,12 +21,6 @@
       <artifactId>atomix-resource</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <dependency>
-      <groupId>io.atomix</groupId>
-      <artifactId>atomix-testing</artifactId>
-      <version>${project.version}</version>
-      <scope>test</scope>
-    </dependency>
   </dependencies>
   
   <build>

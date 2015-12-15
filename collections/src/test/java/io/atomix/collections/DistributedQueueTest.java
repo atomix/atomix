@@ -20,7 +20,7 @@ import static org.testng.Assert.assertTrue;
 
 import org.testng.annotations.Test;
 
-import io.atomix.atomix.testing.AbstractAtomixTest;
+import io.atomix.atomix.testing.AbstractCopycatTest;
 import io.atomix.collections.state.QueueState;
 import io.atomix.resource.ResourceStateMachine;
 
@@ -30,7 +30,7 @@ import io.atomix.resource.ResourceStateMachine;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class DistributedQueueTest extends AbstractAtomixTest {
+public class DistributedQueueTest extends AbstractCopycatTest {
 
   @Override
   protected ResourceStateMachine createStateMachine() {
@@ -51,19 +51,19 @@ public class DistributedQueueTest extends AbstractAtomixTest {
       threadAssertEquals(1, size);
       resume();
     });
-    await();
+    await(10000);
 
     queue2.poll().thenAccept(result -> {
       threadAssertEquals("Hello world!", result);
       resume();
     });
-    await();
+    await(10000);
 
     queue2.isEmpty().thenAccept(result -> {
       threadAssertTrue(result);
       resume();
     });
-    await();
+    await(10000);
   }
 
   /**
@@ -80,19 +80,19 @@ public class DistributedQueueTest extends AbstractAtomixTest {
       threadAssertEquals(1, size);
       resume();
     });
-    await();
+    await(10000);
 
     queue2.remove().thenAccept(result -> {
       threadAssertEquals("Hello world!", result);
       resume();
     });
-    await();
+    await(10000);
 
     queue2.isEmpty().thenAccept(result -> {
       threadAssertTrue(result);
       resume();
     });
-    await();
+    await(10000);
   }
 
   /**
@@ -109,19 +109,19 @@ public class DistributedQueueTest extends AbstractAtomixTest {
       threadAssertEquals(1, size);
       resume();
     });
-    await();
+    await(10000);
 
     queue2.peek().thenAccept(result -> {
       threadAssertEquals("Hello world!", result);
       resume();
     });
-    await();
+    await(10000);
 
     queue2.isEmpty().thenAccept(result -> {
       threadAssertFalse(result);
       resume();
     });
-    await();
+    await(10000);
   }
 
   /**
@@ -138,19 +138,19 @@ public class DistributedQueueTest extends AbstractAtomixTest {
       threadAssertEquals(1, size);
       resume();
     });
-    await();
+    await(10000);
 
     queue2.element().thenAccept(result -> {
       threadAssertEquals("Hello world!", result);
       resume();
     });
-    await();
+    await(10000);
 
     queue2.isEmpty().thenAccept(result -> {
       threadAssertFalse(result);
       resume();
     });
-    await();
+    await(10000);
   }
 
   /**

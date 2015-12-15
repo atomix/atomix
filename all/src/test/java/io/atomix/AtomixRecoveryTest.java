@@ -15,11 +15,14 @@
  */
 package io.atomix;
 
-import io.atomix.collections.DistributedMap;
-import io.atomix.collections.DistributedSet;
+import java.util.UUID;
+
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import java.util.UUID;
+import io.atomix.atomix.testing.AbstractAtomixTest;
+import io.atomix.collections.DistributedMap;
+import io.atomix.collections.DistributedSet;
 
 /**
  * Atomix resource recovery test.
@@ -28,7 +31,11 @@ import java.util.UUID;
  */
 @Test
 public class AtomixRecoveryTest extends AbstractAtomixTest {
-
+  @BeforeClass
+  protected void setupCluster() throws Throwable {
+     createReplicas(5);
+  }
+  
   public void testRecoverClientResources() throws Throwable {
     testRecoverResources(createClient());
   }

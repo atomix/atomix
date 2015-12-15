@@ -15,10 +15,13 @@
  */
 package io.atomix;
 
-import io.atomix.collections.DistributedQueue;
+import java.util.function.Function;
+
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import java.util.function.Function;
+import io.atomix.atomix.testing.AbstractAtomixTest;
+import io.atomix.collections.DistributedQueue;
 
 /**
  * Atomix queue test.
@@ -27,7 +30,11 @@ import java.util.function.Function;
  */
 @Test
 public class AtomixQueueTest extends AbstractAtomixTest {
-
+  @BeforeClass
+  protected void setupCluster() throws Throwable {
+     createReplicas(5);
+  }
+  
   public void testClientQueueGet() throws Throwable {
     Atomix client1 = createClient();
     Atomix client2 = createClient();
@@ -71,6 +78,8 @@ public class AtomixQueueTest extends AbstractAtomixTest {
       threadAssertEquals(result, "Hello world again!");
       resume();
     });
+    
+    await(10000);
   }
 
 }

@@ -17,7 +17,7 @@ package io.atomix.collections;
 
 import org.testng.annotations.Test;
 
-import io.atomix.atomix.testing.AbstractAtomixTest;
+import io.atomix.atomix.testing.AbstractCopycatTest;
 import io.atomix.collections.state.MultiMapState;
 import io.atomix.resource.ResourceStateMachine;
 
@@ -27,7 +27,7 @@ import io.atomix.resource.ResourceStateMachine;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class DistributedMultiMapTest extends AbstractAtomixTest {
+public class DistributedMultiMapTest extends AbstractCopycatTest {
 
   @Override
   protected ResourceStateMachine createStateMachine() {
@@ -43,30 +43,30 @@ public class DistributedMultiMapTest extends AbstractAtomixTest {
     DistributedMultiMap<String, String> map = new DistributedMultiMap<>(createClient());
 
     map.put("foo", "Hello world!").thenRun(this::resume);
-    await();
+    await(10000);
 
     map.put("foo", "Hello world again!").thenRun(this::resume);
-    await();
+    await(10000);
 
     map.get("foo").thenAccept(result -> {
       threadAssertTrue(result.contains("Hello world!"));
       threadAssertTrue(result.contains("Hello world again!"));
       resume();
     });
-    await();
+    await(10000);
 
     map.remove("foo").thenAccept(result -> {
       threadAssertTrue(result.contains("Hello world!"));
       threadAssertTrue(result.contains("Hello world again!"));
       resume();
     });
-    await();
+    await(10000);
 
     map.get("foo").thenAccept(result -> {
       threadAssertTrue(result.isEmpty());
       resume();
     });
-    await();
+    await(10000);
   }
 
   /**

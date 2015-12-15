@@ -15,10 +15,13 @@
  */
 package io.atomix;
 
-import io.atomix.collections.DistributedSet;
+import java.util.function.Function;
+
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import java.util.function.Function;
+import io.atomix.atomix.testing.AbstractAtomixTest;
+import io.atomix.collections.DistributedSet;
 
 /**
  * Atomix set test.
@@ -27,7 +30,11 @@ import java.util.function.Function;
  */
 @Test
 public class AtomixSetTest extends AbstractAtomixTest {
-
+  @BeforeClass
+  protected void setupCluster() throws Throwable {
+     createReplicas(5);
+  }
+  
   public void testClientSetGet() throws Throwable {
     Atomix client1 = createClient();
     Atomix client2 = createClient();
