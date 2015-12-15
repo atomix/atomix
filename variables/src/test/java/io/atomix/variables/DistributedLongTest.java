@@ -81,6 +81,16 @@ public class DistributedLongTest extends AbstractCopycatTest {
   }
 
   /**
+   * Tests incrementing a value followed by setting it and then incrementing it again.
+   */
+  public void testSequenceOfUpdates() throws Throwable {
+    Function<DistributedLong, CompletableFuture<Long>> sequence = l -> l.incrementAndGet()
+                                                                 .thenCompose(v -> l.set(10L))
+                                                                 .thenCompose(v -> l.incrementAndGet());
+    testAtomic(3, atomic(sequence, l -> 11L));
+  }
+
+  /**
    * Returns an atomic set/get test callback.
    */
   private Consumer<DistributedLong> atomic(Function<DistributedLong, CompletableFuture<Long>> commandFunction, Function<Long, Long> resultFunction) {
