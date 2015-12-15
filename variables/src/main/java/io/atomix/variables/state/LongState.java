@@ -46,7 +46,7 @@ public class LongState extends ValueState<Long> implements Snapshottable {
   @Override
   public void set(Commit<ValueCommands.Set<Long>> commit) {
     try {
-      value.set((Long) commit.operation().value());
+      value.set(commit.operation().value());
     } finally {
       commit.close();
     }
@@ -82,8 +82,8 @@ public class LongState extends ValueState<Long> implements Snapshottable {
   @Override
   public boolean compareAndSet(Commit<ValueCommands.CompareAndSet<Long>> commit) {
     try {
-      Long expect = (Long) commit.operation().expect();
-      Long update = (Long) commit.operation().update();
+      Long expect = commit.operation().expect();
+      Long update = commit.operation().update();
       return value.compareAndSet(expect, update);
     } finally {
       commit.close();
