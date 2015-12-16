@@ -16,8 +16,11 @@
 package io.atomix.examples.variables;
 
 import io.atomix.Atomix;
-import io.atomix.AtomixClient;
+import io.atomix.AtomixReplica;
 import io.atomix.catalyst.transport.Address;
+import io.atomix.catalyst.transport.NettyTransport;
+import io.atomix.copycat.server.storage.Storage;
+import io.atomix.copycat.server.storage.StorageLevel;
 import io.atomix.variables.DistributedValue;
 
 import java.time.Duration;
@@ -36,16 +39,33 @@ public class DistributedValueExample {
    * Starts the client.
    */
   public static void main(String[] args) throws Exception {
-    if (args.length < 1)
-      throw new IllegalArgumentException("must supply at least one server host:port");
+    if (args.length < 2)
+      throw new IllegalArgumentException("must supply a path and set of host:port tuples");
 
+    // Parse the address to which to bind the server.
+    String[] mainParts = args[1].split(":");
+    Address address = new Address(mainParts[0], Integer.valueOf(mainParts[1]));
+
+    // Build a list of all member addresses to which to connect.
     List<Address> members = new ArrayList<>();
-    for (int i = 0; i < args.length; i++) {
+    for (int i = 1; i < args.length; i++) {
       String[] parts = args[i].split(":");
       members.add(new Address(parts[0], Integer.valueOf(parts[1])));
     }
 
-    Atomix atomix = AtomixClient.builder(members).build();
+    // Create a stateful Atomix replica. The replica communicates with other replicas in the cluster
+    // to replicate state changes.
+    Atomix atomix = AtomixReplica.builder(address, members)
+      .withTransport(new NettyTransport())
+      .withStorage(Storage.builder()
+        .withStorageLevel(StorageLevel.DISK)
+        .withDirectory(args[0])
+        .withMinorCompactionInterval(Duration.ofSeconds(30))
+        .withMajorCompactionInterval(Duration.ofMinutes(1))
+        .withMaxSegmentSize(1024 * 1024 * 8)
+        .withMaxEntriesPerSegment(1024 * 1024)
+        .build())
+      .build();
 
     atomix.open().join();
 
@@ -62,8 +82,7 @@ public class DistributedValueExample {
   private static void recursiveSet(DistributedValue<String> value) {
     value.set(UUID.randomUUID().toString()).thenRun(() -> {
       value.get().thenAccept(result -> {
-        System.out.println("Value is: " + result);
-        value.context().schedule(Duration.ofSeconds(1), () -> recursiveSet(value));
+        value.context().schedule(Duration.ofMillis(1), () -> recursiveSet(value));
       });
     });
   }

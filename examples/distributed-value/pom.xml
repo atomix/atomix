@@ -65,7 +65,7 @@
               <transformers>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                  <mainClass>io.atomix.examples.primitives.DistributedValueExample</mainClass>
+                  <mainClass>io.atomix.examples.variables.DistributedValueExample</mainClass>
                 </transformer>
               </transformers>
             </configuration>
