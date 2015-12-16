@@ -15,6 +15,8 @@
  */
 package io.atomix.variables.state;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.Snapshottable;
 import io.atomix.copycat.server.storage.snapshot.SnapshotReader;
@@ -25,17 +27,67 @@ import io.atomix.copycat.server.storage.snapshot.SnapshotWriter;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class LongState extends ValueState implements Snapshottable {
-  private long diff;
+public class LongState extends ValueState<Long> implements Snapshottable {
+  private AtomicLong value = new AtomicLong(0);
 
   @Override
   public void snapshot(SnapshotWriter writer) {
-    writer.writeLong(diff);
+    writer.writeLong(value.get());
   }
 
   @Override
   public void install(SnapshotReader reader) {
-    diff = reader.readLong();
+    value = new AtomicLong(reader.readLong());
+  }
+
+  /**
+   * Handles a set commit.
+   */
+  @Override
+  public void set(Commit<ValueCommands.Set<Long>> commit) {
+    try {
+      value.set(commit.operation().value());
+    } finally {
+      commit.close();
+    }
+  }
+
+  /**
+   * Handles a get commit.
+   */
+  @Override
+  public Long get(Commit<ValueCommands.Get<Long>> commit) {
+    try {
+      return value.get();
+    } finally {
+      commit.close();
+    }
+  }
+
+  /**
+   * Handles a get and set commit.
+   */
+  @Override
+  public Long getAndSet(Commit<ValueCommands.GetAndSet<Long>> commit) {
+    try {
+      return value.getAndSet(commit.operation().value());
+    } finally {
+      commit.close();
+    }
+  }
+
+  /**
+   * Handles a compare and set commit.
+   */
+  @Override
+  public boolean compareAndSet(Commit<ValueCommands.CompareAndSet<Long>> commit) {
+    try {
+      Long expect = commit.operation().expect();
+      Long update = commit.operation().update();
+      return value.compareAndSet(expect, update);
+    } finally {
+      commit.close();
+    }
   }
 
   /**
@@ -43,9 +95,7 @@ public class LongState extends ValueState implements Snapshottable {
    */
   public long incrementAndGet(Commit<LongCommands.IncrementAndGet> commit) {
     try {
-      diff++;
-      Long value = (Long) this.value;
-      return value != null ? value + diff : diff;
+      return value.incrementAndGet();
     } finally {
       commit.close();
     }
@@ -56,8 +106,7 @@ public class LongState extends ValueState implements Snapshottable {
    */
   public long decrementAndGet(Commit<LongCommands.DecrementAndGet> commit) {
     try {
-      diff--;
-      return value();
+      return value.decrementAndGet();
     } finally {
       commit.close();
     }
@@ -68,9 +117,7 @@ public class LongState extends ValueState implements Snapshottable {
    */
   public long getAndIncrement(Commit<LongCommands.GetAndIncrement> commit) {
     try {
-      long value = value();
-      diff++;
-      return value;
+      return value.getAndIncrement();
     } finally {
       commit.close();
     }
@@ -81,9 +128,7 @@ public class LongState extends ValueState implements Snapshottable {
    */
   public long getAndDecrement(Commit<LongCommands.GetAndDecrement> commit) {
     try {
-      long value = value();
-      diff--;
-      return value;
+      return value.getAndDecrement();
     } finally {
       commit.close();
     }
@@ -94,8 +139,7 @@ public class LongState extends ValueState implements Snapshottable {
    */
   public long addAndGet(Commit<LongCommands.AddAndGet> commit) {
     try {
-      diff += commit.operation().delta();
-      return value();
+      return value.addAndGet(commit.operation().delta());
     } finally {
       commit.close();
     }
@@ -106,22 +150,9 @@ public class LongState extends ValueState implements Snapshottable {
    */
   public long getAndAdd(Commit<LongCommands.GetAndAdd> commit) {
     try {
-      long value = value();
-      diff += commit.operation().delta();
-      return value;
+      return value.getAndAdd(commit.operation().delta());
     } finally {
       commit.close();
     }
   }
-
-  /**
-   * Returns the current value.
-   *
-   * @return The current value.
-   */
-  private long value() {
-    Long value = (Long) this.value;
-    return value != null ? value + diff : diff;
-  }
-
 }

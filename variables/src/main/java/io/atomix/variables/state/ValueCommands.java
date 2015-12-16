@@ -98,17 +98,17 @@ public class ValueCommands {
    * Set command.
    */
   @SerializeWith(id=51)
-  public static class Set extends ValueCommand<Void> {
-    private Object value;
+  public static class Set<T> extends ValueCommand<T> {
+    private T value;
 
     public Set() {
     }
 
-    public Set(Object value) {
+    public Set(T value) {
       this.value = value;
     }
 
-    public Set(Object value, long ttl) {
+    public Set(T value, long ttl) {
       super(ttl);
       this.value = value;
     }
@@ -118,7 +118,7 @@ public class ValueCommands {
      *
      * @return The command value.
      */
-    public Object value() {
+    public T value() {
       return value;
     }
 
@@ -142,19 +142,19 @@ public class ValueCommands {
    * Compare and set command.
    */
   @SerializeWith(id=52)
-  public static class CompareAndSet extends ValueCommand<Boolean> {
-    private Object expect;
-    private Object update;
+  public static class CompareAndSet<T> extends ValueCommand<Boolean> {
+    private T expect;
+    private T update;
 
     public CompareAndSet() {
     }
 
-    public CompareAndSet(Object expect, Object update) {
+    public CompareAndSet(T expect, T update) {
       this.expect = expect;
       this.update = update;
     }
 
-    public CompareAndSet(Object expect, Object update, long ttl) {
+    public CompareAndSet(T expect, T update, long ttl) {
       super(ttl);
       this.expect = expect;
       this.update = update;
@@ -165,7 +165,7 @@ public class ValueCommands {
      *
      * @return The expected value.
      */
-    public Object expect() {
+    public T expect() {
       return expect;
     }
 
@@ -174,7 +174,7 @@ public class ValueCommands {
      *
      * @return The updated value.
      */
-    public Object update() {
+    public T update() {
       return update;
     }
 
@@ -201,16 +201,16 @@ public class ValueCommands {
    */
   @SerializeWith(id=53)
   public static class GetAndSet<T> extends ValueCommand<T> {
-    private Object value;
+    private T value;
 
     public GetAndSet() {
     }
 
-    public GetAndSet(Object value) {
+    public GetAndSet(T value) {
       this.value = value;
     }
 
-    public GetAndSet(Object value, long ttl) {
+    public GetAndSet(T value, long ttl) {
       super(ttl);
       this.value = value;
     }
@@ -220,7 +220,7 @@ public class ValueCommands {
      *
      * @return The command value.
      */
-    public Object value() {
+    public T value() {
       return value;
     }
 

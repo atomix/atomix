@@ -21,7 +21,7 @@ public class TestCaseLogger implements IInvokedMethodListener {
     IClass clazz = testMethod.getTestClass();
 
     START_TIMES.put(testMethod, System.currentTimeMillis());
-    LoggerFactory.getLogger("BEFORE").info("{}.{}", clazz.getRealClass().getName(), testMethod.getMethodName());
+    LoggerFactory.getLogger("BEFORE").info("{}#{}", clazz.getRealClass().getName(), testMethod.getMethodName());
   }
 
   public void afterInvocation(IInvokedMethod method, ITestResult testResult) {
@@ -33,7 +33,7 @@ public class TestCaseLogger implements IInvokedMethodListener {
     double elapsed = (System.currentTimeMillis() - START_TIMES.remove(testMethod)) / 1000.0;
 
     if (elapsed > 1)
-      LoggerFactory.getLogger("AFTER").info("{}.{} Ran for {} seconds", clazz.getRealClass().getName(),
+      LoggerFactory.getLogger("AFTER").info("{}#{} Ran for {} seconds", clazz.getRealClass().getName(),
           testMethod.getMethodName(), elapsed);
   }
 }

@@ -26,15 +26,15 @@ import java.time.Duration;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ValueState extends ResourceStateMachine {
-  protected Object value;
-  protected Commit<? extends ValueCommands.ValueCommand> current;
+public class ValueState<T> extends ResourceStateMachine {
+  protected T value;
+  protected Commit<? extends ValueCommands.ValueCommand<?>> current;
   protected Scheduled timer;
 
   /**
    * Handles a get commit.
    */
-  public Object get(Commit<ValueCommands.Get> commit) {
+  public T get(Commit<ValueCommands.Get<T>> commit) {
     try {
       return current != null ? value : null;
     } finally {
@@ -58,7 +58,7 @@ public class ValueState extends ResourceStateMachine {
   /**
    * Sets the current commit.
    */
-  private void setCurrent(Commit<? extends ValueCommands.ValueCommand> commit) {
+  private void setCurrent(Commit<? extends ValueCommands.ValueCommand<?>> commit) {
     timer = commit.operation().ttl() > 0 ? executor.schedule(Duration.ofMillis(commit.operation().ttl()), () -> {
       value = null;
       current.close();
@@ -70,7 +70,7 @@ public class ValueState extends ResourceStateMachine {
   /**
    * Applies a set commit.
    */
-  public void set(Commit<ValueCommands.Set> commit) {
+  public void set(Commit<ValueCommands.Set<T>> commit) {
     cleanCurrent();
     value = commit.operation().value();
     setCurrent(commit);
@@ -79,7 +79,7 @@ public class ValueState extends ResourceStateMachine {
   /**
    * Handles a compare and set commit.
    */
-  public boolean compareAndSet(Commit<ValueCommands.CompareAndSet> commit) {
+  public boolean compareAndSet(Commit<ValueCommands.CompareAndSet<T>> commit) {
     if ((value == null && commit.operation().expect() == null) || (value != null && commit.operation().expect() != null && value.equals(commit.operation().expect()))) {
       value = commit.operation().update();
       cleanCurrent();
@@ -94,8 +94,8 @@ public class ValueState extends ResourceStateMachine {
   /**
    * Handles a get and set commit.
    */
-  public Object getAndSet(Commit<ValueCommands.GetAndSet> commit) {
-    Object result = value;
+  public T getAndSet(Commit<ValueCommands.GetAndSet<T>> commit) {
+    T result = value;
     value = commit.operation().value();
     cleanCurrent();
     setCurrent(commit);
