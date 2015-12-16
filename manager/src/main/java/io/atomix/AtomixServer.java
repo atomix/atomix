@@ -185,11 +185,12 @@ public final class AtomixServer implements Managed<AtomixServer> {
    * memory or memory-mapped files.
    */
   public static class Builder extends io.atomix.catalyst.util.Builder<AtomixServer> {
+    private static final String SERVER_NAME = "atomix";
     private final CopycatServer.Builder builder;
     private ResourceTypeResolver resourceResolver = new ServiceLoaderResourceResolver();
 
     private Builder(Address clientAddress, Address serverAddress, Collection<Address> members) {
-      this.builder = CopycatServer.builder(clientAddress, serverAddress, members);
+      this.builder = CopycatServer.builder(clientAddress, serverAddress, members).withName(SERVER_NAME);
     }
 
     /**

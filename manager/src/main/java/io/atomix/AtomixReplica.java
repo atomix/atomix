@@ -242,6 +242,7 @@ public final class AtomixReplica extends Atomix {
    * memory or memory-mapped files.
    */
   public static class Builder extends Atomix.Builder {
+    private static final String SERVER_NAME = "atomix";
     private final Address clientAddress;
     private final CopycatServer.Builder serverBuilder;
     private Transport clientTransport;
@@ -251,7 +252,7 @@ public final class AtomixReplica extends Atomix {
     private Builder(Address clientAddress, Address serverAddress, Collection<Address> members) {
       super(Collections.singleton(Assert.notNull(clientAddress, "clientAddress")));
       this.clientAddress = clientAddress;
-      this.serverBuilder = CopycatServer.builder(clientAddress, serverAddress, members);
+      this.serverBuilder = CopycatServer.builder(clientAddress, serverAddress, members).withName(SERVER_NAME);
     }
 
     /**
