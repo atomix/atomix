@@ -36,29 +36,30 @@ public class StandaloneServerExample {
    * Starts the server.
    */
   public static void main(String[] args) throws Exception {
-    if (args.length < 2)
-      throw new IllegalArgumentException("must supply a path and set of host:port tuples");
+    if (args.length < 3)
+      throw new IllegalArgumentException("must supply a path, a local port, and set of remote host:port tuples");
 
     // Parse the address to which to bind the server.
-    String[] mainParts = args[1].split(":");
-    Address address = new Address(mainParts[0], Integer.valueOf(mainParts[1]));
+    int port = Integer.valueOf(args[1]);
+    Address localAddress = new Address(InetAddress.getLocalHost().getHostName(), port);
 
     // Build a list of all member addresses to which to connect.
     List<Address> members = new ArrayList<>();
-    for (int i = 1; i < args.length; i++) {
+    members.add(localAddress);
+    for (int i = 2; i < args.length; i++) {
       String[] parts = args[i].split(":");
       members.add(new Address(parts[0], Integer.valueOf(parts[1])));
     }
 
-    AtomixServer server = AtomixServer.builder(address, members)
+    AtomixServer server = AtomixServer.builder(localAddress, members)
         .withTransport(new NettyTransport())
         .withStorage(Storage.builder()
-          .withDirectory(args[0])
-          .withMinorCompactionInterval(Duration.ofSeconds(30))
-          .withMajorCompactionInterval(Duration.ofMinutes(1))
-          .withMaxSegmentSize(1024 * 1024 * 8)
-          .withMaxEntriesPerSegment(1024 * 1024)
-          .build())
+            .withDirectory(args[0])
+            .withMinorCompactionInterval(Duration.ofSeconds(30))
+            .withMajorCompactionInterval(Duration.ofMinutes(1))
+            .withMaxSegmentSize(1024 * 1024 * 8)
+            .withMaxEntriesPerSegment(1024 * 1024)
+            .build())
         .build();
 
     server.open().join();
