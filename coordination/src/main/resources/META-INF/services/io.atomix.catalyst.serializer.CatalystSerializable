@@ -30,6 +30,10 @@ io.atomix.coordination.state.MembershipGroupCommands$GetProperty
 io.atomix.coordination.state.MembershipGroupCommands$RemoveProperty
 io.atomix.coordination.state.MembershipGroupCommands$Send
 
+io.atomix.coordination.state.TaskQueueCommands$Subscribe
+io.atomix.coordination.state.TaskQueueCommands$Unsubscribe
+io.atomix.coordination.state.TaskQueueCommands$Submit
+
 io.atomix.coordination.state.MessageBusCommands$Join
 io.atomix.coordination.state.MessageBusCommands$Leave
 io.atomix.coordination.state.MessageBusCommands$Register
