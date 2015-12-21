@@ -52,4 +52,9 @@ public final class DistributedCoordination {
    */
   public static final ResourceType<DistributedTaskQueue> TASK_QUEUE = DistributedTaskQueue.TYPE;
 
+  /**
+   * Distributed topic resource.
+   */
+  public static final ResourceType<DistributedTopic> TOPIC = DistributedTopic.TYPE;
+
 }
