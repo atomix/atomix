@@ -41,22 +41,22 @@ public class DistributedTaskQueueTest extends AbstractCopycatTest {
   /**
    * Tests submitting and processing tasks.
    */
-  public void testSubmit() throws Throwable {
+  public void testSubmitAsync() throws Throwable {
     createServers(3);
 
-    DistributedTaskQueue<String> worker1 = new DistributedTaskQueue<>(createClient());
-    DistributedTaskQueue<String> worker2 = new DistributedTaskQueue<>(createClient());
-    DistributedTaskQueue<String> queue = new DistributedTaskQueue<>(createClient());
+    DistributedTaskQueue<String> worker1 = new DistributedTaskQueue<String>(createClient()).async();
+    DistributedTaskQueue<String> worker2 = new DistributedTaskQueue<String>(createClient()).async();
+    DistributedTaskQueue<String> queue = new DistributedTaskQueue<String>(createClient()).async();
 
     Set<String> tasks = new HashSet<>(Arrays.asList("foo", "bar", "baz"));
     Set<String> completed = new ConcurrentSkipListSet<>();
-    worker1.subscribe(task -> {
+    worker1.consumer(task -> {
       threadAssertTrue(tasks.contains(task));
       threadAssertFalse(completed.contains(task));
       completed.add(task);
       resume();
     }).thenRun(this::resume);
-    worker2.subscribe(task -> {
+    worker2.consumer(task -> {
       threadAssertTrue(tasks.contains(task));
       threadAssertFalse(completed.contains(task));
       completed.add(task);
@@ -74,22 +74,22 @@ public class DistributedTaskQueueTest extends AbstractCopycatTest {
   /**
    * Tests submitting and processing tasks and awaiting the acknowledgement.
    */
-  public void testSubmitNow() throws Throwable {
+  public void testSubmitSync() throws Throwable {
     createServers(3);
 
-    DistributedTaskQueue<String> worker1 = new DistributedTaskQueue<>(createClient());
-    DistributedTaskQueue<String> worker2 = new DistributedTaskQueue<>(createClient());
-    DistributedTaskQueue<String> queue = new DistributedTaskQueue<>(createClient());
+    DistributedTaskQueue<String> worker1 = new DistributedTaskQueue<String>(createClient()).sync();
+    DistributedTaskQueue<String> worker2 = new DistributedTaskQueue<String>(createClient()).sync();
+    DistributedTaskQueue<String> queue = new DistributedTaskQueue<String>(createClient()).sync();
 
     Set<String> tasks = new HashSet<>(Arrays.asList("foo", "bar", "baz"));
     Set<String> completed = new ConcurrentSkipListSet<>();
-    worker1.subscribe(task -> {
+    worker1.consumer(task -> {
       threadAssertTrue(tasks.contains(task));
       threadAssertFalse(completed.contains(task));
       completed.add(task);
       resume();
     }).thenRun(this::resume);
-    worker2.subscribe(task -> {
+    worker2.consumer(task -> {
       threadAssertTrue(tasks.contains(task));
       threadAssertFalse(completed.contains(task));
       completed.add(task);
@@ -98,9 +98,9 @@ public class DistributedTaskQueueTest extends AbstractCopycatTest {
 
     await(5000, 2);
 
-    queue.submitNow("foo").thenRun(this::resume);
-    queue.submitNow("bar").thenRun(this::resume);
-    queue.submitNow("baz").thenRun(this::resume);
+    queue.submit("foo").thenRun(this::resume);
+    queue.submit("bar").thenRun(this::resume);
+    queue.submit("baz").thenRun(this::resume);
     await(5000, 6);
   }
 

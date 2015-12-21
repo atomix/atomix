@@ -73,6 +73,20 @@ public abstract class Resource<T extends Resource<T>> {
   }
 
   /**
+   * Returns the configured resource consistency level.
+   * <p>
+   * Resource consistency levels are configured via the {@link #with(Consistency)} setter. By default,
+   * all resources submit commands under the {@link Consistency#ATOMIC} consistency level. See the
+   * {@link Consistency} documentation for information about guarantees provided by specific consistency
+   * levels.
+   *
+   * @return The configured resource consistency level.
+   */
+  public Consistency consistency() {
+    return consistency;
+  }
+
+  /**
    * Sets the resource consistency level.
    * <p>
    * The configured consistency level specifies how operations on the resource should be handled by the

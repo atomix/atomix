@@ -19,6 +19,7 @@ import io.atomix.catalyst.util.Listener;
 import io.atomix.coordination.state.TaskQueueCommands;
 import io.atomix.coordination.state.TaskQueueState;
 import io.atomix.copycat.client.CopycatClient;
+import io.atomix.resource.Consistency;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceType;
 import io.atomix.resource.ResourceTypeInfo;
@@ -38,7 +39,7 @@ public class DistributedTaskQueue<T> extends Resource<DistributedTaskQueue<T>> {
   public static final ResourceType<DistributedTaskQueue> TYPE = new ResourceType<>(DistributedTaskQueue.class);
   private long taskId;
   private final Map<Long, CompletableFuture<Void>> taskFutures = new ConcurrentHashMap<>();
-  private Consumer<T> subscriber;
+  private Consumer<T> consumer;
 
   @SuppressWarnings("unchecked")
   public DistributedTaskQueue(CopycatClient client) {
@@ -58,8 +59,8 @@ public class DistributedTaskQueue<T> extends Resource<DistributedTaskQueue<T>> {
    */
   @SuppressWarnings("unchecked")
   private void process(T task) {
-    if (subscriber != null) {
-      subscriber.accept((T) task);
+    if (consumer != null) {
+      consumer.accept(task);
       submit(new TaskQueueCommands.Ack()).whenComplete((result, error) -> {
         if (error == null && result != null) {
           process((T) result);
@@ -79,13 +80,46 @@ public class DistributedTaskQueue<T> extends Resource<DistributedTaskQueue<T>> {
   }
 
   /**
+   * Sets the queue to synchronous mode.
+   * <p>
+   * Setting the queue to synchronous mode effectively configures the queue's {@link Consistency} to
+   * {@link Consistency#ATOMIC}. Atomic consistency means that tasks {@link #submit(Object) submitted} to the
+   * queue will be received and processed by a {@link #consumer(Consumer) consumer} some time between the
+   * invocation of the submit operation and its completion. In other words, synchronous task queues await
+   * acknowledgement from a consumer.
+   *
+   * @return The distributed task queue.
+   */
+  public DistributedTaskQueue<T> sync() {
+    return with(Consistency.ATOMIC);
+  }
+
+  /**
+   * Sets the queue to asynchronous mode.
+   * <p>
+   * Setting the queue to asynchronous mode effectively configures the queue's {@link Consistency} to
+   * {@link Consistency#SEQUENTIAL}. Sequential consistency means that once a task is {@link #submit(Object) submitted}
+   * to the queue, the task will be persisted in the cluster but may be delivered to a {@link #consumer(Consumer) consumer}
+   * after some arbitrary delay. Tasks are guaranteed to be delivered to consumers in the order in which they were sent
+   * (sequential consistency) but different consumers may receive different tasks at different points in time.
+   *
+   * @return The distributed task queue.
+   */
+  public DistributedTaskQueue<T> async() {
+    return with(Consistency.SEQUENTIAL);
+  }
+
+  /**
    * Submits a task to the task queue.
    *
    * @param task The task to submit.
    * @return A completable future to be completed once the task has been completed.
    */
   public CompletableFuture<Void> submit(T task) {
-    return submit(new TaskQueueCommands.Submit(++taskId, task, false));
+    if (consistency() == Consistency.ATOMIC) {
+      return submitAtomic(task);
+    }
+    return submitSequential(task);
   }
 
   /**
@@ -94,7 +128,7 @@ public class DistributedTaskQueue<T> extends Resource<DistributedTaskQueue<T>> {
    * @param task The task to submit.
    * @return A completable future to be completed once the task has been completed.
    */
-  public CompletableFuture<Void> submitNow(T task) {
+  private CompletableFuture<Void> submitAtomic(T task) {
     long taskId = ++this.taskId;
     CompletableFuture<Void> future = new CompletableFuture<>();
     taskFutures.put(taskId, future);
@@ -108,19 +142,30 @@ public class DistributedTaskQueue<T> extends Resource<DistributedTaskQueue<T>> {
   }
 
   /**
-   * Subscribes to messages from the topic.
+   * Submits a task to the task queue without awaiting processing.
+   */
+  private CompletableFuture<Void> submitSequential(T task) {
+    return submit(new TaskQueueCommands.Submit(++taskId, task, false));
+  }
+
+  /**
+   * Registers a task consumer.
    * <p>
-   * Once the returned {@link CompletableFuture} is completed, the subscriber is guaranteed to receive all
-   * messages from any client thereafter. Messages are guaranteed to be received in the order specified by
-   * the instance from which they were sent. The provided {@link Consumer} will always be executed on the
-   * same thread.
+   * Once the returned {@link CompletableFuture} is completed, the consumer will begin consuming tasks
+   * from the queue. The task queue guarantees that only one consumer will fully process any given task.
+   * However, failures during the processing of a task will result in the task being reprocessed by another
+   * consumer. Consumers should be idempotent to account for failures.
    * <p>
-   * This method returns a {@link CompletableFuture} which can be used to block until the listener has been registered
+   * All tasks are guaranteed to be received on the same thread and tasks will be received in the order in
+   * which they were submitted to the queue. Once the consumer callback has exited, the task will be acknowledged
+   * and the next task fetched from the cluster.
+   * <p>
+   * This method returns a {@link CompletableFuture} which can be used to block until the consumer has been registered
    * or to be notified in a separate thread once the operation completes. To block until the operation completes,
    * use the {@link CompletableFuture#join()} method to block the calling thread:
    * <pre>
    *   {@code
-   *   topic.subscribe(message -> {
+   *   topic.consume(task -> {
    *     ...
    *   }).join();
    *   }
@@ -129,21 +174,21 @@ public class DistributedTaskQueue<T> extends Resource<DistributedTaskQueue<T>> {
    * thread, use one of the many completable future callbacks:
    * <pre>
    *   {@code
-   *   queue.subscribe(message -> {
+   *   queue.consume(task -> {
    *     ...
-   *   }).thenRun(() -> System.out.println("Subscribed to queue"));
+   *   }).thenRun(() -> System.out.println("Consumer registered"));
    *   }
    * </pre>
    *
-   * @param consumer The message consumer.
-   * @return A completable future to be completed once the consumer has been subscribed.
+   * @param consumer The task consumer.
+   * @return A completable future to be completed once the consumer has been registered.
    */
-  public synchronized CompletableFuture<Listener<T>> subscribe(Consumer<T> consumer) {
-    if (subscriber != null) {
-      subscriber = consumer;
+  public synchronized CompletableFuture<Listener<T>> consumer(Consumer<T> consumer) {
+    if (this.consumer != null) {
+      this.consumer = consumer;
       return CompletableFuture.completedFuture(new TaskQueueListener(consumer));
     }
-    subscriber = consumer;
+    this.consumer = consumer;
     return submit(new TaskQueueCommands.Subscribe())
       .thenApply(v -> new TaskQueueListener(consumer));
   }
@@ -166,7 +211,7 @@ public class DistributedTaskQueue<T> extends Resource<DistributedTaskQueue<T>> {
     @Override
     public void close() {
       synchronized (DistributedTaskQueue.this) {
-        subscriber = null;
+        consumer = null;
         submit(new TaskQueueCommands.Unsubscribe());
       }
     }
