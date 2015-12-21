@@ -13,33 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.coordination;
+package io.atomix.messaging;
 
 import io.atomix.resource.ResourceType;
 
 /**
- * Distributed coordination resource types.
+ * Distributed messaging resource constants.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public final class DistributedCoordination {
+public final class DistributedMessaging {
 
-  private DistributedCoordination() {
+  private DistributedMessaging() {
   }
 
   /**
-   * Distributed leader election resource.
+   * Distributed message bus resource.
    */
-  public static final ResourceType<DistributedLeaderElection> LEADER_ELECTION = DistributedLeaderElection.TYPE;
+  public static final ResourceType<DistributedMessageBus> MESSAGE_BUS = DistributedMessageBus.TYPE;
 
   /**
-   * Distributed lock resource.
+   * Distributed task queue resource.
    */
-  public static final ResourceType<DistributedLock> LOCK = DistributedLock.TYPE;
+  public static final ResourceType<DistributedTaskQueue> TASK_QUEUE = DistributedTaskQueue.TYPE;
 
   /**
-   * Distributed membership group resource.
+   * Distributed topic resource.
    */
-  public static final ResourceType<DistributedMembershipGroup> MEMBERSHIP_GROUP = DistributedMembershipGroup.TYPE;
+  public static final ResourceType<DistributedTopic> TOPIC = DistributedTopic.TYPE;
 
 }

@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.coordination;
+package io.atomix.messaging;
 
 import io.atomix.atomix.testing.AbstractCopycatTest;
-import io.atomix.coordination.state.TopicState;
+import io.atomix.messaging.state.TopicState;
 import io.atomix.resource.ResourceStateMachine;
 import org.testng.annotations.Test;
 

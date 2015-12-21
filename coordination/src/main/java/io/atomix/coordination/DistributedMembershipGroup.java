@@ -119,7 +119,7 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
       }
     });
 
-    client.session().<Message>onEvent("message", message -> {
+    client.session().<MembershipGroupCommands.Message>onEvent("message", message -> {
       if (member != null) {
         member.handle(message);
       }
@@ -344,7 +344,7 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
     /**
      * Handles a message to the member.
      */
-    private void handle(Message message) {
+    private void handle(MembershipGroupCommands.Message message) {
       ListenerHolder listener = listeners.get(message.topic());
       if (listener != null) {
         listener.accept(message.body());
