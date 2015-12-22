@@ -21,19 +21,19 @@ import io.atomix.copycat.client.Query;
 /**
  * Resource consistency constraints.
  * <p>
- * This enum provides identifiers for configurable {@link AbstractResource} consistency levels. Each operation
+ * This enum provides identifiers for configurable {@link Resource} consistency levels. Each operation
  * on a resource is submitted to the cluster with a configurable consistency level. The consistency level specifies
  * how the cluster should handle the operation and places constraints on the level of consistency required to complete
  * the operation.
  * <p>
- * The consistency level of a resource can be configured via {@link AbstractResource#with(Consistency)}.
+ * The consistency level of a resource can be configured via {@link Resource#with(Consistency)}.
  * <pre>
  *   {@code
  *   Object value = map.with(Consistency.ATOMIC).get("key").get();
  *   }
  * </pre>
  * In some cases, such as with leader elections, strong consistency is critical to the correctness of a resource.
- * In those cases, consistency levels may be explicitly overridden by specific {@link AbstractResource} implementations.
+ * In those cases, consistency levels may be explicitly overridden by specific {@link Resource} implementations.
  * In that sense, consistency level configurations serve as a default. Consult specific resource documentation for
  * consistency implementation details.
  * <p>
