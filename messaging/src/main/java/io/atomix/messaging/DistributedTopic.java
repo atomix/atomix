@@ -58,7 +58,7 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@ResourceTypeInfo(id=-25, stateMachine=TopicState.class)
+@ResourceTypeInfo(id=-31, stateMachine=TopicState.class)
 public class DistributedTopic<T> extends Resource<DistributedTopic<T>> {
   public static final ResourceType<DistributedTopic> TYPE = new ResourceType<>(DistributedTopic.class);
 

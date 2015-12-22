@@ -62,7 +62,7 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@ResourceTypeInfo(id=-22, stateMachine=LeaderElectionState.class)
+@ResourceTypeInfo(id=-21, stateMachine=LeaderElectionState.class)
 public class DistributedLeaderElection extends Resource<DistributedLeaderElection> {
   public static final ResourceType<DistributedLeaderElection> TYPE = new ResourceType<>(DistributedLeaderElection.class);
 

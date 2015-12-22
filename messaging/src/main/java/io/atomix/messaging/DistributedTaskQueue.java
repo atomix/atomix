@@ -34,7 +34,7 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-@ResourceTypeInfo(id=-25, stateMachine=TaskQueueState.class)
+@ResourceTypeInfo(id=-32, stateMachine=TaskQueueState.class)
 public class DistributedTaskQueue<T> extends Resource<DistributedTaskQueue<T>> {
   public static final ResourceType<DistributedTaskQueue> TYPE = new ResourceType<>(DistributedTaskQueue.class);
   private long taskId;

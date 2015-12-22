@@ -91,7 +91,7 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-@ResourceTypeInfo(id=-23, stateMachine=MembershipGroupState.class)
+@ResourceTypeInfo(id=-20, stateMachine=MembershipGroupState.class)
 public class DistributedMembershipGroup extends Resource<DistributedMembershipGroup> {
   public static final ResourceType<DistributedMembershipGroup> TYPE = new ResourceType<>(DistributedMembershipGroup.class);
 
