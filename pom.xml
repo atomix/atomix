@@ -11,7 +11,7 @@
   <artifactId>atomix-parent</artifactId>
   <version>0.1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
-  <name>Atomix</name>
+  <name>Atomix Parent Pom</name>
   <description>Distributed coordination framework based on the Raft consensus algorithm.</description>
   <url>http://github.com/atomix/atomix</url>
   <inceptionYear>2013</inceptionYear>
@@ -87,7 +87,7 @@
     <dependency>
       <groupId>net.jodah</groupId>
       <artifactId>concurrentunit</artifactId>
-      <version>0.4.1</version>
+      <version>0.4.2</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -150,7 +150,7 @@
             -link http://atomix.io/copycat/api/latest/
             -group "Atomix core" io.atomix
             -group "Resource API" io.atomix.resource
-            -group "Distributed resources" io.atomix.atomic:io.atomix.collections:io.atomix.coordination
+            -group "Distributed resources" io.atomix.variables:io.atomix.collections:io.atomix.coordination
           </additionalparam>
         </configuration>
       </plugin>

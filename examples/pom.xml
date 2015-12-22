@@ -15,7 +15,7 @@
 
   <artifactId>atomix-examples-parent</artifactId>
   <packaging>pom</packaging>
-  <name>Atomix Examples</name>
+  <name>Atomix Examples Parent Pom</name>
   <description>Example projects for Atomix.</description>
   <url>http://github.com/atomix/atomix</url>
   <inceptionYear>2013</inceptionYear>
