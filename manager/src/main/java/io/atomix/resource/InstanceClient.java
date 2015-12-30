@@ -39,21 +39,25 @@ import java.util.function.Consumer;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class InstanceClient implements CopycatClient {
-  private final long resource;
+  private long resource;
   private final CopycatClient client;
   private final Transport transport;
-  private final InstanceSession session;
+  private InstanceSession session;
   private final Map<String, Set<EventListener>> eventListeners = new ConcurrentHashMap<>();
   private final Map<String, Listener<InstanceEvent<?>>> listeners = new ConcurrentHashMap<>();
 
-  /**
-   * @throws NullPointerException if {@code client} is null
-   */
-  public InstanceClient(long resource, CopycatClient client, Transport transport) {
-    this.resource = resource;
+  public InstanceClient(CopycatClient client, Transport transport) {
     this.client = Assert.notNull(client, "client");
-    this.transport = transport;
-    this.session = new InstanceSession(resource, client.session(), client.context());
+    this.transport = Assert.notNull(transport, "transport");
+  }
+
+  /**
+   * Resets the instance resource ID.
+   */
+  InstanceClient reset(long resourceId) {
+    this.resource = resourceId;
+    this.session = new InstanceSession(resourceId, client.session(), client.context());;
+    return this;
   }
 
   @Override
@@ -83,7 +87,7 @@ public class InstanceClient implements CopycatClient {
 
   @Override
   public Serializer serializer() {
-    return null;
+    return client.serializer();
   }
 
   @Override

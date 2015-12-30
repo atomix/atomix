@@ -48,15 +48,6 @@ public abstract class Resource<T extends Resource<T>> {
   }
 
   /**
-   * Resets the internal Raft client.
-   *
-   * @param client The internal Raft client.
-   */
-  final void reset(CopycatClient client) {
-    this.client = Assert.notNull(client, "client");
-  }
-
-  /**
    * Returns the resource type.
    *
    * @return The resource type.

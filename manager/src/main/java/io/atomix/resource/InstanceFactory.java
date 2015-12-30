@@ -173,8 +173,9 @@ public class InstanceFactory implements Managed<InstanceFactory> {
     return client.submit(new GetResource(Assert.notNull(key, "key"), Assert.notNull(type, "type").id()))
       .thenApply(id -> instances.computeIfAbsent(id, i -> {
         try {
-          T instance = type.resource().getConstructor(CopycatClient.class).newInstance(new InstanceClient(id, client, transport));
-          return new Instance<>(key, type, Instance.Method.GET, instance);
+          InstanceClient instanceClient = new InstanceClient(client, transport);
+          T instance = type.resource().getConstructor(CopycatClient.class).newInstance(instanceClient.reset(id));
+          return new Instance<>(key, type, Instance.Method.GET, instanceClient, instance);
         } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
           throw new RuntimeException(e);
         }
@@ -237,8 +238,9 @@ public class InstanceFactory implements Managed<InstanceFactory> {
     return client.submit(new CreateResource(Assert.notNull(key, "key"), Assert.notNull(type, "type").id()))
       .thenApply(id -> instances.computeIfAbsent(id, i -> {
         try {
-          T instance = type.resource().getConstructor(CopycatClient.class).newInstance(new InstanceClient(id, client, transport));
-          return new Instance<>(key, type, Instance.Method.CREATE, instance);
+          InstanceClient instanceClient = new InstanceClient(client, transport);
+          T instance = type.resource().getConstructor(CopycatClient.class).newInstance(instanceClient.reset(id));
+          return new Instance<>(key, type, Instance.Method.CREATE, instanceClient, instance);
         } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
           throw new ResourceException(e);
         }
@@ -346,7 +348,7 @@ public class InstanceFactory implements Managed<InstanceFactory> {
     return (result, error) -> {
       if (error == null) {
         if (result > 0) {
-          instance.instance.reset(new InstanceClient(result, client, transport));
+          instance.client.reset(result);
           instances.put(result, instance);
           recoverResources(iterator, future);
         }
@@ -392,12 +394,14 @@ public class InstanceFactory implements Managed<InstanceFactory> {
     private final String key;
     private final ResourceType type;
     private final Method method;
+    private final InstanceClient client;
     private final T instance;
 
-    private Instance(String key, ResourceType type, Method method, T instance) {
+    private Instance(String key, ResourceType type, Method method, InstanceClient client, T instance) {
       this.key = key;
       this.type = type;
       this.method = method;
+      this.client = client;
       this.instance = instance;
     }
   }
