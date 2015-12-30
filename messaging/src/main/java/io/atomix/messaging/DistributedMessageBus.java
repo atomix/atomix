@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.coordination;
+package io.atomix.messaging;
 
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.Client;
 import io.atomix.catalyst.transport.Connection;
 import io.atomix.catalyst.transport.Server;
 import io.atomix.catalyst.util.concurrent.Futures;
-import io.atomix.coordination.state.MessageBusCommands;
-import io.atomix.coordination.state.MessageBusState;
 import io.atomix.copycat.client.CopycatClient;
+import io.atomix.messaging.state.MessageBusCommands;
+import io.atomix.messaging.state.MessageBusState;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceType;
 import io.atomix.resource.ResourceTypeInfo;
@@ -69,7 +69,7 @@ import java.util.function.Function;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-@ResourceTypeInfo(id=-24, stateMachine=MessageBusState.class)
+@ResourceTypeInfo(id=-30, stateMachine=MessageBusState.class)
 public class DistributedMessageBus extends Resource<DistributedMessageBus> {
   public static final ResourceType<DistributedMessageBus> TYPE = new ResourceType<>(DistributedMessageBus.class);
 

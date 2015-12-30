@@ -419,4 +419,52 @@ public final class MembershipGroupCommands {
     }
   }
 
+  /**
+   * Membership group message.
+   */
+  @SerializeWith(id=119)
+  public static class Message implements CatalystSerializable {
+    private String topic;
+    private Object body;
+
+    public Message() {
+    }
+
+    public Message(String topic, Object body) {
+      this.topic = Assert.notNull(topic, "topic");
+      this.body = body;
+    }
+
+    /**
+     * Returns the message topic.
+     *
+     * @return The message topic.
+     */
+    public String topic() {
+      return topic;
+    }
+
+    /**
+     * Returns the message body.
+     *
+     * @return The message body.
+     */
+    public Object body() {
+      return body;
+    }
+
+    @Override
+    public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
+      buffer.writeString(topic);
+      serializer.writeObject(body, buffer);
+    }
+
+    @Override
+    public void readObject(BufferInput<?> buffer, Serializer serializer) {
+      topic = buffer.readString();
+      body = serializer.readObject(buffer);
+    }
+
+  }
+
 }

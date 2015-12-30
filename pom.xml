@@ -65,6 +65,7 @@
     <module>resource</module>
     <module>manager</module>
     <module>collections</module>
+    <module>messaging</module>
     <module>coordination</module>
     <module>variables</module>
     <module>examples</module>

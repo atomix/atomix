@@ -15,14 +15,13 @@
  */
 package io.atomix;
 
-import java.util.function.Function;
-
+import io.atomix.atomix.testing.AbstractAtomixTest;
+import io.atomix.catalyst.transport.Address;
+import io.atomix.messaging.DistributedMessageBus;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import io.atomix.atomix.testing.AbstractAtomixTest;
-import io.atomix.catalyst.transport.Address;
-import io.atomix.coordination.DistributedMessageBus;
+import java.util.function.Function;
 
 /**
  * Atomix message bus test.

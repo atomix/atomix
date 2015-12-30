@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.coordination.state;
+package io.atomix.messaging.state;
 
 import io.atomix.catalyst.transport.Address;
 import io.atomix.copycat.client.session.Session;

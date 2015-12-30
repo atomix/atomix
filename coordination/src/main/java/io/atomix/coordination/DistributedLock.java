@@ -54,7 +54,7 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@ResourceTypeInfo(id=-21, stateMachine=LockState.class)
+@ResourceTypeInfo(id=-22, stateMachine=LockState.class)
 public class DistributedLock extends Resource<DistributedLock> {
   public static final ResourceType<DistributedLock> TYPE = new ResourceType<DistributedLock>(DistributedLock.class);
 

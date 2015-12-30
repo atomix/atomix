@@ -15,7 +15,6 @@
  */
 package io.atomix.coordination.state;
 
-import io.atomix.coordination.Message;
 import io.atomix.copycat.client.session.Session;
 import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.session.SessionListener;
@@ -183,7 +182,7 @@ public class MembershipGroupState extends ResourceStateMachine implements Sessio
         throw new IllegalArgumentException("unknown member: " + commit.operation().member());
       }
 
-      join.session().publish("message", new Message(commit.operation().topic(), commit.operation().message()));
+      join.session().publish("message", new MembershipGroupCommands.Message(commit.operation().topic(), commit.operation().message()));
     } finally {
       commit.close();
     }

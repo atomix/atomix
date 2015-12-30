@@ -19,6 +19,7 @@ Atomix exposes a set of high level APIs with tools - known as resources - to sol
 including:
 * [Distributed coordination tools](http://atomix.io/atomix/user-manual/coordination/) - locks, leader elections, group membership
 * [Distributed collections](http://atomix.io/atomix/user-manual/collections/) - maps, multimaps, sets, queues
+* [Distributed messaging](http://atomix.io/atomix/user-manual/messaging/) - message bus, publish-subscribe, reliable work queues
 * [Distributed atomic variables](http://atomix.io/atomix/user-manual/atomics/) - atomic value, atomic long
 
 ### Project status: BETA

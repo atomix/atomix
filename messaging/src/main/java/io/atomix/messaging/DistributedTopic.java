@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.coordination;
+package io.atomix.messaging;
 
 import io.atomix.catalyst.util.Listener;
-import io.atomix.coordination.state.TopicCommands;
-import io.atomix.coordination.state.TopicState;
 import io.atomix.copycat.client.CopycatClient;
+import io.atomix.messaging.state.TopicCommands;
+import io.atomix.messaging.state.TopicState;
 import io.atomix.resource.Consistency;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceType;
@@ -58,7 +58,7 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@ResourceTypeInfo(id=-25, stateMachine=TopicState.class)
+@ResourceTypeInfo(id=-31, stateMachine=TopicState.class)
 public class DistributedTopic<T> extends Resource<DistributedTopic<T>> {
   public static final ResourceType<DistributedTopic> TYPE = new ResourceType<>(DistributedTopic.class);
 

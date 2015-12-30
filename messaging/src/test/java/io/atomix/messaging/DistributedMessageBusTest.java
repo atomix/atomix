@@ -13,14 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.coordination;
-
-import org.testng.annotations.Test;
+package io.atomix.messaging;
 
 import io.atomix.atomix.testing.AbstractCopycatTest;
 import io.atomix.catalyst.transport.Address;
-import io.atomix.coordination.state.MessageBusState;
+import io.atomix.messaging.state.MessageBusState;
 import io.atomix.resource.ResourceStateMachine;
+import org.testng.annotations.Test;
 
 /**
  * Distributed message bus test.
