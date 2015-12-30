@@ -15,7 +15,6 @@
  */
 package io.atomix.manager;
 
-import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.catalyst.util.Listeners;
 import io.atomix.copycat.client.session.Session;
@@ -30,34 +29,29 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-class ManagedResourceSession implements Session {
-
-  /**
-   * Resource session state.
-   */
-  private enum State {
-    OPEN,
-    CLOSED,
-    EXPIRED
-  }
-
-  private State state = State.OPEN;
+final class ManagedResourceSession implements Session {
   private final long resource;
   private final Session parent;
-  private final Listeners<Session> openListeners = new Listeners<>();
-  private final Listeners<Session> closeListeners = new Listeners<>();
   private final Map<String, Listeners<Object>> eventListeners = new ConcurrentHashMap<>();
 
   public ManagedResourceSession(long resource, Session parent) {
     this.resource = resource;
     this.parent = parent;
-    parent.onOpen(this::handleOpen);
-    parent.onClose(this::handleClose);
   }
 
   @Override
   public long id() {
     return resource;
+  }
+
+  @Override
+  public State state() {
+    return parent.state();
+  }
+
+  @Override
+  public Listener<State> onStateChange(Consumer<State> callback) {
+    return parent.onStateChange(callback);
   }
 
   @Override
@@ -101,51 +95,6 @@ class ManagedResourceSession implements Session {
       parent.onEvent(event, message -> handleEvent(event, (InstanceEvent) message));
     }
     return listeners.add(listener);
-  }
-
-  @Override
-  public boolean isOpen() {
-    return state == State.OPEN;
-  }
-
-  /**
-   * Handles a session open event.
-   */
-  private void handleOpen(Session session) {
-    state = State.OPEN;
-    for (Consumer<Session> listener : openListeners) {
-      listener.accept(this);
-    }
-  }
-
-  @Override
-  public Listener<Session> onOpen(Consumer<Session> listener) {
-    return openListeners.add(Assert.notNull(listener, "listener"));
-  }
-
-  /**
-   * Handles a session close event.
-   */
-  private void handleClose(Session session) {
-    state = session.isExpired() ? State.EXPIRED : State.CLOSED;
-    for (Consumer<Session> listener : closeListeners) {
-      listener.accept(this);
-    }
-  }
-
-  @Override
-  public Listener<Session> onClose(Consumer<Session> listener) {
-    return closeListeners.add(Assert.notNull(listener, "listener"));
-  }
-
-  @Override
-  public boolean isClosed() {
-    return state == State.CLOSED || state == State.EXPIRED;
-  }
-
-  @Override
-  public boolean isExpired() {
-    return state == State.EXPIRED;
   }
 
 }

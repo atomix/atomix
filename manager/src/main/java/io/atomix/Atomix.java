@@ -430,9 +430,10 @@ public abstract class Atomix implements Managed<Atomix> {
 
     protected Builder(Collection<Address> members) {
       clientBuilder = CopycatClient.builder(members)
-        .withConnectionStrategy(ConnectionStrategies.BACKOFF)
+        .withServerSelectionStrategy(ServerSelectionStrategies.ANY)
+        .withConnectionStrategy(ConnectionStrategies.FIBONACCI_BACKOFF)
         .withRecoveryStrategy(RecoveryStrategies.RECOVER)
-        .withSubmissionStrategy(SubmissionStrategies.ANY);
+        .withRetryStrategy(RetryStrategies.FIBONACCI_BACKOFF);
     }
 
     /**

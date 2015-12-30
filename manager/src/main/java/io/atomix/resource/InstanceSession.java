@@ -53,13 +53,13 @@ public final class InstanceSession implements Session {
   }
 
   @Override
-  public boolean isOpen() {
-    return parent.isOpen();
+  public State state() {
+    return parent.state();
   }
 
   @Override
-  public Listener<Session> onOpen(Consumer<Session> listener) {
-    return parent.onOpen(Assert.notNull(listener, "listener"));
+  public Listener<State> onStateChange(Consumer<State> callback) {
+    return parent.onStateChange(callback);
   }
 
   @Override
@@ -117,21 +117,6 @@ public final class InstanceSession implements Session {
         }
       }
     }
-  }
-
-  @Override
-  public Listener<Session> onClose(Consumer<Session> listener) {
-    return parent.onClose(Assert.notNull(listener, "listener"));
-  }
-
-  @Override
-  public boolean isClosed() {
-    return parent.isClosed();
-  }
-
-  @Override
-  public boolean isExpired() {
-    return parent.isExpired();
   }
 
   @Override

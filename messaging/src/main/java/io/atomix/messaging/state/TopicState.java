@@ -85,7 +85,7 @@ public class TopicState extends ResourceStateMachine implements SessionListener 
       Iterator<Map.Entry<Long, Commit<TopicCommands.Listen>>> iterator = listeners.entrySet().iterator();
       while (iterator.hasNext()) {
         Commit<TopicCommands.Listen> listener = iterator.next().getValue();
-        if (listener.session().isOpen()) {
+        if (listener.session().state() == Session.State.OPEN) {
           listener.session().publish("message", commit.operation().message());
         } else {
           iterator.remove();

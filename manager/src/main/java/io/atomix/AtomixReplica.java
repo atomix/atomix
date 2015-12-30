@@ -20,14 +20,17 @@ import io.atomix.catalyst.transport.*;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.ConfigurationException;
 import io.atomix.copycat.client.CopycatClient;
-import io.atomix.copycat.client.SubmissionStrategy;
+import io.atomix.copycat.client.ServerSelectionStrategy;
 import io.atomix.copycat.server.CopycatServer;
 import io.atomix.copycat.server.storage.Storage;
 import io.atomix.manager.ResourceManager;
 import io.atomix.resource.ResourceRegistry;
 
 import java.time.Duration;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
@@ -153,19 +156,17 @@ public final class AtomixReplica extends Atomix {
   }
 
   /**
-   * Combined submission strategy.
+   * Combined server selection strategy.
    */
-  private static class CombinedSubmissionStrategy implements SubmissionStrategy {
-    private final Address address;
+  private static class CombinedSelectionStrategy implements ServerSelectionStrategy {
+    private final Collection<Address> addresses;
 
-    private CombinedSubmissionStrategy(Address address) {
-      this.address = address;
+    private CombinedSelectionStrategy(Address address) {
+      this.addresses = Collections.singleton(address);
     }
 
     @Override
-    public List<Address> getConnections(Address leader, List<Address> servers) {
-      List<Address> addresses = new ArrayList<>(1);
-      addresses.add(address);
+    public Collection<Address> selectConnections(Address leader, List<Address> servers) {
       return addresses;
     }
   }
@@ -433,7 +434,8 @@ public final class AtomixReplica extends Atomix {
       // directly through the local server, ensuring we don't incur unnecessary network traffic by
       // sending operations to a remote server when a local server is already available in the same JVM.=
       clientBuilder.withTransport(new LocalTransport(localRegistry))
-        .withSubmissionStrategy(new CombinedSubmissionStrategy(clientAddress)).build();
+        .withServerSelectionStrategy(new CombinedSelectionStrategy(clientAddress))
+        .build();
 
       // Construct the underlying CopycatServer. The server should have been configured with a CombinedTransport
       // that facilitates the local client connecting directly to the server.
