@@ -16,12 +16,16 @@
 package io.atomix.resource;
 
 import io.atomix.catalyst.util.Assert;
+import io.atomix.catalyst.util.Listener;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.copycat.client.Command;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.copycat.client.Query;
 
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.function.Consumer;
 
 /**
  * Fault-tolerant stateful distributed object.
@@ -40,11 +44,45 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class Resource<T extends Resource<T>> {
+
+  /**
+   * Resource state.
+   */
+  public enum State {
+
+    /**
+     * Indicates that the client is connected to the cluster and operating normally.
+     */
+    CONNECTED,
+
+    /**
+     * Indicates that the client is suspended and unable to communicate with the cluster.
+     */
+    SUSPENDED,
+
+    /**
+     * Indicates that the client is closed.
+     */
+    CLOSED
+
+  }
+
   protected CopycatClient client;
+  private State state;
+  private final Set<StateChangeListener> changeListeners = new CopyOnWriteArraySet<>();
   private Consistency consistency = Consistency.ATOMIC;
 
   protected Resource(CopycatClient client) {
     this.client = Assert.notNull(client, "client");
+    client.onStateChange(this::onStateChange);
+  }
+
+  /**
+   * Called when a client state change occurs.
+   */
+  private void onStateChange(CopycatClient.State state) {
+    this.state = State.valueOf(state.name());
+    changeListeners.forEach(l -> l.accept(this.state));
   }
 
   /**
@@ -53,6 +91,25 @@ public abstract class Resource<T extends Resource<T>> {
    * @return The resource type.
    */
   public abstract ResourceType<T> type();
+
+  /**
+   * Returns the current resource state.
+   *
+   * @return The current resource state.
+   */
+  public State state() {
+    return state;
+  }
+
+  /**
+   * Registers a resource state change listener.
+   *
+   * @param callback The callback to call when the resource state changes.
+   * @return The state change listener.
+   */
+  public Listener<State> onStateChange(Consumer<State> callback) {
+    return new StateChangeListener(Assert.notNull(callback, "callback"));
+  }
 
   /**
    * Returns the resource thread context.
@@ -156,6 +213,28 @@ public abstract class Resource<T extends Resource<T>> {
   @Override
   public String toString() {
     return String.format("%s[id=%s]", getClass().getSimpleName(), client.session().id());
+  }
+
+  /**
+   * Resource state change listener.
+   */
+  private class StateChangeListener implements Listener<State> {
+    private final Consumer<State> callback;
+
+    private StateChangeListener(Consumer<State> callback) {
+      this.callback = callback;
+      changeListeners.add(this);
+    }
+
+    @Override
+    public void accept(State state) {
+      callback.accept(state);
+    }
+
+    @Override
+    public void close() {
+      changeListeners.remove(this);
+    }
   }
 
 }
