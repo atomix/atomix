@@ -44,7 +44,7 @@ public class InstanceFactory implements Managed<InstanceFactory> {
   private static final Logger LOGGER = LoggerFactory.getLogger(InstanceFactory.class);
   private final CopycatClient client;
   private final Transport transport;
-  private final Map<Long, Instance> instances = new ConcurrentHashMap<>();
+  final Map<Long, Instance> instances = new ConcurrentHashMap<>();
 
   public InstanceFactory(CopycatClient client, Transport transport) {
     this.client = Assert.notNull(client, "client");
@@ -173,8 +173,9 @@ public class InstanceFactory implements Managed<InstanceFactory> {
     return client.submit(new GetResource(Assert.notNull(key, "key"), Assert.notNull(type, "type").id()))
       .thenApply(id -> instances.computeIfAbsent(id, i -> {
         try {
-          T instance = type.resource().getConstructor(CopycatClient.class).newInstance(new InstanceClient(id, client, transport));
-          return new Instance<>(key, type, Instance.Method.GET, instance);
+          InstanceClient instanceClient = new InstanceClient(client, transport, this);
+          T instance = type.resource().getConstructor(CopycatClient.class).newInstance(instanceClient.reset(id));
+          return new Instance<>(key, type, Instance.Method.GET, instanceClient, instance);
         } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
           throw new RuntimeException(e);
         }
@@ -237,8 +238,9 @@ public class InstanceFactory implements Managed<InstanceFactory> {
     return client.submit(new CreateResource(Assert.notNull(key, "key"), Assert.notNull(type, "type").id()))
       .thenApply(id -> instances.computeIfAbsent(id, i -> {
         try {
-          T instance = type.resource().getConstructor(CopycatClient.class).newInstance(new InstanceClient(id, client, transport));
-          return new Instance<>(key, type, Instance.Method.CREATE, instance);
+          InstanceClient instanceClient = new InstanceClient(client, transport, this);
+          T instance = type.resource().getConstructor(CopycatClient.class).newInstance(instanceClient.reset(id));
+          return new Instance<>(key, type, Instance.Method.CREATE, instanceClient, instance);
         } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
           throw new ResourceException(e);
         }
@@ -346,7 +348,7 @@ public class InstanceFactory implements Managed<InstanceFactory> {
     return (result, error) -> {
       if (error == null) {
         if (result > 0) {
-          instance.instance.reset(new InstanceClient(result, client, transport));
+          instance.client.reset(result);
           instances.put(result, instance);
           recoverResources(iterator, future);
         }
@@ -363,7 +365,12 @@ public class InstanceFactory implements Managed<InstanceFactory> {
    */
   @Override
   public CompletableFuture<Void> close() {
-    return client.close();
+    CompletableFuture<?>[] futures = new CompletableFuture[instances.size()];
+    int i = 0;
+    for (Instance instance : instances.values()) {
+      futures[i++] = instance.instance.close();
+    }
+    return CompletableFuture.allOf(futures).thenCompose(v -> client.close());
   }
 
   /**
@@ -379,7 +386,7 @@ public class InstanceFactory implements Managed<InstanceFactory> {
   /**
    * Resource instance.
    */
-  private static class Instance<T extends Resource> {
+  final static class Instance<T extends Resource> {
 
     /**
      * The method with which the resource was opened.
@@ -392,12 +399,14 @@ public class InstanceFactory implements Managed<InstanceFactory> {
     private final String key;
     private final ResourceType type;
     private final Method method;
+    private final InstanceClient client;
     private final T instance;
 
-    private Instance(String key, ResourceType type, Method method, T instance) {
+    private Instance(String key, ResourceType type, Method method, InstanceClient client, T instance) {
       this.key = key;
       this.type = type;
       this.method = method;
+      this.client = client;
       this.instance = instance;
     }
   }

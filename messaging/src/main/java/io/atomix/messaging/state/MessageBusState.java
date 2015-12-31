@@ -51,7 +51,8 @@ public class MessageBusState extends ResourceStateMachine implements SessionList
   public void close(Session session) {
     members.remove(session.id());
     for (Commit<MessageBusCommands.Join> member : members.values()) {
-      member.session().publish("leave", session.id());
+      if (member.session().state() == Session.State.OPEN)
+        member.session().publish("leave", session.id());
     }
   }
 

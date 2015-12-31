@@ -63,7 +63,8 @@ public class MembershipGroupState extends ResourceStateMachine implements Sessio
     }
 
     for (Commit<MembershipGroupCommands.Join> member : members.values()) {
-      member.session().publish("leave", session.id());
+      if (member.session().state() == Session.State.OPEN)
+        member.session().publish("leave", session.id());
     }
   }
 
