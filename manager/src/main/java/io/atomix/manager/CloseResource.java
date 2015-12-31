@@ -27,7 +27,7 @@ import io.atomix.copycat.client.Command;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=38)
+@SerializeWith(id=42)
 public class CloseResource implements Command<Void>, CatalystSerializable {
   private long resource;
 

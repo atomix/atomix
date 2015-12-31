@@ -365,7 +365,12 @@ public class InstanceFactory implements Managed<InstanceFactory> {
    */
   @Override
   public CompletableFuture<Void> close() {
-    return client.close();
+    CompletableFuture<?>[] futures = new CompletableFuture[instances.size()];
+    int i = 0;
+    for (Instance instance : instances.values()) {
+      futures[i++] = instance.instance.close();
+    }
+    return CompletableFuture.allOf(futures).thenCompose(v -> client.close());
   }
 
   /**
@@ -381,7 +386,7 @@ public class InstanceFactory implements Managed<InstanceFactory> {
   /**
    * Resource instance.
    */
-  private static class Instance<T extends Resource> {
+  final static class Instance<T extends Resource> {
 
     /**
      * The method with which the resource was opened.

@@ -314,12 +314,7 @@ public class DistributedMessageBus extends Resource<DistributedMessageBus> {
     });
   }
 
-  /**
-   * Closes the message bus.
-   *
-   * @return A completable future to be completed once the message bus is closed.
-   * @throws IllegalStateException if the message bus is not open
-   */
+  @Override
   public synchronized CompletableFuture<Void> close() {
     if (closeFuture != null)
       return closeFuture;
