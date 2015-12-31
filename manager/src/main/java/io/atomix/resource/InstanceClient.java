@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
 
 /**
@@ -45,13 +46,18 @@ public class InstanceClient implements CopycatClient {
   private final Transport transport;
   private final InstanceFactory factory;
   private InstanceSession session;
+  private State state;
+  private final Listener<State> changeListener;
   private final Map<String, Set<EventListener>> eventListeners = new ConcurrentHashMap<>();
   private final Map<String, Listener<InstanceEvent<?>>> listeners = new ConcurrentHashMap<>();
+  private final Set<StateChangeListener> changeListeners = new CopyOnWriteArraySet<>();
 
   public InstanceClient(CopycatClient client, Transport transport, InstanceFactory factory) {
     this.client = Assert.notNull(client, "client");
     this.transport = Assert.notNull(transport, "transport");
     this.factory = Assert.notNull(factory, "factory");
+    this.state = client.state();
+    this.changeListener = client.onStateChange(this::onStateChange);
   }
 
   /**
@@ -66,6 +72,14 @@ public class InstanceClient implements CopycatClient {
   @Override
   public State state() {
     return client.state();
+  }
+
+  /**
+   * Called when the parent client's state changes.
+   */
+  private void onStateChange(State state) {
+    this.state = client.state();
+    changeListeners.forEach(l -> l.accept(state));
   }
 
   @Override
@@ -162,7 +176,11 @@ public class InstanceClient implements CopycatClient {
   @Override
   public CompletableFuture<Void> close() {
     return client.submit(new CloseResource(resource))
-      .whenComplete((result, error) -> factory.instances.remove(resource));
+      .whenComplete((result, error) -> {
+        factory.instances.remove(resource);
+        changeListener.close();
+        onStateChange(State.CLOSED);
+      });
   }
 
   @Override
@@ -207,6 +225,28 @@ public class InstanceClient implements CopycatClient {
           }
         }
       }
+    }
+  }
+
+  /**
+   * Resource state change listener.
+   */
+  private class StateChangeListener implements Listener<State> {
+    private final Consumer<State> callback;
+
+    private StateChangeListener(Consumer<State> callback) {
+      this.callback = callback;
+      changeListeners.add(this);
+    }
+
+    @Override
+    public void accept(State state) {
+      callback.accept(state);
+    }
+
+    @Override
+    public void close() {
+      changeListeners.remove(this);
     }
   }
 
