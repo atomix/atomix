@@ -192,6 +192,15 @@ public abstract class Resource<T extends Resource<T>> {
   }
 
   /**
+   * Closes the resource.
+   *
+   * @return A completable future to be completed once the resource is closed.
+   */
+  public CompletableFuture<Void> close() {
+    return client.close();
+  }
+
+  /**
    * Deletes the resource state.
    *
    * @return A completable future to be completed once the resource has been deleted.

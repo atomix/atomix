@@ -24,6 +24,7 @@ import io.atomix.copycat.client.Command;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.copycat.client.Query;
 import io.atomix.copycat.client.session.Session;
+import io.atomix.manager.CloseResource;
 import io.atomix.manager.DeleteResource;
 
 import java.util.HashSet;
@@ -42,13 +43,15 @@ public class InstanceClient implements CopycatClient {
   private long resource;
   private final CopycatClient client;
   private final Transport transport;
+  private final InstanceFactory factory;
   private InstanceSession session;
   private final Map<String, Set<EventListener>> eventListeners = new ConcurrentHashMap<>();
   private final Map<String, Listener<InstanceEvent<?>>> listeners = new ConcurrentHashMap<>();
 
-  public InstanceClient(CopycatClient client, Transport transport) {
+  public InstanceClient(CopycatClient client, Transport transport, InstanceFactory factory) {
     this.client = Assert.notNull(client, "client");
     this.transport = Assert.notNull(transport, "transport");
+    this.factory = Assert.notNull(factory, "factory");
   }
 
   /**
@@ -158,7 +161,8 @@ public class InstanceClient implements CopycatClient {
 
   @Override
   public CompletableFuture<Void> close() {
-    return CompletableFuture.completedFuture(null);
+    return client.submit(new CloseResource(resource))
+      .whenComplete((result, error) -> factory.instances.remove(resource));
   }
 
   @Override

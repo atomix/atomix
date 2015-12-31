@@ -58,6 +58,7 @@ public class ResourceManager extends StateMachine implements SessionListener, Sn
     executor.register(GetResourceIfExists.class, this::getResourceIfExists);
     executor.register(CreateResource.class, this::createResource);
     executor.register(CreateResourceIfExists.class, this::createResourceIfExists);
+    executor.register(CloseResource.class, this::closeResource);
     executor.register(DeleteResource.class, this::deleteResource);
     executor.register(ResourceExists.class, this::resourceExists);
     executor.register(GetResourceKeys.class, this::getResourceKeys);
@@ -66,7 +67,7 @@ public class ResourceManager extends StateMachine implements SessionListener, Sn
   @Override
   public void snapshot(SnapshotWriter writer) {
     List<ResourceHolder> resources = new ArrayList<>(this.resources.values());
-    Collections.sort(resources, (r1, r2) -> (int)(r1.id - r2.id));
+    Collections.sort(resources, (r1, r2) -> (int) (r1.id - r2.id));
     for (ResourceHolder resource : resources) {
       if (resource.stateMachine instanceof Snapshottable) {
         ((Snapshottable) resource.stateMachine).snapshot(writer);
@@ -289,6 +290,26 @@ public class ResourceManager extends StateMachine implements SessionListener, Sn
       return keys.containsKey(commit.operation().key());
     } finally {
       commit.close();
+    }
+  }
+
+  /**
+   * Closes a resource.
+   */
+  protected void closeResource(Commit<CloseResource> commit) {
+    SessionHolder session = sessions.get(commit.operation().resource());
+    if (session == null) {
+      try {
+        throw new ResourceManagerException("unknown resource session: " + commit.operation().resource());
+      } finally {
+        commit.close();
+      }
+    }
+
+    ResourceHolder resource = resources.get(session.resource);
+    resource.sessions.remove(session.commit.session().id());
+    if (resource.stateMachine instanceof SessionListener) {
+      ((SessionListener) resource.stateMachine).close(session.session);
     }
   }
 

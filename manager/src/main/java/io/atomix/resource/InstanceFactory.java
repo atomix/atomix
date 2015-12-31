@@ -44,7 +44,7 @@ public class InstanceFactory implements Managed<InstanceFactory> {
   private static final Logger LOGGER = LoggerFactory.getLogger(InstanceFactory.class);
   private final CopycatClient client;
   private final Transport transport;
-  private final Map<Long, Instance> instances = new ConcurrentHashMap<>();
+  final Map<Long, Instance> instances = new ConcurrentHashMap<>();
 
   public InstanceFactory(CopycatClient client, Transport transport) {
     this.client = Assert.notNull(client, "client");
@@ -173,7 +173,7 @@ public class InstanceFactory implements Managed<InstanceFactory> {
     return client.submit(new GetResource(Assert.notNull(key, "key"), Assert.notNull(type, "type").id()))
       .thenApply(id -> instances.computeIfAbsent(id, i -> {
         try {
-          InstanceClient instanceClient = new InstanceClient(client, transport);
+          InstanceClient instanceClient = new InstanceClient(client, transport, this);
           T instance = type.resource().getConstructor(CopycatClient.class).newInstance(instanceClient.reset(id));
           return new Instance<>(key, type, Instance.Method.GET, instanceClient, instance);
         } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
@@ -238,7 +238,7 @@ public class InstanceFactory implements Managed<InstanceFactory> {
     return client.submit(new CreateResource(Assert.notNull(key, "key"), Assert.notNull(type, "type").id()))
       .thenApply(id -> instances.computeIfAbsent(id, i -> {
         try {
-          InstanceClient instanceClient = new InstanceClient(client, transport);
+          InstanceClient instanceClient = new InstanceClient(client, transport, this);
           T instance = type.resource().getConstructor(CopycatClient.class).newInstance(instanceClient.reset(id));
           return new Instance<>(key, type, Instance.Method.CREATE, instanceClient, instance);
         } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
