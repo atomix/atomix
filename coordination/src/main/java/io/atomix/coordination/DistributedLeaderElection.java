@@ -59,14 +59,14 @@ import java.util.function.Consumer;
  * When a leader is elected, the election callback will be supplied with a monotonically increasing election
  * number known commonly as an <em>epoch</em>. The epoch is guaranteed to be unique across the entire cluster
  * and over the full lifetime of a resource for any given election.
- * <h3>Handling failures</h3>
+ * <h3>Detecting failures</h3>
  * Once an instance is elected leader, the cluster will track the leader's availability and elect a new leader
  * in the event that the leader becomes disconnected from the cluster. However, in order to ensure no two processes
  * believe themselves to be the leader simultaneously, the leader itself may need to take additional measures to
  * detect failures. If the resource's {@link DistributedLeaderElection#state() State} transitions to
- * {@link DistributedLeaderElection.State#SUSPENDED}, that indicates that the client cannot communicate with the
+ * {@link io.atomix.resource.Resource.State#SUSPENDED}, that indicates that the client cannot communicate with the
  * cluster. In that case, a new leader may be elected after some time. Users should assume that the
- * {@link io.atomix.resource.Resource.State#SUSPENDED} state is indicative of a loss of leadership. To listen
+ * {@link io.atomix.resource.Resource.State#SUSPENDED SUSPENDED} state is indicative of a loss of leadership. To listen
  * for a leader state change, register a {@link DistributedLeaderElection#onStateChange(Consumer) state change listener}
  * once the leader is elected.
  * <p>
