@@ -142,7 +142,7 @@
           <doctitle>Atomix API Reference (${jv})</doctitle>
           <windowtitle>Atomix API Reference (${jv})</windowtitle>
           <aggregate>true</aggregate>
-          <excludePackageNames>io.atomix.examples*:*.state*:io.atomix.manager*</excludePackageNames>
+          <excludePackageNames>io.atomix.examples*:*.state*:io.atomix.manager*:io.atomix.testing*</excludePackageNames>
           <additionalparam>
             -Xdoclint:none
             -notimestamp
@@ -151,7 +151,7 @@
             -link http://atomix.io/copycat/api/latest/
             -group "Atomix core" io.atomix
             -group "Resource API" io.atomix.resource
-            -group "Distributed resources" io.atomix.variables:io.atomix.collections:io.atomix.coordination
+            -group "Distributed resources" io.atomix.variables:io.atomix.collections:io.atomix.coordination:io.atomix.messaging
           </additionalparam>
         </configuration>
       </plugin>
