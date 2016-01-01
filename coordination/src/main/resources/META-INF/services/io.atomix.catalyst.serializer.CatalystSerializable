@@ -16,6 +16,7 @@
 io.atomix.coordination.state.LeaderElectionCommands$Listen
 io.atomix.coordination.state.LeaderElectionCommands$Unlisten
 io.atomix.coordination.state.LeaderElectionCommands$IsLeader
+io.atomix.coordination.state.LeaderElectionCommands$Resign
 
 io.atomix.coordination.state.LockCommands$Lock
 io.atomix.coordination.state.LockCommands$Unlock

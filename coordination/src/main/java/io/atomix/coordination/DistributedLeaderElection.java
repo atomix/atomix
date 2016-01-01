@@ -40,7 +40,7 @@ import java.util.function.Consumer;
  * instance:
  * <pre>
  *   {@code
- *   DistributedLeaderElection election = atomix.create("election", DistributedLeaderElection::new);
+ *   DistributedLeaderElection election = atomix.create("election", DistributedLeaderElection.TYPE);
  *   }
  * </pre>
  * Leaders are elected by simply registering an election callback on a leader election resource instance:
@@ -59,6 +59,34 @@ import java.util.function.Consumer;
  * When a leader is elected, the election callback will be supplied with a monotonically increasing election
  * number known commonly as an <em>epoch</em>. The epoch is guaranteed to be unique across the entire cluster
  * and over the full lifetime of a resource for any given election.
+ * <h3>Handling failures</h3>
+ * Once an instance is elected leader, the cluster will track the leader's availability and elect a new leader
+ * in the event that the leader becomes disconnected from the cluster. However, in order to ensure no two processes
+ * believe themselves to be the leader simultaneously, the leader itself may need to take additional measures to
+ * detect failures. If the resource's {@link DistributedLeaderElection#state() State} transitions to
+ * {@link DistributedLeaderElection.State#SUSPENDED}, that indicates that the client cannot communicate with the
+ * cluster. In that case, a new leader may be elected after some time. Users should assume that the
+ * {@link io.atomix.resource.Resource.State#SUSPENDED} state is indicative of a loss of leadership. To listen
+ * for a leader state change, register a {@link DistributedLeaderElection#onStateChange(Consumer) state change listener}
+ * once the leader is elected.
+ * <p>
+ * <pre>
+ *   {@code
+ *   DistributedLeaderElection election = atomix.create("election", DistributedLeaderElection.TYPE).get();
+ *   election.onElection(epoch -> {
+ *     election.onStateChange(state -> {
+ *       if (state == DistributedLeaderElection.State.SUSPENDED) {
+ *         election.resign(epoch);
+ *         System.out.println("lost leadership");
+ *       }
+ *     });
+ *   });
+ *   }
+ * </pre>
+ * In the event that the resource is able to maintain its session, the cluster may not elect a new leader until
+ * the existing leader resigns. For this reason, clients should {@link #resign(long)} their leadership explicitly
+ * when a {@link DistributedLeaderElection.State#SUSPENDED SUSPENDED} state is detected. Alternatively, leaders
+ * can poll the cluster to determine whether they're still the leader for the resource.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -133,6 +161,27 @@ public class DistributedLeaderElection extends Resource<DistributedLeaderElectio
    */
   public CompletableFuture<Boolean> isLeader(long epoch) {
     return submit(new LeaderElectionCommands.IsLeader(epoch));
+  }
+
+  /**
+   * Resigns leadership for the given epoch.
+   * <p>
+   * The epoch indicates the election for which to resign as leader and should be provided from
+   * the argument passed to the election callback.
+   * <p>
+   * <pre>
+   *   {@code
+   *   election.onElection(epoch -> {
+   *     election.resign(epoch);
+   *   });
+   *   }
+   * </pre>
+   *
+   * @param epoch The epoch for which to resign.
+   * @return A completable future to be completed once the instance has resigned from leadership for the given epoch.
+   */
+  public CompletableFuture<Void> resign(long epoch) {
+    return submit(new LeaderElectionCommands.Resign(epoch));
   }
 
   /**

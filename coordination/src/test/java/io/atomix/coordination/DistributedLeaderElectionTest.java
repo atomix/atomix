@@ -15,14 +15,13 @@
  */
 package io.atomix.coordination;
 
-import java.util.concurrent.atomic.AtomicLong;
-
-import org.testng.annotations.Test;
-
-import io.atomix.testing.AbstractCopycatTest;
 import io.atomix.coordination.state.LeaderElectionState;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.ResourceStateMachine;
+import io.atomix.testing.AbstractCopycatTest;
+import org.testng.annotations.Test;
+
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Async leader election test.
@@ -77,6 +76,38 @@ public class DistributedLeaderElectionTest extends AbstractCopycatTest {
     }).join();
 
     client1.close();
+
+    await(10000);
+  }
+
+  /**
+   * Tests resigning from a leadership.
+   */
+  public void testResignElection() throws Throwable {
+    createServers(3);
+
+    CopycatClient client1 = createClient();
+    CopycatClient client2 = createClient();
+
+    DistributedLeaderElection election1 = new DistributedLeaderElection(client1);
+    DistributedLeaderElection election2 = new DistributedLeaderElection(client2);
+
+    AtomicLong lastEpoch = new AtomicLong(0);
+    election1.onElection(epoch -> {
+      threadAssertTrue(epoch > lastEpoch.get());
+      lastEpoch.set(epoch);
+      resume();
+    }).join();
+
+    await(10000);
+
+    election2.onElection(epoch -> {
+      threadAssertTrue(epoch > lastEpoch.get());
+      lastEpoch.set(epoch);
+      resume();
+    }).join();
+
+    election1.resign(lastEpoch.get());
 
     await(10000);
   }

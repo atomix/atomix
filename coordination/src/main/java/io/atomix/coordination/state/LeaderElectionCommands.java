@@ -124,8 +124,62 @@ public final class LeaderElectionCommands {
     }
 
     @Override
+    public void writeObject(BufferOutput buffer, Serializer serializer) {
+      buffer.writeLong(epoch);
+    }
+
+    @Override
+    public void readObject(BufferInput buffer, Serializer serializer) {
+      epoch = buffer.readLong();
+    }
+
+    @Override
     public ConsistencyLevel consistency() {
       return ConsistencyLevel.LINEARIZABLE;
+    }
+  }
+
+  /**
+   * Resign command.
+   */
+  @SerializeWith(id=113)
+  public static class Resign extends ElectionCommand<Void> {
+    private long epoch;
+
+    public Resign() {
+    }
+
+    public Resign(long epoch) {
+      this.epoch = Assert.argNot(epoch, epoch < 0, "epoch cannot be negative");
+    }
+
+    /**
+     * Returns the epoch for which to resign.
+     *
+     * @return The epoch for which to resign.
+     */
+    public long epoch() {
+      return epoch;
+    }
+
+    @Override
+    public void writeObject(BufferOutput buffer, Serializer serializer) {
+      buffer.writeLong(epoch);
+    }
+
+    @Override
+    public void readObject(BufferInput buffer, Serializer serializer) {
+      epoch = buffer.readLong();
+    }
+
+    @Override
+    public ConsistencyLevel consistency() {
+      return ConsistencyLevel.LINEARIZABLE;
+    }
+
+    @Override
+    public CompactionMode compaction() {
+      return CompactionMode.SEQUENTIAL;
     }
   }
 
