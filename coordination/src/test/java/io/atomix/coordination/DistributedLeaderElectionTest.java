@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.testng.annotations.Test;
 
-import io.atomix.atomix.testing.AbstractCopycatTest;
+import io.atomix.testing.AbstractCopycatTest;
 import io.atomix.coordination.state.LeaderElectionState;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.ResourceStateMachine;

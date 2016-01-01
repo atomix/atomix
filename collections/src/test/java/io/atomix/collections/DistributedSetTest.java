@@ -20,7 +20,7 @@ import static org.testng.Assert.assertTrue;
 
 import org.testng.annotations.Test;
 
-import io.atomix.atomix.testing.AbstractCopycatTest;
+import io.atomix.testing.AbstractCopycatTest;
 import io.atomix.collections.state.SetState;
 import io.atomix.resource.ResourceStateMachine;
 

@@ -17,7 +17,7 @@ package io.atomix.coordination;
 
 import org.testng.annotations.Test;
 
-import io.atomix.atomix.testing.AbstractCopycatTest;
+import io.atomix.testing.AbstractCopycatTest;
 import io.atomix.coordination.state.LockState;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.ResourceStateMachine;

@@ -15,7 +15,7 @@
  */
 package io.atomix;
 
-import io.atomix.atomix.testing.AbstractAtomixTest;
+import io.atomix.testing.AbstractAtomixTest;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.messaging.DistributedMessageBus;
 import org.testng.annotations.BeforeClass;

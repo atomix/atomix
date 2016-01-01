@@ -20,7 +20,7 @@ import java.util.function.Function;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import io.atomix.atomix.testing.AbstractAtomixTest;
+import io.atomix.testing.AbstractAtomixTest;
 import io.atomix.coordination.DistributedMembershipGroup;
 
 /**
