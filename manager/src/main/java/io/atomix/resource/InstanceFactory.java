@@ -274,7 +274,7 @@ public class InstanceFactory implements Managed<InstanceFactory> {
    */
   public CompletableFuture<Void> recover() {
     CompletableFuture<Void> future = new CompletableFuture<>();
-    client.open().whenComplete((openResult, openError) -> {
+    client.recover().whenComplete((openResult, openError) -> {
       if (openError == null) {
         recoverResources().whenComplete((recoverResult, recoverError) -> {
           if (recoverError == null) {
