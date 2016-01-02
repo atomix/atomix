@@ -30,7 +30,6 @@ import net.jodah.concurrentunit.ConcurrentTestCase;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -159,13 +158,7 @@ public abstract class AbstractAtomixTest extends ConcurrentTestCase {
   protected AtomixServer createServer(Address address, List<Address> members) {
     AtomixServer server = AtomixServer.builder(address, members)
         .withTransport(new LocalTransport(registry))
-        .withStorage(Storage.builder()
-            .withStorageLevel(StorageLevel.MEMORY)
-            .withMaxSegmentSize(1024 * 1024)
-            .withMaxEntriesPerSegment(8)
-            .withMinorCompactionInterval(Duration.ofSeconds(3))
-            .withMajorCompactionInterval(Duration.ofSeconds(7))
-            .build())
+        .withStorage(new Storage(StorageLevel.MEMORY))
         .build();
     servers.add(server);
     return server;
