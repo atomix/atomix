@@ -15,10 +15,8 @@
  */
 package io.atomix.variables;
 
+import io.atomix.resource.ResourceType;
 import io.atomix.testing.AbstractCopycatTest;
-import io.atomix.copycat.client.CopycatClient;
-import io.atomix.resource.ResourceStateMachine;
-import io.atomix.variables.state.LongState;
 import org.testng.annotations.Test;
 
 import java.util.concurrent.CompletableFuture;
@@ -31,11 +29,11 @@ import java.util.function.Function;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class DistributedLongTest extends AbstractCopycatTest {
+public class DistributedLongTest extends AbstractCopycatTest<DistributedLong> {
 
   @Override
-  protected ResourceStateMachine createStateMachine() {
-    return new LongState();
+  protected ResourceType type() {
+    return DistributedLong.TYPE;
   }
 
   /**
@@ -109,8 +107,7 @@ public class DistributedLongTest extends AbstractCopycatTest {
    */
   private void testAtomic(int servers, Consumer<DistributedLong> consumer) throws Throwable {
     createServers(servers);
-    CopycatClient client = createClient();
-    DistributedLong atomic = new DistributedLong(client);
+    DistributedLong atomic = createResource();
     consumer.accept(atomic);
     await(10000);
   }

@@ -102,35 +102,41 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
 
   public DistributedMembershipGroup(CopycatClient client) {
     super(client);
-
-    client.session().<Long>onEvent("join", memberId -> {
-      GroupMember member = members.computeIfAbsent(memberId, InternalGroupMember::new);
-      for (Listener<GroupMember> listener : joinListeners) {
-        listener.accept(member);
-      }
-    });
-
-    client.session().<Long>onEvent("leave", memberId -> {
-      GroupMember member = members.remove(memberId);
-      if (member != null) {
-        for (Listener<GroupMember> listener : leaveListeners) {
-          listener.accept(member);
-        }
-      }
-    });
-
-    client.session().<MembershipGroupCommands.Message>onEvent("message", message -> {
-      if (member != null) {
-        member.handle(message);
-      }
-    });
-
-    client.session().onEvent("execute", Runnable::run);
   }
 
   @Override
   public ResourceType<DistributedMembershipGroup> type() {
     return TYPE;
+  }
+
+  @Override
+  public CompletableFuture<DistributedMembershipGroup> open() {
+    return super.open().thenApply(result -> {
+      client.<Long>onEvent("join", memberId -> {
+        GroupMember member = members.computeIfAbsent(memberId, InternalGroupMember::new);
+        for (Listener<GroupMember> listener : joinListeners) {
+          listener.accept(member);
+        }
+      });
+
+      client.<Long>onEvent("leave", memberId -> {
+        GroupMember member = members.remove(memberId);
+        if (member != null) {
+          for (Listener<GroupMember> listener : leaveListeners) {
+            listener.accept(member);
+          }
+        }
+      });
+
+      client.<MembershipGroupCommands.Message>onEvent("message", message -> {
+        if (member != null) {
+          member.handle(message);
+        }
+      });
+
+      client.onEvent("execute", Runnable::run);
+      return result;
+    });
   }
 
   /**

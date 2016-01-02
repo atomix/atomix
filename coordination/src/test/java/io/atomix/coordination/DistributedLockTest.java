@@ -15,12 +15,9 @@
  */
 package io.atomix.coordination;
 
-import org.testng.annotations.Test;
-
+import io.atomix.resource.ResourceType;
 import io.atomix.testing.AbstractCopycatTest;
-import io.atomix.coordination.state.LockState;
-import io.atomix.copycat.client.CopycatClient;
-import io.atomix.resource.ResourceStateMachine;
+import org.testng.annotations.Test;
 
 /**
  * Async lock test.
@@ -28,11 +25,11 @@ import io.atomix.resource.ResourceStateMachine;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class DistributedLockTest extends AbstractCopycatTest {
-
+public class DistributedLockTest extends AbstractCopycatTest<DistributedLock> {
+  
   @Override
-  protected ResourceStateMachine createStateMachine() {
-    return new LockState();
+  protected ResourceType<DistributedLock> type() {
+    return DistributedLock.TYPE;
   }
 
   /**
@@ -41,7 +38,7 @@ public class DistributedLockTest extends AbstractCopycatTest {
   public void testLockUnlock() throws Throwable {
     createServers(3);
 
-    DistributedLock lock = new DistributedLock(createClient());
+    DistributedLock lock = createResource();
 
     lock.lock().thenRun(this::resume);
     await(10000);
@@ -56,17 +53,14 @@ public class DistributedLockTest extends AbstractCopycatTest {
   public void testReleaseOnClose() throws Throwable {
     createServers(3);
 
-    CopycatClient client1 = createClient();
-    CopycatClient client2 = createClient();
-
-    DistributedLock lock1 = new DistributedLock(client1);
-    DistributedLock lock2 = new DistributedLock(client2);
+    DistributedLock lock1 = createResource();
+    DistributedLock lock2 = createResource();
 
     lock1.lock().thenRun(this::resume);
     await(10000);
 
     lock2.lock().thenRun(this::resume);
-    client1.close();
+    lock1.close();
     await(10000);
   }
 

@@ -34,8 +34,9 @@ public class DistributedValue<T> extends AbstractDistributedValue<DistributedVal
   }
 
   @Override
-  public ResourceType type() {
-    return TYPE;
+  @SuppressWarnings("unchecked")
+  public ResourceType<DistributedValue<T>> type() {
+    return (ResourceType) TYPE;
   }
 
 }

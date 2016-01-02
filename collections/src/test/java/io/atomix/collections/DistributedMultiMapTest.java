@@ -15,11 +15,9 @@
  */
 package io.atomix.collections;
 
-import org.testng.annotations.Test;
-
+import io.atomix.resource.ResourceType;
 import io.atomix.testing.AbstractCopycatTest;
-import io.atomix.collections.state.MultiMapState;
-import io.atomix.resource.ResourceStateMachine;
+import org.testng.annotations.Test;
 
 /**
  * Distributed multi map test.
@@ -27,11 +25,12 @@ import io.atomix.resource.ResourceStateMachine;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class DistributedMultiMapTest extends AbstractCopycatTest {
-
+@SuppressWarnings("unchecked")
+public class DistributedMultiMapTest extends AbstractCopycatTest<DistributedMultiMap> {
+  
   @Override
-  protected ResourceStateMachine createStateMachine() {
-    return new MultiMapState();
+  protected ResourceType<DistributedMultiMap> type() {
+    return DistributedMultiMap.TYPE;
   }
 
   /**
@@ -40,7 +39,7 @@ public class DistributedMultiMapTest extends AbstractCopycatTest {
   public void testMapPutGetRemove() throws Throwable {
     createServers(3);
 
-    DistributedMultiMap<String, String> map = new DistributedMultiMap<>(createClient());
+    DistributedMultiMap<String, String> map = createResource();
 
     map.put("foo", "Hello world!").thenRun(this::resume);
     await(10000);
@@ -75,7 +74,7 @@ public class DistributedMultiMapTest extends AbstractCopycatTest {
   public void testMultiMapClear() throws Throwable {
     createServers(3);
 
-    DistributedMultiMap<String, String> map = new DistributedMultiMap<>(createClient());
+    DistributedMultiMap<String, String> map = createResource();
 
     map.put("foo", "Hello world!").thenRun(this::resume);
     map.put("foo", "Hello world again!").thenRun(this::resume);

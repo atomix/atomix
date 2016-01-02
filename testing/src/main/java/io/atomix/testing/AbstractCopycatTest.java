@@ -15,53 +15,54 @@
  */
 package io.atomix.testing;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.LocalServerRegistry;
 import io.atomix.catalyst.transport.LocalTransport;
-import io.atomix.copycat.client.CopycatClient;
+import io.atomix.copycat.client.*;
 import io.atomix.copycat.server.CopycatServer;
 import io.atomix.copycat.server.storage.Storage;
 import io.atomix.copycat.server.storage.StorageLevel;
+import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceStateMachine;
+import io.atomix.resource.ResourceType;
 import net.jodah.concurrentunit.ConcurrentTestCase;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Abstract copycat test.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public abstract class AbstractCopycatTest extends ConcurrentTestCase {
+public abstract class AbstractCopycatTest<T extends Resource> extends ConcurrentTestCase {
   protected LocalServerRegistry registry;
   protected int port;
   protected List<Address> members;
-  protected List<CopycatClient> clients;
+  protected List<T> resources;
   protected List<CopycatServer> servers;
 
   /**
-   * Creates a new resource state machine.
+   * Returns the resource type.
    *
-   * @return A new resource state machine.
+   * @return The resource type.
    */
-  protected abstract ResourceStateMachine createStateMachine();
+  protected abstract ResourceType<T> type();
 
   @BeforeMethod
   protected void init() {
     port = 5000;
     registry = new LocalServerRegistry();
     members = new ArrayList<>();
-    clients = new ArrayList<>();
+    resources = new ArrayList<>();
     servers = new ArrayList<>();
   }
 
   @AfterMethod
   protected void cleanup() {
-    clients.stream().forEach(c -> {
+    resources.stream().forEach(c -> {
       try {
         c.close().join();
       } catch (Exception ignore) {
@@ -73,8 +74,8 @@ public abstract class AbstractCopycatTest extends ConcurrentTestCase {
       } catch (Exception ignore) {
       }
     });
-    
-    clients.clear();
+
+    resources.clear();
     servers.clear();
   }
 
@@ -88,27 +89,40 @@ public abstract class AbstractCopycatTest extends ConcurrentTestCase {
   }
 
   /**
-   * Creates a Copycat client.
+   * Creates a new resource instance.
    */
-  protected CopycatClient createClient() throws Throwable {
-    CopycatClient client = CopycatClient.builder(members).withTransport(new LocalTransport(registry)).build();
-    clients.add(client);
-    client.open().thenRun(this::resume);
-    await();
-    return client;
+  protected T createResource() throws Throwable {
+    CopycatClient client = CopycatClient.builder(members)
+      .withTransport(new LocalTransport(registry))
+      .withServerSelectionStrategy(ServerSelectionStrategies.ANY)
+      .withConnectionStrategy(ConnectionStrategies.FIBONACCI_BACKOFF)
+      .withRecoveryStrategy(RecoveryStrategies.RECOVER)
+      .withRetryStrategy(RetryStrategies.FIBONACCI_BACKOFF)
+      .build();
+    T resource = type().resource().getConstructor(CopycatClient.class).newInstance(client);
+    resource.open().thenRun(this::resume);
+    resources.add(resource);
+    await(10000);
+    return resource;
   }
 
   /**
    * Creates a Raft server.
    */
   protected CopycatServer createServer(Address address) {
-    CopycatServer server = CopycatServer.builder(address, members)
+    try {
+      ResourceStateMachine stateMachine = type().stateMachine().newInstance();
+
+      CopycatServer server = CopycatServer.builder(address, members)
         .withTransport(new LocalTransport(registry))
         .withStorage(new Storage(StorageLevel.MEMORY))
-        .withStateMachine(createStateMachine())
+        .withStateMachine(stateMachine)
         .build();
-    servers.add(server);
-    return server;
+      servers.add(server);
+      return server;
+    } catch (InstantiationException | IllegalAccessException e) {
+      throw new AssertionError();
+    }
   }
 
   /**

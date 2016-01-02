@@ -15,12 +15,9 @@
  */
 package io.atomix.variables;
 
-import org.testng.annotations.Test;
-
+import io.atomix.resource.ResourceType;
 import io.atomix.testing.AbstractCopycatTest;
-import io.atomix.copycat.client.CopycatClient;
-import io.atomix.resource.ResourceStateMachine;
-import io.atomix.variables.state.ValueState;
+import org.testng.annotations.Test;
 
 /**
  * Distributed atomic value test.
@@ -28,11 +25,12 @@ import io.atomix.variables.state.ValueState;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class DistributedValueTest extends AbstractCopycatTest {
+@SuppressWarnings("unchecked")
+public class DistributedValueTest extends AbstractCopycatTest<DistributedValue> {
 
   @Override
-  protected ResourceStateMachine createStateMachine() {
-    return new ValueState();
+  protected ResourceType<DistributedValue> type() {
+    return DistributedValue.TYPE;
   }
 
   /**
@@ -40,8 +38,7 @@ public class DistributedValueTest extends AbstractCopycatTest {
    */
   public void testAtomicSetGet() throws Throwable {
     createServers(3);
-    CopycatClient client = createClient();
-    DistributedValue<String> atomic = new DistributedValue<>(client);
+    DistributedValue<String> atomic = createResource();
     atomic.set("Hello world!").thenRun(() -> {
       atomic.get().thenAccept(value -> {
         threadAssertEquals(value, "Hello world!");

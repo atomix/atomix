@@ -15,9 +15,8 @@
  */
 package io.atomix.messaging;
 
+import io.atomix.resource.ResourceType;
 import io.atomix.testing.AbstractCopycatTest;
-import io.atomix.messaging.state.TaskQueueState;
-import io.atomix.resource.ResourceStateMachine;
 import org.testng.annotations.Test;
 
 import java.util.Arrays;
@@ -31,11 +30,12 @@ import java.util.concurrent.ConcurrentSkipListSet;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 @Test
-public class DistributedTaskQueueTest extends AbstractCopycatTest {
+@SuppressWarnings("unchecked")
+public class DistributedTaskQueueTest extends AbstractCopycatTest<DistributedTaskQueue> {
 
   @Override
-  protected ResourceStateMachine createStateMachine() {
-    return new TaskQueueState();
+  protected ResourceType<DistributedTaskQueue> type() {
+    return DistributedTaskQueue.TYPE;
   }
 
   /**
@@ -44,9 +44,9 @@ public class DistributedTaskQueueTest extends AbstractCopycatTest {
   public void testSubmitAsync() throws Throwable {
     createServers(3);
 
-    DistributedTaskQueue<String> worker1 = new DistributedTaskQueue<String>(createClient()).async();
-    DistributedTaskQueue<String> worker2 = new DistributedTaskQueue<String>(createClient()).async();
-    DistributedTaskQueue<String> queue = new DistributedTaskQueue<String>(createClient()).async();
+    DistributedTaskQueue<String> worker1 = createResource().async();
+    DistributedTaskQueue<String> worker2 = createResource().async();
+    DistributedTaskQueue<String> queue = createResource().async();
 
     Set<String> tasks = new HashSet<>(Arrays.asList("foo", "bar", "baz"));
     Set<String> completed = new ConcurrentSkipListSet<>();
@@ -77,9 +77,9 @@ public class DistributedTaskQueueTest extends AbstractCopycatTest {
   public void testSubmitSync() throws Throwable {
     createServers(3);
 
-    DistributedTaskQueue<String> worker1 = new DistributedTaskQueue<String>(createClient()).sync();
-    DistributedTaskQueue<String> worker2 = new DistributedTaskQueue<String>(createClient()).sync();
-    DistributedTaskQueue<String> queue = new DistributedTaskQueue<String>(createClient()).sync();
+    DistributedTaskQueue<String> worker1 = createResource().sync();
+    DistributedTaskQueue<String> worker2 = createResource().sync();
+    DistributedTaskQueue<String> queue = createResource().sync();
 
     Set<String> tasks = new HashSet<>(Arrays.asList("foo", "bar", "baz"));
     Set<String> completed = new ConcurrentSkipListSet<>();

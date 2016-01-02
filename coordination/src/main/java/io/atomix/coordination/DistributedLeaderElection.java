@@ -98,16 +98,23 @@ public class DistributedLeaderElection extends Resource<DistributedLeaderElectio
 
   public DistributedLeaderElection(CopycatClient client) {
     super(client);
-    client.session().<Long>onEvent("elect", epoch -> {
-      for (Consumer<Long> listener : listeners) {
-        listener.accept(epoch);
-      }
-    });
   }
 
   @Override
   public ResourceType<DistributedLeaderElection> type() {
     return TYPE;
+  }
+
+  @Override
+  public CompletableFuture<DistributedLeaderElection> open() {
+    return super.open().thenApply(result -> {
+      client.<Long>onEvent("elect", epoch -> {
+        for (Consumer<Long> listener : listeners) {
+          listener.accept(epoch);
+        }
+      });
+      return result;
+    });
   }
 
   /**

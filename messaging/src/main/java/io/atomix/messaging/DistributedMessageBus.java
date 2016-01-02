@@ -153,8 +153,8 @@ public class DistributedMessageBus extends Resource<DistributedMessageBus> {
             remotes.put(entry.getKey(), new RemoteConsumers(entry.getValue()));
           }
 
-          super.client.session().onEvent("register", this::registerConsumer);
-          super.client.session().onEvent("unregister", this::unregisterConsumer);
+          super.client.onEvent("register", this::registerConsumer);
+          super.client.onEvent("unregister", this::unregisterConsumer);
           future.complete(null);
         } else {
           future.completeExceptionally(error);

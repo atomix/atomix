@@ -16,6 +16,9 @@
 package io.atomix.resource;
 
 import io.atomix.catalyst.util.Assert;
+import io.atomix.copycat.client.CopycatClient;
+
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * Resource type.
@@ -55,6 +58,21 @@ public class ResourceType<T extends Resource> {
    */
   public Class<T> resource() {
     return type;
+  }
+
+  /**
+   * Returns the resource instance factory.
+   *
+   * @return The resource instance factory.
+   */
+  public ResourceFactory<T> factory() {
+    return client -> {
+      try {
+        return resource().getConstructor(CopycatClient.class).newInstance(client);
+      } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+        throw new ResourceException("failed to instantiate resource class", e);
+      }
+    };
   }
 
   /**

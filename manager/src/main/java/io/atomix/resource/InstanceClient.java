@@ -19,13 +19,16 @@ import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.Listener;
+import io.atomix.catalyst.util.concurrent.Futures;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.copycat.client.Command;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.copycat.client.Query;
 import io.atomix.copycat.client.session.Session;
 import io.atomix.manager.CloseResource;
+import io.atomix.manager.CreateResource;
 import io.atomix.manager.DeleteResource;
+import io.atomix.manager.GetResource;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -41,45 +44,57 @@ import java.util.function.Consumer;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class InstanceClient implements CopycatClient {
-  private long resource;
+  private volatile long resource;
+  private final Instance<?> instance;
   private final CopycatClient client;
-  private final Transport transport;
-  private final InstanceFactory factory;
-  private InstanceSession session;
-  private State state;
+  private volatile Session clientSession;
+  private volatile InstanceSession session;
+  private volatile State state;
   private final Listener<State> changeListener;
   private final Map<String, Set<EventListener>> eventListeners = new ConcurrentHashMap<>();
   private final Map<String, Listener<InstanceEvent<?>>> listeners = new ConcurrentHashMap<>();
   private final Set<StateChangeListener> changeListeners = new CopyOnWriteArraySet<>();
+  private volatile CompletableFuture<CopycatClient> openFuture;
+  private volatile CompletableFuture<CopycatClient> recoverFuture;
+  private volatile CompletableFuture<Void> closeFuture;
 
-  public InstanceClient(CopycatClient client, Transport transport, InstanceFactory factory) {
+  public InstanceClient(Instance<?> instance, CopycatClient client) {
+    this.instance = Assert.notNull(instance, "instance");
     this.client = Assert.notNull(client, "client");
-    this.transport = Assert.notNull(transport, "transport");
-    this.factory = Assert.notNull(factory, "factory");
-    this.state = client.state();
+    this.state = State.CLOSED;
     this.changeListener = client.onStateChange(this::onStateChange);
-  }
-
-  /**
-   * Resets the instance resource ID.
-   */
-  InstanceClient reset(long resourceId) {
-    this.resource = resourceId;
-    this.session = new InstanceSession(resourceId, client.session(), client.context());;
-    return this;
   }
 
   @Override
   public State state() {
-    return client.state();
+    return state;
   }
 
   /**
    * Called when the parent client's state changes.
    */
   private void onStateChange(State state) {
-    this.state = client.state();
-    changeListeners.forEach(l -> l.accept(state));
+    // Don't allow the underlying client to transition the instance's state if the state is CLOSED.
+    if (this.state != State.CLOSED && this.state != state) {
+      // If the underlying client registered a new session, set the instance's state to SUSPENDED
+      // and recover the instance using the new session.
+      if (!client.session().equals(clientSession)) {
+        clientSession = client.session();
+        if (this.state != State.SUSPENDED) {
+          this.state = State.SUSPENDED;
+          changeListeners.forEach(l -> l.accept(state));
+        }
+        recover();
+      }
+      // If the underlying client's state has changed, update the instance's state and invoke listeners.
+      // This ensures that the instance's state changes to SUSPENDED when the client's state changes
+      // to SUSPENDED, and the instance's state only changes back to CONNECTED if the underlying client's
+      // state changed back to CONNECTED *and* its session was maintained.
+      else {
+        this.state = state;
+        changeListeners.forEach(l -> l.accept(state));
+      }
+    }
   }
 
   @Override
@@ -94,7 +109,7 @@ public class InstanceClient implements CopycatClient {
 
   @Override
   public Transport transport() {
-    return transport;
+    return client.transport();
   }
 
   @Override
@@ -159,8 +174,49 @@ public class InstanceClient implements CopycatClient {
   }
 
   @Override
-  public CompletableFuture<CopycatClient> open() {
-    return CompletableFuture.completedFuture(this);
+  public synchronized CompletableFuture<CopycatClient> open() {
+    if (state != State.CLOSED)
+      return Futures.exceptionalFuture(new IllegalStateException("client already open"));
+
+    if (openFuture == null) {
+      switch (instance.method()) {
+        case GET:
+          openFuture = openGet();
+          break;
+        case CREATE:
+          openFuture = openCreate();
+          break;
+      }
+    }
+    return openFuture;
+  }
+
+  /**
+   * Opens the resource using the GET method.
+   */
+  private CompletableFuture<CopycatClient> openGet() {
+    return client.submit(new GetResource(instance.key(), instance.type().id())).thenApply(this::completeOpen);
+  }
+
+  /**
+   * Opens the resource using the CREATE method.
+   */
+  private CompletableFuture<CopycatClient> openCreate() {
+    return client.submit(new CreateResource(instance.key(), instance.type().id())).thenApply(this::completeOpen);
+  }
+
+  /**
+   * Completes the registration of a new session.
+   */
+  private synchronized CopycatClient completeOpen(long resourceId) {
+    this.resource = resourceId;
+    this.clientSession = client.session();
+    this.session = new InstanceSession(resourceId, clientSession, client.context());
+    this.state = State.CONNECTED;
+    changeListeners.forEach(l -> l.accept(State.CONNECTED));
+    openFuture = null;
+    recoverFuture = null;
+    return this;
   }
 
   @Override
@@ -169,18 +225,45 @@ public class InstanceClient implements CopycatClient {
   }
 
   @Override
-  public CompletableFuture<CopycatClient> recover() {
-    return CompletableFuture.completedFuture(this);
+  public synchronized CompletableFuture<CopycatClient> recover() {
+    if (state != State.SUSPENDED)
+      return Futures.exceptionalFuture(new IllegalStateException("client not suspended"));
+
+    if (recoverFuture == null) {
+      switch (instance.method()) {
+        case GET:
+          recoverFuture = openGet();
+          break;
+        case CREATE:
+          recoverFuture = openCreate();
+          break;
+      }
+    }
+    return recoverFuture;
   }
 
   @Override
-  public CompletableFuture<Void> close() {
-    return client.submit(new CloseResource(resource))
-      .whenComplete((result, error) -> {
-        factory.instances.remove(resource);
-        changeListener.close();
-        onStateChange(State.CLOSED);
-      });
+  public synchronized CompletableFuture<Void> close() {
+    if (state == State.CLOSED)
+      return Futures.exceptionalFuture(new IllegalStateException("client already closed"));
+
+    if (closeFuture == null) {
+      closeFuture = client.submit(new CloseResource(resource))
+        .whenComplete((result, error) -> {
+          synchronized (this) {
+            instance.close();
+            changeListener.close();
+            for (Map.Entry<String, Listener<InstanceEvent<?>>> entry : listeners.entrySet()) {
+              entry.getValue().close();
+            }
+            listeners.clear();
+            this.state = State.CLOSED;
+            changeListeners.forEach(l -> l.accept(State.CLOSED));
+            closeFuture = null;
+          }
+        });
+    }
+    return closeFuture;
   }
 
   @Override

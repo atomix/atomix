@@ -15,9 +15,8 @@
  */
 package io.atomix.messaging;
 
+import io.atomix.resource.ResourceType;
 import io.atomix.testing.AbstractCopycatTest;
-import io.atomix.messaging.state.TopicState;
-import io.atomix.resource.ResourceStateMachine;
 import org.testng.annotations.Test;
 
 import java.util.Arrays;
@@ -30,11 +29,12 @@ import java.util.Set;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 @Test
-public class DistributedTopicTest extends AbstractCopycatTest {
+@SuppressWarnings("unchecked")
+public class DistributedTopicTest extends AbstractCopycatTest<DistributedTopic> {
 
   @Override
-  protected ResourceStateMachine createStateMachine() {
-    return new TopicState();
+  protected ResourceType<DistributedTopic> type() {
+    return DistributedTopic.TYPE;
   }
 
   /**
@@ -43,9 +43,9 @@ public class DistributedTopicTest extends AbstractCopycatTest {
   public void testPublishAsync() throws Throwable {
     createServers(3);
 
-    DistributedTopic<String> subscriber1 = new DistributedTopic<String>(createClient()).async();
-    DistributedTopic<String> subscriber2 = new DistributedTopic<String>(createClient()).async();
-    DistributedTopic<String> queue = new DistributedTopic<String>(createClient()).async();
+    DistributedTopic<String> subscriber1 = createResource().async();
+    DistributedTopic<String> subscriber2 = createResource().async();
+    DistributedTopic<String> queue = createResource().async();
 
     Set<String> messages = new HashSet<>(Arrays.asList("foo", "bar", "baz"));
     subscriber1.subscribe(message -> {
@@ -71,9 +71,9 @@ public class DistributedTopicTest extends AbstractCopycatTest {
   public void testPublishSync() throws Throwable {
     createServers(3);
 
-    DistributedTopic<String> subscriber1 = new DistributedTopic<String>(createClient()).sync();
-    DistributedTopic<String> subscriber2 = new DistributedTopic<String>(createClient()).sync();
-    DistributedTopic<String> queue = new DistributedTopic<String>(createClient()).sync();
+    DistributedTopic<String> subscriber1 = createResource().sync();
+    DistributedTopic<String> subscriber2 = createResource().sync();
+    DistributedTopic<String> queue = createResource().sync();
 
     Set<String> messages = new HashSet<>(Arrays.asList("foo", "bar", "baz"));
     subscriber1.subscribe(message -> {

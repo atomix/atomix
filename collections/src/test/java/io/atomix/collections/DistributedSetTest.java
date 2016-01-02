@@ -15,14 +15,12 @@
  */
 package io.atomix.collections;
 
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
-
+import io.atomix.resource.ResourceType;
+import io.atomix.testing.AbstractCopycatTest;
 import org.testng.annotations.Test;
 
-import io.atomix.testing.AbstractCopycatTest;
-import io.atomix.collections.state.SetState;
-import io.atomix.resource.ResourceStateMachine;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
 
 /**
  * Distributed map test.
@@ -30,11 +28,12 @@ import io.atomix.resource.ResourceStateMachine;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class DistributedSetTest extends AbstractCopycatTest {
+@SuppressWarnings("unchecked")
+public class DistributedSetTest extends AbstractCopycatTest<DistributedSet> {
 
   @Override
-  protected ResourceStateMachine createStateMachine() {
-    return new SetState();
+  protected ResourceType<DistributedSet> type() {
+    return DistributedSet.TYPE;
   }
 
   /**
@@ -43,10 +42,10 @@ public class DistributedSetTest extends AbstractCopycatTest {
   public void testSetAddRemove() throws Throwable {
     createServers(3);
 
-    DistributedSet<String> set1 = new DistributedSet<>(createClient());
+    DistributedSet<String> set1 = createResource();
     assertFalse(set1.contains("Hello world!").get());
 
-    DistributedSet<String> set2 = new DistributedSet<>(createClient());
+    DistributedSet<String> set2 = createResource();
     assertFalse(set2.contains("Hello world!").get());
 
     set1.add("Hello world!").join();

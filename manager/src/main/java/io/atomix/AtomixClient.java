@@ -20,7 +20,6 @@ import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.ConfigurationException;
 import io.atomix.copycat.client.CopycatClient;
-import io.atomix.resource.InstanceFactory;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -103,8 +102,8 @@ public final class AtomixClient extends Atomix {
   /**
    * @throws NullPointerException if {@code factory} is null
    */
-  private AtomixClient(CopycatClient.Builder builder, Transport transport) {
-    super(builder, transport);
+  public AtomixClient(CopycatClient client) {
+    super(client);
   }
 
   /**
@@ -142,7 +141,7 @@ public final class AtomixClient extends Atomix {
           throw new ConfigurationException("transport not configured");
         }
       }
-      return new AtomixClient(clientBuilder, transport);
+      return new AtomixClient(clientBuilder.build());
     }
   }
 

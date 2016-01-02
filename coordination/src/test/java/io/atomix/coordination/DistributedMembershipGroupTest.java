@@ -15,9 +15,8 @@
  */
 package io.atomix.coordination;
 
+import io.atomix.resource.ResourceType;
 import io.atomix.testing.AbstractCopycatTest;
-import io.atomix.coordination.state.MembershipGroupState;
-import io.atomix.resource.ResourceStateMachine;
 import org.testng.annotations.Test;
 
 import java.io.Serializable;
@@ -30,11 +29,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class DistributedMembershipGroupTest extends AbstractCopycatTest {
-
+public class DistributedMembershipGroupTest extends AbstractCopycatTest<DistributedMembershipGroup> {
+  
   @Override
-  protected ResourceStateMachine createStateMachine() {
-    return new MembershipGroupState();
+  protected ResourceType<DistributedMembershipGroup> type() {
+    return DistributedMembershipGroup.TYPE;
   }
 
   /**
@@ -43,8 +42,8 @@ public class DistributedMembershipGroupTest extends AbstractCopycatTest {
   public void testJoin() throws Throwable {
     createServers(3);
 
-    DistributedMembershipGroup group1 = new DistributedMembershipGroup(createClient());
-    DistributedMembershipGroup group2 = new DistributedMembershipGroup(createClient());
+    DistributedMembershipGroup group1 = createResource();
+    DistributedMembershipGroup group2 = createResource();
 
     AtomicBoolean joined = new AtomicBoolean();
     group2.join().join();
@@ -71,8 +70,8 @@ public class DistributedMembershipGroupTest extends AbstractCopycatTest {
   public void testLeave() throws Throwable {
     createServers(3);
 
-    DistributedMembershipGroup group1 = new DistributedMembershipGroup(createClient());
-    DistributedMembershipGroup group2 = new DistributedMembershipGroup(createClient());
+    DistributedMembershipGroup group1 = createResource();
+    DistributedMembershipGroup group2 = createResource();
 
     group2.join().thenRun(() -> {
       group2.members().thenAccept(members -> {
@@ -108,8 +107,8 @@ public class DistributedMembershipGroupTest extends AbstractCopycatTest {
   public void testProperties() throws Throwable {
     createServers(3);
 
-    DistributedMembershipGroup group1 = new DistributedMembershipGroup(createClient());
-    DistributedMembershipGroup group2 = new DistributedMembershipGroup(createClient());
+    DistributedMembershipGroup group1 = createResource();
+    DistributedMembershipGroup group2 = createResource();
 
     group1.join().thenAccept(member -> {
       member.set("foo", "Hello world!").thenRun(this::resume);
@@ -147,8 +146,8 @@ public class DistributedMembershipGroupTest extends AbstractCopycatTest {
   public void testSend() throws Throwable {
     createServers(3);
 
-    DistributedMembershipGroup group1 = new DistributedMembershipGroup(createClient());
-    DistributedMembershipGroup group2 = new DistributedMembershipGroup(createClient());
+    DistributedMembershipGroup group1 = createResource();
+    DistributedMembershipGroup group2 = createResource();
 
     group1.join().thenAccept(member -> {
       member.onMessage("foo", message -> {
@@ -174,8 +173,8 @@ public class DistributedMembershipGroupTest extends AbstractCopycatTest {
   public void testRemoteExecute() throws Throwable {
     createServers(3);
 
-    DistributedMembershipGroup group1 = new DistributedMembershipGroup(createClient());
-    DistributedMembershipGroup group2 = new DistributedMembershipGroup(createClient());
+    DistributedMembershipGroup group1 = createResource();
+    DistributedMembershipGroup group2 = createResource();
 
     group2.join().thenRun(() -> {
       group2.members().thenAccept(members -> {

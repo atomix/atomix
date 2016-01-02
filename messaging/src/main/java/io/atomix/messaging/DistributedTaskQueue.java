@@ -81,14 +81,21 @@ public class DistributedTaskQueue<T> extends Resource<DistributedTaskQueue<T>> {
   @SuppressWarnings("unchecked")
   public DistributedTaskQueue(CopycatClient client) {
     super(client);
-    client.session().onEvent("process", this::process);
-    client.session().onEvent("ack", this::ack);
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public ResourceType<DistributedTaskQueue<T>> type() {
     return (ResourceType) TYPE;
+  }
+
+  @Override
+  public CompletableFuture<DistributedTaskQueue<T>> open() {
+    return super.open().thenApply(result -> {
+      client.onEvent("process", this::process);
+      client.onEvent("ack", this::ack);
+      return result;
+    });
   }
 
   /**
