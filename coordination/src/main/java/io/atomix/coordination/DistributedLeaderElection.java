@@ -95,6 +95,7 @@ public class DistributedLeaderElection extends Resource<DistributedLeaderElectio
   public static final ResourceType<DistributedLeaderElection> TYPE = new ResourceType<>(DistributedLeaderElection.class);
 
   private final Set<Consumer<Long>> listeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
+  private volatile long epoch;
 
   public DistributedLeaderElection(CopycatClient client) {
     super(client);
@@ -107,14 +108,15 @@ public class DistributedLeaderElection extends Resource<DistributedLeaderElectio
 
   @Override
   public CompletableFuture<DistributedLeaderElection> open() {
-    return super.open().thenApply(result -> {
+    return super.open().thenRun(() -> {
       client.<Long>onEvent("elect", epoch -> {
+        this.epoch = epoch;
         for (Consumer<Long> listener : listeners) {
           listener.accept(epoch);
         }
       });
-      return result;
-    });
+    }).thenCompose(v -> submit(new LeaderElectionCommands.Listen()))
+      .thenApply(v -> this);
   }
 
   /**
@@ -145,18 +147,26 @@ public class DistributedLeaderElection extends Resource<DistributedLeaderElectio
    *   }
    * </pre>
    *
-   * @param listener The listener to register.
+   * @param callback The callback to register.
    * @return A completable future to be completed with the listener context.
    */
-  public CompletableFuture<Listener<Long>> onElection(Consumer<Long> listener) {
-    if (!listeners.isEmpty()) {
-      listeners.add(listener);
-      return CompletableFuture.completedFuture(new ElectionListener(listener));
-    }
-
+  public Listener<Long> onElection(Consumer<Long> callback) {
+    Listener<Long> listener = new Listener<Long>() {
+      @Override
+      public void accept(Long epoch) {
+        callback.accept(epoch);
+      }
+      @Override
+      public void close() {
+        listeners.remove(this);
+      }
+    };
     listeners.add(listener);
-    return submit(new LeaderElectionCommands.Listen())
-      .thenApply(v -> new ElectionListener(listener));
+
+    if (epoch != 0) {
+      listener.accept(epoch);
+    }
+    return listener;
   }
 
   /**
@@ -188,33 +198,8 @@ public class DistributedLeaderElection extends Resource<DistributedLeaderElectio
    * @return A completable future to be completed once the instance has resigned from leadership for the given epoch.
    */
   public CompletableFuture<Void> resign(long epoch) {
-    return submit(new LeaderElectionCommands.Resign(epoch));
-  }
-
-  /**
-   * Election listener context.
-   */
-  private class ElectionListener implements Listener<Long> {
-    private final Consumer<Long> listener;
-
-    private ElectionListener(Consumer<Long> listener) {
-      this.listener = listener;
-    }
-
-    @Override
-    public void accept(Long epoch) {
-      listener.accept(epoch);
-    }
-
-    @Override
-    public void close() {
-      synchronized (DistributedLeaderElection.this) {
-        listeners.remove(listener);
-        if (listeners.isEmpty()) {
-          submit(new LeaderElectionCommands.Unlisten());
-        }
-      }
-    }
+    return submit(new LeaderElectionCommands.Resign(epoch))
+      .whenComplete((result, error) -> this.epoch = 0);
   }
 
 }

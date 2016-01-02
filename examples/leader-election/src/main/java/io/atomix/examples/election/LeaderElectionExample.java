@@ -66,7 +66,7 @@ public class LeaderElectionExample {
     // Register a callback to be called when this election instance is elected the leader
     election.onElection(epoch -> {
       System.out.println("Elected leader!");
-    }).join();
+    });
 
     // Block while the replica is open.
     while (atomix.isOpen()) {

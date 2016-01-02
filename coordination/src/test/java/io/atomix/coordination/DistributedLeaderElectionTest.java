@@ -42,8 +42,8 @@ public class DistributedLeaderElectionTest extends AbstractCopycatTest<Distribut
 
     DistributedLeaderElection election = createResource();
 
-    election.onElection(v -> resume()).thenRun(this::resume);
-    await(0, 2);
+    election.onElection(v -> resume());
+    await(10000);
   }
 
   /**
@@ -60,7 +60,7 @@ public class DistributedLeaderElectionTest extends AbstractCopycatTest<Distribut
       threadAssertTrue(epoch > lastEpoch.get());
       lastEpoch.set(epoch);
       resume();
-    }).join();
+    });
 
     await(10000);
 
@@ -68,7 +68,7 @@ public class DistributedLeaderElectionTest extends AbstractCopycatTest<Distribut
       threadAssertTrue(epoch > lastEpoch.get());
       lastEpoch.set(epoch);
       resume();
-    }).join();
+    });
 
     election1.close();
 
@@ -89,7 +89,7 @@ public class DistributedLeaderElectionTest extends AbstractCopycatTest<Distribut
       threadAssertTrue(epoch > lastEpoch.get());
       lastEpoch.set(epoch);
       resume();
-    }).join();
+    });
 
     await(10000);
 
@@ -97,7 +97,7 @@ public class DistributedLeaderElectionTest extends AbstractCopycatTest<Distribut
       threadAssertTrue(epoch > lastEpoch.get());
       lastEpoch.set(epoch);
       resume();
-    }).join();
+    });
 
     election1.resign(lastEpoch.get());
 
