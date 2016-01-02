@@ -22,8 +22,11 @@ import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.Managed;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.copycat.client.*;
+import io.atomix.manager.GetResourceKeys;
+import io.atomix.manager.ResourceExists;
 import io.atomix.resource.*;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -47,13 +50,15 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class Atomix implements Managed<Atomix> {
-  final InstanceFactory factory;
+  final CopycatClient client;
+  final InstanceManager manager;
 
   /**
    * @throws NullPointerException if {@code client} is null
    */
-  protected Atomix(CopycatClient.Builder builder, Transport transport) {
-    this.factory = new InstanceFactory(builder.withRecoveryStrategy(new AtomixRecoveryStrategy()).build(), transport);
+  protected Atomix(CopycatClient client) {
+    this.client = Assert.notNull(client, "client");
+    this.manager = new InstanceManager(client);
   }
 
   /**
@@ -67,7 +72,7 @@ public abstract class Atomix implements Managed<Atomix> {
    * @return The Atomix thread context.
    */
   public ThreadContext context() {
-    return factory.context();
+    return client.context();
   }
 
   /**
@@ -84,7 +89,7 @@ public abstract class Atomix implements Managed<Atomix> {
    * <pre>
    *   {@code
    *   if (!atomix.exists("lock").get()) {
-   *     DistributedLock lock = atomix.create("lock", DistributedLock::new).get();
+   *     DistributedLock lock = atomix.create("lock", DistributedLock.TYPE).get();
    *   }
    *   }
    * </pre>
@@ -94,7 +99,7 @@ public abstract class Atomix implements Managed<Atomix> {
    *   {@code
    *   atomix.exists("lock").thenAccept(exists -> {
    *     if (!exists) {
-   *       atomix.<DistributedLock>create("lock", DistributedLock::new).thenAccept(lock -> {
+   *       atomix.<DistributedLock>create("lock", DistributedLock.TYPE).thenAccept(lock -> {
    *         ...
    *       });
    *     }
@@ -107,7 +112,7 @@ public abstract class Atomix implements Managed<Atomix> {
    * @throws NullPointerException if {@code key} is null
    */
   public CompletableFuture<Boolean> exists(String key) {
-    return factory.exists(key);
+    return client.submit(new ResourceExists(key));
   }
 
   /**
@@ -135,7 +140,7 @@ public abstract class Atomix implements Managed<Atomix> {
    * @return A completable future to be completed with the keys of all existing resources.
    */
   public CompletableFuture<Set<String>> keys() {
-    return this.factory.keys();
+    return client.submit(new GetResourceKeys());
   }
 
   /**
@@ -164,8 +169,14 @@ public abstract class Atomix implements Managed<Atomix> {
    * @param <T> The resource type.
    * @return A completable future to be completed with the set of resource keys.
    */
+  @SuppressWarnings("unchecked")
   public <T extends Resource> CompletableFuture<Set<String>> keys(Class<? super T> type) {
-    return this.factory.keys(type);
+    try {
+      T instance = (T) type.getConstructor(CopycatClient.class).newInstance(client);
+      return keys(instance.type());
+    } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   /**
@@ -177,7 +188,7 @@ public abstract class Atomix implements Managed<Atomix> {
    * use the {@link CompletableFuture#get()} method:
    * <pre>
    *   {@code
-   *   Set<String> resourceKeys = atomix.keys(DistributedLock.class).get();
+   *   Set<String> resourceKeys = atomix.keys(DistributedLock.TYPE).get();
    *   }
    * </pre>
    * Alternatively, to execute the operation asynchronous and be notified once the result is received in a different
@@ -195,7 +206,7 @@ public abstract class Atomix implements Managed<Atomix> {
    * @return A completable future to be completed with the set of resource keys.
    */
   public <T extends Resource> CompletableFuture<Set<String>> keys(ResourceType<T> type) {
-    return this.factory.keys(type);
+    return client.submit(new GetResourceKeys(Assert.notNull(type, "type").id()));
   }
 
   /**
@@ -233,8 +244,9 @@ public abstract class Atomix implements Managed<Atomix> {
    * @return A completable future to be completed once the resource has been loaded.
    * @throws NullPointerException if {@code key} or {@code type} are null
    */
+  @SuppressWarnings("unchecked")
   public <T extends Resource> CompletableFuture<T> get(String key, Class<? super T> type) {
-    return factory.get(key, type);
+    return get(key, new ResourceType<>((Class<T>) type));
   }
 
   /**
@@ -253,14 +265,14 @@ public abstract class Atomix implements Managed<Atomix> {
    * use the {@link CompletableFuture#get()} method:
    * <pre>
    *   {@code
-   *   DistributedLock lock = atomix.get("lock", DistributedLock.class).get();
+   *   DistributedLock lock = atomix.get("lock", DistributedLock.TYPE).get();
    *   }
    * </pre>
    * Alternatively, to execute the operation asynchronous and be notified once the result is received in a different
    * thread, use one of the many completable future callbacks:
    * <pre>
    *   {@code
-   *   atomix.<DistributedLock>get("lock", DistributedLock.class).thenAccept(lock -> {
+   *   atomix.<DistributedLock>get("lock", DistributedLock.TYPE).thenAccept(lock -> {
    *     ...
    *   });
    *   }
@@ -272,8 +284,9 @@ public abstract class Atomix implements Managed<Atomix> {
    * @return A completable future to be completed once the resource has been loaded.
    * @throws NullPointerException if {@code key} or {@code type} are null
    */
+  @SuppressWarnings("unchecked")
   public <T extends Resource> CompletableFuture<T> get(String key, ResourceType<T> type) {
-    return factory.get(key, type);
+    return manager.get(key, type);
   }
 
   /**
@@ -317,8 +330,9 @@ public abstract class Atomix implements Managed<Atomix> {
    * @throws NullPointerException if {@code key} or {@code type} are null
    * @throws ResourceException if the resource could not be instantiated
    */
+  @SuppressWarnings("unchecked")
   public <T extends Resource> CompletableFuture<T> create(String key, Class<? super T> type) {
-    return factory.create(key, type);
+    return create(key, new ResourceType<>((Class<T>) type));
   }
 
   /**
@@ -342,14 +356,14 @@ public abstract class Atomix implements Managed<Atomix> {
    * use the {@link CompletableFuture#get()} method:
    * <pre>
    *   {@code
-   *   DistributedLock lock = atomix.create("lock", DistributedLock.class).get();
+   *   DistributedLock lock = atomix.create("lock", DistributedLock.TYPE).get();
    *   }
    * </pre>
    * Alternatively, to execute the operation asynchronous and be notified once the result is received in a different
    * thread, use one of the many completable future callbacks:
    * <pre>
    *   {@code
-   *   atomix.<DistributedLock>create("lock", DistributedLock.class).thenAccept(lock -> {
+   *   atomix.<DistributedLock>create("lock", DistributedLock.TYPE).thenAccept(lock -> {
    *     ...
    *   });
    *   }
@@ -363,7 +377,7 @@ public abstract class Atomix implements Managed<Atomix> {
    * @throws ResourceException if the resource could not be instantiated
    */
   public <T extends Resource> CompletableFuture<T> create(String key, ResourceType<T> type) {
-    return factory.create(key, type);
+    return manager.create(key, type);
   }
 
   /**
@@ -373,7 +387,7 @@ public abstract class Atomix implements Managed<Atomix> {
    */
   @Override
   public CompletableFuture<Atomix> open() {
-    return factory.open().thenApply(v -> this);
+    return client.open().thenApply(v -> this);
   }
 
   /**
@@ -383,7 +397,7 @@ public abstract class Atomix implements Managed<Atomix> {
    */
   @Override
   public boolean isOpen() {
-    return factory.isOpen();
+    return client.isOpen();
   }
 
   /**
@@ -393,7 +407,7 @@ public abstract class Atomix implements Managed<Atomix> {
    */
   @Override
   public CompletableFuture<Void> close() {
-    return factory.close();
+    return manager.close().thenCompose(v -> client.close());
   }
 
   /**
@@ -403,22 +417,12 @@ public abstract class Atomix implements Managed<Atomix> {
    */
   @Override
   public boolean isClosed() {
-    return factory.isClosed();
+    return client.isClosed();
   }
 
   @Override
   public String toString() {
-    return String.format("%s[session=%s]", getClass().getSimpleName(), factory.session());
-  }
-
-  /**
-   * Atomix recovery strategy.
-   */
-  protected class AtomixRecoveryStrategy implements RecoveryStrategy {
-    @Override
-    public void recover(CopycatClient client) {
-      factory.recover();
-    }
+    return String.format("%s[session=%s]", getClass().getSimpleName(), client.session());
   }
 
   /**

@@ -15,9 +15,7 @@
  */
 package io.atomix.coordination;
 
-import io.atomix.coordination.state.LeaderElectionState;
-import io.atomix.copycat.client.CopycatClient;
-import io.atomix.resource.ResourceStateMachine;
+import io.atomix.resource.ResourceType;
 import io.atomix.testing.AbstractCopycatTest;
 import org.testng.annotations.Test;
 
@@ -29,11 +27,11 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class DistributedLeaderElectionTest extends AbstractCopycatTest {
+public class DistributedLeaderElectionTest extends AbstractCopycatTest<DistributedLeaderElection> {
 
   @Override
-  protected ResourceStateMachine createStateMachine() {
-    return new LeaderElectionState();
+  protected ResourceType<DistributedLeaderElection> type() {
+    return DistributedLeaderElection.TYPE;
   }
 
   /**
@@ -42,7 +40,7 @@ public class DistributedLeaderElectionTest extends AbstractCopycatTest {
   public void testElection() throws Throwable {
     createServers(3);
 
-    DistributedLeaderElection election = new DistributedLeaderElection(createClient());
+    DistributedLeaderElection election = createResource();
 
     election.onElection(v -> resume()).thenRun(this::resume);
     await(0, 2);
@@ -54,11 +52,8 @@ public class DistributedLeaderElectionTest extends AbstractCopycatTest {
   public void testNextElection() throws Throwable {
     createServers(3);
 
-    CopycatClient client1 = createClient();
-    CopycatClient client2 = createClient();
-
-    DistributedLeaderElection election1 = new DistributedLeaderElection(client1);
-    DistributedLeaderElection election2 = new DistributedLeaderElection(client2);
+    DistributedLeaderElection election1 = createResource();
+    DistributedLeaderElection election2 = createResource();
 
     AtomicLong lastEpoch = new AtomicLong(0);
     election1.onElection(epoch -> {
@@ -75,7 +70,7 @@ public class DistributedLeaderElectionTest extends AbstractCopycatTest {
       resume();
     }).join();
 
-    client1.close();
+    election1.close();
 
     await(10000);
   }
@@ -86,11 +81,8 @@ public class DistributedLeaderElectionTest extends AbstractCopycatTest {
   public void testResignElection() throws Throwable {
     createServers(3);
 
-    CopycatClient client1 = createClient();
-    CopycatClient client2 = createClient();
-
-    DistributedLeaderElection election1 = new DistributedLeaderElection(client1);
-    DistributedLeaderElection election2 = new DistributedLeaderElection(client2);
+    DistributedLeaderElection election1 = createResource();
+    DistributedLeaderElection election2 = createResource();
 
     AtomicLong lastEpoch = new AtomicLong(0);
     election1.onElection(epoch -> {

@@ -15,15 +15,6 @@
  */
 package io.atomix.testing;
 
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.function.Function;
-
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-
 import io.atomix.Atomix;
 import io.atomix.AtomixClient;
 import io.atomix.AtomixReplica;
@@ -36,6 +27,14 @@ import io.atomix.copycat.server.storage.StorageLevel;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceType;
 import net.jodah.concurrentunit.ConcurrentTestCase;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.function.Function;
 
 /**
  * Abstract copycat test.
@@ -148,12 +147,7 @@ public abstract class AbstractAtomixTest extends ConcurrentTestCase {
   protected Atomix createReplica(Address address, List<Address> members) {
     AtomixReplica replica = AtomixReplica.builder(address, members)
         .withTransport(new LocalTransport(registry))
-        .withStorage(Storage.builder()
-            .withStorageLevel(StorageLevel.MEMORY)
-            .withMaxEntriesPerSegment(8)
-            .withMinorCompactionInterval(Duration.ofSeconds(5))
-            .withMajorCompactionInterval(Duration.ofSeconds(10))
-            .build())
+        .withStorage(new Storage(StorageLevel.MEMORY))
         .build();
     replicas.add(replica);
     return replica;

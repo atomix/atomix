@@ -15,10 +15,9 @@
  */
 package io.atomix.messaging;
 
-import io.atomix.testing.AbstractCopycatTest;
 import io.atomix.catalyst.transport.Address;
-import io.atomix.messaging.state.MessageBusState;
-import io.atomix.resource.ResourceStateMachine;
+import io.atomix.resource.ResourceType;
+import io.atomix.testing.AbstractCopycatTest;
 import org.testng.annotations.Test;
 
 /**
@@ -27,11 +26,11 @@ import org.testng.annotations.Test;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class DistributedMessageBusTest extends AbstractCopycatTest {
+public class DistributedMessageBusTest extends AbstractCopycatTest<DistributedMessageBus> {
 
   @Override
-  protected ResourceStateMachine createStateMachine() {
-    return new MessageBusState();
+  protected ResourceType<DistributedMessageBus> type() {
+    return DistributedMessageBus.TYPE;
   }
 
   /**
@@ -40,8 +39,8 @@ public class DistributedMessageBusTest extends AbstractCopycatTest {
   public void testSend() throws Throwable {
     createServers(3);
 
-    DistributedMessageBus bus1 = new DistributedMessageBus(createClient());
-    DistributedMessageBus bus2 = new DistributedMessageBus(createClient());
+    DistributedMessageBus bus1 = createResource();
+    DistributedMessageBus bus2 = createResource();
 
     bus1.open(new Address("localhost", 6000)).join();
     bus2.open(new Address("localhost", 6001)).join();

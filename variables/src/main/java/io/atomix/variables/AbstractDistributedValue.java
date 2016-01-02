@@ -27,6 +27,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
+@SuppressWarnings("unchecked")
 public abstract class AbstractDistributedValue<T extends AbstractDistributedValue<T, U>, U> extends Resource<T> {
 
   protected AbstractDistributedValue(CopycatClient client) {

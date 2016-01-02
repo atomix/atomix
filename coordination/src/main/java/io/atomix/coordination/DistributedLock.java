@@ -86,12 +86,19 @@ public class DistributedLock extends Resource<DistributedLock> {
 
   public DistributedLock(CopycatClient client) {
     super(client);
-    client.session().onEvent("lock", this::handleEvent);
   }
 
   @Override
   public ResourceType<DistributedLock> type() {
     return TYPE;
+  }
+
+  @Override
+  public CompletableFuture<DistributedLock> open() {
+    return super.open().thenApply(result -> {
+      client.onEvent("lock", this::handleEvent);
+      return result;
+    });
   }
 
   /**

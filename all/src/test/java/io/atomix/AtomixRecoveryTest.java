@@ -15,14 +15,13 @@
  */
 package io.atomix;
 
-import java.util.UUID;
-
+import io.atomix.collections.DistributedMap;
+import io.atomix.collections.DistributedSet;
+import io.atomix.testing.AbstractAtomixTest;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import io.atomix.testing.AbstractAtomixTest;
-import io.atomix.collections.DistributedMap;
-import io.atomix.collections.DistributedSet;
+import java.util.UUID;
 
 /**
  * Atomix resource recovery test.
@@ -30,6 +29,7 @@ import io.atomix.collections.DistributedSet;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 @Test
+@SuppressWarnings("unchecked")
 public class AtomixRecoveryTest extends AbstractAtomixTest {
   @BeforeClass
   protected void setupCluster() throws Throwable {
@@ -62,7 +62,7 @@ public class AtomixRecoveryTest extends AbstractAtomixTest {
     DistributedSet<String> set = atomix.get("test-set-" + id, DistributedSet.TYPE).get();
     set.add("Hello world!").join();
 
-    atomix.factory.recover().whenComplete((result, error) -> {
+    atomix.client.recover().whenComplete((result, error) -> {
       threadAssertNull(error);
       resume();
     });

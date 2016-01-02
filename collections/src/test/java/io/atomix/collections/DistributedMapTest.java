@@ -15,13 +15,11 @@
  */
 package io.atomix.collections;
 
-import java.time.Duration;
-
+import io.atomix.resource.ResourceType;
+import io.atomix.testing.AbstractCopycatTest;
 import org.testng.annotations.Test;
 
-import io.atomix.testing.AbstractCopycatTest;
-import io.atomix.collections.state.MapState;
-import io.atomix.resource.ResourceStateMachine;
+import java.time.Duration;
 
 /**
  * Distributed map test.
@@ -29,11 +27,12 @@ import io.atomix.resource.ResourceStateMachine;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class DistributedMapTest extends AbstractCopycatTest {
-
+@SuppressWarnings("unchecked")
+public class DistributedMapTest extends AbstractCopycatTest<DistributedMap> {
+  
   @Override
-  protected ResourceStateMachine createStateMachine() {
-    return new MapState();
+  protected ResourceType<DistributedMap> type() {
+    return DistributedMap.TYPE;
   }
 
   /**
@@ -42,7 +41,7 @@ public class DistributedMapTest extends AbstractCopycatTest {
   public void testMapPutGetRemove() throws Throwable {
     createServers(3);
 
-    DistributedMap<String, String> map = new DistributedMap<>(createClient());
+    DistributedMap<String, String> map = createResource();
 
     map.put("foo", "Hello world!").thenRun(this::resume);
     await(10000);
@@ -72,7 +71,7 @@ public class DistributedMapTest extends AbstractCopycatTest {
   public void testMapPutIfAbsent() throws Throwable {
     createServers(3);
 
-    DistributedMap<String, String> map = new DistributedMap<>(createClient());
+    DistributedMap<String, String> map = createResource();
 
     map.put("foo", "Hello world!").join();
 
@@ -95,7 +94,7 @@ public class DistributedMapTest extends AbstractCopycatTest {
   public void testMapPutIfAbsentTtl() throws Throwable {
     createServers(3);
 
-    DistributedMap<String, String> map = new DistributedMap<>(createClient());
+    DistributedMap<String, String> map = createResource();
 
     map.putIfAbsent("foo", "Hello world!", Duration.ofMillis(100)).join();
 
@@ -115,7 +114,7 @@ public class DistributedMapTest extends AbstractCopycatTest {
   public void testMapGetOrDefault() throws Throwable {
     createServers(3);
 
-    DistributedMap<String, String> map = new DistributedMap<>(createClient());
+    DistributedMap<String, String> map = createResource();
 
     map.put("foo", "Hello world!").thenRun(this::resume);
     await(10000);
@@ -139,7 +138,7 @@ public class DistributedMapTest extends AbstractCopycatTest {
   public void testMapContainsKey() throws Throwable {
     createServers(3);
 
-    DistributedMap<String, String> map = new DistributedMap<>(createClient());
+    DistributedMap<String, String> map = createResource();
 
     map.containsKey("foo").thenAccept(result -> {
       threadAssertFalse(result);
@@ -163,7 +162,7 @@ public class DistributedMapTest extends AbstractCopycatTest {
   public void testMapContainsValue() throws Throwable {
     createServers(3);
 
-    DistributedMap<String, String> map = new DistributedMap<>(createClient());
+    DistributedMap<String, String> map = createResource();
 
     map.containsValue("Hello world!").thenAccept(result -> {
       threadAssertFalse(result);
@@ -187,7 +186,7 @@ public class DistributedMapTest extends AbstractCopycatTest {
   public void testMapSize() throws Throwable {
     createServers(3);
 
-    DistributedMap<String, String> map = new DistributedMap<>(createClient());
+    DistributedMap<String, String> map = createResource();
 
     map.size().thenAccept(size -> {
       threadAssertEquals(size, 0);
@@ -220,7 +219,7 @@ public class DistributedMapTest extends AbstractCopycatTest {
   public void testMapPutTtl() throws Throwable {
     createServers(3);
 
-    DistributedMap<String, String> map = new DistributedMap<>(createClient());
+    DistributedMap<String, String> map = createResource();
 
     map.put("foo", "Hello world!", Duration.ofSeconds(1)).thenRun(this::resume);
     await(10000);
@@ -252,7 +251,7 @@ public class DistributedMapTest extends AbstractCopycatTest {
   public void testMapClear() throws Throwable {
     createServers(3);
 
-    DistributedMap<String, String> map = new DistributedMap<>(createClient());
+    DistributedMap<String, String> map = createResource();
 
     map.put("foo", "Hello world!").thenRun(this::resume);
     map.put("bar", "Hello world again!").thenRun(this::resume);

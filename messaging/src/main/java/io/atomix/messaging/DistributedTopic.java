@@ -67,17 +67,25 @@ public class DistributedTopic<T> extends Resource<DistributedTopic<T>> {
   @SuppressWarnings("unchecked")
   public DistributedTopic(CopycatClient client) {
     super(client);
-    client.session().onEvent("message", event -> {
-      for (Consumer<T> listener : listeners) {
-        listener.accept((T) event);
-      }
-    });
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public ResourceType<DistributedTopic<T>> type() {
     return (ResourceType) TYPE;
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public CompletableFuture<DistributedTopic<T>> open() {
+    return super.open().thenApply(result -> {
+      client.onEvent("message", event -> {
+        for (Consumer<T> listener : listeners) {
+          listener.accept((T) event);
+        }
+      });
+      return result;
+    });
   }
 
   /**

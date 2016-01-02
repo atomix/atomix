@@ -15,14 +15,12 @@
  */
 package io.atomix.collections;
 
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
-
+import io.atomix.resource.ResourceType;
+import io.atomix.testing.AbstractCopycatTest;
 import org.testng.annotations.Test;
 
-import io.atomix.testing.AbstractCopycatTest;
-import io.atomix.collections.state.QueueState;
-import io.atomix.resource.ResourceStateMachine;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
 
 /**
  * Distributed queue test.
@@ -30,11 +28,12 @@ import io.atomix.resource.ResourceStateMachine;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class DistributedQueueTest extends AbstractCopycatTest {
-
+@SuppressWarnings("unchecked")
+public class DistributedQueueTest extends AbstractCopycatTest<DistributedQueue> {
+  
   @Override
-  protected ResourceStateMachine createStateMachine() {
-    return new QueueState();
+  protected ResourceType<DistributedQueue> type() {
+    return DistributedQueue.TYPE;
   }
 
   /**
@@ -43,8 +42,8 @@ public class DistributedQueueTest extends AbstractCopycatTest {
   public void testQueueOfferPoll() throws Throwable {
     createServers(3);
 
-    DistributedQueue<String> queue1 = new DistributedQueue<>(createClient());
-    DistributedQueue<String> queue2 = new DistributedQueue<>(createClient());
+    DistributedQueue<String> queue1 = createResource();
+    DistributedQueue<String> queue2 = createResource();
 
     queue1.offer("Hello world!").join();
     queue2.size().thenAccept(size -> {
@@ -72,8 +71,8 @@ public class DistributedQueueTest extends AbstractCopycatTest {
   public void testQueueOfferRemove() throws Throwable {
     createServers(3);
 
-    DistributedQueue<String> queue1 = new DistributedQueue<>(createClient());
-    DistributedQueue<String> queue2 = new DistributedQueue<>(createClient());
+    DistributedQueue<String> queue1 = createResource();
+    DistributedQueue<String> queue2 = createResource();
 
     queue1.offer("Hello world!").join();
     queue2.size().thenAccept(size -> {
@@ -101,8 +100,8 @@ public class DistributedQueueTest extends AbstractCopycatTest {
   public void testQueueOfferPeek() throws Throwable {
     createServers(3);
 
-    DistributedQueue<String> queue1 = new DistributedQueue<>(createClient());
-    DistributedQueue<String> queue2 = new DistributedQueue<>(createClient());
+    DistributedQueue<String> queue1 = createResource();
+    DistributedQueue<String> queue2 = createResource();
 
     queue1.offer("Hello world!").join();
     queue2.size().thenAccept(size -> {
@@ -130,8 +129,8 @@ public class DistributedQueueTest extends AbstractCopycatTest {
   public void testQueueOfferElement() throws Throwable {
     createServers(3);
 
-    DistributedQueue<String> queue1 = new DistributedQueue<>(createClient());
-    DistributedQueue<String> queue2 = new DistributedQueue<>(createClient());
+    DistributedQueue<String> queue1 = createResource();
+    DistributedQueue<String> queue2 = createResource();
 
     queue1.offer("Hello world!").join();
     queue2.size().thenAccept(size -> {
@@ -159,10 +158,10 @@ public class DistributedQueueTest extends AbstractCopycatTest {
   public void testQueueAddRemove() throws Throwable {
     createServers(3);
 
-    DistributedQueue<String> queue1 = new DistributedQueue<>(createClient());
+    DistributedQueue<String> queue1 = createResource();
     assertFalse(queue1.contains("Hello world!").get());
 
-    DistributedQueue<String> queue2 = new DistributedQueue<>(createClient());
+    DistributedQueue<String> queue2 = createResource();
     assertFalse(queue2.contains("Hello world!").get());
 
     queue1.add("Hello world!").join();

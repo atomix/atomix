@@ -17,6 +17,7 @@ package io.atomix.resource;
 
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.Listener;
+import io.atomix.catalyst.util.Managed;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.copycat.client.Command;
 import io.atomix.copycat.client.CopycatClient;
@@ -50,7 +51,7 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class Resource<T extends Resource<T>> {
+public abstract class Resource<T extends Resource<T>> implements Managed<T> {
 
   /**
    * Indicates the state of the resource's communication with the cluster.
@@ -257,6 +258,25 @@ public abstract class Resource<T extends Resource<T>> {
   }
 
   /**
+   * Opens the resource.
+   * <p>
+   * Once the resource is opened, the resource will be transitioned to the {@link State#CONNECTED} state
+   * and the returned {@link CompletableFuture} will be completed.
+   *
+   * @return A completable future to be completed once the resource is opened.
+   */
+  @Override
+  @SuppressWarnings("unchecked")
+  public CompletableFuture<T> open() {
+    return client.open().thenApply(v -> (T) this);
+  }
+
+  @Override
+  public boolean isOpen() {
+    return state != State.CLOSED;
+  }
+
+  /**
    * Closes the resource.
    * <p>
    * Once the resource is closed, the resource will be transitioned to the {@link State#CLOSED} state and
@@ -265,8 +285,14 @@ public abstract class Resource<T extends Resource<T>> {
    *
    * @return A completable future to be completed once the resource is closed.
    */
+  @Override
   public CompletableFuture<Void> close() {
     return client.close();
+  }
+
+  @Override
+  public boolean isClosed() {
+    return state == State.CLOSED;
   }
 
   /**
@@ -280,7 +306,7 @@ public abstract class Resource<T extends Resource<T>> {
 
   @Override
   public int hashCode() {
-    return 37 * 23 + (int)(client.session().id() ^ (client.session().id() >>> 32));
+    return 37 * 23 + client.hashCode();
   }
 
   @Override
