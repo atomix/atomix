@@ -15,14 +15,13 @@
  */
 package io.atomix;
 
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Function;
-
+import io.atomix.coordination.DistributedLeaderElection;
+import io.atomix.testing.AbstractAtomixTest;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import io.atomix.testing.AbstractAtomixTest;
-import io.atomix.coordination.DistributedLeaderElection;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
 
 /**
  * Atomix leader election test.
@@ -68,7 +67,7 @@ public class AtomixLeaderElectionTest extends AbstractAtomixTest {
       threadAssertTrue(epoch > lastEpoch.get());
       lastEpoch.set(epoch);
       resume();
-    }).join();
+    });
 
     await(10000);
 
@@ -76,7 +75,7 @@ public class AtomixLeaderElectionTest extends AbstractAtomixTest {
       threadAssertTrue(epoch > lastEpoch.get());
       lastEpoch.set(epoch);
       resume();
-    }).join();
+    });
 
     client1.close();
 
