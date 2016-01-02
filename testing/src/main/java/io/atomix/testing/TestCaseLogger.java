@@ -1,4 +1,4 @@
-package io.atomix.atomix.testing;
+package io.atomix.testing;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

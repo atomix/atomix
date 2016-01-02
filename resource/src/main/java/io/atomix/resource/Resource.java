@@ -21,6 +21,7 @@ import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.copycat.client.Command;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.copycat.client.Query;
+import io.atomix.copycat.client.session.Session;
 
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -28,7 +29,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
 
 /**
- * Fault-tolerant stateful distributed object.
+ * Base class for fault-tolerant stateful distributed objects.
  * <p>
  * Resources are stateful distributed objects that run across a set of {@link io.atomix.copycat.server.CopycatServer}s
  * in a cluster.
@@ -38,6 +39,12 @@ import java.util.function.Consumer;
  * {@link Command}s and {@link Query}s which are submitted to the cluster where they're logged and
  * replicated.
  * <p>
+ * Resource implementations must be annotated with the {@link ResourceTypeInfo} annotation to indicate the
+ * {@link ResourceStateMachine} to be used by the Atomix resource manager. Additionally, resources must be
+ * registered via the {@code ServiceLoader} pattern in a file at {@code META-INF/services/io.atomix.resource.Resource}
+ * on the class path. The resource registration allows the Atomix resource manager to locate and load the resource
+ * state machine on each server in the cluster.
+ * <p>
  * Resources have varying consistency guarantees depending on the configured resource {@link Consistency}
  * and the semantics of the specific resource implementation.
  *
@@ -46,22 +53,71 @@ import java.util.function.Consumer;
 public abstract class Resource<T extends Resource<T>> {
 
   /**
-   * Resource state.
+   * Indicates the state of the resource's communication with the cluster.
+   * <p>
+   * The resource state is indicative of the resource's ability to communicate with the cluster within the
+   * context of the underlying {@link Session}. In some cases, resource state changes may be indicative of a
+   * loss of guarantees. Users of the resource should {@link Resource#onStateChange(Consumer) watch} the state
+   * of a resource to determine when guarantees are lost and react to changes in the resource's ability to communicate
+   * with the cluster.
+   * <p>
+   * <pre>
+   *   {@code
+   *   resource.onStateChange(state -> {
+   *     switch (state) {
+   *       case OPEN:
+   *         // The resource is healthy
+   *         break;
+   *       case SUSPENDED:
+   *         // The resource is unhealthy and operations may be unsafe
+   *         break;
+   *       case CLOSED:
+   *         // The resource has been closed and pending operations have failed
+   *         break;
+   *     }
+   *   });
+   *   }
+   * </pre>
+   * So long as the resource is in the {@link #CONNECTED} state, all guarantees with respect to reads and writes will
+   * be maintained, and a loss of the {@code CONNECTED} state may indicate a loss of linearizability. See the specific
+   * states for more info.
+   * <p>
+   * Reference resource documentation for implications of the various states on specific resources.
    */
   public enum State {
 
     /**
-     * Indicates that the client is connected to the cluster and operating normally.
+     * Indicates that the resource is connected and operating normally.
+     * <p>
+     * The {@code CONNECTED} state indicates that the resource is healthy and operating normally. Operations submitted
+     * and completed while the resource is in this state are guaranteed to adhere to the respective {@link Consistency consistency}
+     * guarantees.
      */
     CONNECTED,
 
     /**
-     * Indicates that the client is suspended and unable to communicate with the cluster.
+     * Indicates that the resource is suspended and its session may or may not be expired.
+     * <p>
+     * The {@code SUSPENDED} state is indicative of an inability to communicate with the cluster within the context of
+     * the underlying client's {@link Session}. Operations performed on resources in this state should be considered
+     * unsafe. An operation performed on a {@link #CONNECTED} resource that transitions to the {@code SUSPENDED} state
+     * prior to the operation's completion may be committed multiple times in the event that the underlying session
+     * is ultimately {@link Session.State#EXPIRED expired}, thus breaking linearizability. Additionally, state machines
+     * may see the session expire while the resource is in this state.
+     * <p>
+     * A resource that is in the {@code SUSPENDED} state may transition back to {@link #CONNECTED} once its underlying
+     * session is recovered. However, operations not yet completed prior to the resource's recovery may lose linearizability
+     * guarantees. If an operation is submitted while a resource is in the {@link #CONNECTED} state and the resource loses
+     * and recovers its session, the operation may be applied to the resource's state more than once. Operations completed
+     * across sessions are guaranteed to be performed at-least-once only.
      */
     SUSPENDED,
 
     /**
-     * Indicates that the client is closed.
+     * Indicates that the resource is closed.
+     * <p>
+     * A resource may transition to this state as a result of an expired session or an explicit {@link Resource#close() close}
+     * by the user or a closure of the resource's underlying client.
      */
     CLOSED
 
@@ -87,6 +143,10 @@ public abstract class Resource<T extends Resource<T>> {
 
   /**
    * Returns the resource type.
+   * <p>
+   * The resource type is a special descriptor of the resource that indicates the resource's unique
+   * {@link ResourceType#id() ID} and {@link ResourceStateMachine state machine} based on the annotated
+   * {@link ResourceTypeInfo}.
    *
    * @return The resource type.
    */
@@ -94,6 +154,11 @@ public abstract class Resource<T extends Resource<T>> {
 
   /**
    * Returns the current resource state.
+   * <p>
+   * The resource's {@link State} is indicative of the resource's ability to communicate with the cluster at any given
+   * time. Users of the resource should use the state to determine when guarantees may be lost. See the {@link State}
+   * documentation for information on the specific states, and see resource implementation documentation for the
+   * implications of different states on resource consistency.
    *
    * @return The current resource state.
    */
@@ -164,7 +229,7 @@ public abstract class Resource<T extends Resource<T>> {
   /**
    * Submits a write operation for this resource to the cluster.
    * <p>
-   * The read operation will be submitted with the configured {@link Consistency#writeConsistency()} if
+   * The write operation will be submitted with the configured {@link Consistency#writeConsistency()} if
    * it does not explicitly override {@link Command#consistency()} to provide a static consistency level.
    *
    * @param command The command to submit.
@@ -193,6 +258,10 @@ public abstract class Resource<T extends Resource<T>> {
 
   /**
    * Closes the resource.
+   * <p>
+   * Once the resource is closed, the resource will be transitioned to the {@link State#CLOSED} state and
+   * the returned {@link CompletableFuture} will be completed. Thereafter, attempts to operate on the resource
+   * will fail.
    *
    * @return A completable future to be completed once the resource is closed.
    */

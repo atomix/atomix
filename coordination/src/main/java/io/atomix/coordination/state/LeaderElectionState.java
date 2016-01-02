@@ -20,7 +20,6 @@ import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.session.SessionListener;
 import io.atomix.resource.ResourceStateMachine;
 
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -51,19 +50,26 @@ public class LeaderElectionState extends ResourceStateMachine implements Session
   @Override
   public void close(Session session) {
     if (leader != null && leader.session().equals(session)) {
-      leader.close();
-      leader = null;
-      if (!listeners.isEmpty()) {
-        Iterator<Map.Entry<Long, Commit<LeaderElectionCommands.Listen>>> iterator = listeners.entrySet().iterator();
-        leader = iterator.next().getValue();
-        iterator.remove();
-        leader.session().publish("elect", leader.index());
-      }
+      nextLeader();
     } else {
       Commit<LeaderElectionCommands.Listen> listener = listeners.remove(session.id());
       if (listener != null) {
         listener.close();
       }
+    }
+  }
+
+  /**
+   * Elects the next leader.
+   */
+  private void nextLeader() {
+    leader.close();
+    leader = null;
+
+    if (!listeners.isEmpty()) {
+      leader = listeners.entrySet().iterator().next().getValue();
+      listeners.remove(leader.session().id());
+      leader.session().publish("elect", leader.index());
     }
   }
 
@@ -87,14 +93,7 @@ public class LeaderElectionState extends ResourceStateMachine implements Session
   public void unlisten(Commit<LeaderElectionCommands.Unlisten> commit) {
     try {
       if (leader != null && leader.session().equals(commit.session())) {
-        leader.close();
-        leader = null;
-        if (!listeners.isEmpty()) {
-          Iterator<Map.Entry<Long, Commit<LeaderElectionCommands.Listen>>> iterator = listeners.entrySet().iterator();
-          leader = iterator.next().getValue();
-          iterator.remove();
-          leader.session().publish("elect", leader.index());
-        }
+        nextLeader();
       } else {
         Commit<LeaderElectionCommands.Listen> listener = listeners.remove(commit.session().id());
         if (listener != null) {
@@ -111,6 +110,19 @@ public class LeaderElectionState extends ResourceStateMachine implements Session
    */
   public boolean isLeader(Commit<LeaderElectionCommands.IsLeader> commit) {
     return leader != null && leader.session().equals(commit.session()) && leader.index() == commit.operation().epoch();
+  }
+
+  /**
+   * Resigns the leader.
+   */
+  public void resign(Commit<LeaderElectionCommands.Resign> commit) {
+    try {
+      if (leader != null && leader.index() == commit.operation().epoch()) {
+        nextLeader();
+      }
+    } finally {
+      commit.close();
+    }
   }
 
   @Override

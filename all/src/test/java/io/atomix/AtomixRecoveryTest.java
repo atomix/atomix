@@ -20,7 +20,7 @@ import java.util.UUID;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import io.atomix.atomix.testing.AbstractAtomixTest;
+import io.atomix.testing.AbstractAtomixTest;
 import io.atomix.collections.DistributedMap;
 import io.atomix.collections.DistributedSet;
 

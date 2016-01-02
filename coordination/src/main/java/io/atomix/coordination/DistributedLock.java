@@ -35,7 +35,7 @@ import java.util.function.Consumer;
  * This interface is an asynchronous version of Java's {@link java.util.concurrent.locks.Lock}.
  * <pre>
  *   {@code
- *   atomix.create("lock", DistributedLock::new).thenAccept(lock -> {
+ *   atomix.create("lock", DistributedLock.TYPE).thenAccept(lock -> {
  *     lock.lock().thenRun(() -> {
  *       ...
  *       lock.unlock();
@@ -51,6 +51,30 @@ import java.util.function.Consumer;
  * Distributed locks require no polling from the client. Locks are granted via session events published by the Atomix
  * cluster to the lock instance. In the event that a lock's client becomes disconnected from the cluster, its session
  * will expire after the configured cluster session timeout and the lock will be automatically released.
+ * <h3>Detecting failures</h3>
+ * Once a lock is acquired by a client, the cluster will monitor the lock holder's availability and release the lock
+ * automatically if the client becomes disconnected from the cluster. However, in the event that a lock holder becomes
+ * disconnected without crashing, it's possible for two processes to believe themselves to hold the lock simultaneously.
+ * If the lock holder becomes disconnected the cluster may grant the lock to another process. For this reason it's essential
+ * that clients monitor the {@link io.atomix.resource.Resource.State State} of the lock. If the resource transitions to the
+ * {@link Resource.State#SUSPENDED} state, that indicates that the underlying client is unable to communicate with the
+ * cluster and another process may have been granted the lock. Lock holders should monitor the resource for state changes
+ * and release the lock if the resource becomes suspended.
+ * <p>
+ * <pre>
+ *   {@code
+ *   DistributedLock lock = atomix.create("lock", DistributedLock.TYPE).get();
+ *
+ *   lock.lock().thenRun(() -> {}
+ *     lock.onStateChange(state -> {
+ *       if (state == DistributedLock.State.SUSPENDED) {
+ *         lock.unlock();
+ *         System.out.println("lost the lock");
+ *       }
+ *     });
+ *     // Do stuff
+ *   });
+ * </pre>
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

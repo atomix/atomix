@@ -15,7 +15,7 @@
  */
 package io.atomix.messaging;
 
-import io.atomix.atomix.testing.AbstractCopycatTest;
+import io.atomix.testing.AbstractCopycatTest;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.messaging.state.MessageBusState;
 import io.atomix.resource.ResourceStateMachine;

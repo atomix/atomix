@@ -16,6 +16,70 @@
 
 /**
  * Core Atomix APIs, including {@link io.atomix.AtomixClient} and {@link io.atomix.AtomixReplica}.
+ * <p>
+ * <h3>The Atomix cluster</h3>
+ * This package provides the primary mechanisms for creating and managing Atomix clusters. An Atomix cluster
+ * consists of one or more {@link io.atomix.AtomixServer servers} or {@link io.atomix.AtomixReplica replicas}
+ * and any number of clients. To create a cluster, construct an {@link io.atomix.AtomixServer AtomixServer} or
+ * {@link io.atomix.AtomixReplica AtomixReplica}.
+ * <p>
+ * <pre>
+ *   {@code
+ *   Address address = new Address("localhost", 5000);
+ *   List<Address> members = Arrays.asList(
+ *     new Address("localhost", 5000),
+ *     new Address("localhost", 5001),
+ *     new Address("localhost", 5002)
+ *   );
+ *
+ *   AtomixReplica replica = AtomixReplica.builder(address, members)
+ *     .withTransport(new NettyTransport())
+ *     .withStorage(new Storage("logs"))
+ *     .build();
+ *   replica.open();
+ *   }
+ * </pre>
+ * Atomix is built on the <a href="http://raft.github.io">Raft consensus algorithm</a> and so state changes
+ * in the Atomix cluster are quorum-based. Atomix clusters typically consist of an odd number of servers or
+ * replicas - e.g. {@code 3} or {@code 5} - to acheive the greatest level of fault tolerance.
+ * <p>
+ * <b>Servers vs Replicas</b>
+ * <p>
+ * The sole difference between {@link io.atomix.AtomixServer servers} and {@link io.atomix.AtomixReplica replicas}
+ * is the ability to operate on {@link io.atomix.resource.Resource resources}. Servers should be used when constructing
+ * a standalone system with which only {@link io.atomix.AtomixClient clients} can communicate, and replicas should be
+ * used for embedding a server while simultaneously operating on that server's state.
+ * <p>
+ * <h3>Resources</h3>
+ * <p>
+ * Atomix {@link io.atomix.AtomixServer servers} and {@link io.atomix.AtomixReplica replicas} provide the ability
+ * to manage and replicate state, and {@link io.atomix.AtomixReplica replicas} and {@link io.atomix.AtomixClient clients}
+ * provide the interface to operate on that state. The {@link io.atomix.Atomix Atomix} interface provides the
+ * methods necessary to manage creating and operating on {@link io.atomix.resource.Resource Resources}.
+ * A resource is a stateful, fault-tolerant, distributed object that's manged by a replicated state machine. To
+ * create a resource, simply call {@link io.atomix.Atomix#get(java.lang.String, io.atomix.resource.ResourceType)} or
+ * {@link io.atomix.Atomix#create(java.lang.String, io.atomix.resource.ResourceType)} on a
+ * {@link io.atomix.AtomixClient client} or {@link io.atomix.AtomixReplica replica}.
+ * <p>
+ * <pre>
+ *   {@code
+ *   DistributedLeaderElection election = atomix.create("election", DistributedLeaderElection.TYPE).get();
+ *   }
+ * </pre>
+ * A {@link io.atomix.resource.Resource resource} is simply an interface to a replicated state machine. When a
+ * resource is created, a state machine is created on each {@link io.atomix.AtomixServer server} or
+ * {@link io.atomix.AtomixReplica replica} in the cluster, and operations on the resource are submitted to the
+ * cluster where they're logged, replicated, and applied to the resource's specific {@link io.atomix.resource.ResourceStateMachine}.
+ * <p>
+ * <b>Clients vs Replicas</b>
+ * <p>
+ * The sole difference between {@link io.atomix.AtomixClient clients} and {@link io.atomix.AtomixReplica replicas} is
+ * the ability to store state and participate in replication. Clients operate on resource state purely remotely. When
+ * a resource created by an {@link io.atomix.AtomixClient AtomixClient} is modified, operations are submitted remotely
+ * to the cluster. The same is true of replicas; when operations are performed on a resource created via an
+ * {@link io.atomix.AtomixReplica AtomixReplica}, state changes may be performed remotely, but the replica also participates
+ * in the replication and commitment of the state changes. This allows servers to be effectively be embedded in code that
+ * operates on resource state.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

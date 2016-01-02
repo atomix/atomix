@@ -54,7 +54,7 @@
           <properties>
             <property>
               <name>listener</name>
-              <value>io.atomix.atomix.testing.TestCaseLogger</value>
+              <value>io.atomix.testing.TestCaseLogger</value>
             </property>
           </properties>
         </configuration>

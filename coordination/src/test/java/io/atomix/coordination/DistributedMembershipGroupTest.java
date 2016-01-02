@@ -15,7 +15,7 @@
  */
 package io.atomix.coordination;
 
-import io.atomix.atomix.testing.AbstractCopycatTest;
+import io.atomix.testing.AbstractCopycatTest;
 import io.atomix.coordination.state.MembershipGroupState;
 import io.atomix.resource.ResourceStateMachine;
 import org.testng.annotations.Test;

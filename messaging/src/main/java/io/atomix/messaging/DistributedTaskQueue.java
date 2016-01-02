@@ -31,6 +31,43 @@ import java.util.function.Consumer;
 
 /**
  * Distributed task queue.
+ * <p>
+ * The distributed task queue provides a mechanism for processes to schedule and complete tasks
+ * across a cluster. Tasks are submitted to the queue via the {@link #submit(Object)} method,
+ * and listeners process tasks on the queue by registering a {@link #consumer(Consumer)}.
+ * <p>
+ * <pre>
+ *   {@code
+ *   queue.consumer(value -> System.out.println(value));
+ *   queue.submit("Hello world!");
+ *   }
+ * </pre>
+ * Users of the task queue can either await completion of submitted tasks or complete submitted
+ * tasks once written and replicated in the cluster. To await completion of submitted tasks,
+ * use the {@link #sync()} consistency level, and to allow tasks to be completed asynchronously,
+ * use the {@link #async()} consistency level.
+ * <p>
+ * <pre>
+ *   {@code
+ *   queue.async().submit("Hello world!").thenRun(() -> {
+ *     // Task was written and replicated
+ *   });
+ *
+ *   queue.sync().submit("Hello world!").thenRun(() -> {
+ *     // Task was written, replicated, processed, and acknowledged by a consumer
+ *   });
+ *   }
+ * </pre>
+ * Tasks are guaranteed to be processed <em>at least once</em> by queue consumers. When a consumer
+ * consumes and processes a task, once the registered {@link #consumer(Consumer) consumer} callback
+ * is completed, the task will be acknowledged by the task queue instance and the next task will be
+ * retrieved from the cluster. In the event that a consumer fails before completing the processing of
+ * a task, the task will be reassigned to another active consumer.
+ * <p>
+ * The task queue does not guarantee ordering of processed tasks. In the absence of failures, tasks
+ * will be consumed and processed in the order in which they were placed on the queue, but in the event
+ * of a failure failed tasks may be requeued and processed out-of-order. This ensures that tasks can
+ * continue processing during failure detection.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
