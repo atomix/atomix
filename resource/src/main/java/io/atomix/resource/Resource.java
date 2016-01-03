@@ -24,6 +24,7 @@ import io.atomix.copycat.client.CopycatClient;
 import io.atomix.copycat.client.Query;
 import io.atomix.copycat.client.session.Session;
 
+import java.io.Serializable;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -51,7 +52,13 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class Resource<T extends Resource<T>> implements Managed<T> {
+public abstract class Resource<T extends Resource<?>> implements Managed<T> {
+
+  /**
+   * Resource configuration.
+   */
+  public interface Config extends Serializable {
+  }
 
   /**
    * Indicates the state of the resource's communication with the cluster.

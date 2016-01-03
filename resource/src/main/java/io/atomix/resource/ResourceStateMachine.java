@@ -15,30 +15,62 @@
  */
 package io.atomix.resource;
 
+import io.atomix.catalyst.buffer.BufferInput;
+import io.atomix.catalyst.buffer.BufferOutput;
+import io.atomix.catalyst.serializer.CatalystSerializable;
+import io.atomix.catalyst.serializer.SerializeWith;
+import io.atomix.catalyst.serializer.Serializer;
+import io.atomix.catalyst.util.Assert;
 import io.atomix.copycat.client.Command;
 import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.StateMachine;
 import io.atomix.copycat.server.StateMachineExecutor;
-
-import java.util.function.Consumer;
 
 /**
  * Base resource state machine.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public abstract class ResourceStateMachine extends StateMachine {
+public abstract class ResourceStateMachine<T extends Resource.Config> extends StateMachine {
+  private Commit<ConfigureCommand> configureCommit;
+  protected T config;
 
   @Override
   public final void init(StateMachineExecutor executor) {
-    executor.register(DeleteCommand.class, (Consumer<Commit<DeleteCommand>>) c -> {
-      try {
-        delete();
-      } finally {
-        c.close();
-      }
-    });
+    executor.<DeleteCommand>register(DeleteCommand.class, this::delete);
+    executor.<ConfigureCommand>register(ConfigureCommand.class, this::configure);
     super.init(new ResourceStateMachineExecutor(executor));
+  }
+
+  /**
+   * Handles a configure command.
+   */
+  @SuppressWarnings("unchecked")
+  private void configure(Commit<ConfigureCommand> commit) {
+    if (configureCommit != null)
+      configureCommit.close();
+    configureCommit = commit;
+    configure((T) configureCommit.operation().config());
+  }
+
+  /**
+   * Configures the resource.
+   *
+   * @param config The resource configuration.
+   */
+  public void configure(T config) {
+    this.config = config;
+  }
+
+  /**
+   * Handles a delete command.
+   */
+  private void delete(Commit<DeleteCommand> commit) {
+    try {
+      delete();
+    } finally {
+      commit.close();
+    }
   }
 
   /**
@@ -48,9 +80,47 @@ public abstract class ResourceStateMachine extends StateMachine {
   }
 
   /**
+   * Resource configure command.
+   */
+  @SerializeWith(id=130)
+  public static class ConfigureCommand implements Command<Void>, CatalystSerializable {
+    private Resource.Config config;
+
+    public ConfigureCommand(Resource.Config config) {
+      this.config = Assert.notNull(config, "config");
+    }
+
+    /**
+     * Returns the resource configuration.
+     *
+     * @return The resource configuration.
+     */
+    public Resource.Config config() {
+      return config;
+    }
+
+    @Override
+    public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
+      serializer.writeObject(config, buffer);
+    }
+
+    @Override
+    public void readObject(BufferInput<?> buffer, Serializer serializer) {
+      config = serializer.readObject(buffer);
+    }
+  }
+
+  /**
    * Resource delete command.
    */
-  public static class DeleteCommand implements Command<Void> {
+  @SerializeWith(id=131)
+  public static class DeleteCommand implements Command<Void>, CatalystSerializable {
+    @Override
+    public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
+    }
+    @Override
+    public void readObject(BufferInput<?> buffer, Serializer serializer) {
+    }
   }
 
 }
