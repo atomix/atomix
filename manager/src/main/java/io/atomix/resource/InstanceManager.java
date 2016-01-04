@@ -32,9 +32,9 @@ import java.util.concurrent.CompletableFuture;
  */
 public final class InstanceManager {
   private final CopycatClient client;
-  private final Map<String, Resource<?>> instances = new HashMap<>();
+  private final Map<String, Resource<?, ?>> instances = new HashMap<>();
   private final Map<String, CompletableFuture> futures = new HashMap<>();
-  private final Set<Resource<?>> resources = new HashSet<>();
+  private final Set<Resource<?, ?>> resources = new HashSet<>();
 
   public InstanceManager(CopycatClient client) {
     this.client = Assert.notNull(client, "client");
@@ -49,15 +49,15 @@ public final class InstanceManager {
    * @return A completable future to be completed once the resource has been opened.
    */
   @SuppressWarnings("unchecked")
-  public synchronized <T extends Resource> CompletableFuture<T> get(String key, ResourceType<T> type) {
+  public synchronized <T extends Resource<T, U>, U extends Resource.Options> CompletableFuture<T> get(String key, ResourceType type, U options) {
     T resource;
 
     // Determine whether a singleton instance of the given resource key already exists.
-    Resource<?> check = instances.get(key);
+    Resource<?, ?> check = instances.get(key);
     if (check == null) {
-      Instance<T> instance = new Instance<>(key, type, Instance.Method.GET, this);
+      Instance instance = new Instance(key, type, Instance.Method.GET, this);
       InstanceClient client = new InstanceClient(instance, this.client);
-      check = type.factory().create(client);
+      check = type.factory().create(client, options);
       instances.put(key, check);
       resources.add(check);
     }
@@ -65,7 +65,7 @@ public final class InstanceManager {
     // Ensure the existing singleton instance type matches the requested instance type. If the instance
     // was created new, this condition will always pass. If there was another instance created of a
     // different type, an exception will be returned without having to make a request to the cluster.
-    if (!check.type().equals(type)) {
+    if (check.getClass() != type.resource()) {
       return Futures.exceptionalFuture(new IllegalArgumentException("inconsistent resource type: " + type));
     }
 
@@ -89,10 +89,10 @@ public final class InstanceManager {
    * @return A completable future to be completed once the resource has been created.
    */
   @SuppressWarnings("unchecked")
-  public <T extends Resource> CompletableFuture<T> create(String key, ResourceType<T> type) {
-    Instance<T> instance = new Instance<>(key, type, Instance.Method.GET, this);
+  public <T extends Resource<T, U>, U extends Resource.Options> CompletableFuture<T> create(String key, ResourceType type, U options) {
+    Instance instance = new Instance(key, type, Instance.Method.GET, this);
     InstanceClient client = new InstanceClient(instance, this.client);
-    T resource = type.factory().create(client);
+    T resource = (T) type.factory().create(client, options);
     synchronized (this) {
       resources.add(resource);
     }
@@ -104,7 +104,7 @@ public final class InstanceManager {
    *
    * @param instance The instance to close.
    */
-  void close(Instance<?> instance) {
+  void close(Instance instance) {
     if (instance.method() == Instance.Method.GET) {
       synchronized (this) {
         instances.remove(instance.key());
@@ -121,7 +121,7 @@ public final class InstanceManager {
   public synchronized CompletableFuture<Void> close() {
     CompletableFuture<?>[] futures = new CompletableFuture[resources.size()];
     int i = 0;
-    for (Resource<?> instance : resources) {
+    for (Resource<?, ?> instance : resources) {
       futures[i++] = instance.close();
     }
     return CompletableFuture.allOf(futures);

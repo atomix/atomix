@@ -15,16 +15,6 @@
  */
 package io.atomix;
 
-import static org.testng.Assert.assertEquals;
-
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
-
-import io.atomix.testing.AbstractAtomixTest;
 import io.atomix.copycat.client.Command;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.copycat.client.Query;
@@ -32,8 +22,16 @@ import io.atomix.copycat.server.Commit;
 import io.atomix.resource.Consistency;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceStateMachine;
-import io.atomix.resource.ResourceType;
 import io.atomix.resource.ResourceTypeInfo;
+import io.atomix.testing.AbstractAtomixTest;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+
+import static org.testng.Assert.assertEquals;
 
 /**
  * Replica test.
@@ -86,7 +84,7 @@ public class AtomixReplicaTest extends AbstractAtomixTest {
   private void testSubmitCommand(Consistency consistency) throws Throwable {
     Atomix replica = createReplicas(5).iterator().next();
 
-    TestResource resource = replica.create("test", TestResource.TYPE).get();
+    TestResource resource = replica.create("test", TestResource.class).get();
 
     resource.with(consistency).command("Hello world!").thenAccept(result -> {
       threadAssertEquals(result, "Hello world!");
@@ -130,7 +128,7 @@ public class AtomixReplicaTest extends AbstractAtomixTest {
   private void testSubmitQuery(Consistency consistency) throws Throwable {
     Atomix replica = createReplicas(5).iterator().next();
 
-    TestResource resource = replica.create("test", TestResource.TYPE).get();
+    TestResource resource = replica.create("test", TestResource.class).get();
 
     resource.with(consistency).query("Hello world!").thenAccept(result -> {
       threadAssertEquals(result, "Hello world!");
@@ -149,8 +147,8 @@ public class AtomixReplicaTest extends AbstractAtomixTest {
     Atomix replica1 = replicas.get(0);
     Atomix replica2 = replicas.get(1);
 
-    ValueResource resource1 = replica1.get("test", ValueResource.TYPE).get();
-    ValueResource resource2 = replica2.get("test", ValueResource.TYPE).get();
+    ValueResource resource1 = replica1.get("test", ValueResource.class).get();
+    ValueResource resource2 = replica2.get("test", ValueResource.class).get();
 
     resource1.set("Hello world!").join();
 
@@ -170,8 +168,8 @@ public class AtomixReplicaTest extends AbstractAtomixTest {
     Atomix replica1 = replicas.get(0);
     Atomix replica2 = replicas.get(1);
 
-    ValueResource resource1 = replica1.create("test", ValueResource.TYPE).get();
-    ValueResource resource2 = replica2.create("test", ValueResource.TYPE).get();
+    ValueResource resource1 = replica1.create("test", ValueResource.class).get();
+    ValueResource resource2 = replica2.create("test", ValueResource.class).get();
 
     resource1.set("Hello world!").join();
 
@@ -191,8 +189,8 @@ public class AtomixReplicaTest extends AbstractAtomixTest {
     Atomix replica1 = replicas.get(0);
     Atomix replica2 = replicas.get(1);
 
-    ValueResource resource1 = replica1.get("test", ValueResource.TYPE).get();
-    ValueResource resource2 = replica2.create("test", ValueResource.TYPE).get();
+    ValueResource resource1 = replica1.get("test", ValueResource.class).get();
+    ValueResource resource2 = replica2.create("test", ValueResource.class).get();
 
     resource1.set("Hello world!").join();
 
@@ -212,10 +210,10 @@ public class AtomixReplicaTest extends AbstractAtomixTest {
     Atomix replica1 = replicas.get(0);
     Atomix replica2 = replicas.get(1);
 
-    ValueResource resource11 = replica1.get("test1", ValueResource.TYPE).get();
-    ValueResource resource12 = replica2.create("test1", ValueResource.TYPE).get();
-    ValueResource resource21 = replica1.get("test2", ValueResource.TYPE).get();
-    ValueResource resource22 = replica2.create("test2", ValueResource.TYPE).get();
+    ValueResource resource11 = replica1.get("test1", ValueResource.class).get();
+    ValueResource resource12 = replica2.create("test1", ValueResource.class).get();
+    ValueResource resource21 = replica1.get("test2", ValueResource.class).get();
+    ValueResource resource22 = replica2.create("test2", ValueResource.class).get();
 
     resource11.set("foo").join();
     assertEquals(resource12.get().get(), "foo");
@@ -231,16 +229,9 @@ public class AtomixReplicaTest extends AbstractAtomixTest {
    * Test resource.
    */
   @ResourceTypeInfo(id = 3, stateMachine = TestStateMachine.class)
-  public static class TestResource extends Resource {
-    public static final ResourceType<TestResource> TYPE = new ResourceType<>(TestResource.class);
-
-    public TestResource(CopycatClient client) {
-      super(client);
-    }
-
-    @Override
-    public ResourceType type() {
-      return TYPE;
+  public static class TestResource extends Resource<TestResource, Resource.Options> {
+    public TestResource(CopycatClient client, Resource.Options options) {
+      super(client, options);
     }
 
     @Override
@@ -305,16 +296,9 @@ public class AtomixReplicaTest extends AbstractAtomixTest {
    * Value resource.
    */
   @ResourceTypeInfo(id = 4, stateMachine = ValueStateMachine.class)
-  public static class ValueResource extends Resource {
-    public static final ResourceType<ValueResource> TYPE = new ResourceType<ValueResource>(ValueResource.class);
-
-    public ValueResource(CopycatClient client) {
-      super(client);
-    }
-
-    @Override
-    public ResourceType type() {
-      return TYPE;
+  public static class ValueResource extends Resource<ValueResource, Resource.Options> {
+    public ValueResource(CopycatClient client, Resource.Options options) {
+      super(client, options);
     }
 
     public CompletableFuture<Void> set(String value) {

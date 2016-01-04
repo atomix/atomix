@@ -96,10 +96,10 @@ public abstract class AbstractAtomixTest extends ConcurrentTestCase {
    * Creates a resource factory for the given type.
    */
   @SuppressWarnings("unchecked")
-  protected <T extends Resource<T>> Function<Atomix, T> get(String key, ResourceType<?> type) {
+  protected <T extends Resource> Function<Atomix, T> get(String key, Class<? super T> type) {
     return a -> {
       try {
-        return a.get(key, (ResourceType<T>) type).get();
+        return a.get(key, type).get();
       } catch (InterruptedException | ExecutionException e) {
         throw new RuntimeException(e);
       }
@@ -110,10 +110,10 @@ public abstract class AbstractAtomixTest extends ConcurrentTestCase {
    * Creates a resource factory for the given type.
    */
   @SuppressWarnings("unchecked")
-  protected <T extends Resource<T>> Function<Atomix, T> create(String key, ResourceType<?> type) {
+  protected <T extends Resource> Function<Atomix, T> create(String key, Class<? super T> type) {
     return a -> {
       try {
-        return a.create(key, (ResourceType<T>) type).get();
+        return a.create(key, type).get();
       } catch (InterruptedException | ExecutionException e) {
         throw new RuntimeException(e);
       }

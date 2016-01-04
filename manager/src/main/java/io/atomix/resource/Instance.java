@@ -22,7 +22,7 @@ import io.atomix.catalyst.util.Assert;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public final class Instance<T extends Resource> implements AutoCloseable {
+public final class Instance implements AutoCloseable {
 
   /**
    * Instance open method.
@@ -42,11 +42,11 @@ public final class Instance<T extends Resource> implements AutoCloseable {
   }
 
   private final String key;
-  private final ResourceType<T> type;
+  private final ResourceType type;
   private final Method method;
   private final InstanceManager manager;
 
-  public Instance(String key, ResourceType<T> type, Method method, InstanceManager manager) {
+  public Instance(String key, ResourceType type, Method method, InstanceManager manager) {
     this.key = Assert.notNull(key, "key");
     this.type = Assert.notNull(type, "type");
     this.method = Assert.notNull(method, "method");
@@ -67,7 +67,7 @@ public final class Instance<T extends Resource> implements AutoCloseable {
    *
    * @return The resource instance type.
    */
-  public ResourceType<T> type() {
+  public ResourceType type() {
     return type;
   }
 

@@ -32,8 +32,8 @@ import java.util.function.Function;
 public class DistributedLongTest extends AbstractCopycatTest<DistributedLong> {
 
   @Override
-  protected ResourceType type() {
-    return DistributedLong.TYPE;
+  protected Class<? super DistributedLong> type() {
+    return DistributedLong.class;
   }
 
   /**

@@ -28,10 +28,10 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 @SuppressWarnings("unchecked")
-public abstract class AbstractDistributedValue<T extends AbstractDistributedValue<T, U>, U> extends Resource<T> {
+public abstract class AbstractDistributedValue<T extends AbstractDistributedValue<T, U, V>, U extends Resource.Options, V> extends Resource<T, U> {
 
-  protected AbstractDistributedValue(CopycatClient client) {
-    super(client);
+  protected AbstractDistributedValue(CopycatClient client, U options) {
+    super(client, options);
   }
 
   /**
@@ -39,7 +39,7 @@ public abstract class AbstractDistributedValue<T extends AbstractDistributedValu
    *
    * @return A completable future to be completed with the current value.
    */
-  public CompletableFuture<U> get() {
+  public CompletableFuture<V> get() {
     return submit(new ValueCommands.Get<>());
   }
 
@@ -49,7 +49,7 @@ public abstract class AbstractDistributedValue<T extends AbstractDistributedValu
    * @param value The current value.
    * @return A completable future to be completed once the value has been set.
    */
-  public CompletableFuture<Void> set(U value) {
+  public CompletableFuture<Void> set(V value) {
     return submit(new ValueCommands.Set(value));
   }
 
@@ -60,7 +60,7 @@ public abstract class AbstractDistributedValue<T extends AbstractDistributedValu
    * @param ttl The time after which to expire the value.
    * @return A completable future to be completed once the value has been set.
    */
-  public CompletableFuture<Void> set(U value, Duration ttl) {
+  public CompletableFuture<Void> set(V value, Duration ttl) {
     return submit(new ValueCommands.Set(value, ttl.toMillis()));
   }
 
@@ -70,7 +70,7 @@ public abstract class AbstractDistributedValue<T extends AbstractDistributedValu
    * @param value The updated value.
    * @return A completable future to be completed with the previous value.
    */
-  public CompletableFuture<U> getAndSet(U value) {
+  public CompletableFuture<V> getAndSet(V value) {
     return submit(new ValueCommands.GetAndSet<>(value));
   }
 
@@ -81,7 +81,7 @@ public abstract class AbstractDistributedValue<T extends AbstractDistributedValu
    * @param ttl The time after which to expire the value.
    * @return A completable future to be completed with the previous value.
    */
-  public CompletableFuture<U> getAndSet(U value, Duration ttl) {
+  public CompletableFuture<V> getAndSet(V value, Duration ttl) {
     return submit(new ValueCommands.GetAndSet<>(value, ttl.toMillis()));
   }
 
@@ -92,7 +92,7 @@ public abstract class AbstractDistributedValue<T extends AbstractDistributedValu
    * @param update The updated value.
    * @return A completable future to be completed with a boolean value indicating whether the value was updated.
    */
-  public CompletableFuture<Boolean> compareAndSet(U expect, U update) {
+  public CompletableFuture<Boolean> compareAndSet(V expect, V update) {
     return submit(new ValueCommands.CompareAndSet(expect, update));
   }
 
@@ -104,7 +104,7 @@ public abstract class AbstractDistributedValue<T extends AbstractDistributedValu
    * @param ttl The time after which to expire the value.
    * @return A completable future to be completed with a boolean value indicating whether the value was updated.
    */
-  public CompletableFuture<Boolean> compareAndSet(U expect, U update, Duration ttl) {
+  public CompletableFuture<Boolean> compareAndSet(V expect, V update, Duration ttl) {
     return submit(new ValueCommands.CompareAndSet(expect, update, ttl.toMillis()));
   }
 

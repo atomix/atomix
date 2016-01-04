@@ -29,8 +29,8 @@ import org.testng.annotations.Test;
 public class DistributedMessageBusTest extends AbstractCopycatTest<DistributedMessageBus> {
 
   @Override
-  protected ResourceType<DistributedMessageBus> type() {
-    return DistributedMessageBus.TYPE;
+  protected Class<? super DistributedMessageBus> type() {
+    return DistributedMessageBus.class;
   }
 
   /**

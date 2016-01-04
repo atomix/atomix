@@ -32,8 +32,8 @@ import static org.testng.Assert.assertTrue;
 public class DistributedQueueTest extends AbstractCopycatTest<DistributedQueue> {
   
   @Override
-  protected ResourceType<DistributedQueue> type() {
-    return DistributedQueue.TYPE;
+  protected Class<? super DistributedQueue> type() {
+    return DistributedQueue.class;
   }
 
   /**

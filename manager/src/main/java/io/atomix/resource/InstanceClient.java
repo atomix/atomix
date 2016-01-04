@@ -45,7 +45,7 @@ import java.util.function.Consumer;
  */
 public class InstanceClient implements CopycatClient {
   private volatile long resource;
-  private final Instance<?> instance;
+  private final Instance instance;
   private final CopycatClient client;
   private volatile Session clientSession;
   private volatile InstanceSession session;
@@ -58,7 +58,7 @@ public class InstanceClient implements CopycatClient {
   private volatile CompletableFuture<CopycatClient> recoverFuture;
   private volatile CompletableFuture<Void> closeFuture;
 
-  public InstanceClient(Instance<?> instance, CopycatClient client) {
+  public InstanceClient(Instance instance, CopycatClient client) {
     this.instance = Assert.notNull(instance, "instance");
     this.client = Assert.notNull(client, "client");
     this.state = State.CLOSED;

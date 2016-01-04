@@ -26,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public final class ResourceRegistry {
-  private final Map<Integer, ResourceType<?>> resourceTypes = new ConcurrentHashMap<>();
+  private final Map<Integer, ResourceType> resourceTypes = new ConcurrentHashMap<>();
 
   /**
    * Registers a resource type.
@@ -34,7 +34,7 @@ public final class ResourceRegistry {
    * @param type The resource type to register.
    * @return The resource registry.
    */
-  public ResourceRegistry register(ResourceType<?> type) {
+  public ResourceRegistry register(ResourceType type) {
     Assert.notNull(type, "type");
     Assert.argNot(type.id() > Short.MAX_VALUE, "resource ID must be less than %d", Short.MAX_VALUE);
     Assert.argNot(resourceTypes.containsKey(type.id()), "a type with the ID %s already exists", type.id());
@@ -48,7 +48,7 @@ public final class ResourceRegistry {
    * @param id The resource type ID.
    * @return The resource type.
    */
-  public ResourceType<?> lookup(int id) {
+  public ResourceType lookup(int id) {
     return resourceTypes.get(id);
   }
 

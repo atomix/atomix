@@ -38,26 +38,26 @@ public class AtomixQueueTest extends AbstractAtomixTest {
   public void testClientQueueGet() throws Throwable {
     Atomix client1 = createClient();
     Atomix client2 = createClient();
-    testQueue(client1, client2, get("test-client-queue-get", DistributedQueue.TYPE));
+    testQueue(client1, client2, get("test-client-queue-get", DistributedQueue.class));
   }
 
   public void testClientQueueCreate() throws Throwable {
     Atomix client1 = createClient();
     Atomix client2 = createClient();
-    testQueue(client1, client2, create("test-client-queue-create", DistributedQueue.TYPE));
+    testQueue(client1, client2, create("test-client-queue-create", DistributedQueue.class));
   }
 
   public void testReplicaQueueGet() throws Throwable {
-    testQueue(replicas.get(0), replicas.get(1), get("test-replica-queue-get", DistributedQueue.TYPE));
+    testQueue(replicas.get(0), replicas.get(1), get("test-replica-queue-get", DistributedQueue.class));
   }
 
   public void testReplicaQueueCreate() throws Throwable {
-    testQueue(replicas.get(0), replicas.get(1), create("test-replica-queue-create", DistributedQueue.TYPE));
+    testQueue(replicas.get(0), replicas.get(1), create("test-replica-queue-create", DistributedQueue.class));
   }
 
   public void testMixQueue() throws Throwable {
     Atomix client = createClient();
-    testQueue(replicas.get(0), client, create("test-queue-mix", DistributedQueue.TYPE));
+    testQueue(replicas.get(0), client, create("test-queue-mix", DistributedQueue.class));
   }
 
   /**

@@ -52,12 +52,18 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class Resource<T extends Resource<?>> implements Managed<T> {
+public abstract class Resource<T extends Resource<T, U>, U extends Resource.Options> implements Managed<T> {
 
   /**
    * Resource configuration.
    */
   public interface Config extends Serializable {
+  }
+
+  /**
+   * Resource options.
+   */
+  public interface Options {
   }
 
   /**
@@ -131,13 +137,15 @@ public abstract class Resource<T extends Resource<?>> implements Managed<T> {
 
   }
 
-  protected CopycatClient client;
+  protected final CopycatClient client;
+  protected final U options;
   private State state;
   private final Set<StateChangeListener> changeListeners = new CopyOnWriteArraySet<>();
   private Consistency consistency = Consistency.ATOMIC;
 
-  protected Resource(CopycatClient client) {
+  protected Resource(CopycatClient client, U options) {
     this.client = Assert.notNull(client, "client");
+    this.options = options;
     client.onStateChange(this::onStateChange);
   }
 
@@ -148,17 +156,6 @@ public abstract class Resource<T extends Resource<?>> implements Managed<T> {
     this.state = State.valueOf(state.name());
     changeListeners.forEach(l -> l.accept(this.state));
   }
-
-  /**
-   * Returns the resource type.
-   * <p>
-   * The resource type is a special descriptor of the resource that indicates the resource's unique
-   * {@link ResourceType#id() ID} and {@link ResourceStateMachine state machine} based on the annotated
-   * {@link ResourceTypeInfo}.
-   *
-   * @return The resource type.
-   */
-  public abstract ResourceType<T> type();
 
   /**
    * Returns the current resource state.

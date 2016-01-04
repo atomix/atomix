@@ -113,7 +113,7 @@ public class ResourceManager extends StateMachine implements SessionListener, Sn
    */
   protected long getResource(Commit<? extends GetResource> commit) {
     String key = commit.operation().key();
-    ResourceType<?> type = registry.lookup(commit.operation().type());
+    ResourceType type = registry.lookup(commit.operation().type());
 
     // If the resource type is not known, fail the get.
     if (type == null) {
@@ -210,7 +210,7 @@ public class ResourceManager extends StateMachine implements SessionListener, Sn
    */
   private long createResource(Commit<? extends CreateResource> commit) {
     String key = commit.operation().key();
-    ResourceType<?> type = registry.lookup(commit.operation().type());
+    ResourceType type = registry.lookup(commit.operation().type());
 
     // If the resource type is not known, fail the get.
     if (type == null) {

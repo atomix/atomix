@@ -38,26 +38,26 @@ public class AtomixMapTest extends AbstractAtomixTest {
   public void testClientMapGet() throws Throwable {
     Atomix client1 = createClient();
     Atomix client2 = createClient();
-    testMap(client1, client2, get("test-client-map-get", DistributedMap.TYPE));
+    testMap(client1, client2, get("test-client-map-get", DistributedMap.class));
   }
 
   public void testClientMapCreate() throws Throwable {
     Atomix client1 = createClient();
     Atomix client2 = createClient();
-    testMap(client1, client2, create("test-client-map-create", DistributedMap.TYPE));
+    testMap(client1, client2, create("test-client-map-create", DistributedMap.class));
   }
 
   public void testReplicaMapGet() throws Throwable {
-    testMap(replicas.get(0), replicas.get(1), get("test-replica-map-get", DistributedMap.TYPE));
+    testMap(replicas.get(0), replicas.get(1), get("test-replica-map-get", DistributedMap.class));
   }
 
   public void testReplicaMapCreate() throws Throwable {
-    testMap(replicas.get(0), replicas.get(1), create("test-replica-map-create", DistributedMap.TYPE));
+    testMap(replicas.get(0), replicas.get(1), create("test-replica-map-create", DistributedMap.class));
   }
 
   public void testMixMap() throws Throwable {
     Atomix client = createClient();
-    testMap(replicas.get(0), client, create("test-map-mix", DistributedMap.TYPE));
+    testMap(replicas.get(0), client, create("test-map-mix", DistributedMap.class));
   }
 
   /**

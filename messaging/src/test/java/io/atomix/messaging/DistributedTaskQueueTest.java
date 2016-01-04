@@ -34,8 +34,8 @@ import java.util.concurrent.ConcurrentSkipListSet;
 public class DistributedTaskQueueTest extends AbstractCopycatTest<DistributedTaskQueue> {
 
   @Override
-  protected ResourceType<DistributedTaskQueue> type() {
-    return DistributedTaskQueue.TYPE;
+  protected Class<? super DistributedTaskQueue> type() {
+    return DistributedTaskQueue.class;
   }
 
   /**

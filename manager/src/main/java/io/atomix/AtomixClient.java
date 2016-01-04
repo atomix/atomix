@@ -20,6 +20,7 @@ import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.ConfigurationException;
 import io.atomix.copycat.client.CopycatClient;
+import io.atomix.resource.ResourceRegistry;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -102,8 +103,8 @@ public final class AtomixClient extends Atomix {
   /**
    * @throws NullPointerException if {@code factory} is null
    */
-  public AtomixClient(CopycatClient client) {
-    super(client);
+  public AtomixClient(CopycatClient client, ResourceRegistry registry) {
+    super(client, registry);
   }
 
   /**
@@ -141,7 +142,12 @@ public final class AtomixClient extends Atomix {
           throw new ConfigurationException("transport not configured");
         }
       }
-      return new AtomixClient(clientBuilder.build());
+
+      // Create a resource registry and resolve resources with the configured resolver.
+      ResourceRegistry registry = new ResourceRegistry();
+      resourceResolver.resolve(registry);
+
+      return new AtomixClient(clientBuilder.build(), registry);
     }
   }
 

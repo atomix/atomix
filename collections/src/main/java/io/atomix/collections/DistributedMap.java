@@ -20,7 +20,6 @@ import io.atomix.collections.state.MapState;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.Consistency;
 import io.atomix.resource.Resource;
-import io.atomix.resource.ResourceType;
 import io.atomix.resource.ResourceTypeInfo;
 
 import java.time.Duration;
@@ -48,17 +47,10 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @ResourceTypeInfo(id=-11, stateMachine=MapState.class)
-public class DistributedMap<K, V> extends Resource<DistributedMap<K, V>> {
-  public static final ResourceType<DistributedMap> TYPE = new ResourceType<>(DistributedMap.class);
+public class DistributedMap<K, V> extends Resource<DistributedMap<K, V>, Resource.Options> {
 
-  public DistributedMap(CopycatClient client) {
-    super(client);
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public ResourceType<DistributedMap<K, V>> type() {
-    return (ResourceType) TYPE;
+  public DistributedMap(CopycatClient client, Resource.Options options) {
+    super(client, options);
   }
 
   /**

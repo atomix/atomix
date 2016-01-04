@@ -16,7 +16,7 @@
 package io.atomix.variables;
 
 import io.atomix.copycat.client.CopycatClient;
-import io.atomix.resource.ResourceType;
+import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceTypeInfo;
 import io.atomix.variables.state.LongCommands;
 import io.atomix.variables.state.LongState;
@@ -30,16 +30,10 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 @ResourceTypeInfo(id=-2, stateMachine=LongState.class)
-public class DistributedLong extends AbstractDistributedValue<DistributedLong, Long> {
-  public static final ResourceType<DistributedLong> TYPE = new ResourceType<>(DistributedLong.class);
+public class DistributedLong extends AbstractDistributedValue<DistributedLong, Resource.Options, Long> {
 
-  public DistributedLong(CopycatClient client) {
-    super(client);
-  }
-
-  @Override
-  public ResourceType<DistributedLong> type() {
-    return TYPE;
+  public DistributedLong(CopycatClient client, Resource.Options options) {
+    super(client, options);
   }
 
   @Override

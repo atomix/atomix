@@ -24,15 +24,15 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public abstract class ConfigurableResource<T extends ConfigurableResource<T, U>, U extends Resource.Config> extends Resource<T> implements Configurable<T, U> {
+public abstract class ConfigurableResource<T extends ConfigurableResource<T, U, V>, U extends Resource.Options, V extends Resource.Config> extends Resource<T, U> implements Configurable<T, V> {
 
-  public ConfigurableResource(CopycatClient client) {
-    super(client);
+  public ConfigurableResource(CopycatClient client, U options) {
+    super(client, options);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<T> configure(U config) {
+  public CompletableFuture<T> configure(V config) {
     return client.submit(new ResourceStateMachine.ConfigureCommand(config)).thenApply(v -> (T) this);
   }
 

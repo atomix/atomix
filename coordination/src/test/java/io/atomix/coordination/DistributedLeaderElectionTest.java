@@ -30,8 +30,8 @@ import java.util.concurrent.atomic.AtomicLong;
 public class DistributedLeaderElectionTest extends AbstractCopycatTest<DistributedLeaderElection> {
 
   @Override
-  protected ResourceType<DistributedLeaderElection> type() {
-    return DistributedLeaderElection.TYPE;
+  protected Class<? super DistributedLeaderElection> type() {
+    return DistributedLeaderElection.class;
   }
 
   /**

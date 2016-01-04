@@ -38,26 +38,26 @@ public class AtomixMultiMapTest extends AbstractAtomixTest {
   public void testClientMultiMapGet() throws Throwable {
     Atomix client1 = createClient();
     Atomix client2 = createClient();
-    testMultiMap(client1, client2, get("test-client-multimap-get", DistributedMultiMap.TYPE));
+    testMultiMap(client1, client2, get("test-client-multimap-get", DistributedMultiMap.class));
   }
 
   public void testClientMultiMapCreate() throws Throwable {
     Atomix client1 = createClient();
     Atomix client2 = createClient();
-    testMultiMap(client1, client2, create("test-client-multimap-create", DistributedMultiMap.TYPE));
+    testMultiMap(client1, client2, create("test-client-multimap-create", DistributedMultiMap.class));
   }
 
   public void testReplicaMultiMapGet() throws Throwable {
-    testMultiMap(replicas.get(0), replicas.get(1), get("test-replica-multimap-get", DistributedMultiMap.TYPE));
+    testMultiMap(replicas.get(0), replicas.get(1), get("test-replica-multimap-get", DistributedMultiMap.class));
   }
 
   public void testReplicaMultiMapCreate() throws Throwable {
-    testMultiMap(replicas.get(0), replicas.get(1), create("test-replica-multimap-create", DistributedMultiMap.TYPE));
+    testMultiMap(replicas.get(0), replicas.get(1), create("test-replica-multimap-create", DistributedMultiMap.class));
   }
 
   public void testMixMultiMap() throws Throwable {
     Atomix client = createClient();
-    testMultiMap(replicas.get(0), client, create("test-multimap", DistributedMultiMap.TYPE));
+    testMultiMap(replicas.get(0), client, create("test-multimap", DistributedMultiMap.class));
   }
 
   /**

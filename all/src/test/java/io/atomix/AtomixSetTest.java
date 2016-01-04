@@ -38,26 +38,26 @@ public class AtomixSetTest extends AbstractAtomixTest {
   public void testClientSetGet() throws Throwable {
     Atomix client1 = createClient();
     Atomix client2 = createClient();
-    testSet(client1, client2, get("test-client-set-get", DistributedSet.TYPE));
+    testSet(client1, client2, get("test-client-set-get", DistributedSet.class));
   }
 
   public void testClientSetCreate() throws Throwable {
     Atomix client1 = createClient();
     Atomix client2 = createClient();
-    testSet(client1, client2, create("test-client-set-create", DistributedSet.TYPE));
+    testSet(client1, client2, create("test-client-set-create", DistributedSet.class));
   }
 
   public void testReplicaSetGet() throws Throwable {
-    testSet(replicas.get(0), replicas.get(1), get("test-replica-set-get", DistributedSet.TYPE));
+    testSet(replicas.get(0), replicas.get(1), get("test-replica-set-get", DistributedSet.class));
   }
 
   public void testReplicaSetCreate() throws Throwable {
-    testSet(replicas.get(0), replicas.get(1), create("test-replica-set-create", DistributedSet.TYPE));
+    testSet(replicas.get(0), replicas.get(1), create("test-replica-set-create", DistributedSet.class));
   }
 
   public void testMixSet() throws Throwable {
     Atomix client = createClient();
-    testSet(replicas.get(0), client, create("test-set-mix", DistributedSet.TYPE));
+    testSet(replicas.get(0), client, create("test-set-mix", DistributedSet.class));
   }
 
   /**

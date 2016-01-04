@@ -49,7 +49,7 @@ public abstract class AbstractCopycatTest<T extends Resource> extends Concurrent
    *
    * @return The resource type.
    */
-  protected abstract ResourceType<T> type();
+  protected abstract Class<? super T> type();
 
   @BeforeMethod
   protected void init() {
@@ -91,6 +91,7 @@ public abstract class AbstractCopycatTest<T extends Resource> extends Concurrent
   /**
    * Creates a new resource instance.
    */
+  @SuppressWarnings("unchecked")
   protected T createResource() throws Throwable {
     CopycatClient client = CopycatClient.builder(members)
       .withTransport(new LocalTransport(registry))
@@ -99,7 +100,8 @@ public abstract class AbstractCopycatTest<T extends Resource> extends Concurrent
       .withRecoveryStrategy(RecoveryStrategies.RECOVER)
       .withRetryStrategy(RetryStrategies.FIBONACCI_BACKOFF)
       .build();
-    T resource = type().resource().getConstructor(CopycatClient.class).newInstance(client);
+    ResourceType type = new ResourceType((Class<? extends Resource>) type());
+    T resource = (T) type.resource().getConstructor(CopycatClient.class).newInstance(client);
     resource.open().thenRun(this::resume);
     resources.add(resource);
     await(10000);
@@ -109,9 +111,11 @@ public abstract class AbstractCopycatTest<T extends Resource> extends Concurrent
   /**
    * Creates a Raft server.
    */
+  @SuppressWarnings("unchecked")
   protected CopycatServer createServer(Address address) {
     try {
-      ResourceStateMachine stateMachine = type().stateMachine().newInstance();
+      ResourceType type = new ResourceType((Class<? extends Resource>) type());
+      ResourceStateMachine stateMachine = type.stateMachine().newInstance();
 
       CopycatServer server = CopycatServer.builder(address, members)
         .withTransport(new LocalTransport(registry))

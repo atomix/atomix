@@ -38,26 +38,26 @@ public class AtomixMessageBusTest extends AbstractAtomixTest {
   public void testClientMessageBusGet() throws Throwable {
     Atomix client1 = createClient();
     Atomix client2 = createClient();
-    testMessageBus(client1, client2, get("test-client-bus-get", DistributedMessageBus.TYPE));
+    testMessageBus(client1, client2, get("test-client-bus-get", DistributedMessageBus.class));
   }
 
   public void testClientMessageBusCreate() throws Throwable {
     Atomix client1 = createClient();
     Atomix client2 = createClient();
-    testMessageBus(client1, client2, create("test-client-bus-create", DistributedMessageBus.TYPE));
+    testMessageBus(client1, client2, create("test-client-bus-create", DistributedMessageBus.class));
   }
 
   public void testReplicaMessageBusGet() throws Throwable {
-    testMessageBus(replicas.get(0), replicas.get(1), get("test-replica-bus-get", DistributedMessageBus.TYPE));
+    testMessageBus(replicas.get(0), replicas.get(1), get("test-replica-bus-get", DistributedMessageBus.class));
   }
 
   public void testReplicaMessageBusCreate() throws Throwable {
-    testMessageBus(replicas.get(0), replicas.get(1), create("test-replica-bus-create", DistributedMessageBus.TYPE));
+    testMessageBus(replicas.get(0), replicas.get(1), create("test-replica-bus-create", DistributedMessageBus.class));
   }
 
   public void testMixMessageBus() throws Throwable {
     Atomix client = createClient();
-    testMessageBus(replicas.get(0), client, create("test-bus-mix", DistributedMessageBus.TYPE));
+    testMessageBus(replicas.get(0), client, create("test-bus-mix", DistributedMessageBus.class));
   }
 
   /**

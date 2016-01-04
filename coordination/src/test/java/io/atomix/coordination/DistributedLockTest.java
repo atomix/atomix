@@ -28,8 +28,8 @@ import org.testng.annotations.Test;
 public class DistributedLockTest extends AbstractCopycatTest<DistributedLock> {
   
   @Override
-  protected ResourceType<DistributedLock> type() {
-    return DistributedLock.TYPE;
+  protected Class<? super DistributedLock> type() {
+    return DistributedLock.class;
   }
 
   /**

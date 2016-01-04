@@ -140,8 +140,8 @@ public final class AtomixReplica extends Atomix {
   /**
    * @throws NullPointerException if {@code client} or {@code server} are null
    */
-  public AtomixReplica(CopycatClient client, CopycatServer server) {
-    super(client);
+  public AtomixReplica(CopycatClient client, CopycatServer server, ResourceRegistry registry) {
+    super(client, registry);
     this.server = Assert.notNull(server, "server");
   }
 
@@ -449,7 +449,7 @@ public final class AtomixReplica extends Atomix {
       // Set the server resource state machine.
       serverBuilder.withStateMachine(new ResourceManager(registry));
 
-      return new AtomixReplica(new AtomixCopycatClient(clientBuilder.build(), serverTransport), serverBuilder.build());
+      return new AtomixReplica(new AtomixCopycatClient(clientBuilder.build(), serverTransport), serverBuilder.build(), registry);
     }
   }
 

@@ -21,7 +21,6 @@ import io.atomix.messaging.state.TaskQueueCommands;
 import io.atomix.messaging.state.TaskQueueState;
 import io.atomix.resource.Consistency;
 import io.atomix.resource.Resource;
-import io.atomix.resource.ResourceType;
 import io.atomix.resource.ResourceTypeInfo;
 
 import java.util.Map;
@@ -72,21 +71,14 @@ import java.util.function.Consumer;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 @ResourceTypeInfo(id=-32, stateMachine=TaskQueueState.class)
-public class DistributedTaskQueue<T> extends Resource<DistributedTaskQueue<T>> {
-  public static final ResourceType<DistributedTaskQueue> TYPE = new ResourceType<>(DistributedTaskQueue.class);
+public class DistributedTaskQueue<T> extends Resource<DistributedTaskQueue<T>, Resource.Options> {
   private long taskId;
   private final Map<Long, CompletableFuture<Void>> taskFutures = new ConcurrentHashMap<>();
   private Consumer<T> consumer;
 
   @SuppressWarnings("unchecked")
-  public DistributedTaskQueue(CopycatClient client) {
-    super(client);
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public ResourceType<DistributedTaskQueue<T>> type() {
-    return (ResourceType) TYPE;
+  public DistributedTaskQueue(CopycatClient client, Resource.Options options) {
+    super(client, options);
   }
 
   @Override

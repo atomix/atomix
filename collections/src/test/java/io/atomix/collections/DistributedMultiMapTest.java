@@ -29,8 +29,8 @@ import org.testng.annotations.Test;
 public class DistributedMultiMapTest extends AbstractCopycatTest<DistributedMultiMap> {
   
   @Override
-  protected ResourceType<DistributedMultiMap> type() {
-    return DistributedMultiMap.TYPE;
+  protected Class<? super DistributedMultiMap> type() {
+    return DistributedMultiMap.class;
   }
 
   /**
