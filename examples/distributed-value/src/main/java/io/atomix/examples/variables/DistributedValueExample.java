@@ -15,8 +15,8 @@
  */
 package io.atomix.examples.variables;
 
-import io.atomix.Atomix;
-import io.atomix.AtomixReplica;
+import io.atomix.manager.ResourceManager;
+import io.atomix.manager.ResourceReplica;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.NettyTransport;
 import io.atomix.copycat.server.storage.Storage;
@@ -55,7 +55,7 @@ public class DistributedValueExample {
 
     // Create a stateful Atomix replica. The replica communicates with other replicas in the cluster
     // to replicate state changes.
-    Atomix atomix = AtomixReplica.builder(address, members)
+    ResourceManager atomix = ResourceReplica.builder(address, members)
       .withTransport(new NettyTransport())
       .withStorage(Storage.builder()
         .withStorageLevel(StorageLevel.DISK)

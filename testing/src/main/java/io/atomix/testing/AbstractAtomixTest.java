@@ -15,17 +15,16 @@
  */
 package io.atomix.testing;
 
-import io.atomix.Atomix;
-import io.atomix.AtomixClient;
-import io.atomix.AtomixReplica;
-import io.atomix.AtomixServer;
+import io.atomix.manager.ResourceManager;
+import io.atomix.manager.ResourceClient;
+import io.atomix.manager.ResourceReplica;
+import io.atomix.manager.ResourceServer;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.LocalServerRegistry;
 import io.atomix.catalyst.transport.LocalTransport;
 import io.atomix.copycat.server.storage.Storage;
 import io.atomix.copycat.server.storage.StorageLevel;
 import io.atomix.resource.Resource;
-import io.atomix.resource.ResourceType;
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -44,9 +43,9 @@ public abstract class AbstractAtomixTest extends ConcurrentTestCase {
   protected LocalServerRegistry registry;
   protected int port;
   protected List<Address> members;
-  protected List<Atomix> clients;
-  protected List<Atomix> replicas;
-  protected List<AtomixServer> servers;
+  protected List<ResourceManager> clients;
+  protected List<ResourceManager> replicas;
+  protected List<ResourceServer> servers;
 
   @BeforeClass
   protected void beforeClass() {
@@ -96,7 +95,7 @@ public abstract class AbstractAtomixTest extends ConcurrentTestCase {
    * Creates a resource factory for the given type.
    */
   @SuppressWarnings("unchecked")
-  protected <T extends Resource> Function<Atomix, T> get(String key, Class<? super T> type) {
+  protected <T extends Resource> Function<ResourceManager, T> get(String key, Class<? super T> type) {
     return a -> {
       try {
         return a.get(key, type).get();
@@ -110,7 +109,7 @@ public abstract class AbstractAtomixTest extends ConcurrentTestCase {
    * Creates a resource factory for the given type.
    */
   @SuppressWarnings("unchecked")
-  protected <T extends Resource> Function<Atomix, T> create(String key, Class<? super T> type) {
+  protected <T extends Resource> Function<ResourceManager, T> create(String key, Class<? super T> type) {
     return a -> {
       try {
         return a.create(key, type).get();
@@ -132,8 +131,8 @@ public abstract class AbstractAtomixTest extends ConcurrentTestCase {
   /**
    * Creates a client.
    */
-  protected Atomix createClient() throws Throwable {
-    Atomix client = AtomixClient.builder(members).withTransport(new LocalTransport(registry)).build();
+  protected ResourceManager createClient() throws Throwable {
+    ResourceManager client = ResourceClient.builder(members).withTransport(new LocalTransport(registry)).build();
     client.open().thenRun(this::resume);
     clients.add(client);
     await(10000);
@@ -143,8 +142,8 @@ public abstract class AbstractAtomixTest extends ConcurrentTestCase {
   /**
    * Creates an Atomix replica.
    */
-  protected Atomix createReplica(Address address, List<Address> members) {
-    AtomixReplica replica = AtomixReplica.builder(address, members)
+  protected ResourceManager createReplica(Address address, List<Address> members) {
+    ResourceReplica replica = ResourceReplica.builder(address, members)
         .withTransport(new LocalTransport(registry))
         .withStorage(new Storage(StorageLevel.MEMORY))
         .build();
@@ -155,8 +154,8 @@ public abstract class AbstractAtomixTest extends ConcurrentTestCase {
   /**
    * Creates an Atomix server.
    */
-  protected AtomixServer createServer(Address address, List<Address> members) {
-    AtomixServer server = AtomixServer.builder(address, members)
+  protected ResourceServer createServer(Address address, List<Address> members) {
+    ResourceServer server = ResourceServer.builder(address, members)
         .withTransport(new LocalTransport(registry))
         .withStorage(new Storage(StorageLevel.MEMORY))
         .build();
@@ -167,16 +166,16 @@ public abstract class AbstractAtomixTest extends ConcurrentTestCase {
   /**
    * Creates a set of Atomix instances.
    */
-  protected List<Atomix> createReplicas(int nodes) throws Throwable {
+  protected List<ResourceManager> createReplicas(int nodes) throws Throwable {
     List<Address> members = new ArrayList<>();
     for (int i = 0; i < nodes; i++) {
       members.add(nextAddress());
     }
     this.members.addAll(members);
 
-    List<Atomix> replicas = new ArrayList<>();
+    List<ResourceManager> replicas = new ArrayList<>();
     for (int i = 0; i < nodes; i++) {
-      Atomix atomix = createReplica(members.get(i), members);
+      ResourceManager atomix = createReplica(members.get(i), members);
       atomix.open().thenRun(this::resume);
       replicas.add(atomix);
     }
@@ -188,16 +187,16 @@ public abstract class AbstractAtomixTest extends ConcurrentTestCase {
   /**
    * Creates a set of Raft servers.
    */
-  protected List<AtomixServer> createServers(int live, int total) throws Throwable {
+  protected List<ResourceServer> createServers(int live, int total) throws Throwable {
     List<Address> members = new ArrayList<>();
     for (int i = 0; i < total; i++) {
       members.add(nextAddress());
     }
     this.members.addAll(members);
 
-    List<AtomixServer> servers = new ArrayList<>();
+    List<ResourceServer> servers = new ArrayList<>();
     for (int i = 0; i < live; i++) {
-      AtomixServer server = createServer(members.get(i), members);
+      ResourceServer server = createServer(members.get(i), members);
       server.open().thenRun(this::resume);
       servers.add(server);
     }
@@ -209,7 +208,7 @@ public abstract class AbstractAtomixTest extends ConcurrentTestCase {
   /**
    * Creates a set of Raft servers.
    */
-  protected List<AtomixServer> createServers(int nodes) throws Throwable {
+  protected List<ResourceServer> createServers(int nodes) throws Throwable {
     return createServers(nodes, nodes);
   }
 }

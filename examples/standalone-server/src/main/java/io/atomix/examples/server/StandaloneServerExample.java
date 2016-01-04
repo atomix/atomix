@@ -15,7 +15,7 @@
  */
 package io.atomix.examples.server;
 
-import io.atomix.AtomixServer;
+import io.atomix.manager.ResourceServer;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.NettyTransport;
 import io.atomix.copycat.server.storage.Storage;
@@ -51,7 +51,7 @@ public class StandaloneServerExample {
       members.add(new Address(parts[0], Integer.valueOf(parts[1])));
     }
 
-    AtomixServer server = AtomixServer.builder(localAddress, members)
+    ResourceServer server = ResourceServer.builder(localAddress, members)
         .withTransport(new NettyTransport())
         .withStorage(Storage.builder()
             .withDirectory(args[0])

@@ -25,10 +25,10 @@ import io.atomix.copycat.client.Command;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.copycat.client.Query;
 import io.atomix.copycat.client.session.Session;
-import io.atomix.manager.CloseResource;
-import io.atomix.manager.CreateResource;
-import io.atomix.manager.DeleteResource;
-import io.atomix.manager.GetResource;
+import io.atomix.manager.state.CloseResource;
+import io.atomix.manager.state.CreateResource;
+import io.atomix.manager.state.DeleteResource;
+import io.atomix.manager.state.GetResource;
 
 import java.util.HashSet;
 import java.util.Map;
