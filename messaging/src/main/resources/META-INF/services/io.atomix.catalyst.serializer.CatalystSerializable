@@ -16,6 +16,7 @@
 io.atomix.messaging.state.TaskQueueCommands$Subscribe
 io.atomix.messaging.state.TaskQueueCommands$Unsubscribe
 io.atomix.messaging.state.TaskQueueCommands$Submit
+io.atomix.messaging.state.TaskQueueCommands$Ack
 
 io.atomix.messaging.state.TopicCommands$Listen
 io.atomix.messaging.state.TopicCommands$Unlisten
