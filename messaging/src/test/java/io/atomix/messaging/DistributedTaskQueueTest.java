@@ -22,9 +22,7 @@ import org.testng.annotations.Test;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Distributed task queue test.
@@ -71,35 +69,6 @@ public class DistributedTaskQueueTest extends AbstractCopycatTest<DistributedTas
     queue.submit("bar");
     queue.submit("baz");
     await(5000, 3);
-  }
-
-  public void testSubmitRecursive() throws Throwable {
-    createServers(3);
-
-    DistributedTaskQueue<String> worker = createResource().async();
-    DistributedTaskQueue<String> queue = createResource().async();
-
-    AtomicInteger counter = new AtomicInteger();
-    worker.consumer(task -> {
-      if (counter.incrementAndGet() % 1000 == 0) {
-        System.out.println("1000 messages received");
-      }
-      if (counter.get() == 20000) {
-        resume();
-      }
-    });
-    submitTasks(queue);
-    await(10000);
-  }
-
-  private void submitTasks(DistributedTaskQueue<String> queue) {
-    for (int i = 0; i < 100; i++) {
-      submitTask(queue);
-    }
-  }
-
-  private void submitTask(DistributedTaskQueue<String> queue) {
-    queue.submit(UUID.randomUUID().toString()).whenComplete((result, error) -> submitTask(queue));
   }
 
   /**
