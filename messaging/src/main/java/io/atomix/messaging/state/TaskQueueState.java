@@ -124,7 +124,7 @@ public class TaskQueueState extends ResourceStateMachine implements SessionListe
       }
 
       // Send an ack message to the session that submitted the task.
-      if (acked.operation().ack()) {
+      if (acked.operation().ack() && acked.session().state() == Session.State.OPEN) {
         acked.session().publish("ack", acked.operation().id());
       }
 
