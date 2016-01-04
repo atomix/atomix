@@ -20,8 +20,6 @@ import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.NettyTransport;
 import io.atomix.copycat.server.storage.Storage;
 
-import java.net.InetAddress;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,31 +34,24 @@ public class StandaloneServerExample {
    * Starts the server.
    */
   public static void main(String[] args) throws Exception {
-    if (args.length < 3)
-      throw new IllegalArgumentException("must supply a path, a local port, and set of remote host:port tuples");
+    if (args.length < 2)
+      throw new IllegalArgumentException("must supply a path and set of host:port tuples");
 
     // Parse the address to which to bind the server.
-    int port = Integer.valueOf(args[1]);
-    Address localAddress = new Address(InetAddress.getLocalHost().getHostName(), port);
+    String[] mainParts = args[1].split(":");
+    Address address = new Address(mainParts[0], Integer.valueOf(mainParts[1]));
 
     // Build a list of all member addresses to which to connect.
     List<Address> members = new ArrayList<>();
-    members.add(localAddress);
-    for (int i = 2; i < args.length; i++) {
+    for (int i = 1; i < args.length; i++) {
       String[] parts = args[i].split(":");
       members.add(new Address(parts[0], Integer.valueOf(parts[1])));
     }
 
-    AtomixServer server = AtomixServer.builder(localAddress, members)
-        .withTransport(new NettyTransport())
-        .withStorage(Storage.builder()
-            .withDirectory(args[0])
-            .withMinorCompactionInterval(Duration.ofSeconds(30))
-            .withMajorCompactionInterval(Duration.ofMinutes(1))
-            .withMaxSegmentSize(1024 * 1024 * 8)
-            .withMaxEntriesPerSegment(1024 * 1024)
-            .build())
-        .build();
+    AtomixServer server = AtomixServer.builder(address, members)
+      .withTransport(new NettyTransport())
+      .withStorage(new Storage(args[0]))
+      .build();
 
     server.open().join();
 
