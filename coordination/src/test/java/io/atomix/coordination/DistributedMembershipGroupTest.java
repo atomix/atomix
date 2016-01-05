@@ -100,6 +100,64 @@ public class DistributedMembershipGroupTest extends AbstractCopycatTest<Distribu
   }
 
   /**
+   * Tests electing a group leader.
+   */
+  public void testElectResign() throws Throwable {
+    createServers(3);
+
+    DistributedMembershipGroup group1 = createResource();
+    DistributedMembershipGroup group2 = createResource();
+
+    LocalGroupMember localMember2 = group2.join().get();
+    group2.members().thenAccept(members -> {
+      threadAssertEquals(members.size(), 1);
+      resume();
+    });
+
+    await(5000);
+
+    localMember2.onElection(term -> resume());
+
+    await(5000);
+
+    LocalGroupMember localMember1 = group1.join().get();
+    localMember1.onElection(term -> resume());
+
+    localMember2.resign().thenRun(this::resume);
+
+    await(10000, 2);
+  }
+
+  /**
+   * Tests electing a group leader.
+   */
+  public void testElectClose() throws Throwable {
+    createServers(3);
+
+    DistributedMembershipGroup group1 = createResource();
+    DistributedMembershipGroup group2 = createResource();
+
+    LocalGroupMember localMember2 = group2.join().get();
+    group2.members().thenAccept(members -> {
+      threadAssertEquals(members.size(), 1);
+      resume();
+    });
+
+    await(5000);
+
+    localMember2.onElection(term -> resume());
+
+    await(5000);
+
+    LocalGroupMember localMember1 = group1.join().get();
+    localMember1.onElection(term -> resume());
+
+    group2.close().thenRun(this::resume);
+
+    await(10000, 2);
+  }
+
+  /**
    * Tests setting and getting member properties.
    */
   public void testProperties() throws Throwable {

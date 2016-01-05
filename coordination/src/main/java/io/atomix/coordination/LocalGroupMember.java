@@ -55,6 +55,21 @@ public interface LocalGroupMember extends GroupMember {
   <T> Listener<T> onMessage(String topic, Consumer<T> consumer);
 
   /**
+   * Registers a callback to be called when this member is elected leader.
+   *
+   * @param callback The callback to call.
+   * @return The leader election listener.
+   */
+  Listener<Long> onElection(Consumer<Long> callback);
+
+  /**
+   * Resigns from leadership.
+   *
+   * @return A completable future to be completed once the member has resigned.
+   */
+  CompletableFuture<Void> resign();
+
+  /**
    * Leaves the membership group.
    * <p>
    * When this member leaves the membership group, the membership lists of this and all other instances

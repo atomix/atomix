@@ -21,7 +21,6 @@ import io.atomix.collections.DistributedMap;
 import io.atomix.collections.DistributedMultiMap;
 import io.atomix.collections.DistributedQueue;
 import io.atomix.collections.DistributedSet;
-import io.atomix.coordination.DistributedLeaderElection;
 import io.atomix.coordination.DistributedLock;
 import io.atomix.coordination.DistributedMembershipGroup;
 import io.atomix.manager.ResourceClient;
@@ -123,16 +122,6 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    */
   public CompletableFuture<DistributedLong> getLong(String key) {
     return get(key, DistributedLong.class);
-  }
-
-  /**
-   * Gets or creates a distributed leader election.
-   *
-   * @param key The resource key.
-   * @return A completable future to be completed once the leader election has been created.
-   */
-  public CompletableFuture<DistributedLeaderElection> getLeaderElection(String key) {
-    return get(key, DistributedLeaderElection.class);
   }
 
   /**

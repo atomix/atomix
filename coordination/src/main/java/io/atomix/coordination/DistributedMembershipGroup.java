@@ -94,8 +94,12 @@ import java.util.function.Consumer;
 public class DistributedMembershipGroup extends Resource<DistributedMembershipGroup, Resource.Options> {
   private final Listeners<GroupMember> joinListeners = new Listeners<>();
   private final Listeners<GroupMember> leaveListeners = new Listeners<>();
+  private final Listeners<Long> termListeners = new Listeners<>();
+  private final Listeners<GroupMember> electionListeners = new Listeners<>();
   private final Map<Long, InternalLocalGroupMember> localMembers = new ConcurrentHashMap<>();
   private final Map<Long, GroupMember> members = new ConcurrentHashMap<>();
+  private volatile long leader;
+  private volatile long term;
 
   public DistributedMembershipGroup(CopycatClient client, Resource.Options options) {
     super(client, options);
@@ -120,6 +124,26 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
         }
       });
 
+      client.<Long>onEvent("term", term -> {
+        this.term = term;
+        termListeners.accept(term);
+      });
+
+      client.<Long>onEvent("elect", leader -> {
+        this.leader = leader;
+        electionListeners.accept(member(leader));
+        InternalLocalGroupMember member = localMembers.get(leader);
+        if (member != null) {
+          member.electionListeners.accept(term);
+        }
+      });
+
+      client.<Long>onEvent("resign", leader -> {
+        if (this.leader == leader) {
+          this.leader = 0;
+        }
+      });
+
       client.<MembershipGroupCommands.Message>onEvent("message", message -> {
         InternalLocalGroupMember localMember = localMembers.get(message.member());
         if (localMember != null) {
@@ -128,6 +152,7 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
       });
 
       client.onEvent("execute", Runnable::run);
+
       return result;
     }).thenCompose(v -> sync())
       .thenApply(v -> this);
@@ -145,20 +170,54 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
   }
 
   /**
+   * Returns the current group leader.
+   *
+   * @return The current group leader.
+   */
+  public GroupMember leader() {
+    return leader != 0 ? members.get(leader) : null;
+  }
+
+  /**
+   * Returns the current group term.
+   *
+   * @return The current group term.
+   */
+  public long term() {
+    return term;
+  }
+
+  /**
+   * Registers a callback to be called when the term changes.
+   *
+   * @param callback The callback to be called when the term changes.
+   * @return The term listener.
+   */
+  public Listener<Long> onTerm(Consumer<Long> callback) {
+    return termListeners.add(callback);
+  }
+
+  /**
+   * Registers a callback to be called when a member of the group is elected leader.
+   *
+   * @param callback The callback to call when a member of the group is elected leader.
+   * @return The leader election listener.
+   */
+  public Listener<GroupMember> onElection(Consumer<GroupMember> callback) {
+    return electionListeners.add(callback);
+  }
+
+  /**
    * Gets a group member by ID.
    * <p>
-   * The group member is fetched from the cluster by member ID. If the member with the given ID has not
-   * {@link #join() joined} the membership group, the resulting {@link GroupMember} will be {@code null}.
+   * If the member with the given ID has not {@link #join() joined} the membership group, the resulting
+   * {@link GroupMember} will be {@code null}.
    *
    * @param memberId The member ID for which to return a {@link GroupMember}.
    * @return The member with the given {@code memberId} or {@code null} if it is not a known member of the group.
    */
-  public CompletableFuture<GroupMember> member(long memberId) {
-    GroupMember member = members.get(memberId);
-    if (member != null) {
-      return CompletableFuture.completedFuture(member);
-    }
-    return sync().thenApply(v -> members.get(memberId));
+  public GroupMember member(long memberId) {
+    return members.get(memberId);
   }
 
   /**
@@ -271,6 +330,7 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
    */
   private class InternalLocalGroupMember extends InternalGroupMember implements LocalGroupMember {
     private final Map<String, ListenerHolder> listeners = new ConcurrentHashMap<>();
+    private final Listeners<Long> electionListeners = new Listeners<>();
 
     InternalLocalGroupMember(long memberId) {
       super(memberId);
@@ -302,6 +362,20 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
       if (listener != null) {
         listener.accept(message.body());
       }
+    }
+
+    @Override
+    public Listener<Long> onElection(Consumer<Long> callback) {
+      Listener<Long> listener = electionListeners.add(callback);
+      if (isLeader()) {
+        listener.accept(term);
+      }
+      return listener;
+    }
+
+    @Override
+    public CompletableFuture<Void> resign() {
+      return submit(new MembershipGroupCommands.Resign(memberId));
     }
 
     @Override
@@ -347,6 +421,11 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
     @Override
     public long id() {
       return memberId;
+    }
+
+    @Override
+    public boolean isLeader() {
+      return leader == memberId;
     }
 
     @Override

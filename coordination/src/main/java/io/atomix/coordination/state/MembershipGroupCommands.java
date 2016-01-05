@@ -241,6 +241,25 @@ public final class MembershipGroupCommands {
   }
 
   /**
+   * Resign command.
+   */
+  @SerializeWith(id=113)
+  public static class Resign extends MemberCommand<Void> {
+
+    public Resign() {
+    }
+
+    public Resign(long member) {
+      super(member);
+    }
+
+    @Override
+    public Command.CompactionMode compaction() {
+      return Command.CompactionMode.SEQUENTIAL;
+    }
+  }
+
+  /**
    * Property command.
    */
   public static abstract class PropertyCommand<T> extends MemberCommand<T> {
