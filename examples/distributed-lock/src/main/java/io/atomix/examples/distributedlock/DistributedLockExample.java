@@ -54,7 +54,7 @@ public class DistributedLockExample {
       System.out.println("Client started!");
     });
 
-    DistributedLock lock = client.create("lock", DistributedLock.class).get();
+    DistributedLock lock = client.getLock("lock").get();
 
     lock.lock().thenRun(() -> {
        System.out.println("Lock acquired!");
