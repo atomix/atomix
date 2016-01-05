@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,65 +13,68 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.examples.election;
+package io.atomix.examples.taskqueue;
 
 import io.atomix.Atomix;
-import io.atomix.AtomixReplica;
+import io.atomix.AtomixClient;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.NettyTransport;
-import io.atomix.coordination.DistributedLeaderElection;
-import io.atomix.copycat.server.storage.Storage;
+import io.atomix.messaging.DistributedTaskQueue;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
- * Leader election example.
+ * Task queue producer example.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class LeaderElectionExample {
+public class TaskQueueProducerExample {
 
   /**
    * Starts the server.
    */
   public static void main(String[] args) throws Exception {
-    if (args.length < 2)
-      throw new IllegalArgumentException("must supply a path and set of host:port tuples");
-
-    // Parse the address to which to bind the server.
-    String[] mainParts = args[1].split(":");
-    Address address = new Address(mainParts[0], Integer.valueOf(mainParts[1]));
+    if (args.length < 1)
+      throw new IllegalArgumentException("must supply a set of host:port tuples");
 
     // Build a list of all member addresses to which to connect.
     List<Address> members = new ArrayList<>();
-    for (int i = 1; i < args.length; i++) {
-      String[] parts = args[i].split(":");
+    for (String arg : args) {
+      String[] parts = arg.split(":");
       members.add(new Address(parts[0], Integer.valueOf(parts[1])));
     }
 
     // Create a stateful Atomix replica. The replica communicates with other replicas in the cluster
     // to replicate state changes.
-    Atomix atomix = AtomixReplica.builder(address, members)
+    Atomix atomix = AtomixClient.builder(members)
       .withTransport(new NettyTransport())
-      .withStorage(new Storage(args[0]))
       .build();
 
-    // Open the replica. Once this operation completes resources can be created and managed.
+    // Open the client. Once this operation completes resources can be created and managed.
     atomix.open().join();
 
-    // Create a leader election resource.
-    DistributedLeaderElection election = atomix.getLeaderElection("election").get();
+    // Create a task queue resource.
+    @SuppressWarnings("unchecked")
+    DistributedTaskQueue<String> queue = atomix.<String>getTaskQueue("tasks").get().async();
 
-    // Register a callback to be called when this election instance is elected the leader
-    election.onElection(epoch -> {
-      System.out.println("Elected leader!");
-    });
+    // Register a callback to be called when a message is received.
+    for (int i = 0; i < 100; i++) {
+      submitTasks(queue);
+    }
 
     // Block while the replica is open.
     while (atomix.isOpen()) {
       Thread.sleep(1000);
     }
+  }
+
+  /**
+   * Recursively submits tasks to the queue.
+   */
+  private static void submitTasks(DistributedTaskQueue<String> queue) {
+    queue.submit(UUID.randomUUID().toString()).whenComplete((result, error) -> submitTasks(queue));
   }
 
 }

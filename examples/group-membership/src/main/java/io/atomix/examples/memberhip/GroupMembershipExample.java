@@ -62,7 +62,7 @@ public class GroupMembershipExample {
     atomix.open().join();
 
     System.out.println("Creating membership group");
-    DistributedMembershipGroup group = atomix.get("group", DistributedMembershipGroup.class).get();
+    DistributedMembershipGroup group = atomix.getMembershipGroup("group").get();
 
     System.out.println("Joining membership group");
     group.join().thenAccept(member -> {
