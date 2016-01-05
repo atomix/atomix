@@ -111,7 +111,6 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
   private final Map<Class<? extends Resource<?, ?>>, ResourceType> types = new ConcurrentHashMap<>();
   private final Map<String, Resource<?, ?>> instances = new HashMap<>();
   private final Map<String, CompletableFuture> futures = new HashMap<>();
-  private final Set<Resource<?, ?>> resources = new HashSet<>();
 
   /**
    * @throws NullPointerException if {@code client} is null
@@ -130,26 +129,12 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
     return client;
   }
 
-  /**
-   * Returns the Atomix thread context.
-   * <p>
-   * This context is representative of the thread on which asynchronous callbacks will be executed for this
-   * Atomix instance. Atomix guarantees that all {@link CompletableFuture}s supplied by this instance will
-   * be executed via the returned context. Users can use the context to access the thread-local
-   * {@link Serializer}.
-   *
-   * @return The Atomix thread context.
-   */
+  @Override
   public ThreadContext context() {
     return client.context();
   }
 
-  /**
-   * Returns the resource type for the given resource class.
-   *
-   * @param type The resource class.
-   * @return The resource type for the given resource class.
-   */
+  @Override
   public final ResourceType type(Class<? extends Resource<?, ?>> type) {
     return types.computeIfAbsent(type, t -> {
       ResourceType resourceType = new ResourceType(type);
@@ -159,289 +144,46 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
     });
   }
 
-  /**
-   * Checks whether a resource exists with the given key.
-   * <p>
-   * If no resource with the given {@code key} exists in the cluster, the returned {@link CompletableFuture} will
-   * be completed {@code false}. Note, however, that users should not significantly rely upon the existence or
-   * non-existence of a resource due to race conditions. While a resource may not exist when the returned future is
-   * completed, it may be created by another node shortly thereafter.
-   * <p>
-   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
-   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
-   * use the {@link CompletableFuture#get()} method:
-   * <pre>
-   *   {@code
-   *   if (!atomix.exists("lock").get()) {
-   *     DistributedLock lock = atomix.create("lock", DistributedLock.class).get();
-   *   }
-   *   }
-   * </pre>
-   * Alternatively, to execute the operation asynchronous and be notified once the result is received in a different
-   * thread, use one of the many completable future callbacks:
-   * <pre>
-   *   {@code
-   *   atomix.exists("lock").thenAccept(exists -> {
-   *     if (!exists) {
-   *       atomix.<DistributedLock>create("lock", DistributedLock.class).thenAccept(lock -> {
-   *         ...
-   *       });
-   *     }
-   *   });
-   *   }
-   * </pre>
-   *
-   * @param key The key to check.
-   * @return A completable future indicating whether the given key exists.
-   * @throws NullPointerException if {@code key} is null
-   */
+  @Override
   public CompletableFuture<Boolean> exists(String key) {
     return client.submit(new ResourceExists(key));
   }
 
-  /**
-   * Returns keys of all existing resources.
-   *
-   * <p>
-   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
-   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
-   * use the {@link CompletableFuture#get()} method:
-   * <pre>
-   *   {@code
-   *   Collection<String> resourceKeys = atomix.keys().get();
-   *   }
-   * </pre>
-   * Alternatively, to execute the operation asynchronous and be notified once the result is received in a different
-   * thread, use one of the many completable future callbacks:
-   * <pre>
-   *   {@code
-   *   atomix.<Collection<String>>keys().thenAccept(resourceKeys -> {
-   *     ...
-   *   });
-   *   }
-   * </pre>
-   *
-   * @return A completable future to be completed with the keys of all existing resources.
-   */
+  @Override
   public CompletableFuture<Set<String>> keys() {
     return client.submit(new GetResourceKeys());
   }
 
-  /**
-   * Returns the keys of existing resources belonging to a resource type.
-   *
-   * <p>
-   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
-   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
-   * use the {@link CompletableFuture#get()} method:
-   * <pre>
-   *   {@code
-   *   Set<String> resourceKeys = atomix.keys(DistributedLock.class).get();
-   *   }
-   * </pre>
-   * Alternatively, to execute the operation asynchronous and be notified once the result is received in a different
-   * thread, use one of the many completable future callbacks:
-   * <pre>
-   *   {@code
-   *   atomix.<Set<String>>keys().thenAccept(resourceKeys -> {
-   *     ...
-   *   });
-   *   }
-   * </pre>
-   *
-   * @param type The resource type by which to filter resources.
-   * @param <T> The resource type.
-   * @return A completable future to be completed with the set of resource keys.
-   */
+  @Override
   @SuppressWarnings("unchecked")
   public <T extends Resource> CompletableFuture<Set<String>> keys(Class<? super T> type) {
     return keys(type((Class<? extends Resource<?, ?>>) type));
   }
 
-  /**
-   * Returns the keys of existing resources belonging to a resource type.
-   *
-   * <p>
-   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
-   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
-   * use the {@link CompletableFuture#get()} method:
-   * <pre>
-   *   {@code
-   *   Set<String> resourceKeys = atomix.keys(DistributedLock.class).get();
-   *   }
-   * </pre>
-   * Alternatively, to execute the operation asynchronous and be notified once the result is received in a different
-   * thread, use one of the many completable future callbacks:
-   * <pre>
-   *   {@code
-   *   atomix.<Set<String>>keys().thenAccept(resourceKeys -> {
-   *     ...
-   *   });
-   *   }
-   * </pre>
-   *
-   * @param type The resource type by which to filter resources.
-   * @return A completable future to be completed with the set of resource keys.
-   */
+  @Override
   public CompletableFuture<Set<String>> keys(ResourceType type) {
     return client.submit(new GetResourceKeys(Assert.notNull(type, "type").id()));
   }
 
-  /**
-   * Gets or creates the given resource and acquires a singleton reference to it.
-   * <p>
-   * If a resource at the given key already exists, the resource will be validated to verify that its type
-   * matches the given type. If no resource yet exists, a new resource will be created in the cluster. Once
-   * the session for the resource has been opened, a resource instance will be returned.
-   * <p>
-   * The returned {@link Resource} instance will be a singleton reference to an global instance for this node.
-   * That is, multiple calls to this method for the same resource will result in the same {@link Resource}
-   * instance being returned.
-   * <p>
-   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
-   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
-   * use the {@link CompletableFuture#get()} method:
-   * <pre>
-   *   {@code
-   *   DistributedLock lock = atomix.get("lock", DistributedLock.class).get();
-   *   }
-   * </pre>
-   * Alternatively, to execute the operation asynchronous and be notified once the result is received in a different
-   * thread, use one of the many completable future callbacks:
-   * <pre>
-   *   {@code
-   *   atomix.<DistributedLock>get("lock", DistributedLock.class).thenAccept(lock -> {
-   *     ...
-   *   });
-   *   }
-   * </pre>
-   *
-   * @param key The key at which to get the resource.
-   * @param type The expected resource type.
-   * @param <T> The resource type.
-   * @return A completable future to be completed once the resource has been loaded.
-   * @throws NullPointerException if {@code key} or {@code type} are null
-   */
+  @Override
   @SuppressWarnings("unchecked")
   public <T extends Resource> CompletableFuture<T> get(String key, Class<? super T> type) {
     return get(key, type((Class<? extends Resource<?, ?>>) type));
   }
 
-  /**
-   * Gets or creates the given resource and acquires a singleton reference to it.
-   * <p>
-   * If a resource at the given key already exists, the resource will be validated to verify that its type
-   * matches the given type. If no resource yet exists, a new resource will be created in the cluster. Once
-   * the session for the resource has been opened, a resource instance will be returned.
-   * <p>
-   * The returned {@link Resource} instance will be a singleton reference to an global instance for this node.
-   * That is, multiple calls to this method for the same resource will result in the same {@link Resource}
-   * instance being returned.
-   * <p>
-   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
-   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
-   * use the {@link CompletableFuture#get()} method:
-   * <pre>
-   *   {@code
-   *   DistributedLock lock = atomix.get("lock", DistributedLock.class).get();
-   *   }
-   * </pre>
-   * Alternatively, to execute the operation asynchronous and be notified once the result is received in a different
-   * thread, use one of the many completable future callbacks:
-   * <pre>
-   *   {@code
-   *   atomix.<DistributedLock>get("lock", DistributedLock.class).thenAccept(lock -> {
-   *     ...
-   *   });
-   *   }
-   * </pre>
-   *
-   * @param key The key at which to get the resource.
-   * @param type The expected resource type.
-   * @param <T> The resource type.
-   * @return A completable future to be completed once the resource has been loaded.
-   * @throws NullPointerException if {@code key} or {@code type} are null
-   */
+  @Override
   @SuppressWarnings("unchecked")
   public <T extends Resource<T, U>, U extends Resource.Options> CompletableFuture<T> get(String key, Class<? super T> type, U options) {
     return this.<T, U>get(key, type((Class<? extends Resource<?, ?>>) type), options);
   }
 
-  /**
-   * Gets or creates the given resource and acquires a singleton reference to it.
-   * <p>
-   * If a resource at the given key already exists, the resource will be validated to verify that its type
-   * matches the given type. If no resource yet exists, a new resource will be created in the cluster. Once
-   * the session for the resource has been opened, a resource instance will be returned.
-   * <p>
-   * The returned {@link Resource} instance will be a singleton reference to an global instance for this node.
-   * That is, multiple calls to this method for the same resource will result in the same {@link Resource}
-   * instance being returned.
-   * <p>
-   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
-   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
-   * use the {@link CompletableFuture#get()} method:
-   * <pre>
-   *   {@code
-   *   DistributedLock lock = atomix.get("lock", DistributedLock.class).get();
-   *   }
-   * </pre>
-   * Alternatively, to execute the operation asynchronous and be notified once the result is received in a different
-   * thread, use one of the many completable future callbacks:
-   * <pre>
-   *   {@code
-   *   atomix.<DistributedLock>get("lock", DistributedLock.class).thenAccept(lock -> {
-   *     ...
-   *   });
-   *   }
-   * </pre>
-   *
-   * @param key The key at which to get the resource.
-   * @param type The expected resource type.
-   * @param <T> The resource type.
-   * @return A completable future to be completed once the resource has been loaded.
-   * @throws NullPointerException if {@code key} or {@code type} are null
-   */
+  @Override
   @SuppressWarnings("unchecked")
   public <T extends Resource> CompletableFuture<T> get(String key, ResourceType type) {
     return get(key, type, null);
   }
 
-  /**
-   * Gets or creates the given resource and acquires a singleton reference to it.
-   * <p>
-   * If a resource at the given key already exists, the resource will be validated to verify that its type
-   * matches the given type. If no resource yet exists, a new resource will be created in the cluster. Once
-   * the session for the resource has been opened, a resource instance will be returned.
-   * <p>
-   * The returned {@link Resource} instance will be a singleton reference to an global instance for this node.
-   * That is, multiple calls to this method for the same resource will result in the same {@link Resource}
-   * instance being returned.
-   * <p>
-   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
-   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
-   * use the {@link CompletableFuture#get()} method:
-   * <pre>
-   *   {@code
-   *   DistributedLock lock = atomix.get("lock", DistributedLock.class).get();
-   *   }
-   * </pre>
-   * Alternatively, to execute the operation asynchronous and be notified once the result is received in a different
-   * thread, use one of the many completable future callbacks:
-   * <pre>
-   *   {@code
-   *   atomix.<DistributedLock>get("lock", DistributedLock.class).thenAccept(lock -> {
-   *     ...
-   *   });
-   *   }
-   * </pre>
-   *
-   * @param key The key at which to get the resource.
-   * @param type The expected resource type.
-   * @param <T> The resource type.
-   * @return A completable future to be completed once the resource has been loaded.
-   * @throws NullPointerException if {@code key} or {@code type} are null
-   */
+  @Override
   @SuppressWarnings("unchecked")
   public synchronized <T extends Resource<T, U>, U extends Resource.Options> CompletableFuture<T> get(String key, ResourceType type, U options) {
     T resource;
@@ -453,7 +195,6 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
       InstanceClient client = new InstanceClient(instance, this.client);
       check = type.factory().create(client, options);
       instances.put(key, check);
-      resources.add(check);
     }
 
     // Ensure the existing singleton instance type matches the requested instance type. If the instance
@@ -475,195 +216,6 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
   }
 
   /**
-   * Creates a new instance for the given resource.
-   * <p>
-   * If a resource at the given key already exists, the resource will be validated to verify that its type
-   * matches the given type. If no resource yet exists, a new resource will be created in the cluster. Once
-   * the session for the resource has been opened, a new resource instance will be returned.
-   * <p>
-   * The returned {@link Resource} instance will have a unique logical connection to the resource state. This
-   * means that operations and events submitted or received by this instance related to this instance only,
-   * even if multiple instances of the resource are open on this node. For instance, a lock resource created
-   * via this method will behave as a unique reference to the distributed state. Locking a lock acquired via this
-   * method will lock <em>only</em> that lock instance and not other instance of the lock on this node.
-   * <p>
-   * To acquire a singleton reference to a resource that is global to this node, use the {@link #get(String, ResourceType)}
-   * method.
-   * <p>
-   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
-   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
-   * use the {@link CompletableFuture#get()} method:
-   * <pre>
-   *   {@code
-   *   DistributedLock lock = atomix.create("lock", DistributedLock.class).get();
-   *   }
-   * </pre>
-   * Alternatively, to execute the operation asynchronous and be notified once the result is received in a different
-   * thread, use one of the many completable future callbacks:
-   * <pre>
-   *   {@code
-   *   atomix.<DistributedLock>create("lock", DistributedLock.class).thenAccept(lock -> {
-   *     ...
-   *   });
-   *   }
-   * </pre>
-   *
-   * @param key The key at which to create the resource.
-   * @param type The resource type to create.
-   * @param <T> The resource type.
-   * @return A completable future to be completed once the resource has been created.
-   * @throws NullPointerException if {@code key} or {@code type} are null
-   * @throws ResourceException if the resource could not be instantiated
-   */
-  @SuppressWarnings("unchecked")
-  public <T extends Resource> CompletableFuture<T> create(String key, Class<? super T> type) {
-    return create(key, type((Class<? extends Resource<?, ?>>) type), null);
-  }
-
-  /**
-   * Creates a new instance for the given resource.
-   * <p>
-   * If a resource at the given key already exists, the resource will be validated to verify that its type
-   * matches the given type. If no resource yet exists, a new resource will be created in the cluster. Once
-   * the session for the resource has been opened, a new resource instance will be returned.
-   * <p>
-   * The returned {@link Resource} instance will have a unique logical connection to the resource state. This
-   * means that operations and events submitted or received by this instance related to this instance only,
-   * even if multiple instances of the resource are open on this node. For instance, a lock resource created
-   * via this method will behave as a unique reference to the distributed state. Locking a lock acquired via this
-   * method will lock <em>only</em> that lock instance and not other instance of the lock on this node.
-   * <p>
-   * To acquire a singleton reference to a resource that is global to this node, use the {@link #get(String, ResourceType)}
-   * method.
-   * <p>
-   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
-   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
-   * use the {@link CompletableFuture#get()} method:
-   * <pre>
-   *   {@code
-   *   DistributedLock lock = atomix.create("lock", DistributedLock.class).get();
-   *   }
-   * </pre>
-   * Alternatively, to execute the operation asynchronous and be notified once the result is received in a different
-   * thread, use one of the many completable future callbacks:
-   * <pre>
-   *   {@code
-   *   atomix.<DistributedLock>create("lock", DistributedLock.class).thenAccept(lock -> {
-   *     ...
-   *   });
-   *   }
-   * </pre>
-   *
-   * @param key The key at which to create the resource.
-   * @param type The resource type to create.
-   * @param <T> The resource type.
-   * @return A completable future to be completed once the resource has been created.
-   * @throws NullPointerException if {@code key} or {@code type} are null
-   * @throws ResourceException if the resource could not be instantiated
-   */
-  @SuppressWarnings("unchecked")
-  public <T extends Resource<T, U>, U extends Resource.Options> CompletableFuture<T> create(String key, Class<? super T> type, U options) {
-    return this.<T, U>create(key, type((Class<T>) type), options);
-  }
-
-  /**
-   * Creates a new instance for the given resource.
-   * <p>
-   * If a resource at the given key already exists, the resource will be validated to verify that its type
-   * matches the given type. If no resource yet exists, a new resource will be created in the cluster. Once
-   * the session for the resource has been opened, a new resource instance will be returned.
-   * <p>
-   * The returned {@link Resource} instance will have a unique logical connection to the resource state. This
-   * means that operations and events submitted or received by this instance related to this instance only,
-   * even if multiple instances of the resource are open on this node. For instance, a lock resource created
-   * via this method will behave as a unique reference to the distributed state. Locking a lock acquired via this
-   * method will lock <em>only</em> that lock instance and not other instance of the lock on this node.
-   * <p>
-   * To acquire a singleton reference to a resource that is global to this node, use the {@link #get(String, ResourceType)}
-   * method.
-   * <p>
-   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
-   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
-   * use the {@link CompletableFuture#get()} method:
-   * <pre>
-   *   {@code
-   *   DistributedLock lock = atomix.create("lock", DistributedLock.class).get();
-   *   }
-   * </pre>
-   * Alternatively, to execute the operation asynchronous and be notified once the result is received in a different
-   * thread, use one of the many completable future callbacks:
-   * <pre>
-   *   {@code
-   *   atomix.<DistributedLock>create("lock", DistributedLock.class).thenAccept(lock -> {
-   *     ...
-   *   });
-   *   }
-   * </pre>
-   *
-   * @param key The key at which to create the resource.
-   * @param type The resource type to create.
-   * @param <T> The resource type.
-   * @return A completable future to be completed once the resource has been created.
-   * @throws NullPointerException if {@code key} or {@code type} are null
-   * @throws ResourceException if the resource could not be instantiated
-   */
-  public <T extends Resource> CompletableFuture<T> create(String key, ResourceType type) {
-    return create(key, type, null);
-  }
-
-  /**
-   * Creates a new instance for the given resource.
-   * <p>
-   * If a resource at the given key already exists, the resource will be validated to verify that its type
-   * matches the given type. If no resource yet exists, a new resource will be created in the cluster. Once
-   * the session for the resource has been opened, a new resource instance will be returned.
-   * <p>
-   * The returned {@link Resource} instance will have a unique logical connection to the resource state. This
-   * means that operations and events submitted or received by this instance related to this instance only,
-   * even if multiple instances of the resource are open on this node. For instance, a lock resource created
-   * via this method will behave as a unique reference to the distributed state. Locking a lock acquired via this
-   * method will lock <em>only</em> that lock instance and not other instance of the lock on this node.
-   * <p>
-   * To acquire a singleton reference to a resource that is global to this node, use the {@link #get(String, ResourceType)}
-   * method.
-   * <p>
-   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
-   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
-   * use the {@link CompletableFuture#get()} method:
-   * <pre>
-   *   {@code
-   *   DistributedLock lock = atomix.create("lock", DistributedLock.class).get();
-   *   }
-   * </pre>
-   * Alternatively, to execute the operation asynchronous and be notified once the result is received in a different
-   * thread, use one of the many completable future callbacks:
-   * <pre>
-   *   {@code
-   *   atomix.<DistributedLock>create("lock", DistributedLock.class).thenAccept(lock -> {
-   *     ...
-   *   });
-   *   }
-   * </pre>
-   *
-   * @param key The key at which to create the resource.
-   * @param type The resource type to create.
-   * @param <T> The resource type.
-   * @return A completable future to be completed once the resource has been created.
-   * @throws NullPointerException if {@code key} or {@code type} are null
-   * @throws ResourceException if the resource could not be instantiated
-   */
-  @SuppressWarnings("unchecked")
-  public <T extends Resource<T, U>, U extends Resource.Options> CompletableFuture<T> create(String key, ResourceType type, U options) {
-    Instance instance = new Instance(key, type, Instance.Method.GET, this::close);
-    InstanceClient client = new InstanceClient(instance, this.client);
-    T resource = (T) type.factory().create(client, options);
-    synchronized (this) {
-      resources.add(resource);
-    }
-    return resource.open();
-  }
-
-  /**
    * Closes the given resource instance.
    *
    * @param instance The instance to close.
@@ -677,46 +229,26 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
     }
   }
 
-  /**
-   * Opens the instance.
-   *
-   * @return A completable future to be completed once the instance is open.
-   */
   @Override
   public CompletableFuture<ResourceClient> open() {
     return client.open().thenApply(v -> this);
   }
 
-  /**
-   * Returns a boolean value indicating whether the instance is open.
-   *
-   * @return Indicates whether the instance is open.
-   */
   @Override
   public boolean isOpen() {
     return client.isOpen();
   }
 
-  /**
-   * Closes the instance.
-   *
-   * @return A completable future to be completed once the instance is closed.
-   */
   @Override
   public CompletableFuture<Void> close() {
-    CompletableFuture<?>[] futures = new CompletableFuture[resources.size()];
+    CompletableFuture<?>[] futures = new CompletableFuture[instances.size()];
     int i = 0;
-    for (Resource<?, ?> instance : resources) {
+    for (Resource<?, ?> instance : instances.values()) {
       futures[i++] = instance.close();
     }
     return CompletableFuture.allOf(futures).thenCompose(v -> client.close());
   }
 
-  /**
-   * Returns a boolean value indicating whether the instance is closed.
-   *
-   * @return Indicates whether the instance is closed.
-   */
   @Override
   public boolean isClosed() {
     return client.isClosed();

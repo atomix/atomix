@@ -15,12 +15,11 @@
  */
 package io.atomix;
 
-import java.util.function.Function;
-
+import io.atomix.variables.DistributedLong;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import io.atomix.variables.DistributedLong;
+import java.util.function.Function;
 
 /**
  * Atomix long test.
@@ -40,23 +39,8 @@ public class AtomixLongTest extends AbstractAtomixTest {
     testLong(client1, client2, get("test-client-long-get", DistributedLong.class));
   }
 
-  public void testClientLongCreate() throws Throwable {
-    Atomix client1 = createClient();
-    Atomix client2 = createClient();
-    testLong(client1, client2, create("test-client-long-create", DistributedLong.class));
-  }
-
   public void testReplicaLongGet() throws Throwable {
     testLong(replicas.get(0), replicas.get(1), get("test-replica-long-get", DistributedLong.class));
-  }
-
-  public void testReplicaLongCreate() throws Throwable {
-    testLong(replicas.get(0), replicas.get(1), create("test-replica-long-create", DistributedLong.class));
-  }
-
-  public void testMixLong() throws Throwable {
-    Atomix client = createClient();
-    testLong(replicas.get(0), client, create("test-long-mix", DistributedLong.class));
   }
 
   /**

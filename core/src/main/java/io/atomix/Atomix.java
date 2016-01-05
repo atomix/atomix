@@ -71,18 +71,6 @@ public abstract class Atomix implements ResourceManager<Atomix> {
   }
 
   /**
-   * Gets or creates a distributed map.
-   *
-   * @param key The resource key.
-   * @param <K> The map key type.
-   * @param <V> The map value type.
-   * @return A completable future to be completed once the map has been created.
-   */
-  public <K, V> CompletableFuture<DistributedMap<K, V>> createMap(String key) {
-    return create(key, DistributedMap.class);
-  }
-
-  /**
    * Gets or creates a distributed multi map.
    *
    * @param key The resource key.
@@ -92,18 +80,6 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    */
   public <K, V> CompletableFuture<DistributedMultiMap<K, V>> getMultiMap(String key) {
     return get(key, DistributedMultiMap.class);
-  }
-
-  /**
-   * Gets or creates a distributed multi map.
-   *
-   * @param key The resource key.
-   * @param <K> The multi map key type.
-   * @param <V> The multi map value type.
-   * @return A completable future to be completed once the multi map has been created.
-   */
-  public <K, V> CompletableFuture<DistributedMultiMap<K, V>> createMultiMap(String key) {
-    return create(key, DistributedMultiMap.class);
   }
 
   /**
@@ -118,17 +94,6 @@ public abstract class Atomix implements ResourceManager<Atomix> {
   }
 
   /**
-   * Gets or creates a distributed set.
-   *
-   * @param key The resource key.
-   * @param <T> The value type.
-   * @return A completable future to be completed once the set has been created.
-   */
-  public <T> CompletableFuture<DistributedSet<T>> createSet(String key) {
-    return create(key, DistributedSet.class);
-  }
-
-  /**
    * Gets or creates a distributed queue.
    *
    * @param key The resource key.
@@ -137,17 +102,6 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    */
   public <T> CompletableFuture<DistributedQueue<T>> getQueue(String key) {
     return get(key, DistributedQueue.class);
-  }
-
-  /**
-   * Gets or creates a distributed queue.
-   *
-   * @param key The resource key.
-   * @param <T> The value type.
-   * @return A completable future to be completed once the queue has been created.
-   */
-  public <T> CompletableFuture<DistributedQueue<T>> createQueue(String key) {
-    return create(key, DistributedQueue.class);
   }
 
   /**
@@ -162,17 +116,6 @@ public abstract class Atomix implements ResourceManager<Atomix> {
   }
 
   /**
-   * Gets or creates a distributed value.
-   *
-   * @param key The resource key.
-   * @param <T> The value type.
-   * @return A completable future to be completed once the value has been created.
-   */
-  public <T> CompletableFuture<DistributedValue<T>> createValue(String key) {
-    return create(key, DistributedValue.class);
-  }
-
-  /**
    * Gets or creates a distributed long.
    *
    * @param key The resource key.
@@ -180,16 +123,6 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    */
   public CompletableFuture<DistributedLong> getLong(String key) {
     return get(key, DistributedLong.class);
-  }
-
-  /**
-   * Gets or creates a distributed long.
-   *
-   * @param key The resource key.
-   * @return A completable future to be completed once the long has been created.
-   */
-  public CompletableFuture<DistributedLong> createLong(String key) {
-    return create(key, DistributedLong.class);
   }
 
   /**
@@ -203,16 +136,6 @@ public abstract class Atomix implements ResourceManager<Atomix> {
   }
 
   /**
-   * Gets or creates a distributed leader election.
-   *
-   * @param key The resource key.
-   * @return A completable future to be completed once the leader election has been created.
-   */
-  public CompletableFuture<DistributedLeaderElection> createLeaderElection(String key) {
-    return create(key, DistributedLeaderElection.class);
-  }
-
-  /**
    * Gets or creates a distributed lock.
    *
    * @param key The resource key.
@@ -223,16 +146,6 @@ public abstract class Atomix implements ResourceManager<Atomix> {
   }
 
   /**
-   * Gets or creates a distributed lock.
-   *
-   * @param key The resource key.
-   * @return A completable future to be completed once the lock has been created.
-   */
-  public CompletableFuture<DistributedLock> createLock(String key) {
-    return create(key, DistributedLock.class);
-  }
-
-  /**
    * Gets or creates a distributed membership group.
    *
    * @param key The resource key.
@@ -240,16 +153,6 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    */
   public CompletableFuture<DistributedMembershipGroup> getMembershipGroup(String key) {
     return get(key, DistributedMembershipGroup.class);
-  }
-
-  /**
-   * Gets or creates a distributed membership group.
-   *
-   * @param key The resource key.
-   * @return A completable future to be completed once the membership group has been created.
-   */
-  public CompletableFuture<DistributedMembershipGroup> createMembershipGroup(String key) {
-    return create(key, DistributedMembershipGroup.class);
   }
 
   /**
@@ -264,17 +167,6 @@ public abstract class Atomix implements ResourceManager<Atomix> {
   }
 
   /**
-   * Gets or creates a distributed topic.
-   *
-   * @param key The resource key.
-   * @param <T> The topic message type.
-   * @return A completable future to be completed once the topic has been created.
-   */
-  public <T> CompletableFuture<DistributedTopic<T>> createTopic(String key) {
-    return create(key, DistributedTopic.class);
-  }
-
-  /**
    * Gets or creates a distributed queue.
    *
    * @param key The resource key.
@@ -286,17 +178,6 @@ public abstract class Atomix implements ResourceManager<Atomix> {
   }
 
   /**
-   * Gets or creates a distributed queue.
-   *
-   * @param key The resource key.
-   * @param <T> The queue message type.
-   * @return A completable future to be completed once the queue has been created.
-   */
-  public <T> CompletableFuture<DistributedTaskQueue<T>> createTaskQueue(String key) {
-    return create(key, DistributedTaskQueue.class);
-  }
-
-  /**
    * Gets or creates a distributed message bus.
    *
    * @param key The resource key.
@@ -304,16 +185,6 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    */
   public CompletableFuture<DistributedMessageBus> getMessageBus(String key) {
     return get(key, DistributedMessageBus.class);
-  }
-
-  /**
-   * Gets or creates a distributed message bus.
-   *
-   * @param key The resource key.
-   * @return A completable future to be completed once the message bus has been created.
-   */
-  public CompletableFuture<DistributedMessageBus> createMessageBus(String key) {
-    return create(key, DistributedMessageBus.class);
   }
 
   @Override
@@ -364,26 +235,6 @@ public abstract class Atomix implements ResourceManager<Atomix> {
   @Override
   public <T extends Resource<T, U>, U extends Resource.Options> CompletableFuture<T> get(String key, ResourceType type, U options) {
     return client.get(key, type, options);
-  }
-
-  @Override
-  public <T extends Resource> CompletableFuture<T> create(String key, Class<? super T> type) {
-    return client.create(key, type);
-  }
-
-  @Override
-  public <T extends Resource<T, U>, U extends Resource.Options> CompletableFuture<T> create(String key, Class<? super T> type, U options) {
-    return client.create(key, type, options);
-  }
-
-  @Override
-  public <T extends Resource> CompletableFuture<T> create(String key, ResourceType type) {
-    return client.create(key, type);
-  }
-
-  @Override
-  public <T extends Resource<T, U>, U extends Resource.Options> CompletableFuture<T> create(String key, ResourceType type, U options) {
-    return client.create(key, type, options);
   }
 
   @Override

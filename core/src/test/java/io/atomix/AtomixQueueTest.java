@@ -15,12 +15,11 @@
  */
 package io.atomix;
 
-import java.util.function.Function;
-
+import io.atomix.collections.DistributedQueue;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import io.atomix.collections.DistributedQueue;
+import java.util.function.Function;
 
 /**
  * Atomix queue test.
@@ -40,23 +39,8 @@ public class AtomixQueueTest extends AbstractAtomixTest {
     testQueue(client1, client2, get("test-client-queue-get", DistributedQueue.class));
   }
 
-  public void testClientQueueCreate() throws Throwable {
-    Atomix client1 = createClient();
-    Atomix client2 = createClient();
-    testQueue(client1, client2, create("test-client-queue-create", DistributedQueue.class));
-  }
-
   public void testReplicaQueueGet() throws Throwable {
     testQueue(replicas.get(0), replicas.get(1), get("test-replica-queue-get", DistributedQueue.class));
-  }
-
-  public void testReplicaQueueCreate() throws Throwable {
-    testQueue(replicas.get(0), replicas.get(1), create("test-replica-queue-create", DistributedQueue.class));
-  }
-
-  public void testMixQueue() throws Throwable {
-    Atomix client = createClient();
-    testQueue(replicas.get(0), client, create("test-queue-mix", DistributedQueue.class));
   }
 
   /**

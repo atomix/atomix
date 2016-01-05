@@ -15,12 +15,11 @@
  */
 package io.atomix;
 
-import java.util.function.Function;
-
+import io.atomix.collections.DistributedMap;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import io.atomix.collections.DistributedMap;
+import java.util.function.Function;
 
 /**
  * Atomix map test.
@@ -40,23 +39,8 @@ public class AtomixMapTest extends AbstractAtomixTest {
     testMap(client1, client2, get("test-client-map-get", DistributedMap.class));
   }
 
-  public void testClientMapCreate() throws Throwable {
-    Atomix client1 = createClient();
-    Atomix client2 = createClient();
-    testMap(client1, client2, create("test-client-map-create", DistributedMap.class));
-  }
-
   public void testReplicaMapGet() throws Throwable {
     testMap(replicas.get(0), replicas.get(1), get("test-replica-map-get", DistributedMap.class));
-  }
-
-  public void testReplicaMapCreate() throws Throwable {
-    testMap(replicas.get(0), replicas.get(1), create("test-replica-map-create", DistributedMap.class));
-  }
-
-  public void testMixMap() throws Throwable {
-    Atomix client = createClient();
-    testMap(replicas.get(0), client, create("test-map-mix", DistributedMap.class));
   }
 
   /**

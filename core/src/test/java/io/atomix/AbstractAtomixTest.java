@@ -102,20 +102,6 @@ public abstract class AbstractAtomixTest extends ConcurrentTestCase {
   }
 
   /**
-   * Creates a resource factory for the given type.
-   */
-  @SuppressWarnings("unchecked")
-  protected <T extends Resource> Function<Atomix, T> create(String key, Class<? super T> type) {
-    return a -> {
-      try {
-        return a.create(key, type).get();
-      } catch (InterruptedException | ExecutionException e) {
-        throw new RuntimeException(e);
-      }
-    };
-  }
-
-  /**
    * Returns the next server address.
    *
    * @return The next server address.

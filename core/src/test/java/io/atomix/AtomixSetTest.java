@@ -15,12 +15,11 @@
  */
 package io.atomix;
 
-import java.util.function.Function;
-
+import io.atomix.collections.DistributedSet;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import io.atomix.collections.DistributedSet;
+import java.util.function.Function;
 
 /**
  * Atomix set test.
@@ -40,23 +39,8 @@ public class AtomixSetTest extends AbstractAtomixTest {
     testSet(client1, client2, get("test-client-set-get", DistributedSet.class));
   }
 
-  public void testClientSetCreate() throws Throwable {
-    Atomix client1 = createClient();
-    Atomix client2 = createClient();
-    testSet(client1, client2, create("test-client-set-create", DistributedSet.class));
-  }
-
   public void testReplicaSetGet() throws Throwable {
     testSet(replicas.get(0), replicas.get(1), get("test-replica-set-get", DistributedSet.class));
-  }
-
-  public void testReplicaSetCreate() throws Throwable {
-    testSet(replicas.get(0), replicas.get(1), create("test-replica-set-create", DistributedSet.class));
-  }
-
-  public void testMixSet() throws Throwable {
-    Atomix client = createClient();
-    testSet(replicas.get(0), client, create("test-set-mix", DistributedSet.class));
   }
 
   /**

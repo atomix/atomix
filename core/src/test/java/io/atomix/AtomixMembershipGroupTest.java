@@ -39,23 +39,8 @@ public class AtomixMembershipGroupTest extends AbstractAtomixTest {
     testMembershipGroup(client1, client2, get("test-client-group-get", DistributedMembershipGroup.class));
   }
 
-  public void testClientMembershipGroupCreate() throws Throwable {
-    Atomix client1 = createClient();
-    Atomix client2 = createClient();
-    testMembershipGroup(client1, client2, create("test-client-group-create", DistributedMembershipGroup.class));
-  }
-
   public void testReplicaMembershipGroupGet() throws Throwable {
     testMembershipGroup(replicas.get(0), replicas.get(1), get("test-replica-group-get", DistributedMembershipGroup.class));
-  }
-
-  public void testReplicaMembershipGroupCreate() throws Throwable {
-    testMembershipGroup(replicas.get(0), replicas.get(1), create("test-replica-group-create", DistributedMembershipGroup.class));
-  }
-
-  public void testMixMembershipGroup() throws Throwable {
-    Atomix client = createClient();
-    testMembershipGroup(replicas.get(0), client, create("test-group-mix", DistributedMembershipGroup.class));
   }
 
   /**

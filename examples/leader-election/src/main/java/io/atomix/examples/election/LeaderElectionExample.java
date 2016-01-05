@@ -61,7 +61,7 @@ public class LeaderElectionExample {
     atomix.open().join();
 
     // Create a leader election resource.
-    DistributedLeaderElection election = atomix.create("election", DistributedLeaderElection.class).get();
+    DistributedLeaderElection election = atomix.get("election", DistributedLeaderElection.class).get();
 
     // Register a callback to be called when this election instance is elected the leader
     election.onElection(epoch -> {

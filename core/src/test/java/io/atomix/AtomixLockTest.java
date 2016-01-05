@@ -15,12 +15,11 @@
  */
 package io.atomix;
 
-import java.util.function.Function;
-
+import io.atomix.coordination.DistributedLock;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import io.atomix.coordination.DistributedLock;
+import java.util.function.Function;
 
 /**
  * Atomix lock test.
@@ -40,18 +39,8 @@ public class AtomixLockTest extends AbstractAtomixTest {
     testLock(client1, client2, get("test-client-lock-get", DistributedLock.class));
   }
 
-  public void testClientLockCreate() throws Throwable {
-    Atomix client1 = createClient();
-    Atomix client2 = createClient();
-    testLock(client1, client2, create("test-client-lock-create", DistributedLock.class));
-  }
-
   public void testReplicaLockGet() throws Throwable {
     testLock(createClient(), replicas.get(0), get("test-replica-lock-get", DistributedLock.class));
-  }
-
-  public void testReplicaLockCreate() throws Throwable {
-    testLock(createClient(), replicas.get(0), create("test-replica-lock-create", DistributedLock.class));
   }
 
   /**

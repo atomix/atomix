@@ -40,18 +40,8 @@ public class AtomixLeaderElectionTest extends AbstractAtomixTest {
     testLeaderElection(client1, client2, get("test-client-election-get", DistributedLeaderElection.class));
   }
 
-  public void testClientLeaderElectionCreate() throws Throwable {
-    Atomix client1 = createClient();
-    Atomix client2 = createClient();
-    testLeaderElection(client1, client2, create("test-client-election-create", DistributedLeaderElection.class));
-  }
-
   public void testReplicaLeaderElectionGet() throws Throwable {
     testLeaderElection(createClient(), replicas.get(1), get("test-replica-election-get", DistributedLeaderElection.class));
-  }
-
-  public void testReplicaLeaderElectionCreate() throws Throwable {
-    testLeaderElection(createClient(), replicas.get(1), create("test-replica-election-create", DistributedLeaderElection.class));
   }
 
   /**

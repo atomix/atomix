@@ -49,7 +49,7 @@ public class ResourceRecoveryTest extends AbstractAtomixTest {
   private void testRecoverResources(Atomix atomix) throws Throwable {
     String id = UUID.randomUUID().toString();
 
-    DistributedMap<String, String> map = atomix.create("test-map-" + id, DistributedMap.class).get();
+    DistributedMap<String, String> map = atomix.get("test-map-" + id, DistributedMap.class).get();
     map.put("foo", "Hello world!").join();
     map.put("bar", "Hello world again!").join();
     map.get("foo").thenAccept(result -> {

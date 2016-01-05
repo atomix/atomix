@@ -15,8 +15,6 @@
  */
 package io.atomix;
 
-import io.atomix.AbstractAtomixTest;
-import io.atomix.Atomix;
 import io.atomix.copycat.client.Command;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.copycat.client.Query;
@@ -84,7 +82,7 @@ public class AtomixClientTest extends AbstractAtomixTest {
 
     Atomix client = createClient();
 
-    TestResource resource = client.create("test", TestResource.class).get();
+    TestResource resource = client.get("test", TestResource.class).get();
 
     resource.with(consistency).command("Hello world!").thenAccept(result -> {
       threadAssertEquals(result, "Hello world!");
@@ -130,7 +128,7 @@ public class AtomixClientTest extends AbstractAtomixTest {
 
     Atomix client = createClient();
 
-    TestResource resource = client.create("test", TestResource.class).get();
+    TestResource resource = client.get("test", TestResource.class).get();
 
     resource.with(consistency).query("Hello world!").thenAccept(result -> {
       threadAssertEquals(result, "Hello world!");
@@ -170,8 +168,8 @@ public class AtomixClientTest extends AbstractAtomixTest {
     Atomix client1 = createClient();
     Atomix client2 = createClient();
 
-    ValueResource resource1 = client1.create("test", ValueResource.class).get();
-    ValueResource resource2 = client2.create("test", ValueResource.class).get();
+    ValueResource resource1 = client1.get("test", ValueResource.class).get();
+    ValueResource resource2 = client2.get("test", ValueResource.class).get();
 
     resource1.set("Hello world!").join();
 
@@ -192,7 +190,7 @@ public class AtomixClientTest extends AbstractAtomixTest {
     Atomix client2 = createClient();
 
     ValueResource resource1 = client1.get("test", ValueResource.class).get();
-    ValueResource resource2 = client2.create("test", ValueResource.class).get();
+    ValueResource resource2 = client2.get("test", ValueResource.class).get();
 
     resource1.set("Hello world!").join();
 
@@ -216,14 +214,14 @@ public class AtomixClientTest extends AbstractAtomixTest {
     });
     await(10000);
 
-    client.create("test", TestResource.class).get();
+    client.get("test", TestResource.class).get();
     client.keys().thenAccept(result -> {
       threadAssertTrue(result.size() == 1 && result.contains("test"));
       resume();
     });
     await(10000);
 
-    client.create("value", ValueResource.class).get();
+    client.get("value", ValueResource.class).get();
     client.keys().thenAccept(result -> {
       threadAssertTrue(result.size() == 2 && result.contains("test") && result.contains("value"));
       resume();
