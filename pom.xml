@@ -68,6 +68,7 @@
     <module>messaging</module>
     <module>coordination</module>
     <module>variables</module>
+    <module>core</module>
     <module>examples</module>
     <module>testing</module>
     <module>all</module>

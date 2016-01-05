@@ -32,8 +32,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class DistributedMembershipGroupTest extends AbstractCopycatTest<DistributedMembershipGroup> {
   
   @Override
-  protected ResourceType<DistributedMembershipGroup> type() {
-    return DistributedMembershipGroup.TYPE;
+  protected Class<? super DistributedMembershipGroup> type() {
+    return DistributedMembershipGroup.class;
   }
 
   /**

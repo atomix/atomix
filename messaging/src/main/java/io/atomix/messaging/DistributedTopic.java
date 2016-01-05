@@ -21,7 +21,6 @@ import io.atomix.messaging.state.TopicCommands;
 import io.atomix.messaging.state.TopicState;
 import io.atomix.resource.Consistency;
 import io.atomix.resource.Resource;
-import io.atomix.resource.ResourceType;
 import io.atomix.resource.ResourceTypeInfo;
 
 import java.util.HashSet;
@@ -59,20 +58,12 @@ import java.util.function.Consumer;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @ResourceTypeInfo(id=-31, stateMachine=TopicState.class)
-public class DistributedTopic<T> extends Resource<DistributedTopic<T>> {
-  public static final ResourceType<DistributedTopic> TYPE = new ResourceType<>(DistributedTopic.class);
-
+public class DistributedTopic<T> extends Resource<DistributedTopic<T>, Resource.Options> {
   private final Set<Consumer<T>> listeners = new HashSet<>();
 
   @SuppressWarnings("unchecked")
-  public DistributedTopic(CopycatClient client) {
-    super(client);
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public ResourceType<DistributedTopic<T>> type() {
-    return (ResourceType) TYPE;
+  public DistributedTopic(CopycatClient client, Resource.Options options) {
+    super(client, options);
   }
 
   @Override

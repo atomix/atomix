@@ -56,7 +56,7 @@ public class TaskQueueConsumerExample {
 
     // Create a task queue resource.
     @SuppressWarnings("unchecked")
-    DistributedTaskQueue<String> queue = atomix.create("queue", DistributedTaskQueue.class).get();
+    DistributedTaskQueue<String> queue = atomix.<String>getTaskQueue("tasks").get();
 
     // Register a callback to be called when a message is received.
     queue.consumer(task -> {

@@ -33,8 +33,8 @@ import java.util.Set;
 public class DistributedTopicTest extends AbstractCopycatTest<DistributedTopic> {
 
   @Override
-  protected ResourceType<DistributedTopic> type() {
-    return DistributedTopic.TYPE;
+  protected Class<? super DistributedTopic> type() {
+    return DistributedTopic.class;
   }
 
   /**

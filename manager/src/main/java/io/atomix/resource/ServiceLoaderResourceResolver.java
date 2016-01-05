@@ -40,7 +40,7 @@ public class ServiceLoaderResourceResolver implements ResourceTypeResolver {
   @Override
   public void resolve(ResourceRegistry registry) {
     for (Class<? extends Resource> resourceType : load(Resource.class)) {
-      registry.register(new ResourceType<>(resourceType));
+      registry.register(new ResourceType(resourceType));
     }
   }
 

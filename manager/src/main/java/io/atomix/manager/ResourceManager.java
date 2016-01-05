@@ -15,441 +15,307 @@
  */
 package io.atomix.manager;
 
-import io.atomix.catalyst.util.Assert;
-import io.atomix.copycat.client.session.Session;
-import io.atomix.copycat.server.Commit;
-import io.atomix.copycat.server.Snapshottable;
-import io.atomix.copycat.server.StateMachine;
-import io.atomix.copycat.server.StateMachineExecutor;
-import io.atomix.copycat.server.session.SessionListener;
-import io.atomix.copycat.server.storage.snapshot.SnapshotReader;
-import io.atomix.copycat.server.storage.snapshot.SnapshotWriter;
-import io.atomix.resource.InstanceOperation;
-import io.atomix.resource.ResourceRegistry;
-import io.atomix.resource.ResourceStateMachine;
+import io.atomix.catalyst.serializer.Serializer;
+import io.atomix.catalyst.util.Managed;
+import io.atomix.catalyst.util.concurrent.ThreadContext;
+import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceType;
 
-import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 /**
- * Resource manager.
+ * Provides an interface for creating and operating on {@link io.atomix.resource.Resource}s remotely.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ResourceManager extends StateMachine implements SessionListener, Snapshottable {
-  private final ResourceRegistry registry;
-  private StateMachineExecutor executor;
-  private final Map<String, Long> keys = new HashMap<>();
-  private final Map<Long, ResourceHolder> resources = new HashMap<>();
-  private final Map<Long, SessionHolder> sessions = new HashMap<>();
-  private final ResourceManagerCommitPool commits = new ResourceManagerCommitPool();
-
-  public ResourceManager(ResourceRegistry registry) {
-    this.registry = Assert.notNull(registry, "registry");
-  }
-
-  @Override
-  public void configure(StateMachineExecutor executor) {
-    this.executor = executor;
-    executor.register(InstanceOperation.class, (Function<Commit<InstanceOperation>, Object>) this::operateResource);
-    executor.register(GetResource.class, this::getResource);
-    executor.register(GetResourceIfExists.class, this::getResourceIfExists);
-    executor.register(CreateResource.class, this::createResource);
-    executor.register(CreateResourceIfExists.class, this::createResourceIfExists);
-    executor.register(CloseResource.class, this::closeResource);
-    executor.register(DeleteResource.class, this::deleteResource);
-    executor.register(ResourceExists.class, this::resourceExists);
-    executor.register(GetResourceKeys.class, this::getResourceKeys);
-  }
-
-  @Override
-  public void snapshot(SnapshotWriter writer) {
-    List<ResourceHolder> resources = new ArrayList<>(this.resources.values());
-    Collections.sort(resources, (r1, r2) -> (int) (r1.id - r2.id));
-    for (ResourceHolder resource : resources) {
-      if (resource.stateMachine instanceof Snapshottable) {
-        ((Snapshottable) resource.stateMachine).snapshot(writer);
-      }
-    }
-  }
-
-  @Override
-  public void install(SnapshotReader reader) {
-    List<ResourceHolder> resources = new ArrayList<>(this.resources.values());
-    Collections.sort(resources, (r1, r2) -> (int)(r1.id - r2.id));
-    for (ResourceHolder resource : resources) {
-      if (resource.stateMachine instanceof Snapshottable) {
-        ((Snapshottable) resource.stateMachine).install(reader);
-      }
-    }
-  }
+public interface ResourceManager<T extends ResourceManager<T>> extends Managed<T> {
 
   /**
-   * Performs an operation on a resource.
+   * Returns the Atomix thread context.
+   * <p>
+   * This context is representative of the thread on which asynchronous callbacks will be executed for this
+   * Atomix instance. Atomix guarantees that all {@link CompletableFuture}s supplied by this instance will
+   * be executed via the returned context. Users can use the context to access the thread-local
+   * {@link Serializer}.
+   *
+   * @return The Atomix thread context.
    */
-  @SuppressWarnings("unchecked")
-  private Object operateResource(Commit<InstanceOperation> commit) {
-    ResourceHolder resource;
-
-    // Get the session and resource associated with the commit.
-    SessionHolder session = sessions.get(commit.operation().resource());
-    if (session != null) {
-      resource = resources.get(session.resource);
-    } else {
-      try {
-        throw new ResourceManagerException("unknown resource session: " + commit.operation().resource());
-      } finally {
-        commit.close();
-      }
-    }
-
-    return resource.executor.execute(commits.acquire(commit, session.session));
-  }
+  ThreadContext context();
 
   /**
-   * Gets a resource.
+   * Returns the resource type for the given resource class.
+   *
+   * @param type The resource class.
+   * @return The resource type for the given resource class.
    */
-  protected long getResource(Commit<? extends GetResource> commit) {
-    String key = commit.operation().key();
-    ResourceType<?> type = registry.lookup(commit.operation().type());
-
-    // If the resource type is not known, fail the get.
-    if (type == null) {
-      commit.close();
-      throw new IllegalArgumentException("unknown resource type: " + commit.operation().type());
-    }
-
-    // Lookup the resource ID for the resource key.
-    Long resourceId = keys.get(key);
-
-    // If no resource ID was found, create the resource.
-    if (resourceId == null) {
-
-      // The first time a resource is created, the resource ID is the index of the commit that created it.
-      resourceId = commit.index();
-      keys.put(key, resourceId);
-
-      try {
-        // For the new resource, construct a state machine and store the resource info.
-        ResourceStateMachine stateMachine = type.stateMachine().newInstance();
-        ResourceManagerStateMachineExecutor executor = new ResourceManagerStateMachineExecutor(resourceId, this.executor);
-
-        // Store the resource to be referenced by its resource ID.
-        ResourceHolder resource = new ResourceHolder(resourceId, key, type, stateMachine, executor);
-        resources.put(resourceId, resource);
-
-        // Initialize the resource state machine.
-        stateMachine.init(executor);
-
-        // Create a resource session for the client resource instance.
-        ManagedResourceSession session = new ManagedResourceSession(commit.index(), commit.session());
-        SessionHolder holder = new SessionHolder(resourceId, commit, session);
-        sessions.put(session.id(), holder);
-        resource.sessions.put(commit.session().id(), holder);
-
-        // Register the newly created session with the resource state machine.
-        if (stateMachine instanceof SessionListener) {
-          ((SessionListener) stateMachine).register(session);
-        }
-
-        // Returns the session ID for the resource client session.
-        return session.id();
-      } catch (InstantiationException | IllegalAccessException e) {
-        throw new ResourceManagerException("failed to instantiate state machine", e);
-      }
-    } else {
-      // If a resource was found, validate that the resource type matches.
-      ResourceHolder resource = resources.get(resourceId);
-      if (resource == null || !resource.type.equals(type)) {
-        throw new ResourceManagerException("inconsistent resource type: " + commit.operation().type());
-      }
-
-      // If the session is not already associated with the resource, attach the session to the resource.
-      // Otherwise, if the session already has a multiton instance of the resource open, clean the commit.
-      SessionHolder holder = resource.sessions.get(commit.session().id());
-      if (holder == null) {
-        // Crete a resource session for the client resource instance.
-        ManagedResourceSession session = new ManagedResourceSession(commit.index(), commit.session());
-        holder = new SessionHolder(resourceId, commit, session);
-        sessions.put(session.id(), holder);
-        resource.sessions.put(commit.session().id(), holder);
-
-        // Register the newly created session with the resource state machine.
-        if (resource.stateMachine instanceof SessionListener) {
-          ((SessionListener) resource.stateMachine).register(session);
-        }
-
-        return session.id();
-      } else {
-        // Return the resource client session ID and clean the commit since no new resource or session was created.
-        commit.close();
-        return holder.session.id();
-      }
-    }
-  }
+  ResourceType type(Class<? extends Resource<?, ?>> type);
 
   /**
-   * Applies a get resource if exists commit.
+   * Checks whether a resource exists with the given key.
+   * <p>
+   * If no resource with the given {@code key} exists in the cluster, the returned {@link CompletableFuture} will
+   * be completed {@code false}. Note, however, that users should not significantly rely upon the existence or
+   * non-existence of a resource due to race conditions. While a resource may not exist when the returned future is
+   * completed, it may be created by another node shortly thereafter.
+   * <p>
+   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
+   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
+   * use the {@link CompletableFuture#get()} method:
+   * <pre>
+   *   {@code
+   *   if (!atomix.exists("lock").get()) {
+   *     DistributedLock lock = atomix.create("lock", DistributedLock.class).get();
+   *   }
+   *   }
+   * </pre>
+   * Alternatively, to execute the operation asynchronous and be notified once the result is received in a different
+   * thread, use one of the many completable future callbacks:
+   * <pre>
+   *   {@code
+   *   atomix.exists("lock").thenAccept(exists -> {
+   *     if (!exists) {
+   *       atomix.<DistributedLock>create("lock", DistributedLock.class).thenAccept(lock -> {
+   *         ...
+   *       });
+   *     }
+   *   });
+   *   }
+   * </pre>
+   *
+   * @param key The key to check.
+   * @return A completable future indicating whether the given key exists.
+   * @throws NullPointerException if {@code key} is null
    */
-  @SuppressWarnings("unchecked")
-  private long getResourceIfExists(Commit<GetResourceIfExists> commit) {
-    String key = commit.operation().key();
-
-    // Lookup the resource ID for the resource key.
-    Long resourceId = keys.get(key);
-    if (resourceId != null) {
-      return getResource(commit);
-    }
-    return 0;
-  }
+  CompletableFuture<Boolean> exists(String key);
 
   /**
-   * Applies a create resource commit.
+   * Returns keys of all existing resources.
+   *
+   * <p>
+   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
+   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
+   * use the {@link CompletableFuture#get()} method:
+   * <pre>
+   *   {@code
+   *   Collection<String> resourceKeys = atomix.keys().get();
+   *   }
+   * </pre>
+   * Alternatively, to execute the operation asynchronous and be notified once the result is received in a different
+   * thread, use one of the many completable future callbacks:
+   * <pre>
+   *   {@code
+   *   atomix.<Collection<String>>keys().thenAccept(resourceKeys -> {
+   *     ...
+   *   });
+   *   }
+   * </pre>
+   *
+   * @return A completable future to be completed with the keys of all existing resources.
    */
-  private long createResource(Commit<? extends CreateResource> commit) {
-    String key = commit.operation().key();
-    ResourceType<?> type = registry.lookup(commit.operation().type());
-
-    // If the resource type is not known, fail the get.
-    if (type == null) {
-      commit.close();
-      throw new IllegalArgumentException("unknown resource type: " + commit.operation().type());
-    }
-
-    // Get the resource ID for the key.
-    Long resourceId = keys.get(key);
-
-    ResourceHolder resource;
-
-    // If no resource yet exists, create a new resource state machine with the commit index as the resource ID.
-    if (resourceId == null) {
-
-      // The first time a resource is created, the resource ID is the index of the commit that created it.
-      resourceId = commit.index();
-      keys.put(key, resourceId);
-
-      try {
-        // For the new resource, construct a state machine and store the resource info.
-        ResourceStateMachine stateMachine = type.stateMachine().newInstance();
-        ResourceManagerStateMachineExecutor executor = new ResourceManagerStateMachineExecutor(resourceId, this.executor);
-
-        // Store the resource to be referenced by its resource ID.
-        resource = new ResourceHolder(resourceId, key, type, stateMachine, executor);
-        resources.put(resourceId, resource);
-
-        // Initialize the resource state machine.
-        stateMachine.init(executor);
-      } catch (InstantiationException | IllegalAccessException e) {
-        throw new ResourceManagerException("failed to instantiate state machine", e);
-      }
-    } else {
-      // If a resource was found, validate that the resource type matches.
-      resource = resources.get(resourceId);
-      if (resource == null || !resource.type.equals(type)) {
-        throw new ResourceManagerException("inconsistent resource type: " + commit.operation().type());
-      }
-    }
-
-    // The resource ID for the unique resource session is the commit index.
-    long id = commit.index();
-
-    // Create the resource session and register the session with the resource state machine.
-    ManagedResourceSession session = new ManagedResourceSession(id, commit.session());
-    sessions.put(id, new SessionHolder(resourceId, commit, session));
-
-    // Register the newly created session with the resource state machine.
-    if (resource.stateMachine instanceof SessionListener) {
-      ((SessionListener) resource.stateMachine).register(session);
-    }
-
-    return id;
-  }
+  CompletableFuture<Set<String>> keys();
 
   /**
-   * Applies a create resource if exists commit.
+   * Returns the keys of existing resources belonging to a resource type.
+   *
+   * <p>
+   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
+   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
+   * use the {@link CompletableFuture#get()} method:
+   * <pre>
+   *   {@code
+   *   Set<String> resourceKeys = atomix.keys(DistributedLock.class).get();
+   *   }
+   * </pre>
+   * Alternatively, to execute the operation asynchronous and be notified once the result is received in a different
+   * thread, use one of the many completable future callbacks:
+   * <pre>
+   *   {@code
+   *   atomix.<Set<String>>keys().thenAccept(resourceKeys -> {
+   *     ...
+   *   });
+   *   }
+   * </pre>
+   *
+   * @param type The resource type by which to filter resources.
+   * @param <T> The resource type.
+   * @return A completable future to be completed with the set of resource keys.
    */
-  @SuppressWarnings("unchecked")
-  private long createResourceIfExists(Commit<CreateResourceIfExists> commit) {
-    String key = commit.operation().key();
-
-    // Lookup the resource ID for the resource key.
-    Long resourceId = keys.get(key);
-    if (resourceId != null) {
-      return createResource(commit);
-    }
-    return 0;
-  }
+  <T extends Resource> CompletableFuture<Set<String>> keys(Class<? super T> type);
 
   /**
-   * Checks if a resource exists.
+   * Returns the keys of existing resources belonging to a resource type.
+   *
+   * <p>
+   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
+   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
+   * use the {@link CompletableFuture#get()} method:
+   * <pre>
+   *   {@code
+   *   Set<String> resourceKeys = atomix.keys(DistributedLock.class).get();
+   *   }
+   * </pre>
+   * Alternatively, to execute the operation asynchronous and be notified once the result is received in a different
+   * thread, use one of the many completable future callbacks:
+   * <pre>
+   *   {@code
+   *   atomix.<Set<String>>keys().thenAccept(resourceKeys -> {
+   *     ...
+   *   });
+   *   }
+   * </pre>
+   *
+   * @param type The resource type by which to filter resources.
+   * @return A completable future to be completed with the set of resource keys.
    */
-  protected boolean resourceExists(Commit<ResourceExists> commit) {
-    try {
-      return keys.containsKey(commit.operation().key());
-    } finally {
-      commit.close();
-    }
-  }
+  CompletableFuture<Set<String>> keys(ResourceType type);
 
   /**
-   * Closes a resource.
+   * Gets or creates the given resource and acquires a singleton reference to it.
+   * <p>
+   * If a resource at the given key already exists, the resource will be validated to verify that its type
+   * matches the given type. If no resource yet exists, a new resource will be created in the cluster. Once
+   * the session for the resource has been opened, a resource instance will be returned.
+   * <p>
+   * The returned {@link Resource} instance will be a singleton reference to an global instance for this node.
+   * That is, multiple calls to this method for the same resource will result in the same {@link Resource}
+   * instance being returned.
+   * <p>
+   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
+   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
+   * use the {@link CompletableFuture#get()} method:
+   * <pre>
+   *   {@code
+   *   DistributedLock lock = atomix.get("lock", DistributedLock.class).get();
+   *   }
+   * </pre>
+   * Alternatively, to execute the operation asynchronous and be notified once the result is received in a different
+   * thread, use one of the many completable future callbacks:
+   * <pre>
+   *   {@code
+   *   atomix.<DistributedLock>get("lock", DistributedLock.class).thenAccept(lock -> {
+   *     ...
+   *   });
+   *   }
+   * </pre>
+   *
+   * @param key The key at which to get the resource.
+   * @param type The expected resource type.
+   * @param <T> The resource type.
+   * @return A completable future to be completed once the resource has been loaded.
+   * @throws NullPointerException if {@code key} or {@code type} are null
    */
-  protected void closeResource(Commit<CloseResource> commit) {
-    SessionHolder session = sessions.get(commit.operation().resource());
-    if (session == null) {
-      try {
-        throw new ResourceManagerException("unknown resource session: " + commit.operation().resource());
-      } finally {
-        commit.close();
-      }
-    }
-
-    ResourceHolder resource = resources.get(session.resource);
-    resource.sessions.remove(session.commit.session().id());
-    if (resource.stateMachine instanceof SessionListener) {
-      ((SessionListener) resource.stateMachine).close(session.session);
-    }
-  }
+  <T extends Resource> CompletableFuture<T> get(String key, Class<? super T> type);
 
   /**
-   * Applies a delete resource commit.
+   * Gets or creates the given resource and acquires a singleton reference to it.
+   * <p>
+   * If a resource at the given key already exists, the resource will be validated to verify that its type
+   * matches the given type. If no resource yet exists, a new resource will be created in the cluster. Once
+   * the session for the resource has been opened, a resource instance will be returned.
+   * <p>
+   * The returned {@link Resource} instance will be a singleton reference to an global instance for this node.
+   * That is, multiple calls to this method for the same resource will result in the same {@link Resource}
+   * instance being returned.
+   * <p>
+   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
+   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
+   * use the {@link CompletableFuture#get()} method:
+   * <pre>
+   *   {@code
+   *   DistributedLock lock = atomix.get("lock", DistributedLock.class).get();
+   *   }
+   * </pre>
+   * Alternatively, to execute the operation asynchronous and be notified once the result is received in a different
+   * thread, use one of the many completable future callbacks:
+   * <pre>
+   *   {@code
+   *   atomix.<DistributedLock>get("lock", DistributedLock.class).thenAccept(lock -> {
+   *     ...
+   *   });
+   *   }
+   * </pre>
+   *
+   * @param key The key at which to get the resource.
+   * @param type The expected resource type.
+   * @param <T> The resource type.
+   * @return A completable future to be completed once the resource has been loaded.
+   * @throws NullPointerException if {@code key} or {@code type} are null
    */
-  protected boolean deleteResource(Commit<DeleteResource> commit) {
-    try {
-      ResourceHolder resource = resources.remove(commit.operation().resource());
-      if (resource == null) {
-        throw new ResourceManagerException("unknown resource: " + commit.operation().resource());
-      }
-
-      resource.stateMachine.delete();
-      resource.executor.close();
-      keys.remove(resource.key);
-
-      Iterator<Map.Entry<Long, SessionHolder>> iterator = sessions.entrySet().iterator();
-      while (iterator.hasNext()) {
-        SessionHolder session = iterator.next().getValue();
-        if (session.resource == commit.operation().resource()) {
-          iterator.remove();
-          session.commit.close();
-        }
-      }
-      return true;
-    } finally {
-      commit.close();
-    }
-  }
+  <T extends Resource<T, U>, U extends Resource.Options> CompletableFuture<T> get(String key, Class<? super T> type, U options);
 
   /**
-   * Handles get resource keys commit.
+   * Gets or creates the given resource and acquires a singleton reference to it.
+   * <p>
+   * If a resource at the given key already exists, the resource will be validated to verify that its type
+   * matches the given type. If no resource yet exists, a new resource will be created in the cluster. Once
+   * the session for the resource has been opened, a resource instance will be returned.
+   * <p>
+   * The returned {@link Resource} instance will be a singleton reference to an global instance for this node.
+   * That is, multiple calls to this method for the same resource will result in the same {@link Resource}
+   * instance being returned.
+   * <p>
+   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
+   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
+   * use the {@link CompletableFuture#get()} method:
+   * <pre>
+   *   {@code
+   *   DistributedLock lock = atomix.get("lock", DistributedLock.class).get();
+   *   }
+   * </pre>
+   * Alternatively, to execute the operation asynchronous and be notified once the result is received in a different
+   * thread, use one of the many completable future callbacks:
+   * <pre>
+   *   {@code
+   *   atomix.<DistributedLock>get("lock", DistributedLock.class).thenAccept(lock -> {
+   *     ...
+   *   });
+   *   }
+   * </pre>
+   *
+   * @param key The key at which to get the resource.
+   * @param type The expected resource type.
+   * @param <T> The resource type.
+   * @return A completable future to be completed once the resource has been loaded.
+   * @throws NullPointerException if {@code key} or {@code type} are null
    */
-  protected Set<String> getResourceKeys(Commit<GetResourceKeys> commit) {
-    try {
-      if (commit.operation().type() == 0) {
-        return keys.keySet();
-      }
-
-      ResourceType resourceType = registry.lookup(commit.operation().type());
-      if (resourceType == null) {
-        throw new IllegalArgumentException("unknown resource type: " + commit.operation().type());
-      }
-
-      return resources.entrySet()
-        .stream()
-        .filter(e -> e.getValue().type.equals(resourceType))
-        .map(e -> e.getValue().key)
-        .collect(Collectors.toSet());
-    } finally {
-      commit.close();
-    }
-  }
-
-  @Override
-  public void register(Session session) {
-
-  }
-
-  @Override
-  public void expire(Session session) {
-    for (SessionHolder sessionHolder : sessions.values()) {
-      if (sessionHolder.commit.session().id() == session.id()) {
-        ResourceHolder resource = resources.get(sessionHolder.resource);
-        if (resource != null) {
-          if (resource.stateMachine instanceof SessionListener) {
-            ((SessionListener) resource.stateMachine).expire(sessionHolder.session);
-          }
-        }
-      }
-    }
-  }
-
-  @Override
-  public void unregister(Session session) {
-    for (SessionHolder sessionHolder : sessions.values()) {
-      if (sessionHolder.commit.session().id() == session.id()) {
-        ResourceHolder resource = resources.get(sessionHolder.resource);
-        if (resource != null) {
-          if (resource.stateMachine instanceof SessionListener) {
-            ((SessionListener) resource.stateMachine).unregister(sessionHolder.session);
-          }
-        }
-      }
-    }
-  }
-
-  @Override
-  public void close(Session session) {
-    Iterator<Map.Entry<Long, SessionHolder>> iterator = sessions.entrySet().iterator();
-    while (iterator.hasNext()) {
-      SessionHolder sessionHolder = iterator.next().getValue();
-      if (sessionHolder.commit.session().id() == session.id()) {
-        ResourceHolder resource = resources.get(sessionHolder.resource);
-        if (resource != null) {
-          resource.sessions.remove(sessionHolder.commit.session().id());
-          if (resource.stateMachine instanceof SessionListener) {
-            ((SessionListener) resource.stateMachine).close(sessionHolder.session);
-          }
-        }
-        sessionHolder.commit.close();
-        iterator.remove();
-      }
-    }
-  }
+  <T extends Resource> CompletableFuture<T> get(String key, ResourceType type);
 
   /**
-   * Resource holder.
+   * Gets or creates the given resource and acquires a singleton reference to it.
+   * <p>
+   * If a resource at the given key already exists, the resource will be validated to verify that its type
+   * matches the given type. If no resource yet exists, a new resource will be created in the cluster. Once
+   * the session for the resource has been opened, a resource instance will be returned.
+   * <p>
+   * The returned {@link Resource} instance will be a singleton reference to an global instance for this node.
+   * That is, multiple calls to this method for the same resource will result in the same {@link Resource}
+   * instance being returned.
+   * <p>
+   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
+   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
+   * use the {@link CompletableFuture#get()} method:
+   * <pre>
+   *   {@code
+   *   DistributedLock lock = atomix.get("lock", DistributedLock.class).get();
+   *   }
+   * </pre>
+   * Alternatively, to execute the operation asynchronous and be notified once the result is received in a different
+   * thread, use one of the many completable future callbacks:
+   * <pre>
+   *   {@code
+   *   atomix.<DistributedLock>get("lock", DistributedLock.class).thenAccept(lock -> {
+   *     ...
+   *   });
+   *   }
+   * </pre>
+   *
+   * @param key The key at which to get the resource.
+   * @param type The expected resource type.
+   * @param <T> The resource type.
+   * @return A completable future to be completed once the resource has been loaded.
+   * @throws NullPointerException if {@code key} or {@code type} are null
    */
-  private static class ResourceHolder {
-    private final long id;
-    private final String key;
-    private final ResourceType type;
-    private final ResourceStateMachine stateMachine;
-    private final ResourceManagerStateMachineExecutor executor;
-    private final Map<Long, SessionHolder> sessions = new HashMap<>();
-
-    private ResourceHolder(long id, String key, ResourceType type, ResourceStateMachine stateMachine, ResourceManagerStateMachineExecutor executor) {
-      this.id = id;
-      this.key = key;
-      this.type = type;
-      this.stateMachine = stateMachine;
-      this.executor = executor;
-    }
-  }
-
-  /**
-   * Session holder.
-   */
-  private static class SessionHolder {
-    private final long resource;
-    private final Commit commit;
-    private final ManagedResourceSession session;
-
-    private SessionHolder(long resource, Commit commit, ManagedResourceSession session) {
-      this.resource = resource;
-      this.commit = commit;
-      this.session = session;
-    }
-  }
+  <T extends Resource<T, U>, U extends Resource.Options> CompletableFuture<T> get(String key, ResourceType type, U options);
 
 }

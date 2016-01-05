@@ -17,11 +17,11 @@ io.atomix.resource.InstanceCommand
 io.atomix.resource.InstanceQuery
 io.atomix.resource.InstanceEvent
 
-io.atomix.manager.GetResource
-io.atomix.manager.GetResourceIfExists
-io.atomix.manager.CreateResource
-io.atomix.manager.CreateResourceIfExists
-io.atomix.manager.CloseResource
-io.atomix.manager.DeleteResource
-io.atomix.manager.ResourceExists
-io.atomix.manager.GetResourceKeys
+io.atomix.manager.state.GetResource
+io.atomix.manager.state.GetResourceIfExists
+io.atomix.manager.state.CreateResource
+io.atomix.manager.state.CreateResourceIfExists
+io.atomix.manager.state.CloseResource
+io.atomix.manager.state.DeleteResource
+io.atomix.manager.state.ResourceExists
+io.atomix.manager.state.GetResourceKeys

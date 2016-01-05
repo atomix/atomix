@@ -24,7 +24,6 @@ import io.atomix.copycat.client.CopycatClient;
 import io.atomix.messaging.state.MessageBusCommands;
 import io.atomix.messaging.state.MessageBusState;
 import io.atomix.resource.Resource;
-import io.atomix.resource.ResourceType;
 import io.atomix.resource.ResourceTypeInfo;
 
 import java.util.*;
@@ -70,9 +69,7 @@ import java.util.function.Function;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 @ResourceTypeInfo(id=-30, stateMachine=MessageBusState.class)
-public class DistributedMessageBus extends Resource<DistributedMessageBus> {
-  public static final ResourceType<DistributedMessageBus> TYPE = new ResourceType<>(DistributedMessageBus.class);
-
+public class DistributedMessageBus extends Resource<DistributedMessageBus, Resource.Options> {
   private Client client;
   private Server server;
   private final Map<Integer, Connection> connections = new HashMap<>();
@@ -82,13 +79,8 @@ public class DistributedMessageBus extends Resource<DistributedMessageBus> {
   private final Map<String, InternalMessageConsumer> consumers = new ConcurrentHashMap<>();
   private volatile boolean open;
 
-  public DistributedMessageBus(CopycatClient client) {
-    super(client);
-  }
-
-  @Override
-  public ResourceType<DistributedMessageBus> type() {
-    return TYPE;
+  public DistributedMessageBus(CopycatClient client, Resource.Options options) {
+    super(client, options);
   }
 
   /**

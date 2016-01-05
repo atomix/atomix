@@ -19,7 +19,6 @@ import io.atomix.coordination.state.LockCommands;
 import io.atomix.coordination.state.LockState;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.Resource;
-import io.atomix.resource.ResourceType;
 import io.atomix.resource.ResourceTypeInfo;
 
 import java.time.Duration;
@@ -79,18 +78,11 @@ import java.util.function.Consumer;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @ResourceTypeInfo(id=-22, stateMachine=LockState.class)
-public class DistributedLock extends Resource<DistributedLock> {
-  public static final ResourceType<DistributedLock> TYPE = new ResourceType<DistributedLock>(DistributedLock.class);
-
+public class DistributedLock extends Resource<DistributedLock, Resource.Options> {
   private final Queue<Consumer<Boolean>> queue = new ConcurrentLinkedQueue<>();
 
-  public DistributedLock(CopycatClient client) {
-    super(client);
-  }
-
-  @Override
-  public ResourceType<DistributedLock> type() {
-    return TYPE;
+  public DistributedLock(CopycatClient client, Resource.Options options) {
+    super(client, options);
   }
 
   @Override

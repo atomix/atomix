@@ -29,8 +29,8 @@ import org.testng.annotations.Test;
 public class DistributedValueTest extends AbstractCopycatTest<DistributedValue> {
 
   @Override
-  protected ResourceType<DistributedValue> type() {
-    return DistributedValue.TYPE;
+  protected Class<? super DistributedValue> type() {
+    return DistributedValue.class;
   }
 
   /**

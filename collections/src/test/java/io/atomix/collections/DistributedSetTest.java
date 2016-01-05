@@ -32,8 +32,8 @@ import static org.testng.Assert.assertTrue;
 public class DistributedSetTest extends AbstractCopycatTest<DistributedSet> {
 
   @Override
-  protected ResourceType<DistributedSet> type() {
-    return DistributedSet.TYPE;
+  protected Class<? super DistributedSet> type() {
+    return DistributedSet.class;
   }
 
   /**

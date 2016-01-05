@@ -10,6 +10,9 @@ import org.testng.IInvokedMethodListener;
 import org.testng.ITestNGMethod;
 import org.testng.ITestResult;
 
+/**
+ * Logs test invocations.
+ */
 public class TestCaseLogger implements IInvokedMethodListener {
   private static final Map<ITestNGMethod, Long> START_TIMES = new ConcurrentHashMap<>();
 

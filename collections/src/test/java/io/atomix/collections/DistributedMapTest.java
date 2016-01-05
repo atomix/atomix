@@ -31,8 +31,8 @@ import java.time.Duration;
 public class DistributedMapTest extends AbstractCopycatTest<DistributedMap> {
   
   @Override
-  protected ResourceType<DistributedMap> type() {
-    return DistributedMap.TYPE;
+  protected Class<? super DistributedMap> type() {
+    return DistributedMap.class;
   }
 
   /**

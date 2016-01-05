@@ -19,7 +19,6 @@ import io.atomix.collections.state.SetCommands;
 import io.atomix.collections.state.SetState;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.Resource;
-import io.atomix.resource.ResourceType;
 import io.atomix.resource.ResourceTypeInfo;
 
 import java.time.Duration;
@@ -32,17 +31,10 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @ResourceTypeInfo(id=-13, stateMachine=SetState.class)
-public class DistributedSet<T> extends Resource<DistributedSet<T>> {
-  public static final ResourceType<DistributedSet> TYPE = new ResourceType<>(DistributedSet.class);
+public class DistributedSet<T> extends Resource<DistributedSet<T>, Resource.Options> {
 
-  public DistributedSet(CopycatClient client) {
-    super(client);
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public ResourceType<DistributedSet<T>> type() {
-    return (ResourceType) TYPE;
+  public DistributedSet(CopycatClient client, Resource.Options options) {
+    super(client, options);
   }
 
   /**

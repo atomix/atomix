@@ -20,7 +20,6 @@ import io.atomix.coordination.state.LeaderElectionCommands;
 import io.atomix.coordination.state.LeaderElectionState;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.Resource;
-import io.atomix.resource.ResourceType;
 import io.atomix.resource.ResourceTypeInfo;
 
 import java.util.Collections;
@@ -91,19 +90,12 @@ import java.util.function.Consumer;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @ResourceTypeInfo(id=-21, stateMachine=LeaderElectionState.class)
-public class DistributedLeaderElection extends Resource<DistributedLeaderElection> {
-  public static final ResourceType<DistributedLeaderElection> TYPE = new ResourceType<>(DistributedLeaderElection.class);
-
+public class DistributedLeaderElection extends Resource<DistributedLeaderElection, Resource.Options> {
   private final Set<Consumer<Long>> listeners = Collections.newSetFromMap(new ConcurrentHashMap<>());
   private volatile long epoch;
 
-  public DistributedLeaderElection(CopycatClient client) {
-    super(client);
-  }
-
-  @Override
-  public ResourceType<DistributedLeaderElection> type() {
-    return TYPE;
+  public DistributedLeaderElection(CopycatClient client, Resource.Options options) {
+    super(client, options);
   }
 
   @Override

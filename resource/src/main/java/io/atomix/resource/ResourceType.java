@@ -25,12 +25,12 @@ import java.lang.reflect.InvocationTargetException;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class ResourceType<T extends Resource> {
-  private final Class<T> type;
+public class ResourceType {
+  private final Class<? extends Resource> type;
   private final int id;
   private final Class<? extends ResourceStateMachine> stateMachine;
 
-  public ResourceType(Class<T> type) {
+  public ResourceType(Class<? extends Resource> type) {
     this.type = Assert.notNull(type, "type");
 
     ResourceTypeInfo info = type.getAnnotation(ResourceTypeInfo.class);
@@ -56,7 +56,7 @@ public class ResourceType<T extends Resource> {
    *
    * @return The resource class.
    */
-  public Class<T> resource() {
+  public Class<? extends Resource> resource() {
     return type;
   }
 
@@ -65,10 +65,10 @@ public class ResourceType<T extends Resource> {
    *
    * @return The resource instance factory.
    */
-  public ResourceFactory<T> factory() {
-    return client -> {
+  public ResourceFactory factory() {
+    return (client, options) -> {
       try {
-        return resource().getConstructor(CopycatClient.class).newInstance(client);
+        return resource().getConstructor(CopycatClient.class, Resource.Options.class).newInstance(client, options);
       } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
         throw new ResourceException("failed to instantiate resource class", e);
       }

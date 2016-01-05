@@ -16,7 +16,7 @@
 package io.atomix.variables;
 
 import io.atomix.copycat.client.CopycatClient;
-import io.atomix.resource.ResourceType;
+import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceTypeInfo;
 import io.atomix.variables.state.ValueState;
 
@@ -26,17 +26,10 @@ import io.atomix.variables.state.ValueState;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @ResourceTypeInfo(id=-1, stateMachine=ValueState.class)
-public class DistributedValue<T> extends AbstractDistributedValue<DistributedValue<T>, T> {
-  public static final ResourceType<DistributedValue> TYPE = new ResourceType<>(DistributedValue.class);
+public class DistributedValue<T> extends AbstractDistributedValue<DistributedValue<T>, Resource.Options, T> {
 
-  public DistributedValue(CopycatClient client) {
-    super(client);
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public ResourceType<DistributedValue<T>> type() {
-    return (ResourceType) TYPE;
+  public DistributedValue(CopycatClient client, Resource.Options options) {
+    super(client, options);
   }
 
 }

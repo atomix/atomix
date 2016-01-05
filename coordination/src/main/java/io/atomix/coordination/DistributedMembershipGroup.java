@@ -22,7 +22,6 @@ import io.atomix.coordination.state.MembershipGroupState;
 import io.atomix.copycat.client.Command;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.Resource;
-import io.atomix.resource.ResourceType;
 import io.atomix.resource.ResourceTypeInfo;
 
 import java.time.Duration;
@@ -92,21 +91,14 @@ import java.util.function.Consumer;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 @ResourceTypeInfo(id=-20, stateMachine=MembershipGroupState.class)
-public class DistributedMembershipGroup extends Resource<DistributedMembershipGroup> {
-  public static final ResourceType<DistributedMembershipGroup> TYPE = new ResourceType<>(DistributedMembershipGroup.class);
-
+public class DistributedMembershipGroup extends Resource<DistributedMembershipGroup, Resource.Options> {
   private final Listeners<GroupMember> joinListeners = new Listeners<>();
   private final Listeners<GroupMember> leaveListeners = new Listeners<>();
   private InternalLocalGroupMember member;
   private final Map<Long, GroupMember> members = new ConcurrentHashMap<>();
 
-  public DistributedMembershipGroup(CopycatClient client) {
-    super(client);
-  }
-
-  @Override
-  public ResourceType<DistributedMembershipGroup> type() {
-    return TYPE;
+  public DistributedMembershipGroup(CopycatClient client, Resource.Options options) {
+    super(client, options);
   }
 
   @Override

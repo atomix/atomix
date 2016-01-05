@@ -7,8 +7,8 @@
     <version>0.1.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>atomix</artifactId>
-  <name>Atomix</name>
+  <artifactId>atomix-resource-manager</artifactId>
+  <name>Atomix Resource Manager</name>
 
   <dependencies>
     <dependency>

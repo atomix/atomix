@@ -23,14 +23,15 @@ import io.atomix.copycat.client.CopycatClient;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 @FunctionalInterface
-public interface ResourceFactory<T extends Resource> {
+public interface ResourceFactory<T extends Resource<T, U>, U extends Resource.Options> {
 
   /**
    * Creates a new resource.
    *
    * @param client The Copycat client.
+   * @param options The resource options.
    * @return The created resource.
    */
-  T create(CopycatClient client);
+  T create(CopycatClient client, U options);
 
 }

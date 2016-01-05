@@ -19,7 +19,6 @@ import io.atomix.collections.state.MultiMapCommands;
 import io.atomix.collections.state.MultiMapState;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.Resource;
-import io.atomix.resource.ResourceType;
 import io.atomix.resource.ResourceTypeInfo;
 
 import java.time.Duration;
@@ -32,17 +31,10 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 @ResourceTypeInfo(id=-12, stateMachine=MultiMapState.class)
-public class DistributedMultiMap<K, V> extends Resource<DistributedMultiMap<K, V>> {
-  public static final ResourceType<DistributedMultiMap> TYPE = new ResourceType<>(DistributedMultiMap.class);
+public class DistributedMultiMap<K, V> extends Resource<DistributedMultiMap<K, V>, Resource.Options> {
 
-  public DistributedMultiMap(CopycatClient client) {
-    super(client);
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public ResourceType<DistributedMultiMap<K, V>> type() {
-    return (ResourceType) TYPE;
+  public DistributedMultiMap(CopycatClient client, Resource.Options options) {
+    super(client, options);
   }
 
   /**
