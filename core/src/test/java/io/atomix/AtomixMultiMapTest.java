@@ -17,11 +17,9 @@ package io.atomix;
 
 import java.util.function.Function;
 
-import io.atomix.manager.ResourceManager;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import io.atomix.testing.AbstractAtomixTest;
 import io.atomix.collections.DistributedMultiMap;
 
 /**
@@ -37,14 +35,14 @@ public class AtomixMultiMapTest extends AbstractAtomixTest {
   }
   
   public void testClientMultiMapGet() throws Throwable {
-    ResourceManager client1 = createClient();
-    ResourceManager client2 = createClient();
+    Atomix client1 = createClient();
+    Atomix client2 = createClient();
     testMultiMap(client1, client2, get("test-client-multimap-get", DistributedMultiMap.class));
   }
 
   public void testClientMultiMapCreate() throws Throwable {
-    ResourceManager client1 = createClient();
-    ResourceManager client2 = createClient();
+    Atomix client1 = createClient();
+    Atomix client2 = createClient();
     testMultiMap(client1, client2, create("test-client-multimap-create", DistributedMultiMap.class));
   }
 
@@ -57,14 +55,14 @@ public class AtomixMultiMapTest extends AbstractAtomixTest {
   }
 
   public void testMixMultiMap() throws Throwable {
-    ResourceManager client = createClient();
+    Atomix client = createClient();
     testMultiMap(replicas.get(0), client, create("test-multimap", DistributedMultiMap.class));
   }
 
   /**
    * Tests creating a distributed multi map.
    */
-  private void testMultiMap(ResourceManager client1, ResourceManager client2, Function<ResourceManager, DistributedMultiMap<String, String>> factory) throws Throwable {
+  private void testMultiMap(Atomix client1, Atomix client2, Function<Atomix, DistributedMultiMap<String, String>> factory) throws Throwable {
     DistributedMultiMap<String, String> map1 = factory.apply(client1);
     map1.put("foo", "Hello world!").join();
     map1.put("foo", "Hello world again!").join();

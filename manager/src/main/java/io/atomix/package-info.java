@@ -54,11 +54,11 @@
  * <p>
  * Atomix {@link io.atomix.manager.ResourceServer servers} and {@link io.atomix.manager.ResourceReplica replicas} provide the ability
  * to manage and replicate state, and {@link io.atomix.manager.ResourceReplica replicas} and {@link io.atomix.manager.ResourceClient clients}
- * provide the interface to operate on that state. The {@link io.atomix.manager.ResourceManager Atomix} interface provides the
+ * provide the interface to operate on that state. The {@link io.atomix.manager.ResourceClient Atomix} interface provides the
  * methods necessary to manage creating and operating on {@link io.atomix.resource.Resource Resources}.
  * A resource is a stateful, fault-tolerant, distributed object that's manged by a replicated state machine. To
- * create a resource, simply call {@link io.atomix.manager.ResourceManager#get(java.lang.String, io.atomix.resource.ResourceType)} or
- * {@link io.atomix.manager.ResourceManager#create(java.lang.String, io.atomix.resource.ResourceType)} on a
+ * create a resource, simply call {@link io.atomix.manager.ResourceClient#get(java.lang.String, io.atomix.resource.ResourceType)} or
+ * {@link io.atomix.manager.ResourceClient#create(java.lang.String, io.atomix.resource.ResourceType)} on a
  * {@link io.atomix.manager.ResourceClient client} or {@link io.atomix.manager.ResourceReplica replica}.
  * <p>
  * <pre>

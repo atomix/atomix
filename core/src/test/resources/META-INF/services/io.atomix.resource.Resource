@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License
 #
-io.atomix.manager.ResourceReplicaTest$TestResource
-io.atomix.manager.ResourceReplicaTest$ValueResource
-io.atomix.manager.ResourceClientServerTest$TestResource
-io.atomix.manager.ResourceClientServerTest$ValueResource
+io.atomix.AtomixReplicaTest$TestResource
+io.atomix.AtomixReplicaTest$ValueResource
+io.atomix.AtomixClientTest$TestResource
+io.atomix.AtomixClientTest$ValueResource

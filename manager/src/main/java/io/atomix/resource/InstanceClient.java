@@ -43,7 +43,7 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class InstanceClient implements CopycatClient {
+public final class InstanceClient implements CopycatClient {
   private volatile long resource;
   private final Instance instance;
   private final CopycatClient client;

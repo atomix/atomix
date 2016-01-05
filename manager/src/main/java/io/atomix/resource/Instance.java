@@ -17,6 +17,8 @@ package io.atomix.resource;
 
 import io.atomix.catalyst.util.Assert;
 
+import java.util.function.Consumer;
+
 /**
  * Resource instance.
  *
@@ -44,13 +46,13 @@ public final class Instance implements AutoCloseable {
   private final String key;
   private final ResourceType type;
   private final Method method;
-  private final InstanceManager manager;
+  private final Consumer<Instance> closer;
 
-  public Instance(String key, ResourceType type, Method method, InstanceManager manager) {
+  public Instance(String key, ResourceType type, Method method, Consumer<Instance> closer) {
     this.key = Assert.notNull(key, "key");
     this.type = Assert.notNull(type, "type");
     this.method = Assert.notNull(method, "method");
-    this.manager = Assert.notNull(manager, "manager");
+    this.closer = Assert.notNull(closer, "closer");
   }
 
   /**
@@ -82,7 +84,7 @@ public final class Instance implements AutoCloseable {
 
   @Override
   public void close() {
-    manager.close(this);
+    closer.accept(this);
   }
 
   @Override

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.manager;
+package io.atomix;
 
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.transport.*;
@@ -23,8 +23,12 @@ import io.atomix.copycat.client.CopycatClient;
 import io.atomix.copycat.client.ServerSelectionStrategy;
 import io.atomix.copycat.server.CopycatServer;
 import io.atomix.copycat.server.storage.Storage;
+import io.atomix.manager.ResourceClient;
+import io.atomix.manager.ResourceServer;
 import io.atomix.manager.state.ResourceManagerState;
 import io.atomix.resource.ResourceRegistry;
+import io.atomix.resource.ResourceTypeResolver;
+import io.atomix.resource.ServiceLoaderResourceResolver;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -37,10 +41,10 @@ import java.util.function.Consumer;
 /**
  * Provides an interface for creating and operating on {@link io.atomix.resource.Resource}s as a stateful node.
  * <p>
- * Replicas serve as a hybrid {@link ResourceClient} and {@link ResourceServer} to allow a server to be embedded
- * in an application. From the perspective of state, replicas behave like {@link ResourceServer}s in that they
+ * Replicas serve as a hybrid {@link AtomixClient} and {@link AtomixServer} to allow a server to be embedded
+ * in an application. From the perspective of state, replicas behave like {@link AtomixServer}s in that they
  * maintain a replicated state machine for {@link io.atomix.resource.Resource}s and fully participate in the underlying
- * consensus algorithm. From the perspective of resources, replicas behave like {@link ResourceClient}s in that
+ * consensus algorithm. From the perspective of resources, replicas behave like {@link AtomixClient}s in that
  * they may themselves create and modify distributed resources.
  * <p>
  * To create a replica, use the {@link #builder(Address, Address...)} builder factory. Each replica must
@@ -62,7 +66,7 @@ import java.util.function.Consumer;
  * Similarly, if no storage module is configured, replicated commit logs will be written to
  * {@code System.getProperty("user.dir")} with a default log name.
  * <p>
- * Atomix clusters are not restricted solely to {@link ResourceServer}s or {@link ResourceReplica}s. Clusters may be
+ * Atomix clusters are not restricted solely to {@link AtomixServer}s or {@link AtomixReplica}s. Clusters may be
  * composed from a mixture of each type of server.
  * <p>
  * <b>Replica lifecycle</b>
@@ -79,7 +83,7 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public final class ResourceReplica extends ResourceManager {
+public final class AtomixReplica extends Atomix {
 
   /**
    * Returns a new Atomix replica builder.
@@ -135,18 +139,18 @@ public final class ResourceReplica extends ResourceManager {
     return new Builder(clientAddress, serverAddress, members);
   }
 
-  private final CopycatServer server;
+  private final ResourceServer server;
 
   /**
    * @throws NullPointerException if {@code client} or {@code server} are null
    */
-  public ResourceReplica(CopycatClient client, CopycatServer server, ResourceRegistry registry) {
-    super(client, registry);
-    this.server = Assert.notNull(server, "server");
+  public AtomixReplica(ResourceClient client, ResourceServer server) {
+    super(client);
+    this.server = server;
   }
 
   @Override
-  public CompletableFuture<ResourceManager> open() {
+  public CompletableFuture<Atomix> open() {
     return server.open().thenCompose(v -> super.open());
   }
 
@@ -220,9 +224,9 @@ public final class ResourceReplica extends ResourceManager {
   }
 
   /**
-   * Builds an {@link ResourceReplica}.
+   * Builds an {@link AtomixReplica}.
    * <p>
-   * The replica builder configures an {@link ResourceReplica} to listen for connections from clients and other
+   * The replica builder configures an {@link AtomixReplica} to listen for connections from clients and other
    * servers/replica, connect to other servers in a cluster, and manage a replicated log. To create a replica builder,
    * use the {@link #builder(Address, Address...)} method:
    * <pre>
@@ -242,18 +246,19 @@ public final class ResourceReplica extends ResourceManager {
    * module configures how the replica manages the replicated log. Logs can be written to disk or held in
    * memory or memory-mapped files.
    */
-  public static class Builder extends ResourceManager.Builder {
-    private static final String SERVER_NAME = "atomix";
+  public static class Builder extends io.atomix.catalyst.util.Builder<AtomixReplica> {
     private final Address clientAddress;
+    private final CopycatClient.Builder clientBuilder;
     private final CopycatServer.Builder serverBuilder;
     private Transport clientTransport;
     private Transport serverTransport;
     private LocalServerRegistry localRegistry = new LocalServerRegistry();
+    private ResourceTypeResolver resourceResolver = new ServiceLoaderResourceResolver();
 
     private Builder(Address clientAddress, Address serverAddress, Collection<Address> members) {
-      super(Collections.singleton(Assert.notNull(clientAddress, "clientAddress")));
-      this.clientAddress = clientAddress;
-      this.serverBuilder = CopycatServer.builder(clientAddress, serverAddress, members).withName(SERVER_NAME);
+      this.clientAddress = Assert.notNull(clientAddress, "clientAddress");
+      this.clientBuilder = CopycatClient.builder(Collections.singleton(clientAddress));
+      this.serverBuilder = CopycatServer.builder(clientAddress, serverAddress, members);
     }
 
     /**
@@ -316,6 +321,17 @@ public final class ResourceReplica extends ResourceManager {
     public Builder withSerializer(Serializer serializer) {
       clientBuilder.withSerializer(serializer);
       serverBuilder.withSerializer(serializer);
+      return this;
+    }
+
+    /**
+     * Sets the Atomix resource type resolver.
+     *
+     * @param resolver The resource type resolver.
+     * @return The Atomix builder.
+     */
+    public Builder withResourceResolver(ResourceTypeResolver resolver) {
+      this.resourceResolver = Assert.notNull(resolver, "resolver");
       return this;
     }
 
@@ -416,7 +432,7 @@ public final class ResourceReplica extends ResourceManager {
      * @throws ConfigurationException if the replica is misconfigured
      */
     @Override
-    public ResourceReplica build() {
+    public AtomixReplica build() {
       // If no transport was configured by the user, attempt to load the Netty transport.
       if (serverTransport == null) {
         try {
@@ -449,7 +465,7 @@ public final class ResourceReplica extends ResourceManager {
       // Set the server resource state machine.
       serverBuilder.withStateMachine(new ResourceManagerState(registry));
 
-      return new ResourceReplica(new AtomixCopycatClient(clientBuilder.build(), serverTransport), serverBuilder.build(), registry);
+      return new AtomixReplica(new ResourceClient(new AtomixCopycatClient(clientBuilder.build(), serverTransport), registry), new ResourceServer(serverBuilder.build()));
     }
   }
 

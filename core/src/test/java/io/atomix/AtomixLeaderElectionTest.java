@@ -16,8 +16,6 @@
 package io.atomix;
 
 import io.atomix.coordination.DistributedLeaderElection;
-import io.atomix.manager.ResourceManager;
-import io.atomix.testing.AbstractAtomixTest;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -37,14 +35,14 @@ public class AtomixLeaderElectionTest extends AbstractAtomixTest {
   }
   
   public void testClientLeaderElectionGet() throws Throwable {
-    ResourceManager client1 = createClient();
-    ResourceManager client2 = createClient();
+    Atomix client1 = createClient();
+    Atomix client2 = createClient();
     testLeaderElection(client1, client2, get("test-client-election-get", DistributedLeaderElection.class));
   }
 
   public void testClientLeaderElectionCreate() throws Throwable {
-    ResourceManager client1 = createClient();
-    ResourceManager client2 = createClient();
+    Atomix client1 = createClient();
+    Atomix client2 = createClient();
     testLeaderElection(client1, client2, create("test-client-election-create", DistributedLeaderElection.class));
   }
 
@@ -59,7 +57,7 @@ public class AtomixLeaderElectionTest extends AbstractAtomixTest {
   /**
    * Tests a leader election.
    */
-  private void testLeaderElection(ResourceManager client1, ResourceManager client2, Function<ResourceManager, DistributedLeaderElection> factory) throws Throwable {
+  private void testLeaderElection(Atomix client1, Atomix client2, Function<Atomix, DistributedLeaderElection> factory) throws Throwable {
     DistributedLeaderElection election1 = factory.apply(client1);
     DistributedLeaderElection election2 = factory.apply(client2);
 

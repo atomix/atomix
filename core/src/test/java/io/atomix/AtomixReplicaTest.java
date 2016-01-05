@@ -13,18 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.manager;
+package io.atomix;
 
+import io.atomix.AbstractAtomixTest;
+import io.atomix.Atomix;
 import io.atomix.copycat.client.Command;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.copycat.client.Query;
 import io.atomix.copycat.server.Commit;
-import io.atomix.manager.ResourceManager;
 import io.atomix.resource.Consistency;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceStateMachine;
 import io.atomix.resource.ResourceTypeInfo;
-import io.atomix.testing.AbstractAtomixTest;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -40,7 +40,7 @@ import static org.testng.Assert.assertEquals;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 @Test
-public class ResourceReplicaTest extends AbstractAtomixTest {
+public class AtomixReplicaTest extends AbstractAtomixTest {
   @BeforeMethod
   protected void beforeMethod() {
     init();
@@ -83,7 +83,7 @@ public class ResourceReplicaTest extends AbstractAtomixTest {
    * Tests submitting a command with a configured consistency level.
    */
   private void testSubmitCommand(Consistency consistency) throws Throwable {
-    ResourceManager replica = createReplicas(5).iterator().next();
+    Atomix replica = createReplicas(5).iterator().next();
 
     TestResource resource = replica.create("test", TestResource.class).get();
 
@@ -127,7 +127,7 @@ public class ResourceReplicaTest extends AbstractAtomixTest {
    * Tests submitting a query with a configured consistency level.
    */
   private void testSubmitQuery(Consistency consistency) throws Throwable {
-    ResourceManager replica = createReplicas(5).iterator().next();
+    Atomix replica = createReplicas(5).iterator().next();
 
     TestResource resource = replica.create("test", TestResource.class).get();
 
@@ -143,10 +143,10 @@ public class ResourceReplicaTest extends AbstractAtomixTest {
    * Tests getting a resource and submitting commands.
    */
   public void testGetConcurrency() throws Throwable {
-    List<ResourceManager> replicas = createReplicas(5);
+    List<Atomix> replicas = createReplicas(5);
 
-    ResourceManager replica1 = replicas.get(0);
-    ResourceManager replica2 = replicas.get(1);
+    Atomix replica1 = replicas.get(0);
+    Atomix replica2 = replicas.get(1);
 
     ValueResource resource1 = replica1.get("test", ValueResource.class).get();
     ValueResource resource2 = replica2.get("test", ValueResource.class).get();
@@ -164,10 +164,10 @@ public class ResourceReplicaTest extends AbstractAtomixTest {
    * Tests creating a resource and submitting commands.
    */
   public void testCreateConcurrency() throws Throwable {
-    List<ResourceManager> replicas = createReplicas(5);
+    List<Atomix> replicas = createReplicas(5);
 
-    ResourceManager replica1 = replicas.get(0);
-    ResourceManager replica2 = replicas.get(1);
+    Atomix replica1 = replicas.get(0);
+    Atomix replica2 = replicas.get(1);
 
     ValueResource resource1 = replica1.create("test", ValueResource.class).get();
     ValueResource resource2 = replica2.create("test", ValueResource.class).get();
@@ -185,10 +185,10 @@ public class ResourceReplicaTest extends AbstractAtomixTest {
    * Tests getting and creating a resource and submitting commands.
    */
   public void testGetCreateConcurrency() throws Throwable {
-    List<ResourceManager> replicas = createReplicas(5);
+    List<Atomix> replicas = createReplicas(5);
 
-    ResourceManager replica1 = replicas.get(0);
-    ResourceManager replica2 = replicas.get(1);
+    Atomix replica1 = replicas.get(0);
+    Atomix replica2 = replicas.get(1);
 
     ValueResource resource1 = replica1.get("test", ValueResource.class).get();
     ValueResource resource2 = replica2.create("test", ValueResource.class).get();
@@ -206,10 +206,10 @@ public class ResourceReplicaTest extends AbstractAtomixTest {
    * Tests operating many separate resources from the same clients.
    */
   public void testOperateMany() throws Throwable {
-    List<ResourceManager> replicas = createReplicas(5);
+    List<Atomix> replicas = createReplicas(5);
 
-    ResourceManager replica1 = replicas.get(0);
-    ResourceManager replica2 = replicas.get(1);
+    Atomix replica1 = replicas.get(0);
+    Atomix replica2 = replicas.get(1);
 
     ValueResource resource11 = replica1.get("test1", ValueResource.class).get();
     ValueResource resource12 = replica2.create("test1", ValueResource.class).get();

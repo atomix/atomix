@@ -13,12 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.manager;
+package io.atomix;
 
 import io.atomix.collections.DistributedMap;
 import io.atomix.collections.DistributedSet;
-import io.atomix.manager.ResourceManager;
-import io.atomix.testing.AbstractAtomixTest;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -48,7 +46,7 @@ public class ResourceRecoveryTest extends AbstractAtomixTest {
   /**
    * Tests recovering resources.
    */
-  private void testRecoverResources(ResourceManager atomix) throws Throwable {
+  private void testRecoverResources(Atomix atomix) throws Throwable {
     String id = UUID.randomUUID().toString();
 
     DistributedMap<String, String> map = atomix.create("test-map-" + id, DistributedMap.class).get();
@@ -63,7 +61,7 @@ public class ResourceRecoveryTest extends AbstractAtomixTest {
     DistributedSet<String> set = atomix.get("test-set-" + id, DistributedSet.class).get();
     set.add("Hello world!").join();
 
-    atomix.client.recover().whenComplete((result, error) -> {
+    atomix.client.client().recover().whenComplete((result, error) -> {
       threadAssertNull(error);
       resume();
     });

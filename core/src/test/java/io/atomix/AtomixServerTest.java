@@ -13,16 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.manager;
+package io.atomix;
 
-import java.util.List;
-
-import io.atomix.manager.ResourceServer;
+import io.atomix.AbstractAtomixTest;
+import io.atomix.AtomixServer;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import io.atomix.testing.AbstractAtomixTest;
+import java.util.List;
 
 /**
  * Atomix server test.
@@ -30,7 +29,7 @@ import io.atomix.testing.AbstractAtomixTest;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 @Test
-public class ResourceServerTest extends AbstractAtomixTest {
+public class AtomixServerTest extends AbstractAtomixTest {
   @BeforeMethod
   protected void beforeMethod() {
     init();
@@ -46,7 +45,7 @@ public class ResourceServerTest extends AbstractAtomixTest {
    */
   public void testServerJoin() throws Throwable {
     createServers(3);
-    ResourceServer joiner = createServer(nextAddress(), members);
+    AtomixServer joiner = createServer(nextAddress(), members);
     joiner.open().thenRun(this::resume);
     await(30000);
   }
@@ -55,8 +54,8 @@ public class ResourceServerTest extends AbstractAtomixTest {
    * Tests leaving a sever from a cluster.
    */
   public void testServerLeave() throws Throwable {
-    List<ResourceServer> servers = createServers(3);
-    ResourceServer server = servers.get(0);
+    List<AtomixServer> servers = createServers(3);
+    AtomixServer server = servers.get(0);
     server.close().thenRun(this::resume);
     await(30000);
   }

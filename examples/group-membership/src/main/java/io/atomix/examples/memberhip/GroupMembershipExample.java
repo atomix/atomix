@@ -15,8 +15,8 @@
  */
 package io.atomix.examples.memberhip;
 
-import io.atomix.manager.ResourceManager;
-import io.atomix.manager.ResourceReplica;
+import io.atomix.Atomix;
+import io.atomix.AtomixReplica;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.NettyTransport;
 import io.atomix.coordination.DistributedMembershipGroup;
@@ -52,7 +52,7 @@ public class GroupMembershipExample {
       members.add(new Address(parts[0], Integer.valueOf(parts[1])));
     }
 
-    ResourceManager atomix = ResourceReplica.builder(address, members)
+    Atomix atomix = AtomixReplica.builder(address, members)
       .withTransport(new NettyTransport())
       .withStorage(Storage.builder()
         .withDirectory(System.getProperty("user.dir") + "/logs/" + UUID.randomUUID().toString())

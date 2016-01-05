@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -11,9 +11,9 @@
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
- * limitations under the License.
+ * limitations under the License
  */
-package io.atomix.manager;
+package io.atomix;
 
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.transport.Address;
@@ -21,15 +21,12 @@ import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.ConfigurationException;
 import io.atomix.catalyst.util.Managed;
-import io.atomix.copycat.server.CopycatServer;
 import io.atomix.copycat.server.storage.Storage;
-import io.atomix.manager.state.ResourceManagerState;
-import io.atomix.resource.ResourceRegistry;
+import io.atomix.manager.ResourceClient;
+import io.atomix.manager.ResourceServer;
 import io.atomix.resource.ResourceTypeResolver;
-import io.atomix.resource.ServiceLoaderResourceResolver;
 
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 
@@ -60,7 +57,7 @@ import java.util.concurrent.CompletableFuture;
  * Similarly, if no storage module is configured, replicated commit logs will be written to
  * {@code System.getProperty("user.dir")} with a default log name.
  * <p>
- * Atomix clusters are not restricted solely to {@link ResourceServer}s or {@link ResourceReplica}s. Clusters may be
+ * Atomix clusters are not restricted solely to {@link AtomixServer}s or {@link ResourceReplica}s. Clusters may be
  * composed from a mixture of each type of server.
  * <p>
  * <b>Server lifecycle</b>
@@ -79,7 +76,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public final class ResourceServer implements Managed<ResourceServer> {
+public final class AtomixServer implements Managed<AtomixServer> {
 
   /**
    * Returns a new Atomix server builder.
@@ -91,7 +88,7 @@ public final class ResourceServer implements Managed<ResourceServer> {
    * @return The replica builder.
    */
   public static Builder builder(Address address, Address... members) {
-    return builder(address, Arrays.asList(Assert.notNull(members, "members")));
+    return new Builder(ResourceServer.builder(address, members));
   }
 
   /**
@@ -104,7 +101,7 @@ public final class ResourceServer implements Managed<ResourceServer> {
    * @return The replica builder.
    */
   public static Builder builder(Address address, Collection<Address> members) {
-    return new Builder(address, address, members);
+    return new Builder(ResourceServer.builder(address, members));
   }
 
   /**
@@ -118,7 +115,7 @@ public final class ResourceServer implements Managed<ResourceServer> {
    * @return The replica builder.
    */
   public static Builder builder(Address clientAddress, Address serverAddress, Address... members) {
-    return builder(clientAddress, serverAddress, Arrays.asList(Assert.notNull(members, "members")));
+    return new Builder(ResourceServer.builder(clientAddress, serverAddress, members));
   }
 
   /**
@@ -132,17 +129,17 @@ public final class ResourceServer implements Managed<ResourceServer> {
    * @return The replica builder.
    */
   public static Builder builder(Address clientAddress, Address serverAddress, Collection<Address> members) {
-    return new Builder(clientAddress, serverAddress, members);
+    return new Builder(ResourceServer.builder(clientAddress, serverAddress, members));
   }
 
-  private final CopycatServer server;
+  private final ResourceServer server;
 
-  public ResourceServer(CopycatServer server) {
+  public AtomixServer(ResourceServer server) {
     this.server = Assert.notNull(server, "server");
   }
 
   @Override
-  public CompletableFuture<ResourceServer> open() {
+  public CompletableFuture<AtomixServer> open() {
     return server.open().thenApply(v -> this);
   }
 
@@ -162,9 +159,9 @@ public final class ResourceServer implements Managed<ResourceServer> {
   }
 
   /**
-   * Builds an {@link ResourceServer}.
+   * Builds an {@link AtomixServer}.
    * <p>
-   * The server builder configures an {@link ResourceServer} to listen for connections from clients and other
+   * The server builder configures an {@link AtomixServer} to listen for connections from clients and other
    * servers, connect to other servers in a cluster, and manage a replicated log. To create a server builder,
    * use the {@link #builder(Address, Address...)} method:
    * <pre>
@@ -184,13 +181,11 @@ public final class ResourceServer implements Managed<ResourceServer> {
    * module configures how the server manages the replicated log. Logs can be written to disk or held in
    * memory or memory-mapped files.
    */
-  public static class Builder extends io.atomix.catalyst.util.Builder<ResourceServer> {
-    private static final String SERVER_NAME = "atomix";
-    private final CopycatServer.Builder builder;
-    private ResourceTypeResolver resourceResolver = new ServiceLoaderResourceResolver();
+  public static class Builder extends io.atomix.catalyst.util.Builder<AtomixServer> {
+    private final ResourceServer.Builder builder;
 
-    private Builder(Address clientAddress, Address serverAddress, Collection<Address> members) {
-      this.builder = CopycatServer.builder(clientAddress, serverAddress, members).withName(SERVER_NAME);
+    private Builder(ResourceServer.Builder builder) {
+      this.builder = Assert.notNull(builder, "builder");
     }
 
     /**
@@ -262,7 +257,7 @@ public final class ResourceServer implements Managed<ResourceServer> {
      * @return The Atomix builder.
      */
     public Builder withResourceResolver(ResourceTypeResolver resolver) {
-      this.resourceResolver = Assert.notNull(resolver, "resolver");
+      builder.withResourceResolver(resolver);
       return this;
     }
 
@@ -278,7 +273,7 @@ public final class ResourceServer implements Managed<ResourceServer> {
      *     .build();
      *   }
      * </pre>
-     * For more complex storage configurations, use the {@link io.atomix.copycat.server.storage.Storage.Builder}:
+     * For more complex storage configurations, use the {@link Storage.Builder}:
      * <pre>
      *   {@code
      *   AtomixServer server = AtomixServer.builder(address, members)
@@ -363,16 +358,8 @@ public final class ResourceServer implements Managed<ResourceServer> {
      * @throws ConfigurationException if the server is misconfigured
      */
     @Override
-    public ResourceServer build() {
-      // Create a resource registry and resolve resources with the configured resolver.
-      ResourceRegistry registry = new ResourceRegistry();
-      resourceResolver.resolve(registry);
-
-      // Construct the underlying CopycatServer. The server should have been configured with a CombinedTransport
-      // that facilitates the local client connecting directly to the server.
-      CopycatServer server = builder.withStateMachine(new ResourceManagerState(registry)).build();
-
-      return new ResourceServer(server);
+    public AtomixServer build() {
+      return new AtomixServer(builder.build());
     }
   }
 

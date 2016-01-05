@@ -13,18 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.manager;
+package io.atomix;
 
+import io.atomix.AbstractAtomixTest;
+import io.atomix.Atomix;
 import io.atomix.copycat.client.Command;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.copycat.client.Query;
 import io.atomix.copycat.server.Commit;
-import io.atomix.manager.ResourceManager;
 import io.atomix.resource.Consistency;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceStateMachine;
 import io.atomix.resource.ResourceTypeInfo;
-import io.atomix.testing.AbstractAtomixTest;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -37,7 +37,7 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 @Test
-public class ResourceClientServerTest extends AbstractAtomixTest {
+public class AtomixClientTest extends AbstractAtomixTest {
   @BeforeMethod
   protected void beforeMethod() {
     init();
@@ -82,7 +82,7 @@ public class ResourceClientServerTest extends AbstractAtomixTest {
   private void testSubmitCommand(Consistency consistency) throws Throwable {
     createServers(5);
 
-    ResourceManager client = createClient();
+    Atomix client = createClient();
 
     TestResource resource = client.create("test", TestResource.class).get();
 
@@ -128,7 +128,7 @@ public class ResourceClientServerTest extends AbstractAtomixTest {
   private void testSubmitQuery(Consistency consistency) throws Throwable {
     createServers(5);
 
-    ResourceManager client = createClient();
+    Atomix client = createClient();
 
     TestResource resource = client.create("test", TestResource.class).get();
 
@@ -146,8 +146,8 @@ public class ResourceClientServerTest extends AbstractAtomixTest {
   public void testGetConcurrency() throws Throwable {
     createServers(5);
 
-    ResourceManager client1 = createClient();
-    ResourceManager client2 = createClient();
+    Atomix client1 = createClient();
+    Atomix client2 = createClient();
 
     ValueResource resource1 = client1.get("test", ValueResource.class).get();
     ValueResource resource2 = client2.get("test", ValueResource.class).get();
@@ -167,8 +167,8 @@ public class ResourceClientServerTest extends AbstractAtomixTest {
   public void testCreateConcurrency() throws Throwable {
     createServers(5);
 
-    ResourceManager client1 = createClient();
-    ResourceManager client2 = createClient();
+    Atomix client1 = createClient();
+    Atomix client2 = createClient();
 
     ValueResource resource1 = client1.create("test", ValueResource.class).get();
     ValueResource resource2 = client2.create("test", ValueResource.class).get();
@@ -188,8 +188,8 @@ public class ResourceClientServerTest extends AbstractAtomixTest {
   public void testGetCreateConcurrency() throws Throwable {
     createServers(5);
 
-    ResourceManager client1 = createClient();
-    ResourceManager client2 = createClient();
+    Atomix client1 = createClient();
+    Atomix client2 = createClient();
 
     ValueResource resource1 = client1.get("test", ValueResource.class).get();
     ValueResource resource2 = client2.create("test", ValueResource.class).get();
@@ -208,7 +208,7 @@ public class ResourceClientServerTest extends AbstractAtomixTest {
    */
   public void testGetResourceKeys() throws Throwable {
     createServers(5);
-    ResourceManager client = createClient();
+    Atomix client = createClient();
 
     client.keys().thenAccept(result -> {
       threadAssertTrue(result.isEmpty());

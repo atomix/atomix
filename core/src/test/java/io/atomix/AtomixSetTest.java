@@ -17,11 +17,9 @@ package io.atomix;
 
 import java.util.function.Function;
 
-import io.atomix.manager.ResourceManager;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import io.atomix.testing.AbstractAtomixTest;
 import io.atomix.collections.DistributedSet;
 
 /**
@@ -37,14 +35,14 @@ public class AtomixSetTest extends AbstractAtomixTest {
   }
   
   public void testClientSetGet() throws Throwable {
-    ResourceManager client1 = createClient();
-    ResourceManager client2 = createClient();
+    Atomix client1 = createClient();
+    Atomix client2 = createClient();
     testSet(client1, client2, get("test-client-set-get", DistributedSet.class));
   }
 
   public void testClientSetCreate() throws Throwable {
-    ResourceManager client1 = createClient();
-    ResourceManager client2 = createClient();
+    Atomix client1 = createClient();
+    Atomix client2 = createClient();
     testSet(client1, client2, create("test-client-set-create", DistributedSet.class));
   }
 
@@ -57,14 +55,14 @@ public class AtomixSetTest extends AbstractAtomixTest {
   }
 
   public void testMixSet() throws Throwable {
-    ResourceManager client = createClient();
+    Atomix client = createClient();
     testSet(replicas.get(0), client, create("test-set-mix", DistributedSet.class));
   }
 
   /**
    * Tests creating a distributed set.
    */
-  private void testSet(ResourceManager client1, ResourceManager client2, Function<ResourceManager, DistributedSet<String>> factory) throws Throwable {
+  private void testSet(Atomix client1, Atomix client2, Function<Atomix, DistributedSet<String>> factory) throws Throwable {
     DistributedSet<String> set1 = factory.apply(client1);
     set1.add("Hello world!").join();
     set1.add("Hello world again!").join();

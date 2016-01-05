@@ -23,19 +23,14 @@
 
   <dependencies>
     <dependency>
-      <groupId>io.atomix</groupId>
-      <artifactId>atomix</artifactId>
-      <version>${project.version}</version>
+      <groupId>io.atomix.catalyst</groupId>
+      <artifactId>catalyst-local</artifactId>
+      <version>${catalyst.version}</version>
     </dependency>
     <dependency>
       <groupId>io.atomix</groupId>
       <artifactId>atomix-resource</artifactId>
       <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>io.atomix.catalyst</groupId>
-      <artifactId>catalyst-local</artifactId>
-      <version>${catalyst.version}</version>
     </dependency>
     <dependency>
       <groupId>org.testng</groupId>

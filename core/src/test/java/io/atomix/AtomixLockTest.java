@@ -17,11 +17,9 @@ package io.atomix;
 
 import java.util.function.Function;
 
-import io.atomix.manager.ResourceManager;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import io.atomix.testing.AbstractAtomixTest;
 import io.atomix.coordination.DistributedLock;
 
 /**
@@ -37,14 +35,14 @@ public class AtomixLockTest extends AbstractAtomixTest {
   }
   
   public void testClientLockGet() throws Throwable {
-    ResourceManager client1 = createClient();
-    ResourceManager client2 = createClient();
+    Atomix client1 = createClient();
+    Atomix client2 = createClient();
     testLock(client1, client2, get("test-client-lock-get", DistributedLock.class));
   }
 
   public void testClientLockCreate() throws Throwable {
-    ResourceManager client1 = createClient();
-    ResourceManager client2 = createClient();
+    Atomix client1 = createClient();
+    Atomix client2 = createClient();
     testLock(client1, client2, create("test-client-lock-create", DistributedLock.class));
   }
 
@@ -59,7 +57,7 @@ public class AtomixLockTest extends AbstractAtomixTest {
   /**
    * Tests a leader election.
    */
-  private void testLock(ResourceManager client1, ResourceManager client2, Function<ResourceManager, DistributedLock> factory) throws Throwable {
+  private void testLock(Atomix client1, Atomix client2, Function<Atomix, DistributedLock> factory) throws Throwable {
     DistributedLock lock1 = factory.apply(client1);
     DistributedLock lock2 = factory.apply(client2);
 

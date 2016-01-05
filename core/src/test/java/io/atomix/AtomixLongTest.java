@@ -17,11 +17,9 @@ package io.atomix;
 
 import java.util.function.Function;
 
-import io.atomix.manager.ResourceManager;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import io.atomix.testing.AbstractAtomixTest;
 import io.atomix.variables.DistributedLong;
 
 /**
@@ -37,14 +35,14 @@ public class AtomixLongTest extends AbstractAtomixTest {
   }
   
   public void testClientLongGet() throws Throwable {
-    ResourceManager client1 = createClient();
-    ResourceManager client2 = createClient();
+    Atomix client1 = createClient();
+    Atomix client2 = createClient();
     testLong(client1, client2, get("test-client-long-get", DistributedLong.class));
   }
 
   public void testClientLongCreate() throws Throwable {
-    ResourceManager client1 = createClient();
-    ResourceManager client2 = createClient();
+    Atomix client1 = createClient();
+    Atomix client2 = createClient();
     testLong(client1, client2, create("test-client-long-create", DistributedLong.class));
   }
 
@@ -57,14 +55,14 @@ public class AtomixLongTest extends AbstractAtomixTest {
   }
 
   public void testMixLong() throws Throwable {
-    ResourceManager client = createClient();
+    Atomix client = createClient();
     testLong(replicas.get(0), client, create("test-long-mix", DistributedLong.class));
   }
 
   /**
    * Tests creating a distributed long.
    */
-  private void testLong(ResourceManager client1, ResourceManager client2, Function<ResourceManager, DistributedLong> factory) throws Throwable {
+  private void testLong(Atomix client1, Atomix client2, Function<Atomix, DistributedLong> factory) throws Throwable {
     DistributedLong value1 = factory.apply(client1);
     value1.set(10L).join();
     value1.getAndIncrement().thenAccept(result -> {

@@ -15,14 +15,11 @@
  */
 package io.atomix;
 
-import java.util.function.Function;
-
-import io.atomix.manager.ResourceManager;
+import io.atomix.coordination.DistributedMembershipGroup;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import io.atomix.testing.AbstractAtomixTest;
-import io.atomix.coordination.DistributedMembershipGroup;
+import java.util.function.Function;
 
 /**
  * Atomix membership group test.
@@ -37,14 +34,14 @@ public class AtomixMembershipGroupTest extends AbstractAtomixTest {
   }
   
   public void testClientMembershipGroupGet() throws Throwable {
-    ResourceManager client1 = createClient();
-    ResourceManager client2 = createClient();
+    Atomix client1 = createClient();
+    Atomix client2 = createClient();
     testMembershipGroup(client1, client2, get("test-client-group-get", DistributedMembershipGroup.class));
   }
 
   public void testClientMembershipGroupCreate() throws Throwable {
-    ResourceManager client1 = createClient();
-    ResourceManager client2 = createClient();
+    Atomix client1 = createClient();
+    Atomix client2 = createClient();
     testMembershipGroup(client1, client2, create("test-client-group-create", DistributedMembershipGroup.class));
   }
 
@@ -57,14 +54,14 @@ public class AtomixMembershipGroupTest extends AbstractAtomixTest {
   }
 
   public void testMixMembershipGroup() throws Throwable {
-    ResourceManager client = createClient();
+    Atomix client = createClient();
     testMembershipGroup(replicas.get(0), client, create("test-group-mix", DistributedMembershipGroup.class));
   }
 
   /**
    * Tests a membership group.
    */
-  private void testMembershipGroup(ResourceManager client1, ResourceManager client2, Function<ResourceManager, DistributedMembershipGroup> factory) throws Throwable {
+  private void testMembershipGroup(Atomix client1, Atomix client2, Function<Atomix, DistributedMembershipGroup> factory) throws Throwable {
     DistributedMembershipGroup group1 = factory.apply(client1);
     DistributedMembershipGroup group2 = factory.apply(client2);
 

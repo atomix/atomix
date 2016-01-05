@@ -17,11 +17,9 @@ package io.atomix;
 
 import java.util.function.Function;
 
-import io.atomix.manager.ResourceManager;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import io.atomix.testing.AbstractAtomixTest;
 import io.atomix.collections.DistributedQueue;
 
 /**
@@ -37,14 +35,14 @@ public class AtomixQueueTest extends AbstractAtomixTest {
   }
   
   public void testClientQueueGet() throws Throwable {
-    ResourceManager client1 = createClient();
-    ResourceManager client2 = createClient();
+    Atomix client1 = createClient();
+    Atomix client2 = createClient();
     testQueue(client1, client2, get("test-client-queue-get", DistributedQueue.class));
   }
 
   public void testClientQueueCreate() throws Throwable {
-    ResourceManager client1 = createClient();
-    ResourceManager client2 = createClient();
+    Atomix client1 = createClient();
+    Atomix client2 = createClient();
     testQueue(client1, client2, create("test-client-queue-create", DistributedQueue.class));
   }
 
@@ -57,14 +55,14 @@ public class AtomixQueueTest extends AbstractAtomixTest {
   }
 
   public void testMixQueue() throws Throwable {
-    ResourceManager client = createClient();
+    Atomix client = createClient();
     testQueue(replicas.get(0), client, create("test-queue-mix", DistributedQueue.class));
   }
 
   /**
    * Tests creating a distributed queue.
    */
-  private void testQueue(ResourceManager client1, ResourceManager client2, Function<ResourceManager, DistributedQueue<String>> factory) throws Throwable {
+  private void testQueue(Atomix client1, Atomix client2, Function<Atomix, DistributedQueue<String>> factory) throws Throwable {
     DistributedQueue<String> queue1 = factory.apply(client1);
     queue1.offer("Hello world!").join();
     queue1.offer("Hello world again!").join();

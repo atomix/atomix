@@ -15,8 +15,6 @@
  */
 package io.atomix;
 
-import io.atomix.manager.ResourceManager;
-import io.atomix.testing.AbstractAtomixTest;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.messaging.DistributedMessageBus;
 import org.testng.annotations.BeforeClass;
@@ -37,14 +35,14 @@ public class AtomixMessageBusTest extends AbstractAtomixTest {
   }
   
   public void testClientMessageBusGet() throws Throwable {
-    ResourceManager client1 = createClient();
-    ResourceManager client2 = createClient();
+    Atomix client1 = createClient();
+    Atomix client2 = createClient();
     testMessageBus(client1, client2, get("test-client-bus-get", DistributedMessageBus.class));
   }
 
   public void testClientMessageBusCreate() throws Throwable {
-    ResourceManager client1 = createClient();
-    ResourceManager client2 = createClient();
+    Atomix client1 = createClient();
+    Atomix client2 = createClient();
     testMessageBus(client1, client2, create("test-client-bus-create", DistributedMessageBus.class));
   }
 
@@ -57,14 +55,14 @@ public class AtomixMessageBusTest extends AbstractAtomixTest {
   }
 
   public void testMixMessageBus() throws Throwable {
-    ResourceManager client = createClient();
+    Atomix client = createClient();
     testMessageBus(replicas.get(0), client, create("test-bus-mix", DistributedMessageBus.class));
   }
 
   /**
    * Tests sending and receiving messages on a message bus.
    */
-  private void testMessageBus(ResourceManager client1, ResourceManager client2, Function<ResourceManager, DistributedMessageBus> factory) throws Throwable {
+  private void testMessageBus(Atomix client1, Atomix client2, Function<Atomix, DistributedMessageBus> factory) throws Throwable {
     DistributedMessageBus bus1 = factory.apply(client1);
     DistributedMessageBus bus2 = factory.apply(client2);
 
