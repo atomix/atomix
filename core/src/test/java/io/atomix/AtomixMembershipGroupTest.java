@@ -16,6 +16,7 @@
 package io.atomix;
 
 import io.atomix.coordination.DistributedMembershipGroup;
+import io.atomix.coordination.LocalGroupMember;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -50,11 +51,10 @@ public class AtomixMembershipGroupTest extends AbstractAtomixTest {
     DistributedMembershipGroup group1 = factory.apply(client1);
     DistributedMembershipGroup group2 = factory.apply(client2);
 
-    group2.join().thenRun(() -> {
-      group2.members().thenAccept(members -> {
-        threadAssertEquals(members.size(), 1);
-        resume();
-      });
+    LocalGroupMember localMember = group2.join().get();
+    group2.members().thenAccept(members -> {
+      threadAssertEquals(members.size(), 1);
+      resume();
     });
 
     await(5000);
@@ -73,7 +73,7 @@ public class AtomixMembershipGroupTest extends AbstractAtomixTest {
     await(5000, 2);
 
     group1.onLeave(member -> resume());
-    group2.leave().thenRun(this::resume);
+    localMember.leave().thenRun(this::resume);
 
     await(5000, 2);
   }

@@ -97,4 +97,14 @@ final class ManagedResourceSession implements Session {
     return listeners.add(listener);
   }
 
+  @Override
+  public boolean equals(Object object) {
+    return object instanceof Session && ((Session) object).id() == id();
+  }
+
+  @Override
+  public int hashCode() {
+    return 37 * 23 + (int)(resource ^ resource >>> 32);
+  }
+
 }

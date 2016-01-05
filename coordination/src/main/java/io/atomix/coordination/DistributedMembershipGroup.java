@@ -37,9 +37,9 @@ import java.util.function.Consumer;
  * <p>
  * The distributed membership group resource facilitates managing group membership within the Atomix cluster.
  * Each instance of a {@code DistributedMembershipGroup} resource represents a single {@link GroupMember}.
- * Members can {@link #join()} and {@link #leave()} the group and be notified of other members {@link #onJoin(Consumer) joining}
- * and {@link #onLeave(Consumer) leaving} the group. Members may leave the group either voluntarily or due to
- * a failure or other disconnection from the cluster.
+ * Members can {@link #join()} and {@link LocalGroupMember#leave()} the group and be notified of other members
+ * {@link #onJoin(Consumer) joining} and {@link #onLeave(Consumer) leaving} the group. Members may leave the group
+ * either voluntarily or due to a failure or other disconnection from the cluster.
  * <p>
  * To create a membership group resource, use the {@code DistributedMembershipGroup} class or constructor:
  * <pre>
@@ -51,9 +51,9 @@ import java.util.function.Consumer;
  * </pre>
  * <b>Joining the group</b>
  * <p>
- * When a new instance of the resource is created, it is initialized with an empty {@link #members()} list and
- * {@link #member()} as it is not yet a member of the group. Once the instance has been created, the instance must
- * join the group via {@link #join()}:
+ * When a new instance of the resource is created, it is initialized with an empty {@link #members()} list
+ * as it is not yet a member of the group. Once the instance has been created, the user must join the group
+ * via {@link #join()}:
  * <pre>
  *   {@code
  *   group.join().thenAccept(member -> {
@@ -94,7 +94,7 @@ import java.util.function.Consumer;
 public class DistributedMembershipGroup extends Resource<DistributedMembershipGroup, Resource.Options> {
   private final Listeners<GroupMember> joinListeners = new Listeners<>();
   private final Listeners<GroupMember> leaveListeners = new Listeners<>();
-  private InternalLocalGroupMember member;
+  private final Map<Long, InternalLocalGroupMember> localMembers = new ConcurrentHashMap<>();
   private final Map<Long, GroupMember> members = new ConcurrentHashMap<>();
 
   public DistributedMembershipGroup(CopycatClient client, Resource.Options options) {
@@ -121,38 +121,27 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
       });
 
       client.<MembershipGroupCommands.Message>onEvent("message", message -> {
-        if (member != null) {
-          member.handle(message);
+        InternalLocalGroupMember localMember = localMembers.get(message.member());
+        if (localMember != null) {
+          localMember.handle(message);
         }
       });
 
       client.onEvent("execute", Runnable::run);
       return result;
-    });
+    }).thenCompose(v -> sync())
+      .thenApply(v -> this);
   }
 
   /**
    * Synchronizes the membership group.
    */
   private CompletableFuture<Void> sync() {
-    return submit(new MembershipGroupCommands.List()).thenAccept(members -> {
+    return submit(new MembershipGroupCommands.Listen()).thenAccept(members -> {
       for (long memberId : members) {
         this.members.computeIfAbsent(memberId, InternalGroupMember::new);
       }
     });
-  }
-
-  /**
-   * Returns the local group member.
-   * <p>
-   * The local {@link GroupMember} is constructed when this instance {@link #join() joins} the group.
-   * The {@link GroupMember#id()} is guaranteed to be unique to this instance throughout the lifetime of
-   * this distributed resource.
-   *
-   * @return The local group member or {@code null} if the member has not joined the group.
-   */
-  public LocalGroupMember member() {
-    return member;
   }
 
   /**
@@ -231,11 +220,9 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
    * @return A completable future to be completed once the member has joined.
    */
   public CompletableFuture<LocalGroupMember> join() {
-    return submit(new MembershipGroupCommands.Join()).thenApply(members -> {
-      member = new InternalLocalGroupMember(client.session().id());
-      for (long memberId : members) {
-        this.members.computeIfAbsent(memberId, InternalGroupMember::new);
-      }
+    return submit(new MembershipGroupCommands.Join()).thenApply(memberId -> {
+      InternalLocalGroupMember member = new InternalLocalGroupMember(memberId);
+      localMembers.put(member.id(), member);
       return member;
     });
   }
@@ -257,44 +244,12 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
   }
 
   /**
-   * Leaves the membership group.
-   * <p>
-   * When this instance leaves the membership group, the membership lists of this and all other instances
-   * in the group are guaranteed to be updated <em>before</em> the {@link CompletableFuture} returned by
-   * this method is completed. Once this instance has left the group, the returned future will be completed.
-   * <p>
-   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
-   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
-   * use the {@link CompletableFuture#join()} method to block the calling thread:
-   * <pre>
-   *   {@code
-   *   group.leave().join();
-   *   }
-   * </pre>
-   * Alternatively, to execute the operation asynchronous and be notified once the lock is acquired in a different
-   * thread, use one of the many completable future callbacks:
-   * <pre>
-   *   {@code
-   *   group.leave().thenRun(() -> System.out.println("Left the group!")));
-   *   }
-   * </pre>
-   *
-   * @return A completable future to be completed once the member has left.
-   */
-  public CompletableFuture<Void> leave() {
-    return submit(new MembershipGroupCommands.Leave()).whenComplete((result, error) -> {
-      member = null;
-      members.clear();
-    });
-  }
-
-  /**
    * Adds a listener for members leaving the group.
    * <p>
    * The provided {@link Consumer} will be called each time a member leaves the group. Members can
    * leave the group either voluntarily or by crashing or otherwise becoming disconnected from the
    * cluster for longer than their session timeout. Note that the leave consumer will be called before
-   * the leaving member's {@link #leave()} completes.
+   * the leaving member's {@link LocalGroupMember#leave()} completes.
    * <p>
    * The returned {@link Listener} can be used to {@link Listener#close() unregister} the listener
    * when its use if finished.
@@ -323,12 +278,12 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
 
     @Override
     public CompletableFuture<Void> set(String property, Object value) {
-      return submit(new MembershipGroupCommands.SetProperty(property, value));
+      return submit(new MembershipGroupCommands.SetProperty(memberId, property, value));
     }
 
     @Override
     public CompletableFuture<Void> remove(String property) {
-      return submit(new MembershipGroupCommands.RemoveProperty(property));
+      return submit(new MembershipGroupCommands.RemoveProperty(memberId, property));
     }
 
     @Override
@@ -347,6 +302,13 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
       if (listener != null) {
         listener.accept(message.body());
       }
+    }
+
+    @Override
+    public CompletableFuture<Void> leave() {
+      return submit(new MembershipGroupCommands.Leave(memberId)).whenComplete((result, error) -> {
+        localMembers.remove(memberId);
+      });
     }
 
     /**

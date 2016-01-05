@@ -23,7 +23,7 @@ io.atomix.coordination.state.LockCommands$Unlock
 
 io.atomix.coordination.state.MembershipGroupCommands$Join
 io.atomix.coordination.state.MembershipGroupCommands$Leave
-io.atomix.coordination.state.MembershipGroupCommands$List
+io.atomix.coordination.state.MembershipGroupCommands$Listen
 io.atomix.coordination.state.MembershipGroupCommands$Schedule
 io.atomix.coordination.state.MembershipGroupCommands$Execute
 io.atomix.coordination.state.MembershipGroupCommands$SetProperty
