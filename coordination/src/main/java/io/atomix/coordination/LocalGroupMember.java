@@ -54,4 +54,46 @@ public interface LocalGroupMember extends GroupMember {
    */
   <T> Listener<T> onMessage(String topic, Consumer<T> consumer);
 
+  /**
+   * Registers a callback to be called when this member is elected leader.
+   *
+   * @param callback The callback to call.
+   * @return The leader election listener.
+   */
+  Listener<Long> onElection(Consumer<Long> callback);
+
+  /**
+   * Resigns from leadership.
+   *
+   * @return A completable future to be completed once the member has resigned.
+   */
+  CompletableFuture<Void> resign();
+
+  /**
+   * Leaves the membership group.
+   * <p>
+   * When this member leaves the membership group, the membership lists of this and all other instances
+   * in the group are guaranteed to be updated <em>before</em> the {@link CompletableFuture} returned by
+   * this method is completed. Once this instance has left the group, the returned future will be completed.
+   * <p>
+   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
+   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
+   * use the {@link CompletableFuture#join()} method to block the calling thread:
+   * <pre>
+   *   {@code
+   *   member.leave().join();
+   *   }
+   * </pre>
+   * Alternatively, to execute the operation asynchronous and be notified once the lock is acquired in a different
+   * thread, use one of the many completable future callbacks:
+   * <pre>
+   *   {@code
+   *   member.leave().thenRun(() -> System.out.println("Left the group!")));
+   *   }
+   * </pre>
+   *
+   * @return A completable future to be completed once the member has left.
+   */
+  CompletableFuture<Void> leave();
+
 }

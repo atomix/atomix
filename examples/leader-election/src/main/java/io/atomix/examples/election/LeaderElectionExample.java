@@ -19,7 +19,8 @@ import io.atomix.Atomix;
 import io.atomix.AtomixReplica;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.NettyTransport;
-import io.atomix.coordination.DistributedLeaderElection;
+import io.atomix.coordination.DistributedMembershipGroup;
+import io.atomix.coordination.LocalGroupMember;
 import io.atomix.copycat.server.storage.Storage;
 
 import java.util.ArrayList;
@@ -61,10 +62,13 @@ public class LeaderElectionExample {
     atomix.open().join();
 
     // Create a leader election resource.
-    DistributedLeaderElection election = atomix.getLeaderElection("election").get();
+    DistributedMembershipGroup group = atomix.getMembershipGroup("group").get();
 
-    // Register a callback to be called when this election instance is elected the leader
-    election.onElection(epoch -> {
+    // Join the group.
+    LocalGroupMember member = group.join().get();
+
+    // Register a callback to be called when the local member is elected the leader.
+    member.onElection(term -> {
       System.out.println("Elected leader!");
     });
 

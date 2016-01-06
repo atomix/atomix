@@ -40,6 +40,13 @@ public interface GroupMember {
   long id();
 
   /**
+   * Returns a boolean value indicating whether this member is the current leader.
+   *
+   * @return Indicates whether this member is the current leader.
+   */
+  boolean isLeader();
+
+  /**
    * Gets the value of a property of the member.
    * <p>
    * Properties are identified by a {@link String} name. Properties may only be set by the local member but

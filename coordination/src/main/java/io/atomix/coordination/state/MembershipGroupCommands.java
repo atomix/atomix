@@ -85,14 +85,23 @@ public final class MembershipGroupCommands {
    * Join command.
    */
   @SerializeWith(id=120)
-  public static class Join extends GroupCommand<Set<Long>> {
+  public static class Join extends GroupCommand<Long> {
   }
 
   /**
    * Leave command.
    */
   @SerializeWith(id=121)
-  public static class Leave extends GroupCommand<Void> {
+  public static class Leave extends MemberCommand<Void> {
+    private long member;
+
+    public Leave() {
+    }
+
+    public Leave(long member) {
+      super(member);
+    }
+
     @Override
     public CompactionMode compaction() {
       return CompactionMode.SEQUENTIAL;
@@ -224,7 +233,7 @@ public final class MembershipGroupCommands {
    * List command.
    */
   @SerializeWith(id=124)
-  public static class List extends GroupCommand<Set<Long>> {
+  public static class Listen extends GroupCommand<Set<Long>> {
     @Override
     public CompactionMode compaction() {
       return CompactionMode.QUORUM;
@@ -232,15 +241,35 @@ public final class MembershipGroupCommands {
   }
 
   /**
+   * Resign command.
+   */
+  @SerializeWith(id=113)
+  public static class Resign extends MemberCommand<Void> {
+
+    public Resign() {
+    }
+
+    public Resign(long member) {
+      super(member);
+    }
+
+    @Override
+    public Command.CompactionMode compaction() {
+      return Command.CompactionMode.SEQUENTIAL;
+    }
+  }
+
+  /**
    * Property command.
    */
-  public static abstract class PropertyCommand<T> extends GroupCommand<T> {
+  public static abstract class PropertyCommand<T> extends MemberCommand<T> {
     private String property;
 
     protected PropertyCommand() {
     }
 
-    protected PropertyCommand(String property) {
+    protected PropertyCommand(long member, String property) {
+      super(member);
       this.property = property;
     }
 
@@ -276,8 +305,8 @@ public final class MembershipGroupCommands {
     public SetProperty() {
     }
 
-    public SetProperty(String property, Object value) {
-      super(property);
+    public SetProperty(long member, String property, Object value) {
+      super(member, property);
       this.value = value;
     }
 
@@ -359,8 +388,8 @@ public final class MembershipGroupCommands {
     public RemoveProperty() {
     }
 
-    public RemoveProperty(String property) {
-      super(property);
+    public RemoveProperty(long member, String property) {
+      super(member, property);
     }
 
     @Override
@@ -424,15 +453,26 @@ public final class MembershipGroupCommands {
    */
   @SerializeWith(id=119)
   public static class Message implements CatalystSerializable {
+    private long member;
     private String topic;
     private Object body;
 
     public Message() {
     }
 
-    public Message(String topic, Object body) {
+    public Message(long member, String topic, Object body) {
+      this.member = member;
       this.topic = Assert.notNull(topic, "topic");
       this.body = body;
+    }
+
+    /**
+     * Returns the local group member ID.
+     *
+     * @return The local group member ID.
+     */
+    public long member() {
+      return member;
     }
 
     /**
@@ -455,12 +495,13 @@ public final class MembershipGroupCommands {
 
     @Override
     public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
-      buffer.writeString(topic);
+      buffer.writeLong(member).writeString(topic);
       serializer.writeObject(body, buffer);
     }
 
     @Override
     public void readObject(BufferInput<?> buffer, Serializer serializer) {
+      member = buffer.readLong();
       topic = buffer.readString();
       body = serializer.readObject(buffer);
     }

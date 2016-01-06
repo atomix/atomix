@@ -15,7 +15,6 @@
  */
 package io.atomix.coordination;
 
-import io.atomix.resource.ResourceType;
 import io.atomix.testing.AbstractCopycatTest;
 import org.testng.annotations.Test;
 
@@ -73,11 +72,10 @@ public class DistributedMembershipGroupTest extends AbstractCopycatTest<Distribu
     DistributedMembershipGroup group1 = createResource();
     DistributedMembershipGroup group2 = createResource();
 
-    group2.join().thenRun(() -> {
-      group2.members().thenAccept(members -> {
-        threadAssertEquals(members.size(), 1);
-        resume();
-      });
+    LocalGroupMember localMember = group2.join().get();
+    group2.members().thenAccept(members -> {
+      threadAssertEquals(members.size(), 1);
+      resume();
     });
 
     await(5000);
@@ -96,7 +94,65 @@ public class DistributedMembershipGroupTest extends AbstractCopycatTest<Distribu
     await(10000, 2);
 
     group1.onLeave(member -> resume());
-    group2.leave().thenRun(this::resume);
+    localMember.leave().thenRun(this::resume);
+
+    await(10000, 2);
+  }
+
+  /**
+   * Tests electing a group leader.
+   */
+  public void testElectResign() throws Throwable {
+    createServers(3);
+
+    DistributedMembershipGroup group1 = createResource();
+    DistributedMembershipGroup group2 = createResource();
+
+    LocalGroupMember localMember2 = group2.join().get();
+    group2.members().thenAccept(members -> {
+      threadAssertEquals(members.size(), 1);
+      resume();
+    });
+
+    await(5000);
+
+    localMember2.onElection(term -> resume());
+
+    await(5000);
+
+    LocalGroupMember localMember1 = group1.join().get();
+    localMember1.onElection(term -> resume());
+
+    localMember2.resign().thenRun(this::resume);
+
+    await(10000, 2);
+  }
+
+  /**
+   * Tests electing a group leader.
+   */
+  public void testElectClose() throws Throwable {
+    createServers(3);
+
+    DistributedMembershipGroup group1 = createResource();
+    DistributedMembershipGroup group2 = createResource();
+
+    LocalGroupMember localMember2 = group2.join().get();
+    group2.members().thenAccept(members -> {
+      threadAssertEquals(members.size(), 1);
+      resume();
+    });
+
+    await(5000);
+
+    localMember2.onElection(term -> resume());
+
+    await(5000);
+
+    LocalGroupMember localMember1 = group1.join().get();
+    localMember1.onElection(term -> resume());
+
+    group2.close().thenRun(this::resume);
 
     await(10000, 2);
   }
@@ -110,9 +166,8 @@ public class DistributedMembershipGroupTest extends AbstractCopycatTest<Distribu
     DistributedMembershipGroup group1 = createResource();
     DistributedMembershipGroup group2 = createResource();
 
-    group1.join().thenAccept(member -> {
-      member.set("foo", "Hello world!").thenRun(this::resume);
-    });
+    LocalGroupMember localMember = group1.join().get();
+    localMember.set("foo", "Hello world!").thenRun(this::resume);
 
     await(5000);
 
@@ -126,7 +181,7 @@ public class DistributedMembershipGroupTest extends AbstractCopycatTest<Distribu
 
     await(5000);
 
-    group1.member().remove("foo").thenRun(this::resume);
+    localMember.remove("foo").thenRun(this::resume);
     await(5000);
 
     group2.members().thenAccept(members -> {
