@@ -85,7 +85,37 @@ public final class MembershipGroupCommands {
    * Join command.
    */
   @SerializeWith(id=120)
-  public static class Join extends GroupCommand<Long> {
+  public static class Join extends MemberCommand<String> {
+    private boolean persist;
+
+    public Join() {
+    }
+
+    public Join(String member, boolean persist) {
+      super(member);
+      this.persist = persist;
+    }
+
+    /**
+     * Returns whether the member is persistent.
+     *
+     * @return Whether the member is persistent.
+     */
+    public boolean persist() {
+      return persist;
+    }
+
+    @Override
+    public void writeObject(BufferOutput buffer, Serializer serializer) {
+      super.writeObject(buffer, serializer);
+      buffer.writeBoolean(persist);
+    }
+
+    @Override
+    public void readObject(BufferInput buffer, Serializer serializer) {
+      super.readObject(buffer, serializer);
+      persist = buffer.readBoolean();
+    }
   }
 
   /**
@@ -93,12 +123,10 @@ public final class MembershipGroupCommands {
    */
   @SerializeWith(id=121)
   public static class Leave extends MemberCommand<Void> {
-    private long member;
-
     public Leave() {
     }
 
-    public Leave(long member) {
+    public Leave(String member) {
       super(member);
     }
 
@@ -112,12 +140,12 @@ public final class MembershipGroupCommands {
    * Member command.
    */
   public static abstract class MemberCommand<T> extends GroupCommand<T> {
-    private long member;
+    private String member;
 
     protected MemberCommand() {
     }
 
-    protected MemberCommand(long member) {
+    protected MemberCommand(String member) {
       this.member = member;
     }
 
@@ -126,20 +154,20 @@ public final class MembershipGroupCommands {
      *
      * @return The member ID.
      */
-    public long member() {
+    public String member() {
       return member;
     }
 
     @Override
     public void writeObject(BufferOutput buffer, Serializer serializer) {
       super.writeObject(buffer, serializer);
-      buffer.writeLong(member);
+      buffer.writeString(member);
     }
 
     @Override
     public void readObject(BufferInput buffer, Serializer serializer) {
       super.readObject(buffer, serializer);
-      member = buffer.readLong();
+      member = buffer.readString();
     }
   }
 
@@ -154,7 +182,7 @@ public final class MembershipGroupCommands {
     public Schedule() {
     }
 
-    public Schedule(long member, long delay, Runnable callback) {
+    public Schedule(String member, long delay, Runnable callback) {
       super(member);
       this.delay = Assert.argNot(delay, delay <= 0, "delay must be positive");
       this.callback = Assert.notNull(callback, "callback");
@@ -202,7 +230,7 @@ public final class MembershipGroupCommands {
     public Execute() {
     }
 
-    public Execute(long member, Runnable callback) {
+    public Execute(String member, Runnable callback) {
       super(member);
       this.callback = Assert.notNull(callback, "callback");
     }
@@ -233,7 +261,7 @@ public final class MembershipGroupCommands {
    * List command.
    */
   @SerializeWith(id=124)
-  public static class Listen extends GroupCommand<Set<Long>> {
+  public static class Listen extends GroupCommand<Set<String>> {
     @Override
     public CompactionMode compaction() {
       return CompactionMode.QUORUM;
@@ -249,7 +277,7 @@ public final class MembershipGroupCommands {
     public Resign() {
     }
 
-    public Resign(long member) {
+    public Resign(String member) {
       super(member);
     }
 
@@ -268,7 +296,7 @@ public final class MembershipGroupCommands {
     protected PropertyCommand() {
     }
 
-    protected PropertyCommand(long member, String property) {
+    protected PropertyCommand(String member, String property) {
       super(member);
       this.property = property;
     }
@@ -305,7 +333,7 @@ public final class MembershipGroupCommands {
     public SetProperty() {
     }
 
-    public SetProperty(long member, String property, Object value) {
+    public SetProperty(String member, String property, Object value) {
       super(member, property);
       this.value = value;
     }
@@ -337,13 +365,13 @@ public final class MembershipGroupCommands {
    */
   @SerializeWith(id=126)
   public static class GetProperty extends GroupQuery<Object> {
-    private long member;
+    private String member;
     private String property;
 
     public GetProperty() {
     }
 
-    public GetProperty(long member, String property) {
+    public GetProperty(String member, String property) {
       this.member = member;
       this.property = property;
     }
@@ -353,7 +381,7 @@ public final class MembershipGroupCommands {
      *
      * @return The member ID.
      */
-    public long member() {
+    public String member() {
       return member;
     }
 
@@ -369,13 +397,13 @@ public final class MembershipGroupCommands {
     @Override
     public void writeObject(BufferOutput buffer, Serializer serializer) {
       super.writeObject(buffer, serializer);
-      buffer.writeLong(member).writeString(property);
+      buffer.writeString(member).writeString(property);
     }
 
     @Override
     public void readObject(BufferInput buffer, Serializer serializer) {
       super.readObject(buffer, serializer);
-      member = buffer.readLong();
+      member = buffer.readString();
       property = buffer.readString();
     }
   }
@@ -388,7 +416,7 @@ public final class MembershipGroupCommands {
     public RemoveProperty() {
     }
 
-    public RemoveProperty(long member, String property) {
+    public RemoveProperty(String member, String property) {
       super(member, property);
     }
 
@@ -409,7 +437,7 @@ public final class MembershipGroupCommands {
     public Send() {
     }
 
-    public Send(long member, String topic, Object message) {
+    public Send(String member, String topic, Object message) {
       super(member);
       this.topic = Assert.notNull(topic, "topic");
       this.message = message;
@@ -453,14 +481,14 @@ public final class MembershipGroupCommands {
    */
   @SerializeWith(id=119)
   public static class Message implements CatalystSerializable {
-    private long member;
+    private String member;
     private String topic;
     private Object body;
 
     public Message() {
     }
 
-    public Message(long member, String topic, Object body) {
+    public Message(String member, String topic, Object body) {
       this.member = member;
       this.topic = Assert.notNull(topic, "topic");
       this.body = body;
@@ -471,7 +499,7 @@ public final class MembershipGroupCommands {
      *
      * @return The local group member ID.
      */
-    public long member() {
+    public String member() {
       return member;
     }
 
@@ -495,13 +523,13 @@ public final class MembershipGroupCommands {
 
     @Override
     public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
-      buffer.writeLong(member).writeString(topic);
+      buffer.writeString(member).writeString(topic);
       serializer.writeObject(body, buffer);
     }
 
     @Override
     public void readObject(BufferInput<?> buffer, Serializer serializer) {
-      member = buffer.readLong();
+      member = buffer.readString();
       topic = buffer.readString();
       body = serializer.readObject(buffer);
     }

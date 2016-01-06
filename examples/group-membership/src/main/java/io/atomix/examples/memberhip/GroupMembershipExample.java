@@ -72,7 +72,7 @@ public class GroupMembershipExample {
     group.onJoin(member -> {
       System.out.println(member.id() + " joined the group!");
 
-      long id = member.id();
+      String id = member.id();
       member.execute((Serializable & Runnable) () -> System.out.println("Executing on member " + id));
     });
 
