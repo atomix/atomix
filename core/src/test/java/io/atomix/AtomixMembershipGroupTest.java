@@ -22,6 +22,8 @@ import org.testng.annotations.Test;
 
 import java.util.function.Function;
 
+import static org.testng.Assert.*;
+
 /**
  * Atomix membership group test.
  *
@@ -52,25 +54,15 @@ public class AtomixMembershipGroupTest extends AbstractAtomixTest {
     DistributedMembershipGroup group2 = factory.apply(client2);
 
     LocalGroupMember localMember = group2.join().get();
-    group2.members().thenAccept(members -> {
-      threadAssertEquals(members.size(), 1);
+    assertEquals(group2.members().size(), 1);
+
+    group1.join().thenRun(() -> {
+      threadAssertEquals(group1.members().size(), 2);
+      threadAssertEquals(group2.members().size(), 2);
       resume();
     });
 
     await(5000);
-
-    group1.join().thenRun(() -> {
-      group1.members().thenAccept(members -> {
-        threadAssertEquals(members.size(), 2);
-        resume();
-      });
-      group2.members().thenAccept(members -> {
-        threadAssertEquals(members.size(), 2);
-        resume();
-      });
-    });
-
-    await(5000, 2);
 
     group1.onLeave(member -> resume());
     localMember.leave().thenRun(this::resume);

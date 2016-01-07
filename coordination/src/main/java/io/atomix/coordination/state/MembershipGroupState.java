@@ -30,8 +30,8 @@ import java.util.*;
  */
 public class MembershipGroupState extends ResourceStateMachine implements SessionListener {
   private final Set<Session> sessions = new HashSet<>();
-  private final Map<Long, Commit<MembershipGroupCommands.Join>> members = new HashMap<>();
-  private final Map<Long, Map<String, Commit<MembershipGroupCommands.SetProperty>>> properties = new HashMap<>();
+  private final Map<String, Commit<MembershipGroupCommands.Join>> members = new HashMap<>();
+  private final Map<String, Map<String, Commit<MembershipGroupCommands.SetProperty>>> properties = new HashMap<>();
   private final Queue<Commit<MembershipGroupCommands.Join>> candidates = new ArrayDeque<>();
   private Commit<MembershipGroupCommands.Join> leader;
   private long term;
@@ -59,19 +59,19 @@ public class MembershipGroupState extends ResourceStateMachine implements Sessio
     sessions.remove(session);
 
     // Iterate through all open members.
-    Iterator<Map.Entry<Long, Commit<MembershipGroupCommands.Join>>> iterator = members.entrySet().iterator();
+    Iterator<Map.Entry<String, Commit<MembershipGroupCommands.Join>>> iterator = members.entrySet().iterator();
     while (iterator.hasNext()) {
       // If the member is associated with the closed session, remove it from the members list.
       Commit<MembershipGroupCommands.Join> commit = iterator.next().getValue();
       if (commit.session().equals(session)) {
         iterator.remove();
 
-        long memberId = commit.index();
-
         // Clear properties associated with the member.
-        Map<String, Commit<MembershipGroupCommands.SetProperty>> properties = this.properties.remove(memberId);
-        if (properties != null) {
-          properties.values().forEach(Commit::close);
+        if (!commit.operation().persist()) {
+          Map<String, Commit<MembershipGroupCommands.SetProperty>> properties = this.properties.remove(commit.operation().member());
+          if (properties != null) {
+            properties.values().forEach(Commit::close);
+          }
         }
 
         candidates.remove(commit);
@@ -98,7 +98,8 @@ public class MembershipGroupState extends ResourceStateMachine implements Sessio
 
     // Close the commits for the members that left the group.
     for (Map.Entry<Long, Commit<MembershipGroupCommands.Join>> entry : left.entrySet()) {
-      entry.getValue().close();
+      Commit<MembershipGroupCommands.Join> commit = entry.getValue();
+      commit.close();
     }
   }
 
@@ -121,7 +122,7 @@ public class MembershipGroupState extends ResourceStateMachine implements Sessio
     if (leader != null) {
       for (Session session : sessions) {
         if (session.state() == Session.State.OPEN) {
-          session.publish("resign", leader.index());
+          session.publish("resign", leader.operation().member());
         }
       }
 
@@ -141,7 +142,7 @@ public class MembershipGroupState extends ResourceStateMachine implements Sessio
       leader = commit;
       for (Session session : sessions) {
         if (session.state() == Session.State.OPEN) {
-          session.publish("elect", leader.index());
+          session.publish("elect", leader.operation().member());
         }
       }
     }
@@ -150,10 +151,11 @@ public class MembershipGroupState extends ResourceStateMachine implements Sessio
   /**
    * Applies join commits.
    */
-  public long join(Commit<MembershipGroupCommands.Join> commit) {
+  public String join(Commit<MembershipGroupCommands.Join> commit) {
     try {
-      long memberId = commit.index();
+      String memberId = commit.operation().member();
 
+      // Store the member ID and join commit mappings and add the member as a candidate.
       members.put(memberId, commit);
       candidates.add(commit);
 
@@ -186,7 +188,7 @@ public class MembershipGroupState extends ResourceStateMachine implements Sessio
    */
   public void leave(Commit<MembershipGroupCommands.Leave> commit) {
     try {
-      long memberId = commit.operation().member();
+      String memberId = commit.operation().member();
 
       // Remove the member from the members list.
       Commit<MembershipGroupCommands.Join> join = members.remove(memberId);
@@ -202,7 +204,7 @@ public class MembershipGroupState extends ResourceStateMachine implements Sessio
         candidates.remove(join);
 
         // If the leaving member was the leader, increment the term and elect a new leader.
-        if (leader.index() == memberId) {
+        if (leader.operation().member().equals(memberId)) {
           resignLeader(false);
           incrementTerm();
           electLeader();
@@ -226,7 +228,7 @@ public class MembershipGroupState extends ResourceStateMachine implements Sessio
   /**
    * Handles a listen commit.
    */
-  public Set<Long> listen(Commit<MembershipGroupCommands.Listen> commit) {
+  public Set<String> listen(Commit<MembershipGroupCommands.Listen> commit) {
     try {
       sessions.add(commit.session());
       return new HashSet<>(members.keySet());
@@ -240,7 +242,7 @@ public class MembershipGroupState extends ResourceStateMachine implements Sessio
    */
   public void resign(Commit<MembershipGroupCommands.Resign> commit) {
     try {
-      if (leader.index() == commit.operation().member()) {
+      if (leader.operation().member().equals(commit.operation().member())) {
         resignLeader(true);
         incrementTerm();
         electLeader();

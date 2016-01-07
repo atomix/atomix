@@ -28,6 +28,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
@@ -96,9 +97,9 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
   private final Listeners<GroupMember> leaveListeners = new Listeners<>();
   private final Listeners<Long> termListeners = new Listeners<>();
   private final Listeners<GroupMember> electionListeners = new Listeners<>();
-  private final Map<Long, InternalLocalGroupMember> localMembers = new ConcurrentHashMap<>();
-  private final Map<Long, GroupMember> members = new ConcurrentHashMap<>();
-  private volatile long leader;
+  private final Map<String, InternalLocalGroupMember> localMembers = new ConcurrentHashMap<>();
+  private final Map<String, GroupMember> members = new ConcurrentHashMap<>();
+  private volatile String leader;
   private volatile long term;
 
   public DistributedMembershipGroup(CopycatClient client, Resource.Options options) {
@@ -108,14 +109,14 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
   @Override
   public CompletableFuture<DistributedMembershipGroup> open() {
     return super.open().thenApply(result -> {
-      client.<Long>onEvent("join", memberId -> {
+      client.<String>onEvent("join", memberId -> {
         GroupMember member = members.computeIfAbsent(memberId, InternalGroupMember::new);
         for (Listener<GroupMember> listener : joinListeners) {
           listener.accept(member);
         }
       });
 
-      client.<Long>onEvent("leave", memberId -> {
+      client.<String>onEvent("leave", memberId -> {
         GroupMember member = members.remove(memberId);
         if (member != null) {
           for (Listener<GroupMember> listener : leaveListeners) {
@@ -129,7 +130,7 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
         termListeners.accept(term);
       });
 
-      client.<Long>onEvent("elect", leader -> {
+      client.<String>onEvent("elect", leader -> {
         this.leader = leader;
         electionListeners.accept(member(leader));
         InternalLocalGroupMember member = localMembers.get(leader);
@@ -138,9 +139,9 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
         }
       });
 
-      client.<Long>onEvent("resign", leader -> {
+      client.<String>onEvent("resign", leader -> {
         if (this.leader == leader) {
-          this.leader = 0;
+          this.leader = null;
         }
       });
 
@@ -163,7 +164,7 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
    */
   private CompletableFuture<Void> sync() {
     return submit(new MembershipGroupCommands.Listen()).thenAccept(members -> {
-      for (long memberId : members) {
+      for (String memberId : members) {
         this.members.computeIfAbsent(memberId, InternalGroupMember::new);
       }
     });
@@ -175,7 +176,7 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
    * @return The current group leader.
    */
   public GroupMember leader() {
-    return leader != 0 ? members.get(leader) : null;
+    return leader != null ? members.get(leader) : null;
   }
 
   /**
@@ -216,7 +217,7 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
    * @param memberId The member ID for which to return a {@link GroupMember}.
    * @return The member with the given {@code memberId} or {@code null} if it is not a known member of the group.
    */
-  public GroupMember member(long memberId) {
+  public GroupMember member(String memberId) {
     return members.get(memberId);
   }
 
@@ -248,8 +249,8 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
    *
    * @return The collection of all members in the group.
    */
-  public CompletableFuture<Collection<GroupMember>> members() {
-    return sync().thenApply(v -> members.values());
+  public Collection<GroupMember> members() {
+    return members.values();
   }
 
   /**
@@ -279,8 +280,43 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
    * @return A completable future to be completed once the member has joined.
    */
   public CompletableFuture<LocalGroupMember> join() {
-    return submit(new MembershipGroupCommands.Join()).thenApply(memberId -> {
+    return submit(new MembershipGroupCommands.Join(UUID.randomUUID().toString(), false)).thenApply(memberId -> {
       InternalLocalGroupMember member = new InternalLocalGroupMember(memberId);
+      localMembers.put(member.id(), member);
+      return member;
+    });
+  }
+
+  /**
+   * Joins the instance to the membership group with a user-provided member ID.
+   * <p>
+   * When this instance joins the membership group, the membership lists of this and all other instances
+   * in the group are guaranteed to be updated <em>before</em> the {@link CompletableFuture} returned by
+   * this method is completed. Once this instance has joined the group, the returned future will be completed
+   * with the {@link GroupMember} instance for this member.
+   * <p>
+   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
+   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
+   * use the {@link CompletableFuture#join()} method to block the calling thread:
+   * <pre>
+   *   {@code
+   *   group.join().join();
+   *   }
+   * </pre>
+   * Alternatively, to execute the operation asynchronous and be notified once the lock is acquired in a different
+   * thread, use one of the many completable future callbacks:
+   * <pre>
+   *   {@code
+   *   group.join().thenAccept(thisMember -> System.out.println("This member is: " + thisMember.id()));
+   *   }
+   * </pre>
+   *
+   * @param memberId The unique member ID to assign to the member.
+   * @return A completable future to be completed once the member has joined.
+   */
+  public CompletableFuture<LocalGroupMember> join(String memberId) {
+    return submit(new MembershipGroupCommands.Join(memberId, true)).thenApply(id -> {
+      InternalLocalGroupMember member = new InternalLocalGroupMember(id);
       localMembers.put(member.id(), member);
       return member;
     });
@@ -332,7 +368,7 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
     private final Map<String, ListenerHolder> listeners = new ConcurrentHashMap<>();
     private final Listeners<Long> electionListeners = new Listeners<>();
 
-    InternalLocalGroupMember(long memberId) {
+    InternalLocalGroupMember(String memberId) {
       super(memberId);
     }
 
@@ -412,20 +448,20 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
    * Internal group member.
    */
   private class InternalGroupMember implements GroupMember {
-    protected final long memberId;
+    protected final String memberId;
 
-    InternalGroupMember(long memberId) {
+    InternalGroupMember(String memberId) {
       this.memberId = memberId;
     }
 
     @Override
-    public long id() {
+    public String id() {
       return memberId;
     }
 
     @Override
     public boolean isLeader() {
-      return leader == memberId;
+      return leader.equals(memberId);
     }
 
     @Override

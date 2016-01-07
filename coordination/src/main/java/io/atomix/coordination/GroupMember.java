@@ -37,7 +37,7 @@ public interface GroupMember {
    *
    * @return The member ID.
    */
-  long id();
+  String id();
 
   /**
    * Returns a boolean value indicating whether this member is the current leader.

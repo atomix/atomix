@@ -19,8 +19,11 @@ import io.atomix.testing.AbstractCopycatTest;
 import org.testng.annotations.Test;
 
 import java.io.Serializable;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.testng.Assert.assertEquals;
 
 /**
  * Async group test.
@@ -73,25 +76,15 @@ public class DistributedMembershipGroupTest extends AbstractCopycatTest<Distribu
     DistributedMembershipGroup group2 = createResource();
 
     LocalGroupMember localMember = group2.join().get();
-    group2.members().thenAccept(members -> {
-      threadAssertEquals(members.size(), 1);
+    assertEquals(group2.members().size(), 1);
+
+    group1.join().thenRun(() -> {
+      threadAssertEquals(group1.members().size(), 2);
+      threadAssertEquals(group2.members().size(), 2);
       resume();
     });
 
     await(5000);
-
-    group1.join().thenRun(() -> {
-      group1.members().thenAccept(members -> {
-        threadAssertEquals(members.size(), 2);
-        resume();
-      });
-      group2.members().thenAccept(members -> {
-        threadAssertEquals(members.size(), 2);
-        resume();
-      });
-    });
-
-    await(10000, 2);
 
     group1.onLeave(member -> resume());
     localMember.leave().thenRun(this::resume);
@@ -109,12 +102,7 @@ public class DistributedMembershipGroupTest extends AbstractCopycatTest<Distribu
     DistributedMembershipGroup group2 = createResource();
 
     LocalGroupMember localMember2 = group2.join().get();
-    group2.members().thenAccept(members -> {
-      threadAssertEquals(members.size(), 1);
-      resume();
-    });
-
-    await(5000);
+    assertEquals(group2.members().size(), 1);
 
     localMember2.onElection(term -> resume());
 
@@ -138,12 +126,7 @@ public class DistributedMembershipGroupTest extends AbstractCopycatTest<Distribu
     DistributedMembershipGroup group2 = createResource();
 
     LocalGroupMember localMember2 = group2.join().get();
-    group2.members().thenAccept(members -> {
-      threadAssertEquals(members.size(), 1);
-      resume();
-    });
-
-    await(5000);
+    assertEquals(group2.members().size(), 1);
 
     localMember2.onElection(term -> resume());
 
@@ -171,12 +154,10 @@ public class DistributedMembershipGroupTest extends AbstractCopycatTest<Distribu
 
     await(5000);
 
-    group2.members().thenAccept(members -> {
-      threadAssertEquals(members.size(), 1);
-      members.iterator().next().get("foo").thenAccept(result -> {
-        threadAssertEquals(result, "Hello world!");
-        resume();
-      });
+    assertEquals(group2.members().size(), 1);
+    group2.members().iterator().next().get("foo").thenAccept(result -> {
+      threadAssertEquals(result, "Hello world!");
+      resume();
     });
 
     await(5000);
@@ -184,12 +165,47 @@ public class DistributedMembershipGroupTest extends AbstractCopycatTest<Distribu
     localMember.remove("foo").thenRun(this::resume);
     await(5000);
 
-    group2.members().thenAccept(members -> {
-      threadAssertEquals(members.size(), 1);
-      members.iterator().next().get("foo").thenAccept(result -> {
-        threadAssertNull(result);
-        resume();
-      });
+    assertEquals(group2.members().size(), 1);
+    group2.members().iterator().next().get("foo").thenAccept(result -> {
+      threadAssertNull(result);
+      resume();
+    });
+
+    await(5000);
+  }
+
+  /**
+   * Tests setting and getting member properties.
+   */
+  public void testPersistentProperties() throws Throwable {
+    createServers(3);
+
+    DistributedMembershipGroup group1 = createResource();
+    DistributedMembershipGroup group2 = createResource();
+
+    String memberId = UUID.randomUUID().toString();
+
+    LocalGroupMember localMember = group1.join(memberId).get();
+
+    localMember.set("foo", "Hello world!").thenRun(this::resume);
+    await(5000);
+
+    assertEquals(group2.members().size(), 1);
+    group2.members().iterator().next().get("foo").thenAccept(result -> {
+      threadAssertEquals(result, "Hello world!");
+      resume();
+    });
+    await(5000);
+
+    group1.close().thenRun(this::resume);
+    await(5000);
+
+    LocalGroupMember localMember2 = group2.join(memberId).get();
+
+    assertEquals(group2.members().size(), 1);
+    localMember2.get("foo").thenAccept(result -> {
+      threadAssertEquals(result, "Hello world!");
+      resume();
     });
 
     await(5000);
@@ -214,10 +230,8 @@ public class DistributedMembershipGroupTest extends AbstractCopycatTest<Distribu
 
     await(5000);
 
-    group2.members().thenAccept(members -> {
-      threadAssertEquals(members.size(), 1);
-      members.iterator().next().send("foo", "Hello world!").thenRun(this::resume);
-    });
+    assertEquals(group2.members().size(), 1);
+    group2.members().iterator().next().send("foo", "Hello world!").thenRun(this::resume);
 
     await(10000, 2);
   }
@@ -232,21 +246,16 @@ public class DistributedMembershipGroupTest extends AbstractCopycatTest<Distribu
     DistributedMembershipGroup group2 = createResource();
 
     group2.join().thenRun(() -> {
-      group2.members().thenAccept(members -> {
-        threadAssertEquals(members.size(), 1);
-        resume();
-      });
+      threadAssertEquals(group2.members().size(), 1);
     });
 
     await(5000);
 
     AtomicInteger counter = new AtomicInteger();
     group1.join().thenRun(() -> {
-      group1.members().thenAccept(members -> {
-        for (GroupMember member : members) {
-          member.execute((Runnable & Serializable) counter::incrementAndGet).thenRun(this::resume);
-        }
-      });
+      for (GroupMember member : group1.members()) {
+        member.execute((Runnable & Serializable) counter::incrementAndGet).thenRun(this::resume);
+      }
     });
 
     await(10000, 2);
