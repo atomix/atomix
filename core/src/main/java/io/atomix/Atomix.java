@@ -15,6 +15,7 @@
  */
 package io.atomix;
 
+import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.collections.DistributedMap;
@@ -170,10 +171,11 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * Gets or creates a distributed message bus.
    *
    * @param key The resource key.
+   * @param address The local message bus address.
    * @return A completable future to be completed once the message bus has been created.
    */
-  public CompletableFuture<DistributedMessageBus> getMessageBus(String key) {
-    return get(key, DistributedMessageBus.class);
+  public CompletableFuture<DistributedMessageBus> getMessageBus(String key, Address address) {
+    return get(key, DistributedMessageBus.class, DistributedMessageBus.options().withAddress(address).build());
   }
 
   @Override

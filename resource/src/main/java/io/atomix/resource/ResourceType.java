@@ -27,6 +27,7 @@ import java.lang.reflect.InvocationTargetException;
  */
 public class ResourceType {
   private final Class<? extends Resource> type;
+  private final Class<? extends Resource.Options> options;
   private final int id;
   private final Class<? extends ResourceStateMachine> stateMachine;
 
@@ -40,6 +41,7 @@ public class ResourceType {
 
     this.id = info.id();
     this.stateMachine = info.stateMachine();
+    this.options = info.options();
   }
 
   /**
@@ -61,6 +63,15 @@ public class ResourceType {
   }
 
   /**
+   * Returns the resource options class.
+   *
+   * @return The resource options class.
+   */
+  public Class<? extends Resource.Options> options() {
+    return options;
+  }
+
+  /**
    * Returns the resource instance factory.
    *
    * @return The resource instance factory.
@@ -68,7 +79,7 @@ public class ResourceType {
   public ResourceFactory factory() {
     return (client, options) -> {
       try {
-        return resource().getConstructor(CopycatClient.class, Resource.Options.class).newInstance(client, options);
+        return resource().getConstructor(CopycatClient.class, options()).newInstance(client, options);
       } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
         throw new ResourceException("failed to instantiate resource class", e);
       }

@@ -91,8 +91,15 @@ public abstract class AbstractCopycatTest<T extends Resource> extends Concurrent
   /**
    * Creates a new resource instance.
    */
-  @SuppressWarnings("unchecked")
   protected T createResource() throws Throwable {
+    return createResource(null);
+  }
+
+  /**
+   * Creates a new resource instance.
+   */
+  @SuppressWarnings("unchecked")
+  protected T createResource(Resource.Options options) throws Throwable {
     CopycatClient client = CopycatClient.builder(members)
       .withTransport(new LocalTransport(registry))
       .withServerSelectionStrategy(ServerSelectionStrategies.ANY)
@@ -101,7 +108,7 @@ public abstract class AbstractCopycatTest<T extends Resource> extends Concurrent
       .withRetryStrategy(RetryStrategies.FIBONACCI_BACKOFF)
       .build();
     ResourceType type = new ResourceType((Class<? extends Resource>) type());
-    T resource = (T) type.factory().create(client, null);
+    T resource = (T) type.factory().create(client, options);
     resource.open().thenRun(this::resume);
     resources.add(resource);
     await(10000);

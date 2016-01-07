@@ -39,4 +39,9 @@ public @interface ResourceTypeInfo {
    */
   Class<? extends ResourceStateMachine> stateMachine();
 
+  /**
+   * The resource options class.
+   */
+  Class<? extends Resource.Options> options() default Resource.Options.None.class;
+
 }
