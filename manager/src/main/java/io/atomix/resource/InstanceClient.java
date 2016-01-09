@@ -26,7 +26,6 @@ import io.atomix.copycat.client.CopycatClient;
 import io.atomix.copycat.client.Query;
 import io.atomix.copycat.client.session.Session;
 import io.atomix.manager.state.CloseResource;
-import io.atomix.manager.state.CreateResource;
 import io.atomix.manager.state.DeleteResource;
 import io.atomix.manager.state.GetResource;
 
@@ -179,30 +178,9 @@ public final class InstanceClient implements CopycatClient {
       return Futures.exceptionalFuture(new IllegalStateException("client already open"));
 
     if (openFuture == null) {
-      switch (instance.method()) {
-        case GET:
-          openFuture = openGet();
-          break;
-        case CREATE:
-          openFuture = openCreate();
-          break;
-      }
+      openFuture = client.submit(new GetResource(instance.key(), instance.type().id())).thenApply(this::completeOpen);
     }
     return openFuture;
-  }
-
-  /**
-   * Opens the resource using the GET method.
-   */
-  private CompletableFuture<CopycatClient> openGet() {
-    return client.submit(new GetResource(instance.key(), instance.type().id())).thenApply(this::completeOpen);
-  }
-
-  /**
-   * Opens the resource using the CREATE method.
-   */
-  private CompletableFuture<CopycatClient> openCreate() {
-    return client.submit(new CreateResource(instance.key(), instance.type().id())).thenApply(this::completeOpen);
   }
 
   /**
@@ -230,14 +208,7 @@ public final class InstanceClient implements CopycatClient {
       return Futures.exceptionalFuture(new IllegalStateException("client not suspended"));
 
     if (recoverFuture == null) {
-      switch (instance.method()) {
-        case GET:
-          recoverFuture = openGet();
-          break;
-        case CREATE:
-          recoverFuture = openCreate();
-          break;
-      }
+      recoverFuture = client.submit(new GetResource(instance.key(), instance.type().id())).thenApply(this::completeOpen);
     }
     return recoverFuture;
   }

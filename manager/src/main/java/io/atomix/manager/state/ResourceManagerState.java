@@ -56,8 +56,6 @@ public class ResourceManagerState extends StateMachine implements SessionListene
     executor.register(InstanceOperation.class, (Function<Commit<InstanceOperation>, Object>) this::operateResource);
     executor.register(GetResource.class, this::getResource);
     executor.register(GetResourceIfExists.class, this::getResourceIfExists);
-    executor.register(CreateResource.class, this::createResource);
-    executor.register(CreateResourceIfExists.class, this::createResourceIfExists);
     executor.register(CloseResource.class, this::closeResource);
     executor.register(DeleteResource.class, this::deleteResource);
     executor.register(ResourceExists.class, this::resourceExists);
@@ -201,83 +199,6 @@ public class ResourceManagerState extends StateMachine implements SessionListene
     Long resourceId = keys.get(key);
     if (resourceId != null) {
       return getResource(commit);
-    }
-    return 0;
-  }
-
-  /**
-   * Applies a create resource commit.
-   */
-  private long createResource(Commit<? extends CreateResource> commit) {
-    String key = commit.operation().key();
-    ResourceType type = registry.lookup(commit.operation().type());
-
-    // If the resource type is not known, fail the get.
-    if (type == null) {
-      commit.close();
-      throw new IllegalArgumentException("unknown resource type: " + commit.operation().type());
-    }
-
-    // Get the resource ID for the key.
-    Long resourceId = keys.get(key);
-
-    ResourceHolder resource;
-
-    // If no resource yet exists, create a new resource state machine with the commit index as the resource ID.
-    if (resourceId == null) {
-
-      // The first time a resource is created, the resource ID is the index of the commit that created it.
-      resourceId = commit.index();
-      keys.put(key, resourceId);
-
-      try {
-        // For the new resource, construct a state machine and store the resource info.
-        ResourceStateMachine stateMachine = type.stateMachine().newInstance();
-        ResourceManagerStateMachineExecutor executor = new ResourceManagerStateMachineExecutor(resourceId, this.executor);
-
-        // Store the resource to be referenced by its resource ID.
-        resource = new ResourceHolder(resourceId, key, type, stateMachine, executor);
-        resources.put(resourceId, resource);
-
-        // Initialize the resource state machine.
-        stateMachine.init(executor);
-      } catch (InstantiationException | IllegalAccessException e) {
-        throw new ResourceManagerException("failed to instantiate state machine", e);
-      }
-    } else {
-      // If a resource was found, validate that the resource type matches.
-      resource = resources.get(resourceId);
-      if (resource == null || !resource.type.equals(type)) {
-        throw new ResourceManagerException("inconsistent resource type: " + commit.operation().type());
-      }
-    }
-
-    // The resource ID for the unique resource session is the commit index.
-    long id = commit.index();
-
-    // Create the resource session and register the session with the resource state machine.
-    ManagedResourceSession session = new ManagedResourceSession(id, commit.session());
-    sessions.put(id, new SessionHolder(resourceId, commit, session));
-
-    // Register the newly created session with the resource state machine.
-    if (resource.stateMachine instanceof SessionListener) {
-      ((SessionListener) resource.stateMachine).register(session);
-    }
-
-    return id;
-  }
-
-  /**
-   * Applies a create resource if exists commit.
-   */
-  @SuppressWarnings("unchecked")
-  private long createResourceIfExists(Commit<CreateResourceIfExists> commit) {
-    String key = commit.operation().key();
-
-    // Lookup the resource ID for the resource key.
-    Long resourceId = keys.get(key);
-    if (resourceId != null) {
-      return createResource(commit);
     }
     return 0;
   }
