@@ -153,42 +153,27 @@ public final class AtomixReplica extends Atomix {
     this.server = Assert.notNull(server, "server");
     this.quorumHint = quorumHint;
     this.backupCount = backupCount;
-    server.server().cluster().onLeaderElection(this::onLeaderElection);
-    server.server().cluster().onJoin(this::onJoin);
-    server.server().cluster().onLeave(this::onLeave);
-  }
-
-  /**
-   * Handles a member joining the cluster.
-   */
-  private void onJoin(Member member) {
-    if (server.server().cluster().member().equals(server.server().cluster().leader())) {
-      rebalance();
+    for (Member member : server.server().cluster().members()) {
+      member.onTypeChange(t -> rebalance());
+      member.onStatusChange(s -> rebalance());
     }
-  }
-
-  /**
-   * Handles a member leaving the cluster.
-   */
-  private void onLeave(Member member) {
-    if (server.server().cluster().member().equals(server.server().cluster().leader())) {
+    server.server().cluster().onLeaderElection(l -> rebalance());
+    server.server().cluster().onJoin(m -> {
+      m.onTypeChange(t -> rebalance());
+      m.onStatusChange(s -> rebalance());
       rebalance();
-    }
-  }
-
-  /**
-   * Handles a leader change.
-   */
-  private void onLeaderElection(Member member) {
-    if (server.server().cluster().member().equals(member)) {
-      rebalance();
-    }
+    });
+    server.server().cluster().onLeave(m -> rebalance());
   }
 
   /**
    * Rebalances the cluster.
    */
   private void rebalance() {
+    if (!server.server().cluster().member().equals(server.server().cluster().leader())) {
+      return;
+    }
+
     Collection<Member> members = server.server().cluster().members();
     Member member = server.server().cluster().member();
 
