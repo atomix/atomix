@@ -32,7 +32,7 @@ import java.util.UUID;
 public class ResourceRecoveryTest extends AbstractAtomixTest {
   @BeforeClass
   protected void setupCluster() throws Throwable {
-     createReplicas(5);
+    createReplicas(5, 3, 1);
   }
   
   public void testRecoverClientResources() throws Throwable {

@@ -19,8 +19,6 @@ io.atomix.resource.InstanceEvent
 
 io.atomix.manager.state.GetResource
 io.atomix.manager.state.GetResourceIfExists
-io.atomix.manager.state.CreateResource
-io.atomix.manager.state.CreateResourceIfExists
 io.atomix.manager.state.CloseResource
 io.atomix.manager.state.DeleteResource
 io.atomix.manager.state.ResourceExists

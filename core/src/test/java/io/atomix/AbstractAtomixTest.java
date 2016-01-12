@@ -41,7 +41,6 @@ public abstract class AbstractAtomixTest extends ConcurrentTestCase {
   protected List<Address> members;
   protected List<AtomixClient> clients;
   protected List<AtomixReplica> replicas;
-  protected List<AtomixServer> servers;
 
   @BeforeClass
   protected void beforeClass() {
@@ -59,7 +58,6 @@ public abstract class AbstractAtomixTest extends ConcurrentTestCase {
     members = new ArrayList<>();
     clients = new ArrayList<>();
     replicas = new ArrayList<>();
-    servers = new ArrayList<>();
   }
 
   protected void cleanup() {
@@ -72,19 +70,13 @@ public abstract class AbstractAtomixTest extends ConcurrentTestCase {
     replicas.stream().forEach(a -> {
       try {
         a.close().join();
-      } catch (Exception ignore) {
-      }
-    });
-    servers.stream().forEach(s -> {
-      try {
-        s.close().join();
+        Thread.sleep(1000);
       } catch (Exception ignore) {
       }
     });
 
     clients.clear();
     replicas.clear();
-    servers.clear();
   }
 
   /**
@@ -124,74 +116,36 @@ public abstract class AbstractAtomixTest extends ConcurrentTestCase {
   /**
    * Creates an Atomix replica.
    */
-  protected AtomixReplica createReplica(Address address, List<Address> members) {
+  protected AtomixReplica createReplica(Address address, List<Address> members, int quorumHint, int backupCount) {
     AtomixReplica replica = AtomixReplica.builder(address, members)
-        .withTransport(new LocalTransport(registry))
-        .withStorage(new Storage(StorageLevel.MEMORY))
-        .build();
+      .withTransport(new LocalTransport(registry))
+      .withStorage(new Storage(StorageLevel.MEMORY))
+      .withQuorumHint(quorumHint)
+      .withBackupCount(backupCount)
+      .build();
     replicas.add(replica);
     return replica;
   }
 
   /**
-   * Creates an Atomix server.
-   */
-  protected AtomixServer createServer(Address address, List<Address> members) {
-    AtomixServer server = AtomixServer.builder(address, members)
-        .withTransport(new LocalTransport(registry))
-        .withStorage(new Storage(StorageLevel.MEMORY))
-        .build();
-    servers.add(server);
-    return server;
-  }
-
-  /**
    * Creates a set of Atomix instances.
    */
-  protected List<Atomix> createReplicas(int nodes) throws Throwable {
+  protected List<Atomix> createReplicas(int nodes, int quorumHint, int backupCount) throws Throwable {
     List<Address> members = new ArrayList<>();
-    for (int i = 0; i < nodes; i++) {
+    for (int i = 0; i < quorumHint; i++) {
       members.add(nextAddress());
     }
     this.members.addAll(members);
 
     List<Atomix> replicas = new ArrayList<>();
     for (int i = 0; i < nodes; i++) {
-      AtomixReplica atomix = createReplica(members.get(i), members);
+      AtomixReplica atomix = createReplica(members.size() > i ? members.get(i) : nextAddress(), members, quorumHint, backupCount);
       atomix.open().thenRun(this::resume);
       replicas.add(atomix);
     }
 
-    await(0, nodes);
+    await(10000 * nodes, nodes);
     return replicas;
-  }
-
-  /**
-   * Creates a set of Raft servers.
-   */
-  protected List<AtomixServer> createServers(int live, int total) throws Throwable {
-    List<Address> members = new ArrayList<>();
-    for (int i = 0; i < total; i++) {
-      members.add(nextAddress());
-    }
-    this.members.addAll(members);
-
-    List<AtomixServer> servers = new ArrayList<>();
-    for (int i = 0; i < live; i++) {
-      AtomixServer server = createServer(members.get(i), members);
-      server.open().thenRun(this::resume);
-      servers.add(server);
-    }
-
-    await(0, live);
-    return servers;
-  }
-
-  /**
-   * Creates a set of Raft servers.
-   */
-  protected List<AtomixServer> createServers(int nodes) throws Throwable {
-    return createServers(nodes, nodes);
   }
 
 }

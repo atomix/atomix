@@ -39,6 +39,7 @@ import static org.testng.Assert.assertEquals;
  */
 @Test
 public class AtomixReplicaTest extends AbstractAtomixTest {
+
   @BeforeMethod
   protected void beforeMethod() {
     init();
@@ -81,7 +82,7 @@ public class AtomixReplicaTest extends AbstractAtomixTest {
    * Tests submitting a command with a configured consistency level.
    */
   private void testSubmitCommand(Consistency consistency) throws Throwable {
-    Atomix replica = createReplicas(5).iterator().next();
+    Atomix replica = createReplicas(8, 3, 1).iterator().next();
 
     TestResource resource = replica.get("test", TestResource.class).get();
 
@@ -125,7 +126,7 @@ public class AtomixReplicaTest extends AbstractAtomixTest {
    * Tests submitting a query with a configured consistency level.
    */
   private void testSubmitQuery(Consistency consistency) throws Throwable {
-    Atomix replica = createReplicas(5).iterator().next();
+    Atomix replica = createReplicas(8, 3, 1).iterator().next();
 
     TestResource resource = replica.get("test", TestResource.class).get();
 
@@ -141,49 +142,7 @@ public class AtomixReplicaTest extends AbstractAtomixTest {
    * Tests getting a resource and submitting commands.
    */
   public void testGetConcurrency() throws Throwable {
-    List<Atomix> replicas = createReplicas(5);
-
-    Atomix replica1 = replicas.get(0);
-    Atomix replica2 = replicas.get(1);
-
-    ValueResource resource1 = replica1.get("test", ValueResource.class).get();
-    ValueResource resource2 = replica2.get("test", ValueResource.class).get();
-
-    resource1.set("Hello world!").join();
-
-    resource2.get().thenAccept(result -> {
-      threadAssertEquals("Hello world!", result);
-      resume();
-    });
-    await(10000);
-  }
-
-  /**
-   * Tests creating a resource and submitting commands.
-   */
-  public void testCreateConcurrency() throws Throwable {
-    List<Atomix> replicas = createReplicas(5);
-
-    Atomix replica1 = replicas.get(0);
-    Atomix replica2 = replicas.get(1);
-
-    ValueResource resource1 = replica1.get("test", ValueResource.class).get();
-    ValueResource resource2 = replica2.get("test", ValueResource.class).get();
-
-    resource1.set("Hello world!").join();
-
-    resource2.get().thenAccept(result -> {
-      threadAssertEquals("Hello world!", result);
-      resume();
-    });
-    await(10000);
-  }
-
-  /**
-   * Tests getting and creating a resource and submitting commands.
-   */
-  public void testGetCreateConcurrency() throws Throwable {
-    List<Atomix> replicas = createReplicas(5);
+    List<Atomix> replicas = createReplicas(8, 3, 1);
 
     Atomix replica1 = replicas.get(0);
     Atomix replica2 = replicas.get(1);
@@ -204,7 +163,7 @@ public class AtomixReplicaTest extends AbstractAtomixTest {
    * Tests operating many separate resources from the same clients.
    */
   public void testOperateMany() throws Throwable {
-    List<Atomix> replicas = createReplicas(5);
+    List<Atomix> replicas = createReplicas(8, 3, 1);
 
     Atomix replica1 = replicas.get(0);
     Atomix replica2 = replicas.get(1);
@@ -227,7 +186,7 @@ public class AtomixReplicaTest extends AbstractAtomixTest {
   /**
    * Test resource.
    */
-  @ResourceTypeInfo(id = 3, stateMachine = TestStateMachine.class)
+  @ResourceTypeInfo(id=3, stateMachine=TestStateMachine.class)
   public static class TestResource extends Resource<TestResource, Resource.Options> {
     public TestResource(CopycatClient client, Resource.Options options) {
       super(client, options);
@@ -294,7 +253,7 @@ public class AtomixReplicaTest extends AbstractAtomixTest {
   /**
    * Value resource.
    */
-  @ResourceTypeInfo(id = 4, stateMachine = ValueStateMachine.class)
+  @ResourceTypeInfo(id=4, stateMachine=ValueStateMachine.class)
   public static class ValueResource extends Resource<ValueResource, Resource.Options> {
     public ValueResource(CopycatClient client, Resource.Options options) {
       super(client, options);

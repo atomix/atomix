@@ -30,7 +30,7 @@ import java.util.function.Function;
 public class AtomixMapTest extends AbstractAtomixTest {
   @BeforeClass
   protected void setupCluster() throws Throwable {
-     createReplicas(5);
+    createReplicas(3, 3, 0);
   }
   
   public void testClientMapGet() throws Throwable {

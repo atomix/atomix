@@ -153,16 +153,20 @@ public final class AtomixReplica extends Atomix {
     this.server = Assert.notNull(server, "server");
     this.quorumHint = quorumHint;
     this.backupCount = backupCount;
-    for (Member member : server.server().cluster().members()) {
-      member.onTypeChange(t -> rebalance());
-      member.onStatusChange(s -> rebalance());
-    }
+
+    server.server().cluster().members().forEach(m -> {
+      m.onTypeChange(t -> rebalance());
+      m.onStatusChange(s -> rebalance());
+    });
+
     server.server().cluster().onLeaderElection(l -> rebalance());
+
     server.server().cluster().onJoin(m -> {
       m.onTypeChange(t -> rebalance());
       m.onStatusChange(s -> rebalance());
       rebalance();
     });
+
     server.server().cluster().onLeave(m -> rebalance());
   }
 
