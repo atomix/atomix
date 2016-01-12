@@ -247,6 +247,7 @@ public class DistributedMembershipGroupTest extends AbstractCopycatTest<Distribu
 
     group2.join().thenRun(() -> {
       threadAssertEquals(group2.members().size(), 1);
+      resume();
     });
 
     await(5000);
