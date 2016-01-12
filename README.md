@@ -5,29 +5,29 @@
 [![Gitter](https://img.shields.io/badge/GITTER-join%20chat-green.svg)](https://gitter.im/atomix/atomix)
 
 
-**Persistent • Consistent • Fault-tolerant • Database • Coordination • Framework**
+**Persistent • Consistent • Fault-tolerant • Asynchronous • Database • Coordination • Framework**
 
 ##### [Getting started][Getting started] • [User Manual][User manual] • [Javadoc][Javadoc] • [Raft Algorithm][Copycat] • [Jepsen Tests](https://github.com/atomix/atomix-jepsen) • [Google Group][Google group]
 
 Atomix is a high-level asynchronous framework for building fault-tolerant distributed systems. It combines the consistency of
 [ZooKeeper](https://zookeeper.apache.org/) with the usability of [Hazelcast](http://hazelcast.org/) to provide tools for managing
 and coordinating stateful resources in a distributed system. Its strongly consistent, fault-tolerant data store is designed for
-such use cases as configuration management, service discovery, group membership, scheduling, messaging, and synchronizing distributed
-processes.
-
-Atomix exposes a set of high level APIs with tools - known as resources - to solve a variety of distributed systems problems
-including:
-* [Distributed coordination tools](http://atomix.io/atomix/user-manual/coordination/) - locks, leader elections, group membership
-* [Distributed collections](http://atomix.io/atomix/user-manual/collections/) - maps, multimaps, sets, queues
-* [Distributed messaging](http://atomix.io/atomix/user-manual/messaging/) - message bus, publish-subscribe, reliable work queues
-* [Distributed atomic variables](http://atomix.io/atomix/user-manual/atomics/) - atomic value, atomic long
+such use cases as:
+* [Configuration management](http://atomix.io/atomix/user-manual/collections/)
+* [Service discovery](http://atomix.io/atomix/user-manual/coordination/)
+* [Group membership](http://atomix.io/atomix/user-manual/coordination/)
+* [Leader election](http://atomix.io/atomix/user-manual/coordination/)
+* [Scheduling](http://atomix.io/atomix/user-manual/coordination/)
+* [Messaging](http://atomix.io/atomix/user-manual/messaging/)
+* [Synchronization](http://atomix.io/atomix/user-manual/coordination/)
 
 ### Project status: BETA
 
 Atomix is a fault-tolerant framework that provides strong consistency guarantees, and as such we take the responsibility
 to test these claims and document the implementation very seriously. Atomix is built on [Copycat][Copycat], a well tested,
 well documented, [Jepsen verified](https://github.com/atomix/atomix-jepsen) implementation of the
-[Raft consensus algorithm](https://raft.github.io/). *But the beta label indicates that the implementation
+[Raft consensus algorithm](https://raft.github.io/). Atomix is also now considered feature complete and a release
+candidate is expected very soon. *But the beta label indicates that the implementation
 may still have some bugs* or other issues that make it not quite suitable for production. Users are encouraged to
 use Atomix in development and contribute to the increasing stability of the project with
 [issues](https://github.com/atomix/copycat/issues) and [pull requests](https://github.com/atomix/copycat/pulls).
@@ -35,12 +35,85 @@ Once we've reached consensus on the lack of significant bugs in the beta release
 Once we've reached consensus on the stability of the release candidate(s) and Atomix's production readiness, a full
 release will be pushed.
 
-**It's all about that consensus**!
+*Note: the website and documentation is currently undergoing a rewrite for the 1.0 release. We realize some links are
+broken and are actively working to update the documentation. Please reference the [Javadoc][Javadoc] for the most
+up-to-date documentation.*
 
-Documentation for most of Atomix's implementation of the Raft algorithm is
-[available on the Atomix website](http://atomix.github.io/copycat/user-manual/internals/), and users are encouraged
-to [explore the Javadoc][Javadoc] which is also heavily documented. All documentation remains under continued
-development, and websites for both Atomix and [Copycat][Copycat] will continue to be updated until and after a release.
+#### [Locks](http://atomix.io/atomix/user-manual/coordination/)
+```java
+// Get a distributed lock
+DistributedLock lock = atomix.getLock("my-lock").get();
+
+// Acquire the lock
+CompletableFuture<Void> future = lock.lock();
+
+// Once the lock is acquired, release the lock
+future.thenRun(() -> lock.unlock());
+```
+
+#### [Group membership](http://atomix.io/atomix/user-manual/coordination/)
+```java
+// Get a distributed membership group
+DistributedMembershipGroup group = atomix.getMembershipGroup("my-group").get();
+
+// Join the group
+group.join();
+
+// When a member joins the group, print a message
+group.onJoin(member -> System.out.println(member.id() + " joined!"));
+
+// When a member leaves the group, print a message
+group.onLeave(member -> System.out.println(member.id() + " left!"));
+```
+
+#### [Leader election](http://atomix.io/atomix/user-manual/coordination/)
+```java
+// Join a group
+CompletableFuture<LocalMember> future = group.join();
+
+// Once the member has joined the group, register an election listener
+future.thenAccept(member -> {
+  member.onElection(term -> {
+    System.out.println("Elected leader!");
+    member.resign();
+  });
+});
+```
+
+#### [Messaging](http://atomix.io/atomix/user-manual/messaging/)
+```java
+// Get a distributed topic
+DistributedTopic<String> topic = atomix.getTopic("my-topic");
+
+// Register a message consumer
+topic.consumer(message -> System.out.println(message));
+
+// Publish a message to the topic
+topic.publish("Hello world!");
+```
+
+#### [Variables](http://atomix.io/atomix/user-manual/variables/)
+```java
+// Get a distributed long
+DistributedLong counter = atomix.getLong("my-long").get();
+
+// Increment the counter
+long value = counter.incrementAndGet().get();
+```
+
+#### [Collections](http://atomix.io/atomix/user-manual/collections/)
+```java
+// Get a distributed map
+DistributedMap<String, String> map = atomix.getMap("my-map").get();
+
+// Put a value in the map
+map.put("atomix", "is great!").join();
+
+// Get a value from the map
+map.get("atomix").thenAccept(value -> System.out.println("atomix " + value));
+```
+
+...[and much more][Website]
 
 ### Examples
 

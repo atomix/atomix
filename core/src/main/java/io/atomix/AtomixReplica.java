@@ -22,6 +22,7 @@ import io.atomix.catalyst.util.ConfigurationException;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.copycat.client.ServerSelectionStrategy;
 import io.atomix.copycat.server.CopycatServer;
+import io.atomix.copycat.server.cluster.Member;
 import io.atomix.copycat.server.storage.Storage;
 import io.atomix.manager.ResourceClient;
 import io.atomix.manager.ResourceServer;
@@ -37,12 +38,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * Provides an interface for creating and operating on {@link io.atomix.resource.Resource}s as a stateful node.
  * <p>
- * Replicas serve as a hybrid {@link AtomixClient} and {@link AtomixServer} to allow a server to be embedded
- * in an application. From the perspective of state, replicas behave like {@link AtomixServer}s in that they
+ * Replicas serve as a hybrid {@link AtomixClient} and server to allow a server to be embedded
+ * in an application. From the perspective of state, replicas behave like servers in that they
  * maintain a replicated state machine for {@link io.atomix.resource.Resource}s and fully participate in the underlying
  * consensus algorithm. From the perspective of resources, replicas behave like {@link AtomixClient}s in that
  * they may themselves create and modify distributed resources.
@@ -66,7 +68,7 @@ import java.util.function.Consumer;
  * Similarly, if no storage module is configured, replicated commit logs will be written to
  * {@code System.getProperty("user.dir")} with a default log name.
  * <p>
- * Atomix clusters are not restricted solely to {@link AtomixServer}s or {@link AtomixReplica}s. Clusters may be
+ * Atomix clusters are not restricted solely to servers or {@link AtomixReplica}s. Clusters may be
  * composed from a mixture of each type of server.
  * <p>
  * <b>Replica lifecycle</b>
@@ -140,18 +142,121 @@ public final class AtomixReplica extends Atomix {
   }
 
   private final ResourceServer server;
+  private final int quorumHint;
+  private final int backupCount;
 
   /**
    * @throws NullPointerException if {@code client} or {@code server} are null
    */
-  public AtomixReplica(ResourceClient client, ResourceServer server) {
+  private AtomixReplica(ResourceClient client, ResourceServer server, int quorumHint, int backupCount) {
     super(client);
-    this.server = server;
+    this.server = Assert.notNull(server, "server");
+    this.quorumHint = quorumHint;
+    this.backupCount = backupCount;
+
+    server.server().cluster().members().forEach(m -> {
+      m.onTypeChange(t -> rebalance());
+      m.onStatusChange(s -> rebalance());
+    });
+
+    server.server().cluster().onLeaderElection(l -> rebalance());
+
+    server.server().cluster().onJoin(m -> {
+      m.onTypeChange(t -> rebalance());
+      m.onStatusChange(s -> rebalance());
+      rebalance();
+    });
+
+    server.server().cluster().onLeave(m -> rebalance());
+  }
+
+  /**
+   * Rebalances the cluster.
+   */
+  private void rebalance() {
+    if (!server.server().cluster().member().equals(server.server().cluster().leader())) {
+      return;
+    }
+
+    Collection<Member> members = server.server().cluster().members();
+    Member member = server.server().cluster().member();
+
+    Collection<Member> active = members.stream().filter(m -> m.type() == Member.Type.ACTIVE || m.type() == Member.Type.PROMOTABLE).collect(Collectors.toList());
+    Collection<Member> passive = members.stream().filter(m -> m.type() == Member.Type.PASSIVE).collect(Collectors.toList());
+    Collection<Member> reserve = members.stream().filter(m -> m.type() == Member.Type.RESERVE).collect(Collectors.toList());
+
+    int totalActiveCount = active.size();
+    int totalPassiveCount = passive.size();
+
+    long availableActiveCount = active.stream().filter(m -> m.status() == Member.Status.AVAILABLE).count();
+    long availablePassiveCount = passive.stream().filter(m -> m.status() == Member.Status.AVAILABLE).count();
+    long availableReserveCount = reserve.stream().filter(m -> m.status() == Member.Status.AVAILABLE).count();
+
+    // If the number of available active members is less than the quorum hint, promote a passive or reserve member.
+    if (availableActiveCount < quorumHint) {
+      // If a passive member is available, promote it.
+      if (availablePassiveCount > 0) {
+        passive.stream().filter(m -> m.status() == Member.Status.AVAILABLE).findFirst().get()
+          .promote(Member.Type.PROMOTABLE)
+          .thenRun(this::rebalance);
+        return;
+      }
+      // If a reserve member is available, promote it.
+      else if (availableReserveCount > 0) {
+        reserve.stream().filter(m -> m.status() == Member.Status.AVAILABLE).findFirst().get()
+          .promote(Member.Type.PROMOTABLE)
+          .thenRun(this::rebalance);
+        return;
+      }
+    }
+
+    // If the total number of active members is greater than the quorum hint, demote an active member.
+    // Preferably, we want to demote a member that is unavailable.
+    if (totalActiveCount > quorumHint) {
+      // If the number of available passive members is less than the required number, demote an active
+      // member to passive.
+      if (availablePassiveCount < quorumHint * backupCount) {
+        active.stream().filter(m -> m.status() == Member.Status.UNAVAILABLE).findFirst()
+          .orElseGet(() -> active.stream().filter(m -> !m.equals(member)).findAny().get())
+          .demote(Member.Type.PASSIVE)
+          .thenRun(this::rebalance);
+        return;
+      }
+      // Otherwise, demote an active member to reserve.
+      else {
+        active.stream().filter(m -> m.status() == Member.Status.UNAVAILABLE).findAny()
+          .orElseGet(() -> active.stream().filter(m -> !m.equals(member)).findAny().get())
+          .demote(Member.Type.RESERVE)
+          .thenRun(this::rebalance);
+        return;
+      }
+    }
+
+    // If the number of available passive members is less than the required number of passive members,
+    // promote a reserve member.
+    if (availablePassiveCount < quorumHint * backupCount) {
+      // If any reserve members are available, promote to passive.
+      if (availableReserveCount > 0) {
+        reserve.stream().filter(m -> m.status() == Member.Status.AVAILABLE).findFirst().get()
+          .promote(Member.Type.PASSIVE)
+          .thenRun(this::rebalance);
+        return;
+      }
+    }
+
+    // If the total number of passive members is greater than the required number of passive members,
+    // demote a passive member. Preferably we demote an unavailable member.
+    if (totalPassiveCount > quorumHint * backupCount) {
+      passive.stream().filter(m -> m.status() == Member.Status.UNAVAILABLE).findAny()
+        .orElseGet(() -> passive.stream().findAny().get())
+        .demote(Member.Type.RESERVE)
+        .thenRun(this::rebalance);
+    }
   }
 
   @Override
   public CompletableFuture<Atomix> open() {
-    return server.open().thenCompose(v -> super.open());
+    return server.open().thenCompose(v -> super.open()).thenApply(v -> this);
   }
 
   @Override
@@ -252,6 +357,8 @@ public final class AtomixReplica extends Atomix {
     private final CopycatServer.Builder serverBuilder;
     private Transport clientTransport;
     private Transport serverTransport;
+    private int quorumHint;
+    private int backupCount;
     private LocalServerRegistry localRegistry = new LocalServerRegistry();
     private ResourceTypeResolver resourceResolver = new ServiceLoaderResourceResolver();
 
@@ -259,6 +366,7 @@ public final class AtomixReplica extends Atomix {
       this.clientAddress = Assert.notNull(clientAddress, "clientAddress");
       this.clientBuilder = CopycatClient.builder(Collections.singleton(clientAddress));
       this.serverBuilder = CopycatServer.builder(clientAddress, serverAddress, members);
+      this.quorumHint = members.size();
     }
 
     /**
@@ -321,6 +429,28 @@ public final class AtomixReplica extends Atomix {
     public Builder withSerializer(Serializer serializer) {
       clientBuilder.withSerializer(serializer);
       serverBuilder.withSerializer(serializer);
+      return this;
+    }
+
+    /**
+     * Sets the quorum hint.
+     *
+     * @param quorumHint The quorum hint.
+     * @return The replica builder.
+     */
+    public Builder withQuorumHint(int quorumHint) {
+      this.quorumHint = Assert.argNot(quorumHint, quorumHint <= 0, "quorumHint must be positive");
+      return this;
+    }
+
+    /**
+     * Sets the backup count.
+     *
+     * @param backupCount The backup count.
+     * @return The replica builder.
+     */
+    public Builder withBackupCount(int backupCount) {
+      this.backupCount = Assert.argNot(backupCount, backupCount < 0, "backupCount must be positive");
       return this;
     }
 
@@ -465,7 +595,7 @@ public final class AtomixReplica extends Atomix {
       // Set the server resource state machine.
       serverBuilder.withStateMachine(new ResourceManagerState(registry));
 
-      return new AtomixReplica(new ResourceClient(new AtomixCopycatClient(clientBuilder.build(), serverTransport), registry), new ResourceServer(serverBuilder.build()));
+      return new AtomixReplica(new ResourceClient(new AtomixCopycatClient(clientBuilder.build(), serverTransport), registry), new ResourceServer(serverBuilder.build()), quorumHint, backupCount);
     }
   }
 

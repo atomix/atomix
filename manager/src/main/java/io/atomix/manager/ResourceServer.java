@@ -60,9 +60,6 @@ import java.util.concurrent.CompletableFuture;
  * Similarly, if no storage module is configured, replicated commit logs will be written to
  * {@code System.getProperty("user.dir")} with a default log name.
  * <p>
- * Atomix clusters are not restricted solely to {@link ResourceServer}s or {@link ResourceReplica}s. Clusters may be
- * composed from a mixture of each type of server.
- * <p>
  * <b>Server lifecycle</b>
  * <p>
  * When the server is {@link #open() started}, the server will attempt to contact members in the configured
@@ -74,8 +71,6 @@ import java.util.concurrent.CompletableFuture;
  * servers in the cluster but does not participate in elections or other quorum-based aspects of the
  * underlying consensus algorithm. Once the joining server is caught up with the rest of the cluster, the
  * leader will promote it to a full voting member.
- *
- * {@code AtomixServer}s and {@link ResourceReplica}s can safely be members of the same cluster.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
@@ -139,6 +134,15 @@ public final class ResourceServer implements Managed<ResourceServer> {
 
   public ResourceServer(CopycatServer server) {
     this.server = Assert.notNull(server, "server");
+  }
+
+  /**
+   * Returns the underlying Copycat server.
+   *
+   * @return The underlying Copycat server.
+   */
+  public CopycatServer server() {
+    return server;
   }
 
   @Override

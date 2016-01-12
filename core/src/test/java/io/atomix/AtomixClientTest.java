@@ -78,7 +78,7 @@ public class AtomixClientTest extends AbstractAtomixTest {
    * Tests submitting a command with a configured consistency level.
    */
   private void testSubmitCommand(Consistency consistency) throws Throwable {
-    createServers(5);
+    createReplicas(5, 3, 1);
 
     Atomix client = createClient();
 
@@ -124,7 +124,7 @@ public class AtomixClientTest extends AbstractAtomixTest {
    * Tests submitting a query with a configured consistency level.
    */
   private void testSubmitQuery(Consistency consistency) throws Throwable {
-    createServers(5);
+    createReplicas(5, 3, 1);
 
     Atomix client = createClient();
 
@@ -142,7 +142,7 @@ public class AtomixClientTest extends AbstractAtomixTest {
    * Tests getting a resource and submitting commands.
    */
   public void testGetConcurrency() throws Throwable {
-    createServers(5);
+    createReplicas(5, 3, 1);
 
     Atomix client1 = createClient();
     Atomix client2 = createClient();
@@ -163,7 +163,7 @@ public class AtomixClientTest extends AbstractAtomixTest {
    * Tests creating a resource and submitting commands.
    */
   public void testCreateConcurrency() throws Throwable {
-    createServers(5);
+    createReplicas(5, 3, 1);
 
     Atomix client1 = createClient();
     Atomix client2 = createClient();
@@ -184,7 +184,7 @@ public class AtomixClientTest extends AbstractAtomixTest {
    * Tests getting and creating a resource and submitting commands.
    */
   public void testGetCreateConcurrency() throws Throwable {
-    createServers(5);
+    createReplicas(5, 3, 1);
 
     Atomix client1 = createClient();
     Atomix client2 = createClient();
@@ -205,7 +205,7 @@ public class AtomixClientTest extends AbstractAtomixTest {
    * Tests getting resource keys.
    */
   public void testGetResourceKeys() throws Throwable {
-    createServers(5);
+    createReplicas(5, 3, 1);
     Atomix client = createClient();
 
     client.keys().thenAccept(result -> {

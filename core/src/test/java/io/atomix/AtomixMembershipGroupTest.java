@@ -33,7 +33,7 @@ import static org.testng.Assert.*;
 public class AtomixMembershipGroupTest extends AbstractAtomixTest {
   @BeforeClass
   protected void setupCluster() throws Throwable {
-     createReplicas(5);
+    createReplicas(3, 3, 0);
   }
   
   public void testClientMembershipGroupGet() throws Throwable {

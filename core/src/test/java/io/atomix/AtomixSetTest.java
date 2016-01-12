@@ -28,9 +28,10 @@ import java.util.function.Function;
  */
 @Test
 public class AtomixSetTest extends AbstractAtomixTest {
+
   @BeforeClass
   protected void setupCluster() throws Throwable {
-     createReplicas(5);
+    createReplicas(3, 3, 0);
   }
   
   public void testClientSetGet() throws Throwable {
