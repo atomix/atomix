@@ -140,7 +140,7 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
       });
 
       client.<String>onEvent("resign", leader -> {
-        if (this.leader == leader) {
+        if (this.leader.equals(leader)) {
           this.leader = null;
         }
       });
@@ -461,7 +461,7 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
 
     @Override
     public boolean isLeader() {
-      return leader.equals(memberId);
+      return leader != null && leader.equals(memberId);
     }
 
     @Override
