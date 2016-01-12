@@ -33,7 +33,7 @@ release will be pushed.
 broken and are actively working to update the documentation. Please reference the [Javadoc][Javadoc] for the most
 up-to-date documentation.*
 
-#### Locks - [Coordination](http://atomix.io/atomix/user-manual/coordination/)
+#### [Locks](http://atomix.io/atomix/user-manual/coordination/)
 ```java
 // Get a distributed lock
 DistributedLock lock = atomix.getLock("my-lock").get();
@@ -45,7 +45,7 @@ CompletableFuture<Void> future = lock.lock();
 future.thenRun(() -> lock.unlock());
 ```
 
-#### Group membership - [Coordination](http://atomix.io/atomix/user-manual/coordination/)
+#### [Group membership](http://atomix.io/atomix/user-manual/coordination/)
 ```java
 // Get a distributed membership group
 DistributedMembershipGroup group = atomix.getMembershipGroup("my-group").get();
@@ -60,7 +60,7 @@ group.onJoin(member -> System.out.println(member.id() + " joined!"));
 group.onLeave(member -> System.out.println(member.id() + " left!"));
 ```
 
-#### Leader election - [Coordination](http://atomix.io/atomix/user-manual/coordination/)
+#### [Leader election](http://atomix.io/atomix/user-manual/coordination/)
 ```java
 // Join a group
 CompletableFuture<LocalMember> future = group.join();
@@ -74,7 +74,7 @@ future.thenAccept(member -> {
 });
 ```
 
-#### Messaging - [Messaging](http://atomix.io/atomix/user-manual/messaging/)
+#### [Messaging](http://atomix.io/atomix/user-manual/messaging/)
 ```java
 // Get a distributed topic
 DistributedTopic<String> topic = atomix.getTopic("my-topic");
@@ -86,7 +86,7 @@ topic.consumer(message -> System.out.println(message));
 topic.publish("Hello world!");
 ```
 
-#### Variables - [Variables](http://atomix.io/atomix/user-manual/variables/)
+#### [Variables](http://atomix.io/atomix/user-manual/variables/)
 ```java
 // Get a distributed long
 DistributedLong counter = atomix.getLong("my-long").get();
@@ -95,7 +95,7 @@ DistributedLong counter = atomix.getLong("my-long").get();
 long value = counter.incrementAndGet().get();
 ```
 
-#### Collections - [Collections](http://atomix.io/atomix/user-manual/collections/)
+#### [Collections](http://atomix.io/atomix/user-manual/collections/)
 ```java
 // Get a distributed map
 DistributedMap<String, String> map = atomix.getMap("my-map").get();
@@ -106,6 +106,8 @@ map.put("atomix", "is great!").join();
 // Get a value from the map
 map.get("atomix").thenAccept(value -> System.out.println("atomix " + value));
 ```
+
+...[and much more][Website]
 
 ### Examples
 
