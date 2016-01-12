@@ -12,8 +12,14 @@
 Atomix is a high-level asynchronous framework for building fault-tolerant distributed systems. It combines the consistency of
 [ZooKeeper](https://zookeeper.apache.org/) with the usability of [Hazelcast](http://hazelcast.org/) to provide tools for managing
 and coordinating stateful resources in a distributed system. Its strongly consistent, fault-tolerant data store is designed for
-such use cases as configuration management, service discovery, group membership, scheduling, messaging, and synchronizing distributed
-processes.
+such use cases as:
+* [Configuration management](http://atomix.io/atomix/user-manual/collections/)
+* [Service discovery](http://atomix.io/atomix/user-manual/coordination/)
+* [Group membership](http://atomix.io/atomix/user-manual/coordination/)
+* [Leader election](http://atomix.io/atomix/user-manual/coordination/)
+* [Scheduling](http://atomix.io/atomix/user-manual/coordination/)
+* [Messaging](http://atomix.io/atomix/user-manual/messaging/)
+* [Synchronization](http://atomix.io/atomix/user-manual/coordination/)
 
 ### Project status: BETA
 
