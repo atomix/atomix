@@ -41,7 +41,7 @@ import java.util.function.Function;
  * To create a message bus resource, use the {@code DistributedMessageBus} class or constructor:
  * <pre>
  *   {@code
- *   atomix.get("bus", DistributedMessageBus.class).thenAccept(bus -> {
+ *   atomix.getMessageBus("my-bus").thenAccept(bus -> {
  *     ...
  *   });
  *   }

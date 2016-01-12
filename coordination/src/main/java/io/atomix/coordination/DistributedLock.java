@@ -34,7 +34,7 @@ import java.util.function.Consumer;
  * This interface is an asynchronous version of Java's {@link java.util.concurrent.locks.Lock}.
  * <pre>
  *   {@code
- *   atomix.create("lock", DistributedLock.TYPE).thenAccept(lock -> {
+ *   atomix.getLock("my-lock").thenAccept(lock -> {
  *     lock.lock().thenRun(() -> {
  *       ...
  *       lock.unlock();
@@ -62,7 +62,7 @@ import java.util.function.Consumer;
  * <p>
  * <pre>
  *   {@code
- *   DistributedLock lock = atomix.create("lock", DistributedLock.TYPE).get();
+ *   DistributedLock lock = atomix.getLock("my-lock").get();
  *
  *   lock.lock().thenRun(() -> {}
  *     lock.onStateChange(state -> {

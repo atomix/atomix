@@ -31,7 +31,7 @@ import java.util.concurrent.CompletableFuture;
  * The distributed map resource provides an interface and behavior similar to {@link java.util.Map}.
  * <pre>
  *   {@code
- *   DistributedMap<String, String> map = atomix.<DistributedMap<String, String>>create("map", DistributedMap.class).get();
+ *   DistributedMap<String, String> map = atomix.getMap("map").get();
  *   }
  * </pre>
  * The map requires non-{@code null} keys but supports {@code null} values. All keys and values

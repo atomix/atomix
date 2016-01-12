@@ -45,7 +45,7 @@ import java.util.function.Consumer;
  * To create a membership group resource, use the {@code DistributedMembershipGroup} class or constructor:
  * <pre>
  *   {@code
- *   atomix.create("group", DistributedMembershipGroup.class).thenAccept(group -> {
+ *   atomix.getMembershipGroup("my-group").thenAccept(group -> {
  *     ...
  *   });
  *   }

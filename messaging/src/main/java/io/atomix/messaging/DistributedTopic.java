@@ -40,7 +40,7 @@ import java.util.function.Consumer;
  * To create a topic resource, use the {@code DistributedTopic} class or constructor:
  * <pre>
  *   {@code
- *   atomix.create("topic", DistributedTopic.class).thenAccept(topic -> {
+ *   atomix.getTopic("my-topic").thenAccept(topic -> {
  *     ...
  *   });
  *   }
