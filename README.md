@@ -5,7 +5,7 @@
 [![Gitter](https://img.shields.io/badge/GITTER-join%20chat-green.svg)](https://gitter.im/atomix/atomix)
 
 
-**Persistent • Consistent • Fault-tolerant • Database • Coordination • Framework**
+**Persistent • Consistent • Fault-tolerant • Asynchronous • Database • Coordination • Framework**
 
 ##### [Getting started][Getting started] • [User Manual][User manual] • [Javadoc][Javadoc] • [Raft Algorithm][Copycat] • [Jepsen Tests](https://github.com/atomix/atomix-jepsen) • [Google Group][Google group]
 
@@ -15,12 +15,95 @@ and coordinating stateful resources in a distributed system. Its strongly consis
 such use cases as configuration management, service discovery, group membership, scheduling, messaging, and synchronizing distributed
 processes.
 
-Atomix exposes a set of high level APIs with tools - known as resources - to solve a variety of distributed systems problems
-including:
-* [Distributed coordination tools](http://atomix.io/atomix/user-manual/coordination/) - locks, leader elections, group membership
-* [Distributed collections](http://atomix.io/atomix/user-manual/collections/) - maps, multimaps, sets, queues
-* [Distributed messaging](http://atomix.io/atomix/user-manual/messaging/) - message bus, publish-subscribe, reliable work queues
-* [Distributed atomic variables](http://atomix.io/atomix/user-manual/atomics/) - atomic value, atomic long
+*Note: the website and documentation is currently undergoing a rewrite for the 1.0 release. We realize many links are
+broken and are actively working to update the documentation. Please reference the [Javadoc][Javadoc] for the most
+up-to-date documentation.*
+
+#### Locks
+```java
+// Get a distributed lock
+DistributedLock lock = atomix.getLock("my-lock").get();
+
+// Acquire the lock
+CompletableFuture<Void> future = lock.lock();
+
+// Once the lock is acquired, release the lock
+future.thenRun(() -> lock.unlock());
+```
+
+See [distributed coordination](http://atomix.io/atomix/user-manual/coordination/)
+
+#### Group membership
+```java
+// Get a distributed membership group
+DistributedMembershipGroup group = atomix.getMembershipGroup("my-group").get();
+
+// Join the group
+group.join();
+
+// When a member joins the group, print a message
+group.onJoin(member -> System.out.println(member.id() + " joined!"));
+
+// When a member leaves the group, print a message
+group.onLeave(member -> System.out.println(member.id() + " left!"));
+```
+
+See [distributed coordination](http://atomix.io/atomix/user-manual/coordination/)
+
+#### Leader election
+```java
+// Join a group
+CompletableFuture<LocalMember> future = group.join();
+
+// Once the member has joined the group, register an election listener
+future.thenAccept(member -> {
+  member.onElection(term -> {
+    System.out.println("Elected leader!");
+    member.resign();
+  });
+});
+```
+
+See [distributed coordination](http://atomix.io/atomix/user-manual/coordination/)
+
+#### Messaging
+```java
+// Get a distributed topic
+DistributedTopic<String> topic = atomix.getTopic("my-topic");
+
+// Register a message consumer
+topic.consumer(message -> System.out.println(message));
+
+// Publish a message to the topic
+topic.publish("Hello world!");
+```
+
+See [distributed messaging](http://atomix.io/atomix/user-manual/messaging/)
+
+#### Variables
+```java
+// Get a distributed long
+DistributedLong counter = atomix.getLong("my-long").get();
+
+// Increment the counter
+long value = counter.incrementAndGet().get();
+```
+
+See [distributed variables](http://atomix.io/atomix/user-manual/variables/)
+
+#### Collections
+```java
+// Get a distributed map
+DistributedMap<String, String> map = atomix.getMap("my-map").get();
+
+// Put a value in the map
+map.put("atomix", "is great!").join();
+
+// Get a value from the map
+map.get("atomix").thenAccept(value -> System.out.println("atomix " + value));
+```
+
+See [distributed collections](http://atomix.io/atomix/user-manual/collections/)
 
 ### Project status: BETA
 
