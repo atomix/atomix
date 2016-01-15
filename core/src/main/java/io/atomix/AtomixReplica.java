@@ -268,14 +268,14 @@ public final class AtomixReplica extends Atomix {
    * Combined server selection strategy.
    */
   private static class CombinedSelectionStrategy implements ServerSelectionStrategy {
-    private final Collection<Address> addresses;
+    private final List<Address> addresses;
 
     private CombinedSelectionStrategy(Address address) {
-      this.addresses = Collections.singleton(address);
+      this.addresses = Collections.singletonList(address);
     }
 
     @Override
-    public Collection<Address> selectConnections(Address leader, List<Address> servers) {
+    public List<Address> selectConnections(Address leader, List<Address> servers) {
       return addresses;
     }
   }
