@@ -20,10 +20,10 @@ import io.atomix.catalyst.transport.LocalServerRegistry;
 import io.atomix.catalyst.transport.LocalTransport;
 import io.atomix.copycat.client.*;
 import io.atomix.copycat.server.CopycatServer;
+import io.atomix.copycat.server.StateMachine;
 import io.atomix.copycat.server.storage.Storage;
 import io.atomix.copycat.server.storage.StorageLevel;
 import io.atomix.resource.Resource;
-import io.atomix.resource.ResourceStateMachine;
 import io.atomix.resource.ResourceType;
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import org.testng.annotations.AfterMethod;
@@ -31,6 +31,7 @@ import org.testng.annotations.BeforeMethod;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * Abstract copycat test.
@@ -113,20 +114,22 @@ public abstract class AbstractCopycatTest<T extends Resource> extends Concurrent
    */
   @SuppressWarnings("unchecked")
   protected CopycatServer createServer(Address address) {
-    try {
-      ResourceType type = new ResourceType((Class<? extends Resource>) type());
-      ResourceStateMachine stateMachine = type.stateMachine().newInstance();
+    ResourceType type = new ResourceType((Class<? extends Resource>) type());
+    Supplier<StateMachine> stateMachine = () -> {
+      try {
+        return type.stateMachine().newInstance();
+      } catch (InstantiationException | IllegalAccessException e) {
+        throw new RuntimeException(e);
+      }
+    };
 
-      CopycatServer server = CopycatServer.builder(address, members)
-        .withTransport(new LocalTransport(registry))
-        .withStorage(new Storage(StorageLevel.MEMORY))
-        .withStateMachine(stateMachine)
-        .build();
-      servers.add(server);
-      return server;
-    } catch (InstantiationException | IllegalAccessException e) {
-      throw new AssertionError();
-    }
+    CopycatServer server = CopycatServer.builder(address, members)
+      .withTransport(new LocalTransport(registry))
+      .withStorage(new Storage(StorageLevel.MEMORY))
+      .withStateMachine(stateMachine)
+      .build();
+    servers.add(server);
+    return server;
   }
 
   /**

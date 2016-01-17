@@ -181,7 +181,7 @@ public final class AtomixReplica extends Atomix {
     Collection<Member> members = server.server().cluster().members();
     Member member = server.server().cluster().member();
 
-    Collection<Member> active = members.stream().filter(m -> m.type() == Member.Type.ACTIVE || m.type() == Member.Type.PROMOTABLE).collect(Collectors.toList());
+    Collection<Member> active = members.stream().filter(m -> m.type() == Member.Type.ACTIVE).collect(Collectors.toList());
     Collection<Member> passive = members.stream().filter(m -> m.type() == Member.Type.PASSIVE).collect(Collectors.toList());
     Collection<Member> reserve = members.stream().filter(m -> m.type() == Member.Type.RESERVE).collect(Collectors.toList());
 
@@ -197,14 +197,14 @@ public final class AtomixReplica extends Atomix {
       // If a passive member is available, promote it.
       if (availablePassiveCount > 0) {
         passive.stream().filter(m -> m.status() == Member.Status.AVAILABLE).findFirst().get()
-          .promote(Member.Type.PROMOTABLE)
+          .promote(Member.Type.ACTIVE)
           .thenRun(this::rebalance);
         return;
       }
       // If a reserve member is available, promote it.
       else if (availableReserveCount > 0) {
         reserve.stream().filter(m -> m.status() == Member.Status.AVAILABLE).findFirst().get()
-          .promote(Member.Type.PROMOTABLE)
+          .promote(Member.Type.ACTIVE)
           .thenRun(this::rebalance);
         return;
       }
@@ -593,7 +593,7 @@ public final class AtomixReplica extends Atomix {
       }
 
       // Set the server resource state machine.
-      serverBuilder.withStateMachine(new ResourceManagerState(registry));
+      serverBuilder.withStateMachine(() -> new ResourceManagerState(registry));
 
       return new AtomixReplica(new ResourceClient(new AtomixCopycatClient(clientBuilder.build(), serverTransport), registry), new ResourceServer(serverBuilder.build()), quorumHint, backupCount);
     }
