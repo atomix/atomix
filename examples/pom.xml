@@ -22,7 +22,7 @@
 
   <properties>
     <logback.version>1.1.2</logback.version>
-    <catalyst.version>1.0.0-SNAPSHOT</catalyst.version>
+    <catalyst.version>1.0.0-rc6</catalyst.version>
   </properties>
 
   <modules>
