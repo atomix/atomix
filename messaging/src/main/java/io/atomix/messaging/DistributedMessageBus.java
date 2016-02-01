@@ -19,6 +19,7 @@ import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.Client;
 import io.atomix.catalyst.transport.Connection;
 import io.atomix.catalyst.transport.Server;
+import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.concurrent.Futures;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.messaging.state.MessageBusCommands;
@@ -47,7 +48,7 @@ import java.util.function.Function;
  *   }
  * </pre>
  * Once a message bus instance has been created, it's not immediately opened. The message bus instance must be explicitly
- * opened by calling {@link #open(Address)}, providing an {@link Address} to which to bind the message bus server. Because
+ * opened by calling {@link #open()}, providing an {@link Address} to which to bind the message bus server. Because
  * each message bus instance runs on a separate server, it's recommended that nodes use a singleton instance of this
  * resource by using {@code get(...)} rather than {@code create(...)} to get a reference to the resource.
  * <p>
@@ -68,8 +69,68 @@ import java.util.function.Function;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-@ResourceTypeInfo(id=-30, stateMachine=MessageBusState.class)
-public class DistributedMessageBus extends Resource<DistributedMessageBus, Resource.Options> {
+@ResourceTypeInfo(
+  id=-30,
+  stateMachine=MessageBusState.class,
+  options=DistributedMessageBus.Options.class
+)
+public class DistributedMessageBus extends Resource<DistributedMessageBus, DistributedMessageBus.Options> {
+
+  /**
+   * Returns a new message bus options builder.
+   *
+   * @return A new message bus options builder.
+   */
+  public static Options.Builder options() {
+    return new Options.Builder();
+  }
+
+  /**
+   * Message bus options.
+   */
+  public static class Options implements Resource.Options {
+    private Address address;
+
+    private Options() {
+    }
+
+    /**
+     * Returns the message bus address.
+     *
+     * @return The message bus address.
+     */
+    public Address address() {
+      return address;
+    }
+
+    /**
+     * Message bus options builder.
+     */
+    public static class Builder extends io.atomix.catalyst.util.Builder<Options> {
+      private final Options options = new Options();
+
+      private Builder() {
+      }
+
+      /**
+       * Sets the message bus server address.
+       *
+       * @param address The message bus server address.
+       * @return The message bus options builder.
+       */
+      public Builder withAddress(Address address) {
+        options.address = Assert.notNull(address, "address");
+        return this;
+      }
+
+      @Override
+      public Options build() {
+        return options;
+      }
+    }
+
+  }
+
   private Client client;
   private Server server;
   private final Map<Integer, Connection> connections = new HashMap<>();
@@ -79,7 +140,7 @@ public class DistributedMessageBus extends Resource<DistributedMessageBus, Resou
   private final Map<String, InternalMessageConsumer> consumers = new ConcurrentHashMap<>();
   private volatile boolean open;
 
-  public DistributedMessageBus(CopycatClient client, Resource.Options options) {
+  public DistributedMessageBus(CopycatClient client, DistributedMessageBus.Options options) {
     super(client, options);
   }
 
@@ -104,42 +165,43 @@ public class DistributedMessageBus extends Resource<DistributedMessageBus, Resou
    *   }
    * </pre>
    *
-   * @param address The address on which to listen.
    * @return A completable future to be completed once the message bus is started.
    */
-  public synchronized CompletableFuture<DistributedMessageBus> open(Address address) {
-    if (openFuture != null)
-      return openFuture;
+  public synchronized CompletableFuture<DistributedMessageBus> open() {
+    return super.open().thenCompose(v -> {
+      if (openFuture != null)
+        return openFuture;
 
-    client = super.client.transport().client();
-    server = super.client.transport().server();
+      client = super.client.transport().client();
+      server = super.client.transport().server();
 
-    openFuture = new CompletableFuture<>();
-    super.client.context().execute(() -> {
-      server.listen(address, this::connectListener).whenComplete((result, error) -> {
-        synchronized (this) {
-          if (error == null) {
-            open = true;
-            CompletableFuture<DistributedMessageBus> future = openFuture;
-            if (future != null) {
-              openFuture = null;
-              future.complete(null);
-            }
-          } else {
-            open = false;
-            CompletableFuture<DistributedMessageBus> future = openFuture;
-            if (future != null) {
-              openFuture = null;
-              future.completeExceptionally(error);
+      openFuture = new CompletableFuture<>();
+      super.client.context().execute(() -> {
+        server.listen(options.address(), this::connectListener).whenComplete((result, error) -> {
+          synchronized (this) {
+            if (error == null) {
+              open = true;
+              CompletableFuture<DistributedMessageBus> future = openFuture;
+              if (future != null) {
+                openFuture = null;
+                future.complete(null);
+              }
+            } else {
+              open = false;
+              CompletableFuture<DistributedMessageBus> future = openFuture;
+              if (future != null) {
+                openFuture = null;
+                future.completeExceptionally(error);
+              }
             }
           }
-        }
+        });
       });
-    });
 
-    return openFuture.thenCompose(v -> {
+      return openFuture;
+    }).thenCompose(v -> {
       CompletableFuture<Void> future = new CompletableFuture<>();
-      submit(new MessageBusCommands.Join(address)).whenComplete((topics, error) -> {
+      submit(new MessageBusCommands.Join(options.address())).whenComplete((topics, error) -> {
         if (error == null) {
           for (Map.Entry<String, Set<Address>> entry : topics.entrySet()) {
             remotes.put(entry.getKey(), new RemoteConsumers(entry.getValue()));

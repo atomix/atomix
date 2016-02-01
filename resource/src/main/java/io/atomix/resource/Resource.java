@@ -64,6 +64,13 @@ public abstract class Resource<T extends Resource<T, U>, U extends Resource.Opti
    * Resource options.
    */
   public interface Options {
+
+    /**
+     * Indicates
+     */
+    class None implements Resource.Options {
+    }
+
   }
 
   /**
