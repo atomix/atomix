@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix;
+package io.atomix.util;
 
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.transport.Transport;
@@ -29,11 +29,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 /**
- * Special CopycatClient implementation that provides a user-defined transport.
+ * A simple {@link CopycatClient} wrapper that exposes a custom {@link Transport}.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-final class AtomixCopycatClient implements CopycatClient {
+public class AtomixCopycatClient implements CopycatClient {
   private final CopycatClient client;
   private final Transport transport;
 

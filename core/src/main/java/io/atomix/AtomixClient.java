@@ -19,11 +19,13 @@ import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.Assert;
+import io.atomix.catalyst.util.PropertiesReader;
 import io.atomix.manager.ResourceClient;
 import io.atomix.manager.ResourceServer;
 import io.atomix.resource.ResourceTypeResolver;
 
 import java.util.Collection;
+import java.util.Properties;
 
 /**
  * Provides an interface for creating and operating on {@link io.atomix.resource.Resource}s remotely.
@@ -75,6 +77,28 @@ import java.util.Collection;
 public class AtomixClient extends Atomix {
 
   /**
+   * Returns a new Atomix replica builder from the given configuration file.
+   *
+   * @param properties The properties file from which to load the replica builder.
+   * @return The replica builder.
+   */
+  public static Builder builder(String properties) {
+    return builder(PropertiesReader.load(properties).properties());
+  }
+
+  /**
+   * Returns a new Atomix replica builder from the given properties.
+   *
+   * @param properties The properties from which to load the replica builder.
+   * @return The replica builder.
+   */
+  public static Builder builder(Properties properties) {
+    ClientProperties clientProperties = new ClientProperties(properties);
+    return builder(clientProperties.replicas())
+      .withTransport(clientProperties.transport());
+  }
+
+  /**
    * Returns a new Atomix client builder.
    * <p>
    * The provided set of members will be used to connect to the Raft cluster. The members list does not have to represent
@@ -100,6 +124,30 @@ public class AtomixClient extends Atomix {
     return new Builder(ResourceClient.builder(members));
   }
 
+  /**
+   * Builds the underlying resource client from the given properties.
+   */
+  private static ResourceClient buildClient(Properties properties) {
+    ClientProperties clientProperties = new ClientProperties(properties);
+    return ResourceClient.builder(clientProperties.replicas())
+      .withTransport(clientProperties.transport())
+      .build();
+  }
+
+  /**
+   * Constructs a client from the given properties.
+   *
+   * @param properties The properties from which to construct the client.
+   */
+  public AtomixClient(Properties properties) {
+    this(buildClient(properties));
+  }
+
+  /**
+   * Constructs a client for the given resource client.
+   *
+   * @param client The resource client.
+   */
   public AtomixClient(ResourceClient client) {
     super(client);
   }
@@ -107,8 +155,8 @@ public class AtomixClient extends Atomix {
   /**
    * Builds an {@link AtomixClient}.
    * <p>
-   * The client builder configures an {@link AtomixClient} to connect to a cluster of {@link ResourceServer}s
-   * or {@link ResourceReplica}. To create a client builder, use the {@link #builder(Address...)} method.
+   * The client builder configures an {@link AtomixClient} to connect to a cluster of {@link ResourceServer}s.
+   * To create a client builder, use the {@link #builder(Address...)} method.
    * <pre>
    *   {@code
    *   Atomix client = AtomixClient.builder(servers)
