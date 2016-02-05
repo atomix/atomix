@@ -489,6 +489,11 @@ public class DistributedGroup extends Resource<DistributedGroup, Resource.Option
     public CompletableFuture<Void> execute(Runnable callback) {
       return submit(new GroupCommands.Execute(memberId, callback));
     }
+    
+    @Override
+    public String toString() {
+      return memberId;
+    }
   }
 
 }
