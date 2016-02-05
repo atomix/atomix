@@ -236,30 +236,4 @@ public class DistributedMembershipGroupTest extends AbstractCopycatTest<Distribu
     await(10000, 2);
   }
 
-  /**
-   * Tests executing an immediate callback.
-   */
-  public void testRemoteExecute() throws Throwable {
-    createServers(3);
-
-    DistributedMembershipGroup group1 = createResource();
-    DistributedMembershipGroup group2 = createResource();
-
-    group2.join().thenRun(() -> {
-      threadAssertEquals(group2.members().size(), 1);
-      resume();
-    });
-
-    await(5000);
-
-    AtomicInteger counter = new AtomicInteger();
-    group1.join().thenRun(() -> {
-      for (GroupMember member : group1.members()) {
-        member.execute((Runnable & Serializable) counter::incrementAndGet).thenRun(this::resume);
-      }
-    });
-
-    await(10000, 2);
-  }
-
 }

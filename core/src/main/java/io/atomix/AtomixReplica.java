@@ -16,13 +16,19 @@
 package io.atomix;
 
 import io.atomix.catalyst.serializer.Serializer;
+import io.atomix.catalyst.serializer.ServiceLoaderTypeResolver;
 import io.atomix.catalyst.transport.*;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.ConfigurationException;
+import io.atomix.catalyst.util.Listener;
+import io.atomix.catalyst.util.PropertiesReader;
+import io.atomix.catalyst.util.concurrent.ThreadContext;
+import io.atomix.copycat.client.Command;
 import io.atomix.copycat.client.CopycatClient;
+import io.atomix.copycat.client.Query;
 import io.atomix.copycat.client.ServerSelectionStrategy;
+import io.atomix.copycat.client.session.Session;
 import io.atomix.copycat.server.CopycatServer;
-import io.atomix.copycat.server.cluster.Member;
 import io.atomix.copycat.server.storage.Storage;
 import io.atomix.manager.ResourceClient;
 import io.atomix.manager.ResourceServer;
@@ -30,15 +36,12 @@ import io.atomix.manager.state.ResourceManagerState;
 import io.atomix.resource.ResourceRegistry;
 import io.atomix.resource.ResourceTypeResolver;
 import io.atomix.resource.ServiceLoaderResourceResolver;
+import io.atomix.util.ClusterBalancer;
 
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 /**
  * Provides an interface for creating and operating on {@link io.atomix.resource.Resource}s as a stateful node.
@@ -86,6 +89,46 @@ import java.util.stream.Collectors;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public final class AtomixReplica extends Atomix {
+
+  /**
+   * Returns a new Atomix replica builder from the given configuration file.
+   *
+   * @param properties The properties file from which to load the replica builder.
+   * @return The replica builder.
+   */
+  public static Builder builder(String properties) {
+    return builder(PropertiesReader.load(properties).properties());
+  }
+
+  /**
+   * Returns a new Atomix replica builder from the given properties.
+   *
+   * @param properties The properties from which to load the replica builder.
+   * @return The replica builder.
+   */
+  public static Builder builder(Properties properties) {
+    ReplicaProperties replicaProperties = new ReplicaProperties(properties);
+    Collection<Address> replicas = replicaProperties.replicas();
+    return builder(replicaProperties.clientAddress(), replicaProperties.serverAddress(), replicas)
+      .withTransport(replicaProperties.transport())
+      .withStorage(Storage.builder()
+        .withStorageLevel(replicaProperties.storageLevel())
+        .withDirectory(replicaProperties.storageDirectory())
+        .withMaxSegmentSize(replicaProperties.maxSegmentSize())
+        .withMaxEntriesPerSegment(replicaProperties.maxEntriesPerSegment())
+        .withMaxSnapshotSize(replicaProperties.maxSnapshotSize())
+        .withRetainStaleSnapshots(replicaProperties.retainStaleSnapshots())
+        .withCompactionThreads(replicaProperties.compactionThreads())
+        .withMinorCompactionInterval(replicaProperties.minorCompactionInterval())
+        .withMajorCompactionInterval(replicaProperties.majorCompactionInterval())
+        .withCompactionThreshold(replicaProperties.compactionThreshold())
+        .build())
+      .withQuorumHint(replicaProperties.quorumHint() != -1 ? replicaProperties.quorumHint() : replicas.size())
+      .withBackupCount(replicaProperties.backupCount())
+      .withElectionTimeout(replicaProperties.electionTimeout())
+      .withHeartbeatInterval(replicaProperties.heartbeatInterval())
+      .withSessionTimeout(replicaProperties.sessionTimeout());
+  }
 
   /**
    * Returns a new Atomix replica builder.
@@ -142,190 +185,59 @@ public final class AtomixReplica extends Atomix {
   }
 
   private final ResourceServer server;
-  private final int quorumHint;
-  private final int backupCount;
+  private final ClusterBalancer balancer;
 
-  /**
-   * @throws NullPointerException if {@code client} or {@code server} are null
-   */
-  private AtomixReplica(ResourceClient client, ResourceServer server, int quorumHint, int backupCount) {
+  public AtomixReplica(Properties properties) {
+    this(builder(properties));
+  }
+
+  private AtomixReplica(Builder builder) {
+    this(builder.buildClient(), builder.buildServer(), builder.buildBalancer());
+  }
+
+  private AtomixReplica(ResourceClient client, ResourceServer server, ClusterBalancer balancer) {
     super(client);
     this.server = Assert.notNull(server, "server");
-    this.quorumHint = quorumHint;
-    this.backupCount = backupCount;
-
-    server.server().cluster().members().forEach(m -> {
-      m.onTypeChange(t -> rebalance());
-      m.onStatusChange(s -> rebalance());
-    });
-
-    server.server().cluster().onLeaderElection(l -> rebalance());
-
-    server.server().cluster().onJoin(m -> {
-      m.onTypeChange(t -> rebalance());
-      m.onStatusChange(s -> rebalance());
-      rebalance();
-    });
-
-    server.server().cluster().onLeave(m -> rebalance());
+    this.balancer = Assert.notNull(balancer, "balancer");
   }
 
   /**
-   * Rebalances the cluster.
+   * Registers membership change listeners on the cluster.
    */
-  private void rebalance() {
-    if (!server.server().cluster().member().equals(server.server().cluster().leader())) {
-      return;
-    }
+  private void registerListeners() {
+    server.server().cluster().members().forEach(m -> {
+      m.onTypeChange(t -> balance());
+      m.onStatusChange(s -> balance());
+    });
 
-    Collection<Member> members = server.server().cluster().members();
-    Member member = server.server().cluster().member();
+    server.server().cluster().onLeaderElection(l -> balance());
 
-    Collection<Member> active = members.stream().filter(m -> m.type() == Member.Type.ACTIVE).collect(Collectors.toList());
-    Collection<Member> passive = members.stream().filter(m -> m.type() == Member.Type.PASSIVE).collect(Collectors.toList());
-    Collection<Member> reserve = members.stream().filter(m -> m.type() == Member.Type.RESERVE).collect(Collectors.toList());
+    server.server().cluster().onJoin(m -> {
+      m.onTypeChange(t -> balance());
+      m.onStatusChange(s -> balance());
+      balance();
+    });
 
-    int totalActiveCount = active.size();
-    int totalPassiveCount = passive.size();
+    server.server().cluster().onLeave(m -> balance());
+  }
 
-    long availableActiveCount = active.stream().filter(m -> m.status() == Member.Status.AVAILABLE).count();
-    long availablePassiveCount = passive.stream().filter(m -> m.status() == Member.Status.AVAILABLE).count();
-    long availableReserveCount = reserve.stream().filter(m -> m.status() == Member.Status.AVAILABLE).count();
-
-    // If the number of available active members is less than the quorum hint, promote a passive or reserve member.
-    if (availableActiveCount < quorumHint) {
-      // If a passive member is available, promote it.
-      if (availablePassiveCount > 0) {
-        passive.stream().filter(m -> m.status() == Member.Status.AVAILABLE).findFirst().get()
-          .promote(Member.Type.ACTIVE)
-          .thenRun(this::rebalance);
-        return;
-      }
-      // If a reserve member is available, promote it.
-      else if (availableReserveCount > 0) {
-        reserve.stream().filter(m -> m.status() == Member.Status.AVAILABLE).findFirst().get()
-          .promote(Member.Type.ACTIVE)
-          .thenRun(this::rebalance);
-        return;
-      }
-    }
-
-    // If the total number of active members is greater than the quorum hint, demote an active member.
-    // Preferably, we want to demote a member that is unavailable.
-    if (totalActiveCount > quorumHint) {
-      // If the number of available passive members is less than the required number, demote an active
-      // member to passive.
-      if (availablePassiveCount < quorumHint * backupCount) {
-        active.stream().filter(m -> m.status() == Member.Status.UNAVAILABLE).findFirst()
-          .orElseGet(() -> active.stream().filter(m -> !m.equals(member)).findAny().get())
-          .demote(Member.Type.PASSIVE)
-          .thenRun(this::rebalance);
-        return;
-      }
-      // Otherwise, demote an active member to reserve.
-      else {
-        active.stream().filter(m -> m.status() == Member.Status.UNAVAILABLE).findAny()
-          .orElseGet(() -> active.stream().filter(m -> !m.equals(member)).findAny().get())
-          .demote(Member.Type.RESERVE)
-          .thenRun(this::rebalance);
-        return;
-      }
-    }
-
-    // If the number of available passive members is less than the required number of passive members,
-    // promote a reserve member.
-    if (availablePassiveCount < quorumHint * backupCount) {
-      // If any reserve members are available, promote to passive.
-      if (availableReserveCount > 0) {
-        reserve.stream().filter(m -> m.status() == Member.Status.AVAILABLE).findFirst().get()
-          .promote(Member.Type.PASSIVE)
-          .thenRun(this::rebalance);
-        return;
-      }
-    }
-
-    // If the total number of passive members is greater than the required number of passive members,
-    // demote a passive member. Preferably we demote an unavailable member.
-    if (totalPassiveCount > quorumHint * backupCount) {
-      passive.stream().filter(m -> m.status() == Member.Status.UNAVAILABLE).findAny()
-        .orElseGet(() -> passive.stream().findAny().get())
-        .demote(Member.Type.RESERVE)
-        .thenRun(this::rebalance);
+  /**
+   * Balances the cluster.
+   */
+  private void balance() {
+    if (server.server().cluster().member().equals(server.server().cluster().leader())) {
+      balancer.balance(server.server().cluster());
     }
   }
 
   @Override
   public CompletableFuture<Atomix> open() {
-    return server.open().thenCompose(v -> super.open()).thenApply(v -> this);
+    return server.open().thenRun(this::registerListeners).thenCompose(v -> super.open()).thenApply(v -> this);
   }
 
   @Override
   public CompletableFuture<Void> close() {
     return super.close().thenCompose(v -> server.close());
-  }
-
-  /**
-   * Combined server selection strategy.
-   */
-  private static class CombinedSelectionStrategy implements ServerSelectionStrategy {
-    private final List<Address> addresses;
-
-    private CombinedSelectionStrategy(Address address) {
-      this.addresses = Collections.singletonList(address);
-    }
-
-    @Override
-    public List<Address> selectConnections(Address leader, List<Address> servers) {
-      return addresses;
-    }
-  }
-
-  /**
-   * Combined transport that aids in the local client communicating directly with the local server.
-   */
-  private static class CombinedTransport implements Transport {
-    private final Transport local;
-    private final Transport remote;
-
-    private CombinedTransport(Transport local, Transport remote) {
-      this.local = local;
-      this.remote = remote;
-    }
-
-    @Override
-    public Client client() {
-      return remote.client();
-    }
-
-    @Override
-    public Server server() {
-      return new CombinedServer(local.server(), remote.server());
-    }
-  }
-
-  /**
-   * Combined server that access connections from the local client directly.
-   */
-  private static class CombinedServer implements Server {
-    private final Server local;
-    private final Server remote;
-
-    private CombinedServer(Server local, Server remote) {
-      this.local = local;
-      this.remote = remote;
-    }
-
-    @Override
-    public CompletableFuture<Void> listen(Address address, Consumer<Connection> listener) {
-      Assert.notNull(address, "address");
-      Assert.notNull(listener, "listener");
-      return local.listen(address, listener).thenCompose(v -> remote.listen(address, listener));
-    }
-
-    @Override
-    public CompletableFuture<Void> close() {
-      return local.close().thenCompose(v -> remote.close());
-    }
   }
 
   /**
@@ -361,11 +273,14 @@ public final class AtomixReplica extends Atomix {
     private int backupCount;
     private LocalServerRegistry localRegistry = new LocalServerRegistry();
     private ResourceTypeResolver resourceResolver = new ServiceLoaderResourceResolver();
+    private final ResourceRegistry registry = new ResourceRegistry();
+    private ResourceServer server;
 
     private Builder(Address clientAddress, Address serverAddress, Collection<Address> members) {
+      Serializer serializer = new Serializer(new ServiceLoaderTypeResolver());
       this.clientAddress = Assert.notNull(clientAddress, "clientAddress");
-      this.clientBuilder = CopycatClient.builder(Collections.singleton(clientAddress));
-      this.serverBuilder = CopycatServer.builder(clientAddress, serverAddress, members);
+      this.clientBuilder = CopycatClient.builder(Collections.singleton(clientAddress)).withSerializer(serializer.clone());
+      this.serverBuilder = CopycatServer.builder(clientAddress, serverAddress, members).withSerializer(serializer.clone());
       this.quorumHint = members.size();
     }
 
@@ -549,6 +464,56 @@ public final class AtomixReplica extends Atomix {
     }
 
     /**
+     * Builds a client for the replica.
+     */
+    private ResourceClient buildClient() {
+      // Resolve resources.
+      resourceResolver.resolve(registry);
+
+      // Configure the client and server with a transport that routes all local client communication
+      // directly through the local server, ensuring we don't incur unnecessary network traffic by
+      // sending operations to a remote server when a local server is already available in the same JVM.=
+      clientBuilder.withTransport(new LocalTransport(localRegistry))
+        .withServerSelectionStrategy(new CombinedSelectionStrategy(clientAddress));
+      return new ResourceClient(new CombinedCopycatClient(clientBuilder.build(), serverTransport), registry);
+    }
+
+    /**
+     * Builds a server for the replica.
+     */
+    private ResourceServer buildServer() {
+      // If no transport was configured by the user, attempt to load the Netty transport.
+      if (serverTransport == null) {
+        try {
+          serverTransport = (Transport) Class.forName("io.atomix.catalyst.transport.NettyTransport").newInstance();
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+          throw new ConfigurationException("transport not configured");
+        }
+      }
+
+      // Construct the underlying CopycatServer. The server should have been configured with a CombinedTransport
+      // that facilitates the local client connecting directly to the server.
+      if (clientTransport != null) {
+        serverBuilder.withClientTransport(new CombinedTransport(new LocalTransport(localRegistry), clientTransport))
+          .withServerTransport(serverTransport);
+      } else {
+        serverBuilder.withTransport(new CombinedTransport(new LocalTransport(localRegistry), serverTransport));
+      }
+
+      // Set the server resource state machine.
+      serverBuilder.withStateMachine(() -> new ResourceManagerState(registry));
+      server = new ResourceServer(serverBuilder.build());
+      return server;
+    }
+
+    /**
+     * Builds a balancer for the replica.
+     */
+    private ClusterBalancer buildBalancer() {
+      return new ClusterBalancer(quorumHint, backupCount);
+    }
+
+    /**
      * Builds the replica.
      * <p>
      * If no {@link Transport} was configured for the replica, the builder will attempt to create a
@@ -563,39 +528,165 @@ public final class AtomixReplica extends Atomix {
      */
     @Override
     public AtomixReplica build() {
-      // If no transport was configured by the user, attempt to load the Netty transport.
-      if (serverTransport == null) {
-        try {
-          serverTransport = (Transport) Class.forName("io.atomix.catalyst.transport.NettyTransport").newInstance();
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-          throw new ConfigurationException("transport not configured");
-        }
-      }
+      return new AtomixReplica(buildClient(), buildServer(), buildBalancer());
+    }
+  }
 
-      // Create a resource registry and resolve resources with the configured resolver.
-      ResourceRegistry registry = new ResourceRegistry();
-      resourceResolver.resolve(registry);
+  /**
+   * Copycat client wrapper.
+   */
+  private static final class CombinedCopycatClient implements CopycatClient {
+    private final CopycatClient client;
+    private final Transport transport;
 
-      // Configure the client and server with a transport that routes all local client communication
-      // directly through the local server, ensuring we don't incur unnecessary network traffic by
-      // sending operations to a remote server when a local server is already available in the same JVM.=
-      clientBuilder.withTransport(new LocalTransport(localRegistry))
-        .withServerSelectionStrategy(new CombinedSelectionStrategy(clientAddress))
-        .build();
+    CombinedCopycatClient(CopycatClient client, Transport transport) {
+      this.client = Assert.notNull(client, "client");
+      this.transport = Assert.notNull(transport, "transport");
+    }
 
-      // Construct the underlying CopycatServer. The server should have been configured with a CombinedTransport
-      // that facilitates the local client connecting directly to the server.
-      if (clientTransport != null) {
-        serverBuilder.withClientTransport(new CombinedTransport(new LocalTransport(localRegistry), clientTransport))
-          .withServerTransport(serverTransport);
-      } else {
-        serverBuilder.withTransport(new CombinedTransport(new LocalTransport(localRegistry), serverTransport));
-      }
+    @Override
+    public State state() {
+      return client.state();
+    }
 
-      // Set the server resource state machine.
-      serverBuilder.withStateMachine(() -> new ResourceManagerState(registry));
+    @Override
+    public Listener<State> onStateChange(Consumer<State> consumer) {
+      return client.onStateChange(consumer);
+    }
 
-      return new AtomixReplica(new ResourceClient(new AtomixCopycatClient(clientBuilder.build(), serverTransport), registry), new ResourceServer(serverBuilder.build()), quorumHint, backupCount);
+    @Override
+    public ThreadContext context() {
+      return client.context();
+    }
+
+    @Override
+    public Transport transport() {
+      return transport;
+    }
+
+    @Override
+    public Serializer serializer() {
+      return client.serializer();
+    }
+
+    @Override
+    public Session session() {
+      return client.session();
+    }
+
+    @Override
+    public <T> CompletableFuture<T> submit(Command<T> command) {
+      return client.submit(command);
+    }
+
+    @Override
+    public <T> CompletableFuture<T> submit(Query<T> query) {
+      return client.submit(query);
+    }
+
+    @Override
+    public Listener<Void> onEvent(String event, Runnable callback) {
+      return client.onEvent(event, callback);
+    }
+
+    @Override
+    public <T> Listener<T> onEvent(String event, Consumer<T> callback) {
+      return client.onEvent(event, callback);
+    }
+
+    @Override
+    public CompletableFuture<CopycatClient> open() {
+      return client.open();
+    }
+
+    @Override
+    public CompletableFuture<CopycatClient> recover() {
+      return client.recover();
+    }
+
+    @Override
+    public CompletableFuture<Void> close() {
+      return client.close();
+    }
+
+    @Override
+    public boolean isOpen() {
+      return client.isOpen();
+    }
+
+    @Override
+    public boolean isClosed() {
+      return client.isClosed();
+    }
+
+    @Override
+    public String toString() {
+      return client.toString();
+    }
+
+  }
+
+  /**
+   * Combined server selection strategy.
+   */
+  private static class CombinedSelectionStrategy implements ServerSelectionStrategy {
+    private final List<Address> addresses;
+
+    private CombinedSelectionStrategy(Address address) {
+      this.addresses = Collections.singletonList(address);
+    }
+
+    @Override
+    public List<Address> selectConnections(Address leader, List<Address> servers) {
+      return addresses;
+    }
+  }
+
+  /**
+   * Combined transport that aids in the local client communicating directly with the local server.
+   */
+  private static class CombinedTransport implements Transport {
+    private final Transport local;
+    private final Transport remote;
+
+    private CombinedTransport(Transport local, Transport remote) {
+      this.local = local;
+      this.remote = remote;
+    }
+
+    @Override
+    public Client client() {
+      return remote.client();
+    }
+
+    @Override
+    public Server server() {
+      return new CombinedServer(local.server(), remote.server());
+    }
+  }
+
+  /**
+   * Combined server that access connections from the local client directly.
+   */
+  private static class CombinedServer implements Server {
+    private final Server local;
+    private final Server remote;
+
+    private CombinedServer(Server local, Server remote) {
+      this.local = local;
+      this.remote = remote;
+    }
+
+    @Override
+    public CompletableFuture<Void> listen(Address address, Consumer<Connection> listener) {
+      Assert.notNull(address, "address");
+      Assert.notNull(listener, "listener");
+      return local.listen(address, listener).thenCompose(v -> remote.listen(address, listener));
+    }
+
+    @Override
+    public CompletableFuture<Void> close() {
+      return local.close().thenCompose(v -> remote.close());
     }
   }
 

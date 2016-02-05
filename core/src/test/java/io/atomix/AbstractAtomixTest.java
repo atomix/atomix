@@ -106,7 +106,10 @@ public abstract class AbstractAtomixTest extends ConcurrentTestCase {
    * Creates a client.
    */
   protected Atomix createClient() throws Throwable {
-    AtomixClient client = AtomixClient.builder(members).withTransport(new LocalTransport(registry)).build();
+    AtomixClient client = AtomixClient.builder(members)
+      .withTransport(new LocalTransport(registry))
+      .build();
+    client.serializer().disableWhitelist();
     client.open().thenRun(this::resume);
     clients.add(client);
     await(10000);
@@ -123,6 +126,7 @@ public abstract class AbstractAtomixTest extends ConcurrentTestCase {
       .withQuorumHint(quorumHint)
       .withBackupCount(backupCount)
       .build();
+    replica.serializer().disableWhitelist();
     replicas.add(replica);
     return replica;
   }

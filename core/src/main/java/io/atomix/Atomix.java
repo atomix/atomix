@@ -15,6 +15,7 @@
  */
 package io.atomix;
 
+import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.collections.DistributedMap;
@@ -55,6 +56,15 @@ public abstract class Atomix implements ResourceManager<Atomix> {
 
   protected Atomix(ResourceClient client) {
     this.client = Assert.notNull(client, "client");
+  }
+
+  /**
+   * Returns the Atomix serializer.
+   *
+   * @return The Atomix serializer.
+   */
+  public Serializer serializer() {
+    return client.client().serializer();
   }
 
   /**
