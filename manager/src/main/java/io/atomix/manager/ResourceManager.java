@@ -27,6 +27,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Provides an interface for creating and operating on {@link io.atomix.resource.Resource}s remotely.
  *
+ * @param <T> resource type
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface ResourceManager<T extends ResourceManager<T>> extends Managed<T> {
@@ -48,6 +49,7 @@ public interface ResourceManager<T extends ResourceManager<T>> extends Managed<T
    *
    * @param type The resource class.
    * @return The resource type for the given resource class.
+   * @throws IllegalArgumentException if {@code type} is unregistered
    */
   ResourceType type(Class<? extends Resource<?, ?>> type);
 
@@ -140,6 +142,7 @@ public interface ResourceManager<T extends ResourceManager<T>> extends Managed<T
    * @param type The resource type by which to filter resources.
    * @param <T> The resource type.
    * @return A completable future to be completed with the set of resource keys.
+   * @throws NullPointerException if {@code type} is null
    */
   <T extends Resource> CompletableFuture<Set<String>> keys(Class<? super T> type);
 
@@ -204,6 +207,7 @@ public interface ResourceManager<T extends ResourceManager<T>> extends Managed<T
    * @param <T> The resource type.
    * @return A completable future to be completed once the resource has been loaded.
    * @throws NullPointerException if {@code key} or {@code type} are null
+   * @throws IllegalArgumentException if {@code type} is inconsistent with a previously created type
    */
   <T extends Resource> CompletableFuture<T> get(String key, Class<? super T> type);
 
@@ -241,6 +245,7 @@ public interface ResourceManager<T extends ResourceManager<T>> extends Managed<T
    * @param <T> The resource type.
    * @return A completable future to be completed once the resource has been loaded.
    * @throws NullPointerException if {@code key} or {@code type} are null
+   * @throws IllegalArgumentException if {@code type} is inconsistent with a previously created type
    */
   <T extends Resource<T, U>, U extends Resource.Options> CompletableFuture<T> get(String key, Class<? super T> type, U options);
 
@@ -278,6 +283,7 @@ public interface ResourceManager<T extends ResourceManager<T>> extends Managed<T
    * @param <T> The resource type.
    * @return A completable future to be completed once the resource has been loaded.
    * @throws NullPointerException if {@code key} or {@code type} are null
+   * @throws IllegalArgumentException if {@code type} is inconsistent with a previously created type
    */
   <T extends Resource> CompletableFuture<T> get(String key, ResourceType type);
 
@@ -315,6 +321,7 @@ public interface ResourceManager<T extends ResourceManager<T>> extends Managed<T
    * @param <T> The resource type.
    * @return A completable future to be completed once the resource has been loaded.
    * @throws NullPointerException if {@code key} or {@code type} are null
+   * @throws IllegalArgumentException if {@code type} is inconsistent with a previously created type
    */
   <T extends Resource<T, U>, U extends Resource.Options> CompletableFuture<T> get(String key, ResourceType type, U options);
 

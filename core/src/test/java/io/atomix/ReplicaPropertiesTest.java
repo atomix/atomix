@@ -66,27 +66,27 @@ public class ReplicaPropertiesTest {
    */
   public void testProperties() {
     Properties properties = new Properties();
-    properties.setProperty(ReplicaProperties.ADDRESS, "localhost:5000");
-    properties.setProperty("replica.1", "localhost:5000");
-    properties.setProperty("replica.2", "localhost:5001");
-    properties.setProperty("replica.3", "localhost:5002");
-    properties.setProperty(ReplicaProperties.TRANSPORT, "io.atomix.catalyst.transport.NettyTransport");
-    properties.setProperty("transport.threads", "1");
-    properties.setProperty(ReplicaProperties.QUORUM_HINT, "3");
-    properties.setProperty(ReplicaProperties.BACKUP_COUNT, "1");
-    properties.setProperty(ReplicaProperties.ELECTION_TIMEOUT, "200");
-    properties.setProperty(ReplicaProperties.HEARTBEAT_INTERVAL, "100");
-    properties.setProperty(ReplicaProperties.SESSION_TIMEOUT, "1000");
-    properties.setProperty(ReplicaProperties.STORAGE_DIRECTORY, "test");
-    properties.setProperty(ReplicaProperties.STORAGE_LEVEL, "MEMORY");
-    properties.setProperty(ReplicaProperties.MAX_SEGMENT_SIZE, "1024");
-    properties.setProperty(ReplicaProperties.MAX_ENTRIES_PER_SEGMENT, "1024");
-    properties.setProperty(ReplicaProperties.MAX_SNAPSHOT_SIZE, "1024");
-    properties.setProperty(ReplicaProperties.RETAIN_STALE_SNAPSHOTS, "true");
-    properties.setProperty(ReplicaProperties.COMPACTION_THREADS, "1");
-    properties.setProperty(ReplicaProperties.MINOR_COMPACTION_INTERVAL, "1000");
-    properties.setProperty(ReplicaProperties.MAJOR_COMPACTION_INTERVAL, "10000");
-    properties.setProperty(ReplicaProperties.COMPACTION_THRESHOLD, "0.2");
+    properties.setProperty("node.address", "localhost:5000");
+    properties.setProperty("cluster.seed.1", "localhost:5000");
+    properties.setProperty("cluster.seed.2", "localhost:5001");
+    properties.setProperty("cluster.seed.3", "localhost:5002");
+    properties.setProperty("node.transport", "io.atomix.catalyst.transport.NettyTransport");
+    properties.setProperty("node.transport.threads", "1");
+    properties.setProperty("cluster.quorumHint", "3");
+    properties.setProperty("cluster.backupCount", "1");
+    properties.setProperty("cluster.electionTimeout", "200");
+    properties.setProperty("cluster.heartbeatInterval", "100");
+    properties.setProperty("cluster.sessionTimeout", "1000");
+    properties.setProperty("storage.directory", "test");
+    properties.setProperty("storage.level", "MEMORY");
+    properties.setProperty("storage.maxSegmentSize", "1024");
+    properties.setProperty("storage.maxEntriesPerSegment", "1024");
+    properties.setProperty("storage.compaction.maxSnapshotSize", "1024");
+    properties.setProperty("storage.compaction.retainSnapshots", "true");
+    properties.setProperty("storage.compaction.threads", "1");
+    properties.setProperty("storage.compaction.minor", "1000");
+    properties.setProperty("storage.compaction.major", "10000");
+    properties.setProperty("storage.compaction.threshold", "0.2");
 
     ReplicaProperties replicaProperties = new ReplicaProperties(properties);
     Transport transport = replicaProperties.transport();

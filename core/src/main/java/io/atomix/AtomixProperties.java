@@ -16,12 +16,9 @@
 package io.atomix;
 
 import io.atomix.catalyst.transport.Address;
-import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.ConfigurationException;
 import io.atomix.catalyst.util.PropertiesReader;
-import io.atomix.catalyst.util.QualifiedProperties;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.Properties;
 
@@ -31,10 +28,7 @@ import java.util.Properties;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public abstract class AtomixProperties {
-  public static final String TRANSPORT = "transport";
-  public static final String REPLICA = "replica";
-
-  private static final String DEFAULT_TRANSPORT = "io.atomix.catalyst.transport.NettyTransport";
+  public static final String SEED = "cluster.seed";
 
   protected final PropertiesReader reader;
 
@@ -43,28 +37,12 @@ public abstract class AtomixProperties {
   }
 
   /**
-   * Returns the replica transport.
-   *
-   * @return The replica transport.
-   */
-  public Transport transport() {
-    String transportClass = reader.getString(TRANSPORT, DEFAULT_TRANSPORT);
-    try {
-      return (Transport) Class.forName(transportClass).getConstructor(Properties.class).newInstance(new QualifiedProperties(reader.properties(), TRANSPORT));
-    } catch (ClassNotFoundException e) {
-      throw new ConfigurationException("unknown transport class: " + transportClass, e);
-    } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
-      throw new ConfigurationException("failed to instantiate transport", e);
-    }
-  }
-
-  /**
    * Returns the collection of replicas.
    *
    * @return The collection of replicas.
    */
   public Collection<Address> replicas() {
-    return reader.getCollection(REPLICA, p -> parseAddress(reader.getString(p)));
+    return reader.getCollection(SEED, p -> parseAddress(reader.getString(p)));
   }
 
   /**

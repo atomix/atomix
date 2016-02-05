@@ -44,7 +44,7 @@ import java.util.concurrent.CompletableFuture;
  * creation and management of {@link Resource} objects via a filesystem like interface. There is a
  * one-to-one relationship between keys and resources, so each key can be associated with one and only one resource.
  * <p>
- * To create a resource, pass the resource {@link java.lang.Class} to the {@link Atomix#create(String, ResourceType)} method.
+ * To create a resource, pass the resource {@link java.lang.Class} to the {@link Atomix#get(String, ResourceType)} method.
  * When a resource is created, the {@link io.atomix.copycat.server.StateMachine} associated with the resource will be created on each Raft server
  * and future operations submitted for that resource will be applied to the state machine. Internally, resource state
  * machines are multiplexed across a shared Raft log.

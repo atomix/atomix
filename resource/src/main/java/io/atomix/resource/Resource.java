@@ -50,6 +50,8 @@ import java.util.function.Consumer;
  * Resources have varying consistency guarantees depending on the configured resource {@link Consistency}
  * and the semantics of the specific resource implementation.
  *
+ * @param <T> resource type
+ * @param <U> option type
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class Resource<T extends Resource<T, U>, U extends Resource.Options> implements Managed<T> {
@@ -224,6 +226,7 @@ public abstract class Resource<T extends Resource<T, U>, U extends Resource.Opti
    *
    * @param consistency The resource consistency level.
    * @return The resource instance.
+   * @throws NullPointerException if {@code consistency} is null
    */
   @SuppressWarnings("unchecked")
   public T with(Consistency consistency) {

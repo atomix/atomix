@@ -88,6 +88,7 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
    *
    * @param members The cluster members to which to connect.
    * @return The client builder.
+   * @throws NullPointerException if {@code members} is null
    */
   public static Builder builder(Address... members) {
     return new Builder(Arrays.asList(Assert.notNull(members, "members")));
@@ -113,7 +114,7 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
   private final Map<String, CompletableFuture> futures = new HashMap<>();
 
   /**
-   * @throws NullPointerException if {@code client} is null
+   * @throws NullPointerException if {@code client} or {@code registry} are null
    */
   public ResourceClient(CopycatClient client, ResourceRegistry registry) {
     this.client = Assert.notNull(client, "client");
@@ -186,6 +187,8 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
   @Override
   @SuppressWarnings("unchecked")
   public synchronized <T extends Resource<T, U>, U extends Resource.Options> CompletableFuture<T> get(String key, ResourceType type, U options) {
+    Assert.notNull(key, "key");
+    Assert.notNull(type, "type");
     T resource;
 
     // Determine whether a singleton instance of the given resource key already exists.
