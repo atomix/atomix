@@ -19,7 +19,7 @@ import io.atomix.Atomix;
 import io.atomix.AtomixReplica;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.NettyTransport;
-import io.atomix.coordination.DistributedMembershipGroup;
+import io.atomix.coordination.DistributedGroup;
 import io.atomix.coordination.LocalGroupMember;
 import io.atomix.copycat.server.storage.Storage;
 
@@ -62,7 +62,7 @@ public class LeaderElectionExample {
     atomix.open().join();
 
     // Create a leader election resource.
-    DistributedMembershipGroup group = atomix.getMembershipGroup("group").get();
+    DistributedGroup group = atomix.getGroup("group").get();
 
     // Join the group.
     LocalGroupMember member = group.join().get();

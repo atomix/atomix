@@ -33,9 +33,9 @@ import java.util.Set;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public final class MembershipGroupCommands {
+public final class GroupCommands {
 
-  private MembershipGroupCommands() {
+  private GroupCommands() {
   }
 
   /**

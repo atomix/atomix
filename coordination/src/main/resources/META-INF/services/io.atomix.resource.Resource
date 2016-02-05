@@ -14,4 +14,4 @@
 # limitations under the License
 #
 io.atomix.coordination.DistributedLock
-io.atomix.coordination.DistributedMembershipGroup
+io.atomix.coordination.DistributedGroup
