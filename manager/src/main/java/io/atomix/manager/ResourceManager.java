@@ -27,6 +27,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Provides an interface for creating and operating on {@link io.atomix.resource.Resource}s remotely.
  *
+ * @param <T> resource type
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface ResourceManager<T extends ResourceManager<T>> extends Managed<T> {
