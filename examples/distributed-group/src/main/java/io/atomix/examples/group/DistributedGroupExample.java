@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.examples.memberhip;
+package io.atomix.examples.group;
 
 import io.atomix.Atomix;
 import io.atomix.AtomixReplica;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.NettyTransport;
-import io.atomix.coordination.DistributedMembershipGroup;
+import io.atomix.coordination.DistributedGroup;
 import io.atomix.copycat.server.storage.Storage;
 
 import java.io.Serializable;
@@ -29,11 +29,11 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Group membership example.
+ * Distributed group example.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class GroupMembershipExample {
+public class DistributedGroupExample {
 
   /**
    * Starts the server.
@@ -62,7 +62,7 @@ public class GroupMembershipExample {
     atomix.open().join();
 
     System.out.println("Creating membership group");
-    DistributedMembershipGroup group = atomix.getMembershipGroup("group").get();
+    DistributedGroup group = atomix.getGroup("group").get();
 
     System.out.println("Joining membership group");
     group.join().thenAccept(member -> {

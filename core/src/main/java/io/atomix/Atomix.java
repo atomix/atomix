@@ -23,7 +23,7 @@ import io.atomix.collections.DistributedMultiMap;
 import io.atomix.collections.DistributedQueue;
 import io.atomix.collections.DistributedSet;
 import io.atomix.coordination.DistributedLock;
-import io.atomix.coordination.DistributedMembershipGroup;
+import io.atomix.coordination.DistributedGroup;
 import io.atomix.manager.ResourceClient;
 import io.atomix.manager.ResourceManager;
 import io.atomix.messaging.DistributedMessageBus;
@@ -145,13 +145,13 @@ public abstract class Atomix implements ResourceManager<Atomix> {
   }
 
   /**
-   * Gets or creates a distributed membership group.
+   * Gets or creates a distributed group.
    *
    * @param key The resource key.
-   * @return A completable future to be completed once the membership group has been created.
+   * @return A completable future to be completed once the group has been created.
    */
-  public CompletableFuture<DistributedMembershipGroup> getMembershipGroup(String key) {
-    return get(key, DistributedMembershipGroup.class);
+  public CompletableFuture<DistributedGroup> getGroup(String key) {
+    return get(key, DistributedGroup.class);
   }
 
   /**
