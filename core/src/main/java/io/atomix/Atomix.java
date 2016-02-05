@@ -218,21 +218,25 @@ public abstract class Atomix implements ResourceManager<Atomix> {
 
   @Override
   public <T extends Resource> CompletableFuture<T> get(String key, Class<? super T> type) {
+    Assert.argNot(key.trim().length() == 0, "invalid resource key: key must be of non-zero length");
     return client.get(key, type);
   }
 
   @Override
   public <T extends Resource<T, U>, U extends Resource.Options> CompletableFuture<T> get(String key, Class<? super T> type, U options) {
+    Assert.argNot(key.trim().length() == 0, "invalid resource key: key must be of non-zero length");
     return client.get(key, type, options);
   }
 
   @Override
   public <T extends Resource> CompletableFuture<T> get(String key, ResourceType type) {
+    Assert.argNot(key.trim().length() == 0, "invalid resource key: key must be of non-zero length");
     return client.get(key, type);
   }
 
   @Override
   public <T extends Resource<T, U>, U extends Resource.Options> CompletableFuture<T> get(String key, ResourceType type, U options) {
+    Assert.argNot(key.trim().length() == 0, "invalid resource key: key must be of non-zero length");
     return client.get(key, type, options);
   }
 

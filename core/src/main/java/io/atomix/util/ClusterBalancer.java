@@ -21,7 +21,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -29,10 +32,11 @@ import java.util.stream.Collectors;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class ClusterBalancer {
+public class ClusterBalancer implements AutoCloseable {
   private static final Logger LOGGER = LoggerFactory.getLogger(ClusterBalancer.class);
   private final int quorumHint;
   private final int backupCount;
+  private boolean closed;
 
   public ClusterBalancer(int quorumHint, int backupCount) {
     this.quorumHint = quorumHint;
@@ -54,6 +58,11 @@ public class ClusterBalancer {
    * Balances the cluster, recursively promoting/demoting members as necessary.
    */
   private CompletableFuture<Void> balance(Cluster cluster, CompletableFuture<Void> future) {
+    if (closed) {
+      future.completeExceptionally(new IllegalStateException("balancer closed"));
+      return future;
+    }
+
     Collection<Member> members = cluster.members();
     Member member = cluster.member();
 
@@ -68,20 +77,28 @@ public class ClusterBalancer {
     long availablePassiveCount = passive.stream().filter(m -> m.status() == Member.Status.AVAILABLE).count();
     long availableReserveCount = reserve.stream().filter(m -> m.status() == Member.Status.AVAILABLE).count();
 
+    BiConsumer<Void, Throwable> completeFunction = (result, error) -> {
+      if (error == null) {
+        balance(cluster, future);
+      } else {
+        future.completeExceptionally(error);
+      }
+    };
+
     // If the number of available active members is less than the quorum hint, promote a passive or reserve member.
     if (availableActiveCount < quorumHint) {
       // If a passive member is available, promote it.
       if (availablePassiveCount > 0) {
-        passive.stream().filter(m -> m.status() == Member.Status.AVAILABLE).findFirst().get()
-          .promote(Member.Type.ACTIVE)
-          .thenRun(() -> balance(cluster, future));
+        Member promote = passive.stream().filter(m -> m.status() == Member.Status.AVAILABLE).findFirst().get();
+        LOGGER.info("Promoting {} to ACTIVE: not enough active members", promote.address());
+        promote.promote(Member.Type.ACTIVE).whenComplete(completeFunction);
         return future;
       }
       // If a reserve member is available, promote it.
       else if (availableReserveCount > 0) {
-        reserve.stream().filter(m -> m.status() == Member.Status.AVAILABLE).findFirst().get()
-          .promote(Member.Type.ACTIVE)
-          .thenRun(() -> balance(cluster, future));
+        Member promote = reserve.stream().filter(m -> m.status() == Member.Status.AVAILABLE).findFirst().get();
+        LOGGER.info("Promoting {} to ACTIVE: not enough active members", promote.address());
+          promote.promote(Member.Type.ACTIVE).whenComplete(completeFunction);
         return future;
       }
     }
@@ -92,18 +109,18 @@ public class ClusterBalancer {
       // If the number of available passive members is less than the required number, demote an active
       // member to passive.
       if (availablePassiveCount < quorumHint * backupCount) {
-        active.stream().filter(m -> m.status() == Member.Status.UNAVAILABLE).findFirst()
-          .orElseGet(() -> active.stream().filter(m -> !m.equals(member)).findAny().get())
-          .demote(Member.Type.PASSIVE)
-          .thenRun(() -> balance(cluster, future));
+        Member demote = active.stream().filter(m -> m.status() == Member.Status.UNAVAILABLE).findFirst()
+          .orElseGet(() -> active.stream().filter(m -> !m.equals(member)).findAny().get());
+        LOGGER.info("Demoting {} to PASSIVE: too many active members", demote.address());
+        demote.demote(Member.Type.PASSIVE).whenComplete(completeFunction);
         return future;
       }
       // Otherwise, demote an active member to reserve.
       else {
-        active.stream().filter(m -> m.status() == Member.Status.UNAVAILABLE).findAny()
-          .orElseGet(() -> active.stream().filter(m -> !m.equals(member)).findAny().get())
-          .demote(Member.Type.RESERVE)
-          .thenRun(() -> balance(cluster, future));
+        Member demote = active.stream().filter(m -> m.status() == Member.Status.UNAVAILABLE).findAny()
+          .orElseGet(() -> active.stream().filter(m -> !m.equals(member)).findAny().get());
+        LOGGER.info("Demoting {} to RESERVE: too many active members", demote.address());
+        demote.demote(Member.Type.RESERVE).whenComplete(completeFunction);
         return future;
       }
     }
@@ -113,9 +130,9 @@ public class ClusterBalancer {
     if (availablePassiveCount < quorumHint * backupCount) {
       // If any reserve members are available, promote to passive.
       if (availableReserveCount > 0) {
-        reserve.stream().filter(m -> m.status() == Member.Status.AVAILABLE).findFirst().get()
-          .promote(Member.Type.PASSIVE)
-          .thenRun(() -> balance(cluster, future));
+        Member promote = reserve.stream().filter(m -> m.status() == Member.Status.AVAILABLE).findFirst().get();
+        LOGGER.info("Promoting {} to PASSIVE: not enough passive members", promote.address());
+        promote.promote(Member.Type.PASSIVE).whenComplete(completeFunction);
         return future;
       }
     }
@@ -123,16 +140,134 @@ public class ClusterBalancer {
     // If the total number of passive members is greater than the required number of passive members,
     // demote a passive member. Preferably we demote an unavailable member.
     if (totalPassiveCount > quorumHint * backupCount) {
-      passive.stream().filter(m -> m.status() == Member.Status.UNAVAILABLE).findAny()
-        .orElseGet(() -> passive.stream().findAny().get())
-        .demote(Member.Type.RESERVE)
-        .thenRun(() -> balance(cluster, future));
+      Member demote = passive.stream().filter(m -> m.status() == Member.Status.UNAVAILABLE).findAny()
+        .orElseGet(() -> passive.stream().findAny().get());
+      LOGGER.info("Demoting {} to RESERVE: too many passive members", demote.address());
+      demote.demote(Member.Type.RESERVE).whenComplete(completeFunction);
       return future;
     }
 
     // If we've made it this far then the cluster is balanced.
     future.complete(null);
     return future;
+  }
+
+  /**
+   * Replaces the local member in the cluster.
+   *
+   * @param cluster The cluster in which to replace the local member.
+   * @return A completable future to be completed once the local member has been replaced.
+   */
+  public CompletableFuture<Void> replace(Cluster cluster) {
+    LOGGER.debug("Balancing cluster...");
+    return replace(cluster, new CompletableFuture<>());
+  }
+
+  /**
+   * Replaces the local member in the cluster.
+   */
+  private CompletableFuture<Void> replace(Cluster cluster, CompletableFuture<Void> future) {
+    if (closed) {
+      future.completeExceptionally(new IllegalStateException("cluster balancer closed"));
+      return future;
+    }
+
+    BiConsumer<Void, Throwable> completeFunction = (result, error) -> {
+      if (error == null) {
+        future.complete(null);
+      } else {
+        future.completeExceptionally(error);
+      }
+    };
+
+    Function<Void, CompletableFuture<Void>> demoteFunction = v -> {
+      LOGGER.info("Demoting {} to RESERVE", cluster.member().address());
+      return cluster.member().demote(Member.Type.RESERVE);
+    };
+
+    // If the local member is active, replace it with a passive or reserve member.
+    if (cluster.member().type() == Member.Type.ACTIVE) {
+      // Get a list of passive members.
+      Collection<Member> passive = cluster.members().stream()
+        .filter(m -> m.type() == Member.Type.PASSIVE)
+        .collect(Collectors.toList());
+
+      // Get a list of reserve members.
+      Collection<Member> reserve = cluster.members().stream()
+        .filter(m -> m.type() == Member.Type.RESERVE)
+        .collect(Collectors.toList());
+
+      // Attempt to promote an available passive member.
+      if (!passive.isEmpty()) {
+        Optional<Member> optionalMember = passive.stream().filter(m -> m.status() == Member.Status.AVAILABLE).findFirst();
+        if (optionalMember.isPresent()) {
+          LOGGER.info("Promoting {} to ACTIVE: replacing {}", optionalMember.get().address(), cluster.member().address());
+          optionalMember.get().promote(Member.Type.ACTIVE)
+            .thenCompose(demoteFunction)
+            .whenComplete(completeFunction);
+          return future;
+        }
+      }
+
+      // Attempt to promote an available reserve member.
+      if (!reserve.isEmpty()) {
+        Optional<Member> optionalMember = reserve.stream().filter(m -> m.status() == Member.Status.AVAILABLE).findFirst();
+        if (optionalMember.isPresent()) {
+          LOGGER.info("Promoting {} to ACTIVE: replacing {}", optionalMember.get().address(), cluster.member().address());
+          optionalMember.get().promote(Member.Type.ACTIVE)
+            .thenCompose(demoteFunction)
+            .whenComplete(completeFunction);
+          return future;
+        }
+      }
+
+      // Promote an unavailable passive or reserve member.
+      if (!passive.isEmpty()) {
+        Member member = passive.iterator().next();
+        LOGGER.info("Promoting {} to ACTIVE: replacing {}", member.address(), cluster.member().address());
+        member.promote(Member.Type.ACTIVE)
+          .thenCompose(demoteFunction)
+          .whenComplete(completeFunction);
+      } else if (!reserve.isEmpty()) {
+        Member member = reserve.iterator().next();
+        LOGGER.info("Promoting {} to ACTIVE: replacing {}", member.address(), cluster.member().address());
+        member.promote(Member.Type.ACTIVE)
+          .thenCompose(demoteFunction)
+          .whenComplete(completeFunction);
+      } else {
+        future.complete(null);
+      }
+    } else if (cluster.member().type() == Member.Type.PASSIVE) {
+      Collection<Member> reserve = cluster.members().stream()
+        .filter(m -> m.type() == Member.Type.RESERVE)
+        .collect(Collectors.toList());
+
+      if (!reserve.isEmpty()) {
+        Optional<Member> optionalMember = reserve.stream().filter(m -> m.status() == Member.Status.AVAILABLE).findFirst();
+        if (optionalMember.isPresent()) {
+          LOGGER.info("Promoting {} to PASSIVE: replacing {}", optionalMember.get().address(), cluster.member().address());
+          optionalMember.get().promote(Member.Type.PASSIVE)
+            .thenCompose(demoteFunction)
+            .whenComplete(completeFunction);
+        } else {
+          Member member = reserve.iterator().next();
+          LOGGER.info("Promoting {} to PASSIVE: replacing {}", member.address(), cluster.member().address());
+          member.promote(Member.Type.PASSIVE)
+            .thenCompose(demoteFunction)
+            .whenComplete(completeFunction);
+        }
+      } else {
+        future.complete(null);
+      }
+    } else {
+      future.complete(null);
+    }
+    return future;
+  }
+
+  @Override
+  public void close() {
+    closed = true;
   }
 
 }

@@ -29,7 +29,6 @@ import io.atomix.copycat.client.Query;
 import io.atomix.copycat.client.ServerSelectionStrategy;
 import io.atomix.copycat.client.session.Session;
 import io.atomix.copycat.server.CopycatServer;
-import io.atomix.copycat.server.cluster.Member;
 import io.atomix.copycat.server.storage.Storage;
 import io.atomix.manager.ResourceClient;
 import io.atomix.manager.ResourceServer;
@@ -233,12 +232,15 @@ public final class AtomixReplica extends Atomix {
 
   @Override
   public CompletableFuture<Atomix> open() {
-    return server.open().thenRun(this::registerListeners).thenCompose(v -> super.open()).thenApply(v -> this);
+    return server.open()
+      .thenRun(this::registerListeners)
+      .thenCompose(v -> super.open());
   }
 
   @Override
   public CompletableFuture<Void> close() {
-    return server.server().cluster().member().demote(Member.Type.RESERVE)
+    return balancer.replace(server.server().cluster())
+      .whenComplete((r, e) -> balancer.close())
       .thenCompose(v -> super.close())
       .thenCompose(v -> server.close());
   }
