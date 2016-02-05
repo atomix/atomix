@@ -15,6 +15,7 @@
  */
 package io.atomix;
 
+import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.NettyTransport;
 import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.PropertiesReader;
@@ -46,8 +47,11 @@ public class ClientPropertiesTest {
    */
   public void testProperties() {
     Properties properties = new Properties();
-    properties.setProperty(ClientProperties.TRANSPORT, "io.atomix.catalyst.transport.NettyTransport");
-    properties.setProperty("transport.threads", "1");
+    properties.setProperty("client.transport", "io.atomix.catalyst.transport.NettyTransport");
+    properties.setProperty("client.transport.threads", "1");
+    properties.setProperty("cluster.seed.1", "localhost:5000");
+    properties.setProperty("cluster.seed.2", "localhost:5001");
+    properties.setProperty("cluster.seed.3", "localhost:5002");
 
     ClientProperties clientProperties = new ClientProperties(properties);
     Transport transport = clientProperties.transport();
@@ -62,6 +66,11 @@ public class ClientPropertiesTest {
     ClientProperties clientProperties = new ClientProperties(PropertiesReader.load("client-test.properties").properties());
     assertTrue(clientProperties.transport() instanceof NettyTransport);
     assertEquals(((NettyTransport) clientProperties.transport()).properties().threads(), 1);
+
+    assertEquals(clientProperties.replicas().size(), 3);
+    assertTrue(clientProperties.replicas().contains(new Address("localhost", 5000)));
+    assertTrue(clientProperties.replicas().contains(new Address("localhost", 5001)));
+    assertTrue(clientProperties.replicas().contains(new Address("localhost", 5002)));
   }
 
 }

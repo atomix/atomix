@@ -16,9 +16,13 @@
 package io.atomix;
 
 import io.atomix.catalyst.transport.Address;
+import io.atomix.catalyst.transport.Transport;
+import io.atomix.catalyst.util.ConfigurationException;
+import io.atomix.catalyst.util.QualifiedProperties;
 import io.atomix.copycat.server.storage.StorageLevel;
 
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
 import java.util.Properties;
 
@@ -28,25 +32,27 @@ import java.util.Properties;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public final class ReplicaProperties extends AtomixProperties {
-  public static final String ADDRESS = "address";
-  public static final String CLIENT_ADDRESS = "clientAddress";
-  public static final String SERVER_ADDRESS = "serverAddress";
-  public static final String QUORUM_HINT = "quorumHint";
-  public static final String BACKUP_COUNT = "backupCount";
-  public static final String ELECTION_TIMEOUT = "electionTimeout";
-  public static final String HEARTBEAT_INTERVAL = "heartbeatInterval";
-  public static final String SESSION_TIMEOUT = "sessionTimeout";
+  public static final String TRANSPORT = "node.transport";
+  public static final String ADDRESS = "node.address";
+  public static final String CLIENT_ADDRESS = "node.clientAddress";
+  public static final String SERVER_ADDRESS = "node.serverAddress";
+  public static final String QUORUM_HINT = "cluster.quorumHint";
+  public static final String BACKUP_COUNT = "cluster.backupCount";
+  public static final String ELECTION_TIMEOUT = "cluster.electionTimeout";
+  public static final String HEARTBEAT_INTERVAL = "cluster.heartbeatInterval";
+  public static final String SESSION_TIMEOUT = "cluster.sessionTimeout";
   public static final String STORAGE_DIRECTORY = "storage.directory";
   public static final String STORAGE_LEVEL = "storage.level";
   public static final String MAX_SEGMENT_SIZE = "storage.maxSegmentSize";
   public static final String MAX_ENTRIES_PER_SEGMENT = "storage.maxEntriesPerSegment";
-  public static final String MAX_SNAPSHOT_SIZE = "storage.maxSnapshotSize";
-  public static final String RETAIN_STALE_SNAPSHOTS = "storage.retainStaleSnapshots";
-  public static final String COMPACTION_THREADS = "storage.compactionThreads";
-  public static final String MINOR_COMPACTION_INTERVAL = "storage.minorCompactionInterval";
-  public static final String MAJOR_COMPACTION_INTERVAL = "storage.majorCompactionInterval";
-  public static final String COMPACTION_THRESHOLD = "storage.compactionThreshold";
+  public static final String MAX_SNAPSHOT_SIZE = "storage.compaction.maxSnapshotSize";
+  public static final String RETAIN_STALE_SNAPSHOTS = "storage.compaction.retainSnapshots";
+  public static final String COMPACTION_THREADS = "storage.compaction.threads";
+  public static final String MINOR_COMPACTION_INTERVAL = "storage.compaction.minor";
+  public static final String MAJOR_COMPACTION_INTERVAL = "storage.compaction.major";
+  public static final String COMPACTION_THRESHOLD = "storage.compaction.threshold";
 
+  private static final String DEFAULT_TRANSPORT = "io.atomix.catalyst.transport.NettyTransport";
   private static final int DEFAULT_QUORUM_HINT = -1;
   private static final int DEFAULT_BACKUP_COUNT = 0;
   private static final Duration DEFAULT_ELECTION_TIMEOUT = Duration.ofMillis(500);
@@ -65,6 +71,22 @@ public final class ReplicaProperties extends AtomixProperties {
 
   public ReplicaProperties(Properties properties) {
     super(properties);
+  }
+
+  /**
+   * Returns the replica transport.
+   *
+   * @return The replica transport.
+   */
+  public Transport transport() {
+    String transportClass = reader.getString(TRANSPORT, DEFAULT_TRANSPORT);
+    try {
+      return (Transport) Class.forName(transportClass).getConstructor(Properties.class).newInstance(new QualifiedProperties(reader.properties(), TRANSPORT));
+    } catch (ClassNotFoundException e) {
+      throw new ConfigurationException("unknown transport class: " + transportClass, e);
+    } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
+      throw new ConfigurationException("failed to instantiate transport", e);
+    }
   }
 
   /**
