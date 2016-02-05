@@ -84,6 +84,7 @@ public final class ResourceServer implements Managed<ResourceServer> {
    * @param address The local server member address.
    * @param members The cluster members to which to connect.
    * @return The replica builder.
+   * @throws NullPointerException if {@code address} or {@code members} are null
    */
   public static Builder builder(Address address, Address... members) {
     return builder(address, Arrays.asList(Assert.notNull(members, "members")));
@@ -97,9 +98,10 @@ public final class ResourceServer implements Managed<ResourceServer> {
    * @param address The local server member address.
    * @param members The cluster members to which to connect.
    * @return The replica builder.
+   * @throws NullPointerException if {@code address} or {@code members} are null
    */
   public static Builder builder(Address address, Collection<Address> members) {
-    return new Builder(address, address, members);
+    return new Builder(address, address, Assert.notNull(members, "members"));
   }
 
   /**
@@ -111,6 +113,7 @@ public final class ResourceServer implements Managed<ResourceServer> {
    * @param serverAddress The address through which servers connect to each other.
    * @param members The cluster members to which to connect.
    * @return The replica builder.
+   * @throws NullPointerException if any argument is null
    */
   public static Builder builder(Address clientAddress, Address serverAddress, Address... members) {
     return builder(clientAddress, serverAddress, Arrays.asList(Assert.notNull(members, "members")));
@@ -125,13 +128,17 @@ public final class ResourceServer implements Managed<ResourceServer> {
    * @param serverAddress The address through which servers connect to each other.
    * @param members The cluster members to which to connect.
    * @return The replica builder.
+   * @throws NullPointerException if any argument is null
    */
   public static Builder builder(Address clientAddress, Address serverAddress, Collection<Address> members) {
-    return new Builder(clientAddress, serverAddress, members);
+    return new Builder(clientAddress, serverAddress, Assert.notNull(members, "members"));
   }
 
   private final CopycatServer server;
 
+  /**
+   * @throws NullPointerException if {@code server} is null
+   */
   public ResourceServer(CopycatServer server) {
     this.server = Assert.notNull(server, "server");
   }
