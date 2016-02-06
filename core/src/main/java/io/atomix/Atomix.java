@@ -203,17 +203,25 @@ public abstract class Atomix implements ResourceManager<Atomix> {
 
   @Override
   public CompletableFuture<Set<String>> keys() {
-    return client.keys();
+    return client.keys().thenApply(this::cleanKeys);
   }
 
   @Override
   public <T extends Resource> CompletableFuture<Set<String>> keys(Class<? super T> type) {
-    return client.keys(type);
+    return client.keys(type).thenApply(this::cleanKeys);
   }
 
   @Override
   public CompletableFuture<Set<String>> keys(ResourceType type) {
-    return client.keys(type);
+    return client.keys(type).thenApply(this::cleanKeys);
+  }
+
+  /**
+   * Cleans the key set.
+   */
+  private Set<String> cleanKeys(Set<String> keys) {
+    keys.remove("");
+    return keys;
   }
 
   @Override
