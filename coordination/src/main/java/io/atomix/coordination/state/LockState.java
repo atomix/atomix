@@ -62,11 +62,11 @@ public class LockState extends ResourceStateMachine implements SessionListener {
         if (timer != null)
           timer.cancel();
 
-        if (lock.session().state() == Session.State.OPEN) {
+        if (lock.session().state() == Session.State.CLOSED) {
+          lock = queue.poll();
+        } else {
           lock.session().publish("lock", true);
           break;
-        } else {
-          lock = queue.poll();
         }
       }
     }
@@ -114,11 +114,11 @@ public class LockState extends ResourceStateMachine implements SessionListener {
           if (timer != null)
             timer.cancel();
 
-          if (lock.session().state() == Session.State.OPEN) {
+          if (lock.session().state() == Session.State.CLOSED) {
+            lock = queue.poll();
+          } else {
             lock.session().publish("lock", true);
             break;
-          } else {
-            lock = queue.poll();
           }
         }
       }
