@@ -139,7 +139,7 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
   private void electLeader() {
     Commit<GroupCommands.Join> commit = candidates.poll();
     while (commit != null) {
-      if (commit.session().state() == Session.State.CLOSED) {
+      if (commit.session().state() == Session.State.EXPIRED || commit.session().state() == Session.State.CLOSED) {
         commit = candidates.poll();
       } else {
         leader = commit;
