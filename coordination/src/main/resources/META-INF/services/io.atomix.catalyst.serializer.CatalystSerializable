@@ -16,14 +16,14 @@
 io.atomix.coordination.state.LockCommands$Lock
 io.atomix.coordination.state.LockCommands$Unlock
 
-io.atomix.coordination.state.MembershipGroupCommands$Join
-io.atomix.coordination.state.MembershipGroupCommands$Leave
-io.atomix.coordination.state.MembershipGroupCommands$Listen
-io.atomix.coordination.state.MembershipGroupCommands$Resign
-io.atomix.coordination.state.MembershipGroupCommands$Schedule
-io.atomix.coordination.state.MembershipGroupCommands$Execute
-io.atomix.coordination.state.MembershipGroupCommands$SetProperty
-io.atomix.coordination.state.MembershipGroupCommands$GetProperty
-io.atomix.coordination.state.MembershipGroupCommands$RemoveProperty
-io.atomix.coordination.state.MembershipGroupCommands$Send
-io.atomix.coordination.state.MembershipGroupCommands$Message
+io.atomix.coordination.state.GroupCommands$Join
+io.atomix.coordination.state.GroupCommands$Leave
+io.atomix.coordination.state.GroupCommands$Listen
+io.atomix.coordination.state.GroupCommands$Resign
+io.atomix.coordination.state.GroupCommands$Schedule
+io.atomix.coordination.state.GroupCommands$Execute
+io.atomix.coordination.state.GroupCommands$SetProperty
+io.atomix.coordination.state.GroupCommands$GetProperty
+io.atomix.coordination.state.GroupCommands$RemoveProperty
+io.atomix.coordination.state.GroupCommands$Send
+io.atomix.coordination.state.GroupCommands$Message
