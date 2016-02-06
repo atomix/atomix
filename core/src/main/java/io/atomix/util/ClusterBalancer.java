@@ -181,8 +181,14 @@ public class ClusterBalancer implements AutoCloseable {
     };
 
     Function<Void, CompletableFuture<Void>> demoteFunction = v -> {
-      LOGGER.info("Demoting {} to RESERVE", cluster.member().address());
-      return cluster.member().demote(Member.Type.RESERVE);
+      long passiveCount = cluster.members().stream().filter(m -> m.type() == Member.Type.PASSIVE).count();
+      if (passiveCount < quorumHint * backupCount) {
+        LOGGER.info("Demoting {} to PASSIVE", cluster.member().address());
+        return cluster.member().demote(Member.Type.PASSIVE);
+      } else {
+        LOGGER.info("Demoting {} to RESERVE", cluster.member().address());
+        return cluster.member().demote(Member.Type.RESERVE);
+      }
     };
 
     // If the local member is active, replace it with a passive or reserve member.

@@ -139,6 +139,26 @@ public class AtomixReplicaTest extends AbstractAtomixTest {
   }
 
   /**
+   * Tests submitting a command through all nodes.
+   */
+  public void testSubmitAll() throws Throwable {
+    List<Atomix> replicas = createReplicas(8, 3, 1);
+
+    for (Atomix replica : replicas) {
+      ValueResource resource = replica.get("test", ValueResource.class).get();
+      resource.set("Hello world!").thenRun(this::resume);
+      await(10000);
+    }
+
+    ValueResource resource = replicas.get(0).get("test", ValueResource.class).get();
+    resource.get().thenAccept(result -> {
+      threadAssertEquals("Hello world!", result);
+      resume();
+    });
+    await(10000);
+  }
+
+  /**
    * Tests getting a resource and submitting commands.
    */
   public void testGetConcurrency() throws Throwable {

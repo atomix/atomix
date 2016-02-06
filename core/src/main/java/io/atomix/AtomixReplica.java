@@ -23,6 +23,7 @@ import io.atomix.catalyst.util.ConfigurationException;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.catalyst.util.PropertiesReader;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
+import io.atomix.coordination.DistributedLock;
 import io.atomix.copycat.client.Command;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.copycat.client.Query;
@@ -186,6 +187,8 @@ public final class AtomixReplica extends Atomix {
 
   private final ResourceServer server;
   private final ClusterBalancer balancer;
+  private DistributedLock lock;
+  private boolean locking;
 
   public AtomixReplica(Properties properties) {
     this(builder(properties));
@@ -225,8 +228,11 @@ public final class AtomixReplica extends Atomix {
    * Balances the cluster.
    */
   private void balance() {
-    if (server.server().cluster().member().equals(server.server().cluster().leader())) {
-      balancer.balance(server.server().cluster());
+    if (!locking && server.server().cluster().member().equals(server.server().cluster().leader())) {
+      locking = true;
+      lock.lock()
+        .thenCompose(v -> balancer.balance(server.server().cluster()))
+        .whenComplete((r1, e1) -> lock.unlock().whenComplete((r2, e2) -> locking = false));
     }
   }
 
@@ -234,15 +240,34 @@ public final class AtomixReplica extends Atomix {
   public CompletableFuture<Atomix> open() {
     return server.open()
       .thenRun(this::registerListeners)
-      .thenCompose(v -> super.open());
+      .thenCompose(v -> super.open())
+      .thenCompose(v -> client.get("", DistributedLock.class))
+      .thenApply(lock -> {
+        this.lock = lock;
+        return this;
+      });
   }
 
   @Override
   public CompletableFuture<Void> close() {
-    return balancer.replace(server.server().cluster())
-      .whenComplete((r, e) -> balancer.close())
-      .thenCompose(v -> super.close())
-      .thenCompose(v -> server.close());
+    CompletableFuture<Void> future = new CompletableFuture<>();
+    lock.lock()
+      .thenCompose(v -> balancer.replace(server.server().cluster()))
+      .whenComplete((r1, e1) -> {
+        balancer.close();
+        lock.close().whenComplete((r2, e2) -> {
+          super.close().whenComplete((r3, e3) -> {
+            server.close().whenComplete((r4, e4) -> {
+              if (e4 == null) {
+                future.complete(null);
+              } else {
+                future.completeExceptionally(e4);
+              }
+            });
+          });
+        });
+      });
+    return future;
   }
 
   /**
@@ -284,7 +309,7 @@ public final class AtomixReplica extends Atomix {
     private Builder(Address clientAddress, Address serverAddress, Collection<Address> members) {
       Serializer serializer = new Serializer(new ServiceLoaderTypeResolver());
       this.clientAddress = Assert.notNull(clientAddress, "clientAddress");
-      this.clientBuilder = CopycatClient.builder(Collections.singleton(clientAddress)).withSerializer(serializer.clone());
+      this.clientBuilder = CopycatClient.builder(members).withSerializer(serializer.clone());
       this.serverBuilder = CopycatServer.builder(clientAddress, serverAddress, members).withSerializer(serializer.clone());
       this.quorumHint = members.size();
     }
@@ -469,24 +494,9 @@ public final class AtomixReplica extends Atomix {
     }
 
     /**
-     * Builds a client for the replica.
+     * Builds the replica transports.
      */
-    private ResourceClient buildClient() {
-      // Resolve resources.
-      resourceResolver.resolve(registry);
-
-      // Configure the client and server with a transport that routes all local client communication
-      // directly through the local server, ensuring we don't incur unnecessary network traffic by
-      // sending operations to a remote server when a local server is already available in the same JVM.=
-      clientBuilder.withTransport(new LocalTransport(localRegistry))
-        .withServerSelectionStrategy(new CombinedSelectionStrategy(clientAddress));
-      return new ResourceClient(new CombinedCopycatClient(clientBuilder.build(), serverTransport), registry);
-    }
-
-    /**
-     * Builds a server for the replica.
-     */
-    private ResourceServer buildServer() {
+    private void buildTransport() {
       // If no transport was configured by the user, attempt to load the Netty transport.
       if (serverTransport == null) {
         try {
@@ -495,14 +505,36 @@ public final class AtomixReplica extends Atomix {
           throw new ConfigurationException("transport not configured");
         }
       }
+    }
 
+    /**
+     * Builds a client for the replica.
+     */
+    private ResourceClient buildClient() {
+      buildTransport();
+
+      // Resolve resources.
+      resourceResolver.resolve(registry);
+
+      // Configure the client and server with a transport that routes all local client communication
+      // directly through the local server, ensuring we don't incur unnecessary network traffic by
+      // sending operations to a remote server when a local server is already available in the same JVM.=
+      clientBuilder.withTransport(new CombinedClientTransport(clientAddress, new LocalTransport(localRegistry), clientTransport != null ? clientTransport : serverTransport))
+        .withServerSelectionStrategy(new CombinedSelectionStrategy(clientAddress));
+      return new ResourceClient(new CombinedCopycatClient(clientBuilder.build(), serverTransport), registry);
+    }
+
+    /**
+     * Builds a server for the replica.
+     */
+    private ResourceServer buildServer() {
       // Construct the underlying CopycatServer. The server should have been configured with a CombinedTransport
       // that facilitates the local client connecting directly to the server.
       if (clientTransport != null) {
-        serverBuilder.withClientTransport(new CombinedTransport(new LocalTransport(localRegistry), clientTransport))
+        serverBuilder.withClientTransport(new CombinedServerTransport(new LocalTransport(localRegistry), clientTransport))
           .withServerTransport(serverTransport);
       } else {
-        serverBuilder.withTransport(new CombinedTransport(new LocalTransport(localRegistry), serverTransport));
+        serverBuilder.withTransport(new CombinedServerTransport(new LocalTransport(localRegistry), serverTransport));
       }
 
       // Set the server resource state machine.
@@ -635,26 +667,87 @@ public final class AtomixReplica extends Atomix {
    * Combined server selection strategy.
    */
   private static class CombinedSelectionStrategy implements ServerSelectionStrategy {
-    private final List<Address> addresses;
+    private final Address address;
 
     private CombinedSelectionStrategy(Address address) {
-      this.addresses = Collections.singletonList(address);
+      this.address = address;
     }
 
     @Override
     public List<Address> selectConnections(Address leader, List<Address> servers) {
+      List<Address> addresses = new ArrayList<>(servers.size());
+      addresses.add(address);
+      Collections.shuffle(servers);
+      for (Address address : servers) {
+        if (!address.equals(this.address)) {
+          addresses.add(address);
+        }
+      }
       return addresses;
+    }
+  }
+
+  /**
+   * Combined client transport.
+   */
+  private static class CombinedClientTransport implements Transport {
+    private final Address address;
+    private final Transport local;
+    private final Transport remote;
+
+    private CombinedClientTransport(Address address, Transport local, Transport remote) {
+      this.address = address;
+      this.local = local;
+      this.remote = remote;
+    }
+
+    @Override
+    public Client client() {
+      return new CombinedClient(address, local.client(), remote.client());
+    }
+
+    @Override
+    public Server server() {
+      return remote.server();
+    }
+  }
+
+  /**
+   * Combined client,
+   */
+  private static class CombinedClient implements Client {
+    private final Address address;
+    private final Client local;
+    private final Client remote;
+
+    private CombinedClient(Address address, Client local, Client remote) {
+      this.address = address;
+      this.local = local;
+      this.remote = remote;
+    }
+
+    @Override
+    public CompletableFuture<Connection> connect(Address address) {
+      if (this.address.equals(address)) {
+        return local.connect(address);
+      }
+      return remote.connect(address);
+    }
+
+    @Override
+    public CompletableFuture<Void> close() {
+      return remote.close().thenRun(local::close);
     }
   }
 
   /**
    * Combined transport that aids in the local client communicating directly with the local server.
    */
-  private static class CombinedTransport implements Transport {
+  private static class CombinedServerTransport implements Transport {
     private final Transport local;
     private final Transport remote;
 
-    private CombinedTransport(Transport local, Transport remote) {
+    private CombinedServerTransport(Transport local, Transport remote) {
       this.local = local;
       this.remote = remote;
     }
