@@ -20,10 +20,10 @@ import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Provides an interface to interacting with members of a {@link DistributedMembershipGroup}.
+ * Provides an interface to interacting with members of a {@link DistributedGroup}.
  * <p>
  * A {@code GroupMember} represents a reference to a single instance of a resource which has
- * {@link DistributedMembershipGroup#join() joined} a membership group. Each member is guaranteed to
+ * {@link DistributedGroup#join() joined} a membership group. Each member is guaranteed to
  * have a unique {@link #id()} throughout the lifetime of the distributed resource. Group members
  * can {@link #schedule(Duration, Runnable) schedule} or {@link #execute(Runnable) execute} callbacks
  * remotely on member nodes.
@@ -50,7 +50,7 @@ public interface GroupMember {
    * Gets the value of a property of the member.
    * <p>
    * Properties are identified by a {@link String} name. Properties may only be set by the local member but
-   * can be accessed by any instance of the {@link DistributedMembershipGroup}.
+   * can be accessed by any instance of the {@link DistributedGroup}.
    *
    * @param property The property to get.
    * @param <T> The property type.
@@ -62,7 +62,7 @@ public interface GroupMember {
    * Sends a message to the member.
    * <p>
    * Group messaging guarantees sequential consistency such that members are guaranteed to receive messages
-   * in the order in which they were sent. Messages will be sent according to the parent {@link DistributedMembershipGroup}'s
+   * in the order in which they were sent. Messages will be sent according to the parent {@link DistributedGroup}'s
    * {@link io.atomix.resource.Consistency consistency} level. If the consistency level is
    * {@link io.atomix.resource.Consistency#ATOMIC} (the default), the returned {@link CompletableFuture} will
    * be completed once the member has received the message or has left the group. Note that the completion of

@@ -28,7 +28,7 @@
   <modules>
     <module>standalone-server</module>
     <module>leader-election</module>
-    <module>group-membership</module>
+    <module>distributed-group</module>
     <module>distributed-value</module>
     <module>task-queue-producer</module>
     <module>task-queue-consumer</module>

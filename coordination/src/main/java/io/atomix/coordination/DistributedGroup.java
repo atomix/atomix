@@ -17,8 +17,8 @@ package io.atomix.coordination;
 
 import io.atomix.catalyst.util.Listener;
 import io.atomix.catalyst.util.Listeners;
-import io.atomix.coordination.state.MembershipGroupCommands;
-import io.atomix.coordination.state.MembershipGroupState;
+import io.atomix.coordination.state.GroupCommands;
+import io.atomix.coordination.state.GroupState;
 import io.atomix.copycat.client.Command;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.Resource;
@@ -37,15 +37,15 @@ import java.util.function.Consumer;
  * Provides a mechanism for managing group membership and remote scheduling and execution.
  * <p>
  * The distributed membership group resource facilitates managing group membership within the Atomix cluster.
- * Each instance of a {@code DistributedMembershipGroup} resource represents a single {@link GroupMember}.
+ * Each instance of a {@code DistributedGroup} resource represents a single {@link GroupMember}.
  * Members can {@link #join()} and {@link LocalGroupMember#leave()} the group and be notified of other members
  * {@link #onJoin(Consumer) joining} and {@link #onLeave(Consumer) leaving} the group. Members may leave the group
  * either voluntarily or due to a failure or other disconnection from the cluster.
  * <p>
- * To create a membership group resource, use the {@code DistributedMembershipGroup} class or constructor:
+ * To create a membership group resource, use the {@code DistributedGroup} class or constructor:
  * <pre>
  *   {@code
- *   atomix.getMembershipGroup("my-group").thenAccept(group -> {
+ *   atomix.getGroup("my-group").thenAccept(group -> {
  *     ...
  *   });
  *   }
@@ -91,8 +91,8 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-@ResourceTypeInfo(id=-20, stateMachine=MembershipGroupState.class)
-public class DistributedMembershipGroup extends Resource<DistributedMembershipGroup, Resource.Options> {
+@ResourceTypeInfo(id=-20, stateMachine=GroupState.class)
+public class DistributedGroup extends Resource<DistributedGroup, Resource.Options> {
   private final Listeners<GroupMember> joinListeners = new Listeners<>();
   private final Listeners<GroupMember> leaveListeners = new Listeners<>();
   private final Listeners<Long> termListeners = new Listeners<>();
@@ -102,12 +102,12 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
   private volatile String leader;
   private volatile long term;
 
-  public DistributedMembershipGroup(CopycatClient client, Resource.Options options) {
+  public DistributedGroup(CopycatClient client, Resource.Options options) {
     super(client, options);
   }
 
   @Override
-  public CompletableFuture<DistributedMembershipGroup> open() {
+  public CompletableFuture<DistributedGroup> open() {
     return super.open().thenApply(result -> {
       client.<String>onEvent("join", memberId -> {
         GroupMember member = members.computeIfAbsent(memberId, InternalGroupMember::new);
@@ -145,7 +145,7 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
         }
       });
 
-      client.<MembershipGroupCommands.Message>onEvent("message", message -> {
+      client.<GroupCommands.Message>onEvent("message", message -> {
         InternalLocalGroupMember localMember = localMembers.get(message.member());
         if (localMember != null) {
           localMember.handle(message);
@@ -163,7 +163,7 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
    * Synchronizes the membership group.
    */
   private CompletableFuture<Void> sync() {
-    return submit(new MembershipGroupCommands.Listen()).thenAccept(members -> {
+    return submit(new GroupCommands.Listen()).thenAccept(members -> {
       for (String memberId : members) {
         this.members.computeIfAbsent(memberId, InternalGroupMember::new);
       }
@@ -280,7 +280,7 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
    * @return A completable future to be completed once the member has joined.
    */
   public CompletableFuture<LocalGroupMember> join() {
-    return submit(new MembershipGroupCommands.Join(UUID.randomUUID().toString(), false)).thenApply(memberId -> {
+    return submit(new GroupCommands.Join(UUID.randomUUID().toString(), false)).thenApply(memberId -> {
       InternalLocalGroupMember member = new InternalLocalGroupMember(memberId);
       localMembers.put(member.id(), member);
       return member;
@@ -315,7 +315,7 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
    * @return A completable future to be completed once the member has joined.
    */
   public CompletableFuture<LocalGroupMember> join(String memberId) {
-    return submit(new MembershipGroupCommands.Join(memberId, true)).thenApply(id -> {
+    return submit(new GroupCommands.Join(memberId, true)).thenApply(id -> {
       InternalLocalGroupMember member = new InternalLocalGroupMember(id);
       localMembers.put(member.id(), member);
       return member;
@@ -374,12 +374,12 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
 
     @Override
     public CompletableFuture<Void> set(String property, Object value) {
-      return submit(new MembershipGroupCommands.SetProperty(memberId, property, value));
+      return submit(new GroupCommands.SetProperty(memberId, property, value));
     }
 
     @Override
     public CompletableFuture<Void> remove(String property) {
-      return submit(new MembershipGroupCommands.RemoveProperty(memberId, property));
+      return submit(new GroupCommands.RemoveProperty(memberId, property));
     }
 
     @Override
@@ -393,7 +393,7 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
     /**
      * Handles a message to the member.
      */
-    private void handle(MembershipGroupCommands.Message message) {
+    private void handle(GroupCommands.Message message) {
       ListenerHolder listener = listeners.get(message.topic());
       if (listener != null) {
         listener.accept(message.body());
@@ -411,12 +411,12 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
 
     @Override
     public CompletableFuture<Void> resign() {
-      return submit(new MembershipGroupCommands.Resign(memberId));
+      return submit(new GroupCommands.Resign(memberId));
     }
 
     @Override
     public CompletableFuture<Void> leave() {
-      return submit(new MembershipGroupCommands.Leave(memberId)).whenComplete((result, error) -> {
+      return submit(new GroupCommands.Leave(memberId)).whenComplete((result, error) -> {
         localMembers.remove(memberId);
       });
     }
@@ -467,12 +467,12 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
     @Override
     @SuppressWarnings("unchecked")
     public <T> CompletableFuture<T> get(String property) {
-      return submit(new MembershipGroupCommands.GetProperty(memberId, property)).thenApply(result -> (T) result);
+      return submit(new GroupCommands.GetProperty(memberId, property)).thenApply(result -> (T) result);
     }
 
     @Override
     public CompletableFuture<Void> send(String topic, Object message) {
-      return submit(new MembershipGroupCommands.Send(memberId, topic, message));
+      return submit(new GroupCommands.Send(memberId, topic, message));
     }
 
     @Override
@@ -482,12 +482,17 @@ public class DistributedMembershipGroup extends Resource<DistributedMembershipGr
 
     @Override
     public CompletableFuture<Void> schedule(Duration delay, Runnable callback) {
-      return submit(new MembershipGroupCommands.Schedule(memberId, delay.toMillis(), callback));
+      return submit(new GroupCommands.Schedule(memberId, delay.toMillis(), callback));
     }
 
     @Override
     public CompletableFuture<Void> execute(Runnable callback) {
-      return submit(new MembershipGroupCommands.Execute(memberId, callback));
+      return submit(new GroupCommands.Execute(memberId, callback));
+    }
+    
+    @Override
+    public String toString() {
+      return memberId;
     }
   }
 

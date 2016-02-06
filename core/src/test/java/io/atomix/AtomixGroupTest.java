@@ -15,7 +15,7 @@
  */
 package io.atomix;
 
-import io.atomix.coordination.DistributedMembershipGroup;
+import io.atomix.coordination.DistributedGroup;
 import io.atomix.coordination.LocalGroupMember;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -30,28 +30,28 @@ import static org.testng.Assert.*;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 @Test
-public class AtomixMembershipGroupTest extends AbstractAtomixTest {
+public class AtomixGroupTest extends AbstractAtomixTest {
   @BeforeClass
   protected void setupCluster() throws Throwable {
     createReplicas(3, 3, 0);
   }
   
-  public void testClientMembershipGroupGet() throws Throwable {
+  public void testClientGroupGet() throws Throwable {
     Atomix client1 = createClient();
     Atomix client2 = createClient();
-    testMembershipGroup(client1, client2, get("test-client-group-get", DistributedMembershipGroup.class));
+    testGroup(client1, client2, get("test-client-group-get", DistributedGroup.class));
   }
 
-  public void testReplicaMembershipGroupGet() throws Throwable {
-    testMembershipGroup(replicas.get(0), replicas.get(1), get("test-replica-group-get", DistributedMembershipGroup.class));
+  public void testReplicaGroupGet() throws Throwable {
+    testGroup(replicas.get(0), replicas.get(1), get("test-replica-group-get", DistributedGroup.class));
   }
 
   /**
    * Tests a membership group.
    */
-  private void testMembershipGroup(Atomix client1, Atomix client2, Function<Atomix, DistributedMembershipGroup> factory) throws Throwable {
-    DistributedMembershipGroup group1 = factory.apply(client1);
-    DistributedMembershipGroup group2 = factory.apply(client2);
+  private void testGroup(Atomix client1, Atomix client2, Function<Atomix, DistributedGroup> factory) throws Throwable {
+    DistributedGroup group1 = factory.apply(client1);
+    DistributedGroup group2 = factory.apply(client2);
 
     LocalGroupMember localMember = group2.join().get();
     assertEquals(group2.members().size(), 1);

@@ -15,15 +15,14 @@
  */
 package io.atomix.coordination;
 
-import io.atomix.testing.AbstractCopycatTest;
-import org.testng.annotations.Test;
+import static org.testng.Assert.assertEquals;
 
-import java.io.Serializable;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.testng.Assert.assertEquals;
+import org.testng.annotations.Test;
+
+import io.atomix.testing.AbstractCopycatTest;
 
 /**
  * Async group test.
@@ -31,11 +30,11 @@ import static org.testng.Assert.assertEquals;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class DistributedMembershipGroupTest extends AbstractCopycatTest<DistributedMembershipGroup> {
+public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> {
   
   @Override
-  protected Class<? super DistributedMembershipGroup> type() {
-    return DistributedMembershipGroup.class;
+  protected Class<? super DistributedGroup> type() {
+    return DistributedGroup.class;
   }
 
   /**
@@ -44,8 +43,8 @@ public class DistributedMembershipGroupTest extends AbstractCopycatTest<Distribu
   public void testJoin() throws Throwable {
     createServers(3);
 
-    DistributedMembershipGroup group1 = createResource();
-    DistributedMembershipGroup group2 = createResource();
+    DistributedGroup group1 = createResource();
+    DistributedGroup group2 = createResource();
 
     AtomicBoolean joined = new AtomicBoolean();
     group2.join().join();
@@ -72,8 +71,8 @@ public class DistributedMembershipGroupTest extends AbstractCopycatTest<Distribu
   public void testLeave() throws Throwable {
     createServers(3);
 
-    DistributedMembershipGroup group1 = createResource();
-    DistributedMembershipGroup group2 = createResource();
+    DistributedGroup group1 = createResource();
+    DistributedGroup group2 = createResource();
 
     LocalGroupMember localMember = group2.join().get();
     assertEquals(group2.members().size(), 1);
@@ -98,8 +97,8 @@ public class DistributedMembershipGroupTest extends AbstractCopycatTest<Distribu
   public void testElectResign() throws Throwable {
     createServers(3);
 
-    DistributedMembershipGroup group1 = createResource();
-    DistributedMembershipGroup group2 = createResource();
+    DistributedGroup group1 = createResource();
+    DistributedGroup group2 = createResource();
 
     LocalGroupMember localMember2 = group2.join().get();
     assertEquals(group2.members().size(), 1);
@@ -122,8 +121,8 @@ public class DistributedMembershipGroupTest extends AbstractCopycatTest<Distribu
   public void testElectClose() throws Throwable {
     createServers(3);
 
-    DistributedMembershipGroup group1 = createResource();
-    DistributedMembershipGroup group2 = createResource();
+    DistributedGroup group1 = createResource();
+    DistributedGroup group2 = createResource();
 
     LocalGroupMember localMember2 = group2.join().get();
     assertEquals(group2.members().size(), 1);
@@ -146,8 +145,8 @@ public class DistributedMembershipGroupTest extends AbstractCopycatTest<Distribu
   public void testProperties() throws Throwable {
     createServers(3);
 
-    DistributedMembershipGroup group1 = createResource();
-    DistributedMembershipGroup group2 = createResource();
+    DistributedGroup group1 = createResource();
+    DistributedGroup group2 = createResource();
 
     LocalGroupMember localMember = group1.join().get();
     localMember.set("foo", "Hello world!").thenRun(this::resume);
@@ -180,8 +179,8 @@ public class DistributedMembershipGroupTest extends AbstractCopycatTest<Distribu
   public void testPersistentProperties() throws Throwable {
     createServers(3);
 
-    DistributedMembershipGroup group1 = createResource();
-    DistributedMembershipGroup group2 = createResource();
+    DistributedGroup group1 = createResource();
+    DistributedGroup group2 = createResource();
 
     String memberId = UUID.randomUUID().toString();
 
@@ -217,8 +216,8 @@ public class DistributedMembershipGroupTest extends AbstractCopycatTest<Distribu
   public void testSend() throws Throwable {
     createServers(3);
 
-    DistributedMembershipGroup group1 = createResource();
-    DistributedMembershipGroup group2 = createResource();
+    DistributedGroup group1 = createResource();
+    DistributedGroup group2 = createResource();
 
     group1.join().thenAccept(member -> {
       member.onMessage("foo", message -> {

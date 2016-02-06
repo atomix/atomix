@@ -15,9 +15,9 @@
  */
 package io.atomix.coordination;
 
-import io.atomix.resource.ResourceType;
-import io.atomix.testing.AbstractCopycatTest;
 import org.testng.annotations.Test;
+
+import io.atomix.testing.AbstractCopycatTest;
 
 /**
  * Async lock test.
