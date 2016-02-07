@@ -36,13 +36,14 @@ import java.util.concurrent.CompletableFuture;
  */
 @Test
 public class AtomixClientTest extends AbstractAtomixTest {
+
   @BeforeMethod
   protected void beforeMethod() {
     init();
   }
 
   @AfterMethod
-  protected void afterMethod() {
+  protected void afterMethod() throws Throwable {
     cleanup();
   }
 

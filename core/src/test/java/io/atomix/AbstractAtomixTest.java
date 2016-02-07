@@ -43,12 +43,12 @@ public abstract class AbstractAtomixTest extends ConcurrentTestCase {
   protected List<AtomixReplica> replicas;
 
   @BeforeClass
-  protected void beforeClass() {
+  protected void beforeClass() throws Throwable {
     init();
   }
 
   @AfterClass
-  protected void afterClass() {
+  protected void afterClass() throws Throwable {
     cleanup();
   }
 
@@ -60,20 +60,15 @@ public abstract class AbstractAtomixTest extends ConcurrentTestCase {
     replicas = new ArrayList<>();
   }
 
-  protected void cleanup() {
-    clients.stream().forEach(a -> {
-      try {
-        a.close().join();
-      } catch (Exception ignore) {
-      }
-    });
-    replicas.stream().forEach(a -> {
-      try {
-        a.close().join();
-        Thread.sleep(1000);
-      } catch (Exception ignore) {
-      }
-    });
+  protected void cleanup() throws Throwable {
+    for (AtomixClient client : clients) {
+      client.close().thenRun(this::resume);
+      await(10000);
+    }
+    for (AtomixReplica replica : replicas) {
+      replica.close().thenRun(this::resume);
+      await(10000);
+    }
 
     clients.clear();
     replicas.clear();

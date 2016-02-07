@@ -46,7 +46,7 @@ public class AtomixReplicaTest extends AbstractAtomixTest {
   }
 
   @AfterMethod
-  protected void afterMethod() {
+  protected void afterMethod() throws Throwable{
     cleanup();
   }
 
