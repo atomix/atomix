@@ -67,6 +67,23 @@ final class DummySession implements Session {
     return new DummyListener<>();
   }
 
+  @Override
+  public int hashCode() {
+    int hashCode = 23;
+    hashCode = 37 * hashCode + (int)(id ^ (id >>> 32));
+    return hashCode;
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    return object instanceof Session && ((Session) object).id() == id;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[id=%d]", getClass().getSimpleName(), id);
+  }
+
   /**
    * Dummy listener.
    */

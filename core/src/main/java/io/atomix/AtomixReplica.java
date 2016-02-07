@@ -255,7 +255,7 @@ public final class AtomixReplica extends Atomix {
       .thenCompose(v -> balancer.replace(server.server().cluster()))
       .whenComplete((r1, e1) -> {
         balancer.close();
-        lock.close().whenComplete((r2, e2) -> {
+        lock.unlock().whenComplete((r2, e2) -> {
           super.close().whenComplete((r3, e3) -> {
             server.close().whenComplete((r4, e4) -> {
               if (e4 == null) {
