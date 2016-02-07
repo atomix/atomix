@@ -95,8 +95,23 @@ public class ResourceManagerState extends StateMachine implements SessionListene
       throw new ResourceManagerException("unknown resource: " + resourceId);
     }
 
+    Session session;
+
+    // If the session exists for the resource, use the existing session.
     SessionHolder sessionHolder = resource.sessions.get(commit.session().id());
-    Session session = sessionHolder != null ? sessionHolder.session : new DummySession(commit.session().id());
+    if (sessionHolder != null) {
+      session = sessionHolder.session;
+    }
+    // If the commit session is OPEN or UNSTABLE, add the commit session to the resource.
+    else if (commit.session().state() == Session.State.OPEN || commit.session().state() == Session.State.UNSTABLE) {
+      session = new ManagedResourceSession(resourceId, commit.session());
+    }
+    // If the commit session is CLOSED or EXPIRED, use a temporary dummy session.
+    else {
+      session = new DummySession(commit.session().id());
+    }
+
+    // Execute the operation.
     return resource.executor.execute(commits.acquire(commit, session));
   }
 
