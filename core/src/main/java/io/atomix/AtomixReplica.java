@@ -228,7 +228,7 @@ public final class AtomixReplica extends Atomix {
    * Balances the cluster.
    */
   private void balance() {
-    if (!locking && server.server().cluster().member().equals(server.server().cluster().leader())) {
+    if (lock != null && !locking && server.server().cluster().member().equals(server.server().cluster().leader())) {
       locking = true;
       lock.lock()
         .thenCompose(v -> balancer.balance(server.server().cluster()))
