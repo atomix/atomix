@@ -79,7 +79,7 @@ import java.util.function.Consumer;
  */
 @ResourceTypeInfo(id=-22, stateMachine=LockState.class)
 public class DistributedLock extends Resource<DistributedLock, Resource.Options> {
-  private final Queue<Consumer<Boolean>> queue = new ConcurrentLinkedQueue<>();
+  private final Queue<Consumer<Long>> queue = new ConcurrentLinkedQueue<>();
 
   public DistributedLock(CopycatClient client, Resource.Options options) {
     super(client, options);
@@ -96,10 +96,10 @@ public class DistributedLock extends Resource<DistributedLock, Resource.Options>
   /**
    * Handles a received session event.
    */
-  private void handleEvent(boolean locked) {
-    Consumer<Boolean> consumer = queue.poll();
+  private void handleEvent(long version) {
+    Consumer<Long> consumer = queue.poll();
     if (consumer != null) {
-      consumer.accept(locked);
+      consumer.accept(version);
     }
   }
 
@@ -128,9 +128,9 @@ public class DistributedLock extends Resource<DistributedLock, Resource.Options>
    *
    * @return A completable future to be completed once the lock has been acquired.
    */
-  public CompletableFuture<Void> lock() {
-    CompletableFuture<Void> future = new CompletableFuture<>();
-    Consumer<Boolean> consumer = locked -> future.complete(null);
+  public CompletableFuture<Long> lock() {
+    CompletableFuture<Long> future = new CompletableFuture<>();
+    Consumer<Long> consumer = locked -> future.complete(null);
     queue.add(consumer);
     submit(new LockCommands.Lock(-1)).whenComplete((result, error) -> {
       if (error != null) {
@@ -177,9 +177,9 @@ public class DistributedLock extends Resource<DistributedLock, Resource.Options>
    *
    * @return A completable future to be completed with a boolean indicating whether the lock was acquired.
    */
-  public CompletableFuture<Boolean> tryLock() {
-    CompletableFuture<Boolean> future = new CompletableFuture<>();
-    Consumer<Boolean> consumer = future::complete;
+  public CompletableFuture<Long> tryLock() {
+    CompletableFuture<Long> future = new CompletableFuture<>();
+    Consumer<Long> consumer = future::complete;
     queue.add(consumer);
     submit(new LockCommands.Lock()).whenComplete((result, error) -> {
       if (error != null) {
@@ -234,9 +234,9 @@ public class DistributedLock extends Resource<DistributedLock, Resource.Options>
    * @param timeout The duration within which to acquire the lock.
    * @return A completable future to be completed with a boolean indicating whether the lock was acquired.
    */
-  public CompletableFuture<Boolean> tryLock(Duration timeout) {
-    CompletableFuture<Boolean> future = new CompletableFuture<>();
-    Consumer<Boolean> consumer = future::complete;
+  public CompletableFuture<Long> tryLock(Duration timeout) {
+    CompletableFuture<Long> future = new CompletableFuture<>();
+    Consumer<Long> consumer = future::complete;
     queue.add(consumer);
     submit(new LockCommands.Lock(timeout.toMillis())).whenComplete((result, error) -> {
       if (error != null) {
