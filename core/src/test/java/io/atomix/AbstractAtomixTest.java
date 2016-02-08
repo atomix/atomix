@@ -63,11 +63,11 @@ public abstract class AbstractAtomixTest extends ConcurrentTestCase {
   protected void cleanup() throws Throwable {
     for (AtomixClient client : clients) {
       client.close().thenRun(this::resume);
-      await(10000);
+      await(30000);
     }
     for (AtomixReplica replica : replicas) {
       replica.close().thenRun(this::resume);
-      await(10000);
+      await(30000);
     }
 
     clients.clear();
