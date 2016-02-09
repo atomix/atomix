@@ -102,13 +102,9 @@ public class ResourceManagerState extends StateMachine implements SessionListene
     if (sessionHolder != null) {
       session = sessionHolder.session;
     }
-    // If the commit session is OPEN or UNSTABLE, add the commit session to the resource.
-    else if (commit.session().state() == Session.State.OPEN || commit.session().state() == Session.State.UNSTABLE) {
-      session = new ManagedResourceSession(resourceId, commit.session());
-    }
-    // If the commit session is CLOSED or EXPIRED, use a temporary dummy session.
+    // If the commit session is not open for this resource, add the commit session to the resource.
     else {
-      session = new DummySession(commit.session().id());
+      session = new ManagedResourceSession(resourceId, commit.session());
     }
 
     // Execute the operation.
