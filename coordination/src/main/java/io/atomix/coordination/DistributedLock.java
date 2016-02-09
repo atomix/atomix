@@ -110,6 +110,10 @@ public class DistributedLock extends Resource<DistributedLock, Resource.Options>
    * an event granting the lock to this instance. The returned {@link CompletableFuture} will not be completed
    * until the lock has been acquired.
    * <p>
+   * Once the lock is granted, the returned future will be completed with a positive {@code Long} value. This value
+   * is guaranteed to be unique across all clients and monotonically increasing. Thus, the value can be used as a
+   * fencing token for further concurrency control.
+   * <p>
    * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
    * or to be notified in a separate thread once the operation completes. To block until the operation completes,
    * use the {@link CompletableFuture#join()} method to block the calling thread:
@@ -146,7 +150,11 @@ public class DistributedLock extends Resource<DistributedLock, Resource.Options>
    * When the lock is acquired, this lock instance will publish an immediate lock request to the cluster. If the
    * lock is available, the lock will be granted and the returned {@link CompletableFuture} will be completed
    * successfully. If the lock is not immediately available, the {@link CompletableFuture} will be completed
-   * {@code false}.
+   * with a {@code null} value.
+   * <p>
+   * If the lock is granted, the returned future will be completed with a positive {@code Long} value. This value
+   * is guaranteed to be unique across all clients and monotonically increasing. Thus, the value can be used as a
+   * fencing token for further concurrency control.
    * <p>
    * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
    * or to be notified in a separate thread once the operation completes. To block until the operation completes,
@@ -196,7 +204,11 @@ public class DistributedLock extends Resource<DistributedLock, Resource.Options>
    * lock is available, the lock will be granted and the returned {@link CompletableFuture} will be completed
    * successfully. If the lock is not immediately available, the lock request will be queued until the lock comes
    * available. If the lock {@code timeout} expires, the lock request will be cancelled and the returned
-   * {@link CompletableFuture} will be completed {@code false}.
+   * {@link CompletableFuture} will be completed successfully with a {@code null} result.
+   * <p>
+   * If the lock is granted, the returned future will be completed with a positive {@code Long} value. This value
+   * is guaranteed to be unique across all clients and monotonically increasing. Thus, the value can be used as a
+   * fencing token for further concurrency control.
    * <p>
    * <b>Timeouts and wall-clock time</b>
    * The provided {@code timeout} may not ultimately be representative of the actual timeout in the cluster. Because
@@ -232,7 +244,7 @@ public class DistributedLock extends Resource<DistributedLock, Resource.Options>
    * </pre>
    *
    * @param timeout The duration within which to acquire the lock.
-   * @return A completable future to be completed with a boolean indicating whether the lock was acquired.
+   * @return A completable future to be completed with a value indicating whether the lock was acquired.
    */
   public CompletableFuture<Long> tryLock(Duration timeout) {
     CompletableFuture<Long> future = new CompletableFuture<>();

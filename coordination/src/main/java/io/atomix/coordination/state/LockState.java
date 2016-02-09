@@ -75,7 +75,7 @@ public class LockState extends ResourceStateMachine implements SessionListener {
       commit.session().publish("lock", commit.index());
     } else if (commit.operation().timeout() == 0) {
       try {
-        commit.session().publish("lock", 0);
+        commit.session().publish("lock", null);
       } finally {
         commit.close();
       }
