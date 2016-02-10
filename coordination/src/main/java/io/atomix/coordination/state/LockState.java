@@ -65,7 +65,7 @@ public class LockState extends ResourceStateMachine implements SessionListener {
         if (lock.session().state() == Session.State.EXPIRED || lock.session().state() == Session.State.CLOSED) {
           lock = queue.poll();
         } else {
-          lock.session().publish("lock", true);
+          lock.session().publish("lock", lock.index());
           break;
         }
       }
@@ -78,10 +78,10 @@ public class LockState extends ResourceStateMachine implements SessionListener {
   public void lock(Commit<LockCommands.Lock> commit) {
     if (lock == null) {
       lock = commit;
-      commit.session().publish("lock", true);
+      commit.session().publish("lock", commit.index());
     } else if (commit.operation().timeout() == 0) {
       try {
-        commit.session().publish("lock", false);
+        commit.session().publish("lock", null);
       } finally {
         commit.close();
       }
@@ -117,7 +117,7 @@ public class LockState extends ResourceStateMachine implements SessionListener {
           if (lock.session().state() == Session.State.EXPIRED || lock.session().state() == Session.State.CLOSED) {
             lock = queue.poll();
           } else {
-            lock.session().publish("lock", true);
+            lock.session().publish("lock", lock.index());
             break;
           }
         }

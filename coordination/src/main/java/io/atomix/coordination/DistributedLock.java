@@ -79,7 +79,7 @@ import java.util.function.Consumer;
  */
 @ResourceTypeInfo(id=-22, stateMachine=LockState.class)
 public class DistributedLock extends Resource<DistributedLock, Resource.Options> {
-  private final Queue<Consumer<Boolean>> queue = new ConcurrentLinkedQueue<>();
+  private final Queue<Consumer<Long>> queue = new ConcurrentLinkedQueue<>();
 
   public DistributedLock(CopycatClient client, Resource.Options options) {
     super(client, options);
@@ -96,10 +96,10 @@ public class DistributedLock extends Resource<DistributedLock, Resource.Options>
   /**
    * Handles a received session event.
    */
-  private void handleEvent(boolean locked) {
-    Consumer<Boolean> consumer = queue.poll();
+  private void handleEvent(long version) {
+    Consumer<Long> consumer = queue.poll();
     if (consumer != null) {
-      consumer.accept(locked);
+      consumer.accept(version);
     }
   }
 
@@ -109,6 +109,10 @@ public class DistributedLock extends Resource<DistributedLock, Resource.Options>
    * When the lock is acquired, this lock instance will publish a lock request to the cluster and await
    * an event granting the lock to this instance. The returned {@link CompletableFuture} will not be completed
    * until the lock has been acquired.
+   * <p>
+   * Once the lock is granted, the returned future will be completed with a positive {@code Long} value. This value
+   * is guaranteed to be unique across all clients and monotonically increasing. Thus, the value can be used as a
+   * fencing token for further concurrency control.
    * <p>
    * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
    * or to be notified in a separate thread once the operation completes. To block until the operation completes,
@@ -128,9 +132,9 @@ public class DistributedLock extends Resource<DistributedLock, Resource.Options>
    *
    * @return A completable future to be completed once the lock has been acquired.
    */
-  public CompletableFuture<Void> lock() {
-    CompletableFuture<Void> future = new CompletableFuture<>();
-    Consumer<Boolean> consumer = locked -> future.complete(null);
+  public CompletableFuture<Long> lock() {
+    CompletableFuture<Long> future = new CompletableFuture<>();
+    Consumer<Long> consumer = locked -> future.complete(null);
     queue.add(consumer);
     submit(new LockCommands.Lock(-1)).whenComplete((result, error) -> {
       if (error != null) {
@@ -146,7 +150,11 @@ public class DistributedLock extends Resource<DistributedLock, Resource.Options>
    * When the lock is acquired, this lock instance will publish an immediate lock request to the cluster. If the
    * lock is available, the lock will be granted and the returned {@link CompletableFuture} will be completed
    * successfully. If the lock is not immediately available, the {@link CompletableFuture} will be completed
-   * {@code false}.
+   * with a {@code null} value.
+   * <p>
+   * If the lock is granted, the returned future will be completed with a positive {@code Long} value. This value
+   * is guaranteed to be unique across all clients and monotonically increasing. Thus, the value can be used as a
+   * fencing token for further concurrency control.
    * <p>
    * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
    * or to be notified in a separate thread once the operation completes. To block until the operation completes,
@@ -177,9 +185,9 @@ public class DistributedLock extends Resource<DistributedLock, Resource.Options>
    *
    * @return A completable future to be completed with a boolean indicating whether the lock was acquired.
    */
-  public CompletableFuture<Boolean> tryLock() {
-    CompletableFuture<Boolean> future = new CompletableFuture<>();
-    Consumer<Boolean> consumer = future::complete;
+  public CompletableFuture<Long> tryLock() {
+    CompletableFuture<Long> future = new CompletableFuture<>();
+    Consumer<Long> consumer = future::complete;
     queue.add(consumer);
     submit(new LockCommands.Lock()).whenComplete((result, error) -> {
       if (error != null) {
@@ -196,7 +204,11 @@ public class DistributedLock extends Resource<DistributedLock, Resource.Options>
    * lock is available, the lock will be granted and the returned {@link CompletableFuture} will be completed
    * successfully. If the lock is not immediately available, the lock request will be queued until the lock comes
    * available. If the lock {@code timeout} expires, the lock request will be cancelled and the returned
-   * {@link CompletableFuture} will be completed {@code false}.
+   * {@link CompletableFuture} will be completed successfully with a {@code null} result.
+   * <p>
+   * If the lock is granted, the returned future will be completed with a positive {@code Long} value. This value
+   * is guaranteed to be unique across all clients and monotonically increasing. Thus, the value can be used as a
+   * fencing token for further concurrency control.
    * <p>
    * <b>Timeouts and wall-clock time</b>
    * The provided {@code timeout} may not ultimately be representative of the actual timeout in the cluster. Because
@@ -232,11 +244,11 @@ public class DistributedLock extends Resource<DistributedLock, Resource.Options>
    * </pre>
    *
    * @param timeout The duration within which to acquire the lock.
-   * @return A completable future to be completed with a boolean indicating whether the lock was acquired.
+   * @return A completable future to be completed with a value indicating whether the lock was acquired.
    */
-  public CompletableFuture<Boolean> tryLock(Duration timeout) {
-    CompletableFuture<Boolean> future = new CompletableFuture<>();
-    Consumer<Boolean> consumer = future::complete;
+  public CompletableFuture<Long> tryLock(Duration timeout) {
+    CompletableFuture<Long> future = new CompletableFuture<>();
+    Consumer<Long> consumer = future::complete;
     queue.add(consumer);
     submit(new LockCommands.Lock(timeout.toMillis())).whenComplete((result, error) -> {
       if (error != null) {
