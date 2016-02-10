@@ -28,6 +28,8 @@ import org.testng.annotations.BeforeClass;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 
 /**
@@ -81,8 +83,8 @@ public abstract class AbstractAtomixTest extends ConcurrentTestCase {
   protected <T extends Resource> Function<Atomix, T> get(String key, Class<? super T> type) {
     return a -> {
       try {
-        return a.get(key, type).get();
-      } catch (InterruptedException | ExecutionException e) {
+        return a.get(key, type).get(5, TimeUnit.SECONDS);
+      } catch (InterruptedException | ExecutionException | TimeoutException e) {
         throw new RuntimeException(e);
       }
     };
@@ -143,7 +145,7 @@ public abstract class AbstractAtomixTest extends ConcurrentTestCase {
       replicas.add(atomix);
     }
 
-    await(10000 * nodes, nodes);
+    await(30000 * nodes, nodes);
     return replicas;
   }
 

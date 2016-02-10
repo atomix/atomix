@@ -19,6 +19,7 @@ import io.atomix.collections.DistributedQueue;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 /**
@@ -48,8 +49,8 @@ public class AtomixQueueTest extends AbstractAtomixTest {
    */
   private void testQueue(Atomix client1, Atomix client2, Function<Atomix, DistributedQueue<String>> factory) throws Throwable {
     DistributedQueue<String> queue1 = factory.apply(client1);
-    queue1.offer("Hello world!").join();
-    queue1.offer("Hello world again!").join();
+    queue1.offer("Hello world!").get(5, TimeUnit.SECONDS);
+    queue1.offer("Hello world again!").get(5, TimeUnit.SECONDS);
     queue1.poll().thenAccept(result -> {
       threadAssertEquals(result, "Hello world!");
       resume();

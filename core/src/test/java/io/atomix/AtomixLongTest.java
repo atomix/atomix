@@ -19,6 +19,7 @@ import io.atomix.variables.DistributedLong;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 /**
@@ -48,7 +49,7 @@ public class AtomixLongTest extends AbstractAtomixTest {
    */
   private void testLong(Atomix client1, Atomix client2, Function<Atomix, DistributedLong> factory) throws Throwable {
     DistributedLong value1 = factory.apply(client1);
-    value1.set(10L).join();
+    value1.set(10L).get(5, TimeUnit.SECONDS);
     value1.getAndIncrement().thenAccept(result -> {
       threadAssertEquals(result, 10L);
       resume();

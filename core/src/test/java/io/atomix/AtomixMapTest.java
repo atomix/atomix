@@ -19,6 +19,7 @@ import io.atomix.collections.DistributedMap;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 /**
@@ -48,7 +49,7 @@ public class AtomixMapTest extends AbstractAtomixTest {
    */
   private void testMap(Atomix client1, Atomix client2, Function<Atomix, DistributedMap<String, String>> factory) throws Throwable {
     DistributedMap<String, String> map1 = factory.apply(client1);
-    map1.put("foo", "Hello world!").join();
+    map1.put("foo", "Hello world!").get(5, TimeUnit.SECONDS);
     map1.get("foo").thenAccept(result -> {
       threadAssertEquals(result, "Hello world!");
       resume();

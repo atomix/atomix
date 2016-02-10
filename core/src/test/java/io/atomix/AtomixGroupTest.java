@@ -20,6 +20,7 @@ import io.atomix.coordination.LocalGroupMember;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import static org.testng.Assert.*;
@@ -53,7 +54,7 @@ public class AtomixGroupTest extends AbstractAtomixTest {
     DistributedGroup group1 = factory.apply(client1);
     DistributedGroup group2 = factory.apply(client2);
 
-    LocalGroupMember localMember = group2.join().get();
+    LocalGroupMember localMember = group2.join().get(5, TimeUnit.SECONDS);
     assertEquals(group2.members().size(), 1);
 
     group1.join().thenRun(() -> {

@@ -21,6 +21,7 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Atomix resource recovery test.
@@ -50,8 +51,8 @@ public class ResourceRecoveryTest extends AbstractAtomixTest {
     String id = UUID.randomUUID().toString();
 
     DistributedMap<String, String> map = atomix.get("test-map-" + id, DistributedMap.class).get();
-    map.put("foo", "Hello world!").join();
-    map.put("bar", "Hello world again!").join();
+    map.put("foo", "Hello world!").get(5, TimeUnit.SECONDS);
+    map.put("bar", "Hello world again!").get(5, TimeUnit.SECONDS);
     map.get("foo").thenAccept(result -> {
       threadAssertEquals(result, "Hello world!");
       resume();
@@ -59,7 +60,7 @@ public class ResourceRecoveryTest extends AbstractAtomixTest {
     await(1000);
 
     DistributedSet<String> set = atomix.get("test-set-" + id, DistributedSet.class).get();
-    set.add("Hello world!").join();
+    set.add("Hello world!").get(5, TimeUnit.SECONDS);
 
     atomix.client.client().recover().whenComplete((result, error) -> {
       threadAssertNull(error);

@@ -19,6 +19,7 @@ import io.atomix.collections.DistributedSet;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 /**
@@ -49,8 +50,8 @@ public class AtomixSetTest extends AbstractAtomixTest {
    */
   private void testSet(Atomix client1, Atomix client2, Function<Atomix, DistributedSet<String>> factory) throws Throwable {
     DistributedSet<String> set1 = factory.apply(client1);
-    set1.add("Hello world!").join();
-    set1.add("Hello world again!").join();
+    set1.add("Hello world!").get(5, TimeUnit.SECONDS);
+    set1.add("Hello world again!").get(5, TimeUnit.SECONDS);
     set1.contains("Hello world!").thenAccept(result -> {
       threadAssertTrue(result);
       resume();

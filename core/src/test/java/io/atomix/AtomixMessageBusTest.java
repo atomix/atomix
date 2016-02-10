@@ -20,6 +20,7 @@ import io.atomix.messaging.DistributedMessageBus;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 /**
@@ -51,8 +52,8 @@ public class AtomixMessageBusTest extends AbstractAtomixTest {
     DistributedMessageBus bus1 = factory.apply(client1);
     DistributedMessageBus bus2 = factory.apply(client2);
 
-    bus1.open(new Address("localhost", 6000)).join();
-    bus2.open(new Address("localhost", 6001)).join();
+    bus1.open(new Address("localhost", 6000)).get(5, TimeUnit.SECONDS);
+    bus2.open(new Address("localhost", 6001)).get(5, TimeUnit.SECONDS);
 
     bus1.<String>consumer("test", message -> {
       threadAssertEquals(message, "Hello world!");
