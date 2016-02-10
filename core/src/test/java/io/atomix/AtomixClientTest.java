@@ -50,13 +50,6 @@ public class AtomixClientTest extends AbstractAtomixTest {
   /**
    * Tests submitting a command.
    */
-  public void testSubmitCommandWithNoneConsistency() throws Throwable {
-    testSubmitCommand(Consistency.NONE);
-  }
-
-  /**
-   * Tests submitting a command.
-   */
   public void testSubmitCommandWithProcessConsistency() throws Throwable {
     testSubmitCommand(Consistency.PROCESS);
   }
@@ -91,13 +84,6 @@ public class AtomixClientTest extends AbstractAtomixTest {
     });
 
     await(10000);
-  }
-
-  /**
-   * Tests submitting a query.
-   */
-  public void testSubmitQueryWithNoneConsistency() throws Throwable {
-    testSubmitQuery(Consistency.NONE);
   }
 
   /**

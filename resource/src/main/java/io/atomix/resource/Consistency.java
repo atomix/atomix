@@ -45,31 +45,6 @@ import io.atomix.copycat.client.Query;
 public enum Consistency {
 
   /**
-   * Provides no guarantees regarding write atomicity or order.
-   * <p>
-   * This consistency level places no additional burden of coordination on write operations submitted to the
-   * cluster. This means an operation on any resource that modifies that resource's state may be applied to
-   * the resource's replicated state machine more than once and it arbitrary order.
-   * <p>
-   * Read-only operations submitted with this consistency level are only guaranteed to be completed within
-   * a bounded time of the leader, but order for concurrent queries is not enforced.
-   * <p>
-   * Resource events triggered by operations submitted with this consistency level are similarly not guaranteed
-   * to be received by the client exactly once or in any particular order.
-   */
-  NONE {
-    @Override
-    public Command.ConsistencyLevel writeConsistency() {
-      return Command.ConsistencyLevel.NONE;
-    }
-
-    @Override
-    public Query.ConsistencyLevel readConsistency() {
-      return Query.ConsistencyLevel.CAUSAL;
-    }
-  },
-
-  /**
    * Guarantees atomicity for write operations and ensures clients see state progress monotonically for
    * non-concurrent operations.
    * <p>

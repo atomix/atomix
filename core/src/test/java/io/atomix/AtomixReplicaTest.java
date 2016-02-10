@@ -46,15 +46,8 @@ public class AtomixReplicaTest extends AbstractAtomixTest {
   }
 
   @AfterMethod
-  protected void afterMethod() throws Throwable{
+  protected void afterMethod() throws Throwable {
     cleanup();
-  }
-
-  /**
-   * Tests submitting a command.
-   */
-  public void testSubmitCommandWithNoneConsistency() throws Throwable {
-    testSubmitCommand(Consistency.NONE);
   }
 
   /**
@@ -92,13 +85,6 @@ public class AtomixReplicaTest extends AbstractAtomixTest {
     });
 
     await(10000);
-  }
-
-  /**
-   * Tests submitting a query.
-   */
-  public void testSubmitQueryWithNoneConsistency() throws Throwable {
-    testSubmitQuery(Consistency.NONE);
   }
 
   /**
