@@ -22,16 +22,18 @@ import io.atomix.catalyst.serializer.SerializeWith;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.copycat.client.Command;
+import io.atomix.copycat.client.session.Session;
 import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.StateMachine;
 import io.atomix.copycat.server.StateMachineExecutor;
+import io.atomix.copycat.server.session.SessionListener;
 
 /**
  * Base resource state machine.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public abstract class ResourceStateMachine<T extends Resource.Config> extends StateMachine {
+public abstract class ResourceStateMachine<T extends Resource.Config> extends StateMachine implements SessionListener {
   private Commit<ConfigureCommand> configureCommit;
   protected T config;
 
@@ -60,6 +62,22 @@ public abstract class ResourceStateMachine<T extends Resource.Config> extends St
    */
   public void configure(T config) {
     this.config = config;
+  }
+
+  @Override
+  public void register(Session session) {
+  }
+
+  @Override
+  public void unregister(Session session) {
+  }
+
+  @Override
+  public void expire(Session session) {
+  }
+
+  @Override
+  public void close(Session session) {
   }
 
   /**

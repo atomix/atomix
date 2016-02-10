@@ -36,21 +36,15 @@ import java.util.concurrent.CompletableFuture;
  */
 @Test
 public class AtomixClientTest extends AbstractAtomixTest {
+
   @BeforeMethod
   protected void beforeMethod() {
     init();
   }
 
   @AfterMethod
-  protected void afterMethod() {
+  protected void afterMethod() throws Throwable {
     cleanup();
-  }
-
-  /**
-   * Tests submitting a command.
-   */
-  public void testSubmitCommandWithNoneConsistency() throws Throwable {
-    testSubmitCommand(Consistency.NONE);
   }
 
   /**
@@ -90,13 +84,6 @@ public class AtomixClientTest extends AbstractAtomixTest {
     });
 
     await(10000);
-  }
-
-  /**
-   * Tests submitting a query.
-   */
-  public void testSubmitQueryWithNoneConsistency() throws Throwable {
-    testSubmitQuery(Consistency.NONE);
   }
 
   /**

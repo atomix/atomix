@@ -57,11 +57,17 @@ public class LockState extends ResourceStateMachine implements SessionListener {
     if (lock != null && lock.session().id() == session.id()) {
       lock.close();
       lock = queue.poll();
-      if (lock != null) {
+      while (lock != null) {
         Scheduled timer = timers.remove(lock.index());
         if (timer != null)
           timer.cancel();
-        lock.session().publish("lock", lock.index());
+
+        if (lock.session().state() == Session.State.EXPIRED || lock.session().state() == Session.State.CLOSED) {
+          lock = queue.poll();
+        } else {
+          lock.session().publish("lock", lock.index());
+          break;
+        }
       }
     }
   }
@@ -103,11 +109,17 @@ public class LockState extends ResourceStateMachine implements SessionListener {
         lock.close();
 
         lock = queue.poll();
-        if (lock != null) {
+        while (lock != null) {
           Scheduled timer = timers.remove(lock.index());
           if (timer != null)
             timer.cancel();
-          lock.session().publish("lock", lock.index());
+
+          if (lock.session().state() == Session.State.EXPIRED || lock.session().state() == Session.State.CLOSED) {
+            lock = queue.poll();
+          } else {
+            lock.session().publish("lock", lock.index());
+            break;
+          }
         }
       }
     } finally {

@@ -203,36 +203,48 @@ public abstract class Atomix implements ResourceManager<Atomix> {
 
   @Override
   public CompletableFuture<Set<String>> keys() {
-    return client.keys();
+    return client.keys().thenApply(this::cleanKeys);
   }
 
   @Override
   public <T extends Resource> CompletableFuture<Set<String>> keys(Class<? super T> type) {
-    return client.keys(type);
+    return client.keys(type).thenApply(this::cleanKeys);
   }
 
   @Override
   public CompletableFuture<Set<String>> keys(ResourceType type) {
-    return client.keys(type);
+    return client.keys(type).thenApply(this::cleanKeys);
+  }
+
+  /**
+   * Cleans the key set.
+   */
+  private Set<String> cleanKeys(Set<String> keys) {
+    keys.remove("");
+    return keys;
   }
 
   @Override
   public <T extends Resource> CompletableFuture<T> get(String key, Class<? super T> type) {
+    Assert.argNot(key.trim().length() == 0, "invalid resource key: key must be of non-zero length");
     return client.get(key, type);
   }
 
   @Override
   public <T extends Resource<T, U>, U extends Resource.Options> CompletableFuture<T> get(String key, Class<? super T> type, U options) {
+    Assert.argNot(key.trim().length() == 0, "invalid resource key: key must be of non-zero length");
     return client.get(key, type, options);
   }
 
   @Override
   public <T extends Resource> CompletableFuture<T> get(String key, ResourceType type) {
+    Assert.argNot(key.trim().length() == 0, "invalid resource key: key must be of non-zero length");
     return client.get(key, type);
   }
 
   @Override
   public <T extends Resource<T, U>, U extends Resource.Options> CompletableFuture<T> get(String key, ResourceType type, U options) {
+    Assert.argNot(key.trim().length() == 0, "invalid resource key: key must be of non-zero length");
     return client.get(key, type, options);
   }
 

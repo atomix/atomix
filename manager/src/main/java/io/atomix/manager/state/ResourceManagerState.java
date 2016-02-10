@@ -43,7 +43,6 @@ public class ResourceManagerState extends StateMachine implements SessionListene
   private StateMachineExecutor executor;
   private final Map<String, Long> keys = new HashMap<>();
   private final Map<Long, ResourceHolder> resources = new HashMap<>();
-  private final Map<Long, SessionHolder> sessions = new HashMap<>();
   private final ResourceManagerCommitPool commits = new ResourceManagerCommitPool();
 
   public ResourceManagerState(ResourceRegistry registry) {
@@ -89,21 +88,27 @@ public class ResourceManagerState extends StateMachine implements SessionListene
    */
   @SuppressWarnings("unchecked")
   private Object operateResource(Commit<InstanceOperation> commit) {
-    ResourceHolder resource;
-
-    // Get the session and resource associated with the commit.
-    SessionHolder session = sessions.get(commit.operation().resource());
-    if (session != null) {
-      resource = resources.get(session.resource);
-    } else {
-      try {
-        throw new ResourceManagerException("unknown resource session: " + commit.operation().resource());
-      } finally {
-        commit.close();
-      }
+    long resourceId = commit.operation().resource();
+    ResourceHolder resource = resources.get(resourceId);
+    if (resource == null) {
+      commit.close();
+      throw new ResourceManagerException("unknown resource: " + resourceId);
     }
 
-    return resource.executor.execute(commits.acquire(commit, session.session));
+    Session session;
+
+    // If the session exists for the resource, use the existing session.
+    SessionHolder sessionHolder = resource.sessions.get(commit.session().id());
+    if (sessionHolder != null) {
+      session = sessionHolder.session;
+    }
+    // If the commit session is not open for this resource, add the commit session to the resource.
+    else {
+      session = new ManagedResourceSession(resourceId, commit.session());
+    }
+
+    // Execute the operation.
+    return resource.executor.execute(commits.acquire(commit, session));
   }
 
   /**
@@ -135,51 +140,45 @@ public class ResourceManagerState extends StateMachine implements SessionListene
         ResourceManagerStateMachineExecutor executor = new ResourceManagerStateMachineExecutor(resourceId, this.executor);
 
         // Store the resource to be referenced by its resource ID.
-        ResourceHolder resource = new ResourceHolder(resourceId, key, type, stateMachine, executor);
-        resources.put(resourceId, resource);
+        ResourceHolder resourceHolder = new ResourceHolder(resourceId, key, type, commit, stateMachine, executor);
+        resources.put(resourceId, resourceHolder);
 
         // Initialize the resource state machine.
         stateMachine.init(executor);
 
         // Create a resource session for the client resource instance.
-        ManagedResourceSession session = new ManagedResourceSession(commit.index(), commit.session());
-        SessionHolder holder = new SessionHolder(resourceId, commit, session);
-        sessions.put(session.id(), holder);
-        resource.sessions.put(commit.session().id(), holder);
+        ManagedResourceSession session = new ManagedResourceSession(resourceId, commit.session());
+        SessionHolder holder = new SessionHolder(commit, session);
+        resourceHolder.sessions.put(commit.session().id(), holder);
 
         // Register the newly created session with the resource state machine.
-        if (stateMachine instanceof SessionListener) {
-          ((SessionListener) stateMachine).register(session);
-        }
+        stateMachine.register(session);
 
         // Returns the session ID for the resource client session.
-        return session.id();
+        return resourceId;
       } catch (InstantiationException | IllegalAccessException e) {
         throw new ResourceManagerException("failed to instantiate state machine", e);
       }
     } else {
       // If a resource was found, validate that the resource type matches.
-      ResourceHolder resource = resources.get(resourceId);
-      if (resource == null || !resource.type.equals(type)) {
+      ResourceHolder resourceHolder = resources.get(resourceId);
+      if (resourceHolder == null || !resourceHolder.type.equals(type)) {
         throw new ResourceManagerException("inconsistent resource type: " + commit.operation().type());
       }
 
       // If the session is not already associated with the resource, attach the session to the resource.
       // Otherwise, if the session already has a multiton instance of the resource open, clean the commit.
-      SessionHolder holder = resource.sessions.get(commit.session().id());
+      SessionHolder holder = resourceHolder.sessions.get(commit.session().id());
       if (holder == null) {
         // Crete a resource session for the client resource instance.
-        ManagedResourceSession session = new ManagedResourceSession(commit.index(), commit.session());
-        holder = new SessionHolder(resourceId, commit, session);
-        sessions.put(session.id(), holder);
-        resource.sessions.put(commit.session().id(), holder);
+        ManagedResourceSession session = new ManagedResourceSession(resourceId, commit.session());
+        holder = new SessionHolder(commit, session);
+        resourceHolder.sessions.put(commit.session().id(), holder);
 
         // Register the newly created session with the resource state machine.
-        if (resource.stateMachine instanceof SessionListener) {
-          ((SessionListener) resource.stateMachine).register(session);
-        }
+        resourceHolder.stateMachine.register(session);
 
-        return session.id();
+        return resourceId;
       } else {
         // Return the resource client session ID and clean the commit since no new resource or session was created.
         commit.close();
@@ -218,19 +217,21 @@ public class ResourceManagerState extends StateMachine implements SessionListene
    * Closes a resource.
    */
   protected void closeResource(Commit<CloseResource> commit) {
-    SessionHolder session = sessions.get(commit.operation().resource());
-    if (session == null) {
-      try {
-        throw new ResourceManagerException("unknown resource session: " + commit.operation().resource());
-      } finally {
-        commit.close();
-      }
+    long resourceId = commit.operation().resource();
+    ResourceHolder resourceHolder = resources.get(resourceId);
+    if (resourceHolder == null) {
+      commit.close();
+      throw new ResourceManagerException("unknown resource: " + resourceId);
     }
 
-    ResourceHolder resource = resources.get(session.resource);
-    resource.sessions.remove(session.commit.session().id());
-    if (resource.stateMachine instanceof SessionListener) {
-      ((SessionListener) resource.stateMachine).close(session.session);
+    SessionHolder sessionHolder = resourceHolder.sessions.remove(commit.session().id());
+    if (sessionHolder != null) {
+      try {
+        resourceHolder.stateMachine.unregister(sessionHolder.session);
+        resourceHolder.stateMachine.close(sessionHolder.session);
+      } finally {
+        sessionHolder.commit.close();
+      }
     }
   }
 
@@ -239,23 +240,25 @@ public class ResourceManagerState extends StateMachine implements SessionListene
    */
   protected boolean deleteResource(Commit<DeleteResource> commit) {
     try {
-      ResourceHolder resource = resources.remove(commit.operation().resource());
-      if (resource == null) {
+      ResourceHolder resourceHolder = resources.remove(commit.operation().resource());
+      if (resourceHolder == null) {
         throw new ResourceManagerException("unknown resource: " + commit.operation().resource());
       }
 
-      resource.stateMachine.delete();
-      resource.executor.close();
-      keys.remove(resource.key);
-
-      Iterator<Map.Entry<Long, SessionHolder>> iterator = sessions.entrySet().iterator();
-      while (iterator.hasNext()) {
-        SessionHolder session = iterator.next().getValue();
-        if (session.resource == commit.operation().resource()) {
-          iterator.remove();
-          session.commit.close();
-        }
+      // Delete the resource state machine and close the resource state machine executor.
+      try {
+        resourceHolder.stateMachine.delete();
+        resourceHolder.executor.close();
+      } finally {
+        resourceHolder.commit.close();
       }
+
+      // Close all commits that opened sessions to the resource.
+      for (SessionHolder sessionHolder : resourceHolder.sessions.values()) {
+        sessionHolder.commit.close();
+      }
+
+      keys.remove(resourceHolder.key);
       return true;
     } finally {
       commit.close();
@@ -288,52 +291,35 @@ public class ResourceManagerState extends StateMachine implements SessionListene
 
   @Override
   public void register(Session session) {
-
   }
 
   @Override
   public void expire(Session session) {
-    for (SessionHolder sessionHolder : sessions.values()) {
-      if (sessionHolder.commit.session().id() == session.id()) {
-        ResourceHolder resource = resources.get(sessionHolder.resource);
-        if (resource != null) {
-          if (resource.stateMachine instanceof SessionListener) {
-            ((SessionListener) resource.stateMachine).expire(sessionHolder.session);
-          }
-        }
+    for (ResourceHolder resource : resources.values()) {
+      SessionHolder sessionHolder = resource.sessions.get(session.id());
+      if (sessionHolder != null) {
+        resource.stateMachine.expire(sessionHolder.session);
       }
     }
   }
 
   @Override
   public void unregister(Session session) {
-    for (SessionHolder sessionHolder : sessions.values()) {
-      if (sessionHolder.commit.session().id() == session.id()) {
-        ResourceHolder resource = resources.get(sessionHolder.resource);
-        if (resource != null) {
-          if (resource.stateMachine instanceof SessionListener) {
-            ((SessionListener) resource.stateMachine).unregister(sessionHolder.session);
-          }
-        }
+    for (ResourceHolder resource : resources.values()) {
+      SessionHolder sessionHolder = resource.sessions.get(session.id());
+      if (sessionHolder != null) {
+        resource.stateMachine.unregister(sessionHolder.session);
       }
     }
   }
 
   @Override
   public void close(Session session) {
-    Iterator<Map.Entry<Long, SessionHolder>> iterator = sessions.entrySet().iterator();
-    while (iterator.hasNext()) {
-      SessionHolder sessionHolder = iterator.next().getValue();
-      if (sessionHolder.commit.session().id() == session.id()) {
-        ResourceHolder resource = resources.get(sessionHolder.resource);
-        if (resource != null) {
-          resource.sessions.remove(sessionHolder.commit.session().id());
-          if (resource.stateMachine instanceof SessionListener) {
-            ((SessionListener) resource.stateMachine).close(sessionHolder.session);
-          }
-        }
+    for (ResourceHolder resource : resources.values()) {
+      SessionHolder sessionHolder = resource.sessions.remove(session.id());
+      if (sessionHolder != null) {
+        resource.stateMachine.close(sessionHolder.session);
         sessionHolder.commit.close();
-        iterator.remove();
       }
     }
   }
@@ -345,14 +331,16 @@ public class ResourceManagerState extends StateMachine implements SessionListene
     private final long id;
     private final String key;
     private final ResourceType type;
+    private final Commit<? extends GetResource> commit;
     private final ResourceStateMachine stateMachine;
     private final ResourceManagerStateMachineExecutor executor;
     private final Map<Long, SessionHolder> sessions = new HashMap<>();
 
-    private ResourceHolder(long id, String key, ResourceType type, ResourceStateMachine stateMachine, ResourceManagerStateMachineExecutor executor) {
+    private ResourceHolder(long id, String key, ResourceType type, Commit<? extends GetResource> commit, ResourceStateMachine stateMachine, ResourceManagerStateMachineExecutor executor) {
       this.id = id;
       this.key = key;
       this.type = type;
+      this.commit = commit;
       this.stateMachine = stateMachine;
       this.executor = executor;
     }
@@ -362,12 +350,10 @@ public class ResourceManagerState extends StateMachine implements SessionListene
    * Session holder.
    */
   private static class SessionHolder {
-    private final long resource;
     private final Commit commit;
     private final ManagedResourceSession session;
 
-    private SessionHolder(long resource, Commit commit, ManagedResourceSession session) {
-      this.resource = resource;
+    private SessionHolder(Commit commit, ManagedResourceSession session) {
       this.commit = commit;
       this.session = session;
     }

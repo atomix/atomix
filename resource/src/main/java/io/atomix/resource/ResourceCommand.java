@@ -15,7 +15,10 @@
  */
 package io.atomix.resource;
 
+import io.atomix.catalyst.buffer.BufferInput;
+import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.SerializeWith;
+import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.copycat.client.Command;
 
 /**
@@ -44,6 +47,18 @@ public final class ResourceCommand<T extends Command<U>, U> extends ResourceOper
   @Override
   public CompactionMode compaction() {
     return operation.compaction();
+  }
+
+  @Override
+  public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
+    super.writeObject(buffer, serializer);
+    buffer.writeByte(consistency.ordinal());
+  }
+
+  @Override
+  public void readObject(BufferInput<?> buffer, Serializer serializer) {
+    super.readObject(buffer, serializer);
+    consistency = ConsistencyLevel.values()[buffer.readByte()];
   }
 
   @Override

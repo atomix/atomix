@@ -41,7 +41,7 @@ final class ManagedResourceSession implements Session {
 
   @Override
   public long id() {
-    return resource;
+    return parent.id();
   }
 
   @Override
@@ -98,13 +98,18 @@ final class ManagedResourceSession implements Session {
   }
 
   @Override
-  public boolean equals(Object object) {
-    return object instanceof Session && ((Session) object).id() == id();
+  public int hashCode() {
+    return parent.hashCode();
   }
 
   @Override
-  public int hashCode() {
-    return 37 * 23 + (int)(resource ^ resource >>> 32);
+  public boolean equals(Object object) {
+    return parent.equals(object);
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[id=%d]", getClass().getSimpleName(), parent.id());
   }
 
 }
