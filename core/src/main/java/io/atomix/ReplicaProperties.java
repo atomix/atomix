@@ -31,7 +31,7 @@ import java.util.Properties;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public final class ReplicaProperties extends AtomixProperties {
+final class ReplicaProperties extends AtomixProperties {
   public static final String TRANSPORT = "node.transport";
   public static final String ADDRESS = "node.address";
   public static final String CLIENT_ADDRESS = "node.clientAddress";

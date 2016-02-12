@@ -92,7 +92,26 @@ import java.util.function.Consumer;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 @ResourceTypeInfo(id=-20, stateMachine=GroupState.class, typeResolver=GroupCommands.TypeResolver.class)
-public class DistributedGroup extends Resource<DistributedGroup, Resource.Options> {
+public class DistributedGroup extends Resource<DistributedGroup> {
+
+  /**
+   * Returns new group options.
+   *
+   * @return New group options.
+   */
+  public static Options options() {
+    return new Options();
+  }
+
+  /**
+   * Returns a new group configuration.
+   *
+   * @return A new group configuration.
+   */
+  public static Config config() {
+    return new Config();
+  }
+
   private final Listeners<GroupMember> joinListeners = new Listeners<>();
   private final Listeners<GroupMember> leaveListeners = new Listeners<>();
   private final Listeners<Long> termListeners = new Listeners<>();

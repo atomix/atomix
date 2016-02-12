@@ -71,7 +71,26 @@ import java.util.function.Consumer;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 @ResourceTypeInfo(id=-32, stateMachine=TaskQueueState.class, typeResolver=TaskQueueCommands.TypeResolver.class)
-public class DistributedTaskQueue<T> extends Resource<DistributedTaskQueue<T>, Resource.Options> {
+public class DistributedTaskQueue<T> extends Resource<DistributedTaskQueue<T>> {
+
+  /**
+   * Returns new task queue options.
+   *
+   * @return New task queue options.
+   */
+  public static Options options() {
+    return new Options();
+  }
+
+  /**
+   * Returns a new task queue configuration.
+   *
+   * @return A new task queue configuration.
+   */
+  public static Config config() {
+    return new Config();
+  }
+
   private long taskId;
   private final Map<Long, CompletableFuture<Void>> taskFutures = new ConcurrentHashMap<>();
   private Consumer<T> consumer;

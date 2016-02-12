@@ -58,7 +58,26 @@ import java.util.function.Consumer;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @ResourceTypeInfo(id=-31, stateMachine=TopicState.class, typeResolver=TopicCommands.TypeResolver.class)
-public class DistributedTopic<T> extends Resource<DistributedTopic<T>, Resource.Options> {
+public class DistributedTopic<T> extends Resource<DistributedTopic<T>> {
+
+  /**
+   * Returns new topic options.
+   *
+   * @return New topic options.
+   */
+  public static Options options() {
+    return new Options();
+  }
+
+  /**
+   * Returns a new topic configuration.
+   *
+   * @return A new topic configuration.
+   */
+  public static Config config() {
+    return new Config();
+  }
+
   private final Set<Consumer<T>> listeners = new HashSet<>();
 
   @SuppressWarnings("unchecked")

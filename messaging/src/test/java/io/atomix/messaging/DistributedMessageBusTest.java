@@ -16,7 +16,6 @@
 package io.atomix.messaging;
 
 import io.atomix.catalyst.transport.Address;
-import io.atomix.resource.ResourceType;
 import io.atomix.testing.AbstractCopycatTest;
 import org.testng.annotations.Test;
 
@@ -39,11 +38,8 @@ public class DistributedMessageBusTest extends AbstractCopycatTest<DistributedMe
   public void testSend() throws Throwable {
     createServers(3);
 
-    DistributedMessageBus bus1 = createResource();
-    DistributedMessageBus bus2 = createResource();
-
-    bus1.open(new Address("localhost", 6000)).join();
-    bus2.open(new Address("localhost", 6001)).join();
+    DistributedMessageBus bus1 = createResource(DistributedMessageBus.options().withAddress(new Address("localhost", 6000)));
+    DistributedMessageBus bus2 = createResource(DistributedMessageBus.options().withAddress(new Address("localhost", 6001)));
 
     bus1.<String>consumer("test", message -> {
       threadAssertEquals(message, "Hello world!");

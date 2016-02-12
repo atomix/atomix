@@ -78,7 +78,26 @@ import java.util.function.Consumer;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @ResourceTypeInfo(id=-22, stateMachine=LockState.class, typeResolver=LockCommands.TypeResolver.class)
-public class DistributedLock extends Resource<DistributedLock, Resource.Options> {
+public class DistributedLock extends Resource<DistributedLock> {
+
+  /**
+   * Returns new lock options.
+   *
+   * @return New lock options.
+   */
+  public static Options options() {
+    return new Options();
+  }
+
+  /**
+   * Returns a new lock configuration.
+   *
+   * @return A new lock configuration.
+   */
+  public static Config config() {
+    return new Config();
+  }
+
   private final Queue<Consumer<Long>> queue = new ConcurrentLinkedQueue<>();
 
   public DistributedLock(CopycatClient client, Resource.Options options) {

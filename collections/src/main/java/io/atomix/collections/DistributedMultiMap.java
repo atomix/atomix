@@ -31,7 +31,25 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 @ResourceTypeInfo(id=-12, stateMachine=MultiMapState.class, typeResolver=MultiMapCommands.TypeResolver.class)
-public class DistributedMultiMap<K, V> extends Resource<DistributedMultiMap<K, V>, Resource.Options> {
+public class DistributedMultiMap<K, V> extends Resource<DistributedMultiMap<K, V>> {
+
+  /**
+   * Returns new multimap options.
+   *
+   * @return New multimap options.
+   */
+  public static Options options() {
+    return new Options();
+  }
+
+  /**
+   * Returns a new multimap configuration.
+   *
+   * @return A new multimap configuration.
+   */
+  public static Config config() {
+    return new Config();
+  }
 
   public DistributedMultiMap(CopycatClient client, Resource.Options options) {
     super(client, options);

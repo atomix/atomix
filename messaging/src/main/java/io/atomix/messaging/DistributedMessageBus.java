@@ -19,6 +19,7 @@ import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.Client;
 import io.atomix.catalyst.transport.Connection;
 import io.atomix.catalyst.transport.Server;
+import io.atomix.catalyst.util.ConfigurationException;
 import io.atomix.catalyst.util.concurrent.Futures;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.messaging.state.MessageBusCommands;
@@ -46,11 +47,6 @@ import java.util.function.Function;
  *   });
  *   }
  * </pre>
- * Once a message bus instance has been created, it's not immediately opened. The message bus instance must be explicitly
- * opened by calling {@link #open(Address)}, providing an {@link Address} to which to bind the message bus server. Because
- * each message bus instance runs on a separate server, it's recommended that nodes use a singleton instance of this
- * resource by using {@code get(...)} rather than {@code create(...)} to get a reference to the resource.
- * <p>
  * Messages are produced and consumed by {@link MessageProducer producers} and {@link MessageConsumer consumers} respectively.
  * Each producer and consumer is associated with a string message bus topic.
  * <pre>
@@ -69,9 +65,29 @@ import java.util.function.Function;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 @ResourceTypeInfo(id=-30, stateMachine=MessageBusState.class, typeResolver=MessageBusCommands.TypeResolver.class)
-public class DistributedMessageBus extends Resource<DistributedMessageBus, Resource.Options> {
+public class DistributedMessageBus extends Resource<DistributedMessageBus> {
+
+  /**
+   * Returns new message bus options.
+   *
+   * @return New message bus options.
+   */
+  public static Options options() {
+    return new Options();
+  }
+
+  /**
+   * Returns a new message bus configuration.
+   *
+   * @return A new message bus configuration.
+   */
+  public static Config config() {
+    return new Config();
+  }
+
   private Client client;
   private Server server;
+  private final Options options;
   private final Map<Integer, Connection> connections = new HashMap<>();
   private volatile CompletableFuture<DistributedMessageBus> openFuture;
   private volatile CompletableFuture<Void> closeFuture;
@@ -81,33 +97,19 @@ public class DistributedMessageBus extends Resource<DistributedMessageBus, Resou
 
   public DistributedMessageBus(CopycatClient client, Resource.Options options) {
     super(client, options);
+    this.options = new Options(options);
+  }
+
+  @Override
+  public CompletableFuture<DistributedMessageBus> open() {
+    Address address = options.getAddress();
+    return super.open().thenCompose(v -> listen(address));
   }
 
   /**
-   * Opens the message bus.
-   * <p>
-   * When the message bus is opened, this instance will bind to the provided {@link Address}.
-   * <p>
-   * This method returns a {@link CompletableFuture} which can be used to block until the server is opened
-   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
-   * use the {@link CompletableFuture#join()} method to block the calling thread:
-   * <pre>
-   *   {@code
-   *   bus.open(new Address("123.456.789.0", 5000)).join();
-   *   }
-   * </pre>
-   * Alternatively, to execute the operation asynchronous and be notified once the lock is acquired in a different
-   * thread, use one of the many completable future callbacks:
-   * <pre>
-   *   {@code
-   *   bus.open(new Address("123.456.789.0", 5000)).thenRun(() -> System.out.println("Message bus open!"));
-   *   }
-   * </pre>
-   *
-   * @param address The address on which to listen.
-   * @return A completable future to be completed once the message bus is started.
+   * Starts listening on the server.
    */
-  public synchronized CompletableFuture<DistributedMessageBus> open(Address address) {
+  public synchronized CompletableFuture<DistributedMessageBus> listen(Address address) {
     if (openFuture != null)
       return openFuture;
 
@@ -452,6 +454,52 @@ public class DistributedMessageBus extends Resource<DistributedMessageBus, Resou
       if (iterator == null || !iterator.hasNext())
         iterator = consumers.iterator();
       return iterator.next();
+    }
+  }
+
+  /**
+   * Message bus options.
+   */
+  public static class Options extends Resource.Options {
+    private static final String ADDRESS = "address";
+
+    public Options() {
+    }
+
+    public Options(Properties defaults) {
+      super(defaults);
+    }
+
+    /**
+     * Returns the message bus address.
+     *
+     * @return The message bus address.
+     */
+    public Address getAddress() {
+      String addressString = getProperty(ADDRESS);
+      if (addressString == null)
+        throw new ConfigurationException("missing required message bus property: " + ADDRESS);
+
+      String[] split = addressString.split(":");
+      if (split.length != 2)
+        throw new ConfigurationException("malformed address string: " + addressString);
+
+      try {
+        return new Address(split[0], Integer.valueOf(split[1]));
+      } catch (NumberFormatException e) {
+        throw new ConfigurationException("malformed port: " + split[1]);
+      }
+    }
+
+    /**
+     * Sets the local message bus server address.
+     *
+     * @param address The local message bus server address.
+     * @return The message bus options.
+     */
+    public Options withAddress(Address address) {
+      setProperty(ADDRESS, String.format("%s:%s", address.host(), address.port()));
+      return this;
     }
   }
 

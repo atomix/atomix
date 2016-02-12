@@ -232,7 +232,7 @@ public class AtomixClientTest extends AbstractAtomixTest {
    * Test resource.
    */
   @ResourceTypeInfo(id=1, stateMachine=TestStateMachine.class, typeResolver=TestResource.TypeResolver.class)
-  public static class TestResource extends Resource<TestResource, Resource.Options> {
+  public static class TestResource extends Resource<TestResource> {
 
     public TestResource(CopycatClient client, Resource.Options options) {
       super(client, options);
@@ -311,7 +311,7 @@ public class AtomixClientTest extends AbstractAtomixTest {
    * Value resource.
    */
   @ResourceTypeInfo(id=2, stateMachine=ValueStateMachine.class, typeResolver=ValueResource.TypeResolver.class)
-  public static class ValueResource extends Resource<ValueResource, Resource.Options> {
+  public static class ValueResource extends Resource<ValueResource> {
 
     public ValueResource(CopycatClient client, Resource.Options options) {
       super(client, options);
