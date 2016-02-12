@@ -15,14 +15,11 @@
  */
 package io.atomix.manager.state;
 
-import io.atomix.catalyst.serializer.SerializeWith;
-
 /**
  * Get resource if exists command.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=40)
 public class GetResourceIfExists extends GetResource {
 
   public GetResourceIfExists() {

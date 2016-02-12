@@ -68,7 +68,7 @@ import java.util.function.Function;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-@ResourceTypeInfo(id=-30, stateMachine=MessageBusState.class)
+@ResourceTypeInfo(id=-30, stateMachine=MessageBusState.class, typeResolver=MessageBusCommands.TypeResolver.class)
 public class DistributedMessageBus extends Resource<DistributedMessageBus, Resource.Options> {
   private Client client;
   private Server server;

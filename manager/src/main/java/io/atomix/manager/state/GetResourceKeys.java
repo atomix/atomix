@@ -18,7 +18,6 @@ package io.atomix.manager.state;
 import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
-import io.atomix.catalyst.serializer.SerializeWith;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.copycat.client.Query;
 
@@ -27,7 +26,6 @@ import java.util.Set;
 /**
  * Get resource keys query.
  */
-@SerializeWith(id=41)
 public class GetResourceKeys implements Query<Set<String>>, CatalystSerializable {
   private int type;
 

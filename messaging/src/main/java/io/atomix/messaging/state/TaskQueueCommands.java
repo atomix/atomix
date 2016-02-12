@@ -18,8 +18,9 @@ package io.atomix.messaging.state;
 import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
-import io.atomix.catalyst.serializer.SerializeWith;
+import io.atomix.catalyst.serializer.SerializableTypeResolver;
 import io.atomix.catalyst.serializer.Serializer;
+import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.copycat.client.Command;
 
 /**
@@ -50,7 +51,6 @@ public final class TaskQueueCommands {
   /**
    * Submit command.
    */
-  @SerializeWith(id=256)
   public static class Submit extends TaskQueueCommand<Void> {
     private long id;
     private Object task;
@@ -109,14 +109,12 @@ public final class TaskQueueCommands {
   /**
    * Ack command.
    */
-  @SerializeWith(id=257)
   public static class Ack extends TaskQueueCommand<Object> {
   }
 
   /**
    * Subscribe command.
    */
-  @SerializeWith(id=258)
   public static class Subscribe extends TaskQueueCommand<Void> {
     @Override
     public Command.CompactionMode compaction() {
@@ -132,7 +130,6 @@ public final class TaskQueueCommands {
   /**
    * Unsubscribe command.
    */
-  @SerializeWith(id=259)
   public static class Unsubscribe extends TaskQueueCommand<Void> {
     @Override
     public Command.ConsistencyLevel consistency() {
@@ -142,6 +139,19 @@ public final class TaskQueueCommands {
     @Override
     public Command.CompactionMode compaction() {
       return Command.CompactionMode.SEQUENTIAL;
+    }
+  }
+
+  /**
+   * Message bus command type resolver.
+   */
+  public static class TypeResolver implements SerializableTypeResolver {
+    @Override
+    public void resolve(SerializerRegistry registry) {
+      registry.register(Subscribe.class, -150);
+      registry.register(Unsubscribe.class, -151);
+      registry.register(Submit.class, -107);
+      registry.register(Ack.class, -108);
     }
   }
 

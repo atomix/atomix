@@ -18,8 +18,9 @@ package io.atomix.collections.state;
 import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
-import io.atomix.catalyst.serializer.SerializeWith;
+import io.atomix.catalyst.serializer.SerializableTypeResolver;
 import io.atomix.catalyst.serializer.Serializer;
+import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.copycat.client.Command;
 import io.atomix.copycat.client.Query;
 
@@ -134,7 +135,6 @@ public class QueueCommands {
   /**
    * Contains value command.
    */
-  @SerializeWith(id=90)
   public static class Contains extends ValueQuery<Boolean> {
     public Contains() {
     }
@@ -147,7 +147,6 @@ public class QueueCommands {
   /**
    * Add command.
    */
-  @SerializeWith(id=91)
   public static class Add extends ValueCommand<Boolean> {
     public Add() {
     }
@@ -160,7 +159,6 @@ public class QueueCommands {
   /**
    * Offer
    */
-  @SerializeWith(id=92)
   public static class Offer extends ValueCommand<Boolean> {
     public Offer() {
     }
@@ -173,14 +171,12 @@ public class QueueCommands {
   /**
    * Peek query.
    */
-  @SerializeWith(id=93)
   public static class Peek extends QueueQuery<Object> {
   }
 
   /**
    * Poll command.
    */
-  @SerializeWith(id=94)
   public static class Poll extends QueueCommand<Object> {
 
     @Override
@@ -192,7 +188,6 @@ public class QueueCommands {
   /**
    * Element command.
    */
-  @SerializeWith(id=95)
   public static class Element extends QueueCommand<Object> {
 
     @Override
@@ -204,7 +199,6 @@ public class QueueCommands {
   /**
    * Remove command.
    */
-  @SerializeWith(id=96)
   public static class Remove extends ValueCommand<Object> {
     public Remove() {
     }
@@ -222,26 +216,42 @@ public class QueueCommands {
   /**
    * Size query.
    */
-  @SerializeWith(id=97)
   public static class Size extends QueueQuery<Integer> {
   }
 
   /**
    * Is empty query.
    */
-  @SerializeWith(id=98)
   public static class IsEmpty extends QueueQuery<Boolean> {
   }
 
   /**
    * Clear command.
    */
-  @SerializeWith(id=99)
   public static class Clear extends QueueCommand<Void> {
 
     @Override
     public CompactionMode compaction() {
       return CompactionMode.SEQUENTIAL;
+    }
+  }
+
+  /**
+   * Queue command type resolver.
+   */
+  public static class TypeResolver implements SerializableTypeResolver {
+    @Override
+    public void resolve(SerializerRegistry registry) {
+      registry.register(Contains.class, -90);
+      registry.register(Add.class, -91);
+      registry.register(Offer.class, -92);
+      registry.register(Peek.class, -93);
+      registry.register(Poll.class, -94);
+      registry.register(Element.class, -95);
+      registry.register(Remove.class, -96);
+      registry.register(IsEmpty.class, -97);
+      registry.register(Size.class, -98);
+      registry.register(Clear.class, -99);
     }
   }
 

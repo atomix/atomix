@@ -18,6 +18,7 @@ package io.atomix.variables;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceTypeInfo;
+import io.atomix.variables.state.ValueCommands;
 import io.atomix.variables.state.ValueState;
 
 /**
@@ -25,7 +26,7 @@ import io.atomix.variables.state.ValueState;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@ResourceTypeInfo(id=-1, stateMachine=ValueState.class)
+@ResourceTypeInfo(id=-1, stateMachine=ValueState.class, typeResolver=ValueCommands.TypeResolver.class)
 public class DistributedValue<T> extends AbstractDistributedValue<DistributedValue<T>, Resource.Options, T> {
 
   public DistributedValue(CopycatClient client, Resource.Options options) {

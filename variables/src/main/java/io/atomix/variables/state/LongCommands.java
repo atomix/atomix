@@ -18,8 +18,9 @@ package io.atomix.variables.state;
 import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
-import io.atomix.catalyst.serializer.SerializeWith;
+import io.atomix.catalyst.serializer.SerializableTypeResolver;
 import io.atomix.catalyst.serializer.Serializer;
+import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.copycat.client.Command;
 
 /**
@@ -57,28 +58,24 @@ public final class LongCommands {
   /**
    * Increment and get command.
    */
-  @SerializeWith(id=54)
   public static class IncrementAndGet extends LongCommand<Long> {
   }
 
   /**
    * Decrement and get command.
    */
-  @SerializeWith(id=55)
   public static class DecrementAndGet extends LongCommand<Long> {
   }
 
   /**
    * Get and increment command.
    */
-  @SerializeWith(id=56)
   public static class GetAndIncrement extends LongCommand<Long> {
   }
 
   /**
    * Get and decrement command.
    */
-  @SerializeWith(id=57)
   public static class GetAndDecrement extends LongCommand<Long> {
   }
 
@@ -118,7 +115,6 @@ public final class LongCommands {
   /**
    * Get and add command.
    */
-  @SerializeWith(id=58)
   public static class GetAndAdd extends DeltaCommand {
     public GetAndAdd() {
     }
@@ -131,13 +127,31 @@ public final class LongCommands {
   /**
    * Add and get command.
    */
-  @SerializeWith(id=59)
   public static class AddAndGet extends DeltaCommand {
     public AddAndGet() {
     }
 
     public AddAndGet(long delta) {
       super(delta);
+    }
+  }
+
+  /**
+   * Value command type resolver.
+   */
+  public static class TypeResolver implements SerializableTypeResolver {
+    @Override
+    public void resolve(SerializerRegistry registry) {
+      registry.register(ValueCommands.CompareAndSet.class, -110);
+      registry.register(ValueCommands.Get.class, -111);
+      registry.register(ValueCommands.GetAndSet.class, -112);
+      registry.register(ValueCommands.Set.class, -113);
+      registry.register(IncrementAndGet.class, -114);
+      registry.register(DecrementAndGet.class, -115);
+      registry.register(GetAndIncrement.class, -116);
+      registry.register(GetAndDecrement.class, -117);
+      registry.register(AddAndGet.class, -118);
+      registry.register(GetAndAdd.class, -119);
     }
   }
 

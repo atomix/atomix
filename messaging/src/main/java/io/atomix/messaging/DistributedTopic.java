@@ -57,7 +57,7 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@ResourceTypeInfo(id=-31, stateMachine=TopicState.class)
+@ResourceTypeInfo(id=-31, stateMachine=TopicState.class, typeResolver=TopicCommands.TypeResolver.class)
 public class DistributedTopic<T> extends Resource<DistributedTopic<T>, Resource.Options> {
   private final Set<Consumer<T>> listeners = new HashSet<>();
 

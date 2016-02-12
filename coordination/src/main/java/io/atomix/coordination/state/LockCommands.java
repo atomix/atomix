@@ -18,8 +18,9 @@ package io.atomix.coordination.state;
 import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
-import io.atomix.catalyst.serializer.SerializeWith;
+import io.atomix.catalyst.serializer.SerializableTypeResolver;
 import io.atomix.catalyst.serializer.Serializer;
+import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.copycat.client.Command;
 
 /**
@@ -61,7 +62,6 @@ public final class LockCommands {
   /**
    * Lock command.
    */
-  @SerializeWith(id=115)
   public static class Lock extends LockCommand<Void> {
     private long timeout;
 
@@ -100,11 +100,21 @@ public final class LockCommands {
   /**
    * Unlock command.
    */
-  @SerializeWith(id=116)
   public static class Unlock extends LockCommand<Void> {
     @Override
     public CompactionMode compaction() {
       return CompactionMode.SEQUENTIAL;
+    }
+  }
+
+  /**
+   * Lock command type resolver.
+   */
+  public static class TypeResolver implements SerializableTypeResolver {
+    @Override
+    public void resolve(SerializerRegistry registry) {
+      registry.register(Lock.class, -141);
+      registry.register(Unlock.class, -142);
     }
   }
 

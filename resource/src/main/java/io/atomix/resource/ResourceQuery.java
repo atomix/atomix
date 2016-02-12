@@ -17,7 +17,6 @@ package io.atomix.resource;
 
 import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
-import io.atomix.catalyst.serializer.SerializeWith;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.copycat.client.Query;
 
@@ -26,7 +25,6 @@ import io.atomix.copycat.client.Query;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=29)
 public final class ResourceQuery<T extends Query<U>, U> extends ResourceOperation<T, U> implements Query<U> {
   private ConsistencyLevel consistency;
 

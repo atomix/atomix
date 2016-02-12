@@ -15,10 +15,12 @@
  */
 package io.atomix.coordination.state;
 
+import io.atomix.coordination.DistributedGroup;
 import io.atomix.copycat.client.session.Session;
 import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.session.SessionListener;
 import io.atomix.resource.ResourceStateMachine;
+import io.atomix.resource.ResourceType;
 
 import java.time.Duration;
 import java.util.*;
@@ -36,19 +38,8 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
   private Commit<GroupCommands.Join> leader;
   private long term;
 
-  @Override
-  public void register(Session session) {
-
-  }
-
-  @Override
-  public void unregister(Session session) {
-
-  }
-
-  @Override
-  public void expire(Session session) {
-
+  public GroupState() {
+    super(new ResourceType(DistributedGroup.class));
   }
 
   @Override

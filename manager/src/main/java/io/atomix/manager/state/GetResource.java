@@ -17,7 +17,6 @@ package io.atomix.manager.state;
 
 import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
-import io.atomix.catalyst.serializer.SerializeWith;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.copycat.client.Command;
@@ -27,7 +26,6 @@ import io.atomix.copycat.client.Command;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=35)
 public class GetResource extends KeyOperation<Long> implements Command<Long> {
   private int type;
 

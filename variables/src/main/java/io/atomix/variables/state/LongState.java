@@ -15,20 +15,26 @@
  */
 package io.atomix.variables.state;
 
-import java.util.concurrent.atomic.AtomicLong;
-
 import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.Snapshottable;
 import io.atomix.copycat.server.storage.snapshot.SnapshotReader;
 import io.atomix.copycat.server.storage.snapshot.SnapshotWriter;
+import io.atomix.resource.ResourceType;
+import io.atomix.variables.DistributedLong;
+
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Long state machine.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class LongState extends ValueState<Long> implements Snapshottable {
+public class LongState extends AbstractValueState<Long> implements Snapshottable {
   private AtomicLong value = new AtomicLong(0);
+
+  public LongState() {
+    super(new ResourceType(DistributedLong.class));
+  }
 
   @Override
   public void snapshot(SnapshotWriter writer) {

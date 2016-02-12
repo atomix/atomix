@@ -382,7 +382,7 @@ public final class ResourceServer implements Managed<ResourceServer> {
       // Construct the underlying CopycatServer. The server should have been configured with a CombinedTransport
       // that facilitates the local client connecting directly to the server.
       CopycatServer server = builder.withStateMachine(() -> new ResourceManagerState(registry)).build();
-
+      server.serializer().resolve(new ResourceManagerTypeResolver(registry));
       return new ResourceServer(server);
     }
   }

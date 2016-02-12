@@ -343,6 +343,9 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
       ResourceRegistry registry = new ResourceRegistry();
       resourceResolver.resolve(registry);
 
+      CopycatClient client = clientBuilder.build();
+      client.serializer().resolve(new ResourceManagerTypeResolver(registry));
+
       return new ResourceClient(clientBuilder.build(), registry);
     }
   }

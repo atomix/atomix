@@ -16,7 +16,6 @@
 package io.atomix;
 
 import io.atomix.catalyst.serializer.Serializer;
-import io.atomix.catalyst.serializer.ServiceLoaderTypeResolver;
 import io.atomix.catalyst.transport.*;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.ConfigurationException;
@@ -32,6 +31,7 @@ import io.atomix.copycat.client.session.Session;
 import io.atomix.copycat.server.CopycatServer;
 import io.atomix.copycat.server.storage.Storage;
 import io.atomix.manager.ResourceClient;
+import io.atomix.manager.ResourceManagerTypeResolver;
 import io.atomix.manager.ResourceServer;
 import io.atomix.manager.state.ResourceManagerState;
 import io.atomix.resource.ResourceRegistry;
@@ -304,10 +304,9 @@ public final class AtomixReplica extends Atomix {
     private LocalServerRegistry localRegistry = new LocalServerRegistry();
     private ResourceTypeResolver resourceResolver = new ServiceLoaderResourceResolver();
     private final ResourceRegistry registry = new ResourceRegistry();
-    private ResourceServer server;
 
     private Builder(Address clientAddress, Address serverAddress, Collection<Address> members) {
-      Serializer serializer = new Serializer(new ServiceLoaderTypeResolver());
+      Serializer serializer = new Serializer();
       this.clientAddress = Assert.notNull(clientAddress, "clientAddress");
       this.clientBuilder = CopycatClient.builder(members).withSerializer(serializer.clone());
       this.serverBuilder = CopycatServer.builder(clientAddress, serverAddress, members).withSerializer(serializer.clone());
@@ -521,7 +520,10 @@ public final class AtomixReplica extends Atomix {
       // sending operations to a remote server when a local server is already available in the same JVM.=
       clientBuilder.withTransport(new CombinedClientTransport(clientAddress, new LocalTransport(localRegistry), clientTransport != null ? clientTransport : serverTransport))
         .withServerSelectionStrategy(new CombinedSelectionStrategy(clientAddress));
-      return new ResourceClient(new CombinedCopycatClient(clientBuilder.build(), serverTransport), registry);
+
+      CopycatClient client = clientBuilder.build();
+      client.serializer().resolve(new ResourceManagerTypeResolver(registry));
+      return new ResourceClient(new CombinedCopycatClient(client, serverTransport), registry);
     }
 
     /**
@@ -539,8 +541,10 @@ public final class AtomixReplica extends Atomix {
 
       // Set the server resource state machine.
       serverBuilder.withStateMachine(() -> new ResourceManagerState(registry));
-      server = new ResourceServer(serverBuilder.build());
-      return server;
+
+      CopycatServer server = serverBuilder.build();
+      server.serializer().resolve(new ResourceManagerTypeResolver(registry));
+      return new ResourceServer(server);
     }
 
     /**

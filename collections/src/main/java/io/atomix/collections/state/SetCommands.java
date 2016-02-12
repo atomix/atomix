@@ -18,8 +18,9 @@ package io.atomix.collections.state;
 import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
-import io.atomix.catalyst.serializer.SerializeWith;
+import io.atomix.catalyst.serializer.SerializableTypeResolver;
 import io.atomix.catalyst.serializer.Serializer;
+import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.copycat.client.Command;
 import io.atomix.copycat.client.Query;
 
@@ -134,7 +135,6 @@ public class SetCommands {
   /**
    * Contains value command.
    */
-  @SerializeWith(id=100)
   public static class Contains extends ValueQuery<Boolean> {
     public Contains() {
     }
@@ -188,7 +188,6 @@ public class SetCommands {
   /**
    * Add command.
    */
-  @SerializeWith(id=101)
   public static class Add extends TtlCommand<Boolean> {
     public Add() {
     }
@@ -205,7 +204,6 @@ public class SetCommands {
   /**
    * Remove command.
    */
-  @SerializeWith(id=102)
   public static class Remove extends ValueCommand<Boolean> {
 
     public Remove() {
@@ -224,26 +222,38 @@ public class SetCommands {
   /**
    * Size query.
    */
-  @SerializeWith(id=103)
   public static class Size extends SetQuery<Integer> {
   }
 
   /**
    * Is empty query.
    */
-  @SerializeWith(id=104)
   public static class IsEmpty extends SetQuery<Boolean> {
   }
 
   /**
    * Clear command.
    */
-  @SerializeWith(id=105)
   public static class Clear extends SetCommand<Void> {
 
     @Override
     public CompactionMode compaction() {
       return CompactionMode.SEQUENTIAL;
+    }
+  }
+
+  /**
+   * Set command type resolver.
+   */
+  public static class TypeResolver implements SerializableTypeResolver {
+    @Override
+    public void resolve(SerializerRegistry registry) {
+      registry.register(Contains.class, -100);
+      registry.register(Add.class, -101);
+      registry.register(Remove.class, -102);
+      registry.register(IsEmpty.class, -103);
+      registry.register(Size.class, -104);
+      registry.register(Clear.class, -105);
     }
   }
 

@@ -70,7 +70,7 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-@ResourceTypeInfo(id=-32, stateMachine=TaskQueueState.class)
+@ResourceTypeInfo(id=-32, stateMachine=TaskQueueState.class, typeResolver=TaskQueueCommands.TypeResolver.class)
 public class DistributedTaskQueue<T> extends Resource<DistributedTaskQueue<T>, Resource.Options> {
   private long taskId;
   private final Map<Long, CompletableFuture<Void>> taskFutures = new ConcurrentHashMap<>();
