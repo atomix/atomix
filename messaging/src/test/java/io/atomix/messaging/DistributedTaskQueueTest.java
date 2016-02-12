@@ -15,7 +15,6 @@
  */
 package io.atomix.messaging;
 
-import io.atomix.resource.ResourceType;
 import io.atomix.testing.AbstractCopycatTest;
 import org.testng.annotations.Test;
 
