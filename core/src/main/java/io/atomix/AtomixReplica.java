@@ -293,7 +293,7 @@ public final class AtomixReplica extends Atomix {
    * module configures how the replica manages the replicated log. Logs can be written to disk or held in
    * memory or memory-mapped files.
    */
-  public static class Builder extends io.atomix.catalyst.util.Builder<AtomixReplica> {
+  public static class Builder implements io.atomix.catalyst.util.Builder<AtomixReplica> {
     private final Address clientAddress;
     private final CopycatClient.Builder clientBuilder;
     private final CopycatServer.Builder serverBuilder;

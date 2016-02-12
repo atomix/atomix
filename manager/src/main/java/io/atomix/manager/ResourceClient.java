@@ -275,7 +275,7 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
    *   }
    * </pre>
    */
-  public static class Builder extends io.atomix.catalyst.util.Builder<ResourceClient> {
+  public static class Builder implements io.atomix.catalyst.util.Builder<ResourceClient> {
     private CopycatClient.Builder clientBuilder;
     private ResourceTypeResolver resourceResolver = new ServiceLoaderResourceResolver();
     private Transport transport;

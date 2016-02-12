@@ -195,7 +195,7 @@ public final class ResourceServer implements Managed<ResourceServer> {
    * module configures how the server manages the replicated log. Logs can be written to disk or held in
    * memory or memory-mapped files.
    */
-  public static class Builder extends io.atomix.catalyst.util.Builder<ResourceServer> {
+  public static class Builder implements io.atomix.catalyst.util.Builder<ResourceServer> {
     private static final String SERVER_NAME = "atomix";
     private final CopycatServer.Builder builder;
     private ResourceTypeResolver resourceResolver = new ServiceLoaderResourceResolver();

@@ -165,7 +165,7 @@ public class AtomixClient extends Atomix {
    *   }
    * </pre>
    */
-  public static class Builder extends io.atomix.catalyst.util.Builder<AtomixClient> {
+  public static class Builder implements io.atomix.catalyst.util.Builder<AtomixClient> {
     private final ResourceClient.Builder builder;
 
     private Builder(ResourceClient.Builder builder) {
