@@ -77,7 +77,7 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@ResourceTypeInfo(id=-22, stateMachine=LockState.class)
+@ResourceTypeInfo(id=-22, stateMachine=LockState.class, typeResolver=LockCommands.TypeResolver.class)
 public class DistributedLock extends Resource<DistributedLock, Resource.Options> {
   private final Queue<Consumer<Long>> queue = new ConcurrentLinkedQueue<>();
 

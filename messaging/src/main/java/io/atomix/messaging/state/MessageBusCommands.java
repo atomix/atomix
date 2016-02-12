@@ -18,11 +18,13 @@ package io.atomix.messaging.state;
 import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
-import io.atomix.catalyst.serializer.SerializeWith;
+import io.atomix.catalyst.serializer.SerializableTypeResolver;
 import io.atomix.catalyst.serializer.Serializer;
+import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.copycat.client.Command;
+import io.atomix.messaging.Message;
 
 import java.util.Map;
 import java.util.Set;
@@ -66,7 +68,6 @@ public final class MessageBusCommands {
   /**
    * Join command.
    */
-  @SerializeWith(id=85)
   public static class Join extends MessageBusCommand<Map<String, Set<Address>>> {
     protected Address address;
 
@@ -100,7 +101,6 @@ public final class MessageBusCommands {
   /**
    * Leave command.
    */
-  @SerializeWith(id=86)
   public static class Leave extends MessageBusCommand<Void> {
     @Override
     public CompactionMode compaction() {
@@ -111,7 +111,6 @@ public final class MessageBusCommands {
   /**
    * Register command.
    */
-  @SerializeWith(id=87)
   public static class Register extends MessageBusCommand<Void> {
     private String topic;
 
@@ -145,7 +144,6 @@ public final class MessageBusCommands {
   /**
    * Unregister command.
    */
-  @SerializeWith(id=88)
   public static class Unregister extends MessageBusCommand<Void> {
     private String topic;
 
@@ -184,7 +182,6 @@ public final class MessageBusCommands {
   /**
    * Consumer info.
    */
-  @SerializeWith(id=89)
   public static class ConsumerInfo implements CatalystSerializable {
     private String topic;
     private Address address;
@@ -225,6 +222,21 @@ public final class MessageBusCommands {
     public void readObject(BufferInput buffer, Serializer serializer) {
       topic = buffer.readString();
       address = serializer.readObject(buffer);
+    }
+  }
+
+  /**
+   * Message bus command type resolver.
+   */
+  public static class TypeResolver implements SerializableTypeResolver {
+    @Override
+    public void resolve(SerializerRegistry registry) {
+      registry.register(Join.class, -145);
+      registry.register(Leave.class, -146);
+      registry.register(Register.class, -147);
+      registry.register(Unregister.class, -148);
+      registry.register(ConsumerInfo.class, -149);
+      registry.register(Message.class, -106);
     }
   }
 

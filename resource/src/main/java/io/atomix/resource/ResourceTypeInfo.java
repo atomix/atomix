@@ -15,6 +15,8 @@
  */
 package io.atomix.resource;
 
+import io.atomix.catalyst.serializer.SerializableTypeResolver;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -38,5 +40,10 @@ public @interface ResourceTypeInfo {
    * The resource state machine class.
    */
   Class<? extends ResourceStateMachine> stateMachine();
+
+  /**
+   * The resource serializable type resolver.
+   */
+  Class<? extends SerializableTypeResolver> typeResolver();
 
 }

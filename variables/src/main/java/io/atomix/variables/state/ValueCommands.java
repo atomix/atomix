@@ -18,8 +18,9 @@ package io.atomix.variables.state;
 import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
-import io.atomix.catalyst.serializer.SerializeWith;
+import io.atomix.catalyst.serializer.SerializableTypeResolver;
 import io.atomix.catalyst.serializer.Serializer;
+import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.copycat.client.Command;
 import io.atomix.copycat.client.Query;
 
@@ -90,14 +91,12 @@ public class ValueCommands {
   /**
    * Get query.
    */
-  @SerializeWith(id=50)
   public static class Get<T> extends ValueQuery<T> {
   }
 
   /**
    * Set command.
    */
-  @SerializeWith(id=51)
   public static class Set<T> extends ValueCommand<T> {
     private T value;
 
@@ -141,7 +140,6 @@ public class ValueCommands {
   /**
    * Compare and set command.
    */
-  @SerializeWith(id=52)
   public static class CompareAndSet<T> extends ValueCommand<Boolean> {
     private T expect;
     private T update;
@@ -199,7 +197,6 @@ public class ValueCommands {
   /**
    * Get and set command.
    */
-  @SerializeWith(id=53)
   public static class GetAndSet<T> extends ValueCommand<T> {
     private T value;
 
@@ -237,6 +234,19 @@ public class ValueCommands {
     @Override
     public String toString() {
       return String.format("%s[value=%s]", getClass().getSimpleName(), value);
+    }
+  }
+
+  /**
+   * Value command type resolver.
+   */
+  public static class TypeResolver implements SerializableTypeResolver {
+    @Override
+    public void resolve(SerializerRegistry registry) {
+      registry.register(ValueCommands.CompareAndSet.class, -110);
+      registry.register(ValueCommands.Get.class, -111);
+      registry.register(ValueCommands.GetAndSet.class, -112);
+      registry.register(ValueCommands.Set.class, -113);
     }
   }
 

@@ -139,6 +139,7 @@ public abstract class Resource<T extends Resource<T, U>, U extends Resource.Opti
 
   }
 
+  private final ResourceType type;
   protected final CopycatClient client;
   protected final U options;
   private State state;
@@ -146,7 +147,20 @@ public abstract class Resource<T extends Resource<T, U>, U extends Resource.Opti
   private Consistency consistency = Consistency.ATOMIC;
 
   protected Resource(CopycatClient client, U options) {
+    this.type = new ResourceType(getClass());
     this.client = Assert.notNull(client, "client");
+
+    client.serializer().register(ResourceCommand.class, -50);
+    client.serializer().register(ResourceQuery.class, -51);
+    client.serializer().register(ResourceStateMachine.ConfigureCommand.class, -52);
+    client.serializer().register(ResourceStateMachine.DeleteCommand.class, -53);
+
+    try {
+      client.serializer().resolve(type.typeResolver().newInstance());
+    } catch (InstantiationException | IllegalAccessException e) {
+      throw new ResourceException("failed to instantiate resource type resolver");
+    }
+
     this.options = options;
     client.onStateChange(this::onStateChange);
   }
@@ -157,6 +171,15 @@ public abstract class Resource<T extends Resource<T, U>, U extends Resource.Opti
   private void onStateChange(CopycatClient.State state) {
     this.state = State.valueOf(state.name());
     changeListeners.forEach(l -> l.accept(this.state));
+  }
+
+  /**
+   * Returns the resource type.
+   *
+   * @return The resource type.
+   */
+  public ResourceType type() {
+    return type;
   }
 
   /**

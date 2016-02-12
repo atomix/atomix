@@ -18,8 +18,9 @@ package io.atomix.collections.state;
 import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
-import io.atomix.catalyst.serializer.SerializeWith;
+import io.atomix.catalyst.serializer.SerializableTypeResolver;
 import io.atomix.catalyst.serializer.Serializer;
+import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.copycat.client.Command;
 import io.atomix.copycat.client.Query;
@@ -135,7 +136,6 @@ public class MapCommands {
   /**
    * Contains key command.
    */
-  @SerializeWith(id=60)
   public static class ContainsKey extends KeyQuery<Boolean> {
     public ContainsKey() {
     }
@@ -148,7 +148,6 @@ public class MapCommands {
   /**
    * Abstract key-based query.
    */
-  @SerializeWith(id=61)
   public static class ContainsValue extends MapQuery<Boolean> {
     protected Object value;
 
@@ -257,7 +256,6 @@ public class MapCommands {
   /**
    * Put command.
    */
-  @SerializeWith(id=62)
   public static class Put extends TtlCommand<Object> {
     public Put() {
     }
@@ -274,7 +272,6 @@ public class MapCommands {
   /**
    * Put if absent command.
    */
-  @SerializeWith(id=63)
   public static class PutIfAbsent extends TtlCommand<Object> {
     public PutIfAbsent() {
     }
@@ -291,7 +288,6 @@ public class MapCommands {
   /**
    * Get query.
    */
-  @SerializeWith(id=64)
   public static class Get extends KeyQuery<Object> {
     public Get() {
     }
@@ -304,7 +300,6 @@ public class MapCommands {
   /**
    * Get or default query.
    */
-  @SerializeWith(id=65)
   public static class GetOrDefault extends KeyQuery<Object> {
     private Object defaultValue;
 
@@ -341,7 +336,6 @@ public class MapCommands {
   /**
    * Remove command.
    */
-  @SerializeWith(id=66)
   public static class Remove extends KeyCommand<Object> {
 
     public Remove() {
@@ -360,7 +354,6 @@ public class MapCommands {
   /**
    * Remove if absent command.
    */
-  @SerializeWith(id=67)
   public static class RemoveIfPresent extends KeyValueCommand<Boolean> {
 
     public RemoveIfPresent() {
@@ -379,7 +372,6 @@ public class MapCommands {
   /**
    * Remove command.
    */
-  @SerializeWith(id=68)
   public static class Replace extends TtlCommand<Object> {
     public Replace() {
     }
@@ -396,7 +388,6 @@ public class MapCommands {
   /**
    * Remove if absent command.
    */
-  @SerializeWith(id=69)
   public static class ReplaceIfPresent extends TtlCommand<Boolean> {
     private Object replace;
 
@@ -437,26 +428,45 @@ public class MapCommands {
   /**
    * Is empty query.
    */
-  @SerializeWith(id=70)
   public static class IsEmpty extends MapQuery<Boolean> {
   }
 
   /**
    * Size query.
    */
-  @SerializeWith(id=71)
   public static class Size extends MapQuery<Integer> {
   }
 
   /**
    * Clear command.
    */
-  @SerializeWith(id=72)
   public static class Clear extends MapCommand<Void> {
 
     @Override
     public CompactionMode compaction() {
       return CompactionMode.SEQUENTIAL;
+    }
+  }
+
+  /**
+   * Map command type resolver.
+   */
+  public static class TypeResolver implements SerializableTypeResolver {
+    @Override
+    public void resolve(SerializerRegistry registry) {
+      registry.register(ContainsKey.class, -65);
+      registry.register(ContainsValue.class, -66);
+      registry.register(Put.class, -67);
+      registry.register(PutIfAbsent.class, -68);
+      registry.register(Get.class, -69);
+      registry.register(GetOrDefault.class, -70);
+      registry.register(Remove.class, -71);
+      registry.register(RemoveIfPresent.class, -72);
+      registry.register(Replace.class, -73);
+      registry.register(ReplaceIfPresent.class, -74);
+      registry.register(IsEmpty.class, -75);
+      registry.register(Size.class, -76);
+      registry.register(Clear.class, -77);
     }
   }
 

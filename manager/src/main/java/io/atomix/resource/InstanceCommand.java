@@ -15,7 +15,6 @@
  */
 package io.atomix.resource;
 
-import io.atomix.catalyst.serializer.SerializeWith;
 import io.atomix.copycat.client.Command;
 
 /**
@@ -23,7 +22,6 @@ import io.atomix.copycat.client.Command;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=30)
 public final class InstanceCommand<T extends Command<U>, U> extends InstanceOperation<T, U> implements Command<U> {
 
   public InstanceCommand() {

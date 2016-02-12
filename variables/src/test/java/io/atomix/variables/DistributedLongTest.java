@@ -15,7 +15,6 @@
  */
 package io.atomix.variables;
 
-import io.atomix.resource.ResourceType;
 import io.atomix.testing.AbstractCopycatTest;
 import org.testng.annotations.Test;
 
@@ -83,8 +82,8 @@ public class DistributedLongTest extends AbstractCopycatTest<DistributedLong> {
    */
   public void testSequenceOfUpdates() throws Throwable {
     Function<DistributedLong, CompletableFuture<Long>> sequence = l -> l.incrementAndGet()
-                                                                 .thenCompose(v -> l.set(10L))
-                                                                 .thenCompose(v -> l.incrementAndGet());
+      .thenCompose(v -> l.set(10L))
+      .thenCompose(v -> l.incrementAndGet());
     testAtomic(3, atomic(sequence, l -> 11L));
   }
 

@@ -46,7 +46,7 @@ import java.util.concurrent.CompletableFuture;
  * @param <V> The map entry type.
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@ResourceTypeInfo(id=-11, stateMachine=MapState.class)
+@ResourceTypeInfo(id=-11, stateMachine=MapState.class, typeResolver=MapCommands.TypeResolver.class)
 public class DistributedMap<K, V> extends Resource<DistributedMap<K, V>, Resource.Options> {
 
   public DistributedMap(CopycatClient client, Resource.Options options) {

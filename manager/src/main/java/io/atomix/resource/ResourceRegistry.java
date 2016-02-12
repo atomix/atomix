@@ -17,6 +17,7 @@ package io.atomix.resource;
 
 import io.atomix.catalyst.util.Assert;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -27,6 +28,15 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class ResourceRegistry {
   private final Map<Integer, ResourceType> resourceTypes = new ConcurrentHashMap<>();
+
+  /**
+   * Returns a collection of resource types.
+   *
+   * @return A collection of registered resource types.
+   */
+  public Collection<ResourceType> types() {
+    return resourceTypes.values();
+  }
 
   /**
    * Registers a resource type.

@@ -30,7 +30,7 @@ import java.util.concurrent.CompletableFuture;
  * @param <T> The set value type.
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@ResourceTypeInfo(id=-13, stateMachine=SetState.class)
+@ResourceTypeInfo(id=-13, stateMachine=SetState.class, typeResolver=SetCommands.TypeResolver.class)
 public class DistributedSet<T> extends Resource<DistributedSet<T>, Resource.Options> {
 
   public DistributedSet(CopycatClient client, Resource.Options options) {

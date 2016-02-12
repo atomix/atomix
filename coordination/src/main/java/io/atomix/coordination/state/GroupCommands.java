@@ -18,8 +18,9 @@ package io.atomix.coordination.state;
 import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
-import io.atomix.catalyst.serializer.SerializeWith;
+import io.atomix.catalyst.serializer.SerializableTypeResolver;
 import io.atomix.catalyst.serializer.Serializer;
+import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.copycat.client.Command;
 import io.atomix.copycat.client.Query;
@@ -84,7 +85,6 @@ public final class GroupCommands {
   /**
    * Join command.
    */
-  @SerializeWith(id=120)
   public static class Join extends MemberCommand<String> {
     private boolean persist;
 
@@ -121,7 +121,6 @@ public final class GroupCommands {
   /**
    * Leave command.
    */
-  @SerializeWith(id=121)
   public static class Leave extends MemberCommand<Void> {
     public Leave() {
     }
@@ -174,7 +173,6 @@ public final class GroupCommands {
   /**
    * Schedule command.
    */
-  @SerializeWith(id=122)
   public static class Schedule extends MemberCommand<Void> {
     private long delay;
     private Runnable callback;
@@ -223,7 +221,6 @@ public final class GroupCommands {
   /**
    * Execute command.
    */
-  @SerializeWith(id=123)
   public static class Execute extends MemberCommand<Void> {
     private Runnable callback;
 
@@ -260,7 +257,6 @@ public final class GroupCommands {
   /**
    * List command.
    */
-  @SerializeWith(id=124)
   public static class Listen extends GroupCommand<Set<String>> {
     @Override
     public CompactionMode compaction() {
@@ -271,7 +267,6 @@ public final class GroupCommands {
   /**
    * Resign command.
    */
-  @SerializeWith(id=113)
   public static class Resign extends MemberCommand<Void> {
 
     public Resign() {
@@ -326,7 +321,6 @@ public final class GroupCommands {
   /**
    * Set property command.
    */
-  @SerializeWith(id=125)
   public static class SetProperty extends PropertyCommand<Void> {
     private Object value;
 
@@ -363,7 +357,6 @@ public final class GroupCommands {
   /**
    * Get property command.
    */
-  @SerializeWith(id=126)
   public static class GetProperty extends GroupQuery<Object> {
     private String member;
     private String property;
@@ -411,7 +404,6 @@ public final class GroupCommands {
   /**
    * Remove property command.
    */
-  @SerializeWith(id=127)
   public static class RemoveProperty extends PropertyCommand<Void> {
     public RemoveProperty() {
     }
@@ -429,7 +421,6 @@ public final class GroupCommands {
   /**
    * Send command.
    */
-  @SerializeWith(id=118)
   public static class Send extends MemberCommand<Void> {
     private String topic;
     private Object message;
@@ -479,7 +470,6 @@ public final class GroupCommands {
   /**
    * Membership group message.
    */
-  @SerializeWith(id=119)
   public static class Message implements CatalystSerializable {
     private String member;
     private String topic;
@@ -534,6 +524,26 @@ public final class GroupCommands {
       body = serializer.readObject(buffer);
     }
 
+  }
+
+  /**
+   * Group command type resolver.
+   */
+  public static class TypeResolver implements SerializableTypeResolver {
+    @Override
+    public void resolve(SerializerRegistry registry) {
+      registry.register(Join.class, -130);
+      registry.register(Leave.class, -131);
+      registry.register(Listen.class, -132);
+      registry.register(Resign.class, -133);
+      registry.register(Schedule.class, -134);
+      registry.register(Execute.class, -135);
+      registry.register(SetProperty.class, -136);
+      registry.register(GetProperty.class, -137);
+      registry.register(RemoveProperty.class, -138);
+      registry.register(Send.class, -139);
+      registry.register(Message.class, -140);
+    }
   }
 
 }

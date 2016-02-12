@@ -18,8 +18,9 @@ package io.atomix.messaging.state;
 import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
-import io.atomix.catalyst.serializer.SerializeWith;
+import io.atomix.catalyst.serializer.SerializableTypeResolver;
 import io.atomix.catalyst.serializer.Serializer;
+import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.copycat.client.Command;
 
 /**
@@ -55,7 +56,6 @@ public final class TopicCommands {
   /**
    * Listen command.
    */
-  @SerializeWith(id=260)
   public static class Listen extends TopicCommand<Void> {
     @Override
     public CompactionMode compaction() {
@@ -71,7 +71,6 @@ public final class TopicCommands {
   /**
    * Unlisten command.
    */
-  @SerializeWith(id=261)
   public static class Unlisten extends TopicCommand<Void> {
     @Override
     public ConsistencyLevel consistency() {
@@ -87,7 +86,6 @@ public final class TopicCommands {
   /**
    * Publish command.
    */
-  @SerializeWith(id=262)
   public static class Publish<T> extends TopicCommand<Void> {
     private T message;
 
@@ -120,6 +118,18 @@ public final class TopicCommands {
     @Override
     public void readObject(BufferInput buffer, Serializer serializer) {
       message = serializer.readObject(buffer);
+    }
+  }
+
+  /**
+   * Message bus command type resolver.
+   */
+  public static class TypeResolver implements SerializableTypeResolver {
+    @Override
+    public void resolve(SerializerRegistry registry) {
+      registry.register(Listen.class, -152);
+      registry.register(Unlisten.class, -153);
+      registry.register(Publish.class, -109);
     }
   }
 

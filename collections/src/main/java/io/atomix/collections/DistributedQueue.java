@@ -29,7 +29,7 @@ import java.util.concurrent.CompletableFuture;
  * @param <T> The queue value type.
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@ResourceTypeInfo(id=-14, stateMachine=QueueState.class)
+@ResourceTypeInfo(id=-14, stateMachine=QueueState.class, typeResolver=QueueCommands.TypeResolver.class)
 public class DistributedQueue<T> extends Resource<DistributedQueue<T>, Resource.Options> {
 
   public DistributedQueue(CopycatClient client, Resource.Options options) {

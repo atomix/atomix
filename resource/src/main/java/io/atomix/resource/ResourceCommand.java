@@ -17,7 +17,6 @@ package io.atomix.resource;
 
 import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
-import io.atomix.catalyst.serializer.SerializeWith;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.copycat.client.Command;
 
@@ -26,7 +25,6 @@ import io.atomix.copycat.client.Command;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=28)
 public final class ResourceCommand<T extends Command<U>, U> extends ResourceOperation<T, U> implements Command<U> {
   private ConsistencyLevel consistency;
 

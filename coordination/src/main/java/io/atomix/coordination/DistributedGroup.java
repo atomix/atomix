@@ -91,7 +91,7 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-@ResourceTypeInfo(id=-20, stateMachine=GroupState.class)
+@ResourceTypeInfo(id=-20, stateMachine=GroupState.class, typeResolver=GroupCommands.TypeResolver.class)
 public class DistributedGroup extends Resource<DistributedGroup, Resource.Options> {
   private final Listeners<GroupMember> joinListeners = new Listeners<>();
   private final Listeners<GroupMember> leaveListeners = new Listeners<>();

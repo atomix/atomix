@@ -16,8 +16,10 @@
 package io.atomix.collections.state;
 
 import io.atomix.catalyst.util.concurrent.Scheduled;
+import io.atomix.collections.DistributedMultiMap;
 import io.atomix.copycat.server.Commit;
 import io.atomix.resource.ResourceStateMachine;
+import io.atomix.resource.ResourceType;
 
 import java.time.Duration;
 import java.util.*;
@@ -30,6 +32,10 @@ import java.util.*;
 public class MultiMapState extends ResourceStateMachine {
   private final Map<Object, Map<Object, Commit<? extends MultiMapCommands.TtlCommand>>> map = new HashMap<>();
   private final Map<Long, Scheduled> timers = new HashMap<>();
+
+  public MultiMapState() {
+    super(new ResourceType(DistributedMultiMap.class));
+  }
 
   /**
    * Handles a contains key commit.

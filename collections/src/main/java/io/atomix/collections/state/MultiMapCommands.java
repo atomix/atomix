@@ -18,8 +18,9 @@ package io.atomix.collections.state;
 import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
-import io.atomix.catalyst.serializer.SerializeWith;
+import io.atomix.catalyst.serializer.SerializableTypeResolver;
 import io.atomix.catalyst.serializer.Serializer;
+import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.copycat.client.Command;
 import io.atomix.copycat.client.Query;
@@ -206,7 +207,6 @@ public class MultiMapCommands {
   /**
    * Contains key query.
    */
-  @SerializeWith(id=75)
   public static class ContainsKey extends KeyQuery<Boolean> {
     public ContainsKey() {
     }
@@ -219,7 +219,6 @@ public class MultiMapCommands {
   /**
    * Contains entry query.
    */
-  @SerializeWith(id=76)
   public static class ContainsEntry extends EntryQuery<Boolean> {
     public ContainsEntry() {
     }
@@ -232,7 +231,6 @@ public class MultiMapCommands {
   /**
    * Contains value query.
    */
-  @SerializeWith(id=77)
   public static class ContainsValue extends ValueQuery<Boolean> {
     public ContainsValue() {
     }
@@ -324,7 +322,6 @@ public class MultiMapCommands {
   /**
    * Put command.
    */
-  @SerializeWith(id=78)
   public static class Put extends TtlCommand<Boolean> {
     public Put() {
     }
@@ -341,7 +338,6 @@ public class MultiMapCommands {
   /**
    * Get query.
    */
-  @SerializeWith(id=79)
   public static class Get extends KeyQuery<Collection> {
     public Get() {
     }
@@ -354,7 +350,6 @@ public class MultiMapCommands {
   /**
    * Remove command.
    */
-  @SerializeWith(id=80)
   public static class Remove extends EntryCommand<Object> {
     public Remove() {
     }
@@ -376,7 +371,6 @@ public class MultiMapCommands {
   /**
    * Remove command.
    */
-  @SerializeWith(id=81)
   public static class RemoveValue extends MultiMapCommand<Void> {
     private Object value;
 
@@ -413,14 +407,12 @@ public class MultiMapCommands {
   /**
    * Is empty query.
    */
-  @SerializeWith(id=82)
   public static class IsEmpty extends MultiMapQuery<Boolean> {
   }
 
   /**
    * Size query.
    */
-  @SerializeWith(id=83)
   public static class Size extends KeyQuery<Integer> {
     public Size() {
     }
@@ -433,12 +425,30 @@ public class MultiMapCommands {
   /**
    * Clear command.
    */
-  @SerializeWith(id=84)
   public static class Clear extends MultiMapCommand<Void> {
 
     @Override
     public CompactionMode compaction() {
       return CompactionMode.SEQUENTIAL;
+    }
+  }
+
+  /**
+   * Multi-map command type resolver.
+   */
+  public static class TypeResolver implements SerializableTypeResolver {
+    @Override
+    public void resolve(SerializerRegistry registry) {
+      registry.register(ContainsKey.class, -80);
+      registry.register(ContainsEntry.class, -81);
+      registry.register(ContainsValue.class, -82);
+      registry.register(Put.class, -83);
+      registry.register(Get.class, -84);
+      registry.register(Remove.class, -85);
+      registry.register(RemoveValue.class, -86);
+      registry.register(IsEmpty.class, -87);
+      registry.register(Size.class, -88);
+      registry.register(Clear.class, -89);
     }
   }
 

@@ -15,7 +15,6 @@
  */
 package io.atomix.manager.state;
 
-import io.atomix.catalyst.serializer.SerializeWith;
 import io.atomix.copycat.client.Query;
 
 /**
@@ -23,7 +22,6 @@ import io.atomix.copycat.client.Query;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=38)
 public class ResourceExists extends KeyOperation<Boolean> implements Query<Boolean> {
 
   public ResourceExists() {

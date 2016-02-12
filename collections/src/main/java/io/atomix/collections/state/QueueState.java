@@ -15,8 +15,10 @@
  */
 package io.atomix.collections.state;
 
+import io.atomix.collections.DistributedQueue;
 import io.atomix.copycat.server.Commit;
 import io.atomix.resource.ResourceStateMachine;
+import io.atomix.resource.ResourceType;
 
 import java.util.ArrayDeque;
 import java.util.Iterator;
@@ -29,6 +31,10 @@ import java.util.Queue;
  */
 public class QueueState extends ResourceStateMachine {
   private final Queue<Commit<? extends QueueCommands.ValueCommand>> queue = new ArrayDeque<>();
+
+  public QueueState() {
+    super(new ResourceType(DistributedQueue.class));
+  }
 
   /**
    * Handles a contains commit.

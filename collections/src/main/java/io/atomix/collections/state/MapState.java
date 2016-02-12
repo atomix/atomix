@@ -16,8 +16,10 @@
 package io.atomix.collections.state;
 
 import io.atomix.catalyst.util.concurrent.Scheduled;
+import io.atomix.collections.DistributedMap;
 import io.atomix.copycat.server.Commit;
 import io.atomix.resource.ResourceStateMachine;
+import io.atomix.resource.ResourceType;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -31,6 +33,10 @@ import java.util.Map;
  */
 public class MapState extends ResourceStateMachine {
   private final Map<Object, Value> map = new HashMap<>();
+
+  public MapState() {
+    super(new ResourceType(DistributedMap.class));
+  }
 
   /**
    * Handles a contains key commit.

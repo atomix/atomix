@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,25 +15,21 @@
  */
 package io.atomix.resource;
 
-import io.atomix.copycat.client.CopycatClient;
-
-import java.util.concurrent.CompletableFuture;
+import io.atomix.catalyst.serializer.SerializableTypeResolver;
+import io.atomix.catalyst.serializer.SerializerRegistry;
 
 /**
- * Base class for configurable resources.
+ * Resource instance serializable type resolver.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public abstract class ConfigurableResource<T extends ConfigurableResource<T, U, V>, U extends Resource.Options, V extends Resource.Config> extends Resource<T, U> implements Configurable<T, V> {
-
-  protected ConfigurableResource(CopycatClient client, U options) {
-    super(client, options);
-  }
+public class InstanceTypeResolver implements SerializableTypeResolver {
 
   @Override
-  @SuppressWarnings("unchecked")
-  public CompletableFuture<T> configure(V config) {
-    return client.submit(new ResourceStateMachine.ConfigureCommand(config)).thenApply(v -> (T) this);
+  public void resolve(SerializerRegistry registry) {
+    registry.register(InstanceCommand.class, -55);
+    registry.register(InstanceQuery.class, -56);
+    registry.register(InstanceEvent.class, -57);
   }
 
 }

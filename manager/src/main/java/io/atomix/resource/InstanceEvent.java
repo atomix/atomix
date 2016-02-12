@@ -18,7 +18,6 @@ package io.atomix.resource;
 import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
-import io.atomix.catalyst.serializer.SerializeWith;
 import io.atomix.catalyst.serializer.Serializer;
 
 /**
@@ -26,7 +25,6 @@ import io.atomix.catalyst.serializer.Serializer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=32)
 public final class InstanceEvent<T> implements CatalystSerializable {
   private long resource;
   private T message;

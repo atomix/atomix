@@ -15,6 +15,7 @@
  */
 package io.atomix.resource;
 
+import io.atomix.catalyst.serializer.SerializableTypeResolver;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.copycat.client.CopycatClient;
 
@@ -29,6 +30,7 @@ public class ResourceType {
   private final Class<? extends Resource> type;
   private final int id;
   private final Class<? extends ResourceStateMachine> stateMachine;
+  private final Class<? extends SerializableTypeResolver> typeResolver;
 
   public ResourceType(Class<? extends Resource> type) {
     this.type = Assert.notNull(type, "type");
@@ -40,6 +42,7 @@ public class ResourceType {
 
     this.id = info.id();
     this.stateMachine = info.stateMachine();
+    this.typeResolver = info.typeResolver();
   }
 
   /**
@@ -84,12 +87,20 @@ public class ResourceType {
     return stateMachine;
   }
 
+  /**
+   * Returns the resource serializable type resolver.
+   *
+   * @return The resource serializable type resolver.
+   */
+  public Class<? extends SerializableTypeResolver> typeResolver() {
+    return typeResolver;
+  }
+
   @Override
   public int hashCode() {
     int hashCode = 23;
     hashCode = 37 * hashCode + type.hashCode();
     hashCode = 37 * hashCode + id;
-    hashCode = 37 * hashCode + stateMachine.hashCode();
     return hashCode;
   }
 
@@ -97,7 +108,7 @@ public class ResourceType {
   public boolean equals(Object object) {
     if (object instanceof ResourceType) {
       ResourceType resourceType = (ResourceType) object;
-      return resourceType.type == type && resourceType.id == id && resourceType.stateMachine == stateMachine;
+      return resourceType.type == type && resourceType.id == id;
     }
     return false;
   }

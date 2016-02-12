@@ -18,7 +18,6 @@ package io.atomix.resource;
 import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
-import io.atomix.catalyst.serializer.SerializeWith;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.copycat.client.Command;
@@ -34,11 +33,27 @@ import io.atomix.copycat.server.session.SessionListener;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public abstract class ResourceStateMachine<T extends Resource.Config> extends StateMachine implements SessionListener {
+  private final ResourceType type;
   private Commit<ConfigureCommand> configureCommit;
   protected T config;
 
+  protected ResourceStateMachine(ResourceType type) {
+    this.type = Assert.notNull(type, "type");
+  }
+
   @Override
   public final void init(StateMachineExecutor executor) {
+    try {
+      executor.serializer().resolve(type.typeResolver().newInstance());
+    } catch (InstantiationException | IllegalAccessException e) {
+      throw new ResourceException("failed to instantiate resource type resolver");
+    }
+
+    executor.serializer().register(ResourceCommand.class, -50);
+    executor.serializer().register(ResourceQuery.class, -51);
+    executor.serializer().register(ConfigureCommand.class, -52);
+    executor.serializer().register(DeleteCommand.class, -53);
+
     executor.<DeleteCommand>register(DeleteCommand.class, this::delete);
     executor.<ConfigureCommand>register(ConfigureCommand.class, this::configure);
     super.init(new ResourceStateMachineExecutor(executor));
@@ -100,7 +115,6 @@ public abstract class ResourceStateMachine<T extends Resource.Config> extends St
   /**
    * Resource configure command.
    */
-  @SerializeWith(id=130)
   public static class ConfigureCommand implements Command<Void>, CatalystSerializable {
     private Resource.Config config;
 
@@ -131,7 +145,6 @@ public abstract class ResourceStateMachine<T extends Resource.Config> extends St
   /**
    * Resource delete command.
    */
-  @SerializeWith(id=131)
   public static class DeleteCommand implements Command<Void>, CatalystSerializable {
     @Override
     public void writeObject(BufferOutput<?> buffer, Serializer serializer) {

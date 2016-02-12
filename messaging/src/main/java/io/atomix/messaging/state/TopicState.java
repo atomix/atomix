@@ -18,7 +18,9 @@ package io.atomix.messaging.state;
 import io.atomix.copycat.client.session.Session;
 import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.session.SessionListener;
+import io.atomix.messaging.DistributedTopic;
 import io.atomix.resource.ResourceStateMachine;
+import io.atomix.resource.ResourceType;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -32,19 +34,8 @@ import java.util.Map;
 public class TopicState extends ResourceStateMachine implements SessionListener {
   private final Map<Long, Commit<TopicCommands.Listen>> listeners = new HashMap<>();
 
-  @Override
-  public void register(Session session) {
-
-  }
-
-  @Override
-  public void unregister(Session session) {
-
-  }
-
-  @Override
-  public void expire(Session session) {
-
+  public TopicState() {
+    super(new ResourceType(DistributedTopic.class));
   }
 
   @Override

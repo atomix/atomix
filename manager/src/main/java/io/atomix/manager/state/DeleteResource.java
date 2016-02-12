@@ -18,7 +18,6 @@ package io.atomix.manager.state;
 import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
-import io.atomix.catalyst.serializer.SerializeWith;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.copycat.client.Command;
 
@@ -27,7 +26,6 @@ import io.atomix.copycat.client.Command;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SerializeWith(id=37)
 public class DeleteResource implements Command<Boolean>, CatalystSerializable {
   private long resource;
 

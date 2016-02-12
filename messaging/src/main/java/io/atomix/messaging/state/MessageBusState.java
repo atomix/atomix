@@ -19,7 +19,9 @@ import io.atomix.catalyst.transport.Address;
 import io.atomix.copycat.client.session.Session;
 import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.session.SessionListener;
+import io.atomix.messaging.DistributedMessageBus;
 import io.atomix.resource.ResourceStateMachine;
+import io.atomix.resource.ResourceType;
 
 import java.util.*;
 
@@ -32,19 +34,8 @@ public class MessageBusState extends ResourceStateMachine implements SessionList
   private final Map<Long, Commit<MessageBusCommands.Join>> members = new HashMap<>();
   private final Map<String, Map<Long, Commit<MessageBusCommands.Register>>> topics = new HashMap<>();
 
-  @Override
-  public void register(Session session) {
-
-  }
-
-  @Override
-  public void unregister(Session session) {
-
-  }
-
-  @Override
-  public void expire(Session session) {
-
+  public MessageBusState() {
+    super(new ResourceType(DistributedMessageBus.class));
   }
 
   @Override
