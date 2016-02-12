@@ -20,9 +20,6 @@ import io.atomix.messaging.DistributedMessageBus;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-
 /**
  * Atomix message bus test.
  *
@@ -38,23 +35,23 @@ public class AtomixMessageBusTest extends AbstractAtomixTest {
   public void testClientMessageBusGet() throws Throwable {
     Atomix client1 = createClient();
     Atomix client2 = createClient();
-    testMessageBus(client1, client2, get("test-client-bus-get", DistributedMessageBus.class));
+    testMessageBus(
+      createClient().getMessageBus("test-client-bus-get", DistributedMessageBus.options().withAddress(new Address("localhost", 6000))).get(),
+      createClient().getMessageBus("test-client-bus-get", DistributedMessageBus.options().withAddress(new Address("localhost", 6001))).get()
+    );
   }
 
   public void testReplicaMessageBusGet() throws Throwable {
-    testMessageBus(replicas.get(0), replicas.get(1), get("test-replica-bus-get", DistributedMessageBus.class));
+    testMessageBus(
+      replicas.get(0).getMessageBus("test-client-bus-get", DistributedMessageBus.options().withAddress(new Address("localhost", 6000))).get(),
+      replicas.get(1).getMessageBus("test-client-bus-get", DistributedMessageBus.options().withAddress(new Address("localhost", 6001))).get()
+    );
   }
 
   /**
    * Tests sending and receiving messages on a message bus.
    */
-  private void testMessageBus(Atomix client1, Atomix client2, Function<Atomix, DistributedMessageBus> factory) throws Throwable {
-    DistributedMessageBus bus1 = factory.apply(client1);
-    DistributedMessageBus bus2 = factory.apply(client2);
-
-    bus1.open(new Address("localhost", 6000)).get(5, TimeUnit.SECONDS);
-    bus2.open(new Address("localhost", 6001)).get(5, TimeUnit.SECONDS);
-
+  private void testMessageBus(DistributedMessageBus bus1, DistributedMessageBus bus2) throws Throwable {
     bus1.<String>consumer("test", message -> {
       threadAssertEquals(message, "Hello world!");
       resume();
