@@ -30,7 +30,25 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @ResourceTypeInfo(id=-14, stateMachine=QueueState.class, typeResolver=QueueCommands.TypeResolver.class)
-public class DistributedQueue<T> extends Resource<DistributedQueue<T>, Resource.Options> {
+public class DistributedQueue<T> extends Resource<DistributedQueue<T>> {
+
+  /**
+   * Returns new queue options.
+   *
+   * @return New queue options.
+   */
+  public static Options options() {
+    return new Options();
+  }
+
+  /**
+   * Returns a new queue configuration.
+   *
+   * @return A new queue configuration.
+   */
+  public static Config config() {
+    return new Config();
+  }
 
   public DistributedQueue(CopycatClient client, Resource.Options options) {
     super(client, options);

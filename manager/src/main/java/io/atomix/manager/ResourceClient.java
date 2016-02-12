@@ -109,8 +109,8 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
 
   final CopycatClient client;
   private final ResourceRegistry registry;
-  private final Map<Class<? extends Resource<?, ?>>, ResourceType> types = new ConcurrentHashMap<>();
-  private final Map<String, Resource<?, ?>> instances = new HashMap<>();
+  private final Map<Class<? extends Resource<?>>, ResourceType> types = new ConcurrentHashMap<>();
+  private final Map<String, Resource<?>> instances = new HashMap<>();
   private final Map<String, CompletableFuture> futures = new HashMap<>();
 
   /**
@@ -136,7 +136,12 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
   }
 
   @Override
-  public final ResourceType type(Class<? extends Resource<?, ?>> type) {
+  public Serializer serializer() {
+    return client.serializer();
+  }
+
+  @Override
+  public final ResourceType type(Class<? extends Resource<?>> type) {
     return types.computeIfAbsent(type, t -> {
       ResourceType resourceType = new ResourceType(type);
       if (registry.lookup(resourceType.id()) == null)
@@ -158,7 +163,7 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
   @Override
   @SuppressWarnings("unchecked")
   public <T extends Resource> CompletableFuture<Set<String>> keys(Class<? super T> type) {
-    return keys(type((Class<? extends Resource<?, ?>>) type));
+    return keys(type((Class<? extends Resource<?>>) type));
   }
 
   @Override
@@ -169,31 +174,57 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
   @Override
   @SuppressWarnings("unchecked")
   public <T extends Resource> CompletableFuture<T> get(String key, Class<? super T> type) {
-    return get(key, type((Class<? extends Resource<?, ?>>) type));
+    return get(key, type((Class<? extends Resource<?>>) type), null, null);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T extends Resource<T, U>, U extends Resource.Options> CompletableFuture<T> get(String key, Class<? super T> type, U options) {
-    return this.<T, U>get(key, type((Class<? extends Resource<?, ?>>) type), options);
+  public <T extends Resource> CompletableFuture<T> get(String key, Class<? super T> type, Resource.Config config) {
+    return this.<T>get(key, type((Class<? extends Resource<?>>) type), config, null);
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public <T extends Resource> CompletableFuture<T> get(String key, Class<? super T> type, Resource.Options options) {
+    return this.<T>get(key, type((Class<? extends Resource<?>>) type), null, options);
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public <T extends Resource> CompletableFuture<T> get(String key, Class<? super T> type, Resource.Config config, Resource.Options options) {
+    return this.<T>get(key, type((Class<? extends Resource<?>>) type), config, options);
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public <T extends Resource> CompletableFuture<T> get(String key, ResourceType type) {
-    return get(key, type, null);
+    return get(key, type, null, null);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public synchronized <T extends Resource<T, U>, U extends Resource.Options> CompletableFuture<T> get(String key, ResourceType type, U options) {
+  public <T extends Resource> CompletableFuture<T> get(String key, ResourceType type, Resource.Config config) {
+    return this.<T>get(key, type, config, null);
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public <T extends Resource> CompletableFuture<T> get(String key, ResourceType type, Resource.Options options) {
+    return this.<T>get(key, type, null, options);
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public synchronized <T extends Resource> CompletableFuture<T> get(String key, ResourceType type, Resource.Config config, Resource.Options options) {
     Assert.notNull(key, "key");
     Assert.notNull(type, "type");
     T resource;
 
     // Determine whether a singleton instance of the given resource key already exists.
-    Resource<?, ?> check = instances.get(key);
+    Resource<?> check = instances.get(key);
     if (check == null) {
+      if (options == null)
+        options = new Resource.Options();
       Instance instance = new Instance(key, type, Instance.Method.GET, this::close);
       InstanceClient client = new InstanceClient(instance, this.client);
       check = type.factory().create(client, options);
@@ -213,6 +244,9 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
     CompletableFuture<T> future = futures.get(key);
     if (future == null) {
       future = resource.open();
+      if (config != null) {
+        future = future.thenCompose(v -> resource.configure(config));
+      }
       futures.put(key, future);
     }
     return future;
@@ -246,7 +280,7 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
   public CompletableFuture<Void> close() {
     CompletableFuture<?>[] futures = new CompletableFuture[instances.size()];
     int i = 0;
-    for (Resource<?, ?> instance : instances.values()) {
+    for (Resource<?> instance : instances.values()) {
       futures[i++] = instance.close();
     }
     return CompletableFuture.allOf(futures).thenCompose(v -> client.close());
@@ -265,8 +299,8 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
   /**
    * Builds a {@link ResourceClient}.
    * <p>
-   * The client builder configures a {@link ResourceClient} to connect to a cluster of {@link ResourceServer}s
-   * or {@link ResourceReplica}. To create a client builder, use the {@link #builder(Address...)} method.
+   * The client builder configures a {@link ResourceClient} to connect to a cluster of {@link ResourceServer}s.
+   * To create a client builder, use the {@link #builder(Address...)} method.
    * <pre>
    *   {@code
    *   ResourceClient client = ResourceClient.builder(servers)

@@ -21,6 +21,7 @@ import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.ConfigurationException;
 import io.atomix.catalyst.util.Managed;
+import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.copycat.server.CopycatServer;
 import io.atomix.copycat.server.storage.Storage;
 import io.atomix.manager.state.ResourceManagerState;
@@ -141,6 +142,28 @@ public final class ResourceServer implements Managed<ResourceServer> {
    */
   public ResourceServer(CopycatServer server) {
     this.server = Assert.notNull(server, "server");
+  }
+
+  /**
+   * Returns the server thread context.
+   *
+   * @return The server thread context.
+   */
+  public ThreadContext context() {
+    return server.context();
+  }
+
+  /**
+   * Returns the server serializer.
+   * <p>
+   * The server serializer handles serialization for all operations within the resource server. Serializable
+   * types registered on the server serializer will be reflected in the {@link Storage} and {@link Transport}
+   * layers.
+   *
+   * @return The server serializer.
+   */
+  public Serializer serializer() {
+    return server.serializer();
   }
 
   /**

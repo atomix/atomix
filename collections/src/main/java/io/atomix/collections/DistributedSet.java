@@ -31,7 +31,25 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @ResourceTypeInfo(id=-13, stateMachine=SetState.class, typeResolver=SetCommands.TypeResolver.class)
-public class DistributedSet<T> extends Resource<DistributedSet<T>, Resource.Options> {
+public class DistributedSet<T> extends Resource<DistributedSet<T>> {
+
+  /**
+   * Returns new set options.
+   *
+   * @return New set options.
+   */
+  public static Options options() {
+    return new Options();
+  }
+
+  /**
+   * Returns a new set configuration.
+   *
+   * @return A new set configuration.
+   */
+  public static Config config() {
+    return new Config();
+  }
 
   public DistributedSet(CopycatClient client, Resource.Options options) {
     super(client, options);

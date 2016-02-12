@@ -27,7 +27,25 @@ import io.atomix.variables.state.ValueState;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @ResourceTypeInfo(id=-1, stateMachine=ValueState.class, typeResolver=ValueCommands.TypeResolver.class)
-public class DistributedValue<T> extends AbstractDistributedValue<DistributedValue<T>, Resource.Options, T> {
+public class DistributedValue<T> extends AbstractDistributedValue<DistributedValue<T>, T> {
+
+  /**
+   * Returns new value options.
+   *
+   * @return New value options.
+   */
+  public static Options options() {
+    return new Options();
+  }
+
+  /**
+   * Returns a new value configuration.
+   *
+   * @return A new value configuration.
+   */
+  public static Config config() {
+    return new Config();
+  }
 
   public DistributedValue(CopycatClient client, Resource.Options options) {
     super(client, options);

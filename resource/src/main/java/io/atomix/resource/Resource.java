@@ -25,6 +25,7 @@ import io.atomix.copycat.client.Query;
 import io.atomix.copycat.client.session.Session;
 
 import java.io.Serializable;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -51,21 +52,32 @@ import java.util.function.Consumer;
  * and the semantics of the specific resource implementation.
  *
  * @param <T> resource type
- * @param <U> option type
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class Resource<T extends Resource<T, U>, U extends Resource.Options> implements Managed<T> {
+public abstract class Resource<T extends Resource<T>> implements Managed<T> {
 
   /**
    * Resource configuration.
    */
-  public interface Config extends Serializable {
+  public static class Config extends Properties implements Serializable {
+    public Config() {
+    }
+
+    public Config(Properties defaults) {
+      super(defaults);
+    }
   }
 
   /**
    * Resource options.
    */
-  public interface Options {
+  public static class Options extends Properties {
+    public Options() {
+    }
+
+    public Options(Properties defaults) {
+      super(defaults);
+    }
   }
 
   /**
@@ -141,12 +153,12 @@ public abstract class Resource<T extends Resource<T, U>, U extends Resource.Opti
 
   private final ResourceType type;
   protected final CopycatClient client;
-  protected final U options;
+  protected final Options options;
   private State state;
   private final Set<StateChangeListener> changeListeners = new CopyOnWriteArraySet<>();
   private Consistency consistency = Consistency.ATOMIC;
 
-  protected Resource(CopycatClient client, U options) {
+  protected Resource(CopycatClient client, Options options) {
     this.type = new ResourceType(getClass());
     this.client = Assert.notNull(client, "client");
 
@@ -213,6 +225,17 @@ public abstract class Resource<T extends Resource<T, U>, U extends Resource.Opti
    */
   public ThreadContext context() {
     return client.context();
+  }
+
+  /**
+   * Configures the resource.
+   *
+   * @param config The resource configuration.
+   * @return A completable future to be completed once the resource has been configured.
+   */
+  @SuppressWarnings("unchecked")
+  public CompletableFuture<T> configure(Config config) {
+    return client.submit(new ResourceStateMachine.ConfigureCommand(config)).thenApply(v -> (T) this);
   }
 
   /**

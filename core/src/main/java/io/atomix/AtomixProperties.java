@@ -27,7 +27,7 @@ import java.util.Properties;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public abstract class AtomixProperties {
+abstract class AtomixProperties {
   public static final String SEED = "cluster.seed";
 
   protected final PropertiesReader reader;

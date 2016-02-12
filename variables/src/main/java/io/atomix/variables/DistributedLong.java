@@ -30,7 +30,25 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 @ResourceTypeInfo(id=-2, stateMachine=LongState.class, typeResolver=LongCommands.TypeResolver.class)
-public class DistributedLong extends AbstractDistributedValue<DistributedLong, Resource.Options, Long> {
+public class DistributedLong extends AbstractDistributedValue<DistributedLong, Long> {
+
+  /**
+   * Returns new long options.
+   *
+   * @return New long options.
+   */
+  public static Options options() {
+    return new Options();
+  }
+
+  /**
+   * Returns a new long configuration.
+   *
+   * @return A new long configuration.
+   */
+  public static Config config() {
+    return new Config();
+  }
 
   public DistributedLong(CopycatClient client, Resource.Options options) {
     super(client, options);

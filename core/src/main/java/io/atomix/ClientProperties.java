@@ -27,7 +27,7 @@ import java.util.Properties;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public final class ClientProperties extends AtomixProperties {
+final class ClientProperties extends AtomixProperties {
   public static final String TRANSPORT = "client.transport";
 
   private static final String DEFAULT_TRANSPORT = "io.atomix.catalyst.transport.NettyTransport";

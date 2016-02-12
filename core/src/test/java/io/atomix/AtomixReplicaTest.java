@@ -193,7 +193,7 @@ public class AtomixReplicaTest extends AbstractAtomixTest {
    * Test resource.
    */
   @ResourceTypeInfo(id=3, stateMachine=TestStateMachine.class, typeResolver=TestResource.TypeResolver.class)
-  public static class TestResource extends Resource<TestResource, Resource.Options> {
+  public static class TestResource extends Resource<TestResource> {
     public TestResource(CopycatClient client, Resource.Options options) {
       super(client, options);
     }
@@ -271,7 +271,7 @@ public class AtomixReplicaTest extends AbstractAtomixTest {
    * Value resource.
    */
   @ResourceTypeInfo(id=4, stateMachine=ValueStateMachine.class, typeResolver=ValueResource.TypeResolver.class)
-  public static class ValueResource extends Resource<ValueResource, Resource.Options> {
+  public static class ValueResource extends Resource<ValueResource> {
     public ValueResource(CopycatClient client, Resource.Options options) {
       super(client, options);
     }

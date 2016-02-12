@@ -47,7 +47,25 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @ResourceTypeInfo(id=-11, stateMachine=MapState.class, typeResolver=MapCommands.TypeResolver.class)
-public class DistributedMap<K, V> extends Resource<DistributedMap<K, V>, Resource.Options> {
+public class DistributedMap<K, V> extends Resource<DistributedMap<K, V>> {
+
+  /**
+   * Returns new map options.
+   *
+   * @return New map options.
+   */
+  public static Options options() {
+    return new Options();
+  }
+
+  /**
+   * Returns a new map configuration.
+   *
+   * @return A new map configuration.
+   */
+  public static Config config() {
+    return new Config();
+  }
 
   public DistributedMap(CopycatClient client, Resource.Options options) {
     super(client, options);
