@@ -18,7 +18,7 @@ package io.atomix.collections;
 import io.atomix.collections.state.MapCommands;
 import io.atomix.collections.state.MapState;
 import io.atomix.copycat.client.CopycatClient;
-import io.atomix.resource.Consistency;
+import io.atomix.resource.ReadConsistency;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceTypeInfo;
 
@@ -74,9 +74,9 @@ public class DistributedMap<K, V> extends Resource<DistributedMap<K, V>> {
   /**
    * Returns {@code true} if the map is empty.
    * <p>
-   * Note that depending on the configured {@link Consistency} of the map instance, empty checks
+   * Note that depending on the configured {@link ReadConsistency} of the map instance, empty checks
    * may return stale results. To perform a fully consistent empty check, configure the map with
-   * {@link Consistency#ATOMIC} consistency (the default).
+   * {@link ReadConsistency#ATOMIC} consistency (the default).
    * <pre>
    *   {@code
    *   map.with(Consistency.ATOMIC).isEmpty().thenAccept(isEmpty -> {
@@ -85,7 +85,7 @@ public class DistributedMap<K, V> extends Resource<DistributedMap<K, V>> {
    *   }
    * </pre>
    * For better performance with potentially stale results, use a lower consistency level. See the
-   * {@link Consistency} documentation for specific consistency guarantees.
+   * {@link ReadConsistency} documentation for specific consistency guarantees.
    * <p>
    * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
    * or to be notified in a separate thread once the operation completes. To block until the operation completes,
@@ -114,11 +114,53 @@ public class DistributedMap<K, V> extends Resource<DistributedMap<K, V>> {
   }
 
   /**
+   * Returns {@code true} if the map is empty.
+   * <p>
+   * Note that depending on the {@link ReadConsistency}, empty checks may return stale results. To perform a fully
+   * consistent empty check, use {@link ReadConsistency#ATOMIC} consistency (the default).
+   * <pre>
+   *   {@code
+   *   map.isEmpty(ReadConsistency.ATOMIC).thenAccept(isEmpty -> {
+   *     ...
+   *   });
+   *   }
+   * </pre>
+   * For better performance with potentially stale results, use a lower consistency level. See the
+   * {@link ReadConsistency} documentation for specific consistency guarantees.
+   * <p>
+   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
+   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
+   * use the {@link CompletableFuture#get()} method to block the calling thread:
+   * <pre>
+   *   {@code
+   *   if (map.isEmpty(ReadConsistency.ATOMIC).get()) {
+   *     ...
+   *   }
+   *   }
+   * </pre>
+   * Alternatively, to execute the operation asynchronous and be notified once the operation is complete in a different
+   * thread, use one of the many completable future callbacks:
+   * <pre>
+   *   {@code
+   *   map.isEmpty(ReadConsistency.ATOMIC).thenAccept(isEmpty -> {
+   *     ...
+   *   });
+   *   }
+   * </pre>
+   *
+   * @param consistency The read consistency level.
+   * @return A completable future to be completed with a boolean value indicating whether the map is empty.
+   */
+  public CompletableFuture<Boolean> isEmpty(ReadConsistency consistency) {
+    return submit(new MapCommands.IsEmpty(), consistency);
+  }
+
+  /**
    * Gets the number of key-value pairs in the map.
    * <p>
-   * Note that depending on the configured {@link Consistency} of the map instance, size checks
+   * Note that depending on the configured {@link ReadConsistency} of the map instance, size checks
    * may return stale results. To perform a fully consistent size check, configure the map with
-   * {@link Consistency#ATOMIC} consistency (the default).
+   * {@link ReadConsistency#ATOMIC} consistency (the default).
    * <pre>
    *   {@code
    *   map.with(Consistency.ATOMIC).size().thenAccept(size -> {
@@ -127,7 +169,7 @@ public class DistributedMap<K, V> extends Resource<DistributedMap<K, V>> {
    *   }
    * </pre>
    * For better performance with potentially stale results, use a lower consistency level. See the
-   * {@link Consistency} documentation for specific consistency guarantees.
+   * {@link ReadConsistency} documentation for specific consistency guarantees.
    * <p>
    * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
    * or to be notified in a separate thread once the operation completes. To block until the operation completes,
@@ -154,11 +196,51 @@ public class DistributedMap<K, V> extends Resource<DistributedMap<K, V>> {
   }
 
   /**
+   * Gets the number of key-value pairs in the map.
+   * <p>
+   * Note that depending on the {@link ReadConsistency}, size checks may return stale results. To perform a
+   * fully consistent size check, use {@link ReadConsistency#ATOMIC} consistency (the default).
+   * <pre>
+   *   {@code
+   *   map.size(ReadConsistency.ATOMIC).thenAccept(size -> {
+   *     ...
+   *   });
+   *   }
+   * </pre>
+   * For better performance with potentially stale results, use a lower consistency level. See the
+   * {@link ReadConsistency} documentation for specific consistency guarantees.
+   * <p>
+   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
+   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
+   * use the {@link CompletableFuture#get()} method to block the calling thread:
+   * <pre>
+   *   {@code
+   *   int size = map.size(ReadConsistency.ATOMIC).get();
+   *   }
+   * </pre>
+   * Alternatively, to execute the operation asynchronous and be notified once the operation is complete in a different
+   * thread, use one of the many completable future callbacks:
+   * <pre>
+   *   {@code
+   *   map.size(ReadConsistency.ATOMIC).thenAccept(size -> {
+   *     ...
+   *   });
+   *   }
+   * </pre>
+   *
+   * @param consistency The read consistency level.
+   * @return A completable future to be completed with the number of entries in the map.
+   */
+  public CompletableFuture<Integer> size(ReadConsistency consistency) {
+    return submit(new MapCommands.Size(), consistency);
+  }
+
+  /**
    * Returns {@code true} if the given key is present in the map.
    * <p>
-   * Note that depending on the configured {@link Consistency} of the map instance, checks
+   * Note that depending on the configured {@link ReadConsistency} of the map instance, checks
    * may return stale results. To perform a fully consistent check, configure the map with
-   * {@link Consistency#ATOMIC} consistency (the default).
+   * {@link ReadConsistency#ATOMIC} consistency (the default).
    * <pre>
    *   {@code
    *   map.with(Consistency.ATOMIC).containsKey("foo").thenAccept(contains -> {
@@ -167,7 +249,7 @@ public class DistributedMap<K, V> extends Resource<DistributedMap<K, V>> {
    *   }
    * </pre>
    * For better performance with potentially stale results, use a lower consistency level. See the
-   * {@link Consistency} documentation for specific consistency guarantees.
+   * {@link ReadConsistency} documentation for specific consistency guarantees.
    * <p>
    * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
    * or to be notified in a separate thread once the operation completes. To block until the operation completes,
@@ -198,11 +280,55 @@ public class DistributedMap<K, V> extends Resource<DistributedMap<K, V>> {
   }
 
   /**
+   * Returns {@code true} if the given key is present in the map.
+   * <p>
+   * Note that depending on the {@link ReadConsistency}, checks may return stale results. To perform a fully
+   * consistent check, use {@link ReadConsistency#ATOMIC} consistency (the default).
+   * <pre>
+   *   {@code
+   *   map.containsKey("foo", ReadConsistency.ATOMIC).thenAccept(contains -> {
+   *     ...
+   *   });
+   *   }
+   * </pre>
+   * For better performance with potentially stale results, use a lower consistency level. See the
+   * {@link ReadConsistency} documentation for specific consistency guarantees.
+   * <p>
+   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
+   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
+   * use the {@link CompletableFuture#get()} method to block the calling thread:
+   * <pre>
+   *   {@code
+   *   if (map.containsKey("foo", ReadConsistency.ATOMIC).get()) {
+   *     ...
+   *   }
+   *   }
+   * </pre>
+   * Alternatively, to execute the operation asynchronous and be notified once the operation is complete in a different
+   * thread, use one of the many completable future callbacks:
+   * <pre>
+   *   {@code
+   *   map.containsKey("foo", ReadConsistency.ATOMIC).thenAccept(contains -> {
+   *     ...
+   *   });
+   *   }
+   * </pre>
+   *
+   * @param key The key to check.
+   * @param consistency The read consistency level.
+   * @return A completable future to be completed with a boolean indicating whether {@code key} is present in the map.
+   * @throws NullPointerException if {@code key} is {@code null}
+   */
+  public CompletableFuture<Boolean> containsKey(Object key, ReadConsistency consistency) {
+    return submit(new MapCommands.ContainsKey(key), consistency);
+  }
+
+  /**
    * Returns {@code true} if the map contains a key with the given value.
    * <p>
-   * Note that depending on the configured {@link Consistency} of the map instance, checks
+   * Note that depending on the configured {@link ReadConsistency} of the map instance, checks
    * may return stale results. To perform a fully consistent check, configure the map with
-   * {@link Consistency#ATOMIC} consistency (the default).
+   * {@link ReadConsistency#ATOMIC} consistency (the default).
    * <pre>
    *   {@code
    *   map.with(Consistency.ATOMIC).containsValue("foo").thenAccept(contains -> {
@@ -211,7 +337,7 @@ public class DistributedMap<K, V> extends Resource<DistributedMap<K, V>> {
    *   }
    * </pre>
    * For better performance with potentially stale results, use a lower consistency level. See the
-   * {@link Consistency} documentation for specific consistency guarantees.
+   * {@link ReadConsistency} documentation for specific consistency guarantees.
    * <p>
    * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
    * or to be notified in a separate thread once the operation completes. To block until the operation completes,
@@ -242,11 +368,55 @@ public class DistributedMap<K, V> extends Resource<DistributedMap<K, V>> {
   }
 
   /**
+   * Returns {@code true} if the map contains a key with the given value.
+   * <p>
+   * Note that depending on the {@link ReadConsistency}, checks may return stale results. To perform a fully
+   * consistent check, use {@link ReadConsistency#ATOMIC} consistency (the default).
+   * <pre>
+   *   {@code
+   *   map.containsValue("foo", ReadConsistency.ATOMIC).thenAccept(contains -> {
+   *     ...
+   *   });
+   *   }
+   * </pre>
+   * For better performance with potentially stale results, use a lower consistency level. See the
+   * {@link ReadConsistency} documentation for specific consistency guarantees.
+   * <p>
+   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
+   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
+   * use the {@link CompletableFuture#get()} method to block the calling thread:
+   * <pre>
+   *   {@code
+   *   if (map.containsValue("foo", ReadConsistency.ATOMIC).get()) {
+   *     ...
+   *   }
+   *   }
+   * </pre>
+   * Alternatively, to execute the operation asynchronous and be notified once the operation is complete in a different
+   * thread, use one of the many completable future callbacks:
+   * <pre>
+   *   {@code
+   *   map.containsValue("foo", ReadConsistency.ATOMIC).thenAccept(contains -> {
+   *     ...
+   *   });
+   *   }
+   * </pre>
+   *
+   * @param value The value for which to search keys.
+   * @param consistency The read consistency level.
+   * @return A completable future to be completed with a boolean indicating whether {@code key} is present in the map.
+   * @throws NullPointerException if {@code key} is {@code null}
+   */
+  public CompletableFuture<Boolean> containsValue(Object value, ReadConsistency consistency) {
+    return submit(new MapCommands.ContainsValue(value), consistency);
+  }
+
+  /**
    * Gets a value from the map.
    * <p>
-   * Note that depending on the configured {@link Consistency} of the map instance, queries
+   * Note that depending on the configured {@link ReadConsistency} of the map instance, queries
    * may return stale results. To perform a fully consistent query, configure the map with
-   * {@link Consistency#ATOMIC} consistency (the default).
+   * {@link ReadConsistency#ATOMIC} consistency (the default).
    * <pre>
    *   {@code
    *   map.with(Consistency.ATOMIC).get("key").thenAccept(value -> {
@@ -255,7 +425,7 @@ public class DistributedMap<K, V> extends Resource<DistributedMap<K, V>> {
    *   }
    * </pre>
    * For better performance with potentially stale results, use a lower consistency level. See the
-   * {@link Consistency} documentation for specific consistency guarantees.
+   * {@link ReadConsistency} documentation for specific consistency guarantees.
    * <p>
    * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
    * or to be notified in a separate thread once the operation completes. To block until the operation completes,
@@ -286,14 +456,58 @@ public class DistributedMap<K, V> extends Resource<DistributedMap<K, V>> {
   }
 
   /**
+   * Gets a value from the map.
+   * <p>
+   * Note that depending on the {@link ReadConsistency}, queries may return stale results. To perform a fully
+   * consistent query, use {@link ReadConsistency#ATOMIC} consistency (the default).
+   * <pre>
+   *   {@code
+   *   map.get("key", ReadConsistency.ATOMIC).thenAccept(value -> {
+   *     ...
+   *   });
+   *   }
+   * </pre>
+   * For better performance with potentially stale results, use a lower consistency level. See the
+   * {@link ReadConsistency} documentation for specific consistency guarantees.
+   * <p>
+   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
+   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
+   * use the {@link CompletableFuture#get()} method to block the calling thread:
+   * <pre>
+   *   {@code
+   *   String value = map.get("key", ReadConsistency.ATOMIC).get();
+   *   }
+   * </pre>
+   * Alternatively, to execute the operation asynchronous and be notified once the operation is complete in a different
+   * thread, use one of the many completable future callbacks:
+   * <pre>
+   *   {@code
+   *   map.get("key", ReadConsistency.ATOMIC).thenAccept(value -> {
+   *     ...
+   *   });
+   *   }
+   * </pre>
+   *
+   * @param key The key to get.
+   * @param consistency The read consistency level.
+   * @return A completable future to be completed with the result once complete.
+   * @throws NullPointerException if {@code key} is {@code null}
+   */
+  @SuppressWarnings("unchecked")
+  public CompletableFuture<V> get(Object key, ReadConsistency consistency) {
+    return submit(new MapCommands.Get(key), consistency)
+      .thenApply(result -> (V) result);
+  }
+
+  /**
    * Gets the value of {@code key} or returns the given default value if {@code key} does not exist.
    * <p>
    * If no value for the given {@code key} is present in the map, the returned {@link CompletableFuture} will
    * be completed {@code null}. If a value is present, the returned future will be completed with that value.
    * <p>
-   * Note that depending on the configured {@link Consistency} of the map instance, queries
+   * Note that depending on the configured {@link ReadConsistency} of the map instance, queries
    * may return stale results. To perform a fully consistent query, configure the map with
-   * {@link Consistency#ATOMIC} consistency (the default).
+   * {@link ReadConsistency#ATOMIC} consistency (the default).
    * <pre>
    *   {@code
    *   map.with(Consistency.ATOMIC).getOrDefault("key", "Hello world!").thenAccept(value -> {
@@ -302,7 +516,7 @@ public class DistributedMap<K, V> extends Resource<DistributedMap<K, V>> {
    *   }
    * </pre>
    * For better performance with potentially stale results, use a lower consistency level. See the
-   * {@link Consistency} documentation for specific consistency guarantees.
+   * {@link ReadConsistency} documentation for specific consistency guarantees.
    * <p>
    * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
    * or to be notified in a separate thread once the operation completes. To block until the operation completes,
@@ -322,7 +536,7 @@ public class DistributedMap<K, V> extends Resource<DistributedMap<K, V>> {
    *   }
    * </pre>
    *
-   * @param key          The key to get.
+   * @param key The key to get.
    * @param defaultValue The default value to return if the key does not exist.
    * @return A completable future to be completed with the result once complete.
    * @throws NullPointerException if {@code key} is {@code null}
@@ -330,6 +544,54 @@ public class DistributedMap<K, V> extends Resource<DistributedMap<K, V>> {
   @SuppressWarnings("unchecked")
   public CompletableFuture<V> getOrDefault(Object key, V defaultValue) {
     return submit(new MapCommands.GetOrDefault(key, defaultValue))
+      .thenApply(result -> (V) result);
+  }
+
+  /**
+   * Gets the value of {@code key} or returns the given default value if {@code key} does not exist.
+   * <p>
+   * If no value for the given {@code key} is present in the map, the returned {@link CompletableFuture} will
+   * be completed {@code null}. If a value is present, the returned future will be completed with that value.
+   * <p>
+   * Note that depending on the {@link ReadConsistency}, queries may return stale results. To perform a fully
+   * consistent query, use {@link ReadConsistency#ATOMIC} consistency (the default).
+   * <pre>
+   *   {@code
+   *   map.getOrDefault("key", "Hello world!", ReadConsistency.ATOMIC).thenAccept(value -> {
+   *     ...
+   *   });
+   *   }
+   * </pre>
+   * For better performance with potentially stale results, use a lower consistency level. See the
+   * {@link ReadConsistency} documentation for specific consistency guarantees.
+   * <p>
+   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
+   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
+   * use the {@link CompletableFuture#get()} method to block the calling thread:
+   * <pre>
+   *   {@code
+   *   String valueOrDefault = map.getOrDefault("key", "Hello world!", ReadConsistency.ATOMIC).get();
+   *   }
+   * </pre>
+   * Alternatively, to execute the operation asynchronous and be notified once the operation is complete in a different
+   * thread, use one of the many completable future callbacks:
+   * <pre>
+   *   {@code
+   *   map.getOrDefault("key", "Hello world!", ReadConsistency.ATOMIC).thenAccept(valueOrDefault -> {
+   *     ...
+   *   });
+   *   }
+   * </pre>
+   *
+   * @param key The key to get.
+   * @param defaultValue The default value to return if the key does not exist.
+   * @param consistency The read consistency level.
+   * @return A completable future to be completed with the result once complete.
+   * @throws NullPointerException if {@code key} is {@code null}
+   */
+  @SuppressWarnings("unchecked")
+  public CompletableFuture<V> getOrDefault(Object key, V defaultValue, ReadConsistency consistency) {
+    return submit(new MapCommands.GetOrDefault(key, defaultValue), consistency)
       .thenApply(result -> (V) result);
   }
 

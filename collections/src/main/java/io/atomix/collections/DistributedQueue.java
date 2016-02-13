@@ -18,6 +18,7 @@ package io.atomix.collections;
 import io.atomix.collections.state.QueueCommands;
 import io.atomix.collections.state.QueueState;
 import io.atomix.copycat.client.CopycatClient;
+import io.atomix.resource.ReadConsistency;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceTypeInfo;
 
@@ -135,6 +136,17 @@ public class DistributedQueue<T> extends Resource<DistributedQueue<T>> {
   }
 
   /**
+   * Checks whether the set contains a value.
+   *
+   * @param value The value to check.
+   * @param consistency The read consistency level.
+   * @return A completable future to be completed with the result once complete.
+   */
+  public CompletableFuture<Boolean> contains(Object value, ReadConsistency consistency) {
+    return submit(new QueueCommands.Contains(value), consistency);
+  }
+
+  /**
    * Gets the set count.
    *
    * @return A completable future to be completed with the set count.
@@ -144,12 +156,32 @@ public class DistributedQueue<T> extends Resource<DistributedQueue<T>> {
   }
 
   /**
+   * Gets the set count.
+   *
+   * @param consistency The read consistency level.
+   * @return A completable future to be completed with the set count.
+   */
+  public CompletableFuture<Integer> size(ReadConsistency consistency) {
+    return submit(new QueueCommands.Size(), consistency);
+  }
+
+  /**
    * Checks whether the set is empty.
    *
    * @return A completable future to be completed with a boolean value indicating whether the set is empty.
    */
   public CompletableFuture<Boolean> isEmpty() {
     return submit(new QueueCommands.IsEmpty());
+  }
+
+  /**
+   * Checks whether the set is empty.
+   *
+   * @param consistency The read consistency level.
+   * @return A completable future to be completed with a boolean value indicating whether the set is empty.
+   */
+  public CompletableFuture<Boolean> isEmpty(ReadConsistency consistency) {
+    return submit(new QueueCommands.IsEmpty(), consistency);
   }
 
   /**
