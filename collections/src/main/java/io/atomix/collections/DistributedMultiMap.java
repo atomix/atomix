@@ -18,6 +18,7 @@ package io.atomix.collections;
 import io.atomix.collections.state.MultiMapCommands;
 import io.atomix.collections.state.MultiMapState;
 import io.atomix.copycat.client.CopycatClient;
+import io.atomix.resource.ReadConsistency;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceTypeInfo;
 
@@ -65,12 +66,31 @@ public class DistributedMultiMap<K, V> extends Resource<DistributedMultiMap<K, V
   }
 
   /**
+   * Checks whether the map is empty.
+   *
+   * @return A completable future to be completed with a boolean value indicating whether the map is empty.
+   */
+  public CompletableFuture<Boolean> isEmpty(ReadConsistency consistency) {
+    return submit(new MultiMapCommands.IsEmpty(), consistency);
+  }
+
+  /**
    * Gets the number of key-value pairs in the map.
    *
    * @return A completable future to be completed with the number of entries in the map.
    */
   public CompletableFuture<Integer> size() {
     return submit(new MultiMapCommands.Size());
+  }
+
+  /**
+   * Gets the number of key-value pairs in the map.
+   *
+   * @param consistency The read consistency level.
+   * @return A completable future to be completed with the number of entries in the map.
+   */
+  public CompletableFuture<Integer> size(ReadConsistency consistency) {
+    return submit(new MultiMapCommands.Size(), consistency);
   }
 
   /**
@@ -84,6 +104,17 @@ public class DistributedMultiMap<K, V> extends Resource<DistributedMultiMap<K, V
   }
 
   /**
+   * Gets the number of values for the given key.
+   *
+   * @param key The key to check.
+   * @param consistency The read consistency level.
+   * @return A completable future to be completed with the number of entries in the map.
+   */
+  public CompletableFuture<Integer> size(K key, ReadConsistency consistency) {
+    return submit(new MultiMapCommands.Size(key), consistency);
+  }
+
+  /**
    * Checks whether the map contains a key.
    *
    * @param key The key to check.
@@ -91,6 +122,17 @@ public class DistributedMultiMap<K, V> extends Resource<DistributedMultiMap<K, V
    */
   public CompletableFuture<Boolean> containsKey(K key) {
     return submit(new MultiMapCommands.ContainsKey(key));
+  }
+
+  /**
+   * Checks whether the map contains a key.
+   *
+   * @param key The key to check.
+   * @param consistency The read consistency level.
+   * @return A completable future to be completed with the result once complete.
+   */
+  public CompletableFuture<Boolean> containsKey(K key, ReadConsistency consistency) {
+    return submit(new MultiMapCommands.ContainsKey(key), consistency);
   }
 
   /**
@@ -105,6 +147,18 @@ public class DistributedMultiMap<K, V> extends Resource<DistributedMultiMap<K, V
   }
 
   /**
+   * Checks whether the map contains an entry.
+   *
+   * @param key The key to check.
+   * @param value The value to check.
+   * @param consistency The read consistency level.
+   * @return A completable future to be completed with the result once complete.
+   */
+  public CompletableFuture<Boolean> containsEntry(K key, V value, ReadConsistency consistency) {
+    return submit(new MultiMapCommands.ContainsEntry(key, value), consistency);
+  }
+
+  /**
    * Checks whether the map contains a value.
    *
    * @param value The value to check.
@@ -112,6 +166,17 @@ public class DistributedMultiMap<K, V> extends Resource<DistributedMultiMap<K, V
    */
   public CompletableFuture<Boolean> containsValue(V value) {
     return submit(new MultiMapCommands.ContainsValue(value));
+  }
+
+  /**
+   * Checks whether the map contains a value.
+   *
+   * @param value The value to check.
+   * @param consistency The read consistency level.
+   * @return A completable future to be completed with the result once complete.
+   */
+  public CompletableFuture<Boolean> containsValue(V value, ReadConsistency consistency) {
+    return submit(new MultiMapCommands.ContainsValue(value), consistency);
   }
 
   /**
@@ -123,6 +188,19 @@ public class DistributedMultiMap<K, V> extends Resource<DistributedMultiMap<K, V
   @SuppressWarnings("unchecked")
   public CompletableFuture<Collection<V>> get(K key) {
     return submit(new MultiMapCommands.Get(key))
+      .thenApply(result -> result);
+  }
+
+  /**
+   * Gets a value from the map.
+   *
+   * @param key The key to get.
+   * @param consistency The read consistency level.
+   * @return A completable future to be completed with the result once complete.
+   */
+  @SuppressWarnings("unchecked")
+  public CompletableFuture<Collection<V>> get(K key, ReadConsistency consistency) {
+    return submit(new MultiMapCommands.Get(key), consistency)
       .thenApply(result -> result);
   }
 

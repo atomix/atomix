@@ -50,28 +50,21 @@ public class AtomixClientTest extends AbstractAtomixTest {
   /**
    * Tests submitting a command.
    */
-  public void testSubmitCommandWithProcessConsistency() throws Throwable {
-    testSubmitCommand(Consistency.PROCESS);
-  }
-
-  /**
-   * Tests submitting a command.
-   */
   public void testSubmitCommandWithSequentialConsistency() throws Throwable {
-    testSubmitCommand(Consistency.SEQUENTIAL);
+    testSubmitCommand(WriteConsistency.SEQUENTIAL_EVENT);
   }
 
   /**
    * Tests submitting a command.
    */
   public void testSubmitCommandWithAtomicConsistency() throws Throwable {
-    testSubmitCommand(Consistency.ATOMIC);
+    testSubmitCommand(WriteConsistency.ATOMIC);
   }
 
   /**
    * Tests submitting a command with a configured consistency level.
    */
-  private void testSubmitCommand(Consistency consistency) throws Throwable {
+  private void testSubmitCommand(WriteConsistency consistency) throws Throwable {
     createReplicas(5, 3, 1);
 
     Atomix client = createClient();
@@ -89,28 +82,28 @@ public class AtomixClientTest extends AbstractAtomixTest {
   /**
    * Tests submitting a query.
    */
-  public void testSubmitQueryWithProcessConsistency() throws Throwable {
-    testSubmitQuery(Consistency.PROCESS);
+  public void testSubmitQueryWithSequentialConsistency() throws Throwable {
+    testSubmitQuery(ReadConsistency.SEQUENTIAL);
   }
 
   /**
    * Tests submitting a query.
    */
-  public void testSubmitQueryWithSequentialConsistency() throws Throwable {
-    testSubmitQuery(Consistency.SEQUENTIAL);
+  public void testSubmitQueryWithAtomicLeaseConsistency() throws Throwable {
+    testSubmitQuery(ReadConsistency.ATOMIC_LEASE);
   }
 
   /**
    * Tests submitting a query.
    */
   public void testSubmitQueryWithAtomicConsistency() throws Throwable {
-    testSubmitQuery(Consistency.ATOMIC);
+    testSubmitQuery(ReadConsistency.ATOMIC);
   }
 
   /**
    * Tests submitting a query with a configured consistency level.
    */
-  private void testSubmitQuery(Consistency consistency) throws Throwable {
+  private void testSubmitQuery(ReadConsistency consistency) throws Throwable {
     createReplicas(5, 3, 1);
 
     Atomix client = createClient();
@@ -236,12 +229,6 @@ public class AtomixClientTest extends AbstractAtomixTest {
 
     public TestResource(CopycatClient client, Resource.Options options) {
       super(client, options);
-    }
-
-    @Override
-    public TestResource with(Consistency consistency) {
-      super.with(consistency);
-      return this;
     }
 
     public CompletableFuture<String> command(String value) {

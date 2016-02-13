@@ -20,7 +20,6 @@ import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceTypeInfo;
 import io.atomix.variables.state.LongCommands;
 import io.atomix.variables.state.LongState;
-import io.atomix.variables.state.ValueCommands;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -52,11 +51,6 @@ public class DistributedLong extends AbstractDistributedValue<DistributedLong, L
 
   public DistributedLong(CopycatClient client, Resource.Options options) {
     super(client, options);
-  }
-
-  @Override
-  public CompletableFuture<Long> get() {
-    return submit(new ValueCommands.Get<>());
   }
 
   /**

@@ -19,9 +19,9 @@ import io.atomix.catalyst.util.Listener;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.messaging.state.TaskQueueCommands;
 import io.atomix.messaging.state.TaskQueueState;
-import io.atomix.resource.Consistency;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceTypeInfo;
+import io.atomix.resource.WriteConsistency;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -137,8 +137,8 @@ public class DistributedTaskQueue<T> extends Resource<DistributedTaskQueue<T>> {
   /**
    * Sets the queue to synchronous mode.
    * <p>
-   * Setting the queue to synchronous mode effectively configures the queue's {@link Consistency} to
-   * {@link Consistency#ATOMIC}. Atomic consistency means that tasks {@link #submit(Object) submitted} to the
+   * Setting the queue to synchronous mode effectively configures the queue's {@link WriteConsistency} to
+   * {@link WriteConsistency#ATOMIC}. Atomic consistency means that tasks {@link #submit(Object) submitted} to the
    * queue will be received and processed by a {@link #consumer(Consumer) consumer} some time between the
    * invocation of the submit operation and its completion. In other words, synchronous task queues await
    * acknowledgement from a consumer.
@@ -146,14 +146,14 @@ public class DistributedTaskQueue<T> extends Resource<DistributedTaskQueue<T>> {
    * @return The distributed task queue.
    */
   public DistributedTaskQueue<T> sync() {
-    return with(Consistency.ATOMIC);
+    return with(WriteConsistency.ATOMIC);
   }
 
   /**
    * Sets the queue to asynchronous mode.
    * <p>
-   * Setting the queue to asynchronous mode effectively configures the queue's {@link Consistency} to
-   * {@link Consistency#SEQUENTIAL}. Sequential consistency means that once a task is {@link #submit(Object) submitted}
+   * Setting the queue to asynchronous mode effectively configures the queue's {@link WriteConsistency} to
+   * {@link WriteConsistency#SEQUENTIAL_EVENT}. Sequential consistency means that once a task is {@link #submit(Object) submitted}
    * to the queue, the task will be persisted in the cluster but may be delivered to a {@link #consumer(Consumer) consumer}
    * after some arbitrary delay. Tasks are guaranteed to be delivered to consumers in the order in which they were sent
    * (sequential consistency) but different consumers may receive different tasks at different points in time.
@@ -161,7 +161,7 @@ public class DistributedTaskQueue<T> extends Resource<DistributedTaskQueue<T>> {
    * @return The distributed task queue.
    */
   public DistributedTaskQueue<T> async() {
-    return with(Consistency.SEQUENTIAL);
+    return with(WriteConsistency.SEQUENTIAL_EVENT);
   }
 
   /**
@@ -171,7 +171,7 @@ public class DistributedTaskQueue<T> extends Resource<DistributedTaskQueue<T>> {
    * @return A completable future to be completed once the task has been completed.
    */
   public CompletableFuture<Void> submit(T task) {
-    if (consistency() == Consistency.ATOMIC) {
+    if (writeConsistency() == WriteConsistency.ATOMIC) {
       return submitAtomic(task);
     }
     return submitSequential(task);

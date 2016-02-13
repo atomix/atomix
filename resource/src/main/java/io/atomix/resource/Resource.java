@@ -48,8 +48,8 @@ import java.util.function.Consumer;
  * on the class path. The resource registration allows the Atomix resource manager to locate and load the resource
  * state machine on each server in the cluster.
  * <p>
- * Resources have varying consistency guarantees depending on the configured resource {@link Consistency}
- * and the semantics of the specific resource implementation.
+ * Resources have varying consistency guarantees depending on the configured resource {@link WriteConsistency}
+ * and {@link ReadConsistency} and the semantics of the specific resource implementation.
  *
  * @param <T> resource type
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
@@ -118,8 +118,7 @@ public abstract class Resource<T extends Resource<T>> implements Managed<T> {
      * Indicates that the resource is connected and operating normally.
      * <p>
      * The {@code CONNECTED} state indicates that the resource is healthy and operating normally. Operations submitted
-     * and completed while the resource is in this state are guaranteed to adhere to the respective {@link Consistency consistency}
-     * guarantees.
+     * and completed while the resource is in this state are guaranteed to adhere to the configured consistency level.
      */
     CONNECTED,
 
@@ -156,7 +155,8 @@ public abstract class Resource<T extends Resource<T>> implements Managed<T> {
   protected final Options options;
   private State state;
   private final Set<StateChangeListener> changeListeners = new CopyOnWriteArraySet<>();
-  private Consistency consistency = Consistency.ATOMIC;
+  private WriteConsistency writeConsistency = WriteConsistency.ATOMIC;
+  private ReadConsistency readConsistency = ReadConsistency.ATOMIC;
 
   protected Resource(CopycatClient client, Options options) {
     this.type = new ResourceType(getClass());
@@ -239,51 +239,93 @@ public abstract class Resource<T extends Resource<T>> implements Managed<T> {
   }
 
   /**
-   * Returns the configured resource consistency level.
+   * Returns the configured write consistency level.
    * <p>
-   * Resource consistency levels are configured via the {@link #with(Consistency)} setter. By default,
-   * all resources submit commands under the {@link Consistency#ATOMIC} consistency level. See the
-   * {@link Consistency} documentation for information about guarantees provided by specific consistency
+   * Resource consistency levels are configured via the {@link #with(WriteConsistency)} setter. By default,
+   * all resources submit commands under the {@link WriteConsistency#ATOMIC} consistency level. See the
+   * {@link WriteConsistency} documentation for information about guarantees provided by specific consistency
    * levels.
    *
    * @return The configured resource consistency level.
    */
-  public Consistency consistency() {
-    return consistency;
+  public WriteConsistency writeConsistency() {
+    return writeConsistency;
   }
 
   /**
-   * Sets the resource consistency level.
+   * Sets the write consistency level.
    * <p>
    * The configured consistency level specifies how operations on the resource should be handled by the
    * cluster. Consistency levels dictate the order in which reads, writes, and events should be handled
    * by the Atomix cluster and the consistency requirements for completing different types of operations.
    * <p>
    * Note that consistency configurations apply only to a single instance of a distributed resource. Two
-   * instances of the same resource on the same or different nodes can have differen consistency requirements,
+   * instances of the same resource on the same or different nodes can have different consistency requirements,
    * and the cluster will obey those differences.
    * <p>
-   * By default, all resource operations are submitted to the cluster with the {@link Consistency#ATOMIC}
+   * By default, all resource operations are submitted to the cluster with the {@link WriteConsistency#ATOMIC}
    * consistency level. Atomic consistency means that the distributed resource will behave as a single
    * object for all instances. Users can decrease the default consistency level, but note that in some
-   * cases resource implementations may override the configured {@link Consistency} for safety. For instance,
+   * cases resource implementations may override the configured {@link WriteConsistency} for safety. For instance,
    * a leader election may enforce atomic consistency at all times to ensure no two leaders can be
    * elected at the same time.
    *
-   * @param consistency The resource consistency level.
+   * @param consistency The write consistency level.
    * @return The resource instance.
    * @throws NullPointerException if {@code consistency} is null
    */
   @SuppressWarnings("unchecked")
-  public T with(Consistency consistency) {
-    this.consistency = Assert.notNull(consistency, "consistency");
+  public T with(WriteConsistency consistency) {
+    this.writeConsistency = Assert.notNull(consistency, "consistency");
+    return (T) this;
+  }
+
+  /**
+   * Returns the configured read consistency level.
+   * <p>
+   * Resource consistency levels are configured via the {@link #with(ReadConsistency)} setter. By default,
+   * all resources submit commands under the {@link ReadConsistency#ATOMIC} consistency level. See the
+   * {@link ReadConsistency} documentation for information about guarantees provided by specific consistency
+   * levels.
+   *
+   * @return The configured resource consistency level.
+   */
+  public ReadConsistency readConsistency() {
+    return readConsistency;
+  }
+
+  /**
+   * Sets the read consistency level.
+   * <p>
+   * The configured consistency level specifies how operations on the resource should be handled by the
+   * cluster. Consistency levels dictate the order in which reads, writes, and events should be handled
+   * by the Atomix cluster and the consistency requirements for completing different types of operations.
+   * <p>
+   * Note that consistency configurations apply only to a single instance of a distributed resource. Two
+   * instances of the same resource on the same or different nodes can have different consistency requirements,
+   * and the cluster will obey those differences.
+   * <p>
+   * By default, all resource operations are submitted to the cluster with the {@link WriteConsistency#ATOMIC}
+   * consistency level. Atomic consistency means that the distributed resource will behave as a single
+   * object for all instances. Users can decrease the default consistency level, but note that in some
+   * cases resource implementations may override the configured {@link WriteConsistency} for safety. For instance,
+   * a leader election may enforce atomic consistency at all times to ensure no two leaders can be
+   * elected at the same time.
+   *
+   * @param consistency The read consistency level.
+   * @return The resource instance.
+   * @throws NullPointerException if {@code consistency} is null
+   */
+  @SuppressWarnings("unchecked")
+  public T with(ReadConsistency consistency) {
+    this.readConsistency = Assert.notNull(consistency, "consistency");
     return (T) this;
   }
 
   /**
    * Submits a write operation for this resource to the cluster.
    * <p>
-   * The write operation will be submitted with the configured {@link Consistency#writeConsistency()} if
+   * The write operation will be submitted with the configured {@link WriteConsistency#level()} if
    * it does not explicitly override {@link Command#consistency()} to provide a static consistency level.
    *
    * @param command The command to submit.
@@ -292,13 +334,29 @@ public abstract class Resource<T extends Resource<T>> implements Managed<T> {
    * @throws NullPointerException if {@code command} is null
    */
   protected <R> CompletableFuture<R> submit(Command<R> command) {
-    return client.submit(new ResourceCommand<>(Assert.notNull(command, "command"), consistency.writeConsistency()));
+    return client.submit(new ResourceCommand<>(Assert.notNull(command, "command"), writeConsistency.level()));
+  }
+
+  /**
+   * Submits a write operation for this resource to the cluster.
+   * <p>
+   * The write operation will be submitted with the {@link WriteConsistency#level()} if
+   * it does not explicitly override {@link Command#consistency()} to provide a static consistency level.
+   *
+   * @param command The command to submit.
+   * @param consistency The consistency with which to submit the command.
+   * @param <R> The command result type.
+   * @return A completable future to be completed with the command result.
+   * @throws NullPointerException if {@code command} is null
+   */
+  protected <R> CompletableFuture<R> submit(Command<R> command, WriteConsistency consistency) {
+    return client.submit(new ResourceCommand<>(Assert.notNull(command, "command"), consistency.level()));
   }
 
   /**
    * Submits a read operation for this resource to the cluster.
    * <p>
-   * The read operation will be submitted with the configured {@link Consistency#readConsistency()} if
+   * The read operation will be submitted with the configured {@link ReadConsistency#level()} if
    * it does not explicitly override {@link Query#consistency()} to provide a static consistency level.
    *
    * @param query The query to submit.
@@ -307,7 +365,23 @@ public abstract class Resource<T extends Resource<T>> implements Managed<T> {
    * @throws NullPointerException if {@code query} is null
    */
   protected <R> CompletableFuture<R> submit(Query<R> query) {
-    return client.submit(new ResourceQuery<>(Assert.notNull(query, "query"), consistency.readConsistency()));
+    return client.submit(new ResourceQuery<>(Assert.notNull(query, "query"), readConsistency.level()));
+  }
+
+  /**
+   * Submits a read operation for this resource to the cluster.
+   * <p>
+   * The read operation will be submitted with the {@link ReadConsistency#level()} if
+   * it does not explicitly override {@link Query#consistency()} to provide a static consistency level.
+   *
+   * @param query The query to submit.
+   * @param consistency The read consistency level.
+   * @param <R> The query result type.
+   * @return A completable future to be completed with the query result.
+   * @throws NullPointerException if {@code query} is null
+   */
+  protected <R> CompletableFuture<R> submit(Query<R> query, ReadConsistency consistency) {
+    return client.submit(new ResourceQuery<>(Assert.notNull(query, "query"), consistency.level()));
   }
 
   /**

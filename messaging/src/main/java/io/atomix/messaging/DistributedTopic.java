@@ -19,9 +19,9 @@ import io.atomix.catalyst.util.Listener;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.messaging.state.TopicCommands;
 import io.atomix.messaging.state.TopicState;
-import io.atomix.resource.Consistency;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceTypeInfo;
+import io.atomix.resource.WriteConsistency;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -101,22 +101,22 @@ public class DistributedTopic<T> extends Resource<DistributedTopic<T>> {
   /**
    * Sets the topic to synchronous mode.
    * <p>
-   * Setting the topic to synchronous mode effectively configures the topic's {@link Consistency} to
-   * {@link Consistency#ATOMIC}. Atomic consistency means that messages {@link #publish(Object) published} to the
+   * Setting the topic to synchronous mode effectively configures the topic's {@link WriteConsistency} to
+   * {@link WriteConsistency#ATOMIC}. Atomic consistency means that messages {@link #publish(Object) published} to the
    * topic will be received by all {@link #subscribe(Consumer) subscribers} some time between the invocation of
    * the publish operation and its completion.
    *
    * @return The distributed topic.
    */
   public DistributedTopic<T> sync() {
-    return with(Consistency.ATOMIC);
+    return with(WriteConsistency.ATOMIC);
   }
 
   /**
    * Sets the topic to asynchronous mode.
    * <p>
-   * Setting the topic to asynchronous mode effectively configures the topic's {@link Consistency} to
-   * {@link Consistency#SEQUENTIAL}. Sequential consistency means that once a message is {@link #publish(Object) published}
+   * Setting the topic to asynchronous mode effectively configures the topic's {@link WriteConsistency} to
+   * {@link WriteConsistency#SEQUENTIAL_EVENT}. Sequential consistency means that once a message is {@link #publish(Object) published}
    * to the topic, the message will be persisted in the cluster but may be delivered to {@link #subscribe(Consumer) subscribers}
    * after some arbitrary delay. Messages are guaranteed to be delivered to subscribers in the order in which they were sent
    * (sequential consistency) but different subscribers may receive different messages at different points in time.
@@ -124,14 +124,14 @@ public class DistributedTopic<T> extends Resource<DistributedTopic<T>> {
    * @return The distributed topic.
    */
   public DistributedTopic<T> async() {
-    return with(Consistency.SEQUENTIAL);
+    return with(WriteConsistency.SEQUENTIAL_EVENT);
   }
 
   /**
    * Publishes a message to the topic.
    * <p>
-   * The message will be published according to the {@link #with(Consistency) configured consistency level}.
-   * Events published with {@link Consistency#ATOMIC} consistency are guaranteed to be received by all
+   * The message will be published according to the {@link #with(WriteConsistency) configured consistency level}.
+   * Events published with {@link WriteConsistency#ATOMIC} consistency are guaranteed to be received by all
    * subscribers prior to the {@link CompletableFuture} returned by this method being completed. For all other
    * consistency levels, messages will be received by subscribers asynchronously.
    * <p>

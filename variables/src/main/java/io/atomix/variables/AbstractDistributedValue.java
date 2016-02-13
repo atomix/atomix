@@ -16,6 +16,7 @@
 package io.atomix.variables;
 
 import io.atomix.copycat.client.CopycatClient;
+import io.atomix.resource.ReadConsistency;
 import io.atomix.resource.Resource;
 import io.atomix.variables.state.ValueCommands;
 
@@ -41,6 +42,16 @@ public abstract class AbstractDistributedValue<T extends AbstractDistributedValu
    */
   public CompletableFuture<U> get() {
     return submit(new ValueCommands.Get<>());
+  }
+
+  /**
+   * Gets the current value.
+   *
+   * @param consistency The read consistency level.
+   * @return A completable future to be completed with the current value.
+   */
+  public CompletableFuture<U> get(ReadConsistency consistency) {
+    return submit(new ValueCommands.Get<>(), consistency);
   }
 
   /**
