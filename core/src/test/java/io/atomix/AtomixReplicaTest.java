@@ -90,8 +90,8 @@ public class AtomixReplicaTest extends AbstractAtomixTest {
   /**
    * Tests submitting a query.
    */
-  public void testSubmitQueryWithOptimizedAtomicConsistency() throws Throwable {
-    testSubmitQuery(ReadConsistency.OPTIMIZED_ATOMIC);
+  public void testSubmitQueryWithAtomicLeaseConsistency() throws Throwable {
+    testSubmitQuery(ReadConsistency.ATOMIC_LEASE);
   }
 
   /**

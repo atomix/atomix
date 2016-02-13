@@ -156,7 +156,7 @@ public abstract class Resource<T extends Resource<T>> implements Managed<T> {
   private State state;
   private final Set<StateChangeListener> changeListeners = new CopyOnWriteArraySet<>();
   private WriteConsistency writeConsistency = WriteConsistency.ATOMIC;
-  private ReadConsistency readConsistency = ReadConsistency.OPTIMIZED_ATOMIC;
+  private ReadConsistency readConsistency = ReadConsistency.ATOMIC;
 
   protected Resource(CopycatClient client, Options options) {
     this.type = new ResourceType(getClass());
@@ -284,7 +284,7 @@ public abstract class Resource<T extends Resource<T>> implements Managed<T> {
    * Returns the configured read consistency level.
    * <p>
    * Resource consistency levels are configured via the {@link #with(ReadConsistency)} setter. By default,
-   * all resources submit commands under the {@link ReadConsistency#OPTIMIZED_ATOMIC} consistency level. See the
+   * all resources submit commands under the {@link ReadConsistency#ATOMIC} consistency level. See the
    * {@link ReadConsistency} documentation for information about guarantees provided by specific consistency
    * levels.
    *
