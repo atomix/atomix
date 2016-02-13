@@ -66,12 +66,12 @@ public class ReplicaPropertiesTest {
    */
   public void testProperties() {
     Properties properties = new Properties();
-    properties.setProperty("node.address", "localhost:5000");
+    properties.setProperty("replica.address", "localhost:5000");
     properties.setProperty("cluster.seed.1", "localhost:5000");
     properties.setProperty("cluster.seed.2", "localhost:5001");
     properties.setProperty("cluster.seed.3", "localhost:5002");
-    properties.setProperty("node.transport", "io.atomix.catalyst.transport.NettyTransport");
-    properties.setProperty("node.transport.threads", "1");
+    properties.setProperty("replica.transport", "io.atomix.catalyst.transport.NettyTransport");
+    properties.setProperty("replica.transport.threads", "1");
     properties.setProperty("cluster.quorumHint", "3");
     properties.setProperty("cluster.backupCount", "1");
     properties.setProperty("cluster.electionTimeout", "200");

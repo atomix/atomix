@@ -32,10 +32,10 @@ import java.util.Properties;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 final class ReplicaProperties extends AtomixProperties {
-  public static final String TRANSPORT = "node.transport";
-  public static final String ADDRESS = "node.address";
-  public static final String CLIENT_ADDRESS = "node.clientAddress";
-  public static final String SERVER_ADDRESS = "node.serverAddress";
+  public static final String TRANSPORT = "replica.transport";
+  public static final String ADDRESS = "replica.address";
+  public static final String CLIENT_ADDRESS = "replica.clientAddress";
+  public static final String SERVER_ADDRESS = "replica.serverAddress";
   public static final String QUORUM_HINT = "cluster.quorumHint";
   public static final String BACKUP_COUNT = "cluster.backupCount";
   public static final String ELECTION_TIMEOUT = "cluster.electionTimeout";
