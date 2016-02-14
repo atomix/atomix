@@ -59,6 +59,7 @@ public class ReplicaPropertiesTest {
     assertEquals(properties.minorCompactionInterval(), Duration.ofMinutes(1));
     assertEquals(properties.majorCompactionInterval(), Duration.ofHours(1));
     assertEquals(properties.compactionThreshold(), 0.5);
+    assertTrue(properties.serializer().isWhitelistRequired());
   }
 
   /**
@@ -87,6 +88,7 @@ public class ReplicaPropertiesTest {
     properties.setProperty("storage.compaction.minor", "1000");
     properties.setProperty("storage.compaction.major", "10000");
     properties.setProperty("storage.compaction.threshold", "0.2");
+    properties.setProperty("serializer.whitelist", "false");
 
     ReplicaProperties replicaProperties = new ReplicaProperties(properties);
     Transport transport = replicaProperties.transport();
@@ -114,6 +116,8 @@ public class ReplicaPropertiesTest {
     assertEquals(replicaProperties.minorCompactionInterval(), Duration.ofSeconds(1));
     assertEquals(replicaProperties.majorCompactionInterval(), Duration.ofSeconds(10));
     assertEquals(replicaProperties.compactionThreshold(), 0.2);
+
+    assertFalse(replicaProperties.serializer().isWhitelistRequired());
   }
 
   /**
@@ -145,6 +149,8 @@ public class ReplicaPropertiesTest {
     assertEquals(replicaProperties.minorCompactionInterval(), Duration.ofSeconds(1));
     assertEquals(replicaProperties.majorCompactionInterval(), Duration.ofSeconds(10));
     assertEquals(replicaProperties.compactionThreshold(), 0.2);
+
+    assertFalse(replicaProperties.serializer().isWhitelistRequired());
   }
 
 }
