@@ -299,6 +299,7 @@ public final class AtomixReplica extends Atomix {
     private final CopycatServer.Builder serverBuilder;
     private Transport clientTransport;
     private Transport serverTransport;
+    private final Collection<Address> members;
     private int quorumHint;
     private int backupCount;
     private LocalServerRegistry localRegistry = new LocalServerRegistry();
@@ -306,11 +307,11 @@ public final class AtomixReplica extends Atomix {
     private final ResourceRegistry registry = new ResourceRegistry();
 
     private Builder(Address clientAddress, Address serverAddress, Collection<Address> members) {
+      this.members = Assert.notNull(members, "members");
       Serializer serializer = new Serializer();
       this.clientAddress = Assert.notNull(clientAddress, "clientAddress");
       this.clientBuilder = CopycatClient.builder(members).withSerializer(serializer.clone());
       this.serverBuilder = CopycatServer.builder(clientAddress, serverAddress, members).withSerializer(serializer.clone());
-      this.quorumHint = members.size();
     }
 
     /**
@@ -383,7 +384,18 @@ public final class AtomixReplica extends Atomix {
      * @return The replica builder.
      */
     public Builder withQuorumHint(int quorumHint) {
-      this.quorumHint = Assert.argNot(quorumHint, quorumHint <= 0, "quorumHint must be positive");
+      this.quorumHint = Assert.argNot(quorumHint, quorumHint < -1, "quorumHint must be positive, 0, or -1");
+      return this;
+    }
+
+    /**
+     * Sets the quorum hint.
+     *
+     * @param quorum The quorum hint.
+     * @return The replica builder.
+     */
+    public Builder withQuorumHint(Quorum quorum) {
+      this.quorumHint = Assert.notNull(quorum, "quorum").size();
       return this;
     }
 
@@ -551,7 +563,7 @@ public final class AtomixReplica extends Atomix {
      * Builds a balancer for the replica.
      */
     private ClusterBalancer buildBalancer() {
-      return new ClusterBalancer(quorumHint, backupCount);
+      return new ClusterBalancer(quorumHint == Quorum.SEED.size() ? members.size() : quorumHint, backupCount);
     }
 
     /**
