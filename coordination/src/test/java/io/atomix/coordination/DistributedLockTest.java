@@ -15,9 +15,10 @@
  */
 package io.atomix.coordination;
 
+import io.atomix.testing.AbstractCopycatTest;
 import org.testng.annotations.Test;
 
-import io.atomix.testing.AbstractCopycatTest;
+import java.time.Duration;
 
 /**
  * Async lock test.
@@ -61,6 +62,25 @@ public class DistributedLockTest extends AbstractCopycatTest<DistributedLock> {
 
     lock2.lock().thenRun(this::resume);
     lock1.close();
+    await(10000);
+  }
+
+  /**
+   * Tests attempting to acquire a lock with a timeout.
+   */
+  public void testTryLockFail() throws Throwable {
+    createServers(3);
+
+    DistributedLock lock1 = createResource();
+    DistributedLock lock2 = createResource();
+
+    lock1.lock().thenRun(this::resume);
+    await(10000);
+
+    lock2.tryLock(Duration.ofSeconds(1)).thenAccept(result -> {
+      threadAssertNull(result);
+      resume();
+    });
     await(10000);
   }
 

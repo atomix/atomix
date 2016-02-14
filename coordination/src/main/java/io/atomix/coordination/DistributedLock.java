@@ -22,10 +22,10 @@ import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceTypeInfo;
 
 import java.time.Duration;
-import java.util.Queue;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.function.Consumer;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Provides a mechanism for synchronizing access to cluster-wide shared resources.
@@ -98,7 +98,9 @@ public class DistributedLock extends Resource<DistributedLock> {
     return new Config();
   }
 
-  private final Queue<Consumer<Long>> queue = new ConcurrentLinkedQueue<>();
+  private final Map<Integer, CompletableFuture<Long>> futures = new ConcurrentHashMap<>();
+  private final AtomicInteger id = new AtomicInteger();
+  private int lock;
 
   public DistributedLock(CopycatClient client, Resource.Options options) {
     super(client, options);
@@ -108,17 +110,29 @@ public class DistributedLock extends Resource<DistributedLock> {
   public CompletableFuture<DistributedLock> open() {
     return super.open().thenApply(result -> {
       client.onEvent("lock", this::handleEvent);
+      client.onEvent("fail", this::handleFail);
       return result;
     });
   }
 
   /**
-   * Handles a received session event.
+   * Handles a received lock event.
    */
-  private void handleEvent(long version) {
-    Consumer<Long> consumer = queue.poll();
-    if (consumer != null) {
-      consumer.accept(version);
+  private void handleEvent(LockCommands.LockEvent event) {
+    CompletableFuture<Long> future = futures.get(event.id());
+    if (future != null) {
+      this.lock = event.id();
+      future.complete(event.version());
+    }
+  }
+
+  /**
+   * Handles a received failure event.
+   */
+  private void handleFail(LockCommands.LockEvent event) {
+    CompletableFuture<Long> future = futures.get(event.id());
+    if (future != null) {
+      future.complete(null);
     }
   }
 
@@ -153,11 +167,12 @@ public class DistributedLock extends Resource<DistributedLock> {
    */
   public CompletableFuture<Long> lock() {
     CompletableFuture<Long> future = new CompletableFuture<>();
-    Consumer<Long> consumer = locked -> future.complete(null);
-    queue.add(consumer);
-    submit(new LockCommands.Lock(-1)).whenComplete((result, error) -> {
+    int id = this.id.incrementAndGet();
+    futures.put(id, future);
+    submit(new LockCommands.Lock(id, -1)).whenComplete((result, error) -> {
       if (error != null) {
-        queue.remove(consumer);
+        futures.remove(id);
+        future.completeExceptionally(error);
       }
     });
     return future;
@@ -206,11 +221,12 @@ public class DistributedLock extends Resource<DistributedLock> {
    */
   public CompletableFuture<Long> tryLock() {
     CompletableFuture<Long> future = new CompletableFuture<>();
-    Consumer<Long> consumer = future::complete;
-    queue.add(consumer);
-    submit(new LockCommands.Lock()).whenComplete((result, error) -> {
+    int id = this.id.incrementAndGet();
+    futures.put(id, future);
+    submit(new LockCommands.Lock(id, 0)).whenComplete((result, error) -> {
       if (error != null) {
-        queue.remove(consumer);
+        futures.remove(id);
+        future.completeExceptionally(error);
       }
     });
     return future;
@@ -267,11 +283,12 @@ public class DistributedLock extends Resource<DistributedLock> {
    */
   public CompletableFuture<Long> tryLock(Duration timeout) {
     CompletableFuture<Long> future = new CompletableFuture<>();
-    Consumer<Long> consumer = future::complete;
-    queue.add(consumer);
-    submit(new LockCommands.Lock(timeout.toMillis())).whenComplete((result, error) -> {
+    int id = this.id.incrementAndGet();
+    futures.put(id, future);
+    submit(new LockCommands.Lock(id, timeout.toMillis())).whenComplete((result, error) -> {
       if (error != null) {
-        queue.remove(consumer);
+        futures.remove(id);
+        future.completeExceptionally(error);
       }
     });
     return future;
@@ -304,7 +321,12 @@ public class DistributedLock extends Resource<DistributedLock> {
    * @return A completable future to be completed once the lock has been released.
    */
   public CompletableFuture<Void> unlock() {
-    return submit(new LockCommands.Unlock());
+    int lock = this.lock;
+    this.lock = 0;
+    if (lock != 0) {
+      return submit(new LockCommands.Unlock(lock));
+    }
+    return CompletableFuture.completedFuture(null);
   }
 
 }

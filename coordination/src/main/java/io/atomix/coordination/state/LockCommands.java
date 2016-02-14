@@ -63,13 +63,24 @@ public final class LockCommands {
    * Lock command.
    */
   public static class Lock extends LockCommand<Void> {
+    private int id;
     private long timeout;
 
     public Lock() {
     }
 
-    public Lock(long timeout) {
+    public Lock(int id, long timeout) {
+      this.id = id;
       this.timeout = timeout;
+    }
+
+    /**
+     * Returns the lock ID.
+     *
+     * @return The lock ID.
+     */
+    public int id() {
+      return id;
     }
 
     /**
@@ -88,11 +99,12 @@ public final class LockCommands {
 
     @Override
     public void writeObject(BufferOutput buffer, Serializer serializer) {
-      buffer.writeLong(timeout);
+      buffer.writeInt(id).writeLong(timeout);
     }
 
     @Override
     public void readObject(BufferInput buffer, Serializer serializer) {
+      id = buffer.readInt();
       timeout = buffer.readLong();
     }
   }
@@ -101,9 +113,87 @@ public final class LockCommands {
    * Unlock command.
    */
   public static class Unlock extends LockCommand<Void> {
+    private int id;
+
+    public Unlock() {
+    }
+
+    public Unlock(int id) {
+      this.id = id;
+    }
+
+    /**
+     * Returns the lock ID.
+     *
+     * @return The lock ID.
+     */
+    public int id() {
+      return id;
+    }
+
     @Override
     public CompactionMode compaction() {
       return CompactionMode.SEQUENTIAL;
+    }
+
+    @Override
+    public void writeObject(BufferOutput buffer, Serializer serializer) {
+      buffer.writeInt(id);
+    }
+
+    @Override
+    public void readObject(BufferInput buffer, Serializer serializer) {
+      id = buffer.readInt();
+    }
+  }
+
+  /**
+   * Lock event.
+   */
+  public static class LockEvent implements CatalystSerializable {
+    private int id;
+    private long version;
+
+    public LockEvent() {
+    }
+
+    public LockEvent(int id, long version) {
+      this.id = id;
+      this.version = version;
+    }
+
+    /**
+     * Returns the lock ID.
+     *
+     * @return The lock ID.
+     */
+    public int id() {
+      return id;
+    }
+
+    /**
+     * Returns the lock version.
+     *
+     * @return The lock version.
+     */
+    public long version() {
+      return version;
+    }
+
+    @Override
+    public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
+      buffer.writeInt(id).writeLong(version);
+    }
+
+    @Override
+    public void readObject(BufferInput<?> buffer, Serializer serializer) {
+      id = buffer.readInt();
+      version = buffer.readLong();
+    }
+
+    @Override
+    public String toString() {
+      return String.format("%s[id=%d, version=%d]", getClass().getSimpleName(), id, version);
     }
   }
 
@@ -115,6 +205,7 @@ public final class LockCommands {
     public void resolve(SerializerRegistry registry) {
       registry.register(Lock.class, -141);
       registry.register(Unlock.class, -142);
+      registry.register(LockEvent.class, -143);
     }
   }
 
