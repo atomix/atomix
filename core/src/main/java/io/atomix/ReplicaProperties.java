@@ -113,7 +113,12 @@ final class ReplicaProperties extends AtomixProperties {
    * @return The quorum hint.
    */
   public int quorumHint() {
-    return reader.getInteger(QUORUM_HINT, DEFAULT_QUORUM_HINT);
+    String quorumHint = reader.getString(QUORUM_HINT, String.valueOf(DEFAULT_QUORUM_HINT));
+    try {
+      return Integer.valueOf(quorumHint);
+    } catch (NumberFormatException e) {
+      return Quorum.valueOf(quorumHint.trim().toUpperCase()).size();
+    }
   }
 
   /**

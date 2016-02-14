@@ -15,6 +15,7 @@
  */
 package io.atomix.util;
 
+import io.atomix.Quorum;
 import io.atomix.copycat.server.cluster.Cluster;
 import io.atomix.copycat.server.cluster.Member;
 import org.slf4j.Logger;
@@ -86,7 +87,7 @@ public class ClusterBalancer implements AutoCloseable {
     };
 
     // If the number of available active members is less than the quorum hint, promote a passive or reserve member.
-    if (availableActiveCount < quorumHint) {
+    if (quorumHint == Quorum.ALL.size() || availableActiveCount < quorumHint) {
       // If a passive member is available, promote it.
       if (availablePassiveCount > 0) {
         Member promote = passive.stream().filter(m -> m.status() == Member.Status.AVAILABLE).findFirst().get();
@@ -105,7 +106,7 @@ public class ClusterBalancer implements AutoCloseable {
 
     // If the total number of active members is greater than the quorum hint, demote an active member.
     // Preferably, we want to demote a member that is unavailable.
-    if (totalActiveCount > quorumHint) {
+    if (quorumHint != Quorum.ALL.size() && totalActiveCount > quorumHint) {
       // If the number of available passive members is less than the required number, demote an active
       // member to passive.
       if (availablePassiveCount < quorumHint * backupCount) {
@@ -127,7 +128,7 @@ public class ClusterBalancer implements AutoCloseable {
 
     // If the number of available passive members is less than the required number of passive members,
     // promote a reserve member.
-    if (availablePassiveCount < quorumHint * backupCount) {
+    if (quorumHint != Quorum.ALL.size() && availablePassiveCount < quorumHint * backupCount) {
       // If any reserve members are available, promote to passive.
       if (availableReserveCount > 0) {
         Member promote = reserve.stream().filter(m -> m.status() == Member.Status.AVAILABLE).findFirst().get();
@@ -139,7 +140,7 @@ public class ClusterBalancer implements AutoCloseable {
 
     // If the total number of passive members is greater than the required number of passive members,
     // demote a passive member. Preferably we demote an unavailable member.
-    if (totalPassiveCount > quorumHint * backupCount) {
+    if (quorumHint != Quorum.ALL.size() && totalPassiveCount > quorumHint * backupCount) {
       Member demote = passive.stream().filter(m -> m.status() == Member.Status.UNAVAILABLE).findAny()
         .orElseGet(() -> passive.stream().findAny().get());
       LOGGER.info("Demoting {} to RESERVE: too many passive members", demote.address());
@@ -190,6 +191,11 @@ public class ClusterBalancer implements AutoCloseable {
         return cluster.member().demote(Member.Type.RESERVE);
       }
     };
+
+    // If the quorum hint is ALL, don't replace the replica.
+    if (quorumHint == Quorum.ALL.size()) {
+      return CompletableFuture.completedFuture(null);
+    }
 
     // If the local member is active, replace it with a passive or reserve member.
     if (cluster.member().type() == Member.Type.ACTIVE) {
