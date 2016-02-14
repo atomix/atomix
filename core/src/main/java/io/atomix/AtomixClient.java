@@ -95,7 +95,8 @@ public class AtomixClient extends Atomix {
   public static Builder builder(Properties properties) {
     ClientProperties clientProperties = new ClientProperties(properties);
     return builder(clientProperties.replicas())
-      .withTransport(clientProperties.transport());
+      .withTransport(clientProperties.transport())
+      .withSerializer(clientProperties.serializer());
   }
 
   /**

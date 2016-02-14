@@ -124,6 +124,7 @@ public final class AtomixReplica extends Atomix {
         .withMajorCompactionInterval(replicaProperties.majorCompactionInterval())
         .withCompactionThreshold(replicaProperties.compactionThreshold())
         .build())
+      .withSerializer(replicaProperties.serializer())
       .withQuorumHint(replicaProperties.quorumHint() != -1 ? replicaProperties.quorumHint() : replicas.size())
       .withBackupCount(replicaProperties.backupCount())
       .withElectionTimeout(replicaProperties.electionTimeout())

@@ -15,9 +15,11 @@
  */
 package io.atomix;
 
+import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.util.ConfigurationException;
 import io.atomix.catalyst.util.PropertiesReader;
+import io.atomix.catalyst.util.QualifiedProperties;
 
 import java.util.Collection;
 import java.util.Properties;
@@ -29,6 +31,7 @@ import java.util.Properties;
  */
 abstract class AtomixProperties {
   public static final String SEED = "cluster.seed";
+  public static final String SERIALIZER = "serializer";
 
   protected final PropertiesReader reader;
 
@@ -62,6 +65,15 @@ abstract class AtomixProperties {
     } catch (NumberFormatException e) {
       throw new ConfigurationException("invalid port number: " + split[1]);
     }
+  }
+
+  /**
+   * Returns the Atomix serializer.
+   *
+   * @return The Atomix serializer.
+   */
+  public Serializer serializer() {
+    return new Serializer(new QualifiedProperties(reader.properties(), SERIALIZER));
   }
 
 }

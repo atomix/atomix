@@ -23,8 +23,7 @@ import org.testng.annotations.Test;
 
 import java.util.Properties;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.*;
 
 /**
  * Client properties test.
@@ -40,6 +39,7 @@ public class ClientPropertiesTest {
   public void testPropertyDefaults() {
     ClientProperties properties = new ClientProperties(new Properties());
     assertTrue(properties.transport() instanceof NettyTransport);
+    assertTrue(properties.serializer().isWhitelistRequired());
   }
 
   /**
@@ -52,11 +52,13 @@ public class ClientPropertiesTest {
     properties.setProperty("cluster.seed.1", "localhost:5000");
     properties.setProperty("cluster.seed.2", "localhost:5001");
     properties.setProperty("cluster.seed.3", "localhost:5002");
+    properties.setProperty("serializer.whitelist", "false");
 
     ClientProperties clientProperties = new ClientProperties(properties);
     Transport transport = clientProperties.transport();
     assertTrue(transport instanceof NettyTransport);
     assertEquals(((NettyTransport) transport).properties().threads(), 1);
+    assertFalse(clientProperties.serializer().isWhitelistRequired());
   }
 
   /**
@@ -71,6 +73,7 @@ public class ClientPropertiesTest {
     assertTrue(clientProperties.replicas().contains(new Address("localhost", 5000)));
     assertTrue(clientProperties.replicas().contains(new Address("localhost", 5001)));
     assertTrue(clientProperties.replicas().contains(new Address("localhost", 5002)));
+    assertFalse(clientProperties.serializer().isWhitelistRequired());
   }
 
 }
