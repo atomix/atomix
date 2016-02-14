@@ -159,7 +159,7 @@ public class DistributedGroup extends Resource<DistributedGroup> {
       });
 
       client.<String>onEvent("resign", leader -> {
-        if (this.leader.equals(leader)) {
+        if (this.leader != null && this.leader.equals(leader)) {
           this.leader = null;
         }
       });
