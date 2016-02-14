@@ -56,7 +56,7 @@ public class LockState extends ResourceStateMachine implements SessionListener {
         if (lock.session().state() == Session.State.EXPIRED || lock.session().state() == Session.State.CLOSED) {
           lock = queue.poll();
         } else {
-          lock.session().publish("lock", lock.index());
+          lock.session().publish("lock", new LockCommands.LockEvent(lock.operation().id(), lock.index()));
           break;
         }
       }
@@ -69,10 +69,10 @@ public class LockState extends ResourceStateMachine implements SessionListener {
   public void lock(Commit<LockCommands.Lock> commit) {
     if (lock == null) {
       lock = commit;
-      commit.session().publish("lock", commit.index());
+      commit.session().publish("lock", new LockCommands.LockEvent(commit.operation().id(), commit.index()));
     } else if (commit.operation().timeout() == 0) {
       try {
-        commit.session().publish("lock", null);
+        commit.session().publish("fail", new LockCommands.LockEvent(commit.operation().id(), commit.index()));
       } finally {
         commit.close();
       }
@@ -80,9 +80,15 @@ public class LockState extends ResourceStateMachine implements SessionListener {
       queue.add(commit);
       if (commit.operation().timeout() > 0) {
         timers.put(commit.index(), executor.schedule(Duration.ofMillis(commit.operation().timeout()), () -> {
-          timers.remove(commit.index());
-          queue.remove(commit);
-          commit.close();
+          try {
+            timers.remove(commit.index());
+            queue.remove(commit);
+            if (commit.session().state().active()) {
+              commit.session().publish("fail", new LockCommands.LockEvent(commit.operation().id(), commit.index()));
+            }
+          } finally {
+            commit.close();
+          }
         }));
       }
     }
@@ -108,7 +114,7 @@ public class LockState extends ResourceStateMachine implements SessionListener {
           if (lock.session().state() == Session.State.EXPIRED || lock.session().state() == Session.State.CLOSED) {
             lock = queue.poll();
           } else {
-            lock.session().publish("lock", lock.index());
+            lock.session().publish("lock", new LockCommands.LockEvent(lock.operation().id(), lock.index()));
             break;
           }
         }
