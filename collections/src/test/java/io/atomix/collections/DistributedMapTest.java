@@ -15,7 +15,6 @@
  */
 package io.atomix.collections;
 
-import io.atomix.resource.ResourceType;
 import io.atomix.testing.AbstractCopycatTest;
 import org.testng.annotations.Test;
 
@@ -103,6 +102,36 @@ public class DistributedMapTest extends AbstractCopycatTest<DistributedMap> {
     map.put("bar", "Hello world again!").join();
     map.containsKey("foo").thenAccept(result -> {
       threadAssertFalse(result);
+      resume();
+    });
+    await(10000);
+  }
+
+  /**
+   * Tests replace.
+   */
+  public void testMapReplace() throws Throwable {
+    createServers(3);
+
+    DistributedMap<String, String> map = createResource();
+
+    map.put("foo", "Hello world!").thenRun(this::resume);
+    await(10000);
+
+    map.replace("foo", "Hello world!", "Hello world again!").thenAccept(result -> {
+      threadAssertTrue(result);
+      resume();
+    });
+    await(10000);
+
+    map.replace("foo", "Hello world!", "Hello world again!").thenAccept(result -> {
+      threadAssertFalse(result);
+      resume();
+    });
+    await(10000);
+
+    map.get("foo").thenAccept(result -> {
+      threadAssertEquals(result, "Hello world again!");
       resume();
     });
     await(10000);
