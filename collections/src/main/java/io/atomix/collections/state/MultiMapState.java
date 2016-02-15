@@ -111,13 +111,13 @@ public class MultiMapState extends ResourceStateMachine {
         Commit<? extends MultiMapCommands.TtlCommand> previous = values.remove(commit.operation().value());
         if (previous == null) {
           return false;
-        } else {
-          previous.close();
         }
 
         Scheduled timer = timers.remove(previous.index());
         if (timer != null)
           timer.cancel();
+
+        previous.close();
 
         if (values.isEmpty())
           map.remove(commit.operation().key());
@@ -131,6 +131,7 @@ public class MultiMapState extends ResourceStateMachine {
             if (timer != null)
               timer.cancel();
             results.add(value.operation().value());
+            value.close();
           }
           return results;
         }
