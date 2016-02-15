@@ -394,11 +394,11 @@ public class MapCommands {
     public ReplaceIfPresent() {
     }
 
-    public ReplaceIfPresent(Object key, Object value, Object replace) {
-      this(key, value, replace, 0);
+    public ReplaceIfPresent(Object key, Object replace, Object value) {
+      this(key, replace, value, 0);
     }
 
-    public ReplaceIfPresent(Object key, Object value, Object replace, long ttl) {
+    public ReplaceIfPresent(Object key, Object replace, Object value, long ttl) {
       super(key, value, ttl);
       this.replace = replace;
     }
