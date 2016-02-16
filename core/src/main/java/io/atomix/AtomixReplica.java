@@ -29,6 +29,7 @@ import io.atomix.copycat.client.Query;
 import io.atomix.copycat.client.ServerSelectionStrategy;
 import io.atomix.copycat.client.session.Session;
 import io.atomix.copycat.server.CopycatServer;
+import io.atomix.copycat.server.cluster.Member;
 import io.atomix.copycat.server.storage.Storage;
 import io.atomix.manager.ResourceClient;
 import io.atomix.manager.ResourceManagerTypeResolver;
@@ -554,6 +555,11 @@ public final class AtomixReplica extends Atomix {
 
       // Set the server resource state machine.
       serverBuilder.withStateMachine(() -> new ResourceManagerState(registry));
+
+      // If the quorum hint is ALL then set the local member to ACTIVE.
+      if (quorumHint == Quorum.ALL.size()) {
+        serverBuilder.withType(Member.Type.ACTIVE);
+      }
 
       CopycatServer server = serverBuilder.build();
       server.serializer().resolve(new ResourceManagerTypeResolver(registry));
