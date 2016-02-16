@@ -25,6 +25,9 @@ import io.atomix.catalyst.util.Assert;
 import io.atomix.copycat.client.Command;
 import io.atomix.copycat.client.Query;
 
+import java.util.Collection;
+import java.util.Set;
+
 /**
  * Map commands.
  * <p>
@@ -438,6 +441,24 @@ public class MapCommands {
   }
 
   /**
+   * Values query.
+   */
+  public static class Values extends MapQuery<Collection> {
+  }
+
+  /**
+   * Key set query.
+   */
+  public static class KeySet extends MapQuery<Set> {
+  }
+
+  /**
+   * Entry set query.
+   */
+  public static class EntrySet extends MapQuery<Set> {
+  }
+
+  /**
    * Clear command.
    */
   public static class Clear extends MapCommand<Void> {
@@ -464,6 +485,9 @@ public class MapCommands {
       registry.register(RemoveIfPresent.class, -72);
       registry.register(Replace.class, -73);
       registry.register(ReplaceIfPresent.class, -74);
+      registry.register(Values.class, -154);
+      registry.register(KeySet.class, -155);
+      registry.register(EntrySet.class, -156);
       registry.register(IsEmpty.class, -75);
       registry.register(Size.class, -76);
       registry.register(Clear.class, -77);
