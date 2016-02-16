@@ -15,6 +15,7 @@
  */
 package io.atomix.collections.state;
 
+import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.concurrent.Scheduled;
 import io.atomix.collections.DistributedMap;
 import io.atomix.copycat.server.Commit;
@@ -22,9 +23,7 @@ import io.atomix.resource.ResourceStateMachine;
 import io.atomix.resource.ResourceType;
 
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Map state machine.
@@ -234,6 +233,47 @@ public class MapState extends ResourceStateMachine {
   }
 
   /**
+   * Handles a values query.
+   */
+  public Collection<Object> values(Commit<MapCommands.Values> commit) {
+    try {
+      Collection<Object> values = new ArrayList<>();
+      for (Value value : map.values()) {
+        values.add(value.commit.operation().value());
+      }
+      return values;
+    } finally {
+      commit.close();
+    }
+  }
+
+  /**
+   * Handles a key set query.
+   */
+  public Set<Object> keySet(Commit<MapCommands.KeySet> commit) {
+    try {
+      return new HashSet<>(map.keySet());
+    } finally {
+      commit.close();
+    }
+  }
+
+  /**
+   * Handles an entry set query.
+   */
+  public Set<Map.Entry<Object, Object>> entrySet(Commit<MapCommands.EntrySet> commit) {
+    try {
+      Set<Map.Entry<Object, Object>> entries = new HashSet<>();
+      for (Map.Entry<Object, Value> entry : map.entrySet()) {
+        entries.add(new MapEntry(entry.getKey(), entry.getValue().commit.operation().value()));
+      }
+      return entries;
+    } finally {
+      commit.close();
+    }
+  }
+
+  /**
    * Handles a count commit.
    */
   public int size(Commit<MapCommands.Size> commit) {
@@ -289,6 +329,36 @@ public class MapState extends ResourceStateMachine {
     private Value(Commit<? extends MapCommands.TtlCommand> commit, Scheduled timer) {
       this.commit = commit;
       this.timer = timer;
+    }
+  }
+
+  /**
+   * Map entry.
+   */
+  private static class MapEntry implements Map.Entry<Object, Object> {
+    private final Object key;
+    private Object value;
+
+    private MapEntry(Object key, Object value) {
+      this.key = Assert.notNull(key, "key");
+      this.value = value;
+    }
+
+    @Override
+    public Object getKey() {
+      return key;
+    }
+
+    @Override
+    public Object getValue() {
+      return value;
+    }
+
+    @Override
+    public Object setValue(Object value) {
+      Object oldValue = this.value;
+      this.value = value;
+      return oldValue;
     }
   }
 

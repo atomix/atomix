@@ -19,6 +19,9 @@ import io.atomix.testing.AbstractCopycatTest;
 import org.testng.annotations.Test;
 
 import java.time.Duration;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Distributed map test.
@@ -205,6 +208,70 @@ public class DistributedMapTest extends AbstractCopycatTest<DistributedMap> {
         threadAssertTrue(result);
         resume();
       });
+    });
+    await(10000);
+  }
+
+  /**
+   * Tests getting map values.
+   */
+  public void testMapValues() throws Throwable {
+    createServers(3);
+
+    DistributedMap<String, String> map = createResource();
+
+    map.put("foo", "Hello world!").thenRun(this::resume);
+    map.put("bar", "Hello world again!").thenRun(this::resume);
+    await(10000, 2);
+
+    map.values().thenAccept(values -> {
+      threadAssertTrue(values.contains("Hello world!"));
+      threadAssertTrue(values.contains("Hello world again!"));
+      resume();
+    });
+    await(10000);
+  }
+
+  /**
+   * Tests getting map keys.
+   */
+  public void testMapKeySet() throws Throwable {
+    createServers(3);
+
+    DistributedMap<String, String> map = createResource();
+
+    map.put("foo", "Hello world!").thenRun(this::resume);
+    map.put("bar", "Hello world again!").thenRun(this::resume);
+    await(10000, 2);
+
+    map.keySet().thenAccept(keys -> {
+      threadAssertTrue(keys.contains("foo"));
+      threadAssertTrue(keys.contains("bar"));
+      resume();
+    });
+    await(10000);
+  }
+
+  /**
+   * Tests getting map entries.
+   */
+  public void testMapEntrySet() throws Throwable {
+    createServers(3);
+
+    DistributedMap<String, String> map = createResource();
+
+    map.put("foo", "Hello world!").thenRun(this::resume);
+    map.put("bar", "Hello world again!").thenRun(this::resume);
+    await(10000, 2);
+
+    map.entrySet().thenAccept(entries -> {
+      Set<String> keys = entries.stream().map(Map.Entry::getKey).collect(Collectors.toSet());
+      Set<String> values = entries.stream().map(Map.Entry::getValue).collect(Collectors.toSet());
+      threadAssertTrue(keys.contains("foo"));
+      threadAssertTrue(keys.contains("bar"));
+      threadAssertTrue(values.contains("Hello world!"));
+      threadAssertTrue(values.contains("Hello world again!"));
+      resume();
     });
     await(10000);
   }

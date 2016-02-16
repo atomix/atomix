@@ -23,6 +23,9 @@ import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceTypeInfo;
 
 import java.time.Duration;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -965,6 +968,99 @@ public class DistributedMap<K, V> extends Resource<DistributedMap<K, V>> {
   @SuppressWarnings("unchecked")
   public CompletableFuture<Boolean> replace(K key, V oldValue, V newValue, Duration ttl) {
     return submit(new MapCommands.ReplaceIfPresent(key, oldValue, newValue, ttl.toMillis()));
+  }
+
+  /**
+   * Reads the set of all keys in the map.
+   * <p>
+   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
+   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
+   * use the {@link CompletableFuture#get()} or {@link CompletableFuture#join()} method to block the calling thread:
+   * <pre>
+   *   {@code
+   *   Set<String> keys = map.keySet().get();
+   *   }
+   * </pre>
+   * Alternatively, to execute the operation asynchronous and be notified once the operation is complete in a different
+   * thread, use one of the many completable future callbacks:
+   * <pre>
+   *   {@code
+   *   map.keySet().thenAccept(keys -> {
+   *     keys.forEach(key -> ...);
+   *   });
+   *   map.replace("key", "Hello world!", "Hello world again!", Duration.ofSeconds(10)).thenAccept(oldValue -> {
+   *     ...
+   *   });
+   *   }
+   * </pre>
+   *
+   * @return A completable future to be completed with the result once complete.
+   */
+  @SuppressWarnings("unchecked")
+  public CompletableFuture<Set<K>> keySet() {
+    return submit(new MapCommands.KeySet()).thenApply(keys -> (Set<K>) keys);
+  }
+
+  /**
+   * Reads the collection of all values in the map.
+   * <p>
+   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
+   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
+   * use the {@link CompletableFuture#get()} or {@link CompletableFuture#join()} method to block the calling thread:
+   * <pre>
+   *   {@code
+   *   Set<String> keys = map.keySet().get();
+   *   }
+   * </pre>
+   * Alternatively, to execute the operation asynchronous and be notified once the operation is complete in a different
+   * thread, use one of the many completable future callbacks:
+   * <pre>
+   *   {@code
+   *   map.keySet().thenAccept(keys -> {
+   *     keys.forEach(key -> ...);
+   *   });
+   *   map.replace("key", "Hello world!", "Hello world again!", Duration.ofSeconds(10)).thenAccept(oldValue -> {
+   *     ...
+   *   });
+   *   }
+   * </pre>
+   *
+   * @return A completable future to be completed with the result once complete.
+   */
+  @SuppressWarnings("unchecked")
+  public CompletableFuture<Collection<V>> values() {
+    return submit(new MapCommands.Values()).thenApply(values -> (Collection<V>) values);
+  }
+
+  /**
+   * Reads the set of all entries in the map.
+   * <p>
+   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
+   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
+   * use the {@link CompletableFuture#get()} or {@link CompletableFuture#join()} method to block the calling thread:
+   * <pre>
+   *   {@code
+   *   Set<String> keys = map.keySet().get();
+   *   }
+   * </pre>
+   * Alternatively, to execute the operation asynchronous and be notified once the operation is complete in a different
+   * thread, use one of the many completable future callbacks:
+   * <pre>
+   *   {@code
+   *   map.keySet().thenAccept(keys -> {
+   *     keys.forEach(key -> ...);
+   *   });
+   *   map.replace("key", "Hello world!", "Hello world again!", Duration.ofSeconds(10)).thenAccept(oldValue -> {
+   *     ...
+   *   });
+   *   }
+   * </pre>
+   *
+   * @return A completable future to be completed with the result once complete.
+   */
+  @SuppressWarnings("unchecked")
+  public CompletableFuture<Set<Map.Entry<K, V>>> entrySet() {
+    return submit(new MapCommands.EntrySet()).thenApply(entries -> (Set<Map.Entry<K, V>>) entries);
   }
 
   /**
