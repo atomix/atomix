@@ -103,14 +103,14 @@ class ResourceManagerStateMachineExecutor implements StateMachineExecutor {
 
   @Override
   public Scheduled schedule(Duration delay, Runnable callback) {
-    Scheduled task = parent.schedule(delay, () -> parent.executor().execute(callback));
+    Scheduled task = parent.schedule(delay, callback);
     tasks.add(task);
     return task;
   }
 
   @Override
   public Scheduled schedule(Duration initialDelay, Duration interval, Runnable callback) {
-    Scheduled task = parent.schedule(initialDelay, interval, () -> parent.executor().execute(callback));
+    Scheduled task = parent.schedule(initialDelay, interval, callback);
     tasks.add(task);
     return task;
   }
