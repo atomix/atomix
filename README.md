@@ -12,22 +12,14 @@
 Atomix is a high-level asynchronous framework for building fault-tolerant distributed systems. It combines the consistency of [ZooKeeper](https://zookeeper.apache.org/) with the usability of [Hazelcast](http://hazelcast.org/) to provide tools for managing and coordinating stateful resources in a distributed system. Its strongly consistent, fault-tolerant data store is designed for such use cases as:
 
 * [Configuration management](http://atomix.io/atomix/docs/collections/)
-* [Service discovery](http://atomix.io/atomix/docs/coordination/)
-* [Group membership](http://atomix.io/atomix/docs/coordination/)
-* [Leader election](http://atomix.io/atomix/docs/coordination/)
-* [Scheduling](http://atomix.io/atomix/docs/coordination/)
+* [Service discovery](http://atomix.io/atomix/docs/coordination/#distributedgroup)
+* [Group membership](http://atomix.io/atomix/docs/coordination/#distributedgroup)
+* [Leader election](http://atomix.io/atomix/docs/coordination/#leader-election)
+* [Scheduling](http://atomix.io/atomix/docs/coordination/#scheduling-remote-callbacks)
 * [Messaging](http://atomix.io/atomix/docs/messaging/)
-* [Synchronization](http://atomix.io/atomix/docs/coordination/)
+* [Synchronization](http://atomix.io/atomix/docs/coordination/#distributedlock)
 
-### Project status: BETA
-
-Atomix is a fault-tolerant framework that provides strong consistency guarantees, and as such we take the responsibility to test these claims and document the implementation very seriously. Atomix is built on [Copycat][Copycat], a well tested, well documented, [Jepsen verified](https://github.com/atomix/atomix-jepsen) implementation of the [Raft consensus algorithm][Raft]. Atomix is also now considered feature complete and a release candidate is expected very soon. *But the beta label indicates that the implementation may still have some bugs* or other issues that make it not quite suitable for production. Users are encouraged to use Atomix in development and contribute to the increasing stability of the project with
-[issues](https://github.com/atomix/atomix/issues) and [pull requests](https://github.com/atomix/atomix/pulls).
-Once we've reached consensus on the lack of significant bugs in the beta release(s), a release candidate will be pushed. Once we've reached consensus on the stability of the release candidate(s) and Atomix's production readiness, a full release will be pushed.
-
-*Note: the website and documentation is currently undergoing a rewrite for the 1.0 release. We realize some links are broken and are actively working to update the documentation. Please reference the [Javadoc][Javadoc] for the most up-to-date documentation.*
-
-#### [Locks](http://atomix.io/atomix/docs/coordination/)
+#### [Locks](http://atomix.io/atomix/docs/coordination/#distributedlock)
 ```java
 // Get a distributed lock
 DistributedLock lock = atomix.getLock("my-lock").get();
@@ -39,13 +31,18 @@ CompletableFuture<Void> future = lock.lock();
 future.thenRun(() -> lock.unlock());
 ```
 
-#### [Group membership](http://atomix.io/atomix/docs/coordination/)
+#### [Group membership](http://atomix.io/atomix/docs/coordination/#distributedgroup)
 ```java
 // Get a distributed membership group
 DistributedMembershipGroup group = atomix.getMembershipGroup("my-group").get();
 
 // Join the group
-group.join();
+group.join().thenAccept(member -> {
+
+  // Leave the group
+  member.leave();
+
+});
 
 // When a member joins the group, print a message
 group.onJoin(member -> System.out.println(member.id() + " joined!"));
@@ -54,7 +51,7 @@ group.onJoin(member -> System.out.println(member.id() + " joined!"));
 group.onLeave(member -> System.out.println(member.id() + " left!"));
 ```
 
-#### [Leader election](http://atomix.io/atomix/docs/coordination/)
+#### [Leader election](http://atomix.io/atomix/docs/coordination/#leader-election)
 ```java
 // Join a group
 CompletableFuture<LocalMember> future = group.join();
