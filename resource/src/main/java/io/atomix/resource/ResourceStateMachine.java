@@ -27,15 +27,16 @@ import io.atomix.copycat.server.StateMachine;
 import io.atomix.copycat.server.StateMachineExecutor;
 import io.atomix.copycat.server.session.SessionListener;
 
+import java.util.Properties;
+
 /**
  * Base resource state machine.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public abstract class ResourceStateMachine<T extends Resource.Config> extends StateMachine implements SessionListener {
+public abstract class ResourceStateMachine extends StateMachine implements SessionListener {
   private final ResourceType type;
   private Commit<ConfigureCommand> configureCommit;
-  protected T config;
 
   protected ResourceStateMachine(ResourceType type) {
     this.type = Assert.notNull(type, "type");
@@ -67,7 +68,7 @@ public abstract class ResourceStateMachine<T extends Resource.Config> extends St
     if (configureCommit != null)
       configureCommit.close();
     configureCommit = commit;
-    configure((T) configureCommit.operation().config());
+    configure(configureCommit.operation().config());
   }
 
   /**
@@ -75,8 +76,7 @@ public abstract class ResourceStateMachine<T extends Resource.Config> extends St
    *
    * @param config The resource configuration.
    */
-  public void configure(T config) {
-    this.config = config;
+  public void configure(Properties config) {
   }
 
   @Override
@@ -116,9 +116,12 @@ public abstract class ResourceStateMachine<T extends Resource.Config> extends St
    * Resource configure command.
    */
   public static class ConfigureCommand implements Command<Void>, CatalystSerializable {
-    private Resource.Config config;
+    private Properties config;
 
-    public ConfigureCommand(Resource.Config config) {
+    public ConfigureCommand() {
+    }
+
+    public ConfigureCommand(Properties config) {
       this.config = Assert.notNull(config, "config");
     }
 
@@ -127,7 +130,7 @@ public abstract class ResourceStateMachine<T extends Resource.Config> extends St
      *
      * @return The resource configuration.
      */
-    public Resource.Config config() {
+    public Properties config() {
       return config;
     }
 

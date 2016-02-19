@@ -32,9 +32,51 @@ import java.util.*;
 public class MultiMapState extends ResourceStateMachine {
   private final Map<Object, Map<Object, Commit<? extends MultiMapCommands.TtlCommand>>> map = new HashMap<>();
   private final Map<Long, Scheduled> timers = new HashMap<>();
+  private DistributedMultiMap.Order order = DistributedMultiMap.Order.INSERT;
 
   public MultiMapState() {
     super(new ResourceType(DistributedMultiMap.class));
+  }
+
+  @Override
+  public void configure(Properties config) {
+    this.order = DistributedMultiMap.Order.valueOf(config.getProperty("order", DistributedMultiMap.Order.INSERT.name().toLowerCase()).toUpperCase());
+    Set<Object> keys = new HashSet<>(map.keySet());
+    for (Object key : keys) {
+      map.put(key, createValueMap(map.get(key)));
+    }
+  }
+
+  /**
+   * Creates a new value map.
+   */
+  private Map<Object, Commit<? extends MultiMapCommands.TtlCommand>> createValueMap() {
+    switch (order) {
+      case NONE:
+        return new HashMap<>();
+      case NATURAL:
+        return new TreeMap<>();
+      case INSERT:
+        return new LinkedHashMap<>();
+      default:
+        return new HashMap<>();
+    }
+  }
+
+  /**
+   * Creates a new value map.
+   */
+  private Map<Object, Commit<? extends MultiMapCommands.TtlCommand>> createValueMap(Map<Object, Commit<? extends MultiMapCommands.TtlCommand>> map) {
+    switch (order) {
+      case NONE:
+        return new HashMap<>(map);
+      case NATURAL:
+        return new TreeMap<>(map);
+      case INSERT:
+        return new LinkedHashMap<>(map);
+      default:
+        return new HashMap<>(map);
+    }
   }
 
   /**
@@ -75,7 +117,7 @@ public class MultiMapState extends ResourceStateMachine {
     try {
       Map<Object, Commit<? extends MultiMapCommands.TtlCommand>> values = map.get(commit.operation().key());
       if (values == null) {
-        values = new LinkedHashMap<>();
+        values = createValueMap();
         map.put(commit.operation().key(), values);
       }
 
@@ -125,7 +167,7 @@ public class MultiMapState extends ResourceStateMachine {
       } else {
         Map<Object, Commit<? extends MultiMapCommands.TtlCommand>> values = map.remove(commit.operation().key());
         if (values != null) {
-          Collection<Object> results = new ArrayList<>();
+          Collection<Object> results = new ArrayList<>(values.size());
           for (Commit<? extends MultiMapCommands.TtlCommand> value : values.values()) {
             Scheduled timer = timers.remove(value.index());
             if (timer != null)
