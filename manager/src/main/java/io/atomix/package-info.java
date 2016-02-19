@@ -63,7 +63,7 @@
  * <p>
  * <pre>
  *   {@code
- *   DistributedLeaderElection election = atomix.create("election", DistributedLeaderElection.TYPE).get();
+ *   DistributedGroup group = atomix.getGroup("group").get();
  *   }
  * </pre>
  * A {@link io.atomix.resource.Resource resource} is simply an interface to a replicated state machine. When a
