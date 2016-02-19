@@ -271,7 +271,7 @@ public class ResourceManagerState extends StateMachine implements SessionListene
   protected Set<String> getResourceKeys(Commit<GetResourceKeys> commit) {
     try {
       if (commit.operation().type() == 0) {
-        return keys.keySet();
+        return new HashSet<>(keys.keySet());
       }
 
       ResourceType resourceType = registry.lookup(commit.operation().type());
@@ -279,11 +279,11 @@ public class ResourceManagerState extends StateMachine implements SessionListene
         throw new IllegalArgumentException("unknown resource type: " + commit.operation().type());
       }
 
-      return resources.entrySet()
+      return new HashSet<>(resources.entrySet()
         .stream()
         .filter(e -> e.getValue().type.equals(resourceType))
         .map(e -> e.getValue().key)
-        .collect(Collectors.toSet());
+        .collect(Collectors.toSet()));
     } finally {
       commit.close();
     }
