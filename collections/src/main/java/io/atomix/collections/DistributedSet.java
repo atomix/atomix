@@ -26,7 +26,27 @@ import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Distributed set.
+ * Distributed collection of unique values.
+ * <p>
+ * The distributed set is closely modeled on Java's {@link java.util.HashSet}. All methods present
+ * in the {@link java.util.Set} interface are present in this interface. Set items are held in
+ * memory on each stateful node and backed by replicated logs on disk, thus the size of a set
+ * is limited by the memory available to the smallest node in the cluster. Internally, {@code DistributedSet}
+ * uses a {@link java.util.HashMap} to store set items in memory in the replicated state machine.
+ * <p>
+ * To create a distributed set, use the {@code getSet} factory method:
+ * <pre>
+ *   {@code
+ *   DistributedSet<String> set = atomix.getSet("foo").get();
+ *   }
+ * </pre>
+ * All set modification operations are linearizable, so items added to or removed from the set will
+ * be immediately reflected from the perspective of all clients operating on the set. The set is
+ * shared by processes based on the set name.
+ * <p>
+ * Sets support relaxed consistency levels for some read operations line {@link #size(ReadConsistency)}
+ * and {@link #contains(Object, ReadConsistency)}. By default, read operations on a set are linearizable
+ * but require some level of communication between nodes.
  *
  * @param <T> The set value type.
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>

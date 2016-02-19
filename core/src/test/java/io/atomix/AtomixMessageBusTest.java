@@ -33,8 +33,6 @@ public class AtomixMessageBusTest extends AbstractAtomixTest {
   }
   
   public void testClientMessageBusGet() throws Throwable {
-    Atomix client1 = createClient();
-    Atomix client2 = createClient();
     testMessageBus(
       createClient().getMessageBus("test-client-bus-get", DistributedMessageBus.options().withAddress(new Address("localhost", 6000))).get(),
       createClient().getMessageBus("test-client-bus-get", DistributedMessageBus.options().withAddress(new Address("localhost", 6001))).get()
@@ -43,8 +41,8 @@ public class AtomixMessageBusTest extends AbstractAtomixTest {
 
   public void testReplicaMessageBusGet() throws Throwable {
     testMessageBus(
-      replicas.get(0).getMessageBus("test-client-bus-get", DistributedMessageBus.options().withAddress(new Address("localhost", 6000))).get(),
-      replicas.get(1).getMessageBus("test-client-bus-get", DistributedMessageBus.options().withAddress(new Address("localhost", 6001))).get()
+      replicas.get(0).getMessageBus("test-client-bus-get", DistributedMessageBus.options().withAddress(new Address("localhost", 6002))).get(),
+      replicas.get(1).getMessageBus("test-client-bus-get", DistributedMessageBus.options().withAddress(new Address("localhost", 6003))).get()
     );
   }
 

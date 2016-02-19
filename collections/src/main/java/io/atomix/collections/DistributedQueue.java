@@ -25,7 +25,31 @@ import io.atomix.resource.ResourceTypeInfo;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Distributed queue.
+ * Distributed collection designed for holding ordered items for processing.
+ * <p>
+ * The distributed queue is closely modeled on Java's queues. All methods present in the
+ * {@link java.util.Queue} interface are present in this interface. Queued items are held in
+ * memory on each stateful node and backed by replicated logs on disk, thus the size of a queue
+ * is limited by the memory available to the smallest node in the cluster.
+ * <p>
+ * Internally, {@code DistributedQueue} uses an {@link java.util.ArrayDeque} to enqueue items
+ * in memory in the replicated state machine. Operations submitted through this interface are
+ * replicated and result in calling the associated method on the replicated {@link java.util.ArrayDeque}
+ * on each stateful node.
+ * <p>
+ * To create a distributed queue, use the {@code getQueue} factory method:
+ * <pre>
+ *   {@code
+ *   DistributedQueue<String> queue = atomix.getQueue("foo").get();
+ *   }
+ * </pre>
+ * All queue modification operations are linearizable, so items added to or removed from the queue will
+ * be immediately reflected from the perspective of all clients operating on the queue. The queue is
+ * shared by processes based on the queue name.
+ * <p>
+ * Queues support relaxed consistency levels for some read operations line {@link #size(ReadConsistency)}
+ * and {@link #contains(Object, ReadConsistency)}. By default, read operations on a queue are linearizable
+ * but require some level of communication between nodes.
  *
  * @param <T> The queue value type.
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>

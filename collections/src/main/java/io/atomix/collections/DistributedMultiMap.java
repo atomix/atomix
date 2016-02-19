@@ -27,7 +27,40 @@ import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Distributed multi-map.
+ * Stores a map of keys to multiple values.
+ * <p>
+ * The multi-map resource stores a map of keys that allows multiple values to be associated with each key.
+ * Multimap entries are stored in memory on each stateful node and backed by disk, thus the size of a multi-map
+ * is limited by the available memory on the smallest node in the cluster.
+ * <p>
+ * To create a multimap, use the {@code getMultiMap} factory method on an {@code Atomix} instance:
+ * <pre>
+ *   {@code
+ *   DistributedMultiMap<String, String> multiMap = atomix.getMultiMap("foo").get();
+ *   }
+ * </pre>
+ * The multi-map interface closely simulates that of {@link java.util.Map} except that values are {@link Collection}s
+ * rather than {@code V}.
+ * <h3>Value order</h3>
+ * By default, the values associated with each key are stored in insertion order. However, this behavior can
+ * be configured via the {@link io.atomix.collections.DistributedMultiMap.Config map configuration} by setting
+ * the value {@link Order}. To set the order of values in a multi-map, create a configuration and provide the
+ * configuration at the creation of the map.
+ * <pre>
+ *   {@code
+ *   DistributedMultiMap.Config config = DistributedMultiMap.config()
+ *     .withValueOrder(DistributedMultiMap.Order.NATURAL);
+ *   DistributedMultiMap<String, String> multiMap = atomix.getMultiMap("foo", config).get();
+ *   }
+ * </pre>
+ * The multimap can also be configured after the instance is created via the {@link #configure(Resource.Config)}
+ * method. Note that configurations effect <em>all</em> instances of the resource throughout the cluster.
+ * If one node sets the value order to {@link Order#INSERT} and then another to {@link Order#NATURAL}, the
+ * last configuration applied will be used.
+ * <p>
+ * Multi-maps support relaxed consistency levels for some read operations line {@link #size(ReadConsistency)}
+ * and {@link #containsKey(Object, ReadConsistency)}. By default, read operations on a queue are linearizable
+ * but require some level of communication between nodes.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
@@ -79,7 +112,7 @@ public class DistributedMultiMap<K, V> extends Resource<DistributedMultiMap<K, V
   }
 
   /**
-   * Map value order.
+   * Represents the order of values in a multimap.
    */
   public enum Order {
 

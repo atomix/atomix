@@ -29,17 +29,26 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Distributed map.
+ * Stores a map of keys to values.
  * <p>
- * The distributed map resource provides an interface and behavior similar to {@link java.util.Map}.
+ * The distributed map stores a map of keys and values via an interface similar to that of {@link Map}.
+ * Map entries are stored in memory on each stateful node and backed by disk, thus the size of the map is
+ * limited to the available memory on the smallest node in the cluster. This map requires non-null keys but
+ * supports {@code null} values. All keys and values must be serializable by a
+ * {@link io.atomix.catalyst.serializer.Serializer}. Serializable types include implementations of
+ * {@link java.io.Serializable} or {@link io.atomix.catalyst.serializer.CatalystSerializable}. See the
+ * serialization API for more information.
+ * <p>
+ * A {@code DistributedMap} can be created either via the {@code Atomix} API or by wrapping a {@link CopycatClient}
+ * directly. To create a map via the Atomix API, use the {@code getMap} factory method:
  * <pre>
  *   {@code
- *   DistributedMap<String, String> map = atomix.getMap("map").get();
+ *   DistributedMap<String, String> map = atomix.getMap("foo").get();
  *   }
  * </pre>
- * The map requires non-{@code null} keys but supports {@code null} values. All keys and values
- * must be serializable by a {@link io.atomix.catalyst.serializer.Serializer}. Serializable types
- * include implementations of {@link java.io.Serializable} or {@link io.atomix.catalyst.serializer.CatalystSerializable}.
+ * Maps are distributed and are referenced by the map name. If a value is {@link #put(Object, Object)} in
+ * a map on one node, that value is immediately available for {@link #get(Object) reading} by any other node
+ * in the cluster by operating on the same map.
  * <p>
  * In addition to supporting normal {@link java.util.Map} methods, this implementation supports values
  * with TTLs. When a key is set with a TTL, the value will expire and be automatically evicted from the map
@@ -68,6 +77,10 @@ public class DistributedMap<K, V> extends Resource<DistributedMap<K, V>> {
    */
   public static Config config() {
     return new Config();
+  }
+
+  public DistributedMap(CopycatClient client) {
+    this(client, new Options());
   }
 
   public DistributedMap(CopycatClient client, Resource.Options options) {
