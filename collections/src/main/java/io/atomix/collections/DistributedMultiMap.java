@@ -52,6 +52,54 @@ public class DistributedMultiMap<K, V> extends Resource<DistributedMultiMap<K, V
     return new Config();
   }
 
+  /**
+   * Multimap configuration.
+   */
+  public static class Config extends Resource.Config {
+
+    /**
+     * Sets the map value order.
+     *
+     * @param order The map value order.
+     * @return The map configuration.
+     */
+    public Config withValueOrder(Order order) {
+      setProperty("order", order.name().toLowerCase());
+      return this;
+    }
+
+    /**
+     * Returns the map value order.
+     *
+     * @return The map value order.
+     */
+    public Order getValueOrder() {
+      return Order.valueOf(getProperty("order", Order.INSERT.name().toLowerCase()).toUpperCase());
+    }
+  }
+
+  /**
+   * Map value order.
+   */
+  public enum Order {
+
+    /**
+     * Indicates that values should be stored in natural order.
+     */
+    NATURAL,
+
+    /**
+     * Indicates that values should be stored in insertion order.
+     */
+    INSERT,
+
+    /**
+     * Indicates that no order is required for values.
+     */
+    NONE
+
+  }
+
   public DistributedMultiMap(CopycatClient client, Resource.Options options) {
     super(client, options);
   }

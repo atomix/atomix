@@ -15,9 +15,10 @@
  */
 package io.atomix.collections;
 
-import io.atomix.resource.ResourceType;
 import io.atomix.testing.AbstractCopycatTest;
 import org.testng.annotations.Test;
+
+import java.util.Iterator;
 
 /**
  * Distributed multi map test.
@@ -74,7 +75,7 @@ public class DistributedMultiMapTest extends AbstractCopycatTest<DistributedMult
   public void testMultiMapClear() throws Throwable {
     createServers(3);
 
-    DistributedMultiMap<String, String> map = createResource();
+    DistributedMultiMap<String, String> map = createResource(DistributedMultiMap.config().withValueOrder(DistributedMultiMap.Order.NATURAL));
 
     map.put("foo", "Hello world!").thenRun(this::resume);
     map.put("foo", "Hello world again!").thenRun(this::resume);
@@ -97,6 +98,29 @@ public class DistributedMultiMapTest extends AbstractCopycatTest<DistributedMult
           resume();
         });
       });
+    });
+    await(10000);
+  }
+
+  /**
+   * Tests operating on a map with naturally ordered values.
+   */
+  public void testNaturalOrder() throws Throwable {
+    createServers(3);
+
+    DistributedMultiMap.Config config = DistributedMultiMap.config()
+      .withValueOrder(DistributedMultiMap.Order.NATURAL);
+    DistributedMultiMap<String, String> map = createResource(config);
+
+    map.put("foo", "foo").thenRun(this::resume);
+    map.put("foo", "bar").thenRun(this::resume);
+    await(10000, 2);
+
+    map.get("foo").thenAccept(results -> {
+      Iterator<String> iterator = results.iterator();
+      threadAssertEquals(iterator.next(), "bar");
+      threadAssertEquals(iterator.next(), "foo");
+      resume();
     });
     await(10000);
   }
