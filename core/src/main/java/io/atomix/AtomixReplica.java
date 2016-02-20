@@ -23,10 +23,7 @@ import io.atomix.catalyst.util.Listener;
 import io.atomix.catalyst.util.PropertiesReader;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.coordination.DistributedLock;
-import io.atomix.copycat.client.Command;
-import io.atomix.copycat.client.CopycatClient;
-import io.atomix.copycat.client.Query;
-import io.atomix.copycat.client.ServerSelectionStrategy;
+import io.atomix.copycat.client.*;
 import io.atomix.copycat.client.session.Session;
 import io.atomix.copycat.server.CopycatServer;
 import io.atomix.copycat.server.cluster.Member;
@@ -312,7 +309,12 @@ public final class AtomixReplica extends Atomix {
       this.members = Assert.notNull(members, "members");
       Serializer serializer = new Serializer();
       this.clientAddress = Assert.notNull(clientAddress, "clientAddress");
-      this.clientBuilder = CopycatClient.builder(members).withSerializer(serializer.clone());
+      this.clientBuilder = CopycatClient.builder(members)
+        .withSerializer(serializer.clone())
+        .withServerSelectionStrategy(ServerSelectionStrategies.ANY)
+        .withConnectionStrategy(ConnectionStrategies.FIBONACCI_BACKOFF)
+        .withRecoveryStrategy(RecoveryStrategies.RECOVER)
+        .withRetryStrategy(RetryStrategies.FIBONACCI_BACKOFF);
       this.serverBuilder = CopycatServer.builder(clientAddress, serverAddress, members).withSerializer(serializer.clone());
     }
 
