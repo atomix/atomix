@@ -63,7 +63,7 @@ public class DistributedValueExample {
         .withMinorCompactionInterval(Duration.ofSeconds(30))
         .withMajorCompactionInterval(Duration.ofMinutes(1))
         .withMaxSegmentSize(1024 * 1024 * 8)
-        .withMaxEntriesPerSegment(1024 * 1024)
+        .withMaxEntriesPerSegment(1024 * 8)
         .build())
       .build();
 
