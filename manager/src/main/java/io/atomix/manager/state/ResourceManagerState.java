@@ -230,7 +230,10 @@ public class ResourceManagerState extends StateMachine implements SessionListene
         resourceHolder.stateMachine.unregister(sessionHolder.session);
         resourceHolder.stateMachine.close(sessionHolder.session);
       } finally {
-        sessionHolder.commit.close();
+        // Ensure that the commit that created the resource is not closed even of the client closed its reference to it.
+        if (sessionHolder.commit != resourceHolder.commit) {
+          sessionHolder.commit.close();
+        }
       }
     }
   }
@@ -254,8 +257,11 @@ public class ResourceManagerState extends StateMachine implements SessionListene
       }
 
       // Close all commits that opened sessions to the resource.
+      // Don't close the commit that created the resource since that was closed above.
       for (SessionHolder sessionHolder : resourceHolder.sessions.values()) {
-        sessionHolder.commit.close();
+        if (sessionHolder.commit != resourceHolder.commit) {
+          sessionHolder.commit.close();
+        }
       }
 
       keys.remove(resourceHolder.key);
@@ -319,7 +325,11 @@ public class ResourceManagerState extends StateMachine implements SessionListene
       SessionHolder sessionHolder = resource.sessions.remove(session.id());
       if (sessionHolder != null) {
         resource.stateMachine.close(sessionHolder.session);
-        sessionHolder.commit.close();
+
+        // Ensure that the commit that created the resource is not closed when the session that created it is closed.
+        if (resource.commit != sessionHolder.commit) {
+          sessionHolder.commit.close();
+        }
       }
     }
   }
