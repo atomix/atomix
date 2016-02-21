@@ -20,10 +20,10 @@ import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
-import io.atomix.copycat.client.Command;
+import io.atomix.copycat.Command;
+import io.atomix.copycat.Query;
 import io.atomix.copycat.client.CopycatClient;
-import io.atomix.copycat.client.Query;
-import io.atomix.copycat.client.session.Session;
+import io.atomix.copycat.session.Session;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;

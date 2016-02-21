@@ -20,11 +20,11 @@ import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.util.Assert;
-import io.atomix.copycat.client.Command;
-import io.atomix.copycat.client.session.Session;
+import io.atomix.copycat.Command;
 import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.StateMachine;
 import io.atomix.copycat.server.StateMachineExecutor;
+import io.atomix.copycat.server.session.ServerSession;
 import io.atomix.copycat.server.session.SessionListener;
 
 import java.util.Properties;
@@ -80,19 +80,19 @@ public abstract class ResourceStateMachine extends StateMachine implements Sessi
   }
 
   @Override
-  public void register(Session session) {
+  public void register(ServerSession session) {
   }
 
   @Override
-  public void unregister(Session session) {
+  public void unregister(ServerSession session) {
   }
 
   @Override
-  public void expire(Session session) {
+  public void expire(ServerSession session) {
   }
 
   @Override
-  public void close(Session session) {
+  public void close(ServerSession session) {
   }
 
   /**

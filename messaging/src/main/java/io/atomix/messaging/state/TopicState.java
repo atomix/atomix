@@ -15,8 +15,8 @@
  */
 package io.atomix.messaging.state;
 
-import io.atomix.copycat.client.session.Session;
 import io.atomix.copycat.server.Commit;
+import io.atomix.copycat.server.session.ServerSession;
 import io.atomix.copycat.server.session.SessionListener;
 import io.atomix.messaging.DistributedTopic;
 import io.atomix.resource.ResourceStateMachine;
@@ -39,7 +39,7 @@ public class TopicState extends ResourceStateMachine implements SessionListener 
   }
 
   @Override
-  public void close(Session session) {
+  public void close(ServerSession session) {
     listeners.remove(session.id());
   }
 
@@ -76,7 +76,7 @@ public class TopicState extends ResourceStateMachine implements SessionListener 
       Iterator<Map.Entry<Long, Commit<TopicCommands.Listen>>> iterator = listeners.entrySet().iterator();
       while (iterator.hasNext()) {
         Commit<TopicCommands.Listen> listener = iterator.next().getValue();
-        if (listener.session().state() == Session.State.OPEN) {
+        if (listener.session().state() == ServerSession.State.OPEN) {
           listener.session().publish("message", commit.operation().message());
         } else {
           iterator.remove();

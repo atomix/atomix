@@ -15,8 +15,8 @@
  */
 package io.atomix.messaging.state;
 
-import io.atomix.copycat.client.session.Session;
 import io.atomix.copycat.server.Commit;
+import io.atomix.copycat.server.session.ServerSession;
 import io.atomix.copycat.server.session.SessionListener;
 import io.atomix.messaging.DistributedTaskQueue;
 import io.atomix.resource.ResourceStateMachine;
@@ -35,7 +35,7 @@ import java.util.concurrent.LinkedBlockingDeque;
  */
 public class TaskQueueState extends ResourceStateMachine implements SessionListener {
   private final Map<Long, Commit<TaskQueueCommands.Subscribe>> workers = new HashMap<>();
-  private final Queue<Session> workerQueue = new ArrayDeque<>();
+  private final Queue<ServerSession> workerQueue = new ArrayDeque<>();
   private final LinkedBlockingDeque<Commit<TaskQueueCommands.Submit>> taskQueue = new LinkedBlockingDeque<>();
   private final Map<Long, Commit<TaskQueueCommands.Submit>> processing = new HashMap<>();
 
@@ -44,7 +44,7 @@ public class TaskQueueState extends ResourceStateMachine implements SessionListe
   }
 
   @Override
-  public void close(Session session) {
+  public void close(ServerSession session) {
     // Remove and close the subscription.
     Commit<TaskQueueCommands.Subscribe> commit = workers.remove(session.id());
     if (commit != null)
@@ -55,7 +55,7 @@ public class TaskQueueState extends ResourceStateMachine implements SessionListe
 
     Commit<TaskQueueCommands.Submit> task = processing.remove(session.id());
     if (task != null) {
-      Session next = workerQueue.poll();
+      ServerSession next = workerQueue.poll();
       if (next != null) {
         next.publish("process", task.operation().task());
       } else {
@@ -91,7 +91,7 @@ public class TaskQueueState extends ResourceStateMachine implements SessionListe
    */
   public void submit(Commit<TaskQueueCommands.Submit> commit) {
     try {
-      Session session = workerQueue.poll();
+      ServerSession session = workerQueue.poll();
       if (session != null) {
         session.publish("process", commit.operation().task());
         processing.put(session.id(), commit);
@@ -118,7 +118,7 @@ public class TaskQueueState extends ResourceStateMachine implements SessionListe
       }
 
       // Send an ack message to the session that submitted the task.
-      if (acked.operation().ack() && acked.session().state() == Session.State.OPEN) {
+      if (acked.operation().ack() && acked.session().state() == ServerSession.State.OPEN) {
         acked.session().publish("ack", acked.operation().id());
       }
 

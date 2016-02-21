@@ -15,7 +15,7 @@
  */
 package io.atomix.resource;
 
-import io.atomix.copycat.client.Command;
+import io.atomix.copycat.Command;
 
 /**
  * Resource write consistency level.

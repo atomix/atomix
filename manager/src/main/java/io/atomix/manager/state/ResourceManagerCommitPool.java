@@ -15,8 +15,8 @@
  */
 package io.atomix.manager.state;
 
-import io.atomix.copycat.client.session.Session;
 import io.atomix.copycat.server.Commit;
+import io.atomix.copycat.server.session.ServerSession;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -37,7 +37,7 @@ class ResourceManagerCommitPool {
    * @return The acquired resource commit.
    */
   @SuppressWarnings("unchecked")
-  public ResourceManagerCommit acquire(Commit commit, Session session) {
+  public ResourceManagerCommit acquire(Commit commit, ServerSession session) {
     ResourceManagerCommit resourceCommit = pool.poll();
     if (resourceCommit == null) {
       resourceCommit = new ResourceManagerCommit(this);
