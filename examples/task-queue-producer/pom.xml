@@ -19,7 +19,7 @@
   <parent>
     <groupId>io.atomix</groupId>
     <artifactId>atomix-examples-parent</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.0-rc2</version>
   </parent>
 
   <artifactId>atomix-task-queue-producer-example</artifactId>
