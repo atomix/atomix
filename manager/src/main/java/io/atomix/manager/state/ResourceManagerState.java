@@ -16,11 +16,11 @@
 package io.atomix.manager.state;
 
 import io.atomix.catalyst.util.Assert;
-import io.atomix.copycat.client.session.Session;
 import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.Snapshottable;
 import io.atomix.copycat.server.StateMachine;
 import io.atomix.copycat.server.StateMachineExecutor;
+import io.atomix.copycat.server.session.ServerSession;
 import io.atomix.copycat.server.session.SessionListener;
 import io.atomix.copycat.server.storage.snapshot.SnapshotReader;
 import io.atomix.copycat.server.storage.snapshot.SnapshotWriter;
@@ -95,7 +95,7 @@ public class ResourceManagerState extends StateMachine implements SessionListene
       throw new ResourceManagerException("unknown resource: " + resourceId);
     }
 
-    Session session;
+    ServerSession session;
 
     // If the session exists for the resource, use the existing session.
     SessionHolder sessionHolder = resource.sessions.get(commit.session().id());
@@ -296,11 +296,11 @@ public class ResourceManagerState extends StateMachine implements SessionListene
   }
 
   @Override
-  public void register(Session session) {
+  public void register(ServerSession session) {
   }
 
   @Override
-  public void expire(Session session) {
+  public void expire(ServerSession session) {
     for (ResourceHolder resource : resources.values()) {
       SessionHolder sessionHolder = resource.sessions.get(session.id());
       if (sessionHolder != null) {
@@ -310,7 +310,7 @@ public class ResourceManagerState extends StateMachine implements SessionListene
   }
 
   @Override
-  public void unregister(Session session) {
+  public void unregister(ServerSession session) {
     for (ResourceHolder resource : resources.values()) {
       SessionHolder sessionHolder = resource.sessions.get(session.id());
       if (sessionHolder != null) {
@@ -320,7 +320,7 @@ public class ResourceManagerState extends StateMachine implements SessionListene
   }
 
   @Override
-  public void close(Session session) {
+  public void close(ServerSession session) {
     for (ResourceHolder resource : resources.values()) {
       SessionHolder sessionHolder = resource.sessions.remove(session.id());
       if (sessionHolder != null) {

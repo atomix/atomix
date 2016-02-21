@@ -19,7 +19,7 @@ import io.atomix.catalyst.util.Listener;
 import io.atomix.catalyst.util.Listeners;
 import io.atomix.coordination.state.GroupCommands;
 import io.atomix.coordination.state.GroupState;
-import io.atomix.copycat.client.Command;
+import io.atomix.copycat.Command;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceTypeInfo;

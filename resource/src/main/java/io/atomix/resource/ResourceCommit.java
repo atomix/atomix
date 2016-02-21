@@ -16,9 +16,9 @@
 package io.atomix.resource;
 
 import io.atomix.catalyst.util.Assert;
-import io.atomix.copycat.client.Operation;
-import io.atomix.copycat.client.session.Session;
+import io.atomix.copycat.Operation;
 import io.atomix.copycat.server.Commit;
+import io.atomix.copycat.server.session.ServerSession;
 
 import java.time.Instant;
 
@@ -40,7 +40,7 @@ public class ResourceCommit<T extends Operation> implements Commit<T> {
   }
 
   @Override
-  public Session session() {
+  public ServerSession session() {
     return parent.session();
   }
 

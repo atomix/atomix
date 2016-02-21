@@ -15,7 +15,7 @@
  */
 package io.atomix.resource;
 
-import io.atomix.copycat.client.Query;
+import io.atomix.copycat.Query;
 
 /**
  * Resource query.

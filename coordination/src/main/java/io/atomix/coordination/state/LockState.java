@@ -17,8 +17,8 @@ package io.atomix.coordination.state;
 
 import io.atomix.catalyst.util.concurrent.Scheduled;
 import io.atomix.coordination.DistributedLock;
-import io.atomix.copycat.client.session.Session;
 import io.atomix.copycat.server.Commit;
+import io.atomix.copycat.server.session.ServerSession;
 import io.atomix.copycat.server.session.SessionListener;
 import io.atomix.resource.ResourceStateMachine;
 import io.atomix.resource.ResourceType;
@@ -44,7 +44,7 @@ public class LockState extends ResourceStateMachine implements SessionListener {
   }
 
   @Override
-  public void close(Session session) {
+  public void close(ServerSession session) {
     if (lock != null && lock.session().id() == session.id()) {
       lock.close();
       lock = queue.poll();
@@ -53,7 +53,7 @@ public class LockState extends ResourceStateMachine implements SessionListener {
         if (timer != null)
           timer.cancel();
 
-        if (lock.session().state() == Session.State.EXPIRED || lock.session().state() == Session.State.CLOSED) {
+        if (lock.session().state() == ServerSession.State.EXPIRED || lock.session().state() == ServerSession.State.CLOSED) {
           lock = queue.poll();
         } else {
           lock.session().publish("lock", new LockCommands.LockEvent(lock.operation().id(), lock.index()));
@@ -111,7 +111,7 @@ public class LockState extends ResourceStateMachine implements SessionListener {
           if (timer != null)
             timer.cancel();
 
-          if (lock.session().state() == Session.State.EXPIRED || lock.session().state() == Session.State.CLOSED) {
+          if (lock.session().state() == ServerSession.State.EXPIRED || lock.session().state() == ServerSession.State.CLOSED) {
             lock = queue.poll();
           } else {
             lock.session().publish("lock", new LockCommands.LockEvent(lock.operation().id(), lock.index()));

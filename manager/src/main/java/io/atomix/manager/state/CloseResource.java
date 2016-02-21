@@ -19,7 +19,7 @@ import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
 import io.atomix.catalyst.serializer.Serializer;
-import io.atomix.copycat.client.Command;
+import io.atomix.copycat.Command;
 
 /**
  * Close resource command.

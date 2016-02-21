@@ -16,9 +16,10 @@
 package io.atomix.messaging.state;
 
 import io.atomix.catalyst.transport.Address;
-import io.atomix.copycat.client.session.Session;
 import io.atomix.copycat.server.Commit;
+import io.atomix.copycat.server.session.ServerSession;
 import io.atomix.copycat.server.session.SessionListener;
+import io.atomix.copycat.session.Session;
 import io.atomix.messaging.DistributedMessageBus;
 import io.atomix.resource.ResourceStateMachine;
 import io.atomix.resource.ResourceType;
@@ -39,7 +40,7 @@ public class MessageBusState extends ResourceStateMachine implements SessionList
   }
 
   @Override
-  public void close(Session session) {
+  public void close(ServerSession session) {
     members.remove(session.id());
     for (Commit<MessageBusCommands.Join> member : members.values()) {
       if (member.session().state() == Session.State.OPEN)

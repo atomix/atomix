@@ -15,9 +15,9 @@
  */
 package io.atomix.manager.state;
 
-import io.atomix.copycat.client.Operation;
-import io.atomix.copycat.client.session.Session;
+import io.atomix.copycat.Operation;
 import io.atomix.copycat.server.Commit;
+import io.atomix.copycat.server.session.ServerSession;
 import io.atomix.resource.InstanceOperation;
 
 import java.time.Instant;
@@ -30,7 +30,7 @@ import java.time.Instant;
 class ResourceManagerCommit implements Commit {
   private final ResourceManagerCommitPool pool;
   private Commit<InstanceOperation<?, ?>> commit;
-  private Session session;
+  private ServerSession session;
   private volatile boolean open;
 
   public ResourceManagerCommit(ResourceManagerCommitPool pool) {
@@ -43,7 +43,7 @@ class ResourceManagerCommit implements Commit {
    * @param commit The parent commit.
    * @param session The resource session.
    */
-  void reset(Commit<InstanceOperation<?, ?>> commit, Session session) {
+  void reset(Commit<InstanceOperation<?, ?>> commit, ServerSession session) {
     this.commit = commit;
     this.session = session;
     open = true;
@@ -55,7 +55,7 @@ class ResourceManagerCommit implements Commit {
   }
 
   @Override
-  public Session session() {
+  public ServerSession session() {
     return session;
   }
 

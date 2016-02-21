@@ -16,12 +16,10 @@
 package io.atomix.manager.state;
 
 import io.atomix.catalyst.util.Listener;
-import io.atomix.catalyst.util.Listeners;
-import io.atomix.copycat.client.session.Session;
+import io.atomix.copycat.server.session.ServerSession;
+import io.atomix.copycat.session.Session;
 import io.atomix.resource.InstanceEvent;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 /**
@@ -29,12 +27,11 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-final class ManagedResourceSession implements Session {
+final class ManagedResourceSession implements ServerSession {
   private final long resource;
-  private final Session parent;
-  private final Map<String, Listeners<Object>> eventListeners = new ConcurrentHashMap<>();
+  private final ServerSession parent;
 
-  public ManagedResourceSession(long resource, Session parent) {
+  public ManagedResourceSession(long resource, ServerSession parent) {
     this.resource = resource;
     this.parent = parent;
   }
@@ -62,39 +59,6 @@ final class ManagedResourceSession implements Session {
   @Override
   public Session publish(String event, Object message) {
     return parent.publish(event, new InstanceEvent<>(resource, message));
-  }
-
-  /**
-   * handles receiving an event.
-   */
-  @SuppressWarnings("unchecked")
-  private void handleEvent(String event, InstanceEvent message) {
-    if (message.resource() == resource) {
-      Listeners<Object> listeners = eventListeners.get(event);
-      if (listeners != null) {
-        for (Consumer listener : listeners) {
-          listener.accept(message.message());
-        }
-      }
-    }
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public Listener<Void> onEvent(String event, Runnable callback) {
-    return onEvent(event, v -> callback.run());
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public synchronized Listener onEvent(String event, Consumer listener) {
-    Listeners listeners = eventListeners.get(event);
-    if (listeners == null) {
-      listeners = new Listeners();
-      eventListeners.put(event, listeners);
-      parent.onEvent(event, message -> handleEvent(event, (InstanceEvent) message));
-    }
-    return listeners.add(listener);
   }
 
   @Override

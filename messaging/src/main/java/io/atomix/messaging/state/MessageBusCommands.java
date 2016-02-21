@@ -23,7 +23,7 @@ import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.util.Assert;
-import io.atomix.copycat.client.Command;
+import io.atomix.copycat.Command;
 import io.atomix.messaging.Message;
 
 import java.util.Map;

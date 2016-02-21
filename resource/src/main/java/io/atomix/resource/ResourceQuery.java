@@ -18,7 +18,7 @@ package io.atomix.resource;
 import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.Serializer;
-import io.atomix.copycat.client.Query;
+import io.atomix.copycat.Query;
 
 /**
  * Resource query.
