@@ -38,6 +38,11 @@ public final class TaskQueueCommands {
    */
   public static abstract class TaskQueueCommand<T> implements Command<T>, CatalystSerializable {
     @Override
+    public CompactionMode compaction() {
+      return CompactionMode.QUORUM;
+    }
+
+    @Override
     public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
 
     }
