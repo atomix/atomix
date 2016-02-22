@@ -34,7 +34,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 /**
- * Provides a mechanism for managing group membership and remote scheduling and execution.
+ * Generic group abstraction for managing group membership, service discovery, leader election, and remote
+ * scheduling and execution.
  * <p>
  * The distributed membership group resource facilitates managing group membership within the Atomix cluster.
  * Each instance of a {@code DistributedGroup} resource represents a single {@link GroupMember}.
@@ -50,8 +51,7 @@ import java.util.function.Consumer;
  *   });
  *   }
  * </pre>
- * <b>Joining the group</b>
- * <p>
+ * <h2>Joining the group</h2>
  * When a new instance of the resource is created, it is initialized with an empty {@link #members()} list
  * as it is not yet a member of the group. Once the instance has been created, the user must join the group
  * via {@link #join()}:
@@ -72,8 +72,58 @@ import java.util.function.Consumer;
  *   });
  *   }
  * </pre>
- * <b>Remote execution</b>
+ * <h2>Listing the members in the group</h2>
+ * Users of the distributed group do not have to join the group to interact with it. For instance, while a server
+ * may participate in the group by joining it, a client may interact with the group just to get a list of available
+ * members. To access the list of group members, use the {@link #members()} getter:
+ * <pre>
+ *   {@code
+ *   DistributedGroup group = atomix.getGroup("foo").get();
+ *   for (GroupMember member : group.members()) {
+ *     ...
+ *   }
+ *   }
+ * </pre>
+ * Once the group instance has been created, the group membership will be automatically updated each time the structure
+ * of the group changes. However, in the event that the client becomes disconnected from the cluster, it may not receive
+ * notifications of changes in the group structure.
+ * <h2>Leader election</h2>
+ * The {@code DistributedGroup} resource facilitates leader election which can be used to coordinate a group by
+ * ensuring only a single member of the group performs some set of operations at any given time. Leader election
+ * is a core concept of membership groups, and because leader election is a low-overhead process, leaders are
+ * elected for each group automatically.
  * <p>
+ * Leaders are elected using a fair policy. The first member to {@link #join() join} a group will always become the
+ * initial group leader. Each unique leader in a group is associated with a {@link #term() term}. The term is a
+ * globally unique, monotonically increasing token that can be used for fencing. Users can listen for changes in
+ * group terms and leaders with event listeners:
+ * <pre>
+ *   {@code
+ *   DistributedGroup group = atomix.getGroup("foo").get();
+ *   group.onTerm(term -> {
+ *     ...
+ *   });
+ *   group.onElection(leader -> {
+ *     ...
+ *   });
+ *   }
+ * </pre>
+ * The {@link #term() term} is guaranteed to be incremented prior to the election of a new {@link #leader() leader},
+ * and only a single leader for any given term will ever be elected. Each instance of a group is guaranteed to see
+ * terms and leaders progress monotonically, and no two leaders can exist in the same term. In that sense, the
+ * terminology and constrains of leader election in Atomix borrow heavily from the Raft algorithm that underlies it.
+ * <p>
+ * While terms and leaders are guaranteed to progress in the same order from the perspective of all clients of
+ * the resource, Atomix cannot guarantee that two leaders cannot exist at any given time. The group state machine
+ * will make a best effort attempt to ensure that all clients are notified of a term or leader change prior to the
+ * change being completed, but arbitrary process pauses due to garbage collection and other effects can cause a client's
+ * session to expire and thus prevent the client from being updated in real time. Only clients that can maintain their
+ * session are guaranteed to have a consistent view of the membership, term, and leader in the group at any given
+ * time.
+ * <p>
+ * To guard against inconsistencies resulting from arbitrary process pauses, clients can use the monotonically
+ * increasing term for coordination and managing optimistic access to external resources.
+ * <h2>Remote execution</h2>
  * Once members of the group, any member can {@link GroupMember#execute(Runnable) execute} immediate callbacks or
  * {@link GroupMember#schedule(Duration, Runnable) schedule} delayed callbacks to be run on any other member of the
  * group. Submitting a {@link Runnable} callback to a member will cause it to be serialized and sent to that node
@@ -81,11 +131,47 @@ import java.util.function.Consumer;
  * <pre>
  *   {@code
  *   group.onJoin(member -> {
- *     long memberId = member.id();
+ *     String memberId = member.id();
  *     member.execute((Serializable & Runnable) () -> System.out.println("Executing on " + memberId));
  *   });
  *   }
  * </pre>
+ * <h3>Implementation</h3>
+ * Group state is managed in a Copycat replicated {@link io.atomix.copycat.server.StateMachine}. When a
+ * {@code DistributedGroup} is created, an instance of the group state machine is created on each replica in
+ * the cluster. The state machine instance manages state for the specific membership group. When a member
+ * {@link #join() joins} the group, a join request is sent to the cluster and logged and replicated before
+ * being applied to the group state machine. Once the join request has been committed and applied to the
+ * state machine, the group state is updated and existing group members are notified by
+ * {@link io.atomix.copycat.server.session.ServerSession#publish(String, Object) publishing} state change
+ * notifications to open instances of the group. Membership change event notifications are received by all
+ * open instances of the resource.
+ * <p>
+ * Leader election is performed by the group state machine. When the first member joins the group, that
+ * member will automatically be assigned as the group member. Each time an additional member joins the group,
+ * the new member will be placed in a leader queue. In the event that the current group leader's
+ * {@link io.atomix.copycat.session.Session} expires or is closed, the group state machine will assign a new
+ * leader by pulling from the leader queue and will publish an {@code elect} event to all remaining group
+ * members. Additionally, for each new leader of the group, the state machine will publish a {@code term} change
+ * event, providing a globally unique, monotonically increasing token uniquely associated with the new leader.
+ * <p>
+ * To track group membership, the group state machine tracks the state of the {@link io.atomix.copycat.session.Session}
+ * associated with each open instance of the group. In the event that the session expires or is closed, the group
+ * member associated with that session will automatically be removed from the group and remaining instances
+ * of the group will be notified.
+ * <p>
+ * The group state machine facilitates messaging and remote execution by routing serialize messages and callbacks
+ * to specific members of the group by publishing event messages to the desired resource session. Messages and
+ * callbacks are logged and replicated like any other state change in the group. Once a message or callback has
+ * been successfully published and received by the appropriate client, the associated commit is released from
+ * the state machine and will be removed from the log during compaction.
+ * <p>
+ * The group state machine manages compaction of the replicated log by tracking which state changes contribute to
+ * the state of the group at any given time. For instance, when a member joins the group, the commit that added the
+ * member to the group contributes to the group's state as long as the member remains a part of the group. Once the
+ * member leaves the group or its session is expired, the commit that created and remove the member no longer contribute
+ * to the group's state and are therefore released from the state machine and will be removed from the log during
+ * compaction.
  *
  * @see GroupMember
  *
@@ -191,6 +277,18 @@ public class DistributedGroup extends Resource<DistributedGroup> {
 
   /**
    * Returns the current group leader.
+   * <p>
+   * The returned leader is the last known leader for the group. The leader is associated with
+   * the current {@link #term()} which is guaranteed to be unique and monotonically increasing.
+   * All resource instances are guaranteed to see leader changes in the same order. If a leader
+   * leaves the group, it is guaranteed that all open resource instances are notified of the change
+   * in leadership prior to the leave operation being completed. This guarantee is maintained only
+   * as long as the resource's session remains open.
+   * <p>
+   * The leader is <em>not</em> guaranteed to be consistent across the cluster at any given point
+   * in time. For example, a long garbage collection pause can result in the resource's session expiring
+   * and the resource failing to increment the leader at the appropriate time. Users should use
+   * the {@link #term()} for fencing when interacting with external systems.
    *
    * @return The current group leader.
    */
@@ -200,6 +298,21 @@ public class DistributedGroup extends Resource<DistributedGroup> {
 
   /**
    * Returns the current group term.
+   * <p>
+   * The term is a globally unique, monotonically increasing token that represents an epoch.
+   * All resource instances are guaranteed to see term changes in the same order. If a leader
+   * leaves the group, it is guaranteed that the term will be incremented and all open resource
+   * instances are notified of the term change prior to the leave operation being completed. However,
+   * this guarantee is maintained only as long as the resource's session remains open.
+   * <p>
+   * For any given term, the group guarantees that a single {@link #leader()} will be elected
+   * and any leader elected after the leader for this term will be associated with a higher
+   * term.
+   * <p>
+   * The term is <em>not</em> guaranteed to be unique across the cluster at any given point in time.
+   * For example, a long garbage collection pause can result in the resource's session expiring and the
+   * resource failing to increment the term at the appropriate time. Users should use the term for
+   * fencing when interacting with external systems.
    *
    * @return The current group term.
    */
@@ -209,6 +322,9 @@ public class DistributedGroup extends Resource<DistributedGroup> {
 
   /**
    * Registers a callback to be called when the term changes.
+   * <p>
+   * The provided callback will be called when a term change notification is received by the resource.
+   * The returned {@link Listener} can be used to unregister the term listener via {@link Listener#close()}.
    *
    * @param callback The callback to be called when the term changes.
    * @return The term listener.
@@ -219,6 +335,9 @@ public class DistributedGroup extends Resource<DistributedGroup> {
 
   /**
    * Registers a callback to be called when a member of the group is elected leader.
+   * <p>
+   * The provided callback will be called when notification of a leader change is received by the resource.
+   * The returned {@link Listener} can be used to unregister the term listener via {@link Listener#close()}.
    *
    * @param callback The callback to call when a member of the group is elected leader.
    * @return The leader election listener.

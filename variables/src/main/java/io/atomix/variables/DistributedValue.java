@@ -22,7 +22,30 @@ import io.atomix.variables.state.ValueCommands;
 import io.atomix.variables.state.ValueState;
 
 /**
- * Distributed value.
+ * Stores a single replicated value, providing atomic operations for modifying the value.
+ * <p>
+ * The value resource stores a single value that can be accessed across the Atomix cluster. The value
+ * must be of a type that is serializable by the {@link io.atomix.catalyst.serializer.Serializer} on
+ * any client that opens the resource and on all replicas in the cluster. Atomic operations like
+ * {@link #compareAndSet(Object, Object)} can be used to check and update the state of the value.
+ * <pre>
+ *   {@code
+ *   DistributedValue<String> value = atomix.getValue("foo").get();
+ *   value.compareAndSet("foo", "bar").thenAccept(succeeded -> {
+ *     ...
+ *   });
+ *   }
+ * </pre>
+ * Changes to the state of the value are linearizable and are therefore guaranteed to take place some
+ * time between the invocation of a state changing method and the completion of the returned
+ * {@link java.util.concurrent.CompletableFuture}.
+ * <h3>Implementation</h3>
+ * State management for the {@code DistributedValue} resource is implemented as a basic Copycat
+ * {@link io.atomix.copycat.server.StateMachine}. Changes to the value are written to a log and replicated
+ * to a majority of the cluster before being applied to the state machine. State change are applied to the
+ * state machine atomically, and the state machine keeps track of state changes that apply to the current
+ * system state. Once a write no longer contributes to the state machine's state, it is released to be
+ * removed from the log during compaction.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
