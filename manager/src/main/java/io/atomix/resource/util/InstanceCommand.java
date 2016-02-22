@@ -13,12 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.resource;
+package io.atomix.resource.util;
 
 import io.atomix.copycat.Command;
+import io.atomix.resource.Resource;
 
 /**
- * Resource command.
+ * Instance-level resource command.
+ * <p>
+ * Instance commands are submitted by {@link Resource} instances to a specific state machine
+ * in the Atomix cluster. The command {@link #resource()} identifies the state machine to which
+ * the command is being submitted.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

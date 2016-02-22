@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.resource;
+package io.atomix.resource.util;
 
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.transport.Transport;
@@ -22,12 +22,13 @@ import io.atomix.catalyst.util.Listener;
 import io.atomix.catalyst.util.concurrent.Futures;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.copycat.Command;
-import io.atomix.copycat.client.CopycatClient;
 import io.atomix.copycat.Query;
+import io.atomix.copycat.client.CopycatClient;
 import io.atomix.copycat.session.Session;
 import io.atomix.manager.state.CloseResource;
 import io.atomix.manager.state.DeleteResource;
 import io.atomix.manager.state.GetResource;
+import io.atomix.resource.Resource;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -38,13 +39,18 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
 
 /**
- * Resource context.
+ * Special {@link CopycatClient} implementation for operating on server-side replicated state
+ * on behalf of a client-side {@link Resource} instance.
+ * <p>
+ * The instance client handles submission of {@link Command commands} and {@link Query queries}
+ * for a {@link Resource} instance. It handles wrapping client operations in {@link InstanceCommand}
+ * and {@link InstanceQuery} to route resource operations to the appropriate replicated state machine.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public final class InstanceClient implements CopycatClient {
   private volatile long resource;
-  private final Instance instance;
+  private final ResourceInstance instance;
   private final CopycatClient client;
   private volatile Session clientSession;
   private volatile InstanceSession session;
@@ -57,7 +63,7 @@ public final class InstanceClient implements CopycatClient {
   private volatile CompletableFuture<CopycatClient> recoverFuture;
   private volatile CompletableFuture<Void> closeFuture;
 
-  public InstanceClient(Instance instance, CopycatClient client) {
+  public InstanceClient(ResourceInstance instance, CopycatClient client) {
     this.instance = Assert.notNull(instance, "instance");
     this.client = Assert.notNull(client, "client");
     this.state = State.CLOSED;
@@ -123,8 +129,10 @@ public final class InstanceClient implements CopycatClient {
 
   @Override
   public <T> CompletableFuture<T> submit(Command<T> command) {
-    if (command instanceof ResourceStateMachine.DeleteCommand) {
-      return client.submit(new InstanceCommand<>(resource, command)).thenCompose(v -> client.submit(new DeleteResource(resource))).thenApply(result -> null);
+    if (command instanceof ResourceCommand.Delete) {
+      return client.submit(new InstanceCommand<>(resource, command))
+        .thenCompose(v -> client.submit(new DeleteResource(resource)))
+        .thenApply(result -> null);
     }
     return client.submit(new InstanceCommand<>(resource, command));
   }

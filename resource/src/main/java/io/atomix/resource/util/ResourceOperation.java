@@ -13,50 +13,53 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.resource;
+package io.atomix.resource.util;
 
 import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
+import io.atomix.catalyst.serializer.CatalystSerializable;
 import io.atomix.catalyst.serializer.Serializer;
-import io.atomix.copycat.Query;
+import io.atomix.copycat.Operation;
 
 /**
- * Resource query.
+ * Base class for resource operations.
  *
+ * @see ResourceCommand
+ * @see ResourceQuery
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public final class ResourceQuery<T extends Query<U>, U> extends ResourceOperation<T, U> implements Query<U> {
-  private ConsistencyLevel consistency;
+public abstract class ResourceOperation<T extends Operation<U>, U> implements Operation<U>, CatalystSerializable {
+  protected T operation;
 
-  public ResourceQuery() {
+  protected ResourceOperation() {
   }
 
-  public ResourceQuery(T query, ConsistencyLevel consistency) {
-    super(query);
-    this.consistency = consistency;
+  protected ResourceOperation(T operation) {
+    this.operation = operation;
   }
 
-  @Override
-  public ConsistencyLevel consistency() {
-    ConsistencyLevel consistency = operation.consistency();
-    return consistency != null ? consistency : this.consistency;
+  /**
+   * Returns the resource operation.
+   *
+   * @return The resource operation.
+   */
+  public T operation() {
+    return operation;
   }
 
   @Override
   public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
-    super.writeObject(buffer, serializer);
-    buffer.writeByte(consistency.ordinal());
+    serializer.writeObject(operation, buffer);
   }
 
   @Override
   public void readObject(BufferInput<?> buffer, Serializer serializer) {
-    super.readObject(buffer, serializer);
-    consistency = ConsistencyLevel.values()[buffer.readByte()];
+    operation = serializer.readObject(buffer);
   }
 
   @Override
   public String toString() {
-    return String.format("%s[query=%s, consistency=%s]", getClass().getSimpleName(), operation, consistency());
+    return String.format("%s[operation=%s]", getClass().getSimpleName(), operation.getClass().getSimpleName());
   }
 
 }

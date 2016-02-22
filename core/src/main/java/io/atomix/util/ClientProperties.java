@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix;
+package io.atomix.util;
 
 import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.ConfigurationException;
@@ -27,7 +27,7 @@ import java.util.Properties;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-final class ClientProperties extends AtomixProperties {
+public final class ClientProperties extends AtomixProperties {
   public static final String TRANSPORT = "client.transport";
 
   private static final String DEFAULT_TRANSPORT = "io.atomix.catalyst.transport.NettyTransport";

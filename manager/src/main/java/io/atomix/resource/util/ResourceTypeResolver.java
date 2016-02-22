@@ -13,32 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.resource;
-
-import io.atomix.copycat.Query;
+package io.atomix.resource.util;
 
 /**
- * Resource query.
+ * The resource type resolver is responsible for locating resource types.
+ * <p>
+ * Users can implement custom resource type resolvers to automatically register serializers. See
+ * {@link ServiceLoaderResourceResolver} for an example implementation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public final class InstanceQuery<T extends Query<U>, U> extends InstanceOperation<T, U> implements Query<U> {
+public interface ResourceTypeResolver {
 
-  public InstanceQuery() {
-  }
-
-  public InstanceQuery(long resource, T query) {
-    super(resource, query);
-  }
-
-  @Override
-  public ConsistencyLevel consistency() {
-    return operation.consistency();
-  }
-
-  @Override
-  public String toString() {
-    return String.format("%s[resource=%d, query=%s, consistency=%s]", getClass().getSimpleName(), resource, operation, consistency());
-  }
+  /**
+   * Registers resource types on the given {@link ResourceRegistry} instance.
+   *
+   * @param registry The serializer registry.
+   */
+  void resolve(ResourceRegistry registry);
 
 }

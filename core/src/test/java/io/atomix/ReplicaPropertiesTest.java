@@ -20,6 +20,7 @@ import io.atomix.catalyst.transport.NettyTransport;
 import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.PropertiesReader;
 import io.atomix.copycat.server.storage.StorageLevel;
+import io.atomix.util.ReplicaProperties;
 import org.testng.annotations.Test;
 
 import java.io.File;

@@ -15,7 +15,7 @@
  */
 
 /**
- * Provides classes and interfaces for creating and operating on Raft replicated state machines.
+ * Base classes and interfaces for creating and operating on replicated state machines in Atomix.
  * <p>
  * This package provides base classes for Atomix distributed resources. At their core, distributed resources are standalone
  * Copycat {@link io.atomix.copycat.server.StateMachine} implementations which can be accessed by a high-level proxy API.

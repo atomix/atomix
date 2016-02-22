@@ -23,6 +23,8 @@ import io.atomix.copycat.Command;
 import io.atomix.copycat.Query;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.copycat.session.Session;
+import io.atomix.resource.util.ResourceCommand;
+import io.atomix.resource.util.ResourceQuery;
 
 import java.io.Serializable;
 import java.util.Properties;
@@ -57,7 +59,15 @@ import java.util.function.Consumer;
 public abstract class Resource<T extends Resource<T>> implements Managed<T> {
 
   /**
-   * Resource configuration.
+   * Base class for cluster-wide resource configurations.
+   * <p>
+   * Configurations can be {@link #configure(Config) submitted} by any client with an open {@link Resource}
+   * instance. Configurations are cluster-wide and affect the resource from the perspective of <em>all</em>
+   * clients. Specifically, resource configurations are committed to the cluster, replicated, and applied
+   * to the server-side replicated state machine for the resource.
+   * <p>
+   * Resource configurations control options specific to the resource's replicated {@link ResourceStateMachine}.
+   * These options might include a maximum collection size or the order of values in a multi-map.
    */
   public static class Config extends Properties implements Serializable {
     public Config() {
@@ -69,7 +79,13 @@ public abstract class Resource<T extends Resource<T>> implements Managed<T> {
   }
 
   /**
-   * Resource options.
+   * Base class for local resource options.
+   * <p>
+   * Options are configurations that are specific to a local resource instance. The first time a resource
+   * is created by a client, the client may provide {@code Options} specifying the behavior of the resource
+   * instance. Those initial options configure the behavior of the resource instance on the local node only.
+   * For instance, options may include an {@link io.atomix.catalyst.transport.Address Address} to which to
+   * bind a server or a default {@link WriteConsistency} level.
    */
   public static class Options extends Properties {
     public Options() {
@@ -81,7 +97,7 @@ public abstract class Resource<T extends Resource<T>> implements Managed<T> {
   }
 
   /**
-   * Indicates the state of the resource's communication with the cluster.
+   * Resource session state constants.
    * <p>
    * The resource state is indicative of the resource's ability to communicate with the cluster within the
    * context of the underlying {@link Session}. In some cases, resource state changes may be indicative of a
@@ -164,8 +180,8 @@ public abstract class Resource<T extends Resource<T>> implements Managed<T> {
 
     client.serializer().register(ResourceCommand.class, -50);
     client.serializer().register(ResourceQuery.class, -51);
-    client.serializer().register(ResourceStateMachine.ConfigureCommand.class, -52);
-    client.serializer().register(ResourceStateMachine.DeleteCommand.class, -53);
+    client.serializer().register(ResourceCommand.Configure.class, -52);
+    client.serializer().register(ResourceCommand.Delete.class, -53);
 
     try {
       client.serializer().resolve(type.typeResolver().newInstance());
@@ -228,14 +244,19 @@ public abstract class Resource<T extends Resource<T>> implements Managed<T> {
   }
 
   /**
-   * Configures the resource.
+   * Configures the cluster-wide resource.
+   * <p>
+   * The resource configuration will be submitted to the cluster, replicated, and applied on all
+   * state machines in the cluster. Once successful, the configuration is guaranteed to be applied
+   * on all replicas and all resource instances will rely on the updated configuration for linearizable
+   * operations.
    *
    * @param config The resource configuration.
    * @return A completable future to be completed once the resource has been configured.
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<T> configure(Config config) {
-    return client.submit(new ResourceStateMachine.ConfigureCommand(config)).thenApply(v -> (T) this);
+    return client.submit(new ResourceCommand.Configure(config)).thenApply(v -> (T) this);
   }
 
   /**
@@ -428,7 +449,7 @@ public abstract class Resource<T extends Resource<T>> implements Managed<T> {
    * @return A completable future to be completed once the resource has been deleted.
    */
   public CompletableFuture<Void> delete() {
-    return client.submit(new ResourceStateMachine.DeleteCommand());
+    return client.submit(new ResourceCommand.Delete());
   }
 
   @Override

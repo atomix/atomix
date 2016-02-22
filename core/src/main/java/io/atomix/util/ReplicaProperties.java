@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix;
+package io.atomix.util;
 
+import io.atomix.Quorum;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.ConfigurationException;
@@ -31,7 +32,7 @@ import java.util.Properties;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-final class ReplicaProperties extends AtomixProperties {
+public final class ReplicaProperties extends AtomixProperties {
   public static final String TRANSPORT = "replica.transport";
   public static final String ADDRESS = "replica.address";
   public static final String CLIENT_ADDRESS = "replica.clientAddress";

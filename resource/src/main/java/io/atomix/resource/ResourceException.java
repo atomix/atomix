@@ -16,7 +16,7 @@
 package io.atomix.resource;
 
 /**
- * Resource exception.
+ * Base class for Atomix resource exceptions.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */

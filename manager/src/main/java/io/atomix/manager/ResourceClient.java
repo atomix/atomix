@@ -25,7 +25,9 @@ import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.copycat.client.*;
 import io.atomix.manager.state.GetResourceKeys;
 import io.atomix.manager.state.ResourceExists;
+import io.atomix.manager.util.ResourceManagerTypeResolver;
 import io.atomix.resource.*;
+import io.atomix.resource.util.*;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -225,7 +227,7 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
     if (check == null) {
       if (options == null)
         options = new Resource.Options();
-      Instance instance = new Instance(key, type, Instance.Method.GET, this::close);
+      ResourceInstance instance = new ResourceInstance(key, type, this::close);
       InstanceClient client = new InstanceClient(instance, this.client);
       check = type.factory().create(client, options);
       instances.put(key, check);
@@ -257,13 +259,9 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
    *
    * @param instance The instance to close.
    */
-  private void close(Instance instance) {
-    if (instance.method() == Instance.Method.GET) {
-      synchronized (this) {
-        instances.remove(instance.key());
-        futures.remove(instance.key());
-      }
-    }
+  private synchronized void close(ResourceInstance instance) {
+    instances.remove(instance.key());
+    futures.remove(instance.key());
   }
 
   @Override

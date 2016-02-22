@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.resource;
+package io.atomix.resource.util;
 
 import io.atomix.catalyst.util.Assert;
 import io.atomix.copycat.Operation;
@@ -23,14 +23,14 @@ import io.atomix.copycat.server.session.ServerSession;
 import java.time.Instant;
 
 /**
- * Resource commit.
+ * Wrapper for resource commits.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class ResourceCommit<T extends Operation> implements Commit<T> {
   private final Commit<? extends ResourceOperation> parent;
 
-  ResourceCommit(Commit<? extends ResourceOperation> parent) {
+  public ResourceCommit(Commit<? extends ResourceOperation> parent) {
     this.parent = Assert.notNull(parent, "parent");
   }
 

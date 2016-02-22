@@ -19,6 +19,7 @@ import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.NettyTransport;
 import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.PropertiesReader;
+import io.atomix.util.ClientProperties;
 import org.testng.annotations.Test;
 
 import java.util.Properties;

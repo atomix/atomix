@@ -18,7 +18,7 @@ package io.atomix.manager.state;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.copycat.server.session.ServerSession;
 import io.atomix.copycat.session.Session;
-import io.atomix.resource.InstanceEvent;
+import io.atomix.resource.util.InstanceEvent;
 
 import java.util.function.Consumer;
 

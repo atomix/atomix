@@ -18,11 +18,16 @@ package io.atomix.resource;
 import io.atomix.catalyst.serializer.SerializableTypeResolver;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.copycat.client.CopycatClient;
+import io.atomix.resource.util.ResourceFactory;
 
 import java.lang.reflect.InvocationTargetException;
 
 /**
- * Resource type.
+ * Identifier for resource metadata and {@link ResourceStateMachine state machine} information.
+ * <p>
+ * Given a {@link Resource} class, the {@code ResourceType} provides information about that resource
+ * necessary to handle state changes and serialization in the cluster. Resource classes provided to
+ * the {@code ResourceType} constructor must be annotated with the {@link ResourceTypeInfo} annotation.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */

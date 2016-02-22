@@ -18,7 +18,7 @@ package io.atomix.manager.state;
 import io.atomix.copycat.Operation;
 import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.session.ServerSession;
-import io.atomix.resource.InstanceOperation;
+import io.atomix.resource.util.InstanceOperation;
 
 import java.time.Instant;
 
