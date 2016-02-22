@@ -52,9 +52,7 @@ import java.util.Properties;
  * Clients communicate with the cluster via a {@link Transport}. By default, the {@code NettyTransport} is used if
  * no transport is explicitly configured. Thus, if no transport is configured then the Netty transport is expected
  * to be available on the classpath.
- * <p>
- * <b>Client lifecycle</b>
- * <p>
+ * <h2>Client lifecycle</h2>
  * When a client is {@link #open() started}, the client will attempt to contact random servers in the provided
  * {@link Address} list to open a new session. Opening a client session requires only that the client be able to
  * communicate with at least one server which can communicate with the leader. Once a session has been opened,

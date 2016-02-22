@@ -20,13 +20,25 @@ import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Provides an interface to interacting with members of a {@link DistributedGroup}.
+ * A {@link DistributedGroup} member representing a member of the group controlled by a local
+ * or remote process.
  * <p>
  * A {@code GroupMember} represents a reference to a single instance of a resource which has
  * {@link DistributedGroup#join() joined} a membership group. Each member is guaranteed to
  * have a unique {@link #id()} throughout the lifetime of the distributed resource. Group members
  * can {@link #schedule(Duration, Runnable) schedule} or {@link #execute(Runnable) execute} callbacks
  * remotely on member nodes.
+ * <p>
+ * Group members support direct messaging via the {@link #send(String, Object)} method. Messages
+ * sent between group members must be associated with a {@link String} topic. The topic is used
+ * to identify the type of message being sent.
+ * <pre>
+ *   {@code
+ *   group.member("foo").send("bar", "Hello world!");
+ *   }
+ * </pre>
+ * Messages sent between group members are persisted and replicated in the cluster and are guaranteed
+ * to be received by the member as long as its session remains open.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
@@ -34,6 +46,9 @@ public interface GroupMember {
 
   /**
    * Returns the member ID.
+   * <p>
+   * The member ID is guaranteed to be unique across the cluster. Depending on how the member was
+   * constructed, it may be a user-provided identifier or an automatically generated {@link java.util.UUID}.
    *
    * @return The member ID.
    */
@@ -41,6 +56,10 @@ public interface GroupMember {
 
   /**
    * Returns a boolean value indicating whether this member is the current leader.
+   * <p>
+   * Whether this member is the current leader is dependent on the last known configuration of the membership
+   * group. If the local group instance is partitioned from the cluster, it may believe a member to be the
+   * leader when it has in fact been replaced.
    *
    * @return Indicates whether this member is the current leader.
    */
@@ -63,11 +82,16 @@ public interface GroupMember {
    * <p>
    * Group messaging guarantees sequential consistency such that members are guaranteed to receive messages
    * in the order in which they were sent. Messages will be sent according to the parent {@link DistributedGroup}'s
-   * {@link io.atomix.resource.Consistency consistency} level. If the consistency level is
-   * {@link io.atomix.resource.Consistency#ATOMIC} (the default), the returned {@link CompletableFuture} will
+   * {@link io.atomix.resource.WriteConsistency consistency} level. If the consistency level is
+   * {@link io.atomix.resource.WriteConsistency#ATOMIC} (the default), the returned {@link CompletableFuture} will
    * be completed once the member has received the message or has left the group. Note that the completion of
    * the returned future does not necessarily guarantee that the message was received and processed, only that
    * it was <em>either</em> received and processed <em>or</em> the member left the group or disconnected.
+   * <pre>
+   *   {@code
+   *   group.member("foo").send("bar", "Hello world!");
+   *   }
+   * </pre>
    *
    * @param topic The message topic.
    * @param message The message to send.

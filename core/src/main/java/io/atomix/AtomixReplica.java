@@ -72,7 +72,7 @@ import java.util.function.Consumer;
  * configured, the {@code NettyTransport} will be used and will thus be expected to be available on the classpath.
  * Similarly, if no storage module is configured, replicated commit logs will be written to
  * {@code System.getProperty("user.dir")} with a default log name.
- * <h3>Cluster management</h3>
+ * <h2>Cluster management</h2>
  * Atomix clusters are managed by a custom implementation of the <a href="https://raft.github.io/">Raft consensus algorithm</a>.
  * Raft is a leader-based system that requires a quorum of nodes to synchronously acknowledge a write. Typically,
  * Raft clusters consist of {@code 3} or {@code 5} nodes.
@@ -135,7 +135,7 @@ import java.util.function.Consumer;
  * be quickly replaced in the event of a network partition or other failure. Quick replacement of active
  * member nodes improves fault tolerance in cases where a majority of the active members in the cluster are
  * not lost simultaneously.
- * <h3>Storage</h3>
+ * <h2>Storage</h2>
  * Replicas manage resource and replicate and store resource state changes on disk. In order to do so, users
  * must configure the replica's {@link Storage} configuration via the {@link Builder#withStorage(Storage)} method.
  * Storage does not have to be identical on all replicas, but it is important to the desired level of fault-tolerance,
@@ -160,7 +160,7 @@ import java.util.function.Consumer;
  * storage level is recommended only for testing. Atomix cannot guarantee writes will not be lost with {@code MEMORY}
  * based logs. If a majority of the active replicas in the cluster are lost or partitioned, writes can be overwritten.
  * Using memory-based storage amounts to recreating the entire replica each time it's started.
- * <h3>Replica lifecycle</h3>
+ * <h2>Replica lifecycle</h2>
  * When the replica is {@link #open() started}, the replica will attempt to contact members in the configured
  * startup {@link Address} list. If any of the members are already in an active state, the replica will request
  * to join the cluster. During the process of joining the cluster, the replica will notify the current cluster
