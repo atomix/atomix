@@ -24,8 +24,8 @@ import io.atomix.copycat.server.session.ServerSession;
 import io.atomix.copycat.server.session.SessionListener;
 import io.atomix.copycat.server.storage.snapshot.SnapshotReader;
 import io.atomix.copycat.server.storage.snapshot.SnapshotWriter;
-import io.atomix.resource.InstanceOperation;
-import io.atomix.resource.ResourceRegistry;
+import io.atomix.resource.util.InstanceOperation;
+import io.atomix.resource.util.ResourceRegistry;
 import io.atomix.resource.ResourceStateMachine;
 import io.atomix.resource.ResourceType;
 

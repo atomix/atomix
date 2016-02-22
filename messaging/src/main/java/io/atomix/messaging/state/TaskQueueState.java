@@ -139,4 +139,11 @@ public class TaskQueueState extends ResourceStateMachine implements SessionListe
     }
   }
 
+  @Override
+  public void delete() {
+    workers.values().forEach(Commit::close);
+    taskQueue.forEach(Commit::close);
+    processing.values().forEach(Commit::close);
+  }
+
 }

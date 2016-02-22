@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.resource;
+package io.atomix.resource.util;
 
 import io.atomix.copycat.client.CopycatClient;
+import io.atomix.resource.Resource;
 
 /**
- * Resource factory.
+ * Constructs a resource instance given a client and resource options.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */

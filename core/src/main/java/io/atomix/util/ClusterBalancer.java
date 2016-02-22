@@ -109,7 +109,7 @@ public class ClusterBalancer implements AutoCloseable {
     if (quorumHint != Quorum.ALL.size() && totalActiveCount > quorumHint) {
       // If the number of available passive members is less than the required number, demote an active
       // member to passive.
-      if (availablePassiveCount < quorumHint * backupCount) {
+      if (availablePassiveCount < (quorumHint - 1) * backupCount) {
         Member demote = active.stream().filter(m -> m.status() == Member.Status.UNAVAILABLE).findFirst()
           .orElseGet(() -> active.stream().filter(m -> !m.equals(member)).findAny().get());
         LOGGER.info("Demoting {} to PASSIVE: too many active members", demote.address());
@@ -128,7 +128,7 @@ public class ClusterBalancer implements AutoCloseable {
 
     // If the number of available passive members is less than the required number of passive members,
     // promote a reserve member.
-    if (quorumHint != Quorum.ALL.size() && availablePassiveCount < quorumHint * backupCount) {
+    if (quorumHint != Quorum.ALL.size() && availablePassiveCount < (quorumHint - 1) * backupCount) {
       // If any reserve members are available, promote to passive.
       if (availableReserveCount > 0) {
         Member promote = reserve.stream().filter(m -> m.status() == Member.Status.AVAILABLE).findFirst().get();
@@ -140,7 +140,7 @@ public class ClusterBalancer implements AutoCloseable {
 
     // If the total number of passive members is greater than the required number of passive members,
     // demote a passive member. Preferably we demote an unavailable member.
-    if (quorumHint != Quorum.ALL.size() && totalPassiveCount > quorumHint * backupCount) {
+    if (quorumHint != Quorum.ALL.size() && totalPassiveCount > (quorumHint - 1) * backupCount) {
       Member demote = passive.stream().filter(m -> m.status() == Member.Status.UNAVAILABLE).findAny()
         .orElseGet(() -> passive.stream().findAny().get());
       LOGGER.info("Demoting {} to RESERVE: too many passive members", demote.address());
@@ -183,7 +183,7 @@ public class ClusterBalancer implements AutoCloseable {
 
     Function<Void, CompletableFuture<Void>> demoteFunction = v -> {
       long passiveCount = cluster.members().stream().filter(m -> m.type() == Member.Type.PASSIVE).count();
-      if (passiveCount < quorumHint * backupCount) {
+      if (passiveCount < (quorumHint - 1) * backupCount) {
         LOGGER.info("Demoting {} to PASSIVE", cluster.member().address());
         return cluster.member().demote(Member.Type.PASSIVE);
       } else {

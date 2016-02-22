@@ -13,45 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.resource;
+package io.atomix.resource.util;
 
 import io.atomix.catalyst.util.Assert;
+import io.atomix.resource.ResourceType;
 
 import java.util.function.Consumer;
 
 /**
- * Resource instance.
+ * Represents an instance of a client-side resource.
+ * <p>
+ * A resource instance is associated with a specific {@link #key()} and {@link #type() resource type}.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public final class Instance implements AutoCloseable {
-
-  /**
-   * Instance open method.
-   */
-  public enum Method {
-
-    /**
-     * Indicates that the instance was opened with the GET method.
-     */
-    GET,
-
-    /**
-     * Indicates that the instance was opened with the CREATE method.
-     */
-    CREATE,
-
-  }
-
+public final class ResourceInstance implements AutoCloseable {
   private final String key;
   private final ResourceType type;
-  private final Method method;
-  private final Consumer<Instance> closer;
+  private final Consumer<ResourceInstance> closer;
 
-  public Instance(String key, ResourceType type, Method method, Consumer<Instance> closer) {
+  public ResourceInstance(String key, ResourceType type, Consumer<ResourceInstance> closer) {
     this.key = Assert.notNull(key, "key");
     this.type = Assert.notNull(type, "type");
-    this.method = Assert.notNull(method, "method");
     this.closer = Assert.notNull(closer, "closer");
   }
 
@@ -73,15 +56,6 @@ public final class Instance implements AutoCloseable {
     return type;
   }
 
-  /**
-   * Returns the resource instance open method.
-   *
-   * @return The resource instance open method.
-   */
-  public Method method() {
-    return method;
-  }
-
   @Override
   public void close() {
     closer.accept(this);
@@ -89,7 +63,7 @@ public final class Instance implements AutoCloseable {
 
   @Override
   public String toString() {
-    return String.format("%s[key=%s, type=%s, method=%s]", getClass().getSimpleName(), key, type, method);
+    return String.format("%s[key=%s, type=%s]", getClass().getSimpleName(), key, type);
   }
 
 }

@@ -25,9 +25,10 @@ import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.copycat.server.CopycatServer;
 import io.atomix.copycat.server.storage.Storage;
 import io.atomix.manager.state.ResourceManagerState;
-import io.atomix.resource.ResourceRegistry;
-import io.atomix.resource.ResourceTypeResolver;
-import io.atomix.resource.ServiceLoaderResourceResolver;
+import io.atomix.manager.util.ResourceManagerTypeResolver;
+import io.atomix.resource.util.ResourceRegistry;
+import io.atomix.resource.util.ResourceTypeResolver;
+import io.atomix.resource.util.ServiceLoaderResourceResolver;
 
 import java.time.Duration;
 import java.util.Arrays;

@@ -22,6 +22,10 @@ import io.atomix.copycat.Operation;
 import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.StateMachineContext;
 import io.atomix.copycat.server.StateMachineExecutor;
+import io.atomix.resource.util.ResourceCommand;
+import io.atomix.resource.util.ResourceCommit;
+import io.atomix.resource.util.ResourceOperation;
+import io.atomix.resource.util.ResourceQuery;
 import org.slf4j.Logger;
 
 import java.time.Duration;
@@ -32,7 +36,10 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
- * Resource state machine executor.
+ * Custom executor for executing {@link ResourceStateMachine} {@link ResourceOperation operations}.
+ * <p>
+ * This is a special executor used by Atomix to execute resource state machines to unwrap
+ * resource {@link ResourceCommand commands} and {@link ResourceQuery queries}.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */

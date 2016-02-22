@@ -13,26 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.resource;
+package io.atomix.resource.util;
 
 import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.Serializer;
-import io.atomix.copycat.Command;
+import io.atomix.copycat.Query;
 
 /**
- * Resource command.
+ * Wrapper for resource queries.
+ * <p>
+ * This class wraps {@link Query queries} submitted to the Atomix cluster on behalf of a resource.
+ * Wrapping the query allows Atomix to control the query {@link io.atomix.copycat.Query.ConsistencyLevel}
+ * based on the user resource configuration.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public final class ResourceCommand<T extends Command<U>, U> extends ResourceOperation<T, U> implements Command<U> {
+public final class ResourceQuery<T extends Query<U>, U> extends ResourceOperation<T, U> implements Query<U> {
   private ConsistencyLevel consistency;
 
-  public ResourceCommand() {
+  public ResourceQuery() {
   }
 
-  public ResourceCommand(T command, ConsistencyLevel consistency) {
-    super(command);
+  public ResourceQuery(T query, ConsistencyLevel consistency) {
+    super(query);
     this.consistency = consistency;
   }
 
@@ -40,11 +44,6 @@ public final class ResourceCommand<T extends Command<U>, U> extends ResourceOper
   public ConsistencyLevel consistency() {
     ConsistencyLevel consistency = operation.consistency();
     return consistency != null ? consistency : this.consistency;
-  }
-
-  @Override
-  public CompactionMode compaction() {
-    return operation.compaction();
   }
 
   @Override
@@ -61,7 +60,7 @@ public final class ResourceCommand<T extends Command<U>, U> extends ResourceOper
 
   @Override
   public String toString() {
-    return String.format("%s[command=%s, consistency=%s]", getClass().getSimpleName(), operation, consistency());
+    return String.format("%s[query=%s, consistency=%s]", getClass().getSimpleName(), operation, consistency());
   }
 
 }

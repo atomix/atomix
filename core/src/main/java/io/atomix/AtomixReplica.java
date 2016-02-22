@@ -31,13 +31,14 @@ import io.atomix.copycat.server.cluster.Member;
 import io.atomix.copycat.server.storage.Storage;
 import io.atomix.copycat.session.Session;
 import io.atomix.manager.ResourceClient;
-import io.atomix.manager.ResourceManagerTypeResolver;
+import io.atomix.manager.util.ResourceManagerTypeResolver;
 import io.atomix.manager.ResourceServer;
 import io.atomix.manager.state.ResourceManagerState;
-import io.atomix.resource.ResourceRegistry;
-import io.atomix.resource.ResourceTypeResolver;
-import io.atomix.resource.ServiceLoaderResourceResolver;
+import io.atomix.resource.util.ResourceRegistry;
+import io.atomix.resource.util.ResourceTypeResolver;
+import io.atomix.resource.util.ServiceLoaderResourceResolver;
 import io.atomix.util.ClusterBalancer;
+import io.atomix.util.ReplicaProperties;
 
 import java.time.Duration;
 import java.util.*;
@@ -54,9 +55,9 @@ import java.util.function.Consumer;
  * they may themselves create and modify distributed resources.
  * <p>
  * To create a replica, use the {@link #builder(Address, Address...)} builder factory. Each replica must
- * be initially configured with a server {@link Address} and a list of addresses for other members of the
- * core cluster. Note that the list of member addresses does not have to include the local server nor does
- * it have to include all the servers in the cluster. As long as the replica can reach one live member of
+ * be initially configured with a replica {@link Address} and a list of addresses for other members of the
+ * core cluster. Note that the list of member addresses does not have to include the local replica nor does
+ * it have to include all the replicas in the cluster. As long as the replica can reach one live member of
  * the cluster, it can join.
  * <pre>
  *   {@code
@@ -71,21 +72,113 @@ import java.util.function.Consumer;
  * configured, the {@code NettyTransport} will be used and will thus be expected to be available on the classpath.
  * Similarly, if no storage module is configured, replicated commit logs will be written to
  * {@code System.getProperty("user.dir")} with a default log name.
+ * <h3>Cluster management</h3>
+ * Atomix clusters are managed by a custom implementation of the <a href="https://raft.github.io/">Raft consensus algorithm</a>.
+ * Raft is a leader-based system that requires a quorum of nodes to synchronously acknowledge a write. Typically,
+ * Raft clusters consist of {@code 3} or {@code 5} nodes.
  * <p>
- * Atomix clusters are not restricted solely to servers or {@link AtomixReplica}s. Clusters may be
- * composed from a mixture of each type of server.
+ * But Atomix is designed to be embedded and scale in clusters much larger than the typical {@code 3} or {@code 5}
+ * node consensus based cluster. To do so, Atomix assigns a portion of the cluster to participate in the Raft
+ * algorithm, and the remainder of the replicas participate in asynchronous replication or await failures as standby
+ * nodes. A typical Atomix cluster may consist of {@code 3} active Raft-voting replicas, {@code 2} backup replicas,
+ * and any number of reserve nodes. As replicas are added to or removed from the cluster, Atomix transparently
+ * balances the cluster to ensure it maintains the desired number of active and backup replicas.
  * <p>
- * <b>Replica lifecycle</b>
+ * Users are responsible for configuring the desired number of Raft participants in the cluster by setting the
+ * {@link Builder#withQuorumHint(int) quorumHint}. The quorum hint indicates the desired minimum number of active
+ * Raft participants in the cluster. If the cluster consists of enough replicas, Atomix will guarantee that the
+ * cluster always has <em>at least</em> {@code quorumHint} replicas.
  * <p>
+ * The size of the quorum is relevant both to performance and fault-tolerance. When resources are
+ * created or deleted or resource state changes are submitted to the cluster, Atomix will synchronously
+ * replicate changes to a majority of the cluster before they can be committed and update state. For
+ * example, in a cluster where the {@code quorumHint} is {@code 3}, a
+ * {@link io.atomix.collections.DistributedMap#put(Object, Object)} command must be sent to the leader
+ * and then synchronously replicated to one other replica before it can be committed and applied to the
+ * map state machine. This also means that a cluster with {@code quorumHint} equal to {@code 3} can tolerate
+ * at most one failure.
+ * <p>
+ * Users should set the {@code quorumHint} to an odd number of replicas or use one of the {@link Quorum}
+ * magic constants for the greatest level of fault tolerance. By default, the quorum hint is set to
+ * {@link Quorum#SEED} which is based on the number of member nodes provided to the replica builder
+ * {@link #builder(Address, Address...) factory}. Typically, in write-heavy workloads, the most
+ * performant configuration will be a {@code quorumHint} of {@code 3}. In read-heavy workloads, quorum hints
+ * of {@code 3} or {@code 5} can be used depending on the size of the cluster and desired level of fault tolerance.
+ * Additional active replicas may or may not improve read performance depending on usage and in particular
+ * {@link io.atomix.resource.ReadConsistency read consistency} levels.
+ * <p>
+ * In addition to the {@code quorumHint}, users can also configure the {@code backupCount} to specify the
+ * desired number of backup replicas to maintain per active replica. The {@code backupCount} specifies the
+ * maximum number of replicas per {@link Builder#withQuorumHint(int) active} replica to participate in
+ * asynchronous replication of state. Backup replicas allow quorum-member replicas to be more quickly replaced
+ * in the event of a failure or an active replica leaving the cluster. Additionally, backup replicas may
+ * service {@link io.atomix.resource.ReadConsistency#SEQUENTIAL SEQUENTIAL} and
+ * {@link io.atomix.resource.ReadConsistency#CAUSAL CAUSAL} reads to allow read operations to be further
+ * spread across the cluster.
+ * <pre>
+ *   {@code
+ *   Atomix atomix = AtomixReplica.builder(address, members)
+ *     .withTransport(new NettyTransport())
+ *     .withStorage(new Storage(StorageLevel.MEMORY))
+ *     .withQuorumHint(3)
+ *     .withBackupCount(1)
+ *     .build();
+ *   }
+ * </pre>
+ * The backup count is used to calculate the number of backup replicas per non-leader active member. The
+ * number of actual backups is calculated by {@code (quorumHint - 1) * backupCount}. If the
+ * {@code backupCount} is {@code 1} and the {@code quorumHint} is {@code 3}, the number of backup replicas
+ * will be {@code 2}.
+ * <p>
+ * By default, the backup count is {@code 0}, indicating no backups should be maintained. However, it is
+ * recommended that each cluster have at least a backup count of {@code 1} to ensure active replicas can
+ * be quickly replaced in the event of a network partition or other failure. Quick replacement of active
+ * member nodes improves fault tolerance in cases where a majority of the active members in the cluster are
+ * not lost simultaneously.
+ * <h3>Storage</h3>
+ * Replicas manage resource and replicate and store resource state changes on disk. In order to do so, users
+ * must configure the replica's {@link Storage} configuration via the {@link Builder#withStorage(Storage)} method.
+ * Storage does not have to be identical on all replicas, but it is important to the desired level of fault-tolerance,
+ * consistency, and performance. Users can configure where and how state changes are stored by configuring the
+ * {@link io.atomix.copycat.server.storage.StorageLevel}.
+ * <pre>
+ *   {@code
+ *   Atomix atomix = AtomixReplica.builder(address, members)
+ *     .withTransport(new NettyTransport())
+ *     .withStorage(Storage.builder()
+ *       .withDirectory(new File("logs"))
+ *       .withStorageLevel(StorageLevel.MAPPED)
+ *       .withMaxSegmentSize(1024 * 1024)
+ *       .build())
+ *     .build();
+ *   }
+ * </pre>
+ * For the strongest level of consistency, it's recommended that users use the
+ * {@link io.atomix.copycat.server.storage.StorageLevel#DISK DISK} storage level. For the greatest mix of consistency
+ * and performance, the {@link io.atomix.copycat.server.storage.StorageLevel#MAPPED MAPPED} storage level uses memory
+ * mapped files to persist state changes. The {@link io.atomix.copycat.server.storage.StorageLevel#MEMORY MEMORY}
+ * storage level is recommended only for testing. Atomix cannot guarantee writes will not be lost with {@code MEMORY}
+ * based logs. If a majority of the active replicas in the cluster are lost or partitioned, writes can be overwritten.
+ * Using memory-based storage amounts to recreating the entire replica each time it's started.
+ * <h3>Replica lifecycle</h3>
  * When the replica is {@link #open() started}, the replica will attempt to contact members in the configured
  * startup {@link Address} list. If any of the members are already in an active state, the replica will request
  * to join the cluster. During the process of joining the cluster, the replica will notify the current cluster
  * leader of its existence. If the leader already knows about the joining replica, the replica will immediately
  * join and become a full voting member. If the joining replica is not yet known to the rest of the cluster,
  * it will join the cluster in a <em>passive</em> state in which it receives replicated state from other
- * servers in the cluster but does not participate in elections or other quorum-based aspects of the
+ * replicas in the cluster but does not participate in elections or other quorum-based aspects of the
  * underlying consensus algorithm. Once the joining replica is caught up with the rest of the cluster, the
  * leader will promote it to a full voting member.
+ * <p>
+ * Once the replica has joined the cluster, it will persist the updated cluster configuration to disk via
+ * the replica's configured {@link Storage} module. This is important to note as in the event that the replica
+ * crashes, <em>the replica will recover from its last known configuration</em> rather than the configuration
+ * provided to the {@link #builder(Address, Address...) builder factory}. This allows Atomix cluster structures
+ * to change transparently and independently of the code that configures any given replica. If a persistent
+ * {@link io.atomix.copycat.server.storage.StorageLevel} is used, user code should simply configure the replica
+ * consistently based on the <em>initial</em> replica configuration, and the replica will recover from the last
+ * known cluster configuration in the event of a failure.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -135,9 +228,26 @@ public final class AtomixReplica extends Atomix {
   /**
    * Returns a new Atomix replica builder.
    * <p>
-   * The provided set of members will be used to connect to the other members in the Raft cluster.
+   * The replica {@link Address} is the address to which the replica will bind to communicate with both
+   * clients and other replicas and through which clients and replicas will connect to the constructed replica.
+   * <p>
+   * The provided set of members will be used to connect to the other members in the Raft cluster. The members
+   * do not have to be representative of the full cluster membership.
+   * <p>
+   * When starting a new cluster, the cluster should be formed by providing the {@code members} list of the
+   * replicas that make up the initial members of the cluster. If the replica being built is included in the
+   * initial membership list, its {@link Address} should be listed in the {@code members} list. Otherwise,
+   * if the replica is joining an existing cluster, its {@link Address} should not be listed in the membership
+   * list.
+   * <p>
+   * If the replica uses a persistent {@link io.atomix.copycat.server.storage.StorageLevel} like
+   * {@link io.atomix.copycat.server.storage.StorageLevel#DISK DISK} or {@link io.atomix.copycat.server.storage.StorageLevel#MAPPED MAPPED}
+   * then the provided membership list only applies to the first time the replica is started. Once the replica
+   * has been started and joined with other members of the cluster, the updated cluster configuration will be
+   * stored on disk, and if the replica crashes and is restarted it will use the persisted configuration rather
+   * than the user-provided configuration. This behavior cannot be overridden.
    *
-   * @param address The address through which clients and servers connect to the replica.
+   * @param address The address through which clients and replicas connect to the replica.
    * @param members The cluster members to which to connect.
    * @return The replica builder.
    */
@@ -148,9 +258,26 @@ public final class AtomixReplica extends Atomix {
   /**
    * Returns a new Atomix replica builder.
    * <p>
-   * The provided set of members will be used to connect to the other members in the Raft cluster.
+   * The replica {@link Address} is the address to which the replica will bind to communicate with both
+   * clients and other replicas and through which clients and replicas will connect to the constructed replica.
+   * <p>
+   * The provided set of members will be used to connect to the other members in the Raft cluster. The members
+   * do not have to be representative of the full cluster membership.
+   * <p>
+   * When starting a new cluster, the cluster should be formed by providing the {@code members} list of the
+   * replicas that make up the initial members of the cluster. If the replica being built is included in the
+   * initial membership list, its {@link Address} should be listed in the {@code members} list. Otherwise,
+   * if the replica is joining an existing cluster, its {@link Address} should not be listed in the membership
+   * list.
+   * <p>
+   * If the replica uses a persistent {@link io.atomix.copycat.server.storage.StorageLevel} like
+   * {@link io.atomix.copycat.server.storage.StorageLevel#DISK DISK} or {@link io.atomix.copycat.server.storage.StorageLevel#MAPPED MAPPED}
+   * then the provided membership list only applies to the first time the replica is started. Once the replica
+   * has been started and joined with other members of the cluster, the updated cluster configuration will be
+   * stored on disk, and if the replica crashes and is restarted it will use the persisted configuration rather
+   * than the user-provided configuration. This behavior cannot be overridden.
    *
-   * @param address The address through which clients and servers connect to the replica.
+   * @param address The address through which clients and replicas connect to the replica.
    * @param members The cluster members to which to connect.
    * @return The replica builder.
    */
@@ -161,10 +288,30 @@ public final class AtomixReplica extends Atomix {
   /**
    * Returns a new Atomix replica builder.
    * <p>
-   * The provided set of members will be used to connect to the other members in the Raft cluster.
+   * The provided server {@link Address} is the address to which the replica will bind for communication with
+   * other replicas in the cluster.
+   * <p>
+   * The client {@link Address} is the address to which clients will connect to the replica to open and close
+   * resources and submit state change operations.
+   * <p>
+   * The provided set of members will be used to connect to the other members in the Raft cluster. The members
+   * do not have to be representative of the full cluster membership.
+   * <p>
+   * When starting a new cluster, the cluster should be formed by providing the {@code members} list of the
+   * replicas that make up the initial members of the cluster. If the replica being built is included in the
+   * initial membership list, its {@link Address} should be listed in the {@code members} list. Otherwise,
+   * if the replica is joining an existing cluster, its {@link Address} should not be listed in the membership
+   * list.
+   * <p>
+   * If the replica uses a persistent {@link io.atomix.copycat.server.storage.StorageLevel} like
+   * {@link io.atomix.copycat.server.storage.StorageLevel#DISK DISK} or {@link io.atomix.copycat.server.storage.StorageLevel#MAPPED MAPPED}
+   * then the provided membership list only applies to the first time the replica is started. Once the replica
+   * has been started and joined with other members of the cluster, the updated cluster configuration will be
+   * stored on disk, and if the replica crashes and is restarted it will use the persisted configuration rather
+   * than the user-provided configuration. This behavior cannot be overridden.
    *
-   * @param clientAddress The address through which clients connect to the server.
-   * @param serverAddress The local server member address.
+   * @param clientAddress The address through which clients connect to the replica.
+   * @param serverAddress The address through which other replicas connect to the replica.
    * @param members The cluster members to which to connect.
    * @return The replica builder.
    */
@@ -175,7 +322,27 @@ public final class AtomixReplica extends Atomix {
   /**
    * Returns a new Atomix replica builder.
    * <p>
-   * The provided set of members will be used to connect to the other members in the Raft cluster.
+   * The provided server {@link Address} is the address to which the replica will bind for communication with
+   * other replicas in the cluster.
+   * <p>
+   * The client {@link Address} is the address to which clients will connect to the replica to open and close
+   * resources and submit state change operations.
+   * <p>
+   * The provided set of members will be used to connect to the other members in the Raft cluster. The members
+   * do not have to be representative of the full cluster membership.
+   * <p>
+   * When starting a new cluster, the cluster should be formed by providing the {@code members} list of the
+   * replicas that make up the initial members of the cluster. If the replica being built is included in the
+   * initial membership list, its {@link Address} should be listed in the {@code members} list. Otherwise,
+   * if the replica is joining an existing cluster, its {@link Address} should not be listed in the membership
+   * list.
+   * <p>
+   * If the replica uses a persistent {@link io.atomix.copycat.server.storage.StorageLevel} like
+   * {@link io.atomix.copycat.server.storage.StorageLevel#DISK DISK} or {@link io.atomix.copycat.server.storage.StorageLevel#MAPPED MAPPED}
+   * then the provided membership list only applies to the first time the replica is started. Once the replica
+   * has been started and joined with other members of the cluster, the updated cluster configuration will be
+   * stored on disk, and if the replica crashes and is restarted it will use the persisted configuration rather
+   * than the user-provided configuration. This behavior cannot be overridden.
    *
    * @param clientAddress The address through which clients connect to the server.
    * @param serverAddress The local server member address.
@@ -272,7 +439,7 @@ public final class AtomixReplica extends Atomix {
   }
 
   /**
-   * Builds an {@link AtomixReplica}.
+   * Builder for programmatically constructing an {@link AtomixReplica}.
    * <p>
    * The replica builder configures an {@link AtomixReplica} to listen for connections from clients and other
    * servers/replica, connect to other servers in a cluster, and manage a replicated log. To create a replica builder,
@@ -384,10 +551,38 @@ public final class AtomixReplica extends Atomix {
     }
 
     /**
-     * Sets the quorum hint.
+     * Sets the cluster quorum hint.
+     * <p>
+     * The quorum hint specifies the optimal number of replicas to actively participate in the Raft
+     * consensus algorithm. As long as there are at least {@code quorumHint} replicas in the cluster,
+     * Atomix will automatically balance replicas to ensure that at least {@code quorumHint} replicas
+     * are active participants in the Raft algorithm at any given time. Replicas can be added to or
+     * removed from the cluster at will, and remaining replicas will be transparently promoted and demoted
+     * as necessary to maintain the desired quorum size.
+     * <p>
+     * By default, the configured quorum hint is {@link Quorum#SEED} which is based on the number of
+     * {@link Address members} provided to the {@link #builder(Address, Address...) builder factory}
+     * when constructing this builder.
+     * <p>
+     * The size of the quorum is relevant both to performance and fault-tolerance. When resources are
+     * created or deleted or resource state changes are submitted to the cluster, Atomix will synchronously
+     * replicate changes to a majority of the cluster before they can be committed and update state. For
+     * example, in a cluster where the {@code quorumHint} is {@code 3}, a
+     * {@link io.atomix.collections.DistributedMap#put(Object, Object)} command must be sent to the leader
+     * and then synchronously replicated to one other replica before it can be committed and applied to the
+     * map state machine. This also means that a cluster with {@code quorumHint} equal to {@code 3} can tolerate
+     * at most one failure.
+     * <p>
+     * Users should set the {@code quorumHint} to an odd number of replicas or use one of the {@link Quorum}
+     * magic constants for the greatest level of fault tolerance. Typically, in write-heavy workloads, the most
+     * performant configuration will be a {@code quorumHint} of {@code 3}. In read-heavy workloads, quorum hints
+     * of {@code 3} or {@code 5} can be used depending on the size of the cluster and desired level of fault tolerance.
+     * Additional active replicas may or may not improve read performance depending on usage and in particular
+     * {@link io.atomix.resource.ReadConsistency read consistency} levels.
      *
-     * @param quorumHint The quorum hint.
+     * @param quorumHint The quorum hint. This must be the same on all replicas in the cluster.
      * @return The replica builder.
+     * @throws IllegalArgumentException if the quorum hint is less than {@code -1}
      */
     public Builder withQuorumHint(int quorumHint) {
       this.quorumHint = Assert.argNot(quorumHint, quorumHint < -1, "quorumHint must be positive, 0, or -1");
@@ -395,10 +590,38 @@ public final class AtomixReplica extends Atomix {
     }
 
     /**
-     * Sets the quorum hint.
+     * Sets the cluster quorum hint.
+     * <p>
+     * The quorum hint specifies the optimal number of replicas to actively participate in the Raft
+     * consensus algorithm. As long as there are at least {@code quorumHint} replicas in the cluster,
+     * Atomix will automatically balance replicas to ensure that at least {@code quorumHint} replicas
+     * are active participants in the Raft algorithm at any given time. Replicas can be added to or
+     * removed from the cluster at will, and remaining replicas will be transparently promoted and demoted
+     * as necessary to maintain the desired quorum size.
+     * <p>
+     * By default, the configured quorum hint is {@link Quorum#SEED} which is based on the number of
+     * {@link Address members} provided to the {@link #builder(Address, Address...) builder factory}
+     * when constructing this builder.
+     * <p>
+     * The size of the quorum is relevant both to performance and fault-tolerance. When resources are
+     * created or deleted or resource state changes are submitted to the cluster, Atomix will synchronously
+     * replicate changes to a majority of the cluster before they can be committed and update state. For
+     * example, in a cluster where the {@code quorumHint} is {@code 3}, a
+     * {@link io.atomix.collections.DistributedMap#put(Object, Object)} command must be sent to the leader
+     * and then synchronously replicated to one other replica before it can be committed and applied to the
+     * map state machine. This also means that a cluster with {@code quorumHint} equal to {@code 3} can tolerate
+     * at most one failure.
+     * <p>
+     * Users should set the {@code quorumHint} to an odd number of replicas or use one of the {@link Quorum}
+     * magic constants for the greatest level of fault tolerance. Typically, in write-heavy workloads, the most
+     * performant configuration will be a {@code quorumHint} of {@code 3}. In read-heavy workloads, quorum hints
+     * of {@code 3} or {@code 5} can be used depending on the size of the cluster and desired level of fault tolerance.
+     * Additional active replicas may or may not improve read performance depending on usage and in particular
+     * {@link io.atomix.resource.ReadConsistency read consistency} levels.
      *
-     * @param quorum The quorum hint.
+     * @param quorum The quorum hint. This must be the same on all replicas in the cluster.
      * @return The replica builder.
+     * @throws NullPointerException if the quorum hint is null
      */
     public Builder withQuorumHint(Quorum quorum) {
       this.quorumHint = Assert.notNull(quorum, "quorum").size();
@@ -406,10 +629,30 @@ public final class AtomixReplica extends Atomix {
     }
 
     /**
-     * Sets the backup count.
+     * Sets the replica backup count.
+     * <p>
+     * The backup count specifies the maximum number of replicas per {@link #withQuorumHint(int) active} replica
+     * to participate in asynchronous replication of state. Backup replicas allow quorum-member replicas to be
+     * more quickly replaced in the event of a failure or an active replica leaving the cluster. Additionally,
+     * backup replicas may service {@link io.atomix.resource.ReadConsistency#SEQUENTIAL SEQUENTIAL} and
+     * {@link io.atomix.resource.ReadConsistency#CAUSAL CAUSAL} reads to allow read operations to be further
+     * spread across the cluster.
+     * <p>
+     * The backup count is used to calculate the number of backup replicas per non-leader active member. The
+     * number of actual backups is calculated by {@code (quorumHint - 1) * backupCount}. If the
+     * {@code backupCount} is {@code 1} and the {@code quorumHint} is {@code 3}, the number of backup replicas
+     * will be {@code 2}.
+     * <p>
+     * By default, the backup count is {@code 0}, indicating no backups should be maintained. However, it is
+     * recommended that each cluster have at least a backup count of {@code 1} to ensure active replicas can
+     * be quickly replaced in the event of a network partition or other failure. Quick replacement of active
+     * member nodes improves fault tolerance in cases where a majority of the active members in the cluster are
+     * not lost simultaneously.
      *
-     * @param backupCount The backup count.
+     * @param backupCount The number of backup replicas per active replica. This must be the same on all
+     *                    replicas in the cluster.
      * @return The replica builder.
+     * @throws IllegalArgumentException if the {@code backupCount} is negative
      */
     public Builder withBackupCount(int backupCount) {
       this.backupCount = Assert.argNot(backupCount, backupCount < 0, "backupCount must be positive");
@@ -418,6 +661,11 @@ public final class AtomixReplica extends Atomix {
 
     /**
      * Sets the Atomix resource type resolver.
+     * <p>
+     * The resource resolver can be used to register custom {@link io.atomix.resource.Resource} types
+     * with the replica. In order for a client or replica to {@link #get(String, Class) create} an instance
+     * of a custom resource, the resource type must be registered on all replicas and on any client that
+     * accesses the resource.
      *
      * @param resolver The resource type resolver.
      * @return The Atomix builder.
@@ -439,7 +687,10 @@ public final class AtomixReplica extends Atomix {
      *     .build();
      *   }
      * </pre>
-     * For more complex storage configurations, use the {@link io.atomix.copycat.server.storage.Storage.Builder}:
+     * Users can configure how state changes are stored on the replica by setting the
+     * {@link io.atomix.copycat.server.storage.StorageLevel}. Use the
+     * {@link io.atomix.copycat.server.storage.Storage.Builder} for the greatest flexibility in configuring
+     * the replica's storage layer:
      * <pre>
      *   {@code
      *   Atomix replica = AtomixReplica.builder(address, members)
@@ -451,6 +702,12 @@ public final class AtomixReplica extends Atomix {
      *     .build();
      *   }
      * </pre>
+     * For the greatest safety, it's recommended that users use the
+     * {@link io.atomix.copycat.server.storage.StorageLevel#DISK DISK} storage level. Alternatively, the
+     * {@link io.atomix.copycat.server.storage.StorageLevel#MAPPED MAPPED} storage level provides significantly
+     * greater performance without significantly relaxing safety. The {@link io.atomix.copycat.server.storage.StorageLevel#MEMORY MEMORY}
+     * storage level is not recommended for production. For replicas that use the {@code MEMORY} storage level,
+     * Atomix cannot guarantee writes will not be lost of a majority of the cluster is lost.
      *
      * @param storage The replica storage module.
      * @return The replica builder.
@@ -468,7 +725,7 @@ public final class AtomixReplica extends Atomix {
      * the replica should start a new election. The election timeout should always be significantly
      * larger than {@link #withHeartbeatInterval(Duration)} in order to prevent unnecessary elections.
      *
-     * @param electionTimeout The replica election timeout in milliseconds.
+     * @param electionTimeout The replica election timeout.
      * @return The replica builder.
      * @throws NullPointerException if {@code electionTimeout} is null
      */
@@ -484,7 +741,7 @@ public final class AtomixReplica extends Atomix {
      * other replicas within the cluster to maintain its leadership. The heartbeat interval should
      * always be some fraction of {@link #withElectionTimeout(Duration)}.
      *
-     * @param heartbeatInterval The replica heartbeat interval in milliseconds.
+     * @param heartbeatInterval The replica heartbeat interval.
      * @return The replica builder.
      * @throws NullPointerException if {@code heartbeatInterval} is null
      */
@@ -501,12 +758,36 @@ public final class AtomixReplica extends Atomix {
      * session. If a client fails to communicate with the cluster for larger than the configured session
      * timeout, its session may be expired.
      *
-     * @param sessionTimeout The replica session timeout in milliseconds.
+     * @param sessionTimeout The replica session timeout.
      * @return The replica builder.
      * @throws NullPointerException if {@code sessionTimeout} is null
      */
     public Builder withSessionTimeout(Duration sessionTimeout) {
       serverBuilder.withSessionTimeout(sessionTimeout);
+      return this;
+    }
+
+    /**
+     * Sets the replica's global suspend timeout.
+     * <p>
+     * The global suspend timeout is an advanced configuration option that controls how long a leader
+     * waits for a partitioned follower to rejoin the cluster before forcing that follower to truncate
+     * its logs. Because of various consistency issues, followers must be forced to truncate their logs
+     * after crashing or being partitioned for a lengthy amount of time in order to allow the cluster to
+     * progress. Specifically, in Atomix while a follower is partitioned replicas cannot compact their
+     * logs of certain types of commits like resource deletes and other tombstones.
+     * <p>
+     * By default, replicas will wait at least an hour for a partitioned follower to rejoin the cluster
+     * before advancing compaction and forcing the follower to truncate its logs once the partition heals.
+     * However, for clusters that have a surplus of replicas, Atomix may replace a partitioned follower
+     * with a connected follower anyways, so this option frequently does not apply to larger clusters.
+     *
+     * @param globalSuspendTimeout The global suspend timeout.
+     * @return The replica builder.
+     * @throws NullPointerException if {@code globalSuspendTimeout} is null
+     */
+    public Builder withGlobalSuspendTimeout(Duration globalSuspendTimeout) {
+      serverBuilder.withGlobalSuspendTimeout(globalSuspendTimeout);
       return this;
     }
 

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix;
+package io.atomix.util;
 
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.transport.Address;
@@ -29,7 +29,7 @@ import java.util.Properties;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-abstract class AtomixProperties {
+public abstract class AtomixProperties {
   public static final String SEED = "cluster.seed";
   public static final String SERIALIZER = "serializer";
 

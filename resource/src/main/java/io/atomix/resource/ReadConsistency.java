@@ -18,7 +18,7 @@ package io.atomix.resource;
 import io.atomix.copycat.Query;
 
 /**
- * Resource read consistency levels.
+ * Constants for controlling read consistency constraints on a per-request basis.
  * <p>
  * Read consistency levels dictate how queries should be evaluated in the Atomix cluster. Resources generally have
  * significantly greater flexibility in controlling the consistency level of reads because Raft allows reads from

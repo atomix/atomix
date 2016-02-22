@@ -15,8 +15,14 @@
  */
 package io.atomix;
 
+import io.atomix.catalyst.transport.Address;
+
 /**
- * Quorum configuration constants.
+ * Magic quorum configuration constants.
+ * <p>
+ * Quorum constants can be used to configure "magic" quorum hints for an {@link AtomixReplica}.
+ * Quorum hints define the minimum number of replicas that must participate in the Raft consensus
+ * algorithm.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
@@ -24,11 +30,20 @@ public enum Quorum {
 
   /**
    * Indicates that the seed members should represent the quorum size.
+   * <p>
+   * This is a magic quorum hint that is based on the number of replica
+   * {@link io.atomix.catalyst.transport.Address addresses} provided to the
+   * {@link AtomixReplica#builder(Address, Address...) replica builder factory} when constructing a new
+   * replica. If the number of {@code members} provided to the replica builder is {@code 3} then the
+   * configured quorum hint will be {@code 3}. This is the default quorum hint.
    */
   SEED(0),
 
   /**
    * Indicates that all members of the cluster should participate in the quorum.
+   * <p>
+   * This is a special quorum hint that forces all {@link AtomixReplica}s in the cluster to be full
+   * voting members of the Raft consensus algorithm. This is only recommended for small clusters.
    */
   ALL(-1);
 
@@ -39,9 +54,9 @@ public enum Quorum {
   }
 
   /**
-   * Returns the quorum size.
+   * Returns the quorum size hint.
    *
-   * @return The quorum size.
+   * @return The quorum size hint.
    */
   public int size() {
     return size;

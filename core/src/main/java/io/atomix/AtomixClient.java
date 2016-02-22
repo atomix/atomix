@@ -22,7 +22,8 @@ import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.PropertiesReader;
 import io.atomix.manager.ResourceClient;
 import io.atomix.manager.ResourceServer;
-import io.atomix.resource.ResourceTypeResolver;
+import io.atomix.resource.util.ResourceTypeResolver;
+import io.atomix.util.ClientProperties;
 
 import java.util.Collection;
 import java.util.Properties;
@@ -154,7 +155,7 @@ public class AtomixClient extends Atomix {
   }
 
   /**
-   * Builds an {@link AtomixClient}.
+   * Builder for programmatically constructing an {@link AtomixClient}.
    * <p>
    * The client builder configures an {@link AtomixClient} to connect to a cluster of {@link ResourceServer}s.
    * To create a client builder, use the {@link #builder(Address...)} method.

@@ -13,17 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.resource;
+package io.atomix.resource.util;
 
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.copycat.session.Session;
+import io.atomix.resource.Resource;
+import io.atomix.resource.ResourceStateMachine;
 
 import java.util.function.Consumer;
 
 /**
- * Resource session.
+ * Instance-level resource session.
+ * <p>
+ * The instance session provides a {@link Session} implementation for a client-side {@link Resource}
+ * instance. The session is associated with a specific open instance associated with a specific
+ * server-side replicated {@link ResourceStateMachine} instance.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

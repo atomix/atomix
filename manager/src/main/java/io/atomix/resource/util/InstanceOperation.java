@@ -13,31 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.resource;
+package io.atomix.resource.util;
 
 import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
 import io.atomix.catalyst.serializer.Serializer;
+import io.atomix.copycat.Operation;
+import io.atomix.resource.Resource;
 
 /**
- * Resource event.
+ * Instance-level resource operation.
+ * <p>
+ * Instance operations are submitted by {@link Resource} instances to a specific state machine
+ * in the Atomix cluster. The operation {@link #resource()} identifies the state machine to which
+ * the operation is being submitted.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public final class InstanceEvent<T> implements CatalystSerializable {
-  private long resource;
-  private T message;
+public abstract class InstanceOperation<T extends Operation<U>, U> implements Operation<U>, CatalystSerializable {
+  protected long resource;
+  protected T operation;
 
-  public InstanceEvent() {
+  protected InstanceOperation() {
   }
 
-  /**
-   * @throws NullPointerException if {@code message} is null
-   */
-  public InstanceEvent(long resource, T message) {
+  protected InstanceOperation(long resource, T operation) {
     this.resource = resource;
-    this.message = message;
+    this.operation = operation;
   }
 
   /**
@@ -50,29 +53,29 @@ public final class InstanceEvent<T> implements CatalystSerializable {
   }
 
   /**
-   * Returns the message body.
+   * Returns the resource operation.
    *
-   * @return The message body.
+   * @return The resource operation.
    */
-  public T message() {
-    return message;
+  public T operation() {
+    return operation;
   }
 
   @Override
   public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
     buffer.writeLong(resource);
-    serializer.writeObject(message, buffer);
+    serializer.writeObject(operation, buffer);
   }
 
   @Override
   public void readObject(BufferInput<?> buffer, Serializer serializer) {
     resource = buffer.readLong();
-    message = serializer.readObject(buffer);
+    operation = serializer.readObject(buffer);
   }
 
   @Override
   public String toString() {
-    return String.format("%s[resource=%d, message=%s]", getClass().getSimpleName(), resource, message);
+    return String.format("%s[resource=%s, operation=%s]", getClass().getSimpleName(), resource, operation.getClass().getSimpleName());
   }
 
 }

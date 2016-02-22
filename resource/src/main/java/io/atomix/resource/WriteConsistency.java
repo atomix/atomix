@@ -18,7 +18,7 @@ package io.atomix.resource;
 import io.atomix.copycat.Command;
 
 /**
- * Resource write consistency level.
+ * Constants for controlling write consistency constraints on a per-request basis.
  * <p>
  * Write consistency levels dictate how commands should behave when submitted to a resource in the Atomic cluster.
  * Consistency levels can be applied on a per-command basis or to all operations for a given resource.
