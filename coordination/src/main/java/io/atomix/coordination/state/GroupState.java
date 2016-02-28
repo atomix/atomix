@@ -15,6 +15,8 @@
  */
 package io.atomix.coordination.state;
 
+import io.atomix.catalyst.util.hash.Hasher;
+import io.atomix.catalyst.util.hash.Murmur2Hasher;
 import io.atomix.coordination.DistributedGroup;
 import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.session.ServerSession;
@@ -31,6 +33,8 @@ import java.util.*;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class GroupState extends ResourceStateMachine implements SessionListener {
+  private HashRing hashRing = new HashRing(new Murmur2Hasher(getClass().hashCode()), 100, 1);
+  private List<List<String>> partitions = new ArrayList<>(0);
   private final Set<ServerSession> sessions = new HashSet<>();
   private final Map<String, Commit<GroupCommands.Join>> members = new HashMap<>();
   private final Map<String, Map<String, Commit<GroupCommands.SetProperty>>> properties = new HashMap<>();
@@ -40,6 +44,32 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
 
   public GroupState() {
     super(new ResourceType(DistributedGroup.class));
+  }
+
+  @Override
+  public void configure(Properties config) {
+    // Configure the hasher.
+    Hasher hasher;
+    String hasherClass = config.getProperty("hasher", Murmur2Hasher.class.getName());
+    try {
+      hasher = (Hasher) Thread.currentThread().getContextClassLoader().loadClass(hasherClass).newInstance();
+    } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+      throw new RuntimeException(e);
+    }
+
+    // Set up the hash ring.
+    this.hashRing = new HashRing(hasher, Integer.valueOf(config.getProperty("virtualNodes", "100")), Integer.valueOf(config.getProperty("replicationFactor", "1")));
+
+    // Configure the partitions with empty membership lists.
+    int numPartitions = Integer.valueOf(config.getProperty("partitions", "1"));
+    List<List<String>> partitions = new ArrayList<>(numPartitions);
+    for (int i = 0; i < numPartitions; i++) {
+      partitions.add(new ArrayList<>());
+    }
+    this.partitions = partitions;
+
+    // Force the partition membership lists to be populated and existing members to be notified.
+    updatePartitions();
   }
 
   @Override
@@ -80,12 +110,17 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
 
     // Iterate through the remaining sessions and publish a leave event for each removed member.
     sessions.forEach(s -> {
-      if (s.state() == ServerSession.State.OPEN) {
+      if (s.state().active()) {
         for (Map.Entry<Long, Commit<GroupCommands.Join>> entry : left.entrySet()) {
-          s.publish("leave", entry.getValue().index());
+          s.publish("leave", entry.getValue().operation().member());
         }
       }
     });
+
+    for (Map.Entry<Long, Commit<GroupCommands.Join>> entry : left.entrySet()) {
+      hashRing.removeMember(entry.getValue().operation().member());
+    }
+    updatePartitions();
 
     // Close the commits for the members that left the group.
     for (Map.Entry<Long, Commit<GroupCommands.Join>> entry : left.entrySet()) {
@@ -100,7 +135,7 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
   private void incrementTerm() {
     term = context.index();
     for (ServerSession session : sessions) {
-      if (session.state() == ServerSession.State.OPEN) {
+      if (session.state().active()) {
         session.publish("term", term);
       }
     }
@@ -112,7 +147,7 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
   private void resignLeader(boolean toCandidate) {
     if (leader != null) {
       for (ServerSession session : sessions) {
-        if (session.state() == ServerSession.State.OPEN) {
+        if (session.state().active()) {
           session.publish("resign", leader.operation().member());
         }
       }
@@ -130,7 +165,7 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
   private void electLeader() {
     Commit<GroupCommands.Join> commit = candidates.poll();
     while (commit != null) {
-      if (commit.session().state() == ServerSession.State.EXPIRED || commit.session().state() == ServerSession.State.CLOSED) {
+      if (!commit.session().state().active()) {
         commit = candidates.poll();
       } else {
         leader = commit;
@@ -140,6 +175,31 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
           }
         }
         break;
+      }
+    }
+  }
+
+  /**
+   * Converts an integer to a byte array.
+   */
+  private byte[] intToByteArray(int value) {
+    return new byte[]{(byte) (value >> 24), (byte) (value >> 16), (byte) (value >> 8), (byte) value};
+  }
+
+  /**
+   * Updates partitions.
+   */
+  private void updatePartitions() {
+    List<List<String>> partitions = new ArrayList<>(this.partitions.size());
+    for (int i = 0; i < this.partitions.size(); i++) {
+      List<String> members = hashRing.members(intToByteArray(i));
+      partitions.add(members);
+    }
+    this.partitions = partitions;
+
+    for (ServerSession session : sessions) {
+      if (session.state().active()) {
+        session.publish("repartition", partitions);
       }
     }
   }
@@ -157,10 +217,13 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
 
       // Iterate through available sessions and publish a join event to each session.
       for (ServerSession session : sessions) {
-        if (session.state() == ServerSession.State.OPEN) {
+        if (session.state().active()) {
           session.publish("join", memberId);
         }
       }
+
+      hashRing.addMember(memberId);
+      updatePartitions();
 
       // If the term has not yet been set, set it.
       if (term == 0) {
@@ -208,10 +271,13 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
 
         // Publish a leave event to all listening sessions.
         for (ServerSession session : sessions) {
-          if (session.state() == ServerSession.State.OPEN) {
+          if (session.state().active()) {
             session.publish("leave", memberId);
           }
         }
+
+        hashRing.removeMember(memberId);
+        updatePartitions();
 
         // Close the join commit to ensure it's garbage collected.
         join.close();

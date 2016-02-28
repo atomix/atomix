@@ -15,14 +15,14 @@
  */
 package io.atomix.coordination;
 
-import static org.testng.Assert.assertEquals;
-
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
-
+import io.atomix.testing.AbstractCopycatTest;
 import org.testng.annotations.Test;
 
-import io.atomix.testing.AbstractCopycatTest;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import static org.testng.Assert.assertEquals;
 
 /**
  * Async group test.
@@ -208,6 +208,27 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     });
 
     await(5000);
+  }
+
+  /**
+   * Tests a group with partitions.
+   */
+  public void testPartitions() throws Throwable {
+    createServers(3);
+
+    DistributedGroup.Config config = DistributedGroup.config()
+      .withPartitions(3)
+      .withReplicationFactor(2);
+
+    DistributedGroup group1 = createResource(config);
+    DistributedGroup group2 = createResource(config);
+    DistributedGroup group3 = createResource(config);
+
+    LocalGroupMember member1 = group1.join().get(10, TimeUnit.SECONDS);
+    LocalGroupMember member2 = group2.join().get(10, TimeUnit.SECONDS);
+    LocalGroupMember member3 = group3.join().get(10, TimeUnit.SECONDS);
+
+    assertEquals(member1.partitions().size() + member2.partitions().size() + member3.partitions().size(), 6);
   }
 
   /**
