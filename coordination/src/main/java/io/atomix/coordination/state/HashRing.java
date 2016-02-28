@@ -25,15 +25,15 @@ import java.util.*;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-final class HashRing {
+public final class HashRing {
   private final Hasher hasher;
-  private final int virtualMembers;
+  private final int virtualNodes;
   private final int replicationFactor;
   private final TreeMap<Long, String> ring = new TreeMap<>();
 
-  public HashRing(Hasher hasher, int virtualMembers, int replicationFactor) {
+  public HashRing(Hasher hasher, int virtualNodes, int replicationFactor) {
     this.hasher = Assert.notNull(hasher, "hasher");
-    this.virtualMembers = Assert.argNot(virtualMembers, virtualMembers < 0, "virtualMembers must be positive");
+    this.virtualNodes = Assert.argNot(virtualNodes, virtualNodes < 0, "virtualNodes must be positive");
     this.replicationFactor = Assert.argNot(replicationFactor, replicationFactor <= 0, "replicationFactor must be positive");
   }
 
@@ -42,9 +42,9 @@ final class HashRing {
    *
    * @param member The member to add.
    */
-  void addMember(String member) {
+  public void addMember(String member) {
     if (!ring.values().contains(member)) {
-      for (int i = 0; i < 1 + virtualMembers; i++) {
+      for (int i = 0; i < 1 + virtualNodes; i++) {
         ring.put(hasher.hash64(member + i), member);
       }
     }
@@ -55,9 +55,9 @@ final class HashRing {
    *
    * @param member The member to remove.
    */
-  void removeMember(String member) {
+  public void removeMember(String member) {
     if (ring.values().contains(member)) {
-      for (int i = 0; i < 1 + virtualMembers; i++) {
+      for (int i = 0; i < 1 + virtualNodes; i++) {
         ring.remove(hasher.hash64(member + i));
       }
     }
@@ -113,6 +113,7 @@ final class HashRing {
     private final Map.Entry<Long, String> firstEntry;
     private final Set<String> members = new HashSet<>();
     private Map.Entry<Long, String> next;
+    private int count;
 
     private HashRingIterator(byte[] key) {
       long hash = hasher.hash64(key);
@@ -125,6 +126,7 @@ final class HashRing {
       this.next = firstEntry;
       if (next != null) {
         members.add(next.getValue());
+        count = 1;
       }
     }
 
@@ -142,15 +144,15 @@ final class HashRing {
 
       next = null;
 
-      // If the replication factor has already been met, return the next element.
-      if (members.size() == replicationFactor) {
+      // If the replication factor has already been met, return the next (last) element.
+      if (count == replicationFactor) {
         return entry.getValue();
       }
 
       // Get the next entry in the ring. If the entry is null, go back to the start.
       // If the next entry is equivalent to any iterated group member, skip it.
       next = ring.higherEntry(entry.getKey());
-      while (next == null || members.contains(next.getValue())) {
+      while (next == null || (members.contains(next.getValue()) && !next.getKey().equals(firstEntry.getKey()))) {
         if (next == null) {
           next = ring.firstEntry();
         } else {
@@ -158,12 +160,15 @@ final class HashRing {
         }
       }
 
-      // If the next entry is equal to the starting entry, set the next entry to null.
+      // If the next entry is equal to the first entry, that indicates that the total number of members
+      // available is less than the replication factor. Reset the members list to add the same members again.
       if (next.getKey().equals(firstEntry.getKey())) {
-        next = null;
-      } else {
-        members.add(next.getValue());
+        members.clear();
       }
+
+      members.add(next.getValue());
+      count++;
+
       return entry.getValue();
     }
   }

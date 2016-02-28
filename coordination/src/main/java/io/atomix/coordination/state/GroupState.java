@@ -33,7 +33,7 @@ import java.util.*;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class GroupState extends ResourceStateMachine implements SessionListener {
-  private HashRing hashRing = new HashRing(new Murmur2Hasher(getClass().hashCode()), 32, 0);
+  private HashRing hashRing = new HashRing(new Murmur2Hasher(getClass().hashCode()), 100, 1);
   private List<List<String>> partitions = new ArrayList<>(0);
   private final Set<ServerSession> sessions = new HashSet<>();
   private final Map<String, Commit<GroupCommands.Join>> members = new HashMap<>();
@@ -58,7 +58,7 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
     }
 
     // Set up the hash ring.
-    this.hashRing = new HashRing(hasher, Integer.valueOf(config.getProperty("virtualNodes", "100")), Integer.valueOf(config.getProperty("replicationFactor", "0")));
+    this.hashRing = new HashRing(hasher, Integer.valueOf(config.getProperty("virtualNodes", "100")), Integer.valueOf(config.getProperty("replicationFactor", "1")));
 
     // Configure the partitions with empty membership lists.
     int numPartitions = Integer.valueOf(config.getProperty("partitions", "1"));
@@ -135,7 +135,7 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
   private void incrementTerm() {
     term = context.index();
     for (ServerSession session : sessions) {
-      if (session.state() == ServerSession.State.OPEN) {
+      if (session.state().active()) {
         session.publish("term", term);
       }
     }
@@ -147,7 +147,7 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
   private void resignLeader(boolean toCandidate) {
     if (leader != null) {
       for (ServerSession session : sessions) {
-        if (session.state() == ServerSession.State.OPEN) {
+        if (session.state().active()) {
           session.publish("resign", leader.operation().member());
         }
       }
@@ -165,7 +165,7 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
   private void electLeader() {
     Commit<GroupCommands.Join> commit = candidates.poll();
     while (commit != null) {
-      if (commit.session().state() == ServerSession.State.EXPIRED || commit.session().state() == ServerSession.State.CLOSED) {
+      if (!commit.session().state().active()) {
         commit = candidates.poll();
       } else {
         leader = commit;
@@ -192,7 +192,8 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
   private void updatePartitions() {
     List<List<String>> partitions = new ArrayList<>(this.partitions.size());
     for (int i = 0; i < this.partitions.size(); i++) {
-      partitions.add(hashRing.members(intToByteArray(i)));
+      List<String> members = hashRing.members(intToByteArray(i));
+      partitions.add(members);
     }
     this.partitions = partitions;
 
@@ -216,7 +217,7 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
 
       // Iterate through available sessions and publish a join event to each session.
       for (ServerSession session : sessions) {
-        if (session.state() == ServerSession.State.OPEN) {
+        if (session.state().active()) {
           session.publish("join", memberId);
         }
       }
@@ -270,7 +271,7 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
 
         // Publish a leave event to all listening sessions.
         for (ServerSession session : sessions) {
-          if (session.state() == ServerSession.State.OPEN) {
+          if (session.state().active()) {
             session.publish("leave", memberId);
           }
         }

@@ -22,12 +22,33 @@ import java.util.Collection;
 import java.util.Iterator;
 
 /**
- * Group partition.
+ * Represents a segment of the cluster managed by consistent hashing.
+ * <p>
+ * {@link DistributedGroup} members are split into segments called partition. A partition represents
+ * a group of neighboring {@link GroupMember members} that may participate in replication or messaging
+ * protocols outside the core consensus service. The number of members in a partition is dependent both
+ * on the group {@link DistributedGroup.Config configuration} and the number of members in the group.
+ * In particular, the {@link DistributedGroup.Config#withReplicationFactor(int) replication factor} controls
+ * the number of members in each partition.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class Partition implements Iterable<GroupMember> {
+  private final int id;
   private volatile Collection<GroupMember> members = new ArrayList<>();
+
+  Partition(int id) {
+    this.id = id;
+  }
+
+  /**
+   * Returns the partition ID.
+   *
+   * @return The partition ID.
+   */
+  public int id() {
+    return id;
+  }
 
   /**
    * Updates the partition with the given number of group members.

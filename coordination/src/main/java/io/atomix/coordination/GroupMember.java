@@ -80,6 +80,12 @@ public interface GroupMember {
 
   /**
    * Returns a collection of partitions assigned to the member.
+   * <p>
+   * The returned collection of partitions can change over time as partitions are reassigned when members
+   * {@link DistributedGroup#join() join} or {@link LocalGroupMember#leave() leave} the group. Users should
+   * call this method each time the member's partitions are being accessed. When a member is added to or
+   * removed from the group, partitions will not be added until <em>after</em> the group change event has
+   * occurred, so listening to member join/leave events to determine when partitions change is unreliable.
    *
    * @return A collection of partitions assigned to the member.
    */
