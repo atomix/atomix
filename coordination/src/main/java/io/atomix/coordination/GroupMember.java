@@ -17,6 +17,7 @@ package io.atomix.coordination;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -76,6 +77,13 @@ public interface GroupMember {
    * @return A completable future to be completed with the value of the property.
    */
   <T> CompletableFuture<T> get(String property);
+
+  /**
+   * Returns a collection of partitions assigned to the member.
+   *
+   * @return A collection of partitions assigned to the member.
+   */
+  Collection<Partition> partitions();
 
   /**
    * Sends a message to the member.

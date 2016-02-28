@@ -17,6 +17,7 @@ package io.atomix.coordination;
 
 import io.atomix.catalyst.util.Listener;
 import io.atomix.catalyst.util.Listeners;
+import io.atomix.catalyst.util.hash.Hasher;
 import io.atomix.coordination.state.GroupCommands;
 import io.atomix.coordination.state.GroupState;
 import io.atomix.copycat.Command;
@@ -26,12 +27,12 @@ import io.atomix.resource.ResourceTypeInfo;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Collection;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * Generic group abstraction for managing group membership, service discovery, leader election, and remote
@@ -181,6 +182,15 @@ import java.util.function.Consumer;
 public class DistributedGroup extends Resource<DistributedGroup> {
 
   /**
+   * Returns a new group configuration.
+   *
+   * @return A new group configuration.
+   */
+  public static Config config() {
+    return new Config();
+  }
+
+  /**
    * Returns new group options.
    *
    * @return New group options.
@@ -190,12 +200,70 @@ public class DistributedGroup extends Resource<DistributedGroup> {
   }
 
   /**
-   * Returns a new group configuration.
-   *
-   * @return A new group configuration.
+   * Distributed group configuration.
    */
-  public static Config config() {
-    return new Config();
+  public static class Config extends Resource.Config {
+
+    /**
+     * Sets the hash function with which to hash keys.
+     *
+     * @param hasherClass The hasher function class.
+     * @return The group configuration.
+     */
+    public Config withHasher(Class<? extends Hasher> hasherClass) {
+      setProperty("hasher", hasherClass.getName());
+      return this;
+    }
+
+    /**
+     * Sets the number of partitions.
+     *
+     * @param partitions The number of partitions.
+     * @return The group configuration.
+     */
+    public Config withPartitions(int partitions) {
+      setProperty("partitions", String.valueOf(partitions));
+      return this;
+    }
+
+    /**
+     * Sets the number of virtual nodes per group member in the consistent hash ring.
+     *
+     * @param virtualNodes The number of virtual members per group member.
+     * @return The group configuration.
+     */
+    public Config withVirtualNodes(int virtualNodes) {
+      setProperty("virtualNodes", String.valueOf(virtualNodes));
+      return this;
+    }
+
+    /**
+     * Sets the group replication factor.
+     *
+     * @param replicationFactor The group replication factor.
+     * @return The group configuration.
+     */
+    public Config withReplicationFactor(int replicationFactor) {
+      setProperty("replicationFactor", String.valueOf(replicationFactor));
+      return this;
+    }
+  }
+
+  /**
+   * Distributed group options.
+   */
+  public static class Options extends Resource.Options {
+
+    /**
+     * Sets the partitioner class.
+     *
+     * @param partitionerClass The partitioner class.
+     * @return The group options.
+     */
+    public Options withPartitioner(Class<? extends Partitioner> partitionerClass) {
+      setProperty("partitioner", partitionerClass.getName());
+      return this;
+    }
   }
 
   private final Listeners<GroupMember> joinListeners = new Listeners<>();
@@ -204,11 +272,20 @@ public class DistributedGroup extends Resource<DistributedGroup> {
   private final Listeners<GroupMember> electionListeners = new Listeners<>();
   private final Map<String, InternalLocalGroupMember> localMembers = new ConcurrentHashMap<>();
   private final Map<String, GroupMember> members = new ConcurrentHashMap<>();
+  private volatile List<Partition> partitions = new CopyOnWriteArrayList<>();
+  private final Partitioner partitioner;
   private volatile String leader;
   private volatile long term;
 
   public DistributedGroup(CopycatClient client, Resource.Options options) {
     super(client, options);
+
+    String partitionerClass = options.getProperty("partitioner", HashCodePartitioner.class.getName());
+    try {
+      partitioner = (Partitioner) Thread.currentThread().getContextClassLoader().loadClass(partitionerClass).newInstance();
+    } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override
@@ -224,6 +301,7 @@ public class DistributedGroup extends Resource<DistributedGroup> {
       client.<String>onEvent("leave", memberId -> {
         GroupMember member = members.remove(memberId);
         if (member != null) {
+          onLeave(member);
           for (Listener<GroupMember> listener : leaveListeners) {
             listener.accept(member);
           }
@@ -250,6 +328,8 @@ public class DistributedGroup extends Resource<DistributedGroup> {
         }
       });
 
+      client.<List<List<String>>>onEvent("repartition", this::repartition);
+
       client.<GroupCommands.Message>onEvent("message", message -> {
         InternalLocalGroupMember localMember = localMembers.get(message.member());
         if (localMember != null) {
@@ -270,9 +350,38 @@ public class DistributedGroup extends Resource<DistributedGroup> {
   private CompletableFuture<Void> sync() {
     return submit(new GroupCommands.Listen()).thenAccept(members -> {
       for (String memberId : members) {
-        this.members.computeIfAbsent(memberId, InternalGroupMember::new);
+        GroupMember member = this.members.computeIfAbsent(memberId, InternalGroupMember::new);
+        onJoin(member);
       }
     });
+  }
+
+  /**
+   * Called when a member joins the group.
+   */
+  protected void onJoin(GroupMember member) {
+
+  }
+
+  /**
+   * Called when a member leaves the group.
+   */
+  protected void onLeave(GroupMember member) {
+
+  }
+
+  /**
+   * Called when a term change occurs.
+   */
+  protected void onTerm(long term) {
+
+  }
+
+  /**
+   * Called when a leader change occurs.
+   */
+  protected void onElection(GroupMember member) {
+
   }
 
   /**
@@ -389,6 +498,62 @@ public class DistributedGroup extends Resource<DistributedGroup> {
    */
   public Collection<GroupMember> members() {
     return members.values();
+  }
+
+  /**
+   * Repartitions the partitions in the group.
+   */
+  private synchronized void repartition(List<List<String>> partitionMembers) {
+    List<Partition> partitions = new CopyOnWriteArrayList<>();
+    for (int i = 0; i < partitionMembers.size(); i++) {
+      Partition partition;
+      if (this.partitions.size() > i) {
+        partition = this.partitions.get(i);
+      } else {
+        partition = new Partition();
+      }
+
+      List<String> memberIds = partitionMembers.get(i);
+      List<GroupMember> members = new ArrayList<>(memberIds.size());
+      for (String memberId : memberIds) {
+        GroupMember member = this.members.get(memberId);
+        if (member != null) {
+          members.add(member);
+        }
+      }
+      partition.update(members);
+      partitions.add(partition);
+    }
+    this.partitions = partitions;
+  }
+
+  /**
+   * Returns a partition by ID.
+   *
+   * @param partitionId The partition ID.
+   * @return The partition.
+   */
+  public Partition partition(int partitionId) {
+    return partitions.get(partitionId);
+  }
+
+  /**
+   * Returns the partition for the given object.
+   *
+   * @param object The object for which to return the partition.
+   * @return The partition for the given object.
+   */
+  public Partition partition(Object object) {
+    return partition(partitioner.partition(object, partitions.size()));
+  }
+
+  /**
+   * Returns an ordered list of all partitions.
+   *
+   * @return A list of all partitions.
+   */
+  public List<Partition> partitions() {
+    return partitions;
   }
 
   /**
@@ -521,6 +686,11 @@ public class DistributedGroup extends Resource<DistributedGroup> {
     }
 
     @Override
+    public Collection<Partition> partitions() {
+      return partitions.stream().filter(p -> p.members().contains(this)).collect(Collectors.toList());
+    }
+
+    @Override
     @SuppressWarnings("unchecked")
     public <T> Listener<T> onMessage(String topic, Consumer<T> consumer) {
       ListenerHolder listener = new ListenerHolder(consumer);
@@ -606,6 +776,11 @@ public class DistributedGroup extends Resource<DistributedGroup> {
     @SuppressWarnings("unchecked")
     public <T> CompletableFuture<T> get(String property) {
       return submit(new GroupCommands.GetProperty(memberId, property)).thenApply(result -> (T) result);
+    }
+
+    @Override
+    public Collection<Partition> partitions() {
+      return partitions.stream().filter(p -> p.members().contains(this)).collect(Collectors.toList());
     }
 
     @Override
