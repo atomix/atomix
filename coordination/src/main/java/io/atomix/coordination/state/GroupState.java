@@ -80,9 +80,9 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
 
     // Iterate through the remaining sessions and publish a leave event for each removed member.
     sessions.forEach(s -> {
-      if (s.state() == ServerSession.State.OPEN) {
+      if (s.state().active()) {
         for (Map.Entry<Long, Commit<GroupCommands.Join>> entry : left.entrySet()) {
-          s.publish("leave", entry.getValue().index());
+          s.publish("leave", entry.getValue().operation().member());
         }
       }
     });
@@ -100,7 +100,7 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
   private void incrementTerm() {
     term = context.index();
     for (ServerSession session : sessions) {
-      if (session.state() == ServerSession.State.OPEN) {
+      if (session.state().active()) {
         session.publish("term", term);
       }
     }
@@ -112,7 +112,7 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
   private void resignLeader(boolean toCandidate) {
     if (leader != null) {
       for (ServerSession session : sessions) {
-        if (session.state() == ServerSession.State.OPEN) {
+        if (session.state().active()) {
           session.publish("resign", leader.operation().member());
         }
       }
@@ -130,12 +130,12 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
   private void electLeader() {
     Commit<GroupCommands.Join> commit = candidates.poll();
     while (commit != null) {
-      if (commit.session().state() == ServerSession.State.EXPIRED || commit.session().state() == ServerSession.State.CLOSED) {
+      if (!commit.session().state().active()) {
         commit = candidates.poll();
       } else {
         leader = commit;
         for (ServerSession session : sessions) {
-          if (session.state() == ServerSession.State.OPEN) {
+          if (session.state().active()) {
             session.publish("elect", leader.operation().member());
           }
         }
@@ -157,7 +157,7 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
 
       // Iterate through available sessions and publish a join event to each session.
       for (ServerSession session : sessions) {
-        if (session.state() == ServerSession.State.OPEN) {
+        if (session.state().active()) {
           session.publish("join", memberId);
         }
       }
@@ -208,7 +208,7 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
 
         // Publish a leave event to all listening sessions.
         for (ServerSession session : sessions) {
-          if (session.state() == ServerSession.State.OPEN) {
+          if (session.state().active()) {
             session.publish("leave", memberId);
           }
         }
