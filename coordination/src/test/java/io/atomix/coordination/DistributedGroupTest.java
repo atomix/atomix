@@ -25,7 +25,7 @@ import org.testng.annotations.Test;
 import io.atomix.testing.AbstractCopycatTest;
 
 /**
- * Async group test.
+ * Distributed group test.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -87,6 +87,35 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
 
     group1.onLeave(member -> resume());
     localMember.leave().thenRun(this::resume);
+
+    await(10000, 2);
+  }
+
+  /**
+   * Tests a member being expired from the group.
+   */
+  public void testExpire() throws Throwable {
+    createServers(3);
+
+    DistributedGroup group1 = createResource();
+    DistributedGroup group2 = createResource();
+
+    LocalGroupMember localMember = group2.join().get();
+    assertEquals(group2.members().size(), 1);
+
+    group1.join().thenRun(() -> {
+      threadAssertEquals(group1.members().size(), 2);
+      threadAssertEquals(group2.members().size(), 2);
+      resume();
+    });
+
+    await(5000);
+
+    group1.onLeave(member -> {
+      threadAssertEquals(member.id(), localMember.id());
+      resume();
+    });
+    group2.close().thenRun(this::resume);
 
     await(10000, 2);
   }
