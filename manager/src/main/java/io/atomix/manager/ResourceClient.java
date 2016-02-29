@@ -26,7 +26,8 @@ import io.atomix.copycat.client.*;
 import io.atomix.manager.state.GetResourceKeys;
 import io.atomix.manager.state.ResourceExists;
 import io.atomix.manager.util.ResourceManagerTypeResolver;
-import io.atomix.resource.*;
+import io.atomix.resource.Resource;
+import io.atomix.resource.ResourceType;
 import io.atomix.resource.util.*;
 
 import java.util.*;
@@ -176,19 +177,19 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
   @Override
   @SuppressWarnings("unchecked")
   public <T extends Resource> CompletableFuture<T> get(String key, Class<? super T> type) {
-    return get(key, type((Class<? extends Resource<?>>) type), null, null);
+    return get(key, type((Class<? extends Resource<?>>) type), new Resource.Config(), new Resource.Options());
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public <T extends Resource> CompletableFuture<T> get(String key, Class<? super T> type, Resource.Config config) {
-    return this.<T>get(key, type((Class<? extends Resource<?>>) type), config, null);
+    return this.<T>get(key, type((Class<? extends Resource<?>>) type), config, new Resource.Options());
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public <T extends Resource> CompletableFuture<T> get(String key, Class<? super T> type, Resource.Options options) {
-    return this.<T>get(key, type((Class<? extends Resource<?>>) type), null, options);
+    return this.<T>get(key, type((Class<? extends Resource<?>>) type), new Resource.Config(), options);
   }
 
   @Override
@@ -200,19 +201,19 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
   @Override
   @SuppressWarnings("unchecked")
   public <T extends Resource> CompletableFuture<T> get(String key, ResourceType type) {
-    return get(key, type, null, null);
+    return get(key, type, new Resource.Config(), new Resource.Options());
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public <T extends Resource> CompletableFuture<T> get(String key, ResourceType type, Resource.Config config) {
-    return this.<T>get(key, type, config, null);
+    return this.<T>get(key, type, config, new Resource.Options());
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public <T extends Resource> CompletableFuture<T> get(String key, ResourceType type, Resource.Options options) {
-    return this.<T>get(key, type, null, options);
+    return this.<T>get(key, type, new Resource.Config(), options);
   }
 
   @Override
@@ -220,16 +221,16 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
   public synchronized <T extends Resource> CompletableFuture<T> get(String key, ResourceType type, Resource.Config config, Resource.Options options) {
     Assert.notNull(key, "key");
     Assert.notNull(type, "type");
+    Assert.notNull(config, "config");
+    Assert.notNull(options, "options");
     T resource;
 
     // Determine whether a singleton instance of the given resource key already exists.
     Resource<?> check = instances.get(key);
     if (check == null) {
-      if (options == null)
-        options = new Resource.Options();
       ResourceInstance instance = new ResourceInstance(key, type, this::close);
       InstanceClient client = new InstanceClient(instance, this.client);
-      check = type.factory().create(client, options);
+      check = type.factory().create(client, config, options);
       instances.put(key, check);
     }
 
@@ -246,9 +247,6 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
     CompletableFuture<T> future = futures.get(key);
     if (future == null) {
       future = resource.open();
-      if (config != null) {
-        future = future.thenCompose(v -> resource.configure(config));
-      }
       futures.put(key, future);
     }
     return future;

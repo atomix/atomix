@@ -25,6 +25,7 @@ import io.atomix.resource.ResourceTypeInfo;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
@@ -61,30 +62,12 @@ import java.util.concurrent.CompletableFuture;
 @ResourceTypeInfo(id=-11, stateMachine=MapState.class, typeResolver=MapCommands.TypeResolver.class)
 public class DistributedMap<K, V> extends Resource<DistributedMap<K, V>> {
 
-  /**
-   * Returns new map options.
-   *
-   * @return New map options.
-   */
-  public static Options options() {
-    return new Options();
-  }
-
-  /**
-   * Returns a new map configuration.
-   *
-   * @return A new map configuration.
-   */
-  public static Config config() {
-    return new Config();
-  }
-
   public DistributedMap(CopycatClient client) {
-    this(client, new Options());
+    this(client, new Config(), new Options());
   }
 
-  public DistributedMap(CopycatClient client, Resource.Options options) {
-    super(client, options);
+  public DistributedMap(CopycatClient client, Properties config, Properties options) {
+    super(client, config, options);
   }
 
   /**

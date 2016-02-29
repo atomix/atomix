@@ -21,6 +21,7 @@ import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.util.ResourceFactory;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.Properties;
 
 /**
  * Identifier for resource metadata and {@link ResourceStateMachine state machine} information.
@@ -74,9 +75,9 @@ public class ResourceType {
    * @return The resource instance factory.
    */
   public ResourceFactory factory() {
-    return (client, options) -> {
+    return (client, config, options) -> {
       try {
-        return resource().getConstructor(CopycatClient.class, Resource.Options.class).newInstance(client, options);
+        return resource().getConstructor(CopycatClient.class, Properties.class, Properties.class).newInstance(client, config, options);
       } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
         throw new ResourceException("failed to instantiate resource class", e);
       }

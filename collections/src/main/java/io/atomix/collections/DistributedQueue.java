@@ -22,6 +22,7 @@ import io.atomix.resource.ReadConsistency;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceTypeInfo;
 
+import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -57,26 +58,8 @@ import java.util.concurrent.CompletableFuture;
 @ResourceTypeInfo(id=-14, stateMachine=QueueState.class, typeResolver=QueueCommands.TypeResolver.class)
 public class DistributedQueue<T> extends Resource<DistributedQueue<T>> {
 
-  /**
-   * Returns new queue options.
-   *
-   * @return New queue options.
-   */
-  public static Options options() {
-    return new Options();
-  }
-
-  /**
-   * Returns a new queue configuration.
-   *
-   * @return A new queue configuration.
-   */
-  public static Config config() {
-    return new Config();
-  }
-
-  public DistributedQueue(CopycatClient client, Resource.Options options) {
-    super(client, options);
+  public DistributedQueue(CopycatClient client, Properties config, Properties options) {
+    super(client, config, options);
   }
 
   /**

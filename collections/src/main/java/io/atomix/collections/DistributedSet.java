@@ -23,6 +23,7 @@ import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceTypeInfo;
 
 import java.time.Duration;
+import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -53,27 +54,8 @@ import java.util.concurrent.CompletableFuture;
  */
 @ResourceTypeInfo(id=-13, stateMachine=SetState.class, typeResolver=SetCommands.TypeResolver.class)
 public class DistributedSet<T> extends Resource<DistributedSet<T>> {
-
-  /**
-   * Returns new set options.
-   *
-   * @return New set options.
-   */
-  public static Options options() {
-    return new Options();
-  }
-
-  /**
-   * Returns a new set configuration.
-   *
-   * @return A new set configuration.
-   */
-  public static Config config() {
-    return new Config();
-  }
-
-  public DistributedSet(CopycatClient client, Resource.Options options) {
-    super(client, options);
+  public DistributedSet(CopycatClient client, Properties config, Properties options) {
+    super(client, config, options);
   }
 
   /**

@@ -17,11 +17,11 @@ package io.atomix.variables;
 
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.ReadConsistency;
-import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceTypeInfo;
 import io.atomix.variables.state.LongCommands;
 import io.atomix.variables.state.LongState;
 
+import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -55,26 +55,8 @@ import java.util.concurrent.CompletableFuture;
 @ResourceTypeInfo(id=-2, stateMachine=LongState.class, typeResolver=LongCommands.TypeResolver.class)
 public class DistributedLong extends AbstractDistributedValue<DistributedLong, Long> {
 
-  /**
-   * Returns new long options.
-   *
-   * @return New long options.
-   */
-  public static Options options() {
-    return new Options();
-  }
-
-  /**
-   * Returns a new long configuration.
-   *
-   * @return A new long configuration.
-   */
-  public static Config config() {
-    return new Config();
-  }
-
-  public DistributedLong(CopycatClient client, Resource.Options options) {
-    super(client, options);
+  public DistributedLong(CopycatClient client, Properties config, Properties options) {
+    super(client, config, options);
   }
 
   /**

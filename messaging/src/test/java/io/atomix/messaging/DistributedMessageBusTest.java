@@ -38,8 +38,8 @@ public class DistributedMessageBusTest extends AbstractCopycatTest<DistributedMe
   public void testSend() throws Throwable {
     createServers(3);
 
-    DistributedMessageBus bus1 = createResource(DistributedMessageBus.options().withAddress(new Address("localhost", 6000)));
-    DistributedMessageBus bus2 = createResource(DistributedMessageBus.options().withAddress(new Address("localhost", 6001)));
+    DistributedMessageBus bus1 = createResource(new DistributedMessageBus.Options().withAddress(new Address("localhost", 6000)));
+    DistributedMessageBus bus2 = createResource(new DistributedMessageBus.Options().withAddress(new Address("localhost", 6001)));
 
     bus1.<String>consumer("test", message -> {
       threadAssertEquals(message, "Hello world!");

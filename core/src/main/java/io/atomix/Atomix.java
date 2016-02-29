@@ -1410,19 +1410,19 @@ public abstract class Atomix implements ResourceManager<Atomix> {
   @Override
   public <T extends Resource> CompletableFuture<T> get(String key, Class<? super T> type) {
     Assert.argNot(key.trim().length() == 0, "invalid resource key: key must be of non-zero length");
-    return client.get(key, type, null, null);
+    return client.get(key, type, new Resource.Config(), new Resource.Options());
   }
 
   @Override
   public <T extends Resource> CompletableFuture<T> get(String key, Class<? super T> type, Resource.Config config) {
     Assert.argNot(key.trim().length() == 0, "invalid resource key: key must be of non-zero length");
-    return client.get(key, type, config, null);
+    return client.get(key, type, config, new Resource.Options());
   }
 
   @Override
   public <T extends Resource> CompletableFuture<T> get(String key, Class<? super T> type, Resource.Options options) {
     Assert.argNot(key.trim().length() == 0, "invalid resource key: key must be of non-zero length");
-    return client.get(key, type, null, options);
+    return client.get(key, type, new Resource.Config(), options);
   }
 
   @Override
@@ -1434,19 +1434,19 @@ public abstract class Atomix implements ResourceManager<Atomix> {
   @Override
   public <T extends Resource> CompletableFuture<T> get(String key, ResourceType type) {
     Assert.argNot(key.trim().length() == 0, "invalid resource key: key must be of non-zero length");
-    return client.get(key, type, null, null);
+    return client.get(key, type, new Resource.Config(), new Resource.Options());
   }
 
   @Override
   public <T extends Resource> CompletableFuture<T> get(String key, ResourceType type, Resource.Config config) {
     Assert.argNot(key.trim().length() == 0, "invalid resource key: key must be of non-zero length");
-    return client.get(key, type, config, null);
+    return client.get(key, type, config, new Resource.Options());
   }
 
   @Override
   public <T extends Resource> CompletableFuture<T> get(String key, ResourceType type, Resource.Options options) {
     Assert.argNot(key.trim().length() == 0, "invalid resource key: key must be of non-zero length");
-    return client.get(key, type, null, options);
+    return client.get(key, type, new Resource.Config(), options);
   }
 
   @Override

@@ -23,6 +23,7 @@ import io.atomix.resource.ResourceTypeInfo;
 
 import java.time.Duration;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -134,31 +135,12 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 @ResourceTypeInfo(id=-22, stateMachine=LockState.class, typeResolver=LockCommands.TypeResolver.class)
 public class DistributedLock extends Resource<DistributedLock> {
-
-  /**
-   * Returns new lock options.
-   *
-   * @return New lock options.
-   */
-  public static Options options() {
-    return new Options();
-  }
-
-  /**
-   * Returns a new lock configuration.
-   *
-   * @return A new lock configuration.
-   */
-  public static Config config() {
-    return new Config();
-  }
-
   private final Map<Integer, CompletableFuture<Long>> futures = new ConcurrentHashMap<>();
   private final AtomicInteger id = new AtomicInteger();
   private int lock;
 
-  public DistributedLock(CopycatClient client, Resource.Options options) {
-    super(client, options);
+  public DistributedLock(CopycatClient client, Properties config, Properties options) {
+    super(client, config, options);
   }
 
   @Override

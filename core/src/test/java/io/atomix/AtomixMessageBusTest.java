@@ -34,15 +34,15 @@ public class AtomixMessageBusTest extends AbstractAtomixTest {
   
   public void testClientMessageBusGet() throws Throwable {
     testMessageBus(
-      createClient().getMessageBus("test-client-bus-get", DistributedMessageBus.options().withAddress(new Address("localhost", 6000))).get(),
-      createClient().getMessageBus("test-client-bus-get", DistributedMessageBus.options().withAddress(new Address("localhost", 6001))).get()
+      createClient().getMessageBus("test-client-bus-get", new DistributedMessageBus.Options().withAddress(new Address("localhost", 6000))).get(),
+      createClient().getMessageBus("test-client-bus-get", new DistributedMessageBus.Options().withAddress(new Address("localhost", 6001))).get()
     );
   }
 
   public void testReplicaMessageBusGet() throws Throwable {
     testMessageBus(
-      replicas.get(0).getMessageBus("test-client-bus-get", DistributedMessageBus.options().withAddress(new Address("localhost", 6002))).get(),
-      replicas.get(1).getMessageBus("test-client-bus-get", DistributedMessageBus.options().withAddress(new Address("localhost", 6003))).get()
+      replicas.get(0).getMessageBus("test-client-bus-get", new DistributedMessageBus.Options().withAddress(new Address("localhost", 6002))).get(),
+      replicas.get(1).getMessageBus("test-client-bus-get", new DistributedMessageBus.Options().withAddress(new Address("localhost", 6003))).get()
     );
   }
 

@@ -21,6 +21,7 @@ import io.atomix.resource.Resource;
 import io.atomix.variables.state.ValueCommands;
 
 import java.time.Duration;
+import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -37,8 +38,8 @@ import java.util.concurrent.CompletableFuture;
 @SuppressWarnings("unchecked")
 public abstract class AbstractDistributedValue<T extends AbstractDistributedValue<T, U>, U> extends Resource<T> {
 
-  protected AbstractDistributedValue(CopycatClient client, Options options) {
-    super(client, options);
+  protected AbstractDistributedValue(CopycatClient client, Properties config, Properties options) {
+    super(client, config, options);
   }
 
   /**

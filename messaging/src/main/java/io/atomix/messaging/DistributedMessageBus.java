@@ -66,25 +66,6 @@ import java.util.function.Function;
  */
 @ResourceTypeInfo(id=-30, stateMachine=MessageBusState.class, typeResolver=MessageBusCommands.TypeResolver.class)
 public class DistributedMessageBus extends Resource<DistributedMessageBus> {
-
-  /**
-   * Returns new message bus options.
-   *
-   * @return New message bus options.
-   */
-  public static Options options() {
-    return new Options();
-  }
-
-  /**
-   * Returns a new message bus configuration.
-   *
-   * @return A new message bus configuration.
-   */
-  public static Config config() {
-    return new Config();
-  }
-
   private Client client;
   private Server server;
   private final Options options;
@@ -95,8 +76,8 @@ public class DistributedMessageBus extends Resource<DistributedMessageBus> {
   private final Map<String, InternalMessageConsumer> consumers = new ConcurrentHashMap<>();
   private volatile boolean open;
 
-  public DistributedMessageBus(CopycatClient client, Resource.Options options) {
-    super(client, options);
+  public DistributedMessageBus(CopycatClient client, Properties config, Properties options) {
+    super(client, config, options);
     this.options = new Options(options);
   }
 

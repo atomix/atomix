@@ -24,6 +24,7 @@ import io.atomix.resource.ResourceTypeInfo;
 
 import java.time.Duration;
 import java.util.Collection;
+import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -53,11 +54,6 @@ import java.util.concurrent.CompletableFuture;
  *   DistributedMultiMap<String, String> multiMap = atomix.getMultiMap("foo", config).get();
  *   }
  * </pre>
- * The multimap can also be configured after the instance is created via the {@link #configure(Resource.Config)}
- * method. Note that configurations effect <em>all</em> instances of the resource throughout the cluster.
- * If one node sets the value order to {@link Order#INSERT} and then another to {@link Order#NATURAL}, the
- * last configuration applied will be used.
- * <p>
  * Multi-maps support relaxed consistency levels for some read operations line {@link #size(ReadConsistency)}
  * and {@link #containsKey(Object, ReadConsistency)}. By default, read operations on a queue are linearizable
  * but require some level of communication between nodes.
@@ -68,27 +64,16 @@ import java.util.concurrent.CompletableFuture;
 public class DistributedMultiMap<K, V> extends Resource<DistributedMultiMap<K, V>> {
 
   /**
-   * Returns new multimap options.
-   *
-   * @return New multimap options.
-   */
-  public static Options options() {
-    return new Options();
-  }
-
-  /**
-   * Returns a new multimap configuration.
-   *
-   * @return A new multimap configuration.
-   */
-  public static Config config() {
-    return new Config();
-  }
-
-  /**
    * Multimap configuration.
    */
   public static class Config extends Resource.Config {
+
+    public Config() {
+    }
+
+    public Config(Properties defaults) {
+      super(defaults);
+    }
 
     /**
      * Sets the map value order.
@@ -133,8 +118,13 @@ public class DistributedMultiMap<K, V> extends Resource<DistributedMultiMap<K, V
 
   }
 
-  public DistributedMultiMap(CopycatClient client, Resource.Options options) {
-    super(client, options);
+  public DistributedMultiMap(CopycatClient client, Properties config, Properties options) {
+    super(client, config, options);
+  }
+
+  @Override
+  public Resource.Config config() {
+    return new Config(super.config());
   }
 
   /**

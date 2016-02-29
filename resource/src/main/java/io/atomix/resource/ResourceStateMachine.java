@@ -130,7 +130,7 @@ public abstract class ResourceStateMachine extends StateMachine implements Sessi
     executor.serializer().register(ResourceCommand.Delete.class, -53);
 
     executor.<ResourceCommand.Delete>register(ResourceCommand.Delete.class, this::delete);
-    executor.<ResourceCommand.Configure>register(ResourceCommand.Configure.class, this::configure);
+    executor.register(ResourceCommand.Configure.class, this::configure);
     super.init(new ResourceStateMachineExecutor(executor));
   }
 
@@ -138,11 +138,12 @@ public abstract class ResourceStateMachine extends StateMachine implements Sessi
    * Handles a configure command.
    */
   @SuppressWarnings("unchecked")
-  private void configure(Commit<ResourceCommand.Configure> commit) {
-    if (configureCommit != null)
-      configureCommit.close();
-    configureCommit = commit;
-    configure(configureCommit.operation().config());
+  private Properties configure(Commit<ResourceCommand.Configure> commit) {
+    if (configureCommit == null) {
+      configureCommit = commit;
+      configure(commit.operation().config());
+    }
+    return configureCommit.operation().config();
   }
 
   /**

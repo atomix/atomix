@@ -26,10 +26,7 @@ import io.atomix.resource.ResourceTypeInfo;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -181,25 +178,6 @@ import java.util.function.Consumer;
  */
 @ResourceTypeInfo(id=-20, stateMachine=GroupState.class, typeResolver=GroupCommands.TypeResolver.class)
 public class DistributedGroup extends Resource<DistributedGroup> {
-
-  /**
-   * Returns new group options.
-   *
-   * @return New group options.
-   */
-  public static Options options() {
-    return new Options();
-  }
-
-  /**
-   * Returns a new group configuration.
-   *
-   * @return A new group configuration.
-   */
-  public static Config config() {
-    return new Config();
-  }
-
   private final Listeners<GroupMember> joinListeners = new Listeners<>();
   private final Listeners<GroupMember> leaveListeners = new Listeners<>();
   private final Listeners<Long> termListeners = new Listeners<>();
@@ -209,8 +187,8 @@ public class DistributedGroup extends Resource<DistributedGroup> {
   private volatile String leader;
   private volatile long term;
 
-  public DistributedGroup(CopycatClient client, Resource.Options options) {
-    super(client, options);
+  public DistributedGroup(CopycatClient client, Properties config, Properties options) {
+    super(client, config, options);
   }
 
   @Override
