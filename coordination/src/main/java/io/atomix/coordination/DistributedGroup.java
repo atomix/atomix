@@ -15,17 +15,20 @@
  */
 package io.atomix.coordination;
 
+import io.atomix.catalyst.transport.Address;
+import io.atomix.catalyst.transport.Server;
+import io.atomix.catalyst.util.ConfigurationException;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.catalyst.util.Listeners;
 import io.atomix.coordination.state.GroupCommands;
 import io.atomix.coordination.state.GroupState;
 import io.atomix.copycat.Command;
+import io.atomix.copycat.Query;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceTypeInfo;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -93,7 +96,7 @@ import java.util.function.Consumer;
  * elected for each group automatically.
  * <p>
  * Leaders are elected using a fair policy. The first member to {@link #join() join} a group will always become the
- * initial group leader. Each unique leader in a group is associated with a {@link #term() term}. The term is a
+ * initial group leader. Each unique leader in a group is associated with a {@link GroupElection#term() term}. The term is a
  * globally unique, monotonically increasing token that can be used for fencing. Users can listen for changes in
  * group terms and leaders with event listeners:
  * <pre>
@@ -107,7 +110,7 @@ import java.util.function.Consumer;
  *   });
  *   }
  * </pre>
- * The {@link #term() term} is guaranteed to be incremented prior to the election of a new {@link #leader() leader},
+ * The {@link GroupElection#term() term} is guaranteed to be incremented prior to the election of a new {@link GroupElection#leader() leader},
  * and only a single leader for any given term will ever be elected. Each instance of a group is guaranteed to see
  * terms and leaders progress monotonically, and no two leaders can exist in the same term. In that sense, the
  * terminology and constrains of leader election in Atomix borrow heavily from the Raft algorithm that underlies it.
@@ -123,8 +126,8 @@ import java.util.function.Consumer;
  * To guard against inconsistencies resulting from arbitrary process pauses, clients can use the monotonically
  * increasing term for coordination and managing optimistic access to external resources.
  * <h2>Remote execution</h2>
- * Once members of the group, any member can {@link GroupMember#execute(Runnable) execute} immediate callbacks or
- * {@link GroupMember#schedule(Duration, Runnable) schedule} delayed callbacks to be run on any other member of the
+ * Once members of the group, any member can {@link GroupScheduler#execute(Runnable) execute} immediate callbacks or
+ * {@link GroupScheduler#schedule(Duration, Runnable) schedule} delayed callbacks to be run on any other member of the
  * group. Submitting a {@link Runnable} callback to a member will cause it to be serialized and sent to that node
  * to be executed.
  * <pre>
@@ -178,17 +181,74 @@ import java.util.function.Consumer;
  */
 @ResourceTypeInfo(id=-20, stateMachine=GroupState.class, typeResolver=GroupCommands.TypeResolver.class)
 public class DistributedGroup extends Resource<DistributedGroup> {
+
+  /**
+   * Group options.
+   */
+  public static class Options extends Resource.Options {
+    private static final String ADDRESS = "address";
+
+    public Options() {
+    }
+
+    public Options(Properties defaults) {
+      super(defaults);
+    }
+
+    /**
+     * Returns the message bus address.
+     *
+     * @return The message bus address.
+     */
+    public Address getAddress() {
+      String addressString = getProperty(ADDRESS);
+      if (addressString == null)
+        return null;
+
+      String[] split = addressString.split(":");
+      if (split.length != 2)
+        throw new ConfigurationException("malformed address string: " + addressString);
+
+      try {
+        return new Address(split[0], Integer.valueOf(split[1]));
+      } catch (NumberFormatException e) {
+        throw new ConfigurationException("malformed port: " + split[1]);
+      }
+    }
+
+    /**
+     * Sets the local message bus server address.
+     *
+     * @param address The local message bus server address.
+     * @return The message bus options.
+     */
+    public Options withAddress(Address address) {
+      setProperty(ADDRESS, String.format("%s:%s", address.host(), address.port()));
+      return this;
+    }
+  }
+
   private final Listeners<GroupMember> joinListeners = new Listeners<>();
   private final Listeners<GroupMember> leaveListeners = new Listeners<>();
-  private final Listeners<Long> termListeners = new Listeners<>();
-  private final Listeners<GroupMember> electionListeners = new Listeners<>();
   private final Set<String> joining = new CopyOnWriteArraySet<>();
-  private final Map<String, GroupMember> members = new ConcurrentHashMap<>();
-  private volatile String leader;
-  private volatile long term;
+  private final Address address;
+  private final Server server;
+  final GroupConnectionManager connections;
+  private final GroupProperties properties = new GroupProperties(null, this);
+  private final GroupElection election = new GroupElection(this);
+  private final GroupScheduler scheduler = new GroupScheduler(null, this);
+  final Map<String, GroupMember> members = new ConcurrentHashMap<>();
 
   public DistributedGroup(CopycatClient client, Properties config, Properties options) {
     super(client, config, options);
+    this.address = new Options(options).getAddress();
+    this.server = client.transport().server();
+    this.connections = new GroupConnectionManager(client.transport().client(), client.context());
+  }
+
+  @Override
+  public Options options() {
+    return new Options(super.options());
   }
 
   @Override
@@ -196,15 +256,47 @@ public class DistributedGroup extends Resource<DistributedGroup> {
     return super.open().thenApply(result -> {
       client.onEvent("join", this::onJoinEvent);
       client.onEvent("leave", this::onLeaveEvent);
-      client.onEvent("term", this::onTermEvent);
-      client.onEvent("elect", this::onElectEvent);
-      client.onEvent("resign", this::onResignEvent);
-      client.onEvent("message", this::onMessageEvent);
+      client.onEvent("term", election::onTermEvent);
+      client.onEvent("elect", election::onElectEvent);
+      client.onEvent("resign", election::onResignEvent);
+      client.onEvent("task", this::onTaskEvent);
+      client.onEvent("ack", this::onAckEvent);
       client.onEvent("execute", this::onExecuteEvent);
 
       return result;
-    }).thenCompose(v -> sync())
+    }).thenCompose(v -> listen())
+      .thenCompose(v -> sync())
       .thenApply(v -> this);
+  }
+
+  /**
+   * Starts the server.
+   */
+  private CompletableFuture<Void> listen() {
+    if (address != null) {
+      return server.listen(address, c -> {
+        c.handler(GroupMessage.class, this::onMessage);
+      });
+    }
+    return CompletableFuture.completedFuture(null);
+  }
+
+  /**
+   * Handles a group message.
+   */
+  private CompletableFuture<Object> onMessage(GroupMessage message) {
+    CompletableFuture<Object> future = new CompletableFuture<>();
+    GroupMember member = members.get(message.member());
+    if (member != null) {
+      if (member instanceof LocalGroupMember) {
+        ((LocalGroupMember) member).handleMessage(message.setFuture(future));
+      } else {
+        future.completeExceptionally(new IllegalStateException("not a local member"));
+      }
+    } else {
+      future.completeExceptionally(new IllegalStateException("unknown member"));
+    }
+    return future;
   }
 
   /**
@@ -212,8 +304,8 @@ public class DistributedGroup extends Resource<DistributedGroup> {
    */
   private CompletableFuture<Void> sync() {
     return submit(new GroupCommands.Listen()).thenAccept(members -> {
-      for (String memberId : members) {
-        this.members.computeIfAbsent(memberId, InternalGroupMember::new);
+      for (GroupMemberInfo info : members) {
+        this.members.computeIfAbsent(info.memberId(), m -> new GroupMember(info, this));
       }
     });
   }
@@ -221,13 +313,13 @@ public class DistributedGroup extends Resource<DistributedGroup> {
   /**
    * Handles a join event received from the cluster.
    */
-  private void onJoinEvent(String memberId) {
+  private void onJoinEvent(GroupMemberInfo info) {
     GroupMember member;
-    if (joining.contains(memberId)) {
-      member = new InternalLocalGroupMember(memberId);
-      members.put(memberId, member);
+    if (joining.contains(info.memberId())) {
+      member = new LocalGroupMember(info, this);
+      members.put(info.memberId(), member);
     } else {
-      member = members.computeIfAbsent(memberId, InternalGroupMember::new);
+      member = members.computeIfAbsent(info.memberId(), m -> new GroupMember(info, this));
     }
 
     for (Listener<GroupMember> listener : joinListeners) {
@@ -248,41 +340,26 @@ public class DistributedGroup extends Resource<DistributedGroup> {
   }
 
   /**
-   * Handles a term change event received from the cluster.
+   * Handles a task event received from the cluster.
    */
-  private void onTermEvent(long term) {
-    this.term = term;
-    termListeners.accept(term);
-  }
-
-  /**
-   * Handles an elect event received from the cluster.
-   */
-  private void onElectEvent(String leader) {
-    this.leader = leader;
-    electionListeners.accept(member(leader));
-    GroupMember member = members.get(leader);
-    if (member != null && member instanceof InternalLocalGroupMember) {
-      ((InternalLocalGroupMember) member).electionListeners.accept(term);
+  private void onTaskEvent(GroupTask task) {
+    GroupMember localMember = members.get(task.member());
+    if (localMember != null && localMember instanceof LocalGroupMember) {
+      CompletableFuture<Boolean> future = new CompletableFuture<>();
+      future.whenComplete((succeeded, error) -> {
+        submit(new GroupCommands.Ack(task.id()));
+      });
+      ((LocalGroupMember) localMember).handleTask(task.setFuture(future));
     }
   }
 
   /**
-   * Handles a resign event received from the cluster.
+   * Handles an ack event received from the cluster.
    */
-  private void onResignEvent(String leader) {
-    if (this.leader != null && this.leader.equals(leader)) {
-      this.leader = null;
-    }
-  }
-
-  /**
-   * Handles a message event received from the cluster.
-   */
-  private void onMessageEvent(GroupCommands.Message message) {
-    GroupMember localMember = members.get(message.member());
-    if (localMember != null && localMember instanceof InternalLocalGroupMember) {
-      ((InternalLocalGroupMember) localMember).handle(message);
+  private void onAckEvent(GroupCommands.Submit task) {
+    GroupMember member = members.get(task.member());
+    if (member != null) {
+      member.tasks().handleAck(task.id());
     }
   }
 
@@ -294,74 +371,30 @@ public class DistributedGroup extends Resource<DistributedGroup> {
   }
 
   /**
-   * Returns the current group leader.
-   * <p>
-   * The returned leader is the last known leader for the group. The leader is associated with
-   * the current {@link #term()} which is guaranteed to be unique and monotonically increasing.
-   * All resource instances are guaranteed to see leader changes in the same order. If a leader
-   * leaves the group, it is guaranteed that all open resource instances are notified of the change
-   * in leadership prior to the leave operation being completed. This guarantee is maintained only
-   * as long as the resource's session remains open.
-   * <p>
-   * The leader is <em>not</em> guaranteed to be consistent across the cluster at any given point
-   * in time. For example, a long garbage collection pause can result in the resource's session expiring
-   * and the resource failing to increment the leader at the appropriate time. Users should use
-   * the {@link #term()} for fencing when interacting with external systems.
+   * Returns the group properties.
    *
-   * @return The current group leader.
+   * @return The group properties.
    */
-  public GroupMember leader() {
-    return leader != null ? members.get(leader) : null;
+  public GroupProperties properties() {
+    return properties;
   }
 
   /**
-   * Returns the current group term.
-   * <p>
-   * The term is a globally unique, monotonically increasing token that represents an epoch.
-   * All resource instances are guaranteed to see term changes in the same order. If a leader
-   * leaves the group, it is guaranteed that the term will be incremented and all open resource
-   * instances are notified of the term change prior to the leave operation being completed. However,
-   * this guarantee is maintained only as long as the resource's session remains open.
-   * <p>
-   * For any given term, the group guarantees that a single {@link #leader()} will be elected
-   * and any leader elected after the leader for this term will be associated with a higher
-   * term.
-   * <p>
-   * The term is <em>not</em> guaranteed to be unique across the cluster at any given point in time.
-   * For example, a long garbage collection pause can result in the resource's session expiring and the
-   * resource failing to increment the term at the appropriate time. Users should use the term for
-   * fencing when interacting with external systems.
+   * Returns the group election.
    *
-   * @return The current group term.
+   * @return The group election.
    */
-  public long term() {
-    return term;
+  public GroupElection election() {
+    return election;
   }
 
   /**
-   * Registers a callback to be called when the term changes.
-   * <p>
-   * The provided callback will be called when a term change notification is received by the resource.
-   * The returned {@link Listener} can be used to unregister the term listener via {@link Listener#close()}.
+   * Returns the group scheduler.
    *
-   * @param callback The callback to be called when the term changes.
-   * @return The term listener.
+   * @return The group scheduler.
    */
-  public Listener<Long> onTerm(Consumer<Long> callback) {
-    return termListeners.add(callback);
-  }
-
-  /**
-   * Registers a callback to be called when a member of the group is elected leader.
-   * <p>
-   * The provided callback will be called when notification of a leader change is received by the resource.
-   * The returned {@link Listener} can be used to unregister the term listener via {@link Listener#close()}.
-   *
-   * @param callback The callback to call when a member of the group is elected leader.
-   * @return The leader election listener.
-   */
-  public Listener<GroupMember> onElection(Consumer<GroupMember> callback) {
-    return electionListeners.add(callback);
+  public GroupScheduler scheduler() {
+    return scheduler;
   }
 
   /**
@@ -479,15 +512,15 @@ public class DistributedGroup extends Resource<DistributedGroup> {
    */
   private CompletableFuture<LocalGroupMember> join(String memberId, boolean persistent) {
     joining.add(memberId);
-    return submit(new GroupCommands.Join(memberId, persistent)).whenComplete((result, error) -> {
+    return submit(new GroupCommands.Join(memberId, address, persistent)).whenComplete((result, error) -> {
       if (error != null) {
         joining.remove(memberId);
       }
-    }).thenApply(id -> {
-      LocalGroupMember member = (LocalGroupMember) members.get(id);
+    }).thenApply(info -> {
+      LocalGroupMember member = (LocalGroupMember) members.get(info.memberId());
       if (member == null) {
-        member = new InternalLocalGroupMember(id);
-        members.put(id, member);
+        member = new LocalGroupMember(info, this);
+        members.put(info.memberId(), member);
       }
       return member;
     });
@@ -528,143 +561,13 @@ public class DistributedGroup extends Resource<DistributedGroup> {
   }
 
   @Override
+  protected <T> CompletableFuture<T> submit(Query<T> query) {
+    return super.submit(query);
+  }
+
+  @Override
   protected <T> CompletableFuture<T> submit(Command<T> command) {
     return super.submit(command);
-  }
-
-  /**
-   * Internal local group member.
-   */
-  private class InternalLocalGroupMember extends InternalGroupMember implements LocalGroupMember {
-    private final Map<String, ListenerHolder> listeners = new ConcurrentHashMap<>();
-    private final Listeners<Long> electionListeners = new Listeners<>();
-
-    InternalLocalGroupMember(String memberId) {
-      super(memberId);
-    }
-
-    @Override
-    public CompletableFuture<Void> set(String property, Object value) {
-      return submit(new GroupCommands.SetProperty(memberId, property, value));
-    }
-
-    @Override
-    public CompletableFuture<Void> remove(String property) {
-      return submit(new GroupCommands.RemoveProperty(memberId, property));
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public <T> Listener<T> onMessage(String topic, Consumer<T> consumer) {
-      ListenerHolder listener = new ListenerHolder(consumer);
-      listeners.put(topic, listener);
-      return listener;
-    }
-
-    /**
-     * Handles a message to the member.
-     */
-    private void handle(GroupCommands.Message message) {
-      ListenerHolder listener = listeners.get(message.topic());
-      if (listener != null) {
-        listener.accept(message.body());
-      }
-    }
-
-    @Override
-    public Listener<Long> onElection(Consumer<Long> callback) {
-      Listener<Long> listener = electionListeners.add(callback);
-      if (isLeader()) {
-        listener.accept(term);
-      }
-      return listener;
-    }
-
-    @Override
-    public CompletableFuture<Void> resign() {
-      return submit(new GroupCommands.Resign(memberId));
-    }
-
-    @Override
-    public CompletableFuture<Void> leave() {
-      return submit(new GroupCommands.Leave(memberId)).whenComplete((result, error) -> {
-        members.remove(memberId);
-      });
-    }
-
-    /**
-     * Listener holder.
-     */
-    @SuppressWarnings("unchecked")
-    private class ListenerHolder implements Listener {
-      private final Consumer consumer;
-
-      private ListenerHolder(Consumer consumer) {
-        this.consumer = consumer;
-      }
-
-      @Override
-      public void accept(Object message) {
-        consumer.accept(message);
-      }
-
-      @Override
-      public void close() {
-        listeners.remove(this);
-      }
-    }
-  }
-
-  /**
-   * Internal group member.
-   */
-  private class InternalGroupMember implements GroupMember {
-    protected final String memberId;
-
-    InternalGroupMember(String memberId) {
-      this.memberId = memberId;
-    }
-
-    @Override
-    public String id() {
-      return memberId;
-    }
-
-    @Override
-    public boolean isLeader() {
-      return leader != null && leader.equals(memberId);
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public <T> CompletableFuture<T> get(String property) {
-      return submit(new GroupCommands.GetProperty(memberId, property)).thenApply(result -> (T) result);
-    }
-
-    @Override
-    public CompletableFuture<Void> send(String topic, Object message) {
-      return submit(new GroupCommands.Send(memberId, topic, message));
-    }
-
-    @Override
-    public CompletableFuture<Void> schedule(Instant instant, Runnable callback) {
-      return schedule(Duration.ofMillis(instant.toEpochMilli() - System.currentTimeMillis()), callback);
-    }
-
-    @Override
-    public CompletableFuture<Void> schedule(Duration delay, Runnable callback) {
-      return submit(new GroupCommands.Schedule(memberId, delay.toMillis(), callback));
-    }
-
-    @Override
-    public CompletableFuture<Void> execute(Runnable callback) {
-      return submit(new GroupCommands.Execute(memberId, callback));
-    }
-    
-    @Override
-    public String toString() {
-      return memberId;
-    }
   }
 
 }

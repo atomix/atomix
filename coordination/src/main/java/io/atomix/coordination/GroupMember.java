@@ -15,34 +15,33 @@
  */
 package io.atomix.coordination;
 
-import java.time.Duration;
-import java.time.Instant;
-import java.util.concurrent.CompletableFuture;
+import io.atomix.catalyst.transport.Address;
+import io.atomix.catalyst.util.Assert;
 
 /**
  * A {@link DistributedGroup} member representing a member of the group controlled by a local
  * or remote process.
- * <p>
- * A {@code GroupMember} represents a reference to a single instance of a resource which has
- * {@link DistributedGroup#join() joined} a membership group. Each member is guaranteed to
- * have a unique {@link #id()} throughout the lifetime of the distributed resource. Group members
- * can {@link #schedule(Duration, Runnable) schedule} or {@link #execute(Runnable) execute} callbacks
- * remotely on member nodes.
- * <p>
- * Group members support direct messaging via the {@link #send(String, Object)} method. Messages
- * sent between group members must be associated with a {@link String} topic. The topic is used
- * to identify the type of message being sent.
- * <pre>
- *   {@code
- *   group.member("foo").send("bar", "Hello world!");
- *   }
- * </pre>
- * Messages sent between group members are persisted and replicated in the cluster and are guaranteed
- * to be received by the member as long as its session remains open.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public interface GroupMember {
+public class GroupMember {
+  protected final String memberId;
+  protected final Address address;
+  protected final DistributedGroup group;
+  private final GroupProperties properties;
+  private final GroupTaskQueue tasks;
+  private final GroupScheduler scheduler;
+  private final GroupConnection connection;
+
+  GroupMember(GroupMemberInfo info, DistributedGroup group) {
+    this.memberId = info.memberId();
+    this.address = info.address();
+    this.group = Assert.notNull(group, "group");
+    this.properties = new GroupProperties(memberId, group);
+    this.tasks = new GroupTaskQueue(memberId, group);
+    this.scheduler = new GroupScheduler(memberId, group);
+    this.connection = new GroupConnection(memberId, address, group.connections);
+  }
 
   /**
    * Returns the member ID.
@@ -52,7 +51,18 @@ public interface GroupMember {
    *
    * @return The member ID.
    */
-  String id();
+  public String id() {
+    return memberId;
+  }
+
+  /**
+   * Returns the member address.
+   *
+   * @return The member address.
+   */
+  public Address address() {
+    return address;
+  }
 
   /**
    * Returns a boolean value indicating whether this member is the current leader.
@@ -63,66 +73,29 @@ public interface GroupMember {
    *
    * @return Indicates whether this member is the current leader.
    */
-  boolean isLeader();
+  public boolean isLeader() {
+    return group.election().leader != null && group.election().leader.equals(memberId);
+  }
 
-  /**
-   * Gets the value of a property of the member.
-   * <p>
-   * Properties are identified by a {@link String} name. Properties may only be set by the local member but
-   * can be accessed by any instance of the {@link DistributedGroup}.
-   *
-   * @param property The property to get.
-   * @param <T> The property type.
-   * @return A completable future to be completed with the value of the property.
-   */
-  <T> CompletableFuture<T> get(String property);
+  public GroupProperties properties() {
+    return properties;
+  }
 
-  /**
-   * Sends a message to the member.
-   * <p>
-   * Group messaging guarantees sequential consistency such that members are guaranteed to receive messages
-   * in the order in which they were sent. Messages will be sent according to the parent {@link DistributedGroup}'s
-   * {@link io.atomix.resource.WriteConsistency consistency} level. If the consistency level is
-   * {@link io.atomix.resource.WriteConsistency#ATOMIC} (the default), the returned {@link CompletableFuture} will
-   * be completed once the member has received the message or has left the group. Note that the completion of
-   * the returned future does not necessarily guarantee that the message was received and processed, only that
-   * it was <em>either</em> received and processed <em>or</em> the member left the group or disconnected.
-   * <pre>
-   *   {@code
-   *   group.member("foo").send("bar", "Hello world!");
-   *   }
-   * </pre>
-   *
-   * @param topic The message topic.
-   * @param message The message to send.
-   * @return A completable future to be completed once the message has been received by the member.
-   */
-  CompletableFuture<Void> send(String topic, Object message);
+  public GroupConnection connection() {
+    return connection;
+  }
 
-  /**
-   * Schedules a callback to run at the given instant.
-   *
-   * @param instant The instant at which to run the callback.
-   * @param callback The callback to run.
-   * @return A completable future to be completed once the callback has been scheduled.
-   */
-  CompletableFuture<Void> schedule(Instant instant, Runnable callback);
+  public GroupTaskQueue tasks() {
+    return tasks;
+  }
 
-  /**
-   * Schedules a callback to run after the given delay on the member.
-   *
-   * @param delay The delay after which to run the callback.
-   * @param callback The callback to run.
-   * @return A completable future to be completed once the callback has been scheduled.
-   */
-  CompletableFuture<Void> schedule(Duration delay, Runnable callback);
+  public GroupScheduler scheduler() {
+    return scheduler;
+  }
 
-  /**
-   * Executes a callback on the group member.
-   *
-   * @param callback The callback to execute.
-   * @return A completable future to be completed once the callback has completed.
-   */
-  CompletableFuture<Void> execute(Runnable callback);
+  @Override
+  public String toString() {
+    return String.format("%s[id=%s, address=%s]", getClass().getSimpleName(), memberId, address);
+  }
 
 }

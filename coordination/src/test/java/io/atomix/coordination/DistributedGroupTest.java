@@ -15,14 +15,14 @@
  */
 package io.atomix.coordination;
 
-import static org.testng.Assert.assertEquals;
+import io.atomix.catalyst.transport.Address;
+import io.atomix.testing.AbstractCopycatTest;
+import org.testng.annotations.Test;
 
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.testng.annotations.Test;
-
-import io.atomix.testing.AbstractCopycatTest;
+import static org.testng.Assert.assertEquals;
 
 /**
  * Distributed group test.
@@ -178,23 +178,23 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     DistributedGroup group2 = createResource();
 
     LocalGroupMember localMember = group1.join().get();
-    localMember.set("foo", "Hello world!").thenRun(this::resume);
+    localMember.properties().set("foo", "Hello world!").thenRun(this::resume);
 
     await(5000);
 
     assertEquals(group2.members().size(), 1);
-    group2.members().iterator().next().get("foo").thenAccept(result -> {
+    group2.members().iterator().next().properties().get("foo").thenAccept(result -> {
       threadAssertEquals(result, "Hello world!");
       resume();
     });
 
     await(5000);
 
-    localMember.remove("foo").thenRun(this::resume);
+    localMember.properties().remove("foo").thenRun(this::resume);
     await(5000);
 
     assertEquals(group2.members().size(), 1);
-    group2.members().iterator().next().get("foo").thenAccept(result -> {
+    group2.members().iterator().next().properties().get("foo").thenAccept(result -> {
       threadAssertNull(result);
       resume();
     });
@@ -215,11 +215,11 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
 
     LocalGroupMember localMember = group1.join(memberId).get();
 
-    localMember.set("foo", "Hello world!").thenRun(this::resume);
+    localMember.properties().set("foo", "Hello world!").thenRun(this::resume);
     await(5000);
 
     assertEquals(group2.members().size(), 1);
-    group2.members().iterator().next().get("foo").thenAccept(result -> {
+    group2.members().iterator().next().properties().get("foo").thenAccept(result -> {
       threadAssertEquals(result, "Hello world!");
       resume();
     });
@@ -231,7 +231,7 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     LocalGroupMember localMember2 = group2.join(memberId).get();
 
     assertEquals(group2.members().size(), 1);
-    localMember2.get("foo").thenAccept(result -> {
+    localMember2.properties().get("foo").thenAccept(result -> {
       threadAssertEquals(result, "Hello world!");
       resume();
     });
@@ -245,12 +245,13 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
   public void testSend() throws Throwable {
     createServers(3);
 
-    DistributedGroup group1 = createResource();
-    DistributedGroup group2 = createResource();
+    DistributedGroup group1 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6000)));
+    DistributedGroup group2 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6001)));
 
     group1.join().thenAccept(member -> {
       member.onMessage("foo", message -> {
-        threadAssertEquals(message, "Hello world!");
+        threadAssertEquals(message.body(), "Hello world!");
+        message.reply("bar");
         resume();
       });
       resume();
@@ -259,7 +260,10 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     await(5000);
 
     assertEquals(group2.members().size(), 1);
-    group2.members().iterator().next().send("foo", "Hello world!").thenRun(this::resume);
+    group2.members().iterator().next().connection().send("foo", "Hello world!").thenAccept(result -> {
+      threadAssertEquals(result, "bar");
+      resume();
+    });
 
     await(10000, 2);
   }

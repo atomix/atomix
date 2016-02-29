@@ -21,7 +21,11 @@ import io.atomix.catalyst.serializer.CatalystSerializable;
 import io.atomix.catalyst.serializer.SerializableTypeResolver;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.serializer.SerializerRegistry;
+import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.util.Assert;
+import io.atomix.coordination.GroupMemberInfo;
+import io.atomix.coordination.GroupMessage;
+import io.atomix.coordination.GroupTask;
 import io.atomix.copycat.Command;
 import io.atomix.copycat.Query;
 
@@ -85,15 +89,26 @@ public final class GroupCommands {
   /**
    * Join command.
    */
-  public static class Join extends MemberCommand<String> {
+  public static class Join extends MemberCommand<GroupMemberInfo> {
+    private Address address;
     private boolean persist;
 
     public Join() {
     }
 
-    public Join(String member, boolean persist) {
+    public Join(String member, Address address, boolean persist) {
       super(member);
+      this.address = address;
       this.persist = persist;
+    }
+
+    /**
+     * Returns the member address.
+     *
+     * @return The member address.
+     */
+    public Address address() {
+      return address;
     }
 
     /**
@@ -109,12 +124,14 @@ public final class GroupCommands {
     public void writeObject(BufferOutput buffer, Serializer serializer) {
       super.writeObject(buffer, serializer);
       buffer.writeBoolean(persist);
+      serializer.writeObject(address, buffer);
     }
 
     @Override
     public void readObject(BufferInput buffer, Serializer serializer) {
       super.readObject(buffer, serializer);
       persist = buffer.readBoolean();
+      address = serializer.readObject(buffer);
     }
   }
 
@@ -257,7 +274,7 @@ public final class GroupCommands {
   /**
    * List command.
    */
-  public static class Listen extends GroupCommand<Set<String>> {
+  public static class Listen extends GroupCommand<Set<GroupMemberInfo>> {
     @Override
     public CompactionMode compaction() {
       return CompactionMode.QUORUM;
@@ -419,28 +436,28 @@ public final class GroupCommands {
   }
 
   /**
-   * Send command.
+   * Submit command.
    */
-  public static class Send extends MemberCommand<Void> {
-    private String topic;
-    private Object message;
+  public static class Submit extends MemberCommand<Void> {
+    private long id;
+    private Object task;
 
-    public Send() {
+    public Submit() {
     }
 
-    public Send(String member, String topic, Object message) {
+    public Submit(long id, String member, Object task) {
       super(member);
-      this.topic = Assert.notNull(topic, "topic");
-      this.message = message;
+      this.id = id;
+      this.task = task;
     }
 
     /**
-     * Returns the topic.
+     * Returns the task ID.
      *
-     * @return The topic.
+     * @return The task ID.
      */
-    public String topic() {
-      return topic;
+    public long id() {
+      return id;
     }
 
     /**
@@ -448,82 +465,58 @@ public final class GroupCommands {
      *
      * @return The message.
      */
-    public Object message() {
-      return message;
+    public Object task() {
+      return task;
     }
 
     @Override
     public void writeObject(BufferOutput buffer, Serializer serializer) {
       super.writeObject(buffer, serializer);
-      buffer.writeString(topic);
-      serializer.writeObject(message, buffer);
+      buffer.writeLong(id);
+      serializer.writeObject(task, buffer);
     }
 
     @Override
     public void readObject(BufferInput buffer, Serializer serializer) {
       super.readObject(buffer, serializer);
-      topic = buffer.readString();
-      message = serializer.readObject(buffer);
+      id = buffer.readLong();
+      task = serializer.readObject(buffer);
     }
   }
 
   /**
-   * Membership group message.
+   * Ack command.
    */
-  public static class Message implements CatalystSerializable {
-    private String member;
-    private String topic;
-    private Object body;
+  public static class Ack extends MemberCommand<Object> {
+    private long id;
 
-    public Message() {
+    public Ack() {
     }
 
-    public Message(String member, String topic, Object body) {
-      this.member = member;
-      this.topic = Assert.notNull(topic, "topic");
-      this.body = body;
+    public Ack(long id) {
+      this.id = id;
     }
 
     /**
-     * Returns the local group member ID.
+     * Returns the task ID.
      *
-     * @return The local group member ID.
+     * @return The task ID.
      */
-    public String member() {
-      return member;
-    }
-
-    /**
-     * Returns the message topic.
-     *
-     * @return The message topic.
-     */
-    public String topic() {
-      return topic;
-    }
-
-    /**
-     * Returns the message body.
-     *
-     * @return The message body.
-     */
-    public Object body() {
-      return body;
+    public long id() {
+      return id;
     }
 
     @Override
-    public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
-      buffer.writeString(member).writeString(topic);
-      serializer.writeObject(body, buffer);
+    public void writeObject(BufferOutput buffer, Serializer serializer) {
+      super.writeObject(buffer, serializer);
+      buffer.writeLong(id);
     }
 
     @Override
-    public void readObject(BufferInput<?> buffer, Serializer serializer) {
-      member = buffer.readString();
-      topic = buffer.readString();
-      body = serializer.readObject(buffer);
+    public void readObject(BufferInput buffer, Serializer serializer) {
+      super.readObject(buffer, serializer);
+      id = buffer.readLong();
     }
-
   }
 
   /**
@@ -541,8 +534,10 @@ public final class GroupCommands {
       registry.register(SetProperty.class, -136);
       registry.register(GetProperty.class, -137);
       registry.register(RemoveProperty.class, -138);
-      registry.register(Send.class, -139);
-      registry.register(Message.class, -140);
+      registry.register(Submit.class, -139);
+      registry.register(GroupMessage.class, -140);
+      registry.register(GroupTask.class, -141);
+      registry.register(Ack.class, -142);
     }
   }
 

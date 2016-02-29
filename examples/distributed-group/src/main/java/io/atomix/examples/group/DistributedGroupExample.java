@@ -73,7 +73,7 @@ public class DistributedGroupExample {
       System.out.println(member.id() + " joined the group!");
 
       String id = member.id();
-      member.execute((Serializable & Runnable) () -> System.out.println("Executing on member " + id));
+      member.scheduler().execute((Serializable & Runnable) () -> System.out.println("Executing on member " + id));
     });
 
     while (atomix.isOpen()) {
