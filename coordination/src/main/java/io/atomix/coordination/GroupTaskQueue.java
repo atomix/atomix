@@ -34,7 +34,7 @@ public class GroupTaskQueue {
   private final Map<Long, CompletableFuture<Void>> taskFutures = new ConcurrentHashMap<>();
 
   protected GroupTaskQueue(String memberId, DistributedGroup group) {
-    this.memberId = Assert.notNull(memberId, "memberId");
+    this.memberId = memberId;
     this.group = Assert.notNull(group, "group");
   }
 
@@ -64,6 +64,16 @@ public class GroupTaskQueue {
     CompletableFuture<Void> future = taskFutures.remove(taskId);
     if (future != null) {
       future.complete(null);
+    }
+  }
+
+  /**
+   * Handles a task failure.
+   */
+  void handleFail(long taskId) {
+    CompletableFuture<Void> future = taskFutures.remove(taskId);
+    if (future != null) {
+      future.completeExceptionally(new TaskFailedException());
     }
   }
 

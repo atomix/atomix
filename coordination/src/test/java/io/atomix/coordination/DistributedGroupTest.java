@@ -20,6 +20,7 @@ import io.atomix.testing.AbstractCopycatTest;
 import org.testng.annotations.Test;
 
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.testng.Assert.assertEquals;
@@ -213,9 +214,9 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
 
     String memberId = UUID.randomUUID().toString();
 
-    LocalGroupMember localMember = group1.join(memberId).get();
+    LocalGroupMember localMember1 = group1.join(memberId).get();
 
-    localMember.properties().set("foo", "Hello world!").thenRun(this::resume);
+    localMember1.properties().set("foo", "Hello world!").thenRun(this::resume);
     await(5000);
 
     assertEquals(group2.members().size(), 1);
@@ -266,6 +267,67 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     });
 
     await(10000, 2);
+  }
+
+  /**
+   * Tests direct member tasks.
+   */
+  public void testDirectTask() throws Throwable {
+    createServers(3);
+
+    DistributedGroup group1 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6000)));
+    DistributedGroup group2 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6001)));
+
+    LocalGroupMember member = group2.join().get(10, TimeUnit.SECONDS);
+
+    assertEquals(group1.members().size(), 1);
+    assertEquals(group2.members().size(), 1);
+
+    member.onTask(task -> {
+      threadAssertEquals(task.value(), "Hello world!");
+      task.ack();
+      resume();
+    });
+    group1.member(member.id()).tasks().submit("Hello world!").thenRun(this::resume);
+    await(10000, 2);
+  }
+
+  /**
+   * Tests fan-out member tasks.
+   */
+  public void testAllTask() throws Throwable {
+    createServers(3);
+
+    DistributedGroup group1 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6000)));
+    DistributedGroup group2 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6001)));
+
+    LocalGroupMember member1 = group1.join().get(10, TimeUnit.SECONDS);
+    LocalGroupMember member2 = group2.join().get(10, TimeUnit.SECONDS);
+    LocalGroupMember member3 = group2.join().get(10, TimeUnit.SECONDS);
+
+    assertEquals(group1.members().size(), 3);
+    assertEquals(group2.members().size(), 3);
+
+    member1.onTask(task -> {
+      threadAssertEquals(task.value(), "Hello world!");
+      System.out.println("RECTASK 1");
+      task.ack();
+      resume();
+    });
+    member2.onTask(task -> {
+      threadAssertEquals(task.value(), "Hello world!");
+      System.out.println("RECTASK 2");
+      task.ack();
+      resume();
+    });
+    member3.onTask(task -> {
+      threadAssertEquals(task.value(), "Hello world!");
+      System.out.println("RECTASK 3");
+      task.ack();
+      resume();
+    });
+    group1.tasks().submit("Hello world!").thenRun(this::resume);
+    await(10000, 4);
   }
 
 }

@@ -237,6 +237,7 @@ public class DistributedGroup extends Resource<DistributedGroup> {
   private final GroupProperties properties = new GroupProperties(null, this);
   private final GroupElection election = new GroupElection(this);
   private final GroupScheduler scheduler = new GroupScheduler(null, this);
+  private final GroupTaskQueue tasks = new GroupTaskQueue(null, this);
   final Map<String, GroupMember> members = new ConcurrentHashMap<>();
 
   public DistributedGroup(CopycatClient client, Properties config, Properties options) {
@@ -261,6 +262,7 @@ public class DistributedGroup extends Resource<DistributedGroup> {
       client.onEvent("resign", election::onResignEvent);
       client.onEvent("task", this::onTaskEvent);
       client.onEvent("ack", this::onAckEvent);
+      client.onEvent("fail", this::onFailEvent);
       client.onEvent("execute", this::onExecuteEvent);
 
       return result;
@@ -347,7 +349,11 @@ public class DistributedGroup extends Resource<DistributedGroup> {
     if (localMember != null && localMember instanceof LocalGroupMember) {
       CompletableFuture<Boolean> future = new CompletableFuture<>();
       future.whenComplete((succeeded, error) -> {
-        submit(new GroupCommands.Ack(task.id()));
+        if (error == null && succeeded) {
+          submit(new GroupCommands.Ack(task.id(), task.member(), true));
+        } else {
+          submit(new GroupCommands.Ack(task.id(), task.member(), false));
+        }
       });
       ((LocalGroupMember) localMember).handleTask(task.setFuture(future));
     }
@@ -356,10 +362,28 @@ public class DistributedGroup extends Resource<DistributedGroup> {
   /**
    * Handles an ack event received from the cluster.
    */
-  private void onAckEvent(GroupCommands.Submit task) {
-    GroupMember member = members.get(task.member());
-    if (member != null) {
-      member.tasks().handleAck(task.id());
+  private void onAckEvent(GroupCommands.Submit submit) {
+    if (submit.member() != null) {
+      GroupMember member = members.get(submit.member());
+      if (member != null) {
+        member.tasks().handleAck(submit.id());
+      }
+    } else {
+      tasks.handleAck(submit.id());
+    }
+  }
+
+  /**
+   * Handles a fail event received from the cluster.
+   */
+  private void onFailEvent(GroupCommands.Submit submit) {
+    if (submit.member() != null) {
+      GroupMember member = members.get(submit.member());
+      if (member != null) {
+        member.tasks().handleFail(submit.id());
+      }
+    } else {
+      tasks.handleFail(submit.id());
     }
   }
 
@@ -386,6 +410,15 @@ public class DistributedGroup extends Resource<DistributedGroup> {
    */
   public GroupElection election() {
     return election;
+  }
+
+  /**
+   * Returns the group task queue.
+   *
+   * @return The group task queue.
+   */
+  public GroupTaskQueue tasks() {
+    return tasks;
   }
 
   /**

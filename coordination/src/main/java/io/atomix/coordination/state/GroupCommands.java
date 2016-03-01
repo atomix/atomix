@@ -489,12 +489,15 @@ public final class GroupCommands {
    */
   public static class Ack extends MemberCommand<Object> {
     private long id;
+    private boolean succeeded;
 
     public Ack() {
     }
 
-    public Ack(long id) {
+    public Ack(long id, String member, boolean succeeded) {
+      super(member);
       this.id = id;
+      this.succeeded = succeeded;
     }
 
     /**
@@ -506,16 +509,26 @@ public final class GroupCommands {
       return id;
     }
 
+    /**
+     * Returns a boolean value indicating whether the task succeeded.
+     *
+     * @return Indicates whether the task was successfully processed.
+     */
+    public boolean succeeded() {
+      return succeeded;
+    }
+
     @Override
     public void writeObject(BufferOutput buffer, Serializer serializer) {
       super.writeObject(buffer, serializer);
-      buffer.writeLong(id);
+      buffer.writeLong(id).writeBoolean(succeeded);
     }
 
     @Override
     public void readObject(BufferInput buffer, Serializer serializer) {
       super.readObject(buffer, serializer);
       id = buffer.readLong();
+      succeeded = buffer.readBoolean();
     }
   }
 

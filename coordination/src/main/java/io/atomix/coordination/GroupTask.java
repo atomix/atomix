@@ -29,7 +29,7 @@ public class GroupTask<T> implements CatalystSerializable {
   private long id;
   private String member;
   private T value;
-  private CompletableFuture<Void> future;
+  private CompletableFuture<Boolean> future;
 
   public GroupTask() {
   }
@@ -40,12 +40,17 @@ public class GroupTask<T> implements CatalystSerializable {
     this.value = value;
   }
 
-  GroupTask<T> setFuture(CompletableFuture<Void> future) {
+  GroupTask<T> setFuture(CompletableFuture<Boolean> future) {
     this.future = future;
     return this;
   }
 
-  long id() {
+  /**
+   * Returns the task ID.
+   *
+   * @return The unique task ID.
+   */
+  public long id() {
     return id;
   }
 
@@ -58,17 +63,23 @@ public class GroupTask<T> implements CatalystSerializable {
   }
 
   public void ack() {
-    future.complete(null);
+    future.complete(true);
+  }
+
+  public void fail() {
+    future.complete(false);
   }
 
   @Override
   public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
+    buffer.writeLong(id);
     buffer.writeString(member);
     serializer.writeObject(value, buffer);
   }
 
   @Override
   public void readObject(BufferInput<?> buffer, Serializer serializer) {
+    id = buffer.readLong();
     member = buffer.readString();
     value = serializer.readObject(buffer);
   }
