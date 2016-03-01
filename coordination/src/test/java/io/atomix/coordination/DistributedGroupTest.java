@@ -250,7 +250,7 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     DistributedGroup group2 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6001)));
 
     group1.join().thenAccept(member -> {
-      member.onMessage("foo", message -> {
+      member.connection().onMessage("foo", message -> {
         threadAssertEquals(message.body(), "Hello world!");
         message.reply("bar");
         resume();
@@ -283,7 +283,7 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     assertEquals(group1.members().size(), 1);
     assertEquals(group2.members().size(), 1);
 
-    member.onTask(task -> {
+    member.tasks().onTask(task -> {
       threadAssertEquals(task.value(), "Hello world!");
       task.ack();
       resume();
@@ -308,19 +308,19 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     assertEquals(group1.members().size(), 3);
     assertEquals(group2.members().size(), 3);
 
-    member1.onTask(task -> {
+    member1.tasks().onTask(task -> {
       threadAssertEquals(task.value(), "Hello world!");
       System.out.println("RECTASK 1");
       task.ack();
       resume();
     });
-    member2.onTask(task -> {
+    member2.tasks().onTask(task -> {
       threadAssertEquals(task.value(), "Hello world!");
       System.out.println("RECTASK 2");
       task.ack();
       resume();
     });
-    member3.onTask(task -> {
+    member3.tasks().onTask(task -> {
       threadAssertEquals(task.value(), "Hello world!");
       System.out.println("RECTASK 3");
       task.ack();

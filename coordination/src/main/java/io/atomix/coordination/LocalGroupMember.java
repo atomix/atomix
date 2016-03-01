@@ -16,12 +16,9 @@
 package io.atomix.coordination;
 
 import io.atomix.catalyst.util.Listener;
-import io.atomix.catalyst.util.Listeners;
 import io.atomix.coordination.state.GroupCommands;
 
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 /**
@@ -60,73 +57,22 @@ import java.util.function.Consumer;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class LocalGroupMember extends GroupMember {
-  private final Map<String, MessageListenerHolder> messageListeners = new ConcurrentHashMap<>();
-  private final Listeners<GroupTask<Object>> taskListeners = new Listeners<>();
-  private final GroupConnection connection;
+  private final LocalGroupTaskQueue tasks;
+  private final LocalGroupConnection connection;
 
   LocalGroupMember(GroupMemberInfo info, DistributedGroup group) {
     super(info, group);
-    connection = new GroupConnection(info.memberId(), info.address(), group.connections) {
-      @Override
-      @SuppressWarnings("unchecked")
-      public <T, U> CompletableFuture<U> send(String topic, T message) {
-        CompletableFuture<U> future = new CompletableFuture<>();
-        handleMessage(new GroupMessage(memberId, topic, message).setFuture(future));
-        return future;
-      }
-    };
-  }
-
-  /**
-   * Registers a consumer for messages sent to the local member.
-   * <p>
-   * The provided message consumer will be called when a message sent to the local member
-   * is received for the given {@code topic}.
-   *
-   * @param topic The message topic.
-   * @param consumer The message consumer.
-   * @param <T> The message type.
-   * @return The message listener.
-   */
-  @SuppressWarnings("unchecked")
-  public <T> Listener<GroupMessage<T>> onMessage(String topic, Consumer<GroupMessage<T>> consumer) {
-    MessageListenerHolder listener = new MessageListenerHolder(consumer);
-    messageListeners.put(topic, listener);
-    return listener;
-  }
-
-  /**
-   * Handles a message to the member.
-   */
-  void handleMessage(GroupMessage message) {
-    MessageListenerHolder listener = messageListeners.get(message.topic());
-    if (listener != null) {
-      listener.accept(message);
-    }
-  }
-
-  /**
-   * Registers a consumer for tasks send to the local member.
-   *
-   * @param consumer The task consumer.
-   * @param <T> The task type.
-   * @return The task listener.
-   */
-  @SuppressWarnings("unchecked")
-  public <T> Listener<GroupTask<T>> onTask(Consumer<GroupTask<T>> consumer) {
-    return (Listener) taskListeners.add((Consumer) consumer);
-  }
-
-  /**
-   * Handles a task.
-   */
-  @SuppressWarnings("unchecked")
-  void handleTask(GroupTask task) {
-    taskListeners.accept(task);
+    this.tasks = new LocalGroupTaskQueue(info.memberId(), group);
+    this.connection = new LocalGroupConnection(info.memberId(), info.address(), group.connections);
   }
 
   @Override
-  public GroupConnection connection() {
+  public LocalGroupTaskQueue tasks() {
+    return tasks;
+  }
+
+  @Override
+  public LocalGroupConnection connection() {
     return connection;
   }
 
@@ -210,28 +156,6 @@ public class LocalGroupMember extends GroupMember {
     return group.submit(new GroupCommands.Leave(memberId)).whenComplete((result, error) -> {
       group.members.remove(memberId);
     });
-  }
-
-  /**
-   * Listener holder.
-   */
-  @SuppressWarnings("unchecked")
-  private class MessageListenerHolder implements Listener {
-    private final Consumer consumer;
-
-    private MessageListenerHolder(Consumer consumer) {
-      this.consumer = consumer;
-    }
-
-    @Override
-    public void accept(Object message) {
-      consumer.accept(message);
-    }
-
-    @Override
-    public void close() {
-      messageListeners.remove(this);
-    }
   }
 
 }

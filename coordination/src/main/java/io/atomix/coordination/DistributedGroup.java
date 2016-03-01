@@ -291,7 +291,7 @@ public class DistributedGroup extends Resource<DistributedGroup> {
     GroupMember member = members.get(message.member());
     if (member != null) {
       if (member instanceof LocalGroupMember) {
-        ((LocalGroupMember) member).handleMessage(message.setFuture(future));
+        ((LocalGroupMember) member).connection().handleMessage(message.setFuture(future));
       } else {
         future.completeExceptionally(new IllegalStateException("not a local member"));
       }
@@ -355,7 +355,7 @@ public class DistributedGroup extends Resource<DistributedGroup> {
           submit(new GroupCommands.Ack(task.id(), task.member(), false));
         }
       });
-      ((LocalGroupMember) localMember).handleTask(task.setFuture(future));
+      ((LocalGroupMember) localMember).tasks().handleTask(task.setFuture(future));
     }
   }
 
