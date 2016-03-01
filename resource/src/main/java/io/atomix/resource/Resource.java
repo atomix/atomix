@@ -69,7 +69,10 @@ public abstract class Resource<T extends Resource<T>> implements Managed<T> {
     }
 
     public Config(Properties defaults) {
-      super(defaults);
+      super();
+      for (String property : defaults.stringPropertyNames()) {
+        setProperty(property, defaults.getProperty(property));
+      }
     }
   }
 
