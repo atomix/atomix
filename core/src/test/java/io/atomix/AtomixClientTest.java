@@ -26,6 +26,7 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -227,8 +228,8 @@ public class AtomixClientTest extends AbstractAtomixTest {
   @ResourceTypeInfo(id=1, stateMachine=TestStateMachine.class, typeResolver=TestResource.TypeResolver.class)
   public static class TestResource extends Resource<TestResource> {
 
-    public TestResource(CopycatClient client, Resource.Options options) {
-      super(client, options);
+    public TestResource(CopycatClient client, Properties config, Properties options) {
+      super(client, config, options);
     }
 
     public CompletableFuture<String> command(String value) {
@@ -300,8 +301,8 @@ public class AtomixClientTest extends AbstractAtomixTest {
   @ResourceTypeInfo(id=2, stateMachine=ValueStateMachine.class, typeResolver=ValueResource.TypeResolver.class)
   public static class ValueResource extends Resource<ValueResource> {
 
-    public ValueResource(CopycatClient client, Resource.Options options) {
-      super(client, options);
+    public ValueResource(CopycatClient client, Properties config, Properties options) {
+      super(client, config, options);
     }
 
     public CompletableFuture<Void> set(String value) {

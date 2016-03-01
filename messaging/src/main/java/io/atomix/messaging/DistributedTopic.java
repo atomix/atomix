@@ -24,6 +24,7 @@ import io.atomix.resource.ResourceTypeInfo;
 import io.atomix.resource.WriteConsistency;
 
 import java.util.HashSet;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -59,30 +60,11 @@ import java.util.function.Consumer;
  */
 @ResourceTypeInfo(id=-31, stateMachine=TopicState.class, typeResolver=TopicCommands.TypeResolver.class)
 public class DistributedTopic<T> extends Resource<DistributedTopic<T>> {
-
-  /**
-   * Returns new topic options.
-   *
-   * @return New topic options.
-   */
-  public static Options options() {
-    return new Options();
-  }
-
-  /**
-   * Returns a new topic configuration.
-   *
-   * @return A new topic configuration.
-   */
-  public static Config config() {
-    return new Config();
-  }
-
   private final Set<Consumer<T>> listeners = new HashSet<>();
 
   @SuppressWarnings("unchecked")
-  public DistributedTopic(CopycatClient client, Resource.Options options) {
-    super(client, options);
+  public DistributedTopic(CopycatClient client, Properties config, Properties options) {
+    super(client, config, options);
   }
 
   @Override

@@ -75,7 +75,7 @@ public class DistributedMultiMapTest extends AbstractCopycatTest<DistributedMult
   public void testMultiMapClear() throws Throwable {
     createServers(3);
 
-    DistributedMultiMap<String, String> map = createResource(DistributedMultiMap.config().withValueOrder(DistributedMultiMap.Order.NATURAL));
+    DistributedMultiMap<String, String> map = createResource(new DistributedMultiMap.Config().withValueOrder(DistributedMultiMap.Order.NATURAL));
 
     map.put("foo", "Hello world!").thenRun(this::resume);
     map.put("foo", "Hello world again!").thenRun(this::resume);
@@ -108,7 +108,7 @@ public class DistributedMultiMapTest extends AbstractCopycatTest<DistributedMult
   public void testNaturalOrder() throws Throwable {
     createServers(3);
 
-    DistributedMultiMap.Config config = DistributedMultiMap.config()
+    DistributedMultiMap.Config config = new DistributedMultiMap.Config()
       .withValueOrder(DistributedMultiMap.Order.NATURAL);
     DistributedMultiMap<String, String> map = createResource(config);
 

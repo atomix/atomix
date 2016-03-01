@@ -61,11 +61,6 @@ public abstract class Resource<T extends Resource<T>> implements Managed<T> {
   /**
    * Base class for cluster-wide resource configurations.
    * <p>
-   * Configurations can be {@link #configure(Config) submitted} by any client with an open {@link Resource}
-   * instance. Configurations are cluster-wide and affect the resource from the perspective of <em>all</em>
-   * clients. Specifically, resource configurations are committed to the cluster, replicated, and applied
-   * to the server-side replicated state machine for the resource.
-   * <p>
    * Resource configurations control options specific to the resource's replicated {@link ResourceStateMachine}.
    * These options might include a maximum collection size or the order of values in a multi-map.
    */
@@ -74,7 +69,10 @@ public abstract class Resource<T extends Resource<T>> implements Managed<T> {
     }
 
     public Config(Properties defaults) {
-      super(defaults);
+      super();
+      for (String property : defaults.stringPropertyNames()) {
+        setProperty(property, defaults.getProperty(property));
+      }
     }
   }
 
@@ -168,13 +166,14 @@ public abstract class Resource<T extends Resource<T>> implements Managed<T> {
 
   private final ResourceType type;
   protected final CopycatClient client;
+  protected volatile Config config;
   protected final Options options;
-  private State state;
+  private volatile State state;
   private final Set<StateChangeListener> changeListeners = new CopyOnWriteArraySet<>();
   private WriteConsistency writeConsistency = WriteConsistency.ATOMIC;
   private ReadConsistency readConsistency = ReadConsistency.ATOMIC;
 
-  protected Resource(CopycatClient client, Options options) {
+  protected Resource(CopycatClient client, Properties config, Properties options) {
     this.type = new ResourceType(getClass());
     this.client = Assert.notNull(client, "client");
 
@@ -189,7 +188,8 @@ public abstract class Resource<T extends Resource<T>> implements Managed<T> {
       throw new ResourceException("failed to instantiate resource type resolver");
     }
 
-    this.options = options;
+    this.config = new Config(Assert.notNull(config, "config"));
+    this.options = new Options(Assert.notNull(options, "options"));
     client.onStateChange(this::onStateChange);
   }
 
@@ -208,6 +208,24 @@ public abstract class Resource<T extends Resource<T>> implements Managed<T> {
    */
   public ResourceType type() {
     return type;
+  }
+
+  /**
+   * Returns the resource configuration.
+   *
+   * @return The resource configuration.
+   */
+  public Config config() {
+    return config;
+  }
+
+  /**
+   * Returns the resource options.
+   *
+   * @return The configured resource options.
+   */
+  public Options options() {
+    return options;
   }
 
   /**
@@ -241,22 +259,6 @@ public abstract class Resource<T extends Resource<T>> implements Managed<T> {
    */
   public ThreadContext context() {
     return client.context();
-  }
-
-  /**
-   * Configures the cluster-wide resource.
-   * <p>
-   * The resource configuration will be submitted to the cluster, replicated, and applied on all
-   * state machines in the cluster. Once successful, the configuration is guaranteed to be applied
-   * on all replicas and all resource instances will rely on the updated configuration for linearizable
-   * operations.
-   *
-   * @param config The resource configuration.
-   * @return A completable future to be completed once the resource has been configured.
-   */
-  @SuppressWarnings("unchecked")
-  public CompletableFuture<T> configure(Config config) {
-    return client.submit(new ResourceCommand.Configure(config)).thenApply(v -> (T) this);
   }
 
   /**
@@ -416,7 +418,12 @@ public abstract class Resource<T extends Resource<T>> implements Managed<T> {
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<T> open() {
-    return client.open().thenApply(v -> (T) this);
+    return client.open()
+      .thenCompose(v -> client.submit(new ResourceCommand.Configure(config)))
+      .thenApply(config -> {
+        this.config = new Config(config);
+        return (T) this;
+      });
   }
 
   @Override

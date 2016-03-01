@@ -16,10 +16,11 @@
 package io.atomix.variables;
 
 import io.atomix.copycat.client.CopycatClient;
-import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceTypeInfo;
 import io.atomix.variables.state.ValueCommands;
 import io.atomix.variables.state.ValueState;
+
+import java.util.Properties;
 
 /**
  * Stores a single replicated value, providing atomic operations for modifying the value.
@@ -52,26 +53,8 @@ import io.atomix.variables.state.ValueState;
 @ResourceTypeInfo(id=-1, stateMachine=ValueState.class, typeResolver=ValueCommands.TypeResolver.class)
 public class DistributedValue<T> extends AbstractDistributedValue<DistributedValue<T>, T> {
 
-  /**
-   * Returns new value options.
-   *
-   * @return New value options.
-   */
-  public static Options options() {
-    return new Options();
-  }
-
-  /**
-   * Returns a new value configuration.
-   *
-   * @return A new value configuration.
-   */
-  public static Config config() {
-    return new Config();
-  }
-
-  public DistributedValue(CopycatClient client, Resource.Options options) {
-    super(client, options);
+  public DistributedValue(CopycatClient client, Properties config, Properties options) {
+    super(client, config, options);
   }
 
 }

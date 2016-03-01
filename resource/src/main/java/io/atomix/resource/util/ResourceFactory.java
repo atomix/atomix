@@ -18,6 +18,8 @@ package io.atomix.resource.util;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.Resource;
 
+import java.util.Properties;
+
 /**
  * Constructs a resource instance given a client and resource options.
  *
@@ -30,9 +32,10 @@ public interface ResourceFactory<T extends Resource<T>> {
    * Creates a new resource.
    *
    * @param client The Copycat client.
+   * @param config The resource configuration.
    * @param options The resource options.
    * @return The created resource.
    */
-  T create(CopycatClient client, Resource.Options options);
+  T create(CopycatClient client, Properties config, Properties options);
 
 }

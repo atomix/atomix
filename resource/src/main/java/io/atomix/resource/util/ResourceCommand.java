@@ -75,7 +75,7 @@ public final class ResourceCommand<T extends Command<U>, U> extends ResourceOper
   /**
    * Resource configure command.
    */
-  public static class Configure implements Command<Void>, CatalystSerializable {
+  public static class Configure implements Command<Properties>, CatalystSerializable {
     private Properties config;
 
     public Configure() {

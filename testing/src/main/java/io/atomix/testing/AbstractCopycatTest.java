@@ -123,11 +123,9 @@ public abstract class AbstractCopycatTest<T extends Resource> extends Concurrent
       .withRetryStrategy(RetryStrategies.FIBONACCI_BACKOFF)
       .build();
     ResourceType type = new ResourceType((Class<? extends Resource>) type());
-    T resource = (T) type.factory().create(client, options);
+    T resource = (T) type.factory().create(client, config, options);
     resource.open().thenRun(this::resume);
     resources.add(resource);
-    await(10000);
-    resource.configure(config).thenRun(this::resume);
     await(10000);
     return resource;
   }

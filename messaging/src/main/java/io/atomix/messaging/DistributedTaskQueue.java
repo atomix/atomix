@@ -24,6 +24,7 @@ import io.atomix.resource.ResourceTypeInfo;
 import io.atomix.resource.WriteConsistency;
 
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
@@ -72,32 +73,13 @@ import java.util.function.Consumer;
  */
 @ResourceTypeInfo(id=-32, stateMachine=TaskQueueState.class, typeResolver=TaskQueueCommands.TypeResolver.class)
 public class DistributedTaskQueue<T> extends Resource<DistributedTaskQueue<T>> {
-
-  /**
-   * Returns new task queue options.
-   *
-   * @return New task queue options.
-   */
-  public static Options options() {
-    return new Options();
-  }
-
-  /**
-   * Returns a new task queue configuration.
-   *
-   * @return A new task queue configuration.
-   */
-  public static Config config() {
-    return new Config();
-  }
-
   private long taskId;
   private final Map<Long, CompletableFuture<Void>> taskFutures = new ConcurrentHashMap<>();
   private Consumer<T> consumer;
 
   @SuppressWarnings("unchecked")
-  public DistributedTaskQueue(CopycatClient client, Resource.Options options) {
-    super(client, options);
+  public DistributedTaskQueue(CopycatClient client, Properties config, Properties options) {
+    super(client, config, options);
   }
 
   @Override
