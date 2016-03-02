@@ -39,10 +39,20 @@ public class GroupMemberInfo implements CatalystSerializable {
     this.address = address;
   }
 
+  /**
+   * Returns the unique member ID.
+   *
+   * @return The unique member ID.
+   */
   public String memberId() {
     return memberId;
   }
 
+  /**
+   * Returns the member server address.
+   *
+   * @return The member address, or {@code null} if the member wasn't configured with a server address.
+   */
   public Address address() {
     return address;
   }

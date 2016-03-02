@@ -22,6 +22,19 @@ import io.atomix.catalyst.util.concurrent.Futures;
 import java.util.concurrent.CompletableFuture;
 
 /**
+ * Facilitates direct communication between group members.
+ * <p>
+ * Members in a {@link DistributedGroup} can communicate with each other directly via a connection.
+ * To send a direct message to a remote {@link GroupMember}, the member must have been configured with
+ * an {@link Address} to which to bind its server.
+ * <pre>
+ *   {@code
+ *   group.member("foo").send("user", "1").thenAccept(reply -> {
+ *     ...
+ *   });
+ *   }
+ * </pre>
+ *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class GroupConnection {
@@ -37,6 +50,8 @@ public class GroupConnection {
 
   /**
    * Sends a direct message to the member.
+   * <p>
+   * The returned {@link CompletableFuture} will be completed with the response from the member.
    *
    * @param topic The message topic.
    * @param message The message to send.

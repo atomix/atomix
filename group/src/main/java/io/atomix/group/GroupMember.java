@@ -77,18 +77,38 @@ public class GroupMember {
     return group.election().leader != null && group.election().leader.equals(memberId);
   }
 
+  /**
+   * Returns the member properties.
+   *
+   * @return The member properties.
+   */
   public GroupProperties properties() {
     return properties;
   }
 
+  /**
+   * Returns a direct connection to the member.
+   *
+   * @return A direct connection to the member.
+   */
   public GroupConnection connection() {
     return connection;
   }
 
+  /**
+   * Returns the member's task queue.
+   *
+   * @return The member's task queue.
+   */
   public GroupTaskQueue tasks() {
     return tasks;
   }
 
+  /**
+   * Returns the remote scheduler for the member.
+   *
+   * @return The remote scheduler for the member.
+   */
   public GroupScheduler scheduler() {
     return scheduler;
   }

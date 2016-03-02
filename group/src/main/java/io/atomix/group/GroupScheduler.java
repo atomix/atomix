@@ -35,10 +35,23 @@ public class GroupScheduler {
     this.group = Assert.notNull(group, "group");
   }
 
+  /**
+   * Schedules a callback to be run after the given delay.
+   *
+   * @param delay The delay after which to run the callback.
+   * @param callback The callback to run after the given delay.
+   * @return A completable future to be completed once the callback has been scheduled.
+   */
   public CompletableFuture<Void> schedule(Duration delay, Runnable callback) {
     return group.submit(new GroupCommands.Schedule(memberId, delay.toMillis(), callback));
   }
 
+  /**
+   * Executes a remote callback.
+   *
+   * @param callback The callback to run.
+   * @return A completable future to be completed once the callback has been scheduled.
+   */
   public CompletableFuture<Void> execute(Runnable callback) {
     return group.submit(new GroupCommands.Execute(memberId, callback));
   }

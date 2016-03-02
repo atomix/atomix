@@ -23,6 +23,8 @@ import io.atomix.catalyst.serializer.Serializer;
 import java.util.concurrent.CompletableFuture;
 
 /**
+ * Group task.
+ *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class GroupTask<T> implements CatalystSerializable {
@@ -46,7 +48,7 @@ public class GroupTask<T> implements CatalystSerializable {
   }
 
   /**
-   * Returns the task ID.
+   * Returns the monotonically increasing task ID.
    *
    * @return The unique task ID.
    */
@@ -54,18 +56,34 @@ public class GroupTask<T> implements CatalystSerializable {
     return id;
   }
 
+  /**
+   * Returns the member to which the task is enqueued.
+   *
+   * @return The task member.
+   */
   String member() {
     return member;
   }
 
+  /**
+   * Returns the value of the task.
+   *
+   * @return The value of the task.
+   */
   public T value() {
     return value;
   }
 
+  /**
+   * Acknowledges completion of the task.
+   */
   public void ack() {
     future.complete(true);
   }
 
+  /**
+   * Fails processing of the task.
+   */
   public void fail() {
     future.complete(false);
   }

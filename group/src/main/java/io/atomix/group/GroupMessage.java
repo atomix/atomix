@@ -47,18 +47,38 @@ public class GroupMessage<T> implements CatalystSerializable {
     return this;
   }
 
+  /**
+   * Returns the member to which the message was sent.
+   *
+   * @return The member to which the message was sent.
+   */
   String member() {
     return member;
   }
 
+  /**
+   * Returns the message topic.
+   *
+   * @return The message topic.
+   */
   public String topic() {
     return topic;
   }
 
+  /**
+   * Returns the message body.
+   *
+   * @return The message body.
+   */
   public T body() {
     return body;
   }
 
+  /**
+   * Replies to the message.
+   *
+   * @param reply The reply to send back to the sender.
+   */
   public void reply(Object reply) {
     future.complete(reply);
   }

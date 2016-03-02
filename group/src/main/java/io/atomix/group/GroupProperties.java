@@ -34,14 +34,36 @@ public class GroupProperties {
     this.group = Assert.notNull(group, "group");
   }
 
+  /**
+   * Sets the value of a property.
+   *
+   * @param property The name of the property to set.
+   * @param value The value of the property.
+   * @return A completable future to be completed once the property has been set.
+   */
   public CompletableFuture<Void> set(String property, Object value) {
     return group.submit(new GroupCommands.SetProperty(memberId, property, value));
   }
 
+  /**
+   * Gets the value of a property.
+   *
+   * @param property The name of the property to get.
+   * @param <T> The property value type.
+   * @return A completable future to be completed with the property value.
+   */
   public <T> CompletableFuture<T> get(String property) {
     return get(property, null);
   }
 
+  /**
+   * Gets the value of a property.
+   *
+   * @param property The name of the property to get.
+   * @param defaultValue The default value to apply to the property if it doesn't exist.
+   * @param <T> The property value type.
+   * @return A completable future to be completed with the property value.
+   */
   @SuppressWarnings("unchecked")
   public <T> CompletableFuture<T> get(String property, T defaultValue) {
     return group.submit(new GroupCommands.GetProperty(memberId, property)).thenApply(result -> {
@@ -52,6 +74,12 @@ public class GroupProperties {
     });
   }
 
+  /**
+   * Removes a property.
+   *
+   * @param property The name of the property to remove.
+   * @return A completable future to be completed once the property has been removed.
+   */
   public CompletableFuture<Void> remove(String property) {
     return group.submit(new GroupCommands.RemoveProperty(memberId, property));
   }

@@ -105,10 +105,10 @@ import java.util.function.Consumer;
  * <pre>
  *   {@code
  *   DistributedGroup group = atomix.getGroup("foo").get();
- *   group.onTerm(term -> {
+ *   group.election().onTerm(term -> {
  *     ...
  *   });
- *   group.onElection(leader -> {
+ *   group.election().onElection(leader -> {
  *     ...
  *   });
  *   }
@@ -128,6 +128,51 @@ import java.util.function.Consumer;
  * <p>
  * To guard against inconsistencies resulting from arbitrary process pauses, clients can use the monotonically
  * increasing term for coordination and managing optimistic access to external resources.
+ * <h2>Consistent hashing</h2>
+ * Membership groups also provide features to aid in supporting replication via consistent hashing and partitioning.
+ * When a group is created, users can configure the group to support a particular number of partitions and replication
+ * factor. Partitioning can aid in hashing resources to specific members of the group, and the replication factor builds
+ * on partitions to aid in identifying multiple members per partition.
+ * <p>
+ * By default, groups are created with a single partition and replication factor of {@code 1}. To configure the group
+ * for more partitions, provide a {@link DistributedGroup.Config} when creating the resource.
+ * <pre>
+ *   {@code
+ *   DistributedGroup.Config config = DistributedGroup.config()
+ *     .withPartitions(32)
+ *     .withVirtualNodes(200)
+ *     .withReplicationFactor(3);
+ *   DistributedGroup group = atomix.getGroup("foo", config);
+ *   }
+ * </pre>
+ * Partitions are managed within a consistent hash ring. For each member of the cluster, {@code 100} virtual nodes
+ * are created on the ring by default. This helps spread reduce hotspotting within the ring. For each partition, the
+ * partition is mapped to a set of members of the group by hashing the partition to a point on the ring. Once hashed
+ * to a point on the ring, the {@code n} members following that point are the replicas for that partition.
+ * <p>
+ * Partition features are accessed via the group's {@link GroupPartitions} instance, which can be fetched via
+ * {@link #partitions()}.
+ * <pre>
+ *   {@code
+ *   group.partitions().partition(1).members().forEach(m -> ...);
+ *   }
+ * </pre>
+ * Partitions change over time while members are added to or removed from the group. Each time a member is added or
+ * removed, the group state machine will reassign the minimal number of partitions necessary to balance the cluster,
+ * and {@code DistributedGroup} instances will be notified and updated automatically. Atomix guarantees that when a
+ * new member {@link #join() joins} a group, all partition information on all connected group instances will be updated
+ * before the join completes. Similarly, when a member {@link LocalGroupMember#leave() leaves} the group, all partition
+ * information on all connected group instances are guaranteed to be updated before the operation completes.
+ * <p>
+ * Groups also aid in hashing objects to specific partitions and thus replicas within the group. Users can provide a
+ * {@link GroupPartitioner} class in the {@link DistributedGroup.Options} when a group instance is first created on a node.
+ * The partitioner will be used to determine the partition to which an object maps within the current set of partitions
+ * when {@link GroupPartitions#partition(Object)} is called.
+ * <pre>
+ *   {@code
+ *   group.partitions().partition("foo").members().forEach(m -> m.send("foo"));
+ *   }
+ * </pre>
  * <h2>Remote execution</h2>
  * Once members of the group, any member can {@link GroupScheduler#execute(Runnable) execute} immediate callbacks or
  * {@link GroupScheduler#schedule(Duration, Runnable) schedule} delayed callbacks to be run on any other member of the
@@ -164,6 +209,12 @@ import java.util.function.Consumer;
  * associated with each open instance of the group. In the event that the session expires or is closed, the group
  * member associated with that session will automatically be removed from the group and remaining instances
  * of the group will be notified.
+ * <p>
+ * Partitions are determined by consistent hashing using the group's members and the configured partition strategy.
+ * Each time a member is added to the group, the member is added to a consistent hash ring. When a member leaves the
+ * group, the member is removed from the ring. Partitions are mapped to a point on the ring, and the {@code n} members
+ * following that point are the replicas for that partition. Virtual nodes are added to the ring to balance the
+ * membership.
  * <p>
  * The group state machine facilitates messaging and remote execution by routing serialize messages and callbacks
  * to specific members of the group by publishing event messages to the desired resource session. Messages and
