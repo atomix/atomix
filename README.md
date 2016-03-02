@@ -19,22 +19,14 @@ Atomix is a high-level asynchronous framework for building fault-tolerant distri
 * [Messaging](http://atomix.io/atomix/docs/messaging/)
 * [Synchronization](http://atomix.io/atomix/docs/coordination/#distributedlock)
 
-#### [Locks](http://atomix.io/atomix/docs/coordination/#distributedlock)
-```java
-// Get a distributed lock
-DistributedLock lock = atomix.getLock("my-lock").get();
-
-// Acquire the lock
-CompletableFuture<Void> future = lock.lock();
-
-// Once the lock is acquired, release the lock
-future.thenRun(() -> lock.unlock());
-```
-
 #### [Group membership](http://atomix.io/atomix/docs/coordination/#distributedgroup)
+
+##### Cluster management
+
+Track the nodes in a cluster:
 ```java
 // Get a distributed membership group
-DistributedMembershipGroup group = atomix.getMembershipGroup("my-group").get();
+DistributedGroup group = atomix.getGroup("my-group").get();
 
 // Join the group
 group.join().thenAccept(member -> {
@@ -51,18 +43,154 @@ group.onJoin(member -> System.out.println(member.id() + " joined!"));
 group.onLeave(member -> System.out.println(member.id() + " left!"));
 ```
 
-#### [Leader election](http://atomix.io/atomix/docs/coordination/#leader-election)
-```java
-// Join a group
-CompletableFuture<LocalMember> future = group.join();
+##### Leader election
 
-// Once the member has joined the group, register an election listener
-future.thenAccept(member -> {
-  member.onElection(term -> {
-    System.out.println("Elected leader!");
-    member.resign();
+Elect a leader among all members in the group:
+```java
+DistributedGroup group = atomix.getGroup("leader-election").get();
+
+// Register an election listener on the group
+group.onElection(member -> {
+  System.out.println(member.id() + " elected leader!");
+});
+
+// Join the group
+group.join();
+```
+
+##### Direct messaging
+
+Send a direct message to a member of the group:
+```java
+DistributedGroup group = atomix.getGroup("message-group").get();
+
+// Join the group
+group.join("member-1").thenAccept(member -> {
+
+  // Register a message listener for the "greetings" topic
+  member.connection().onMessage("greetings", message -> {
+    message.reply("world");
+  });
+
+});
+```
+
+```java
+DistributedGroup group = atomix.getGroup("message-group").get();
+
+// Send a message to the "greetings" topic of member-1 and react when a response is received
+group.member("member-1").connection().send("greetings", "Hello").thenAccept(reply -> {
+  System.out.println("Hello " + reply);
+});
+```
+
+##### Reliable task queues
+
+Submit a task to a persistent, replicated task queue to be processed by a member of the group:
+```java
+DistributedGroup group = atomix.getGroup("task-group").get();
+
+// Join the group
+group.join("member-1").thenAccept(member -> {
+
+  // Register a task handler for the joined member
+  member.tasks().onTask(task -> {
+    // Process and acknowledge the task
+    doProcessing(task);
+    task.ack();
+  });
+
+});
+```
+
+```java
+DistributedGroup group = atomix.getGroup("task-group").get();
+
+// Submit a task to member-1
+group.member("member-1").tasks().submit("doWork").thenRun(() -> {
+  // The task has been acknowledged
+  System.out.println("Task complete!");
+});
+
+// Submit a task to all the members of the group
+group.tasks().submit("everyoneDoWork").thenRun(() -> {
+  // The task has been acknowledged
+  System.out.println("Task complete!");
+});
+```
+
+##### Cluster partitioning
+
+Submit tasks to 3 members using round-robin:
+```java
+// Create a group configuration with three partitions
+DistributedGroup.Config config = new DistributedGroup.Config()
+  .withPartitioner(RoundRobinPartitioner.class)
+  .withPartitions(3);
+
+DistributedGroup group = atomix.getGroup("partition-group", config);
+
+// Iterate through the partitions in the group
+group.partitions().forEach(partition -> {
+  // For each partition, submit a task to the first partition member
+  partition.member(0).tasks().submit("doWork").thenRun(() -> {
+    System.out.println("Work complete!");
   });
 });
+```
+
+Send messages to three replicas using consistent hashing
+```java
+// Create a group configuration with three partitions
+DistributedGroup.Config config = new DistributedGroup.Config()
+  .withPartitioner(HashPartitioner.class)
+  .withPartitions(32)
+  .withVirtualNodes(100)
+  .withReplicas(3);
+
+DistributedGroup group = atomix.getGroup("partition-group", config);
+
+String[] values = new String[]{"foo", "bar", "baz"};
+
+// Iterate through the values to send
+for (String value : values) {
+  // Get the partition for the value
+  GroupPartition partition = group.partitions().partition(value);
+  
+  // Send a put message to each member in the partition
+  CompletableFuture[] futures = new CompletableFuture[partition.members().size()];
+  for (int i = 0; i < partition.members().size(); i++) {
+    futures[i] = partition.member(i).connection().send("put", value);
+  }
+  
+  // Call a callback once the message has been acknowledged by all members and print a message
+  CompletableFuture.allOf(futures).thenRun(() -> {
+    System.out.println("Replicated value: " + value);
+  });
+}
+```
+
+##### Remote execution
+
+```java
+DistributedGroup group = atomix.getGroup("execution-group").get();
+
+// Execute a callback on member-1 in 10 seconds
+group.member("member-1").scheduler().schedule(Duration.ofSeconds(10), (Runnable & Serialiable) () -> {
+  System.out.println("I am member-1!");
+});
+```
+
+#### [Locks](http://atomix.io/atomix/docs/coordination/#distributedlock)
+```java
+// Get a distributed lock
+DistributedLock lock = atomix.getLock("my-lock").get();
+
+// Acquire the lock
+CompletableFuture<Void> future = lock.lock();
+
+// Once the lock is acquired, release the lock
+future.thenRun(() -> lock.unlock());
 ```
 
 #### [Messaging](http://atomix.io/atomix/docs/messaging/)

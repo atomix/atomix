@@ -18,8 +18,8 @@ package io.atomix.group;
 import io.atomix.catalyst.util.Assert;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * Group partition.
@@ -28,7 +28,7 @@ import java.util.Iterator;
  */
 public class GroupPartition implements Iterable<GroupMember> {
   private final int id;
-  private volatile Collection<GroupMember> members = new ArrayList<>(0);
+  private volatile List<GroupMember> members = new ArrayList<>(0);
 
   GroupPartition(int id) {
     this.id = id;
@@ -44,18 +44,28 @@ public class GroupPartition implements Iterable<GroupMember> {
   }
 
   /**
+   * Returns the member for the given index.
+   *
+   * @param index The member index.
+   * @return The group member for the given index.
+   */
+  public GroupMember member(int index) {
+    return members.get(index);
+  }
+
+  /**
    * Returns a collection of members for the partition.
    *
    * @return A collection of members for the partition.
    */
-  public Collection<GroupMember> members() {
+  public List<GroupMember> members() {
     return members;
   }
 
   /**
    * Updates the partition with the given number of group members.
    */
-  void handleRepartition(Collection<GroupMember> members) {
+  void handleRepartition(List<GroupMember> members) {
     this.members = Assert.notNull(members, "members");
   }
 
