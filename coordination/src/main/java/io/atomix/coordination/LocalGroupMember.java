@@ -16,6 +16,7 @@
 package io.atomix.coordination;
 
 import io.atomix.catalyst.util.Listener;
+import io.atomix.coordination.state.GroupCommands;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -47,7 +48,7 @@ import java.util.function.Consumer;
  *   });
  *   }
  * </pre>
- * The leader is guaranteed to be unique within a given {@link DistributedGroup#term() term}. However, once
+ * The leader is guaranteed to be unique within a given {@link GroupElection#term() term}. However, once
  * the member is elected leader, it is not guaranteed to remain the leader of the group until failure. In the
  * event that the local group instance is partitioned from the rest of the cluster, the member may be removed
  * from leadership and another member of the group may be elected. Users should use the provided {@code term}
@@ -55,42 +56,25 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public interface LocalGroupMember extends GroupMember {
+public class LocalGroupMember extends GroupMember {
+  private final LocalGroupTaskQueue tasks;
+  private final LocalGroupConnection connection;
 
-  /**
-   * Sets the value of a property of the member.
-   * <p>
-   * The property will be associated with the local group member and can be
-   * {@link #get(String) read} by any other instance of the membership group. If the
-   * member {@link #id()} is a user provided ID, the group will retain the same properties
-   * in the event of the member leaving and rejoining the group.
-   *
-   * @param property The property to set.
-   * @param value The value of the property to set.
-   * @return A completable future to be completed once the value has been set.
-   */
-  CompletableFuture<Void> set(String property, Object value);
+  LocalGroupMember(GroupMemberInfo info, DistributedGroup group) {
+    super(info, group);
+    this.tasks = new LocalGroupTaskQueue(info.memberId(), group);
+    this.connection = new LocalGroupConnection(info.memberId(), info.address(), group.connections);
+  }
 
-  /**
-   * Removes a property of the member.
-   *
-   * @param property The property to remove.
-   * @return A completable future to be completed once the property has been removed.
-   */
-  CompletableFuture<Void> remove(String property);
+  @Override
+  public LocalGroupTaskQueue tasks() {
+    return tasks;
+  }
 
-  /**
-   * Registers a consumer for messages sent to the local member.
-   * <p>
-   * The provided message consumer will be called when a message sent to the local member
-   * is received for the given {@code topic}.
-   *
-   * @param topic The message topic.
-   * @param consumer The message consumer.
-   * @param <T> The message type.
-   * @return The local group member.
-   */
-  <T> Listener<T> onMessage(String topic, Consumer<T> consumer);
+  @Override
+  public LocalGroupConnection connection() {
+    return connection;
+  }
 
   /**
    * Registers a callback to be called when this member is elected leader.
@@ -116,13 +100,15 @@ public interface LocalGroupMember extends GroupMember {
    * @param callback The callback to call.
    * @return The leader election listener.
    */
-  Listener<Long> onElection(Consumer<Long> callback);
+  public Listener<Long> onElection(Consumer<Long> callback) {
+    return group.election().onElection(memberId, callback);
+  }
 
   /**
    * Resigns from leadership.
    * <p>
    * Resigning as the leader of the group will result in the local member being placed at the
-   * tail of the leader election queue. Once the member has resigned, the {@link DistributedGroup#term()}
+   * tail of the leader election queue. Once the member has resigned, the {@link GroupElection#term()}
    * will be incremented and a new leader will be elected from the leader queue. If the local member
    * is the only member of the group, it will immediately be reassigned as the leader for the new
    * term.
@@ -137,7 +123,9 @@ public interface LocalGroupMember extends GroupMember {
    *
    * @return A completable future to be completed once the member has resigned.
    */
-  CompletableFuture<Void> resign();
+  public CompletableFuture<Void> resign() {
+    return group.submit(new GroupCommands.Resign(memberId));
+  }
 
   /**
    * Leaves the membership group.
@@ -164,6 +152,10 @@ public interface LocalGroupMember extends GroupMember {
    *
    * @return A completable future to be completed once the member has left.
    */
-  CompletableFuture<Void> leave();
+  public CompletableFuture<Void> leave() {
+    return group.submit(new GroupCommands.Leave(memberId)).whenComplete((result, error) -> {
+      group.members.remove(memberId);
+    });
+  }
 
 }
