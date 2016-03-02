@@ -15,11 +15,11 @@
  */
 package io.atomix.collections;
 
+import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.collections.state.MapCommands;
-import io.atomix.collections.state.MapState;
 import io.atomix.copycat.client.CopycatClient;
+import io.atomix.resource.AbstractResource;
 import io.atomix.resource.ReadConsistency;
-import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceTypeInfo;
 
 import java.time.Duration;
@@ -59,15 +59,20 @@ import java.util.concurrent.CompletableFuture;
  * @param <V> The map entry type.
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@ResourceTypeInfo(id=-11, stateMachine=MapState.class, typeResolver=MapCommands.TypeResolver.class)
-public class DistributedMap<K, V> extends Resource<DistributedMap<K, V>> {
+@ResourceTypeInfo(id=-11, factory=DistributedMapFactory.class)
+public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>> {
 
   public DistributedMap(CopycatClient client) {
-    this(client, new Config(), new Options());
+    this(client, new Options());
   }
 
-  public DistributedMap(CopycatClient client, Properties config, Properties options) {
-    super(client, config, options);
+  public DistributedMap(CopycatClient client, Properties options) {
+    super(client, options);
+  }
+
+  @Override
+  protected void registerTypes(SerializerRegistry registry) {
+    new MapCommands.TypeResolver().resolve(registry);
   }
 
   /**

@@ -16,8 +16,8 @@
 package io.atomix.variables;
 
 import io.atomix.copycat.client.CopycatClient;
+import io.atomix.resource.AbstractResource;
 import io.atomix.resource.ReadConsistency;
-import io.atomix.resource.Resource;
 import io.atomix.variables.state.ValueCommands;
 
 import java.time.Duration;
@@ -36,10 +36,10 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 @SuppressWarnings("unchecked")
-public abstract class AbstractDistributedValue<T extends AbstractDistributedValue<T, U>, U> extends Resource<T> {
+public abstract class AbstractDistributedValue<T extends AbstractDistributedValue<T, U>, U> extends AbstractResource<T> {
 
-  protected AbstractDistributedValue(CopycatClient client, Properties config, Properties options) {
-    super(client, config, options);
+  protected AbstractDistributedValue(CopycatClient client, Properties options) {
+    super(client, options);
   }
 
   /**

@@ -15,19 +15,15 @@
  */
 package io.atomix.coordination.state;
 
+import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.catalyst.util.concurrent.Scheduled;
-import io.atomix.coordination.DistributedLock;
 import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.session.ServerSession;
 import io.atomix.copycat.server.session.SessionListener;
 import io.atomix.resource.ResourceStateMachine;
-import io.atomix.resource.ResourceType;
 
 import java.time.Duration;
-import java.util.ArrayDeque;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Queue;
+import java.util.*;
 
 /**
  * Lock state machine.
@@ -39,8 +35,13 @@ public class LockState extends ResourceStateMachine implements SessionListener {
   private final Queue<Commit<LockCommands.Lock>> queue = new ArrayDeque<>();
   private final Map<Long, Scheduled> timers = new HashMap<>();
 
-  public LockState() {
-    super(new ResourceType(DistributedLock.class));
+  public LockState(Properties config) {
+    super(config);
+  }
+
+  @Override
+  protected void registerTypes(SerializerRegistry registry) {
+    new LockCommands.TypeResolver().resolve(registry);
   }
 
   @Override

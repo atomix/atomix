@@ -186,7 +186,7 @@ public final class InstanceClient implements CopycatClient {
       return Futures.exceptionalFuture(new IllegalStateException("client already open"));
 
     if (openFuture == null) {
-      openFuture = client.submit(new GetResource(instance.key(), instance.type().id())).thenApply(this::completeOpen);
+      openFuture = client.submit(new GetResource(instance.key(), instance.type(), instance.config())).thenApply(this::completeOpen);
     }
     return openFuture;
   }
@@ -216,7 +216,7 @@ public final class InstanceClient implements CopycatClient {
       return Futures.exceptionalFuture(new IllegalStateException("client not suspended"));
 
     if (recoverFuture == null) {
-      recoverFuture = client.submit(new GetResource(instance.key(), instance.type().id())).thenApply(this::completeOpen);
+      recoverFuture = client.submit(new GetResource(instance.key(), instance.type(), instance.config())).thenApply(this::completeOpen);
     }
     return recoverFuture;
   }

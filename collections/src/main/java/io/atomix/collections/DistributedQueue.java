@@ -15,11 +15,11 @@
  */
 package io.atomix.collections;
 
+import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.collections.state.QueueCommands;
-import io.atomix.collections.state.QueueState;
 import io.atomix.copycat.client.CopycatClient;
+import io.atomix.resource.AbstractResource;
 import io.atomix.resource.ReadConsistency;
-import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceTypeInfo;
 
 import java.util.Properties;
@@ -55,11 +55,16 @@ import java.util.concurrent.CompletableFuture;
  * @param <T> The queue value type.
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@ResourceTypeInfo(id=-14, stateMachine=QueueState.class, typeResolver=QueueCommands.TypeResolver.class)
-public class DistributedQueue<T> extends Resource<DistributedQueue<T>> {
+@ResourceTypeInfo(id=-14, factory=DistributedQueueFactory.class)
+public class DistributedQueue<T> extends AbstractResource<DistributedQueue<T>> {
 
-  public DistributedQueue(CopycatClient client, Properties config, Properties options) {
-    super(client, config, options);
+  public DistributedQueue(CopycatClient client, Properties options) {
+    super(client, options);
+  }
+
+  @Override
+  protected void registerTypes(SerializerRegistry registry) {
+    new QueueCommands.TypeResolver().resolve(registry);
   }
 
   /**

@@ -19,8 +19,8 @@ import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
 import io.atomix.catalyst.serializer.Serializer;
-import io.atomix.catalyst.util.Assert;
 import io.atomix.copycat.Command;
+import io.atomix.copycat.Query;
 
 import java.util.Properties;
 
@@ -75,38 +75,16 @@ public final class ResourceCommand<T extends Command<U>, U> extends ResourceOper
   /**
    * Resource configure command.
    */
-  public static class Configure implements Command<Properties>, CatalystSerializable {
-    private Properties config;
-
-    public Configure() {
-    }
-
-    public Configure(Properties config) {
-      this.config = Assert.notNull(config, "config");
-    }
-
-    /**
-     * Returns the resource configuration.
-     *
-     * @return The resource configuration.
-     */
-    public Properties config() {
-      return config;
-    }
-
-    @Override
-    public CompactionMode compaction() {
-      return CompactionMode.FULL;
+  public static class Config implements Query<Properties>, CatalystSerializable {
+    public Config() {
     }
 
     @Override
     public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
-      serializer.writeObject(config, buffer);
     }
 
     @Override
     public void readObject(BufferInput<?> buffer, Serializer serializer) {
-      config = serializer.readObject(buffer);
     }
   }
 

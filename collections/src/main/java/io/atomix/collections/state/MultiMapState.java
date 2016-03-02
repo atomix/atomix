@@ -15,11 +15,11 @@
  */
 package io.atomix.collections.state;
 
+import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.catalyst.util.concurrent.Scheduled;
 import io.atomix.collections.DistributedMultiMap;
 import io.atomix.copycat.server.Commit;
 import io.atomix.resource.ResourceStateMachine;
-import io.atomix.resource.ResourceType;
 
 import java.time.Duration;
 import java.util.*;
@@ -32,19 +32,16 @@ import java.util.*;
 public class MultiMapState extends ResourceStateMachine {
   private final Map<Object, Map<Object, Commit<? extends MultiMapCommands.TtlCommand>>> map = new HashMap<>();
   private final Map<Long, Scheduled> timers = new HashMap<>();
-  private DistributedMultiMap.Order order = DistributedMultiMap.Order.INSERT;
+  private final DistributedMultiMap.Order order;
 
-  public MultiMapState() {
-    super(new ResourceType(DistributedMultiMap.class));
+  public MultiMapState(Properties properties) {
+    super(properties);
+    this.order = DistributedMultiMap.Order.valueOf(config.getProperty("order", DistributedMultiMap.Order.INSERT.name().toLowerCase()).toUpperCase());
   }
 
   @Override
-  public void configure(Properties config) {
-    this.order = DistributedMultiMap.Order.valueOf(config.getProperty("order", DistributedMultiMap.Order.INSERT.name().toLowerCase()).toUpperCase());
-    Set<Object> keys = new HashSet<>(map.keySet());
-    for (Object key : keys) {
-      map.put(key, createValueMap(map.get(key)));
-    }
+  protected void registerTypes(SerializerRegistry registry) {
+    new MultiMapCommands.TypeResolver().resolve(registry);
   }
 
   /**
@@ -60,22 +57,6 @@ public class MultiMapState extends ResourceStateMachine {
         return new LinkedHashMap<>();
       default:
         return new HashMap<>();
-    }
-  }
-
-  /**
-   * Creates a new value map.
-   */
-  private Map<Object, Commit<? extends MultiMapCommands.TtlCommand>> createValueMap(Map<Object, Commit<? extends MultiMapCommands.TtlCommand>> map) {
-    switch (order) {
-      case NONE:
-        return new HashMap<>(map);
-      case NATURAL:
-        return new TreeMap<>(map);
-      case INSERT:
-        return new LinkedHashMap<>(map);
-      default:
-        return new HashMap<>(map);
     }
   }
 

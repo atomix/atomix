@@ -123,7 +123,7 @@ public abstract class AbstractCopycatTest<T extends Resource> extends Concurrent
       .withRetryStrategy(RetryStrategies.FIBONACCI_BACKOFF)
       .build();
     ResourceType type = new ResourceType((Class<? extends Resource>) type());
-    T resource = (T) type.factory().create(client, config, options);
+    T resource = (T) type.factory().newInstance().createInstance(client, options);
     resource.open().thenRun(this::resume);
     resources.add(resource);
     await(10000);
@@ -133,12 +133,19 @@ public abstract class AbstractCopycatTest<T extends Resource> extends Concurrent
   /**
    * Creates a Raft server.
    */
-  @SuppressWarnings("unchecked")
   protected CopycatServer createServer(Address address) {
+    return createServer(address, new Resource.Config());
+  }
+
+  /**
+   * Creates a Raft server.
+   */
+  @SuppressWarnings("unchecked")
+  protected CopycatServer createServer(Address address, Resource.Config config) {
     ResourceType type = new ResourceType((Class<? extends Resource>) type());
     Supplier<StateMachine> stateMachine = () -> {
       try {
-        return type.stateMachine().newInstance();
+        return type.factory().newInstance().createStateMachine(config);
       } catch (InstantiationException | IllegalAccessException e) {
         throw new RuntimeException(e);
       }
@@ -157,6 +164,13 @@ public abstract class AbstractCopycatTest<T extends Resource> extends Concurrent
    * Creates a set of Raft servers.
    */
   protected List<CopycatServer> createServers(int live, int total) throws Throwable {
+    return createServers(live, total, new Resource.Config());
+  }
+
+  /**
+   * Creates a set of Raft servers.
+   */
+  protected List<CopycatServer> createServers(int live, int total, Resource.Config config) throws Throwable {
     List<Address> members = new ArrayList<>();
     for (int i = 0; i < total; i++) {
       members.add(nextAddress());
@@ -165,7 +179,7 @@ public abstract class AbstractCopycatTest<T extends Resource> extends Concurrent
 
     List<CopycatServer> servers = new ArrayList<>();
     for (int i = 0; i < live; i++) {
-      CopycatServer server = createServer(members.get(i));
+      CopycatServer server = createServer(members.get(i), config);
       server.open().thenRun(this::resume);
       servers.add(server);
     }
@@ -178,6 +192,13 @@ public abstract class AbstractCopycatTest<T extends Resource> extends Concurrent
    * Creates a set of Raft servers.
    */
   protected List<CopycatServer> createServers(int nodes) throws Throwable {
-    return createServers(nodes, nodes);
+    return createServers(nodes, nodes, new Resource.Config());
+  }
+
+  /**
+   * Creates a set of Raft servers.
+   */
+  protected List<CopycatServer> createServers(int nodes, Resource.Config config) throws Throwable {
+    return createServers(nodes, nodes, config);
   }
 }

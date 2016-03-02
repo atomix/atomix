@@ -15,22 +15,16 @@
  */
 package io.atomix.resource;
 
-import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.catalyst.util.Managed;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.copycat.Command;
 import io.atomix.copycat.Query;
-import io.atomix.copycat.client.CopycatClient;
 import io.atomix.copycat.session.Session;
-import io.atomix.resource.util.ResourceCommand;
-import io.atomix.resource.util.ResourceQuery;
 
 import java.io.Serializable;
 import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
 
 /**
@@ -56,7 +50,7 @@ import java.util.function.Consumer;
  * @param <T> resource type
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class Resource<T extends Resource<T>> implements Managed<T> {
+public interface Resource<T extends Resource<T>> extends Managed<T> {
 
   /**
    * Base class for cluster-wide resource configurations.
@@ -64,7 +58,7 @@ public abstract class Resource<T extends Resource<T>> implements Managed<T> {
    * Resource configurations control options specific to the resource's replicated {@link ResourceStateMachine}.
    * These options might include a maximum collection size or the order of values in a multi-map.
    */
-  public static class Config extends Properties implements Serializable {
+  class Config extends Properties implements Serializable {
     public Config() {
     }
 
@@ -85,7 +79,7 @@ public abstract class Resource<T extends Resource<T>> implements Managed<T> {
    * For instance, options may include an {@link io.atomix.catalyst.transport.Address Address} to which to
    * bind a server or a default {@link WriteConsistency} level.
    */
-  public static class Options extends Properties {
+  class Options extends Properties {
     public Options() {
     }
 
@@ -126,7 +120,7 @@ public abstract class Resource<T extends Resource<T>> implements Managed<T> {
    * <p>
    * Reference resource documentation for implications of the various states on specific resources.
    */
-  public enum State {
+  enum State {
 
     /**
      * Indicates that the resource is connected and operating normally.
@@ -164,69 +158,26 @@ public abstract class Resource<T extends Resource<T>> implements Managed<T> {
 
   }
 
-  private final ResourceType type;
-  protected final CopycatClient client;
-  protected volatile Config config;
-  protected final Options options;
-  private volatile State state;
-  private final Set<StateChangeListener> changeListeners = new CopyOnWriteArraySet<>();
-  private WriteConsistency writeConsistency = WriteConsistency.ATOMIC;
-  private ReadConsistency readConsistency = ReadConsistency.ATOMIC;
-
-  protected Resource(CopycatClient client, Properties config, Properties options) {
-    this.type = new ResourceType(getClass());
-    this.client = Assert.notNull(client, "client");
-
-    client.serializer().register(ResourceCommand.class, -50);
-    client.serializer().register(ResourceQuery.class, -51);
-    client.serializer().register(ResourceCommand.Configure.class, -52);
-    client.serializer().register(ResourceCommand.Delete.class, -53);
-
-    try {
-      client.serializer().resolve(type.typeResolver().newInstance());
-    } catch (InstantiationException | IllegalAccessException e) {
-      throw new ResourceException("failed to instantiate resource type resolver");
-    }
-
-    this.config = new Config(Assert.notNull(config, "config"));
-    this.options = new Options(Assert.notNull(options, "options"));
-    client.onStateChange(this::onStateChange);
-  }
-
-  /**
-   * Called when a client state change occurs.
-   */
-  private void onStateChange(CopycatClient.State state) {
-    this.state = State.valueOf(state.name());
-    changeListeners.forEach(l -> l.accept(this.state));
-  }
-
   /**
    * Returns the resource type.
    *
    * @return The resource type.
    */
-  public ResourceType type() {
-    return type;
-  }
+  ResourceType type();
 
   /**
    * Returns the resource configuration.
    *
    * @return The resource configuration.
    */
-  public Config config() {
-    return config;
-  }
+  Config config();
 
   /**
    * Returns the resource options.
    *
    * @return The configured resource options.
    */
-  public Options options() {
-    return options;
-  }
+  Options options();
 
   /**
    * Returns the current resource state.
@@ -238,9 +189,7 @@ public abstract class Resource<T extends Resource<T>> implements Managed<T> {
    *
    * @return The current resource state.
    */
-  public State state() {
-    return state;
-  }
+  State state();
 
   /**
    * Registers a resource state change listener.
@@ -248,18 +197,14 @@ public abstract class Resource<T extends Resource<T>> implements Managed<T> {
    * @param callback The callback to call when the resource state changes.
    * @return The state change listener.
    */
-  public Listener<State> onStateChange(Consumer<State> callback) {
-    return new StateChangeListener(Assert.notNull(callback, "callback"));
-  }
+  Listener<State> onStateChange(Consumer<State> callback);
 
   /**
    * Returns the resource thread context.
    *
    * @return The resource thread context.
    */
-  public ThreadContext context() {
-    return client.context();
-  }
+  ThreadContext context();
 
   /**
    * Returns the configured write consistency level.
@@ -271,9 +216,7 @@ public abstract class Resource<T extends Resource<T>> implements Managed<T> {
    *
    * @return The configured resource consistency level.
    */
-  public WriteConsistency writeConsistency() {
-    return writeConsistency;
-  }
+  WriteConsistency writeConsistency();
 
   /**
    * Sets the write consistency level.
@@ -297,11 +240,7 @@ public abstract class Resource<T extends Resource<T>> implements Managed<T> {
    * @return The resource instance.
    * @throws NullPointerException if {@code consistency} is null
    */
-  @SuppressWarnings("unchecked")
-  public T with(WriteConsistency consistency) {
-    this.writeConsistency = Assert.notNull(consistency, "consistency");
-    return (T) this;
-  }
+  T with(WriteConsistency consistency);
 
   /**
    * Returns the configured read consistency level.
@@ -313,9 +252,7 @@ public abstract class Resource<T extends Resource<T>> implements Managed<T> {
    *
    * @return The configured resource consistency level.
    */
-  public ReadConsistency readConsistency() {
-    return readConsistency;
-  }
+  ReadConsistency readConsistency();
 
   /**
    * Sets the read consistency level.
@@ -339,73 +276,7 @@ public abstract class Resource<T extends Resource<T>> implements Managed<T> {
    * @return The resource instance.
    * @throws NullPointerException if {@code consistency} is null
    */
-  @SuppressWarnings("unchecked")
-  public T with(ReadConsistency consistency) {
-    this.readConsistency = Assert.notNull(consistency, "consistency");
-    return (T) this;
-  }
-
-  /**
-   * Submits a write operation for this resource to the cluster.
-   * <p>
-   * The write operation will be submitted with the configured {@link WriteConsistency#level()} if
-   * it does not explicitly override {@link Command#consistency()} to provide a static consistency level.
-   *
-   * @param command The command to submit.
-   * @param <R> The command result type.
-   * @return A completable future to be completed with the command result.
-   * @throws NullPointerException if {@code command} is null
-   */
-  protected <R> CompletableFuture<R> submit(Command<R> command) {
-    return client.submit(new ResourceCommand<>(Assert.notNull(command, "command"), writeConsistency.level()));
-  }
-
-  /**
-   * Submits a write operation for this resource to the cluster.
-   * <p>
-   * The write operation will be submitted with the {@link WriteConsistency#level()} if
-   * it does not explicitly override {@link Command#consistency()} to provide a static consistency level.
-   *
-   * @param command The command to submit.
-   * @param consistency The consistency with which to submit the command.
-   * @param <R> The command result type.
-   * @return A completable future to be completed with the command result.
-   * @throws NullPointerException if {@code command} is null
-   */
-  protected <R> CompletableFuture<R> submit(Command<R> command, WriteConsistency consistency) {
-    return client.submit(new ResourceCommand<>(Assert.notNull(command, "command"), consistency.level()));
-  }
-
-  /**
-   * Submits a read operation for this resource to the cluster.
-   * <p>
-   * The read operation will be submitted with the configured {@link ReadConsistency#level()} if
-   * it does not explicitly override {@link Query#consistency()} to provide a static consistency level.
-   *
-   * @param query The query to submit.
-   * @param <R> The query result type.
-   * @return A completable future to be completed with the query result.
-   * @throws NullPointerException if {@code query} is null
-   */
-  protected <R> CompletableFuture<R> submit(Query<R> query) {
-    return client.submit(new ResourceQuery<>(Assert.notNull(query, "query"), readConsistency.level()));
-  }
-
-  /**
-   * Submits a read operation for this resource to the cluster.
-   * <p>
-   * The read operation will be submitted with the {@link ReadConsistency#level()} if
-   * it does not explicitly override {@link Query#consistency()} to provide a static consistency level.
-   *
-   * @param query The query to submit.
-   * @param consistency The read consistency level.
-   * @param <R> The query result type.
-   * @return A completable future to be completed with the query result.
-   * @throws NullPointerException if {@code query} is null
-   */
-  protected <R> CompletableFuture<R> submit(Query<R> query, ReadConsistency consistency) {
-    return client.submit(new ResourceQuery<>(Assert.notNull(query, "query"), consistency.level()));
-  }
+  T with(ReadConsistency consistency);
 
   /**
    * Opens the resource.
@@ -417,19 +288,7 @@ public abstract class Resource<T extends Resource<T>> implements Managed<T> {
    */
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<T> open() {
-    return client.open()
-      .thenCompose(v -> client.submit(new ResourceCommand.Configure(config)))
-      .thenApply(config -> {
-        this.config = new Config(config);
-        return (T) this;
-      });
-  }
-
-  @Override
-  public boolean isOpen() {
-    return state != State.CLOSED;
-  }
+  CompletableFuture<T> open();
 
   /**
    * Closes the resource.
@@ -441,59 +300,13 @@ public abstract class Resource<T extends Resource<T>> implements Managed<T> {
    * @return A completable future to be completed once the resource is closed.
    */
   @Override
-  public CompletableFuture<Void> close() {
-    return client.close();
-  }
-
-  @Override
-  public boolean isClosed() {
-    return state == State.CLOSED;
-  }
+  CompletableFuture<Void> close();
 
   /**
    * Deletes the resource state.
    *
    * @return A completable future to be completed once the resource has been deleted.
    */
-  public CompletableFuture<Void> delete() {
-    return client.submit(new ResourceCommand.Delete());
-  }
-
-  @Override
-  public int hashCode() {
-    return 37 * 23 + client.hashCode();
-  }
-
-  @Override
-  public boolean equals(Object object) {
-    return object instanceof Resource && ((Resource) object).client.session().id() == client.session().id();
-  }
-
-  @Override
-  public String toString() {
-    return String.format("%s[id=%s]", getClass().getSimpleName(), client.session().id());
-  }
-
-  /**
-   * Resource state change listener.
-   */
-  private class StateChangeListener implements Listener<State> {
-    private final Consumer<State> callback;
-
-    private StateChangeListener(Consumer<State> callback) {
-      this.callback = callback;
-      changeListeners.add(this);
-    }
-
-    @Override
-    public void accept(State state) {
-      callback.accept(state);
-    }
-
-    @Override
-    public void close() {
-      changeListeners.remove(this);
-    }
-  }
+  CompletableFuture<Void> delete();
 
 }

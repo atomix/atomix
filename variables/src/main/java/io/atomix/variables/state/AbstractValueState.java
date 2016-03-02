@@ -18,9 +18,9 @@ package io.atomix.variables.state;
 import io.atomix.catalyst.util.concurrent.Scheduled;
 import io.atomix.copycat.server.Commit;
 import io.atomix.resource.ResourceStateMachine;
-import io.atomix.resource.ResourceType;
 
 import java.time.Duration;
+import java.util.Properties;
 
 /**
  * Abstract distributed value state machine.
@@ -32,8 +32,8 @@ public class AbstractValueState<T> extends ResourceStateMachine {
   protected Commit<? extends ValueCommands.ValueCommand<?>> current;
   protected Scheduled timer;
 
-  public AbstractValueState(ResourceType type) {
-    super(type);
+  public AbstractValueState(Properties config) {
+    super(config);
   }
 
   /**

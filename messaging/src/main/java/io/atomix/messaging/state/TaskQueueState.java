@@ -15,12 +15,12 @@
  */
 package io.atomix.messaging.state;
 
+import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.session.ServerSession;
 import io.atomix.copycat.server.session.SessionListener;
-import io.atomix.messaging.DistributedTaskQueue;
+import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceStateMachine;
-import io.atomix.resource.ResourceType;
 
 import java.util.ArrayDeque;
 import java.util.HashMap;
@@ -39,8 +39,13 @@ public class TaskQueueState extends ResourceStateMachine implements SessionListe
   private final LinkedBlockingDeque<Commit<TaskQueueCommands.Submit>> taskQueue = new LinkedBlockingDeque<>();
   private final Map<Long, Commit<TaskQueueCommands.Submit>> processing = new HashMap<>();
 
-  public TaskQueueState() {
-    super(new ResourceType(DistributedTaskQueue.class));
+  public TaskQueueState(Resource.Config config) {
+    super(config);
+  }
+
+  @Override
+  protected void registerTypes(SerializerRegistry registry) {
+    new TaskQueueCommands.TypeResolver().resolve(registry);
   }
 
   @Override

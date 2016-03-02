@@ -15,6 +15,7 @@
  */
 package io.atomix.coordination;
 
+import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.Server;
 import io.atomix.catalyst.util.ConfigurationException;
@@ -23,10 +24,10 @@ import io.atomix.catalyst.util.Listeners;
 import io.atomix.catalyst.util.hash.Hasher;
 import io.atomix.catalyst.util.hash.Murmur2Hasher;
 import io.atomix.coordination.state.GroupCommands;
-import io.atomix.coordination.state.GroupState;
 import io.atomix.copycat.Command;
 import io.atomix.copycat.Query;
 import io.atomix.copycat.client.CopycatClient;
+import io.atomix.resource.AbstractResource;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceTypeInfo;
 
@@ -181,8 +182,8 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-@ResourceTypeInfo(id=-20, stateMachine=GroupState.class, typeResolver=GroupCommands.TypeResolver.class)
-public class DistributedGroup extends Resource<DistributedGroup> {
+@ResourceTypeInfo(id=-20, factory=DistributedGroupFactory.class)
+public class DistributedGroup extends AbstractResource<DistributedGroup> {
 
   /**
    * Group configuration.
@@ -311,11 +312,16 @@ public class DistributedGroup extends Resource<DistributedGroup> {
   private final GroupPartitions partitions = new GroupPartitions();
   final Map<String, GroupMember> members = new ConcurrentHashMap<>();
 
-  public DistributedGroup(CopycatClient client, Properties config, Properties options) {
-    super(client, config, options);
+  public DistributedGroup(CopycatClient client, Properties options) {
+    super(client, options);
     this.address = new Options(options).getAddress();
     this.server = client.transport().server();
     this.connections = new GroupConnectionManager(client.transport().client(), client.context());
+  }
+
+  @Override
+  protected void registerTypes(SerializerRegistry registry) {
+    new GroupCommands.TypeResolver().resolve(registry);
   }
 
   @Override

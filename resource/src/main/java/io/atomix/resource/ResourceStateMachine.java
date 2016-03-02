@@ -15,6 +15,7 @@
  */
 package io.atomix.resource;
 
+import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.StateMachine;
@@ -109,55 +110,32 @@ import java.util.Properties;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public abstract class ResourceStateMachine extends StateMachine implements SessionListener {
-  private final ResourceType type;
-  private Commit<ResourceCommand.Configure> configureCommit;
+  protected final Properties config;
 
-  protected ResourceStateMachine(ResourceType type) {
-    this.type = Assert.notNull(type, "type");
+  protected ResourceStateMachine(Properties config) {
+    this.config = Assert.notNull(config, "config");
   }
 
   @Override
   public final void init(StateMachineExecutor executor) {
-    try {
-      executor.serializer().resolve(type.typeResolver().newInstance());
-    } catch (InstantiationException | IllegalAccessException e) {
-      throw new ResourceException("failed to instantiate resource type resolver");
-    }
-
     executor.serializer().register(ResourceCommand.class, -50);
     executor.serializer().register(ResourceQuery.class, -51);
-    executor.serializer().register(ResourceCommand.Configure.class, -52);
+    executor.serializer().register(ResourceCommand.Config.class, -52);
     executor.serializer().register(ResourceCommand.Delete.class, -53);
 
+    executor.register(ResourceCommand.Config.class, this::config);
     executor.<ResourceCommand.Delete>register(ResourceCommand.Delete.class, this::delete);
-    executor.register(ResourceCommand.Configure.class, this::configure);
+
+    registerTypes(executor.serializer().registry());
+
     super.init(new ResourceStateMachineExecutor(executor));
   }
 
   /**
-   * Handles a configure command.
+   * Registers serializable types on the given serializer.
    */
-  @SuppressWarnings("unchecked")
-  private Properties configure(Commit<ResourceCommand.Configure> commit) {
-    if (configureCommit == null) {
-      configureCommit = commit;
-      configure(commit.operation().config());
-    }
-    return configureCommit.operation().config();
-  }
+  protected void registerTypes(SerializerRegistry registry) {
 
-  /**
-   * Applies a configuration to the resource state machine.
-   * <p>
-   * State machine implementations should override this method to receive configurations from
-   * client-side {@link Resource}s. Configurations are guaranteed to be applied to the state machine
-   * on all nodes at the same logical time (i.e. {@code index}). Configurations may be changed at
-   * runtime by any client, so state machines should account for runtime configuration changes and
-   * update existing state according to the provided configuration if necessary.
-   *
-   * @param config The resource configuration.
-   */
-  public void configure(Properties config) {
   }
 
   @Override
@@ -177,13 +155,21 @@ public abstract class ResourceStateMachine extends StateMachine implements Sessi
   }
 
   /**
+   * Returns the resource configuration.
+   */
+  private Properties config(Commit<ResourceCommand.Config> commit) {
+    try {
+      return config;
+    } finally {
+      commit.close();
+    }
+  }
+
+  /**
    * Handles a delete command.
    */
   private void delete(Commit<ResourceCommand.Delete> commit) {
     try {
-      if (configureCommit != null)
-        configureCommit.close();
-      configureCommit = null;
       delete();
     } finally {
       commit.close();

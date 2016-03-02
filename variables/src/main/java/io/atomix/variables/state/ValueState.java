@@ -15,12 +15,12 @@
  */
 package io.atomix.variables.state;
 
+import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.catalyst.util.concurrent.Scheduled;
 import io.atomix.copycat.server.Commit;
-import io.atomix.resource.ResourceType;
-import io.atomix.variables.DistributedValue;
 
 import java.time.Duration;
+import java.util.Properties;
 
 /**
  * Distributed value state machine.
@@ -32,8 +32,13 @@ public class ValueState<T> extends AbstractValueState<T> {
   protected Commit<? extends ValueCommands.ValueCommand<?>> current;
   protected Scheduled timer;
 
-  public ValueState() {
-    super(new ResourceType(DistributedValue.class));
+  public ValueState(Properties config) {
+    super(config);
+  }
+
+  @Override
+  protected void registerTypes(SerializerRegistry registry) {
+    new ValueCommands.TypeResolver().resolve(registry);
   }
 
   /**

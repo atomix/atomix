@@ -20,6 +20,9 @@ import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.copycat.Command;
+import io.atomix.resource.ResourceType;
+
+import java.util.Properties;
 
 /**
  * Get resource command.
@@ -27,7 +30,8 @@ import io.atomix.copycat.Command;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class GetResource extends KeyOperation<Long> implements Command<Long> {
-  private int type;
+  private ResourceType type;
+  private Properties config;
 
   public GetResource() {
   }
@@ -35,9 +39,10 @@ public class GetResource extends KeyOperation<Long> implements Command<Long> {
   /**
    * @throws NullPointerException if {@code path} or {@code type} are null
    */
-  public GetResource(String key, int type) {
+  public GetResource(String key, ResourceType type, Properties config) {
     super(key);
-    this.type = Assert.argNot(type, type == 0, "type cannot be 0");
+    this.type = Assert.notNull(type, "type");
+    this.config = config;
   }
 
   @Override
@@ -55,21 +60,32 @@ public class GetResource extends KeyOperation<Long> implements Command<Long> {
    *
    * @return The resource type.
    */
-  public int type() {
+  public ResourceType type() {
     return type;
+  }
+
+  /**
+   * Returns the resource configuration.
+   *
+   * @return The resource configuration.
+   */
+  public Properties config() {
+    return config;
   }
 
   @Override
   public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
     super.writeObject(buffer, serializer);
-    buffer.writeShort((short) type);
+    serializer.writeObject(type, buffer);
+    serializer.writeObject(config, buffer);
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public void readObject(BufferInput<?> buffer, Serializer serializer) {
     super.readObject(buffer, serializer);
-    type = buffer.readShort();
+    type = serializer.readObject(buffer);
+    config = serializer.readObject(buffer);
   }
 
 }

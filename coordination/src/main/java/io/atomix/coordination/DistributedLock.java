@@ -15,9 +15,10 @@
  */
 package io.atomix.coordination;
 
+import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.coordination.state.LockCommands;
-import io.atomix.coordination.state.LockState;
 import io.atomix.copycat.client.CopycatClient;
+import io.atomix.resource.AbstractResource;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceTypeInfo;
 
@@ -133,14 +134,19 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@ResourceTypeInfo(id=-22, stateMachine=LockState.class, typeResolver=LockCommands.TypeResolver.class)
-public class DistributedLock extends Resource<DistributedLock> {
+@ResourceTypeInfo(id=-22, factory=DistributedLockFactory.class)
+public class DistributedLock extends AbstractResource<DistributedLock> {
   private final Map<Integer, CompletableFuture<Long>> futures = new ConcurrentHashMap<>();
   private final AtomicInteger id = new AtomicInteger();
   private int lock;
 
-  public DistributedLock(CopycatClient client, Properties config, Properties options) {
-    super(client, config, options);
+  public DistributedLock(CopycatClient client, Properties options) {
+    super(client, options);
+  }
+
+  @Override
+  protected void registerTypes(SerializerRegistry registry) {
+    new LockCommands.TypeResolver().resolve(registry);
   }
 
   @Override

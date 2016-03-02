@@ -15,6 +15,7 @@
  */
 package io.atomix.messaging;
 
+import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.Client;
 import io.atomix.catalyst.transport.Connection;
@@ -23,7 +24,7 @@ import io.atomix.catalyst.util.ConfigurationException;
 import io.atomix.catalyst.util.concurrent.Futures;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.messaging.state.MessageBusCommands;
-import io.atomix.messaging.state.MessageBusState;
+import io.atomix.resource.AbstractResource;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceTypeInfo;
 
@@ -64,8 +65,8 @@ import java.util.function.Function;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-@ResourceTypeInfo(id=-30, stateMachine=MessageBusState.class, typeResolver=MessageBusCommands.TypeResolver.class)
-public class DistributedMessageBus extends Resource<DistributedMessageBus> {
+@ResourceTypeInfo(id=-30, factory=DistributedMessageBusFactory.class)
+public class DistributedMessageBus extends AbstractResource<DistributedMessageBus> {
   private Client client;
   private Server server;
   private final Options options;
@@ -76,9 +77,14 @@ public class DistributedMessageBus extends Resource<DistributedMessageBus> {
   private final Map<String, InternalMessageConsumer> consumers = new ConcurrentHashMap<>();
   private volatile boolean open;
 
-  public DistributedMessageBus(CopycatClient client, Properties config, Properties options) {
-    super(client, config, options);
+  public DistributedMessageBus(CopycatClient client, Properties options) {
+    super(client, options);
     this.options = new Options(options);
+  }
+
+  @Override
+  protected void registerTypes(SerializerRegistry registry) {
+    new MessageBusCommands.TypeResolver().resolve(registry);
   }
 
   @Override

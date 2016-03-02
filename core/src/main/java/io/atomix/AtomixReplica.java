@@ -31,12 +31,9 @@ import io.atomix.copycat.server.cluster.Member;
 import io.atomix.copycat.server.storage.Storage;
 import io.atomix.copycat.session.Session;
 import io.atomix.manager.ResourceClient;
-import io.atomix.manager.util.ResourceManagerTypeResolver;
 import io.atomix.manager.ResourceServer;
 import io.atomix.manager.state.ResourceManagerState;
-import io.atomix.resource.util.ResourceRegistry;
-import io.atomix.resource.util.ResourceTypeResolver;
-import io.atomix.resource.util.ServiceLoaderResourceResolver;
+import io.atomix.manager.util.ResourceManagerTypeResolver;
 import io.atomix.util.ClusterBalancer;
 import io.atomix.util.ReplicaProperties;
 
@@ -471,8 +468,6 @@ public final class AtomixReplica extends Atomix {
     private int quorumHint;
     private int backupCount;
     private LocalServerRegistry localRegistry = new LocalServerRegistry();
-    private ResourceTypeResolver resourceResolver = new ServiceLoaderResourceResolver();
-    private final ResourceRegistry registry = new ResourceRegistry();
 
     private Builder(Address clientAddress, Address serverAddress, Collection<Address> members) {
       this.members = Assert.notNull(members, "members");
@@ -660,22 +655,6 @@ public final class AtomixReplica extends Atomix {
     }
 
     /**
-     * Sets the Atomix resource type resolver.
-     * <p>
-     * The resource resolver can be used to register custom {@link io.atomix.resource.Resource} types
-     * with the replica. In order for a client or replica to {@link #get(String, Class) create} an instance
-     * of a custom resource, the resource type must be registered on all replicas and on any client that
-     * accesses the resource.
-     *
-     * @param resolver The resource type resolver.
-     * @return The Atomix builder.
-     */
-    public Builder withResourceResolver(ResourceTypeResolver resolver) {
-      this.resourceResolver = Assert.notNull(resolver, "resolver");
-      return this;
-    }
-
-    /**
      * Sets the replica storage module, returning the replica builder for method chaining.
      * <p>
      * The storage module is the interface the replica will use to store the persistent replicated log.
@@ -811,9 +790,6 @@ public final class AtomixReplica extends Atomix {
     private ResourceClient buildClient() {
       buildTransport();
 
-      // Resolve resources.
-      resourceResolver.resolve(registry);
-
       // Configure the client and server with a transport that routes all local client communication
       // directly through the local server, ensuring we don't incur unnecessary network traffic by
       // sending operations to a remote server when a local server is already available in the same JVM.=
@@ -821,8 +797,8 @@ public final class AtomixReplica extends Atomix {
         .withServerSelectionStrategy(new CombinedSelectionStrategy(clientAddress));
 
       CopycatClient client = clientBuilder.build();
-      client.serializer().resolve(new ResourceManagerTypeResolver(registry));
-      return new ResourceClient(new CombinedCopycatClient(client, serverTransport), registry);
+      client.serializer().resolve(new ResourceManagerTypeResolver());
+      return new ResourceClient(new CombinedCopycatClient(client, serverTransport));
     }
 
     /**
@@ -839,7 +815,7 @@ public final class AtomixReplica extends Atomix {
       }
 
       // Set the server resource state machine.
-      serverBuilder.withStateMachine(() -> new ResourceManagerState(registry));
+      serverBuilder.withStateMachine(ResourceManagerState::new);
 
       // If the quorum hint is ALL then set the local member to ACTIVE.
       if (quorumHint == Quorum.ALL.size()) {
@@ -847,7 +823,7 @@ public final class AtomixReplica extends Atomix {
       }
 
       CopycatServer server = serverBuilder.build();
-      server.serializer().resolve(new ResourceManagerTypeResolver(registry));
+      server.serializer().resolve(new ResourceManagerTypeResolver());
       return new ResourceServer(server);
     }
 
