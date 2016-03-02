@@ -15,15 +15,15 @@
  */
 package io.atomix;
 
-import io.atomix.coordination.DistributedGroup;
-import io.atomix.coordination.LocalGroupMember;
+import io.atomix.group.DistributedGroup;
+import io.atomix.group.LocalGroupMember;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
 
 /**
  * Atomix membership group test.

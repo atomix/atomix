@@ -15,7 +15,7 @@
  */
 package io.atomix;
 
-import io.atomix.coordination.DistributedLock;
+import io.atomix.concurrent.DistributedLock;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 

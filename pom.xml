@@ -64,9 +64,10 @@
   <modules>
     <module>resource</module>
     <module>manager</module>
+    <module>group</module>
     <module>collections</module>
     <module>messaging</module>
-    <module>coordination</module>
+    <module>concurrent</module>
     <module>variables</module>
     <module>core</module>
     <module>examples</module>
