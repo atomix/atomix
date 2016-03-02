@@ -13,37 +13,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.collections;
+package io.atomix.group.util;
 
 import io.atomix.catalyst.serializer.SerializableTypeResolver;
-import io.atomix.collections.state.MapCommands;
-import io.atomix.collections.state.MapState;
 import io.atomix.copycat.client.CopycatClient;
+import io.atomix.group.DistributedGroup;
+import io.atomix.group.state.GroupCommands;
+import io.atomix.group.state.GroupState;
 import io.atomix.resource.ResourceFactory;
 import io.atomix.resource.ResourceStateMachine;
 
 import java.util.Properties;
 
 /**
- * Distributed map factory.
+ * Distributed group factory.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class DistributedMapFactory implements ResourceFactory<DistributedMap<?, ?>> {
+public class DistributedGroupFactory implements ResourceFactory<DistributedGroup> {
 
   @Override
   public SerializableTypeResolver createSerializableTypeResolver() {
-    return new MapCommands.TypeResolver();
+    return new GroupCommands.TypeResolver();
   }
 
   @Override
   public ResourceStateMachine createStateMachine(Properties config) {
-    return new MapState(config);
+    return new GroupState(config);
   }
 
   @Override
-  public DistributedMap<?, ?> createInstance(CopycatClient client, Properties options) {
-    return new DistributedMap<Object, Object>(client, options);
+  public DistributedGroup createInstance(CopycatClient client, Properties options) {
+    return new DistributedGroup(client, options);
   }
 
 }

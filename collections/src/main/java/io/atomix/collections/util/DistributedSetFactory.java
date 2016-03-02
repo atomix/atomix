@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.collections;
+package io.atomix.collections.util;
 
 import io.atomix.catalyst.serializer.SerializableTypeResolver;
+import io.atomix.collections.DistributedSet;
 import io.atomix.collections.state.SetCommands;
 import io.atomix.collections.state.SetState;
 import io.atomix.copycat.client.CopycatClient;

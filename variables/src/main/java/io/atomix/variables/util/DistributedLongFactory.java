@@ -13,37 +13,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.messaging;
+package io.atomix.variables.util;
 
 import io.atomix.catalyst.serializer.SerializableTypeResolver;
 import io.atomix.copycat.client.CopycatClient;
-import io.atomix.messaging.state.TopicCommands;
-import io.atomix.messaging.state.TopicState;
 import io.atomix.resource.ResourceFactory;
 import io.atomix.resource.ResourceStateMachine;
+import io.atomix.variables.DistributedLong;
+import io.atomix.variables.state.LongCommands;
+import io.atomix.variables.state.LongState;
 
 import java.util.Properties;
 
 /**
- * Distributed topic factory.
+ * Distributed long factory.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class DistributedTopicFactory implements ResourceFactory<DistributedTopic<?>> {
+public class DistributedLongFactory implements ResourceFactory<DistributedLong> {
 
   @Override
   public SerializableTypeResolver createSerializableTypeResolver() {
-    return new TopicCommands.TypeResolver();
+    return new LongCommands.TypeResolver();
   }
 
   @Override
   public ResourceStateMachine createStateMachine(Properties config) {
-    return new TopicState(config);
+    return new LongState(config);
   }
 
   @Override
-  public DistributedTopic<?> createInstance(CopycatClient client, Properties options) {
-    return new DistributedTopic<>(client, options);
+  public DistributedLong createInstance(CopycatClient client, Properties options) {
+    return new DistributedLong(client, options);
   }
 
 }

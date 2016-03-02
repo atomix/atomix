@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.variables;
+package io.atomix.variables.util;
 
 import io.atomix.catalyst.serializer.SerializableTypeResolver;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.ResourceFactory;
 import io.atomix.resource.ResourceStateMachine;
+import io.atomix.variables.DistributedValue;
 import io.atomix.variables.state.ValueCommands;
 import io.atomix.variables.state.ValueState;
 

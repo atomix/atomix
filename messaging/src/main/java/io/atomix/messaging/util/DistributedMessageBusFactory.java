@@ -13,37 +13,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.collections;
+package io.atomix.messaging.util;
 
 import io.atomix.catalyst.serializer.SerializableTypeResolver;
-import io.atomix.collections.state.MultiMapCommands;
-import io.atomix.collections.state.MultiMapState;
 import io.atomix.copycat.client.CopycatClient;
+import io.atomix.messaging.DistributedMessageBus;
+import io.atomix.messaging.state.MessageBusCommands;
+import io.atomix.messaging.state.MessageBusState;
 import io.atomix.resource.ResourceFactory;
 import io.atomix.resource.ResourceStateMachine;
 
 import java.util.Properties;
 
 /**
- * Distributed multi-map factory.
+ * Distributed message bus factory.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class DistributedMultiMapFactory implements ResourceFactory<DistributedMultiMap<?, ?>> {
+public class DistributedMessageBusFactory implements ResourceFactory<DistributedMessageBus> {
 
   @Override
   public SerializableTypeResolver createSerializableTypeResolver() {
-    return new MultiMapCommands.TypeResolver();
+    return new MessageBusCommands.TypeResolver();
   }
 
   @Override
   public ResourceStateMachine createStateMachine(Properties config) {
-    return new MultiMapState(config);
+    return new MessageBusState(config);
   }
 
   @Override
-  public DistributedMultiMap<?, ?> createInstance(CopycatClient client, Properties options) {
-    return new DistributedMultiMap<>(client, options);
+  public DistributedMessageBus createInstance(CopycatClient client, Properties options) {
+    return new DistributedMessageBus(client, options);
   }
 
 }

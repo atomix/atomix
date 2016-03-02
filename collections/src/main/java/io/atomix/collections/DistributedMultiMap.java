@@ -16,6 +16,7 @@
 package io.atomix.collections;
 
 import io.atomix.collections.state.MultiMapCommands;
+import io.atomix.collections.util.DistributedMultiMapFactory;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.AbstractResource;
 import io.atomix.resource.ReadConsistency;

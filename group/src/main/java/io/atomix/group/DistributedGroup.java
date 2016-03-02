@@ -26,6 +26,7 @@ import io.atomix.copycat.Command;
 import io.atomix.copycat.Query;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.group.state.GroupCommands;
+import io.atomix.group.util.DistributedGroupFactory;
 import io.atomix.resource.AbstractResource;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceTypeInfo;

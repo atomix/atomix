@@ -13,37 +13,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.messaging;
+package io.atomix.messaging.util;
 
 import io.atomix.catalyst.serializer.SerializableTypeResolver;
 import io.atomix.copycat.client.CopycatClient;
-import io.atomix.messaging.state.MessageBusCommands;
-import io.atomix.messaging.state.MessageBusState;
+import io.atomix.messaging.DistributedTopic;
+import io.atomix.messaging.state.TopicCommands;
+import io.atomix.messaging.state.TopicState;
 import io.atomix.resource.ResourceFactory;
 import io.atomix.resource.ResourceStateMachine;
 
 import java.util.Properties;
 
 /**
- * Distributed message bus factory.
+ * Distributed topic factory.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class DistributedMessageBusFactory implements ResourceFactory<DistributedMessageBus> {
+public class DistributedTopicFactory implements ResourceFactory<DistributedTopic<?>> {
 
   @Override
   public SerializableTypeResolver createSerializableTypeResolver() {
-    return new MessageBusCommands.TypeResolver();
+    return new TopicCommands.TypeResolver();
   }
 
   @Override
   public ResourceStateMachine createStateMachine(Properties config) {
-    return new MessageBusState(config);
+    return new TopicState(config);
   }
 
   @Override
-  public DistributedMessageBus createInstance(CopycatClient client, Properties options) {
-    return new DistributedMessageBus(client, options);
+  public DistributedTopic<?> createInstance(CopycatClient client, Properties options) {
+    return new DistributedTopic<>(client, options);
   }
 
 }
