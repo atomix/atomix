@@ -50,7 +50,7 @@ public class ResourceRecoveryTest extends AbstractAtomixTest {
   private void testRecoverResources(Atomix atomix) throws Throwable {
     String id = UUID.randomUUID().toString();
 
-    DistributedMap<String, String> map = atomix.get("test-map-" + id, DistributedMap.class).get();
+    DistributedMap<String, String> map = atomix.getResource("test-map-" + id, DistributedMap.class).get();
     map.put("foo", "Hello world!").get(5, TimeUnit.SECONDS);
     map.put("bar", "Hello world again!").get(5, TimeUnit.SECONDS);
     map.get("foo").thenAccept(result -> {
@@ -59,7 +59,7 @@ public class ResourceRecoveryTest extends AbstractAtomixTest {
     });
     await(1000);
 
-    DistributedSet<String> set = atomix.get("test-set-" + id, DistributedSet.class).get();
+    DistributedSet<String> set = atomix.getResource("test-set-" + id, DistributedSet.class).get();
     set.add("Hello world!").get(5, TimeUnit.SECONDS);
 
     atomix.client.client().recover().whenComplete((result, error) -> {

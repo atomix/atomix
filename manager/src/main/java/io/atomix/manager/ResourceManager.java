@@ -78,7 +78,7 @@ public interface ResourceManager<T extends ResourceManager<T>> extends Managed<T
    * <pre>
    *   {@code
    *   if (!atomix.exists("lock").get()) {
-   *     DistributedLock lock = atomix.create("lock", DistributedLock.class).get();
+   *     DistributedLock lock = atomix.getResource("lock", DistributedLock.class).get();
    *   }
    *   }
    * </pre>
@@ -88,7 +88,7 @@ public interface ResourceManager<T extends ResourceManager<T>> extends Managed<T
    *   {@code
    *   atomix.exists("lock").thenAccept(exists -> {
    *     if (!exists) {
-   *       atomix.<DistributedLock>create("lock", DistributedLock.class).thenAccept(lock -> {
+   *       atomix.<DistributedLock>getResource("lock", DistributedLock.class).thenAccept(lock -> {
    *         ...
    *       });
    *     }
@@ -200,14 +200,14 @@ public interface ResourceManager<T extends ResourceManager<T>> extends Managed<T
    * use the {@link CompletableFuture#get()} method:
    * <pre>
    *   {@code
-   *   DistributedLock lock = atomix.get("lock", DistributedLock.class).get();
+   *   DistributedLock lock = atomix.getResource("lock", DistributedLock.class).get();
    *   }
    * </pre>
    * Alternatively, to execute the operation asynchronous and be notified once the result is received in a different
    * thread, use one of the many completable future callbacks:
    * <pre>
    *   {@code
-   *   atomix.<DistributedLock>get("lock", DistributedLock.class).thenAccept(lock -> {
+   *   atomix.<DistributedLock>getResource("lock", DistributedLock.class).thenAccept(lock -> {
    *     ...
    *   });
    *   }
@@ -220,7 +220,7 @@ public interface ResourceManager<T extends ResourceManager<T>> extends Managed<T
    * @throws NullPointerException if {@code key} or {@code type} are null
    * @throws IllegalArgumentException if {@code type} is inconsistent with a previously created type
    */
-  <T extends Resource> CompletableFuture<T> get(String key, Class<? super T> type);
+  <T extends Resource> CompletableFuture<T> getResource(String key, Class<? super T> type);
 
   /**
    * Gets or creates the given resource and acquires a singleton reference to it.
@@ -238,170 +238,14 @@ public interface ResourceManager<T extends ResourceManager<T>> extends Managed<T
    * use the {@link CompletableFuture#get()} method:
    * <pre>
    *   {@code
-   *   DistributedLock lock = atomix.get("lock", DistributedLock.class).get();
+   *   DistributedLock lock = atomix.getResource("lock", DistributedLock.class).get();
    *   }
    * </pre>
    * Alternatively, to execute the operation asynchronous and be notified once the result is received in a different
    * thread, use one of the many completable future callbacks:
    * <pre>
    *   {@code
-   *   atomix.<DistributedLock>get("lock", DistributedLock.class).thenAccept(lock -> {
-   *     ...
-   *   });
-   *   }
-   * </pre>
-   *
-   * @param key The key at which to get the resource.
-   * @param type The expected resource type.
-   * @param config The cluster-wide resource configuration.
-   * @param <T> The resource type.
-   * @return A completable future to be completed once the resource has been loaded.
-   * @throws NullPointerException if {@code key} or {@code type} are null
-   * @throws IllegalArgumentException if {@code type} is inconsistent with a previously created type
-   */
-  <T extends Resource> CompletableFuture<T> get(String key, Class<? super T> type, Resource.Config config);
-
-  /**
-   * Gets or creates the given resource and acquires a singleton reference to it.
-   * <p>
-   * If a resource at the given key already exists, the resource will be validated to verify that its type
-   * matches the given type. If no resource yet exists, a new resource will be created in the cluster. Once
-   * the session for the resource has been opened, a resource instance will be returned.
-   * <p>
-   * The returned {@link Resource} instance will be a singleton reference to an global instance for this node.
-   * That is, multiple calls to this method for the same resource will result in the same {@link Resource}
-   * instance being returned.
-   * <p>
-   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
-   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
-   * use the {@link CompletableFuture#get()} method:
-   * <pre>
-   *   {@code
-   *   DistributedLock lock = atomix.get("lock", DistributedLock.class).get();
-   *   }
-   * </pre>
-   * Alternatively, to execute the operation asynchronous and be notified once the result is received in a different
-   * thread, use one of the many completable future callbacks:
-   * <pre>
-   *   {@code
-   *   atomix.<DistributedLock>get("lock", DistributedLock.class).thenAccept(lock -> {
-   *     ...
-   *   });
-   *   }
-   * </pre>
-   *
-   * @param key The key at which to get the resource.
-   * @param type The expected resource type.
-   * @param options The local resource options.
-   * @param <T> The resource type.
-   * @return A completable future to be completed once the resource has been loaded.
-   * @throws NullPointerException if {@code key} or {@code type} are null
-   * @throws IllegalArgumentException if {@code type} is inconsistent with a previously created type
-   */
-  <T extends Resource> CompletableFuture<T> get(String key, Class<? super T> type, Resource.Options options);
-
-  /**
-   * Gets or creates the given resource and acquires a singleton reference to it.
-   * <p>
-   * If a resource at the given key already exists, the resource will be validated to verify that its type
-   * matches the given type. If no resource yet exists, a new resource will be created in the cluster. Once
-   * the session for the resource has been opened, a resource instance will be returned.
-   * <p>
-   * The returned {@link Resource} instance will be a singleton reference to an global instance for this node.
-   * That is, multiple calls to this method for the same resource will result in the same {@link Resource}
-   * instance being returned.
-   * <p>
-   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
-   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
-   * use the {@link CompletableFuture#get()} method:
-   * <pre>
-   *   {@code
-   *   DistributedLock lock = atomix.get("lock", DistributedLock.class).get();
-   *   }
-   * </pre>
-   * Alternatively, to execute the operation asynchronous and be notified once the result is received in a different
-   * thread, use one of the many completable future callbacks:
-   * <pre>
-   *   {@code
-   *   atomix.<DistributedLock>get("lock", DistributedLock.class).thenAccept(lock -> {
-   *     ...
-   *   });
-   *   }
-   * </pre>
-   *
-   * @param key The key at which to get the resource.
-   * @param type The expected resource type.
-   * @param config The cluster-wide resource configuration.
-   * @param options The local resource options.
-   * @param <T> The resource type.
-   * @return A completable future to be completed once the resource has been loaded.
-   * @throws NullPointerException if {@code key} or {@code type} are null
-   * @throws IllegalArgumentException if {@code type} is inconsistent with a previously created type
-   */
-  <T extends Resource> CompletableFuture<T> get(String key, Class<? super T> type, Resource.Config config, Resource.Options options);
-
-  /**
-   * Gets or creates the given resource and acquires a singleton reference to it.
-   * <p>
-   * If a resource at the given key already exists, the resource will be validated to verify that its type
-   * matches the given type. If no resource yet exists, a new resource will be created in the cluster. Once
-   * the session for the resource has been opened, a resource instance will be returned.
-   * <p>
-   * The returned {@link Resource} instance will be a singleton reference to an global instance for this node.
-   * That is, multiple calls to this method for the same resource will result in the same {@link Resource}
-   * instance being returned.
-   * <p>
-   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
-   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
-   * use the {@link CompletableFuture#get()} method:
-   * <pre>
-   *   {@code
-   *   DistributedLock lock = atomix.get("lock", DistributedLock.class).get();
-   *   }
-   * </pre>
-   * Alternatively, to execute the operation asynchronous and be notified once the result is received in a different
-   * thread, use one of the many completable future callbacks:
-   * <pre>
-   *   {@code
-   *   atomix.<DistributedLock>get("lock", DistributedLock.class).thenAccept(lock -> {
-   *     ...
-   *   });
-   *   }
-   * </pre>
-   *
-   * @param key The key at which to get the resource.
-   * @param type The expected resource type.
-   * @param <T> The resource type.
-   * @return A completable future to be completed once the resource has been loaded.
-   * @throws NullPointerException if {@code key} or {@code type} are null
-   * @throws IllegalArgumentException if {@code type} is inconsistent with a previously created type
-   */
-  <T extends Resource> CompletableFuture<T> get(String key, ResourceType type);
-
-  /**
-   * Gets or creates the given resource and acquires a singleton reference to it.
-   * <p>
-   * If a resource at the given key already exists, the resource will be validated to verify that its type
-   * matches the given type. If no resource yet exists, a new resource will be created in the cluster. Once
-   * the session for the resource has been opened, a resource instance will be returned.
-   * <p>
-   * The returned {@link Resource} instance will be a singleton reference to an global instance for this node.
-   * That is, multiple calls to this method for the same resource will result in the same {@link Resource}
-   * instance being returned.
-   * <p>
-   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
-   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
-   * use the {@link CompletableFuture#get()} method:
-   * <pre>
-   *   {@code
-   *   DistributedLock lock = atomix.get("lock", DistributedLock.class).get();
-   *   }
-   * </pre>
-   * Alternatively, to execute the operation asynchronous and be notified once the result is received in a different
-   * thread, use one of the many completable future callbacks:
-   * <pre>
-   *   {@code
-   *   atomix.<DistributedLock>get("lock", DistributedLock.class).thenAccept(lock -> {
+   *   atomix.<DistributedLock>getResource("lock", DistributedLock.class).thenAccept(lock -> {
    *     ...
    *   });
    *   }
@@ -415,7 +259,7 @@ public interface ResourceManager<T extends ResourceManager<T>> extends Managed<T
    * @throws NullPointerException if {@code key} or {@code type} are null
    * @throws IllegalArgumentException if {@code type} is inconsistent with a previously created type
    */
-  <T extends Resource> CompletableFuture<T> get(String key, ResourceType type, Resource.Config config);
+  <T extends Resource> CompletableFuture<T> getResource(String key, Class<? super T> type, Resource.Config config);
 
   /**
    * Gets or creates the given resource and acquires a singleton reference to it.
@@ -433,14 +277,14 @@ public interface ResourceManager<T extends ResourceManager<T>> extends Managed<T
    * use the {@link CompletableFuture#get()} method:
    * <pre>
    *   {@code
-   *   DistributedLock lock = atomix.get("lock", DistributedLock.class).get();
+   *   DistributedLock lock = atomix.getResource("lock", DistributedLock.class).get();
    *   }
    * </pre>
    * Alternatively, to execute the operation asynchronous and be notified once the result is received in a different
    * thread, use one of the many completable future callbacks:
    * <pre>
    *   {@code
-   *   atomix.<DistributedLock>get("lock", DistributedLock.class).thenAccept(lock -> {
+   *   atomix.<DistributedLock>getResource("lock", DistributedLock.class).thenAccept(lock -> {
    *     ...
    *   });
    *   }
@@ -454,7 +298,7 @@ public interface ResourceManager<T extends ResourceManager<T>> extends Managed<T
    * @throws NullPointerException if {@code key} or {@code type} are null
    * @throws IllegalArgumentException if {@code type} is inconsistent with a previously created type
    */
-  <T extends Resource> CompletableFuture<T> get(String key, ResourceType type, Resource.Options options);
+  <T extends Resource> CompletableFuture<T> getResource(String key, Class<? super T> type, Resource.Options options);
 
   /**
    * Gets or creates the given resource and acquires a singleton reference to it.
@@ -472,14 +316,14 @@ public interface ResourceManager<T extends ResourceManager<T>> extends Managed<T
    * use the {@link CompletableFuture#get()} method:
    * <pre>
    *   {@code
-   *   DistributedLock lock = atomix.get("lock", DistributedLock.class).get();
+   *   DistributedLock lock = atomix.getResource("lock", DistributedLock.class).get();
    *   }
    * </pre>
    * Alternatively, to execute the operation asynchronous and be notified once the result is received in a different
    * thread, use one of the many completable future callbacks:
    * <pre>
    *   {@code
-   *   atomix.<DistributedLock>get("lock", DistributedLock.class).thenAccept(lock -> {
+   *   atomix.<DistributedLock>getResource("lock", DistributedLock.class).thenAccept(lock -> {
    *     ...
    *   });
    *   }
@@ -494,6 +338,162 @@ public interface ResourceManager<T extends ResourceManager<T>> extends Managed<T
    * @throws NullPointerException if {@code key} or {@code type} are null
    * @throws IllegalArgumentException if {@code type} is inconsistent with a previously created type
    */
-  <T extends Resource> CompletableFuture<T> get(String key, ResourceType type, Resource.Config config, Resource.Options options);
+  <T extends Resource> CompletableFuture<T> getResource(String key, Class<? super T> type, Resource.Config config, Resource.Options options);
+
+  /**
+   * Gets or creates the given resource and acquires a singleton reference to it.
+   * <p>
+   * If a resource at the given key already exists, the resource will be validated to verify that its type
+   * matches the given type. If no resource yet exists, a new resource will be created in the cluster. Once
+   * the session for the resource has been opened, a resource instance will be returned.
+   * <p>
+   * The returned {@link Resource} instance will be a singleton reference to an global instance for this node.
+   * That is, multiple calls to this method for the same resource will result in the same {@link Resource}
+   * instance being returned.
+   * <p>
+   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
+   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
+   * use the {@link CompletableFuture#get()} method:
+   * <pre>
+   *   {@code
+   *   DistributedLock lock = atomix.getResource("lock", DistributedLock.class).get();
+   *   }
+   * </pre>
+   * Alternatively, to execute the operation asynchronous and be notified once the result is received in a different
+   * thread, use one of the many completable future callbacks:
+   * <pre>
+   *   {@code
+   *   atomix.<DistributedLock>getResource("lock", DistributedLock.class).thenAccept(lock -> {
+   *     ...
+   *   });
+   *   }
+   * </pre>
+   *
+   * @param key The key at which to get the resource.
+   * @param type The expected resource type.
+   * @param <T> The resource type.
+   * @return A completable future to be completed once the resource has been loaded.
+   * @throws NullPointerException if {@code key} or {@code type} are null
+   * @throws IllegalArgumentException if {@code type} is inconsistent with a previously created type
+   */
+  <T extends Resource> CompletableFuture<T> getResource(String key, ResourceType type);
+
+  /**
+   * Gets or creates the given resource and acquires a singleton reference to it.
+   * <p>
+   * If a resource at the given key already exists, the resource will be validated to verify that its type
+   * matches the given type. If no resource yet exists, a new resource will be created in the cluster. Once
+   * the session for the resource has been opened, a resource instance will be returned.
+   * <p>
+   * The returned {@link Resource} instance will be a singleton reference to an global instance for this node.
+   * That is, multiple calls to this method for the same resource will result in the same {@link Resource}
+   * instance being returned.
+   * <p>
+   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
+   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
+   * use the {@link CompletableFuture#get()} method:
+   * <pre>
+   *   {@code
+   *   DistributedLock lock = atomix.getResource("lock", DistributedLock.class).get();
+   *   }
+   * </pre>
+   * Alternatively, to execute the operation asynchronous and be notified once the result is received in a different
+   * thread, use one of the many completable future callbacks:
+   * <pre>
+   *   {@code
+   *   atomix.<DistributedLock>getResource("lock", DistributedLock.class).thenAccept(lock -> {
+   *     ...
+   *   });
+   *   }
+   * </pre>
+   *
+   * @param key The key at which to get the resource.
+   * @param type The expected resource type.
+   * @param config The cluster-wide resource configuration.
+   * @param <T> The resource type.
+   * @return A completable future to be completed once the resource has been loaded.
+   * @throws NullPointerException if {@code key} or {@code type} are null
+   * @throws IllegalArgumentException if {@code type} is inconsistent with a previously created type
+   */
+  <T extends Resource> CompletableFuture<T> getResource(String key, ResourceType type, Resource.Config config);
+
+  /**
+   * Gets or creates the given resource and acquires a singleton reference to it.
+   * <p>
+   * If a resource at the given key already exists, the resource will be validated to verify that its type
+   * matches the given type. If no resource yet exists, a new resource will be created in the cluster. Once
+   * the session for the resource has been opened, a resource instance will be returned.
+   * <p>
+   * The returned {@link Resource} instance will be a singleton reference to an global instance for this node.
+   * That is, multiple calls to this method for the same resource will result in the same {@link Resource}
+   * instance being returned.
+   * <p>
+   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
+   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
+   * use the {@link CompletableFuture#get()} method:
+   * <pre>
+   *   {@code
+   *   DistributedLock lock = atomix.getResource("lock", DistributedLock.class).get();
+   *   }
+   * </pre>
+   * Alternatively, to execute the operation asynchronous and be notified once the result is received in a different
+   * thread, use one of the many completable future callbacks:
+   * <pre>
+   *   {@code
+   *   atomix.<DistributedLock>getResource("lock", DistributedLock.class).thenAccept(lock -> {
+   *     ...
+   *   });
+   *   }
+   * </pre>
+   *
+   * @param key The key at which to get the resource.
+   * @param type The expected resource type.
+   * @param options The local resource options.
+   * @param <T> The resource type.
+   * @return A completable future to be completed once the resource has been loaded.
+   * @throws NullPointerException if {@code key} or {@code type} are null
+   * @throws IllegalArgumentException if {@code type} is inconsistent with a previously created type
+   */
+  <T extends Resource> CompletableFuture<T> getResource(String key, ResourceType type, Resource.Options options);
+
+  /**
+   * Gets or creates the given resource and acquires a singleton reference to it.
+   * <p>
+   * If a resource at the given key already exists, the resource will be validated to verify that its type
+   * matches the given type. If no resource yet exists, a new resource will be created in the cluster. Once
+   * the session for the resource has been opened, a resource instance will be returned.
+   * <p>
+   * The returned {@link Resource} instance will be a singleton reference to an global instance for this node.
+   * That is, multiple calls to this method for the same resource will result in the same {@link Resource}
+   * instance being returned.
+   * <p>
+   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
+   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
+   * use the {@link CompletableFuture#get()} method:
+   * <pre>
+   *   {@code
+   *   DistributedLock lock = atomix.getResource("lock", DistributedLock.class).get();
+   *   }
+   * </pre>
+   * Alternatively, to execute the operation asynchronous and be notified once the result is received in a different
+   * thread, use one of the many completable future callbacks:
+   * <pre>
+   *   {@code
+   *   atomix.<DistributedLock>getResource("lock", DistributedLock.class).thenAccept(lock -> {
+   *     ...
+   *   });
+   *   }
+   * </pre>
+   *
+   * @param key The key at which to get the resource.
+   * @param type The expected resource type.
+   * @param config The cluster-wide resource configuration.
+   * @param options The local resource options.
+   * @param <T> The resource type.
+   * @return A completable future to be completed once the resource has been loaded.
+   * @throws NullPointerException if {@code key} or {@code type} are null
+   * @throws IllegalArgumentException if {@code type} is inconsistent with a previously created type
+   */
+  <T extends Resource> CompletableFuture<T> getResource(String key, ResourceType type, Resource.Config config, Resource.Options options);
 
 }

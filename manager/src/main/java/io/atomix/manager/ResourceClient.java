@@ -170,49 +170,49 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T extends Resource> CompletableFuture<T> get(String key, Class<? super T> type) {
-    return get(key, type((Class<? extends Resource<?>>) type), new Resource.Config(), new Resource.Options());
+  public <T extends Resource> CompletableFuture<T> getResource(String key, Class<? super T> type) {
+    return getResource(key, type((Class<? extends Resource<?>>) type), new Resource.Config(), new Resource.Options());
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T extends Resource> CompletableFuture<T> get(String key, Class<? super T> type, Resource.Config config) {
-    return this.<T>get(key, type((Class<? extends Resource<?>>) type), config, new Resource.Options());
+  public <T extends Resource> CompletableFuture<T> getResource(String key, Class<? super T> type, Resource.Config config) {
+    return this.<T>getResource(key, type((Class<? extends Resource<?>>) type), config, new Resource.Options());
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T extends Resource> CompletableFuture<T> get(String key, Class<? super T> type, Resource.Options options) {
-    return this.<T>get(key, type((Class<? extends Resource<?>>) type), new Resource.Config(), options);
+  public <T extends Resource> CompletableFuture<T> getResource(String key, Class<? super T> type, Resource.Options options) {
+    return this.<T>getResource(key, type((Class<? extends Resource<?>>) type), new Resource.Config(), options);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T extends Resource> CompletableFuture<T> get(String key, Class<? super T> type, Resource.Config config, Resource.Options options) {
-    return this.<T>get(key, type((Class<? extends Resource<?>>) type), config, options);
+  public <T extends Resource> CompletableFuture<T> getResource(String key, Class<? super T> type, Resource.Config config, Resource.Options options) {
+    return this.<T>getResource(key, type((Class<? extends Resource<?>>) type), config, options);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T extends Resource> CompletableFuture<T> get(String key, ResourceType type) {
-    return get(key, type, new Resource.Config(), new Resource.Options());
+  public <T extends Resource> CompletableFuture<T> getResource(String key, ResourceType type) {
+    return getResource(key, type, new Resource.Config(), new Resource.Options());
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T extends Resource> CompletableFuture<T> get(String key, ResourceType type, Resource.Config config) {
-    return this.<T>get(key, type, config, new Resource.Options());
+  public <T extends Resource> CompletableFuture<T> getResource(String key, ResourceType type, Resource.Config config) {
+    return this.<T>getResource(key, type, config, new Resource.Options());
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T extends Resource> CompletableFuture<T> get(String key, ResourceType type, Resource.Options options) {
-    return this.<T>get(key, type, new Resource.Config(), options);
+  public <T extends Resource> CompletableFuture<T> getResource(String key, ResourceType type, Resource.Options options) {
+    return this.<T>getResource(key, type, new Resource.Config(), options);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public synchronized <T extends Resource> CompletableFuture<T> get(String key, ResourceType type, Resource.Config config, Resource.Options options) {
+  public synchronized <T extends Resource> CompletableFuture<T> getResource(String key, ResourceType type, Resource.Config config, Resource.Options options) {
     Assert.notNull(key, "key");
     Assert.notNull(type, "type");
     Assert.notNull(config, "config");

@@ -45,7 +45,7 @@ import java.util.function.Consumer;
  * creation and management of {@link Resource} objects via a filesystem like interface. There is a
  * one-to-one relationship between keys and resources, so each key can be associated with one and only one resource.
  * <p>
- * To create a resource, pass the resource {@link java.lang.Class} to the {@link Atomix#get(String, ResourceType)} method.
+ * To create a resource, pass the resource {@link java.lang.Class} to the {@link Atomix#getResource(String, ResourceType)} method.
  * When a resource is created, the {@link io.atomix.copycat.server.StateMachine} associated with the resource will be created on each Raft server
  * and future operations submitted for that resource will be applied to the state machine. Internally, resource state
  * machines are multiplexed across a shared Raft log.
@@ -101,7 +101,7 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * @return A completable future to be completed once the map has been created.
    */
   public <K, V> CompletableFuture<DistributedMap<K, V>> getMap(String key) {
-    return get(key, DistributedMap.class);
+    return getResource(key, DistributedMap.class);
   }
 
   /**
@@ -134,7 +134,7 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * @return A completable future to be completed once the map has been created.
    */
   public <K, V> CompletableFuture<DistributedMap<K, V>> getMap(String key, DistributedMap.Config config) {
-    return get(key, DistributedMap.class, config);
+    return getResource(key, DistributedMap.class, config);
   }
 
   /**
@@ -166,7 +166,7 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * @return A completable future to be completed once the map has been created.
    */
   public <K, V> CompletableFuture<DistributedMap<K, V>> getMap(String key, DistributedMap.Options options) {
-    return get(key, DistributedMap.class, options);
+    return getResource(key, DistributedMap.class, options);
   }
 
   /**
@@ -203,7 +203,7 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * @return A completable future to be completed once the map has been created.
    */
   public <K, V> CompletableFuture<DistributedMap<K, V>> getMap(String key, DistributedMap.Config config, DistributedMap.Options options) {
-    return get(key, DistributedMap.class, config, options);
+    return getResource(key, DistributedMap.class, config, options);
   }
 
   /**
@@ -231,7 +231,7 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * @return A completable future to be completed once the multi map has been created.
    */
   public <K, V> CompletableFuture<DistributedMultiMap<K, V>> getMultiMap(String key) {
-    return get(key, DistributedMultiMap.class);
+    return getResource(key, DistributedMultiMap.class);
   }
 
   /**
@@ -264,7 +264,7 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * @return A completable future to be completed once the multi map has been created.
    */
   public <K, V> CompletableFuture<DistributedMultiMap<K, V>> getMultiMap(String key, DistributedMultiMap.Config config) {
-    return get(key, DistributedMultiMap.class, config);
+    return getResource(key, DistributedMultiMap.class, config);
   }
 
   /**
@@ -296,7 +296,7 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * @return A completable future to be completed once the multi map has been created.
    */
   public <K, V> CompletableFuture<DistributedMultiMap<K, V>> getMultiMap(String key, DistributedMultiMap.Options options) {
-    return get(key, DistributedMultiMap.class, options);
+    return getResource(key, DistributedMultiMap.class, options);
   }
 
   /**
@@ -333,7 +333,7 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * @return A completable future to be completed once the multi map has been created.
    */
   public <K, V> CompletableFuture<DistributedMultiMap<K, V>> getMultiMap(String key, DistributedMultiMap.Config config, DistributedMultiMap.Options options) {
-    return get(key, DistributedMultiMap.class, config, options);
+    return getResource(key, DistributedMultiMap.class, config, options);
   }
 
   /**
@@ -356,7 +356,7 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * @return A completable future to be completed once the set has been created.
    */
   public <T> CompletableFuture<DistributedSet<T>> getSet(String key) {
-    return get(key, DistributedSet.class);
+    return getResource(key, DistributedSet.class);
   }
 
   /**
@@ -384,7 +384,7 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * @return A completable future to be completed once the set has been created.
    */
   public <T> CompletableFuture<DistributedSet<T>> getSet(String key, DistributedSet.Config config) {
-    return get(key, DistributedSet.class, config);
+    return getResource(key, DistributedSet.class, config);
   }
 
   /**
@@ -411,7 +411,7 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * @return A completable future to be completed once the set has been created.
    */
   public <T> CompletableFuture<DistributedSet<T>> getSet(String key, DistributedSet.Options options) {
-    return get(key, DistributedSet.class, options);
+    return getResource(key, DistributedSet.class, options);
   }
 
   /**
@@ -443,7 +443,7 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * @return A completable future to be completed once the set has been created.
    */
   public <T> CompletableFuture<DistributedSet<T>> getSet(String key, DistributedSet.Config config, DistributedSet.Options options) {
-    return get(key, DistributedSet.class, config, options);
+    return getResource(key, DistributedSet.class, config, options);
   }
 
   /**
@@ -470,7 +470,7 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * @return A completable future to be completed once the queue has been created.
    */
   public <T> CompletableFuture<DistributedQueue<T>> getQueue(String key) {
-    return get(key, DistributedQueue.class);
+    return getResource(key, DistributedQueue.class);
   }
 
   /**
@@ -502,7 +502,7 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * @return A completable future to be completed once the queue has been created.
    */
   public <T> CompletableFuture<DistributedQueue<T>> getQueue(String key, DistributedQueue.Config config) {
-    return get(key, DistributedQueue.class, config);
+    return getResource(key, DistributedQueue.class, config);
   }
 
   /**
@@ -533,7 +533,7 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * @return A completable future to be completed once the queue has been created.
    */
   public <T> CompletableFuture<DistributedQueue<T>> getQueue(String key, DistributedQueue.Options options) {
-    return get(key, DistributedQueue.class, options);
+    return getResource(key, DistributedQueue.class, options);
   }
 
   /**
@@ -569,7 +569,7 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * @return A completable future to be completed once the queue has been created.
    */
   public <T> CompletableFuture<DistributedQueue<T>> getQueue(String key, DistributedQueue.Config config, DistributedQueue.Options options) {
-    return get(key, DistributedQueue.class, config, options);
+    return getResource(key, DistributedQueue.class, config, options);
   }
 
   /**
@@ -593,7 +593,7 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * @return A completable future to be completed once the value has been created.
    */
   public <T> CompletableFuture<DistributedValue<T>> getValue(String key) {
-    return get(key, DistributedValue.class);
+    return getResource(key, DistributedValue.class);
   }
 
   /**
@@ -622,7 +622,7 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * @return A completable future to be completed once the value has been created.
    */
   public <T> CompletableFuture<DistributedValue<T>> getValue(String key, DistributedValue.Config config) {
-    return get(key, DistributedValue.class, config);
+    return getResource(key, DistributedValue.class, config);
   }
 
   /**
@@ -650,7 +650,7 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * @return A completable future to be completed once the value has been created.
    */
   public <T> CompletableFuture<DistributedValue<T>> getValue(String key, DistributedValue.Options options) {
-    return get(key, DistributedValue.class, options);
+    return getResource(key, DistributedValue.class, options);
   }
 
   /**
@@ -683,7 +683,7 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * @return A completable future to be completed once the value has been created.
    */
   public <T> CompletableFuture<DistributedValue<T>> getValue(String key, DistributedValue.Config config, DistributedValue.Options options) {
-    return get(key, DistributedValue.class, config, options);
+    return getResource(key, DistributedValue.class, config, options);
   }
 
   /**
@@ -705,7 +705,7 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * @return A completable future to be completed once the long has been created.
    */
   public CompletableFuture<DistributedLong> getLong(String key) {
-    return get(key, DistributedLong.class);
+    return getResource(key, DistributedLong.class);
   }
 
   /**
@@ -732,7 +732,7 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * @return A completable future to be completed once the long has been created.
    */
   public CompletableFuture<DistributedLong> getLong(String key, DistributedLong.Config config) {
-    return get(key, DistributedLong.class, config);
+    return getResource(key, DistributedLong.class, config);
   }
 
   /**
@@ -758,7 +758,7 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * @return A completable future to be completed once the long has been created.
    */
   public CompletableFuture<DistributedLong> getLong(String key, DistributedLong.Options options) {
-    return get(key, DistributedLong.class, options);
+    return getResource(key, DistributedLong.class, options);
   }
 
   /**
@@ -789,7 +789,7 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * @return A completable future to be completed once the long has been created.
    */
   public CompletableFuture<DistributedLong> getLong(String key, DistributedLong.Config config, DistributedLong.Options options) {
-    return get(key, DistributedLong.class, config, options);
+    return getResource(key, DistributedLong.class, config, options);
   }
 
   /**
@@ -811,7 +811,7 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * @return A completable future to be completed once the lock has been created.
    */
   public CompletableFuture<DistributedLock> getLock(String key) {
-    return get(key, DistributedLock.class);
+    return getResource(key, DistributedLock.class);
   }
 
   /**
@@ -838,7 +838,7 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * @return A completable future to be completed once the lock has been created.
    */
   public CompletableFuture<DistributedLock> getLock(String key, DistributedLock.Config config) {
-    return get(key, DistributedLock.class, config);
+    return getResource(key, DistributedLock.class, config);
   }
 
   /**
@@ -864,7 +864,7 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * @return A completable future to be completed once the lock has been created.
    */
   public CompletableFuture<DistributedLock> getLock(String key, DistributedLock.Options options) {
-    return get(key, DistributedLock.class, options);
+    return getResource(key, DistributedLock.class, options);
   }
 
   /**
@@ -895,7 +895,7 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * @return A completable future to be completed once the lock has been created.
    */
   public CompletableFuture<DistributedLock> getLock(String key, DistributedLock.Config config, DistributedLock.Options options) {
-    return get(key, DistributedLock.class, config, options);
+    return getResource(key, DistributedLock.class, config, options);
   }
 
   /**
@@ -918,7 +918,7 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * @return A completable future to be completed once the group has been created.
    */
   public CompletableFuture<DistributedGroup> getGroup(String key) {
-    return get(key, DistributedGroup.class);
+    return getResource(key, DistributedGroup.class);
   }
 
   /**
@@ -946,7 +946,7 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * @return A completable future to be completed once the group has been created.
    */
   public CompletableFuture<DistributedGroup> getGroup(String key, DistributedGroup.Config config) {
-    return get(key, DistributedGroup.class, config);
+    return getResource(key, DistributedGroup.class, config);
   }
 
   /**
@@ -973,7 +973,7 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * @return A completable future to be completed once the group has been created.
    */
   public CompletableFuture<DistributedGroup> getGroup(String key, DistributedGroup.Options options) {
-    return get(key, DistributedGroup.class, options);
+    return getResource(key, DistributedGroup.class, options);
   }
 
   /**
@@ -1005,7 +1005,7 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * @return A completable future to be completed once the group has been created.
    */
   public CompletableFuture<DistributedGroup> getGroup(String key, DistributedGroup.Config config, DistributedGroup.Options options) {
-    return get(key, DistributedGroup.class, config, options);
+    return getResource(key, DistributedGroup.class, config, options);
   }
 
   /**
@@ -1032,7 +1032,7 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * @return A completable future to be completed once the topic has been created.
    */
   public <T> CompletableFuture<DistributedTopic<T>> getTopic(String key) {
-    return get(key, DistributedTopic.class);
+    return getResource(key, DistributedTopic.class);
   }
 
   /**
@@ -1064,7 +1064,7 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * @return A completable future to be completed once the topic has been created.
    */
   public <T> CompletableFuture<DistributedTopic<T>> getTopic(String key, DistributedTopic.Config config) {
-    return get(key, DistributedTopic.class, config);
+    return getResource(key, DistributedTopic.class, config);
   }
 
   /**
@@ -1095,7 +1095,7 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * @return A completable future to be completed once the topic has been created.
    */
   public <T> CompletableFuture<DistributedTopic<T>> getTopic(String key, DistributedTopic.Options options) {
-    return get(key, DistributedTopic.class, options);
+    return getResource(key, DistributedTopic.class, options);
   }
 
   /**
@@ -1131,7 +1131,7 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * @return A completable future to be completed once the topic has been created.
    */
   public <T> CompletableFuture<DistributedTopic<T>> getTopic(String key, DistributedTopic.Config config, DistributedTopic.Options options) {
-    return get(key, DistributedTopic.class, config, options);
+    return getResource(key, DistributedTopic.class, config, options);
   }
 
   /**
@@ -1159,7 +1159,7 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * @return A completable future to be completed once the queue has been created.
    */
   public <T> CompletableFuture<DistributedTaskQueue<T>> getTaskQueue(String key) {
-    return get(key, DistributedTaskQueue.class);
+    return getResource(key, DistributedTaskQueue.class);
   }
 
   /**
@@ -1192,7 +1192,7 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * @return A completable future to be completed once the queue has been created.
    */
   public <T> CompletableFuture<DistributedTaskQueue<T>> getTaskQueue(String key, DistributedTaskQueue.Config config) {
-    return get(key, DistributedTaskQueue.class, config);
+    return getResource(key, DistributedTaskQueue.class, config);
   }
 
   /**
@@ -1224,7 +1224,7 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * @return A completable future to be completed once the queue has been created.
    */
   public <T> CompletableFuture<DistributedTaskQueue<T>> getTaskQueue(String key, DistributedTaskQueue.Options options) {
-    return get(key, DistributedTaskQueue.class, options);
+    return getResource(key, DistributedTaskQueue.class, options);
   }
 
   /**
@@ -1261,7 +1261,7 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * @return A completable future to be completed once the queue has been created.
    */
   public <T> CompletableFuture<DistributedTaskQueue<T>> getTaskQueue(String key, DistributedTaskQueue.Config config, DistributedTaskQueue.Options options) {
-    return get(key, DistributedTaskQueue.class, config, options);
+    return getResource(key, DistributedTaskQueue.class, config, options);
   }
 
   /**
@@ -1284,7 +1284,7 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * @return A completable future to be completed once the message bus has been created.
    */
   public CompletableFuture<DistributedMessageBus> getMessageBus(String key) {
-    return get(key, DistributedMessageBus.class);
+    return getResource(key, DistributedMessageBus.class);
   }
 
   /**
@@ -1312,7 +1312,7 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * @return A completable future to be completed once the message bus has been created.
    */
   public CompletableFuture<DistributedMessageBus> getMessageBus(String key, DistributedMessageBus.Config config) {
-    return get(key, DistributedMessageBus.class, config);
+    return getResource(key, DistributedMessageBus.class, config);
   }
 
   /**
@@ -1339,7 +1339,7 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * @return A completable future to be completed once the message bus has been created.
    */
   public CompletableFuture<DistributedMessageBus> getMessageBus(String key, DistributedMessageBus.Options options) {
-    return get(key, DistributedMessageBus.class, options);
+    return getResource(key, DistributedMessageBus.class, options);
   }
 
   /**
@@ -1371,7 +1371,7 @@ public abstract class Atomix implements ResourceManager<Atomix> {
    * @return A completable future to be completed once the message bus has been created.
    */
   public CompletableFuture<DistributedMessageBus> getMessageBus(String key, DistributedMessageBus.Config config, DistributedMessageBus.Options options) {
-    return get(key, DistributedMessageBus.class, config, options);
+    return getResource(key, DistributedMessageBus.class, config, options);
   }
 
   @Override
@@ -1408,51 +1408,51 @@ public abstract class Atomix implements ResourceManager<Atomix> {
   }
 
   @Override
-  public <T extends Resource> CompletableFuture<T> get(String key, Class<? super T> type) {
+  public <T extends Resource> CompletableFuture<T> getResource(String key, Class<? super T> type) {
     Assert.argNot(key.trim().length() == 0, "invalid resource key: key must be of non-zero length");
-    return client.get(key, type, new Resource.Config(), new Resource.Options());
+    return client.getResource(key, type, new Resource.Config(), new Resource.Options());
   }
 
   @Override
-  public <T extends Resource> CompletableFuture<T> get(String key, Class<? super T> type, Resource.Config config) {
+  public <T extends Resource> CompletableFuture<T> getResource(String key, Class<? super T> type, Resource.Config config) {
     Assert.argNot(key.trim().length() == 0, "invalid resource key: key must be of non-zero length");
-    return client.get(key, type, config, new Resource.Options());
+    return client.getResource(key, type, config, new Resource.Options());
   }
 
   @Override
-  public <T extends Resource> CompletableFuture<T> get(String key, Class<? super T> type, Resource.Options options) {
+  public <T extends Resource> CompletableFuture<T> getResource(String key, Class<? super T> type, Resource.Options options) {
     Assert.argNot(key.trim().length() == 0, "invalid resource key: key must be of non-zero length");
-    return client.get(key, type, new Resource.Config(), options);
+    return client.getResource(key, type, new Resource.Config(), options);
   }
 
   @Override
-  public <T extends Resource> CompletableFuture<T> get(String key, Class<? super T> type, Resource.Config config, Resource.Options options) {
+  public <T extends Resource> CompletableFuture<T> getResource(String key, Class<? super T> type, Resource.Config config, Resource.Options options) {
     Assert.argNot(key.trim().length() == 0, "invalid resource key: key must be of non-zero length");
-    return client.get(key, type, config, options);
+    return client.getResource(key, type, config, options);
   }
 
   @Override
-  public <T extends Resource> CompletableFuture<T> get(String key, ResourceType type) {
+  public <T extends Resource> CompletableFuture<T> getResource(String key, ResourceType type) {
     Assert.argNot(key.trim().length() == 0, "invalid resource key: key must be of non-zero length");
-    return client.get(key, type, new Resource.Config(), new Resource.Options());
+    return client.getResource(key, type, new Resource.Config(), new Resource.Options());
   }
 
   @Override
-  public <T extends Resource> CompletableFuture<T> get(String key, ResourceType type, Resource.Config config) {
+  public <T extends Resource> CompletableFuture<T> getResource(String key, ResourceType type, Resource.Config config) {
     Assert.argNot(key.trim().length() == 0, "invalid resource key: key must be of non-zero length");
-    return client.get(key, type, config, new Resource.Options());
+    return client.getResource(key, type, config, new Resource.Options());
   }
 
   @Override
-  public <T extends Resource> CompletableFuture<T> get(String key, ResourceType type, Resource.Options options) {
+  public <T extends Resource> CompletableFuture<T> getResource(String key, ResourceType type, Resource.Options options) {
     Assert.argNot(key.trim().length() == 0, "invalid resource key: key must be of non-zero length");
-    return client.get(key, type, new Resource.Config(), options);
+    return client.getResource(key, type, new Resource.Config(), options);
   }
 
   @Override
-  public <T extends Resource> CompletableFuture<T> get(String key, ResourceType type, Resource.Config config, Resource.Options options) {
+  public <T extends Resource> CompletableFuture<T> getResource(String key, ResourceType type, Resource.Config config, Resource.Options options) {
     Assert.argNot(key.trim().length() == 0, "invalid resource key: key must be of non-zero length");
-    return client.get(key, type, config, options);
+    return client.getResource(key, type, config, options);
   }
 
   @Override

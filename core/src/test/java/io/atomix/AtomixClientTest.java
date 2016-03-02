@@ -68,7 +68,7 @@ public class AtomixClientTest extends AbstractAtomixTest {
 
     Atomix client = createClient();
 
-    TestResource resource = client.get("test", TestResource.class).get(5, TimeUnit.SECONDS);
+    TestResource resource = client.getResource("test", TestResource.class).get(5, TimeUnit.SECONDS);
 
     resource.with(consistency).command("Hello world!").thenAccept(result -> {
       threadAssertEquals(result, "Hello world!");
@@ -107,7 +107,7 @@ public class AtomixClientTest extends AbstractAtomixTest {
 
     Atomix client = createClient();
 
-    TestResource resource = client.get("test", TestResource.class).get(5, TimeUnit.SECONDS);
+    TestResource resource = client.getResource("test", TestResource.class).get(5, TimeUnit.SECONDS);
 
     resource.with(consistency).query("Hello world!").thenAccept(result -> {
       threadAssertEquals(result, "Hello world!");
@@ -126,8 +126,8 @@ public class AtomixClientTest extends AbstractAtomixTest {
     Atomix client1 = createClient();
     Atomix client2 = createClient();
 
-    ValueResource resource1 = client1.get("test", ValueResource.class).get(5, TimeUnit.SECONDS);
-    ValueResource resource2 = client2.get("test", ValueResource.class).get(5, TimeUnit.SECONDS);
+    ValueResource resource1 = client1.getResource("test", ValueResource.class).get(5, TimeUnit.SECONDS);
+    ValueResource resource2 = client2.getResource("test", ValueResource.class).get(5, TimeUnit.SECONDS);
 
     resource1.set("Hello world!").join();
 
@@ -147,8 +147,8 @@ public class AtomixClientTest extends AbstractAtomixTest {
     Atomix client1 = createClient();
     Atomix client2 = createClient();
 
-    ValueResource resource1 = client1.get("test", ValueResource.class).get(5, TimeUnit.SECONDS);
-    ValueResource resource2 = client2.get("test", ValueResource.class).get(5, TimeUnit.SECONDS);
+    ValueResource resource1 = client1.getResource("test", ValueResource.class).get(5, TimeUnit.SECONDS);
+    ValueResource resource2 = client2.getResource("test", ValueResource.class).get(5, TimeUnit.SECONDS);
 
     resource1.set("Hello world!").join();
 
@@ -168,8 +168,8 @@ public class AtomixClientTest extends AbstractAtomixTest {
     Atomix client1 = createClient();
     Atomix client2 = createClient();
 
-    ValueResource resource1 = client1.get("test", ValueResource.class).get(5, TimeUnit.SECONDS);
-    ValueResource resource2 = client2.get("test", ValueResource.class).get(5, TimeUnit.SECONDS);
+    ValueResource resource1 = client1.getResource("test", ValueResource.class).get(5, TimeUnit.SECONDS);
+    ValueResource resource2 = client2.getResource("test", ValueResource.class).get(5, TimeUnit.SECONDS);
 
     resource1.set("Hello world!").join();
 
@@ -193,14 +193,14 @@ public class AtomixClientTest extends AbstractAtomixTest {
     });
     await(10000);
 
-    client.get("test", TestResource.class).get(5, TimeUnit.SECONDS);
+    client.getResource("test", TestResource.class).get(5, TimeUnit.SECONDS);
     client.keys().thenAccept(result -> {
       threadAssertTrue(result.size() == 1 && result.contains("test"));
       resume();
     });
     await(10000);
 
-    client.get("value", ValueResource.class).get(5, TimeUnit.SECONDS);
+    client.getResource("value", ValueResource.class).get(5, TimeUnit.SECONDS);
     client.keys().thenAccept(result -> {
       threadAssertTrue(result.size() == 2 && result.contains("test") && result.contains("value"));
       resume();

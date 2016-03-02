@@ -69,7 +69,7 @@ public class AtomixReplicaTest extends AbstractAtomixTest {
   private void testSubmitCommand(WriteConsistency consistency) throws Throwable {
     Atomix replica = createReplicas(8, 3, 1).iterator().next();
 
-    TestResource resource = replica.get("test", TestResource.class).get(5, TimeUnit.SECONDS);
+    TestResource resource = replica.getResource("test", TestResource.class).get(5, TimeUnit.SECONDS);
 
     resource.with(consistency).command("Hello world!").thenAccept(result -> {
       threadAssertEquals(result, "Hello world!");
@@ -106,7 +106,7 @@ public class AtomixReplicaTest extends AbstractAtomixTest {
   private void testSubmitQuery(ReadConsistency consistency) throws Throwable {
     Atomix replica = createReplicas(8, 3, 1).iterator().next();
 
-    TestResource resource = replica.get("test", TestResource.class).get(5, TimeUnit.SECONDS);
+    TestResource resource = replica.getResource("test", TestResource.class).get(5, TimeUnit.SECONDS);
 
     resource.with(consistency).query("Hello world!").thenAccept(result -> {
       threadAssertEquals(result, "Hello world!");
@@ -123,12 +123,12 @@ public class AtomixReplicaTest extends AbstractAtomixTest {
     List<Atomix> replicas = createReplicas(8, 3, 1);
 
     for (Atomix replica : replicas) {
-      ValueResource resource = replica.get("test", ValueResource.class).get(5, TimeUnit.SECONDS);
+      ValueResource resource = replica.getResource("test", ValueResource.class).get(5, TimeUnit.SECONDS);
       resource.set("Hello world!").thenRun(this::resume);
       await(10000);
     }
 
-    ValueResource resource = replicas.get(0).get("test", ValueResource.class).get(5, TimeUnit.SECONDS);
+    ValueResource resource = replicas.get(0).getResource("test", ValueResource.class).get(5, TimeUnit.SECONDS);
     resource.get().thenAccept(result -> {
       threadAssertEquals("Hello world!", result);
       resume();
@@ -145,8 +145,8 @@ public class AtomixReplicaTest extends AbstractAtomixTest {
     Atomix replica1 = replicas.get(0);
     Atomix replica2 = replicas.get(1);
 
-    ValueResource resource1 = replica1.get("test", ValueResource.class).get(5, TimeUnit.SECONDS);
-    ValueResource resource2 = replica2.get("test", ValueResource.class).get(5, TimeUnit.SECONDS);
+    ValueResource resource1 = replica1.getResource("test", ValueResource.class).get(5, TimeUnit.SECONDS);
+    ValueResource resource2 = replica2.getResource("test", ValueResource.class).get(5, TimeUnit.SECONDS);
 
     resource1.set("Hello world!").join();
 
@@ -166,10 +166,10 @@ public class AtomixReplicaTest extends AbstractAtomixTest {
     Atomix replica1 = replicas.get(0);
     Atomix replica2 = replicas.get(1);
 
-    ValueResource resource11 = replica1.get("test1", ValueResource.class).get(5, TimeUnit.SECONDS);
-    ValueResource resource12 = replica2.get("test1", ValueResource.class).get(5, TimeUnit.SECONDS);
-    ValueResource resource21 = replica1.get("test2", ValueResource.class).get(5, TimeUnit.SECONDS);
-    ValueResource resource22 = replica2.get("test2", ValueResource.class).get(5, TimeUnit.SECONDS);
+    ValueResource resource11 = replica1.getResource("test1", ValueResource.class).get(5, TimeUnit.SECONDS);
+    ValueResource resource12 = replica2.getResource("test1", ValueResource.class).get(5, TimeUnit.SECONDS);
+    ValueResource resource21 = replica1.getResource("test2", ValueResource.class).get(5, TimeUnit.SECONDS);
+    ValueResource resource22 = replica2.getResource("test2", ValueResource.class).get(5, TimeUnit.SECONDS);
 
     resource11.set("foo").join();
     assertEquals(resource12.get().get(), "foo");
