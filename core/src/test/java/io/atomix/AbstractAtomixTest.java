@@ -21,6 +21,7 @@ import io.atomix.catalyst.transport.LocalTransport;
 import io.atomix.copycat.server.storage.Storage;
 import io.atomix.copycat.server.storage.StorageLevel;
 import io.atomix.resource.Resource;
+import io.atomix.resource.ResourceType;
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -102,9 +103,10 @@ public abstract class AbstractAtomixTest extends ConcurrentTestCase {
   /**
    * Creates a client.
    */
-  protected Atomix createClient() throws Throwable {
+  protected Atomix createClient(ResourceType... types) throws Throwable {
     AtomixClient client = AtomixClient.builder(members)
       .withTransport(new LocalTransport(registry))
+      .withResourceTypes(types)
       .build();
     client.serializer().disableWhitelist();
     client.open().thenRun(this::resume);
@@ -116,12 +118,13 @@ public abstract class AbstractAtomixTest extends ConcurrentTestCase {
   /**
    * Creates an Atomix replica.
    */
-  protected AtomixReplica createReplica(Address address, List<Address> members, int quorumHint, int backupCount) {
+  protected AtomixReplica createReplica(Address address, List<Address> members, int quorumHint, int backupCount, ResourceType... types) {
     AtomixReplica replica = AtomixReplica.builder(address, members)
       .withTransport(new LocalTransport(registry))
       .withStorage(new Storage(StorageLevel.MEMORY))
       .withQuorumHint(quorumHint)
       .withBackupCount(backupCount)
+      .withResourceTypes(types)
       .build();
     replica.serializer().disableWhitelist();
     replicas.add(replica);
@@ -131,7 +134,7 @@ public abstract class AbstractAtomixTest extends ConcurrentTestCase {
   /**
    * Creates a set of Atomix instances.
    */
-  protected List<Atomix> createReplicas(int nodes, int quorumHint, int backupCount) throws Throwable {
+  protected List<Atomix> createReplicas(int nodes, int quorumHint, int backupCount, ResourceType... types) throws Throwable {
     List<Address> members = new ArrayList<>();
     for (int i = 0; i < quorumHint; i++) {
       members.add(nextAddress());
@@ -140,7 +143,7 @@ public abstract class AbstractAtomixTest extends ConcurrentTestCase {
 
     List<Atomix> replicas = new ArrayList<>();
     for (int i = 0; i < nodes; i++) {
-      AtomixReplica atomix = createReplica(members.size() > i ? members.get(i) : nextAddress(), members, quorumHint, backupCount);
+      AtomixReplica atomix = createReplica(members.size() > i ? members.get(i) : nextAddress(), members, quorumHint, backupCount, types);
       atomix.open().thenRun(this::resume);
       replicas.add(atomix);
     }

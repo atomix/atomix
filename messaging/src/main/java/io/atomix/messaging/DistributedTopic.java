@@ -15,7 +15,6 @@
  */
 package io.atomix.messaging;
 
-import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.messaging.state.TopicCommands;
@@ -65,11 +64,6 @@ public class DistributedTopic<T> extends AbstractResource<DistributedTopic<T>> {
   @SuppressWarnings("unchecked")
   public DistributedTopic(CopycatClient client, Properties options) {
     super(client, options);
-  }
-
-  @Override
-  protected void registerTypes(SerializerRegistry registry) {
-    new TopicCommands.TypeResolver().resolve(registry);
   }
 
   @Override

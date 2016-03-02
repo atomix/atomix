@@ -15,7 +15,6 @@
  */
 package io.atomix.coordination.state;
 
-import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.catalyst.util.concurrent.Scheduled;
 import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.session.ServerSession;
@@ -37,11 +36,6 @@ public class LockState extends ResourceStateMachine implements SessionListener {
 
   public LockState(Properties config) {
     super(config);
-  }
-
-  @Override
-  protected void registerTypes(SerializerRegistry registry) {
-    new LockCommands.TypeResolver().resolve(registry);
   }
 
   @Override

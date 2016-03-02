@@ -15,7 +15,6 @@
  */
 package io.atomix.variables;
 
-import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.ReadConsistency;
 import io.atomix.resource.ResourceTypeInfo;
@@ -57,11 +56,6 @@ public class DistributedLong extends AbstractDistributedValue<DistributedLong, L
 
   public DistributedLong(CopycatClient client, Properties options) {
     super(client, options);
-  }
-
-  @Override
-  protected void registerTypes(SerializerRegistry registry) {
-    new LongCommands.TypeResolver().resolve(registry);
   }
 
   /**

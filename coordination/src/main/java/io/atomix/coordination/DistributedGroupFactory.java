@@ -15,6 +15,8 @@
  */
 package io.atomix.coordination;
 
+import io.atomix.catalyst.serializer.SerializableTypeResolver;
+import io.atomix.coordination.state.GroupCommands;
 import io.atomix.coordination.state.GroupState;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.ResourceFactory;
@@ -28,6 +30,11 @@ import java.util.Properties;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class DistributedGroupFactory implements ResourceFactory<DistributedGroup> {
+
+  @Override
+  public SerializableTypeResolver createSerializableTypeResolver() {
+    return new GroupCommands.TypeResolver();
+  }
 
   @Override
   public ResourceStateMachine createStateMachine(Properties config) {

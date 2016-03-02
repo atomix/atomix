@@ -64,9 +64,9 @@ public class AtomixClientTest extends AbstractAtomixTest {
    * Tests submitting a command with a configured consistency level.
    */
   private void testSubmitCommand(WriteConsistency consistency) throws Throwable {
-    createReplicas(5, 3, 1);
+    createReplicas(5, 3, 1, new ResourceType(TestResource.class));
 
-    Atomix client = createClient();
+    Atomix client = createClient(new ResourceType(TestResource.class));
 
     TestResource resource = client.getResource("test", TestResource.class).get(5, TimeUnit.SECONDS);
 
@@ -103,9 +103,9 @@ public class AtomixClientTest extends AbstractAtomixTest {
    * Tests submitting a query with a configured consistency level.
    */
   private void testSubmitQuery(ReadConsistency consistency) throws Throwable {
-    createReplicas(5, 3, 1);
+    createReplicas(5, 3, 1, new ResourceType(TestResource.class));
 
-    Atomix client = createClient();
+    Atomix client = createClient(new ResourceType(TestResource.class));
 
     TestResource resource = client.getResource("test", TestResource.class).get(5, TimeUnit.SECONDS);
 
@@ -121,31 +121,10 @@ public class AtomixClientTest extends AbstractAtomixTest {
    * Tests getting a resource and submitting commands.
    */
   public void testGetConcurrency() throws Throwable {
-    createReplicas(5, 3, 1);
+    createReplicas(5, 3, 1, new ResourceType(ValueResource.class));
 
-    Atomix client1 = createClient();
-    Atomix client2 = createClient();
-
-    ValueResource resource1 = client1.getResource("test", ValueResource.class).get(5, TimeUnit.SECONDS);
-    ValueResource resource2 = client2.getResource("test", ValueResource.class).get(5, TimeUnit.SECONDS);
-
-    resource1.set("Hello world!").join();
-
-    resource2.get().thenAccept(result -> {
-      threadAssertEquals("Hello world!", result);
-      resume();
-    });
-    await(10000);
-  }
-
-  /**
-   * Tests creating a resource and submitting commands.
-   */
-  public void testCreateConcurrency() throws Throwable {
-    createReplicas(5, 3, 1);
-
-    Atomix client1 = createClient();
-    Atomix client2 = createClient();
+    Atomix client1 = createClient(new ResourceType(ValueResource.class));
+    Atomix client2 = createClient(new ResourceType(ValueResource.class));
 
     ValueResource resource1 = client1.getResource("test", ValueResource.class).get(5, TimeUnit.SECONDS);
     ValueResource resource2 = client2.getResource("test", ValueResource.class).get(5, TimeUnit.SECONDS);
@@ -163,10 +142,10 @@ public class AtomixClientTest extends AbstractAtomixTest {
    * Tests getting and creating a resource and submitting commands.
    */
   public void testGetCreateConcurrency() throws Throwable {
-    createReplicas(5, 3, 1);
+    createReplicas(5, 3, 1, new ResourceType(ValueResource.class));
 
-    Atomix client1 = createClient();
-    Atomix client2 = createClient();
+    Atomix client1 = createClient(new ResourceType(ValueResource.class));
+    Atomix client2 = createClient(new ResourceType(ValueResource.class));
 
     ValueResource resource1 = client1.getResource("test", ValueResource.class).get(5, TimeUnit.SECONDS);
     ValueResource resource2 = client2.getResource("test", ValueResource.class).get(5, TimeUnit.SECONDS);
@@ -184,8 +163,8 @@ public class AtomixClientTest extends AbstractAtomixTest {
    * Tests getting resource keys.
    */
   public void testGetResourceKeys() throws Throwable {
-    createReplicas(5, 3, 1);
-    Atomix client = createClient();
+    createReplicas(5, 3, 1, new ResourceType(TestResource.class), new ResourceType(ValueResource.class));
+    Atomix client = createClient(new ResourceType(TestResource.class), new ResourceType(ValueResource.class));
 
     client.keys().thenAccept(result -> {
       threadAssertTrue(result.isEmpty());
@@ -241,7 +220,7 @@ public class AtomixClientTest extends AbstractAtomixTest {
     /**
      * Test resource factory.
      */
-    static class Factory implements ResourceFactory<TestResource> {
+    public static class Factory implements ResourceFactory<TestResource> {
       @Override
       public ResourceStateMachine createStateMachine(Properties config) {
         return new TestStateMachine(config);
@@ -322,10 +301,10 @@ public class AtomixClientTest extends AbstractAtomixTest {
     /**
      * Test resource factory.
      */
-    static class Factory implements ResourceFactory<ValueResource> {
+    public static class Factory implements ResourceFactory<ValueResource> {
       @Override
       public ResourceStateMachine createStateMachine(Properties config) {
-        return new TestStateMachine(config);
+        return new ValueStateMachine(config);
       }
 
       @Override

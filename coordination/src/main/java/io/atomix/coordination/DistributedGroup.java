@@ -15,7 +15,6 @@
  */
 package io.atomix.coordination;
 
-import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.Server;
 import io.atomix.catalyst.util.ConfigurationException;
@@ -317,11 +316,6 @@ public class DistributedGroup extends AbstractResource<DistributedGroup> {
     this.address = new Options(options).getAddress();
     this.server = client.transport().server();
     this.connections = new GroupConnectionManager(client.transport().client(), client.context());
-  }
-
-  @Override
-  protected void registerTypes(SerializerRegistry registry) {
-    new GroupCommands.TypeResolver().resolve(registry);
   }
 
   @Override

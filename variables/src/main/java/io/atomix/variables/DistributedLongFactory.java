@@ -15,9 +15,11 @@
  */
 package io.atomix.variables;
 
+import io.atomix.catalyst.serializer.SerializableTypeResolver;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.ResourceFactory;
 import io.atomix.resource.ResourceStateMachine;
+import io.atomix.variables.state.LongCommands;
 import io.atomix.variables.state.LongState;
 
 import java.util.Properties;
@@ -28,6 +30,11 @@ import java.util.Properties;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class DistributedLongFactory implements ResourceFactory<DistributedLong> {
+
+  @Override
+  public SerializableTypeResolver createSerializableTypeResolver() {
+    return new LongCommands.TypeResolver();
+  }
 
   @Override
   public ResourceStateMachine createStateMachine(Properties config) {

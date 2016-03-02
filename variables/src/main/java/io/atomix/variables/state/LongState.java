@@ -15,7 +15,6 @@
  */
 package io.atomix.variables.state;
 
-import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.Snapshottable;
 import io.atomix.copycat.server.storage.snapshot.SnapshotReader;
@@ -34,11 +33,6 @@ public class LongState extends AbstractValueState<Long> implements Snapshottable
 
   public LongState(Properties config) {
     super(config);
-  }
-
-  @Override
-  protected void registerTypes(SerializerRegistry registry) {
-    new LongCommands.TypeResolver().resolve(registry);
   }
 
   @Override

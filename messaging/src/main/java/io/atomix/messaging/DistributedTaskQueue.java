@@ -15,7 +15,6 @@
  */
 package io.atomix.messaging;
 
-import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.messaging.state.TaskQueueCommands;
@@ -80,11 +79,6 @@ public class DistributedTaskQueue<T> extends AbstractResource<DistributedTaskQue
   @SuppressWarnings("unchecked")
   public DistributedTaskQueue(CopycatClient client, Properties options) {
     super(client, options);
-  }
-
-  @Override
-  protected void registerTypes(SerializerRegistry registry) {
-    new TaskQueueCommands.TypeResolver().resolve(registry);
   }
 
   @Override

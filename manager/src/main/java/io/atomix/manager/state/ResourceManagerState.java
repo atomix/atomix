@@ -15,6 +15,7 @@
  */
 package io.atomix.manager.state;
 
+import io.atomix.catalyst.util.Assert;
 import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.Snapshottable;
 import io.atomix.copycat.server.StateMachine;
@@ -27,6 +28,7 @@ import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceStateMachine;
 import io.atomix.resource.ResourceType;
 import io.atomix.resource.util.InstanceOperation;
+import io.atomix.resource.util.ResourceRegistry;
 
 import java.util.*;
 import java.util.function.Function;
@@ -38,10 +40,27 @@ import java.util.stream.Collectors;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class ResourceManagerState extends StateMachine implements SessionListener, Snapshottable {
+  private final ResourceRegistry registry;
   private StateMachineExecutor executor;
   private final Map<String, Long> keys = new HashMap<>();
   private final Map<Long, ResourceHolder> resources = new HashMap<>();
   private final ResourceManagerCommitPool commits = new ResourceManagerCommitPool();
+
+  public ResourceManagerState(ResourceRegistry registry) {
+    this.registry = Assert.notNull(registry, "registry");
+  }
+
+  @Override
+  public void init(StateMachineExecutor executor) {
+    super.init(executor);
+    for (ResourceType type : registry.types()) {
+      try {
+        type.factory().newInstance().createSerializableTypeResolver().resolve(executor.serializer().registry());
+      } catch (InstantiationException | IllegalAccessException e) {
+        throw new ResourceManagerException(e);
+      }
+    }
+  }
 
   @Override
   public void configure(StateMachineExecutor executor) {
