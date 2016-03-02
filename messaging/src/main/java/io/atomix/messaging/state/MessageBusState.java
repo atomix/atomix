@@ -15,14 +15,13 @@
  */
 package io.atomix.messaging.state;
 
+import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.session.ServerSession;
 import io.atomix.copycat.server.session.SessionListener;
 import io.atomix.copycat.session.Session;
-import io.atomix.messaging.DistributedMessageBus;
 import io.atomix.resource.ResourceStateMachine;
-import io.atomix.resource.ResourceType;
 
 import java.util.*;
 
@@ -35,8 +34,13 @@ public class MessageBusState extends ResourceStateMachine implements SessionList
   private final Map<Long, Commit<MessageBusCommands.Join>> members = new HashMap<>();
   private final Map<String, Map<Long, Commit<MessageBusCommands.Register>>> topics = new HashMap<>();
 
-  public MessageBusState() {
-    super(new ResourceType(DistributedMessageBus.class));
+  public MessageBusState(Properties config) {
+    super(config);
+  }
+
+  @Override
+  protected void registerTypes(SerializerRegistry registry) {
+    new MessageBusCommands.TypeResolver().resolve(registry);
   }
 
   @Override

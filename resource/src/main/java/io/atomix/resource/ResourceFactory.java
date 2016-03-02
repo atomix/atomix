@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,25 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.manager.state;
+package io.atomix.resource;
 
-import io.atomix.resource.ResourceType;
+import io.atomix.copycat.client.CopycatClient;
+
+import java.util.Properties;
 
 /**
- * Get resource if exists command.
+ * Resource factory.
  *
- * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
+ * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class GetResourceIfExists extends GetResource {
+public interface ResourceFactory<T extends Resource<?>> {
 
-  public GetResourceIfExists() {
-  }
+  ResourceStateMachine createStateMachine(Properties config);
 
-  /**
-   * @throws NullPointerException if {@code path} or {@code type} are null
-   */
-  public GetResourceIfExists(String key, ResourceType type) {
-    super(key, type, null);
-  }
+  T createInstance(CopycatClient client, Properties options);
 
 }

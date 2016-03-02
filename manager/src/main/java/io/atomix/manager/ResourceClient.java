@@ -28,7 +28,8 @@ import io.atomix.manager.state.ResourceExists;
 import io.atomix.manager.util.ResourceManagerTypeResolver;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceType;
-import io.atomix.resource.util.*;
+import io.atomix.resource.util.InstanceClient;
+import io.atomix.resource.util.ResourceInstance;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -111,7 +112,6 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
   }
 
   final CopycatClient client;
-  private final ResourceRegistry registry;
   private final Map<Class<? extends Resource<?>>, ResourceType> types = new ConcurrentHashMap<>();
   private final Map<String, Resource<?>> instances = new HashMap<>();
   private final Map<String, CompletableFuture> futures = new HashMap<>();
@@ -119,9 +119,8 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
   /**
    * @throws NullPointerException if {@code client} or {@code registry} are null
    */
-  public ResourceClient(CopycatClient client, ResourceRegistry registry) {
+  public ResourceClient(CopycatClient client) {
     this.client = Assert.notNull(client, "client");
-    this.registry = Assert.notNull(registry, "registry");
   }
 
   /**
@@ -145,12 +144,7 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
 
   @Override
   public final ResourceType type(Class<? extends Resource<?>> type) {
-    return types.computeIfAbsent(type, t -> {
-      ResourceType resourceType = new ResourceType(type);
-      if (registry.lookup(resourceType.id()) == null)
-        throw new IllegalArgumentException("unregistered resource type");
-      return resourceType;
-    });
+    return types.computeIfAbsent(type, ResourceType::new);
   }
 
   @Override
@@ -228,16 +222,20 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
     // Determine whether a singleton instance of the given resource key already exists.
     Resource<?> check = instances.get(key);
     if (check == null) {
-      ResourceInstance instance = new ResourceInstance(key, type, this::close);
+      ResourceInstance instance = new ResourceInstance(key, type, config, this::close);
       InstanceClient client = new InstanceClient(instance, this.client);
-      check = type.factory().create(client, config, options);
-      instances.put(key, check);
+      try {
+        check = type.factory().newInstance().createInstance(client, options);
+        instances.put(key, check);
+      } catch (InstantiationException | IllegalAccessException e) {
+        return Futures.exceptionalFuture(e);
+      }
     }
 
     // Ensure the existing singleton instance type matches the requested instance type. If the instance
     // was created new, this condition will always pass. If there was another instance created of a
     // different type, an exception will be returned without having to make a request to the cluster.
-    if (check.getClass() != type.resource()) {
+    if (check.type().id() != type.id()) {
       return Futures.exceptionalFuture(new IllegalArgumentException("inconsistent resource type: " + type));
     }
 
@@ -307,7 +305,6 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
    */
   public static class Builder implements io.atomix.catalyst.util.Builder<ResourceClient> {
     private CopycatClient.Builder clientBuilder;
-    private ResourceTypeResolver resourceResolver = new ServiceLoaderResourceResolver();
     private Transport transport;
 
     protected Builder(Collection<Address> members) {
@@ -348,17 +345,6 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
       return this;
     }
 
-    /**
-     * Sets the Atomix resource type resolver.
-     *
-     * @param resolver The resource type resolver.
-     * @return The Atomix builder.
-     */
-    public Builder withResourceResolver(ResourceTypeResolver resolver) {
-      this.resourceResolver = Assert.notNull(resolver, "resolver");
-      return this;
-    }
-
     @Override
     public ResourceClient build() {
       if (transport == null) {
@@ -369,14 +355,10 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
         }
       }
 
-      // Create a resource registry and resolve resources with the configured resolver.
-      ResourceRegistry registry = new ResourceRegistry();
-      resourceResolver.resolve(registry);
-
       CopycatClient client = clientBuilder.build();
-      client.serializer().resolve(new ResourceManagerTypeResolver(registry));
+      client.serializer().resolve(new ResourceManagerTypeResolver());
 
-      return new ResourceClient(clientBuilder.build(), registry);
+      return new ResourceClient(clientBuilder.build());
     }
   }
 

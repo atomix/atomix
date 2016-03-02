@@ -15,7 +15,6 @@
  */
 package io.atomix.manager.state;
 
-import io.atomix.catalyst.util.Assert;
 import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.Snapshottable;
 import io.atomix.copycat.server.StateMachine;
@@ -24,10 +23,10 @@ import io.atomix.copycat.server.session.ServerSession;
 import io.atomix.copycat.server.session.SessionListener;
 import io.atomix.copycat.server.storage.snapshot.SnapshotReader;
 import io.atomix.copycat.server.storage.snapshot.SnapshotWriter;
-import io.atomix.resource.util.InstanceOperation;
-import io.atomix.resource.util.ResourceRegistry;
+import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceStateMachine;
 import io.atomix.resource.ResourceType;
+import io.atomix.resource.util.InstanceOperation;
 
 import java.util.*;
 import java.util.function.Function;
@@ -39,15 +38,10 @@ import java.util.stream.Collectors;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class ResourceManagerState extends StateMachine implements SessionListener, Snapshottable {
-  private final ResourceRegistry registry;
   private StateMachineExecutor executor;
   private final Map<String, Long> keys = new HashMap<>();
   private final Map<Long, ResourceHolder> resources = new HashMap<>();
   private final ResourceManagerCommitPool commits = new ResourceManagerCommitPool();
-
-  public ResourceManagerState(ResourceRegistry registry) {
-    this.registry = Assert.notNull(registry, "registry");
-  }
 
   @Override
   public void configure(StateMachineExecutor executor) {
@@ -116,13 +110,7 @@ public class ResourceManagerState extends StateMachine implements SessionListene
    */
   protected long getResource(Commit<? extends GetResource> commit) {
     String key = commit.operation().key();
-    ResourceType type = registry.lookup(commit.operation().type());
-
-    // If the resource type is not known, fail the get.
-    if (type == null) {
-      commit.close();
-      throw new IllegalArgumentException("unknown resource type: " + commit.operation().type());
-    }
+    ResourceType type = commit.operation().type();
 
     // Lookup the resource ID for the resource key.
     Long resourceId = keys.get(key);
@@ -136,7 +124,7 @@ public class ResourceManagerState extends StateMachine implements SessionListene
 
       try {
         // For the new resource, construct a state machine and store the resource info.
-        ResourceStateMachine stateMachine = type.stateMachine().newInstance();
+        ResourceStateMachine stateMachine = type.factory().newInstance().createStateMachine(new Resource.Config(commit.operation().config()));
         ResourceManagerStateMachineExecutor executor = new ResourceManagerStateMachineExecutor(resourceId, this.executor);
 
         // Store the resource to be referenced by its resource ID.
@@ -280,14 +268,9 @@ public class ResourceManagerState extends StateMachine implements SessionListene
         return new HashSet<>(keys.keySet());
       }
 
-      ResourceType resourceType = registry.lookup(commit.operation().type());
-      if (resourceType == null) {
-        throw new IllegalArgumentException("unknown resource type: " + commit.operation().type());
-      }
-
       return new HashSet<>(resources.entrySet()
         .stream()
-        .filter(e -> e.getValue().type.equals(resourceType))
+        .filter(e -> e.getValue().type.id() == commit.operation().type())
         .map(e -> e.getValue().key)
         .collect(Collectors.toSet()));
     } finally {

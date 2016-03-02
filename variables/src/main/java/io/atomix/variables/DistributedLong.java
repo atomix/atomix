@@ -15,11 +15,11 @@
  */
 package io.atomix.variables;
 
+import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.ReadConsistency;
 import io.atomix.resource.ResourceTypeInfo;
 import io.atomix.variables.state.LongCommands;
-import io.atomix.variables.state.LongState;
 
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
@@ -52,11 +52,16 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-@ResourceTypeInfo(id=-2, stateMachine=LongState.class, typeResolver=LongCommands.TypeResolver.class)
+@ResourceTypeInfo(id=-2, factory=DistributedLongFactory.class)
 public class DistributedLong extends AbstractDistributedValue<DistributedLong, Long> {
 
-  public DistributedLong(CopycatClient client, Properties config, Properties options) {
-    super(client, config, options);
+  public DistributedLong(CopycatClient client, Properties options) {
+    super(client, options);
+  }
+
+  @Override
+  protected void registerTypes(SerializerRegistry registry) {
+    new LongCommands.TypeResolver().resolve(registry);
   }
 
   /**

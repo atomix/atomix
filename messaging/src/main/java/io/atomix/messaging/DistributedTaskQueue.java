@@ -15,11 +15,11 @@
  */
 package io.atomix.messaging;
 
+import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.messaging.state.TaskQueueCommands;
-import io.atomix.messaging.state.TaskQueueState;
-import io.atomix.resource.Resource;
+import io.atomix.resource.AbstractResource;
 import io.atomix.resource.ResourceTypeInfo;
 import io.atomix.resource.WriteConsistency;
 
@@ -71,15 +71,20 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-@ResourceTypeInfo(id=-32, stateMachine=TaskQueueState.class, typeResolver=TaskQueueCommands.TypeResolver.class)
-public class DistributedTaskQueue<T> extends Resource<DistributedTaskQueue<T>> {
+@ResourceTypeInfo(id=-32, factory=DistributedTaskQueueFactory.class)
+public class DistributedTaskQueue<T> extends AbstractResource<DistributedTaskQueue<T>> {
   private long taskId;
   private final Map<Long, CompletableFuture<Void>> taskFutures = new ConcurrentHashMap<>();
   private Consumer<T> consumer;
 
   @SuppressWarnings("unchecked")
-  public DistributedTaskQueue(CopycatClient client, Properties config, Properties options) {
-    super(client, config, options);
+  public DistributedTaskQueue(CopycatClient client, Properties options) {
+    super(client, options);
+  }
+
+  @Override
+  protected void registerTypes(SerializerRegistry registry) {
+    new TaskQueueCommands.TypeResolver().resolve(registry);
   }
 
   @Override

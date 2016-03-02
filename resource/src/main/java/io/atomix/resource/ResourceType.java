@@ -15,13 +15,12 @@
  */
 package io.atomix.resource;
 
-import io.atomix.catalyst.serializer.SerializableTypeResolver;
+import io.atomix.catalyst.buffer.BufferInput;
+import io.atomix.catalyst.buffer.BufferOutput;
+import io.atomix.catalyst.serializer.CatalystSerializable;
+import io.atomix.catalyst.serializer.SerializationException;
+import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.util.Assert;
-import io.atomix.copycat.client.CopycatClient;
-import io.atomix.resource.util.ResourceFactory;
-
-import java.lang.reflect.InvocationTargetException;
-import java.util.Properties;
 
 /**
  * Identifier for resource metadata and {@link ResourceStateMachine state machine} information.
@@ -32,23 +31,26 @@ import java.util.Properties;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class ResourceType {
-  private final Class<? extends Resource> type;
-  private final int id;
-  private final Class<? extends ResourceStateMachine> stateMachine;
-  private final Class<? extends SerializableTypeResolver> typeResolver;
+public class ResourceType implements CatalystSerializable {
+  private int id;
+  private Class<? extends ResourceFactory<?>> factory;
+
+  public ResourceType() {
+  }
 
   public ResourceType(Class<? extends Resource> type) {
-    this.type = Assert.notNull(type, "type");
-
     ResourceTypeInfo info = type.getAnnotation(ResourceTypeInfo.class);
     if (info == null) {
       throw new IllegalArgumentException("resource type not annotated");
     }
 
     this.id = info.id();
-    this.stateMachine = info.stateMachine();
-    this.typeResolver = info.typeResolver();
+    this.factory = info.factory();
+  }
+
+  public ResourceType(int id, Class<? extends ResourceFactory<?>> factory) {
+    this.id = id;
+    this.factory = Assert.notNull(factory, "factory");
   }
 
   /**
@@ -61,51 +63,32 @@ public class ResourceType {
   }
 
   /**
-   * Returns the resource class.
-   *
-   * @return The resource class.
-   */
-  public Class<? extends Resource> resource() {
-    return type;
-  }
-
-  /**
    * Returns the resource instance factory.
    *
    * @return The resource instance factory.
    */
-  public ResourceFactory factory() {
-    return (client, config, options) -> {
-      try {
-        return resource().getConstructor(CopycatClient.class, Properties.class, Properties.class).newInstance(client, config, options);
-      } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
-        throw new ResourceException("failed to instantiate resource class", e);
-      }
-    };
+  public Class<? extends ResourceFactory<?>> factory() {
+    return factory;
   }
 
-  /**
-   * Returns the resource state machine class.
-   *
-   * @return The resource state machine class.
-   */
-  public Class<? extends ResourceStateMachine> stateMachine() {
-    return stateMachine;
+  @Override
+  public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
+    buffer.writeInt(id).writeString(factory.getName());
   }
 
-  /**
-   * Returns the resource serializable type resolver.
-   *
-   * @return The resource serializable type resolver.
-   */
-  public Class<? extends SerializableTypeResolver> typeResolver() {
-    return typeResolver;
+  @Override
+  public void readObject(BufferInput<?> buffer, Serializer serializer) {
+    id = buffer.readInt();
+    try {
+      factory = (Class<? extends ResourceFactory<?>>) Class.forName(buffer.readString());
+    } catch (ClassNotFoundException | ClassCastException e) {
+      throw new SerializationException(e);
+    }
   }
 
   @Override
   public int hashCode() {
     int hashCode = 23;
-    hashCode = 37 * hashCode + type.hashCode();
     hashCode = 37 * hashCode + id;
     return hashCode;
   }
@@ -114,14 +97,14 @@ public class ResourceType {
   public boolean equals(Object object) {
     if (object instanceof ResourceType) {
       ResourceType resourceType = (ResourceType) object;
-      return resourceType.type == type && resourceType.id == id;
+      return resourceType.id == id;
     }
     return false;
   }
 
   @Override
   public String toString() {
-    return String.format("%s[id=%d, type=%s, state=%s]", getClass().getSimpleName(), id, type, stateMachine);
+    return String.format("%s[id=%d, factory=%s]", getClass().getSimpleName(), id, factory);
   }
 
 }

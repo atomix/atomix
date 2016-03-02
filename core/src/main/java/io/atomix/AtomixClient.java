@@ -22,7 +22,6 @@ import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.PropertiesReader;
 import io.atomix.manager.ResourceClient;
 import io.atomix.manager.ResourceServer;
-import io.atomix.resource.util.ResourceTypeResolver;
 import io.atomix.util.ClientProperties;
 
 import java.util.Collection;
@@ -198,17 +197,6 @@ public class AtomixClient extends Atomix {
      */
     public Builder withSerializer(Serializer serializer) {
       builder.withSerializer(serializer);
-      return this;
-    }
-
-    /**
-     * Sets the Atomix resource type resolver.
-     *
-     * @param resolver The resource type resolver.
-     * @return The Atomix builder.
-     */
-    public Builder withResourceResolver(ResourceTypeResolver resolver) {
-      builder.withResourceResolver(resolver);
       return this;
     }
 

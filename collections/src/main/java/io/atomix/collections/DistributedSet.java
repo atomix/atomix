@@ -15,11 +15,11 @@
  */
 package io.atomix.collections;
 
+import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.collections.state.SetCommands;
-import io.atomix.collections.state.SetState;
 import io.atomix.copycat.client.CopycatClient;
+import io.atomix.resource.AbstractResource;
 import io.atomix.resource.ReadConsistency;
-import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceTypeInfo;
 
 import java.time.Duration;
@@ -52,10 +52,15 @@ import java.util.concurrent.CompletableFuture;
  * @param <T> The set value type.
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@ResourceTypeInfo(id=-13, stateMachine=SetState.class, typeResolver=SetCommands.TypeResolver.class)
-public class DistributedSet<T> extends Resource<DistributedSet<T>> {
-  public DistributedSet(CopycatClient client, Properties config, Properties options) {
-    super(client, config, options);
+@ResourceTypeInfo(id=-13, factory=DistributedSetFactory.class)
+public class DistributedSet<T> extends AbstractResource<DistributedSet<T>> {
+  public DistributedSet(CopycatClient client, Properties options) {
+    super(client, options);
+  }
+
+  @Override
+  protected void registerTypes(SerializerRegistry registry) {
+    new SetCommands.TypeResolver().resolve(registry);
   }
 
   /**

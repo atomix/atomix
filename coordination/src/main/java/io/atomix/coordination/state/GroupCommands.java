@@ -549,8 +549,8 @@ public final class GroupCommands {
       registry.register(RemoveProperty.class, -138);
       registry.register(Submit.class, -139);
       registry.register(GroupMessage.class, -140);
-      registry.register(GroupTask.class, -141);
-      registry.register(Ack.class, -142);
+      registry.register(GroupTask.class, -158);
+      registry.register(Ack.class, -159);
     }
   }
 

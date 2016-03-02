@@ -15,9 +15,10 @@
  */
 package io.atomix.collections;
 
+import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.collections.state.MultiMapCommands;
-import io.atomix.collections.state.MultiMapState;
 import io.atomix.copycat.client.CopycatClient;
+import io.atomix.resource.AbstractResource;
 import io.atomix.resource.ReadConsistency;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceTypeInfo;
@@ -60,8 +61,8 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-@ResourceTypeInfo(id=-12, stateMachine=MultiMapState.class, typeResolver=MultiMapCommands.TypeResolver.class)
-public class DistributedMultiMap<K, V> extends Resource<DistributedMultiMap<K, V>> {
+@ResourceTypeInfo(id=-12, factory=DistributedMultiMapFactory.class)
+public class DistributedMultiMap<K, V> extends AbstractResource<DistributedMultiMap<K, V>> {
 
   /**
    * Multimap configuration.
@@ -118,8 +119,13 @@ public class DistributedMultiMap<K, V> extends Resource<DistributedMultiMap<K, V
 
   }
 
-  public DistributedMultiMap(CopycatClient client, Properties config, Properties options) {
-    super(client, config, options);
+  public DistributedMultiMap(CopycatClient client, Properties options) {
+    super(client, options);
+  }
+
+  @Override
+  protected void registerTypes(SerializerRegistry registry) {
+    new MultiMapCommands.TypeResolver().resolve(registry);
   }
 
   @Override

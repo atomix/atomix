@@ -15,15 +15,14 @@
  */
 package io.atomix.coordination.state;
 
+import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.catalyst.transport.Address;
-import io.atomix.coordination.DistributedGroup;
 import io.atomix.coordination.GroupMemberInfo;
 import io.atomix.coordination.GroupTask;
 import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.session.ServerSession;
 import io.atomix.copycat.server.session.SessionListener;
 import io.atomix.resource.ResourceStateMachine;
-import io.atomix.resource.ResourceType;
 
 import java.time.Duration;
 import java.util.*;
@@ -42,8 +41,13 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
   private Member leader;
   private long term;
 
-  public GroupState() {
-    super(new ResourceType(DistributedGroup.class));
+  public GroupState(Properties config) {
+    super(config);
+  }
+
+  @Override
+  protected void registerTypes(SerializerRegistry registry) {
+    new GroupCommands.TypeResolver().resolve(registry);
   }
 
   @Override

@@ -18,12 +18,10 @@ package io.atomix.manager.util;
 import io.atomix.catalyst.serializer.SerializableTypeResolver;
 import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.manager.state.*;
-import io.atomix.resource.ResourceException;
 import io.atomix.resource.ResourceType;
 import io.atomix.resource.util.InstanceTypeResolver;
 import io.atomix.resource.util.ResourceCommand;
 import io.atomix.resource.util.ResourceQuery;
-import io.atomix.resource.util.ResourceRegistry;
 
 /**
  * Resource manager serializable type resolver.
@@ -31,11 +29,6 @@ import io.atomix.resource.util.ResourceRegistry;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class ResourceManagerTypeResolver implements SerializableTypeResolver {
-  private final ResourceRegistry resourceRegistry;
-
-  public ResourceManagerTypeResolver(ResourceRegistry resourceRegistry) {
-    this.resourceRegistry = resourceRegistry;
-  }
 
   @Override
   public void resolve(SerializerRegistry registry) {
@@ -45,17 +38,9 @@ public class ResourceManagerTypeResolver implements SerializableTypeResolver {
     // Register resource state machine types.
     registry.register(ResourceCommand.class, -50);
     registry.register(ResourceQuery.class, -51);
-    registry.register(ResourceCommand.Configure.class, -52);
+    registry.register(ResourceCommand.Config.class, -52);
     registry.register(ResourceCommand.Delete.class, -53);
-
-    // Register resource types.
-    for (ResourceType type : resourceRegistry.types()) {
-      try {
-        registry.resolve(type.typeResolver().newInstance());
-      } catch (InstantiationException | IllegalAccessException e) {
-        throw new ResourceException("failed to instantiate resource type resolver");
-      }
-    }
+    registry.register(ResourceType.class, -54);
 
     // Register resource manager types.
     registry.register(GetResource.class, -58);

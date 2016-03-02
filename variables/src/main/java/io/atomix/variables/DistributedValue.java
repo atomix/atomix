@@ -15,10 +15,10 @@
  */
 package io.atomix.variables;
 
+import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.ResourceTypeInfo;
 import io.atomix.variables.state.ValueCommands;
-import io.atomix.variables.state.ValueState;
 
 import java.util.Properties;
 
@@ -50,11 +50,16 @@ import java.util.Properties;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@ResourceTypeInfo(id=-1, stateMachine=ValueState.class, typeResolver=ValueCommands.TypeResolver.class)
+@ResourceTypeInfo(id=-1, factory=DistributedValueFactory.class)
 public class DistributedValue<T> extends AbstractDistributedValue<DistributedValue<T>, T> {
 
-  public DistributedValue(CopycatClient client, Properties config, Properties options) {
-    super(client, config, options);
+  public DistributedValue(CopycatClient client, Properties options) {
+    super(client, options);
+  }
+
+  @Override
+  protected void registerTypes(SerializerRegistry registry) {
+    new ValueCommands.TypeResolver().resolve(registry);
   }
 
 }

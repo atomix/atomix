@@ -26,9 +26,6 @@ import io.atomix.copycat.server.CopycatServer;
 import io.atomix.copycat.server.storage.Storage;
 import io.atomix.manager.state.ResourceManagerState;
 import io.atomix.manager.util.ResourceManagerTypeResolver;
-import io.atomix.resource.util.ResourceRegistry;
-import io.atomix.resource.util.ResourceTypeResolver;
-import io.atomix.resource.util.ServiceLoaderResourceResolver;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -222,7 +219,6 @@ public final class ResourceServer implements Managed<ResourceServer> {
   public static class Builder implements io.atomix.catalyst.util.Builder<ResourceServer> {
     private static final String SERVER_NAME = "atomix";
     private final CopycatServer.Builder builder;
-    private ResourceTypeResolver resourceResolver = new ServiceLoaderResourceResolver();
 
     private Builder(Address clientAddress, Address serverAddress, Collection<Address> members) {
       this.builder = CopycatServer.builder(clientAddress, serverAddress, members).withName(SERVER_NAME);
@@ -287,17 +283,6 @@ public final class ResourceServer implements Managed<ResourceServer> {
      */
     public Builder withSerializer(Serializer serializer) {
       builder.withSerializer(serializer);
-      return this;
-    }
-
-    /**
-     * Sets the Atomix resource type resolver.
-     *
-     * @param resolver The resource type resolver.
-     * @return The Atomix builder.
-     */
-    public Builder withResourceResolver(ResourceTypeResolver resolver) {
-      this.resourceResolver = Assert.notNull(resolver, "resolver");
       return this;
     }
 
@@ -399,14 +384,10 @@ public final class ResourceServer implements Managed<ResourceServer> {
      */
     @Override
     public ResourceServer build() {
-      // Create a resource registry and resolve resources with the configured resolver.
-      ResourceRegistry registry = new ResourceRegistry();
-      resourceResolver.resolve(registry);
-
       // Construct the underlying CopycatServer. The server should have been configured with a CombinedTransport
       // that facilitates the local client connecting directly to the server.
-      CopycatServer server = builder.withStateMachine(() -> new ResourceManagerState(registry)).build();
-      server.serializer().resolve(new ResourceManagerTypeResolver(registry));
+      CopycatServer server = builder.withStateMachine(ResourceManagerState::new).build();
+      server.serializer().resolve(new ResourceManagerTypeResolver());
       return new ResourceServer(server);
     }
   }

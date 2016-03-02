@@ -15,11 +15,11 @@
  */
 package io.atomix.messaging;
 
+import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.messaging.state.TopicCommands;
-import io.atomix.messaging.state.TopicState;
-import io.atomix.resource.Resource;
+import io.atomix.resource.AbstractResource;
 import io.atomix.resource.ResourceTypeInfo;
 import io.atomix.resource.WriteConsistency;
 
@@ -58,13 +58,18 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@ResourceTypeInfo(id=-31, stateMachine=TopicState.class, typeResolver=TopicCommands.TypeResolver.class)
-public class DistributedTopic<T> extends Resource<DistributedTopic<T>> {
+@ResourceTypeInfo(id=-31, factory = DistributedTopicFactory.class)
+public class DistributedTopic<T> extends AbstractResource<DistributedTopic<T>> {
   private final Set<Consumer<T>> listeners = new HashSet<>();
 
   @SuppressWarnings("unchecked")
-  public DistributedTopic(CopycatClient client, Properties config, Properties options) {
-    super(client, config, options);
+  public DistributedTopic(CopycatClient client, Properties options) {
+    super(client, options);
+  }
+
+  @Override
+  protected void registerTypes(SerializerRegistry registry) {
+    new TopicCommands.TypeResolver().resolve(registry);
   }
 
   @Override

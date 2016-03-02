@@ -15,16 +15,16 @@
  */
 package io.atomix.collections.state;
 
+import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.catalyst.util.concurrent.Scheduled;
-import io.atomix.collections.DistributedSet;
 import io.atomix.copycat.server.Commit;
 import io.atomix.resource.ResourceStateMachine;
-import io.atomix.resource.ResourceType;
 
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Properties;
 
 /**
  * Distributed set state machine.
@@ -34,8 +34,13 @@ import java.util.Map;
 public class SetState extends ResourceStateMachine {
   private final Map<Object, Value> map = new HashMap<>();
 
-  public SetState() {
-    super(new ResourceType(DistributedSet.class));
+  public SetState(Properties properties) {
+    super(properties);
+  }
+
+  @Override
+  protected void registerTypes(SerializerRegistry registry) {
+    new SetCommands.TypeResolver().resolve(registry);
   }
 
   /**

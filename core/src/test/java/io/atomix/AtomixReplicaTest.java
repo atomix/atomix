@@ -15,8 +15,6 @@
  */
 package io.atomix;
 
-import io.atomix.catalyst.serializer.SerializableTypeResolver;
-import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.copycat.Command;
 import io.atomix.copycat.Query;
 import io.atomix.copycat.client.CopycatClient;
@@ -186,10 +184,10 @@ public class AtomixReplicaTest extends AbstractAtomixTest {
   /**
    * Test resource.
    */
-  @ResourceTypeInfo(id=3, stateMachine=TestStateMachine.class, typeResolver=TestResource.TypeResolver.class)
-  public static class TestResource extends Resource<TestResource> {
-    public TestResource(CopycatClient client, Properties config, Properties options) {
-      super(client, config, options);
+  @ResourceTypeInfo(id=3, factory=TestResource.Factory.class)
+  public static class TestResource extends AbstractResource<TestResource> {
+    public TestResource(CopycatClient client, Properties options) {
+      super(client, options);
     }
 
     public CompletableFuture<String> command(String value) {
@@ -200,10 +198,18 @@ public class AtomixReplicaTest extends AbstractAtomixTest {
       return submit(new TestQuery(value));
     }
 
-    public static class TypeResolver implements SerializableTypeResolver {
+    /**
+     * Test resource factory.
+     */
+    static class Factory implements ResourceFactory<TestResource> {
       @Override
-      public void resolve(SerializerRegistry registry) {
+      public ResourceStateMachine createStateMachine(Properties config) {
+        return new TestStateMachine(config);
+      }
 
+      @Override
+      public TestResource createInstance(CopycatClient client, Properties options) {
+        return new TestResource(client, options);
       }
     }
   }
@@ -212,8 +218,8 @@ public class AtomixReplicaTest extends AbstractAtomixTest {
    * Test state machine.
    */
   public static class TestStateMachine extends ResourceStateMachine {
-    public TestStateMachine() {
-      super(new ResourceType(TestResource.class));
+    public TestStateMachine(Properties config) {
+      super(config);
     }
 
     public String command(Commit<TestCommand> commit) {
@@ -258,10 +264,10 @@ public class AtomixReplicaTest extends AbstractAtomixTest {
   /**
    * Value resource.
    */
-  @ResourceTypeInfo(id=4, stateMachine=ValueStateMachine.class, typeResolver=ValueResource.TypeResolver.class)
-  public static class ValueResource extends Resource<ValueResource> {
-    public ValueResource(CopycatClient client, Properties config, Properties options) {
-      super(client, config, options);
+  @ResourceTypeInfo(id=4, factory=ValueResource.Factory.class)
+  public static class ValueResource extends AbstractResource<ValueResource> {
+    public ValueResource(CopycatClient client, Properties options) {
+      super(client, options);
     }
 
     public CompletableFuture<Void> set(String value) {
@@ -272,10 +278,18 @@ public class AtomixReplicaTest extends AbstractAtomixTest {
       return submit(new GetQuery());
     }
 
-    public static class TypeResolver implements SerializableTypeResolver {
+    /**
+     * Value resource factory.
+     */
+    static class Factory implements ResourceFactory<ValueResource> {
       @Override
-      public void resolve(SerializerRegistry registry) {
+      public ResourceStateMachine createStateMachine(Properties config) {
+        return new TestStateMachine(config);
+      }
 
+      @Override
+      public ValueResource createInstance(CopycatClient client, Properties options) {
+        return new ValueResource(client, options);
       }
     }
   }
@@ -286,8 +300,8 @@ public class AtomixReplicaTest extends AbstractAtomixTest {
   public static class ValueStateMachine extends ResourceStateMachine {
     private Commit<SetCommand> value;
 
-    public ValueStateMachine() {
-      super(new ResourceType(ValueResource.class));
+    public ValueStateMachine(Properties config) {
+      super(config);
     }
 
     public void set(Commit<SetCommand> commit) {

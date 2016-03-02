@@ -15,8 +15,6 @@
  */
 package io.atomix.resource;
 
-import io.atomix.catalyst.serializer.SerializableTypeResolver;
-
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -24,12 +22,6 @@ import java.lang.annotation.Target;
 
 /**
  * Annotation for specifying resource state and serialization information.
- * <p>
- * {@link Resource}s <em>must</em> be annotated with this annotation to be managed by the Atomix cluster.
- * This annotation provides information about the resource's {@link ResourceStateMachine state machine}
- * and {@link SerializableTypeResolver serialization} of resource commands. Atomix will use the annotation
- * at runtime to create a {@link ResourceType} with which it can identify the resource type and create
- * server-side replicated state machines and register serializable types relevant to the resource.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
@@ -48,23 +40,12 @@ public @interface ResourceTypeInfo {
   int id();
 
   /**
-   * The resource state machine class.
+   * The resource factory class.
    * <p>
-   * This is the state machine class that Atomix will construct on each server in the cluster.
-   * The state machine is responsible for managing state on each server. Each resource instance
-   * has an associated state machine which will last throughout its lifetime.
+   * Resources must provide a factory class for constructing instances of the resource for a
+   * given configuration. The factory will define the resource instance type and state machine
+   * to construct based on the configuration.
    */
-  Class<? extends ResourceStateMachine> stateMachine();
-
-  /**
-   * The resource serializable type resolver.
-   * <p>
-   * Resource types should provided a {@link SerializableTypeResolver} to specify how to serialize
-   * {@link io.atomix.copycat.Command commands} and {@link io.atomix.copycat.Query queries} and any
-   * other types of objects required to operate the resource. Atomix will query the type resolver
-   * to ensure serializable types are registered on both clients and servers prior to usage of the
-   * resource.
-   */
-  Class<? extends SerializableTypeResolver> typeResolver();
+  Class<? extends ResourceFactory<?>> factory();
 
 }

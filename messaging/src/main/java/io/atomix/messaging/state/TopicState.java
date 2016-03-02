@@ -15,16 +15,16 @@
  */
 package io.atomix.messaging.state;
 
+import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.session.ServerSession;
 import io.atomix.copycat.server.session.SessionListener;
-import io.atomix.messaging.DistributedTopic;
 import io.atomix.resource.ResourceStateMachine;
-import io.atomix.resource.ResourceType;
 
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Properties;
 
 /**
  * Topic state machine.
@@ -34,8 +34,13 @@ import java.util.Map;
 public class TopicState extends ResourceStateMachine implements SessionListener {
   private final Map<Long, Commit<TopicCommands.Listen>> listeners = new HashMap<>();
 
-  public TopicState() {
-    super(new ResourceType(DistributedTopic.class));
+  public TopicState(Properties config) {
+    super(config);
+  }
+
+  @Override
+  protected void registerTypes(SerializerRegistry registry) {
+    new TopicCommands.TypeResolver().resolve(registry);
   }
 
   @Override

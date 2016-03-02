@@ -15,13 +15,13 @@
  */
 package io.atomix.variables.state;
 
+import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.Snapshottable;
 import io.atomix.copycat.server.storage.snapshot.SnapshotReader;
 import io.atomix.copycat.server.storage.snapshot.SnapshotWriter;
-import io.atomix.resource.ResourceType;
-import io.atomix.variables.DistributedLong;
 
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -32,8 +32,13 @@ import java.util.concurrent.atomic.AtomicLong;
 public class LongState extends AbstractValueState<Long> implements Snapshottable {
   private AtomicLong value = new AtomicLong(0);
 
-  public LongState() {
-    super(new ResourceType(DistributedLong.class));
+  public LongState(Properties config) {
+    super(config);
+  }
+
+  @Override
+  protected void registerTypes(SerializerRegistry registry) {
+    new LongCommands.TypeResolver().resolve(registry);
   }
 
   @Override
