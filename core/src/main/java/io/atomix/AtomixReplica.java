@@ -406,7 +406,7 @@ public final class AtomixReplica extends Atomix {
     return server.open()
       .thenRun(this::registerListeners)
       .thenCompose(v -> super.open())
-      .thenCompose(v -> client.get("", DistributedLock.class))
+      .thenCompose(v -> client.getResource("", DistributedLock.class))
       .thenApply(lock -> {
         this.lock = lock;
         return this;

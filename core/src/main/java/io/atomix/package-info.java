@@ -74,7 +74,7 @@
  * to operate on that state. The {@link io.atomix.Atomix Atomix} interface provides the methods necessary
  * to manage creating and operating on {@link io.atomix.resource.Resource Resources}. A resource is a stateful,
  * fault-tolerant, distributed object that's manged by a replicated state machine. To create a resource, simply
- * call {@link io.atomix.Atomix#get(java.lang.String, io.atomix.resource.ResourceType)} or
+ * call {@link io.atomix.Atomix#getResource(java.lang.String, io.atomix.resource.ResourceType)} or
  * use one of the {@code getResource} methods like {@link io.atomix.Atomix#getMap(java.lang.String)}.
  * <pre>
  *   {@code
