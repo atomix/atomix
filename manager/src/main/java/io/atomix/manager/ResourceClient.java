@@ -36,6 +36,7 @@ import io.atomix.resource.util.ResourceRegistry;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * Provides an interface for creating and operating on {@link io.atomix.resource.Resource}s remotely.
@@ -345,6 +346,37 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
      */
     public Builder withSerializer(Serializer serializer) {
       clientBuilder.withSerializer(serializer);
+      return this;
+    }
+
+    /**
+     * Sets the available resource types.
+     *
+     * @param types The available resource types.
+     * @return The client builder.
+     */
+    public Builder withResourceTypes(Class<? extends Resource<?>>... types) {
+      return withResourceTypes(Arrays.asList(types).stream().map(ResourceType::new).collect(Collectors.toList()));
+    }
+
+    /**
+     * Sets the available resource types.
+     *
+     * @param types The available resource types.
+     * @return The client builder.
+     */
+    public Builder withResourceTypes(ResourceType... types) {
+      return withResourceTypes(Arrays.asList(types));
+    }
+
+    /**
+     * Sets the available resource types.
+     *
+     * @param types The available resource types.
+     * @return The client builder.
+     */
+    public Builder withResourceTypes(Collection<ResourceType> types) {
+      types.forEach(registry::register);
       return this;
     }
 

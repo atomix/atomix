@@ -34,6 +34,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 /**
  * Standalone Atomix server.
@@ -370,6 +371,37 @@ public final class ResourceServer implements Managed<ResourceServer> {
      */
     public Builder withSessionTimeout(Duration sessionTimeout) {
       builder.withSessionTimeout(sessionTimeout);
+      return this;
+    }
+
+    /**
+     * Sets the available resource types.
+     *
+     * @param types The available resource types.
+     * @return The server builder.
+     */
+    public Builder withResourceTypes(Class<? extends Resource<?>>... types) {
+      return withResourceTypes(Arrays.asList(types).stream().map(ResourceType::new).collect(Collectors.toList()));
+    }
+
+    /**
+     * Sets the available resource types.
+     *
+     * @param types The available resource types.
+     * @return The server builder.
+     */
+    public Builder withResourceTypes(ResourceType... types) {
+      return withResourceTypes(Arrays.asList(types));
+    }
+
+    /**
+     * Sets the available resource types.
+     *
+     * @param types The available resource types.
+     * @return The server builder.
+     */
+    public Builder withResourceTypes(Collection<ResourceType> types) {
+      types.forEach(registry::register);
       return this;
     }
 

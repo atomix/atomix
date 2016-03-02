@@ -45,6 +45,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * Provides an interface for creating and operating on {@link io.atomix.resource.Resource}s as a stateful node.
@@ -776,20 +777,57 @@ public final class AtomixReplica extends Atomix {
     }
 
     /**
-     * Adds a resource type to the server.
+     * Sets the available resource types.
+     *
+     * @param types The available resource types.
+     * @return The replica builder.
+     */
+    public Builder withResourceTypes(Class<? extends Resource<?>>... types) {
+      if (types != null) {
+        return withResourceTypes(Arrays.asList(types).stream().map(ResourceType::new).collect(Collectors.toList()));
+      }
+      return this;
+    }
+
+    /**
+     * Sets the available resource types.
+     *
+     * @param types The available resource types.
+     * @return The replica builder.
+     */
+    public Builder withResourceTypes(ResourceType... types) {
+      if (types != null) {
+        return withResourceTypes(Arrays.asList(types));
+      }
+      return this;
+    }
+
+    /**
+     * Sets the available resource types.
+     *
+     * @param types The available resource types.
+     * @return The replica builder.
+     */
+    public Builder withResourceTypes(Collection<ResourceType> types) {
+      types.forEach(registry::register);
+      return this;
+    }
+
+    /**
+     * Adds a resource type to the replica.
      *
      * @param type The resource type.
-     * @return The server builder.
+     * @return The replica builder.
      */
     public Builder addResourceType(Class<? extends Resource<?>> type) {
       return addResourceType(new ResourceType(type));
     }
 
     /**
-     * Adds a resource type to the server.
+     * Adds a resource type to the replica.
      *
      * @param type The resource type.
-     * @return The server builder.
+     * @return The replica builder.
      */
     public Builder addResourceType(ResourceType type) {
       registry.register(type);

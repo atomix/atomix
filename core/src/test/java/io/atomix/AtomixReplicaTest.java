@@ -67,7 +67,7 @@ public class AtomixReplicaTest extends AbstractAtomixTest {
    * Tests submitting a command with a configured consistency level.
    */
   private void testSubmitCommand(WriteConsistency consistency) throws Throwable {
-    Atomix replica = createReplicas(8, 3, 1).iterator().next();
+    Atomix replica = createReplicas(8, 3, 1, new ResourceType(TestResource.class)).iterator().next();
 
     TestResource resource = replica.getResource("test", TestResource.class).get(5, TimeUnit.SECONDS);
 
@@ -104,7 +104,7 @@ public class AtomixReplicaTest extends AbstractAtomixTest {
    * Tests submitting a query with a configured consistency level.
    */
   private void testSubmitQuery(ReadConsistency consistency) throws Throwable {
-    Atomix replica = createReplicas(8, 3, 1).iterator().next();
+    Atomix replica = createReplicas(8, 3, 1, new ResourceType(TestResource.class)).iterator().next();
 
     TestResource resource = replica.getResource("test", TestResource.class).get(5, TimeUnit.SECONDS);
 
@@ -120,7 +120,7 @@ public class AtomixReplicaTest extends AbstractAtomixTest {
    * Tests submitting a command through all nodes.
    */
   public void testSubmitAll() throws Throwable {
-    List<Atomix> replicas = createReplicas(8, 3, 1);
+    List<Atomix> replicas = createReplicas(8, 3, 1, new ResourceType(ValueResource.class));
 
     for (Atomix replica : replicas) {
       ValueResource resource = replica.getResource("test", ValueResource.class).get(5, TimeUnit.SECONDS);
@@ -140,7 +140,7 @@ public class AtomixReplicaTest extends AbstractAtomixTest {
    * Tests getting a resource and submitting commands.
    */
   public void testGetConcurrency() throws Throwable {
-    List<Atomix> replicas = createReplicas(8, 3, 1);
+    List<Atomix> replicas = createReplicas(8, 3, 1, new ResourceType(ValueResource.class));
 
     Atomix replica1 = replicas.get(0);
     Atomix replica2 = replicas.get(1);
@@ -161,7 +161,7 @@ public class AtomixReplicaTest extends AbstractAtomixTest {
    * Tests operating many separate resources from the same clients.
    */
   public void testOperateMany() throws Throwable {
-    List<Atomix> replicas = createReplicas(8, 3, 1);
+    List<Atomix> replicas = createReplicas(8, 3, 1, new ResourceType(ValueResource.class));
 
     Atomix replica1 = replicas.get(0);
     Atomix replica2 = replicas.get(1);
@@ -201,7 +201,7 @@ public class AtomixReplicaTest extends AbstractAtomixTest {
     /**
      * Test resource factory.
      */
-    static class Factory implements ResourceFactory<TestResource> {
+    public static class Factory implements ResourceFactory<TestResource> {
       @Override
       public ResourceStateMachine createStateMachine(Properties config) {
         return new TestStateMachine(config);
@@ -281,10 +281,10 @@ public class AtomixReplicaTest extends AbstractAtomixTest {
     /**
      * Value resource factory.
      */
-    static class Factory implements ResourceFactory<ValueResource> {
+    public static class Factory implements ResourceFactory<ValueResource> {
       @Override
       public ResourceStateMachine createStateMachine(Properties config) {
-        return new TestStateMachine(config);
+        return new ValueStateMachine(config);
       }
 
       @Override
