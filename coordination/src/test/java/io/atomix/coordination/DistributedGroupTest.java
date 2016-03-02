@@ -358,6 +358,32 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
   }
 
   /**
+   * Tests that a task is failed when a member leaves before the task is processed.
+   */
+  public void testDirectTaskFailOnLeave() throws Throwable {
+    createServers(3);
+
+    DistributedGroup group1 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6000)));
+    DistributedGroup group2 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6001)));
+
+    LocalGroupMember member = group2.join().get(10, TimeUnit.SECONDS);
+
+    assertEquals(group1.members().size(), 1);
+    assertEquals(group2.members().size(), 1);
+
+    member.tasks().onTask(task -> {
+      member.leave().thenRun(this::resume);
+      resume();
+    });
+
+    group1.member(member.id()).tasks().submit("Hello world!").whenComplete((result, error) -> {
+      threadAssertTrue(error instanceof TaskFailedException);
+      resume();
+    });
+    await(10000, 3);
+  }
+
+  /**
    * Tests fan-out member tasks.
    */
   public void testAllTask() throws Throwable {

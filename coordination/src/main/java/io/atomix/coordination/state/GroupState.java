@@ -73,11 +73,13 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
       electLeader();
     }
 
-    // Iterate through the remaining sessions and publish a leave event for each removed member.
-    sessions.values().forEach(s -> left.values().forEach(s::leave));
-
     // Close the commits for the members that left the group.
-    left.values().forEach(Member::close);
+    // Iterate through the remaining sessions and publish a leave event for each removed member
+    // *after* the members have been closed to ensure events are sent in the proper order.
+    left.values().forEach(member -> {
+      member.close();
+      sessions.values().forEach(s -> s.leave(member));
+    });
   }
 
   /**
@@ -201,11 +203,12 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
           electLeader();
         }
 
-        // Publish a leave event to all sessions.
-        sessions.values().forEach(s -> s.leave(member));
-
         // Close the member to ensure it's garbage collected.
         member.close();
+
+        // Publish a leave event to all sessions *after* closing the member to ensure events
+        // are received by clients in the proper order.
+        sessions.values().forEach(s -> s.leave(member));
       }
     } finally {
       commit.close();
@@ -501,6 +504,10 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
    */
   private static class Member implements AutoCloseable {
     private final Commit<GroupCommands.Join> commit;
+    private final long index;
+    private final String memberId;
+    private final Address address;
+    private final boolean persistent;
     private ServerSession session;
     private final Queue<Task> tasks = new ArrayDeque<>();
     private Task task;
@@ -508,6 +515,10 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
 
     private Member(Commit<GroupCommands.Join> commit) {
       this.commit = commit;
+      this.index = commit.index();
+      this.memberId = commit.operation().member();
+      this.address = commit.operation().address();
+      this.persistent = commit.operation().persist();
       this.session = commit.session();
     }
 
@@ -515,28 +526,28 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
      * Returns the member index.
      */
     public long index() {
-      return commit.index();
+      return index;
     }
 
     /**
      * Returns the member ID.
      */
     public String id() {
-      return commit.operation().member();
+      return memberId;
     }
 
     /**
      * Returns the member address.
      */
     public Address address() {
-      return commit.operation().address();
+      return address;
     }
 
     /**
      * Returns group member info.
      */
     public GroupMemberInfo info() {
-      return new GroupMemberInfo(id(), address());
+      return new GroupMemberInfo(memberId, address);
     }
 
     /**
@@ -550,7 +561,7 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
      * Returns a boolean indicating whether the member is persistent.
      */
     public boolean persistent() {
-      return commit.operation().persist();
+      return persistent;
     }
 
     /**
@@ -569,7 +580,7 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
       if (this.task == null) {
         this.task = task;
         if (session().state().active()) {
-          session().publish("task", new GroupTask<>(task.index(), id(), task.task()));
+          session().publish("task", new GroupTask<>(task.index(), memberId, task.task()));
         }
       } else {
         tasks.add(task);
@@ -630,7 +641,7 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
       task = tasks.poll();
       if (task != null) {
         if (session().state().active()) {
-          session().publish("task", new GroupTask<>(task.index(), id(), task.task()));
+          session().publish("task", new GroupTask<>(task.index(), memberId, task.task()));
         }
       }
     }
