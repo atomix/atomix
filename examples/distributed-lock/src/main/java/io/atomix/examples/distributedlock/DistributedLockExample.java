@@ -19,7 +19,7 @@ import io.atomix.Atomix;
 import io.atomix.AtomixClient;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.NettyTransport;
-import io.atomix.coordination.DistributedLock;
+import io.atomix.concurrent.DistributedLock;
 
 import java.util.ArrayList;
 import java.util.List;

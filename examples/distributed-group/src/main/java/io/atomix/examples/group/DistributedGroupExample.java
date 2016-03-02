@@ -19,8 +19,8 @@ import io.atomix.Atomix;
 import io.atomix.AtomixReplica;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.NettyTransport;
-import io.atomix.coordination.DistributedGroup;
 import io.atomix.copycat.server.storage.Storage;
+import io.atomix.group.DistributedGroup;
 
 import java.io.Serializable;
 import java.net.InetAddress;

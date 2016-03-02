@@ -22,7 +22,7 @@ import io.atomix.catalyst.util.ConfigurationException;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.catalyst.util.PropertiesReader;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
-import io.atomix.coordination.DistributedLock;
+import io.atomix.concurrent.DistributedLock;
 import io.atomix.copycat.Command;
 import io.atomix.copycat.Query;
 import io.atomix.copycat.client.*;

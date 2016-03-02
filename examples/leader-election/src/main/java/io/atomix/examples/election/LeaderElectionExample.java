@@ -19,9 +19,9 @@ import io.atomix.Atomix;
 import io.atomix.AtomixReplica;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.NettyTransport;
-import io.atomix.coordination.DistributedGroup;
-import io.atomix.coordination.LocalGroupMember;
 import io.atomix.copycat.server.storage.Storage;
+import io.atomix.group.DistributedGroup;
+import io.atomix.group.LocalGroupMember;
 
 import java.util.ArrayList;
 import java.util.List;
