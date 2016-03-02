@@ -203,9 +203,9 @@ public final class LockCommands {
   public static class TypeResolver implements SerializableTypeResolver {
     @Override
     public void resolve(SerializerRegistry registry) {
-      registry.register(Lock.class, -141);
-      registry.register(Unlock.class, -142);
-      registry.register(LockEvent.class, -143);
+      registry.register(Lock.class, -143);
+      registry.register(Unlock.class, -144);
+      registry.register(LockEvent.class, -145);
     }
   }
 
