@@ -17,6 +17,7 @@ package io.atomix.variables;
 
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.ResourceTypeInfo;
+import io.atomix.variables.util.DistributedValueFactory;
 
 import java.util.Properties;
 

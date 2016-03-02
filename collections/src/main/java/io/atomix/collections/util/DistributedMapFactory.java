@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.collections;
+package io.atomix.collections.util;
 
 import io.atomix.catalyst.serializer.SerializableTypeResolver;
-import io.atomix.collections.state.QueueCommands;
-import io.atomix.collections.state.QueueState;
+import io.atomix.collections.DistributedMap;
+import io.atomix.collections.state.MapCommands;
+import io.atomix.collections.state.MapState;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.ResourceFactory;
 import io.atomix.resource.ResourceStateMachine;
@@ -25,25 +26,25 @@ import io.atomix.resource.ResourceStateMachine;
 import java.util.Properties;
 
 /**
- * Distributed queue factory.
+ * Distributed map factory.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class DistributedQueueFactory implements ResourceFactory<DistributedQueue<?>> {
+public class DistributedMapFactory implements ResourceFactory<DistributedMap<?, ?>> {
 
   @Override
   public SerializableTypeResolver createSerializableTypeResolver() {
-    return new QueueCommands.TypeResolver();
+    return new MapCommands.TypeResolver();
   }
 
   @Override
   public ResourceStateMachine createStateMachine(Properties config) {
-    return new QueueState(config);
+    return new MapState(config);
   }
 
   @Override
-  public DistributedQueue<?> createInstance(CopycatClient client, Properties options) {
-    return new DistributedQueue<>(client, options);
+  public DistributedMap<?, ?> createInstance(CopycatClient client, Properties options) {
+    return new DistributedMap<Object, Object>(client, options);
   }
 
 }

@@ -13,37 +13,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.variables;
+package io.atomix.collections.util;
 
 import io.atomix.catalyst.serializer.SerializableTypeResolver;
+import io.atomix.collections.DistributedMultiMap;
+import io.atomix.collections.state.MultiMapCommands;
+import io.atomix.collections.state.MultiMapState;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.ResourceFactory;
 import io.atomix.resource.ResourceStateMachine;
-import io.atomix.variables.state.LongCommands;
-import io.atomix.variables.state.LongState;
 
 import java.util.Properties;
 
 /**
- * Distributed long factory.
+ * Distributed multi-map factory.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class DistributedLongFactory implements ResourceFactory<DistributedLong> {
+public class DistributedMultiMapFactory implements ResourceFactory<DistributedMultiMap<?, ?>> {
 
   @Override
   public SerializableTypeResolver createSerializableTypeResolver() {
-    return new LongCommands.TypeResolver();
+    return new MultiMapCommands.TypeResolver();
   }
 
   @Override
   public ResourceStateMachine createStateMachine(Properties config) {
-    return new LongState(config);
+    return new MultiMapState(config);
   }
 
   @Override
-  public DistributedLong createInstance(CopycatClient client, Properties options) {
-    return new DistributedLong(client, options);
+  public DistributedMultiMap<?, ?> createInstance(CopycatClient client, Properties options) {
+    return new DistributedMultiMap<>(client, options);
   }
 
 }

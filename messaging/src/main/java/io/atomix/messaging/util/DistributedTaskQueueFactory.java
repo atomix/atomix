@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.messaging;
+package io.atomix.messaging.util;
 
 import io.atomix.catalyst.serializer.SerializableTypeResolver;
 import io.atomix.copycat.client.CopycatClient;
+import io.atomix.messaging.DistributedTaskQueue;
 import io.atomix.messaging.state.TaskQueueCommands;
 import io.atomix.messaging.state.TaskQueueState;
 import io.atomix.resource.ResourceFactory;

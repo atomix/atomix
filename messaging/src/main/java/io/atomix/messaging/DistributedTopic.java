@@ -18,6 +18,7 @@ package io.atomix.messaging;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.messaging.state.TopicCommands;
+import io.atomix.messaging.util.DistributedTopicFactory;
 import io.atomix.resource.AbstractResource;
 import io.atomix.resource.ResourceTypeInfo;
 import io.atomix.resource.WriteConsistency;

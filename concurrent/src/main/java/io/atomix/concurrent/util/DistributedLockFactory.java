@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.concurrent;
+package io.atomix.concurrent.util;
 
 import io.atomix.catalyst.serializer.SerializableTypeResolver;
+import io.atomix.concurrent.DistributedLock;
 import io.atomix.concurrent.state.LockCommands;
 import io.atomix.concurrent.state.LockState;
 import io.atomix.copycat.client.CopycatClient;

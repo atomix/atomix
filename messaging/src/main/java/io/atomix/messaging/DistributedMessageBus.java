@@ -23,6 +23,7 @@ import io.atomix.catalyst.util.ConfigurationException;
 import io.atomix.catalyst.util.concurrent.Futures;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.messaging.state.MessageBusCommands;
+import io.atomix.messaging.util.DistributedMessageBusFactory;
 import io.atomix.resource.AbstractResource;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceTypeInfo;
