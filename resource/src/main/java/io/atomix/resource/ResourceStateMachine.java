@@ -15,7 +15,6 @@
  */
 package io.atomix.resource;
 
-import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.StateMachine;
@@ -126,16 +125,7 @@ public abstract class ResourceStateMachine extends StateMachine implements Sessi
     executor.register(ResourceCommand.Config.class, this::config);
     executor.<ResourceCommand.Delete>register(ResourceCommand.Delete.class, this::delete);
 
-    registerTypes(executor.serializer().registry());
-
     super.init(new ResourceStateMachineExecutor(executor));
-  }
-
-  /**
-   * Registers serializable types on the given serializer.
-   */
-  protected void registerTypes(SerializerRegistry registry) {
-
   }
 
   @Override

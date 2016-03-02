@@ -15,10 +15,8 @@
  */
 package io.atomix.variables;
 
-import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.ResourceTypeInfo;
-import io.atomix.variables.state.ValueCommands;
 
 import java.util.Properties;
 
@@ -55,11 +53,6 @@ public class DistributedValue<T> extends AbstractDistributedValue<DistributedVal
 
   public DistributedValue(CopycatClient client, Properties options) {
     super(client, options);
-  }
-
-  @Override
-  protected void registerTypes(SerializerRegistry registry) {
-    new ValueCommands.TypeResolver().resolve(registry);
   }
 
 }

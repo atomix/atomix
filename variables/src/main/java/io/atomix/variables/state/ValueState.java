@@ -15,7 +15,6 @@
  */
 package io.atomix.variables.state;
 
-import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.catalyst.util.concurrent.Scheduled;
 import io.atomix.copycat.server.Commit;
 
@@ -34,11 +33,6 @@ public class ValueState<T> extends AbstractValueState<T> {
 
   public ValueState(Properties config) {
     super(config);
-  }
-
-  @Override
-  protected void registerTypes(SerializerRegistry registry) {
-    new ValueCommands.TypeResolver().resolve(registry);
   }
 
   /**

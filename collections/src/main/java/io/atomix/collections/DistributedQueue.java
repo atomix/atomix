@@ -15,7 +15,6 @@
  */
 package io.atomix.collections;
 
-import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.collections.state.QueueCommands;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.AbstractResource;
@@ -60,11 +59,6 @@ public class DistributedQueue<T> extends AbstractResource<DistributedQueue<T>> {
 
   public DistributedQueue(CopycatClient client, Properties options) {
     super(client, options);
-  }
-
-  @Override
-  protected void registerTypes(SerializerRegistry registry) {
-    new QueueCommands.TypeResolver().resolve(registry);
   }
 
   /**

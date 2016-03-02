@@ -15,7 +15,9 @@
  */
 package io.atomix.messaging;
 
+import io.atomix.catalyst.serializer.SerializableTypeResolver;
 import io.atomix.copycat.client.CopycatClient;
+import io.atomix.messaging.state.TopicCommands;
 import io.atomix.messaging.state.TopicState;
 import io.atomix.resource.ResourceFactory;
 import io.atomix.resource.ResourceStateMachine;
@@ -28,6 +30,11 @@ import java.util.Properties;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class DistributedTopicFactory implements ResourceFactory<DistributedTopic<?>> {
+
+  @Override
+  public SerializableTypeResolver createSerializableTypeResolver() {
+    return new TopicCommands.TypeResolver();
+  }
 
   @Override
   public ResourceStateMachine createStateMachine(Properties config) {

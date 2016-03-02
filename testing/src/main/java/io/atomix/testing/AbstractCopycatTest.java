@@ -124,6 +124,7 @@ public abstract class AbstractCopycatTest<T extends Resource> extends Concurrent
       .build();
     ResourceType type = new ResourceType((Class<? extends Resource>) type());
     T resource = (T) type.factory().newInstance().createInstance(client, options);
+    type.factory().newInstance().createSerializableTypeResolver().resolve(client.serializer().registry());
     resource.open().thenRun(this::resume);
     resources.add(resource);
     await(10000);
@@ -133,7 +134,7 @@ public abstract class AbstractCopycatTest<T extends Resource> extends Concurrent
   /**
    * Creates a Raft server.
    */
-  protected CopycatServer createServer(Address address) {
+  protected CopycatServer createServer(Address address) throws Throwable{
     return createServer(address, new Resource.Config());
   }
 
@@ -141,7 +142,7 @@ public abstract class AbstractCopycatTest<T extends Resource> extends Concurrent
    * Creates a Raft server.
    */
   @SuppressWarnings("unchecked")
-  protected CopycatServer createServer(Address address, Resource.Config config) {
+  protected CopycatServer createServer(Address address, Resource.Config config) throws Throwable {
     ResourceType type = new ResourceType((Class<? extends Resource>) type());
     Supplier<StateMachine> stateMachine = () -> {
       try {
@@ -156,6 +157,7 @@ public abstract class AbstractCopycatTest<T extends Resource> extends Concurrent
       .withStorage(new Storage(StorageLevel.MEMORY))
       .withStateMachine(stateMachine)
       .build();
+    type.factory().newInstance().createSerializableTypeResolver().resolve(server.serializer().registry());
     servers.add(server);
     return server;
   }

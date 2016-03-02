@@ -15,6 +15,8 @@
  */
 package io.atomix.collections;
 
+import io.atomix.catalyst.serializer.SerializableTypeResolver;
+import io.atomix.collections.state.MapCommands;
 import io.atomix.collections.state.MapState;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.ResourceFactory;
@@ -28,6 +30,11 @@ import java.util.Properties;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class DistributedMapFactory implements ResourceFactory<DistributedMap<?, ?>> {
+
+  @Override
+  public SerializableTypeResolver createSerializableTypeResolver() {
+    return new MapCommands.TypeResolver();
+  }
 
   @Override
   public ResourceStateMachine createStateMachine(Properties config) {

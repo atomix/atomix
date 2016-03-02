@@ -15,7 +15,6 @@
  */
 package io.atomix.collections.state;
 
-import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.copycat.server.Commit;
 import io.atomix.resource.ResourceStateMachine;
 
@@ -34,11 +33,6 @@ public class QueueState extends ResourceStateMachine {
 
   public QueueState(Properties properties) {
     super(properties);
-  }
-
-  @Override
-  protected void registerTypes(SerializerRegistry registry) {
-    new QueueCommands.TypeResolver().resolve(registry);
   }
 
   /**

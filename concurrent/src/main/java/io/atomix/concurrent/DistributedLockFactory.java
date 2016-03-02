@@ -15,6 +15,8 @@
  */
 package io.atomix.concurrent;
 
+import io.atomix.catalyst.serializer.SerializableTypeResolver;
+import io.atomix.concurrent.state.LockCommands;
 import io.atomix.concurrent.state.LockState;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.ResourceFactory;
@@ -28,6 +30,11 @@ import java.util.Properties;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class DistributedLockFactory implements ResourceFactory<DistributedLock> {
+
+  @Override
+  public SerializableTypeResolver createSerializableTypeResolver() {
+    return new LockCommands.TypeResolver();
+  }
 
   @Override
   public ResourceStateMachine createStateMachine(Properties config) {

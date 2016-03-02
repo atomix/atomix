@@ -15,7 +15,6 @@
  */
 package io.atomix.collections.state;
 
-import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.catalyst.util.concurrent.Scheduled;
 import io.atomix.copycat.server.Commit;
 import io.atomix.resource.ResourceStateMachine;
@@ -36,11 +35,6 @@ public class SetState extends ResourceStateMachine {
 
   public SetState(Properties properties) {
     super(properties);
-  }
-
-  @Override
-  protected void registerTypes(SerializerRegistry registry) {
-    new SetCommands.TypeResolver().resolve(registry);
   }
 
   /**

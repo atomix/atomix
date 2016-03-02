@@ -15,7 +15,6 @@
  */
 package io.atomix.concurrent;
 
-import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.concurrent.state.LockCommands;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.AbstractResource;
@@ -142,11 +141,6 @@ public class DistributedLock extends AbstractResource<DistributedLock> {
 
   public DistributedLock(CopycatClient client, Properties options) {
     super(client, options);
-  }
-
-  @Override
-  protected void registerTypes(SerializerRegistry registry) {
-    new LockCommands.TypeResolver().resolve(registry);
   }
 
   @Override

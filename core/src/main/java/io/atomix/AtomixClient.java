@@ -22,10 +22,14 @@ import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.PropertiesReader;
 import io.atomix.manager.ResourceClient;
 import io.atomix.manager.ResourceServer;
+import io.atomix.resource.Resource;
+import io.atomix.resource.ResourceType;
 import io.atomix.util.ClientProperties;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 /**
  * Provides an interface for creating and operating on {@link io.atomix.resource.Resource}s remotely.
@@ -197,6 +201,64 @@ public class AtomixClient extends Atomix {
      */
     public Builder withSerializer(Serializer serializer) {
       builder.withSerializer(serializer);
+      return this;
+    }
+
+    /**
+     * Sets the available resource types.
+     *
+     * @param types The available resource types.
+     * @return The client builder.
+     */
+    public Builder withResourceTypes(Class<? extends Resource<?>>... types) {
+      if (types != null) {
+        return withResourceTypes(Arrays.asList(types).stream().map(ResourceType::new).collect(Collectors.toList()));
+      }
+      return this;
+    }
+
+    /**
+     * Sets the available resource types.
+     *
+     * @param types The available resource types.
+     * @return The client builder.
+     */
+    public Builder withResourceTypes(ResourceType... types) {
+      if (types != null) {
+        return withResourceTypes(Arrays.asList(types));
+      }
+      return this;
+    }
+
+    /**
+     * Sets the available resource types.
+     *
+     * @param types The available resource types.
+     * @return The client builder.
+     */
+    public Builder withResourceTypes(Collection<ResourceType> types) {
+      builder.withResourceTypes(types);
+      return this;
+    }
+
+    /**
+     * Adds a resource type to the client.
+     *
+     * @param type The resource type.
+     * @return The client builder.
+     */
+    public Builder addResourceType(Class<? extends Resource<?>> type) {
+      return addResourceType(new ResourceType(type));
+    }
+
+    /**
+     * Adds a resource type to the client.
+     *
+     * @param type The resource type.
+     * @return The client builder.
+     */
+    public Builder addResourceType(ResourceType type) {
+      builder.addResourceType(type);
       return this;
     }
 
