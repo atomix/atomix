@@ -15,7 +15,6 @@
  */
 package io.atomix.coordination.state;
 
-import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.coordination.GroupMemberInfo;
 import io.atomix.coordination.GroupTask;
@@ -43,11 +42,6 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
 
   public GroupState(Properties config) {
     super(config);
-  }
-
-  @Override
-  protected void registerTypes(SerializerRegistry registry) {
-    new GroupCommands.TypeResolver().resolve(registry);
   }
 
   @Override

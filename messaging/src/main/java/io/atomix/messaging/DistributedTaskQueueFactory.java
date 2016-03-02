@@ -15,8 +15,10 @@
  */
 package io.atomix.messaging;
 
+import io.atomix.catalyst.serializer.SerializableTypeResolver;
 import io.atomix.copycat.client.CopycatClient;
-import io.atomix.messaging.state.MessageBusState;
+import io.atomix.messaging.state.TaskQueueCommands;
+import io.atomix.messaging.state.TaskQueueState;
 import io.atomix.resource.ResourceFactory;
 import io.atomix.resource.ResourceStateMachine;
 
@@ -30,8 +32,13 @@ import java.util.Properties;
 public class DistributedTaskQueueFactory implements ResourceFactory<DistributedTaskQueue<?>> {
 
   @Override
+  public SerializableTypeResolver createSerializableTypeResolver() {
+    return new TaskQueueCommands.TypeResolver();
+  }
+
+  @Override
   public ResourceStateMachine createStateMachine(Properties config) {
-    return new MessageBusState(config);
+    return new TaskQueueState(config);
   }
 
   @Override

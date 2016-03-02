@@ -15,6 +15,7 @@
  */
 package io.atomix.resource;
 
+import io.atomix.catalyst.serializer.SerializableTypeResolver;
 import io.atomix.copycat.client.CopycatClient;
 
 import java.util.Properties;
@@ -25,6 +26,10 @@ import java.util.Properties;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public interface ResourceFactory<T extends Resource<?>> {
+
+  default SerializableTypeResolver createSerializableTypeResolver() {
+    return registry -> {};
+  }
 
   ResourceStateMachine createStateMachine(Properties config);
 

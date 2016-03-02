@@ -32,8 +32,12 @@ import io.atomix.copycat.server.storage.Storage;
 import io.atomix.copycat.session.Session;
 import io.atomix.manager.ResourceClient;
 import io.atomix.manager.ResourceServer;
+import io.atomix.manager.state.ResourceManagerException;
 import io.atomix.manager.state.ResourceManagerState;
 import io.atomix.manager.util.ResourceManagerTypeResolver;
+import io.atomix.resource.Resource;
+import io.atomix.resource.ResourceType;
+import io.atomix.resource.util.ResourceRegistry;
 import io.atomix.util.ClusterBalancer;
 import io.atomix.util.ReplicaProperties;
 
@@ -462,6 +466,7 @@ public final class AtomixReplica extends Atomix {
     private final Address clientAddress;
     private final CopycatClient.Builder clientBuilder;
     private final CopycatServer.Builder serverBuilder;
+    private final ResourceRegistry registry = new ResourceRegistry();
     private Transport clientTransport;
     private Transport serverTransport;
     private final Collection<Address> members;
@@ -771,6 +776,27 @@ public final class AtomixReplica extends Atomix {
     }
 
     /**
+     * Adds a resource type to the server.
+     *
+     * @param type The resource type.
+     * @return The server builder.
+     */
+    public Builder addResourceType(Class<? extends Resource<?>> type) {
+      return addResourceType(new ResourceType(type));
+    }
+
+    /**
+     * Adds a resource type to the server.
+     *
+     * @param type The resource type.
+     * @return The server builder.
+     */
+    public Builder addResourceType(ResourceType type) {
+      registry.register(type);
+      return this;
+    }
+
+    /**
      * Builds the replica transports.
      */
     private void buildTransport() {
@@ -798,6 +824,15 @@ public final class AtomixReplica extends Atomix {
 
       CopycatClient client = clientBuilder.build();
       client.serializer().resolve(new ResourceManagerTypeResolver());
+
+      for (ResourceType type : registry.types()) {
+        try {
+          type.factory().newInstance().createSerializableTypeResolver().resolve(client.serializer().registry());
+        } catch (InstantiationException | IllegalAccessException e) {
+          throw new ResourceManagerException(e);
+        }
+      }
+
       return new ResourceClient(new CombinedCopycatClient(client, serverTransport));
     }
 
@@ -815,7 +850,7 @@ public final class AtomixReplica extends Atomix {
       }
 
       // Set the server resource state machine.
-      serverBuilder.withStateMachine(ResourceManagerState::new);
+      serverBuilder.withStateMachine(() -> new ResourceManagerState(registry));
 
       // If the quorum hint is ALL then set the local member to ACTIVE.
       if (quorumHint == Quorum.ALL.size()) {

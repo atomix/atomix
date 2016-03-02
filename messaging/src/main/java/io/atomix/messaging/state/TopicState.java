@@ -15,7 +15,6 @@
  */
 package io.atomix.messaging.state;
 
-import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.session.ServerSession;
 import io.atomix.copycat.server.session.SessionListener;
@@ -36,11 +35,6 @@ public class TopicState extends ResourceStateMachine implements SessionListener 
 
   public TopicState(Properties config) {
     super(config);
-  }
-
-  @Override
-  protected void registerTypes(SerializerRegistry registry) {
-    new TopicCommands.TypeResolver().resolve(registry);
   }
 
   @Override

@@ -26,6 +26,9 @@ import io.atomix.copycat.server.CopycatServer;
 import io.atomix.copycat.server.storage.Storage;
 import io.atomix.manager.state.ResourceManagerState;
 import io.atomix.manager.util.ResourceManagerTypeResolver;
+import io.atomix.resource.Resource;
+import io.atomix.resource.ResourceType;
+import io.atomix.resource.util.ResourceRegistry;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -219,6 +222,7 @@ public final class ResourceServer implements Managed<ResourceServer> {
   public static class Builder implements io.atomix.catalyst.util.Builder<ResourceServer> {
     private static final String SERVER_NAME = "atomix";
     private final CopycatServer.Builder builder;
+    private final ResourceRegistry registry = new ResourceRegistry();
 
     private Builder(Address clientAddress, Address serverAddress, Collection<Address> members) {
       this.builder = CopycatServer.builder(clientAddress, serverAddress, members).withName(SERVER_NAME);
@@ -370,6 +374,27 @@ public final class ResourceServer implements Managed<ResourceServer> {
     }
 
     /**
+     * Adds a resource type to the server.
+     *
+     * @param type The resource type.
+     * @return The server builder.
+     */
+    public Builder addResourceType(Class<? extends Resource<?>> type) {
+      return addResourceType(new ResourceType(type));
+    }
+
+    /**
+     * Adds a resource type to the server.
+     *
+     * @param type The resource type.
+     * @return The server builder.
+     */
+    public Builder addResourceType(ResourceType type) {
+      registry.register(type);
+      return this;
+    }
+
+    /**
      * Builds the server.
      * <p>
      * If no {@link Transport} was configured for the server, the builder will attempt to create a
@@ -386,7 +411,7 @@ public final class ResourceServer implements Managed<ResourceServer> {
     public ResourceServer build() {
       // Construct the underlying CopycatServer. The server should have been configured with a CombinedTransport
       // that facilitates the local client connecting directly to the server.
-      CopycatServer server = builder.withStateMachine(ResourceManagerState::new).build();
+      CopycatServer server = builder.withStateMachine(() -> new ResourceManagerState(registry)).build();
       server.serializer().resolve(new ResourceManagerTypeResolver());
       return new ResourceServer(server);
     }

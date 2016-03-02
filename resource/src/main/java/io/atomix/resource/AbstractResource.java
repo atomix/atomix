@@ -15,7 +15,6 @@
  */
 package io.atomix.resource;
 
-import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
@@ -37,7 +36,6 @@ import java.util.function.Consumer;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public abstract class AbstractResource<T extends Resource<T>> implements Resource<T> {
-
   private final ResourceType type;
   protected final CopycatClient client;
   protected volatile Config config;
@@ -57,17 +55,9 @@ public abstract class AbstractResource<T extends Resource<T>> implements Resourc
     client.serializer().register(ResourceCommand.Delete.class, -53);
     client.serializer().register(ResourceType.class, -54);
 
-    registerTypes(client.serializer().registry());
-
     this.config = new Config();
     this.options = new Options(Assert.notNull(options, "options"));
     client.onStateChange(this::onStateChange);
-  }
-
-  /**
-   * Registers serializable types on the given serializer.
-   */
-  protected void registerTypes(SerializerRegistry registry) {
   }
 
   /**

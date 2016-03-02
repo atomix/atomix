@@ -39,11 +39,6 @@ public class MessageBusState extends ResourceStateMachine implements SessionList
   }
 
   @Override
-  protected void registerTypes(SerializerRegistry registry) {
-    new MessageBusCommands.TypeResolver().resolve(registry);
-  }
-
-  @Override
   public void close(ServerSession session) {
     members.remove(session.id());
     for (Commit<MessageBusCommands.Join> member : members.values()) {

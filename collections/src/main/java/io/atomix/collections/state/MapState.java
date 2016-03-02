@@ -15,7 +15,6 @@
  */
 package io.atomix.collections.state;
 
-import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.concurrent.Scheduled;
 import io.atomix.copycat.server.Commit;
@@ -34,11 +33,6 @@ public class MapState extends ResourceStateMachine {
 
   public MapState(Properties config) {
     super(config);
-  }
-
-  @Override
-  protected void registerTypes(SerializerRegistry registry) {
-    new MapCommands.TypeResolver().resolve(registry);
   }
 
   /**

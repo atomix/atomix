@@ -25,11 +25,13 @@ import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.copycat.client.*;
 import io.atomix.manager.state.GetResourceKeys;
 import io.atomix.manager.state.ResourceExists;
+import io.atomix.manager.state.ResourceManagerException;
 import io.atomix.manager.util.ResourceManagerTypeResolver;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceType;
 import io.atomix.resource.util.InstanceClient;
 import io.atomix.resource.util.ResourceInstance;
+import io.atomix.resource.util.ResourceRegistry;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -304,6 +306,7 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
    * </pre>
    */
   public static class Builder implements io.atomix.catalyst.util.Builder<ResourceClient> {
+    private final ResourceRegistry registry = new ResourceRegistry();
     private CopycatClient.Builder clientBuilder;
     private Transport transport;
 
@@ -345,6 +348,27 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
       return this;
     }
 
+    /**
+     * Adds a resource type to the server.
+     *
+     * @param type The resource type.
+     * @return The server builder.
+     */
+    public Builder addResourceType(Class<? extends Resource<?>> type) {
+      return addResourceType(new ResourceType(type));
+    }
+
+    /**
+     * Adds a resource type to the server.
+     *
+     * @param type The resource type.
+     * @return The server builder.
+     */
+    public Builder addResourceType(ResourceType type) {
+      registry.register(type);
+      return this;
+    }
+
     @Override
     public ResourceClient build() {
       if (transport == null) {
@@ -358,7 +382,15 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
       CopycatClient client = clientBuilder.build();
       client.serializer().resolve(new ResourceManagerTypeResolver());
 
-      return new ResourceClient(clientBuilder.build());
+      for (ResourceType type : registry.types()) {
+        try {
+          type.factory().newInstance().createSerializableTypeResolver().resolve(client.serializer().registry());
+        } catch (InstantiationException | IllegalAccessException e) {
+          throw new ResourceManagerException(e);
+        }
+      }
+
+      return new ResourceClient(client);
     }
   }
 

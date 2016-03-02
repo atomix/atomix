@@ -15,7 +15,6 @@
  */
 package io.atomix.collections.state;
 
-import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.catalyst.util.concurrent.Scheduled;
 import io.atomix.collections.DistributedMultiMap;
 import io.atomix.copycat.server.Commit;
@@ -37,11 +36,6 @@ public class MultiMapState extends ResourceStateMachine {
   public MultiMapState(Properties properties) {
     super(properties);
     this.order = DistributedMultiMap.Order.valueOf(config.getProperty("order", DistributedMultiMap.Order.INSERT.name().toLowerCase()).toUpperCase());
-  }
-
-  @Override
-  protected void registerTypes(SerializerRegistry registry) {
-    new MultiMapCommands.TypeResolver().resolve(registry);
   }
 
   /**

@@ -15,6 +15,8 @@
  */
 package io.atomix.collections;
 
+import io.atomix.catalyst.serializer.SerializableTypeResolver;
+import io.atomix.collections.state.MultiMapCommands;
 import io.atomix.collections.state.MultiMapState;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.ResourceFactory;
@@ -28,6 +30,11 @@ import java.util.Properties;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class DistributedMultiMapFactory implements ResourceFactory<DistributedMultiMap<?, ?>> {
+
+  @Override
+  public SerializableTypeResolver createSerializableTypeResolver() {
+    return new MultiMapCommands.TypeResolver();
+  }
 
   @Override
   public ResourceStateMachine createStateMachine(Properties config) {

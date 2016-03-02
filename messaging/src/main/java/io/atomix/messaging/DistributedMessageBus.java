@@ -15,7 +15,6 @@
  */
 package io.atomix.messaging;
 
-import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.Client;
 import io.atomix.catalyst.transport.Connection;
@@ -80,11 +79,6 @@ public class DistributedMessageBus extends AbstractResource<DistributedMessageBu
   public DistributedMessageBus(CopycatClient client, Properties options) {
     super(client, options);
     this.options = new Options(options);
-  }
-
-  @Override
-  protected void registerTypes(SerializerRegistry registry) {
-    new MessageBusCommands.TypeResolver().resolve(registry);
   }
 
   @Override
