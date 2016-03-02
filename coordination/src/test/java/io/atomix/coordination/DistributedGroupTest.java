@@ -95,7 +95,7 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
   /**
    * Tests a member being expired from the group.
    */
-  public void testExpire() throws Throwable {
+  public void testExpireLeave() throws Throwable {
     createServers(3);
 
     DistributedGroup group1 = createResource();
@@ -243,7 +243,7 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
   /**
    * Tests sending message between members.
    */
-  public void testSend() throws Throwable {
+  public void testDirectMessage() throws Throwable {
     createServers(3);
 
     DistributedGroup group1 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6000)));
@@ -266,6 +266,45 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
       resume();
     });
 
+    await(10000, 2);
+  }
+
+  /**
+   * Tests sending a message to a partition.
+   */
+  public void testPartitionMessage() throws Throwable {
+    createServers(3);
+
+    DistributedGroup group1 = createResource(new DistributedGroup.Config().withPartitions(3), new DistributedGroup.Options().withAddress(new Address("localhost", 6000)));
+    DistributedGroup group2 = createResource(new DistributedGroup.Config().withPartitions(3), new DistributedGroup.Options().withAddress(new Address("localhost", 6001)));
+
+    LocalGroupMember member1 = group1.join().get(10, TimeUnit.SECONDS);
+    LocalGroupMember member2 = group2.join().get(10, TimeUnit.SECONDS);
+    LocalGroupMember member3 = group2.join().get(10, TimeUnit.SECONDS);
+
+    assertEquals(group1.members().size(), 3);
+    assertEquals(group2.members().size(), 3);
+
+    member1.connection().onMessage("test", message -> {
+      threadAssertEquals(message.body(), "Hello world!");
+      message.reply("Hello world back!");
+      resume();
+    });
+    member2.connection().onMessage("test", message -> {
+      threadAssertEquals(message.body(), "Hello world!");
+      message.reply("Hello world back!");
+      resume();
+    });
+    member3.connection().onMessage("test", message -> {
+      threadAssertEquals(message.body(), "Hello world!");
+      message.reply("Hello world back!");
+      resume();
+    });
+
+    group1.partitions().partition("Hello world!").members().iterator().next().connection().send("test", "Hello world!").thenAccept(reply -> {
+      threadAssertEquals(reply, "Hello world back!");
+      resume();
+    });
     await(10000, 2);
   }
 
@@ -293,6 +332,32 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
   }
 
   /**
+   * Tests failing a direct task.
+   */
+  public void testDirectTaskFail() throws Throwable {
+    createServers(3);
+
+    DistributedGroup group1 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6000)));
+    DistributedGroup group2 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6001)));
+
+    LocalGroupMember member = group2.join().get(10, TimeUnit.SECONDS);
+
+    assertEquals(group1.members().size(), 1);
+    assertEquals(group2.members().size(), 1);
+
+    member.tasks().onTask(task -> {
+      threadAssertEquals(task.value(), "Hello world!");
+      task.fail();
+      resume();
+    });
+    group1.member(member.id()).tasks().submit("Hello world!").whenComplete((result, error) -> {
+      threadAssertTrue(error instanceof TaskFailedException);
+      resume();
+    });
+    await(10000, 2);
+  }
+
+  /**
    * Tests fan-out member tasks.
    */
   public void testAllTask() throws Throwable {
@@ -310,19 +375,16 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
 
     member1.tasks().onTask(task -> {
       threadAssertEquals(task.value(), "Hello world!");
-      System.out.println("RECTASK 1");
       task.ack();
       resume();
     });
     member2.tasks().onTask(task -> {
       threadAssertEquals(task.value(), "Hello world!");
-      System.out.println("RECTASK 2");
       task.ack();
       resume();
     });
     member3.tasks().onTask(task -> {
       threadAssertEquals(task.value(), "Hello world!");
-      System.out.println("RECTASK 3");
       task.ack();
       resume();
     });

@@ -20,6 +20,8 @@ import io.atomix.catalyst.transport.Server;
 import io.atomix.catalyst.util.ConfigurationException;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.catalyst.util.Listeners;
+import io.atomix.catalyst.util.hash.Hasher;
+import io.atomix.catalyst.util.hash.Murmur2Hasher;
 import io.atomix.coordination.state.GroupCommands;
 import io.atomix.coordination.state.GroupState;
 import io.atomix.copycat.Command;
@@ -183,6 +185,73 @@ import java.util.function.Consumer;
 public class DistributedGroup extends Resource<DistributedGroup> {
 
   /**
+   * Group configuration.
+   */
+  public static class Config extends Resource.Config {
+    public Config() {
+    }
+
+    public Config(Properties defaults) {
+      super(defaults);
+    }
+
+    /**
+     * Sets the hash function with which to hash keys.
+     *
+     * @param hasherClass The hasher function class.
+     * @return The group configuration.
+     */
+    public Config withHasher(Class<? extends Hasher> hasherClass) {
+      setProperty("hasher", hasherClass.getName());
+      return this;
+    }
+
+    /**
+     * Sets the group partitioner class.
+     *
+     * @param partitionerClass The group partitioner class.
+     * @return The group configuration.
+     */
+    public Config withPartitioner(Class<? extends GroupPartitioner> partitionerClass) {
+      setProperty("partitioner", partitionerClass.getName());
+      return this;
+    }
+
+    /**
+     * Sets the number of partitions.
+     *
+     * @param partitions The number of partitions.
+     * @return The group configuration.
+     */
+    public Config withPartitions(int partitions) {
+      setProperty("partitions", String.valueOf(partitions));
+      return this;
+    }
+
+    /**
+     * Sets the number of virtual nodes per group member in the consistent hash ring.
+     *
+     * @param virtualNodes The number of virtual members per group member.
+     * @return The group configuration.
+     */
+    public Config withVirtualNodes(int virtualNodes) {
+      setProperty("virtualNodes", String.valueOf(virtualNodes));
+      return this;
+    }
+
+    /**
+     * Sets the group replication factor.
+     *
+     * @param replicationFactor The group replication factor.
+     * @return The group configuration.
+     */
+    public Config withReplicationFactor(int replicationFactor) {
+      setProperty("replicationFactor", String.valueOf(replicationFactor));
+      return this;
+    }
+  }
+
+  /**
    * Group options.
    */
   public static class Options extends Resource.Options {
@@ -238,6 +307,8 @@ public class DistributedGroup extends Resource<DistributedGroup> {
   private final GroupElection election = new GroupElection(this);
   private final GroupScheduler scheduler = new GroupScheduler(null, this);
   private final GroupTaskQueue tasks = new GroupTaskQueue(null, this);
+  private GroupHashRing hashRing;
+  private final GroupPartitions partitions = new GroupPartitions();
   final Map<String, GroupMember> members = new ConcurrentHashMap<>();
 
   public DistributedGroup(CopycatClient client, Properties config, Properties options) {
@@ -250,148 +321,6 @@ public class DistributedGroup extends Resource<DistributedGroup> {
   @Override
   public Options options() {
     return new Options(super.options());
-  }
-
-  @Override
-  public CompletableFuture<DistributedGroup> open() {
-    return super.open().thenApply(result -> {
-      client.onEvent("join", this::onJoinEvent);
-      client.onEvent("leave", this::onLeaveEvent);
-      client.onEvent("term", election::onTermEvent);
-      client.onEvent("elect", election::onElectEvent);
-      client.onEvent("resign", election::onResignEvent);
-      client.onEvent("task", this::onTaskEvent);
-      client.onEvent("ack", this::onAckEvent);
-      client.onEvent("fail", this::onFailEvent);
-      client.onEvent("execute", this::onExecuteEvent);
-
-      return result;
-    }).thenCompose(v -> listen())
-      .thenCompose(v -> sync())
-      .thenApply(v -> this);
-  }
-
-  /**
-   * Starts the server.
-   */
-  private CompletableFuture<Void> listen() {
-    if (address != null) {
-      return server.listen(address, c -> {
-        c.handler(GroupMessage.class, this::onMessage);
-      });
-    }
-    return CompletableFuture.completedFuture(null);
-  }
-
-  /**
-   * Handles a group message.
-   */
-  private CompletableFuture<Object> onMessage(GroupMessage message) {
-    CompletableFuture<Object> future = new CompletableFuture<>();
-    GroupMember member = members.get(message.member());
-    if (member != null) {
-      if (member instanceof LocalGroupMember) {
-        ((LocalGroupMember) member).connection().handleMessage(message.setFuture(future));
-      } else {
-        future.completeExceptionally(new IllegalStateException("not a local member"));
-      }
-    } else {
-      future.completeExceptionally(new IllegalStateException("unknown member"));
-    }
-    return future;
-  }
-
-  /**
-   * Synchronizes the membership group.
-   */
-  private CompletableFuture<Void> sync() {
-    return submit(new GroupCommands.Listen()).thenAccept(members -> {
-      for (GroupMemberInfo info : members) {
-        this.members.computeIfAbsent(info.memberId(), m -> new GroupMember(info, this));
-      }
-    });
-  }
-
-  /**
-   * Handles a join event received from the cluster.
-   */
-  private void onJoinEvent(GroupMemberInfo info) {
-    GroupMember member;
-    if (joining.contains(info.memberId())) {
-      member = new LocalGroupMember(info, this);
-      members.put(info.memberId(), member);
-    } else {
-      member = members.computeIfAbsent(info.memberId(), m -> new GroupMember(info, this));
-    }
-
-    for (Listener<GroupMember> listener : joinListeners) {
-      listener.accept(member);
-    }
-  }
-
-  /**
-   * Handles a leave event received from the cluster.
-   */
-  private void onLeaveEvent(String memberId) {
-    GroupMember member = members.remove(memberId);
-    if (member != null) {
-      for (Listener<GroupMember> listener : leaveListeners) {
-        listener.accept(member);
-      }
-    }
-  }
-
-  /**
-   * Handles a task event received from the cluster.
-   */
-  private void onTaskEvent(GroupTask task) {
-    GroupMember localMember = members.get(task.member());
-    if (localMember != null && localMember instanceof LocalGroupMember) {
-      CompletableFuture<Boolean> future = new CompletableFuture<>();
-      future.whenComplete((succeeded, error) -> {
-        if (error == null && succeeded) {
-          submit(new GroupCommands.Ack(task.id(), task.member(), true));
-        } else {
-          submit(new GroupCommands.Ack(task.id(), task.member(), false));
-        }
-      });
-      ((LocalGroupMember) localMember).tasks().handleTask(task.setFuture(future));
-    }
-  }
-
-  /**
-   * Handles an ack event received from the cluster.
-   */
-  private void onAckEvent(GroupCommands.Submit submit) {
-    if (submit.member() != null) {
-      GroupMember member = members.get(submit.member());
-      if (member != null) {
-        member.tasks().handleAck(submit.id());
-      }
-    } else {
-      tasks.handleAck(submit.id());
-    }
-  }
-
-  /**
-   * Handles a fail event received from the cluster.
-   */
-  private void onFailEvent(GroupCommands.Submit submit) {
-    if (submit.member() != null) {
-      GroupMember member = members.get(submit.member());
-      if (member != null) {
-        member.tasks().handleFail(submit.id());
-      }
-    } else {
-      tasks.handleFail(submit.id());
-    }
-  }
-
-  /**
-   * Handles an execute event received from the cluster.
-   */
-  private void onExecuteEvent(Runnable callback) {
-    callback.run();
   }
 
   /**
@@ -428,6 +357,15 @@ public class DistributedGroup extends Resource<DistributedGroup> {
    */
   public GroupScheduler scheduler() {
     return scheduler;
+  }
+
+  /**
+   * Returns the group partitions.
+   *
+   * @return The group partitions.
+   */
+  public GroupPartitions partitions() {
+    return partitions;
   }
 
   /**
@@ -591,6 +529,206 @@ public class DistributedGroup extends Resource<DistributedGroup> {
    */
   public Listener<GroupMember> onLeave(Consumer<GroupMember> listener) {
     return leaveListeners.add(listener);
+  }
+
+  @Override
+  public CompletableFuture<DistributedGroup> open() {
+    return super.open().thenApply(result -> {
+      // Configure the hasher.
+      Hasher hasher;
+      String hasherClass = config.getProperty("hasher", Murmur2Hasher.class.getName());
+      try {
+        hasher = (Hasher) Thread.currentThread().getContextClassLoader().loadClass(hasherClass).newInstance();
+      } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+        throw new RuntimeException(e);
+      }
+
+      // Set up the hash ring.
+      this.hashRing = new GroupHashRing(hasher, Integer.valueOf(config.getProperty("virtualNodes", "100")), Integer.valueOf(config.getProperty("replicationFactor", "1")));
+
+      // Configure the partitioner.
+      String partitionerClass = config.getProperty("partitioner", HashPartitioner.class.getName());
+      try {
+        this.partitions.partitioner = (GroupPartitioner) Thread.currentThread().getContextClassLoader().loadClass(partitionerClass).newInstance();
+      } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+        throw new RuntimeException(e);
+      }
+
+      // Set up the empty partitions.
+      int partitions = Integer.valueOf(config.getProperty("partitions", "1"));
+      for (int i = 0; i < partitions; i++) {
+        this.partitions.partitions.add(new GroupPartition(i));
+      }
+
+      // Populate the partitions with any existing group members.
+      updatePartitions();
+
+      client.onEvent("join", this::onJoinEvent);
+      client.onEvent("leave", this::onLeaveEvent);
+      client.onEvent("term", election::onTermEvent);
+      client.onEvent("elect", election::onElectEvent);
+      client.onEvent("resign", election::onResignEvent);
+      client.onEvent("task", this::onTaskEvent);
+      client.onEvent("ack", this::onAckEvent);
+      client.onEvent("fail", this::onFailEvent);
+      client.onEvent("execute", this::onExecuteEvent);
+
+      return result;
+    }).thenCompose(v -> listen())
+      .thenCompose(v -> sync())
+      .thenApply(v -> this);
+  }
+
+  /**
+   * Starts the server.
+   */
+  private CompletableFuture<Void> listen() {
+    if (address != null) {
+      return server.listen(address, c -> {
+        c.handler(GroupMessage.class, this::onMessage);
+      });
+    }
+    return CompletableFuture.completedFuture(null);
+  }
+
+  /**
+   * Handles a group message.
+   */
+  private CompletableFuture<Object> onMessage(GroupMessage message) {
+    CompletableFuture<Object> future = new CompletableFuture<>();
+    GroupMember member = members.get(message.member());
+    if (member != null) {
+      if (member instanceof LocalGroupMember) {
+        ((LocalGroupMember) member).connection().handleMessage(message.setFuture(future));
+      } else {
+        future.completeExceptionally(new IllegalStateException("not a local member"));
+      }
+    } else {
+      future.completeExceptionally(new IllegalStateException("unknown member"));
+    }
+    return future;
+  }
+
+  /**
+   * Synchronizes the membership group.
+   */
+  private CompletableFuture<Void> sync() {
+    return submit(new GroupCommands.Listen()).thenAccept(members -> {
+      for (GroupMemberInfo info : members) {
+        this.members.computeIfAbsent(info.memberId(), m -> new GroupMember(info, this));
+      }
+    });
+  }
+
+  /**
+   * Converts an integer to a byte array.
+   */
+  private byte[] intToByteArray(int value) {
+    return new byte[]{(byte) (value >> 24), (byte) (value >> 16), (byte) (value >> 8), (byte) value};
+  }
+
+  /**
+   * Updates group partitions.
+   */
+  private void updatePartitions() {
+    for (int i = 0; i < this.partitions.partitions.size(); i++) {
+      this.partitions.partitions.get(i).handleRepartition(hashRing.members(intToByteArray(i)));
+    }
+  }
+
+  /**
+   * Handles a join event received from the cluster.
+   */
+  private void onJoinEvent(GroupMemberInfo info) {
+    GroupMember member;
+    if (joining.contains(info.memberId())) {
+      member = new LocalGroupMember(info, this);
+      if (members.containsKey(info.memberId())) {
+        hashRing.removeMember(member);
+      }
+      members.put(info.memberId(), member);
+      hashRing.addMember(member);
+    } else {
+      member = members.get(info.memberId());
+      if (member == null) {
+        member = new GroupMember(info, this);
+        members.put(info.memberId(), member);
+        hashRing.addMember(member);
+      }
+    }
+
+    updatePartitions();
+
+    for (Listener<GroupMember> listener : joinListeners) {
+      listener.accept(member);
+    }
+  }
+
+  /**
+   * Handles a leave event received from the cluster.
+   */
+  private void onLeaveEvent(String memberId) {
+    GroupMember member = members.remove(memberId);
+    if (member != null) {
+      hashRing.removeMember(member);
+      updatePartitions();
+      for (Listener<GroupMember> listener : leaveListeners) {
+        listener.accept(member);
+      }
+    }
+  }
+
+  /**
+   * Handles a task event received from the cluster.
+   */
+  private void onTaskEvent(GroupTask task) {
+    GroupMember localMember = members.get(task.member());
+    if (localMember != null && localMember instanceof LocalGroupMember) {
+      CompletableFuture<Boolean> future = new CompletableFuture<>();
+      future.whenComplete((succeeded, error) -> {
+        if (error == null && succeeded) {
+          submit(new GroupCommands.Ack(task.id(), task.member(), true));
+        } else {
+          submit(new GroupCommands.Ack(task.id(), task.member(), false));
+        }
+      });
+      ((LocalGroupMember) localMember).tasks().handleTask(task.setFuture(future));
+    }
+  }
+
+  /**
+   * Handles an ack event received from the cluster.
+   */
+  private void onAckEvent(GroupCommands.Submit submit) {
+    if (submit.member() != null) {
+      GroupMember member = members.get(submit.member());
+      if (member != null) {
+        member.tasks().handleAck(submit.id());
+      }
+    } else {
+      tasks.handleAck(submit.id());
+    }
+  }
+
+  /**
+   * Handles a fail event received from the cluster.
+   */
+  private void onFailEvent(GroupCommands.Submit submit) {
+    if (submit.member() != null) {
+      GroupMember member = members.get(submit.member());
+      if (member != null) {
+        member.tasks().handleFail(submit.id());
+      }
+    } else {
+      tasks.handleFail(submit.id());
+    }
+  }
+
+  /**
+   * Handles an execute event received from the cluster.
+   */
+  private void onExecuteEvent(Runnable callback) {
+    callback.run();
   }
 
   @Override
