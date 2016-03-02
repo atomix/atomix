@@ -106,10 +106,10 @@ public class DistributedMultiMapTest extends AbstractCopycatTest<DistributedMult
    * Tests operating on a map with naturally ordered values.
    */
   public void testNaturalOrder() throws Throwable {
-    createServers(3);
-
     DistributedMultiMap.Config config = new DistributedMultiMap.Config()
       .withValueOrder(DistributedMultiMap.Order.NATURAL);
+    createServers(3, config);
+
     DistributedMultiMap<String, String> map = createResource(config);
 
     map.put("foo", "foo").thenRun(this::resume);
