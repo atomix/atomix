@@ -16,7 +16,8 @@
 package io.atomix;
 
 import io.atomix.catalyst.transport.Address;
-import io.atomix.catalyst.transport.NettyTransport;
+import io.atomix.catalyst.transport.LocalServerRegistry;
+import io.atomix.catalyst.transport.LocalTransport;
 import io.atomix.copycat.server.storage.Storage;
 import io.atomix.copycat.server.storage.StorageLevel;
 import io.atomix.resource.Resource;
@@ -38,6 +39,7 @@ import java.util.function.Function;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public abstract class AbstractAtomixTest extends ConcurrentTestCase {
+  protected LocalServerRegistry registry;
   protected int port;
   protected List<Address> members;
   protected List<AtomixClient> clients;
@@ -55,6 +57,7 @@ public abstract class AbstractAtomixTest extends ConcurrentTestCase {
 
   protected void init() {
     port = 5000;
+    registry = new LocalServerRegistry();
     members = new ArrayList<>();
     clients = new ArrayList<>();
     replicas = new ArrayList<>();
@@ -102,7 +105,7 @@ public abstract class AbstractAtomixTest extends ConcurrentTestCase {
    */
   protected Atomix createClient(ResourceType... types) throws Throwable {
     AtomixClient client = AtomixClient.builder(members)
-      .withTransport(NettyTransport.builder().withThreads(2).build())
+      .withTransport(new LocalTransport(registry))
       .withResourceTypes(types)
       .build();
     client.serializer().disableWhitelist();
@@ -117,7 +120,7 @@ public abstract class AbstractAtomixTest extends ConcurrentTestCase {
    */
   protected AtomixReplica createReplica(Address address, List<Address> members, int quorumHint, int backupCount, ResourceType... types) {
     AtomixReplica replica = AtomixReplica.builder(address, members)
-      .withTransport(NettyTransport.builder().withThreads(2).build())
+      .withTransport(new LocalTransport(registry))
       .withStorage(new Storage(StorageLevel.MEMORY))
       .withQuorumHint(quorumHint)
       .withBackupCount(backupCount)
