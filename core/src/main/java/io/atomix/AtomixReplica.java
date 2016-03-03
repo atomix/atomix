@@ -43,6 +43,7 @@ import io.atomix.util.ReplicaProperties;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -356,6 +357,7 @@ public final class AtomixReplica extends Atomix {
 
   private final ResourceServer server;
   private final ClusterBalancer balancer;
+  private final AtomicBoolean configuring = new AtomicBoolean();
 
   public AtomixReplica(Properties properties) {
     this(builder(properties));
@@ -395,8 +397,8 @@ public final class AtomixReplica extends Atomix {
    * Balances the cluster.
    */
   private void balance() {
-    if (server.server().cluster().member().equals(server.server().cluster().leader())) {
-      balancer.balance(server.server().cluster());
+    if (server.server().cluster().member().equals(server.server().cluster().leader()) && configuring.compareAndSet(false, true)) {
+      balancer.balance(server.server().cluster()).whenComplete((result, error) -> configuring.set(false));
     }
   }
 
