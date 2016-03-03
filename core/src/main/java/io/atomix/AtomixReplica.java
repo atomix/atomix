@@ -888,7 +888,7 @@ public final class AtomixReplica extends Atomix {
       }
 
       // Set the server resource state machine.
-      serverBuilder.withStateMachine(() -> new ResourceManagerState(registry));
+      serverBuilder.withStateMachine(ResourceManagerState::new);
 
       // If the quorum hint is ALL then set the local member to ACTIVE.
       if (quorumHint == Quorum.ALL.size()) {
@@ -897,6 +897,15 @@ public final class AtomixReplica extends Atomix {
 
       CopycatServer server = serverBuilder.build();
       server.serializer().resolve(new ResourceManagerTypeResolver());
+
+      for (ResourceType type : registry.types()) {
+        try {
+          type.factory().newInstance().createSerializableTypeResolver().resolve(server.serializer().registry());
+        } catch (InstantiationException | IllegalAccessException e) {
+          throw new ResourceManagerException(e);
+        }
+      }
+
       return new ResourceServer(server);
     }
 

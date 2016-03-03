@@ -24,6 +24,7 @@ import io.atomix.catalyst.util.Managed;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.copycat.server.CopycatServer;
 import io.atomix.copycat.server.storage.Storage;
+import io.atomix.manager.state.ResourceManagerException;
 import io.atomix.manager.state.ResourceManagerState;
 import io.atomix.manager.util.ResourceManagerTypeResolver;
 import io.atomix.resource.Resource;
@@ -443,8 +444,17 @@ public final class ResourceServer implements Managed<ResourceServer> {
     public ResourceServer build() {
       // Construct the underlying CopycatServer. The server should have been configured with a CombinedTransport
       // that facilitates the local client connecting directly to the server.
-      CopycatServer server = builder.withStateMachine(() -> new ResourceManagerState(registry)).build();
+      CopycatServer server = builder.withStateMachine(ResourceManagerState::new).build();
       server.serializer().resolve(new ResourceManagerTypeResolver());
+
+      for (ResourceType type : registry.types()) {
+        try {
+          type.factory().newInstance().createSerializableTypeResolver().resolve(server.serializer().registry());
+        } catch (InstantiationException | IllegalAccessException e) {
+          throw new ResourceManagerException(e);
+        }
+      }
+
       return new ResourceServer(server);
     }
   }
