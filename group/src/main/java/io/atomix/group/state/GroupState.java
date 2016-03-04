@@ -23,6 +23,7 @@ import io.atomix.group.GroupMemberInfo;
 import io.atomix.group.GroupTask;
 import io.atomix.resource.ResourceStateMachine;
 
+import java.time.Duration;
 import java.util.*;
 
 /**
@@ -31,6 +32,7 @@ import java.util.*;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class GroupState extends ResourceStateMachine implements SessionListener {
+  private final Duration expiration;
   private final Map<Long, GroupSession> sessions = new HashMap<>();
   private final Map<String, Member> members = new HashMap<>();
   private final Map<String, Property> properties = new HashMap<>();
@@ -40,6 +42,7 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
 
   public GroupState(Properties config) {
     super(config);
+    expiration = Duration.ofMillis(Long.valueOf(config.getProperty("expiration", "0")));
   }
 
   @Override
@@ -56,12 +59,26 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
       Member member = iterator.next().getValue();
       if (member.session() != null && member.session().equals(session)) {
         candidates.remove(member);
+
+        // If the member is not persistent, remove the member from the membership group.
         if (!member.persistent()) {
           iterator.remove();
           left.put(member.index(), member);
         } else {
+          // If the member is persistent, set its session to null to exclude it from events.
           member.setSession(null);
-          sessions.values().forEach(s -> s.leave(member));
+
+          // For persistent members, if the expiration duration is non-zero then we wait the prescribed duration before
+          // sending a leave event to the remaining sessions, and only send a leave event if the member is still dead.
+          if (expiration.isZero()) {
+            sessions.values().forEach(s -> s.leave(member));
+          } else {
+            executor.schedule(expiration, () -> {
+              if (member.session() == null) {
+                sessions.values().forEach(s -> s.leave(member));
+              }
+            });
+          }
         }
       }
     }

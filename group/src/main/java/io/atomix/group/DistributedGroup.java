@@ -18,6 +18,7 @@ package io.atomix.group;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.Server;
+import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.ConfigurationException;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.catalyst.util.Listeners;
@@ -32,6 +33,7 @@ import io.atomix.resource.AbstractResource;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceTypeInfo;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -518,6 +520,18 @@ public class DistributedGroup extends AbstractResource<DistributedGroup> {
 
     public Config(Properties defaults) {
       super(defaults);
+    }
+
+    /**
+     * Sets the duration after which to remove persistent members from the group.
+     *
+     * @param expiration The duration after which to remove persistent members from the group.
+     * @return The group configuration.
+     * @throws NullPointerException if the expiration is {@code null}
+     */
+    public Config withMemberExpiration(Duration expiration) {
+      setProperty("expiration", String.valueOf(Assert.notNull(expiration, "expiration").toMillis()));
+      return this;
     }
 
     /**
