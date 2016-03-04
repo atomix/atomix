@@ -158,8 +158,9 @@
             -link http://atomix.io/catalyst/api/latest/
             -link http://atomix.io/copycat/api/latest/
             -group "Atomix core" io.atomix
+            -group "Distributed resources" io.atomix.variables:io.atomix.collections:io.atomix.messaging:io.atomix.group:io.atomix.concurrent
+            -group "Resource management" io.atomix.manager
             -group "Resource API" io.atomix.resource
-            -group "Distributed resources" io.atomix.variables:io.atomix.collections:io.atomix.coordination:io.atomix.messaging
           </additionalparam>
         </configuration>
       </plugin>
