@@ -23,9 +23,7 @@ import io.atomix.group.GroupMemberInfo;
 import io.atomix.group.GroupTask;
 import io.atomix.resource.ResourceStateMachine;
 
-import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Group state machine.
@@ -56,10 +54,15 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
     while (iterator.hasNext()) {
       // If the member is associated with the closed session, remove it from the members list.
       Member member = iterator.next().getValue();
-      if (member.session().equals(session) && !member.persistent()) {
-        iterator.remove();
+      if (member.session() != null && member.session().equals(session)) {
         candidates.remove(member);
-        left.put(member.index(), member);
+        if (!member.persistent()) {
+          iterator.remove();
+          left.put(member.index(), member);
+        } else {
+          member.setSession(null);
+          sessions.values().forEach(s -> s.leave(member));
+        }
       }
     }
 
@@ -150,6 +153,14 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
       }
       // If the member already exists and is a persistent member, update the member to point to the new session.
       else if (member.persistent()) {
+        // Update the member's session to the commit session the member may have been reopened via a new session.
+        member.setSession(commit.session());
+
+        // Add the member to the candidates list if it's not already present to ensure it can be elected.
+        if (!candidates.contains(member)) {
+          candidates.add(member);
+        }
+
         // Iterate through available sessions and publish a join event to each session.
         // This will result in client-side groups updating the member object according to locality.
         for (GroupSession session : sessions.values()) {
@@ -163,9 +174,6 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
           incrementTerm();
           electLeader();
         }
-
-        // Update the member's session to the commit session the member may have been reopened via a new session.
-        member.session = commit.session();
 
         // Close the join commit since there's already an earlier commit that opened the member.
         // We have to retain the original commit that created the persistent member to ensure properties
@@ -221,7 +229,9 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
       sessions.put(commit.session().id(), new GroupSession(commit.session()));
       Set<GroupMemberInfo> members = new HashSet<>();
       for (Member member : this.members.values()) {
-        members.add(member.info());
+        if (member.session() != null && member.session().state().active()) {
+          members.add(member.info());
+        }
       }
       return members;
     } finally {
@@ -355,60 +365,6 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
           member.ack(commit.operation().id());
         } else {
           member.fail(commit.operation().id());
-        }
-      }
-    } finally {
-      commit.close();
-    }
-  }
-
-  /**
-   * Handles a schedule commit.
-   */
-  public void schedule(Commit<GroupCommands.Schedule> commit) {
-    try {
-      Set<String> schedule = new HashSet<>();
-      if (commit.operation().member() != null) {
-        if (!members.containsKey(commit.operation().member())) {
-          throw new IllegalArgumentException("unknown member: " + commit.operation().member());
-        }
-        schedule.add(commit.operation().member());
-      } else {
-        schedule.addAll(members.keySet());
-      }
-
-      AtomicInteger counter = new AtomicInteger();
-      for (String memberId : schedule) {
-        executor.schedule(Duration.ofMillis(commit.operation().delay()), () -> {
-          Member member = members.get(memberId);
-          if (member != null) {
-            member.execute(commit.operation().callback());
-          }
-          if (counter.incrementAndGet() == schedule.size()) {
-            commit.close();
-          }
-        });
-      }
-    } catch (Exception e){
-      commit.close();
-      throw e;
-    }
-  }
-
-  /**
-   * Handles an execute commit.
-   */
-  public void execute(Commit<GroupCommands.Execute> commit) {
-    try {
-      if (commit.operation().member() != null) {
-        Member member = members.get(commit.operation().member());
-        if (member == null) {
-          throw new IllegalArgumentException("unknown member: " + commit.operation().member());
-        }
-        member.execute(commit.operation().callback());
-      } else {
-        for (Member member : members.values()) {
-          member.execute(commit.operation().callback());
         }
       }
     } finally {
@@ -556,19 +512,20 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
     }
 
     /**
+     * Sets the member session.
+     */
+    public void setSession(ServerSession session) {
+      this.session = session;
+      if (task != null && session != null && session.state().active()) {
+        session.publish("task", new GroupTask<>(task.index(), memberId, task.task()));
+      }
+    }
+
+    /**
      * Returns a boolean indicating whether the member is persistent.
      */
     public boolean persistent() {
       return persistent;
-    }
-
-    /**
-     * Executes a callback on the member.
-     */
-    public void execute(Runnable callback) {
-      if (session().state().active()) {
-        session().publish("execute", callback);
-      }
     }
 
     /**
@@ -577,8 +534,8 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
     public void submit(Task task) {
       if (this.task == null) {
         this.task = task;
-        if (session().state().active()) {
-          session().publish("task", new GroupTask<>(task.index(), memberId, task.task()));
+        if (session != null && session.state().active()) {
+          session.publish("task", new GroupTask<>(task.index(), memberId, task.task()));
         }
       } else {
         tasks.add(task);
@@ -638,8 +595,8 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
     private void next() {
       task = tasks.poll();
       if (task != null) {
-        if (session().state().active()) {
-          session().publish("task", new GroupTask<>(task.index(), memberId, task.task()));
+        if (session != null && session.state().active()) {
+          session.publish("task", new GroupTask<>(task.index(), memberId, task.task()));
         }
       }
     }

@@ -122,6 +122,47 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
   }
 
   /**
+   * Tests a persistent member being expired.
+   */
+  public void testPersistentExpire() throws Throwable {
+    createServers(3);
+
+    DistributedGroup group1 = createResource();
+    DistributedGroup group2 = createResource();
+
+    group2.join("2").thenRun(this::resume);
+    await(5000);
+
+    assertEquals(group2.members().size(), 1);
+
+    group1.join("1").thenRun(() -> {
+      threadAssertEquals(group1.members().size(), 2);
+      threadAssertEquals(group2.members().size(), 2);
+      resume();
+    });
+
+    await(5000);
+
+    group1.onLeave(member -> {
+      threadAssertEquals(member.id(), "2");
+      resume();
+    });
+    group2.close().thenRun(this::resume);
+
+    await(10000, 2);
+
+    group1.onJoin(member -> {
+      threadAssertEquals(member.id(), "2");
+      resume();
+    });
+
+    DistributedGroup group3 = createResource();
+    group3.join("2").thenRun(this::resume);
+
+    await(10000);
+  }
+
+  /**
    * Tests electing a group leader.
    */
   public void testElectResign() throws Throwable {
@@ -306,6 +347,26 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
       resume();
     });
     await(10000, 2);
+  }
+
+  /**
+   * Tests partition migration.
+   */
+  public void testPartitionMigration() throws Throwable {
+    createServers(3);
+
+    DistributedGroup group1 = createResource(new DistributedGroup.Config().withPartitions(3).withReplicationFactor(3), new DistributedGroup.Options().withAddress(new Address("localhost", 6000)));
+    DistributedGroup group2 = createResource(new DistributedGroup.Config().withPartitions(3).withReplicationFactor(3), new DistributedGroup.Options().withAddress(new Address("localhost", 6001)));
+
+    LocalGroupMember member1 = group1.join().get(10, TimeUnit.SECONDS);
+
+    group2.partitions().partition(0).onMigration(migration -> {
+      threadAssertEquals(migration.source().id(), member1.id());
+      threadAssertNotNull(migration.target());
+      resume();
+    });
+    group2.join().thenRun(this::resume);
+    await(5000, 2);
   }
 
   /**

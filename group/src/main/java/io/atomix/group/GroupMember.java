@@ -30,7 +30,6 @@ public class GroupMember {
   protected final DistributedGroup group;
   private final GroupProperties properties;
   private final GroupTaskQueue tasks;
-  private final GroupScheduler scheduler;
   private final GroupConnection connection;
 
   GroupMember(GroupMemberInfo info, DistributedGroup group) {
@@ -39,7 +38,6 @@ public class GroupMember {
     this.group = Assert.notNull(group, "group");
     this.properties = new GroupProperties(memberId, group);
     this.tasks = new GroupTaskQueue(memberId, group);
-    this.scheduler = new GroupScheduler(memberId, group);
     this.connection = new GroupConnection(memberId, address, group.connections);
   }
 
@@ -102,15 +100,6 @@ public class GroupMember {
    */
   public GroupTaskQueue tasks() {
     return tasks;
-  }
-
-  /**
-   * Returns the remote scheduler for the member.
-   *
-   * @return The remote scheduler for the member.
-   */
-  public GroupScheduler scheduler() {
-    return scheduler;
   }
 
   @Override

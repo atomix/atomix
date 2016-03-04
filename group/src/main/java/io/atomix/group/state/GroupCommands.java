@@ -22,7 +22,6 @@ import io.atomix.catalyst.serializer.SerializableTypeResolver;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.catalyst.transport.Address;
-import io.atomix.catalyst.util.Assert;
 import io.atomix.copycat.Command;
 import io.atomix.copycat.Query;
 import io.atomix.group.GroupMemberInfo;
@@ -184,90 +183,6 @@ public final class GroupCommands {
     public void readObject(BufferInput buffer, Serializer serializer) {
       super.readObject(buffer, serializer);
       member = buffer.readString();
-    }
-  }
-
-  /**
-   * Schedule command.
-   */
-  public static class Schedule extends MemberCommand<Void> {
-    private long delay;
-    private Runnable callback;
-
-    public Schedule() {
-    }
-
-    public Schedule(String member, long delay, Runnable callback) {
-      super(member);
-      this.delay = Assert.argNot(delay, delay <= 0, "delay must be positive");
-      this.callback = Assert.notNull(callback, "callback");
-    }
-
-    /**
-     * Returns the delay after which to execute the callback.
-     *
-     * @return The delay after which to execute the callback.
-     */
-    public long delay() {
-      return delay;
-    }
-
-    /**
-     * Returns the callback to execute.
-     *
-     * @return The callback to execute.
-     */
-    public Runnable callback() {
-      return callback;
-    }
-
-    @Override
-    public void writeObject(BufferOutput buffer, Serializer serializer) {
-      super.writeObject(buffer, serializer);
-      serializer.writeObject(callback, buffer);
-    }
-
-    @Override
-    public void readObject(BufferInput buffer, Serializer serializer) {
-      super.readObject(buffer, serializer);
-      delay = buffer.readLong();
-      callback = serializer.readObject(buffer);
-    }
-  }
-
-  /**
-   * Execute command.
-   */
-  public static class Execute extends MemberCommand<Void> {
-    private Runnable callback;
-
-    public Execute() {
-    }
-
-    public Execute(String member, Runnable callback) {
-      super(member);
-      this.callback = Assert.notNull(callback, "callback");
-    }
-
-    /**
-     * Returns the execute callback.
-     *
-     * @return The execute callback.
-     */
-    public Runnable callback() {
-      return callback;
-    }
-
-    @Override
-    public void writeObject(BufferOutput buffer, Serializer serializer) {
-      super.writeObject(buffer, serializer);
-      serializer.writeObject(callback, buffer);
-    }
-
-    @Override
-    public void readObject(BufferInput buffer, Serializer serializer) {
-      super.readObject(buffer, serializer);
-      callback = serializer.readObject(buffer);
     }
   }
 
@@ -542,15 +457,13 @@ public final class GroupCommands {
       registry.register(Leave.class, -131);
       registry.register(Listen.class, -132);
       registry.register(Resign.class, -133);
-      registry.register(Schedule.class, -134);
-      registry.register(Execute.class, -135);
-      registry.register(SetProperty.class, -136);
-      registry.register(GetProperty.class, -137);
-      registry.register(RemoveProperty.class, -138);
-      registry.register(Submit.class, -139);
-      registry.register(GroupMessage.class, -140);
-      registry.register(GroupTask.class, -158);
-      registry.register(Ack.class, -159);
+      registry.register(SetProperty.class, -134);
+      registry.register(GetProperty.class, -135);
+      registry.register(RemoveProperty.class, -136);
+      registry.register(Submit.class, -137);
+      registry.register(GroupMessage.class, -138);
+      registry.register(GroupTask.class, -139);
+      registry.register(Ack.class, -140);
     }
   }
 

@@ -62,7 +62,10 @@ group.join();
 
 Send a direct message to a member of the group:
 ```java
-DistributedGroup group = atomix.getGroup("message-group").get();
+DistributedGroup.Options options = new DistributedGroup.Options()
+  .withAddress(new Address("localhost", 6000));
+
+DistributedGroup group = atomix.getGroup("message-group", options).get();
 
 // Join the group
 group.join("member-1").thenAccept(member -> {
@@ -128,7 +131,7 @@ DistributedGroup.Config config = new DistributedGroup.Config()
   .withPartitioner(RoundRobinPartitioner.class)
   .withPartitions(3);
 
-DistributedGroup group = atomix.getGroup("partition-group", config);
+DistributedGroup group = atomix.getGroup("partition-group", config).get();
 
 // Iterate through the partitions in the group
 group.partitions().forEach(partition -> {
@@ -146,9 +149,9 @@ DistributedGroup.Config config = new DistributedGroup.Config()
   .withPartitioner(HashPartitioner.class)
   .withPartitions(32)
   .withVirtualNodes(100)
-  .withReplicas(3);
+  .withReplicationFactor(3);
 
-DistributedGroup group = atomix.getGroup("partition-group", config);
+DistributedGroup group = atomix.getGroup("partition-group", config).get();
 
 String[] values = new String[]{"foo", "bar", "baz"};
 

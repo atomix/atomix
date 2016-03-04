@@ -16,10 +16,13 @@
 package io.atomix.group;
 
 import io.atomix.catalyst.util.Assert;
+import io.atomix.catalyst.util.Listener;
+import io.atomix.catalyst.util.Listeners;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * Group partition.
@@ -29,6 +32,7 @@ import java.util.List;
 public class GroupPartition implements Iterable<GroupMember> {
   private final int id;
   private volatile List<GroupMember> members = new ArrayList<>(0);
+  private final Listeners<GroupPartitionMigration> migrationListeners = new Listeners<>();
 
   GroupPartition(int id) {
     this.id = id;
@@ -63,10 +67,27 @@ public class GroupPartition implements Iterable<GroupMember> {
   }
 
   /**
-   * Updates the partition with the given number of group members.
+   * Registers a partition migration listener.
+   *
+   * @param callback The callback to be called when a partition is migrated.
+   * @return The partition migration listener.
+   */
+  public Listener<GroupPartitionMigration> onMigration(Consumer<GroupPartitionMigration> callback) {
+    return migrationListeners.add(callback);
+  }
+
+  /**
+   * Updates the partition with the given group members.
    */
   void handleRepartition(List<GroupMember> members) {
     this.members = Assert.notNull(members, "members");
+  }
+
+  /**
+   * Handles a partition migration.
+   */
+  void handleMigration(GroupPartitionMigration migration) {
+    migrationListeners.accept(migration);
   }
 
   @Override

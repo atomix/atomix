@@ -26,7 +26,33 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
 
 /**
- * Group election.
+ * Manages an election among {@link DistributedGroup} members.
+ * <p>
+ * Within each group, a leader is elected automatically by the group's replicated state machine.
+ * Group elections are fair, meaning the first member to join the group will always be elected the
+ * leader for the first term. Elections provide a unique, monotonically increasing token called
+ * a {@link #term() term} which can be used to resolve leader conflicts across group members. At
+ * most one leader is guaranteed to exist for any term, and the leader for a given term is guaranteed
+ * to be the same for all members of the group.
+ * <p>
+ * The group-wide election can be accessed on the {@link DistributedGroup} object via
+ * {@link DistributedGroup#election()}. Because they're low overhead - action only needs to be taken
+ * when a member joins or leaves the group - group members always participate in an election.
+ * <p>
+ * To listen for a group member to be elected leader, register a {@link #onElection(Consumer) election listener}.
+ * <pre>
+ *   {@code
+ *   DistributedGroup group = atomix.getGroup("election-group").get();
+ *
+ *   group.onElection(leader -> {
+ *     leader.connection().send("hi!");
+ *   });
+ *   }
+ * </pre>
+ * The election listener callback will be called with the {@link GroupMember} that was elected leader
+ * once complete. Similarly, you can access the current leader via the {@link #leader()} getter. The
+ * current leader is guaranteed to be the leader for the current {@link #term()}. However, the leader
+ * may be {@code null} if no leader has been elected for the current term.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
@@ -91,7 +117,22 @@ public class GroupElection {
    * Registers a callback to be called when the term changes.
    * <p>
    * The provided callback will be called when a term change notification is received by the resource.
+   * The term provided to the callback is guaranteed to be monotonically increasing and the callback
+   * is guaranteed to be executed <em>prior</em> to the {@link #leader()} being set or any
+   * {@link #onElection(Consumer) election listener} being called. {@link #leader()} will always be
+   * {@code null} when the term is set.
+   * <p>
    * The returned {@link Listener} can be used to unregister the term listener via {@link Listener#close()}.
+   * <pre>
+   *   {@code
+   *   Listener<GroupMember> listener = group.election().onTerm(term -> {
+   *     ...
+   *   });
+   *
+   *   // Unregister the listener
+   *   listener.close();
+   *   }
+   * </pre>
    *
    * @param callback The callback to be called when the term changes.
    * @return The term listener.
@@ -104,7 +145,21 @@ public class GroupElection {
    * Registers a callback to be called when a member of the group is elected leader.
    * <p>
    * The provided callback will be called when notification of a leader change is received by the resource.
+   * The leader will be assigned only after the {@link #term()} has been incremented. When the callback is
+   * called, the leader is guaranteed to be associated with the current term, and no other leader will ever
+   * be associated with the same term (assuming the cluster is persistent).
+   * <p>
    * The returned {@link Listener} can be used to unregister the term listener via {@link Listener#close()}.
+   * <pre>
+   *   {@code
+   *   Listener<GroupMember> listener = group.election().onElection(leader -> {
+   *     ...
+   *   });
+   *
+   *   // Unregister the listener
+   *   listener.close();
+   *   }
+   * </pre>
    *
    * @param callback The callback to call when a member of the group is elected leader.
    * @return The leader election listener.
