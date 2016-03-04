@@ -150,7 +150,7 @@
           <doctitle>Atomix API Reference (${jv})</doctitle>
           <windowtitle>Atomix API Reference (${jv})</windowtitle>
           <aggregate>true</aggregate>
-          <excludePackageNames>io.atomix.examples*:*.state*:*.util*:io.atomix.manager*:io.atomix.testing*</excludePackageNames>
+          <excludePackageNames>io.atomix.examples*:*.state*:*.util*:io.atomix.testing*</excludePackageNames>
           <additionalparam>
             -Xdoclint:none
             -notimestamp
@@ -158,7 +158,7 @@
             -link http://atomix.io/catalyst/api/latest/
             -link http://atomix.io/copycat/api/latest/
             -group "Atomix core" io.atomix
-            -group "Distributed resources" io.atomix.variables:io.atomix.collections:io.atomix.messaging:io.atomix.group:io.atomix.concurrent
+            -group "Distributed resources" io.atomix.variables:io.atomix.collections:io.atomix.group:io.atomix.concurrent:io.atomix.messaging
             -group "Resource management" io.atomix.manager
             -group "Resource API" io.atomix.resource
           </additionalparam>
