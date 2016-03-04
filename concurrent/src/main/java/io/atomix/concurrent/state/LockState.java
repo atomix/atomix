@@ -96,7 +96,7 @@ public class LockState extends ResourceStateMachine implements SessionListener {
     try {
       if (lock != null) {
         if (!lock.session().equals(commit.session()))
-          throw new IllegalStateException("not the lock holder");
+          return;
 
         lock.close();
 
