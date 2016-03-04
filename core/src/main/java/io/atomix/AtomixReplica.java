@@ -22,7 +22,6 @@ import io.atomix.catalyst.util.ConfigurationException;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.catalyst.util.PropertiesReader;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
-import io.atomix.concurrent.DistributedLock;
 import io.atomix.copycat.Command;
 import io.atomix.copycat.Query;
 import io.atomix.copycat.client.*;
@@ -44,6 +43,7 @@ import io.atomix.util.ReplicaProperties;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -357,8 +357,7 @@ public final class AtomixReplica extends Atomix {
 
   private final ResourceServer server;
   private final ClusterBalancer balancer;
-  private DistributedLock lock;
-  private boolean locking;
+  private final AtomicBoolean configuring = new AtomicBoolean();
 
   public AtomixReplica(Properties properties) {
     this(builder(properties));
@@ -398,11 +397,8 @@ public final class AtomixReplica extends Atomix {
    * Balances the cluster.
    */
   private void balance() {
-    if (lock != null && !locking && server.server().cluster().member().equals(server.server().cluster().leader())) {
-      locking = true;
-      lock.lock()
-        .thenCompose(v -> balancer.balance(server.server().cluster()))
-        .whenComplete((r1, e1) -> lock.unlock().whenComplete((r2, e2) -> locking = false));
+    if (server.server().cluster().member().equals(server.server().cluster().leader()) && configuring.compareAndSet(false, true)) {
+      balancer.balance(server.server().cluster()).whenComplete((result, error) -> configuring.set(false));
     }
   }
 
@@ -410,34 +406,12 @@ public final class AtomixReplica extends Atomix {
   public CompletableFuture<Atomix> open() {
     return server.open()
       .thenRun(this::registerListeners)
-      .thenCompose(v -> super.open())
-      .thenCompose(v -> client.getResource("", DistributedLock.class))
-      .thenApply(lock -> {
-        this.lock = lock;
-        return this;
-      });
+      .thenCompose(v -> super.open());
   }
 
   @Override
   public CompletableFuture<Void> close() {
-    CompletableFuture<Void> future = new CompletableFuture<>();
-    lock.lock()
-      .thenCompose(v -> balancer.replace(server.server().cluster()))
-      .whenComplete((r1, e1) -> {
-        balancer.close();
-        lock.unlock().whenComplete((r2, e2) -> {
-          super.close().whenComplete((r3, e3) -> {
-            server.close().whenComplete((r4, e4) -> {
-              if (e4 == null) {
-                future.complete(null);
-              } else {
-                future.completeExceptionally(e4);
-              }
-            });
-          });
-        });
-      });
-    return future;
+    return super.close().thenCompose(v -> server.close());
   }
 
   /**
