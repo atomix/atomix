@@ -24,7 +24,7 @@ public class HashPartitioner implements GroupPartitioner {
 
   @Override
   public int partition(Object value, int partitions) {
-    return value.hashCode() % partitions;
+    return Math.abs(value.hashCode()) % partitions;
   }
 
 }

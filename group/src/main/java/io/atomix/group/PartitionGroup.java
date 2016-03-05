@@ -45,7 +45,7 @@ public class PartitionGroup extends AbstractDistributedGroup {
 
     List<GroupPartition> partitions = new ArrayList<>(numPartitions);
     for (int i = 0; i < numPartitions; i++) {
-      partitions.add(new GroupPartition(group, i));
+      partitions.add(new GroupPartition(group, hashRing.members(intToByteArray(i)), i));
     }
     this.partitions = new GroupPartitions(partitions, partitioner);
   }

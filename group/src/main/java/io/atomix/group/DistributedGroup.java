@@ -590,6 +590,11 @@ public interface DistributedGroup extends Resource<DistributedGroup> {
 
   /**
    * Returns the group properties.
+   * <p>
+   * The returned properties apply to the entire group regardless of whether this instance is a membership group,
+   * hash group, partition group, or partitions. Properties can be set and read by any instance of the group, and
+   * properties will persist until {@link GroupProperties#remove(String) removed} or the group itself is
+   * {@link #delete() deleted}.
    *
    * @return The group properties.
    */

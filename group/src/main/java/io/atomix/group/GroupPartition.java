@@ -32,13 +32,17 @@ import java.util.function.Consumer;
 public class GroupPartition extends AbstractDistributedGroup {
   private final int id;
   private final Map<String, GroupMember> members = new ConcurrentHashMap<>();
-  private volatile List<GroupMember> sortedMembers = new ArrayList<>(0);
+  private final List<GroupMember> sortedMembers;
   private final Listeners<GroupMember> joinListeners = new Listeners<>();
   private final Listeners<GroupMember> leaveListeners = new Listeners<>();
   private final Listeners<GroupPartitionMigration> migrationListeners = new Listeners<>();
 
-  GroupPartition(MembershipGroup group, int id) {
+  GroupPartition(MembershipGroup group, List<GroupMember> members, int id) {
     super(group);
+    this.sortedMembers = members;
+    for (GroupMember member : members) {
+      this.members.put(member.id(), member);
+    }
     this.id = id;
   }
 
