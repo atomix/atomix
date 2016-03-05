@@ -27,9 +27,9 @@ import java.util.concurrent.CompletableFuture;
  */
 public class GroupProperties {
   private final String memberId;
-  private final DistributedGroup group;
+  private final MembershipGroup group;
 
-  protected GroupProperties(String memberId, DistributedGroup group) {
+  protected GroupProperties(String memberId, MembershipGroup group) {
     this.memberId = memberId;
     this.group = Assert.notNull(group, "group");
   }

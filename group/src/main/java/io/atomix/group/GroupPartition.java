@@ -15,13 +15,13 @@
  */
 package io.atomix.group;
 
-import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.catalyst.util.Listeners;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 /**
@@ -29,12 +29,16 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class GroupPartition implements Iterable<GroupMember> {
+public class GroupPartition extends AbstractDistributedGroup {
   private final int id;
-  private volatile List<GroupMember> members = new ArrayList<>(0);
+  private final Map<String, GroupMember> members = new ConcurrentHashMap<>();
+  private volatile List<GroupMember> sortedMembers = new ArrayList<>(0);
+  private final Listeners<GroupMember> joinListeners = new Listeners<>();
+  private final Listeners<GroupMember> leaveListeners = new Listeners<>();
   private final Listeners<GroupPartitionMigration> migrationListeners = new Listeners<>();
 
-  GroupPartition(int id) {
+  GroupPartition(MembershipGroup group, int id) {
+    super(group);
     this.id = id;
   }
 
@@ -54,16 +58,17 @@ public class GroupPartition implements Iterable<GroupMember> {
    * @return The group member for the given index.
    */
   public GroupMember member(int index) {
-    return members.get(index);
+    return sortedMembers.get(index);
   }
 
-  /**
-   * Returns a collection of members for the partition.
-   *
-   * @return A collection of members for the partition.
-   */
+  @Override
+  public GroupMember member(String memberId) {
+    return members.get(memberId);
+  }
+
+  @Override
   public List<GroupMember> members() {
-    return members;
+    return sortedMembers;
   }
 
   /**
@@ -76,11 +81,63 @@ public class GroupPartition implements Iterable<GroupMember> {
     return migrationListeners.add(callback);
   }
 
+  @Override
+  public Listener<GroupMember> onJoin(Consumer<GroupMember> listener) {
+    return joinListeners.add(listener);
+  }
+
+  @Override
+  public Listener<GroupMember> onLeave(Consumer<GroupMember> listener) {
+    return leaveListeners.add(listener);
+  }
+
+  @Override
+  protected void onJoin(GroupMember member) {
+  }
+
+  @Override
+  protected void onLeave(GroupMember member) {
+  }
+
   /**
    * Updates the partition with the given group members.
    */
   void handleRepartition(List<GroupMember> members) {
-    this.members = Assert.notNull(members, "members");
+    // Create a list of members that have joined the partition.
+    List<GroupMember> joins = new ArrayList<>();
+    for (GroupMember member : members) {
+      if (!this.members.containsKey(member.id())) {
+        joins.add(member);
+      }
+    }
+
+    // Create a list of members that have left the partition.
+    List<GroupMember> leaves = new ArrayList<>();
+    for (GroupMember member : this.members.values()) {
+      if (!members.contains(member)) {
+        leaves.add(member);
+      }
+    }
+
+    // Remove left members from the group and trigger listeners and children.
+    for (GroupMember leave : leaves) {
+      this.members.remove(leave.id());
+      this.sortedMembers.remove(leave);
+      leaveListeners.accept(leave);
+      for (AbstractDistributedGroup child : children) {
+        child.onLeave(leave);
+      }
+    }
+
+    // Add joined members to the group and trigger listeners and children.
+    for (GroupMember join : joins) {
+      this.members.put(join.id(), join);
+      this.sortedMembers.add(join);
+      joinListeners.accept(join);
+      for (AbstractDistributedGroup child : children) {
+        child.onJoin(join);
+      }
+    }
   }
 
   /**
@@ -88,11 +145,6 @@ public class GroupPartition implements Iterable<GroupMember> {
    */
   void handleMigration(GroupPartitionMigration migration) {
     migrationListeners.accept(migration);
-  }
-
-  @Override
-  public Iterator<GroupMember> iterator() {
-    return members.iterator();
   }
 
   @Override

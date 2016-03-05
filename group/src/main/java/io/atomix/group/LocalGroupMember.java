@@ -60,7 +60,7 @@ public class LocalGroupMember extends GroupMember {
   private final LocalGroupTaskQueue tasks;
   private final LocalGroupConnection connection;
 
-  LocalGroupMember(GroupMemberInfo info, DistributedGroup group) {
+  LocalGroupMember(GroupMemberInfo info, MembershipGroup group) {
     super(info, group);
     this.tasks = new LocalGroupTaskQueue(info.memberId(), group);
     this.connection = new LocalGroupConnection(info.memberId(), info.address(), group.connections);

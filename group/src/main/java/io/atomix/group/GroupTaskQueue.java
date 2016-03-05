@@ -29,11 +29,11 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class GroupTaskQueue {
   private final String memberId;
-  private final DistributedGroup group;
+  private final MembershipGroup group;
   private long taskId;
   private final Map<Long, CompletableFuture<Void>> taskFutures = new ConcurrentHashMap<>();
 
-  protected GroupTaskQueue(String memberId, DistributedGroup group) {
+  protected GroupTaskQueue(String memberId, MembershipGroup group) {
     this.memberId = memberId;
     this.group = Assert.notNull(group, "group");
   }

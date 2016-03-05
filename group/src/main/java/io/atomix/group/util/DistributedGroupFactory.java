@@ -18,6 +18,7 @@ package io.atomix.group.util;
 import io.atomix.catalyst.serializer.SerializableTypeResolver;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.group.DistributedGroup;
+import io.atomix.group.MembershipGroup;
 import io.atomix.group.state.GroupCommands;
 import io.atomix.group.state.GroupState;
 import io.atomix.resource.ResourceFactory;
@@ -44,7 +45,7 @@ public class DistributedGroupFactory implements ResourceFactory<DistributedGroup
 
   @Override
   public DistributedGroup createInstance(CopycatClient client, Properties options) {
-    return new DistributedGroup(client, options);
+    return new MembershipGroup(client, options);
   }
 
 }

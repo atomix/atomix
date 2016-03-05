@@ -47,8 +47,14 @@ public abstract class AbstractResource<T extends Resource<T>> implements Resourc
   private ReadConsistency readConsistency = ReadConsistency.ATOMIC;
 
   protected AbstractResource(CopycatClient client, Properties options) {
-    this.type = new ResourceType(getClass());
+    this(client, null, options);
+  }
+
+  protected AbstractResource(CopycatClient client, ResourceType type, Properties options) {
     this.client = Assert.notNull(client, "client");
+    if (type == null)
+      type = new ResourceType(getClass());
+    this.type = type;
 
     client.serializer().register(ResourceCommand.class, -50);
     client.serializer().register(ResourceQuery.class, -51);

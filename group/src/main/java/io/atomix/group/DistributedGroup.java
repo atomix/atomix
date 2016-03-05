@@ -21,23 +21,15 @@ import io.atomix.catalyst.transport.Server;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.ConfigurationException;
 import io.atomix.catalyst.util.Listener;
-import io.atomix.catalyst.util.Listeners;
 import io.atomix.catalyst.util.hash.Hasher;
-import io.atomix.catalyst.util.hash.Murmur2Hasher;
-import io.atomix.copycat.Command;
-import io.atomix.copycat.Query;
-import io.atomix.copycat.client.CopycatClient;
-import io.atomix.group.state.GroupCommands;
 import io.atomix.group.util.DistributedGroupFactory;
-import io.atomix.resource.AbstractResource;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceTypeInfo;
 
 import java.time.Duration;
-import java.util.*;
+import java.util.Collection;
+import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
 
 /**
@@ -71,23 +63,9 @@ import java.util.function.Consumer;
  * </pre>
  * <h2>Configuration</h2>
  * {@code DistributedGroup} instances can be configured to control {@link GroupMember#connection() communication}
- * between members of the group and to define the behavior of how groups are {@link #partitions() partitioned}.
- * To configure groups, a {@link DistributedGroup.Config} and/or {@link DistributedGroup.Options} must be provided
+ * between members of the group. To configure groups, a {@link DistributedGroup.Options} instance must be provided
  * when constructing the initial group instance.
  * <p>
- * The {@link DistributedGroup.Config} controls the cluster-wide resource configuration. Only the configuration
- * of the first instance of a group created <em>on any node in the cluster</em> will be applied to the group.
- * If a group instance is created with {@code 32} {@link DistributedGroup.Config#withPartitions(int) partitions}
- * and later an instance is created with {@code 16} partitions on another node, the latter instance will inherit
- * the {@code 32} partitions from the original instance.
- * <pre>
- *   {@code
- *   DistributedGroup.Config config = new DistributedGroup.Config()
- *     .withPartitioner(RoundRobinPartitioner.class)
- *     .withPartitions(32);
- *   DistributedGroup group = atomix.getGroup("partitioned-group", config).get();
- *   }
- * </pre>
  * The {@link DistributedGroup.Options} define the configuration of the local {@code DistributedGroup} instance
  * only. The group options will <em>not</em> be replicated to or applied on any other node in the cluster. However,
  * group instances accessed via the {@code Atomix} API are static, so the options provided on the first instantiation
@@ -360,42 +338,62 @@ import java.util.function.Consumer;
  *   });
  *   }
  * </pre>
+ * <h2>Consistent hashing</h2>
  * <h2>Partitioning</h2>
  * Membership groups also provide features to aid in supporting replication via consistent hashing and partitioning.
  * When a group is created, users can configure the group to support a particular number of partitions and replication
  * factor. Partitioning can aid in hashing resources to specific members of the group, and the replication factor builds
  * on partitions to aid in identifying multiple members per partition.
  * <p>
- * By default, groups are created with a single partition and replication factor of {@code 1}. To configure the group
- * for more partitions, provide a {@link DistributedGroup.Config} when creating the resource.
- * <pre>
- *   {@code
- *   DistributedGroup.Config config = DistributedGroup.config()
- *     .withPartitions(32)
- *     .withVirtualNodes(200)
- *     .withReplicationFactor(3);
- *   DistributedGroup group = atomix.getGroup("foo", config);
- *   }
- * </pre>
- * Partitions are managed within a consistent hash ring. For each member of the cluster, {@code 100} virtual nodes
- * are created on the ring by default. This helps spread reduce hotspotting within the ring. For each partition, the
- * partition is mapped to a set of members of the group by hashing the partition to a point on the ring. Once hashed
- * to a point on the ring, the {@code n} members following that point are the replicas for that partition.
+ * Groups can be partitioned to any number of partitions and using custom {@link GroupPartitioner}s. Partitions can be
+ * nested within other partitions as well. A set of partitions of a group is known as a {@link PartitionGroup}. Each
+ * partition group consists of several {@link GroupPartition}s. Each partition in a group represents a subset of the
+ * members in the parent {@code PartitionGroup}.
  * <p>
- * Partition features are accessed via the group's {@link GroupPartitions} instance, which can be fetched via
- * {@link #partitions()}.
+ * To create a partition group, use the {@link #partition(int)} method, defining the number of partitions to create
+ * for the group's members.
  * <pre>
  *   {@code
- *   group.partitions().partition(1).members().forEach(m -> ...);
+ *   DistributedGroup group = atomix.getGroup("partition-group", config);
+ *   PartitionGroup partitions = group.partition(3); // Partition the group into three partitions
  *   }
  * </pre>
- * Groups also aid in hashing objects to specific partitions and thus replicas within the group. Users can provide a
- * {@link GroupPartitioner} class in the {@link DistributedGroup.Options} when a group instance is first created on a node.
- * The partitioner will be used to determine the partition to which an object maps within the current set of partitions
- * when {@link GroupPartitions#partition(Object)} is called.
+ * Atomix guarantees that the same group partitioned using the same configuration (number of partitions and virtual
+ * nodes) will result in the same set of {@code PartitionGroup} members. This means any set of nodes can partition
+ * the group in the same way and acheive a consistent partition group. This guarantee is ensured by mapping partitions
+ * to a consistent hash ring internally. Virtual nodes within the hash ring help prevent hotspotting within the ring.
+ * Once a partition is hashed to a point on the ring, the {@code n} members following that point are replicas for that
+ * partition.
+ * <p>
+ * By default, partitions are created with a single member in each partition. However, many use cases require that a partition
+ * consist of several members to support common patterns like primary-backup replication. Users can define the number of
+ * members to associate with each partition in a {@code PartitionGroup} by providing a {@code replicationFactor} when creating
+ * the group.
  * <pre>
  *   {@code
- *   group.partitions().partition("foo").members().forEach(m -> m.send("foo"));
+ *   PartitionGroup partition = group.partition(3, 2); // Partition the group with 3 partitions and 2 replicas per partition
+ *   partition.partitions().forEach(partition -> {
+ *     partition.members().forEach(member -> {
+ *       member.connection().send("hello", "world");
+ *     });
+ *   });
+ *   }
+ * </pre>
+ * Partition instances for a {@code PartitionGroup} can be accessed either by index or by mapping a value to a partition.
+ * Partitions are zero-based, so partition {@code 0} represents the first partition in the group.
+ * <pre>
+ *   {@code
+ *   GroupPartitions partitions = group.partition(3).partitions();
+ *   }
+ * </pre>
+ * Values can be mapped directly to {@link GroupPartition}s via the provided {@link GroupPartitioner}. When the
+ * {@link GroupPartitions#partition(Object)} method is called, the configured partitioner is queried to map the provided
+ * value to a partition in the group. Custom {@link GroupPartitioner}s can be provided when constructing a partition group.
+ * By default, the {@link HashPartitioner} is used if no partitioner is provided.
+ * <pre>
+ *   {@code
+ *   GroupPartitions partitions = group.partition(3, new HashPartitioner()).partitions();
+ *   partitions.partition("foo").members().forEach(m -> m.connection().send("foo"));
  *   }
  * </pre>
  * <h3>Partition migration</h3>
@@ -413,13 +411,16 @@ import java.util.function.Consumer;
  * indicating the source and destination of the partition migration.
  * <pre>
  *   {@code
- *   group.partitions().partition(1).onMigration(migration -> {
+ *   GroupPartitions partitions = group.partition(3).partitions();
+ *
+ *   // Migrate source data to the migration target when a member in partition 1 is migrated
+ *   partitions.partition(1).onMigration(migration -> {
  *     // Send a message to the source replica and tell it to migrate its state to the target replica
  *     migration.source().connection().send("migrate", migration.target().id());
  *   });
  *   }
  * </pre>
- * The {@link GroupPartitions} also provides a similar listener interface for listening for migrations of
+ * The {@link PartitionGroup} also provides a similar listener interface for listening for migrations of
  * <em>all</em> partitions.
  * <pre>
  *   {@code
@@ -430,10 +431,10 @@ import java.util.function.Consumer;
  *   }
  * </pre>
  * In some cases, a partition can be migrated from a non-existent replica to an existing member or vice-versa.
- * For instance, if the {@link DistributedGroup.Config#withReplicationFactor(int) replication factor} is {@code 3}
- * and there are only two members in the group, when a third member is added all partitions will be migrated from
- * a {@code null} third member to the new concrete third member. Group partitioners provide the maximum number
- * of replicas possible given the current group configuration.
+ * For instance, if the {@code replicationFactor} is {@code 3} and there are only two members in the group, when
+ * a third member is added all partitions will be migrated from a {@code null} third member to the new concrete
+ * third member. Group partitioners provide the maximum number of replicas possible given the current group
+ * configuration.
  * <h3>Serialization</h3>
  * Users are responsible for ensuring the serializability of tasks, messages, and properties set on the group
  * and members of the group. Serialization is controlled by the group's {@link io.atomix.catalyst.serializer.Serializer}
@@ -509,12 +510,12 @@ import java.util.function.Consumer;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 @ResourceTypeInfo(id=-20, factory=DistributedGroupFactory.class)
-public class DistributedGroup extends AbstractResource<DistributedGroup> {
+public interface DistributedGroup extends Resource<DistributedGroup> {
 
   /**
    * Group configuration.
    */
-  public static class Config extends Resource.Config {
+  class Config extends Resource.Config {
     public Config() {
     }
 
@@ -533,67 +534,12 @@ public class DistributedGroup extends AbstractResource<DistributedGroup> {
       setProperty("expiration", String.valueOf(Assert.notNull(expiration, "expiration").toMillis()));
       return this;
     }
-
-    /**
-     * Sets the hash function with which to hash keys.
-     *
-     * @param hasherClass The hasher function class.
-     * @return The group configuration.
-     */
-    public Config withHasher(Class<? extends Hasher> hasherClass) {
-      setProperty("hasher", hasherClass.getName());
-      return this;
-    }
-
-    /**
-     * Sets the group partitioner class.
-     *
-     * @param partitionerClass The group partitioner class.
-     * @return The group configuration.
-     */
-    public Config withPartitioner(Class<? extends GroupPartitioner> partitionerClass) {
-      setProperty("partitioner", partitionerClass.getName());
-      return this;
-    }
-
-    /**
-     * Sets the number of partitions.
-     *
-     * @param partitions The number of partitions.
-     * @return The group configuration.
-     */
-    public Config withPartitions(int partitions) {
-      setProperty("partitions", String.valueOf(partitions));
-      return this;
-    }
-
-    /**
-     * Sets the number of virtual nodes per group member in the consistent hash ring.
-     *
-     * @param virtualNodes The number of virtual members per group member.
-     * @return The group configuration.
-     */
-    public Config withVirtualNodes(int virtualNodes) {
-      setProperty("virtualNodes", String.valueOf(virtualNodes));
-      return this;
-    }
-
-    /**
-     * Sets the group replication factor.
-     *
-     * @param replicationFactor The group replication factor.
-     * @return The group configuration.
-     */
-    public Config withReplicationFactor(int replicationFactor) {
-      setProperty("replicationFactor", String.valueOf(replicationFactor));
-      return this;
-    }
   }
 
   /**
    * Group options.
    */
-  public static class Options extends Resource.Options {
+  class Options extends Resource.Options {
     private static final String ADDRESS = "address";
 
     public Options() {
@@ -636,66 +582,100 @@ public class DistributedGroup extends AbstractResource<DistributedGroup> {
     }
   }
 
-  private final Listeners<GroupMember> joinListeners = new Listeners<>();
-  private final Listeners<GroupMember> leaveListeners = new Listeners<>();
-  private final Set<String> joining = new CopyOnWriteArraySet<>();
-  private final Address address;
-  private final Server server;
-  final GroupConnectionManager connections;
-  private final GroupProperties properties = new GroupProperties(null, this);
-  private final GroupElection election = new GroupElection(this);
-  private final GroupTaskQueue tasks = new GroupTaskQueue(null, this);
-  private GroupHashRing hashRing;
-  private final GroupPartitions partitions = new GroupPartitions();
-  final Map<String, GroupMember> members = new ConcurrentHashMap<>();
-
-  public DistributedGroup(CopycatClient client, Properties options) {
-    super(client, options);
-    this.address = new Options(options).getAddress();
-    this.server = client.transport().server();
-    this.connections = new GroupConnectionManager(client.transport().client(), client.context());
-  }
+  @Override
+  Config config();
 
   @Override
-  public Options options() {
-    return new Options(super.options());
-  }
+  Options options();
 
   /**
    * Returns the group properties.
    *
    * @return The group properties.
    */
-  public GroupProperties properties() {
-    return properties;
-  }
+  GroupProperties properties();
 
   /**
    * Returns the group election.
    *
    * @return The group election.
    */
-  public GroupElection election() {
-    return election;
-  }
+  GroupElection election();
 
   /**
    * Returns the group task queue.
    *
    * @return The group task queue.
    */
-  public GroupTaskQueue tasks() {
-    return tasks;
-  }
+  GroupTaskQueue tasks();
 
   /**
-   * Returns the group partitions.
+   * Returns a new consistent hash group.
    *
-   * @return The group partitions.
+   * @return A new consistent hash group.
    */
-  public GroupPartitions partitions() {
-    return partitions;
-  }
+  ConsistentHashGroup hash();
+
+  /**
+   * Returns a new consistent hash group.
+   *
+   * @param hasher The hasher with which to hash values in the group.
+   * @return A new consistent hash group.
+   */
+  ConsistentHashGroup hash(Hasher hasher);
+
+  /**
+   * Returns a new consistent hash group.
+   *
+   * @param virtualNodes The number of virtual nodes per member of the group.
+   * @return A new consistent hash group.
+   */
+  ConsistentHashGroup hash(int virtualNodes);
+
+  /**
+   * Returns a new consistent hash group.
+   *
+   * @param hasher The hasher with which to hash values in the group.
+   * @param virtualNodes The number of virtual nodes per member of the group.
+   * @return A new consistent hash group.
+   */
+  ConsistentHashGroup hash(Hasher hasher, int virtualNodes);
+
+  /**
+   * Returns a new partition group.
+   *
+   * @param partitions The number of partitions in the group.
+   * @return A new partition group.
+   */
+  PartitionGroup partition(int partitions);
+
+  /**
+   * Returns a new partition group.
+   *
+   * @param partitions The number of partitions in the group.
+   * @param replicationFactor The replication factor per partition.
+   * @return A new partition group.
+   */
+  PartitionGroup partition(int partitions, int replicationFactor);
+
+  /**
+   * Returns a new partition group.
+   *
+   * @param partitions The number of partitions in the group.
+   * @param partitioner The group partitioner.
+   * @return A new partition group.
+   */
+  PartitionGroup partition(int partitions, GroupPartitioner partitioner);
+
+  /**
+   * Returns a new partition group.
+   *
+   * @param partitions The number of partitions in the group.
+   * @param replicationFactor The replication factor per partition.
+   * @param partitioner The group partitioner.
+   * @return A new partition group.
+   */
+  PartitionGroup partition(int partitions, int replicationFactor, GroupPartitioner partitioner);
 
   /**
    * Gets a group member by ID.
@@ -706,9 +686,7 @@ public class DistributedGroup extends AbstractResource<DistributedGroup> {
    * @param memberId The member ID for which to return a {@link GroupMember}.
    * @return The member with the given {@code memberId} or {@code null} if it is not a known member of the group.
    */
-  public GroupMember member(String memberId) {
-    return members.get(memberId);
-  }
+  GroupMember member(String memberId);
 
   /**
    * Gets the collection of all members in the group.
@@ -738,9 +716,7 @@ public class DistributedGroup extends AbstractResource<DistributedGroup> {
    *
    * @return The collection of all members in the group.
    */
-  public Collection<GroupMember> members() {
-    return members.values();
-  }
+  Collection<GroupMember> members();
 
   /**
    * Joins the instance to the membership group.
@@ -768,9 +744,7 @@ public class DistributedGroup extends AbstractResource<DistributedGroup> {
    *
    * @return A completable future to be completed once the member has joined.
    */
-  public CompletableFuture<LocalGroupMember> join() {
-    return join(UUID.randomUUID().toString(), false);
-  }
+  CompletableFuture<LocalGroupMember> join();
 
   /**
    * Joins the instance to the membership group with a user-provided member ID.
@@ -799,32 +773,7 @@ public class DistributedGroup extends AbstractResource<DistributedGroup> {
    * @param memberId The unique member ID to assign to the member.
    * @return A completable future to be completed once the member has joined.
    */
-  public CompletableFuture<LocalGroupMember> join(String memberId) {
-    return join(memberId, true);
-  }
-
-  /**
-   * Joins the group.
-   *
-   * @param memberId The member ID with which to join the group.
-   * @param persistent Indicates whether the member ID is persistent.
-   * @return A completable future to be completed once the member has joined the group.
-   */
-  private CompletableFuture<LocalGroupMember> join(String memberId, boolean persistent) {
-    joining.add(memberId);
-    return submit(new GroupCommands.Join(memberId, address, persistent)).whenComplete((result, error) -> {
-      if (error != null) {
-        joining.remove(memberId);
-      }
-    }).thenApply(info -> {
-      LocalGroupMember member = (LocalGroupMember) members.get(info.memberId());
-      if (member == null) {
-        member = new LocalGroupMember(info, this);
-        members.put(info.memberId(), member);
-      }
-      return member;
-    });
-  }
+  CompletableFuture<LocalGroupMember> join(String memberId);
 
   /**
    * Adds a listener for members joining the group.
@@ -838,9 +787,7 @@ public class DistributedGroup extends AbstractResource<DistributedGroup> {
    * @param listener The join listener.
    * @return The listener context.
    */
-  public Listener<GroupMember> onJoin(Consumer<GroupMember> listener) {
-    return joinListeners.add(listener);
-  }
+  Listener<GroupMember> onJoin(Consumer<GroupMember> listener);
 
   /**
    * Adds a listener for members leaving the group.
@@ -856,296 +803,6 @@ public class DistributedGroup extends AbstractResource<DistributedGroup> {
    * @param listener The leave listener.
    * @return The listener context.
    */
-  public Listener<GroupMember> onLeave(Consumer<GroupMember> listener) {
-    return leaveListeners.add(listener);
-  }
-
-  @Override
-  public CompletableFuture<DistributedGroup> open() {
-    return super.open().thenApply(result -> {
-      // Configure the hasher.
-      Hasher hasher;
-      String hasherClass = config.getProperty("hasher", Murmur2Hasher.class.getName());
-      try {
-        hasher = (Hasher) Thread.currentThread().getContextClassLoader().loadClass(hasherClass).newInstance();
-      } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-        throw new RuntimeException(e);
-      }
-
-      // Set up the hash ring.
-      this.hashRing = new GroupHashRing(hasher, Integer.valueOf(config.getProperty("virtualNodes", "100")), Integer.valueOf(config.getProperty("replicationFactor", "1")));
-
-      // Configure the partitioner.
-      String partitionerClass = config.getProperty("partitioner", HashPartitioner.class.getName());
-      try {
-        this.partitions.partitioner = (GroupPartitioner) Thread.currentThread().getContextClassLoader().loadClass(partitionerClass).newInstance();
-      } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-        throw new RuntimeException(e);
-      }
-
-      // Set up the empty partitions.
-      int partitions = Integer.valueOf(config.getProperty("partitions", "1"));
-      for (int i = 0; i < partitions; i++) {
-        this.partitions.partitions.add(new GroupPartition(i));
-      }
-
-      client.onEvent("join", this::onJoinEvent);
-      client.onEvent("leave", this::onLeaveEvent);
-      client.onEvent("term", election::onTermEvent);
-      client.onEvent("elect", election::onElectEvent);
-      client.onEvent("resign", election::onResignEvent);
-      client.onEvent("task", this::onTaskEvent);
-      client.onEvent("ack", this::onAckEvent);
-      client.onEvent("fail", this::onFailEvent);
-
-      return result;
-    }).thenCompose(v -> listen())
-      .thenCompose(v -> sync())
-      .thenApply(v -> this);
-  }
-
-  /**
-   * Starts the server.
-   */
-  private CompletableFuture<Void> listen() {
-    if (address != null) {
-      return server.listen(address, c -> {
-        c.handler(GroupMessage.class, this::onMessage);
-      });
-    }
-    return CompletableFuture.completedFuture(null);
-  }
-
-  /**
-   * Handles a group message.
-   */
-  private CompletableFuture<Object> onMessage(GroupMessage message) {
-    CompletableFuture<Object> future = new CompletableFuture<>();
-    GroupMember member = members.get(message.member());
-    if (member != null) {
-      if (member instanceof LocalGroupMember) {
-        ((LocalGroupMember) member).connection().handleMessage(message.setFuture(future));
-      } else {
-        future.completeExceptionally(new IllegalStateException("not a local member"));
-      }
-    } else {
-      future.completeExceptionally(new IllegalStateException("unknown member"));
-    }
-    return future;
-  }
-
-  /**
-   * Synchronizes the membership group.
-   */
-  private CompletableFuture<Void> sync() {
-    return submit(new GroupCommands.Listen()).thenAccept(members -> {
-      for (GroupMemberInfo info : members) {
-        GroupMember member = this.members.get(info.memberId());
-        if (member == null) {
-          member = new GroupMember(info, this);
-          this.members.put(member.id(), member);
-          hashRing.addMember(member);
-        }
-      }
-
-      // Apply members to partitions.
-      for (int i = 0; i < this.partitions.partitions.size(); i++) {
-        this.partitions.partitions.get(i).handleRepartition(hashRing.members(intToByteArray(i)));
-      }
-    });
-  }
-
-  /**
-   * Converts an integer to a byte array.
-   */
-  private byte[] intToByteArray(int value) {
-    return new byte[]{(byte) (value >> 24), (byte) (value >> 16), (byte) (value >> 8), (byte) value};
-  }
-
-  /**
-   * Adds a member to the partitions.
-   */
-  private void addMember(GroupMember member) {
-    List<List<GroupMember>> oldPartitions = new ArrayList<>();
-    for (int i = 0; i < partitions.partitions.size(); i++) {
-      oldPartitions.add(partitions.partitions.get(i).members());
-    }
-
-    hashRing.addMember(member);
-
-    List<List<GroupMember>> newPartitions = new ArrayList<>();
-    for (int i = 0; i < partitions.partitions.size(); i++) {
-      newPartitions.add(hashRing.members(intToByteArray(i)));
-    }
-
-    migratePartitions(oldPartitions, newPartitions);
-  }
-
-  /**
-   * Removes a member from the partitions.
-   */
-  private void removeMember(GroupMember member) {
-    List<List<GroupMember>> oldPartitions = new ArrayList<>();
-    for (int i = 0; i < partitions.partitions.size(); i++) {
-      oldPartitions.add(partitions.partitions.get(i).members());
-    }
-
-    hashRing.removeMember(member);
-
-    List<List<GroupMember>> newPartitions = new ArrayList<>();
-    for (int i = 0; i < partitions.partitions.size(); i++) {
-      newPartitions.add(hashRing.members(intToByteArray(i)));
-    }
-
-    migratePartitions(oldPartitions, newPartitions);
-  }
-
-  /**
-   * Migrates partitions from the old partitions to the new partitions.
-   */
-  private void migratePartitions(List<List<GroupMember>> oldPartitions, List<List<GroupMember>> newPartitions) {
-    // Iterate through each of the partitions in the group.
-    for (int i = 0; i < partitions.partitions.size(); i++) {
-      // Get a list of the old and new partition members.
-      List<GroupMember> oldPartitionMembers = oldPartitions.get(i);
-      List<GroupMember> newPartitionMembers = newPartitions.get(i);
-
-      List<GroupPartitionMigration> migrations = new ArrayList<>();
-      Set<GroupMember> migratedMembers = new HashSet<>();
-      if (!oldPartitionMembers.equals(newPartitionMembers)) {
-
-        // Determine the members for which the partition changed.
-        for (int j = 0; j < oldPartitionMembers.size(); j++) {
-          if (!migratedMembers.contains(oldPartitionMembers.get(j))) {
-            for (int k = 0; k < newPartitionMembers.size(); k++) {
-              if (!migratedMembers.contains(newPartitionMembers.get(k))) {
-                migrations.add(new GroupPartitionMigration(oldPartitionMembers.get(j), newPartitionMembers.get(k), partitions.partitions.get(i)));
-                migratedMembers.add(oldPartitionMembers.get(j));
-                migratedMembers.add(newPartitionMembers.get(k));
-              }
-            }
-          }
-        }
-
-        // Determine the members present in old partition members but not in new.
-        for (int j = 0; j < oldPartitionMembers.size(); j++) {
-          if (!migratedMembers.contains(oldPartitionMembers.get(j)) && !migratedMembers.contains(oldPartitionMembers.get(j))) {
-            migrations.add(new GroupPartitionMigration(oldPartitionMembers.get(j), null, partitions.partitions.get(i)));
-            migratedMembers.add(oldPartitionMembers.get(j));
-            oldPartitionMembers.remove(j);
-          }
-        }
-
-        // Determine the members present in new partition members but not old.
-        for (int j = 0; j < newPartitionMembers.size(); j++) {
-          if (!migratedMembers.contains(newPartitionMembers.get(j)) && !migratedMembers.contains(newPartitionMembers.get(j))) {
-            migratedMembers.add(newPartitionMembers.get(j));
-            migrations.add(new GroupPartitionMigration(null, newPartitionMembers.get(j), partitions.partitions.get(i)));
-          }
-        }
-      }
-
-      // Update the partition members and trigger migration callbacks.
-      partitions.partitions.get(i).handleRepartition(newPartitions.get(i));
-      for (GroupPartitionMigration migration : migrations) {
-        partitions.handleMigration(migration);
-      }
-    }
-  }
-
-  /**
-   * Handles a join event received from the cluster.
-   */
-  private void onJoinEvent(GroupMemberInfo info) {
-    GroupMember member;
-    if (joining.contains(info.memberId())) {
-      member = new LocalGroupMember(info, this);
-      if (members.containsKey(info.memberId())) {
-        hashRing.removeMember(member);
-      }
-      members.put(info.memberId(), member);
-      addMember(member);
-    } else {
-      member = members.get(info.memberId());
-      if (member == null) {
-        member = new GroupMember(info, this);
-        members.put(info.memberId(), member);
-        addMember(member);
-      }
-    }
-
-    for (Listener<GroupMember> listener : joinListeners) {
-      listener.accept(member);
-    }
-  }
-
-  /**
-   * Handles a leave event received from the cluster.
-   */
-  private void onLeaveEvent(String memberId) {
-    GroupMember member = members.remove(memberId);
-    if (member != null) {
-      removeMember(member);
-      for (Listener<GroupMember> listener : leaveListeners) {
-        listener.accept(member);
-      }
-    }
-  }
-
-  /**
-   * Handles a task event received from the cluster.
-   */
-  private void onTaskEvent(GroupTask task) {
-    GroupMember localMember = members.get(task.member());
-    if (localMember != null && localMember instanceof LocalGroupMember) {
-      CompletableFuture<Boolean> future = new CompletableFuture<>();
-      future.whenComplete((succeeded, error) -> {
-        if (error == null && succeeded) {
-          submit(new GroupCommands.Ack(task.id(), task.member(), true));
-        } else {
-          submit(new GroupCommands.Ack(task.id(), task.member(), false));
-        }
-      });
-      ((LocalGroupMember) localMember).tasks().handleTask(task.setFuture(future));
-    }
-  }
-
-  /**
-   * Handles an ack event received from the cluster.
-   */
-  private void onAckEvent(GroupCommands.Submit submit) {
-    if (submit.member() != null) {
-      GroupMember member = members.get(submit.member());
-      if (member != null) {
-        member.tasks().handleAck(submit.id());
-      }
-    } else {
-      tasks.handleAck(submit.id());
-    }
-  }
-
-  /**
-   * Handles a fail event received from the cluster.
-   */
-  private void onFailEvent(GroupCommands.Submit submit) {
-    if (submit.member() != null) {
-      GroupMember member = members.get(submit.member());
-      if (member != null) {
-        member.tasks().handleFail(submit.id());
-      }
-    } else {
-      tasks.handleFail(submit.id());
-    }
-  }
-
-  @Override
-  protected <T> CompletableFuture<T> submit(Query<T> query) {
-    return super.submit(query);
-  }
-
-  @Override
-  protected <T> CompletableFuture<T> submit(Command<T> command) {
-    return super.submit(command);
-  }
+  Listener<GroupMember> onLeave(Consumer<GroupMember> listener);
 
 }

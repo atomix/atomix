@@ -15,13 +15,10 @@
  */
 package io.atomix.group;
 
-import io.atomix.catalyst.util.Listener;
-import io.atomix.catalyst.util.Listeners;
+import io.atomix.catalyst.util.Assert;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.function.Consumer;
 
 /**
  * Group partitions.
@@ -29,11 +26,12 @@ import java.util.function.Consumer;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class GroupPartitions implements Iterable<GroupPartition> {
-  final List<GroupPartition> partitions = new ArrayList<>();
-  GroupPartitioner partitioner = (value, partitions) -> -1;
-  private final Listeners<GroupPartitionMigration> migrationListeners = new Listeners<>();
+  final List<GroupPartition> partitions;
+  private final GroupPartitioner partitioner;
 
-  GroupPartitions() {
+  GroupPartitions(List<GroupPartition> partitions, GroupPartitioner partitioner) {
+    this.partitions = Assert.notNull(partitions, "partitions");
+    this.partitioner = Assert.notNull(partitioner, "partitioner");
   }
 
   /**
@@ -59,30 +57,12 @@ public class GroupPartitions implements Iterable<GroupPartition> {
   }
 
   /**
-   * Returns an ordered list of partitions in the group.
+   * Returns the partitions size.
    *
-   * @return A list of partitions in the group. The position of each partition in the returned {@link List} is the partition's unique ID.
+   * @return The partitions size.
    */
-  public List<GroupPartition> partitions() {
-    return partitions;
-  }
-
-  /**
-   * Registers a partition migration listener.
-   *
-   * @param callback The callback to be called when a partition is migrated.
-   * @return The partition migration listener.
-   */
-  public Listener<GroupPartitionMigration> onMigration(Consumer<GroupPartitionMigration> callback) {
-    return migrationListeners.add(callback);
-  }
-
-  /**
-   * Handles a partition migration.
-   */
-  void handleMigration(GroupPartitionMigration migration) {
-    migrationListeners.accept(migration);
-    migration.partition().handleMigration(migration);
+  public int size() {
+    return partitions.size();
   }
 
   @Override

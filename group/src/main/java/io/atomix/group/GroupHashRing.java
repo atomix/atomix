@@ -38,6 +38,15 @@ final class GroupHashRing {
   }
 
   /**
+   * Returns the hash ring members.
+   *
+   * @return The hash ring members.
+   */
+  Collection<GroupMember> members() {
+    return ring.values();
+  }
+
+  /**
    * Adds a member to the hash ring.
    *
    * @param member The member to add.

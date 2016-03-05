@@ -27,12 +27,12 @@ import io.atomix.catalyst.util.Assert;
 public class GroupMember {
   protected final String memberId;
   protected final Address address;
-  protected final DistributedGroup group;
+  protected final MembershipGroup group;
   private final GroupProperties properties;
   private final GroupTaskQueue tasks;
   private final GroupConnection connection;
 
-  GroupMember(GroupMemberInfo info, DistributedGroup group) {
+  GroupMember(GroupMemberInfo info, MembershipGroup group) {
     this.memberId = info.memberId();
     this.address = info.address();
     this.group = Assert.notNull(group, "group");
