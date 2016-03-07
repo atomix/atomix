@@ -163,32 +163,31 @@ public class PartitionGroup extends AbstractDistributedGroup {
       if (!oldPartitionMembers.equals(newPartitionMembers)) {
 
         // Determine the members for which the partition changed.
-        for (int j = 0; j < oldPartitionMembers.size(); j++) {
-          if (!migratedMembers.contains(oldPartitionMembers.get(j))) {
-            for (int k = 0; k < newPartitionMembers.size(); k++) {
-              if (!migratedMembers.contains(newPartitionMembers.get(k))) {
-                migrations.add(new GroupPartitionMigration(oldPartitionMembers.get(j), newPartitionMembers.get(k), partitions.partition(i)));
-                migratedMembers.add(oldPartitionMembers.get(j));
-                migratedMembers.add(newPartitionMembers.get(k));
+        for (GroupMember oldMember : oldPartitionMembers) {
+          if (!migratedMembers.contains(oldMember)) {
+            for (GroupMember newMember : newPartitionMembers) {
+              if (!migratedMembers.contains(newMember)) {
+                migrations.add(new GroupPartitionMigration(oldMember, newMember, partitions.partition(i)));
+                migratedMembers.add(oldMember);
+                migratedMembers.add(newMember);
               }
             }
           }
         }
 
         // Determine the members present in old partition members but not in new.
-        for (int j = 0; j < oldPartitionMembers.size(); j++) {
-          if (!migratedMembers.contains(oldPartitionMembers.get(j)) && !migratedMembers.contains(oldPartitionMembers.get(j))) {
-            migrations.add(new GroupPartitionMigration(oldPartitionMembers.get(j), null, partitions.partition(i)));
-            migratedMembers.add(oldPartitionMembers.get(j));
-            oldPartitionMembers.remove(j);
+        for (GroupMember oldMember : oldPartitionMembers) {
+          if (!migratedMembers.contains(oldMember)) {
+            migrations.add(new GroupPartitionMigration(oldMember, null, partitions.partition(i)));
+            migratedMembers.add(oldMember);
           }
         }
 
         // Determine the members present in new partition members but not old.
-        for (int j = 0; j < newPartitionMembers.size(); j++) {
-          if (!migratedMembers.contains(newPartitionMembers.get(j)) && !migratedMembers.contains(newPartitionMembers.get(j))) {
-            migratedMembers.add(newPartitionMembers.get(j));
-            migrations.add(new GroupPartitionMigration(null, newPartitionMembers.get(j), partitions.partition(i)));
+        for (GroupMember newMember : newPartitionMembers) {
+          if (!migratedMembers.contains(newMember) && !migratedMembers.contains(newMember)) {
+            migratedMembers.add(newMember);
+            migrations.add(new GroupPartitionMigration(null, newMember, partitions.partition(i)));
           }
         }
       }
