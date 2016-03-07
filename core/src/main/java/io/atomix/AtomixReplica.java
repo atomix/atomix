@@ -22,7 +22,6 @@ import io.atomix.catalyst.util.ConfigurationException;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.catalyst.util.PropertiesReader;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
-import io.atomix.concurrent.DistributedLock;
 import io.atomix.copycat.Command;
 import io.atomix.copycat.Query;
 import io.atomix.copycat.client.*;
@@ -357,8 +356,6 @@ public final class AtomixReplica extends Atomix {
 
   private final ResourceServer server;
   private final ClusterBalancer balancer;
-  private DistributedLock lock;
-  private boolean locking;
 
   public AtomixReplica(Properties properties) {
     this(builder(properties));
@@ -398,11 +395,8 @@ public final class AtomixReplica extends Atomix {
    * Balances the cluster.
    */
   private void balance() {
-    if (lock != null && !locking && server.server().cluster().member().equals(server.server().cluster().leader())) {
-      locking = true;
-      lock.lock()
-        .thenCompose(v -> balancer.balance(server.server().cluster()))
-        .whenComplete((r1, e1) -> lock.unlock().whenComplete((r2, e2) -> locking = false));
+    if (server.server().cluster().member().equals(server.server().cluster().leader())) {
+      balancer.balance(server.server().cluster());
     }
   }
 
@@ -415,11 +409,7 @@ public final class AtomixReplica extends Atomix {
     return server.start()
       .thenRun(this::registerListeners)
       .thenCompose(v -> client.connect())
-      .thenCompose(v -> client.getResource("", DistributedLock.class))
-      .thenApply(lock -> {
-        this.lock = lock;
-        return this;
-      });
+      .thenApply(v -> this);
   }
 
   /**
@@ -428,24 +418,9 @@ public final class AtomixReplica extends Atomix {
    * @return A completable future to be completed once the replica has been stopped.
    */
   public CompletableFuture<Void> stop() {
-    CompletableFuture<Void> future = new CompletableFuture<>();
-    lock.lock()
-      .thenCompose(v -> balancer.replace(server.server().cluster()))
-      .whenComplete((r1, e1) -> {
-        balancer.close();
-        lock.unlock().whenComplete((r2, e2) -> {
-          client.close().whenComplete((r3, e3) -> {
-            server.stop().whenComplete((r4, e4) -> {
-              if (e4 == null) {
-                future.complete(null);
-              } else {
-                future.completeExceptionally(e4);
-              }
-            });
-          });
-        });
-      });
-    return future;
+    return balancer.replace(server.server().cluster())
+      .thenCompose(v -> client.close())
+      .thenCompose(v -> server.stop());
   }
 
   @Override
