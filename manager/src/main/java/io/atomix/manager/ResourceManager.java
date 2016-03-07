@@ -16,7 +16,6 @@
 package io.atomix.manager;
 
 import io.atomix.catalyst.serializer.Serializer;
-import io.atomix.catalyst.util.Managed;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceType;
@@ -30,7 +29,7 @@ import java.util.concurrent.CompletableFuture;
  * @param <T> resource type
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ResourceManager<T extends ResourceManager<T>> extends Managed<T> {
+public interface ResourceManager<T extends ResourceManager<T>> {
 
   /**
    * Returns the Atomix thread context.

@@ -181,7 +181,7 @@ public final class InstanceClient implements CopycatClient {
   }
 
   @Override
-  public synchronized CompletableFuture<CopycatClient> open() {
+  public synchronized CompletableFuture<CopycatClient> connect() {
     if (state != State.CLOSED)
       return Futures.exceptionalFuture(new IllegalStateException("client already open"));
 
@@ -203,11 +203,6 @@ public final class InstanceClient implements CopycatClient {
     openFuture = null;
     recoverFuture = null;
     return this;
-  }
-
-  @Override
-  public boolean isOpen() {
-    return client.isOpen();
   }
 
   @Override
@@ -243,11 +238,6 @@ public final class InstanceClient implements CopycatClient {
         });
     }
     return closeFuture;
-  }
-
-  @Override
-  public boolean isClosed() {
-    return client.isClosed();
   }
 
   @Override

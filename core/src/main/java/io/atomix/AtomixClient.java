@@ -20,6 +20,7 @@ import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.PropertiesReader;
+import io.atomix.copycat.client.CopycatClient;
 import io.atomix.manager.ResourceClient;
 import io.atomix.manager.ResourceServer;
 import io.atomix.resource.Resource;
@@ -29,6 +30,7 @@ import io.atomix.util.ClientProperties;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Properties;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 /**
@@ -153,6 +155,35 @@ public class AtomixClient extends Atomix {
    */
   public AtomixClient(ResourceClient client) {
     super(client);
+  }
+
+  /**
+   * Connects the client to the cluster.
+   *
+   * @return A completable future to be completed once the client has been connected.
+   */
+  public CompletableFuture<Atomix> connect() {
+    return client.connect().thenApply(v -> this);
+  }
+
+  @Override
+  public CompletableFuture<Atomix> open() {
+    return connect();
+  }
+
+  @Override
+  public boolean isOpen() {
+    return client.state() != CopycatClient.State.CLOSED;
+  }
+
+  @Override
+  public CompletableFuture<Void> close() {
+    return client.close();
+  }
+
+  @Override
+  public boolean isClosed() {
+    return client.state() == CopycatClient.State.CLOSED;
   }
 
   /**
