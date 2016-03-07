@@ -17,6 +17,7 @@ package io.atomix;
 
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.util.Assert;
+import io.atomix.catalyst.util.Managed;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.collections.DistributedMap;
 import io.atomix.collections.DistributedMultiMap;
@@ -52,7 +53,7 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class Atomix implements ResourceManager<Atomix> {
+public abstract class Atomix implements ResourceManager<Atomix>, Managed<Atomix> {
   final ResourceClient client;
 
   protected Atomix(ResourceClient client) {
@@ -1453,26 +1454,6 @@ public abstract class Atomix implements ResourceManager<Atomix> {
   public <T extends Resource> CompletableFuture<T> getResource(String key, ResourceType type, Resource.Config config, Resource.Options options) {
     Assert.argNot(key.trim().length() == 0, "invalid resource key: key must be of non-zero length");
     return client.getResource(key, type, config, options);
-  }
-
-  @Override
-  public CompletableFuture<Atomix> open() {
-    return client.open().thenApply(v -> this);
-  }
-
-  @Override
-  public boolean isOpen() {
-    return client.isOpen();
-  }
-
-  @Override
-  public CompletableFuture<Void> close() {
-    return client.close();
-  }
-
-  @Override
-  public boolean isClosed() {
-    return client.isClosed();
   }
 
   @Override

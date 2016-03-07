@@ -66,7 +66,7 @@ public class ClientPropertiesTest {
    * Tests reading properties from a file.
    */
   public void testPropertiesFile() {
-    ClientProperties clientProperties = new ClientProperties(PropertiesReader.load("client-test.properties").properties());
+    ClientProperties clientProperties = new ClientProperties(PropertiesReader.load("core/src/test/resources/client-test.properties").properties());
     assertTrue(clientProperties.transport() instanceof NettyTransport);
     assertEquals(((NettyTransport) clientProperties.transport()).properties().threads(), 1);
 

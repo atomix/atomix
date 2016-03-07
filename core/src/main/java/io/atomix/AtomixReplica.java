@@ -406,11 +406,15 @@ public final class AtomixReplica extends Atomix {
     }
   }
 
-  @Override
-  public CompletableFuture<Atomix> open() {
-    return server.open()
+  /**
+   * Starts the replica.
+   *
+   * @return A completable future to be completed once the replica has been started.
+   */
+  public CompletableFuture<Atomix> start() {
+    return server.start()
       .thenRun(this::registerListeners)
-      .thenCompose(v -> super.open())
+      .thenCompose(v -> client.connect())
       .thenCompose(v -> client.getResource("", DistributedLock.class))
       .thenApply(lock -> {
         this.lock = lock;
@@ -418,16 +422,20 @@ public final class AtomixReplica extends Atomix {
       });
   }
 
-  @Override
-  public CompletableFuture<Void> close() {
+  /**
+   * Stops the replica.
+   *
+   * @return A completable future to be completed once the replica has been stopped.
+   */
+  public CompletableFuture<Void> stop() {
     CompletableFuture<Void> future = new CompletableFuture<>();
     lock.lock()
       .thenCompose(v -> balancer.replace(server.server().cluster()))
       .whenComplete((r1, e1) -> {
         balancer.close();
         lock.unlock().whenComplete((r2, e2) -> {
-          super.close().whenComplete((r3, e3) -> {
-            server.close().whenComplete((r4, e4) -> {
+          client.close().whenComplete((r3, e3) -> {
+            server.stop().whenComplete((r4, e4) -> {
               if (e4 == null) {
                 future.complete(null);
               } else {
@@ -438,6 +446,26 @@ public final class AtomixReplica extends Atomix {
         });
       });
     return future;
+  }
+
+  @Override
+  public CompletableFuture<Atomix> open() {
+    return start();
+  }
+
+  @Override
+  public boolean isOpen() {
+    return server.isRunning() && client.state() != CopycatClient.State.CLOSED;
+  }
+
+  @Override
+  public CompletableFuture<Void> close() {
+    return stop();
+  }
+
+  @Override
+  public boolean isClosed() {
+    return !server.isRunning() || client.state() == CopycatClient.State.CLOSED;
   }
 
   /**
@@ -998,8 +1026,8 @@ public final class AtomixReplica extends Atomix {
     }
 
     @Override
-    public CompletableFuture<CopycatClient> open() {
-      return client.open();
+    public CompletableFuture<CopycatClient> connect() {
+      return client.connect();
     }
 
     @Override
@@ -1010,16 +1038,6 @@ public final class AtomixReplica extends Atomix {
     @Override
     public CompletableFuture<Void> close() {
       return client.close();
-    }
-
-    @Override
-    public boolean isOpen() {
-      return client.isOpen();
-    }
-
-    @Override
-    public boolean isClosed() {
-      return client.isClosed();
     }
 
     @Override

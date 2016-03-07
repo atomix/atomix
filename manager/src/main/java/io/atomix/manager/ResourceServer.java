@@ -20,7 +20,6 @@ import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.ConfigurationException;
-import io.atomix.catalyst.util.Managed;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.copycat.server.CopycatServer;
 import io.atomix.copycat.server.storage.Storage;
@@ -66,7 +65,7 @@ import java.util.stream.Collectors;
  * <p>
  * <b>Server lifecycle</b>
  * <p>
- * When the server is {@link #open() started}, the server will attempt to contact members in the configured
+ * When the server is {@link #start() started}, the server will attempt to contact members in the configured
  * startup {@link Address} list. If any of the members are already in an active state, the server will request
  * to join the cluster. During the process of joining the cluster, the server will notify the current cluster
  * leader of its existence. If the leader already knows about the joining server, the server will immediately
@@ -78,7 +77,7 @@ import java.util.stream.Collectors;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public final class ResourceServer implements Managed<ResourceServer> {
+public final class ResourceServer {
 
   /**
    * Returns a new Atomix server builder.
@@ -178,24 +177,31 @@ public final class ResourceServer implements Managed<ResourceServer> {
     return server;
   }
 
-  @Override
-  public CompletableFuture<ResourceServer> open() {
-    return server.open().thenApply(v -> this);
+  /**
+   * Starts the server.
+   *
+   * @return A completable future to be completed once the server has been started.
+   */
+  public CompletableFuture<ResourceServer> start() {
+    return server.start().thenApply(v -> this);
   }
 
-  @Override
-  public boolean isOpen() {
-    return server.isOpen();
+  /**
+   * Returns a boolean indicating whether the server is running.
+   *
+   * @return Indicates whether the server is running.
+   */
+  public boolean isRunning() {
+    return server.isRunning();
   }
 
-  @Override
-  public CompletableFuture<Void> close() {
-    return server.close();
-  }
-
-  @Override
-  public boolean isClosed() {
-    return server.isClosed();
+  /**
+   * Stops the server.
+   *
+   * @return A completable future to be completed once the server has been stopped.
+   */
+  public CompletableFuture<Void> stop() {
+    return server.stop();
   }
 
   /**

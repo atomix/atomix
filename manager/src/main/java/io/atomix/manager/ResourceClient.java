@@ -65,7 +65,7 @@ import java.util.stream.Collectors;
  * <p>
  * <b>Client lifecycle</b>
  * <p>
- * When a client is {@link #open() started}, the client will attempt to contact random servers in the provided
+ * When a client is {@link #connect() connected}, the client will attempt to contact random servers in the provided
  * {@link Address} list to open a new session. Opening a client session requires only that the client be able to
  * communicate with at least one server which can communicate with the leader. Once a session has been opened,
  * the client will periodically send keep-alive requests to the cluster to maintain its session. In the event
@@ -263,17 +263,29 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
     futures.remove(instance.key());
   }
 
-  @Override
-  public CompletableFuture<ResourceClient> open() {
-    return client.open().thenApply(v -> this);
+  /**
+   * Returns the resource client state.
+   *
+   * @return The resource client state.
+   */
+  public CopycatClient.State state() {
+    return client.state();
   }
 
-  @Override
-  public boolean isOpen() {
-    return client.isOpen();
+  /**
+   * Connects the client to the cluster.
+   *
+   * @return A completable future to be completed once the client is connected.
+   */
+  public CompletableFuture<ResourceClient> connect() {
+    return client.connect().thenApply(v -> this);
   }
 
-  @Override
+  /**
+   * Closes the client.
+   *
+   * @return A completable future to be completed once the client has been closed.
+   */
   public CompletableFuture<Void> close() {
     CompletableFuture<?>[] futures = new CompletableFuture[instances.size()];
     int i = 0;
@@ -281,11 +293,6 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
       futures[i++] = instance.close();
     }
     return CompletableFuture.allOf(futures).thenCompose(v -> client.close());
-  }
-
-  @Override
-  public boolean isClosed() {
-    return client.isClosed();
   }
 
   @Override

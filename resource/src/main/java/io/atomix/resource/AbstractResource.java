@@ -285,7 +285,7 @@ public abstract class AbstractResource<T extends Resource<T>> implements Resourc
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<T> open() {
-    return client.open()
+    return client.connect()
       .thenCompose(v -> client.submit(new ResourceCommand.Config()))
       .thenApply(config -> {
         this.config = new Config(config);
