@@ -125,7 +125,7 @@ public class ReplicaPropertiesTest {
    * Tests reading properties from a file.
    */
   public void testPropertiesFile() {
-    ReplicaProperties replicaProperties = new ReplicaProperties(PropertiesReader.load("core/src/test/resources/replica-test.properties").properties());
+    ReplicaProperties replicaProperties = new ReplicaProperties(PropertiesReader.loadFromClasspath("replica-test.properties").properties());
     assertTrue(replicaProperties.transport() instanceof NettyTransport);
     assertEquals(((NettyTransport) replicaProperties.transport()).properties().threads(), 1);
 

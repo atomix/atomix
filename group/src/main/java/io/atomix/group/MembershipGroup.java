@@ -186,7 +186,7 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
 
   @Override
   public CompletableFuture<DistributedGroup> open() {
-    return client.open().thenApply(result -> {
+    return client.connect().thenApply(result -> {
       client.onEvent("join", this::onJoinEvent);
       client.onEvent("leave", this::onLeaveEvent);
       client.onEvent("term", election::onTermEvent);
