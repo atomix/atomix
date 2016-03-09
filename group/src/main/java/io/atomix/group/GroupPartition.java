@@ -30,20 +30,20 @@ import java.util.function.Consumer;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class GroupPartition extends AbstractDistributedGroup {
-  private final int id;
+  private final int partition;
   private final Map<String, GroupMember> members = new ConcurrentHashMap<>();
   private final List<GroupMember> sortedMembers;
   private final Listeners<GroupMember> joinListeners = new Listeners<>();
   private final Listeners<GroupMember> leaveListeners = new Listeners<>();
   private final Listeners<GroupPartitionMigration> migrationListeners = new Listeners<>();
 
-  GroupPartition(MembershipGroup group, List<GroupMember> members, int id) {
-    super(group);
+  GroupPartition(MembershipGroup group, int groupId, int level, List<GroupMember> members, int partition) {
+    super(group, groupId, level);
     this.sortedMembers = members;
     for (GroupMember member : members) {
       this.members.put(member.id(), member);
     }
-    this.id = id;
+    this.partition = partition;
   }
 
   /**
@@ -52,7 +52,7 @@ public class GroupPartition extends AbstractDistributedGroup {
    * @return The partition ID.
    */
   public int id() {
-    return id;
+    return partition;
   }
 
   /**
@@ -153,7 +153,7 @@ public class GroupPartition extends AbstractDistributedGroup {
 
   @Override
   public String toString() {
-    return String.format("%s[id=%d]", getClass().getSimpleName(), id);
+    return String.format("%s[id=%d]", getClass().getSimpleName(), partition);
   }
 
 }

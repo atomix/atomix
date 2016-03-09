@@ -29,6 +29,19 @@ import java.util.function.Consumer;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class PartitionGroup extends AbstractDistributedGroup {
+
+  /**
+   * Calculates a hash code for the given group arguments.
+   */
+  static int hashCode(int level, int partitions, int replicationFactor, GroupPartitioner partitioner) {
+    int hashCode = 31;
+    hashCode = 37 * hashCode + level;
+    hashCode = 37 * hashCode + partitions;
+    hashCode = 37 * hashCode + replicationFactor;
+    hashCode = 37 * hashCode + partitioner.hashCode();
+    return hashCode;
+  }
+
   private final Map<String, GroupMember> members = new ConcurrentHashMap<>();
   private final GroupPartitions partitions;
   private final GroupHashRing hashRing;
@@ -36,8 +49,8 @@ public class PartitionGroup extends AbstractDistributedGroup {
   private final Listeners<GroupMember> leaveListeners = new Listeners<>();
   private final Listeners<GroupPartitionMigration> migrationListeners = new Listeners<>();
 
-  PartitionGroup(MembershipGroup group, Collection<GroupMember> members, int numPartitions, int replicationFactor, GroupPartitioner partitioner) {
-    super(group);
+  PartitionGroup(MembershipGroup group, int id, int level, Collection<GroupMember> members, int numPartitions, int replicationFactor, GroupPartitioner partitioner) {
+    super(group, id, level);
     this.hashRing = new GroupHashRing(new Murmur2Hasher(), 100, replicationFactor);
     for (GroupMember member : members) {
       hashRing.addMember(member);

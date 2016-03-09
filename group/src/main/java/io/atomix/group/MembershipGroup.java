@@ -48,11 +48,12 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
   private final Address address;
   private final Server server;
   final GroupConnectionManager connections;
-  private final GroupProperties properties = new GroupProperties(null, this);
-  private final GroupElection election = new GroupElection(this);
-  private final GroupTaskQueue tasks = new GroupTaskQueue(null, this);
+  private final GroupProperties properties = new GroupProperties(this, 0, null);
+  private final GroupElection election = new GroupElection(this, 0);
+  private final GroupTaskQueue tasks = new GroupTaskQueue(this, 0, null);
   final Map<String, GroupMember> members = new ConcurrentHashMap<>();
   private final Set<AbstractDistributedGroup> children = new HashSet<>();
+  final Map<Integer, AbstractDistributedGroup> groups = new ConcurrentHashMap<>();
 
   public MembershipGroup(CopycatClient client, Properties options) {
     super(client, new ResourceType(DistributedGroup.class), options);
@@ -103,10 +104,15 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
   }
 
   @Override
-  public ConsistentHashGroup hash(Hasher hasher, int virtualNodes) {
-    ConsistentHashGroup group = new ConsistentHashGroup(this, members(), hasher, virtualNodes);
-    children.add(group);
-    return group;
+  public synchronized ConsistentHashGroup hash(Hasher hasher, int virtualNodes) {
+    int hashCode = ConsistentHashGroup.hashCode(1, hasher, virtualNodes);
+    AbstractDistributedGroup group = groups.get(hashCode);
+    if (group == null) {
+      group = new ConsistentHashGroup(this, hashCode, 1, members(), hasher, virtualNodes);
+      groups.put(hashCode, group);
+      children.add(group);
+    }
+    return (ConsistentHashGroup) group;
   }
 
   @Override
@@ -125,10 +131,15 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
   }
 
   @Override
-  public PartitionGroup partition(int partitions, int replicationFactor, GroupPartitioner partitioner) {
-    PartitionGroup group = new PartitionGroup(this, members(), partitions, replicationFactor, partitioner);
-    children.add(group);
-    return group;
+  public synchronized PartitionGroup partition(int partitions, int replicationFactor, GroupPartitioner partitioner) {
+    int hashCode = PartitionGroup.hashCode(1, partitions, replicationFactor, partitioner);
+    AbstractDistributedGroup group = groups.get(hashCode);
+    if (group == null) {
+      group = new PartitionGroup(this, hashCode, 1, members(), partitions, replicationFactor, partitioner);
+      groups.put(hashCode, group);
+      children.add(group);
+    }
+    return (PartitionGroup) group;
   }
 
   @Override
@@ -299,9 +310,9 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
       CompletableFuture<Boolean> future = new CompletableFuture<>();
       future.whenComplete((succeeded, error) -> {
         if (error == null && succeeded) {
-          submit(new GroupCommands.Ack(task.id(), task.member(), true));
+          submit(new GroupCommands.Ack(0, task.member(), task.id(), true));
         } else {
-          submit(new GroupCommands.Ack(task.id(), task.member(), false));
+          submit(new GroupCommands.Ack(0, task.member(), task.id(), false));
         }
       });
       ((LocalGroupMember) localMember).tasks().handleTask(task.setFuture(future));

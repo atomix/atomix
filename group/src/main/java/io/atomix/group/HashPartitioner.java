@@ -27,4 +27,9 @@ public class HashPartitioner implements GroupPartitioner {
     return Math.abs(value.hashCode()) % partitions;
   }
 
+  @Override
+  public int hashCode() {
+    return 654188383;
+  }
+
 }

@@ -33,9 +33,9 @@ public class GroupTaskQueue {
   private long taskId;
   private final Map<Long, CompletableFuture<Void>> taskFutures = new ConcurrentHashMap<>();
 
-  protected GroupTaskQueue(String memberId, MembershipGroup group) {
-    this.memberId = memberId;
+  protected GroupTaskQueue(MembershipGroup group, String memberId) {
     this.group = Assert.notNull(group, "group");
+    this.memberId = memberId;
   }
 
   /**
@@ -48,7 +48,7 @@ public class GroupTaskQueue {
     CompletableFuture<Void> future = new CompletableFuture<>();
     final long taskId = ++this.taskId;
     taskFutures.put(taskId, future);
-    group.submit(new GroupCommands.Submit(taskId, memberId, task)).whenComplete((result, error) -> {
+    group.submit(new GroupCommands.Submit(memberId, taskId, task)).whenComplete((result, error) -> {
       if (error != null) {
         taskFutures.remove(taskId);
         future.completeExceptionally(error);

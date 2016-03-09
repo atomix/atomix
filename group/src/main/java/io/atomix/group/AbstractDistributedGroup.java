@@ -37,10 +37,18 @@ import java.util.function.Consumer;
  */
 public abstract class AbstractDistributedGroup implements DistributedGroup {
   protected final MembershipGroup group;
+  protected final int groupId;
+  private final int level;
+  protected final GroupElection election;
+  protected final GroupTaskQueue tasks;
   protected final Set<AbstractDistributedGroup> children = new CopyOnWriteArraySet<>();
 
-  protected AbstractDistributedGroup(MembershipGroup group) {
+  protected AbstractDistributedGroup(MembershipGroup group, int groupId, int level) {
     this.group = Assert.notNull(group, "group");
+    this.groupId = groupId;
+    this.level = level;
+    this.election = new GroupElection(group, groupId);
+    this.tasks = new GroupTaskQueue(group, groupId, null);
   }
 
   @Override
@@ -107,12 +115,12 @@ public abstract class AbstractDistributedGroup implements DistributedGroup {
 
   @Override
   public GroupElection election() {
-    return group.election();
+    return election;
   }
 
   @Override
   public GroupTaskQueue tasks() {
-    return group.tasks();
+    return tasks;
   }
 
   @Override
@@ -132,9 +140,19 @@ public abstract class AbstractDistributedGroup implements DistributedGroup {
 
   @Override
   public ConsistentHashGroup hash(Hasher hasher, int virtualNodes) {
-    ConsistentHashGroup group = new ConsistentHashGroup(this.group, members(), hasher, virtualNodes);
-    children.add(group);
-    return group;
+    int hashCode = ConsistentHashGroup.hashCode(level+1, hasher, virtualNodes);
+    AbstractDistributedGroup group = this.group.groups.get(hashCode);
+    if (group == null) {
+      synchronized (this.group) {
+        group = this.group.groups.get(hashCode);
+        if (group == null) {
+          group = new ConsistentHashGroup(this.group, hashCode, level+1, members(), hasher, virtualNodes);
+          this.group.groups.put(hashCode, group);
+          children.add(group);
+        }
+      }
+    }
+    return (ConsistentHashGroup) group;
   }
 
   @Override
@@ -154,9 +172,19 @@ public abstract class AbstractDistributedGroup implements DistributedGroup {
 
   @Override
   public PartitionGroup partition(int partitions, int replicationFactor, GroupPartitioner partitioner) {
-    PartitionGroup group = new PartitionGroup(this.group, members(), partitions, replicationFactor, partitioner);
-    children.add(group);
-    return group;
+    int hashCode = PartitionGroup.hashCode(level+1, partitions, replicationFactor, partitioner);
+    AbstractDistributedGroup group = this.group.groups.get(hashCode);
+    if (group == null) {
+      synchronized (this.group) {
+        group = this.group.groups.get(hashCode);
+        if (group == null) {
+          group = new PartitionGroup(this.group, hashCode, level+1, members(), partitions, replicationFactor, partitioner);
+          this.group.groups.put(hashCode, group);
+          children.add(group);
+        }
+      }
+    }
+    return (PartitionGroup) group;
   }
 
   @Override
@@ -197,6 +225,11 @@ public abstract class AbstractDistributedGroup implements DistributedGroup {
   protected abstract void onJoin(GroupMember member);
 
   protected abstract void onLeave(GroupMember member);
+
+  @Override
+  public int hashCode() {
+    return groupId;
+  }
 
   @Override
   public String toString() {

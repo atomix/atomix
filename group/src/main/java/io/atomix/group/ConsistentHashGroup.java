@@ -26,18 +26,30 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 /**
- * Consistent hash group.
+ * {@link DistributedGroup} that consistently maps keys to members on a ring.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class ConsistentHashGroup extends AbstractDistributedGroup {
+
+  /**
+   * Returns a hash code for the given hash group arguments.
+   */
+  static int hashCode(int level, Hasher hasher, int virtualNodes) {
+    int hashCode = 17;
+    hashCode = 37 * hashCode + level;
+    hashCode = 37 * hashCode + hasher.hashCode();
+    hashCode = 37 * hashCode + virtualNodes;
+    return hashCode;
+  }
+
   private final GroupHashRing hashRing;
   private final Map<String, GroupMember> members = new ConcurrentHashMap<>();
   private final Listeners<GroupMember> joinListeners = new Listeners<>();
   private final Listeners<GroupMember> leaveListeners = new Listeners<>();
 
-  ConsistentHashGroup(MembershipGroup group, Collection<GroupMember> members, Hasher hasher, int virtualNodes) {
-    super(group);
+  ConsistentHashGroup(MembershipGroup group, int id, int level, Collection<GroupMember> members, Hasher hasher, int virtualNodes) {
+    super(group, id, level);
     this.hashRing = new GroupHashRing(hasher, virtualNodes, 1);
     for (GroupMember member : members) {
       this.members.put(member.id(), member);
