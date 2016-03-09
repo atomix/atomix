@@ -15,11 +15,9 @@
  */
 package io.atomix.group;
 
-import io.atomix.catalyst.util.Listener;
 import io.atomix.group.state.GroupCommands;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
 
 /**
  * A {@link DistributedGroup} member representing a member of the group controlled by the
@@ -38,93 +36,27 @@ import java.util.function.Consumer;
  *   member.onMessage("foo", message -> System.out.println("received: " + message));
  *   }
  * </pre>
- * Membership groups automatically elect a leader for the group at all times. To determine when the local group
- * member has been elected leader, register a leader {@link #onElection(Consumer) election listener}:
- * <pre>
- *   {@code
- *   LocalGroupMember member = group.join().get();
- *   group.onElection(term -> {
- *     System.out.println("Elected leader for term " + term);
- *   });
- *   }
- * </pre>
- * The leader is guaranteed to be unique within a given {@link GroupElection#term() term}. However, once
- * the member is elected leader, it is not guaranteed to remain the leader of the group until failure. In the
- * event that the local group instance is partitioned from the rest of the cluster, the member may be removed
- * from leadership and another member of the group may be elected. Users should use the provided {@code term}
- * for fencing when interacting with external resources.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class LocalGroupMember extends GroupMember {
-  private final LocalGroupTaskQueue tasks;
+  private final LocalMemberTaskQueue tasks;
   private final LocalGroupConnection connection;
 
   LocalGroupMember(GroupMemberInfo info, MembershipGroup group) {
     super(info, group);
-    this.tasks = new LocalGroupTaskQueue(info.memberId(), group);
+    this.tasks = new LocalMemberTaskQueue(group, info.memberId());
     this.connection = new LocalGroupConnection(info.memberId(), info.address(), group.connections);
   }
 
   @Override
-  public LocalGroupTaskQueue tasks() {
+  public LocalMemberTaskQueue tasks() {
     return tasks;
   }
 
   @Override
   public LocalGroupConnection connection() {
     return connection;
-  }
-
-  /**
-   * Registers a callback to be called when this member is elected leader.
-   * <p>
-   * The provided {@link Consumer} will be called when the local member is elected leader.
-   * The term for which the member was elected leader will be provided to the callback.
-   * <pre>
-   *   {@code
-   *   group.join().thenAccept(member -> {
-   *     member.onElection(term -> {
-   *       System.out.println("Elected leader for term " + term);
-   *     });
-   *   });
-   *   }
-   * </pre>
-   * Leader election is performed using a fair algorithm. However, once the member is elected
-   * leader, it is not guaranteed to remain the leader of the group until failure. In the
-   * event that the local group instance is partitioned from the rest of the cluster, the
-   * member may be removed from leadership and another member of the group may be elected.
-   * Users should use the provided {@code term} for fencing when interacting with external
-   * resources.
-   *
-   * @param callback The callback to call.
-   * @return The leader election listener.
-   */
-  public Listener<Long> onElection(Consumer<Long> callback) {
-    return group.election().onElection(memberId, callback);
-  }
-
-  /**
-   * Resigns from leadership.
-   * <p>
-   * Resigning as the leader of the group will result in the local member being placed at the
-   * tail of the leader election queue. Once the member has resigned, the {@link GroupElection#term()}
-   * will be incremented and a new leader will be elected from the leader queue. If the local member
-   * is the only member of the group, it will immediately be reassigned as the leader for the new
-   * term.
-   * <pre>
-   *   {@code
-   *   member.onElection(term -> {
-   *     // I don't want to be the leader!
-   *     member.resign();
-   *   });
-   *   }
-   * </pre>
-   *
-   * @return A completable future to be completed once the member has resigned.
-   */
-  public CompletableFuture<Void> resign() {
-    return group.submit(new GroupCommands.Resign(memberId));
   }
 
   /**

@@ -21,15 +21,15 @@ import io.atomix.catalyst.util.Listeners;
 import java.util.function.Consumer;
 
 /**
- * Local group task queue.
+ * Local member task queue.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class LocalGroupTaskQueue extends GroupTaskQueue {
+public class LocalMemberTaskQueue extends MemberTaskQueue {
   private final Listeners<GroupTask<Object>> taskListeners = new Listeners<>();
 
-  public LocalGroupTaskQueue(String memberId, MembershipGroup group) {
-    super(memberId, group);
+  public LocalMemberTaskQueue(MembershipGroup group, String memberId) {
+    super(group, memberId);
   }
 
   /**
@@ -48,7 +48,7 @@ public class LocalGroupTaskQueue extends GroupTaskQueue {
    * Handles a task.
    */
   @SuppressWarnings("unchecked")
-  void handleTask(GroupTask task) {
+  void onTask(GroupTask task) {
     taskListeners.accept(task);
   }
 

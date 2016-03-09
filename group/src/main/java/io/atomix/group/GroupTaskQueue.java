@@ -18,6 +18,7 @@ package io.atomix.group;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.group.state.GroupCommands;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -28,14 +29,12 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class GroupTaskQueue {
-  private final String memberId;
-  private final MembershipGroup group;
-  private long taskId;
-  private final Map<Long, CompletableFuture<Void>> taskFutures = new ConcurrentHashMap<>();
+  protected final MembershipGroup group;
+  protected long taskId;
+  protected final Map<Long, CompletableFuture<Void>> taskFutures = new ConcurrentHashMap<>();
 
-  protected GroupTaskQueue(MembershipGroup group, String memberId) {
+  protected GroupTaskQueue(MembershipGroup group) {
     this.group = Assert.notNull(group, "group");
-    this.memberId = memberId;
   }
 
   /**
@@ -48,7 +47,7 @@ public class GroupTaskQueue {
     CompletableFuture<Void> future = new CompletableFuture<>();
     final long taskId = ++this.taskId;
     taskFutures.put(taskId, future);
-    group.submit(new GroupCommands.Submit(memberId, taskId, task)).whenComplete((result, error) -> {
+    submit(taskId, task).whenComplete((result, error) -> {
       if (error != null) {
         taskFutures.remove(taskId);
         future.completeExceptionally(error);
@@ -58,9 +57,24 @@ public class GroupTaskQueue {
   }
 
   /**
+   * Submits the task to the cluster.
+   */
+  protected CompletableFuture<Void> submit(long taskId, Object task) {
+    synchronized (group) {
+      Collection<GroupMember> members = group.members();
+      CompletableFuture[] futures = new CompletableFuture[members.size()];
+      int i = 0;
+      for (GroupMember member : members) {
+        futures[i++] = group.submit(new GroupCommands.Submit(member.id(), taskId, task));
+      }
+      return CompletableFuture.allOf(futures);
+    }
+  }
+
+  /**
    * Handles a task acknowledgement.
    */
-  void handleAck(long taskId) {
+  void onAck(long taskId) {
     CompletableFuture<Void> future = taskFutures.remove(taskId);
     if (future != null) {
       future.complete(null);
@@ -70,7 +84,7 @@ public class GroupTaskQueue {
   /**
    * Handles a task failure.
    */
-  void handleFail(long taskId) {
+  void onFail(long taskId) {
     CompletableFuture<Void> future = taskFutures.remove(taskId);
     if (future != null) {
       future.completeExceptionally(new TaskFailedException());
@@ -79,7 +93,7 @@ public class GroupTaskQueue {
 
   @Override
   public String toString() {
-    return String.format("%s[member=%s]", getClass().getSimpleName(), memberId);
+    return String.format("%s[members=%s]", getClass().getSimpleName(), group.members());
   }
 
 }

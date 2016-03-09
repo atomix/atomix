@@ -31,7 +31,7 @@ public class GroupTask<T> implements CatalystSerializable {
   private long id;
   private String member;
   private T value;
-  private CompletableFuture<Boolean> future;
+  private transient CompletableFuture<Boolean> future;
 
   public GroupTask() {
   }

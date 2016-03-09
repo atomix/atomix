@@ -309,7 +309,7 @@ import java.util.function.Consumer;
  * the group during the execution of a task, the task will be explicitly failed and an error will be returned
  * to the task submitter.
  * <p>
- * Tasks are processed by {@link LocalGroupMember}s by registering a {@link LocalGroupTaskQueue#onTask(Consumer) task listener}
+ * Tasks are processed by {@link LocalGroupMember}s by registering a {@link LocalMemberTaskQueue#onTask(Consumer) task listener}
  * on the member's queue. Once a member is done processing a task, it must {@link GroupTask#ack() ack} the task to
  * fetch the next one from the cluster.
  * <pre>

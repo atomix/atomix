@@ -48,12 +48,12 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
   private final Address address;
   private final Server server;
   final GroupConnectionManager connections;
-  private final GroupProperties properties = new GroupProperties(this, 0, null);
-  private final GroupElection election = new GroupElection(this, 0);
-  private final GroupTaskQueue tasks = new GroupTaskQueue(this, 0, null);
+  private final GroupProperties properties = new GroupProperties(null, this);
+  private final GroupElection election = new GroupElection(0, this);
+  private final GroupTaskQueue tasks = new GroupTaskQueue(this);
   final Map<String, GroupMember> members = new ConcurrentHashMap<>();
-  private final Set<AbstractDistributedGroup> children = new HashSet<>();
-  final Map<Integer, AbstractDistributedGroup> groups = new ConcurrentHashMap<>();
+  private final Set<SubGroup> children = new HashSet<>();
+  final Map<Integer, SubGroup> groups = new ConcurrentHashMap<>();
 
   public MembershipGroup(CopycatClient client, Properties options) {
     super(client, new ResourceType(DistributedGroup.class), options);
@@ -106,7 +106,7 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
   @Override
   public synchronized ConsistentHashGroup hash(Hasher hasher, int virtualNodes) {
     int hashCode = ConsistentHashGroup.hashCode(1, hasher, virtualNodes);
-    AbstractDistributedGroup group = groups.get(hashCode);
+    SubGroup group = groups.get(hashCode);
     if (group == null) {
       group = new ConsistentHashGroup(this, hashCode, 1, members(), hasher, virtualNodes);
       groups.put(hashCode, group);
@@ -133,7 +133,7 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
   @Override
   public synchronized PartitionGroup partition(int partitions, int replicationFactor, GroupPartitioner partitioner) {
     int hashCode = PartitionGroup.hashCode(1, partitions, replicationFactor, partitioner);
-    AbstractDistributedGroup group = groups.get(hashCode);
+    SubGroup group = groups.get(hashCode);
     if (group == null) {
       group = new PartitionGroup(this, hashCode, 1, members(), partitions, replicationFactor, partitioner);
       groups.put(hashCode, group);
@@ -268,7 +268,7 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
       for (Listener<GroupMember> listener : joinListeners) {
         listener.accept(member);
       }
-      for (AbstractDistributedGroup child : children) {
+      for (SubGroup child : children) {
         child.onJoin(member);
       }
     } else {
@@ -279,7 +279,7 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
         for (Listener<GroupMember> listener : joinListeners) {
           listener.accept(member);
         }
-        for (AbstractDistributedGroup child : children) {
+        for (SubGroup child : children) {
           child.onJoin(member);
         }
       }
@@ -295,7 +295,7 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
       for (Listener<GroupMember> listener : leaveListeners) {
         listener.accept(member);
       }
-      for (AbstractDistributedGroup child : children) {
+      for (SubGroup child : children) {
         child.onLeave(member);
       }
     }
@@ -315,7 +315,7 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
           submit(new GroupCommands.Ack(0, task.member(), task.id(), false));
         }
       });
-      ((LocalGroupMember) localMember).tasks().handleTask(task.setFuture(future));
+      ((LocalGroupMember) localMember).tasks().onTask(task.setFuture(future));
     }
   }
 
@@ -326,10 +326,10 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
     if (submit.member() != null) {
       GroupMember member = members.get(submit.member());
       if (member != null) {
-        member.tasks().handleAck(submit.id());
+        member.tasks().onAck(submit.id());
       }
     } else {
-      tasks.handleAck(submit.id());
+      tasks.onAck(submit.id());
     }
   }
 
@@ -340,10 +340,10 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
     if (submit.member() != null) {
       GroupMember member = members.get(submit.member());
       if (member != null) {
-        member.tasks().handleFail(submit.id());
+        member.tasks().onFail(submit.id());
       }
     } else {
-      tasks.handleFail(submit.id());
+      tasks.onFail(submit.id());
     }
   }
 

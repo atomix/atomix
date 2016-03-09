@@ -28,7 +28,7 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class PartitionGroup extends AbstractDistributedGroup {
+public class PartitionGroup extends SubGroup {
 
   /**
    * Calculates a hash code for the given group arguments.
@@ -49,8 +49,8 @@ public class PartitionGroup extends AbstractDistributedGroup {
   private final Listeners<GroupMember> leaveListeners = new Listeners<>();
   private final Listeners<GroupPartitionMigration> migrationListeners = new Listeners<>();
 
-  PartitionGroup(MembershipGroup group, int id, int level, Collection<GroupMember> members, int numPartitions, int replicationFactor, GroupPartitioner partitioner) {
-    super(group, id, level);
+  PartitionGroup(MembershipGroup group, int groupId, int level, Collection<GroupMember> members, int numPartitions, int replicationFactor, GroupPartitioner partitioner) {
+    super(group, groupId, level);
     this.hashRing = new GroupHashRing(new Murmur2Hasher(), 100, replicationFactor);
     for (GroupMember member : members) {
       hashRing.addMember(member);
@@ -58,7 +58,7 @@ public class PartitionGroup extends AbstractDistributedGroup {
 
     List<GroupPartition> partitions = new ArrayList<>(numPartitions);
     for (int i = 0; i < numPartitions; i++) {
-      partitions.add(new GroupPartition(group, hashRing.members(intToByteArray(i)), i));
+      partitions.add(new GroupPartition(group, groupId, level, hashRing.members(intToByteArray(i)), i));
     }
     this.partitions = new GroupPartitions(partitions, partitioner);
   }
@@ -118,7 +118,7 @@ public class PartitionGroup extends AbstractDistributedGroup {
       List<List<GroupMember>> newPartitions = getNewPartitions();
       migratePartitions(oldPartitions, newPartitions);
       joinListeners.accept(member);
-      for (AbstractDistributedGroup child : children) {
+      for (SubGroup child : children) {
         child.onJoin(member);
       }
     }
@@ -133,7 +133,7 @@ public class PartitionGroup extends AbstractDistributedGroup {
       List<List<GroupMember>> newPartitions = getNewPartitions();
       migratePartitions(oldPartitions, newPartitions);
       leaveListeners.accept(removed);
-      for (AbstractDistributedGroup child : children) {
+      for (SubGroup child : children) {
         child.onLeave(removed);
       }
     }

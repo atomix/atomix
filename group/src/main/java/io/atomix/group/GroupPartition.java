@@ -29,7 +29,7 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class GroupPartition extends AbstractDistributedGroup {
+public class GroupPartition extends SubGroup {
   private final int partition;
   private final Map<String, GroupMember> members = new ConcurrentHashMap<>();
   private final List<GroupMember> sortedMembers;
@@ -128,7 +128,7 @@ public class GroupPartition extends AbstractDistributedGroup {
       this.members.remove(leave.id());
       this.sortedMembers.remove(leave);
       leaveListeners.accept(leave);
-      for (AbstractDistributedGroup child : children) {
+      for (SubGroup child : children) {
         child.onLeave(leave);
       }
     }
@@ -138,7 +138,7 @@ public class GroupPartition extends AbstractDistributedGroup {
       this.members.put(join.id(), join);
       this.sortedMembers.add(join);
       joinListeners.accept(join);
-      for (AbstractDistributedGroup child : children) {
+      for (SubGroup child : children) {
         child.onJoin(join);
       }
     }

@@ -35,20 +35,20 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public abstract class AbstractDistributedGroup implements DistributedGroup {
+public abstract class SubGroup implements DistributedGroup {
   protected final MembershipGroup group;
   protected final int groupId;
   private final int level;
   protected final GroupElection election;
   protected final GroupTaskQueue tasks;
-  protected final Set<AbstractDistributedGroup> children = new CopyOnWriteArraySet<>();
+  protected final Set<SubGroup> children = new CopyOnWriteArraySet<>();
 
-  protected AbstractDistributedGroup(MembershipGroup group, int groupId, int level) {
+  protected SubGroup(MembershipGroup group, int groupId, int level) {
     this.group = Assert.notNull(group, "group");
     this.groupId = groupId;
     this.level = level;
-    this.election = new GroupElection(group, groupId);
-    this.tasks = new GroupTaskQueue(group, groupId, null);
+    this.election = new GroupElection(groupId, group);
+    this.tasks = new SubGroupTaskQueue(group, this);
   }
 
   @Override
@@ -141,7 +141,7 @@ public abstract class AbstractDistributedGroup implements DistributedGroup {
   @Override
   public ConsistentHashGroup hash(Hasher hasher, int virtualNodes) {
     int hashCode = ConsistentHashGroup.hashCode(level+1, hasher, virtualNodes);
-    AbstractDistributedGroup group = this.group.groups.get(hashCode);
+    SubGroup group = this.group.groups.get(hashCode);
     if (group == null) {
       synchronized (this.group) {
         group = this.group.groups.get(hashCode);
@@ -173,7 +173,7 @@ public abstract class AbstractDistributedGroup implements DistributedGroup {
   @Override
   public PartitionGroup partition(int partitions, int replicationFactor, GroupPartitioner partitioner) {
     int hashCode = PartitionGroup.hashCode(level+1, partitions, replicationFactor, partitioner);
-    AbstractDistributedGroup group = this.group.groups.get(hashCode);
+    SubGroup group = this.group.groups.get(hashCode);
     if (group == null) {
       synchronized (this.group) {
         group = this.group.groups.get(hashCode);

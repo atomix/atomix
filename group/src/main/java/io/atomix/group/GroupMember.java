@@ -37,7 +37,7 @@ public class GroupMember {
     this.address = info.address();
     this.group = Assert.notNull(group, "group");
     this.properties = new GroupProperties(memberId, group);
-    this.tasks = new GroupTaskQueue(memberId, group);
+    this.tasks = new MemberTaskQueue(group, memberId);
     this.connection = new GroupConnection(memberId, address, group.connections);
   }
 

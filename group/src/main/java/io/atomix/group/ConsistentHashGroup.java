@@ -30,7 +30,7 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class ConsistentHashGroup extends AbstractDistributedGroup {
+public class ConsistentHashGroup extends SubGroup {
 
   /**
    * Returns a hash code for the given hash group arguments.
