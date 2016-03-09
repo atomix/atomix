@@ -173,18 +173,13 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
 
     LocalGroupMember localMember2 = group2.join().get();
     assertEquals(group2.members().size(), 1);
-
-    group2.election().onElection(member -> {
-      threadAssertEquals(member, localMember2);
-      resume();
-    });
-
-    await(5000);
+    assertEquals(group2.election().term().leader(), localMember2);
 
     LocalGroupMember localMember1 = group1.join().get();
-    group1.election().onElection(member -> {
-      threadAssertEquals(member, localMember1);
-      resume();
+    group1.election().onElection(term -> {
+      if (term.leader().equals(localMember1)) {
+        resume();
+      }
     });
 
     localMember2.leave().thenRun(this::resume);
@@ -203,18 +198,13 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
 
     LocalGroupMember localMember2 = group2.join().get();
     assertEquals(group2.members().size(), 1);
-
-    group2.election().onElection(member -> {
-      threadAssertEquals(member, localMember2);
-      resume();
-    });
-
-    await(5000);
+    assertEquals(group2.election().term().leader(), localMember2);
 
     LocalGroupMember localMember1 = group1.join().get();
-    group1.election().onElection(member -> {
-      threadAssertEquals(member, localMember1);
-      resume();
+    group1.election().onElection(term -> {
+      if (term.leader().equals(localMember1)) {
+        resume();
+      }
     });
 
     group2.close().thenRun(this::resume);

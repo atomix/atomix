@@ -94,14 +94,18 @@ public class GroupElection {
    * @param callback The callback to call when a member of the group is elected leader.
    * @return The leader election listener.
    */
-  public Listener<GroupTerm> onElection(Consumer<GroupTerm> callback) {
-    return electionListeners.add(callback);
+  public synchronized Listener<GroupTerm> onElection(Consumer<GroupTerm> callback) {
+    Listener<GroupTerm> listener = electionListeners.add(callback);
+    if (term != null) {
+      listener.accept(term);
+    }
+    return listener;
   }
 
   /**
    * Called when a member joins the election.
    */
-  void onJoin(GroupMember member) {
+  synchronized void onJoin(GroupMember member) {
     if (term == null || term.term() != term.leader().index()) {
       elect();
     }
@@ -110,7 +114,7 @@ public class GroupElection {
   /**
    * Called when a member leaves the election.
    */
-  void onLeave(GroupMember member) {
+  synchronized void onLeave(GroupMember member) {
     if (term != null && term.leader().equals(member)) {
       elect();
     }
@@ -119,7 +123,7 @@ public class GroupElection {
   /**
    * Elects a new leader.
    */
-  private void elect() {
+  private synchronized void elect() {
     term = null;
     Collection<GroupMember> members = group.members();
     if (!members.isEmpty()) {
