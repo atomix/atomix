@@ -71,8 +71,8 @@ public class StandaloneServer {
     ResourceServer server = builder.build();
     server.start().join();
 
-    while (server.isRunning()) {
-      synchronized (StandaloneServer.class) {
+    synchronized (StandaloneServer.class) {
+      while (server.isRunning()) {
         StandaloneServer.class.wait();
       }
     }
