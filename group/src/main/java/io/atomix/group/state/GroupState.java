@@ -344,27 +344,17 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
    */
   public void submit(Commit<GroupCommands.Submit> commit) {
     try {
-      if (commit.operation().member() != null) {
-        // Ensure that the member is a member of the group.
-        Member member = members.get(commit.operation().member());
-        if (member == null) {
-          throw new IllegalArgumentException("unknown member: " + commit.operation().member());
-        }
-
-        // Create a task instance.
-        Task task = new Task(commit);
-
-        // Add the task to the member's task queue.
-        member.submit(task);
-      } else {
-        // Create a task instance.
-        Task task = new Task(commit);
-
-        // Iterate through all the members in the group.
-        for (Member member : members.values()) {
-          member.submit(task);
-        }
+      // Ensure that the member is a member of the group.
+      Member member = members.get(commit.operation().member());
+      if (member == null) {
+        throw new IllegalArgumentException("unknown member: " + commit.operation().member());
       }
+
+      // Create a task instance.
+      Task task = new Task(commit);
+
+      // Add the task to the member's task queue.
+      member.submit(task);
     } catch (Exception e) {
       commit.close();
       throw e;
@@ -566,18 +556,9 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
       if (this.task.index() == id) {
         Task task = this.task;
         this.task = null;
-        ack(task);
-        next();
-      }
-    }
-
-    /**
-     * Acks the given task.
-     */
-    private void ack(Task task) {
-      if (task.complete()) {
         task.ack();
         task.close();
+        next();
       }
     }
 
@@ -588,21 +569,9 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
       if (this.task.index() == id) {
         Task task = this.task;
         this.task = null;
-        fail(task);
-        next();
-      }
-    }
-
-    /**
-     * Fails the given task.
-     */
-    private void fail(Task task) {
-      if (task.direct()) {
         task.fail();
         task.close();
-      } else if (task.complete()) {
-        task.ack();
-        task.close();
+        next();
       }
     }
 
@@ -627,11 +596,13 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
       Task task = this.task;
       this.task = null;
       if (task != null) {
-        fail(task);
+        task.fail();
+        task.close();
       }
 
       tasks.forEach(t -> {
-        fail(task);
+        t.fail();
+        t.close();
       });
       tasks.clear();
 
@@ -722,27 +693,6 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
      */
     public Object task() {
       return commit.operation().task();
-    }
-
-    /**
-     * Returns a boolean indicating whether the task is complete.
-     */
-    public boolean complete() {
-      if (commit.operation().member() == null) {
-        for (Member member : members.values()) {
-          if (member.task != null && member.task.index() <= index()) {
-            return false;
-          }
-        }
-      } else {
-        Member member = members.get(commit.operation().member());
-        if (member != null) {
-          if (member.task != null && member.task.index() <= index()) {
-            return false;
-          }
-        }
-      }
-      return true;
     }
 
     /**
