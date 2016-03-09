@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix;
+package io.atomix.manager.options;
 
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.NettyTransport;
 import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.PropertiesReader;
-import io.atomix.util.ClientProperties;
 import org.testng.annotations.Test;
 
 import java.util.Properties;
@@ -32,15 +31,15 @@ import static org.testng.Assert.*;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 @Test
-public class ClientPropertiesTest {
+public class ClientOptionsTest {
 
   /**
    * Tests default client properties.
    */
   public void testPropertyDefaults() {
-    ClientProperties properties = new ClientProperties(new Properties());
-    assertTrue(properties.transport() instanceof NettyTransport);
-    assertTrue(properties.serializer().isWhitelistRequired());
+    ClientOptions options = new ClientOptions(new Properties());
+    assertTrue(options.transport() instanceof NettyTransport);
+    assertTrue(options.serializer().isWhitelistRequired());
   }
 
   /**
@@ -55,26 +54,26 @@ public class ClientPropertiesTest {
     properties.setProperty("cluster.seed.3", "localhost:5002");
     properties.setProperty("serializer.whitelist", "false");
 
-    ClientProperties clientProperties = new ClientProperties(properties);
-    Transport transport = clientProperties.transport();
+    ClientOptions options = new ClientOptions(properties);
+    Transport transport = options.transport();
     assertTrue(transport instanceof NettyTransport);
     assertEquals(((NettyTransport) transport).properties().threads(), 1);
-    assertFalse(clientProperties.serializer().isWhitelistRequired());
+    assertFalse(options.serializer().isWhitelistRequired());
   }
 
   /**
    * Tests reading properties from a file.
    */
   public void testPropertiesFile() {
-    ClientProperties clientProperties = new ClientProperties(PropertiesReader.loadFromClasspath("client-test.properties").properties());
-    assertTrue(clientProperties.transport() instanceof NettyTransport);
-    assertEquals(((NettyTransport) clientProperties.transport()).properties().threads(), 1);
+    ClientOptions options = new ClientOptions(PropertiesReader.loadFromClasspath("client-test.properties").properties());
+    assertTrue(options.transport() instanceof NettyTransport);
+    assertEquals(((NettyTransport) options.transport()).properties().threads(), 1);
 
-    assertEquals(clientProperties.replicas().size(), 3);
-    assertTrue(clientProperties.replicas().contains(new Address("localhost", 5000)));
-    assertTrue(clientProperties.replicas().contains(new Address("localhost", 5001)));
-    assertTrue(clientProperties.replicas().contains(new Address("localhost", 5002)));
-    assertFalse(clientProperties.serializer().isWhitelistRequired());
+    assertEquals(options.servers().size(), 3);
+    assertTrue(options.servers().contains(new Address("localhost", 5000)));
+    assertTrue(options.servers().contains(new Address("localhost", 5001)));
+    assertTrue(options.servers().contains(new Address("localhost", 5002)));
+    assertFalse(options.serializer().isWhitelistRequired());
   }
 
 }

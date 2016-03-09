@@ -15,17 +15,40 @@
  */
 package io.atomix;
 
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Properties;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+
 import io.atomix.catalyst.serializer.Serializer;
-import io.atomix.catalyst.transport.*;
+import io.atomix.catalyst.transport.Address;
+import io.atomix.catalyst.transport.Client;
+import io.atomix.catalyst.transport.Connection;
+import io.atomix.catalyst.transport.LocalServerRegistry;
+import io.atomix.catalyst.transport.LocalTransport;
+import io.atomix.catalyst.transport.Server;
+import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.ConfigurationException;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.catalyst.util.PropertiesReader;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.concurrent.DistributedLock;
+import io.atomix.config.ReplicaOptions;
 import io.atomix.copycat.Command;
 import io.atomix.copycat.Query;
-import io.atomix.copycat.client.*;
+import io.atomix.copycat.client.ConnectionStrategies;
+import io.atomix.copycat.client.CopycatClient;
+import io.atomix.copycat.client.RecoveryStrategies;
+import io.atomix.copycat.client.RetryStrategies;
+import io.atomix.copycat.client.ServerSelectionStrategies;
+import io.atomix.copycat.client.ServerSelectionStrategy;
 import io.atomix.copycat.server.CopycatServer;
 import io.atomix.copycat.server.cluster.Member;
 import io.atomix.copycat.server.storage.Storage;
@@ -39,13 +62,6 @@ import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceType;
 import io.atomix.resource.util.ResourceRegistry;
 import io.atomix.util.ClusterBalancer;
-import io.atomix.util.ReplicaProperties;
-
-import java.time.Duration;
-import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 /**
  * Provides an interface for creating and operating on {@link io.atomix.resource.Resource}s as a stateful node.
@@ -203,8 +219,8 @@ public final class AtomixReplica extends Atomix {
    * @return The replica builder.
    */
   public static Builder builder(Properties properties) {
-    ReplicaProperties replicaProperties = new ReplicaProperties(properties);
-    Collection<Address> replicas = replicaProperties.replicas();
+    ReplicaOptions replicaProperties = new ReplicaOptions(properties);
+    Collection<Address> replicas = replicaProperties.servers();
     return builder(replicaProperties.clientAddress(), replicaProperties.serverAddress(), replicas)
       .withTransport(replicaProperties.transport())
       .withStorage(Storage.builder()
