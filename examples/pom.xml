@@ -25,7 +25,6 @@
   </properties>
 
   <modules>
-    <module>standalone-server</module>
     <module>leader-election</module>
     <module>distributed-group</module>
     <module>distributed-value</module>

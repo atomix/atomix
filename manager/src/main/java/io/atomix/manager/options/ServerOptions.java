@@ -13,32 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.util;
-
-import io.atomix.Quorum;
-import io.atomix.catalyst.transport.Address;
-import io.atomix.catalyst.transport.Transport;
-import io.atomix.catalyst.util.ConfigurationException;
-import io.atomix.catalyst.util.QualifiedProperties;
-import io.atomix.copycat.server.storage.StorageLevel;
+package io.atomix.manager.options;
 
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
 import java.util.Properties;
 
+import io.atomix.catalyst.transport.Address;
+import io.atomix.catalyst.transport.Transport;
+import io.atomix.catalyst.util.ConfigurationException;
+import io.atomix.catalyst.util.QualifiedProperties;
+import io.atomix.copycat.server.storage.StorageLevel;
+
 /**
- * Replica properties.
+ * Server options.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public final class ReplicaProperties extends AtomixProperties {
-  public static final String TRANSPORT = "replica.transport";
-  public static final String ADDRESS = "replica.address";
-  public static final String CLIENT_ADDRESS = "replica.clientAddress";
-  public static final String SERVER_ADDRESS = "replica.serverAddress";
-  public static final String QUORUM_HINT = "cluster.quorumHint";
-  public static final String BACKUP_COUNT = "cluster.backupCount";
+public class ServerOptions extends AtomixOptions {
+  public static final String TRANSPORT = "server.transport";
+  public static final String ADDRESS = "server.address";
+  public static final String CLIENT_ADDRESS = "server.clientAddress";
+  public static final String SERVER_ADDRESS = "server.serverAddress";
   public static final String ELECTION_TIMEOUT = "cluster.electionTimeout";
   public static final String HEARTBEAT_INTERVAL = "cluster.heartbeatInterval";
   public static final String SESSION_TIMEOUT = "cluster.sessionTimeout";
@@ -54,8 +51,6 @@ public final class ReplicaProperties extends AtomixProperties {
   public static final String COMPACTION_THRESHOLD = "storage.compaction.threshold";
 
   private static final String DEFAULT_TRANSPORT = "io.atomix.catalyst.transport.NettyTransport";
-  private static final int DEFAULT_QUORUM_HINT = -1;
-  private static final int DEFAULT_BACKUP_COUNT = 0;
   private static final Duration DEFAULT_ELECTION_TIMEOUT = Duration.ofMillis(500);
   private static final Duration DEFAULT_HEARTBEAT_INTERVAL = Duration.ofMillis(250);
   private static final Duration DEFAULT_SESSION_TIMEOUT = Duration.ofSeconds(5);
@@ -70,14 +65,14 @@ public final class ReplicaProperties extends AtomixProperties {
   private static final Duration DEFAULT_MAJOR_COMPACTION_INTERVAL = Duration.ofHours(1);
   private static final double DEFAULT_COMPACTION_THRESHOLD = 0.5;
 
-  public ReplicaProperties(Properties properties) {
+  public ServerOptions(Properties properties) {
     super(properties);
   }
 
   /**
-   * Returns the replica transport.
+   * Returns the server transport.
    *
-   * @return The replica transport.
+   * @return The server transport.
    */
   public Transport transport() {
     String transportClass = reader.getString(TRANSPORT, DEFAULT_TRANSPORT);
@@ -91,44 +86,21 @@ public final class ReplicaProperties extends AtomixProperties {
   }
 
   /**
-   * Returns the replica client address.
+   * Returns the server client address.
    *
-   * @return The replica client address.
+   * @return The server client address.
    */
   public Address clientAddress() {
-    return parseAddress(reader.getString(CLIENT_ADDRESS, reader.getString(SERVER_ADDRESS, reader.getString(ADDRESS))));
+    return new Address(reader.getString(CLIENT_ADDRESS, reader.getString(SERVER_ADDRESS, reader.getString(ADDRESS))));
   }
 
   /**
-   * Returns the replica server address.
+   * Returns the server server address.
    *
-   * @return The replica server address.
+   * @return The server server address.
    */
   public Address serverAddress() {
-    return parseAddress(reader.getString(SERVER_ADDRESS, reader.getString(ADDRESS)));
-  }
-
-  /**
-   * Returns the quorum hint.
-   *
-   * @return The quorum hint.
-   */
-  public int quorumHint() {
-    String quorumHint = reader.getString(QUORUM_HINT, String.valueOf(DEFAULT_QUORUM_HINT));
-    try {
-      return Integer.valueOf(quorumHint);
-    } catch (NumberFormatException e) {
-      return Quorum.valueOf(quorumHint.trim().toUpperCase()).size();
-    }
-  }
-
-  /**
-   * Returns the backup count.
-   *
-   * @return The backup count.
-   */
-  public int backupCount() {
-    return reader.getInteger(BACKUP_COUNT, DEFAULT_BACKUP_COUNT);
+    return new Address(reader.getString(SERVER_ADDRESS, reader.getString(ADDRESS)));
   }
 
   /**

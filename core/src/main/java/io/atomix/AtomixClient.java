@@ -23,9 +23,9 @@ import io.atomix.catalyst.util.PropertiesReader;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.manager.ResourceClient;
 import io.atomix.manager.ResourceServer;
+import io.atomix.manager.options.ClientOptions;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceType;
-import io.atomix.util.ClientProperties;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -97,8 +97,8 @@ public class AtomixClient extends Atomix {
    * @return The replica builder.
    */
   public static Builder builder(Properties properties) {
-    ClientProperties clientProperties = new ClientProperties(properties);
-    return builder(clientProperties.replicas())
+    ClientOptions clientProperties = new ClientOptions(properties);
+    return builder(clientProperties.servers())
       .withTransport(clientProperties.transport())
       .withSerializer(clientProperties.serializer());
   }
@@ -133,8 +133,8 @@ public class AtomixClient extends Atomix {
    * Builds the underlying resource client from the given properties.
    */
   private static ResourceClient buildClient(Properties properties) {
-    ClientProperties clientProperties = new ClientProperties(properties);
-    return ResourceClient.builder(clientProperties.replicas())
+    ClientOptions clientProperties = new ClientOptions(properties);
+    return ResourceClient.builder(clientProperties.servers())
       .withTransport(clientProperties.transport())
       .build();
   }

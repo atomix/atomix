@@ -15,26 +15,29 @@
  */
 package io.atomix.manager;
 
+import java.time.Duration;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Properties;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.ConfigurationException;
+import io.atomix.catalyst.util.PropertiesReader;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.copycat.server.CopycatServer;
 import io.atomix.copycat.server.storage.Storage;
+import io.atomix.manager.options.ServerOptions;
 import io.atomix.manager.state.ResourceManagerException;
 import io.atomix.manager.state.ResourceManagerState;
 import io.atomix.manager.util.ResourceManagerTypeResolver;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceType;
 import io.atomix.resource.util.ResourceRegistry;
-
-import java.time.Duration;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
 /**
  * Standalone Atomix server.
@@ -79,6 +82,45 @@ import java.util.stream.Collectors;
  */
 public final class ResourceServer {
 
+  /**
+   * Returns a new ResourceServer builder from the given configuration file.
+   *
+   * @param properties The properties file from which to load the replica builder.
+   * @return The replica builder.
+   */
+  public static Builder builder(String properties) {
+    return builder(PropertiesReader.load(properties).properties());
+  }
+
+  /**
+   * Returns a new ResourceServer builder from the given properties.
+   *
+   * @param properties The properties from which to load the replica builder.
+   * @return The replica builder.
+   */
+  public static Builder builder(Properties properties) {
+    ServerOptions serverProperties = new ServerOptions(properties);
+    Collection<Address> servers = serverProperties.servers();
+    return builder(serverProperties.clientAddress(), serverProperties.serverAddress(), servers)
+      .withTransport(serverProperties.transport())
+      .withStorage(Storage.builder()
+        .withStorageLevel(serverProperties.storageLevel())
+        .withDirectory(serverProperties.storageDirectory())
+        .withMaxSegmentSize(serverProperties.maxSegmentSize())
+        .withMaxEntriesPerSegment(serverProperties.maxEntriesPerSegment())
+        .withMaxSnapshotSize(serverProperties.maxSnapshotSize())
+        .withRetainStaleSnapshots(serverProperties.retainStaleSnapshots())
+        .withCompactionThreads(serverProperties.compactionThreads())
+        .withMinorCompactionInterval(serverProperties.minorCompactionInterval())
+        .withMajorCompactionInterval(serverProperties.majorCompactionInterval())
+        .withCompactionThreshold(serverProperties.compactionThreshold())
+        .build())
+      .withSerializer(serverProperties.serializer())
+      .withElectionTimeout(serverProperties.electionTimeout())
+      .withHeartbeatInterval(serverProperties.heartbeatInterval())
+      .withSessionTimeout(serverProperties.sessionTimeout());
+  }
+  
   /**
    * Returns a new Atomix server builder.
    * <p>

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.util;
+package io.atomix.manager.options;
 
 import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.ConfigurationException;
@@ -23,16 +23,16 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Properties;
 
 /**
- * Atomix client properties.
+ * Client options.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public final class ClientProperties extends AtomixProperties {
+public final class ClientOptions extends AtomixOptions {
   public static final String TRANSPORT = "client.transport";
 
   private static final String DEFAULT_TRANSPORT = "io.atomix.catalyst.transport.NettyTransport";
 
-  public ClientProperties(Properties properties) {
+  public ClientOptions(Properties properties) {
     super(properties);
   }
 
