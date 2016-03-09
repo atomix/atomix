@@ -13,58 +13,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.util;
-
-import io.atomix.catalyst.serializer.Serializer;
-import io.atomix.catalyst.transport.Address;
-import io.atomix.catalyst.util.ConfigurationException;
-import io.atomix.catalyst.util.PropertiesReader;
-import io.atomix.catalyst.util.QualifiedProperties;
+package io.atomix.manager.options;
 
 import java.util.Collection;
 import java.util.Properties;
 
+import io.atomix.catalyst.serializer.Serializer;
+import io.atomix.catalyst.transport.Address;
+import io.atomix.catalyst.util.PropertiesReader;
+import io.atomix.catalyst.util.QualifiedProperties;
+
 /**
- * Base class for Atomix properties.
+ * Atomix options.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public abstract class AtomixProperties {
+public abstract class AtomixOptions {
   public static final String SEED = "cluster.seed";
   public static final String SERIALIZER = "serializer";
 
   protected final PropertiesReader reader;
 
-  protected AtomixProperties(Properties properties) {
+  protected AtomixOptions(Properties properties) {
     this.reader = new PropertiesReader(properties);
   }
 
   /**
-   * Returns the collection of replicas.
+   * Returns the collection of seed servers.
    *
-   * @return The collection of replicas.
+   * @return The collection of seed servers.
    */
-  public Collection<Address> replicas() {
-    return reader.getCollection(SEED, p -> parseAddress(reader.getString(p)));
-  }
-
-  /**
-   * Parses an address string.
-   *
-   * @param address The address string.
-   * @return The address.
-   */
-  protected Address parseAddress(String address) {
-    String[] split = address.split(":");
-    if (split.length != 2) {
-      throw new ConfigurationException("malformed address: " + address);
-    }
-
-    try {
-      return new Address(split[0], Integer.valueOf(split[1]));
-    } catch (NumberFormatException e) {
-      throw new ConfigurationException("invalid port number: " + split[1]);
-    }
+  public Collection<Address> servers() {
+    return reader.getCollection(SEED, p -> new Address(reader.getString(p)));
   }
 
   /**

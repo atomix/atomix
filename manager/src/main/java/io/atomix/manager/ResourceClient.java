@@ -15,14 +15,30 @@
  */
 package io.atomix.manager;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.ConfigurationException;
+import io.atomix.catalyst.util.PropertiesReader;
 import io.atomix.catalyst.util.concurrent.Futures;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
-import io.atomix.copycat.client.*;
+import io.atomix.copycat.client.ConnectionStrategies;
+import io.atomix.copycat.client.CopycatClient;
+import io.atomix.copycat.client.RecoveryStrategies;
+import io.atomix.copycat.client.RetryStrategies;
+import io.atomix.copycat.client.ServerSelectionStrategies;
+import io.atomix.manager.options.ClientOptions;
 import io.atomix.manager.state.GetResourceKeys;
 import io.atomix.manager.state.ResourceExists;
 import io.atomix.manager.state.ResourceManagerException;
@@ -32,11 +48,6 @@ import io.atomix.resource.ResourceType;
 import io.atomix.resource.util.InstanceClient;
 import io.atomix.resource.util.ResourceInstance;
 import io.atomix.resource.util.ResourceRegistry;
-
-import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 /**
  * Provides an interface for creating and operating on {@link io.atomix.resource.Resource}s remotely.
@@ -87,6 +98,29 @@ import java.util.stream.Collectors;
  */
 public class ResourceClient implements ResourceManager<ResourceClient> {
 
+  /**
+   * Returns a new ResourceClient builder from the given configuration file.
+   *
+   * @param properties The properties file from which to load the replica builder.
+   * @return The replica builder.
+   */
+  public static Builder builder(String properties) {
+    return builder(PropertiesReader.load(properties).properties());
+  }
+
+  /**
+   * Returns a new ResourceClient builder from the given properties.
+   *
+   * @param properties The properties from which to load the replica builder.
+   * @return The replica builder.
+   */
+  public static Builder builder(Properties properties) {
+    ClientOptions clientProperties = new ClientOptions(properties);
+    return builder(clientProperties.servers())
+      .withTransport(clientProperties.transport())
+      .withSerializer(clientProperties.serializer());
+  }
+  
   /**
    * Returns a new Atomix client builder.
    * <p>

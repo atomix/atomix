@@ -22,6 +22,7 @@ import io.atomix.catalyst.util.ConfigurationException;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.catalyst.util.PropertiesReader;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
+import io.atomix.config.ReplicaOptions;
 import io.atomix.copycat.Command;
 import io.atomix.copycat.Query;
 import io.atomix.copycat.client.*;
@@ -38,7 +39,6 @@ import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceType;
 import io.atomix.resource.util.ResourceRegistry;
 import io.atomix.util.ClusterBalancer;
-import io.atomix.util.ReplicaProperties;
 
 import java.time.Duration;
 import java.util.*;
@@ -202,8 +202,8 @@ public final class AtomixReplica extends Atomix {
    * @return The replica builder.
    */
   public static Builder builder(Properties properties) {
-    ReplicaProperties replicaProperties = new ReplicaProperties(properties);
-    Collection<Address> replicas = replicaProperties.replicas();
+    ReplicaOptions replicaProperties = new ReplicaOptions(properties);
+    Collection<Address> replicas = replicaProperties.servers();
     return builder(replicaProperties.clientAddress(), replicaProperties.serverAddress(), replicas)
       .withTransport(replicaProperties.transport())
       .withStorage(Storage.builder()
