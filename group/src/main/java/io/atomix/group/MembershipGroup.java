@@ -334,13 +334,9 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
    * Handles an ack event received from the cluster.
    */
   private void onAckEvent(GroupCommands.Submit submit) {
-    if (submit.member() != null) {
-      GroupMember member = members.get(submit.member());
-      if (member != null) {
-        member.tasks().onAck(submit.id());
-      }
-    } else {
-      tasks.onAck(submit.id());
+    GroupMember member = members.get(submit.member());
+    if (member != null) {
+      member.tasks().onAck(submit.id());
     }
   }
 
@@ -348,13 +344,9 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
    * Handles a fail event received from the cluster.
    */
   private void onFailEvent(GroupCommands.Submit submit) {
-    if (submit.member() != null) {
-      GroupMember member = members.get(submit.member());
-      if (member != null) {
-        member.tasks().onFail(submit.id());
-      }
-    } else {
-      tasks.onFail(submit.id());
+    GroupMember member = members.get(submit.member());
+    if (member != null) {
+      member.tasks().onFail(submit.id());
     }
   }
 

@@ -26,7 +26,7 @@ import java.util.concurrent.CompletableFuture;
  * Facilitates direct communication between group members.
  * <p>
  * Members of a group and group instances can communicate with one another through the direct messaging API,
- * {@link GroupConnection}. Direct messaging between group members is considered <em>unreliable</em> and is
+ * {@link MemberConnection}. Direct messaging between group members is considered <em>unreliable</em> and is
  * done over the local node's configured {@link io.atomix.catalyst.transport.Transport}. Messages between members
  * of a group are ordered according only to the transport and are not guaranteed to be delivered. While request-reply
  * can be used to achieve some level of assurance that messages are delivered to specific members of the group,
@@ -42,7 +42,7 @@ import java.util.concurrent.CompletableFuture;
  *   }
  * </pre>
  * Once a group instance has been configured with an address for direct messaging, messages can be sent between
- * group members using the {@link GroupConnection} for any member of the group. Messages sent between members must
+ * group members using the {@link MemberConnection} for any member of the group. Messages sent between members must
  * be associated with a {@link String} topic, and messages can be any value that is serializable by the group instance's
  * {@link io.atomix.catalyst.serializer.Serializer}.
  * <pre>
@@ -54,7 +54,7 @@ import java.util.concurrent.CompletableFuture;
  * </pre>
  * Direct messages can only be <em>received</em> by a {@link LocalGroupMember} which must be created by
  * joining the group. Local members register a listener for a link topic on the joined member's
- * {@link LocalGroupConnection}. Message listeners are asynchronous. When a {@link GroupMessage} is received
+ * {@link LocalMemberConnection}. Message listeners are asynchronous. When a {@link GroupMessage} is received
  * by a local member, the member can perform any processing it wishes and {@link GroupMessage#reply(Object) reply}
  * to the message or {@link GroupMessage#ack() acknowledge} completion of handling the message to send a response
  * back to the sender.
@@ -74,17 +74,17 @@ import java.util.concurrent.CompletableFuture;
  *   }
  * </pre>
  * It's critical that message listeners reply to messages, otherwise futures will be held in memory on the
- * sending side of the {@link GroupConnection connection} until the sender or receiver is removed from the
+ * sending side of the {@link MemberConnection connection} until the sender or receiver is removed from the
  * group.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class GroupConnection {
+public class MemberConnection {
   private final String memberId;
   private final Address address;
   private final GroupConnectionManager connections;
 
-  GroupConnection(String memberId, Address address, GroupConnectionManager connections) {
+  MemberConnection(String memberId, Address address, GroupConnectionManager connections) {
     this.memberId = Assert.notNull(memberId, "memberId");
     this.address = address;
     this.connections = Assert.notNull(connections, "connections");

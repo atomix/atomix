@@ -41,12 +41,12 @@ import java.util.concurrent.CompletableFuture;
  */
 public class LocalGroupMember extends GroupMember {
   private final LocalMemberTaskQueue tasks;
-  private final LocalGroupConnection connection;
+  private final LocalMemberConnection connection;
 
   LocalGroupMember(GroupMemberInfo info, MembershipGroup group) {
     super(info, group);
     this.tasks = new LocalMemberTaskQueue(info.memberId(), group);
-    this.connection = new LocalGroupConnection(info.memberId(), info.address(), group.connections);
+    this.connection = new LocalMemberConnection(info.memberId(), info.address(), group.connections);
   }
 
   @Override
@@ -55,7 +55,7 @@ public class LocalGroupMember extends GroupMember {
   }
 
   @Override
-  public LocalGroupConnection connection() {
+  public LocalMemberConnection connection() {
     return connection;
   }
 

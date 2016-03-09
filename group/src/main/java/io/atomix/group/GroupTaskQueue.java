@@ -16,12 +16,9 @@
 package io.atomix.group;
 
 import io.atomix.catalyst.util.Assert;
-import io.atomix.group.state.GroupCommands;
 
 import java.util.Collection;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Group task queue.
@@ -30,8 +27,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class GroupTaskQueue {
   protected final MembershipGroup group;
-  protected long taskId;
-  protected final Map<Long, CompletableFuture<Void>> taskFutures = new ConcurrentHashMap<>();
 
   protected GroupTaskQueue(MembershipGroup group) {
     this.group = Assert.notNull(group, "group");
@@ -44,51 +39,20 @@ public class GroupTaskQueue {
    * @return A completable future to be completed once the task has been acknowledged.
    */
   public CompletableFuture<Void> submit(Object task) {
-    CompletableFuture<Void> future = new CompletableFuture<>();
-    final long taskId = ++this.taskId;
-    taskFutures.put(taskId, future);
-    submit(taskId, task).whenComplete((result, error) -> {
-      if (error != null) {
-        taskFutures.remove(taskId);
-        future.completeExceptionally(error);
-      }
-    });
-    return future;
+    Collection<GroupMember> members = members();
+    CompletableFuture[] futures = new CompletableFuture[members.size()];
+    int i = 0;
+    for (GroupMember member : members) {
+      futures[i++] = member.tasks().submit(task);
+    }
+    return CompletableFuture.allOf(futures);
   }
 
   /**
-   * Submits the task to the cluster.
+   * Returns the collection of group members to which to send tasks.
    */
-  protected CompletableFuture<Void> submit(long taskId, Object task) {
-    synchronized (group) {
-      Collection<GroupMember> members = group.members();
-      CompletableFuture[] futures = new CompletableFuture[members.size()];
-      int i = 0;
-      for (GroupMember member : members) {
-        futures[i++] = group.submit(new GroupCommands.Submit(member.id(), taskId, task));
-      }
-      return CompletableFuture.allOf(futures);
-    }
-  }
-
-  /**
-   * Handles a task acknowledgement.
-   */
-  void onAck(long taskId) {
-    CompletableFuture<Void> future = taskFutures.remove(taskId);
-    if (future != null) {
-      future.complete(null);
-    }
-  }
-
-  /**
-   * Handles a task failure.
-   */
-  void onFail(long taskId) {
-    CompletableFuture<Void> future = taskFutures.remove(taskId);
-    if (future != null) {
-      future.completeExceptionally(new TaskFailedException());
-    }
+  protected Collection<GroupMember> members() {
+    return group.members();
   }
 
   @Override

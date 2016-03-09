@@ -30,8 +30,8 @@ public class GroupMember {
   protected final Address address;
   protected final MembershipGroup group;
   private final GroupProperties properties;
-  private final GroupTaskQueue tasks;
-  private final GroupConnection connection;
+  private final MemberTaskQueue tasks;
+  private final MemberConnection connection;
 
   GroupMember(GroupMemberInfo info, MembershipGroup group) {
     this.index = info.index();
@@ -40,7 +40,7 @@ public class GroupMember {
     this.group = Assert.notNull(group, "group");
     this.properties = new GroupProperties(memberId, group);
     this.tasks = new MemberTaskQueue(memberId, group);
-    this.connection = new GroupConnection(memberId, address, group.connections);
+    this.connection = new MemberConnection(memberId, address, group.connections);
   }
 
   /**
@@ -98,7 +98,7 @@ public class GroupMember {
    *
    * @return A direct connection to the member.
    */
-  public GroupConnection connection() {
+  public MemberConnection connection() {
     return connection;
   }
 
@@ -107,7 +107,7 @@ public class GroupMember {
    *
    * @return The member's task queue.
    */
-  public GroupTaskQueue tasks() {
+  public MemberTaskQueue tasks() {
     return tasks;
   }
 

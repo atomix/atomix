@@ -28,7 +28,7 @@ import java.util.function.Consumer;
 public class LocalMemberTaskQueue extends MemberTaskQueue {
   private final Listeners<GroupTask<Object>> taskListeners = new Listeners<>();
 
-  public LocalMemberTaskQueue(String memberId, MembershipGroup group) {
+  LocalMemberTaskQueue(String memberId, MembershipGroup group) {
     super(memberId, group);
   }
 

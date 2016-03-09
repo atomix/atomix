@@ -27,10 +27,10 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class LocalGroupConnection extends GroupConnection {
+public class LocalMemberConnection extends MemberConnection {
   private final Map<String, MessageListenerHolder> messageListeners = new ConcurrentHashMap<>();
 
-  public LocalGroupConnection(String memberId, Address address, GroupConnectionManager connections) {
+  public LocalMemberConnection(String memberId, Address address, GroupConnectionManager connections) {
     super(memberId, address, connections);
   }
 
