@@ -13,7 +13,7 @@ import java.util.concurrent.CompletableFuture;
 class MemberTaskQueue extends GroupTaskQueue {
   private final String memberId;
 
-  public MemberTaskQueue(MembershipGroup group, String memberId) {
+  public MemberTaskQueue(String memberId, MembershipGroup group) {
     super(group);
     this.memberId = Assert.notNull(memberId, "memberId");
   }

@@ -48,8 +48,8 @@ public class ConsistentHashGroup extends SubGroup {
   private final Listeners<GroupMember> joinListeners = new Listeners<>();
   private final Listeners<GroupMember> leaveListeners = new Listeners<>();
 
-  ConsistentHashGroup(MembershipGroup group, int id, int level, Collection<GroupMember> members, Hasher hasher, int virtualNodes) {
-    super(group, id, level);
+  ConsistentHashGroup(int subGroupId, MembershipGroup group, int level, Collection<GroupMember> members, Hasher hasher, int virtualNodes) {
+    super(subGroupId, group, level);
     this.hashRing = new GroupHashRing(hasher, virtualNodes, 1);
     for (GroupMember member : members) {
       this.members.put(member.id(), member);

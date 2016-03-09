@@ -45,7 +45,7 @@ public class LocalGroupMember extends GroupMember {
 
   LocalGroupMember(GroupMemberInfo info, MembershipGroup group) {
     super(info, group);
-    this.tasks = new LocalMemberTaskQueue(group, info.memberId());
+    this.tasks = new LocalMemberTaskQueue(info.memberId(), group);
     this.connection = new LocalGroupConnection(info.memberId(), info.address(), group.connections);
   }
 

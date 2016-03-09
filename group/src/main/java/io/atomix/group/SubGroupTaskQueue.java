@@ -14,7 +14,7 @@ import java.util.concurrent.CompletableFuture;
 final class SubGroupTaskQueue extends GroupTaskQueue {
   private final SubGroup subGroup;
 
-  public SubGroupTaskQueue(MembershipGroup group, SubGroup subGroup) {
+  public SubGroupTaskQueue(SubGroup subGroup, MembershipGroup group) {
     super(group);
     this.subGroup = Assert.notNull(subGroup, "subGroup");
   }

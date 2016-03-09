@@ -37,8 +37,8 @@ public class GroupPartition extends SubGroup {
   private final Listeners<GroupMember> leaveListeners = new Listeners<>();
   private final Listeners<GroupPartitionMigration> migrationListeners = new Listeners<>();
 
-  GroupPartition(MembershipGroup group, int groupId, int level, List<GroupMember> members, int partition) {
-    super(group, groupId, level);
+  GroupPartition(int subGroupId, MembershipGroup group, int level, List<GroupMember> members, int partition) {
+    super(subGroupId, group, level);
     this.sortedMembers = members;
     for (GroupMember member : members) {
       this.members.put(member.id(), member);

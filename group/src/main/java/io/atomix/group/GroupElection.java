@@ -57,16 +57,16 @@ import java.util.function.Consumer;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class GroupElection {
-  private final DistributedGroup group;
-  private final int groupId;
+  private final int subGroupId;
+  private final MembershipGroup group;
   private final Listeners<Long> termListeners = new Listeners<>();
   private final Listeners<GroupMember> electionListeners = new Listeners<>();
   private final Map<String, Set<Consumer<Long>>> memberElectionListeners = new ConcurrentHashMap<>();
   volatile String leader;
   private volatile long term;
 
-  protected GroupElection(int groupId, DistributedGroup group) {
-    this.groupId = groupId;
+  protected GroupElection(int subGroupId, MembershipGroup group) {
+    this.subGroupId = subGroupId;
     this.group = Assert.notNull(group, "group");
   }
 

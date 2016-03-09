@@ -105,11 +105,11 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
 
   @Override
   public synchronized ConsistentHashGroup hash(Hasher hasher, int virtualNodes) {
-    int hashCode = ConsistentHashGroup.hashCode(1, hasher, virtualNodes);
-    SubGroup group = groups.get(hashCode);
+    int subGroupId = ConsistentHashGroup.hashCode(1, hasher, virtualNodes);
+    SubGroup group = groups.get(subGroupId);
     if (group == null) {
-      group = new ConsistentHashGroup(this, hashCode, 1, members(), hasher, virtualNodes);
-      groups.put(hashCode, group);
+      group = new ConsistentHashGroup(subGroupId, this, 1, members(), hasher, virtualNodes);
+      groups.put(subGroupId, group);
       children.add(group);
     }
     return (ConsistentHashGroup) group;
@@ -132,11 +132,11 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
 
   @Override
   public synchronized PartitionGroup partition(int partitions, int replicationFactor, GroupPartitioner partitioner) {
-    int hashCode = PartitionGroup.hashCode(1, partitions, replicationFactor, partitioner);
-    SubGroup group = groups.get(hashCode);
+    int subGroupId = PartitionGroup.hashCode(1, partitions, replicationFactor, partitioner);
+    SubGroup group = groups.get(subGroupId);
     if (group == null) {
-      group = new PartitionGroup(this, hashCode, 1, members(), partitions, replicationFactor, partitioner);
-      groups.put(hashCode, group);
+      group = new PartitionGroup(subGroupId, this, 1, members(), partitions, replicationFactor, partitioner);
+      groups.put(subGroupId, group);
       children.add(group);
     }
     return (PartitionGroup) group;

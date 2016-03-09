@@ -36,19 +36,19 @@ import java.util.function.Consumer;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public abstract class SubGroup implements DistributedGroup {
+  protected final int subGroupId;
   protected final MembershipGroup group;
-  protected final int groupId;
   private final int level;
   protected final GroupElection election;
   protected final GroupTaskQueue tasks;
   protected final Set<SubGroup> children = new CopyOnWriteArraySet<>();
 
-  protected SubGroup(MembershipGroup group, int groupId, int level) {
+  protected SubGroup(int subGroupId, MembershipGroup group, int level) {
     this.group = Assert.notNull(group, "group");
-    this.groupId = groupId;
+    this.subGroupId = subGroupId;
     this.level = level;
-    this.election = new GroupElection(groupId, group);
-    this.tasks = new SubGroupTaskQueue(group, this);
+    this.election = new GroupElection(subGroupId, group);
+    this.tasks = new SubGroupTaskQueue(this, group);
   }
 
   @Override
@@ -140,14 +140,14 @@ public abstract class SubGroup implements DistributedGroup {
 
   @Override
   public ConsistentHashGroup hash(Hasher hasher, int virtualNodes) {
-    int hashCode = ConsistentHashGroup.hashCode(level+1, hasher, virtualNodes);
-    SubGroup group = this.group.groups.get(hashCode);
+    int subGroupId = ConsistentHashGroup.hashCode(level+1, hasher, virtualNodes);
+    SubGroup group = this.group.groups.get(subGroupId);
     if (group == null) {
       synchronized (this.group) {
-        group = this.group.groups.get(hashCode);
+        group = this.group.groups.get(subGroupId);
         if (group == null) {
-          group = new ConsistentHashGroup(this.group, hashCode, level+1, members(), hasher, virtualNodes);
-          this.group.groups.put(hashCode, group);
+          group = new ConsistentHashGroup(subGroupId, this.group, level+1, members(), hasher, virtualNodes);
+          this.group.groups.put(subGroupId, group);
           children.add(group);
         }
       }
@@ -172,14 +172,14 @@ public abstract class SubGroup implements DistributedGroup {
 
   @Override
   public PartitionGroup partition(int partitions, int replicationFactor, GroupPartitioner partitioner) {
-    int hashCode = PartitionGroup.hashCode(level+1, partitions, replicationFactor, partitioner);
-    SubGroup group = this.group.groups.get(hashCode);
+    int subGroupId = PartitionGroup.hashCode(level+1, partitions, replicationFactor, partitioner);
+    SubGroup group = this.group.groups.get(subGroupId);
     if (group == null) {
       synchronized (this.group) {
-        group = this.group.groups.get(hashCode);
+        group = this.group.groups.get(subGroupId);
         if (group == null) {
-          group = new PartitionGroup(this.group, hashCode, level+1, members(), partitions, replicationFactor, partitioner);
-          this.group.groups.put(hashCode, group);
+          group = new PartitionGroup(subGroupId, this.group, level+1, members(), partitions, replicationFactor, partitioner);
+          this.group.groups.put(subGroupId, group);
           children.add(group);
         }
       }
@@ -228,7 +228,7 @@ public abstract class SubGroup implements DistributedGroup {
 
   @Override
   public int hashCode() {
-    return groupId;
+    return subGroupId;
   }
 
   @Override

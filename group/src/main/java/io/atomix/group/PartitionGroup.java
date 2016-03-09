@@ -49,8 +49,8 @@ public class PartitionGroup extends SubGroup {
   private final Listeners<GroupMember> leaveListeners = new Listeners<>();
   private final Listeners<GroupPartitionMigration> migrationListeners = new Listeners<>();
 
-  PartitionGroup(MembershipGroup group, int groupId, int level, Collection<GroupMember> members, int numPartitions, int replicationFactor, GroupPartitioner partitioner) {
-    super(group, groupId, level);
+  PartitionGroup(int subGroupId, MembershipGroup group, int level, Collection<GroupMember> members, int numPartitions, int replicationFactor, GroupPartitioner partitioner) {
+    super(subGroupId, group, level);
     this.hashRing = new GroupHashRing(new Murmur2Hasher(), 100, replicationFactor);
     for (GroupMember member : members) {
       hashRing.addMember(member);
@@ -58,7 +58,7 @@ public class PartitionGroup extends SubGroup {
 
     List<GroupPartition> partitions = new ArrayList<>(numPartitions);
     for (int i = 0; i < numPartitions; i++) {
-      partitions.add(new GroupPartition(group, groupId, level, hashRing.members(intToByteArray(i)), i));
+      partitions.add(new GroupPartition(subGroupId, group, level, hashRing.members(intToByteArray(i)), i));
     }
     this.partitions = new GroupPartitions(partitions, partitioner);
   }
