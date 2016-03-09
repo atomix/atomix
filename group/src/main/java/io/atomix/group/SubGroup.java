@@ -25,9 +25,9 @@ import io.atomix.resource.ReadConsistency;
 import io.atomix.resource.ResourceType;
 import io.atomix.resource.WriteConsistency;
 
-import java.util.Set;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 /**
@@ -38,16 +38,13 @@ import java.util.function.Consumer;
 public abstract class SubGroup implements DistributedGroup {
   protected final int subGroupId;
   protected final MembershipGroup group;
-  private final int level;
-  protected final GroupElection election;
+  protected final GroupElection election = new GroupElection(this);
   protected final GroupTaskQueue tasks;
-  protected final Set<SubGroup> children = new CopyOnWriteArraySet<>();
+  protected final Map<Integer, SubGroup> subGroups = new ConcurrentHashMap<>();
 
-  protected SubGroup(int subGroupId, MembershipGroup group, int level) {
+  protected SubGroup(int subGroupId, MembershipGroup group) {
     this.group = Assert.notNull(group, "group");
     this.subGroupId = subGroupId;
-    this.level = level;
-    this.election = new GroupElection(subGroupId, group);
     this.tasks = new SubGroupTaskQueue(this, group);
   }
 
@@ -140,19 +137,8 @@ public abstract class SubGroup implements DistributedGroup {
 
   @Override
   public ConsistentHashGroup hash(Hasher hasher, int virtualNodes) {
-    int subGroupId = ConsistentHashGroup.hashCode(level+1, hasher, virtualNodes);
-    SubGroup group = this.group.groups.get(subGroupId);
-    if (group == null) {
-      synchronized (this.group) {
-        group = this.group.groups.get(subGroupId);
-        if (group == null) {
-          group = new ConsistentHashGroup(subGroupId, this.group, level+1, members(), hasher, virtualNodes);
-          this.group.groups.put(subGroupId, group);
-          children.add(group);
-        }
-      }
-    }
-    return (ConsistentHashGroup) group;
+    int subGroupId = ConsistentHashGroup.hashCode(this.subGroupId, hasher, virtualNodes);
+    return (ConsistentHashGroup) subGroups.computeIfAbsent(subGroupId, s -> new ConsistentHashGroup(subGroupId, this.group, members(), hasher, virtualNodes));
   }
 
   @Override
@@ -172,19 +158,8 @@ public abstract class SubGroup implements DistributedGroup {
 
   @Override
   public PartitionGroup partition(int partitions, int replicationFactor, GroupPartitioner partitioner) {
-    int subGroupId = PartitionGroup.hashCode(level+1, partitions, replicationFactor, partitioner);
-    SubGroup group = this.group.groups.get(subGroupId);
-    if (group == null) {
-      synchronized (this.group) {
-        group = this.group.groups.get(subGroupId);
-        if (group == null) {
-          group = new PartitionGroup(subGroupId, this.group, level+1, members(), partitions, replicationFactor, partitioner);
-          this.group.groups.put(subGroupId, group);
-          children.add(group);
-        }
-      }
-    }
-    return (PartitionGroup) group;
+    int subGroupId = PartitionGroup.hashCode(this.subGroupId, partitions, replicationFactor, partitioner);
+    return (PartitionGroup) subGroups.computeIfAbsent(subGroupId, s -> new PartitionGroup(subGroupId, this.group, members(), partitions, replicationFactor, partitioner));
   }
 
   @Override

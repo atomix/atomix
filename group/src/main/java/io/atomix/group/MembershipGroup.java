@@ -49,11 +49,10 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
   private final Server server;
   final GroupConnectionManager connections;
   private final GroupProperties properties = new GroupProperties(null, this);
-  private final GroupElection election = new GroupElection(0, this);
+  private final GroupElection election = new GroupElection(this);
   private final GroupTaskQueue tasks = new GroupTaskQueue(this);
   final Map<String, GroupMember> members = new ConcurrentHashMap<>();
-  private final Set<SubGroup> children = new HashSet<>();
-  final Map<Integer, SubGroup> groups = new ConcurrentHashMap<>();
+  private final Map<Integer, SubGroup> subGroups = new ConcurrentHashMap<>();
 
   public MembershipGroup(CopycatClient client, Properties options) {
     super(client, new ResourceType(DistributedGroup.class), options);
@@ -105,14 +104,8 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
 
   @Override
   public synchronized ConsistentHashGroup hash(Hasher hasher, int virtualNodes) {
-    int subGroupId = ConsistentHashGroup.hashCode(1, hasher, virtualNodes);
-    SubGroup group = groups.get(subGroupId);
-    if (group == null) {
-      group = new ConsistentHashGroup(subGroupId, this, 1, members(), hasher, virtualNodes);
-      groups.put(subGroupId, group);
-      children.add(group);
-    }
-    return (ConsistentHashGroup) group;
+    int subGroupId = ConsistentHashGroup.hashCode(0, hasher, virtualNodes);
+    return (ConsistentHashGroup) subGroups.computeIfAbsent(subGroupId, g -> new ConsistentHashGroup(g, this, members(), hasher, virtualNodes));
   }
 
   @Override
@@ -132,14 +125,8 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
 
   @Override
   public synchronized PartitionGroup partition(int partitions, int replicationFactor, GroupPartitioner partitioner) {
-    int subGroupId = PartitionGroup.hashCode(1, partitions, replicationFactor, partitioner);
-    SubGroup group = groups.get(subGroupId);
-    if (group == null) {
-      group = new PartitionGroup(subGroupId, this, 1, members(), partitions, replicationFactor, partitioner);
-      groups.put(subGroupId, group);
-      children.add(group);
-    }
-    return (PartitionGroup) group;
+    int subGroupId = PartitionGroup.hashCode(0, partitions, replicationFactor, partitioner);
+    return (PartitionGroup) subGroups.computeIfAbsent(subGroupId, s -> new PartitionGroup(s, this, members(), partitions, replicationFactor, partitioner));
   }
 
   @Override
@@ -200,9 +187,6 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
     return client.connect().thenApply(result -> {
       client.onEvent("join", this::onJoinEvent);
       client.onEvent("leave", this::onLeaveEvent);
-      client.onEvent("term", election::onTermEvent);
-      client.onEvent("elect", election::onElectEvent);
-      client.onEvent("resign", election::onResignEvent);
       client.onEvent("task", this::onTaskEvent);
       client.onEvent("ack", this::onAckEvent);
       client.onEvent("fail", this::onFailEvent);
@@ -265,22 +249,45 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
     if (joining.contains(info.memberId())) {
       member = new LocalGroupMember(info, this);
       members.put(info.memberId(), member);
-      for (Listener<GroupMember> listener : joinListeners) {
-        listener.accept(member);
-      }
-      for (SubGroup child : children) {
-        child.onJoin(member);
+
+      // Trigger join listeners.
+      joinListeners.accept(member);
+
+      // Trigger elections.
+      election.onJoin(member);
+
+      // Trigger subgroup join listeners.
+      for (SubGroup subGroup : subGroups.values()) {
+        subGroup.onJoin(member);
       }
     } else {
       member = members.get(info.memberId());
       if (member == null) {
         member = new GroupMember(info, this);
         members.put(info.memberId(), member);
-        for (Listener<GroupMember> listener : joinListeners) {
-          listener.accept(member);
+
+        // Trigger join listeners.
+        joinListeners.accept(member);
+
+        // Trigger elections.
+        election.onJoin(member);
+
+        // Trigger subgroup join listeners.
+        for (SubGroup subGroup : subGroups.values()) {
+          subGroup.onJoin(member);
         }
-        for (SubGroup child : children) {
-          child.onJoin(member);
+      } else {
+        // If the joining member's index is greater than the existing member's index then the member
+        // was reopened on another node. We need to reset elections.
+        if (info.index() > member.index()) {
+          // Update the member's index and trigger a new election if necessary.
+          member.setIndex(info.index());
+          election.onJoin(member);
+
+          // Trigger subgroup join listeners.
+          for (SubGroup subGroup : subGroups.values()) {
+            subGroup.onJoin(member);
+          }
         }
       }
     }
@@ -292,12 +299,16 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
   private void onLeaveEvent(String memberId) {
     GroupMember member = members.remove(memberId);
     if (member != null) {
-      for (Listener<GroupMember> listener : leaveListeners) {
-        listener.accept(member);
+      // Trigger subgroup leave listeners first to ensure the member leaves children before parents.
+      for (SubGroup subGroup : subGroups.values()) {
+        subGroup.onLeave(member);
       }
-      for (SubGroup child : children) {
-        child.onLeave(member);
-      }
+
+      // Trigger a new election.
+      election.onLeave(member);
+
+      // Trigger leave listeners.
+      leaveListeners.accept(member);
     }
   }
 
@@ -310,9 +321,9 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
       CompletableFuture<Boolean> future = new CompletableFuture<>();
       future.whenComplete((succeeded, error) -> {
         if (error == null && succeeded) {
-          submit(new GroupCommands.Ack(0, task.member(), task.id(), true));
+          submit(new GroupCommands.Ack(task.member(), task.id(), true));
         } else {
-          submit(new GroupCommands.Ack(0, task.member(), task.id(), false));
+          submit(new GroupCommands.Ack(task.member(), task.id(), false));
         }
       });
       ((LocalGroupMember) localMember).tasks().onTask(task.setFuture(future));

@@ -33,9 +33,9 @@ public class PartitionGroup extends SubGroup {
   /**
    * Calculates a hash code for the given group arguments.
    */
-  static int hashCode(int level, int partitions, int replicationFactor, GroupPartitioner partitioner) {
+  static int hashCode(int parent, int partitions, int replicationFactor, GroupPartitioner partitioner) {
     int hashCode = 31;
-    hashCode = 37 * hashCode + level;
+    hashCode = 37 * hashCode + parent;
     hashCode = 37 * hashCode + partitions;
     hashCode = 37 * hashCode + replicationFactor;
     hashCode = 37 * hashCode + partitioner.hashCode();
@@ -49,8 +49,8 @@ public class PartitionGroup extends SubGroup {
   private final Listeners<GroupMember> leaveListeners = new Listeners<>();
   private final Listeners<GroupPartitionMigration> migrationListeners = new Listeners<>();
 
-  PartitionGroup(int subGroupId, MembershipGroup group, int level, Collection<GroupMember> members, int numPartitions, int replicationFactor, GroupPartitioner partitioner) {
-    super(subGroupId, group, level);
+  PartitionGroup(int subGroupId, MembershipGroup group, Collection<GroupMember> members, int numPartitions, int replicationFactor, GroupPartitioner partitioner) {
+    super(subGroupId, group);
     this.hashRing = new GroupHashRing(new Murmur2Hasher(), 100, replicationFactor);
     for (GroupMember member : members) {
       hashRing.addMember(member);
@@ -58,7 +58,7 @@ public class PartitionGroup extends SubGroup {
 
     List<GroupPartition> partitions = new ArrayList<>(numPartitions);
     for (int i = 0; i < numPartitions; i++) {
-      partitions.add(new GroupPartition(subGroupId, group, level, hashRing.members(intToByteArray(i)), i));
+      partitions.add(new GroupPartition(GroupPartition.hashCode(subGroupId, i), group, hashRing.members(intToByteArray(i)), i));
     }
     this.partitions = new GroupPartitions(partitions, partitioner);
   }
@@ -106,20 +106,50 @@ public class PartitionGroup extends SubGroup {
   protected void onJoin(GroupMember member) {
     GroupMember existing = members.get(member.id());
     if (existing != null) {
+      // If the member changed from local to remote or vice-versa, update the member object.
       if ((!(existing instanceof LocalGroupMember) && member instanceof LocalGroupMember) || (existing instanceof LocalGroupMember && !(member instanceof LocalGroupMember))) {
         hashRing.removeMember(existing);
         members.put(member.id(), member);
         hashRing.addMember(member);
+
+        // Trigger election events.
+        election.onJoin(member);
+
+        // Trigger subgroup join events.
+        for (SubGroup subGroup : subGroups.values()) {
+          subGroup.onJoin(member);
+        }
+      } else {
+        existing.setIndex(member.index());
+
+        // Trigger election events.
+        election.onJoin(existing);
+
+        // Trigger subgroup join events.
+        for (SubGroup subGroup : subGroups.values()) {
+          subGroup.onJoin(existing);
+        }
       }
     } else {
       members.put(member.id(), member);
+
+      // Calculate old and new partitions given the member change.
       List<List<GroupMember>> oldPartitions = getOldPartitions();
       hashRing.addMember(member);
       List<List<GroupMember>> newPartitions = getNewPartitions();
-      migratePartitions(oldPartitions, newPartitions);
+
+      // Migrate partition members.
+      migratePartitionMembers(oldPartitions, newPartitions);
+
+      // Trigger join event listeners.
       joinListeners.accept(member);
-      for (SubGroup child : children) {
-        child.onJoin(member);
+
+      // Trigger election events.
+      election.onJoin(member);
+
+      // Trigger subgroup join events.
+      for (SubGroup subGroup : subGroups.values()) {
+        subGroup.onJoin(member);
       }
     }
   }
@@ -128,14 +158,21 @@ public class PartitionGroup extends SubGroup {
   protected void onLeave(GroupMember member) {
     GroupMember removed = members.remove(member.id());
     if (removed != null) {
+      // Calculate old and new partitions given the member change.
       List<List<GroupMember>> oldPartitions = getOldPartitions();
       hashRing.removeMember(member);
       List<List<GroupMember>> newPartitions = getNewPartitions();
-      migratePartitions(oldPartitions, newPartitions);
-      leaveListeners.accept(removed);
-      for (SubGroup child : children) {
-        child.onLeave(removed);
+
+      // Migrate partition members.
+      migratePartitionMembers(oldPartitions, newPartitions);
+
+      // Trigger subgroup leave events.
+      for (SubGroup subGroup : subGroups.values()) {
+        subGroup.onLeave(removed);
       }
+
+      // Trigger leave listeners.
+      leaveListeners.accept(removed);
     }
   }
 
@@ -164,7 +201,7 @@ public class PartitionGroup extends SubGroup {
   /**
    * Migrates partitions from the old partitions to the new partitions.
    */
-  private void migratePartitions(List<List<GroupMember>> oldPartitions, List<List<GroupMember>> newPartitions) {
+  private void migratePartitionMembers(List<List<GroupMember>> oldPartitions, List<List<GroupMember>> newPartitions) {
     // Iterate through each of the partitions in the group.
     for (int i = 0; i < partitions.size(); i++) {
       // Get a list of the old and new partition members.

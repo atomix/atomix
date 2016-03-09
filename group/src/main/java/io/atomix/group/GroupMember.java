@@ -25,6 +25,7 @@ import io.atomix.catalyst.util.Assert;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class GroupMember {
+  protected volatile long index;
   protected final String memberId;
   protected final Address address;
   protected final MembershipGroup group;
@@ -33,12 +34,33 @@ public class GroupMember {
   private final GroupConnection connection;
 
   GroupMember(GroupMemberInfo info, MembershipGroup group) {
+    this.index = info.index();
     this.memberId = info.memberId();
     this.address = info.address();
     this.group = Assert.notNull(group, "group");
     this.properties = new GroupProperties(memberId, group);
     this.tasks = new MemberTaskQueue(memberId, group);
     this.connection = new GroupConnection(memberId, address, group.connections);
+  }
+
+  /**
+   * Returns the member index.
+   *
+   * @return The member index.
+   */
+  long index() {
+    return index;
+  }
+
+  /**
+   * Updates the member index.
+   *
+   * @param index The updated member index.
+   * @return The group member.
+   */
+  GroupMember setIndex(long index) {
+    this.index = index;
+    return this;
   }
 
   /**
@@ -60,19 +82,6 @@ public class GroupMember {
    */
   public Address address() {
     return address;
-  }
-
-  /**
-   * Returns a boolean value indicating whether this member is the current leader.
-   * <p>
-   * Whether this member is the current leader is dependent on the last known configuration of the membership
-   * group. If the local group instance is partitioned from the cluster, it may believe a member to be the
-   * leader when it has in fact been replaced.
-   *
-   * @return Indicates whether this member is the current leader.
-   */
-  public boolean isLeader() {
-    return group.election().leader != null && group.election().leader.equals(memberId);
   }
 
   /**
@@ -100,6 +109,11 @@ public class GroupMember {
    */
   public GroupTaskQueue tasks() {
     return tasks;
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    return object instanceof GroupMember && ((GroupMember) object).memberId.equals(memberId);
   }
 
   @Override

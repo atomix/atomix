@@ -30,6 +30,17 @@ import java.util.function.Consumer;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class GroupPartition extends SubGroup {
+
+  /**
+   * Calculates a hash code for the given group arguments.
+   */
+  static int hashCode(int parent, int partition) {
+    int hashCode = 17;
+    hashCode = 37 * hashCode + parent;
+    hashCode = 37 * hashCode + partition;
+    return hashCode;
+  }
+
   private final int partition;
   private final Map<String, GroupMember> members = new ConcurrentHashMap<>();
   private final List<GroupMember> sortedMembers;
@@ -37,8 +48,8 @@ public class GroupPartition extends SubGroup {
   private final Listeners<GroupMember> leaveListeners = new Listeners<>();
   private final Listeners<GroupPartitionMigration> migrationListeners = new Listeners<>();
 
-  GroupPartition(int subGroupId, MembershipGroup group, int level, List<GroupMember> members, int partition) {
-    super(subGroupId, group, level);
+  GroupPartition(int subGroupId, MembershipGroup group, List<GroupMember> members, int partition) {
+    super(subGroupId, group);
     this.sortedMembers = members;
     for (GroupMember member : members) {
       this.members.put(member.id(), member);
@@ -127,19 +138,39 @@ public class GroupPartition extends SubGroup {
     for (GroupMember leave : leaves) {
       this.members.remove(leave.id());
       this.sortedMembers.remove(leave);
-      leaveListeners.accept(leave);
-      for (SubGroup child : children) {
-        child.onLeave(leave);
+
+      // Trigger subgroup leave events.
+      for (SubGroup subGroup : subGroups.values()) {
+        subGroup.onLeave(leave);
       }
+
+      // Trigger a new election.
+      election.onLeave(leave);
+
+      // Trigger leave listeners.
+      leaveListeners.accept(leave);
     }
 
     // Add joined members to the group and trigger listeners and children.
     for (GroupMember join : joins) {
       this.members.put(join.id(), join);
       this.sortedMembers.add(join);
+
+      // Trigger join listeners.
       joinListeners.accept(join);
-      for (SubGroup child : children) {
-        child.onJoin(join);
+    }
+
+    // Trigger election events for all partition members to ensure leaders are properly updated in the
+    // event that a member index was changed.
+    for (GroupMember member : members) {
+      // Trigger election events.
+      election.onJoin(member);
+    }
+
+    // Trigger subgroup join events.
+    for (GroupMember join : joins) {
+      for (SubGroup subGroup : subGroups.values()) {
+        subGroup.onJoin(join);
       }
     }
   }

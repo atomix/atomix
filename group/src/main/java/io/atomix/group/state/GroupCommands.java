@@ -92,42 +92,6 @@ public final class GroupCommands {
   }
 
   /**
-   * Group member operation.
-   */
-  public static abstract class GroupMemberOperation<T> extends MemberOperation<T> {
-    private int group;
-
-    protected GroupMemberOperation() {
-    }
-
-    protected GroupMemberOperation(int group, String member) {
-      super(member);
-      this.group = group;
-    }
-
-    /**
-     * Returns the group ID.
-     *
-     * @return The group ID.
-     */
-    public int group() {
-      return group;
-    }
-
-    @Override
-    public void writeObject(BufferOutput buffer, Serializer serializer) {
-      super.writeObject(buffer, serializer);
-      buffer.writeInt(group);
-    }
-
-    @Override
-    public void readObject(BufferInput buffer, Serializer serializer) {
-      super.readObject(buffer, serializer);
-      group = buffer.readInt();
-    }
-  }
-
-  /**
    * Abstract group command.
    */
   public static abstract class GroupCommand<V> extends GroupOperation<V> implements Command<V> {
@@ -151,28 +115,6 @@ public final class GroupCommands {
 
     public MemberCommand(String member) {
       super(member);
-    }
-
-    @Override
-    public ConsistencyLevel consistency() {
-      return ConsistencyLevel.LINEARIZABLE;
-    }
-
-    @Override
-    public CompactionMode compaction() {
-      return CompactionMode.QUORUM;
-    }
-  }
-
-  /**
-   * Member command.
-   */
-  public static abstract class GroupMemberCommand<V> extends GroupMemberOperation<V> implements Command<V> {
-    public GroupMemberCommand() {
-    }
-
-    public GroupMemberCommand(int group, String member) {
-      super(group, member);
     }
 
     @Override
@@ -276,35 +218,6 @@ public final class GroupCommands {
     @Override
     public CompactionMode compaction() {
       return CompactionMode.QUORUM;
-    }
-  }
-
-  /**
-   * Starts a new election.
-   */
-  public static class Elect extends GroupMemberCommand<Void> {
-    public Elect() {
-    }
-
-    public Elect(int group, String member) {
-      super(group, member);
-    }
-  }
-
-  /**
-   * Resign command.
-   */
-  public static class Resign extends GroupMemberCommand<Void> {
-    public Resign() {
-    }
-
-    public Resign(int group, String member) {
-      super(group, member);
-    }
-
-    @Override
-    public Command.CompactionMode compaction() {
-      return Command.CompactionMode.SEQUENTIAL;
     }
   }
 
@@ -485,15 +398,15 @@ public final class GroupCommands {
   /**
    * Ack command.
    */
-  public static class Ack extends GroupMemberCommand<Object> {
+  public static class Ack extends MemberCommand<Object> {
     private long id;
     private boolean succeeded;
 
     public Ack() {
     }
 
-    public Ack(int group, String member, long id, boolean succeeded) {
-      super(group, member);
+    public Ack(String member, long id, boolean succeeded) {
+      super(member);
       this.id = id;
       this.succeeded = succeeded;
     }
@@ -531,84 +444,6 @@ public final class GroupCommands {
   }
 
   /**
-   * Election event.
-   */
-  public static abstract class ElectionEvent implements CatalystSerializable {
-    private int group;
-
-    protected ElectionEvent() {
-    }
-
-    protected ElectionEvent(int group) {
-      this.group = group;
-    }
-
-    @Override
-    public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
-      buffer.writeInt(group);
-    }
-
-    @Override
-    public void readObject(BufferInput<?> buffer, Serializer serializer) {
-      group = buffer.readInt();
-    }
-  }
-
-  /**
-   * Term change event.
-   */
-  public static class TermEvent extends ElectionEvent {
-    private long term;
-
-    public TermEvent() {
-    }
-
-    public TermEvent(int group, long term) {
-      super(group);
-      this.term = term;
-    }
-
-    @Override
-    public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
-      super.writeObject(buffer, serializer);
-      buffer.writeLong(term);
-    }
-
-    @Override
-    public void readObject(BufferInput<?> buffer, Serializer serializer) {
-      super.readObject(buffer, serializer);
-      term = buffer.readLong();
-    }
-  }
-
-  /**
-   * Leader change event.
-   */
-  public static class LeaderEvent extends ElectionEvent {
-    private String leader;
-
-    public LeaderEvent() {
-    }
-
-    public LeaderEvent(int group, String leader) {
-      super(group);
-      this.leader = leader;
-    }
-
-    @Override
-    public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
-      super.writeObject(buffer, serializer);
-      buffer.writeString(leader);
-    }
-
-    @Override
-    public void readObject(BufferInput<?> buffer, Serializer serializer) {
-      super.readObject(buffer, serializer);
-      leader = buffer.readString();
-    }
-  }
-
-  /**
    * Group command type resolver.
    */
   public static class TypeResolver implements SerializableTypeResolver {
@@ -617,7 +452,6 @@ public final class GroupCommands {
       registry.register(Join.class, -130);
       registry.register(Leave.class, -131);
       registry.register(Listen.class, -132);
-      registry.register(Resign.class, -133);
       registry.register(SetProperty.class, -134);
       registry.register(GetProperty.class, -135);
       registry.register(RemoveProperty.class, -136);
@@ -625,9 +459,6 @@ public final class GroupCommands {
       registry.register(GroupMessage.class, -138);
       registry.register(GroupTask.class, -139);
       registry.register(Ack.class, -140);
-      registry.register(Elect.class, -158);
-      registry.register(TermEvent.class, -159);
-      registry.register(LeaderEvent.class, -160);
     }
   }
 

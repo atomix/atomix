@@ -35,9 +35,9 @@ public class ConsistentHashGroup extends SubGroup {
   /**
    * Returns a hash code for the given hash group arguments.
    */
-  static int hashCode(int level, Hasher hasher, int virtualNodes) {
+  static int hashCode(int parent, Hasher hasher, int virtualNodes) {
     int hashCode = 17;
-    hashCode = 37 * hashCode + level;
+    hashCode = 37 * hashCode + parent;
     hashCode = 37 * hashCode + hasher.hashCode();
     hashCode = 37 * hashCode + virtualNodes;
     return hashCode;
@@ -48,8 +48,8 @@ public class ConsistentHashGroup extends SubGroup {
   private final Listeners<GroupMember> joinListeners = new Listeners<>();
   private final Listeners<GroupMember> leaveListeners = new Listeners<>();
 
-  ConsistentHashGroup(int subGroupId, MembershipGroup group, int level, Collection<GroupMember> members, Hasher hasher, int virtualNodes) {
-    super(subGroupId, group, level);
+  ConsistentHashGroup(int subGroupId, MembershipGroup group, Collection<GroupMember> members, Hasher hasher, int virtualNodes) {
+    super(subGroupId, group);
     this.hashRing = new GroupHashRing(hasher, virtualNodes, 1);
     for (GroupMember member : members) {
       this.members.put(member.id(), member);
@@ -102,10 +102,38 @@ public class ConsistentHashGroup extends SubGroup {
         hashRing.removeMember(existing);
         members.put(member.id(), member);
         hashRing.addMember(member);
+
+        // Trigger election events.
+        election.onJoin(member);
+
+        // Trigger subgroup join events.
+        for (SubGroup subGroup : subGroups.values()) {
+          subGroup.onJoin(member);
+        }
+      } else {
+        existing.setIndex(member.index());
+
+        // Trigger election events.
+        election.onJoin(existing);
+
+        // Trigger subgroup join events.
+        for (SubGroup subGroup : subGroups.values()) {
+          subGroup.onJoin(existing);
+        }
       }
     } else {
       members.put(member.id(), member);
+
+      // Trigger join event listeners.
       joinListeners.accept(member);
+
+      // Trigger election events.
+      election.onJoin(member);
+
+      // Trigger subgroup join events.
+      for (SubGroup subGroup : subGroups.values()) {
+        subGroup.onJoin(member);
+      }
     }
   }
 

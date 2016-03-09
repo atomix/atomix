@@ -36,9 +36,6 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
   private final Map<Long, GroupSession> sessions = new HashMap<>();
   private final Map<String, Member> members = new HashMap<>();
   private final Map<String, Property> properties = new HashMap<>();
-  private final Queue<Member> candidates = new ArrayDeque<>();
-  private Member leader;
-  private long term;
 
   public GroupState(Properties config) {
     super(config);
@@ -58,8 +55,6 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
       // If the member is associated with the closed session, remove it from the members list.
       Member member = iterator.next().getValue();
       if (member.session() != null && member.session().equals(session)) {
-        candidates.remove(member);
-
         // If the member is not persistent, remove the member from the membership group.
         if (!member.persistent()) {
           iterator.remove();
@@ -83,14 +78,6 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
       }
     }
 
-    // If the current leader is one of the members that left the cluster, resign the leadership
-    // and elect a new leader. This must be done after all the removed members are removed from internal state.
-    if (leader != null && left.containsKey(leader.index())) {
-      resignLeader(false);
-      incrementTerm();
-      electLeader();
-    }
-
     // Close the commits for the members that left the group.
     // Iterate through the remaining sessions and publish a leave event for each removed member
     // *after* the members have been closed to ensure events are sent in the proper order.
@@ -98,44 +85,6 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
       member.close();
       sessions.values().forEach(s -> s.leave(member));
     });
-  }
-
-  /**
-   * Increments the term.
-   */
-  private void incrementTerm() {
-    term = context.index();
-    sessions.values().forEach(s -> s.term(term));
-  }
-
-  /**
-   * Resigns a leader.
-   */
-  private void resignLeader(boolean toCandidate) {
-    if (leader != null) {
-      sessions.values().forEach(s -> s.resign(leader));
-
-      if (toCandidate) {
-        candidates.add(leader);
-      }
-      leader = null;
-    }
-  }
-
-  /**
-   * Elects a leader if necessary.
-   */
-  private void electLeader() {
-    Member member = candidates.poll();
-    while (member != null) {
-      if (!member.session().state().active()) {
-        member = candidates.poll();
-      } else {
-        leader = member;
-        sessions.values().forEach(s -> s.elect(leader));
-        break;
-      }
-    }
   }
 
   /**
@@ -151,21 +100,10 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
 
         // Store the member ID and join commit mappings and add the member as a candidate.
         members.put(member.id(), member);
-        candidates.add(member);
 
         // Iterate through available sessions and publish a join event to each session.
         for (GroupSession session : sessions.values()) {
           session.join(member);
-        }
-
-        // If the term has not yet been set, set it.
-        if (term == 0) {
-          incrementTerm();
-        }
-
-        // If a leader has not yet been elected, elect one.
-        if (leader == null) {
-          electLeader();
         }
       }
       // If the member already exists and is a persistent member, update the member to point to the new session.
@@ -173,23 +111,10 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
         // Update the member's session to the commit session the member may have been reopened via a new session.
         member.setSession(commit.session());
 
-        // Add the member to the candidates list if it's not already present to ensure it can be elected.
-        if (!candidates.contains(member)) {
-          candidates.add(member);
-        }
-
         // Iterate through available sessions and publish a join event to each session.
         // This will result in client-side groups updating the member object according to locality.
         for (GroupSession session : sessions.values()) {
           session.join(member);
-        }
-
-        // If the member is the group leader, force it to resign and elect a new leader. This is necessary
-        // in the event the member is being reopened on another node.
-        if (leader != null && leader.equals(member)) {
-          resignLeader(true);
-          incrementTerm();
-          electLeader();
         }
 
         // Close the join commit since there's already an earlier commit that opened the member.
@@ -216,16 +141,6 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
       // Remove the member from the members list.
       Member member = members.remove(commit.operation().member());
       if (member != null) {
-        // Remove the member from the candidates list.
-        candidates.remove(member);
-
-        // If the leaving member was the leader, increment the term and elect a new leader.
-        if (leader != null && leader.equals(member)) {
-          resignLeader(false);
-          incrementTerm();
-          electLeader();
-        }
-
         // Close the member to ensure it's garbage collected.
         member.close();
 
@@ -251,22 +166,6 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
         }
       }
       return members;
-    } finally {
-      commit.close();
-    }
-  }
-
-  /**
-   * Handles a resign commit.
-   */
-  public void resign(Commit<GroupCommands.Resign> commit) {
-    try {
-      Member member = members.get(commit.operation().member());
-      if (member != null && leader != null && leader.equals(member)) {
-        resignLeader(true);
-        incrementTerm();
-        electLeader();
-      }
     } finally {
       commit.close();
     }
@@ -409,7 +308,7 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
      */
     public void join(Member member) {
       if (session.state().active()) {
-        session.publish("join", new GroupMemberInfo(member.id(), member.address()));
+        session.publish("join", member.info());
       }
     }
 
@@ -419,33 +318,6 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
     public void leave(Member member) {
       if (session.state().active()) {
         session.publish("leave", member.id());
-      }
-    }
-
-    /**
-     * Sends a term event to the session for the given member.
-     */
-    public void term(long term) {
-      if (session.state().active()) {
-        session.publish("term", term);
-      }
-    }
-
-    /**
-     * Sends an elect event to the session for the given member.
-     */
-    public void elect(Member member) {
-      if (session.state().active()) {
-        session.publish("elect", member.id());
-      }
-    }
-
-    /**
-     * Sends a resign event to the session for the given member.
-     */
-    public void resign(Member member) {
-      if (session.state().active()) {
-        session.publish("resign", member.id());
       }
     }
 
@@ -508,7 +380,7 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
      * Returns group member info.
      */
     public GroupMemberInfo info() {
-      return new GroupMemberInfo(memberId, address);
+      return new GroupMemberInfo(index, memberId, address);
     }
 
     /**
