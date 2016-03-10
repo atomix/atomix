@@ -36,7 +36,23 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
 
 /**
- * Distributed membership group.
+ * Base {@link DistributedGroup} implementation which manages a membership set for the group
+ * and all {@link SubGroup}s.
+ * <p>
+ * The membership group is the base {@link DistributedGroup} type which is created when a new group
+ * is created via the Atomix API.
+ * <pre>
+ *   {@code
+ *   DistributedGroup group = atomix.getGroup("foo").get();
+ *   }
+ * </pre>
+ * The membership group controls the set of members available within the group and all {@link SubGroup}s.
+ * When a membership change occurs within the group, the membership group will update its state and
+ * the state of all subgroups.
+ * <p>
+ * Subgroups created by the membership group via either {@link #hash()} or {@link #partition(int)} will
+ * inherit the membership group's {@link GroupProperties properties} and members. However, subgroups
+ * may filter members according to their requirements.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */

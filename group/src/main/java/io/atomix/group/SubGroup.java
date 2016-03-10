@@ -31,7 +31,20 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 /**
- * Abstract distributed group.
+ * Base class for subgroups of {@link DistributedGroup}.
+ * <p>
+ * {@link DistributedGroup} can be partitioned into subgroups that can be nested to any depth. This allows groups
+ * to be partitioned multiple times to facilitate replication algorithms. Subgroups are guaranteed to be consistent
+ * across all nodes in a cluster. For example, in a {@link MembershipGroup} partitioned into a {@link PartitionGroup}
+ * with {@code 3} partitions, each {@link GroupPartition} will represent the same members on all nodes in the cluster.
+ * Changes to groups and subgroups are guaranteed to occur in the same order on all nodes.
+ * <p>
+ * Subgroups inherit a number of attributes of their parent group. When a group is {@link #partition(int) partitioned}
+ * into a subgroup, the subgroup will inherit the {@link #members() membership} list of the parent group but may
+ * represent only a subset of those members. Changes in the set of members in a parent group will be immediately
+ * reflected in all subgroups. Subgroups inherit the {@link GroupProperties properties}, {@link GroupTaskQueue tasks},
+ * {@link io.atomix.group.DistributedGroup.Config configuration}, and {@link io.atomix.group.DistributedGroup.Options options}
+ * of the base {@link MembershipGroup}.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */

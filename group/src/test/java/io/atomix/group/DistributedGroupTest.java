@@ -213,6 +213,27 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
   }
 
   /**
+   * Tests electing a leader in a subgroup.
+   */
+  public void testSubGroupElect() throws Throwable {
+    createServers(3);
+
+    DistributedGroup group1 = createResource();
+    DistributedGroup group2 = createResource();
+
+    LocalGroupMember localMember2 = group2.join().get();
+    assertEquals(group2.members().size(), 1);
+    assertEquals(group2.election().term().leader(), localMember2);
+
+    LocalGroupMember localMember1 = group1.join().get();
+    assertEquals(group1.partition(3).partitions().get(0).election().term().leader(), localMember1);
+
+    group2.close().thenRun(this::resume);
+
+    await(10000);
+  }
+
+  /**
    * Tests setting and getting member properties.
    */
   public void testProperties() throws Throwable {
@@ -345,7 +366,7 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     });
 
     PartitionGroup partitions = group1.partition(3);
-    partitions.partitions().partition("Hello world!").members().iterator().next().connection().send("test", "Hello world!").thenAccept(reply -> {
+    partitions.partitions().get("Hello world!").members().iterator().next().connection().send("test", "Hello world!").thenAccept(reply -> {
       threadAssertEquals(reply, "Hello world back!");
       resume();
     });
@@ -364,7 +385,7 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     LocalGroupMember member1 = group1.join().get(10, TimeUnit.SECONDS);
 
     PartitionGroup partitions = group2.partition(3, 3);
-    partitions.partitions().partition(0).onMigration(migration -> {
+    partitions.partitions().get(0).onMigration(migration -> {
       threadAssertEquals(migration.source().id(), member1.id());
       threadAssertNotNull(migration.target());
       resume();
@@ -430,7 +451,7 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     assertEquals(group2.members().size(), 1);
 
     member.tasks().onTask(task -> {
-      threadAssertEquals(task.value(), "Hello world!");
+      threadAssertEquals(task.task(), "Hello world!");
       task.ack();
       resume();
     });
@@ -453,7 +474,7 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     assertEquals(group2.members().size(), 1);
 
     member.tasks().onTask(task -> {
-      threadAssertEquals(task.value(), "Hello world!");
+      threadAssertEquals(task.task(), "Hello world!");
       task.fail();
       resume();
     });
@@ -507,17 +528,17 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     assertEquals(group2.members().size(), 3);
 
     member1.tasks().onTask(task -> {
-      threadAssertEquals(task.value(), "Hello world!");
+      threadAssertEquals(task.task(), "Hello world!");
       task.ack();
       resume();
     });
     member2.tasks().onTask(task -> {
-      threadAssertEquals(task.value(), "Hello world!");
+      threadAssertEquals(task.task(), "Hello world!");
       task.ack();
       resume();
     });
     member3.tasks().onTask(task -> {
-      threadAssertEquals(task.value(), "Hello world!");
+      threadAssertEquals(task.task(), "Hello world!");
       task.ack();
       resume();
     });

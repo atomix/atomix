@@ -41,7 +41,7 @@ public class GroupPartitions implements Iterable<GroupPartition> {
    * @return The group partition.
    * @throws IndexOutOfBoundsException if the given {@code partitionId} is greater than the range of partitions in the group
    */
-  public GroupPartition partition(int partitionId) {
+  public GroupPartition get(int partitionId) {
     return partitions.get(partitionId);
   }
 
@@ -51,7 +51,7 @@ public class GroupPartitions implements Iterable<GroupPartition> {
    * @param value The value for which to return a partition.
    * @return The partition for the given value or {@code null} if the value was not mapped to any partition.
    */
-  public GroupPartition partition(Object value) {
+  public GroupPartition get(Object value) {
     int partitionId = partitioner.partition(value, partitions.size());
     return partitionId != -1 ? partitions.get(partitionId) : null;
   }

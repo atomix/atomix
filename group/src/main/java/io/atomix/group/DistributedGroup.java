@@ -39,13 +39,9 @@ import java.util.function.Consumer;
  * The distributed group resource facilitates managing group membership within an Atomix cluster. Membership is
  * managed by nodes {@link #join() joining} and {@link LocalGroupMember#leave() leaving} the group, and instances
  * of the group throughout the cluster are notified on changes to the structure of the group. Groups can elect a
- * leader, and members can communicate directly with one another or through persistent queues.
- *
- * The distributed membership group resource facilitates managing group membership within the Atomix cluster.
- * Each instance of a {@code DistributedGroup} resource represents a single {@link GroupMember}.
- * Members can {@link #join()} and {@link LocalGroupMember#leave()} the group and be notified of other members
- * {@link #onJoin(Consumer) joining} and {@link #onLeave(Consumer) leaving} the group. Members may leave the group
- * either voluntarily or due to a failure or other disconnection from the cluster.
+ * leader, and members can communicate directly with one another or through persistent queues. Additionally, groups
+ * can be {@link #partition(int) partitioned} into subgroups, subgroups can be further partitioned into more subgroups,
+ * and {@link #hash() consistent hashing} can be used to map arbitrary values to members of the group.
  * <p>
  * Groups membership is managed in a replicated state machine. When a member joins the group, the join request
  * is replicated, the member is added to the group, and the state machine notifies instances of the
@@ -176,25 +172,39 @@ import java.util.function.Consumer;
  * elected for each group automatically.
  * <p>
  * Leaders are elected using a fair policy. The first member to {@link #join() join} a group will always become the
- * initial group leader. Each unique leader in a group is associated with a {@link GroupElection#term() term}. The term is a
- * globally unique, monotonically increasing token that can be used for fencing. Users can listen for changes in
- * group terms and leaders with event listeners:
+ * initial group leader. Each unique leader in a group is associated with a {@link GroupElection#term() term}. The term
+ * represents a globally unique, monotonically increasing token that can be used for fencing. Users can listen for
+ * changes in group terms and leaders with event listeners:
  * <pre>
  *   {@code
- *   DistributedGroup group = atomix.getGroup("foo").get();
- *   group.election().onTerm(term -> {
- *     ...
- *   });
- *   group.election().onElection(leader -> {
+ *   DistributedGroup group = atomix.getGroup("election-group").get();
+ *   group.election().onElection(term -> {
  *     ...
  *   });
  *   }
  * </pre>
- * The {@link GroupElection#term() term} is guaranteed to be incremented prior to the election of a new {@link GroupElection#leader() leader},
- * and only a single leader for any given term will ever be elected. Each instance of a group is guaranteed to see
- * terms and leaders progress monotonically, and no two leaders can exist in the same term. In that sense, the
- * terminology and constrains of leader election in Atomix borrow heavily from the Raft algorithm that underlies it.
+ * The {@link GroupTerm#term() term} is guaranteed to be unique for each {@link GroupTerm#leader() leader} and is
+ * guaranteed to be monotonically increasing. Each instance of a group is guaranteed to see the same leader for the
+ * same term, and no two leaders can ever exist in the same term. In that sense, the terminology and constraints of
+ * leader election in Atomix borrow heavily from the Raft consensus algorithm that underlies it.
  * <p>
+ * Elections are specific to the set of members in a group. If a group is {@link #partition(int) partitioned} into a
+ * {@link SubGroup}, a unique leader election will occur for the members in the subgroup. This ensures that a leader
+ * can be elected within a group in which the set of members doesn't include its parent group's leader. All guarantees
+ * with respect to group elections apply to subgroups as well.
+ * <pre>
+ *   {@code
+ *   DistributedGroup group = atomix.getGroup("election-group").get();
+ *
+ *   // Partition the group into three partitions
+ *   PartitionGroup partitions = group.partition(3);
+ *
+ *   // Await a leader election in partition 0
+ *   partitions.partitions().get(0).election().onElection(term -> {
+ *     ...
+ *   });
+ *   }
+ * </pre>
  * While terms and leaders are guaranteed to progress in the same order from the perspective of all clients of
  * the resource, Atomix cannot guarantee that two leaders cannot exist at any given time. The group state machine
  * will make a best effort attempt to ensure that all clients are notified of a term or leader change prior to the
@@ -339,6 +349,36 @@ import java.util.function.Consumer;
  *   }
  * </pre>
  * <h2>Consistent hashing</h2>
+ * Groups facilitate certain types of algorithms like caching by providing mechanisms for consistent hashing, allowing
+ * arbitrary values to be mapped to members of the group in a manner that ensures the minimal amount of values need to
+ * be rehashed in the event of a membership change.
+ * <p>
+ * Consistent hashing is done by creating a {@link ConsistentHashGroup} as a subgroup of some group of members.
+ * Once a consistent hash group is created, values can be mapped to members of the group simply by passing the
+ * value to hash to the {@link ConsistentHashGroup#member(Object)} method to retrieve the appropriate member.
+ * <pre>
+ *   {@code
+ *   DistributedGroup group = atomix.getGroup("hash-group").get();
+ *   ConsistentHashGroup hashGroup = group.hash();
+ *   Object key = "foo";
+ *   hashGroup.member(key).connection().send("set", key);
+ *   }
+ * </pre>
+ * <p>
+ * Consistent hashing is done by hashing members of the group to a ring. For each member of the group, {@code n}
+ * virtual nodes are created on the ring to reduce hotspotting. By default, the number of virtual nodes is {@code 100},
+ * but users can configure the number of virtual nodes per member when creating the hash group. It is commonly
+ * recommended that the number of virtual nodes be between {@code 100} and {@code 200}. Additionally, users
+ * can provide a custom {@link Hasher} to hash group members onto the ring. By default, {@link io.atomix.catalyst.util.hash.Murmur2Hasher}
+ * is used.
+ * <pre>
+ *   {@code
+ *   DistributedHashGroup hashGroup = group.hash(200);
+ *   }
+ * </pre>
+ * The first time {@link #hash()} or any overloaded hash factory method is called with some unique set of arguments,
+ * a new {@link ConsistentHashGroup} will be created. Thereafter, whenever {@link #hash()} is called with the same arguments,
+ * the same instance of {@code ConsistentHashGroup} will be returned.
  * <h2>Partitioning</h2>
  * Membership groups also provide features to aid in supporting replication via consistent hashing and partitioning.
  * When a group is created, users can configure the group to support a particular number of partitions and replication
@@ -387,13 +427,13 @@ import java.util.function.Consumer;
  *   }
  * </pre>
  * Values can be mapped directly to {@link GroupPartition}s via the provided {@link GroupPartitioner}. When the
- * {@link GroupPartitions#partition(Object)} method is called, the configured partitioner is queried to map the provided
+ * {@link GroupPartitions#get(Object)} method is called, the configured partitioner is queried to map the provided
  * value to a partition in the group. Custom {@link GroupPartitioner}s can be provided when constructing a partition group.
  * By default, the {@link HashPartitioner} is used if no partitioner is provided.
  * <pre>
  *   {@code
  *   GroupPartitions partitions = group.partition(3, new HashPartitioner()).partitions();
- *   partitions.partition("foo").members().forEach(m -> m.connection().send("foo"));
+ *   partitions.get("foo").members().forEach(m -> m.connection().send("foo"));
  *   }
  * </pre>
  * <h3>Partition migration</h3>
@@ -602,6 +642,9 @@ public interface DistributedGroup extends Resource<DistributedGroup> {
 
   /**
    * Returns the group election.
+   * <p>
+   * The returned election is specific to this group's set of members. The {@link GroupTerm} defined by the returned
+   * election will not necessarily be reflected in any subgroups of this group.
    *
    * @return The group election.
    */
@@ -609,28 +652,94 @@ public interface DistributedGroup extends Resource<DistributedGroup> {
 
   /**
    * Returns the group task queue.
+   * <p>
+   * The returned task queue is specific to this group's set of members. Tasks {@link GroupTaskQueue#submit(Object) submitted}
+   * to the queue will be submitted only to the members present in this group's {@link #members() members} list and not
+   * to any additional members present in parent groups.
    *
    * @return The group task queue.
    */
   GroupTaskQueue tasks();
 
   /**
-   * Returns a new consistent hash group.
+   * Returns a consistent hash group.
+   * <p>
+   * The {@link #members()} in the returned hash group will mirror the members of this group. When a member is added to
+   * or removed from this group, the same event will occur in the returned hash group as well. The hash group will be
+   * created with a {@link io.atomix.catalyst.util.hash.Murmur2Hasher} to hash nodes and values onto a hash ring, and
+   * members will be hashed to the ring with {@code 100} virtual nodes. To override default values use the overloaded
+   * methods.
+   * <pre>
+   *   {@code
+   *   // Create a new distributed group
+   *   DistributedGroup group = atomix.getGroup("hash-group").get();
    *
-   * @return A new consistent hash group.
+   *   // Create a consistent hash group
+   *   ConsistentHashGroup hashGroup = group.hash();
+   *
+   *   // Send a key/value to the appropriate member of the group
+   *   Object key = "foo";
+   *   Object value = "Hello world!";
+   *   hashGroup.member(key).connection().send("set", new KeyValue(key, value));
+   *   }
+   * </pre>
+   * The returned hash group is static and is guaranteed to always be the same {@link ConsistentHashGroup} instance.
+   *
+   * @return A consistent hash group.
    */
   ConsistentHashGroup hash();
 
   /**
-   * Returns a new consistent hash group.
+   * Returns a consistent hash group.
+   * <p>
+   * The {@link #members()} in the returned hash group will mirror the members of this group. When a member is added to
+   * or removed from this group, the same event will occur in the returned hash group as well. The hash group will be
+   * created with {@code 100} virtual nodes per member. To override default values use the overloaded methods.
+   * <pre>
+   *   {@code
+   *   // Create a new distributed group
+   *   DistributedGroup group = atomix.getGroup("hash-group").get();
+   *
+   *   // Create a consistent hash group
+   *   ConsistentHashGroup hashGroup = group.hash(new StringHasher());
+   *
+   *   // Send a key/value to the appropriate member of the group
+   *   Object key = "foo";
+   *   Object value = "Hello world!";
+   *   hashGroup.member(key).connection().send("set", new KeyValue(key, value));
+   *   }
+   * </pre>
+   * The returned hash group is static and is guaranteed to always be the same {@link ConsistentHashGroup} instance
+   * given the same arguments.
    *
    * @param hasher The hasher with which to hash values in the group.
-   * @return A new consistent hash group.
+   * @return A consistent hash group.
    */
   ConsistentHashGroup hash(Hasher hasher);
 
   /**
-   * Returns a new consistent hash group.
+   * Returns a consistent hash group.
+   * <p>
+   * The {@link #members()} in the returned hash group will mirror the members of this group. When a member is added to
+   * or removed from this group, the same event will occur in the returned hash group as well. The hash group will be
+   * created with the {@link io.atomix.catalyst.util.hash.Murmur2Hasher} for hashing nodes and values onto the hash ring.
+   * To override default values use the overloaded methods.
+   * <pre>
+   *   {@code
+   *   // Create a new distributed group
+   *   DistributedGroup group = atomix.getGroup("hash-group").get();
+   *
+   *   // Create a consistent hash group
+   *   ConsistentHashGroup hashGroup = group.hash(200);
+   *
+   *   // Send a key/value to the appropriate member of the group
+   *   Object key = "foo";
+   *   Object value = "Hello world!";
+   *   hashGroup.member(key).connection().send("set", new KeyValue(key, value));
+   *   }
+   * </pre>
+   * The returned hash group is static and is guaranteed to always be the same {@link ConsistentHashGroup} instance
+   * given the same arguments.
    *
    * @param virtualNodes The number of virtual nodes per member of the group.
    * @return A new consistent hash group.
@@ -638,7 +747,26 @@ public interface DistributedGroup extends Resource<DistributedGroup> {
   ConsistentHashGroup hash(int virtualNodes);
 
   /**
-   * Returns a new consistent hash group.
+   * Returns a consistent hash group.
+   * <p>
+   * The {@link #members()} in the returned hash group will mirror the members of this group. When a member is added to
+   * or removed from this group, the same event will occur in the returned hash group as well.
+   * <pre>
+   *   {@code
+   *   // Create a new distributed group
+   *   DistributedGroup group = atomix.getGroup("hash-group").get();
+   *
+   *   // Create a consistent hash group
+   *   ConsistentHashGroup hashGroup = group.hash(new StringHasher(), 200);
+   *
+   *   // Send a key/value to the appropriate member of the group
+   *   Object key = "foo";
+   *   Object value = "Hello world!";
+   *   hashGroup.member(key).connection().send("set", new KeyValue(key, value));
+   *   }
+   * </pre>
+   * The returned hash group is static and is guaranteed to always be the same {@link ConsistentHashGroup} instance
+   * given the same arguments.
    *
    * @param hasher The hasher with which to hash values in the group.
    * @param virtualNodes The number of virtual nodes per member of the group.
@@ -647,38 +775,176 @@ public interface DistributedGroup extends Resource<DistributedGroup> {
   ConsistentHashGroup hash(Hasher hasher, int virtualNodes);
 
   /**
-   * Returns a new partition group.
+   * Returns a partition group.
+   * <p>
+   * The returned group will be configured with a {@code replicationFactor} of {@code 1}, indicating that each partition
+   * may consist of up to one member. The group will be configured to use the {@link HashPartitioner} to hash values
+   * to partitions.
+   * <p>
+   * The {@link #members()} in the returned partition group will mirror the members of this group. When a member is
+   * added to or removed from this group, the change will be reflected in the {@link PartitionGroup}. However, the
+   * members will be partitioned into the given number of {@link GroupPartition partitions}. Each partition within
+   * the group will represent some subset of the members of the group. Members are partitioned by hashing them onto
+   * a ring and hashing partitions to points on the same ring. Once hashed to a point on the ring, the {@code n}
+   * members following that point will become members of the partition.
+   * <pre>
+   *   {@code
+   *   // Create a new distributed group
+   *   DistributedGroup group = atomix.getGroup("partition-group").get();
+   *
+   *   // Partition the group into three partitions
+   *   PartitionGroup partitions = group.partition(3);
+   *
+   *   Object key = "foo";
+   *   Object value = "Hello world!";
+   *   // Hash the key to a partition and send a key/value pair
+   *   partitions.partitions().get(key).members().forEach(member -> {
+   *     member.connection().send("set", new KeyValue(key, value));
+   *   });
+   *   }
+   * </pre>
+   * Each {@link GroupPartition} within the partition group is its own unique group of members. Leaders can be elected
+   * among the partition members and tasks can be submitted to the partition members independently of the parent
+   * {@link PartitionGroup} or this group. {@link GroupProperties}, however, are shared among all {@link DistributedGroup}
+   * instances.
+   * <p>
+   * The returned {@link PartitionGroup} is static and is guaranteed to always be the same instance given the same
+   * arguments.
    *
    * @param partitions The number of partitions in the group.
-   * @return A new partition group.
+   * @return A partition group.
    */
   PartitionGroup partition(int partitions);
 
   /**
-   * Returns a new partition group.
+   * Returns a partition group.
+   * <p>
+   * The {@code replicationFactor} indicates the number of {@link GroupMember members} that should be included in
+   * each partition. Members of this group will be mapped to partitions in the returned {@link PartitionGroup}, and
+   * when membership changes occur in this group members will be repartitioned as necessary. The group will be
+   * configured to use the {@link HashPartitioner} to hash values to partitions of the group.
+   * <p>
+   * The {@link #members()} in the returned partition group will mirror the members of this group. When a member is
+   * added to or removed from this group, the change will be reflected in the {@link PartitionGroup}. However, the
+   * members will be partitioned into the given number of {@link GroupPartition partitions}. Each partition within
+   * the group will represent some subset of the members of the group. Members are partitioned by hashing them onto
+   * a ring and hashing partitions to points on the same ring. Once hashed to a point on the ring, the {@code n}
+   * members following that point will become members of the partition.
+   * <pre>
+   *   {@code
+   *   // Create a new distributed group
+   *   DistributedGroup group = atomix.getGroup("partition-group").get();
+   *
+   *   // Partition the group into three partitions
+   *   PartitionGroup partitions = group.partition(3, 3);
+   *
+   *   Object key = "foo";
+   *   Object value = "Hello world!";
+   *   // Hash the key to a partition and send a key/value pair
+   *   partitions.partitions().get(key).members().forEach(member -> {
+   *     member.connection().send("set", new KeyValue(key, value));
+   *   });
+   *   }
+   * </pre>
+   * Each {@link GroupPartition} within the partition group is its own unique group of members. Leaders can be elected
+   * among the partition members and tasks can be submitted to the partition members independently of the parent
+   * {@link PartitionGroup} or this group. {@link GroupProperties}, however, are shared among all {@link DistributedGroup}
+   * instances.
+   * <p>
+   * The returned {@link PartitionGroup} is static and is guaranteed to always be the same instance given the same
+   * arguments.
    *
    * @param partitions The number of partitions in the group.
    * @param replicationFactor The replication factor per partition.
-   * @return A new partition group.
+   * @return A partition group.
    */
   PartitionGroup partition(int partitions, int replicationFactor);
 
   /**
-   * Returns a new partition group.
+   * Returns a partition group.
+   * <p>
+   * The {@link GroupPartitioner} will be used to map values to partitions of the group. The returned group will be
+   * configured with a {@code replicationFactor} of {@code 1}, indicating that each partition may consist of up to
+   * one member.
+   * <p>
+   * The {@link #members()} in the returned partition group will mirror the members of this group. When a member is
+   * added to or removed from this group, the change will be reflected in the {@link PartitionGroup}. However, the
+   * members will be partitioned into the given number of {@link GroupPartition partitions}. Each partition within
+   * the group will represent some subset of the members of the group. Members are partitioned by hashing them onto
+   * a ring and hashing partitions to points on the same ring. Once hashed to a point on the ring, the {@code n}
+   * members following that point will become members of the partition.
+   * <pre>
+   *   {@code
+   *   // Create a new distributed group
+   *   DistributedGroup group = atomix.getGroup("partition-group").get();
+   *
+   *   // Partition the group into three partitions
+   *   PartitionGroup partitions = group.partition(3, new RoundRobinPartitioner());
+   *
+   *   Object key = "foo";
+   *   Object value = "Hello world!";
+   *   // Hash the key to a partition and send a key/value pair
+   *   partitions.partitions().get(key).members().forEach(member -> {
+   *     member.connection().send("set", new KeyValue(key, value));
+   *   });
+   *   }
+   * </pre>
+   * Each {@link GroupPartition} within the partition group is its own unique group of members. Leaders can be elected
+   * among the partition members and tasks can be submitted to the partition members independently of the parent
+   * {@link PartitionGroup} or this group. {@link GroupProperties}, however, are shared among all {@link DistributedGroup}
+   * instances.
+   * <p>
+   * The returned {@link PartitionGroup} is static and is guaranteed to always be the same instance given the same
+   * arguments.
    *
    * @param partitions The number of partitions in the group.
    * @param partitioner The group partitioner.
-   * @return A new partition group.
+   * @return A partition group.
    */
   PartitionGroup partition(int partitions, GroupPartitioner partitioner);
 
   /**
-   * Returns a new partition group.
+   * Returns a partition group.
+   * <p>
+   * The {@code replicationFactor} indicates the number of {@link GroupMember members} that should be included in
+   * each partition. Members of this group will be mapped to partitions in the returned {@link PartitionGroup}, and
+   * when membership changes occur in this group members will be repartitioned as necessary. The provided
+   * {@link GroupPartitioner} will be used to map values to partitions.
+   * <p>
+   * The {@link #members()} in the returned partition group will mirror the members of this group. When a member is
+   * added to or removed from this group, the change will be reflected in the {@link PartitionGroup}. However, the
+   * members will be partitioned into the given number of {@link GroupPartition partitions}. Each partition within
+   * the group will represent some subset of the members of the group. Members are partitioned by hashing them onto
+   * a ring and hashing partitions to points on the same ring. Once hashed to a point on the ring, the {@code n}
+   * members following that point will become members of the partition.
+   * <pre>
+   *   {@code
+   *   // Create a new distributed group
+   *   DistributedGroup group = atomix.getGroup("partition-group").get();
+   *
+   *   // Partition the group into three partitions
+   *   PartitionGroup partitions = group.partition(3, 3, new RoundRobinPartitioner());
+   *
+   *   Object key = "foo";
+   *   Object value = "Hello world!";
+   *   // Hash the key to a partition and send a key/value pair
+   *   partitions.partitions().get(key).members().forEach(member -> {
+   *     member.connection().send("set", new KeyValue(key, value));
+   *   });
+   *   }
+   * </pre>
+   * Each {@link GroupPartition} within the partition group is its own unique group of members. Leaders can be elected
+   * among the partition members and tasks can be submitted to the partition members independently of the parent
+   * {@link PartitionGroup} or this group. {@link GroupProperties}, however, are shared among all {@link DistributedGroup}
+   * instances.
+   * <p>
+   * The returned {@link PartitionGroup} is static and is guaranteed to always be the same instance given the same
+   * arguments.
    *
    * @param partitions The number of partitions in the group.
    * @param replicationFactor The replication factor per partition.
    * @param partitioner The group partitioner.
-   * @return A new partition group.
+   * @return A partition group.
    */
   PartitionGroup partition(int partitions, int replicationFactor, GroupPartitioner partitioner);
 

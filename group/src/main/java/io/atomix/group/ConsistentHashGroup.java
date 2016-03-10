@@ -26,7 +26,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 /**
- * {@link DistributedGroup} that consistently maps keys to members on a ring.
+ * {@link DistributedGroup} that consistently maps values to members on a ring.
+ * <p>
+ * Consistent hash groups place members of the parent {@link DistributedGroup} on a ring. Each member is hashed to
+ * a point on the ring, and {@code n} virtual nodes for each concrete node are created to reduce hotspotting. When
+ * accessing a member {@link #member(Object) by value}, the value is hashed to a point on the ring and the first
+ * member following that point is returned.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
@@ -54,14 +59,20 @@ public class ConsistentHashGroup extends SubGroup {
     for (GroupMember member : members) {
       this.members.put(member.id(), member);
       hashRing.addMember(member);
+      election.onJoin(member);
     }
   }
 
   /**
    * Returns the member associated with the given value.
+   * <p>
+   * The given value's {@link Object#hashCode() hashCode} will be hashed to a point on the consistent hash ring.
+   * The first {@link GroupMember} following that point on the ring will be returned. If there are no members in
+   * the parent {@link DistributedGroup} then {@code null} will be returned.
    *
    * @param value The value for which to return the associated member.
-   * @return The associated group member.
+   * @return The associated group member or {@code null} if the parent {@link DistributedGroup} is empty.
+   * @throws NullPointerException if the value is {@code null}
    */
   public synchronized GroupMember member(Object value) {
     return hashRing.member(intToByteArray(value.hashCode()));

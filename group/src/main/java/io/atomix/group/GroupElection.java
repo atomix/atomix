@@ -41,8 +41,8 @@ import java.util.function.Consumer;
  *   {@code
  *   DistributedGroup group = atomix.getGroup("election-group").get();
  *
- *   group.onElection(leader -> {
- *     leader.connection().send("hi!");
+ *   group.onElection(term -> {
+ *     term.leader().connection().send("hi!");
  *   });
  *   }
  * </pre>

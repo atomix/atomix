@@ -54,6 +54,7 @@ public class PartitionGroup extends SubGroup {
     this.hashRing = new GroupHashRing(new Murmur2Hasher(), 100, replicationFactor);
     for (GroupMember member : members) {
       hashRing.addMember(member);
+      election.onJoin(member);
     }
 
     List<GroupPartition> partitions = new ArrayList<>(numPartitions);
@@ -217,7 +218,7 @@ public class PartitionGroup extends SubGroup {
           if (!migratedMembers.contains(oldMember)) {
             for (GroupMember newMember : newPartitionMembers) {
               if (!migratedMembers.contains(newMember)) {
-                migrations.add(new GroupPartitionMigration(oldMember, newMember, partitions.partition(i)));
+                migrations.add(new GroupPartitionMigration(oldMember, newMember, partitions.get(i)));
                 migratedMembers.add(oldMember);
                 migratedMembers.add(newMember);
               }
@@ -228,7 +229,7 @@ public class PartitionGroup extends SubGroup {
         // Determine the members present in old partition members but not in new.
         for (GroupMember oldMember : oldPartitionMembers) {
           if (!migratedMembers.contains(oldMember)) {
-            migrations.add(new GroupPartitionMigration(oldMember, null, partitions.partition(i)));
+            migrations.add(new GroupPartitionMigration(oldMember, null, partitions.get(i)));
             migratedMembers.add(oldMember);
           }
         }
@@ -237,13 +238,13 @@ public class PartitionGroup extends SubGroup {
         for (GroupMember newMember : newPartitionMembers) {
           if (!migratedMembers.contains(newMember) && !migratedMembers.contains(newMember)) {
             migratedMembers.add(newMember);
-            migrations.add(new GroupPartitionMigration(null, newMember, partitions.partition(i)));
+            migrations.add(new GroupPartitionMigration(null, newMember, partitions.get(i)));
           }
         }
       }
 
       // Update the partition members and trigger migration callbacks.
-      partitions.partition(i).handleRepartition(newPartitions.get(i));
+      partitions.get(i).handleRepartition(newPartitions.get(i));
       for (GroupPartitionMigration migration : migrations) {
         migrationListeners.accept(migration);
         migration.partition().handleMigration(migration);

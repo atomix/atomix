@@ -53,6 +53,7 @@ public class GroupPartition extends SubGroup {
     this.sortedMembers = members;
     for (GroupMember member : members) {
       this.members.put(member.id(), member);
+      election.onJoin(member);
     }
     this.partition = partition;
   }
