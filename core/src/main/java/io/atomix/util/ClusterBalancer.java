@@ -16,6 +16,7 @@
 package io.atomix.util;
 
 import io.atomix.Quorum;
+import io.atomix.copycat.error.ConfigurationException;
 import io.atomix.copycat.server.cluster.Cluster;
 import io.atomix.copycat.server.cluster.Member;
 import org.slf4j.Logger;
@@ -79,7 +80,7 @@ public class ClusterBalancer implements AutoCloseable {
     long availableReserveCount = reserve.stream().filter(m -> m.status() == Member.Status.AVAILABLE).count();
 
     BiConsumer<Void, Throwable> completeFunction = (result, error) -> {
-      if (error == null) {
+      if (error == null || error.getCause() instanceof ConfigurationException) {
         balance(cluster, future);
       } else {
         future.completeExceptionally(error);
@@ -176,6 +177,8 @@ public class ClusterBalancer implements AutoCloseable {
     BiConsumer<Void, Throwable> completeFunction = (result, error) -> {
       if (error == null) {
         future.complete(null);
+      } else if (error.getCause() instanceof ConfigurationException) {
+        replace(cluster, future);
       } else {
         future.completeExceptionally(error);
       }
