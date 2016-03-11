@@ -459,6 +459,7 @@ public final class GroupCommands {
       registry.register(GroupMessage.class, -138);
       registry.register(GroupTask.class, -139);
       registry.register(Ack.class, -140);
+      registry.register(GroupMemberInfo.class, -158);
     }
   }
 
