@@ -22,7 +22,6 @@ import io.atomix.catalyst.transport.NettyTransport;
 import io.atomix.copycat.server.storage.Storage;
 import io.atomix.group.DistributedGroup;
 
-import java.io.Serializable;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
@@ -67,13 +66,22 @@ public class DistributedGroupExample {
     System.out.println("Joining membership group");
     group.join().thenAccept(member -> {
       System.out.println("Joined group with member ID: " + member.id());
+      member.tasks().onTask(task -> {
+        System.out.println("Received task");
+        try {
+          Thread.sleep(100);
+        } catch (InterruptedException e) {
+          task.ack();
+        }
+      });
     });
 
     group.onJoin(member -> {
       System.out.println(member.id() + " joined the group!");
 
-      String id = member.id();
-      member.scheduler().execute((Serializable & Runnable) () -> System.out.println("Executing on member " + id));
+      member.tasks().submit("hello").thenRun(() -> {
+        System.out.println("Task complete!");
+      });
     });
 
     while (atomix.isOpen()) {

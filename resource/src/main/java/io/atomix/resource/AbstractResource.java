@@ -15,6 +15,7 @@
  */
 package io.atomix.resource;
 
+import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
@@ -46,8 +47,14 @@ public abstract class AbstractResource<T extends Resource<T>> implements Resourc
   private ReadConsistency readConsistency = ReadConsistency.ATOMIC;
 
   protected AbstractResource(CopycatClient client, Properties options) {
-    this.type = new ResourceType(getClass());
+    this(client, null, options);
+  }
+
+  protected AbstractResource(CopycatClient client, ResourceType type, Properties options) {
     this.client = Assert.notNull(client, "client");
+    if (type == null)
+      type = new ResourceType(getClass());
+    this.type = type;
 
     client.serializer().register(ResourceCommand.class, -50);
     client.serializer().register(ResourceQuery.class, -51);
@@ -68,144 +75,59 @@ public abstract class AbstractResource<T extends Resource<T>> implements Resourc
     changeListeners.forEach(l -> l.accept(this.state));
   }
 
-  /**
-   * Returns the resource type.
-   *
-   * @return The resource type.
-   */
+  @Override
   public ResourceType type() {
     return type;
   }
 
-  /**
-   * Returns the resource configuration.
-   *
-   * @return The resource configuration.
-   */
+  @Override
+  public Serializer serializer() {
+    return client.serializer();
+  }
+
+  @Override
   public Config config() {
     return config;
   }
 
-  /**
-   * Returns the resource options.
-   *
-   * @return The configured resource options.
-   */
+  @Override
   public Options options() {
     return options;
   }
 
-  /**
-   * Returns the current resource state.
-   * <p>
-   * The resource's {@link State} is indicative of the resource's ability to communicate with the cluster at any given
-   * time. Users of the resource should use the state to determine when guarantees may be lost. See the {@link State}
-   * documentation for information on the specific states, and see resource implementation documentation for the
-   * implications of different states on resource consistency.
-   *
-   * @return The current resource state.
-   */
+  @Override
   public State state() {
     return state;
   }
 
-  /**
-   * Registers a resource state change listener.
-   *
-   * @param callback The callback to call when the resource state changes.
-   * @return The state change listener.
-   */
+  @Override
   public Listener<State> onStateChange(Consumer<State> callback) {
     return new StateChangeListener(Assert.notNull(callback, "callback"));
   }
 
-  /**
-   * Returns the resource thread context.
-   *
-   * @return The resource thread context.
-   */
+  @Override
   public ThreadContext context() {
     return client.context();
   }
 
-  /**
-   * Returns the configured write consistency level.
-   * <p>
-   * Resource consistency levels are configured via the {@link #with(WriteConsistency)} setter. By default,
-   * all resources submit commands under the {@link WriteConsistency#ATOMIC} consistency level. See the
-   * {@link WriteConsistency} documentation for information about guarantees provided by specific consistency
-   * levels.
-   *
-   * @return The configured resource consistency level.
-   */
+  @Override
   public WriteConsistency writeConsistency() {
     return writeConsistency;
   }
 
-  /**
-   * Sets the write consistency level.
-   * <p>
-   * The configured consistency level specifies how operations on the resource should be handled by the
-   * cluster. Consistency levels dictate the order in which reads, writes, and events should be handled
-   * by the Atomix cluster and the consistency requirements for completing different types of operations.
-   * <p>
-   * Note that consistency configurations apply only to a single instance of a distributed resource. Two
-   * instances of the same resource on the same or different nodes can have different consistency requirements,
-   * and the cluster will obey those differences.
-   * <p>
-   * By default, all resource operations are submitted to the cluster with the {@link WriteConsistency#ATOMIC}
-   * consistency level. Atomic consistency means that the distributed resource will behave as a single
-   * object for all instances. Users can decrease the default consistency level, but note that in some
-   * cases resource implementations may override the configured {@link WriteConsistency} for safety. For instance,
-   * a leader election may enforce atomic consistency at all times to ensure no two leaders can be
-   * elected at the same time.
-   *
-   * @param consistency The write consistency level.
-   * @return The resource instance.
-   * @throws NullPointerException if {@code consistency} is null
-   */
+  @Override
   @SuppressWarnings("unchecked")
   public T with(WriteConsistency consistency) {
     this.writeConsistency = Assert.notNull(consistency, "consistency");
     return (T) this;
   }
 
-  /**
-   * Returns the configured read consistency level.
-   * <p>
-   * Resource consistency levels are configured via the {@link #with(ReadConsistency)} setter. By default,
-   * all resources submit commands under the {@link ReadConsistency#ATOMIC} consistency level. See the
-   * {@link ReadConsistency} documentation for information about guarantees provided by specific consistency
-   * levels.
-   *
-   * @return The configured resource consistency level.
-   */
+  @Override
   public ReadConsistency readConsistency() {
     return readConsistency;
   }
 
-  /**
-   * Sets the read consistency level.
-   * <p>
-   * The configured consistency level specifies how operations on the resource should be handled by the
-   * cluster. Consistency levels dictate the order in which reads, writes, and events should be handled
-   * by the Atomix cluster and the consistency requirements for completing different types of operations.
-   * <p>
-   * Note that consistency configurations apply only to a single instance of a distributed resource. Two
-   * instances of the same resource on the same or different nodes can have different consistency requirements,
-   * and the cluster will obey those differences.
-   * <p>
-   * By default, all resource operations are submitted to the cluster with the {@link WriteConsistency#ATOMIC}
-   * consistency level. Atomic consistency means that the distributed resource will behave as a single
-   * object for all instances. Users can decrease the default consistency level, but note that in some
-   * cases resource implementations may override the configured {@link WriteConsistency} for safety. For instance,
-   * a leader election may enforce atomic consistency at all times to ensure no two leaders can be
-   * elected at the same time.
-   *
-   * @param consistency The read consistency level.
-   * @return The resource instance.
-   * @throws NullPointerException if {@code consistency} is null
-   */
+  @Override
   @SuppressWarnings("unchecked")
   public T with(ReadConsistency consistency) {
     this.readConsistency = Assert.notNull(consistency, "consistency");
@@ -274,14 +196,6 @@ public abstract class AbstractResource<T extends Resource<T>> implements Resourc
     return client.submit(new ResourceQuery<>(Assert.notNull(query, "query"), consistency.level()));
   }
 
-  /**
-   * Opens the resource.
-   * <p>
-   * Once the resource is opened, the resource will be transitioned to the {@link State#CONNECTED} state
-   * and the returned {@link CompletableFuture} will be completed.
-   *
-   * @return A completable future to be completed once the resource is opened.
-   */
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<T> open() {
@@ -298,15 +212,6 @@ public abstract class AbstractResource<T extends Resource<T>> implements Resourc
     return state != State.CLOSED;
   }
 
-  /**
-   * Closes the resource.
-   * <p>
-   * Once the resource is closed, the resource will be transitioned to the {@link State#CLOSED} state and
-   * the returned {@link CompletableFuture} will be completed. Thereafter, attempts to operate on the resource
-   * will fail.
-   *
-   * @return A completable future to be completed once the resource is closed.
-   */
   @Override
   public CompletableFuture<Void> close() {
     return client.close();
@@ -317,11 +222,7 @@ public abstract class AbstractResource<T extends Resource<T>> implements Resourc
     return state == State.CLOSED;
   }
 
-  /**
-   * Deletes the resource state.
-   *
-   * @return A completable future to be completed once the resource has been deleted.
-   */
+  @Override
   public CompletableFuture<Void> delete() {
     return client.submit(new ResourceCommand.Delete());
   }

@@ -16,20 +16,35 @@
 package io.atomix.group;
 
 /**
- * Hash code partitioner.
+ * Group election term.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class HashPartitioner implements GroupPartitioner {
+public class GroupTerm {
+  private final long term;
+  private final GroupMember leader;
 
-  @Override
-  public int partition(Object value, int partitions) {
-    return Math.abs(value.hashCode()) % partitions;
+  GroupTerm(long term, GroupMember leader) {
+    this.term = term;
+    this.leader = leader;
   }
 
-  @Override
-  public int hashCode() {
-    return 654188383;
+  /**
+   * Returns the group term.
+   *
+   * @return The group term.
+   */
+  public long term() {
+    return term;
+  }
+
+  /**
+   * Returns the group leader.
+   *
+   * @return The group leader.
+   */
+  public GroupMember leader() {
+    return leader;
   }
 
 }

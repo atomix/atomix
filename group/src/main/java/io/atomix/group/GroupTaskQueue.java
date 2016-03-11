@@ -16,11 +16,9 @@
 package io.atomix.group;
 
 import io.atomix.catalyst.util.Assert;
-import io.atomix.group.state.GroupCommands;
 
-import java.util.Map;
+import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Group task queue.
@@ -28,13 +26,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class GroupTaskQueue {
-  private final String memberId;
-  private final DistributedGroup group;
-  private long taskId;
-  private final Map<Long, CompletableFuture<Void>> taskFutures = new ConcurrentHashMap<>();
+  protected final MembershipGroup group;
 
-  protected GroupTaskQueue(String memberId, DistributedGroup group) {
-    this.memberId = memberId;
+  protected GroupTaskQueue(MembershipGroup group) {
     this.group = Assert.notNull(group, "group");
   }
 
@@ -45,41 +39,25 @@ public class GroupTaskQueue {
    * @return A completable future to be completed once the task has been acknowledged.
    */
   public CompletableFuture<Void> submit(Object task) {
-    CompletableFuture<Void> future = new CompletableFuture<>();
-    final long taskId = ++this.taskId;
-    taskFutures.put(taskId, future);
-    group.submit(new GroupCommands.Submit(taskId, memberId, task)).whenComplete((result, error) -> {
-      if (error != null) {
-        taskFutures.remove(taskId);
-        future.completeExceptionally(error);
-      }
-    });
-    return future;
+    Collection<GroupMember> members = members();
+    CompletableFuture[] futures = new CompletableFuture[members.size()];
+    int i = 0;
+    for (GroupMember member : members) {
+      futures[i++] = member.tasks().submit(task);
+    }
+    return CompletableFuture.allOf(futures);
   }
 
   /**
-   * Handles a task acknowledgement.
+   * Returns the collection of group members to which to send tasks.
    */
-  void handleAck(long taskId) {
-    CompletableFuture<Void> future = taskFutures.remove(taskId);
-    if (future != null) {
-      future.complete(null);
-    }
-  }
-
-  /**
-   * Handles a task failure.
-   */
-  void handleFail(long taskId) {
-    CompletableFuture<Void> future = taskFutures.remove(taskId);
-    if (future != null) {
-      future.completeExceptionally(new TaskFailedException());
-    }
+  protected Collection<GroupMember> members() {
+    return group.members();
   }
 
   @Override
   public String toString() {
-    return String.format("%s[member=%s]", getClass().getSimpleName(), memberId);
+    return String.format("%s[members=%s]", getClass().getSimpleName(), group.members());
   }
 
 }

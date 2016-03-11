@@ -33,8 +33,17 @@ final class GroupHashRing {
 
   public GroupHashRing(Hasher hasher, int virtualNodes, int replicationFactor) {
     this.hasher = Assert.notNull(hasher, "hasher");
-    this.virtualNodes = Assert.argNot(virtualNodes, virtualNodes < 0, "virtualNodes must be positive");
+    this.virtualNodes = Assert.argNot(virtualNodes, virtualNodes <= 0, "virtualNodes must be positive");
     this.replicationFactor = Assert.argNot(replicationFactor, replicationFactor <= 0, "replicationFactor must be positive");
+  }
+
+  /**
+   * Returns the hash ring members.
+   *
+   * @return The hash ring members.
+   */
+  Collection<GroupMember> members() {
+    return ring.values();
   }
 
   /**

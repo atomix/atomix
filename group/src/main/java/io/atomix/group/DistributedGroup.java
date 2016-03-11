@@ -15,38 +15,39 @@
  */
 package io.atomix.group;
 
+import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.Server;
+import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.ConfigurationException;
 import io.atomix.catalyst.util.Listener;
-import io.atomix.catalyst.util.Listeners;
 import io.atomix.catalyst.util.hash.Hasher;
-import io.atomix.catalyst.util.hash.Murmur2Hasher;
-import io.atomix.copycat.Command;
-import io.atomix.copycat.Query;
-import io.atomix.copycat.client.CopycatClient;
-import io.atomix.group.state.GroupCommands;
 import io.atomix.group.util.DistributedGroupFactory;
-import io.atomix.resource.AbstractResource;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceTypeInfo;
 
 import java.time.Duration;
-import java.util.*;
+import java.util.Collection;
+import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
 
 /**
  * Generic group abstraction for managing group membership, service discovery, leader election, and remote
  * scheduling and execution.
  * <p>
- * The distributed membership group resource facilitates managing group membership within the Atomix cluster.
- * Each instance of a {@code DistributedGroup} resource represents a single {@link GroupMember}.
- * Members can {@link #join()} and {@link LocalGroupMember#leave()} the group and be notified of other members
- * {@link #onJoin(Consumer) joining} and {@link #onLeave(Consumer) leaving} the group. Members may leave the group
- * either voluntarily or due to a failure or other disconnection from the cluster.
+ * The distributed group resource facilitates managing group membership within an Atomix cluster. Membership is
+ * managed by nodes {@link #join() joining} and {@link LocalGroupMember#leave() leaving} the group, and instances
+ * of the group throughout the cluster are notified on changes to the structure of the group. Groups can elect a
+ * leader, and members can communicate directly with one another or through persistent queues. Additionally, groups
+ * can be {@link #partition(int) partitioned} into subgroups, subgroups can be further partitioned into more subgroups,
+ * and {@link #hash() consistent hashing} can be used to map arbitrary values to members of the group.
+ * <p>
+ * Groups membership is managed in a replicated state machine. When a member joins the group, the join request
+ * is replicated, the member is added to the group, and the state machine notifies instances of the
+ * {@code DistributedGroup} of the membership change. In the event that a group instance becomes disconnected from
+ * the cluster and its session times out, the replicated state machine will automatically remove the member
+ * from the group and notify the remaining instances of the group of the membership change.
  * <p>
  * To create a membership group resource, use the {@code DistributedGroup} class or constructor:
  * <pre>
@@ -54,6 +55,26 @@ import java.util.function.Consumer;
  *   atomix.getGroup("my-group").thenAccept(group -> {
  *     ...
  *   });
+ *   }
+ * </pre>
+ * <h2>Configuration</h2>
+ * {@code DistributedGroup} instances can be configured to control {@link GroupMember#connection() communication}
+ * between members of the group. To configure groups, a {@link DistributedGroup.Options} instance must be provided
+ * when constructing the initial group instance.
+ * <p>
+ * The {@link DistributedGroup.Options} define the configuration of the local {@code DistributedGroup} instance
+ * only. The group options will <em>not</em> be replicated to or applied on any other node in the cluster. However,
+ * group instances accessed via the {@code Atomix} API are static, so the options provided on the first instantiation
+ * of a group will be used for the local instance until the resource is deleted.
+ * <p>
+ * The primary role of {@link DistributedGroup.Options} is configuring the group's method of communication with
+ * other group instances around the cluster. In order to support direct messaging between members, the group
+ * must be configured with an {@link Address} to which to bind the server for communication.
+ * <pre>
+ *   {@code
+ *   DistributedGroup.Options options = new DistributedGroup.Options()
+ *     .withAddress(new Address("localhost", 6000));
+ *   DistributedGroup group = atomix.getGroup("message-group", options).get();
  *   }
  * </pre>
  * <h2>Joining the group</h2>
@@ -92,6 +113,58 @@ import java.util.function.Consumer;
  * Once the group instance has been created, the group membership will be automatically updated each time the structure
  * of the group changes. However, in the event that the client becomes disconnected from the cluster, it may not receive
  * notifications of changes in the group structure.
+ * <h2>Member properties</h2>
+ * A group and each member of the group can be assigned arbitrary {@link GroupProperties properties}. Properties can
+ * be useful for associating various types of metadata with a group member. For instance, users might assign an
+ * {@link Address} as a property of a group member to indicate the address to which clients can connect to communicate
+ * with that member. Indeed, this is how direct messaging between group members is managed internally.
+ * <p>
+ * Properties are simple maps with non-null {@link String} keys and arbitrary serializable values. Properties
+ * can be set on the group or on a specific member of the group, and any node can assign and read properties for
+ * any member of a group.
+ * <pre>
+ *   {@code
+ *   DistributedGroup group = atomix.getGroup("properties-group").get();
+ *
+ *   // Assign a name to the group and wait for the assignment to complete
+ *   group.properties().set("name", "properties-group").join();
+ *
+ *   // When a member joins the group, read the member's Address and connect to the member
+ *   group.onJoin(member -> {
+ *     Address address = member.properties().get("address").get();
+ *     client.connect(address).thenAccept(connection -> {
+ *       ...
+ *     });
+ *   });
+ *   }
+ * </pre>
+ * Properties are guaranteed to be linearizable for all operations, meaning once a property of a group or member
+ * has been changed, all nodes are guaranteed to see that change when reading the property.
+ * <h2>Persistent members</h2>
+ * {@code DistributedGroup} supports a concept of persistent members that requires members to <em>explicitly</em>
+ * {@link LocalGroupMember#leave() leave} the group to be removed from it. Persistent member {@link GroupProperties properties}
+ * persist through failures, and enqueued {@link GroupTask tasks} will remain in a failed member's queue until the
+ * member recovers.
+ * <p>
+ * In order to support recovery, persistent members must be configured with a user-provided {@link GroupMember#id() member ID}.
+ * The member ID is provided when the member {@link #join(String) joins} the group, and providing a member ID is
+ * all that's required to create a persistent member.
+ * <pre>
+ *   {@code
+ *   DistributedGroup group = atomix.getGroup("persistent-members").get();
+ *   LocalGroupMember memberA = group.join("a").get();
+ *   LocalGroupMember memberB = group.join("b").get();
+ *   }
+ * </pre>
+ * Persistent members are not limited to a single node. If a node crashes, any persistent members that existed
+ * on that node may rejoin the group on any other node. Persistent members rejoin simply by calling {@link #join(String)}
+ * with the unique member ID. Once a persistent member has rejoined the group, its session will be updated and any
+ * tasks remaining in the member's {@link GroupTaskQueue} will be published to the member.
+ * <p>
+ * Persistent member state is retained <em>only</em> inside the group's replicated state machine and not on clients.
+ * From the perspective of {@code DistributedGroup} instances in a cluster, in the event that the node on which
+ * a persistent member is running fails, the member will {@link #onLeave(Consumer) leave} the group. Once the persistent
+ * member rejoins the group, {@link #onJoin(Consumer)} will be called again on each group instance in the cluster.
  * <h2>Leader election</h2>
  * The {@code DistributedGroup} resource facilitates leader election which can be used to coordinate a group by
  * ensuring only a single member of the group performs some set of operations at any given time. Leader election
@@ -99,25 +172,39 @@ import java.util.function.Consumer;
  * elected for each group automatically.
  * <p>
  * Leaders are elected using a fair policy. The first member to {@link #join() join} a group will always become the
- * initial group leader. Each unique leader in a group is associated with a {@link GroupElection#term() term}. The term is a
- * globally unique, monotonically increasing token that can be used for fencing. Users can listen for changes in
- * group terms and leaders with event listeners:
+ * initial group leader. Each unique leader in a group is associated with a {@link GroupElection#term() term}. The term
+ * represents a globally unique, monotonically increasing token that can be used for fencing. Users can listen for
+ * changes in group terms and leaders with event listeners:
  * <pre>
  *   {@code
- *   DistributedGroup group = atomix.getGroup("foo").get();
- *   group.election().onTerm(term -> {
- *     ...
- *   });
- *   group.election().onElection(leader -> {
+ *   DistributedGroup group = atomix.getGroup("election-group").get();
+ *   group.election().onElection(term -> {
  *     ...
  *   });
  *   }
  * </pre>
- * The {@link GroupElection#term() term} is guaranteed to be incremented prior to the election of a new {@link GroupElection#leader() leader},
- * and only a single leader for any given term will ever be elected. Each instance of a group is guaranteed to see
- * terms and leaders progress monotonically, and no two leaders can exist in the same term. In that sense, the
- * terminology and constrains of leader election in Atomix borrow heavily from the Raft algorithm that underlies it.
+ * The {@link GroupTerm#term() term} is guaranteed to be unique for each {@link GroupTerm#leader() leader} and is
+ * guaranteed to be monotonically increasing. Each instance of a group is guaranteed to see the same leader for the
+ * same term, and no two leaders can ever exist in the same term. In that sense, the terminology and constraints of
+ * leader election in Atomix borrow heavily from the Raft consensus algorithm that underlies it.
  * <p>
+ * Elections are specific to the set of members in a group. If a group is {@link #partition(int) partitioned} into a
+ * {@link SubGroup}, a unique leader election will occur for the members in the subgroup. This ensures that a leader
+ * can be elected within a group in which the set of members doesn't include its parent group's leader. All guarantees
+ * with respect to group elections apply to subgroups as well.
+ * <pre>
+ *   {@code
+ *   DistributedGroup group = atomix.getGroup("election-group").get();
+ *
+ *   // Partition the group into three partitions
+ *   PartitionGroup partitions = group.partition(3);
+ *
+ *   // Await a leader election in partition 0
+ *   partitions.partitions().get(0).election().onElection(term -> {
+ *     ...
+ *   });
+ *   }
+ * </pre>
  * While terms and leaders are guaranteed to progress in the same order from the perspective of all clients of
  * the resource, Atomix cannot guarantee that two leaders cannot exist at any given time. The group state machine
  * will make a best effort attempt to ensure that all clients are notified of a term or leader change prior to the
@@ -128,35 +215,228 @@ import java.util.function.Consumer;
  * <p>
  * To guard against inconsistencies resulting from arbitrary process pauses, clients can use the monotonically
  * increasing term for coordination and managing optimistic access to external resources.
+ * <h2>Direct messaging</h2>
+ * Members of a group and group instances can communicate with one another through the direct messaging API,
+ * {@link MemberConnection}. Direct messaging between group members is considered <em>unreliable</em> and is
+ * done over the local node's configured {@link io.atomix.catalyst.transport.Transport}. Messages between members
+ * of a group are ordered according only to the transport and are not guaranteed to be delivered. While request-reply
+ * can be used to achieve some level of assurance that messages are delivered to specific members of the group,
+ * direct message consumers should be idempotent and commutative.
+ * <p>
+ * In order to enable direct messaging for a group instance, the instance must be initialized with
+ * {@link DistributedGroup.Options} that define the {@link Address} to which to bind a {@link Server} for messaging.
+ * <pre>
+ *   {@code
+ *   DistributedGroup.Options options = new DistributedGroup.Options()
+ *     .withAddress(new Address("localhost", 6000));
+ *   DistributedGroup group = atomix.getGroup("message-group", options).get();
+ *   }
+ * </pre>
+ * Once a group instance has been configured with an address for direct messaging, messages can be sent between
+ * group members using the {@link MemberConnection} for any member of the group. Messages sent between members must
+ * be associated with a {@link String} topic, and messages can be any value that is serializable by the group instance's
+ * {@link io.atomix.catalyst.serializer.Serializer}.
+ * <pre>
+ *   {@code
+ *   group.member("foo").connection().send("hello", "World!").thenAccept(reply -> {
+ *     ...
+ *   });
+ *   }
+ * </pre>
+ * Direct messages can only be <em>received</em> by a {@link LocalGroupMember} which must be created by
+ * {@link #join() joining} the group. Local members register a listener for a link topic on the joined member's
+ * {@link LocalMemberConnection}. Message listeners are asynchronous. When a {@link GroupMessage} is received
+ * by a local member, the member can perform any processing it wishes and {@link GroupMessage#reply(Object) reply}
+ * to the message or {@link GroupMessage#ack() acknowledge} completion of handling the message to send a response
+ * back to the sender.
+ * <pre>
+ *   {@code
+ *   // Join the group and run the given callback once successful
+ *   group.join().thenAccept(member -> {
+ *
+ *     // Register a listener for the "hello" topic
+ *     member.connection().onMessage("hello", message -> {
+ *       // Handle the message and reply
+ *       handleMessage(message);
+ *       message.reply("Hello world!");
+ *     });
+ *
+ *   });
+ *   }
+ * </pre>
+ * It's critical that message listeners reply to messages, otherwise futures will be held in memory on the
+ * sending side of the {@link MemberConnection connection} until the sender or receiver is removed from the
+ * group.
+ * <h2>Task queues</h2>
+ * In addition to supporting direct messaging between members of the group, {@code DistributedGroup} provides
+ * mechanisms for reliable, persistent messaging. Tasks are arbitrary objects that can be sent between members
+ * of the group or to all members of a group by any node. In contrast to direct messaging, tasks are uni-directional
+ * in that {@link GroupTaskQueue task queues} only support sending a task but not receiving a reply. Tasks are
+ * submitted directly to the replicated state machine and once task submissions are complete are guaranteed to
+ * be persisted either until received and acknowledged by their target member or until that member leaves the
+ * cluster.
+ * <p>
+ * Task processing is event-driven and requires no polling on the receiving side of a task queue. When a task
+ * is received and persisted by the replicated state machine, if the member to which the task is sent is available
+ * for processing, the task will be pushed to that member through its open session. If the member is already
+ * processing another task, the task will be queued until all preceding tasks have been acked by the receiving
+ * member.
+ * <p>
+ * Tasks can be submitted to all members of a group or to a specific member through the object's associated
+ * {@link GroupTaskQueue}. Once a task has completed processing, the task acknowledgement will be sent back
+ * to the sender. In the event a task fails processing, an exception will be thrown on the sender.
+ * <pre>
+ *   {@code
+ *   DistributedGroup group = atomix.getGroup("task-group").get();
+ *
+ *   // Submit a task to all members of the group
+ *   group.tasks().submit("doIt").whenComplete((result, error) -> {
+ *     if (error == null) {
+ *       // All available members succeeded
+ *     } else {
+ *       // At least one member failed
+ *     }
+ *   });
+ *
+ *   // Submit a task to a specific member of the group when it joins
+ *   group.onJoin(member -> {
+ *     member.tasks().submit("doSetupTasks").whenComplete((result, error) -> {
+ *       if (error == null) {
+ *         // The member received and processed the task
+ *       } else {
+ *         // The member did not receive the task or failed it
+ *       }
+ *     });
+ *   });
+ *   }
+ * </pre>
+ * When submitting a task to all members of the group via the group's {@link #tasks() task queue}, the task will
+ * be enqueued for processing by all current members of the group. However, in the event an ephemeral member
+ * leaves the group (or crashes) during the processing of the task, the task will simply be skipped for that member.
+ * To ensure a member receives a task through a failure, use persistent members.
+ * <p>
+ * Tasks sent directly to specific members behave a bit differently. In the event that an ephemeral member leaves
+ * the group during the execution of a task, the task will be explicitly failed and an error will be returned
+ * to the task submitter.
+ * <p>
+ * Tasks are processed by {@link LocalGroupMember}s by registering a {@link LocalMemberTaskQueue#onTask(Consumer) task listener}
+ * on the member's queue. Once a member is done processing a task, it must {@link GroupTask#ack() ack} the task to
+ * fetch the next one from the cluster.
+ * <pre>
+ *   {@code
+ *   LocalGroupMember member = group.join("member-a").get();
+ *   member.tasks().onTask(task -> {
+ *     doSetup();
+ *     task.ack();
+ *   });
+ *   }
+ * </pre>
+ * Task receivers are free to take as long as is necessary to process a task. Task callbacks may be asynchronous.
+ * Members need only call {@link GroupTask#ack()} once processing is complete. Tasks can also be explicitly
+ * {@link GroupTask#fail() fail}ed by receivers. Task failures will be sent back to the sender in the form of
+ * a {@link TaskFailedException}.
+ * <pre>
+ *   {@code
+ *   member.tasks().onTask(task -> {
+ *     doSetupAsync().whenComplete((result, error) -> {
+ *       if (error == null) {
+ *         task.ack();
+ *       } else {
+ *         task.fail();
+ *       }
+ *     });
+ *   });
+ *   }
+ * </pre>
  * <h2>Consistent hashing</h2>
+ * Groups facilitate certain types of algorithms like caching by providing mechanisms for consistent hashing, allowing
+ * arbitrary values to be mapped to members of the group in a manner that ensures the minimal amount of values need to
+ * be rehashed in the event of a membership change.
+ * <p>
+ * Consistent hashing is done by creating a {@link ConsistentHashGroup} as a subgroup of some group of members.
+ * Once a consistent hash group is created, values can be mapped to members of the group simply by passing the
+ * value to hash to the {@link ConsistentHashGroup#member(Object)} method to retrieve the appropriate member.
+ * <pre>
+ *   {@code
+ *   DistributedGroup group = atomix.getGroup("hash-group").get();
+ *   ConsistentHashGroup hashGroup = group.hash();
+ *   Object key = "foo";
+ *   hashGroup.member(key).connection().send("set", key);
+ *   }
+ * </pre>
+ * <p>
+ * Consistent hashing is done by hashing members of the group to a ring. For each member of the group, {@code n}
+ * virtual nodes are created on the ring to reduce hotspotting. By default, the number of virtual nodes is {@code 100},
+ * but users can configure the number of virtual nodes per member when creating the hash group. It is commonly
+ * recommended that the number of virtual nodes be between {@code 100} and {@code 200}. Additionally, users
+ * can provide a custom {@link Hasher} to hash group members onto the ring. By default, {@link io.atomix.catalyst.util.hash.Murmur2Hasher}
+ * is used.
+ * <pre>
+ *   {@code
+ *   DistributedHashGroup hashGroup = group.hash(200);
+ *   }
+ * </pre>
+ * The first time {@link #hash()} or any overloaded hash factory method is called with some unique set of arguments,
+ * a new {@link ConsistentHashGroup} will be created. Thereafter, whenever {@link #hash()} is called with the same arguments,
+ * the same instance of {@code ConsistentHashGroup} will be returned.
+ * <h2>Partitioning</h2>
  * Membership groups also provide features to aid in supporting replication via consistent hashing and partitioning.
  * When a group is created, users can configure the group to support a particular number of partitions and replication
  * factor. Partitioning can aid in hashing resources to specific members of the group, and the replication factor builds
  * on partitions to aid in identifying multiple members per partition.
  * <p>
- * By default, groups are created with a single partition and replication factor of {@code 1}. To configure the group
- * for more partitions, provide a {@link DistributedGroup.Config} when creating the resource.
- * <pre>
- *   {@code
- *   DistributedGroup.Config config = DistributedGroup.config()
- *     .withPartitions(32)
- *     .withVirtualNodes(200)
- *     .withReplicationFactor(3);
- *   DistributedGroup group = atomix.getGroup("foo", config);
- *   }
- * </pre>
- * Partitions are managed within a consistent hash ring. For each member of the cluster, {@code 100} virtual nodes
- * are created on the ring by default. This helps spread reduce hotspotting within the ring. For each partition, the
- * partition is mapped to a set of members of the group by hashing the partition to a point on the ring. Once hashed
- * to a point on the ring, the {@code n} members following that point are the replicas for that partition.
+ * Groups can be partitioned to any number of partitions and using custom {@link GroupPartitioner}s. Partitions can be
+ * nested within other partitions as well. A set of partitions of a group is known as a {@link PartitionGroup}. Each
+ * partition group consists of several {@link GroupPartition}s. Each partition in a group represents a subset of the
+ * members in the parent {@code PartitionGroup}.
  * <p>
- * Partition features are accessed via the group's {@link GroupPartitions} instance, which can be fetched via
- * {@link #partitions()}.
+ * To create a partition group, use the {@link #partition(int)} method, defining the number of partitions to create
+ * for the group's members.
  * <pre>
  *   {@code
- *   group.partitions().partition(1).members().forEach(m -> ...);
+ *   DistributedGroup group = atomix.getGroup("partition-group", config);
+ *   PartitionGroup partitions = group.partition(3); // Partition the group into three partitions
  *   }
  * </pre>
+ * Atomix guarantees that the same group partitioned using the same configuration (number of partitions and virtual
+ * nodes) will result in the same set of {@code PartitionGroup} members. This means any set of nodes can partition
+ * the group in the same way and acheive a consistent partition group. This guarantee is ensured by mapping partitions
+ * to a consistent hash ring internally. Virtual nodes within the hash ring help prevent hotspotting within the ring.
+ * Once a partition is hashed to a point on the ring, the {@code n} members following that point are replicas for that
+ * partition.
+ * <p>
+ * By default, partitions are created with a single member in each partition. However, many use cases require that a partition
+ * consist of several members to support common patterns like primary-backup replication. Users can define the number of
+ * members to associate with each partition in a {@code PartitionGroup} by providing a {@code replicationFactor} when creating
+ * the group.
+ * <pre>
+ *   {@code
+ *   PartitionGroup partition = group.partition(3, 2); // Partition the group with 3 partitions and 2 replicas per partition
+ *   partition.partitions().forEach(partition -> {
+ *     partition.members().forEach(member -> {
+ *       member.connection().send("hello", "world");
+ *     });
+ *   });
+ *   }
+ * </pre>
+ * Partition instances for a {@code PartitionGroup} can be accessed either by index or by mapping a value to a partition.
+ * Partitions are zero-based, so partition {@code 0} represents the first partition in the group.
+ * <pre>
+ *   {@code
+ *   GroupPartitions partitions = group.partition(3).partitions();
+ *   }
+ * </pre>
+ * Values can be mapped directly to {@link GroupPartition}s via the provided {@link GroupPartitioner}. When the
+ * {@link GroupPartitions#get(Object)} method is called, the configured partitioner is queried to map the provided
+ * value to a partition in the group. Custom {@link GroupPartitioner}s can be provided when constructing a partition group.
+ * By default, the {@link HashPartitioner} is used if no partitioner is provided.
+ * <pre>
+ *   {@code
+ *   GroupPartitions partitions = group.partition(3, new HashPartitioner()).partitions();
+ *   partitions.get("foo").members().forEach(m -> m.connection().send("foo"));
+ *   }
+ * </pre>
+ * <h3>Partition migration</h3>
  * Partitions change over time while members are added to or removed from the group. Each time a member is added or
  * removed, the group state machine will reassign the minimal number of partitions necessary to balance the cluster,
  * and {@code DistributedGroup} instances will be notified and updated automatically. Atomix guarantees that when a
@@ -164,28 +444,64 @@ import java.util.function.Consumer;
  * before the join completes. Similarly, when a member {@link LocalGroupMember#leave() leaves} the group, all partition
  * information on all connected group instances are guaranteed to be updated before the operation completes.
  * <p>
- * Groups also aid in hashing objects to specific partitions and thus replicas within the group. Users can provide a
- * {@link GroupPartitioner} class in the {@link DistributedGroup.Options} when a group instance is first created on a node.
- * The partitioner will be used to determine the partition to which an object maps within the current set of partitions
- * when {@link GroupPartitions#partition(Object)} is called.
+ * Users can detect when partitions change membership to repartition data and update replicas. To listen for changes
+ * in a partition's membership, register a {@link GroupPartition#onMigration(Consumer)} listener. The migration listener
+ * will be called any time a replica within the partition is moved to a new member, which can happen when nodes are
+ * added to or removed from the group. A {@link GroupPartitionMigration} will be provided to the migration callback
+ * indicating the source and destination of the partition migration.
  * <pre>
  *   {@code
- *   group.partitions().partition("foo").members().forEach(m -> m.send("foo"));
- *   }
- * </pre>
- * <h2>Remote execution</h2>
- * Once members of the group, any member can {@link GroupScheduler#execute(Runnable) execute} immediate callbacks or
- * {@link GroupScheduler#schedule(Duration, Runnable) schedule} delayed callbacks to be run on any other member of the
- * group. Submitting a {@link Runnable} callback to a member will cause it to be serialized and sent to that node
- * to be executed.
- * <pre>
- *   {@code
- *   group.onJoin(member -> {
- *     String memberId = member.id();
- *     member.execute((Serializable & Runnable) () -> System.out.println("Executing on " + memberId));
+ *   GroupPartitions partitions = group.partition(3).partitions();
+ *
+ *   // Migrate source data to the migration target when a member in partition 1 is migrated
+ *   partitions.partition(1).onMigration(migration -> {
+ *     // Send a message to the source replica and tell it to migrate its state to the target replica
+ *     migration.source().connection().send("migrate", migration.target().id());
  *   });
  *   }
  * </pre>
+ * The {@link PartitionGroup} also provides a similar listener interface for listening for migrations of
+ * <em>all</em> partitions.
+ * <pre>
+ *   {@code
+ *   group.partitions().onMigration(migration -> {
+ *     // Send a message to the source replica and tell it to migrate its state to the target replica
+ *     migration.source().connection().send("migrate-" + migration.partition().id(), migration.target().id());
+ *   });
+ *   }
+ * </pre>
+ * In some cases, a partition can be migrated from a non-existent replica to an existing member or vice-versa.
+ * For instance, if the {@code replicationFactor} is {@code 3} and there are only two members in the group, when
+ * a third member is added all partitions will be migrated from a {@code null} third member to the new concrete
+ * third member. Group partitioners provide the maximum number of replicas possible given the current group
+ * configuration.
+ * <h3>Serialization</h3>
+ * Users are responsible for ensuring the serializability of tasks, messages, and properties set on the group
+ * and members of the group. Serialization is controlled by the group's {@link io.atomix.catalyst.serializer.Serializer}
+ * which can be access via {@link #serializer()} or on the parent {@code Atomix} instance. Because objects are
+ * typically replicated throughout the cluster, <em>it's critical that any object sent from any node should be
+ * serializable by all other nodes</em>.
+ * <p>
+ * Users should register serializable types before performing any operations on the group.
+ * <pre>
+ *   {@code
+ *   DistributedGroup group = atomix.getGroup("group").get();
+ *   group.serializer().register(User.class, UserSerializer.class);
+ *   }
+ * </pre>
+ * For the best performance from serialization, it is recommended that serializable types be registered with
+ * unique type IDs. This allows the Catalyst {@link io.atomix.catalyst.serializer.Serializer} to identify the
+ * type by its serialization ID rather than its class name. It's essential that the ID for a given type is
+ * the same all all nodes in the cluster.
+ * <pre>
+ *   {@code
+ *   group.serializer().register(User.class, 1, UserSerializer.class);
+ *   }
+ * </pre>
+ * Users can also serialize {@link java.io.Serializable} types by simply registering the class without any
+ * other serializer. Catalyst will attempt to use the optimal serializer based on the interfaces implemented
+ * by the class. Alternatively, type registration can be disabled altogether via {@link Serializer#disableWhitelist()},
+ * however this is not recommended as arbitrary deserialization of class names is slow and is a security risk.
  * <h3>Implementation</h3>
  * Group state is managed in a Copycat replicated {@link io.atomix.copycat.server.StateMachine}. When a
  * {@code DistributedGroup} is created, an instance of the group state machine is created on each replica in
@@ -234,12 +550,12 @@ import java.util.function.Consumer;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 @ResourceTypeInfo(id=-20, factory=DistributedGroupFactory.class)
-public class DistributedGroup extends AbstractResource<DistributedGroup> {
+public interface DistributedGroup extends Resource<DistributedGroup> {
 
   /**
    * Group configuration.
    */
-  public static class Config extends Resource.Config {
+  class Config extends Resource.Config {
     public Config() {
     }
 
@@ -248,57 +564,14 @@ public class DistributedGroup extends AbstractResource<DistributedGroup> {
     }
 
     /**
-     * Sets the hash function with which to hash keys.
+     * Sets the duration after which to remove persistent members from the group.
      *
-     * @param hasherClass The hasher function class.
+     * @param expiration The duration after which to remove persistent members from the group.
      * @return The group configuration.
+     * @throws NullPointerException if the expiration is {@code null}
      */
-    public Config withHasher(Class<? extends Hasher> hasherClass) {
-      setProperty("hasher", hasherClass.getName());
-      return this;
-    }
-
-    /**
-     * Sets the group partitioner class.
-     *
-     * @param partitionerClass The group partitioner class.
-     * @return The group configuration.
-     */
-    public Config withPartitioner(Class<? extends GroupPartitioner> partitionerClass) {
-      setProperty("partitioner", partitionerClass.getName());
-      return this;
-    }
-
-    /**
-     * Sets the number of partitions.
-     *
-     * @param partitions The number of partitions.
-     * @return The group configuration.
-     */
-    public Config withPartitions(int partitions) {
-      setProperty("partitions", String.valueOf(partitions));
-      return this;
-    }
-
-    /**
-     * Sets the number of virtual nodes per group member in the consistent hash ring.
-     *
-     * @param virtualNodes The number of virtual members per group member.
-     * @return The group configuration.
-     */
-    public Config withVirtualNodes(int virtualNodes) {
-      setProperty("virtualNodes", String.valueOf(virtualNodes));
-      return this;
-    }
-
-    /**
-     * Sets the group replication factor.
-     *
-     * @param replicationFactor The group replication factor.
-     * @return The group configuration.
-     */
-    public Config withReplicationFactor(int replicationFactor) {
-      setProperty("replicationFactor", String.valueOf(replicationFactor));
+    public Config withMemberExpiration(Duration expiration) {
+      setProperty("expiration", String.valueOf(Assert.notNull(expiration, "expiration").toMillis()));
       return this;
     }
   }
@@ -306,7 +579,7 @@ public class DistributedGroup extends AbstractResource<DistributedGroup> {
   /**
    * Group options.
    */
-  public static class Options extends Resource.Options {
+  class Options extends Resource.Options {
     private static final String ADDRESS = "address";
 
     public Options() {
@@ -349,76 +622,331 @@ public class DistributedGroup extends AbstractResource<DistributedGroup> {
     }
   }
 
-  private final Listeners<GroupMember> joinListeners = new Listeners<>();
-  private final Listeners<GroupMember> leaveListeners = new Listeners<>();
-  private final Set<String> joining = new CopyOnWriteArraySet<>();
-  private final Address address;
-  private final Server server;
-  final GroupConnectionManager connections;
-  private final GroupProperties properties = new GroupProperties(null, this);
-  private final GroupElection election = new GroupElection(this);
-  private final GroupScheduler scheduler = new GroupScheduler(null, this);
-  private final GroupTaskQueue tasks = new GroupTaskQueue(null, this);
-  private GroupHashRing hashRing;
-  private final GroupPartitions partitions = new GroupPartitions();
-  final Map<String, GroupMember> members = new ConcurrentHashMap<>();
-
-  public DistributedGroup(CopycatClient client, Properties options) {
-    super(client, options);
-    this.address = new Options(options).getAddress();
-    this.server = client.transport().server();
-    this.connections = new GroupConnectionManager(client.transport().client(), client.context());
-  }
+  @Override
+  Config config();
 
   @Override
-  public Options options() {
-    return new Options(super.options());
-  }
+  Options options();
 
   /**
    * Returns the group properties.
+   * <p>
+   * The returned properties apply to the entire group regardless of whether this instance is a membership group,
+   * hash group, partition group, or partitions. Properties can be set and read by any instance of the group, and
+   * properties will persist until {@link GroupProperties#remove(String) removed} or the group itself is
+   * {@link #delete() deleted}.
    *
    * @return The group properties.
    */
-  public GroupProperties properties() {
-    return properties;
-  }
+  GroupProperties properties();
 
   /**
    * Returns the group election.
+   * <p>
+   * The returned election is specific to this group's set of members. The {@link GroupTerm} defined by the returned
+   * election will not necessarily be reflected in any subgroups of this group.
    *
    * @return The group election.
    */
-  public GroupElection election() {
-    return election;
-  }
+  GroupElection election();
 
   /**
    * Returns the group task queue.
+   * <p>
+   * The returned task queue is specific to this group's set of members. Tasks {@link GroupTaskQueue#submit(Object) submitted}
+   * to the queue will be submitted only to the members present in this group's {@link #members() members} list and not
+   * to any additional members present in parent groups.
    *
    * @return The group task queue.
    */
-  public GroupTaskQueue tasks() {
-    return tasks;
-  }
+  GroupTaskQueue tasks();
 
   /**
-   * Returns the group scheduler.
+   * Returns a consistent hash group.
+   * <p>
+   * The {@link #members()} in the returned hash group will mirror the members of this group. When a member is added to
+   * or removed from this group, the same event will occur in the returned hash group as well. The hash group will be
+   * created with a {@link io.atomix.catalyst.util.hash.Murmur2Hasher} to hash nodes and values onto a hash ring, and
+   * members will be hashed to the ring with {@code 100} virtual nodes. To override default values use the overloaded
+   * methods.
+   * <pre>
+   *   {@code
+   *   // Create a new distributed group
+   *   DistributedGroup group = atomix.getGroup("hash-group").get();
    *
-   * @return The group scheduler.
+   *   // Create a consistent hash group
+   *   ConsistentHashGroup hashGroup = group.hash();
+   *
+   *   // Send a key/value to the appropriate member of the group
+   *   Object key = "foo";
+   *   Object value = "Hello world!";
+   *   hashGroup.member(key).connection().send("set", new KeyValue(key, value));
+   *   }
+   * </pre>
+   * The returned hash group is static and is guaranteed to always be the same {@link ConsistentHashGroup} instance.
+   *
+   * @return A consistent hash group.
    */
-  public GroupScheduler scheduler() {
-    return scheduler;
-  }
+  ConsistentHashGroup hash();
 
   /**
-   * Returns the group partitions.
+   * Returns a consistent hash group.
+   * <p>
+   * The {@link #members()} in the returned hash group will mirror the members of this group. When a member is added to
+   * or removed from this group, the same event will occur in the returned hash group as well. The hash group will be
+   * created with {@code 100} virtual nodes per member. To override default values use the overloaded methods.
+   * <pre>
+   *   {@code
+   *   // Create a new distributed group
+   *   DistributedGroup group = atomix.getGroup("hash-group").get();
    *
-   * @return The group partitions.
+   *   // Create a consistent hash group
+   *   ConsistentHashGroup hashGroup = group.hash(new StringHasher());
+   *
+   *   // Send a key/value to the appropriate member of the group
+   *   Object key = "foo";
+   *   Object value = "Hello world!";
+   *   hashGroup.member(key).connection().send("set", new KeyValue(key, value));
+   *   }
+   * </pre>
+   * The returned hash group is static and is guaranteed to always be the same {@link ConsistentHashGroup} instance
+   * given the same arguments.
+   *
+   * @param hasher The hasher with which to hash values in the group.
+   * @return A consistent hash group.
    */
-  public GroupPartitions partitions() {
-    return partitions;
-  }
+  ConsistentHashGroup hash(Hasher hasher);
+
+  /**
+   * Returns a consistent hash group.
+   * <p>
+   * The {@link #members()} in the returned hash group will mirror the members of this group. When a member is added to
+   * or removed from this group, the same event will occur in the returned hash group as well. The hash group will be
+   * created with the {@link io.atomix.catalyst.util.hash.Murmur2Hasher} for hashing nodes and values onto the hash ring.
+   * To override default values use the overloaded methods.
+   * <pre>
+   *   {@code
+   *   // Create a new distributed group
+   *   DistributedGroup group = atomix.getGroup("hash-group").get();
+   *
+   *   // Create a consistent hash group
+   *   ConsistentHashGroup hashGroup = group.hash(200);
+   *
+   *   // Send a key/value to the appropriate member of the group
+   *   Object key = "foo";
+   *   Object value = "Hello world!";
+   *   hashGroup.member(key).connection().send("set", new KeyValue(key, value));
+   *   }
+   * </pre>
+   * The returned hash group is static and is guaranteed to always be the same {@link ConsistentHashGroup} instance
+   * given the same arguments.
+   *
+   * @param virtualNodes The number of virtual nodes per member of the group.
+   * @return A new consistent hash group.
+   */
+  ConsistentHashGroup hash(int virtualNodes);
+
+  /**
+   * Returns a consistent hash group.
+   * <p>
+   * The {@link #members()} in the returned hash group will mirror the members of this group. When a member is added to
+   * or removed from this group, the same event will occur in the returned hash group as well.
+   * <pre>
+   *   {@code
+   *   // Create a new distributed group
+   *   DistributedGroup group = atomix.getGroup("hash-group").get();
+   *
+   *   // Create a consistent hash group
+   *   ConsistentHashGroup hashGroup = group.hash(new StringHasher(), 200);
+   *
+   *   // Send a key/value to the appropriate member of the group
+   *   Object key = "foo";
+   *   Object value = "Hello world!";
+   *   hashGroup.member(key).connection().send("set", new KeyValue(key, value));
+   *   }
+   * </pre>
+   * The returned hash group is static and is guaranteed to always be the same {@link ConsistentHashGroup} instance
+   * given the same arguments.
+   *
+   * @param hasher The hasher with which to hash values in the group.
+   * @param virtualNodes The number of virtual nodes per member of the group.
+   * @return A new consistent hash group.
+   */
+  ConsistentHashGroup hash(Hasher hasher, int virtualNodes);
+
+  /**
+   * Returns a partition group.
+   * <p>
+   * The returned group will be configured with a {@code replicationFactor} of {@code 1}, indicating that each partition
+   * may consist of up to one member. The group will be configured to use the {@link HashPartitioner} to hash values
+   * to partitions.
+   * <p>
+   * The {@link #members()} in the returned partition group will mirror the members of this group. When a member is
+   * added to or removed from this group, the change will be reflected in the {@link PartitionGroup}. However, the
+   * members will be partitioned into the given number of {@link GroupPartition partitions}. Each partition within
+   * the group will represent some subset of the members of the group. Members are partitioned by hashing them onto
+   * a ring and hashing partitions to points on the same ring. Once hashed to a point on the ring, the {@code n}
+   * members following that point will become members of the partition.
+   * <pre>
+   *   {@code
+   *   // Create a new distributed group
+   *   DistributedGroup group = atomix.getGroup("partition-group").get();
+   *
+   *   // Partition the group into three partitions
+   *   PartitionGroup partitions = group.partition(3);
+   *
+   *   Object key = "foo";
+   *   Object value = "Hello world!";
+   *   // Hash the key to a partition and send a key/value pair
+   *   partitions.partitions().get(key).members().forEach(member -> {
+   *     member.connection().send("set", new KeyValue(key, value));
+   *   });
+   *   }
+   * </pre>
+   * Each {@link GroupPartition} within the partition group is its own unique group of members. Leaders can be elected
+   * among the partition members and tasks can be submitted to the partition members independently of the parent
+   * {@link PartitionGroup} or this group. {@link GroupProperties}, however, are shared among all {@link DistributedGroup}
+   * instances.
+   * <p>
+   * The returned {@link PartitionGroup} is static and is guaranteed to always be the same instance given the same
+   * arguments.
+   *
+   * @param partitions The number of partitions in the group.
+   * @return A partition group.
+   */
+  PartitionGroup partition(int partitions);
+
+  /**
+   * Returns a partition group.
+   * <p>
+   * The {@code replicationFactor} indicates the number of {@link GroupMember members} that should be included in
+   * each partition. Members of this group will be mapped to partitions in the returned {@link PartitionGroup}, and
+   * when membership changes occur in this group members will be repartitioned as necessary. The group will be
+   * configured to use the {@link HashPartitioner} to hash values to partitions of the group.
+   * <p>
+   * The {@link #members()} in the returned partition group will mirror the members of this group. When a member is
+   * added to or removed from this group, the change will be reflected in the {@link PartitionGroup}. However, the
+   * members will be partitioned into the given number of {@link GroupPartition partitions}. Each partition within
+   * the group will represent some subset of the members of the group. Members are partitioned by hashing them onto
+   * a ring and hashing partitions to points on the same ring. Once hashed to a point on the ring, the {@code n}
+   * members following that point will become members of the partition.
+   * <pre>
+   *   {@code
+   *   // Create a new distributed group
+   *   DistributedGroup group = atomix.getGroup("partition-group").get();
+   *
+   *   // Partition the group into three partitions
+   *   PartitionGroup partitions = group.partition(3, 3);
+   *
+   *   Object key = "foo";
+   *   Object value = "Hello world!";
+   *   // Hash the key to a partition and send a key/value pair
+   *   partitions.partitions().get(key).members().forEach(member -> {
+   *     member.connection().send("set", new KeyValue(key, value));
+   *   });
+   *   }
+   * </pre>
+   * Each {@link GroupPartition} within the partition group is its own unique group of members. Leaders can be elected
+   * among the partition members and tasks can be submitted to the partition members independently of the parent
+   * {@link PartitionGroup} or this group. {@link GroupProperties}, however, are shared among all {@link DistributedGroup}
+   * instances.
+   * <p>
+   * The returned {@link PartitionGroup} is static and is guaranteed to always be the same instance given the same
+   * arguments.
+   *
+   * @param partitions The number of partitions in the group.
+   * @param replicationFactor The replication factor per partition.
+   * @return A partition group.
+   */
+  PartitionGroup partition(int partitions, int replicationFactor);
+
+  /**
+   * Returns a partition group.
+   * <p>
+   * The {@link GroupPartitioner} will be used to map values to partitions of the group. The returned group will be
+   * configured with a {@code replicationFactor} of {@code 1}, indicating that each partition may consist of up to
+   * one member.
+   * <p>
+   * The {@link #members()} in the returned partition group will mirror the members of this group. When a member is
+   * added to or removed from this group, the change will be reflected in the {@link PartitionGroup}. However, the
+   * members will be partitioned into the given number of {@link GroupPartition partitions}. Each partition within
+   * the group will represent some subset of the members of the group. Members are partitioned by hashing them onto
+   * a ring and hashing partitions to points on the same ring. Once hashed to a point on the ring, the {@code n}
+   * members following that point will become members of the partition.
+   * <pre>
+   *   {@code
+   *   // Create a new distributed group
+   *   DistributedGroup group = atomix.getGroup("partition-group").get();
+   *
+   *   // Partition the group into three partitions
+   *   PartitionGroup partitions = group.partition(3, new RoundRobinPartitioner());
+   *
+   *   Object key = "foo";
+   *   Object value = "Hello world!";
+   *   // Hash the key to a partition and send a key/value pair
+   *   partitions.partitions().get(key).members().forEach(member -> {
+   *     member.connection().send("set", new KeyValue(key, value));
+   *   });
+   *   }
+   * </pre>
+   * Each {@link GroupPartition} within the partition group is its own unique group of members. Leaders can be elected
+   * among the partition members and tasks can be submitted to the partition members independently of the parent
+   * {@link PartitionGroup} or this group. {@link GroupProperties}, however, are shared among all {@link DistributedGroup}
+   * instances.
+   * <p>
+   * The returned {@link PartitionGroup} is static and is guaranteed to always be the same instance given the same
+   * arguments.
+   *
+   * @param partitions The number of partitions in the group.
+   * @param partitioner The group partitioner.
+   * @return A partition group.
+   */
+  PartitionGroup partition(int partitions, GroupPartitioner partitioner);
+
+  /**
+   * Returns a partition group.
+   * <p>
+   * The {@code replicationFactor} indicates the number of {@link GroupMember members} that should be included in
+   * each partition. Members of this group will be mapped to partitions in the returned {@link PartitionGroup}, and
+   * when membership changes occur in this group members will be repartitioned as necessary. The provided
+   * {@link GroupPartitioner} will be used to map values to partitions.
+   * <p>
+   * The {@link #members()} in the returned partition group will mirror the members of this group. When a member is
+   * added to or removed from this group, the change will be reflected in the {@link PartitionGroup}. However, the
+   * members will be partitioned into the given number of {@link GroupPartition partitions}. Each partition within
+   * the group will represent some subset of the members of the group. Members are partitioned by hashing them onto
+   * a ring and hashing partitions to points on the same ring. Once hashed to a point on the ring, the {@code n}
+   * members following that point will become members of the partition.
+   * <pre>
+   *   {@code
+   *   // Create a new distributed group
+   *   DistributedGroup group = atomix.getGroup("partition-group").get();
+   *
+   *   // Partition the group into three partitions
+   *   PartitionGroup partitions = group.partition(3, 3, new RoundRobinPartitioner());
+   *
+   *   Object key = "foo";
+   *   Object value = "Hello world!";
+   *   // Hash the key to a partition and send a key/value pair
+   *   partitions.partitions().get(key).members().forEach(member -> {
+   *     member.connection().send("set", new KeyValue(key, value));
+   *   });
+   *   }
+   * </pre>
+   * Each {@link GroupPartition} within the partition group is its own unique group of members. Leaders can be elected
+   * among the partition members and tasks can be submitted to the partition members independently of the parent
+   * {@link PartitionGroup} or this group. {@link GroupProperties}, however, are shared among all {@link DistributedGroup}
+   * instances.
+   * <p>
+   * The returned {@link PartitionGroup} is static and is guaranteed to always be the same instance given the same
+   * arguments.
+   *
+   * @param partitions The number of partitions in the group.
+   * @param replicationFactor The replication factor per partition.
+   * @param partitioner The group partitioner.
+   * @return A partition group.
+   */
+  PartitionGroup partition(int partitions, int replicationFactor, GroupPartitioner partitioner);
 
   /**
    * Gets a group member by ID.
@@ -429,9 +957,7 @@ public class DistributedGroup extends AbstractResource<DistributedGroup> {
    * @param memberId The member ID for which to return a {@link GroupMember}.
    * @return The member with the given {@code memberId} or {@code null} if it is not a known member of the group.
    */
-  public GroupMember member(String memberId) {
-    return members.get(memberId);
-  }
+  GroupMember member(String memberId);
 
   /**
    * Gets the collection of all members in the group.
@@ -461,9 +987,7 @@ public class DistributedGroup extends AbstractResource<DistributedGroup> {
    *
    * @return The collection of all members in the group.
    */
-  public Collection<GroupMember> members() {
-    return members.values();
-  }
+  Collection<GroupMember> members();
 
   /**
    * Joins the instance to the membership group.
@@ -491,9 +1015,7 @@ public class DistributedGroup extends AbstractResource<DistributedGroup> {
    *
    * @return A completable future to be completed once the member has joined.
    */
-  public CompletableFuture<LocalGroupMember> join() {
-    return join(UUID.randomUUID().toString(), false);
-  }
+  CompletableFuture<LocalGroupMember> join();
 
   /**
    * Joins the instance to the membership group with a user-provided member ID.
@@ -522,32 +1044,7 @@ public class DistributedGroup extends AbstractResource<DistributedGroup> {
    * @param memberId The unique member ID to assign to the member.
    * @return A completable future to be completed once the member has joined.
    */
-  public CompletableFuture<LocalGroupMember> join(String memberId) {
-    return join(memberId, true);
-  }
-
-  /**
-   * Joins the group.
-   *
-   * @param memberId The member ID with which to join the group.
-   * @param persistent Indicates whether the member ID is persistent.
-   * @return A completable future to be completed once the member has joined the group.
-   */
-  private CompletableFuture<LocalGroupMember> join(String memberId, boolean persistent) {
-    joining.add(memberId);
-    return submit(new GroupCommands.Join(memberId, address, persistent)).whenComplete((result, error) -> {
-      if (error != null) {
-        joining.remove(memberId);
-      }
-    }).thenApply(info -> {
-      LocalGroupMember member = (LocalGroupMember) members.get(info.memberId());
-      if (member == null) {
-        member = new LocalGroupMember(info, this);
-        members.put(info.memberId(), member);
-      }
-      return member;
-    });
-  }
+  CompletableFuture<LocalGroupMember> join(String memberId);
 
   /**
    * Adds a listener for members joining the group.
@@ -561,9 +1058,7 @@ public class DistributedGroup extends AbstractResource<DistributedGroup> {
    * @param listener The join listener.
    * @return The listener context.
    */
-  public Listener<GroupMember> onJoin(Consumer<GroupMember> listener) {
-    return joinListeners.add(listener);
-  }
+  Listener<GroupMember> onJoin(Consumer<GroupMember> listener);
 
   /**
    * Adds a listener for members leaving the group.
@@ -579,218 +1074,6 @@ public class DistributedGroup extends AbstractResource<DistributedGroup> {
    * @param listener The leave listener.
    * @return The listener context.
    */
-  public Listener<GroupMember> onLeave(Consumer<GroupMember> listener) {
-    return leaveListeners.add(listener);
-  }
-
-  @Override
-  public CompletableFuture<DistributedGroup> open() {
-    return super.open().thenApply(result -> {
-      // Configure the hasher.
-      Hasher hasher;
-      String hasherClass = config.getProperty("hasher", Murmur2Hasher.class.getName());
-      try {
-        hasher = (Hasher) Thread.currentThread().getContextClassLoader().loadClass(hasherClass).newInstance();
-      } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-        throw new RuntimeException(e);
-      }
-
-      // Set up the hash ring.
-      this.hashRing = new GroupHashRing(hasher, Integer.valueOf(config.getProperty("virtualNodes", "100")), Integer.valueOf(config.getProperty("replicationFactor", "1")));
-
-      // Configure the partitioner.
-      String partitionerClass = config.getProperty("partitioner", HashPartitioner.class.getName());
-      try {
-        this.partitions.partitioner = (GroupPartitioner) Thread.currentThread().getContextClassLoader().loadClass(partitionerClass).newInstance();
-      } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-        throw new RuntimeException(e);
-      }
-
-      // Set up the empty partitions.
-      int partitions = Integer.valueOf(config.getProperty("partitions", "1"));
-      for (int i = 0; i < partitions; i++) {
-        this.partitions.partitions.add(new GroupPartition(i));
-      }
-
-      // Populate the partitions with any existing group members.
-      updatePartitions();
-
-      client.onEvent("join", this::onJoinEvent);
-      client.onEvent("leave", this::onLeaveEvent);
-      client.onEvent("term", election::onTermEvent);
-      client.onEvent("elect", election::onElectEvent);
-      client.onEvent("resign", election::onResignEvent);
-      client.onEvent("task", this::onTaskEvent);
-      client.onEvent("ack", this::onAckEvent);
-      client.onEvent("fail", this::onFailEvent);
-      client.onEvent("execute", this::onExecuteEvent);
-
-      return result;
-    }).thenCompose(v -> listen())
-      .thenCompose(v -> sync())
-      .thenApply(v -> this);
-  }
-
-  /**
-   * Starts the server.
-   */
-  private CompletableFuture<Void> listen() {
-    if (address != null) {
-      return server.listen(address, c -> {
-        c.handler(GroupMessage.class, this::onMessage);
-      });
-    }
-    return CompletableFuture.completedFuture(null);
-  }
-
-  /**
-   * Handles a group message.
-   */
-  private CompletableFuture<Object> onMessage(GroupMessage message) {
-    CompletableFuture<Object> future = new CompletableFuture<>();
-    GroupMember member = members.get(message.member());
-    if (member != null) {
-      if (member instanceof LocalGroupMember) {
-        ((LocalGroupMember) member).connection().handleMessage(message.setFuture(future));
-      } else {
-        future.completeExceptionally(new IllegalStateException("not a local member"));
-      }
-    } else {
-      future.completeExceptionally(new IllegalStateException("unknown member"));
-    }
-    return future;
-  }
-
-  /**
-   * Synchronizes the membership group.
-   */
-  private CompletableFuture<Void> sync() {
-    return submit(new GroupCommands.Listen()).thenAccept(members -> {
-      for (GroupMemberInfo info : members) {
-        this.members.computeIfAbsent(info.memberId(), m -> new GroupMember(info, this));
-      }
-    });
-  }
-
-  /**
-   * Converts an integer to a byte array.
-   */
-  private byte[] intToByteArray(int value) {
-    return new byte[]{(byte) (value >> 24), (byte) (value >> 16), (byte) (value >> 8), (byte) value};
-  }
-
-  /**
-   * Updates group partitions.
-   */
-  private void updatePartitions() {
-    for (int i = 0; i < this.partitions.partitions.size(); i++) {
-      this.partitions.partitions.get(i).handleRepartition(hashRing.members(intToByteArray(i)));
-    }
-  }
-
-  /**
-   * Handles a join event received from the cluster.
-   */
-  private void onJoinEvent(GroupMemberInfo info) {
-    GroupMember member;
-    if (joining.contains(info.memberId())) {
-      member = new LocalGroupMember(info, this);
-      if (members.containsKey(info.memberId())) {
-        hashRing.removeMember(member);
-      }
-      members.put(info.memberId(), member);
-      hashRing.addMember(member);
-    } else {
-      member = members.get(info.memberId());
-      if (member == null) {
-        member = new GroupMember(info, this);
-        members.put(info.memberId(), member);
-        hashRing.addMember(member);
-      }
-    }
-
-    updatePartitions();
-
-    for (Listener<GroupMember> listener : joinListeners) {
-      listener.accept(member);
-    }
-  }
-
-  /**
-   * Handles a leave event received from the cluster.
-   */
-  private void onLeaveEvent(String memberId) {
-    GroupMember member = members.remove(memberId);
-    if (member != null) {
-      hashRing.removeMember(member);
-      updatePartitions();
-      for (Listener<GroupMember> listener : leaveListeners) {
-        listener.accept(member);
-      }
-    }
-  }
-
-  /**
-   * Handles a task event received from the cluster.
-   */
-  private void onTaskEvent(GroupTask task) {
-    GroupMember localMember = members.get(task.member());
-    if (localMember != null && localMember instanceof LocalGroupMember) {
-      CompletableFuture<Boolean> future = new CompletableFuture<>();
-      future.whenComplete((succeeded, error) -> {
-        if (error == null && succeeded) {
-          submit(new GroupCommands.Ack(task.id(), task.member(), true));
-        } else {
-          submit(new GroupCommands.Ack(task.id(), task.member(), false));
-        }
-      });
-      ((LocalGroupMember) localMember).tasks().handleTask(task.setFuture(future));
-    }
-  }
-
-  /**
-   * Handles an ack event received from the cluster.
-   */
-  private void onAckEvent(GroupCommands.Submit submit) {
-    if (submit.member() != null) {
-      GroupMember member = members.get(submit.member());
-      if (member != null) {
-        member.tasks().handleAck(submit.id());
-      }
-    } else {
-      tasks.handleAck(submit.id());
-    }
-  }
-
-  /**
-   * Handles a fail event received from the cluster.
-   */
-  private void onFailEvent(GroupCommands.Submit submit) {
-    if (submit.member() != null) {
-      GroupMember member = members.get(submit.member());
-      if (member != null) {
-        member.tasks().handleFail(submit.id());
-      }
-    } else {
-      tasks.handleFail(submit.id());
-    }
-  }
-
-  /**
-   * Handles an execute event received from the cluster.
-   */
-  private void onExecuteEvent(Runnable callback) {
-    callback.run();
-  }
-
-  @Override
-  protected <T> CompletableFuture<T> submit(Query<T> query) {
-    return super.submit(query);
-  }
-
-  @Override
-  protected <T> CompletableFuture<T> submit(Command<T> command) {
-    return super.submit(command);
-  }
+  Listener<GroupMember> onLeave(Consumer<GroupMember> listener);
 
 }

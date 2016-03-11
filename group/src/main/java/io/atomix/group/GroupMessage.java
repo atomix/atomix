@@ -83,6 +83,13 @@ public class GroupMessage<T> implements CatalystSerializable {
     future.complete(reply);
   }
 
+  /**
+   * Acknowledges receipt of the message with a {@code null} reply.
+   */
+  public void ack() {
+    reply(null);
+  }
+
   @Override
   public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
     buffer.writeString(member);

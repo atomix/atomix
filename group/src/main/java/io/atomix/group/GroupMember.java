@@ -25,22 +25,42 @@ import io.atomix.catalyst.util.Assert;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class GroupMember {
+  protected volatile long index;
   protected final String memberId;
   protected final Address address;
-  protected final DistributedGroup group;
+  protected final MembershipGroup group;
   private final GroupProperties properties;
-  private final GroupTaskQueue tasks;
-  private final GroupScheduler scheduler;
-  private final GroupConnection connection;
+  private final MemberTaskQueue tasks;
+  private final MemberConnection connection;
 
-  GroupMember(GroupMemberInfo info, DistributedGroup group) {
+  GroupMember(GroupMemberInfo info, MembershipGroup group) {
+    this.index = info.index();
     this.memberId = info.memberId();
     this.address = info.address();
     this.group = Assert.notNull(group, "group");
     this.properties = new GroupProperties(memberId, group);
-    this.tasks = new GroupTaskQueue(memberId, group);
-    this.scheduler = new GroupScheduler(memberId, group);
-    this.connection = new GroupConnection(memberId, address, group.connections);
+    this.tasks = new MemberTaskQueue(memberId, group);
+    this.connection = new MemberConnection(memberId, address, group.connections);
+  }
+
+  /**
+   * Returns the member index.
+   *
+   * @return The member index.
+   */
+  long index() {
+    return index;
+  }
+
+  /**
+   * Updates the member index.
+   *
+   * @param index The updated member index.
+   * @return The group member.
+   */
+  GroupMember setIndex(long index) {
+    this.index = index;
+    return this;
   }
 
   /**
@@ -65,19 +85,6 @@ public class GroupMember {
   }
 
   /**
-   * Returns a boolean value indicating whether this member is the current leader.
-   * <p>
-   * Whether this member is the current leader is dependent on the last known configuration of the membership
-   * group. If the local group instance is partitioned from the cluster, it may believe a member to be the
-   * leader when it has in fact been replaced.
-   *
-   * @return Indicates whether this member is the current leader.
-   */
-  public boolean isLeader() {
-    return group.election().leader != null && group.election().leader.equals(memberId);
-  }
-
-  /**
    * Returns the member properties.
    *
    * @return The member properties.
@@ -91,7 +98,7 @@ public class GroupMember {
    *
    * @return A direct connection to the member.
    */
-  public GroupConnection connection() {
+  public MemberConnection connection() {
     return connection;
   }
 
@@ -100,17 +107,13 @@ public class GroupMember {
    *
    * @return The member's task queue.
    */
-  public GroupTaskQueue tasks() {
+  public MemberTaskQueue tasks() {
     return tasks;
   }
 
-  /**
-   * Returns the remote scheduler for the member.
-   *
-   * @return The remote scheduler for the member.
-   */
-  public GroupScheduler scheduler() {
-    return scheduler;
+  @Override
+  public boolean equals(Object object) {
+    return object instanceof GroupMember && ((GroupMember) object).memberId.equals(memberId);
   }
 
   @Override

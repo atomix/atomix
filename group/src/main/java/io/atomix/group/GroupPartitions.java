@@ -15,7 +15,8 @@
  */
 package io.atomix.group;
 
-import java.util.ArrayList;
+import io.atomix.catalyst.util.Assert;
+
 import java.util.Iterator;
 import java.util.List;
 
@@ -25,10 +26,12 @@ import java.util.List;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class GroupPartitions implements Iterable<GroupPartition> {
-  final List<GroupPartition> partitions = new ArrayList<>();
-  GroupPartitioner partitioner = (value, partitions) -> -1;
+  final List<GroupPartition> partitions;
+  private final GroupPartitioner partitioner;
 
-  GroupPartitions() {
+  GroupPartitions(List<GroupPartition> partitions, GroupPartitioner partitioner) {
+    this.partitions = Assert.notNull(partitions, "partitions");
+    this.partitioner = Assert.notNull(partitioner, "partitioner");
   }
 
   /**
@@ -38,7 +41,7 @@ public class GroupPartitions implements Iterable<GroupPartition> {
    * @return The group partition.
    * @throws IndexOutOfBoundsException if the given {@code partitionId} is greater than the range of partitions in the group
    */
-  public GroupPartition partition(int partitionId) {
+  public GroupPartition get(int partitionId) {
     return partitions.get(partitionId);
   }
 
@@ -48,18 +51,18 @@ public class GroupPartitions implements Iterable<GroupPartition> {
    * @param value The value for which to return a partition.
    * @return The partition for the given value or {@code null} if the value was not mapped to any partition.
    */
-  public GroupPartition partition(Object value) {
+  public GroupPartition get(Object value) {
     int partitionId = partitioner.partition(value, partitions.size());
     return partitionId != -1 ? partitions.get(partitionId) : null;
   }
 
   /**
-   * Returns an ordered list of partitions in the group.
+   * Returns the partitions size.
    *
-   * @return A list of partitions in the group. The position of each partition in the returned {@link List} is the partition's unique ID.
+   * @return The partitions size.
    */
-  public List<GroupPartition> partitions() {
-    return partitions;
+  public int size() {
+    return partitions.size();
   }
 
   @Override

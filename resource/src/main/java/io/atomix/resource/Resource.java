@@ -15,6 +15,7 @@
  */
 package io.atomix.resource;
 
+import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.catalyst.util.Managed;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
@@ -164,6 +165,13 @@ public interface Resource<T extends Resource<T>> extends Managed<T> {
    * @return The resource type.
    */
   ResourceType type();
+
+  /**
+   * Returns the resource serializer.
+   *
+   * @return The resource serializer.
+   */
+  Serializer serializer();
 
   /**
    * Returns the resource configuration.

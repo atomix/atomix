@@ -22,8 +22,8 @@ import io.atomix.catalyst.serializer.SerializableTypeResolver;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.catalyst.transport.Address;
-import io.atomix.catalyst.util.Assert;
 import io.atomix.copycat.Command;
+import io.atomix.copycat.Operation;
 import io.atomix.copycat.Query;
 import io.atomix.group.GroupMemberInfo;
 import io.atomix.group.GroupMessage;
@@ -34,7 +34,7 @@ import java.util.Set;
 /**
  * Group commands.
  * <p>
- * This class reserves serializable type IDs {@code 120} through {@code 124}
+ * This class reserves serializable type IDs {@code 130} through {@code 140} and {@code 158} through {@code 160}
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -44,9 +44,78 @@ public final class GroupCommands {
   }
 
   /**
+   * Group operation.
+   */
+  public static abstract class GroupOperation<V> implements Operation<V>, CatalystSerializable {
+    @Override
+    public void writeObject(BufferOutput<?> bufferOutput, Serializer serializer) {
+    }
+
+    @Override
+    public void readObject(BufferInput<?> bufferInput, Serializer serializer) {
+    }
+  }
+
+  /**
+   * Member operation.
+   */
+  public static abstract class MemberOperation<T> extends GroupOperation<T> {
+    private String member;
+
+    protected MemberOperation() {
+    }
+
+    protected MemberOperation(String member) {
+      this.member = member;
+    }
+
+    /**
+     * Returns the member ID.
+     *
+     * @return The member ID.
+     */
+    public String member() {
+      return member;
+    }
+
+    @Override
+    public void writeObject(BufferOutput buffer, Serializer serializer) {
+      super.writeObject(buffer, serializer);
+      buffer.writeString(member);
+    }
+
+    @Override
+    public void readObject(BufferInput buffer, Serializer serializer) {
+      super.readObject(buffer, serializer);
+      member = buffer.readString();
+    }
+  }
+
+  /**
    * Abstract group command.
    */
-  public static abstract class GroupCommand<V> implements Command<V>, CatalystSerializable {
+  public static abstract class GroupCommand<V> extends GroupOperation<V> implements Command<V> {
+    @Override
+    public ConsistencyLevel consistency() {
+      return ConsistencyLevel.LINEARIZABLE;
+    }
+
+    @Override
+    public CompactionMode compaction() {
+      return CompactionMode.QUORUM;
+    }
+  }
+
+  /**
+   * Member command.
+   */
+  public static abstract class MemberCommand<V> extends MemberOperation<V> implements Command<V> {
+    public MemberCommand() {
+    }
+
+    public MemberCommand(String member) {
+      super(member);
+    }
 
     @Override
     public ConsistencyLevel consistency() {
@@ -57,32 +126,22 @@ public final class GroupCommands {
     public CompactionMode compaction() {
       return CompactionMode.QUORUM;
     }
-
-    @Override
-    public void writeObject(BufferOutput buffer, Serializer serializer) {
-    }
-
-    @Override
-    public void readObject(BufferInput buffer, Serializer serializer) {
-    }
   }
 
   /**
-   * Abstract group query.
+   * Group member query.
    */
-  public static abstract class GroupQuery<V> implements Query<V>, CatalystSerializable {
+  public static abstract class MemberQuery<V> extends MemberOperation<V> implements Query<V> {
+    public MemberQuery(String member) {
+      super(member);
+    }
+
+    public MemberQuery() {
+    }
 
     @Override
     public ConsistencyLevel consistency() {
       return ConsistencyLevel.BOUNDED_LINEARIZABLE;
-    }
-
-    @Override
-    public void writeObject(BufferOutput buffer, Serializer serializer) {
-    }
-
-    @Override
-    public void readObject(BufferInput buffer, Serializer serializer) {
     }
   }
 
@@ -153,149 +212,12 @@ public final class GroupCommands {
   }
 
   /**
-   * Member command.
-   */
-  public static abstract class MemberCommand<T> extends GroupCommand<T> {
-    private String member;
-
-    protected MemberCommand() {
-    }
-
-    protected MemberCommand(String member) {
-      this.member = member;
-    }
-
-    /**
-     * Returns the member ID.
-     *
-     * @return The member ID.
-     */
-    public String member() {
-      return member;
-    }
-
-    @Override
-    public void writeObject(BufferOutput buffer, Serializer serializer) {
-      super.writeObject(buffer, serializer);
-      buffer.writeString(member);
-    }
-
-    @Override
-    public void readObject(BufferInput buffer, Serializer serializer) {
-      super.readObject(buffer, serializer);
-      member = buffer.readString();
-    }
-  }
-
-  /**
-   * Schedule command.
-   */
-  public static class Schedule extends MemberCommand<Void> {
-    private long delay;
-    private Runnable callback;
-
-    public Schedule() {
-    }
-
-    public Schedule(String member, long delay, Runnable callback) {
-      super(member);
-      this.delay = Assert.argNot(delay, delay <= 0, "delay must be positive");
-      this.callback = Assert.notNull(callback, "callback");
-    }
-
-    /**
-     * Returns the delay after which to execute the callback.
-     *
-     * @return The delay after which to execute the callback.
-     */
-    public long delay() {
-      return delay;
-    }
-
-    /**
-     * Returns the callback to execute.
-     *
-     * @return The callback to execute.
-     */
-    public Runnable callback() {
-      return callback;
-    }
-
-    @Override
-    public void writeObject(BufferOutput buffer, Serializer serializer) {
-      super.writeObject(buffer, serializer);
-      serializer.writeObject(callback, buffer);
-    }
-
-    @Override
-    public void readObject(BufferInput buffer, Serializer serializer) {
-      super.readObject(buffer, serializer);
-      delay = buffer.readLong();
-      callback = serializer.readObject(buffer);
-    }
-  }
-
-  /**
-   * Execute command.
-   */
-  public static class Execute extends MemberCommand<Void> {
-    private Runnable callback;
-
-    public Execute() {
-    }
-
-    public Execute(String member, Runnable callback) {
-      super(member);
-      this.callback = Assert.notNull(callback, "callback");
-    }
-
-    /**
-     * Returns the execute callback.
-     *
-     * @return The execute callback.
-     */
-    public Runnable callback() {
-      return callback;
-    }
-
-    @Override
-    public void writeObject(BufferOutput buffer, Serializer serializer) {
-      super.writeObject(buffer, serializer);
-      serializer.writeObject(callback, buffer);
-    }
-
-    @Override
-    public void readObject(BufferInput buffer, Serializer serializer) {
-      super.readObject(buffer, serializer);
-      callback = serializer.readObject(buffer);
-    }
-  }
-
-  /**
    * List command.
    */
   public static class Listen extends GroupCommand<Set<GroupMemberInfo>> {
     @Override
     public CompactionMode compaction() {
       return CompactionMode.QUORUM;
-    }
-  }
-
-  /**
-   * Resign command.
-   */
-  public static class Resign extends MemberCommand<Void> {
-
-    public Resign() {
-    }
-
-    public Resign(String member) {
-      super(member);
-    }
-
-    @Override
-    public Command.CompactionMode compaction() {
-      return Command.CompactionMode.SEQUENTIAL;
     }
   }
 
@@ -374,25 +296,15 @@ public final class GroupCommands {
   /**
    * Get property command.
    */
-  public static class GetProperty extends GroupQuery<Object> {
-    private String member;
+  public static class GetProperty extends MemberQuery<Object> {
     private String property;
 
     public GetProperty() {
     }
 
     public GetProperty(String member, String property) {
-      this.member = member;
+      super(member);
       this.property = property;
-    }
-
-    /**
-     * Returns the member ID.
-     *
-     * @return The member ID.
-     */
-    public String member() {
-      return member;
     }
 
     /**
@@ -407,13 +319,12 @@ public final class GroupCommands {
     @Override
     public void writeObject(BufferOutput buffer, Serializer serializer) {
       super.writeObject(buffer, serializer);
-      buffer.writeString(member).writeString(property);
+      buffer.writeString(property);
     }
 
     @Override
     public void readObject(BufferInput buffer, Serializer serializer) {
       super.readObject(buffer, serializer);
-      member = buffer.readString();
       property = buffer.readString();
     }
   }
@@ -445,7 +356,7 @@ public final class GroupCommands {
     public Submit() {
     }
 
-    public Submit(long id, String member, Object task) {
+    public Submit(String member, long id, Object task) {
       super(member);
       this.id = id;
       this.task = task;
@@ -494,7 +405,7 @@ public final class GroupCommands {
     public Ack() {
     }
 
-    public Ack(long id, String member, boolean succeeded) {
+    public Ack(String member, long id, boolean succeeded) {
       super(member);
       this.id = id;
       this.succeeded = succeeded;
@@ -541,16 +452,14 @@ public final class GroupCommands {
       registry.register(Join.class, -130);
       registry.register(Leave.class, -131);
       registry.register(Listen.class, -132);
-      registry.register(Resign.class, -133);
-      registry.register(Schedule.class, -134);
-      registry.register(Execute.class, -135);
-      registry.register(SetProperty.class, -136);
-      registry.register(GetProperty.class, -137);
-      registry.register(RemoveProperty.class, -138);
-      registry.register(Submit.class, -139);
-      registry.register(GroupMessage.class, -140);
-      registry.register(GroupTask.class, -158);
-      registry.register(Ack.class, -159);
+      registry.register(SetProperty.class, -134);
+      registry.register(GetProperty.class, -135);
+      registry.register(RemoveProperty.class, -136);
+      registry.register(Submit.class, -137);
+      registry.register(GroupMessage.class, -138);
+      registry.register(GroupTask.class, -139);
+      registry.register(Ack.class, -140);
+      registry.register(GroupMemberInfo.class, -158);
     }
   }
 

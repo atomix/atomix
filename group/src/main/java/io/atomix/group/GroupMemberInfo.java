@@ -28,15 +28,26 @@ import io.atomix.catalyst.util.Assert;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class GroupMemberInfo implements CatalystSerializable {
+  private long index;
   private String memberId;
   private Address address;
 
   public GroupMemberInfo() {
   }
 
-  public GroupMemberInfo(String memberId, Address address) {
+  public GroupMemberInfo(long index, String memberId, Address address) {
+    this.index = Assert.argNot(index, index <= 0, "index must be positive");
     this.memberId = Assert.notNull(memberId, "memberId");
     this.address = address;
+  }
+
+  /**
+   * Returns the member index.
+   *
+   * @return The member index.
+   */
+  long index() {
+    return index;
   }
 
   /**
@@ -59,12 +70,13 @@ public class GroupMemberInfo implements CatalystSerializable {
 
   @Override
   public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
-    buffer.writeString(memberId);
+    buffer.writeLong(index).writeString(memberId);
     serializer.writeObject(address, buffer);
   }
 
   @Override
   public void readObject(BufferInput<?> buffer, Serializer serializer) {
+    index = buffer.readLong();
     memberId = buffer.readString();
     address = serializer.readObject(buffer);
   }

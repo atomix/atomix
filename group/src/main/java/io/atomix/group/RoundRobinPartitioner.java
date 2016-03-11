@@ -30,4 +30,9 @@ public class RoundRobinPartitioner implements GroupPartitioner {
     return counter.incrementAndGet() % partitions;
   }
 
+  @Override
+  public int hashCode() {
+    return 275604541;
+  }
+
 }

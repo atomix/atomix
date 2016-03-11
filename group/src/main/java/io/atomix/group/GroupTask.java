@@ -23,7 +23,24 @@ import io.atomix.catalyst.serializer.Serializer;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Group task.
+ * Represents a reliable task received by a member to be processed and acknowledged.
+ * <p>
+ * Tasks are {@link GroupTaskQueue#submit(Object) submitted} by {@link DistributedGroup} users to any member of a group.
+ * Tasks are replicated and persisted within the Atomix cluster before being pushed to clients on a queue. Once a task
+ * is received by a task listener, the task may be processed asynchronously and either {@link #ack() acknowledged} or
+ * {@link #fail() failed} once processing is complete.
+ * <pre>
+ *   {@code
+ *   DistributedGroup group = atomix.getGroup("task-group").get();
+ *   group.join().thenAccept(member -> {
+ *     member.tasks().onTask(task -> {
+ *       processTask(task).thenRun(() -> {
+ *         task.ack();
+ *       });
+ *     });
+ *   });
+ *   }
+ * </pre>
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
@@ -31,7 +48,7 @@ public class GroupTask<T> implements CatalystSerializable {
   private long id;
   private String member;
   private T value;
-  private CompletableFuture<Boolean> future;
+  private transient CompletableFuture<Boolean> future;
 
   public GroupTask() {
   }
@@ -48,9 +65,12 @@ public class GroupTask<T> implements CatalystSerializable {
   }
 
   /**
-   * Returns the monotonically increasing task ID.
+   * Returns the task ID.
+   * <p>
+   * The task ID is guaranteed to be unique and monotonically increasing within a given task queue. Tasks received
+   * across members are not associated with one another.
    *
-   * @return The unique task ID.
+   * @return The monotonically increasing task ID.
    */
   public long id() {
     return id;
@@ -66,16 +86,23 @@ public class GroupTask<T> implements CatalystSerializable {
   }
 
   /**
-   * Returns the value of the task.
+   * Returns the task value.
+   * <p>
+   * This is the value that was {@link GroupTaskQueue#submit(Object) submitted} by the sending process.
    *
-   * @return The value of the task.
+   * @return The task value.
    */
-  public T value() {
+  public T task() {
     return value;
   }
 
   /**
    * Acknowledges completion of the task.
+   * <p>
+   * Once a task is acknowledged, an ack will be sent back to the process that submitted the task. Acknowledging
+   * completion of a task does not guarantee that the sender will learn of the acknowledgement. The acknowledgement
+   * itself may fail to reach the cluster or the sender may crash before the acknowledgement can be received.
+   * Acks serve only as positive acknowledgement, but the lack of an ack does not indicate failure.
    */
   public void ack() {
     future.complete(true);
@@ -83,6 +110,10 @@ public class GroupTask<T> implements CatalystSerializable {
 
   /**
    * Fails processing of the task.
+   * <p>
+   * Once a task is failed, a failure message will be sent back to the process that submitted the task for processing.
+   * Failing a task does not guarantee that the sender will learn of the failure. The process that submitted the task
+   * may itself fail.
    */
   public void fail() {
     future.complete(false);
