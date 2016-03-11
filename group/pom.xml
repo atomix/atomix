@@ -22,6 +22,7 @@
     <version>1.0.0-SNAPSHOT</version>
   </parent>
 
+  <packaging>bundle</packaging>
   <artifactId>atomix-group</artifactId>
   <name>Atomix Membership Group</name>
 
