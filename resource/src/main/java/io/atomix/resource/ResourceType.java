@@ -18,7 +18,6 @@ package io.atomix.resource;
 import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
-import io.atomix.catalyst.serializer.SerializationException;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.util.Assert;
 
@@ -73,17 +72,14 @@ public class ResourceType implements CatalystSerializable {
 
   @Override
   public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
-    buffer.writeInt(id).writeString(factory.getName());
+    buffer.writeInt(id);
+    serializer.writeObject(factory, buffer);
   }
 
   @Override
   public void readObject(BufferInput<?> buffer, Serializer serializer) {
     id = buffer.readInt();
-    try {
-      factory = (Class<? extends ResourceFactory<?>>) Class.forName(buffer.readString());
-    } catch (ClassNotFoundException | ClassCastException e) {
-      throw new SerializationException(e);
-    }
+    factory = serializer.<Class<? extends ResourceFactory<?>>>readObject(buffer);
   }
 
   @Override
