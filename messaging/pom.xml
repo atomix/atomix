@@ -22,6 +22,7 @@
     <version>1.0.0-SNAPSHOT</version>
   </parent>
 
+  <packaging>bundle</packaging>
   <artifactId>atomix-messaging</artifactId>
   <name>Atomix Messaging</name>
 
