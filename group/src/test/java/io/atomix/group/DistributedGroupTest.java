@@ -221,11 +221,11 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     DistributedGroup group1 = createResource();
     DistributedGroup group2 = createResource();
 
-    LocalGroupMember localMember2 = group2.join().get();
+    LocalGroupMember localMember2 = group2.join("a").get();
     assertEquals(group2.members().size(), 1);
     assertEquals(group2.election().term().leader(), localMember2);
 
-    LocalGroupMember localMember1 = group1.join().get();
+    LocalGroupMember localMember1 = group1.join("b").get();
     assertEquals(group1.partition(3).partitions().get(0).election().term().leader(), localMember1);
 
     group2.close().thenRun(this::resume);
