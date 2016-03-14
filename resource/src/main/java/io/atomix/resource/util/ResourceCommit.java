@@ -62,6 +62,22 @@ public class ResourceCommit<T extends Operation> implements Commit<T> {
   }
 
   @Override
+  public Commit<T> acquire() {
+    parent.acquire();
+    return this;
+  }
+
+  @Override
+  public boolean release() {
+    return parent.release();
+  }
+
+  @Override
+  public int references() {
+    return parent.references();
+  }
+
+  @Override
   public void close() {
     parent.close();
   }

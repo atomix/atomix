@@ -31,7 +31,6 @@ class ResourceManagerCommit implements Commit {
   private final ResourceManagerCommitPool pool;
   private Commit<InstanceOperation<?, ?>> commit;
   private ServerSession session;
-  private volatile boolean open;
 
   public ResourceManagerCommit(ResourceManagerCommitPool pool) {
     this.pool = pool;
@@ -46,7 +45,6 @@ class ResourceManagerCommit implements Commit {
   void reset(Commit<InstanceOperation<?, ?>> commit, ServerSession session) {
     this.commit = commit;
     this.session = session;
-    open = true;
   }
 
   @Override
@@ -75,12 +73,29 @@ class ResourceManagerCommit implements Commit {
   }
 
   @Override
-  public void close() {
-    if (open) {
-      commit.close();
+  public Commit acquire() {
+    commit.acquire();
+    return this;
+  }
+
+  @Override
+  public boolean release() {
+    if (commit.release()) {
       pool.release(this);
-      open = false;
+      return true;
     }
+    return false;
+  }
+
+  @Override
+  public int references() {
+    return commit.references();
+  }
+
+  @Override
+  public void close() {
+    commit.close();
+    pool.release(this);
   }
 
   @Override
