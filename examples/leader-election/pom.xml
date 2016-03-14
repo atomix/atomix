@@ -19,7 +19,7 @@
   <parent>
     <groupId>io.atomix</groupId>
     <artifactId>atomix-examples-parent</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.0-rc3</version>
   </parent>
 
   <artifactId>atomix-leader-election-example</artifactId>
@@ -33,7 +33,7 @@
     </dependency>
     <dependency>
       <groupId>io.atomix</groupId>
-      <artifactId>atomix-coordination</artifactId>
+      <artifactId>atomix-group</artifactId>
       <version>${project.version}</version>
     </dependency>
   </dependencies>
