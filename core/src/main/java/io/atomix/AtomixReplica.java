@@ -470,7 +470,7 @@ public final class AtomixReplica extends Atomix {
     private final Address clientAddress;
     private final CopycatClient.Builder clientBuilder;
     private final CopycatServer.Builder serverBuilder;
-    private final ResourceRegistry registry = new ResourceRegistry();
+    private final ResourceRegistry registry = new ResourceRegistry(RESOURCES);
     private Transport clientTransport;
     private Transport serverTransport;
     private final Collection<Address> members;

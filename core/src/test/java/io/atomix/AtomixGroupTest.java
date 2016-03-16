@@ -40,11 +40,11 @@ public class AtomixGroupTest extends AbstractAtomixTest {
   public void testClientGroupGet() throws Throwable {
     Atomix client1 = createClient();
     Atomix client2 = createClient();
-    testGroup(client1, client2, get("test-client-group-get", DistributedGroup.class));
+    testGroup(client1, client2, getResource("test-client-group-get", DistributedGroup.class));
   }
 
   public void testReplicaGroupGet() throws Throwable {
-    testGroup(replicas.get(0), replicas.get(1), get("test-replica-group-get", DistributedGroup.class));
+    testGroup(replicas.get(0), replicas.get(1), getResource("test-replica-group-get", DistributedGroup.class));
   }
 
   /**

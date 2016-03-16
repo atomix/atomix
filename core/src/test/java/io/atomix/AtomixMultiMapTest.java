@@ -37,11 +37,11 @@ public class AtomixMultiMapTest extends AbstractAtomixTest {
   public void testClientMultiMapGet() throws Throwable {
     Atomix client1 = createClient();
     Atomix client2 = createClient();
-    testMultiMap(client1, client2, get("test-client-multimap-get", DistributedMultiMap.class));
+    testMultiMap(client1, client2, getResource("test-client-multimap-get", DistributedMultiMap.class));
   }
 
   public void testReplicaMultiMapGet() throws Throwable {
-    testMultiMap(replicas.get(0), replicas.get(1), get("test-replica-multimap-get", DistributedMultiMap.class));
+    testMultiMap(replicas.get(0), replicas.get(1), getResource("test-replica-multimap-get", DistributedMultiMap.class));
   }
 
   /**

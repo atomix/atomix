@@ -203,7 +203,7 @@ public class AtomixClient extends Atomix {
     private final ResourceClient.Builder builder;
 
     private Builder(ResourceClient.Builder builder) {
-      this.builder = Assert.notNull(builder, "builder");
+      this.builder = Assert.notNull(builder, "builder").withResourceTypes(RESOURCES);
     }
 
     /**

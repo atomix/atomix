@@ -36,11 +36,11 @@ public class AtomixLockTest extends AbstractAtomixTest {
   public void testClientLockGet() throws Throwable {
     Atomix client1 = createClient();
     Atomix client2 = createClient();
-    testLock(client1, client2, get("test-client-lock-get", DistributedLock.class));
+    testLock(client1, client2, getResource("test-client-lock-get", DistributedLock.class));
   }
 
   public void testReplicaLockGet() throws Throwable {
-    testLock(createClient(), replicas.get(0), get("test-replica-lock-get", DistributedLock.class));
+    testLock(createClient(), replicas.get(0), getResource("test-replica-lock-get", DistributedLock.class));
   }
 
   /**

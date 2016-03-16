@@ -35,6 +35,8 @@ import io.atomix.resource.ResourceType;
 import io.atomix.variables.DistributedLong;
 import io.atomix.variables.DistributedValue;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -54,6 +56,20 @@ import java.util.function.Consumer;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class Atomix implements ResourceManager<Atomix>, Managed<Atomix> {
+  static final Collection<ResourceType> RESOURCES = Arrays.asList(
+    new ResourceType(DistributedMap.class),
+    new ResourceType(DistributedMultiMap.class),
+    new ResourceType(DistributedSet.class),
+    new ResourceType(DistributedQueue.class),
+    new ResourceType(DistributedValue.class),
+    new ResourceType(DistributedLong.class),
+    new ResourceType(DistributedLock.class),
+    new ResourceType(DistributedGroup.class),
+    new ResourceType(DistributedTopic.class),
+    new ResourceType(DistributedTaskQueue.class),
+    new ResourceType(DistributedMessageBus.class)
+  );
+
   final ResourceClient client;
 
   protected Atomix(ResourceClient client) {

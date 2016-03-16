@@ -80,7 +80,7 @@ public abstract class AbstractAtomixTest extends ConcurrentTestCase {
   /**
    * Creates a resource factory for the given type.
    */
-  protected <T extends Resource<?>> Function<Atomix, T> get(String key, Class<? super T> type) {
+  protected <T extends Resource<?>> Function<Atomix, T> getResource(String key, Class<? super T> type) {
     return a -> {
       try {
         return a.<T>getResource(key, type).get(5, TimeUnit.SECONDS);

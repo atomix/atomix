@@ -37,11 +37,11 @@ public class AtomixMapTest extends AbstractAtomixTest {
   public void testClientMapGet() throws Throwable {
     Atomix client1 = createClient();
     Atomix client2 = createClient();
-    testMap(client1, client2, get("test-client-map-get", DistributedMap.class));
+    testMap(client1, client2, getResource("test-client-map-get", DistributedMap.class));
   }
 
   public void testReplicaMapGet() throws Throwable {
-    testMap(replicas.get(0), replicas.get(1), get("test-replica-map-get", DistributedMap.class));
+    testMap(replicas.get(0), replicas.get(1), getResource("test-replica-map-get", DistributedMap.class));
   }
 
   /**
