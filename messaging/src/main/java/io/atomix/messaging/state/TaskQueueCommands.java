@@ -153,8 +153,8 @@ public final class TaskQueueCommands {
   public static class TypeResolver implements SerializableTypeResolver {
     @Override
     public void resolve(SerializerRegistry registry) {
-      registry.register(Subscribe.class, -150);
-      registry.register(Unsubscribe.class, -151);
+      registry.register(Subscribe.class, -151);
+      registry.register(Unsubscribe.class, -152);
       registry.register(Submit.class, -107);
       registry.register(Ack.class, -108);
     }

@@ -127,8 +127,8 @@ public final class TopicCommands {
   public static class TypeResolver implements SerializableTypeResolver {
     @Override
     public void resolve(SerializerRegistry registry) {
-      registry.register(Listen.class, -152);
-      registry.register(Unlisten.class, -153);
+      registry.register(Listen.class, -153);
+      registry.register(Unlisten.class, -154);
       registry.register(Publish.class, -109);
     }
   }

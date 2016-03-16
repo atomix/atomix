@@ -38,11 +38,11 @@ public class AtomixSetTest extends AbstractAtomixTest {
   public void testClientSetGet() throws Throwable {
     Atomix client1 = createClient();
     Atomix client2 = createClient();
-    testSet(client1, client2, get("test-client-set-get", DistributedSet.class));
+    testSet(client1, client2, getResource("test-client-set-get", DistributedSet.class));
   }
 
   public void testReplicaSetGet() throws Throwable {
-    testSet(replicas.get(0), replicas.get(1), get("test-replica-set-get", DistributedSet.class));
+    testSet(replicas.get(0), replicas.get(1), getResource("test-replica-set-get", DistributedSet.class));
   }
 
   /**

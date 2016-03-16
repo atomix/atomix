@@ -30,6 +30,13 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class ResourceRegistry {
   private final Map<Integer, ResourceType> resourceTypes = new ConcurrentHashMap<>();
 
+  public ResourceRegistry() {
+  }
+
+  public ResourceRegistry(Collection<ResourceType> resources) {
+    resources.forEach(this::register);
+  }
+
   /**
    * Returns a collection of resource types.
    *

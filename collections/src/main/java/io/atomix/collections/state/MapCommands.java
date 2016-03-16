@@ -485,9 +485,9 @@ public class MapCommands {
       registry.register(RemoveIfPresent.class, -72);
       registry.register(Replace.class, -73);
       registry.register(ReplaceIfPresent.class, -74);
-      registry.register(Values.class, -154);
-      registry.register(KeySet.class, -155);
-      registry.register(EntrySet.class, -156);
+      registry.register(Values.class, -155);
+      registry.register(KeySet.class, -156);
+      registry.register(EntrySet.class, -157);
       registry.register(IsEmpty.class, -75);
       registry.register(Size.class, -76);
       registry.register(Clear.class, -77);

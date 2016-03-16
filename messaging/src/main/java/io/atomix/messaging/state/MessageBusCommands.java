@@ -231,11 +231,11 @@ public final class MessageBusCommands {
   public static class TypeResolver implements SerializableTypeResolver {
     @Override
     public void resolve(SerializerRegistry registry) {
-      registry.register(Join.class, -145);
-      registry.register(Leave.class, -146);
-      registry.register(Register.class, -147);
-      registry.register(Unregister.class, -148);
-      registry.register(ConsumerInfo.class, -149);
+      registry.register(Join.class, -146);
+      registry.register(Leave.class, -147);
+      registry.register(Register.class, -148);
+      registry.register(Unregister.class, -149);
+      registry.register(ConsumerInfo.class, -150);
       registry.register(Message.class, -106);
     }
   }

@@ -37,11 +37,11 @@ public class AtomixLongTest extends AbstractAtomixTest {
   public void testClientLongGet() throws Throwable {
     Atomix client1 = createClient();
     Atomix client2 = createClient();
-    testLong(client1, client2, get("test-client-long-get", DistributedLong.class));
+    testLong(client1, client2, getResource("test-client-long-get", DistributedLong.class));
   }
 
   public void testReplicaLongGet() throws Throwable {
-    testLong(replicas.get(0), replicas.get(1), get("test-replica-long-get", DistributedLong.class));
+    testLong(replicas.get(0), replicas.get(1), getResource("test-replica-long-get", DistributedLong.class));
   }
 
   /**

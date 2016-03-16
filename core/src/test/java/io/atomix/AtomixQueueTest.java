@@ -37,11 +37,11 @@ public class AtomixQueueTest extends AbstractAtomixTest {
   public void testClientQueueGet() throws Throwable {
     Atomix client1 = createClient();
     Atomix client2 = createClient();
-    testQueue(client1, client2, get("test-client-queue-get", DistributedQueue.class));
+    testQueue(client1, client2, getResource("test-client-queue-get", DistributedQueue.class));
   }
 
   public void testReplicaQueueGet() throws Throwable {
-    testQueue(replicas.get(0), replicas.get(1), get("test-replica-queue-get", DistributedQueue.class));
+    testQueue(replicas.get(0), replicas.get(1), getResource("test-replica-queue-get", DistributedQueue.class));
   }
 
   /**
