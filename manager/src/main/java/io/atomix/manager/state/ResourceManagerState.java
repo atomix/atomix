@@ -205,24 +205,27 @@ public class ResourceManagerState extends StateMachine implements SessionListene
    * Closes a resource.
    */
   protected void closeResource(Commit<CloseResource> commit) {
-    long resourceId = commit.operation().resource();
-    ResourceHolder resourceHolder = resources.get(resourceId);
-    if (resourceHolder == null) {
-      commit.close();
-      throw new ResourceManagerException("unknown resource: " + resourceId);
-    }
+    try {
+      long resourceId = commit.operation().resource();
+      ResourceHolder resourceHolder = resources.get(resourceId);
+      if (resourceHolder == null) {
+        throw new ResourceManagerException("unknown resource: " + resourceId);
+      }
 
-    SessionHolder sessionHolder = resourceHolder.sessions.remove(commit.session().id());
-    if (sessionHolder != null) {
-      try {
-        resourceHolder.stateMachine.unregister(sessionHolder.session);
-        resourceHolder.stateMachine.close(sessionHolder.session);
-      } finally {
-        // Ensure that the commit that created the resource is not closed even of the client closed its reference to it.
-        if (sessionHolder.commit != resourceHolder.commit) {
-          sessionHolder.commit.close();
+      SessionHolder sessionHolder = resourceHolder.sessions.remove(commit.session().id());
+      if (sessionHolder != null) {
+        try {
+          resourceHolder.stateMachine.unregister(sessionHolder.session);
+          resourceHolder.stateMachine.close(sessionHolder.session);
+        } finally {
+          // Ensure that the commit that created the resource is not closed even if the client closed its reference to it.
+          if (sessionHolder.commit != resourceHolder.commit) {
+            sessionHolder.commit.close();
+          }
         }
       }
+    } finally {
+      commit.close();
     }
   }
 
