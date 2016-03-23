@@ -297,7 +297,7 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
    */
   private void onJoinEvent(GroupMemberInfo info) {
     GroupMember member;
-    if (joining.contains(info.memberId())) {
+    if (joining.remove(info.memberId())) {
       member = new LocalMember(info, this, submitter);
       members.put(info.memberId(), member);
 

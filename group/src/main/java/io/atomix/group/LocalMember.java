@@ -45,12 +45,10 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class LocalMember extends GroupMember {
-  final TaskQueueController tasks;
   final ConnectionController connection;
 
   LocalMember(GroupMemberInfo info, MembershipGroup group, Submitter submitter) {
-    super(info, group, submitter);
-    this.tasks = new TaskQueueController(new LocalTaskQueue(info.memberId(), group, submitter));
+    super(info, group, submitter, new TaskQueueController(new LocalTaskQueue(info.memberId(), group, submitter)));
     this.connection = new ConnectionController(new LocalConnection(info.memberId(), info.address(), group.connections));
   }
 

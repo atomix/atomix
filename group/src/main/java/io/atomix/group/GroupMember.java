@@ -38,13 +38,21 @@ public class GroupMember {
   private final Connection connection;
 
   GroupMember(GroupMemberInfo info, MembershipGroup group, Submitter submitter) {
+    this(info, group, submitter, null);
+  }
+
+  GroupMember(GroupMemberInfo info, MembershipGroup group, Submitter submitter, TaskQueueController tasks) {
     this.index = info.index();
     this.memberId = info.memberId();
     this.address = info.address();
     this.group = Assert.notNull(group, "group");
     this.properties = new GroupProperties(memberId, group);
-    this.tasks = new TaskQueueController(new MemberTaskQueue(memberId, group, submitter));
     this.connection = new Connection(memberId, address, group.connections);
+    if (tasks != null) {
+      this.tasks = tasks;
+    } else {
+      this.tasks = new TaskQueueController(new MemberTaskQueue(memberId, group, submitter));
+    }
   }
 
   /**
