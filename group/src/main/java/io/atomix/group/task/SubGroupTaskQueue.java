@@ -1,4 +1,4 @@
-package io.atomix.group.tasks;
+package io.atomix.group.task;
 
 import io.atomix.catalyst.util.Assert;
 import io.atomix.group.GroupMember;

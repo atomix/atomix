@@ -18,8 +18,8 @@ package io.atomix.group;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.group.connection.Connection;
-import io.atomix.group.tasks.MemberTaskQueue;
-import io.atomix.group.tasks.TaskQueueController;
+import io.atomix.group.task.MemberTaskQueue;
+import io.atomix.group.task.TaskQueueController;
 import io.atomix.group.util.Submitter;
 
 /**

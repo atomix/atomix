@@ -18,7 +18,7 @@ package io.atomix.group;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.group.partition.ConsistentHashGroup;
 import io.atomix.group.partition.PartitionGroup;
-import io.atomix.group.tasks.TaskFailedException;
+import io.atomix.group.task.TaskFailedException;
 import io.atomix.testing.AbstractCopycatTest;
 import org.testng.annotations.Test;
 

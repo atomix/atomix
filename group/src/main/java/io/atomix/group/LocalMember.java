@@ -18,8 +18,8 @@ package io.atomix.group;
 import io.atomix.group.connection.ConnectionController;
 import io.atomix.group.connection.LocalConnection;
 import io.atomix.group.state.GroupCommands;
-import io.atomix.group.tasks.LocalTaskQueue;
-import io.atomix.group.tasks.TaskQueueController;
+import io.atomix.group.task.LocalTaskQueue;
+import io.atomix.group.task.TaskQueueController;
 import io.atomix.group.util.Submitter;
 
 import java.util.concurrent.CompletableFuture;

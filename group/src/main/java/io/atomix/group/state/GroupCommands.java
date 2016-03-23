@@ -27,7 +27,7 @@ import io.atomix.copycat.Operation;
 import io.atomix.copycat.Query;
 import io.atomix.group.GroupMemberInfo;
 import io.atomix.group.connection.Message;
-import io.atomix.group.tasks.Task;
+import io.atomix.group.task.Task;
 
 import java.util.Set;
 

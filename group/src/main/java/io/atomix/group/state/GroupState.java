@@ -395,7 +395,7 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
     public void setSession(ServerSession session) {
       this.session = session;
       if (task != null && session != null && session.state().active()) {
-        session.publish("task", new io.atomix.group.tasks.Task<>(task.index(), memberId, task.task()));
+        session.publish("task", new io.atomix.group.task.Task<>(task.index(), memberId, task.task()));
       }
     }
 
@@ -413,7 +413,7 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
       if (this.task == null) {
         this.task = task;
         if (session != null && session.state().active()) {
-          session.publish("task", new io.atomix.group.tasks.Task<>(task.index(), memberId, task.task()));
+          session.publish("task", new io.atomix.group.task.Task<>(task.index(), memberId, task.task()));
         }
       } else {
         tasks.add(task);
@@ -453,7 +453,7 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
       task = tasks.poll();
       if (task != null) {
         if (session != null && session.state().active()) {
-          session.publish("task", new io.atomix.group.tasks.Task<>(task.index(), memberId, task.task()));
+          session.publish("task", new io.atomix.group.task.Task<>(task.index(), memberId, task.task()));
         }
       }
     }
