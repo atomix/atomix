@@ -68,8 +68,8 @@ public class LeaderElectionExample {
     LocalGroupMember member = group.join().get();
 
     // Register a callback to be called when the local member is elected the leader.
-    group.election().onElection(leader -> {
-      if (leader.equals(member)) {
+    group.election().onElection(term -> {
+      if (term.leader().equals(member)) {
         System.out.println("Elected leader!");
       }
     });
