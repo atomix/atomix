@@ -80,7 +80,7 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
   private final Address address;
   private final Server server;
   final ConnectionManager connections;
-  private final GroupProperties properties = new GroupProperties(null, this);
+  private final GroupProperties properties = new GroupProperties(this);
   private final ElectionController election = new ElectionController(this);
   private final TaskQueue tasks = new GroupTaskQueue(this);
   final Map<String, GroupMember> members = new ConcurrentHashMap<>();

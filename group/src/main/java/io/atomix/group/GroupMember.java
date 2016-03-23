@@ -33,7 +33,7 @@ public class GroupMember {
   protected final String memberId;
   protected final Address address;
   protected final MembershipGroup group;
-  private final GroupProperties properties;
+  private final MemberProperties properties;
   final TaskQueueController tasks;
   private final Connection connection;
 
@@ -46,7 +46,7 @@ public class GroupMember {
     this.memberId = info.memberId();
     this.address = info.address();
     this.group = Assert.notNull(group, "group");
-    this.properties = new GroupProperties(memberId, group);
+    this.properties = new MemberProperties(memberId, group);
     this.connection = new Connection(memberId, address, group.connections);
     if (tasks != null) {
       this.tasks = tasks;
@@ -101,7 +101,7 @@ public class GroupMember {
    *
    * @return The member properties.
    */
-  public GroupProperties properties() {
+  public MemberProperties properties() {
     return properties;
   }
 

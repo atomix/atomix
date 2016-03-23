@@ -29,7 +29,11 @@ public class GroupProperties {
   private final String memberId;
   private final MembershipGroup group;
 
-  protected GroupProperties(String memberId, MembershipGroup group) {
+  GroupProperties(MembershipGroup group) {
+    this(null, group);
+  }
+
+  GroupProperties(String memberId, MembershipGroup group) {
     this.memberId = memberId;
     this.group = Assert.notNull(group, "group");
   }
