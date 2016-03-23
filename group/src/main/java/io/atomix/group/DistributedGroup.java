@@ -22,6 +22,16 @@ import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.ConfigurationException;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.catalyst.util.hash.Hasher;
+import io.atomix.group.connection.Message;
+import io.atomix.group.connection.LocalConnection;
+import io.atomix.group.connection.Connection;
+import io.atomix.group.election.Election;
+import io.atomix.group.election.Term;
+import io.atomix.group.partition.*;
+import io.atomix.group.tasks.Task;
+import io.atomix.group.tasks.TaskQueue;
+import io.atomix.group.tasks.LocalTaskQueue;
+import io.atomix.group.tasks.TaskFailedException;
 import io.atomix.group.util.DistributedGroupFactory;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceTypeInfo;
@@ -37,7 +47,7 @@ import java.util.function.Consumer;
  * scheduling and execution.
  * <p>
  * The distributed group resource facilitates managing group membership within an Atomix cluster. Membership is
- * managed by nodes {@link #join() joining} and {@link LocalGroupMember#leave() leaving} the group, and instances
+ * managed by nodes {@link #join() joining} and {@link LocalMember#leave() leaving} the group, and instances
  * of the group throughout the cluster are notified on changes to the structure of the group. Groups can elect a
  * leader, and members can communicate directly with one another or through persistent queues. Additionally, groups
  * can be {@link #partition(int) partitioned} into subgroups, subgroups can be further partitioned into more subgroups,
@@ -142,8 +152,8 @@ import java.util.function.Consumer;
  * has been changed, all nodes are guaranteed to see that change when reading the property.
  * <h2>Persistent members</h2>
  * {@code DistributedGroup} supports a concept of persistent members that requires members to <em>explicitly</em>
- * {@link LocalGroupMember#leave() leave} the group to be removed from it. Persistent member {@link GroupProperties properties}
- * persist through failures, and enqueued {@link GroupTask tasks} will remain in a failed member's queue until the
+ * {@link LocalMember#leave() leave} the group to be removed from it. Persistent member {@link GroupProperties properties}
+ * persist through failures, and enqueued {@link Task tasks} will remain in a failed member's queue until the
  * member recovers.
  * <p>
  * In order to support recovery, persistent members must be configured with a user-provided {@link GroupMember#id() member ID}.
@@ -159,7 +169,7 @@ import java.util.function.Consumer;
  * Persistent members are not limited to a single node. If a node crashes, any persistent members that existed
  * on that node may rejoin the group on any other node. Persistent members rejoin simply by calling {@link #join(String)}
  * with the unique member ID. Once a persistent member has rejoined the group, its session will be updated and any
- * tasks remaining in the member's {@link GroupTaskQueue} will be published to the member.
+ * tasks remaining in the member's {@link TaskQueue} will be published to the member.
  * <p>
  * Persistent member state is retained <em>only</em> inside the group's replicated state machine and not on clients.
  * From the perspective of {@code DistributedGroup} instances in a cluster, in the event that the node on which
@@ -172,7 +182,7 @@ import java.util.function.Consumer;
  * elected for each group automatically.
  * <p>
  * Leaders are elected using a fair policy. The first member to {@link #join() join} a group will always become the
- * initial group leader. Each unique leader in a group is associated with a {@link GroupElection#term() term}. The term
+ * initial group leader. Each unique leader in a group is associated with a {@link Election#term() term}. The term
  * represents a globally unique, monotonically increasing token that can be used for fencing. Users can listen for
  * changes in group terms and leaders with event listeners:
  * <pre>
@@ -183,7 +193,7 @@ import java.util.function.Consumer;
  *   });
  *   }
  * </pre>
- * The {@link GroupTerm#term() term} is guaranteed to be unique for each {@link GroupTerm#leader() leader} and is
+ * The {@link Term#term() term} is guaranteed to be unique for each {@link Term#leader() leader} and is
  * guaranteed to be monotonically increasing. Each instance of a group is guaranteed to see the same leader for the
  * same term, and no two leaders can ever exist in the same term. In that sense, the terminology and constraints of
  * leader election in Atomix borrow heavily from the Raft consensus algorithm that underlies it.
@@ -217,7 +227,7 @@ import java.util.function.Consumer;
  * increasing term for coordination and managing optimistic access to external resources.
  * <h2>Direct messaging</h2>
  * Members of a group and group instances can communicate with one another through the direct messaging API,
- * {@link MemberConnection}. Direct messaging between group members is considered <em>unreliable</em> and is
+ * {@link Connection}. Direct messaging between group members is considered <em>unreliable</em> and is
  * done over the local node's configured {@link io.atomix.catalyst.transport.Transport}. Messages between members
  * of a group are ordered according only to the transport and are not guaranteed to be delivered. While request-reply
  * can be used to achieve some level of assurance that messages are delivered to specific members of the group,
@@ -233,7 +243,7 @@ import java.util.function.Consumer;
  *   }
  * </pre>
  * Once a group instance has been configured with an address for direct messaging, messages can be sent between
- * group members using the {@link MemberConnection} for any member of the group. Messages sent between members must
+ * group members using the {@link Connection} for any member of the group. Messages sent between members must
  * be associated with a {@link String} topic, and messages can be any value that is serializable by the group instance's
  * {@link io.atomix.catalyst.serializer.Serializer}.
  * <pre>
@@ -243,11 +253,11 @@ import java.util.function.Consumer;
  *   });
  *   }
  * </pre>
- * Direct messages can only be <em>received</em> by a {@link LocalGroupMember} which must be created by
+ * Direct messages can only be <em>received</em> by a {@link LocalMember} which must be created by
  * {@link #join() joining} the group. Local members register a listener for a link topic on the joined member's
- * {@link LocalMemberConnection}. Message listeners are asynchronous. When a {@link GroupMessage} is received
- * by a local member, the member can perform any processing it wishes and {@link GroupMessage#reply(Object) reply}
- * to the message or {@link GroupMessage#ack() acknowledge} completion of handling the message to send a response
+ * {@link LocalConnection}. Message listeners are asynchronous. When a {@link Message} is received
+ * by a local member, the member can perform any processing it wishes and {@link Message#reply(Object) reply}
+ * to the message or {@link Message#ack() acknowledge} completion of handling the message to send a response
  * back to the sender.
  * <pre>
  *   {@code
@@ -265,13 +275,13 @@ import java.util.function.Consumer;
  *   }
  * </pre>
  * It's critical that message listeners reply to messages, otherwise futures will be held in memory on the
- * sending side of the {@link MemberConnection connection} until the sender or receiver is removed from the
+ * sending side of the {@link Connection connection} until the sender or receiver is removed from the
  * group.
  * <h2>Task queues</h2>
  * In addition to supporting direct messaging between members of the group, {@code DistributedGroup} provides
  * mechanisms for reliable, persistent messaging. Tasks are arbitrary objects that can be sent between members
  * of the group or to all members of a group by any node. In contrast to direct messaging, tasks are uni-directional
- * in that {@link GroupTaskQueue task queues} only support sending a task but not receiving a reply. Tasks are
+ * in that {@link TaskQueue task queues} only support sending a task but not receiving a reply. Tasks are
  * submitted directly to the replicated state machine and once task submissions are complete are guaranteed to
  * be persisted either until received and acknowledged by their target member or until that member leaves the
  * cluster.
@@ -283,7 +293,7 @@ import java.util.function.Consumer;
  * member.
  * <p>
  * Tasks can be submitted to all members of a group or to a specific member through the object's associated
- * {@link GroupTaskQueue}. Once a task has completed processing, the task acknowledgement will be sent back
+ * {@link TaskQueue}. Once a task has completed processing, the task acknowledgement will be sent back
  * to the sender. In the event a task fails processing, an exception will be thrown on the sender.
  * <pre>
  *   {@code
@@ -319,8 +329,8 @@ import java.util.function.Consumer;
  * the group during the execution of a task, the task will be explicitly failed and an error will be returned
  * to the task submitter.
  * <p>
- * Tasks are processed by {@link LocalGroupMember}s by registering a {@link LocalMemberTaskQueue#onTask(Consumer) task listener}
- * on the member's queue. Once a member is done processing a task, it must {@link GroupTask#ack() ack} the task to
+ * Tasks are processed by {@link LocalMember}s by registering a {@link LocalTaskQueue#onTask(Consumer) task listener}
+ * on the member's queue. Once a member is done processing a task, it must {@link Task#ack() ack} the task to
  * fetch the next one from the cluster.
  * <pre>
  *   {@code
@@ -332,8 +342,8 @@ import java.util.function.Consumer;
  *   }
  * </pre>
  * Task receivers are free to take as long as is necessary to process a task. Task callbacks may be asynchronous.
- * Members need only call {@link GroupTask#ack()} once processing is complete. Tasks can also be explicitly
- * {@link GroupTask#fail() fail}ed by receivers. Task failures will be sent back to the sender in the form of
+ * Members need only call {@link Task#ack()} once processing is complete. Tasks can also be explicitly
+ * {@link Task#fail() fail}ed by receivers. Task failures will be sent back to the sender in the form of
  * a {@link TaskFailedException}.
  * <pre>
  *   {@code
@@ -385,9 +395,9 @@ import java.util.function.Consumer;
  * factor. Partitioning can aid in hashing resources to specific members of the group, and the replication factor builds
  * on partitions to aid in identifying multiple members per partition.
  * <p>
- * Groups can be partitioned to any number of partitions and using custom {@link GroupPartitioner}s. Partitions can be
+ * Groups can be partitioned to any number of partitions and using custom {@link Partitioner}s. Partitions can be
  * nested within other partitions as well. A set of partitions of a group is known as a {@link PartitionGroup}. Each
- * partition group consists of several {@link GroupPartition}s. Each partition in a group represents a subset of the
+ * partition group consists of several {@link Partition}s. Each partition in a group represents a subset of the
  * members in the parent {@code PartitionGroup}.
  * <p>
  * To create a partition group, use the {@link #partition(int)} method, defining the number of partitions to create
@@ -426,9 +436,9 @@ import java.util.function.Consumer;
  *   GroupPartitions partitions = group.partition(3).partitions();
  *   }
  * </pre>
- * Values can be mapped directly to {@link GroupPartition}s via the provided {@link GroupPartitioner}. When the
- * {@link GroupPartitions#get(Object)} method is called, the configured partitioner is queried to map the provided
- * value to a partition in the group. Custom {@link GroupPartitioner}s can be provided when constructing a partition group.
+ * Values can be mapped directly to {@link Partition}s via the provided {@link Partitioner}. When the
+ * {@link Partitions#get(Object)} method is called, the configured partitioner is queried to map the provided
+ * value to a partition in the group. Custom {@link Partitioner}s can be provided when constructing a partition group.
  * By default, the {@link HashPartitioner} is used if no partitioner is provided.
  * <pre>
  *   {@code
@@ -441,13 +451,13 @@ import java.util.function.Consumer;
  * removed, the group state machine will reassign the minimal number of partitions necessary to balance the cluster,
  * and {@code DistributedGroup} instances will be notified and updated automatically. Atomix guarantees that when a
  * new member {@link #join() joins} a group, all partition information on all connected group instances will be updated
- * before the join completes. Similarly, when a member {@link LocalGroupMember#leave() leaves} the group, all partition
+ * before the join completes. Similarly, when a member {@link LocalMember#leave() leaves} the group, all partition
  * information on all connected group instances are guaranteed to be updated before the operation completes.
  * <p>
  * Users can detect when partitions change membership to repartition data and update replicas. To listen for changes
- * in a partition's membership, register a {@link GroupPartition#onMigration(Consumer)} listener. The migration listener
+ * in a partition's membership, register a {@link Partition#onMigration(Consumer)} listener. The migration listener
  * will be called any time a replica within the partition is moved to a new member, which can happen when nodes are
- * added to or removed from the group. A {@link GroupPartitionMigration} will be provided to the migration callback
+ * added to or removed from the group. A {@link PartitionMigration} will be provided to the migration callback
  * indicating the source and destination of the partition migration.
  * <pre>
  *   {@code
@@ -643,23 +653,23 @@ public interface DistributedGroup extends Resource<DistributedGroup> {
   /**
    * Returns the group election.
    * <p>
-   * The returned election is specific to this group's set of members. The {@link GroupTerm} defined by the returned
+   * The returned election is specific to this group's set of members. The {@link Term} defined by the returned
    * election will not necessarily be reflected in any subgroups of this group.
    *
    * @return The group election.
    */
-  GroupElection election();
+  Election election();
 
   /**
    * Returns the group task queue.
    * <p>
-   * The returned task queue is specific to this group's set of members. Tasks {@link GroupTaskQueue#submit(Object) submitted}
+   * The returned task queue is specific to this group's set of members. Tasks {@link TaskQueue#submit(Object) submitted}
    * to the queue will be submitted only to the members present in this group's {@link #members() members} list and not
    * to any additional members present in parent groups.
    *
    * @return The group task queue.
    */
-  GroupTaskQueue tasks();
+  TaskQueue tasks();
 
   /**
    * Returns a consistent hash group.
@@ -783,7 +793,7 @@ public interface DistributedGroup extends Resource<DistributedGroup> {
    * <p>
    * The {@link #members()} in the returned partition group will mirror the members of this group. When a member is
    * added to or removed from this group, the change will be reflected in the {@link PartitionGroup}. However, the
-   * members will be partitioned into the given number of {@link GroupPartition partitions}. Each partition within
+   * members will be partitioned into the given number of {@link Partition partitions}. Each partition within
    * the group will represent some subset of the members of the group. Members are partitioned by hashing them onto
    * a ring and hashing partitions to points on the same ring. Once hashed to a point on the ring, the {@code n}
    * members following that point will become members of the partition.
@@ -803,7 +813,7 @@ public interface DistributedGroup extends Resource<DistributedGroup> {
    *   });
    *   }
    * </pre>
-   * Each {@link GroupPartition} within the partition group is its own unique group of members. Leaders can be elected
+   * Each {@link Partition} within the partition group is its own unique group of members. Leaders can be elected
    * among the partition members and tasks can be submitted to the partition members independently of the parent
    * {@link PartitionGroup} or this group. {@link GroupProperties}, however, are shared among all {@link DistributedGroup}
    * instances.
@@ -826,7 +836,7 @@ public interface DistributedGroup extends Resource<DistributedGroup> {
    * <p>
    * The {@link #members()} in the returned partition group will mirror the members of this group. When a member is
    * added to or removed from this group, the change will be reflected in the {@link PartitionGroup}. However, the
-   * members will be partitioned into the given number of {@link GroupPartition partitions}. Each partition within
+   * members will be partitioned into the given number of {@link Partition partitions}. Each partition within
    * the group will represent some subset of the members of the group. Members are partitioned by hashing them onto
    * a ring and hashing partitions to points on the same ring. Once hashed to a point on the ring, the {@code n}
    * members following that point will become members of the partition.
@@ -846,7 +856,7 @@ public interface DistributedGroup extends Resource<DistributedGroup> {
    *   });
    *   }
    * </pre>
-   * Each {@link GroupPartition} within the partition group is its own unique group of members. Leaders can be elected
+   * Each {@link Partition} within the partition group is its own unique group of members. Leaders can be elected
    * among the partition members and tasks can be submitted to the partition members independently of the parent
    * {@link PartitionGroup} or this group. {@link GroupProperties}, however, are shared among all {@link DistributedGroup}
    * instances.
@@ -863,13 +873,13 @@ public interface DistributedGroup extends Resource<DistributedGroup> {
   /**
    * Returns a partition group.
    * <p>
-   * The {@link GroupPartitioner} will be used to map values to partitions of the group. The returned group will be
+   * The {@link Partitioner} will be used to map values to partitions of the group. The returned group will be
    * configured with a {@code replicationFactor} of {@code 1}, indicating that each partition may consist of up to
    * one member.
    * <p>
    * The {@link #members()} in the returned partition group will mirror the members of this group. When a member is
    * added to or removed from this group, the change will be reflected in the {@link PartitionGroup}. However, the
-   * members will be partitioned into the given number of {@link GroupPartition partitions}. Each partition within
+   * members will be partitioned into the given number of {@link Partition partitions}. Each partition within
    * the group will represent some subset of the members of the group. Members are partitioned by hashing them onto
    * a ring and hashing partitions to points on the same ring. Once hashed to a point on the ring, the {@code n}
    * members following that point will become members of the partition.
@@ -889,7 +899,7 @@ public interface DistributedGroup extends Resource<DistributedGroup> {
    *   });
    *   }
    * </pre>
-   * Each {@link GroupPartition} within the partition group is its own unique group of members. Leaders can be elected
+   * Each {@link Partition} within the partition group is its own unique group of members. Leaders can be elected
    * among the partition members and tasks can be submitted to the partition members independently of the parent
    * {@link PartitionGroup} or this group. {@link GroupProperties}, however, are shared among all {@link DistributedGroup}
    * instances.
@@ -901,7 +911,7 @@ public interface DistributedGroup extends Resource<DistributedGroup> {
    * @param partitioner The group partitioner.
    * @return A partition group.
    */
-  PartitionGroup partition(int partitions, GroupPartitioner partitioner);
+  PartitionGroup partition(int partitions, Partitioner partitioner);
 
   /**
    * Returns a partition group.
@@ -909,11 +919,11 @@ public interface DistributedGroup extends Resource<DistributedGroup> {
    * The {@code replicationFactor} indicates the number of {@link GroupMember members} that should be included in
    * each partition. Members of this group will be mapped to partitions in the returned {@link PartitionGroup}, and
    * when membership changes occur in this group members will be repartitioned as necessary. The provided
-   * {@link GroupPartitioner} will be used to map values to partitions.
+   * {@link Partitioner} will be used to map values to partitions.
    * <p>
    * The {@link #members()} in the returned partition group will mirror the members of this group. When a member is
    * added to or removed from this group, the change will be reflected in the {@link PartitionGroup}. However, the
-   * members will be partitioned into the given number of {@link GroupPartition partitions}. Each partition within
+   * members will be partitioned into the given number of {@link Partition partitions}. Each partition within
    * the group will represent some subset of the members of the group. Members are partitioned by hashing them onto
    * a ring and hashing partitions to points on the same ring. Once hashed to a point on the ring, the {@code n}
    * members following that point will become members of the partition.
@@ -933,7 +943,7 @@ public interface DistributedGroup extends Resource<DistributedGroup> {
    *   });
    *   }
    * </pre>
-   * Each {@link GroupPartition} within the partition group is its own unique group of members. Leaders can be elected
+   * Each {@link Partition} within the partition group is its own unique group of members. Leaders can be elected
    * among the partition members and tasks can be submitted to the partition members independently of the parent
    * {@link PartitionGroup} or this group. {@link GroupProperties}, however, are shared among all {@link DistributedGroup}
    * instances.
@@ -946,7 +956,7 @@ public interface DistributedGroup extends Resource<DistributedGroup> {
    * @param partitioner The group partitioner.
    * @return A partition group.
    */
-  PartitionGroup partition(int partitions, int replicationFactor, GroupPartitioner partitioner);
+  PartitionGroup partition(int partitions, int replicationFactor, Partitioner partitioner);
 
   /**
    * Gets a group member by ID.
@@ -1015,7 +1025,7 @@ public interface DistributedGroup extends Resource<DistributedGroup> {
    *
    * @return A completable future to be completed once the member has joined.
    */
-  CompletableFuture<LocalGroupMember> join();
+  CompletableFuture<LocalMember> join();
 
   /**
    * Joins the instance to the membership group with a user-provided member ID.
@@ -1044,7 +1054,7 @@ public interface DistributedGroup extends Resource<DistributedGroup> {
    * @param memberId The unique member ID to assign to the member.
    * @return A completable future to be completed once the member has joined.
    */
-  CompletableFuture<LocalGroupMember> join(String memberId);
+  CompletableFuture<LocalMember> join(String memberId);
 
   /**
    * Adds a listener for members joining the group.
@@ -1066,7 +1076,7 @@ public interface DistributedGroup extends Resource<DistributedGroup> {
    * The provided {@link Consumer} will be called each time a member leaves the group. Members can
    * leave the group either voluntarily or by crashing or otherwise becoming disconnected from the
    * cluster for longer than their session timeout. Note that the leave consumer will be called before
-   * the leaving member's {@link LocalGroupMember#leave()} completes.
+   * the leaving member's {@link LocalMember#leave()} completes.
    * <p>
    * The returned {@link Listener} can be used to {@link Listener#close() unregister} the listener
    * when its use if finished.

@@ -13,10 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.group;
+package io.atomix.group.partition;
 
 import io.atomix.catalyst.util.Listener;
 import io.atomix.catalyst.util.Listeners;
+import io.atomix.group.GroupMember;
+import io.atomix.group.MembershipGroup;
+import io.atomix.group.SubGroup;
+import io.atomix.group.SubGroupController;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,7 +33,7 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class GroupPartition extends SubGroup {
+public class Partition extends SubGroup {
 
   /**
    * Calculates a hash code for the given group arguments.
@@ -46,9 +50,9 @@ public class GroupPartition extends SubGroup {
   private final List<GroupMember> sortedMembers;
   private final Listeners<GroupMember> joinListeners = new Listeners<>();
   private final Listeners<GroupMember> leaveListeners = new Listeners<>();
-  private final Listeners<GroupPartitionMigration> migrationListeners = new Listeners<>();
+  private final Listeners<PartitionMigration> migrationListeners = new Listeners<>();
 
-  GroupPartition(int subGroupId, MembershipGroup group, List<GroupMember> members, int partition) {
+  Partition(int subGroupId, MembershipGroup group, List<GroupMember> members, int partition) {
     super(subGroupId, group);
     this.sortedMembers = members;
     for (GroupMember member : members) {
@@ -93,7 +97,7 @@ public class GroupPartition extends SubGroup {
    * @param callback The callback to be called when a partition is migrated.
    * @return The partition migration listener.
    */
-  public Listener<GroupPartitionMigration> onMigration(Consumer<GroupPartitionMigration> callback) {
+  public Listener<PartitionMigration> onMigration(Consumer<PartitionMigration> callback) {
     return migrationListeners.add(callback);
   }
 
@@ -141,7 +145,7 @@ public class GroupPartition extends SubGroup {
       this.sortedMembers.remove(leave);
 
       // Trigger subgroup leave events.
-      for (SubGroup subGroup : subGroups.values()) {
+      for (SubGroupController subGroup : subGroups.values()) {
         subGroup.onLeave(leave);
       }
 
@@ -170,7 +174,7 @@ public class GroupPartition extends SubGroup {
 
     // Trigger subgroup join events.
     for (GroupMember join : joins) {
-      for (SubGroup subGroup : subGroups.values()) {
+      for (SubGroupController subGroup : subGroups.values()) {
         subGroup.onJoin(join);
       }
     }
@@ -179,7 +183,7 @@ public class GroupPartition extends SubGroup {
   /**
    * Handles a partition migration.
    */
-  void handleMigration(GroupPartitionMigration migration) {
+  void handleMigration(PartitionMigration migration) {
     migrationListeners.accept(migration);
   }
 

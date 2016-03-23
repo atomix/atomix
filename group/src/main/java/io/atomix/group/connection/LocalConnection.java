@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.group;
+package io.atomix.group.connection;
 
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.util.Listener;
@@ -27,10 +27,10 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class LocalMemberConnection extends MemberConnection {
+public class LocalConnection extends Connection {
   private final Map<String, MessageListenerHolder> messageListeners = new ConcurrentHashMap<>();
 
-  public LocalMemberConnection(String memberId, Address address, GroupConnectionManager connections) {
+  public LocalConnection(String memberId, Address address, ConnectionManager connections) {
     super(memberId, address, connections);
   }
 
@@ -46,7 +46,7 @@ public class LocalMemberConnection extends MemberConnection {
    * @return The message listener.
    */
   @SuppressWarnings("unchecked")
-  public <T> Listener<GroupMessage<T>> onMessage(String topic, Consumer<GroupMessage<T>> consumer) {
+  public <T> Listener<Message<T>> onMessage(String topic, Consumer<Message<T>> consumer) {
     MessageListenerHolder listener = new MessageListenerHolder(consumer);
     messageListeners.put(topic, listener);
     return listener;
@@ -55,7 +55,7 @@ public class LocalMemberConnection extends MemberConnection {
   /**
    * Handles a message to the member.
    */
-  void handleMessage(GroupMessage message) {
+  void onMessage(Message message) {
     MessageListenerHolder listener = messageListeners.get(message.topic());
     if (listener != null) {
       listener.accept(message);

@@ -26,8 +26,8 @@ import io.atomix.copycat.Command;
 import io.atomix.copycat.Operation;
 import io.atomix.copycat.Query;
 import io.atomix.group.GroupMemberInfo;
-import io.atomix.group.GroupMessage;
-import io.atomix.group.GroupTask;
+import io.atomix.group.connection.Message;
+import io.atomix.group.tasks.Task;
 
 import java.util.Set;
 
@@ -456,8 +456,8 @@ public final class GroupCommands {
       registry.register(GetProperty.class, -135);
       registry.register(RemoveProperty.class, -136);
       registry.register(Submit.class, -137);
-      registry.register(GroupMessage.class, -138);
-      registry.register(GroupTask.class, -139);
+      registry.register(Message.class, -138);
+      registry.register(Task.class, -139);
       registry.register(Ack.class, -140);
       registry.register(GroupMemberInfo.class, -158);
     }

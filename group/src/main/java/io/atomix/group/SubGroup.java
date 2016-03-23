@@ -21,6 +21,12 @@ import io.atomix.catalyst.util.Listener;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.catalyst.util.hash.Hasher;
 import io.atomix.catalyst.util.hash.Murmur2Hasher;
+import io.atomix.group.election.Election;
+import io.atomix.group.election.ElectionController;
+import io.atomix.group.partition.*;
+import io.atomix.group.tasks.SubGroupTaskQueue;
+import io.atomix.group.tasks.TaskQueue;
+import io.atomix.group.util.GroupIdGenerator;
 import io.atomix.resource.ReadConsistency;
 import io.atomix.resource.ResourceType;
 import io.atomix.resource.WriteConsistency;
@@ -36,13 +42,13 @@ import java.util.function.Consumer;
  * {@link DistributedGroup} can be partitioned into subgroups that can be nested to any depth. This allows groups
  * to be partitioned multiple times to facilitate replication algorithms. Subgroups are guaranteed to be consistent
  * across all nodes in a cluster. For example, in a {@link MembershipGroup} partitioned into a {@link PartitionGroup}
- * with {@code 3} partitions, each {@link GroupPartition} will represent the same members on all nodes in the cluster.
+ * with {@code 3} partitions, each {@link Partition} will represent the same members on all nodes in the cluster.
  * Changes to groups and subgroups are guaranteed to occur in the same order on all nodes.
  * <p>
  * Subgroups inherit a number of attributes of their parent group. When a group is {@link #partition(int) partitioned}
  * into a subgroup, the subgroup will inherit the {@link #members() membership} list of the parent group but may
  * represent only a subset of those members. Changes in the set of members in a parent group will be immediately
- * reflected in all subgroups. Subgroups inherit the {@link GroupProperties properties}, {@link GroupTaskQueue tasks},
+ * reflected in all subgroups. Subgroups inherit the {@link GroupProperties properties}, {@link TaskQueue tasks},
  * {@link io.atomix.group.DistributedGroup.Config configuration}, and {@link io.atomix.group.DistributedGroup.Options options}
  * of the base {@link MembershipGroup}.
  *
@@ -51,9 +57,9 @@ import java.util.function.Consumer;
 public abstract class SubGroup implements DistributedGroup {
   protected final int subGroupId;
   protected final MembershipGroup group;
-  protected final GroupElection election = new GroupElection(this);
-  protected final GroupTaskQueue tasks;
-  protected final Map<Integer, SubGroup> subGroups = new ConcurrentHashMap<>();
+  protected final ElectionController election = new ElectionController(this);
+  protected final TaskQueue tasks;
+  protected final Map<Integer, SubGroupController> subGroups = new ConcurrentHashMap<>();
 
   protected SubGroup(int subGroupId, MembershipGroup group) {
     this.group = Assert.notNull(group, "group");
@@ -124,12 +130,12 @@ public abstract class SubGroup implements DistributedGroup {
   }
 
   @Override
-  public GroupElection election() {
-    return election;
+  public Election election() {
+    return election.election();
   }
 
   @Override
-  public GroupTaskQueue tasks() {
+  public TaskQueue tasks() {
     return tasks;
   }
 
@@ -150,8 +156,8 @@ public abstract class SubGroup implements DistributedGroup {
 
   @Override
   public ConsistentHashGroup hash(Hasher hasher, int virtualNodes) {
-    int subGroupId = ConsistentHashGroup.hashCode(this.subGroupId, hasher, virtualNodes);
-    return (ConsistentHashGroup) subGroups.computeIfAbsent(subGroupId, s -> new ConsistentHashGroup(subGroupId, this.group, members(), hasher, virtualNodes));
+    int subGroupId = GroupIdGenerator.groupIdFor(this.subGroupId, hasher, virtualNodes);
+    return (ConsistentHashGroup) subGroups.computeIfAbsent(subGroupId, s -> new SubGroupController(new ConsistentHashGroup(subGroupId, this.group, members(), hasher, virtualNodes))).group();
   }
 
   @Override
@@ -165,23 +171,23 @@ public abstract class SubGroup implements DistributedGroup {
   }
 
   @Override
-  public PartitionGroup partition(int partitions, GroupPartitioner partitioner) {
+  public PartitionGroup partition(int partitions, Partitioner partitioner) {
     return partition(partitions, 1, partitioner);
   }
 
   @Override
-  public PartitionGroup partition(int partitions, int replicationFactor, GroupPartitioner partitioner) {
-    int subGroupId = PartitionGroup.hashCode(this.subGroupId, partitions, replicationFactor, partitioner);
-    return (PartitionGroup) subGroups.computeIfAbsent(subGroupId, s -> new PartitionGroup(subGroupId, this.group, members(), partitions, replicationFactor, partitioner));
+  public PartitionGroup partition(int partitions, int replicationFactor, Partitioner partitioner) {
+    int subGroupId = GroupIdGenerator.groupIdFor(this.subGroupId, partitions, replicationFactor, partitioner);
+    return (PartitionGroup) subGroups.computeIfAbsent(subGroupId, s -> new SubGroupController(new PartitionGroup(subGroupId, this.group, members(), partitions, replicationFactor, partitioner))).group();
   }
 
   @Override
-  public CompletableFuture<LocalGroupMember> join() {
+  public CompletableFuture<LocalMember> join() {
     return group.join();
   }
 
   @Override
-  public CompletableFuture<LocalGroupMember> join(String memberId) {
+  public CompletableFuture<LocalMember> join(String memberId) {
     return group.join(memberId);
   }
 

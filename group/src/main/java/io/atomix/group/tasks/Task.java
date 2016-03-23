@@ -13,19 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.group;
+package io.atomix.group.tasks;
 
 import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
 import io.atomix.catalyst.serializer.Serializer;
+import io.atomix.group.DistributedGroup;
 
 import java.util.concurrent.CompletableFuture;
 
 /**
  * Represents a reliable task received by a member to be processed and acknowledged.
  * <p>
- * Tasks are {@link GroupTaskQueue#submit(Object) submitted} by {@link DistributedGroup} users to any member of a group.
+ * Tasks are {@link TaskQueue#submit(Object) submitted} by {@link DistributedGroup} users to any member of a group.
  * Tasks are replicated and persisted within the Atomix cluster before being pushed to clients on a queue. Once a task
  * is received by a task listener, the task may be processed asynchronously and either {@link #ack() acknowledged} or
  * {@link #fail() failed} once processing is complete.
@@ -44,22 +45,22 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class GroupTask<T> implements CatalystSerializable {
+public class Task<T> implements CatalystSerializable {
   private long id;
   private String member;
   private T value;
   private transient CompletableFuture<Boolean> future;
 
-  public GroupTask() {
+  public Task() {
   }
 
-  public GroupTask(long id, String member, T value) {
+  public Task(long id, String member, T value) {
     this.id = id;
     this.member = member;
     this.value = value;
   }
 
-  GroupTask<T> setFuture(CompletableFuture<Boolean> future) {
+  Task<T> setFuture(CompletableFuture<Boolean> future) {
     this.future = future;
     return this;
   }
@@ -81,14 +82,14 @@ public class GroupTask<T> implements CatalystSerializable {
    *
    * @return The task member.
    */
-  String member() {
+  public String member() {
     return member;
   }
 
   /**
    * Returns the task value.
    * <p>
-   * This is the value that was {@link GroupTaskQueue#submit(Object) submitted} by the sending process.
+   * This is the value that was {@link TaskQueue#submit(Object) submitted} by the sending process.
    *
    * @return The task value.
    */

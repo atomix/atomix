@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.group;
+package io.atomix.group.util;
 
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.hash.Hasher;
+import io.atomix.group.GroupMember;
 
 import java.util.*;
 
@@ -25,13 +26,13 @@ import java.util.*;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-final class GroupHashRing {
+public final class HashRing {
   private final Hasher hasher;
   private final int virtualNodes;
   private final int replicationFactor;
   private final TreeMap<Long, GroupMember> ring = new TreeMap<>();
 
-  public GroupHashRing(Hasher hasher, int virtualNodes, int replicationFactor) {
+  public HashRing(Hasher hasher, int virtualNodes, int replicationFactor) {
     this.hasher = Assert.notNull(hasher, "hasher");
     this.virtualNodes = Assert.argNot(virtualNodes, virtualNodes <= 0, "virtualNodes must be positive");
     this.replicationFactor = Assert.argNot(replicationFactor, replicationFactor <= 0, "replicationFactor must be positive");
@@ -42,7 +43,7 @@ final class GroupHashRing {
    *
    * @return The hash ring members.
    */
-  Collection<GroupMember> members() {
+  public Collection<GroupMember> members() {
     return ring.values();
   }
 
@@ -51,7 +52,7 @@ final class GroupHashRing {
    *
    * @param member The member to add.
    */
-  void addMember(GroupMember member) {
+  public void addMember(GroupMember member) {
     if (!ring.values().contains(member)) {
       for (int i = 0; i < virtualNodes; i++) {
         ring.put(hasher.hash64(member.id() + i), member);
@@ -64,7 +65,7 @@ final class GroupHashRing {
    *
    * @param member The member to remove.
    */
-  void removeMember(GroupMember member) {
+  public void removeMember(GroupMember member) {
     if (ring.values().contains(member)) {
       for (int i = 0; i < virtualNodes; i++) {
         ring.remove(hasher.hash64(member.id() + i));

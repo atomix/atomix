@@ -15,7 +15,12 @@
  */
 package io.atomix.group;
 
+import io.atomix.group.connection.ConnectionController;
+import io.atomix.group.connection.LocalConnection;
 import io.atomix.group.state.GroupCommands;
+import io.atomix.group.tasks.LocalTaskQueue;
+import io.atomix.group.tasks.TaskQueueController;
+import io.atomix.group.util.Submitter;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -39,24 +44,24 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class LocalGroupMember extends GroupMember {
-  private final LocalMemberTaskQueue tasks;
-  private final LocalMemberConnection connection;
+public class LocalMember extends GroupMember {
+  final TaskQueueController tasks;
+  final ConnectionController connection;
 
-  LocalGroupMember(GroupMemberInfo info, MembershipGroup group) {
-    super(info, group);
-    this.tasks = new LocalMemberTaskQueue(info.memberId(), group);
-    this.connection = new LocalMemberConnection(info.memberId(), info.address(), group.connections);
+  LocalMember(GroupMemberInfo info, MembershipGroup group, Submitter submitter) {
+    super(info, group, submitter);
+    this.tasks = new TaskQueueController(new LocalTaskQueue(info.memberId(), group, submitter));
+    this.connection = new ConnectionController(new LocalConnection(info.memberId(), info.address(), group.connections));
   }
 
   @Override
-  public LocalMemberTaskQueue tasks() {
-    return tasks;
+  public LocalTaskQueue tasks() {
+    return (LocalTaskQueue) tasks.queue();
   }
 
   @Override
-  public LocalMemberConnection connection() {
-    return connection;
+  public LocalConnection connection() {
+    return connection.connection();
   }
 
   /**

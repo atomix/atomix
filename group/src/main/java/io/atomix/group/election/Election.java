@@ -13,11 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.group;
+package io.atomix.group.election;
 
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.catalyst.util.Listeners;
+import io.atomix.group.DistributedGroup;
+import io.atomix.group.GroupMember;
 
 import java.util.Collection;
 import java.util.function.Consumer;
@@ -47,18 +49,18 @@ import java.util.function.Consumer;
  *   }
  * </pre>
  * The election listener callback will be called with the {@link GroupMember} that was elected leader
- * once complete. Similarly, you can access the current leader via the {@link GroupTerm#leader()} getter. The
+ * once complete. Similarly, you can access the current leader via the {@link Term#leader()} getter. The
  * current leader is guaranteed to be the leader for the current {@link #term()}. However, the leader
  * may be {@code null} if no leader has been elected for the current term.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class GroupElection {
+public class Election {
   private final DistributedGroup group;
-  private final Listeners<GroupTerm> electionListeners = new Listeners<>();
-  private volatile GroupTerm term;
+  private final Listeners<Term> electionListeners = new Listeners<>();
+  private volatile Term term;
 
-  protected GroupElection(DistributedGroup group) {
+  public Election(DistributedGroup group) {
     this.group = Assert.notNull(group, "group");
   }
 
@@ -67,7 +69,7 @@ public class GroupElection {
    *
    * @return The current election term.
    */
-  public GroupTerm term() {
+  public Term term() {
     return term;
   }
 
@@ -94,8 +96,8 @@ public class GroupElection {
    * @param callback The callback to call when a member of the group is elected leader.
    * @return The leader election listener.
    */
-  public synchronized Listener<GroupTerm> onElection(Consumer<GroupTerm> callback) {
-    Listener<GroupTerm> listener = electionListeners.add(callback);
+  public synchronized Listener<Term> onElection(Consumer<Term> callback) {
+    Listener<Term> listener = electionListeners.add(callback);
     if (term != null) {
       listener.accept(term);
     }
@@ -103,32 +105,14 @@ public class GroupElection {
   }
 
   /**
-   * Called when a member joins the election.
-   */
-  synchronized void onJoin(GroupMember member) {
-    if (term == null || term.term() != term.leader().index()) {
-      elect();
-    }
-  }
-
-  /**
-   * Called when a member leaves the election.
-   */
-  synchronized void onLeave(GroupMember member) {
-    if (term != null && term.leader().equals(member)) {
-      elect();
-    }
-  }
-
-  /**
    * Elects a new leader.
    */
-  private synchronized void elect() {
+  synchronized void elect() {
     term = null;
     Collection<GroupMember> members = group.members();
     if (!members.isEmpty()) {
-      GroupMember leader = group.members().stream().sorted((m1, m2) -> (int) (m1.index() - m2.index())).findFirst().get();
-      term = new GroupTerm(leader.index(), leader);
+      GroupMember leader = group.members().stream().sorted((m1, m2) -> (int) (m1.version() - m2.version())).findFirst().get();
+      term = new Term(leader.version(), leader);
       electionListeners.accept(term);
     }
   }

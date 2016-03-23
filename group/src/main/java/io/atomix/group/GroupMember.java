@@ -17,6 +17,10 @@ package io.atomix.group;
 
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.util.Assert;
+import io.atomix.group.connection.Connection;
+import io.atomix.group.tasks.MemberTaskQueue;
+import io.atomix.group.tasks.TaskQueueController;
+import io.atomix.group.util.Submitter;
 
 /**
  * A {@link DistributedGroup} member representing a member of the group controlled by a local
@@ -30,37 +34,17 @@ public class GroupMember {
   protected final Address address;
   protected final MembershipGroup group;
   private final GroupProperties properties;
-  private final MemberTaskQueue tasks;
-  private final MemberConnection connection;
+  final TaskQueueController tasks;
+  private final Connection connection;
 
-  GroupMember(GroupMemberInfo info, MembershipGroup group) {
+  GroupMember(GroupMemberInfo info, MembershipGroup group, Submitter submitter) {
     this.index = info.index();
     this.memberId = info.memberId();
     this.address = info.address();
     this.group = Assert.notNull(group, "group");
     this.properties = new GroupProperties(memberId, group);
-    this.tasks = new MemberTaskQueue(memberId, group);
-    this.connection = new MemberConnection(memberId, address, group.connections);
-  }
-
-  /**
-   * Returns the member index.
-   *
-   * @return The member index.
-   */
-  long index() {
-    return index;
-  }
-
-  /**
-   * Updates the member index.
-   *
-   * @param index The updated member index.
-   * @return The group member.
-   */
-  GroupMember setIndex(long index) {
-    this.index = index;
-    return this;
+    this.tasks = new TaskQueueController(new MemberTaskQueue(memberId, group, submitter));
+    this.connection = new Connection(memberId, address, group.connections);
   }
 
   /**
@@ -85,6 +69,26 @@ public class GroupMember {
   }
 
   /**
+   * Returns the member version.
+   *
+   * @return The member version.
+   */
+  public long version() {
+    return index;
+  }
+
+  /**
+   * Updates the member index.
+   *
+   * @param index The updated member index.
+   * @return The group member.
+   */
+  GroupMember setIndex(long index) {
+    this.index = index;
+    return this;
+  }
+
+  /**
    * Returns the member properties.
    *
    * @return The member properties.
@@ -98,7 +102,7 @@ public class GroupMember {
    *
    * @return A direct connection to the member.
    */
-  public MemberConnection connection() {
+  public Connection connection() {
     return connection;
   }
 
@@ -108,7 +112,7 @@ public class GroupMember {
    * @return The member's task queue.
    */
   public MemberTaskQueue tasks() {
-    return tasks;
+    return (MemberTaskQueue) tasks.queue();
   }
 
   @Override

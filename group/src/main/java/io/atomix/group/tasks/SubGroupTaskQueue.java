@@ -1,6 +1,9 @@
-package io.atomix.group;
+package io.atomix.group.tasks;
 
 import io.atomix.catalyst.util.Assert;
+import io.atomix.group.GroupMember;
+import io.atomix.group.MembershipGroup;
+import io.atomix.group.SubGroup;
 
 import java.util.Collection;
 
@@ -12,7 +15,7 @@ import java.util.Collection;
 public class SubGroupTaskQueue extends GroupTaskQueue {
   private final SubGroup subGroup;
 
-  SubGroupTaskQueue(SubGroup subGroup, MembershipGroup group) {
+  public SubGroupTaskQueue(SubGroup subGroup, MembershipGroup group) {
     super(group);
     this.subGroup = Assert.notNull(subGroup, "subGroup");
   }

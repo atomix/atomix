@@ -13,26 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.group;
+package io.atomix.group.tasks;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import io.atomix.resource.ResourceException;
 
 /**
- * Round-robin partitioner.
+ * Group task failed exception.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class RoundRobinPartitioner implements GroupPartitioner {
-  private final AtomicInteger counter = new AtomicInteger();
+public class TaskFailedException extends ResourceException {
 
-  @Override
-  public int partition(Object object, int partitions) {
-    return counter.incrementAndGet() % partitions;
+  public TaskFailedException() {
   }
 
-  @Override
-  public int hashCode() {
-    return 275604541;
+  public TaskFailedException(String message) {
+    super(message);
+  }
+
+  public TaskFailedException(String message, Throwable cause) {
+    super(message, cause);
+  }
+
+  public TaskFailedException(Throwable cause) {
+    super(cause);
   }
 
 }

@@ -13,18 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.group;
+package io.atomix.group.election;
+
+import io.atomix.group.GroupMember;
 
 /**
  * Group election term.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class GroupTerm {
+public class Term {
   private final long term;
   private final GroupMember leader;
 
-  GroupTerm(long term, GroupMember leader) {
+  Term(long term, GroupMember leader) {
     this.term = term;
     this.leader = leader;
   }

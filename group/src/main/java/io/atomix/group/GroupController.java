@@ -15,28 +15,32 @@
  */
 package io.atomix.group;
 
-import io.atomix.resource.ResourceException;
-
 /**
- * Group task failed exception.
+ * Controls events for an object.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class TaskFailedException extends ResourceException {
+public interface GroupController {
 
-  public TaskFailedException() {
-  }
+  /**
+   * Returns the underlying group.
+   *
+   * @return The underlying group.
+   */
+  DistributedGroup group();
 
-  public TaskFailedException(String message) {
-    super(message);
-  }
+  /**
+   * Called when a member joins the group.
+   *
+   * @param member The member that joined the group.
+   */
+  void onJoin(GroupMember member);
 
-  public TaskFailedException(String message, Throwable cause) {
-    super(message, cause);
-  }
-
-  public TaskFailedException(Throwable cause) {
-    super(cause);
-  }
+  /**
+   * Called when a member leaves the group.
+   *
+   * @param member The member that left the group.
+   */
+  void onLeave(GroupMember member);
 
 }

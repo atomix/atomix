@@ -16,6 +16,9 @@
 package io.atomix.group;
 
 import io.atomix.catalyst.transport.Address;
+import io.atomix.group.partition.ConsistentHashGroup;
+import io.atomix.group.partition.PartitionGroup;
+import io.atomix.group.tasks.TaskFailedException;
 import io.atomix.testing.AbstractCopycatTest;
 import org.testng.annotations.Test;
 
@@ -75,7 +78,7 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     DistributedGroup group1 = createResource();
     DistributedGroup group2 = createResource();
 
-    LocalGroupMember localMember = group2.join().get();
+    LocalMember localMember = group2.join().get();
     assertEquals(group2.members().size(), 1);
 
     group1.join().thenRun(() -> {
@@ -101,7 +104,7 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     DistributedGroup group1 = createResource();
     DistributedGroup group2 = createResource();
 
-    LocalGroupMember localMember = group2.join().get();
+    LocalMember localMember = group2.join().get();
     assertEquals(group2.members().size(), 1);
 
     group1.join().thenRun(() -> {
@@ -171,11 +174,11 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     DistributedGroup group1 = createResource();
     DistributedGroup group2 = createResource();
 
-    LocalGroupMember localMember2 = group2.join().get();
+    LocalMember localMember2 = group2.join().get();
     assertEquals(group2.members().size(), 1);
     assertEquals(group2.election().term().leader(), localMember2);
 
-    LocalGroupMember localMember1 = group1.join().get();
+    LocalMember localMember1 = group1.join().get();
     group1.election().onElection(term -> {
       if (term.leader().equals(localMember1)) {
         resume();
@@ -196,11 +199,11 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     DistributedGroup group1 = createResource();
     DistributedGroup group2 = createResource();
 
-    LocalGroupMember localMember2 = group2.join().get();
+    LocalMember localMember2 = group2.join().get();
     assertEquals(group2.members().size(), 1);
     assertEquals(group2.election().term().leader(), localMember2);
 
-    LocalGroupMember localMember1 = group1.join().get();
+    LocalMember localMember1 = group1.join().get();
     group1.election().onElection(term -> {
       if (term.leader().equals(localMember1)) {
         resume();
@@ -221,11 +224,11 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     DistributedGroup group1 = createResource();
     DistributedGroup group2 = createResource();
 
-    LocalGroupMember localMember2 = group2.join("a").get();
+    LocalMember localMember2 = group2.join("a").get();
     assertEquals(group2.members().size(), 1);
     assertEquals(group2.election().term().leader(), localMember2);
 
-    LocalGroupMember localMember1 = group1.join("b").get();
+    LocalMember localMember1 = group1.join("b").get();
     assertEquals(group1.partition(3).partitions().get(0).election().term().leader(), localMember1);
 
     group2.close().thenRun(this::resume);
@@ -242,7 +245,7 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     DistributedGroup group1 = createResource();
     DistributedGroup group2 = createResource();
 
-    LocalGroupMember localMember = group1.join().get();
+    LocalMember localMember = group1.join().get();
     localMember.properties().set("foo", "Hello world!").thenRun(this::resume);
 
     await(5000);
@@ -278,7 +281,7 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
 
     String memberId = UUID.randomUUID().toString();
 
-    LocalGroupMember localMember1 = group1.join(memberId).get();
+    LocalMember localMember1 = group1.join(memberId).get();
 
     localMember1.properties().set("foo", "Hello world!").thenRun(this::resume);
     await(5000);
@@ -293,7 +296,7 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     group1.close().thenRun(this::resume);
     await(5000);
 
-    LocalGroupMember localMember2 = group2.join(memberId).get();
+    LocalMember localMember2 = group2.join(memberId).get();
 
     assertEquals(group2.members().size(), 1);
     localMember2.properties().get("foo").thenAccept(result -> {
@@ -342,9 +345,9 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     DistributedGroup group1 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6000)));
     DistributedGroup group2 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6001)));
 
-    LocalGroupMember member1 = group1.join().get(10, TimeUnit.SECONDS);
-    LocalGroupMember member2 = group2.join().get(10, TimeUnit.SECONDS);
-    LocalGroupMember member3 = group2.join().get(10, TimeUnit.SECONDS);
+    LocalMember member1 = group1.join().get(10, TimeUnit.SECONDS);
+    LocalMember member2 = group2.join().get(10, TimeUnit.SECONDS);
+    LocalMember member3 = group2.join().get(10, TimeUnit.SECONDS);
 
     assertEquals(group1.members().size(), 3);
     assertEquals(group2.members().size(), 3);
@@ -382,7 +385,7 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     DistributedGroup group1 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6000)));
     DistributedGroup group2 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6001)));
 
-    LocalGroupMember member1 = group1.join().get(10, TimeUnit.SECONDS);
+    LocalMember member1 = group1.join().get(10, TimeUnit.SECONDS);
 
     PartitionGroup partitions = group2.partition(3, 3);
     partitions.partitions().get(0).onMigration(migration -> {
@@ -445,7 +448,7 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     DistributedGroup group1 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6000)));
     DistributedGroup group2 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6001)));
 
-    LocalGroupMember member = group2.join().get(10, TimeUnit.SECONDS);
+    LocalMember member = group2.join().get(10, TimeUnit.SECONDS);
 
     assertEquals(group1.members().size(), 1);
     assertEquals(group2.members().size(), 1);
@@ -468,7 +471,7 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     DistributedGroup group1 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6000)));
     DistributedGroup group2 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6001)));
 
-    LocalGroupMember member = group2.join().get(10, TimeUnit.SECONDS);
+    LocalMember member = group2.join().get(10, TimeUnit.SECONDS);
 
     assertEquals(group1.members().size(), 1);
     assertEquals(group2.members().size(), 1);
@@ -494,7 +497,7 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     DistributedGroup group1 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6000)));
     DistributedGroup group2 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6001)));
 
-    LocalGroupMember member = group2.join().get(10, TimeUnit.SECONDS);
+    LocalMember member = group2.join().get(10, TimeUnit.SECONDS);
 
     assertEquals(group1.members().size(), 1);
     assertEquals(group2.members().size(), 1);
@@ -520,9 +523,9 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     DistributedGroup group1 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6000)));
     DistributedGroup group2 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6001)));
 
-    LocalGroupMember member1 = group1.join().get(10, TimeUnit.SECONDS);
-    LocalGroupMember member2 = group2.join().get(10, TimeUnit.SECONDS);
-    LocalGroupMember member3 = group2.join().get(10, TimeUnit.SECONDS);
+    LocalMember member1 = group1.join().get(10, TimeUnit.SECONDS);
+    LocalMember member2 = group2.join().get(10, TimeUnit.SECONDS);
+    LocalMember member3 = group2.join().get(10, TimeUnit.SECONDS);
 
     assertEquals(group1.members().size(), 3);
     assertEquals(group2.members().size(), 3);

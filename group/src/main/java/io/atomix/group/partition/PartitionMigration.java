@@ -13,21 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.group;
+package io.atomix.group.partition;
 
 import io.atomix.catalyst.util.Assert;
+import io.atomix.group.GroupMember;
 
 /**
  * Group partition migration.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class GroupPartitionMigration {
+public class PartitionMigration {
   private final GroupMember source;
   private final GroupMember target;
-  private final GroupPartition partition;
+  private final Partition partition;
 
-  GroupPartitionMigration(GroupMember source, GroupMember target, GroupPartition partition) {
+  PartitionMigration(GroupMember source, GroupMember target, Partition partition) {
     this.source = source;
     this.target = target;
     this.partition = Assert.notNull(partition, "partition");
@@ -56,7 +57,7 @@ public class GroupPartitionMigration {
    *
    * @return The migration partition.
    */
-  public GroupPartition partition() {
+  public Partition partition() {
     return partition;
   }
 

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.group;
+package io.atomix.group.connection;
 
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.Client;
@@ -31,12 +31,12 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-final class GroupConnectionManager {
+public final class ConnectionManager {
   private final Client client;
   private final ThreadContext context;
   private final Map<Integer, Connection> connections = new ConcurrentHashMap<>();
 
-  GroupConnectionManager(Client client, ThreadContext context) {
+  public ConnectionManager(Client client, ThreadContext context) {
     this.client = Assert.notNull(client, "client");
     this.context = Assert.notNull(context, "context");
   }

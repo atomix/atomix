@@ -13,23 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.group;
+package io.atomix.group.partition;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Hash code partitioner.
+ * Round-robin partitioner.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class HashPartitioner implements GroupPartitioner {
+public class RoundRobinPartitioner implements Partitioner {
+  private final AtomicInteger counter = new AtomicInteger();
 
   @Override
-  public int partition(Object value, int partitions) {
-    return Math.abs(value.hashCode()) % partitions;
+  public int partition(Object object, int partitions) {
+    return counter.incrementAndGet() % partitions;
   }
 
   @Override
   public int hashCode() {
-    return 654188383;
+    return 275604541;
   }
 
 }

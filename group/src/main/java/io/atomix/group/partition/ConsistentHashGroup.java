@@ -13,12 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.group;
+package io.atomix.group.partition;
 
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.catalyst.util.Listeners;
 import io.atomix.catalyst.util.hash.Hasher;
+import io.atomix.group.*;
+import io.atomix.group.util.HashRing;
 
 import java.util.Collection;
 import java.util.Map;
@@ -36,26 +38,14 @@ import java.util.function.Consumer;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class ConsistentHashGroup extends SubGroup {
-
-  /**
-   * Returns a hash code for the given hash group arguments.
-   */
-  static int hashCode(int parent, Hasher hasher, int virtualNodes) {
-    int hashCode = 17;
-    hashCode = 37 * hashCode + parent;
-    hashCode = 37 * hashCode + hasher.hashCode();
-    hashCode = 37 * hashCode + virtualNodes;
-    return hashCode;
-  }
-
-  private final GroupHashRing hashRing;
+  private final HashRing hashRing;
   private final Map<String, GroupMember> members = new ConcurrentHashMap<>();
   private final Listeners<GroupMember> joinListeners = new Listeners<>();
   private final Listeners<GroupMember> leaveListeners = new Listeners<>();
 
-  ConsistentHashGroup(int subGroupId, MembershipGroup group, Collection<GroupMember> members, Hasher hasher, int virtualNodes) {
+  public ConsistentHashGroup(int subGroupId, MembershipGroup group, Collection<GroupMember> members, Hasher hasher, int virtualNodes) {
     super(subGroupId, group);
-    this.hashRing = new GroupHashRing(hasher, virtualNodes, 1);
+    this.hashRing = new HashRing(hasher, virtualNodes, 1);
     for (GroupMember member : members) {
       this.members.put(member.id(), member);
       hashRing.addMember(member);
@@ -109,7 +99,7 @@ public class ConsistentHashGroup extends SubGroup {
   protected synchronized void onJoin(GroupMember member) {
     GroupMember existing = members.get(member.id());
     if (existing != null) {
-      if ((!(existing instanceof LocalGroupMember) && member instanceof LocalGroupMember) || (existing instanceof LocalGroupMember && !(member instanceof LocalGroupMember))) {
+      if ((!(existing instanceof LocalMember) && member instanceof LocalMember) || (existing instanceof LocalMember && !(member instanceof LocalMember))) {
         hashRing.removeMember(existing);
         members.put(member.id(), member);
         hashRing.addMember(member);
@@ -118,17 +108,15 @@ public class ConsistentHashGroup extends SubGroup {
         election.onJoin(member);
 
         // Trigger subgroup join events.
-        for (SubGroup subGroup : subGroups.values()) {
+        for (SubGroupController subGroup : subGroups.values()) {
           subGroup.onJoin(member);
         }
       } else {
-        existing.setIndex(member.index());
-
         // Trigger election events.
         election.onJoin(existing);
 
         // Trigger subgroup join events.
-        for (SubGroup subGroup : subGroups.values()) {
+        for (SubGroupController subGroup : subGroups.values()) {
           subGroup.onJoin(existing);
         }
       }
@@ -142,7 +130,7 @@ public class ConsistentHashGroup extends SubGroup {
       election.onJoin(member);
 
       // Trigger subgroup join events.
-      for (SubGroup subGroup : subGroups.values()) {
+      for (SubGroupController subGroup : subGroups.values()) {
         subGroup.onJoin(member);
       }
     }

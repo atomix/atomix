@@ -13,22 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.group;
+package io.atomix.group.tasks;
+
+import io.atomix.group.GroupMember;
+import io.atomix.group.MembershipGroup;
+
+import java.util.Collection;
+import java.util.concurrent.CompletableFuture;
 
 /**
- * Group partitioner.
+ * Group task queue.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public interface GroupPartitioner {
+public class GroupTaskQueue extends TaskQueue {
 
-  /**
-   * Returns the partition for the given value.
-   *
-   * @param value The value to partition.
-   * @param partitions The total number of partitions.
-   * @return The partition for the given value.
-   */
-  int partition(Object value, int partitions);
+  public GroupTaskQueue(MembershipGroup group) {
+    super(group);
+  }
+
+  @Override
+  public CompletableFuture<Void> submit(Object task) {
+    Collection<GroupMember> members = members();
+    CompletableFuture[] futures = new CompletableFuture[members.size()];
+    int i = 0;
+    for (GroupMember member : members) {
+      futures[i++] = member.tasks().submit(task);
+    }
+    return CompletableFuture.allOf(futures);
+  }
 
 }

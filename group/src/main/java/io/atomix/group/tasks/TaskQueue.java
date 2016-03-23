@@ -13,9 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.group;
+package io.atomix.group.tasks;
 
 import io.atomix.catalyst.util.Assert;
+import io.atomix.group.GroupMember;
+import io.atomix.group.MembershipGroup;
 
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
@@ -25,10 +27,10 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class GroupTaskQueue {
+public abstract class TaskQueue {
   protected final MembershipGroup group;
 
-  protected GroupTaskQueue(MembershipGroup group) {
+  protected TaskQueue(MembershipGroup group) {
     this.group = Assert.notNull(group, "group");
   }
 
@@ -38,21 +40,25 @@ public class GroupTaskQueue {
    * @param task The task to submit.
    * @return A completable future to be completed once the task has been acknowledged.
    */
-  public CompletableFuture<Void> submit(Object task) {
-    Collection<GroupMember> members = members();
-    CompletableFuture[] futures = new CompletableFuture[members.size()];
-    int i = 0;
-    for (GroupMember member : members) {
-      futures[i++] = member.tasks().submit(task);
-    }
-    return CompletableFuture.allOf(futures);
-  }
+  public abstract CompletableFuture<Void> submit(Object task);
 
   /**
    * Returns the collection of group members to which to send tasks.
    */
   protected Collection<GroupMember> members() {
     return group.members();
+  }
+
+  /**
+   * Handles a task acknowledgement.
+   */
+  void onAck(long taskId) {
+  }
+
+  /**
+   * Handles a task failure.
+   */
+  void onFail(long taskId) {
   }
 
   @Override

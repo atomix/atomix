@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.group;
+package io.atomix.group.connection;
 
 import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
@@ -27,22 +27,22 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class GroupMessage<T> implements CatalystSerializable {
+public class Message<T> implements CatalystSerializable {
   private String member;
   private String topic;
   private T body;
   private CompletableFuture<Object> future;
 
-  public GroupMessage() {
+  public Message() {
   }
 
-  public GroupMessage(String member, String topic, T body) {
+  public Message(String member, String topic, T body) {
     this.member = member;
     this.topic = topic;
     this.body = body;
   }
 
-  GroupMessage<T> setFuture(CompletableFuture<Object> future) {
+  Message<T> setFuture(CompletableFuture<Object> future) {
     this.future = future;
     return this;
   }
@@ -52,7 +52,7 @@ public class GroupMessage<T> implements CatalystSerializable {
    *
    * @return The member to which the message was sent.
    */
-  String member() {
+  public String member() {
     return member;
   }
 

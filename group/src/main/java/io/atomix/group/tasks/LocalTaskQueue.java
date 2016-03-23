@@ -13,10 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.group;
+package io.atomix.group.tasks;
 
 import io.atomix.catalyst.util.Listener;
 import io.atomix.catalyst.util.Listeners;
+import io.atomix.group.MembershipGroup;
+import io.atomix.group.util.Submitter;
 
 import java.util.function.Consumer;
 
@@ -25,11 +27,11 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class LocalMemberTaskQueue extends MemberTaskQueue {
-  private final Listeners<GroupTask<Object>> taskListeners = new Listeners<>();
+public class LocalTaskQueue extends MemberTaskQueue {
+  private final Listeners<Task<Object>> taskListeners = new Listeners<>();
 
-  LocalMemberTaskQueue(String memberId, MembershipGroup group) {
-    super(memberId, group);
+  public LocalTaskQueue(String memberId, MembershipGroup group, Submitter submitter) {
+    super(memberId, group, submitter);
   }
 
   /**
@@ -40,7 +42,7 @@ public class LocalMemberTaskQueue extends MemberTaskQueue {
    * @return The task listener.
    */
   @SuppressWarnings("unchecked")
-  public <T> Listener<GroupTask<T>> onTask(Consumer<GroupTask<T>> consumer) {
+  public <T> Listener<Task<T>> onTask(Consumer<Task<T>> consumer) {
     return (Listener) taskListeners.add((Consumer) consumer);
   }
 
@@ -48,7 +50,7 @@ public class LocalMemberTaskQueue extends MemberTaskQueue {
    * Handles a task.
    */
   @SuppressWarnings("unchecked")
-  void onTask(GroupTask task) {
+  void onTask(Task task) {
     taskListeners.accept(task);
   }
 

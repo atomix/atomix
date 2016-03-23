@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.group;
+package io.atomix.group.partition;
 
 import io.atomix.catalyst.util.Assert;
 
@@ -25,11 +25,11 @@ import java.util.List;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class GroupPartitions implements Iterable<GroupPartition> {
-  final List<GroupPartition> partitions;
-  private final GroupPartitioner partitioner;
+public class Partitions implements Iterable<Partition> {
+  final List<Partition> partitions;
+  private final Partitioner partitioner;
 
-  GroupPartitions(List<GroupPartition> partitions, GroupPartitioner partitioner) {
+  Partitions(List<Partition> partitions, Partitioner partitioner) {
     this.partitions = Assert.notNull(partitions, "partitions");
     this.partitioner = Assert.notNull(partitioner, "partitioner");
   }
@@ -41,7 +41,7 @@ public class GroupPartitions implements Iterable<GroupPartition> {
    * @return The group partition.
    * @throws IndexOutOfBoundsException if the given {@code partitionId} is greater than the range of partitions in the group
    */
-  public GroupPartition get(int partitionId) {
+  public Partition get(int partitionId) {
     return partitions.get(partitionId);
   }
 
@@ -51,7 +51,7 @@ public class GroupPartitions implements Iterable<GroupPartition> {
    * @param value The value for which to return a partition.
    * @return The partition for the given value or {@code null} if the value was not mapped to any partition.
    */
-  public GroupPartition get(Object value) {
+  public Partition get(Object value) {
     int partitionId = partitioner.partition(value, partitions.size());
     return partitionId != -1 ? partitions.get(partitionId) : null;
   }
@@ -66,7 +66,7 @@ public class GroupPartitions implements Iterable<GroupPartition> {
   }
 
   @Override
-  public Iterator<GroupPartition> iterator() {
+  public Iterator<Partition> iterator() {
     return partitions.iterator();
   }
 
