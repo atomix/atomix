@@ -13,28 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.group.util;
+package io.atomix.group.task.internal;
 
-import io.atomix.copycat.Command;
-import io.atomix.copycat.Query;
-import io.atomix.resource.ReadConsistency;
-import io.atomix.resource.WriteConsistency;
-
-import java.util.concurrent.CompletableFuture;
+import io.atomix.group.task.TaskProducer;
+import io.atomix.group.util.Submitter;
 
 /**
- * Operation submitter.
+ * Group message client.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public interface Submitter {
+public class GroupTaskClient extends AbstractTaskClient {
 
-  <T extends Command<U>, U> CompletableFuture<U> submit(T command);
+  public GroupTaskClient(Submitter submitter) {
+    super(submitter);
+  }
 
-  <T extends Command<U>, U> CompletableFuture<U> submit(T command, WriteConsistency consistency);
-
-  <T extends Query<U>, U> CompletableFuture<U> submit(T query);
-
-  <T extends Query<U>, U> CompletableFuture<U> submit(T query, ReadConsistency consistency);
+  @Override
+  protected <T> AbstractTaskProducer<T> createProducer(String name, TaskProducer.Options options) {
+    return new GroupTaskProducer<>(name, options, this);
+  }
 
 }

@@ -13,28 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.group.util;
+package io.atomix.group.task.internal;
 
-import io.atomix.copycat.Command;
-import io.atomix.copycat.Query;
-import io.atomix.resource.ReadConsistency;
-import io.atomix.resource.WriteConsistency;
+import io.atomix.group.Member;
 
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Operation submitter.
+ * Member message producer.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public interface Submitter {
+public class MemberTaskProducer<T> extends AbstractTaskProducer<T> {
+  private final Member member;
 
-  <T extends Command<U>, U> CompletableFuture<U> submit(T command);
+  MemberTaskProducer(String name, Options options, AbstractTaskClient client, Member member) {
+    super(name, options, client);
+    this.member = member;
+  }
 
-  <T extends Command<U>, U> CompletableFuture<U> submit(T command, WriteConsistency consistency);
-
-  <T extends Query<U>, U> CompletableFuture<U> submit(T query);
-
-  <T extends Query<U>, U> CompletableFuture<U> submit(T query, ReadConsistency consistency);
+  @Override
+  public CompletableFuture<Void> submit(T task) {
+    return submit(member.id(), task);
+  }
 
 }

@@ -13,28 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.group.util;
-
-import io.atomix.copycat.Command;
-import io.atomix.copycat.Query;
-import io.atomix.resource.ReadConsistency;
-import io.atomix.resource.WriteConsistency;
-
-import java.util.concurrent.CompletableFuture;
+package io.atomix.group.messaging.internal;
 
 /**
- * Operation submitter.
+ * Member message consumer.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public interface Submitter {
+public class MemberMessageConsumer<T> extends AbstractMessageConsumer<T> {
 
-  <T extends Command<U>, U> CompletableFuture<U> submit(T command);
-
-  <T extends Command<U>, U> CompletableFuture<U> submit(T command, WriteConsistency consistency);
-
-  <T extends Query<U>, U> CompletableFuture<U> submit(T query);
-
-  <T extends Query<U>, U> CompletableFuture<U> submit(T query, ReadConsistency consistency);
+  public MemberMessageConsumer(String name, Options options, AbstractMessageService service) {
+    super(name, options, service);
+  }
 
 }

@@ -15,13 +15,7 @@
  */
 package io.atomix.group.task;
 
-import io.atomix.catalyst.buffer.BufferInput;
-import io.atomix.catalyst.buffer.BufferOutput;
-import io.atomix.catalyst.serializer.CatalystSerializable;
-import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.group.DistributedGroup;
-
-import java.util.concurrent.CompletableFuture;
 
 /**
  * Represents a reliable task received by a member to be processed and acknowledged.
@@ -45,25 +39,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class Task<T> implements CatalystSerializable {
-  private long id;
-  private String member;
-  private T value;
-  private transient CompletableFuture<Boolean> future;
-
-  public Task() {
-  }
-
-  public Task(long id, String member, T value) {
-    this.id = id;
-    this.member = member;
-    this.value = value;
-  }
-
-  Task<T> setFuture(CompletableFuture<Boolean> future) {
-    this.future = future;
-    return this;
-  }
+public interface Task<T> {
 
   /**
    * Returns the task ID.
@@ -73,29 +49,16 @@ public class Task<T> implements CatalystSerializable {
    *
    * @return The monotonically increasing task ID.
    */
-  public long id() {
-    return id;
-  }
-
-  /**
-   * Returns the member to which the task is enqueued.
-   *
-   * @return The task member.
-   */
-  public String member() {
-    return member;
-  }
+  long id();
 
   /**
    * Returns the task value.
    * <p>
-   * This is the value that was {@link TaskQueue#submit(Object) submitted} by the sending process.
+   * This is the value that was {@link TaskProducer#submit(Object) submitted} by the sending process.
    *
    * @return The task value.
    */
-  public T task() {
-    return value;
-  }
+  T task();
 
   /**
    * Acknowledges completion of the task.
@@ -105,9 +68,7 @@ public class Task<T> implements CatalystSerializable {
    * itself may fail to reach the cluster or the sender may crash before the acknowledgement can be received.
    * Acks serve only as positive acknowledgement, but the lack of an ack does not indicate failure.
    */
-  public void ack() {
-    future.complete(true);
-  }
+  void ack();
 
   /**
    * Fails processing of the task.
@@ -116,27 +77,6 @@ public class Task<T> implements CatalystSerializable {
    * Failing a task does not guarantee that the sender will learn of the failure. The process that submitted the task
    * may itself fail.
    */
-  public void fail() {
-    future.complete(false);
-  }
-
-  @Override
-  public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
-    buffer.writeLong(id);
-    buffer.writeString(member);
-    serializer.writeObject(value, buffer);
-  }
-
-  @Override
-  public void readObject(BufferInput<?> buffer, Serializer serializer) {
-    id = buffer.readLong();
-    member = buffer.readString();
-    value = serializer.readObject(buffer);
-  }
-
-  @Override
-  public String toString() {
-    return String.format("%s[member=%s]", getClass().getSimpleName(), member);
-  }
+  void fail();
 
 }

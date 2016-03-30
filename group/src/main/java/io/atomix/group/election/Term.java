@@ -15,38 +15,27 @@
  */
 package io.atomix.group.election;
 
-import io.atomix.group.GroupMember;
+import io.atomix.group.Member;
 
 /**
  * Group election term.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class Term {
-  private final long term;
-  private final GroupMember leader;
-
-  Term(long term, GroupMember leader) {
-    this.term = term;
-    this.leader = leader;
-  }
+public interface Term {
 
   /**
    * Returns the group term.
    *
    * @return The group term.
    */
-  public long term() {
-    return term;
-  }
+  long term();
 
   /**
    * Returns the group leader.
    *
    * @return The group leader.
    */
-  public GroupMember leader() {
-    return leader;
-  }
+  Member leader();
 
 }

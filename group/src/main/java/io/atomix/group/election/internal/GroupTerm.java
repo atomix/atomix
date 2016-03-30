@@ -13,28 +13,42 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.group.util;
+package io.atomix.group.election.internal;
 
-import io.atomix.copycat.Command;
-import io.atomix.copycat.Query;
-import io.atomix.resource.ReadConsistency;
-import io.atomix.resource.WriteConsistency;
-
-import java.util.concurrent.CompletableFuture;
+import io.atomix.catalyst.util.Assert;
+import io.atomix.group.Member;
+import io.atomix.group.election.Term;
 
 /**
- * Operation submitter.
+ * Group term.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public interface Submitter {
+public class GroupTerm implements Term {
+  private final long term;
+  private volatile Member leader;
 
-  <T extends Command<U>, U> CompletableFuture<U> submit(T command);
+  public GroupTerm(long term) {
+    this.term = term;
+  }
 
-  <T extends Command<U>, U> CompletableFuture<U> submit(T command, WriteConsistency consistency);
+  @Override
+  public long term() {
+    return term;
+  }
 
-  <T extends Query<U>, U> CompletableFuture<U> submit(T query);
+  @Override
+  public Member leader() {
+    return leader;
+  }
 
-  <T extends Query<U>, U> CompletableFuture<U> submit(T query, ReadConsistency consistency);
+  /**
+   * Sets the term leader.
+   *
+   * @param leader The term leader.
+   */
+  void setLeader(Member leader) {
+    this.leader = Assert.notNull(leader, "leader");
+  }
 
 }

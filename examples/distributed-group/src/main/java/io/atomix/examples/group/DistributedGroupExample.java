@@ -21,6 +21,7 @@ import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.NettyTransport;
 import io.atomix.copycat.server.storage.Storage;
 import io.atomix.group.DistributedGroup;
+import io.atomix.group.task.TaskConsumer;
 
 import java.net.InetAddress;
 import java.util.ArrayList;
@@ -66,7 +67,8 @@ public class DistributedGroupExample {
     System.out.println("Joining membership group");
     group.join().thenAccept(member -> {
       System.out.println("Joined group with member ID: " + member.id());
-      member.tasks().onTask(task -> {
+      TaskConsumer<String> consumer = member.tasks().consumer("tasks");
+      consumer.onTask(task -> {
         System.out.println("Received task");
         try {
           Thread.sleep(100);
@@ -79,7 +81,7 @@ public class DistributedGroupExample {
     group.onJoin(member -> {
       System.out.println(member.id() + " joined the group!");
 
-      member.tasks().submit("hello").thenRun(() -> {
+      member.tasks().producer("tasks").submit("hello").thenRun(() -> {
         System.out.println("Task complete!");
       });
     });

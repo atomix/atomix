@@ -13,28 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.group.util;
-
-import io.atomix.copycat.Command;
-import io.atomix.copycat.Query;
-import io.atomix.resource.ReadConsistency;
-import io.atomix.resource.WriteConsistency;
+package io.atomix.group.task;
 
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Operation submitter.
- *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public interface Submitter {
+public interface TaskProducer<T> extends AutoCloseable {
 
-  <T extends Command<U>, U> CompletableFuture<U> submit(T command);
+  /**
+   * Task producer options.
+   */
+  class Options {
+  }
 
-  <T extends Command<U>, U> CompletableFuture<U> submit(T command, WriteConsistency consistency);
+  CompletableFuture<Void> submit(T task);
 
-  <T extends Query<U>, U> CompletableFuture<U> submit(T query);
-
-  <T extends Query<U>, U> CompletableFuture<U> submit(T query, ReadConsistency consistency);
+  @Override
+  default void close() {
+  }
 
 }

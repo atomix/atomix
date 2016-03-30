@@ -15,12 +15,8 @@
  */
 package io.atomix.group;
 
-import io.atomix.group.connection.ConnectionController;
-import io.atomix.group.connection.LocalConnection;
-import io.atomix.group.state.GroupCommands;
-import io.atomix.group.task.LocalTaskQueue;
-import io.atomix.group.task.TaskQueueController;
-import io.atomix.group.util.Submitter;
+import io.atomix.group.messaging.MessageService;
+import io.atomix.group.task.TaskService;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -44,23 +40,13 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class LocalMember extends GroupMember {
-  final ConnectionController connection;
-
-  LocalMember(GroupMemberInfo info, MembershipGroup group, Submitter submitter) {
-    super(info, group, submitter, new TaskQueueController(new LocalTaskQueue(info.memberId(), group, submitter)));
-    this.connection = new ConnectionController(new LocalConnection(info.memberId(), info.address(), group.connections));
-  }
+public interface LocalMember extends Member {
 
   @Override
-  public LocalTaskQueue tasks() {
-    return (LocalTaskQueue) tasks.queue();
-  }
+  MessageService messages();
 
   @Override
-  public LocalConnection connection() {
-    return connection.connection();
-  }
+  TaskService tasks();
 
   /**
    * Leaves the membership group.
@@ -87,10 +73,6 @@ public class LocalMember extends GroupMember {
    *
    * @return A completable future to be completed once the member has left.
    */
-  public CompletableFuture<Void> leave() {
-    return group.submit(new GroupCommands.Leave(memberId)).whenComplete((result, error) -> {
-      group.members.remove(memberId);
-    });
-  }
+  CompletableFuture<Void> leave();
 
 }

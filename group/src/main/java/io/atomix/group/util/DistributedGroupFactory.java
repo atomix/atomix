@@ -19,8 +19,8 @@ import io.atomix.catalyst.serializer.SerializableTypeResolver;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.group.DistributedGroup;
 import io.atomix.group.MembershipGroup;
-import io.atomix.group.state.GroupCommands;
-import io.atomix.group.state.GroupState;
+import io.atomix.group.internal.GroupCommands;
+import io.atomix.group.internal.GroupState;
 import io.atomix.resource.ResourceFactory;
 import io.atomix.resource.ResourceStateMachine;
 
