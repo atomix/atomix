@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.group;
+package io.atomix.group.internal;
 
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.Server;
@@ -24,9 +24,11 @@ import io.atomix.catalyst.util.concurrent.Futures;
 import io.atomix.copycat.Command;
 import io.atomix.copycat.Query;
 import io.atomix.copycat.client.CopycatClient;
+import io.atomix.group.DistributedGroup;
+import io.atomix.group.LocalMember;
+import io.atomix.group.Member;
 import io.atomix.group.election.Election;
 import io.atomix.group.election.internal.GroupElection;
-import io.atomix.group.internal.*;
 import io.atomix.group.messaging.MessageClient;
 import io.atomix.group.messaging.internal.ConnectionManager;
 import io.atomix.group.messaging.internal.GroupMessage;

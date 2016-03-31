@@ -18,7 +18,6 @@ package io.atomix.group.internal;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.group.Member;
-import io.atomix.group.MembershipGroup;
 import io.atomix.group.messaging.internal.AbstractMessageClient;
 import io.atomix.group.task.internal.AbstractTaskClient;
 

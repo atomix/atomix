@@ -16,7 +16,6 @@
 package io.atomix.group.internal;
 
 import io.atomix.group.LocalMember;
-import io.atomix.group.MembershipGroup;
 import io.atomix.group.messaging.internal.ConnectionManager;
 import io.atomix.group.messaging.internal.MemberMessageService;
 import io.atomix.group.task.internal.MemberTaskQueue;

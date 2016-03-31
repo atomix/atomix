@@ -19,7 +19,7 @@ import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.catalyst.util.Listeners;
 import io.atomix.group.Member;
-import io.atomix.group.MembershipGroup;
+import io.atomix.group.internal.MembershipGroup;
 import io.atomix.group.election.Election;
 import io.atomix.group.election.Term;
 

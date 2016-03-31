@@ -19,7 +19,8 @@ import io.atomix.Atomix;
 import io.atomix.AtomixClient;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.NettyTransport;
-import io.atomix.messaging.DistributedTaskQueue;
+import io.atomix.group.DistributedGroup;
+import io.atomix.group.task.TaskProducer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,12 +57,11 @@ public class TaskQueueProducerExample {
     atomix.open().join();
 
     // Create a task queue resource.
-    @SuppressWarnings("unchecked")
-    DistributedTaskQueue<String> queue = atomix.<String>getTaskQueue("tasks").get().async();
+    DistributedGroup group = atomix.getGroup("tasks").get();
 
     // Register a callback to be called when a message is received.
     for (int i = 0; i < 100; i++) {
-      submitTasks(queue);
+      submitTasks(group.tasks().producer("tasks"));
     }
 
     // Block while the replica is open.
@@ -73,7 +73,7 @@ public class TaskQueueProducerExample {
   /**
    * Recursively submits tasks to the queue.
    */
-  private static void submitTasks(DistributedTaskQueue<String> queue) {
+  private static void submitTasks(TaskProducer<String> queue) {
     queue.submit(UUID.randomUUID().toString()).whenComplete((result, error) -> submitTasks(queue));
   }
 

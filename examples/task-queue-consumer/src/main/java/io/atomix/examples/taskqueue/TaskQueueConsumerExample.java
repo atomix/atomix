@@ -19,7 +19,8 @@ import io.atomix.Atomix;
 import io.atomix.AtomixClient;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.NettyTransport;
-import io.atomix.messaging.DistributedTaskQueue;
+import io.atomix.group.DistributedGroup;
+import io.atomix.group.LocalMember;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,13 +55,16 @@ public class TaskQueueConsumerExample {
     // Open the client. Once this operation completes resources can be created and managed.
     atomix.open().join();
 
-    // Create a task queue resource.
-    @SuppressWarnings("unchecked")
-    DistributedTaskQueue<String> queue = atomix.<String>getTaskQueue("tasks").get();
+    // Create a group resource.
+    DistributedGroup group = atomix.getGroup("tasks").get();
+
+    // Join the group.
+    LocalMember member = group.join().get();
 
     // Register a callback to be called when a message is received.
-    queue.consumer(task -> {
+    member.tasks().consumer("tasks").onTask(task -> {
       System.out.println("Received " + task);
+      task.ack();
     });
 
     // Block while the replica is open.
