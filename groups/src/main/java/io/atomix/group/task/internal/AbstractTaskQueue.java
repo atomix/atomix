@@ -59,7 +59,7 @@ public abstract class AbstractTaskQueue extends AbstractTaskClient implements Ta
       synchronized (consumers) {
         consumer = consumers.get(name);
         if (consumer == null) {
-          consumer = createConsumer(name, options);
+          consumer = createConsumer(name, options != null ? options : new TaskConsumer.Options());
           consumers.put(name, consumer);
         }
       }

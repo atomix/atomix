@@ -54,7 +54,7 @@ public abstract class AbstractMessageClient implements MessageClient {
       synchronized (producers) {
         producer = producers.get(name);
         if (producer == null) {
-          producer = createProducer(name, options);
+          producer = createProducer(name, options != null ? options : new MessageProducer.Options());
           producers.put(name, producer);
         }
       }

@@ -19,6 +19,8 @@ import io.atomix.catalyst.transport.Address;
 import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.session.ServerSession;
 import io.atomix.copycat.server.session.SessionListener;
+import io.atomix.group.task.FailoverStrategy;
+import io.atomix.group.task.RoutingStrategy;
 import io.atomix.group.task.internal.GroupTask;
 import io.atomix.resource.ResourceStateMachine;
 
@@ -31,9 +33,11 @@ import java.util.*;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class GroupState extends ResourceStateMachine implements SessionListener {
+  private final Random random = new Random(141650939l);
   private final Duration expiration;
   private final Map<Long, GroupSession> sessions = new HashMap<>();
   private final Map<String, Member> members = new HashMap<>();
+  private final List<Member> membersList = new ArrayList<>();
   private final List<Member> candidates = new ArrayList<>();
   private Member leader;
   private long term;
@@ -59,6 +63,7 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
         // If the member is not persistent, remove the member from the membership group.
         if (!member.persistent()) {
           iterator.remove();
+          membersList.remove(member);
           candidates.remove(member);
           left.put(member.index(), member);
         } else {
@@ -155,6 +160,7 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
 
         // Store the member ID and join commit mappings and add the member as a candidate.
         members.put(member.id(), member);
+        membersList.add(member);
         candidates.add(member);
 
         // Iterate through available sessions and publish a join event to each session.
@@ -216,6 +222,7 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
       Member member = members.remove(commit.operation().member());
       if (member != null) {
         // Remove the member from the candidates list.
+        membersList.remove(member);
         candidates.remove(member);
 
         // If the leaving member was the leader, increment the term and elect a new leader.
@@ -261,17 +268,32 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
   public void submit(Commit<GroupCommands.Submit> commit) {
     try {
       if (commit.operation().member() != null) {
-        // Ensure that the member is a member of the group.
-        Member member = members.get(commit.operation().member());
-        if (member == null) {
-          throw new IllegalArgumentException("unknown member: " + commit.operation().member());
-        }
-
         // Create a task instance.
         Task task = new Task(commit);
 
-        // Add the task to the member's task queue.
-        member.submit(task);
+        // Ensure that the member is a member of the group.
+        Member member = members.get(commit.operation().member());
+        if (member == null) {
+          task.fail();
+          task.close();
+        } else {
+          // Add the task to the member's task queue.
+          member.submit(task);
+        }
+      } else if (commit.operation().routingStrategy() == RoutingStrategy.DIRECT) {
+        // Create a task instance.
+        Task task = new Task(commit);
+
+        // If the members list is empty, fail the task submission.
+        if (members.isEmpty()) {
+          task.fail();
+          task.close();
+        } else {
+          Member member = membersList.get(random.nextInt(membersList.size()));
+
+          // Add the task to the member's task queue.
+          member.submit(task);
+        }
       } else {
         // Create a task instance.
         Task task = new Task(commit);
@@ -387,7 +409,7 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
   /**
    * Represents a member of the group.
    */
-  private static class Member implements AutoCloseable {
+  private class Member implements AutoCloseable {
     private final Commit<GroupCommands.Join> commit;
     private final long index;
     private final String memberId;
@@ -522,13 +544,33 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
       Task task = this.task;
       this.task = null;
       if (task != null) {
-        task.fail();
-        task.close();
+        if (task.commit.operation().routingStrategy() == RoutingStrategy.DIRECT && task.commit.operation().failoverStrategy() == FailoverStrategy.RESUBMIT) {
+          if (!members.isEmpty()) {
+            Member member = membersList.get(random.nextInt(membersList.size()));
+            member.submit(task);
+          } else {
+            task.fail();
+            task.close();
+          }
+        } else {
+          task.fail();
+          task.close();
+        }
       }
 
       tasks.forEach(t -> {
-        t.fail();
-        t.close();
+        if (t.commit.operation().routingStrategy() == RoutingStrategy.DIRECT && task.commit.operation().failoverStrategy() == FailoverStrategy.RESUBMIT) {
+          if (!members.isEmpty()) {
+            Member member = membersList.get(random.nextInt(membersList.size()));
+            member.submit(t);
+          } else {
+            t.fail();
+            t.close();
+          }
+        } else {
+          t.fail();
+          t.close();
+        }
       });
       tasks.clear();
 

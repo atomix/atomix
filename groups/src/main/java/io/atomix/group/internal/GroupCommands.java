@@ -26,6 +26,8 @@ import io.atomix.copycat.Command;
 import io.atomix.copycat.Operation;
 import io.atomix.copycat.Query;
 import io.atomix.group.messaging.internal.GroupMessage;
+import io.atomix.group.task.FailoverStrategy;
+import io.atomix.group.task.RoutingStrategy;
 import io.atomix.group.task.internal.GroupTask;
 
 import java.util.Set;
@@ -263,15 +265,19 @@ public final class GroupCommands {
     private long id;
     private String type;
     private Object task;
+    private RoutingStrategy routingStrategy;
+    private FailoverStrategy failoverStrategy;
 
     public Submit() {
     }
 
-    public Submit(String member, String type, long id, Object task) {
+    public Submit(String member, String type, long id, Object task, RoutingStrategy routingStrategy, FailoverStrategy failoverStrategy) {
       super(member);
       this.type = type;
       this.id = id;
       this.task = task;
+      this.routingStrategy = routingStrategy;
+      this.failoverStrategy = failoverStrategy;
     }
 
     /**
@@ -301,11 +307,31 @@ public final class GroupCommands {
       return task;
     }
 
+    /**
+     * Returns the task routing strategy.
+     *
+     * @return The task routing strategy.
+     */
+    public RoutingStrategy routingStrategy() {
+      return routingStrategy;
+    }
+
+    /**
+     * Returns the task failover strategy.
+     *
+     * @return The task failover strategy.
+     */
+    public FailoverStrategy failoverStrategy() {
+      return failoverStrategy;
+    }
+
     @Override
     public void writeObject(BufferOutput buffer, Serializer serializer) {
       super.writeObject(buffer, serializer);
       buffer.writeString(type);
       buffer.writeLong(id);
+      buffer.writeByte(routingStrategy.ordinal());
+      buffer.writeByte(failoverStrategy.ordinal());
       serializer.writeObject(task, buffer);
     }
 
@@ -314,6 +340,8 @@ public final class GroupCommands {
       super.readObject(buffer, serializer);
       type = buffer.readString();
       id = buffer.readLong();
+      routingStrategy = RoutingStrategy.values()[buffer.readByte()];
+      failoverStrategy = FailoverStrategy.values()[buffer.readByte()];
       task = serializer.readObject(buffer);
     }
   }

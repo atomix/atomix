@@ -88,7 +88,7 @@ public abstract class AbstractTaskProducer<T> implements TaskProducer<T> {
     CompletableFuture<Void> future = new CompletableFuture<>();
     final long taskId = ++this.taskId;
     taskFutures.put(taskId, future);
-    client.submitter().submit(new GroupCommands.Submit(member, name, taskId, task)).whenComplete((result, error) -> {
+    client.submitter().submit(new GroupCommands.Submit(member, name, taskId, task, options.getRoutingStrategy(), options.getFailoverStrategy())).whenComplete((result, error) -> {
       if (error != null) {
         CompletableFuture<Void> taskFuture = taskFutures.remove(taskId);
         if (taskFuture != null) {

@@ -15,6 +15,8 @@
  */
 package io.atomix.group.task;
 
+import io.atomix.catalyst.util.Assert;
+
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -26,6 +28,48 @@ public interface TaskProducer<T> extends AutoCloseable {
    * Task producer options.
    */
   class Options {
+    private RoutingStrategy routingStrategy = RoutingStrategy.ALL;
+    private FailoverStrategy failoverStrategy = FailoverStrategy.FAIL;
+
+    /**
+     * Sets the producer routing strategy.
+     *
+     * @param routingStrategy The routing strategy.
+     * @return The producer options.
+     */
+    public Options withRoutingStrategy(RoutingStrategy routingStrategy) {
+      this.routingStrategy = Assert.notNull(routingStrategy, "routingStrategy");
+      return this;
+    }
+
+    /**
+     * Returns the routing strategy.
+     *
+     * @return The routing strategy.
+     */
+    public RoutingStrategy getRoutingStrategy() {
+      return routingStrategy;
+    }
+
+    /**
+     * Sets the producer failover strategy.
+     *
+     * @param failoverStrategy The producer failover strategy.
+     * @return The producer options.
+     */
+    public Options withFailoverStrategy(FailoverStrategy failoverStrategy) {
+      this.failoverStrategy = Assert.notNull(failoverStrategy, "failoverStrategy");
+      return this;
+    }
+
+    /**
+     * Returns the failover strategy.
+     *
+     * @return The failover strategy.
+     */
+    public FailoverStrategy getFailoverStrategy() {
+      return failoverStrategy;
+    }
   }
 
   CompletableFuture<Void> submit(T task);

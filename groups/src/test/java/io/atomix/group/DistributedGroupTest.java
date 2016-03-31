@@ -16,7 +16,10 @@
 package io.atomix.group;
 
 import io.atomix.catalyst.transport.Address;
+import io.atomix.group.task.FailoverStrategy;
+import io.atomix.group.task.RoutingStrategy;
 import io.atomix.group.task.TaskFailedException;
+import io.atomix.group.task.TaskProducer;
 import io.atomix.testing.AbstractCopycatTest;
 import org.testng.annotations.Test;
 
@@ -319,7 +322,7 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
   /**
    * Tests fan-out member tasks.
    */
-  public void testAllTask() throws Throwable {
+  public void testGroupTask() throws Throwable {
     createServers(3);
 
     DistributedGroup group1 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6000)));
@@ -349,6 +352,77 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     });
     group1.tasks().producer("test").submit("Hello world!").thenRun(this::resume);
     await(10000, 4);
+  }
+
+  public void testGroupTaskFailOnLeave() throws Throwable {
+    createServers(3);
+
+    DistributedGroup group1 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6000)));
+    DistributedGroup group2 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6001)));
+
+    LocalMember member1 = group1.join().get(10, TimeUnit.SECONDS);
+    LocalMember member2 = group2.join().get(10, TimeUnit.SECONDS);
+
+    assertEquals(group1.members().size(), 2);
+    assertEquals(group2.members().size(), 2);
+
+    member1.tasks().consumer("test").onTask(task -> {
+      threadAssertEquals(task.task(), "Hello world!");
+      member1.leave();
+      resume();
+    });
+    member2.tasks().consumer("test").onTask(task -> {
+      threadAssertEquals(task.task(), "Hello world!");
+      member2.leave();
+      resume();
+    });
+
+    TaskProducer.Options options = new TaskProducer.Options()
+      .withRoutingStrategy(RoutingStrategy.DIRECT);
+    group1.tasks().producer("test", options).submit("Hello world!").whenComplete((result, error) -> {
+      threadAssertNotNull(error);
+      resume();
+    });
+    await(10000, 2);
+  }
+
+  public void testGroupTaskResubmitOnLeave() throws Throwable {
+    createServers(3);
+
+    DistributedGroup group1 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6000)));
+    DistributedGroup group2 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6001)));
+
+    LocalMember member1 = group1.join().get(10, TimeUnit.SECONDS);
+    LocalMember member2 = group2.join().get(10, TimeUnit.SECONDS);
+
+    assertEquals(group1.members().size(), 2);
+    assertEquals(group2.members().size(), 2);
+
+    AtomicBoolean left = new AtomicBoolean();
+    member1.tasks().consumer("test").onTask(task -> {
+      threadAssertEquals(task.task(), "Hello world!");
+      if (left.compareAndSet(false, true)) {
+        member1.leave();
+      } else {
+        task.ack();
+      }
+      resume();
+    });
+    member2.tasks().consumer("test").onTask(task -> {
+      threadAssertEquals(task.task(), "Hello world!");
+      if (left.compareAndSet(false, true)) {
+        member1.leave();
+      } else {
+        task.ack();
+      }
+      resume();
+    });
+
+    TaskProducer.Options options = new TaskProducer.Options()
+      .withRoutingStrategy(RoutingStrategy.DIRECT)
+      .withFailoverStrategy(FailoverStrategy.RESUBMIT);
+    group1.tasks().producer("test", options).submit("Hello world!").thenRun(this::resume);
+    await(10000, 3);
   }
 
 }

@@ -70,7 +70,7 @@ public abstract class AbstractTaskClient implements TaskClient {
       synchronized (producers) {
         producer = producers.get(name);
         if (producer == null) {
-          producer = createProducer(name, options);
+          producer = createProducer(name, options != null ? options : new TaskProducer.Options());
           producers.put(name, producer);
         }
       }
