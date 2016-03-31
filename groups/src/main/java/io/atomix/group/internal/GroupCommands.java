@@ -349,7 +349,7 @@ public final class GroupCommands {
   /**
    * Ack command.
    */
-  public static class Ack extends MemberCommand<Object> {
+  public static class Ack extends MemberCommand<Void> {
     private long id;
     private boolean succeeded;
 

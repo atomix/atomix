@@ -19,7 +19,9 @@ import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
 import io.atomix.catalyst.serializer.Serializer;
+import io.atomix.group.internal.GroupCommands;
 import io.atomix.group.task.Task;
+import io.atomix.group.util.Submitter;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -33,7 +35,7 @@ public class GroupTask<T> implements Task<T>, CatalystSerializable {
   private String member;
   private String type;
   private T value;
-  private transient CompletableFuture<Boolean> future;
+  private transient Submitter submitter;
 
   public GroupTask() {
   }
@@ -45,8 +47,11 @@ public class GroupTask<T> implements Task<T>, CatalystSerializable {
     this.value = value;
   }
 
-  GroupTask<T> setFuture(CompletableFuture<Boolean> future) {
-    this.future = future;
+  /**
+   * Sets the task submitter.
+   */
+  GroupTask<T> setSubmitter(Submitter submitter) {
+    this.submitter = submitter;
     return this;
   }
 
@@ -79,13 +84,13 @@ public class GroupTask<T> implements Task<T>, CatalystSerializable {
   }
 
   @Override
-  public void ack() {
-    future.complete(true);
+  public CompletableFuture<Void> ack() {
+    return submitter.submit(new GroupCommands.Ack(member, id, true));
   }
 
   @Override
-  public void fail() {
-    future.complete(false);
+  public CompletableFuture<Void> fail() {
+    return submitter.submit(new GroupCommands.Ack(member, id, false));
   }
 
   @Override

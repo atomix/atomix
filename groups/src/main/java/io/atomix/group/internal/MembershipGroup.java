@@ -291,13 +291,7 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
   private void onTaskEvent(GroupTask task) {
     AbstractGroupMember localMember = members.get(task.member());
     if (localMember != null && localMember instanceof LocalMember) {
-      ((LocalGroupMember) localMember).tasks().consumer(task.type()).onTask(task).whenComplete((succeeded, error) -> {
-        if (error == null && (boolean) succeeded) {
-          submit(new GroupCommands.Ack(task.member(), task.id(), true));
-        } else {
-          submit(new GroupCommands.Ack(task.member(), task.id(), false));
-        }
-      });
+      ((LocalGroupMember) localMember).tasks().consumer(task.type()).onTask(task);
     }
   }
 

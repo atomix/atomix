@@ -19,7 +19,6 @@ import io.atomix.catalyst.util.Listener;
 import io.atomix.group.task.Task;
 import io.atomix.group.task.TaskConsumer;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 /**
@@ -65,12 +64,9 @@ public abstract class AbstractTaskConsumer<T> implements TaskConsumer<T> {
    * Called when a task is received.
    *
    * @param task The received task.
-   * @return A completable future to be completed once the task has been processed.
    */
-  public CompletableFuture<Boolean> onTask(GroupTask<T> task) {
-    CompletableFuture<Boolean> future = new CompletableFuture<>();
-    listener.accept(task.setFuture(future));
-    return future;
+  public void onTask(GroupTask<T> task) {
+    listener.accept(task.setSubmitter(service.submitter()));
   }
 
   @Override

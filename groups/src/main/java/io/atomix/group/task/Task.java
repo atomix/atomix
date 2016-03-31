@@ -17,10 +17,12 @@ package io.atomix.group.task;
 
 import io.atomix.group.DistributedGroup;
 
+import java.util.concurrent.CompletableFuture;
+
 /**
  * Represents a reliable task received by a member to be processed and acknowledged.
  * <p>
- * Tasks are {@link TaskService#submit(Object) submitted} by {@link DistributedGroup} users to any member of a group.
+ * Tasks are {@link TaskProducer#submit(Object) submitted} by {@link DistributedGroup} users to any member of a group.
  * Tasks are replicated and persisted within the Atomix cluster before being pushed to clients on a queue. Once a task
  * is received by a task listener, the task may be processed asynchronously and either {@link #ack() acknowledged} or
  * {@link #fail() failed} once processing is complete.
@@ -67,8 +69,10 @@ public interface Task<T> {
    * completion of a task does not guarantee that the sender will learn of the acknowledgement. The acknowledgement
    * itself may fail to reach the cluster or the sender may crash before the acknowledgement can be received.
    * Acks serve only as positive acknowledgement, but the lack of an ack does not indicate failure.
+   *
+   * @return A completable future to be completed once the task has been acknowledged.
    */
-  void ack();
+  CompletableFuture<Void> ack();
 
   /**
    * Fails processing of the task.
@@ -76,7 +80,9 @@ public interface Task<T> {
    * Once a task is failed, a failure message will be sent back to the process that submitted the task for processing.
    * Failing a task does not guarantee that the sender will learn of the failure. The process that submitted the task
    * may itself fail.
+   *
+   * @return A completable future to be completed once the task has been failed.
    */
-  void fail();
+  CompletableFuture<Void> fail();
 
 }
