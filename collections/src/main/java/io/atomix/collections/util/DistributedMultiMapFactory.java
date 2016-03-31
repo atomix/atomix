@@ -17,8 +17,8 @@ package io.atomix.collections.util;
 
 import io.atomix.catalyst.serializer.SerializableTypeResolver;
 import io.atomix.collections.DistributedMultiMap;
-import io.atomix.collections.state.MultiMapCommands;
-import io.atomix.collections.state.MultiMapState;
+import io.atomix.collections.internal.MultiMapCommands;
+import io.atomix.collections.internal.MultiMapState;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.ResourceFactory;
 import io.atomix.resource.ResourceStateMachine;

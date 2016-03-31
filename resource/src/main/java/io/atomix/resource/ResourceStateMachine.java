@@ -21,8 +21,8 @@ import io.atomix.copycat.server.StateMachine;
 import io.atomix.copycat.server.StateMachineExecutor;
 import io.atomix.copycat.server.session.ServerSession;
 import io.atomix.copycat.server.session.SessionListener;
-import io.atomix.resource.util.ResourceCommand;
-import io.atomix.resource.util.ResourceQuery;
+import io.atomix.resource.internal.ResourceCommand;
+import io.atomix.resource.internal.ResourceQuery;
 
 import java.util.Properties;
 

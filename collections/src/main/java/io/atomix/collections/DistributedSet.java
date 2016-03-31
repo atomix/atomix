@@ -15,7 +15,7 @@
  */
 package io.atomix.collections;
 
-import io.atomix.collections.state.SetCommands;
+import io.atomix.collections.internal.SetCommands;
 import io.atomix.collections.util.DistributedSetFactory;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.AbstractResource;

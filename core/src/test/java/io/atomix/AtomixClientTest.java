@@ -49,28 +49,14 @@ public class AtomixClientTest extends AbstractAtomixTest {
   /**
    * Tests submitting a command.
    */
-  public void testSubmitCommandWithSequentialConsistency() throws Throwable {
-    testSubmitCommand(WriteConsistency.SEQUENTIAL_EVENT);
-  }
-
-  /**
-   * Tests submitting a command.
-   */
-  public void testSubmitCommandWithAtomicConsistency() throws Throwable {
-    testSubmitCommand(WriteConsistency.ATOMIC);
-  }
-
-  /**
-   * Tests submitting a command with a configured consistency level.
-   */
-  private void testSubmitCommand(WriteConsistency consistency) throws Throwable {
+  public void testSubmitCommand() throws Throwable {
     createReplicas(5, 3, 1, new ResourceType(TestResource.class));
 
     Atomix client = createClient(new ResourceType(TestResource.class));
 
     TestResource resource = client.getResource("test", TestResource.class).get(5, TimeUnit.SECONDS);
 
-    resource.with(consistency).command("Hello world!").thenAccept(result -> {
+    resource.command("Hello world!").thenAccept(result -> {
       threadAssertEquals(result, "Hello world!");
       resume();
     });
@@ -81,35 +67,14 @@ public class AtomixClientTest extends AbstractAtomixTest {
   /**
    * Tests submitting a query.
    */
-  public void testSubmitQueryWithSequentialConsistency() throws Throwable {
-    testSubmitQuery(ReadConsistency.SEQUENTIAL);
-  }
-
-  /**
-   * Tests submitting a query.
-   */
-  public void testSubmitQueryWithAtomicLeaseConsistency() throws Throwable {
-    testSubmitQuery(ReadConsistency.ATOMIC_LEASE);
-  }
-
-  /**
-   * Tests submitting a query.
-   */
-  public void testSubmitQueryWithAtomicConsistency() throws Throwable {
-    testSubmitQuery(ReadConsistency.ATOMIC);
-  }
-
-  /**
-   * Tests submitting a query with a configured consistency level.
-   */
-  private void testSubmitQuery(ReadConsistency consistency) throws Throwable {
+  private void testSubmitQuery() throws Throwable {
     createReplicas(5, 3, 1, new ResourceType(TestResource.class));
 
     Atomix client = createClient(new ResourceType(TestResource.class));
 
     TestResource resource = client.getResource("test", TestResource.class).get(5, TimeUnit.SECONDS);
 
-    resource.with(consistency).query("Hello world!").thenAccept(result -> {
+    resource.query("Hello world!").thenAccept(result -> {
       threadAssertEquals(result, "Hello world!");
       resume();
     });

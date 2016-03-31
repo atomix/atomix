@@ -22,8 +22,8 @@ import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.copycat.Command;
 import io.atomix.copycat.Query;
 import io.atomix.copycat.client.CopycatClient;
-import io.atomix.resource.util.ResourceCommand;
-import io.atomix.resource.util.ResourceQuery;
+import io.atomix.resource.internal.ResourceCommand;
+import io.atomix.resource.internal.ResourceQuery;
 
 import java.util.Properties;
 import java.util.Set;
@@ -43,8 +43,6 @@ public abstract class AbstractResource<T extends Resource<T>> implements Resourc
   protected final Options options;
   private volatile State state;
   private final Set<StateChangeListener> changeListeners = new CopyOnWriteArraySet<>();
-  private WriteConsistency writeConsistency = WriteConsistency.ATOMIC;
-  private ReadConsistency readConsistency = ReadConsistency.ATOMIC;
 
   protected AbstractResource(CopycatClient client, Properties options) {
     this(client, null, options);
@@ -110,30 +108,6 @@ public abstract class AbstractResource<T extends Resource<T>> implements Resourc
     return client.context();
   }
 
-  @Override
-  public WriteConsistency writeConsistency() {
-    return writeConsistency;
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public T with(WriteConsistency consistency) {
-    this.writeConsistency = Assert.notNull(consistency, "consistency");
-    return (T) this;
-  }
-
-  @Override
-  public ReadConsistency readConsistency() {
-    return readConsistency;
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public T with(ReadConsistency consistency) {
-    this.readConsistency = Assert.notNull(consistency, "consistency");
-    return (T) this;
-  }
-
   /**
    * Submits a write operation for this resource to the cluster.
    * <p>
@@ -146,7 +120,7 @@ public abstract class AbstractResource<T extends Resource<T>> implements Resourc
    * @throws NullPointerException if {@code command} is null
    */
   protected <R> CompletableFuture<R> submit(Command<R> command) {
-    return client.submit(new ResourceCommand<>(Assert.notNull(command, "command"), writeConsistency.level()));
+    return client.submit(new ResourceCommand<>(Assert.notNull(command, "command"), WriteConsistency.ATOMIC.level()));
   }
 
   /**
@@ -177,7 +151,7 @@ public abstract class AbstractResource<T extends Resource<T>> implements Resourc
    * @throws NullPointerException if {@code query} is null
    */
   protected <R> CompletableFuture<R> submit(Query<R> query) {
-    return client.submit(new ResourceQuery<>(Assert.notNull(query, "query"), readConsistency.level()));
+    return client.submit(new ResourceQuery<>(Assert.notNull(query, "query"), ReadConsistency.ATOMIC.level()));
   }
 
   /**

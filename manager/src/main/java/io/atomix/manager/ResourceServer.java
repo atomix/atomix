@@ -32,12 +32,12 @@ import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.copycat.server.CopycatServer;
 import io.atomix.copycat.server.storage.Storage;
 import io.atomix.manager.options.ServerOptions;
-import io.atomix.manager.state.ResourceManagerException;
-import io.atomix.manager.state.ResourceManagerState;
+import io.atomix.manager.internal.ResourceManagerException;
+import io.atomix.manager.internal.ResourceManagerState;
 import io.atomix.manager.util.ResourceManagerTypeResolver;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceType;
-import io.atomix.resource.util.ResourceRegistry;
+import io.atomix.resource.internal.ResourceRegistry;
 
 /**
  * Standalone Atomix server.

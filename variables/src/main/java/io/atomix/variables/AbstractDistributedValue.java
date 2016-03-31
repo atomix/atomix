@@ -18,7 +18,7 @@ package io.atomix.variables;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.AbstractResource;
 import io.atomix.resource.ReadConsistency;
-import io.atomix.variables.state.ValueCommands;
+import io.atomix.variables.internal.ValueCommands;
 
 import java.time.Duration;
 import java.util.Properties;
