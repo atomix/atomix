@@ -48,16 +48,6 @@ public abstract class AbstractTaskClient implements TaskClient {
   }
 
   @Override
-  public <T> AbstractTaskProducer<T> producer(Class<?> type) {
-    return producer(type, null);
-  }
-
-  @Override
-  public <T> AbstractTaskProducer<T> producer(Class<?> type, TaskProducer.Options options) {
-    return producer(type.getName(), options);
-  }
-
-  @Override
   public <T> AbstractTaskProducer<T> producer(String name) {
     return producer(name, null);
   }

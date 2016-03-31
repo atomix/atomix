@@ -16,7 +16,7 @@
 package io.atomix.group;
 
 import io.atomix.group.messaging.MessageService;
-import io.atomix.group.task.TaskQueue;
+import io.atomix.group.task.TaskService;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -46,7 +46,7 @@ public interface LocalMember extends Member {
   MessageService messages();
 
   @Override
-  TaskQueue tasks();
+  TaskService tasks();
 
   /**
    * Leaves the membership group.

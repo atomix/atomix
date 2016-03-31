@@ -30,10 +30,10 @@ import java.util.function.Consumer;
 public abstract class AbstractTaskConsumer<T> implements TaskConsumer<T> {
   protected final String name;
   protected volatile Options options;
-  protected final AbstractTaskQueue service;
+  protected final AbstractTaskService service;
   private volatile Listener<Task<T>> listener;
 
-  public AbstractTaskConsumer(String name, Options options, AbstractTaskQueue service) {
+  public AbstractTaskConsumer(String name, Options options, AbstractTaskService service) {
     this.name = name;
     this.options = options;
     this.service = service;

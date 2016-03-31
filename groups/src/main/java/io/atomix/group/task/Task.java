@@ -20,7 +20,7 @@ import io.atomix.group.DistributedGroup;
 /**
  * Represents a reliable task received by a member to be processed and acknowledged.
  * <p>
- * Tasks are {@link TaskQueue#submit(Object) submitted} by {@link DistributedGroup} users to any member of a group.
+ * Tasks are {@link TaskService#submit(Object) submitted} by {@link DistributedGroup} users to any member of a group.
  * Tasks are replicated and persisted within the Atomix cluster before being pushed to clients on a queue. Once a task
  * is received by a task listener, the task may be processed asynchronously and either {@link #ack() acknowledged} or
  * {@link #fail() failed} once processing is complete.

@@ -133,7 +133,7 @@ import java.util.function.Consumer;
  * Persistent members are not limited to a single node. If a node crashes, any persistent members that existed
  * on that node may rejoin the group on any other node. Persistent members rejoin simply by calling {@link #join(String)}
  * with the unique member ID. Once a persistent member has rejoined the group, its session will be updated and any
- * tasks remaining in the member's {@link TaskQueue} will be published to the member.
+ * tasks remaining in the member's {@link TaskService} will be published to the member.
  * <p>
  * Persistent member state is retained <em>only</em> inside the group's replicated state machine and not on clients.
  * From the perspective of {@code DistributedGroup} instances in a cluster, in the event that the node on which
@@ -241,7 +241,7 @@ import java.util.function.Consumer;
  * In addition to supporting direct messaging between members of the group, {@code DistributedGroup} provides
  * mechanisms for reliable, persistent messaging. Tasks are arbitrary objects that can be sent between members
  * of the group or to all members of a group by any node. In contrast to direct messaging, tasks are uni-directional
- * in that {@link TaskQueue task queues} only support sending a task but not receiving a reply. Tasks are
+ * in that {@link TaskService task queues} only support sending a task but not receiving a reply. Tasks are
  * submitted directly to the replicated state machine and once task submissions are complete are guaranteed to
  * be persisted either until received and acknowledged by their target member or until that member leaves the
  * cluster.
@@ -253,7 +253,7 @@ import java.util.function.Consumer;
  * member.
  * <p>
  * Tasks can be submitted to all members of a group or to a specific member through the object's associated
- * {@link TaskQueue}. Once a task has completed processing, the task acknowledgement will be sent back
+ * {@link TaskService}. Once a task has completed processing, the task acknowledgement will be sent back
  * to the sender. In the event a task fails processing, an exception will be thrown on the sender.
  * <pre>
  *   {@code

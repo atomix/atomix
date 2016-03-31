@@ -20,15 +20,7 @@ package io.atomix.group.task;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public interface TaskQueue extends TaskClient {
-
-  default <T> TaskConsumer<T> consumer(Class<?> type) {
-    return consumer(type.getName(), null);
-  }
-
-  default <T> TaskConsumer<T> consumer(Class<?> type, TaskConsumer.Options options) {
-    return consumer(type.getName(), options);
-  }
+public interface TaskService extends TaskClient {
 
   default <T> TaskConsumer<T> consumer(String name) {
     return consumer(name, null);

@@ -22,7 +22,7 @@ package io.atomix.group.task.internal;
  */
 public class MemberTaskConsumer<T> extends AbstractTaskConsumer<T> {
 
-  public MemberTaskConsumer(String name, Options options, AbstractTaskQueue service) {
+  public MemberTaskConsumer(String name, Options options, AbstractTaskService service) {
     super(name, options, service);
   }
 

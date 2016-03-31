@@ -22,14 +22,6 @@ package io.atomix.group.task;
  */
 public interface TaskClient {
 
-  default <T> TaskProducer<T> producer(Class<?> type) {
-    return producer(type.getName(), null);
-  }
-
-  default <T> TaskProducer<T> producer(Class<?> type, TaskProducer.Options options) {
-    return producer(type.getName(), options);
-  }
-
   default <T> TaskProducer<T> producer(String name) {
     return producer(name, null);
   }

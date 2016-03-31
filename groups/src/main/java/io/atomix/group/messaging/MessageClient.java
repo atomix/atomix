@@ -22,14 +22,6 @@ package io.atomix.group.messaging;
  */
 public interface MessageClient {
 
-  default <T> MessageProducer<T> producer(Class<?> type) {
-    return producer(type.getName(), null);
-  }
-
-  default <T> MessageProducer<T> producer(Class<?> type, MessageProducer.Options options) {
-    return producer(type.getName(), options);
-  }
-
   default <T> MessageProducer<T> producer(String name) {
     return producer(name, null);
   }

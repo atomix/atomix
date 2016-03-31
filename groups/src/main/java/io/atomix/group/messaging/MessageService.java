@@ -20,14 +20,6 @@ package io.atomix.group.messaging;
  */
 public interface MessageService extends MessageClient {
 
-  default <T> MessageConsumer<T> consumer(Class<?> type) {
-    return consumer(type.getName(), null);
-  }
-
-  default <T> MessageConsumer<T> consumer(Class<?> type, MessageConsumer.Options options) {
-    return consumer(type.getName(), options);
-  }
-
   default <T> MessageConsumer<T> consumer(String name) {
     return consumer(name, null);
   }

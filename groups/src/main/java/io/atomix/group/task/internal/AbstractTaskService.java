@@ -16,7 +16,7 @@
 package io.atomix.group.task.internal;
 
 import io.atomix.group.task.TaskConsumer;
-import io.atomix.group.task.TaskQueue;
+import io.atomix.group.task.TaskService;
 import io.atomix.group.util.Submitter;
 
 import java.util.Map;
@@ -27,24 +27,14 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public abstract class AbstractTaskQueue extends AbstractTaskClient implements TaskQueue {
+public abstract class AbstractTaskService extends AbstractTaskClient implements TaskService {
   private final Map<String, AbstractTaskConsumer> consumers = new ConcurrentHashMap<>();
 
-  public AbstractTaskQueue(Submitter submitter) {
+  public AbstractTaskService(Submitter submitter) {
     super(submitter);
   }
 
   protected abstract <T> AbstractTaskConsumer<T> createConsumer(String name, TaskConsumer.Options options);
-
-  @Override
-  public <T> AbstractTaskConsumer<T> consumer(Class<?> type) {
-    return consumer(type.getName(), null);
-  }
-
-  @Override
-  public <T> AbstractTaskConsumer<T> consumer(Class<?> type, TaskConsumer.Options options) {
-    return consumer(type.getName(), options);
-  }
 
   @Override
   public <T> AbstractTaskConsumer<T> consumer(String name) {

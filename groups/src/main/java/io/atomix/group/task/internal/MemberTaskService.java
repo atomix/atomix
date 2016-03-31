@@ -26,10 +26,10 @@ import io.atomix.group.util.Submitter;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class MemberTaskQueue extends AbstractTaskQueue {
+public class MemberTaskService extends AbstractTaskService {
   private final LocalMember member;
 
-  public MemberTaskQueue(LocalMember member, Submitter submitter) {
+  public MemberTaskService(LocalMember member, Submitter submitter) {
     super(submitter);
     this.member = Assert.notNull(member, "member");
   }
