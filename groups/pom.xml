@@ -23,8 +23,8 @@
   </parent>
 
   <packaging>bundle</packaging>
-  <artifactId>atomix-group</artifactId>
-  <name>Atomix Membership Group</name>
+  <artifactId>atomix-groups</artifactId>
+  <name>Atomix Membership Groups</name>
 
   <dependencies>
     <dependency>
