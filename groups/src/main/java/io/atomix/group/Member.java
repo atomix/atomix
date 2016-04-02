@@ -15,9 +15,7 @@
  */
 package io.atomix.group;
 
-import io.atomix.catalyst.transport.Address;
 import io.atomix.group.messaging.MessageClient;
-import io.atomix.group.task.TaskClient;
 
 /**
  * A {@link DistributedGroup} member representing a member of the group controlled by a local
@@ -38,24 +36,10 @@ public interface Member {
   String id();
 
   /**
-   * Returns the member address.
-   *
-   * @return The member address.
-   */
-  Address address();
-
-  /**
    * Returns the member message service.
    *
    * @return The member message service.
    */
   MessageClient messages();
-
-  /**
-   * Returns the member task service.
-   *
-   * @return The member task service.
-   */
-  TaskClient tasks();
 
 }

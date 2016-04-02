@@ -19,7 +19,6 @@ import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.group.Member;
 import io.atomix.group.messaging.internal.AbstractMessageClient;
-import io.atomix.group.task.internal.AbstractTaskClient;
 
 /**
  * Abstract group member.
@@ -28,12 +27,10 @@ import io.atomix.group.task.internal.AbstractTaskClient;
  */
 public abstract class AbstractGroupMember implements Member {
   protected final String memberId;
-  protected final Address address;
   protected final MembershipGroup group;
 
   public AbstractGroupMember(GroupMemberInfo info, MembershipGroup group) {
     this.memberId = info.memberId();
-    this.address = info.address();
     this.group = Assert.notNull(group, "group");
   }
 
@@ -43,14 +40,6 @@ public abstract class AbstractGroupMember implements Member {
   }
 
   @Override
-  public Address address() {
-    return address;
-  }
-
-  @Override
   public abstract AbstractMessageClient messages();
-
-  @Override
-  public abstract AbstractTaskClient tasks();
 
 }

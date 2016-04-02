@@ -16,10 +16,7 @@
 package io.atomix.group.internal;
 
 import io.atomix.group.LocalMember;
-import io.atomix.group.messaging.internal.ConnectionManager;
 import io.atomix.group.messaging.internal.MemberMessageService;
-import io.atomix.group.task.internal.MemberTaskService;
-import io.atomix.group.util.Submitter;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -30,22 +27,15 @@ import java.util.concurrent.CompletableFuture;
  */
 public class LocalGroupMember extends AbstractGroupMember implements LocalMember {
   private final MemberMessageService messages;
-  private final MemberTaskService tasks;
 
-  public LocalGroupMember(GroupMemberInfo info, MembershipGroup group, Submitter submitter, ConnectionManager connections) {
+  public LocalGroupMember(GroupMemberInfo info, MembershipGroup group, GroupSubmitter submitter) {
     super(info, group);
-    this.messages = new MemberMessageService(this, connections);
-    this.tasks = new MemberTaskService(this, submitter);
+    this.messages = new MemberMessageService(this, submitter);
   }
 
   @Override
   public MemberMessageService messages() {
     return messages;
-  }
-
-  @Override
-  public MemberTaskService tasks() {
-    return tasks;
   }
 
   @Override
@@ -60,7 +50,7 @@ public class LocalGroupMember extends AbstractGroupMember implements LocalMember
 
   @Override
   public String toString() {
-    return String.format("%s[id=%s, address=%s]", getClass().getSimpleName(), memberId, address);
+    return String.format("%s[id=%s]", getClass().getSimpleName(), memberId);
   }
 
 }

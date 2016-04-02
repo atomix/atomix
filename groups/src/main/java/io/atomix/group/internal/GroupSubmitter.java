@@ -13,28 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.group.util;
+package io.atomix.group.internal;
 
 import io.atomix.copycat.Command;
-import io.atomix.copycat.Query;
-import io.atomix.resource.ReadConsistency;
-import io.atomix.resource.WriteConsistency;
 
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Operation submitter.
+ * Group submitter.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public interface Submitter {
+@FunctionalInterface
+public interface GroupSubmitter {
 
+  /**
+   * Submit a command to the cluster.
+   *
+   * @param command The command to submit.
+   * @param <T> The command type.
+   * @param <U> The result type.
+   * @return A completable future to be completed with the command result.
+   */
   <T extends Command<U>, U> CompletableFuture<U> submit(T command);
-
-  <T extends Command<U>, U> CompletableFuture<U> submit(T command, WriteConsistency consistency);
-
-  <T extends Query<U>, U> CompletableFuture<U> submit(T query);
-
-  <T extends Query<U>, U> CompletableFuture<U> submit(T query, ReadConsistency consistency);
 
 }

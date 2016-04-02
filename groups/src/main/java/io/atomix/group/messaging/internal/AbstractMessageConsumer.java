@@ -60,8 +60,13 @@ public abstract class AbstractMessageConsumer<T> implements MessageConsumer<T> {
     return listener;
   }
 
-  void onMessage(Message<T> message) {
-    listener.accept(message);
+  /**
+   * Called when a message is received.
+   *
+   * @param task The received message.
+   */
+  public void onTask(GroupMessage<T> task) {
+    listener.accept(task.setSubmitter(service.submitter()));
   }
 
   @Override

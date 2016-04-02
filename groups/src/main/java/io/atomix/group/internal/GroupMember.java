@@ -16,10 +16,7 @@
 package io.atomix.group.internal;
 
 import io.atomix.group.Member;
-import io.atomix.group.messaging.internal.ConnectionManager;
 import io.atomix.group.messaging.internal.MemberMessageClient;
-import io.atomix.group.task.internal.MemberTaskClient;
-import io.atomix.group.util.Submitter;
 
 /**
  * Group member.
@@ -28,30 +25,15 @@ import io.atomix.group.util.Submitter;
  */
 public class GroupMember extends AbstractGroupMember implements Member {
   private final MemberMessageClient messages;
-  private final MemberTaskClient tasks;
 
-  public GroupMember(GroupMemberInfo info, MembershipGroup group, Submitter submitter, ConnectionManager connections) {
+  public GroupMember(GroupMemberInfo info, MembershipGroup group, GroupSubmitter submitter) {
     super(info, group);
-    this.messages = new MemberMessageClient(this, connections);
-    this.tasks = new MemberTaskClient(this, submitter);
+    this.messages = new MemberMessageClient(this, submitter);
   }
 
-  /**
-   * Returns the member message service.
-   *
-   * @return The member message service.
-   */
+  @Override
   public MemberMessageClient messages() {
     return messages;
-  }
-
-  /**
-   * Returns the member task service.
-   *
-   * @return The member task service.
-   */
-  public MemberTaskClient tasks() {
-    return tasks;
   }
 
   @Override
@@ -61,7 +43,7 @@ public class GroupMember extends AbstractGroupMember implements Member {
 
   @Override
   public String toString() {
-    return String.format("%s[id=%s, address=%s]", getClass().getSimpleName(), memberId, address);
+    return String.format("%s[id=%s]", getClass().getSimpleName(), memberId);
   }
 
 }

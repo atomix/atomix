@@ -15,13 +15,11 @@
  */
 package io.atomix.group.internal;
 
-import io.atomix.catalyst.transport.Address;
 import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.session.ServerSession;
 import io.atomix.copycat.server.session.SessionListener;
-import io.atomix.group.task.FailoverStrategy;
-import io.atomix.group.task.RoutingStrategy;
-import io.atomix.group.task.internal.GroupTask;
+import io.atomix.group.messaging.MessageProducer;
+import io.atomix.group.messaging.internal.GroupMessage;
 import io.atomix.resource.ResourceStateMachine;
 
 import java.time.Duration;
@@ -268,39 +266,39 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
   public void submit(Commit<GroupCommands.Submit> commit) {
     try {
       if (commit.operation().member() != null) {
-        // Create a task instance.
-        Task task = new Task(commit);
+        // Create a message instance.
+        Message message = new Message(commit);
 
         // Ensure that the member is a member of the group.
         Member member = members.get(commit.operation().member());
         if (member == null) {
-          task.fail();
-          task.close();
+          message.fail();
+          message.close();
         } else {
-          // Add the task to the member's task queue.
-          member.submit(task);
+          // Add the message to the member's message queue.
+          member.submit(message);
         }
-      } else if (commit.operation().routingStrategy() == RoutingStrategy.DIRECT) {
-        // Create a task instance.
-        Task task = new Task(commit);
+      } else if (commit.operation().dispatchPolicy() == MessageProducer.DispatchPolicy.RANDOM) {
+        // Create a message instance.
+        Message message = new Message(commit);
 
-        // If the members list is empty, fail the task submission.
+        // If the members list is empty, fail the message submission.
         if (members.isEmpty()) {
-          task.fail();
-          task.close();
+          message.fail();
+          message.close();
         } else {
           Member member = membersList.get(random.nextInt(membersList.size()));
 
-          // Add the task to the member's task queue.
-          member.submit(task);
+          // Add the message to the member's message queue.
+          member.submit(message);
         }
       } else {
-        // Create a task instance.
-        Task task = new Task(commit);
+        // Create a message instance.
+        Message message = new Message(commit);
 
         // Iterate through all the members in the group.
         for (Member member : members.values()) {
-          member.submit(task);
+          member.submit(message);
         }
       }
     } catch (Exception e) {
@@ -413,17 +411,15 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
     private final Commit<GroupCommands.Join> commit;
     private final long index;
     private final String memberId;
-    private final Address address;
     private final boolean persistent;
     private ServerSession session;
-    private final Queue<Task> tasks = new ArrayDeque<>();
-    private Task task;
+    private final Queue<Message> messages = new ArrayDeque<>();
+    private Message message;
 
     private Member(Commit<GroupCommands.Join> commit) {
       this.commit = commit;
       this.index = commit.index();
       this.memberId = commit.operation().member();
-      this.address = commit.operation().address();
       this.persistent = commit.operation().persist();
       this.session = commit.session();
     }
@@ -443,17 +439,10 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
     }
 
     /**
-     * Returns the member address.
-     */
-    public Address address() {
-      return address;
-    }
-
-    /**
      * Returns group member info.
      */
     public GroupMemberInfo info() {
-      return new GroupMemberInfo(index, memberId, address);
+      return new GroupMemberInfo(index, memberId);
     }
 
     /**
@@ -468,8 +457,8 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
      */
     public void setSession(ServerSession session) {
       this.session = session;
-      if (task != null && session != null && session.state().active()) {
-        session.publish("task", new GroupTask<>(task.index(), memberId, task.type(), task.task()));
+      if (message != null && session != null && session.state().active()) {
+        session.publish("message", new GroupMessage<>(message.index(), memberId, message.type(), message.message()));
       }
     }
 
@@ -481,85 +470,87 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
     }
 
     /**
-     * Submits the given task to be processed by the member.
+     * Submits the given message to be processed by the member.
      */
-    public void submit(Task task) {
-      if (this.task == null) {
-        this.task = task;
+    public void submit(Message message) {
+      if (this.message == null) {
+        this.message = message;
         if (session != null && session.state().active()) {
-          session.publish("task", new GroupTask<>(task.index(), memberId, task.type(), task.task()));
+          session.publish("message", new GroupMessage<>(message.index(), memberId, message.type(), message.message()));
         }
       } else {
-        tasks.add(task);
+        messages.add(message);
       }
     }
 
     /**
-     * Acknowledges processing of a task.
+     * Acknowledges processing of a message.
      */
     public void ack(long id) {
-      if (this.task.index() == id) {
-        Task task = this.task;
-        this.task = null;
-        if (task.complete()) {
-          task.ack();
-          task.close();
+      if (this.message.index() == id) {
+        Message message = this.message;
+        this.message = null;
+        if (message.complete()) {
+          message.ack();
+          message.close();
         }
         next();
       }
     }
 
     /**
-     * Fails processing of a task.
+     * Fails processing of a message.
      */
     public void fail(long id) {
-      if (this.task.index() == id) {
-        Task task = this.task;
-        this.task = null;
-        if (task.direct()) {
-          task.fail();
-          task.close();
-        } else if (task.complete()) {
-          task.ack();
-          task.close();
+      if (this.message.index() == id) {
+        Message message = this.message;
+        this.message = null;
+        if (message.direct()) {
+          message.fail();
+          message.close();
+        } else if (message.complete()) {
+          message.ack();
+          message.close();
         }
         next();
       }
     }
 
     /**
-     * Sends the next task in the queue.
+     * Sends the next message in the queue.
      */
     private void next() {
-      task = tasks.poll();
-      if (task != null) {
+      message = messages.poll();
+      if (message != null) {
         if (session != null && session.state().active()) {
-          session.publish("task", new GroupTask<>(task.index(), memberId, task.type(), task.task()));
+          session.publish("message", new GroupMessage<>(message.index(), memberId, message.type(), message.message()));
         }
       }
     }
 
     @Override
     public void close() {
-      Task task = this.task;
-      this.task = null;
-      if (task != null) {
-        if (task.commit.operation().routingStrategy() == RoutingStrategy.DIRECT && task.commit.operation().failoverStrategy() == FailoverStrategy.RESUBMIT) {
+      Message message = this.message;
+      this.message = null;
+      if (message != null) {
+        if (message.commit.operation().dispatchPolicy() == MessageProducer.DispatchPolicy.RANDOM
+          && message.commit.operation().deliveryPolicy() == MessageProducer.DeliveryPolicy.RETRY) {
           if (!members.isEmpty()) {
             Member member = membersList.get(random.nextInt(membersList.size()));
-            member.submit(task);
+            member.submit(message);
           } else {
-            task.fail();
-            task.close();
+            message.fail();
+            message.close();
           }
         } else {
-          task.fail();
-          task.close();
+          message.fail();
+          message.close();
         }
       }
 
-      tasks.forEach(t -> {
-        if (t.commit.operation().routingStrategy() == RoutingStrategy.DIRECT && task.commit.operation().failoverStrategy() == FailoverStrategy.RESUBMIT) {
+      messages.forEach(t -> {
+        if (t.commit.operation().dispatchPolicy() == MessageProducer.DispatchPolicy.RANDOM
+          && t.commit.operation().deliveryPolicy() == MessageProducer.DeliveryPolicy.RETRY) {
           if (!members.isEmpty()) {
             Member member = membersList.get(random.nextInt(membersList.size()));
             member.submit(t);
@@ -572,7 +563,7 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
           t.close();
         }
       });
-      tasks.clear();
+      messages.clear();
 
       commit.close();
     }
@@ -589,71 +580,71 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
   }
 
   /**
-   * Represents a group task.
+   * Represents a group message.
    */
-  private class Task implements AutoCloseable {
+  private class Message implements AutoCloseable {
     private final Commit<GroupCommands.Submit> commit;
 
-    private Task(Commit<GroupCommands.Submit> commit) {
+    private Message(Commit<GroupCommands.Submit> commit) {
       this.commit = commit;
     }
 
     /**
-     * Returns the task ID.
+     * Returns the message ID.
      */
     public long id() {
       return commit.operation().id();
     }
 
     /**
-     * Returns the task type.
+     * Returns the message type.
      */
     public String type() {
       return commit.operation().type();
     }
 
     /**
-     * Returns the task index.
+     * Returns the message index.
      */
     public long index() {
       return commit.index();
     }
 
     /**
-     * Returns a boolean indicating whether this is a direct task.
+     * Returns a boolean indicating whether this is a direct message.
      */
     public boolean direct() {
       return commit.operation().member() != null;
     }
 
     /**
-     * Returns the task session.
+     * Returns the message session.
      */
     public ServerSession session() {
       return commit.session();
     }
 
     /**
-     * Returns the task value.
+     * Returns the message value.
      */
-    public Object task() {
-      return commit.operation().task();
+    public Object message() {
+      return commit.operation().message();
     }
 
     /**
-     * Returns a boolean indicating whether the task is complete.
+     * Returns a boolean indicating whether the message is complete.
      */
     public boolean complete() {
       if (commit.operation().member() == null) {
         for (Member member : members.values()) {
-          if (member.task != null && member.task.index() <= index()) {
+          if (member.message != null && member.message.index() <= index()) {
             return false;
           }
         }
       } else {
         Member member = members.get(commit.operation().member());
         if (member != null) {
-          if (member.task != null && member.task.index() <= index()) {
+          if (member.message != null && member.message.index() <= index()) {
             return false;
           }
         }
@@ -662,7 +653,7 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
     }
 
     /**
-     * Sends an ack message back to the task submitter.
+     * Sends an ack message back to the message submitter.
      */
     public void ack() {
       if (session().state().active()) {
@@ -671,7 +662,7 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
     }
 
     /**
-     * Sends a fail message back to the task submitter.
+     * Sends a fail message back to the message submitter.
      */
     public void fail() {
       if (session().state().active()) {

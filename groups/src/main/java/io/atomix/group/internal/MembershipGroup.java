@@ -15,12 +15,9 @@
  */
 package io.atomix.group.internal;
 
-import io.atomix.catalyst.transport.Address;
-import io.atomix.catalyst.transport.Server;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.catalyst.util.Listeners;
-import io.atomix.catalyst.util.concurrent.Futures;
 import io.atomix.copycat.Command;
 import io.atomix.copycat.Query;
 import io.atomix.copycat.client.CopycatClient;
@@ -30,17 +27,10 @@ import io.atomix.group.Member;
 import io.atomix.group.election.Election;
 import io.atomix.group.election.internal.GroupElection;
 import io.atomix.group.messaging.MessageClient;
-import io.atomix.group.messaging.internal.ConnectionManager;
 import io.atomix.group.messaging.internal.GroupMessage;
 import io.atomix.group.messaging.internal.GroupMessageClient;
-import io.atomix.group.task.TaskClient;
-import io.atomix.group.task.internal.GroupTask;
-import io.atomix.group.task.internal.GroupTaskClient;
-import io.atomix.group.util.Submitter;
 import io.atomix.resource.AbstractResource;
-import io.atomix.resource.ReadConsistency;
 import io.atomix.resource.ResourceType;
-import io.atomix.resource.WriteConsistency;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -66,43 +56,14 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
   private final Listeners<Member> leaveListeners = new Listeners<>();
   private final Set<String> joining = new CopyOnWriteArraySet<>();
   private final DistributedGroup.Options options;
-  private final Address address;
-  private final Server server;
-  final ConnectionManager connections;
   private final GroupElection election = new GroupElection(this);
   private final GroupMessageClient messages;
-  private final GroupTaskClient tasks;
-  final Map<String, AbstractGroupMember> members = new ConcurrentHashMap<>();
-  private final Submitter submitter = new Submitter() {
-    @Override
-    public <T extends Command<U>, U> CompletableFuture<U> submit(T command) {
-      return MembershipGroup.this.submit(command);
-    }
-
-    @Override
-    public <T extends Command<U>, U> CompletableFuture<U> submit(T command, WriteConsistency consistency) {
-      return MembershipGroup.this.submit(command, consistency);
-    }
-
-    @Override
-    public <T extends Query<U>, U> CompletableFuture<U> submit(T query) {
-      return MembershipGroup.this.submit(query);
-    }
-
-    @Override
-    public <T extends Query<U>, U> CompletableFuture<U> submit(T query, ReadConsistency consistency) {
-      return MembershipGroup.this.submit(query, consistency);
-    }
-  };
+  private final Map<String, AbstractGroupMember> members = new ConcurrentHashMap<>();
 
   public MembershipGroup(CopycatClient client, Properties options) {
     super(client, new ResourceType(DistributedGroup.class), options);
     this.options = new DistributedGroup.Options(Assert.notNull(options, "options"));
-    this.address = this.options.getAddress();
-    this.server = client.transport().server();
-    this.connections = new ConnectionManager(client.transport().client(), client.context());
-    this.messages = new GroupMessageClient(connections);
-    this.tasks = new GroupTaskClient(submitter);
+    this.messages = new GroupMessageClient(this::submit);
   }
 
   @Override
@@ -123,11 +84,6 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
   @Override
   public MessageClient messages() {
     return messages;
-  }
-
-  @Override
-  public TaskClient tasks() {
-    return tasks;
   }
 
   @Override
@@ -160,14 +116,14 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
    */
   private CompletableFuture<LocalMember> join(String memberId, boolean persistent) {
     joining.add(memberId);
-    return submit(new GroupCommands.Join(memberId, address, persistent)).whenComplete((result, error) -> {
+    return submit(new GroupCommands.Join(memberId, persistent)).whenComplete((result, error) -> {
       if (error != null) {
         joining.remove(memberId);
       }
     }).thenApply(info -> {
       LocalGroupMember member = (LocalGroupMember) members.get(info.memberId());
       if (member == null) {
-        member = new LocalGroupMember(info, this, submitter, connections);
+        member = new LocalGroupMember(info, this, this::submit);
         members.put(info.memberId(), member);
       }
       return member;
@@ -196,43 +152,14 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
     return client.connect().thenApply(result -> {
       client.onEvent("join", this::onJoinEvent);
       client.onEvent("leave", this::onLeaveEvent);
-      client.onEvent("task", this::onTaskEvent);
+      client.onEvent("message", this::onMessageEvent);
       client.onEvent("ack", this::onAckEvent);
       client.onEvent("fail", this::onFailEvent);
       client.onEvent("term", this::onTermEvent);
       client.onEvent("elect", this::onElectEvent);
       return result;
-    }).thenCompose(v -> listen())
-      .thenCompose(v -> sync())
+    }).thenCompose(v -> sync())
       .thenApply(v -> this);
-  }
-
-  /**
-   * Starts the server.
-   */
-  private CompletableFuture<Void> listen() {
-    if (address != null) {
-      return server.listen(address, c -> {
-        c.handler(GroupMessage.class, this::onMessage);
-      });
-    }
-    return CompletableFuture.completedFuture(null);
-  }
-
-  /**
-   * Handles a group message.
-   */
-  private CompletableFuture<Object> onMessage(GroupMessage message) {
-    Member member = members.get(message.member());
-    if (member == null) {
-      return Futures.exceptionalFuture(new IllegalStateException("unknown member"));
-    }
-
-    if (member instanceof LocalMember) {
-      return ((LocalGroupMember) member).messages().handler().handle(message);
-    } else {
-      return Futures.exceptionalFuture(new IllegalStateException("not a local member"));
-    }
   }
 
   /**
@@ -243,7 +170,7 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
       for (GroupMemberInfo info : members) {
         AbstractGroupMember member = this.members.get(info.memberId());
         if (member == null) {
-          member = new GroupMember(info, this, submitter, connections);
+          member = new GroupMember(info, this, this::submit);
           this.members.put(member.id(), member);
         }
       }
@@ -256,7 +183,7 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
   private void onJoinEvent(GroupMemberInfo info) {
     AbstractGroupMember member;
     if (joining.remove(info.memberId())) {
-      member = new LocalGroupMember(info, this, submitter, connections);
+      member = new LocalGroupMember(info, this, this::submit);
       members.put(info.memberId(), member);
 
       // Trigger join listeners.
@@ -264,7 +191,7 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
     } else {
       member = members.get(info.memberId());
       if (member == null) {
-        member = new GroupMember(info, this, submitter, connections);
+        member = new GroupMember(info, this, this::submit);
         members.put(info.memberId(), member);
 
         // Trigger join listeners.
@@ -285,13 +212,13 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
   }
 
   /**
-   * Handles a task event received from the cluster.
+   * Handles a message event received from the cluster.
    */
   @SuppressWarnings("unchecked")
-  private void onTaskEvent(GroupTask task) {
-    AbstractGroupMember localMember = members.get(task.member());
+  private void onMessageEvent(GroupMessage message) {
+    AbstractGroupMember localMember = members.get(message.member());
     if (localMember != null && localMember instanceof LocalMember) {
-      ((LocalGroupMember) localMember).tasks().consumer(task.type()).onTask(task);
+      ((LocalGroupMember) localMember).messages().consumer(message.type()).onTask(message);
     }
   }
 
@@ -302,10 +229,10 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
     if (submit.member() != null) {
       AbstractGroupMember member = members.get(submit.member());
       if (member != null) {
-        member.tasks().producer(submit.type()).onAck(submit.id());
+        member.messages().producer(submit.type()).onAck(submit.id());
       }
     } else {
-      tasks.producer(submit.type()).onAck(submit.id());
+      messages.producer(submit.type()).onAck(submit.id());
     }
   }
 
@@ -316,10 +243,10 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
     if (submit.member() != null) {
       AbstractGroupMember member = members.get(submit.member());
       if (member != null) {
-        member.tasks().producer(submit.type()).onFail(submit.id());
+        member.messages().producer(submit.type()).onFail(submit.id());
       }
     } else {
-      tasks.producer(submit.type()).onFail(submit.id());
+      messages.producer(submit.type()).onFail(submit.id());
     }
   }
 

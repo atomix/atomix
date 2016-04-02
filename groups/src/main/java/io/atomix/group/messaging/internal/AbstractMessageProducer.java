@@ -15,7 +15,13 @@
  */
 package io.atomix.group.messaging.internal;
 
+import io.atomix.group.internal.GroupCommands;
+import io.atomix.group.messaging.MessageFailedException;
 import io.atomix.group.messaging.MessageProducer;
+
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Abstract message producer.
@@ -24,10 +30,12 @@ import io.atomix.group.messaging.MessageProducer;
  */
 public abstract class AbstractMessageProducer<T> implements MessageProducer<T> {
   protected final String name;
-  protected volatile MessageProducer.Options options;
+  protected volatile Options options;
   protected final AbstractMessageClient client;
+  private long messageId;
+  private final Map<Long, CompletableFuture<Void>> messageFutures = new ConcurrentHashMap<>();
 
-  protected AbstractMessageProducer(String name, MessageProducer.Options options, AbstractMessageClient client) {
+  protected AbstractMessageProducer(String name, Options options, AbstractMessageClient client) {
     this.name = name;
     this.options = options;
     this.client = client;
@@ -47,6 +55,48 @@ public abstract class AbstractMessageProducer<T> implements MessageProducer<T> {
    */
   void setOptions(Options options) {
     this.options = options;
+  }
+
+  /**
+   * Called when a message is acknowledged.
+   *
+   * @param messageId The message ID.
+   */
+  public void onAck(long messageId) {
+    CompletableFuture<Void> messageFuture = messageFutures.remove(messageId);
+    if (messageFuture != null) {
+      messageFuture.complete(null);
+    }
+  }
+
+  /**
+   * Called when a message is failed.
+   *
+   * @param messageId The message ID.
+   */
+  public void onFail(long messageId) {
+    CompletableFuture<Void> messageFuture = messageFutures.remove(messageId);
+    if (messageFuture != null) {
+      messageFuture.completeExceptionally(new MessageFailedException("message failed"));
+    }
+  }
+
+  /**
+   * Submits the message to the given member.
+   */
+  protected CompletableFuture<Void> send(String member, T message) {
+    CompletableFuture<Void> future = new CompletableFuture<>();
+    final long messageId = ++this.messageId;
+    messageFutures.put(messageId, future);
+    client.submitter().submit(new GroupCommands.Submit(member, name, messageId, message, options.getDispatchPolicy(), options.getDeliveryPolicy())).whenComplete((result, error) -> {
+      if (error != null) {
+        CompletableFuture<Void> messageFuture = messageFutures.remove(messageId);
+        if (messageFuture != null) {
+          messageFuture.completeExceptionally(error);
+        }
+      }
+    });
+    return future;
   }
 
   @Override

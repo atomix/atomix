@@ -19,7 +19,6 @@ import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
 import io.atomix.catalyst.serializer.Serializer;
-import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.util.Assert;
 
 /**
@@ -30,15 +29,13 @@ import io.atomix.catalyst.util.Assert;
 public class GroupMemberInfo implements CatalystSerializable {
   private long index;
   private String memberId;
-  private Address address;
 
   public GroupMemberInfo() {
   }
 
-  public GroupMemberInfo(long index, String memberId, Address address) {
+  public GroupMemberInfo(long index, String memberId) {
     this.index = Assert.argNot(index, index <= 0, "index must be positive");
     this.memberId = Assert.notNull(memberId, "memberId");
-    this.address = address;
   }
 
   /**
@@ -59,31 +56,20 @@ public class GroupMemberInfo implements CatalystSerializable {
     return memberId;
   }
 
-  /**
-   * Returns the member server address.
-   *
-   * @return The member address, or {@code null} if the member wasn't configured with a server address.
-   */
-  public Address address() {
-    return address;
-  }
-
   @Override
   public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
     buffer.writeLong(index).writeString(memberId);
-    serializer.writeObject(address, buffer);
   }
 
   @Override
   public void readObject(BufferInput<?> buffer, Serializer serializer) {
     index = buffer.readLong();
     memberId = buffer.readString();
-    address = serializer.readObject(buffer);
   }
 
   @Override
   public String toString() {
-    return String.format("%s[member=%s, address=%s]", getClass().getSimpleName(), memberId, address);
+    return String.format("%s[member=%s]", getClass().getSimpleName(), memberId);
   }
 
 }

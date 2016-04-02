@@ -16,6 +16,8 @@
 package io.atomix.group.messaging;
 
 /**
+ * Task queue service.
+ *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public interface MessageService extends MessageClient {

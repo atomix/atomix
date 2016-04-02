@@ -16,6 +16,7 @@
 package io.atomix.group.messaging.internal;
 
 import io.atomix.catalyst.util.Assert;
+import io.atomix.group.internal.GroupSubmitter;
 import io.atomix.group.messaging.MessageClient;
 import io.atomix.group.messaging.MessageProducer;
 
@@ -28,27 +29,32 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public abstract class AbstractMessageClient implements MessageClient {
-  private final ConnectionManager connections;
+  private final GroupSubmitter submitter;
   private final Map<String, AbstractMessageProducer> producers = new ConcurrentHashMap<>();
 
-  protected AbstractMessageClient(ConnectionManager connections) {
-    this.connections = Assert.notNull(connections, "connections");
+  protected AbstractMessageClient(GroupSubmitter submitter) {
+    this.submitter = Assert.notNull(submitter, "submitter");
   }
 
   protected abstract <T> AbstractMessageProducer<T> createProducer(String name, MessageProducer.Options options);
 
   /**
-   * Returns the client connections.
+   * Returns the client submitter.
    *
-   * @return The client connections.
+   * @return The client submitter.
    */
-  ConnectionManager connections() {
-    return connections;
+  GroupSubmitter submitter() {
+    return submitter;
+  }
+
+  @Override
+  public <T> AbstractMessageProducer<T> producer(String name) {
+    return producer(name, null);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T> MessageProducer<T> producer(String name, MessageProducer.Options options) {
+  public <T> AbstractMessageProducer<T> producer(String name, MessageProducer.Options options) {
     AbstractMessageProducer<T> producer = producers.get(name);
     if (producer == null) {
       synchronized (producers) {

@@ -16,10 +16,8 @@
 package io.atomix.group;
 
 import io.atomix.catalyst.transport.Address;
-import io.atomix.group.task.FailoverStrategy;
-import io.atomix.group.task.RoutingStrategy;
-import io.atomix.group.task.TaskFailedException;
-import io.atomix.group.task.TaskProducer;
+import io.atomix.group.messaging.MessageFailedException;
+import io.atomix.group.messaging.MessageProducer;
 import io.atomix.testing.AbstractCopycatTest;
 import org.testng.annotations.Test;
 
@@ -216,7 +214,7 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
   }
 
   /**
-   * Tests sending message between members.
+   * Tests direct member messages.
    */
   public void testDirectMessage() throws Throwable {
     createServers(3);
@@ -224,30 +222,24 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     DistributedGroup group1 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6000)));
     DistributedGroup group2 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6001)));
 
-    group1.join().thenAccept(member -> {
-      member.messages().consumer("foo").onMessage(message -> {
-        threadAssertEquals(message.body(), "Hello world!");
-        message.reply("bar");
-        resume();
-      });
-      resume();
-    });
+    LocalMember member = group2.join().get(10, TimeUnit.SECONDS);
 
-    await(5000);
-
+    assertEquals(group1.members().size(), 1);
     assertEquals(group2.members().size(), 1);
-    group2.members().iterator().next().messages().producer("foo").send("Hello world!").thenAccept(result -> {
-      threadAssertEquals(result, "bar");
+
+    member.messages().consumer("test").onMessage(message -> {
+      threadAssertEquals(message.message(), "Hello world!");
+      message.ack();
       resume();
     });
-
+    group1.member(member.id()).messages().producer("test").send("Hello world!").thenRun(this::resume);
     await(10000, 2);
   }
 
   /**
-   * Tests direct member tasks.
+   * Tests failing a direct message.
    */
-  public void testDirectTask() throws Throwable {
+  public void testDirectMessageFail() throws Throwable {
     createServers(3);
 
     DistributedGroup group1 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6000)));
@@ -258,19 +250,22 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     assertEquals(group1.members().size(), 1);
     assertEquals(group2.members().size(), 1);
 
-    member.tasks().consumer("test").onTask(task -> {
-      threadAssertEquals(task.task(), "Hello world!");
-      task.ack();
+    member.messages().consumer("test").onMessage(message -> {
+      threadAssertEquals(message.message(), "Hello world!");
+      message.fail();
       resume();
     });
-    group1.member(member.id()).tasks().producer("test").submit("Hello world!").thenRun(this::resume);
+    group1.member(member.id()).messages().producer("test").send("Hello world!").whenComplete((result, error) -> {
+      threadAssertTrue(error instanceof MessageFailedException);
+      resume();
+    });
     await(10000, 2);
   }
 
   /**
-   * Tests failing a direct task.
+   * Tests that a message is failed when a member leaves before the message is processed.
    */
-  public void testDirectTaskFail() throws Throwable {
+  public void testDirectMessageFailOnLeave() throws Throwable {
     createServers(3);
 
     DistributedGroup group1 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6000)));
@@ -281,48 +276,22 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     assertEquals(group1.members().size(), 1);
     assertEquals(group2.members().size(), 1);
 
-    member.tasks().consumer("test").onTask(task -> {
-      threadAssertEquals(task.task(), "Hello world!");
-      task.fail();
-      resume();
-    });
-    group1.member(member.id()).tasks().producer("test").submit("Hello world!").whenComplete((result, error) -> {
-      threadAssertTrue(error instanceof TaskFailedException);
-      resume();
-    });
-    await(10000, 2);
-  }
-
-  /**
-   * Tests that a task is failed when a member leaves before the task is processed.
-   */
-  public void testDirectTaskFailOnLeave() throws Throwable {
-    createServers(3);
-
-    DistributedGroup group1 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6000)));
-    DistributedGroup group2 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6001)));
-
-    LocalMember member = group2.join().get(10, TimeUnit.SECONDS);
-
-    assertEquals(group1.members().size(), 1);
-    assertEquals(group2.members().size(), 1);
-
-    member.tasks().consumer("test").onTask(task -> {
+    member.messages().consumer("test").onMessage(message -> {
       member.leave().thenRun(this::resume);
       resume();
     });
 
-    group1.member(member.id()).tasks().producer("test").submit("Hello world!").whenComplete((result, error) -> {
-      threadAssertTrue(error instanceof TaskFailedException);
+    group1.member(member.id()).messages().producer("test").send("Hello world!").whenComplete((result, error) -> {
+      threadAssertTrue(error instanceof MessageFailedException);
       resume();
     });
     await(10000, 3);
   }
 
   /**
-   * Tests fan-out member tasks.
+   * Tests fan-out member messages.
    */
-  public void testGroupTask() throws Throwable {
+  public void testGroupMessage() throws Throwable {
     createServers(3);
 
     DistributedGroup group1 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6000)));
@@ -335,26 +304,30 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     assertEquals(group1.members().size(), 3);
     assertEquals(group2.members().size(), 3);
 
-    member1.tasks().consumer("test").onTask(task -> {
-      threadAssertEquals(task.task(), "Hello world!");
-      task.ack();
+    member1.messages().consumer("test").onMessage(message -> {
+      threadAssertEquals(message.message(), "Hello world!");
+      message.ack();
       resume();
     });
-    member2.tasks().consumer("test").onTask(task -> {
-      threadAssertEquals(task.task(), "Hello world!");
-      task.ack();
+    member2.messages().consumer("test").onMessage(message -> {
+      threadAssertEquals(message.message(), "Hello world!");
+      message.ack();
       resume();
     });
-    member3.tasks().consumer("test").onTask(task -> {
-      threadAssertEquals(task.task(), "Hello world!");
-      task.ack();
+    member3.messages().consumer("test").onMessage(message -> {
+      threadAssertEquals(message.message(), "Hello world!");
+      message.ack();
       resume();
     });
-    group1.tasks().producer("test").submit("Hello world!").thenRun(this::resume);
+    group1.messages().producer("test").send("Hello world!").thenRun(this::resume);
     await(10000, 4);
   }
 
-  public void testGroupTaskFailOnLeave() throws Throwable {
+  /**
+   * Tests that a {@code ONCE} message is failed when a member leaves the group without acknowledging
+   * the message.
+   */
+  public void testGroupMessageFailOnLeave() throws Throwable {
     createServers(3);
 
     DistributedGroup group1 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6000)));
@@ -366,27 +339,31 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     assertEquals(group1.members().size(), 2);
     assertEquals(group2.members().size(), 2);
 
-    member1.tasks().consumer("test").onTask(task -> {
-      threadAssertEquals(task.task(), "Hello world!");
+    member1.messages().consumer("test").onMessage(message -> {
+      threadAssertEquals(message.message(), "Hello world!");
       member1.leave();
       resume();
     });
-    member2.tasks().consumer("test").onTask(task -> {
-      threadAssertEquals(task.task(), "Hello world!");
+    member2.messages().consumer("test").onMessage(message -> {
+      threadAssertEquals(message.message(), "Hello world!");
       member2.leave();
       resume();
     });
 
-    TaskProducer.Options options = new TaskProducer.Options()
-      .withRoutingStrategy(RoutingStrategy.DIRECT);
-    group1.tasks().producer("test", options).submit("Hello world!").whenComplete((result, error) -> {
+    MessageProducer.Options options = new MessageProducer.Options()
+      .withDispatchPolicy(MessageProducer.DispatchPolicy.RANDOM);
+    group1.messages().producer("test", options).send("Hello world!").whenComplete((result, error) -> {
       threadAssertNotNull(error);
       resume();
     });
     await(10000, 2);
   }
 
-  public void testGroupTaskResubmitOnLeave() throws Throwable {
+  /**
+   * Tests resubmitting a message to a group member when the member to which the message
+   * was submitted leaves the group.
+   */
+  public void testGroupMessageResubmitOnLeave() throws Throwable {
     createServers(3);
 
     DistributedGroup group1 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6000)));
@@ -399,29 +376,29 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     assertEquals(group2.members().size(), 2);
 
     AtomicBoolean left = new AtomicBoolean();
-    member1.tasks().consumer("test").onTask(task -> {
-      threadAssertEquals(task.task(), "Hello world!");
+    member1.messages().consumer("test").onMessage(message -> {
+      threadAssertEquals(message.message(), "Hello world!");
       if (left.compareAndSet(false, true)) {
         member1.leave();
       } else {
-        task.ack();
+        message.ack();
       }
       resume();
     });
-    member2.tasks().consumer("test").onTask(task -> {
-      threadAssertEquals(task.task(), "Hello world!");
+    member2.messages().consumer("test").onMessage(message -> {
+      threadAssertEquals(message.message(), "Hello world!");
       if (left.compareAndSet(false, true)) {
         member1.leave();
       } else {
-        task.ack();
+        message.ack();
       }
       resume();
     });
 
-    TaskProducer.Options options = new TaskProducer.Options()
-      .withRoutingStrategy(RoutingStrategy.DIRECT)
-      .withFailoverStrategy(FailoverStrategy.RESUBMIT);
-    group1.tasks().producer("test", options).submit("Hello world!").thenRun(this::resume);
+    MessageProducer.Options options = new MessageProducer.Options()
+      .withDispatchPolicy(MessageProducer.DispatchPolicy.RANDOM)
+      .withDeliveryPolicy(MessageProducer.DeliveryPolicy.RETRY);
+    group1.messages().producer("test", options).send("Hello world!").thenRun(this::resume);
     await(10000, 3);
   }
 

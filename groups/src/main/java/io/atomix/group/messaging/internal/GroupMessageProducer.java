@@ -13,17 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.group.task.internal;
+package io.atomix.group.messaging.internal;
+
+import java.util.concurrent.CompletableFuture;
 
 /**
- * Member message consumer.
+ * Group message producer.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class MemberTaskConsumer<T> extends AbstractTaskConsumer<T> {
+public class GroupMessageProducer<T> extends AbstractMessageProducer<T> {
 
-  public MemberTaskConsumer(String name, Options options, AbstractTaskService service) {
-    super(name, options, service);
+  public GroupMessageProducer(String name, Options options, AbstractMessageClient client) {
+    super(name, options, client);
+  }
+
+  @Override
+  public CompletableFuture<Void> send(T message) {
+    return send(null, message);
   }
 
 }

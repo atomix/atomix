@@ -33,8 +33,8 @@ public class MemberMessageProducer<T> extends AbstractMessageProducer<T> {
   }
 
   @Override
-  public <U> CompletableFuture<U> send(T message) {
-    return client.connections().getConnection(member.address()).thenCompose(connection -> connection.send(new GroupMessage<>(member.id(), name, message)));
+  public CompletableFuture<Void> send(T message) {
+    return send(member.id(), message);
   }
 
 }

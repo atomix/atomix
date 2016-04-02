@@ -23,10 +23,10 @@ import io.atomix.catalyst.util.ConfigurationException;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.group.election.Election;
 import io.atomix.group.election.Term;
-import io.atomix.group.messaging.MessageService;
+import io.atomix.group.internal.DistributedGroupFactory;
+import io.atomix.group.messaging.Message;
 import io.atomix.group.messaging.MessageClient;
-import io.atomix.group.task.*;
-import io.atomix.group.util.DistributedGroupFactory;
+import io.atomix.group.messaging.MessageService;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceTypeInfo;
 
@@ -117,7 +117,7 @@ import java.util.function.Consumer;
  * notifications of changes in the group structure.
  * <h2>Persistent members</h2>
  * {@code DistributedGroup} supports a concept of persistent members that requires members to <em>explicitly</em>
- * {@link LocalMember#leave() leave} the group to be removed from it. Persistent member {@link Task tasks} will remain
+ * {@link LocalMember#leave() leave} the group to be removed from it. Persistent member {@link Message tasks} will remain
  * in a failed member's queue until the member recovers.
  * <p>
  * In order to support recovery, persistent members must be configured with a user-provided {@link Member#id() member ID}.
@@ -133,7 +133,7 @@ import java.util.function.Consumer;
  * Persistent members are not limited to a single node. If a node crashes, any persistent members that existed
  * on that node may rejoin the group on any other node. Persistent members rejoin simply by calling {@link #join(String)}
  * with the unique member ID. Once a persistent member has rejoined the group, its session will be updated and any
- * tasks remaining in the member's {@link TaskService} will be published to the member.
+ * tasks remaining in the member's {@link MessageService} will be published to the member.
  * <p>
  * Persistent member state is retained <em>only</em> inside the group's replicated state machine and not on clients.
  * From the perspective of {@code DistributedGroup} instances in a cluster, in the event that the node on which
@@ -237,87 +237,6 @@ import java.util.function.Consumer;
  * It's critical that message listeners reply to messages, otherwise futures will be held in memory on the
  * sending side of the {@link MessageService} until the sender or receiver is removed from the
  * group.
- * <h2>Task queues</h2>
- * In addition to supporting direct messaging between members of the group, {@code DistributedGroup} provides
- * mechanisms for reliable, persistent messaging. Tasks are arbitrary objects that can be sent between members
- * of the group or to all members of a group by any node. In contrast to direct messaging, tasks are uni-directional
- * in that {@link TaskService task queues} only support sending a task but not receiving a reply. Tasks are
- * submitted directly to the replicated state machine and once task submissions are complete are guaranteed to
- * be persisted either until received and acknowledged by their target member or until that member leaves the
- * cluster.
- * <p>
- * Task processing is event-driven and requires no polling on the receiving side of a task queue. When a task
- * is received and persisted by the replicated state machine, if the member to which the task is sent is available
- * for processing, the task will be pushed to that member through its open session. If the member is already
- * processing another task, the task will be queued until all preceding tasks have been acked by the receiving
- * member.
- * <p>
- * Tasks can be submitted to all members of a group or to a specific member through the object's associated
- * {@link TaskService}. Once a task has completed processing, the task acknowledgement will be sent back
- * to the sender. In the event a task fails processing, an exception will be thrown on the sender.
- * <pre>
- *   {@code
- *   DistributedGroup group = atomix.getGroup("task-group").get();
- *
- *   // Submit a task to all members of the group
- *   group.tasks().submit("doIt").whenComplete((result, error) -> {
- *     if (error == null) {
- *       // All available members succeeded
- *     } else {
- *       // At least one member failed
- *     }
- *   });
- *
- *   // Submit a task to a specific member of the group when it joins
- *   group.onJoin(member -> {
- *     member.tasks().submit("doSetupTasks").whenComplete((result, error) -> {
- *       if (error == null) {
- *         // The member received and processed the task
- *       } else {
- *         // The member did not receive the task or failed it
- *       }
- *     });
- *   });
- *   }
- * </pre>
- * When submitting a task to all members of the group via the group's {@link #tasks() task queue}, the task will
- * be enqueued for processing by all current members of the group. However, in the event an ephemeral member
- * leaves the group (or crashes) during the processing of the task, the task will simply be skipped for that member.
- * To ensure a member receives a task through a failure, use persistent members.
- * <p>
- * Tasks sent directly to specific members behave a bit differently. In the event that an ephemeral member leaves
- * the group during the execution of a task, the task will be explicitly failed and an error will be returned
- * to the task submitter.
- * <p>
- * Tasks are processed by {@link LocalMember}s by registering a {@link TaskConsumer#onTask(Consumer) task listener}
- * on the member's queue. Once a member is done processing a task, it must {@link Task#ack() ack} the task to
- * fetch the next one from the cluster.
- * <pre>
- *   {@code
- *   LocalGroupMember member = group.join("member-a").get();
- *   member.tasks().onTask(task -> {
- *     doSetup();
- *     task.ack();
- *   });
- *   }
- * </pre>
- * Task receivers are free to take as long as is necessary to process a task. Task callbacks may be asynchronous.
- * Members need only call {@link Task#ack()} once processing is complete. Tasks can also be explicitly
- * {@link Task#fail() fail}ed by receivers. Task failures will be sent back to the sender in the form of
- * a {@link TaskFailedException}.
- * <pre>
- *   {@code
- *   member.tasks().onTask(task -> {
- *     doSetupAsync().whenComplete((result, error) -> {
- *       if (error == null) {
- *         task.ack();
- *       } else {
- *         task.fail();
- *       }
- *     });
- *   });
- *   }
- * </pre>
  * <h3>Serialization</h3>
  * Users are responsible for ensuring the serializability of tasks, messages, and properties set on the group
  * and members of the group. Serialization is controlled by the group's {@link io.atomix.catalyst.serializer.Serializer}
@@ -489,17 +408,6 @@ public interface DistributedGroup extends Resource<DistributedGroup> {
    * @return The group message client.
    */
   MessageClient messages();
-
-  /**
-   * Returns the group task queue.
-   * <p>
-   * The returned task queue is specific to this group's set of members. Tasks {@link TaskProducer#submit(Object) submitted}
-   * to the queue will be submitted only to the members present in this group's {@link #members() members} list and not
-   * to any additional members present in parent groups.
-   *
-   * @return The group task queue.
-   */
-  TaskClient tasks();
 
   /**
    * Gets a group member by ID.

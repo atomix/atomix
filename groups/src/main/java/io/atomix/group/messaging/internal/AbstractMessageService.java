@@ -15,6 +15,7 @@
  */
 package io.atomix.group.messaging.internal;
 
+import io.atomix.group.internal.GroupSubmitter;
 import io.atomix.group.messaging.MessageConsumer;
 import io.atomix.group.messaging.MessageService;
 
@@ -28,17 +29,21 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public abstract class AbstractMessageService extends AbstractMessageClient implements MessageService {
   private final Map<String, AbstractMessageConsumer> consumers = new ConcurrentHashMap<>();
-  private final MessageHandler handler = new MessageHandler(consumers);
 
-  public AbstractMessageService(ConnectionManager connections) {
-    super(connections);
+  public AbstractMessageService(GroupSubmitter submitter) {
+    super(submitter);
   }
 
   protected abstract <T> AbstractMessageConsumer<T> createConsumer(String name, MessageConsumer.Options options);
 
   @Override
+  public <T> AbstractMessageConsumer<T> consumer(String name) {
+    return consumer(name, null);
+  }
+
+  @Override
   @SuppressWarnings("unchecked")
-  public <T> MessageConsumer<T> consumer(String name, MessageConsumer.Options options) {
+  public <T> AbstractMessageConsumer<T> consumer(String name, MessageConsumer.Options options) {
     AbstractMessageConsumer<T> consumer = consumers.get(name);
     if (consumer == null) {
       synchronized (consumers) {
@@ -54,15 +59,6 @@ public abstract class AbstractMessageService extends AbstractMessageClient imple
       consumer.setOptions(options);
     }
     return consumer;
-  }
-
-  /**
-   * Returns the service message handler.
-   *
-   * @return The service message handler.
-   */
-  public MessageHandler handler() {
-    return handler;
   }
 
   /**

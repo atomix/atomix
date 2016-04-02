@@ -19,6 +19,8 @@ import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
 import io.atomix.catalyst.serializer.Serializer;
+import io.atomix.group.internal.GroupCommands;
+import io.atomix.group.internal.GroupSubmitter;
 import io.atomix.group.messaging.Message;
 
 import java.util.concurrent.CompletableFuture;
@@ -29,75 +31,87 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class GroupMessage<T> implements Message<T>, CatalystSerializable {
+  private long id;
   private String member;
-  private String topic;
-  private T body;
-  private CompletableFuture<Object> future;
+  private String type;
+  private T value;
+  private transient GroupSubmitter submitter;
 
   public GroupMessage() {
   }
 
-  public GroupMessage(String member, String topic, T body) {
+  public GroupMessage(long id, String member, String type, T value) {
+    this.id = id;
     this.member = member;
-    this.topic = topic;
-    this.body = body;
-  }
-
-  GroupMessage<T> setFuture(CompletableFuture<Object> future) {
-    this.future = future;
-    return this;
+    this.type = type;
+    this.value = value;
   }
 
   /**
-   * Returns the member to which the message was sent.
+   * Sets the message submitter.
+   */
+  GroupMessage<T> setSubmitter(GroupSubmitter submitter) {
+    this.submitter = submitter;
+    return this;
+  }
+
+  @Override
+  public long id() {
+    return id;
+  }
+
+  /**
+   * Returns the member to which the message is enqueued.
    *
-   * @return The member to which the message was sent.
+   * @return The message member.
    */
   public String member() {
     return member;
   }
 
   /**
-   * Returns the message topic.
+   * Returns the message type.
    *
-   * @return The message topic.
+   * @return The message type.
    */
-  public String topic() {
-    return topic;
+  public String type() {
+    return type;
   }
 
   @Override
-  public T body() {
-    return body;
+  public T message() {
+    return value;
   }
 
   @Override
-  public void reply(Object reply) {
-    future.complete(reply);
+  public CompletableFuture<Void> ack() {
+    return submitter.submit(new GroupCommands.Ack(member, id, true));
   }
 
   @Override
-  public void ack() {
-    reply(null);
+  public CompletableFuture<Void> fail() {
+    return submitter.submit(new GroupCommands.Ack(member, id, false));
   }
 
   @Override
   public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
+    buffer.writeLong(id);
     buffer.writeString(member);
-    buffer.writeString(topic);
-    serializer.writeObject(body, buffer);
+    buffer.writeString(type);
+    serializer.writeObject(value, buffer);
   }
 
   @Override
   public void readObject(BufferInput<?> buffer, Serializer serializer) {
+    id = buffer.readLong();
     member = buffer.readString();
-    topic = buffer.readString();
-    body = serializer.readObject(buffer);
+    type = buffer.readString();
+    value = serializer.readObject(buffer);
   }
 
   @Override
   public String toString() {
-    return String.format("%s[member=%s, topic=%s]", getClass().getSimpleName(), member, topic);
+    return String.format("%s[member=%s]", getClass().getSimpleName(), member);
   }
 
 }

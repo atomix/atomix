@@ -20,6 +20,8 @@ import io.atomix.catalyst.util.Listener;
 import java.util.function.Consumer;
 
 /**
+ * Message consumer.
+ *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public interface MessageConsumer<T> extends AutoCloseable {
@@ -30,6 +32,12 @@ public interface MessageConsumer<T> extends AutoCloseable {
   class Options {
   }
 
+  /**
+   * Registers a callback for handling message messages.
+   *
+   * @param callback The message listener callback.
+   * @return The message listener.
+   */
   Listener<Message<T>> onMessage(Consumer<Message<T>> callback);
 
   @Override

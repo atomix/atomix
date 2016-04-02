@@ -17,6 +17,7 @@ package io.atomix.group.messaging.internal;
 
 import io.atomix.catalyst.util.Assert;
 import io.atomix.group.Member;
+import io.atomix.group.internal.GroupSubmitter;
 import io.atomix.group.messaging.MessageProducer;
 
 /**
@@ -27,8 +28,8 @@ import io.atomix.group.messaging.MessageProducer;
 public class MemberMessageClient extends AbstractMessageClient {
   private final Member member;
 
-  public MemberMessageClient(Member member, ConnectionManager connections) {
-    super(connections);
+  public MemberMessageClient(Member member, GroupSubmitter submitter) {
+    super(submitter);
     this.member = Assert.notNull(member, "member");
   }
 

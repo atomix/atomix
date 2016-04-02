@@ -21,14 +21,11 @@ import io.atomix.catalyst.serializer.CatalystSerializable;
 import io.atomix.catalyst.serializer.SerializableTypeResolver;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.serializer.SerializerRegistry;
-import io.atomix.catalyst.transport.Address;
 import io.atomix.copycat.Command;
 import io.atomix.copycat.Operation;
 import io.atomix.copycat.Query;
+import io.atomix.group.messaging.MessageProducer;
 import io.atomix.group.messaging.internal.GroupMessage;
-import io.atomix.group.task.FailoverStrategy;
-import io.atomix.group.task.RoutingStrategy;
-import io.atomix.group.task.internal.GroupTask;
 
 import java.util.Set;
 
@@ -150,25 +147,14 @@ public final class GroupCommands {
    * Join command.
    */
   public static class Join extends MemberCommand<GroupMemberInfo> {
-    private Address address;
     private boolean persist;
 
     public Join() {
     }
 
-    public Join(String member, Address address, boolean persist) {
+    public Join(String member, boolean persist) {
       super(member);
-      this.address = address;
       this.persist = persist;
-    }
-
-    /**
-     * Returns the member address.
-     *
-     * @return The member address.
-     */
-    public Address address() {
-      return address;
     }
 
     /**
@@ -184,14 +170,12 @@ public final class GroupCommands {
     public void writeObject(BufferOutput buffer, Serializer serializer) {
       super.writeObject(buffer, serializer);
       buffer.writeBoolean(persist);
-      serializer.writeObject(address, buffer);
     }
 
     @Override
     public void readObject(BufferInput buffer, Serializer serializer) {
       super.readObject(buffer, serializer);
       persist = buffer.readBoolean();
-      address = serializer.readObject(buffer);
     }
   }
 
@@ -264,35 +248,33 @@ public final class GroupCommands {
   public static class Submit extends MemberCommand<Void> {
     private long id;
     private String type;
-    private Object task;
-    private RoutingStrategy routingStrategy;
-    private FailoverStrategy failoverStrategy;
+    private Object message;
+    private MessageProducer.DispatchPolicy dispatchPolicy;
+    private MessageProducer.DeliveryPolicy deliveryPolicy;
 
     public Submit() {
     }
 
-    public Submit(String member, String type, long id, Object task, RoutingStrategy routingStrategy, FailoverStrategy failoverStrategy) {
+    public Submit(String member, String type, long id, Object message, MessageProducer.DispatchPolicy dispatchPolicy, MessageProducer.DeliveryPolicy deliveryPolicy) {
       super(member);
       this.type = type;
       this.id = id;
-      this.task = task;
-      this.routingStrategy = routingStrategy;
-      this.failoverStrategy = failoverStrategy;
+      this.message = message;
     }
 
     /**
-     * Returns the task type.
+     * Returns the message type.
      *
-     * @return The task type.
+     * @return The message type.
      */
     public String type() {
       return type;
     }
 
     /**
-     * Returns the task ID.
+     * Returns the message ID.
      *
-     * @return The task ID.
+     * @return The message ID.
      */
     public long id() {
       return id;
@@ -303,26 +285,26 @@ public final class GroupCommands {
      *
      * @return The message.
      */
-    public Object task() {
-      return task;
+    public Object message() {
+      return message;
     }
 
     /**
-     * Returns the task routing strategy.
+     * Returns the message dispatch policy.
      *
-     * @return The task routing strategy.
+     * @return The message dispatch policy.
      */
-    public RoutingStrategy routingStrategy() {
-      return routingStrategy;
+    public MessageProducer.DispatchPolicy dispatchPolicy() {
+      return dispatchPolicy;
     }
 
     /**
-     * Returns the task failover strategy.
+     * Returns the message delivery policy.
      *
-     * @return The task failover strategy.
+     * @return The message delivery policy.
      */
-    public FailoverStrategy failoverStrategy() {
-      return failoverStrategy;
+    public MessageProducer.DeliveryPolicy deliveryPolicy() {
+      return deliveryPolicy;
     }
 
     @Override
@@ -330,9 +312,9 @@ public final class GroupCommands {
       super.writeObject(buffer, serializer);
       buffer.writeString(type);
       buffer.writeLong(id);
-      buffer.writeByte(routingStrategy.ordinal());
-      buffer.writeByte(failoverStrategy.ordinal());
-      serializer.writeObject(task, buffer);
+      buffer.writeByte(dispatchPolicy.ordinal());
+      buffer.writeByte(deliveryPolicy.ordinal());
+      serializer.writeObject(message, buffer);
     }
 
     @Override
@@ -340,9 +322,9 @@ public final class GroupCommands {
       super.readObject(buffer, serializer);
       type = buffer.readString();
       id = buffer.readLong();
-      routingStrategy = RoutingStrategy.values()[buffer.readByte()];
-      failoverStrategy = FailoverStrategy.values()[buffer.readByte()];
-      task = serializer.readObject(buffer);
+      dispatchPolicy = MessageProducer.DispatchPolicy.values()[buffer.readByte()];
+      deliveryPolicy = MessageProducer.DeliveryPolicy.values()[buffer.readByte()];
+      message = serializer.readObject(buffer);
     }
   }
 
@@ -363,18 +345,18 @@ public final class GroupCommands {
     }
 
     /**
-     * Returns the task ID.
+     * Returns the message ID.
      *
-     * @return The task ID.
+     * @return The message ID.
      */
     public long id() {
       return id;
     }
 
     /**
-     * Returns a boolean value indicating whether the task succeeded.
+     * Returns a boolean value indicating whether the message succeeded.
      *
-     * @return Indicates whether the task was successfully processed.
+     * @return Indicates whether the message was successfully processed.
      */
     public boolean succeeded() {
       return succeeded;
@@ -405,7 +387,7 @@ public final class GroupCommands {
       registry.register(Listen.class, -132);
       registry.register(Submit.class, -137);
       registry.register(GroupMessage.class, -138);
-      registry.register(GroupTask.class, -139);
+      registry.register(GroupMessage.class, -139);
       registry.register(Ack.class, -140);
       registry.register(GroupMemberInfo.class, -158);
     }

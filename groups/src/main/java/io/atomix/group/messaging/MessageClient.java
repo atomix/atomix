@@ -16,7 +16,7 @@
 package io.atomix.group.messaging;
 
 /**
- * Message client.
+ * Task client.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
