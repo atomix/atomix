@@ -1,0 +1,84 @@
+/*
+ * Copyright 2016 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License
+ */
+package io.atomix.group.internal;
+
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * Message queue state.
+ *
+ * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
+ */
+final class QueueState implements AutoCloseable {
+  private final Map<Long, MessageState> messages = new HashMap<>();
+  private final MembersState members;
+
+  QueueState(MembersState members) {
+    this.members = members;
+  }
+
+  /**
+   * Submits the given commit to the queue.
+   */
+  public void submit(MessageState message) {
+    if (message.submit(members)) {
+      messages.put(message.index(), message);
+    } else {
+      message.close();
+    }
+  }
+
+  /**
+   * Acknowledges the given message.
+   */
+  public void ack(long messageIndex, String memberId) {
+    MessageState message = messages.get(messageIndex);
+    if (message != null) {
+      MemberState member = members.get(memberId);
+      if (member != null) {
+        member.ack(message);
+      }
+    }
+  }
+
+  /**
+   * Fails the given message.
+   */
+  public void fail(long messageIndex, String memberId) {
+    MessageState message = messages.get(messageIndex);
+    if (message != null) {
+      MemberState member = members.get(memberId);
+      if (member != null) {
+        member.fail(message);
+      }
+    }
+  }
+
+  /**
+   * Closes the given message.
+   */
+  public void close(MessageState message) {
+    messages.remove(message.index());
+    message.close();
+  }
+
+  @Override
+  public void close() {
+    messages.values().forEach(MessageState::close);
+  }
+
+}

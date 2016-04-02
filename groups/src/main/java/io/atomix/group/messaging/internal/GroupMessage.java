@@ -33,17 +33,17 @@ import java.util.concurrent.CompletableFuture;
 public class GroupMessage<T> implements Message<T>, CatalystSerializable {
   private long id;
   private String member;
-  private String type;
+  private String queue;
   private T value;
   private transient GroupSubmitter submitter;
 
   public GroupMessage() {
   }
 
-  public GroupMessage(long id, String member, String type, T value) {
+  public GroupMessage(long id, String member, String queue, T value) {
     this.id = id;
     this.member = member;
-    this.type = type;
+    this.queue = queue;
     this.value = value;
   }
 
@@ -70,12 +70,12 @@ public class GroupMessage<T> implements Message<T>, CatalystSerializable {
   }
 
   /**
-   * Returns the message type.
+   * Returns the message queue.
    *
-   * @return The message type.
+   * @return The message queue.
    */
-  public String type() {
-    return type;
+  public String queue() {
+    return queue;
   }
 
   @Override
@@ -85,19 +85,19 @@ public class GroupMessage<T> implements Message<T>, CatalystSerializable {
 
   @Override
   public CompletableFuture<Void> ack() {
-    return submitter.submit(new GroupCommands.Ack(member, id, true));
+    return submitter.submit(new GroupCommands.Ack(member, queue, id, true));
   }
 
   @Override
   public CompletableFuture<Void> fail() {
-    return submitter.submit(new GroupCommands.Ack(member, id, false));
+    return submitter.submit(new GroupCommands.Ack(member, queue, id, false));
   }
 
   @Override
   public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
     buffer.writeLong(id);
     buffer.writeString(member);
-    buffer.writeString(type);
+    buffer.writeString(queue);
     serializer.writeObject(value, buffer);
   }
 
@@ -105,7 +105,7 @@ public class GroupMessage<T> implements Message<T>, CatalystSerializable {
   public void readObject(BufferInput<?> buffer, Serializer serializer) {
     id = buffer.readLong();
     member = buffer.readString();
-    type = buffer.readString();
+    queue = buffer.readString();
     value = serializer.readObject(buffer);
   }
 

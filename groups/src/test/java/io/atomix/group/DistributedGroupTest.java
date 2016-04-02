@@ -359,47 +359,4 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     await(10000, 2);
   }
 
-  /**
-   * Tests resubmitting a message to a group member when the member to which the message
-   * was submitted leaves the group.
-   */
-  public void testGroupMessageResubmitOnLeave() throws Throwable {
-    createServers(3);
-
-    DistributedGroup group1 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6000)));
-    DistributedGroup group2 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6001)));
-
-    LocalMember member1 = group1.join().get(10, TimeUnit.SECONDS);
-    LocalMember member2 = group2.join().get(10, TimeUnit.SECONDS);
-
-    assertEquals(group1.members().size(), 2);
-    assertEquals(group2.members().size(), 2);
-
-    AtomicBoolean left = new AtomicBoolean();
-    member1.messages().consumer("test").onMessage(message -> {
-      threadAssertEquals(message.message(), "Hello world!");
-      if (left.compareAndSet(false, true)) {
-        member1.leave();
-      } else {
-        message.ack();
-      }
-      resume();
-    });
-    member2.messages().consumer("test").onMessage(message -> {
-      threadAssertEquals(message.message(), "Hello world!");
-      if (left.compareAndSet(false, true)) {
-        member1.leave();
-      } else {
-        message.ack();
-      }
-      resume();
-    });
-
-    MessageProducer.Options options = new MessageProducer.Options()
-      .withDispatchPolicy(MessageProducer.DispatchPolicy.RANDOM)
-      .withDeliveryPolicy(MessageProducer.DeliveryPolicy.RETRY);
-    group1.messages().producer("test", options).send("Hello world!").thenRun(this::resume);
-    await(10000, 3);
-  }
-
 }

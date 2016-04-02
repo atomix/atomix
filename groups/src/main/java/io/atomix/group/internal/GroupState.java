@@ -18,8 +18,6 @@ package io.atomix.group.internal;
 import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.session.ServerSession;
 import io.atomix.copycat.server.session.SessionListener;
-import io.atomix.group.messaging.MessageProducer;
-import io.atomix.group.messaging.internal.GroupMessage;
 import io.atomix.resource.ResourceStateMachine;
 
 import java.time.Duration;
@@ -31,13 +29,12 @@ import java.util.*;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class GroupState extends ResourceStateMachine implements SessionListener {
-  private final Random random = new Random(141650939l);
   private final Duration expiration;
-  private final Map<Long, GroupSession> sessions = new HashMap<>();
-  private final Map<String, Member> members = new HashMap<>();
-  private final List<Member> membersList = new ArrayList<>();
-  private final List<Member> candidates = new ArrayList<>();
-  private Member leader;
+  private final Map<Long, SessionState> sessions = new HashMap<>();
+  private final MembersState members = new MembersState();
+  private final Map<String, QueueState> queues = new HashMap<>();
+  private final List<MemberState> candidates = new ArrayList<>();
+  private MemberState leader;
   private long term;
 
   public GroupState(Properties config) {
@@ -47,21 +44,20 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
 
   @Override
   public void close(ServerSession session) {
-    Map<Long, Member> left = new HashMap<>();
+    Map<Long, MemberState> left = new HashMap<>();
 
     // Remove the session from the sessions set.
     sessions.remove(session.id());
 
     // Iterate through all open members.
-    Iterator<Map.Entry<String, Member>> iterator = members.entrySet().iterator();
+    Iterator<MemberState> iterator = members.iterator();
     while (iterator.hasNext()) {
       // If the member is associated with the closed session, remove it from the members list.
-      Member member = iterator.next().getValue();
+      MemberState member = iterator.next();
       if (member.session() != null && member.session().equals(session)) {
         // If the member is not persistent, remove the member from the membership group.
         if (!member.persistent()) {
           iterator.remove();
-          membersList.remove(member);
           candidates.remove(member);
           left.put(member.index(), member);
         } else {
@@ -130,7 +126,7 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
       return;
 
     Random random = new Random(term);
-    Member member = candidates.remove(random.nextInt(candidates.size()));
+    MemberState member = candidates.remove(random.nextInt(candidates.size()));
     while (member != null) {
       if (!member.session().state().active()) {
         if (!candidates.isEmpty()) {
@@ -150,19 +146,18 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
    */
   public GroupMemberInfo join(Commit<GroupCommands.Join> commit) {
     try {
-      Member member = members.get(commit.operation().member());
+      MemberState member = members.get(commit.operation().member());
 
       // If the member doesn't already exist, create it.
       if (member == null) {
-        member = new Member(commit);
+        member = new MemberState(commit);
 
         // Store the member ID and join commit mappings and add the member as a candidate.
-        members.put(member.id(), member);
-        membersList.add(member);
+        members.add(member);
         candidates.add(member);
 
         // Iterate through available sessions and publish a join event to each session.
-        for (GroupSession session : sessions.values()) {
+        for (SessionState session : sessions.values()) {
           session.join(member);
         }
 
@@ -183,7 +178,7 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
 
         // Iterate through available sessions and publish a join event to each session.
         // This will result in client-side groups updating the member object according to locality.
-        for (GroupSession session : sessions.values()) {
+        for (SessionState session : sessions.values()) {
           session.join(member);
         }
 
@@ -217,10 +212,9 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
   public void leave(Commit<GroupCommands.Leave> commit) {
     try {
       // Remove the member from the members list.
-      Member member = members.remove(commit.operation().member());
+      MemberState member = members.remove(commit.operation().member());
       if (member != null) {
         // Remove the member from the candidates list.
-        membersList.remove(member);
         candidates.remove(member);
 
         // If the leaving member was the leader, increment the term and elect a new leader.
@@ -247,9 +241,9 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
    */
   public Set<GroupMemberInfo> listen(Commit<GroupCommands.Listen> commit) {
     try {
-      sessions.put(commit.session().id(), new GroupSession(commit.session()));
+      sessions.put(commit.session().id(), new SessionState(commit.session()));
       Set<GroupMemberInfo> members = new HashSet<>();
-      for (Member member : this.members.values()) {
+      for (MemberState member : this.members) {
         if (member.session() != null && member.session().state().active()) {
           members.add(member.info());
         }
@@ -265,42 +259,8 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
    */
   public void submit(Commit<GroupCommands.Submit> commit) {
     try {
-      if (commit.operation().member() != null) {
-        // Create a message instance.
-        Message message = new Message(commit);
-
-        // Ensure that the member is a member of the group.
-        Member member = members.get(commit.operation().member());
-        if (member == null) {
-          message.fail();
-          message.close();
-        } else {
-          // Add the message to the member's message queue.
-          member.submit(message);
-        }
-      } else if (commit.operation().dispatchPolicy() == MessageProducer.DispatchPolicy.RANDOM) {
-        // Create a message instance.
-        Message message = new Message(commit);
-
-        // If the members list is empty, fail the message submission.
-        if (members.isEmpty()) {
-          message.fail();
-          message.close();
-        } else {
-          Member member = membersList.get(random.nextInt(membersList.size()));
-
-          // Add the message to the member's message queue.
-          member.submit(message);
-        }
-      } else {
-        // Create a message instance.
-        Message message = new Message(commit);
-
-        // Iterate through all the members in the group.
-        for (Member member : members.values()) {
-          member.submit(message);
-        }
-      }
+      QueueState queue = queues.computeIfAbsent(commit.operation().queue(), t -> new QueueState(members));
+      queue.submit(new MessageState(commit, queue));
     } catch (Exception e) {
       commit.close();
       throw e;
@@ -312,12 +272,12 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
    */
   public void ack(Commit<GroupCommands.Ack> commit) {
     try {
-      Member member = members.get(commit.operation().member());
-      if (member != null) {
+      QueueState queue = queues.get(commit.operation().queue());
+      if (queue != null) {
         if (commit.operation().succeeded()) {
-          member.ack(commit.operation().id());
+          queue.ack(commit.operation().id(), commit.operation().member());
         } else {
-          member.fail(commit.operation().id());
+          queue.fail(commit.operation().id(), commit.operation().member());
         }
       }
     } finally {
@@ -327,353 +287,8 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
 
   @Override
   public void delete() {
-    members.values().forEach(Member::close);
-    members.clear();
-  }
-
-  /**
-   * Group session.
-   */
-  private static class GroupSession {
-    private final ServerSession session;
-
-    private GroupSession(ServerSession session) {
-      this.session = session;
-    }
-
-    /**
-     * Returns the session ID.
-     */
-    public long id() {
-      return session.id();
-    }
-
-    /**
-     * Sends a join event to the session for the given member.
-     */
-    public void join(Member member) {
-      if (session.state().active()) {
-        session.publish("join", member.info());
-      }
-    }
-
-    /**
-     * Sends a leave event to the session for the given member.
-     */
-    public void leave(Member member) {
-      if (session.state().active()) {
-        session.publish("leave", member.id());
-      }
-    }
-
-    /**
-     * Sends a term event to the session for the given member.
-     */
-    public void term(long term) {
-      if (session.state().active()) {
-        session.publish("term", term);
-      }
-    }
-
-    /**
-     * Sends an elect event to the session for the given member.
-     */
-    public void elect(Member member) {
-      if (session.state().active()) {
-        session.publish("elect", member.id());
-      }
-    }
-
-    /**
-     * Sends a resign event to the session for the given member.
-     */
-    public void resign(Member member) {
-      if (session.state().active()) {
-        session.publish("resign", member.id());
-      }
-    }
-
-    @Override
-    public int hashCode() {
-      return session.hashCode();
-    }
-
-    @Override
-    public boolean equals(Object object) {
-      return object instanceof GroupSession && ((GroupSession) object).session.equals(session);
-    }
-  }
-
-  /**
-   * Represents a member of the group.
-   */
-  private class Member implements AutoCloseable {
-    private final Commit<GroupCommands.Join> commit;
-    private final long index;
-    private final String memberId;
-    private final boolean persistent;
-    private ServerSession session;
-    private final Queue<Message> messages = new ArrayDeque<>();
-    private Message message;
-
-    private Member(Commit<GroupCommands.Join> commit) {
-      this.commit = commit;
-      this.index = commit.index();
-      this.memberId = commit.operation().member();
-      this.persistent = commit.operation().persist();
-      this.session = commit.session();
-    }
-
-    /**
-     * Returns the member index.
-     */
-    public long index() {
-      return index;
-    }
-
-    /**
-     * Returns the member ID.
-     */
-    public String id() {
-      return memberId;
-    }
-
-    /**
-     * Returns group member info.
-     */
-    public GroupMemberInfo info() {
-      return new GroupMemberInfo(index, memberId);
-    }
-
-    /**
-     * Returns the member session.
-     */
-    public ServerSession session() {
-      return session;
-    }
-
-    /**
-     * Sets the member session.
-     */
-    public void setSession(ServerSession session) {
-      this.session = session;
-      if (message != null && session != null && session.state().active()) {
-        session.publish("message", new GroupMessage<>(message.index(), memberId, message.type(), message.message()));
-      }
-    }
-
-    /**
-     * Returns a boolean indicating whether the member is persistent.
-     */
-    public boolean persistent() {
-      return persistent;
-    }
-
-    /**
-     * Submits the given message to be processed by the member.
-     */
-    public void submit(Message message) {
-      if (this.message == null) {
-        this.message = message;
-        if (session != null && session.state().active()) {
-          session.publish("message", new GroupMessage<>(message.index(), memberId, message.type(), message.message()));
-        }
-      } else {
-        messages.add(message);
-      }
-    }
-
-    /**
-     * Acknowledges processing of a message.
-     */
-    public void ack(long id) {
-      if (this.message.index() == id) {
-        Message message = this.message;
-        this.message = null;
-        if (message.complete()) {
-          message.ack();
-          message.close();
-        }
-        next();
-      }
-    }
-
-    /**
-     * Fails processing of a message.
-     */
-    public void fail(long id) {
-      if (this.message.index() == id) {
-        Message message = this.message;
-        this.message = null;
-        if (message.direct()) {
-          message.fail();
-          message.close();
-        } else if (message.complete()) {
-          message.ack();
-          message.close();
-        }
-        next();
-      }
-    }
-
-    /**
-     * Sends the next message in the queue.
-     */
-    private void next() {
-      message = messages.poll();
-      if (message != null) {
-        if (session != null && session.state().active()) {
-          session.publish("message", new GroupMessage<>(message.index(), memberId, message.type(), message.message()));
-        }
-      }
-    }
-
-    @Override
-    public void close() {
-      Message message = this.message;
-      this.message = null;
-      if (message != null) {
-        if (message.commit.operation().dispatchPolicy() == MessageProducer.DispatchPolicy.RANDOM
-          && message.commit.operation().deliveryPolicy() == MessageProducer.DeliveryPolicy.RETRY) {
-          if (!members.isEmpty()) {
-            Member member = membersList.get(random.nextInt(membersList.size()));
-            member.submit(message);
-          } else {
-            message.fail();
-            message.close();
-          }
-        } else {
-          message.fail();
-          message.close();
-        }
-      }
-
-      messages.forEach(t -> {
-        if (t.commit.operation().dispatchPolicy() == MessageProducer.DispatchPolicy.RANDOM
-          && t.commit.operation().deliveryPolicy() == MessageProducer.DeliveryPolicy.RETRY) {
-          if (!members.isEmpty()) {
-            Member member = membersList.get(random.nextInt(membersList.size()));
-            member.submit(t);
-          } else {
-            t.fail();
-            t.close();
-          }
-        } else {
-          t.fail();
-          t.close();
-        }
-      });
-      messages.clear();
-
-      commit.close();
-    }
-
-    @Override
-    public int hashCode() {
-      return commit.hashCode();
-    }
-
-    @Override
-    public boolean equals(Object object) {
-      return object instanceof Member && ((Member) object).id().equals(id());
-    }
-  }
-
-  /**
-   * Represents a group message.
-   */
-  private class Message implements AutoCloseable {
-    private final Commit<GroupCommands.Submit> commit;
-
-    private Message(Commit<GroupCommands.Submit> commit) {
-      this.commit = commit;
-    }
-
-    /**
-     * Returns the message ID.
-     */
-    public long id() {
-      return commit.operation().id();
-    }
-
-    /**
-     * Returns the message type.
-     */
-    public String type() {
-      return commit.operation().type();
-    }
-
-    /**
-     * Returns the message index.
-     */
-    public long index() {
-      return commit.index();
-    }
-
-    /**
-     * Returns a boolean indicating whether this is a direct message.
-     */
-    public boolean direct() {
-      return commit.operation().member() != null;
-    }
-
-    /**
-     * Returns the message session.
-     */
-    public ServerSession session() {
-      return commit.session();
-    }
-
-    /**
-     * Returns the message value.
-     */
-    public Object message() {
-      return commit.operation().message();
-    }
-
-    /**
-     * Returns a boolean indicating whether the message is complete.
-     */
-    public boolean complete() {
-      if (commit.operation().member() == null) {
-        for (Member member : members.values()) {
-          if (member.message != null && member.message.index() <= index()) {
-            return false;
-          }
-        }
-      } else {
-        Member member = members.get(commit.operation().member());
-        if (member != null) {
-          if (member.message != null && member.message.index() <= index()) {
-            return false;
-          }
-        }
-      }
-      return true;
-    }
-
-    /**
-     * Sends an ack message back to the message submitter.
-     */
-    public void ack() {
-      if (session().state().active()) {
-        session().publish("ack", commit.operation());
-      }
-    }
-
-    /**
-     * Sends a fail message back to the message submitter.
-     */
-    public void fail() {
-      if (session().state().active()) {
-        session().publish("fail", commit.operation());
-      }
-    }
-
-    @Override
-    public void close() {
-      commit.close();
-    }
+    queues.values().forEach(QueueState::close);
+    members.close();
   }
 
 }

@@ -247,7 +247,7 @@ public final class GroupCommands {
    */
   public static class Submit extends MemberCommand<Void> {
     private long id;
-    private String type;
+    private String queue;
     private Object message;
     private MessageProducer.DispatchPolicy dispatchPolicy;
     private MessageProducer.DeliveryPolicy deliveryPolicy;
@@ -255,20 +255,20 @@ public final class GroupCommands {
     public Submit() {
     }
 
-    public Submit(String member, String type, long id, Object message, MessageProducer.DispatchPolicy dispatchPolicy, MessageProducer.DeliveryPolicy deliveryPolicy) {
+    public Submit(String member, String queue, long id, Object message, MessageProducer.DispatchPolicy dispatchPolicy, MessageProducer.DeliveryPolicy deliveryPolicy) {
       super(member);
-      this.type = type;
+      this.queue = queue;
       this.id = id;
       this.message = message;
     }
 
     /**
-     * Returns the message type.
+     * Returns the message queue name.
      *
-     * @return The message type.
+     * @return The message queue name.
      */
-    public String type() {
-      return type;
+    public String queue() {
+      return queue;
     }
 
     /**
@@ -310,7 +310,7 @@ public final class GroupCommands {
     @Override
     public void writeObject(BufferOutput buffer, Serializer serializer) {
       super.writeObject(buffer, serializer);
-      buffer.writeString(type);
+      buffer.writeString(queue);
       buffer.writeLong(id);
       buffer.writeByte(dispatchPolicy.ordinal());
       buffer.writeByte(deliveryPolicy.ordinal());
@@ -320,7 +320,7 @@ public final class GroupCommands {
     @Override
     public void readObject(BufferInput buffer, Serializer serializer) {
       super.readObject(buffer, serializer);
-      type = buffer.readString();
+      queue = buffer.readString();
       id = buffer.readLong();
       dispatchPolicy = MessageProducer.DispatchPolicy.values()[buffer.readByte()];
       deliveryPolicy = MessageProducer.DeliveryPolicy.values()[buffer.readByte()];
@@ -332,16 +332,27 @@ public final class GroupCommands {
    * Ack command.
    */
   public static class Ack extends MemberCommand<Void> {
+    private String queue;
     private long id;
     private boolean succeeded;
 
     public Ack() {
     }
 
-    public Ack(String member, long id, boolean succeeded) {
+    public Ack(String member, String queue, long id, boolean succeeded) {
       super(member);
+      this.queue = queue;
       this.id = id;
       this.succeeded = succeeded;
+    }
+
+    /**
+     * Returns the queue name.
+     *
+     * @return The queue name.
+     */
+    public String queue() {
+      return queue;
     }
 
     /**
@@ -365,12 +376,13 @@ public final class GroupCommands {
     @Override
     public void writeObject(BufferOutput buffer, Serializer serializer) {
       super.writeObject(buffer, serializer);
-      buffer.writeLong(id).writeBoolean(succeeded);
+      buffer.writeString(queue).writeLong(id).writeBoolean(succeeded);
     }
 
     @Override
     public void readObject(BufferInput buffer, Serializer serializer) {
       super.readObject(buffer, serializer);
+      queue = buffer.readString();
       id = buffer.readLong();
       succeeded = buffer.readBoolean();
     }

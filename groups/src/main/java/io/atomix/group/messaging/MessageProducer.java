@@ -31,7 +31,12 @@ public interface MessageProducer<T> extends AutoCloseable {
     /**
      * Atomic message consistency.
      */
-    ATOMIC
+    ATOMIC,
+
+    /**
+     * Sequential message consistency.
+     */
+    SEQUENTIAL
   }
 
   /**
@@ -54,17 +59,17 @@ public interface MessageProducer<T> extends AutoCloseable {
    */
   enum DeliveryPolicy {
     /**
-     * Attempts to deliver a message to one member.
+     * Enforces no requirement on the delivery of a broadcast message.
      */
-    ONCE,
+    NONE,
 
     /**
-     * Retries a failed delivery attempt with another member according to the configured dispatch policy.
+     * Requires a broadcast message to be delivered to at least one recipient.
      */
-    RETRY,
+    ONE,
 
     /**
-     * Delivers a message to all members of a group.
+     * Requires a broadcast message to be delivered to all recipients.
      */
     ALL
   }
@@ -75,7 +80,7 @@ public interface MessageProducer<T> extends AutoCloseable {
   class Options {
     private Consistency consistency = Consistency.ATOMIC;
     private DispatchPolicy dispatchPolicy = DispatchPolicy.BROADCAST;
-    private DeliveryPolicy deliveryPolicy = DeliveryPolicy.ONCE;
+    private DeliveryPolicy deliveryPolicy = DeliveryPolicy.NONE;
 
     /**
      * Sets the producer consistency level.
