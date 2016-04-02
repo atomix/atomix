@@ -85,17 +85,17 @@ public abstract class AbstractMessageProducer<T> implements MessageProducer<T> {
    * Submits the message to the given member.
    */
   protected CompletableFuture<Void> send(String member, T message) {
-    if (options.getConsistency() == Consistency.SEQUENTIAL) {
-      return sendSequential(member, message);
+    if (options.getDeliveryPolicy() == DeliveryPolicy.ASYNC) {
+      return sendAsync(member, message);
     } else {
-      return sendAtomic(member, message);
+      return sendSync(member, message);
     }
   }
 
   /**
    * Sends an atomic message.
    */
-  private CompletableFuture<Void> sendAtomic(String member, T message) {
+  private CompletableFuture<Void> sendSync(String member, T message) {
     CompletableFuture<Void> future = new CompletableFuture<>();
     final long messageId = ++this.messageId;
     messageFutures.put(messageId, future);
@@ -113,7 +113,7 @@ public abstract class AbstractMessageProducer<T> implements MessageProducer<T> {
   /**
    * Sends a sequential message.
    */
-  private CompletableFuture<Void> sendSequential(String member, T message) {
+  private CompletableFuture<Void> sendAsync(String member, T message) {
     return client.submitter().submit(new GroupCommands.Submit(member, name, messageId, message, options.getDispatchPolicy(), options.getDeliveryPolicy()));
   }
 

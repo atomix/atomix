@@ -165,27 +165,7 @@ final class MessageState implements AutoCloseable {
     } else if (commit.operation().dispatchPolicy() == MessageProducer.DispatchPolicy.RANDOM) {
       return sendAck();
     } else if (commit.operation().dispatchPolicy() == MessageProducer.DispatchPolicy.BROADCAST) {
-      if (ack + fail == members) {
-        if (commit.operation().deliveryPolicy() == MessageProducer.DeliveryPolicy.ALL) {
-          if (fail == 0) {
-            return sendAck();
-          } else {
-            return sendFail();
-          }
-        } else if (commit.operation().deliveryPolicy() == MessageProducer.DeliveryPolicy.ONE) {
-          if (ack >= 1) {
-            return sendAck();
-          } else {
-            return sendFail();
-          }
-        } else if (commit.operation().deliveryPolicy() == MessageProducer.DeliveryPolicy.NONE) {
-          return sendAck();
-        } else {
-          return sendFail();
-        }
-      } else {
-        return false;
-      }
+      return ack + fail == members && sendAck();
     } else {
       return sendFail();
     }

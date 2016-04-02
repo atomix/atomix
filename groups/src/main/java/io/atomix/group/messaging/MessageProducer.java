@@ -20,6 +20,8 @@ import io.atomix.catalyst.util.Assert;
 import java.util.concurrent.CompletableFuture;
 
 /**
+ * Message producer.
+ *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public interface MessageProducer<T> extends AutoCloseable {
@@ -27,16 +29,21 @@ public interface MessageProducer<T> extends AutoCloseable {
   /**
    * Message producer consistency.
    */
-  enum Consistency {
+  enum Exchange {
     /**
-     * Atomic message consistency.
+     * Synchronous exchange.
      */
-    ATOMIC,
+    SYNC,
 
     /**
-     * Sequential message consistency.
+     * Asynchronous exchange.
      */
-    SEQUENTIAL
+    ASYNC,
+
+    /**
+     * Request-reply exchange.
+     */
+    REQUEST_REPLY
   }
 
   /**
@@ -58,49 +65,24 @@ public interface MessageProducer<T> extends AutoCloseable {
    * Delivery policy.
    */
   enum DeliveryPolicy {
-    /**
-     * Enforces no requirement on the delivery of a broadcast message.
-     */
-    NONE,
 
     /**
-     * Requires a broadcast message to be delivered to at least one recipient.
+     * Synchronous delivery policy.
      */
-    ONE,
+    SYNC,
 
     /**
-     * Requires a broadcast message to be delivered to all recipients.
+     * Asynchronous delivery policy.
      */
-    ALL
+    ASYNC
   }
 
   /**
    * Task producer options.
    */
   class Options {
-    private Consistency consistency = Consistency.ATOMIC;
     private DispatchPolicy dispatchPolicy = DispatchPolicy.BROADCAST;
-    private DeliveryPolicy deliveryPolicy = DeliveryPolicy.NONE;
-
-    /**
-     * Sets the producer consistency level.
-     *
-     * @param consistency The producer consistency level.
-     * @return The producer options.
-     */
-    public Options withConsistency(Consistency consistency) {
-      this.consistency = Assert.notNull(consistency, "consistency");
-      return this;
-    }
-
-    /**
-     * Returns the producer consistency level.
-     *
-     * @return The producer consistency level.
-     */
-    public Consistency getConsistency() {
-      return consistency;
-    }
+    private DeliveryPolicy deliveryPolicy = DeliveryPolicy.SYNC;
 
     /**
      * Sets the producer dispatch policy.
