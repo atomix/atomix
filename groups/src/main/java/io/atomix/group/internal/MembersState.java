@@ -58,13 +58,6 @@ final class MembersState implements Iterable<MemberState>, AutoCloseable {
   }
 
   /**
-   * Selects a member from the members list.
-   */
-  MemberState select(long index) {
-    return membersList.get((int) (index % membersList.size()));
-  }
-
-  /**
    * Returns the size of the members list.
    */
   int size() {

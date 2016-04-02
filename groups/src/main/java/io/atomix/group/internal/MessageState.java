@@ -19,6 +19,8 @@ import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.session.ServerSession;
 import io.atomix.group.messaging.MessageProducer;
 
+import java.util.Random;
+
 /**
  * Group message state.
  *
@@ -26,6 +28,7 @@ import io.atomix.group.messaging.MessageProducer;
  */
 final class MessageState implements AutoCloseable {
   private final Commit<GroupCommands.Submit> commit;
+  private final Random random;
   private final QueueState queue;
   private int members;
   private int ack;
@@ -35,6 +38,11 @@ final class MessageState implements AutoCloseable {
   MessageState(Commit<GroupCommands.Submit> commit, QueueState queue) {
     this.commit = commit;
     this.queue = queue;
+    if (commit.operation().dispatchPolicy() == MessageProducer.DispatchPolicy.RANDOM) {
+      random = new Random(commit.operation().id());
+    } else {
+      random = null;
+    }
   }
 
   /**
@@ -91,7 +99,7 @@ final class MessageState implements AutoCloseable {
         sendFail();
         return false;
       } else {
-        members.select(index()).submit(this);
+        members.get(random.nextInt(members.size())).submit(this);
         return true;
       }
     } else if (commit.operation().dispatchPolicy() == MessageProducer.DispatchPolicy.BROADCAST) {
