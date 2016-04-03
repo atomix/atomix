@@ -22,6 +22,7 @@ import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.group.internal.GroupCommands;
 import io.atomix.group.internal.GroupSubmitter;
 import io.atomix.group.messaging.Message;
+import io.atomix.group.messaging.MessageProducer;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -35,16 +36,18 @@ public class GroupMessage<T> implements Message<T>, CatalystSerializable {
   private String member;
   private String queue;
   private T value;
+  private MessageProducer.DeliveryPolicy delivery;
   private transient GroupSubmitter submitter;
 
   public GroupMessage() {
   }
 
-  public GroupMessage(long id, String member, String queue, T value) {
+  public GroupMessage(long id, String member, String queue, T value, MessageProducer.DeliveryPolicy delivery) {
     this.id = id;
     this.member = member;
     this.queue = queue;
     this.value = value;
+    this.delivery = delivery;
   }
 
   /**
@@ -84,13 +87,22 @@ public class GroupMessage<T> implements Message<T>, CatalystSerializable {
   }
 
   @Override
+  public CompletableFuture<Void> reply(Object message) {
+    if (delivery == MessageProducer.DeliveryPolicy.REQUEST_REPLY) {
+      return submitter.submit(new GroupCommands.Reply(member, queue, id, message));
+    } else {
+      return submitter.submit(new GroupCommands.Reply(member, queue, id, true));
+    }
+  }
+
+  @Override
   public CompletableFuture<Void> ack() {
-    return submitter.submit(new GroupCommands.Ack(member, queue, id, true));
+    return submitter.submit(new GroupCommands.Reply(member, queue, id, true));
   }
 
   @Override
   public CompletableFuture<Void> fail() {
-    return submitter.submit(new GroupCommands.Ack(member, queue, id, false));
+    return submitter.submit(new GroupCommands.Reply(member, queue, id, false));
   }
 
   @Override
@@ -98,6 +110,7 @@ public class GroupMessage<T> implements Message<T>, CatalystSerializable {
     buffer.writeLong(id);
     buffer.writeString(member);
     buffer.writeString(queue);
+    buffer.writeByte(delivery.ordinal());
     serializer.writeObject(value, buffer);
   }
 
@@ -106,6 +119,7 @@ public class GroupMessage<T> implements Message<T>, CatalystSerializable {
     id = buffer.readLong();
     member = buffer.readString();
     queue = buffer.readString();
+    delivery = MessageProducer.DeliveryPolicy.values()[buffer.readByte()];
     value = serializer.readObject(buffer);
   }
 

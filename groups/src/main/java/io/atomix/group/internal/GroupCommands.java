@@ -243,23 +243,25 @@ public final class GroupCommands {
   }
 
   /**
-   * Submit command.
+   * Send command.
    */
-  public static class Submit extends MemberCommand<Void> {
+  public static class Send extends MemberCommand<Void> {
     private long id;
     private String queue;
     private Object message;
     private MessageProducer.DispatchPolicy dispatchPolicy;
     private MessageProducer.DeliveryPolicy deliveryPolicy;
 
-    public Submit() {
+    public Send() {
     }
 
-    public Submit(String member, String queue, long id, Object message, MessageProducer.DispatchPolicy dispatchPolicy, MessageProducer.DeliveryPolicy deliveryPolicy) {
+    public Send(String member, String queue, long id, Object message, MessageProducer.DispatchPolicy dispatchPolicy, MessageProducer.DeliveryPolicy deliveryPolicy) {
       super(member);
       this.queue = queue;
       this.id = id;
       this.message = message;
+      this.dispatchPolicy = dispatchPolicy;
+      this.deliveryPolicy = deliveryPolicy;
     }
 
     /**
@@ -329,21 +331,21 @@ public final class GroupCommands {
   }
 
   /**
-   * Ack command.
+   * Reply command.
    */
-  public static class Ack extends MemberCommand<Void> {
+  public static class Reply extends MemberCommand<Void> {
     private String queue;
     private long id;
-    private boolean succeeded;
+    private Object message;
 
-    public Ack() {
+    public Reply() {
     }
 
-    public Ack(String member, String queue, long id, boolean succeeded) {
+    public Reply(String member, String queue, long id, Object message) {
       super(member);
       this.queue = queue;
       this.id = id;
-      this.succeeded = succeeded;
+      this.message = message;
     }
 
     /**
@@ -365,18 +367,19 @@ public final class GroupCommands {
     }
 
     /**
-     * Returns a boolean value indicating whether the message succeeded.
+     * Returns the reply message.
      *
-     * @return Indicates whether the message was successfully processed.
+     * @return The reply message.
      */
-    public boolean succeeded() {
-      return succeeded;
+    public Object message() {
+      return message;
     }
 
     @Override
     public void writeObject(BufferOutput buffer, Serializer serializer) {
       super.writeObject(buffer, serializer);
-      buffer.writeString(queue).writeLong(id).writeBoolean(succeeded);
+      buffer.writeString(queue).writeLong(id);
+      serializer.writeObject(message, buffer);
     }
 
     @Override
@@ -384,7 +387,7 @@ public final class GroupCommands {
       super.readObject(buffer, serializer);
       queue = buffer.readString();
       id = buffer.readLong();
-      succeeded = buffer.readBoolean();
+      message = serializer.readObject(buffer);
     }
   }
 
@@ -397,10 +400,10 @@ public final class GroupCommands {
       registry.register(Join.class, -130);
       registry.register(Leave.class, -131);
       registry.register(Listen.class, -132);
-      registry.register(Submit.class, -137);
+      registry.register(Send.class, -137);
       registry.register(GroupMessage.class, -138);
       registry.register(GroupMessage.class, -139);
-      registry.register(Ack.class, -140);
+      registry.register(Reply.class, -140);
       registry.register(GroupMemberInfo.class, -158);
     }
   }

@@ -63,6 +63,14 @@ public interface Message<T> {
   T message();
 
   /**
+   * Replies to the message.
+   *
+   * @param message The reply message.
+   * @return A completable future to be completed once the reply has been sent.
+   */
+  CompletableFuture<Void> reply(Object message);
+
+  /**
    * Acknowledges completion of the message.
    * <p>
    * Once a message is acknowledged, an ack will be sent back to the process that submitted the message. Acknowledging

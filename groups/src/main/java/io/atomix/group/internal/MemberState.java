@@ -78,7 +78,7 @@ final class MemberState implements AutoCloseable {
     this.session = session;
     if (session != null && session.state().active()) {
       for (MessageState message : messages.values()) {
-        session.publish("message", new GroupMessage<>(message.index(), memberId, message.queue(), message.message()));
+        session.publish("message", new GroupMessage<>(message.index(), memberId, message.queue(), message.message(), message.delivery()));
       }
     }
   }
@@ -96,29 +96,21 @@ final class MemberState implements AutoCloseable {
   public void submit(MessageState message) {
     messages.put(message.index(), message);
     if (session != null && session.state().active()) {
-      session.publish("message", new GroupMessage<>(message.index(), memberId, message.queue(), message.message()));
+      session.publish("message", new GroupMessage<>(message.index(), memberId, message.queue(), message.message(), message.delivery()));
     }
   }
 
   /**
-   * Acknowledges processing of a message.
+   * Replies to the message.
    */
-  public void ack(MessageState message) {
+  public void reply(MessageState message, Object reply) {
     messages.remove(message.index());
-    message.ack();
-  }
-
-  /**
-   * Fails processing of a message.
-   */
-  public void fail(MessageState message) {
-    messages.remove(message.index());
-    message.fail();
+    message.reply(reply);
   }
 
   @Override
   public void close() {
-    messages.values().forEach(MessageState::fail);
+    messages.values().forEach(MessageState::expire);
     commit.close();
   }
 

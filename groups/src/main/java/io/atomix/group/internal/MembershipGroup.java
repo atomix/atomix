@@ -159,7 +159,7 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
       client.onEvent("join", this::onJoinEvent);
       client.onEvent("leave", this::onLeaveEvent);
       client.onEvent("message", this::onMessageEvent);
-      client.onEvent("ack", this::onAckEvent);
+      client.onEvent("ack", this::onReplyEvent);
       client.onEvent("fail", this::onFailEvent);
       client.onEvent("term", this::onTermEvent);
       client.onEvent("elect", this::onElectEvent);
@@ -229,30 +229,30 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
   }
 
   /**
-   * Handles an ack event received from the cluster.
+   * Handles a reply event received from the cluster.
    */
-  private void onAckEvent(GroupCommands.Submit submit) {
-    if (submit.member() != null) {
-      AbstractGroupMember member = members.get(submit.member());
+  private void onReplyEvent(GroupCommands.Reply reply) {
+    if (reply.member() != null) {
+      AbstractGroupMember member = members.get(reply.member());
       if (member != null) {
-        member.messages().producer(submit.queue()).onAck(submit.id());
+        member.messages().producer(reply.queue()).onReply(reply.id(), reply.message());
       }
     } else {
-      messages.producer(submit.queue()).onAck(submit.id());
+      messages.producer(reply.queue()).onReply(reply.id(), reply.message());
     }
   }
 
   /**
    * Handles a fail event received from the cluster.
    */
-  private void onFailEvent(GroupCommands.Submit submit) {
-    if (submit.member() != null) {
-      AbstractGroupMember member = members.get(submit.member());
+  private void onFailEvent(GroupCommands.Send send) {
+    if (send.member() != null) {
+      AbstractGroupMember member = members.get(send.member());
       if (member != null) {
-        member.messages().producer(submit.queue()).onFail(submit.id());
+        member.messages().producer(send.queue()).onFail(send.id());
       }
     } else {
-      messages.producer(submit.queue()).onFail(submit.id());
+      messages.producer(send.queue()).onFail(send.id());
     }
   }
 

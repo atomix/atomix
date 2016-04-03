@@ -27,26 +27,6 @@ import java.util.concurrent.CompletableFuture;
 public interface MessageProducer<T> extends AutoCloseable {
 
   /**
-   * Message producer consistency.
-   */
-  enum Exchange {
-    /**
-     * Synchronous exchange.
-     */
-    SYNC,
-
-    /**
-     * Asynchronous exchange.
-     */
-    ASYNC,
-
-    /**
-     * Request-reply exchange.
-     */
-    REQUEST_REPLY
-  }
-
-  /**
    * Dispatch policy.
    */
   enum DispatchPolicy {
@@ -58,7 +38,7 @@ public interface MessageProducer<T> extends AutoCloseable {
     /**
      * Dispatches a message to all members of a group.
      */
-    BROADCAST
+    BROADCAST,
   }
 
   /**
@@ -74,7 +54,12 @@ public interface MessageProducer<T> extends AutoCloseable {
     /**
      * Asynchronous delivery policy.
      */
-    ASYNC
+    ASYNC,
+
+    /**
+     * Request-reply delivery policy.
+     */
+    REQUEST_REPLY,
   }
 
   /**

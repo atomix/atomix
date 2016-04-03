@@ -58,11 +58,11 @@ public abstract class AbstractMessageProducer<T> implements MessageProducer<T> {
   }
 
   /**
-   * Called when a message is acknowledged.
+   * Called when a message reply is received.
    *
    * @param messageId The message ID.
    */
-  public void onAck(long messageId) {
+  public void onReply(long messageId, Object reply) {
     CompletableFuture<Void> messageFuture = messageFutures.remove(messageId);
     if (messageFuture != null) {
       messageFuture.complete(null);
@@ -99,7 +99,7 @@ public abstract class AbstractMessageProducer<T> implements MessageProducer<T> {
     CompletableFuture<Void> future = new CompletableFuture<>();
     final long messageId = ++this.messageId;
     messageFutures.put(messageId, future);
-    client.submitter().submit(new GroupCommands.Submit(member, name, messageId, message, options.getDispatchPolicy(), options.getDeliveryPolicy())).whenComplete((result, error) -> {
+    client.submitter().submit(new GroupCommands.Send(member, name, messageId, message, options.getDispatchPolicy(), options.getDeliveryPolicy())).whenComplete((result, error) -> {
       if (error != null) {
         CompletableFuture<Void> messageFuture = messageFutures.remove(messageId);
         if (messageFuture != null) {
@@ -114,7 +114,7 @@ public abstract class AbstractMessageProducer<T> implements MessageProducer<T> {
    * Sends a sequential message.
    */
   private CompletableFuture<Void> sendAsync(String member, T message) {
-    return client.submitter().submit(new GroupCommands.Submit(member, name, messageId, message, options.getDispatchPolicy(), options.getDeliveryPolicy()));
+    return client.submitter().submit(new GroupCommands.Send(member, name, messageId, message, options.getDispatchPolicy(), options.getDeliveryPolicy()));
   }
 
   @Override

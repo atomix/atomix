@@ -35,7 +35,7 @@ final class QueueState implements AutoCloseable {
    * Submits the given commit to the queue.
    */
   public void submit(MessageState message) {
-    if (message.submit(members)) {
+    if (message.send(members)) {
       messages.put(message.index(), message);
     } else {
       message.close();
@@ -43,27 +43,14 @@ final class QueueState implements AutoCloseable {
   }
 
   /**
-   * Acknowledges the given message.
+   * Replies to the given message.
    */
-  public void ack(long messageIndex, String memberId) {
+  public void reply(long messageIndex, String memberId, Object reply) {
     MessageState message = messages.get(messageIndex);
     if (message != null) {
       MemberState member = members.get(memberId);
       if (member != null) {
-        member.ack(message);
-      }
-    }
-  }
-
-  /**
-   * Fails the given message.
-   */
-  public void fail(long messageIndex, String memberId) {
-    MessageState message = messages.get(messageIndex);
-    if (message != null) {
-      MemberState member = members.get(memberId);
-      if (member != null) {
-        member.fail(message);
+        member.reply(message, reply);
       }
     }
   }

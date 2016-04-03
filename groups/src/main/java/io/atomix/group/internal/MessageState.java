@@ -19,6 +19,7 @@ import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.session.ServerSession;
 import io.atomix.group.messaging.MessageProducer;
 
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -26,23 +27,18 @@ import java.util.Random;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-final class MessageState implements AutoCloseable {
-  private final Commit<GroupCommands.Submit> commit;
-  private final Random random;
-  private final QueueState queue;
+abstract class MessageState implements AutoCloseable {
+  protected final Commit<GroupCommands.Send> commit;
+  protected final QueueState queue;
+  private List<Object> replies;
   private int members;
   private int ack;
   private int fail;
   private boolean complete;
 
-  MessageState(Commit<GroupCommands.Submit> commit, QueueState queue) {
+  protected MessageState(Commit<GroupCommands.Send> commit, QueueState queue) {
     this.commit = commit;
     this.queue = queue;
-    if (commit.operation().dispatchPolicy() == MessageProducer.DispatchPolicy.RANDOM) {
-      random = new Random(commit.operation().id());
-    } else {
-      random = null;
-    }
   }
 
   /**
@@ -74,101 +70,37 @@ final class MessageState implements AutoCloseable {
   }
 
   /**
-   * Submits the message.
+   * Returns the message delivery policy.
    */
-  public void submit(MemberState member) {
-    members = 1;
-    member.submit(this);
+  public MessageProducer.DeliveryPolicy delivery() {
+    return commit.operation().deliveryPolicy();
   }
 
   /**
-   * Submits the message.
+   * Sends the message to the given member.
    */
-  public boolean submit(MembersState members) {
-    if (commit.operation().member() != null) {
-      MemberState member = members.get(commit.operation().member());
-      if (member != null) {
-        member.submit(this);
-        return true;
-      } else {
-        sendFail();
-        return false;
-      }
-    } else if (commit.operation().dispatchPolicy() == MessageProducer.DispatchPolicy.RANDOM) {
-      if (members.isEmpty()) {
-        sendFail();
-        return false;
-      } else {
-        members.get(random.nextInt(members.size())).submit(this);
-        return true;
-      }
-    } else if (commit.operation().dispatchPolicy() == MessageProducer.DispatchPolicy.BROADCAST) {
-      this.members = members.size();
-      members.forEach(m -> m.submit(this));
-      return true;
-    } else {
-      sendFail();
-      return false;
-    }
-  }
+  public abstract boolean send(MembersState members);
 
   /**
-   * Succeeds processing of the message.
+   * Replies to the message.
    */
-  public void ack() {
-    ack++;
-    if (complete()) {
-      queue.close(this);
-    }
-  }
+  public abstract void reply(Object message);
 
   /**
-   * Sends an ack message back to the message submitter.
+   * Expires processing of the message.
    */
-  private boolean sendAck() {
+  public abstract void expire();
+
+  /**
+   * Sends a response back to the message submitter.
+   */
+  protected boolean sendReply(Object message) {
     if (!complete && session().state().active()) {
-      session().publish("ack", commit.operation());
+      session().publish("reply", new GroupCommands.Reply(commit.operation().member(), commit.operation().queue(), commit.operation().id(), message));
       complete = true;
       return true;
     }
     return false;
-  }
-
-  /**
-   * Fails processing of the message.
-   */
-  public void fail() {
-    fail++;
-    if (complete()) {
-      queue.close(this);
-    }
-  }
-
-  /**
-   * Sends a fail message back to the message submitter.
-   */
-  private boolean sendFail() {
-    if (!complete && session().state().active()) {
-      session().publish("fail", commit.operation());
-      complete = true;
-      return true;
-    }
-    return false;
-  }
-
-  /**
-   * Attempts to complete the message.
-   */
-  private boolean complete() {
-    if (commit.operation().member() != null) {
-      return sendAck();
-    } else if (commit.operation().dispatchPolicy() == MessageProducer.DispatchPolicy.RANDOM) {
-      return sendAck();
-    } else if (commit.operation().dispatchPolicy() == MessageProducer.DispatchPolicy.BROADCAST) {
-      return ack + fail == members && sendAck();
-    } else {
-      return sendFail();
-    }
   }
 
   @Override

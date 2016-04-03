@@ -257,10 +257,23 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
   /**
    * Handles a submit commit.
    */
-  public void submit(Commit<GroupCommands.Submit> commit) {
+  public void send(Commit<GroupCommands.Send> commit) {
     try {
       QueueState queue = queues.computeIfAbsent(commit.operation().queue(), t -> new QueueState(members));
-      queue.submit(new MessageState(commit, queue));
+      switch (commit.operation().deliveryPolicy()) {
+        case SYNC:
+          queue.submit(new SyncMessageState(commit, queue));
+          break;
+        case ASYNC:
+          queue.submit(new AsyncMessageState(commit, queue));
+          break;
+        case REQUEST_REPLY:
+          queue.submit(new RequestReplyMessageState(commit, queue));
+          break;
+        default:
+          commit.close();
+          throw new IllegalArgumentException("unknown delivery policy");
+      }
     } catch (Exception e) {
       commit.close();
       throw e;
@@ -268,17 +281,13 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
   }
 
   /**
-   * Handles an ack commit.
+   * Handles a reply commit.
    */
-  public void ack(Commit<GroupCommands.Ack> commit) {
+  public void reply(Commit<GroupCommands.Reply> commit) {
     try {
       QueueState queue = queues.get(commit.operation().queue());
       if (queue != null) {
-        if (commit.operation().succeeded()) {
-          queue.ack(commit.operation().id(), commit.operation().member());
-        } else {
-          queue.fail(commit.operation().id(), commit.operation().member());
-        }
+        queue.reply(commit.operation().id(), commit.operation().member(), commit.operation().message());
       }
     } finally {
       commit.close();
