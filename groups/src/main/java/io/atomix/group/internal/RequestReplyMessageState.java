@@ -67,12 +67,17 @@ class RequestReplyMessageState extends MessageState {
   }
 
   @Override
-  public void reply(Object message) {
+  public void reply(GroupCommands.Reply reply) {
     if (commit.operation().delivery() == MessageProducer.Delivery.DIRECT || commit.operation().delivery() == MessageProducer.Delivery.RANDOM) {
-      sendReply(true, message);
+      sendReply(reply.succeeded(), reply.message());
     } else if (commit.operation().delivery() == MessageProducer.Delivery.BROADCAST) {
-      ack++;
-      replies.set(ack + fail, message);
+      if (reply.succeeded()) {
+        ack++;
+        replies.set(ack + fail, reply.message());
+      } else {
+        fail++;
+      }
+
       if (ack + fail == replies.size()) {
         sendReply(fail == 0, replies);
         queue.close(this);

@@ -69,8 +69,8 @@ class SyncMessageState extends MessageState {
   }
 
   @Override
-  public void reply(Object message) {
-    if ((Boolean) message) {
+  public void reply(GroupCommands.Reply reply) {
+    if (reply.succeeded()) {
       ack++;
     } else {
       fail++;

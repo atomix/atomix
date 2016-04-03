@@ -78,7 +78,7 @@ final class MemberState implements AutoCloseable {
     this.session = session;
     if (session != null && session.state().active()) {
       for (MessageState message : messages.values()) {
-        session.publish("message", new GroupMessage<>(message.index(), memberId, message.queue(), message.message(), message.delivery()));
+        session.publish("message", new GroupMessage<>(message.index(), memberId, message.queue(), message.message()));
       }
     }
   }
@@ -96,14 +96,14 @@ final class MemberState implements AutoCloseable {
   public void submit(MessageState message) {
     messages.put(message.index(), message);
     if (session != null && session.state().active()) {
-      session.publish("message", new GroupMessage<>(message.index(), memberId, message.queue(), message.message(), message.delivery()));
+      session.publish("message", new GroupMessage<>(message.index(), memberId, message.queue(), message.message()));
     }
   }
 
   /**
    * Replies to the message.
    */
-  public void reply(MessageState message, Object reply) {
+  public void reply(MessageState message, GroupCommands.Reply reply) {
     messages.remove(message.index());
     message.reply(reply);
   }

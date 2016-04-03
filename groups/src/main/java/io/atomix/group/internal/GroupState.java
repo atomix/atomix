@@ -272,7 +272,7 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
           break;
         default:
           commit.close();
-          throw new IllegalArgumentException("unknown delivery policy");
+          throw new IllegalArgumentException("unknown execution policy");
       }
     } catch (Exception e) {
       commit.close();
@@ -287,7 +287,7 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
     try {
       QueueState queue = queues.get(commit.operation().queue());
       if (queue != null) {
-        queue.reply(commit.operation().id(), commit.operation().member(), commit.operation().message());
+        queue.reply(commit.operation());
       }
     } finally {
       commit.close();

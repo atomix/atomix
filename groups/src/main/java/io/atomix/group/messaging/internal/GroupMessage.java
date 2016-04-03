@@ -21,7 +21,6 @@ import io.atomix.catalyst.serializer.CatalystSerializable;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.group.internal.GroupCommands;
 import io.atomix.group.messaging.Message;
-import io.atomix.group.messaging.MessageProducer;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -35,18 +34,16 @@ public class GroupMessage<T> implements Message<T>, CatalystSerializable {
   private String member;
   private String queue;
   private T value;
-  private MessageProducer.Execution execution;
   private transient MessageConsumerService consumerService;
 
   public GroupMessage() {
   }
 
-  public GroupMessage(long id, String member, String queue, T value, MessageProducer.Execution execution) {
+  public GroupMessage(long id, String member, String queue, T value) {
     this.id = id;
     this.member = member;
     this.queue = queue;
     this.value = value;
-    this.execution = execution;
   }
 
   /**
@@ -90,29 +87,17 @@ public class GroupMessage<T> implements Message<T>, CatalystSerializable {
 
   @Override
   public CompletableFuture<Void> reply(Object message) {
-    if (execution == MessageProducer.Execution.REQUEST_REPLY) {
-      return consumerService.reply(new GroupCommands.Reply(member, queue, id, message));
-    } else {
-      return consumerService.reply(new GroupCommands.Reply(member, queue, id, true));
-    }
+    return consumerService.reply(new GroupCommands.Reply(member, queue, id, true, message));
   }
 
   @Override
   public CompletableFuture<Void> ack() {
-    if (execution == MessageProducer.Execution.REQUEST_REPLY) {
-      return consumerService.reply(new GroupCommands.Reply(member, queue, id, null));
-    } else {
-      return consumerService.reply(new GroupCommands.Reply(member, queue, id, true));
-    }
+    return consumerService.reply(new GroupCommands.Reply(member, queue, id, true, null));
   }
 
   @Override
   public CompletableFuture<Void> fail() {
-    if (execution == MessageProducer.Execution.REQUEST_REPLY) {
-      return consumerService.reply(new GroupCommands.Reply(member, queue, id, null));
-    } else {
-      return consumerService.reply(new GroupCommands.Reply(member, queue, id, false));
-    }
+    return consumerService.reply(new GroupCommands.Reply(member, queue, id, false, null));
   }
 
   @Override
@@ -120,7 +105,6 @@ public class GroupMessage<T> implements Message<T>, CatalystSerializable {
     buffer.writeLong(id);
     buffer.writeString(member);
     buffer.writeString(queue);
-    buffer.writeByte(execution.ordinal());
     serializer.writeObject(value, buffer);
   }
 
@@ -129,7 +113,6 @@ public class GroupMessage<T> implements Message<T>, CatalystSerializable {
     id = buffer.readLong();
     member = buffer.readString();
     queue = buffer.readString();
-    execution = MessageProducer.Execution.values()[buffer.readByte()];
     value = serializer.readObject(buffer);
   }
 

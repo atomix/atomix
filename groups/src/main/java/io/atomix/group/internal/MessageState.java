@@ -65,7 +65,7 @@ abstract class MessageState implements AutoCloseable {
   /**
    * Returns the message delivery policy.
    */
-  public MessageProducer.Execution delivery() {
+  public MessageProducer.Execution execution() {
     return commit.operation().execution();
   }
 
@@ -77,7 +77,7 @@ abstract class MessageState implements AutoCloseable {
   /**
    * Replies to the message.
    */
-  public abstract void reply(Object message);
+  public abstract void reply(GroupCommands.Reply message);
 
   /**
    * Expires processing of the message.

@@ -349,15 +349,17 @@ public final class GroupCommands {
   public static class Reply extends MemberCommand<Void> {
     private String queue;
     private long id;
+    private boolean succeeded;
     private Object message;
 
     public Reply() {
     }
 
-    public Reply(String member, String queue, long id, Object message) {
+    public Reply(String member, String queue, long id, boolean succeeded, Object message) {
       super(member);
       this.queue = queue;
       this.id = id;
+      this.succeeded = succeeded;
       this.message = message;
     }
 
@@ -380,6 +382,15 @@ public final class GroupCommands {
     }
 
     /**
+     * Returns whether the reply succeeded.
+     *
+     * @return Whether the reply succeeded.
+     */
+    public boolean succeeded() {
+      return succeeded;
+    }
+
+    /**
      * Returns the reply message.
      *
      * @return The reply message.
@@ -391,7 +402,9 @@ public final class GroupCommands {
     @Override
     public void writeObject(BufferOutput buffer, Serializer serializer) {
       super.writeObject(buffer, serializer);
-      buffer.writeString(queue).writeLong(id);
+      buffer.writeString(queue);
+      buffer.writeLong(id);
+      buffer.writeBoolean(succeeded);
       serializer.writeObject(message, buffer);
     }
 
@@ -400,6 +413,7 @@ public final class GroupCommands {
       super.readObject(buffer, serializer);
       queue = buffer.readString();
       id = buffer.readLong();
+      succeeded = buffer.readBoolean();
       message = serializer.readObject(buffer);
     }
   }

@@ -45,10 +45,10 @@ final class QueueState implements AutoCloseable {
   /**
    * Replies to the given message.
    */
-  public void reply(long messageIndex, String memberId, Object reply) {
-    MessageState message = messages.get(messageIndex);
+  public void reply(GroupCommands.Reply reply) {
+    MessageState message = messages.get(reply.id());
     if (message != null) {
-      MemberState member = members.get(memberId);
+      MemberState member = members.get(reply.member());
       if (member != null) {
         member.reply(message, reply);
       }
