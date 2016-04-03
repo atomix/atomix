@@ -35,6 +35,7 @@ final class MessageConsumerRegistry {
   void register(String name, AbstractMessageConsumer consumer) {
     List<AbstractMessageConsumer> consumers = this.consumers.computeIfAbsent(name, n -> new ArrayList<>());
     consumers.add(consumer);
+    iterators.computeIfAbsent(name, n -> new MessageConsumerIterator(consumers));
   }
 
   /**

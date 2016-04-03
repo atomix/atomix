@@ -26,7 +26,7 @@ import java.util.Random;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 class AsyncMessageState extends MessageState {
-  private int members;
+  private int members = 1;
   private int ack;
   private int fail;
 
@@ -52,9 +52,13 @@ class AsyncMessageState extends MessageState {
         return true;
       }
     } else if (commit.operation().dispatchPolicy() == MessageProducer.DispatchPolicy.BROADCAST) {
-      this.members = members.size();
-      members.forEach(m -> m.submit(this));
-      return true;
+      if (members.isEmpty()) {
+        return false;
+      } else {
+        this.members = members.size();
+        members.forEach(m -> m.submit(this));
+        return true;
+      }
     } else {
       return false;
     }
