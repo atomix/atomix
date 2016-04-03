@@ -250,20 +250,20 @@ public final class GroupCommands {
     private long id;
     private String queue;
     private Object message;
-    private MessageProducer.DispatchPolicy dispatchPolicy;
-    private MessageProducer.DeliveryPolicy deliveryPolicy;
+    private MessageProducer.Delivery delivery;
+    private MessageProducer.Execution execution;
 
     public Message() {
     }
 
-    public Message(String member, int producer, String queue, long id, Object message, MessageProducer.DispatchPolicy dispatchPolicy, MessageProducer.DeliveryPolicy deliveryPolicy) {
+    public Message(String member, int producer, String queue, long id, Object message, MessageProducer.Delivery delivery, MessageProducer.Execution execution) {
       super(member);
       this.producer = producer;
       this.queue = queue;
       this.id = id;
       this.message = message;
-      this.dispatchPolicy = dispatchPolicy;
-      this.deliveryPolicy = deliveryPolicy;
+      this.delivery = delivery;
+      this.execution = execution;
     }
 
     /**
@@ -307,8 +307,8 @@ public final class GroupCommands {
      *
      * @return The message dispatch policy.
      */
-    public MessageProducer.DispatchPolicy dispatchPolicy() {
-      return dispatchPolicy;
+    public MessageProducer.Delivery dispatchPolicy() {
+      return delivery;
     }
 
     /**
@@ -316,8 +316,8 @@ public final class GroupCommands {
      *
      * @return The message delivery policy.
      */
-    public MessageProducer.DeliveryPolicy deliveryPolicy() {
-      return deliveryPolicy;
+    public MessageProducer.Execution deliveryPolicy() {
+      return execution;
     }
 
     @Override
@@ -326,8 +326,8 @@ public final class GroupCommands {
       buffer.writeUnsignedShort(producer);
       buffer.writeString(queue);
       buffer.writeLong(id);
-      buffer.writeByte(dispatchPolicy.ordinal());
-      buffer.writeByte(deliveryPolicy.ordinal());
+      buffer.writeByte(delivery.ordinal());
+      buffer.writeByte(execution.ordinal());
       serializer.writeObject(message, buffer);
     }
 
@@ -337,8 +337,8 @@ public final class GroupCommands {
       producer = buffer.readUnsignedShort();
       queue = buffer.readString();
       id = buffer.readLong();
-      dispatchPolicy = MessageProducer.DispatchPolicy.values()[buffer.readByte()];
-      deliveryPolicy = MessageProducer.DeliveryPolicy.values()[buffer.readByte()];
+      delivery = MessageProducer.Delivery.values()[buffer.readByte()];
+      execution = MessageProducer.Execution.values()[buffer.readByte()];
       message = serializer.readObject(buffer);
     }
   }

@@ -31,16 +31,16 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class AbstractMessageProducer<T> implements MessageProducer<T> {
   private final int id;
   private final String name;
-  private final DispatchPolicy dispatchPolicy;
-  private final DeliveryPolicy deliveryPolicy;
+  private final Delivery delivery;
+  private final Execution execution;
   private final AbstractMessageClient client;
   private long messageId;
   private final Map<Long, CompletableFuture> messageFutures = new ConcurrentHashMap<>();
 
   protected AbstractMessageProducer(String name, Options options, AbstractMessageClient client) {
     this.name = name;
-    this.dispatchPolicy = options.getDispatchPolicy();
-    this.deliveryPolicy = options.getDeliveryPolicy();
+    this.delivery = options.getDelivery();
+    this.execution = options.getExecution();
     this.client = client;
     this.id = client.producerService().registry().register(this);
   }
@@ -63,13 +63,13 @@ public abstract class AbstractMessageProducer<T> implements MessageProducer<T> {
   void onAck(GroupCommands.Ack ack) {
     CompletableFuture messageFuture = messageFutures.remove(messageId);
     if (messageFuture != null) {
-      if (deliveryPolicy == DeliveryPolicy.SYNC) {
+      if (execution == Execution.SYNC) {
         if ((Boolean) ack.message()) {
           messageFuture.complete(null);
         } else {
           messageFuture.completeExceptionally(new MessageFailedException("message failed"));
         }
-      } else if (deliveryPolicy == DeliveryPolicy.REQUEST_REPLY) {
+      } else if (execution == Execution.REQUEST_REPLY) {
         messageFuture.complete(ack.message());
       }
     }
@@ -80,7 +80,7 @@ public abstract class AbstractMessageProducer<T> implements MessageProducer<T> {
    */
   @SuppressWarnings("unchecked")
   protected <U> CompletableFuture<U> send(String member, T message) {
-    if (deliveryPolicy == DeliveryPolicy.ASYNC) {
+    if (execution == Execution.ASYNC) {
       return sendAsync(member, message);
     } else {
       return sendSync(member, message);
@@ -94,7 +94,7 @@ public abstract class AbstractMessageProducer<T> implements MessageProducer<T> {
     CompletableFuture<T> future = new CompletableFuture<>();
     final long messageId = ++this.messageId;
     messageFutures.put(messageId, future);
-    client.producerService().send(new GroupCommands.Message(member, id, name, messageId, message, dispatchPolicy, deliveryPolicy)).whenComplete((result, error) -> {
+    client.producerService().send(new GroupCommands.Message(member, id, name, messageId, message, delivery, execution)).whenComplete((result, error) -> {
       if (error != null) {
         CompletableFuture<Object> messageFuture = messageFutures.remove(messageId);
         if (messageFuture != null) {
@@ -109,7 +109,7 @@ public abstract class AbstractMessageProducer<T> implements MessageProducer<T> {
    * Sends a sequential message.
    */
   private CompletableFuture sendAsync(String member, T message) {
-    return client.producerService().send(new GroupCommands.Message(member, id, name, messageId, message, dispatchPolicy, deliveryPolicy));
+    return client.producerService().send(new GroupCommands.Message(member, id, name, messageId, message, delivery, execution));
   }
 
   @Override

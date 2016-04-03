@@ -351,7 +351,7 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     });
 
     MessageProducer.Options options = new MessageProducer.Options()
-      .withDispatchPolicy(MessageProducer.DispatchPolicy.RANDOM);
+      .withDelivery(MessageProducer.Delivery.RANDOM);
     group1.messages().producer("test", options).send("Hello world!").whenComplete((result, error) -> {
       threadAssertNotNull(error);
       resume();

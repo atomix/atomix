@@ -27,76 +27,55 @@ import java.util.concurrent.CompletableFuture;
 public interface MessageProducer<T> extends AutoCloseable {
 
   /**
-   * Dispatch policy.
+   * Execution policy.
    */
-  enum DispatchPolicy {
+  enum Execution {
     /**
-     * Dispatches a message to a random member.
+     * Synchronous execution policy.
      */
-    RANDOM,
+    SYNC,
 
     /**
-     * Dispatches a message to all members of a group.
+     * Asynchronous execution policy.
      */
-    BROADCAST,
+    ASYNC,
+
+    /**
+     * Request-reply execution policy.
+     */
+    REQUEST_REPLY,
   }
 
   /**
    * Delivery policy.
    */
-  enum DeliveryPolicy {
+  enum Delivery {
+    /**
+     * Delivers a message to a random member.
+     */
+    RANDOM,
 
     /**
-     * Synchronous delivery policy.
+     * Delivers a message to all members of a group.
      */
-    SYNC,
-
-    /**
-     * Asynchronous delivery policy.
-     */
-    ASYNC,
-
-    /**
-     * Request-reply delivery policy.
-     */
-    REQUEST_REPLY,
+    BROADCAST,
   }
 
   /**
    * Task producer options.
    */
   class Options {
-    private DispatchPolicy dispatchPolicy = DispatchPolicy.BROADCAST;
-    private DeliveryPolicy deliveryPolicy = DeliveryPolicy.SYNC;
-
-    /**
-     * Sets the producer dispatch policy.
-     *
-     * @param dispatchPolicy The producer dispatch policy.
-     * @return The producer options.
-     */
-    public Options withDispatchPolicy(DispatchPolicy dispatchPolicy) {
-      this.dispatchPolicy = Assert.notNull(dispatchPolicy, "dispatchPolicy");
-      return this;
-    }
-
-    /**
-     * Returns the producer dispatch policy.
-     *
-     * @return The producer dispatch policy.
-     */
-    public DispatchPolicy getDispatchPolicy() {
-      return dispatchPolicy;
-    }
+    private Delivery delivery = Delivery.BROADCAST;
+    private Execution execution = Execution.SYNC;
 
     /**
      * Sets the producer delivery policy.
      *
-     * @param deliveryPolicy The producer delivery policy.
+     * @param delivery The producer delivery policy.
      * @return The producer options.
      */
-    public Options withDeliveryPolicy(DeliveryPolicy deliveryPolicy) {
-      this.deliveryPolicy = Assert.notNull(deliveryPolicy, "deliveryPolicy");
+    public Options withDelivery(Delivery delivery) {
+      this.delivery = Assert.notNull(delivery, "dispatchPolicy");
       return this;
     }
 
@@ -105,8 +84,28 @@ public interface MessageProducer<T> extends AutoCloseable {
      *
      * @return The producer delivery policy.
      */
-    public DeliveryPolicy getDeliveryPolicy() {
-      return deliveryPolicy;
+    public Delivery getDelivery() {
+      return delivery;
+    }
+
+    /**
+     * Sets the producer execution policy.
+     *
+     * @param execution The producer execution policy.
+     * @return The producer options.
+     */
+    public Options withExecution(Execution execution) {
+      this.execution = Assert.notNull(execution, "deliveryPolicy");
+      return this;
+    }
+
+    /**
+     * Returns the producer execution policy.
+     *
+     * @return The producer execution policy.
+     */
+    public Execution getExecution() {
+      return execution;
     }
   }
 

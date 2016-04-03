@@ -48,7 +48,7 @@ class RequestReplyMessageState extends MessageState {
         sendReply(false);
         return false;
       }
-    } else if (commit.operation().dispatchPolicy() == MessageProducer.DispatchPolicy.RANDOM) {
+    } else if (commit.operation().dispatchPolicy() == MessageProducer.Delivery.RANDOM) {
       if (members.isEmpty()) {
         sendReply(false);
         return false;
@@ -56,7 +56,7 @@ class RequestReplyMessageState extends MessageState {
         members.get(new Random(commit.operation().id()).nextInt(members.size())).submit(this);
         return true;
       }
-    } else if (commit.operation().dispatchPolicy() == MessageProducer.DispatchPolicy.BROADCAST) {
+    } else if (commit.operation().dispatchPolicy() == MessageProducer.Delivery.BROADCAST) {
       this.replies = new ArrayList<>(Collections.nCopies(members.size(), null));
       members.forEach(m -> m.submit(this));
       return true;

@@ -35,13 +35,13 @@ public class GroupMessage<T> implements Message<T>, CatalystSerializable {
   private String member;
   private String queue;
   private T value;
-  private MessageProducer.DeliveryPolicy delivery;
+  private MessageProducer.Execution delivery;
   private transient MessageConsumerService consumerService;
 
   public GroupMessage() {
   }
 
-  public GroupMessage(long id, String member, String queue, T value, MessageProducer.DeliveryPolicy delivery) {
+  public GroupMessage(long id, String member, String queue, T value, MessageProducer.Execution delivery) {
     this.id = id;
     this.member = member;
     this.queue = queue;
@@ -90,7 +90,7 @@ public class GroupMessage<T> implements Message<T>, CatalystSerializable {
 
   @Override
   public CompletableFuture<Void> reply(Object message) {
-    if (delivery == MessageProducer.DeliveryPolicy.REQUEST_REPLY) {
+    if (delivery == MessageProducer.Execution.REQUEST_REPLY) {
       return consumerService.reply(new GroupCommands.Reply(member, queue, id, message));
     } else {
       return consumerService.reply(new GroupCommands.Reply(member, queue, id, true));
@@ -99,7 +99,7 @@ public class GroupMessage<T> implements Message<T>, CatalystSerializable {
 
   @Override
   public CompletableFuture<Void> ack() {
-    if (delivery == MessageProducer.DeliveryPolicy.REQUEST_REPLY) {
+    if (delivery == MessageProducer.Execution.REQUEST_REPLY) {
       return consumerService.reply(new GroupCommands.Reply(member, queue, id, null));
     } else {
       return consumerService.reply(new GroupCommands.Reply(member, queue, id, true));
@@ -108,7 +108,7 @@ public class GroupMessage<T> implements Message<T>, CatalystSerializable {
 
   @Override
   public CompletableFuture<Void> fail() {
-    if (delivery == MessageProducer.DeliveryPolicy.REQUEST_REPLY) {
+    if (delivery == MessageProducer.Execution.REQUEST_REPLY) {
       return consumerService.reply(new GroupCommands.Reply(member, queue, id, null));
     } else {
       return consumerService.reply(new GroupCommands.Reply(member, queue, id, false));
@@ -129,7 +129,7 @@ public class GroupMessage<T> implements Message<T>, CatalystSerializable {
     id = buffer.readLong();
     member = buffer.readString();
     queue = buffer.readString();
-    delivery = MessageProducer.DeliveryPolicy.values()[buffer.readByte()];
+    delivery = MessageProducer.Execution.values()[buffer.readByte()];
     value = serializer.readObject(buffer);
   }
 
