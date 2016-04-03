@@ -15,12 +15,9 @@
  */
 package io.atomix.group.messaging.internal;
 
-import io.atomix.group.internal.GroupSubmitter;
+import io.atomix.catalyst.util.Assert;
 import io.atomix.group.messaging.MessageConsumer;
 import io.atomix.group.messaging.MessageService;
-
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Abstract message service.
@@ -28,46 +25,29 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public abstract class AbstractMessageService extends AbstractMessageClient implements MessageService {
-  private final Map<String, AbstractMessageConsumer> consumers = new ConcurrentHashMap<>();
+  private final MessageConsumerService consumerService;
 
-  public AbstractMessageService(GroupSubmitter submitter) {
-    super(submitter);
+  public AbstractMessageService(MessageProducerService producerService, MessageConsumerService consumerService) {
+    super(producerService);
+    this.consumerService = Assert.notNull(consumerService, "consumerService");
   }
 
-  protected abstract <T> AbstractMessageConsumer<T> createConsumer(String name, MessageConsumer.Options options);
+  /**
+   * Returns the message consumer service.
+   *
+   * @return The message consumer service.
+   */
+  MessageConsumerService consumerService() {
+    return consumerService;
+  }
 
   @Override
   public <T> AbstractMessageConsumer<T> consumer(String name) {
-    return consumer(name, null);
+    return consumer(name, new MessageConsumer.Options());
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T> AbstractMessageConsumer<T> consumer(String name, MessageConsumer.Options options) {
-    AbstractMessageConsumer<T> consumer = consumers.get(name);
-    if (consumer == null) {
-      synchronized (consumers) {
-        consumer = consumers.get(name);
-        if (consumer == null) {
-          consumer = createConsumer(name, options != null ? options : new MessageConsumer.Options());
-          consumers.put(name, consumer);
-        }
-      }
-    }
-
-    if (options != null) {
-      consumer.setOptions(options);
-    }
-    return consumer;
-  }
-
-  /**
-   * Closes the given consumer.
-   *
-   * @param consumer The consumer to close.
-   */
-  void close(AbstractMessageConsumer consumer) {
-    consumers.remove(consumer.name());
-  }
+  public abstract <T> AbstractMessageConsumer<T> consumer(String name, MessageConsumer.Options options);
 
 }

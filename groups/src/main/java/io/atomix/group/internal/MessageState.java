@@ -20,7 +20,6 @@ import io.atomix.copycat.server.session.ServerSession;
 import io.atomix.group.messaging.MessageProducer;
 
 import java.util.List;
-import java.util.Random;
 
 /**
  * Group message state.
@@ -28,7 +27,7 @@ import java.util.Random;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 abstract class MessageState implements AutoCloseable {
-  protected final Commit<GroupCommands.Send> commit;
+  protected final Commit<GroupCommands.Message> commit;
   protected final QueueState queue;
   private List<Object> replies;
   private int members;
@@ -36,7 +35,7 @@ abstract class MessageState implements AutoCloseable {
   private int fail;
   private boolean complete;
 
-  protected MessageState(Commit<GroupCommands.Send> commit, QueueState queue) {
+  protected MessageState(Commit<GroupCommands.Message> commit, QueueState queue) {
     this.commit = commit;
     this.queue = queue;
   }
@@ -96,7 +95,7 @@ abstract class MessageState implements AutoCloseable {
    */
   protected boolean sendReply(Object message) {
     if (!complete && session().state().active()) {
-      session().publish("reply", new GroupCommands.Reply(commit.operation().member(), commit.operation().queue(), commit.operation().id(), message));
+      session().publish("ack", new GroupCommands.Ack(commit.operation().member(), commit.operation().producer(), commit.operation().queue(), commit.operation().id(), message));
       complete = true;
       return true;
     }

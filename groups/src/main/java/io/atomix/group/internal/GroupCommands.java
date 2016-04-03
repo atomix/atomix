@@ -243,25 +243,36 @@ public final class GroupCommands {
   }
 
   /**
-   * Send command.
+   * Message command.
    */
-  public static class Send extends MemberCommand<Void> {
+  public static class Message extends MemberCommand<Void> {
+    private int producer;
     private long id;
     private String queue;
     private Object message;
     private MessageProducer.DispatchPolicy dispatchPolicy;
     private MessageProducer.DeliveryPolicy deliveryPolicy;
 
-    public Send() {
+    public Message() {
     }
 
-    public Send(String member, String queue, long id, Object message, MessageProducer.DispatchPolicy dispatchPolicy, MessageProducer.DeliveryPolicy deliveryPolicy) {
+    public Message(String member, int producer, String queue, long id, Object message, MessageProducer.DispatchPolicy dispatchPolicy, MessageProducer.DeliveryPolicy deliveryPolicy) {
       super(member);
+      this.producer = producer;
       this.queue = queue;
       this.id = id;
       this.message = message;
       this.dispatchPolicy = dispatchPolicy;
       this.deliveryPolicy = deliveryPolicy;
+    }
+
+    /**
+     * Returns the producer ID.
+     *
+     * @return The producer ID.
+     */
+    public int producer() {
+      return producer;
     }
 
     /**
@@ -312,6 +323,7 @@ public final class GroupCommands {
     @Override
     public void writeObject(BufferOutput buffer, Serializer serializer) {
       super.writeObject(buffer, serializer);
+      buffer.writeUnsignedShort(producer);
       buffer.writeString(queue);
       buffer.writeLong(id);
       buffer.writeByte(dispatchPolicy.ordinal());
@@ -322,6 +334,7 @@ public final class GroupCommands {
     @Override
     public void readObject(BufferInput buffer, Serializer serializer) {
       super.readObject(buffer, serializer);
+      producer = buffer.readUnsignedShort();
       queue = buffer.readString();
       id = buffer.readLong();
       dispatchPolicy = MessageProducer.DispatchPolicy.values()[buffer.readByte()];
@@ -392,6 +405,79 @@ public final class GroupCommands {
   }
 
   /**
+   * Ack command.
+   */
+  public static class Ack extends MemberCommand<Void> {
+    private int producer;
+    private String queue;
+    private long id;
+    private Object message;
+
+    public Ack() {
+    }
+
+    public Ack(String member, int producer, String queue, long id, Object message) {
+      super(member);
+      this.producer = producer;
+      this.queue = queue;
+      this.id = id;
+      this.message = message;
+    }
+
+    /**
+     * Returns the producer ID.
+     *
+     * @return The producer ID.
+     */
+    public int producer() {
+      return producer;
+    }
+
+    /**
+     * Returns the queue name.
+     *
+     * @return The queue name.
+     */
+    public String queue() {
+      return queue;
+    }
+
+    /**
+     * Returns the message ID.
+     *
+     * @return The message ID.
+     */
+    public long id() {
+      return id;
+    }
+
+    /**
+     * Returns the reply message.
+     *
+     * @return The reply message.
+     */
+    public Object message() {
+      return message;
+    }
+
+    @Override
+    public void writeObject(BufferOutput buffer, Serializer serializer) {
+      super.writeObject(buffer, serializer);
+      buffer.writeUnsignedShort(producer).writeString(queue).writeLong(id);
+      serializer.writeObject(message, buffer);
+    }
+
+    @Override
+    public void readObject(BufferInput buffer, Serializer serializer) {
+      super.readObject(buffer, serializer);
+      producer = buffer.readUnsignedShort();
+      queue = buffer.readString();
+      id = buffer.readLong();
+      message = serializer.readObject(buffer);
+    }
+  }
+
+  /**
    * Group command type resolver.
    */
   public static class TypeResolver implements SerializableTypeResolver {
@@ -400,10 +486,10 @@ public final class GroupCommands {
       registry.register(Join.class, -130);
       registry.register(Leave.class, -131);
       registry.register(Listen.class, -132);
-      registry.register(Send.class, -137);
-      registry.register(GroupMessage.class, -138);
-      registry.register(GroupMessage.class, -139);
-      registry.register(Reply.class, -140);
+      registry.register(Message.class, -137);
+      registry.register(Reply.class, -138);
+      registry.register(Ack.class, -139);
+      registry.register(GroupMessage.class, -140);
       registry.register(GroupMemberInfo.class, -158);
     }
   }

@@ -30,7 +30,7 @@ class AsyncMessageState extends MessageState {
   private int ack;
   private int fail;
 
-  public AsyncMessageState(Commit<GroupCommands.Send> commit, QueueState queue) {
+  public AsyncMessageState(Commit<GroupCommands.Message> commit, QueueState queue) {
     super(commit, queue);
   }
 

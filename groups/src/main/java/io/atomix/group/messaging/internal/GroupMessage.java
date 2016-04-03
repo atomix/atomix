@@ -20,7 +20,6 @@ import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.group.internal.GroupCommands;
-import io.atomix.group.internal.GroupSubmitter;
 import io.atomix.group.messaging.Message;
 import io.atomix.group.messaging.MessageProducer;
 
@@ -37,7 +36,7 @@ public class GroupMessage<T> implements Message<T>, CatalystSerializable {
   private String queue;
   private T value;
   private MessageProducer.DeliveryPolicy delivery;
-  private transient GroupSubmitter submitter;
+  private transient MessageConsumerService consumerService;
 
   public GroupMessage() {
   }
@@ -51,10 +50,13 @@ public class GroupMessage<T> implements Message<T>, CatalystSerializable {
   }
 
   /**
-   * Sets the message submitter.
+   * Sets the message consumer service.
+   *
+   * @param consumerService The message consumer service.
+   * @return The group message.
    */
-  GroupMessage<T> setSubmitter(GroupSubmitter submitter) {
-    this.submitter = submitter;
+  GroupMessage<T> setConsumerService(MessageConsumerService consumerService) {
+    this.consumerService = consumerService;
     return this;
   }
 
@@ -89,20 +91,28 @@ public class GroupMessage<T> implements Message<T>, CatalystSerializable {
   @Override
   public CompletableFuture<Void> reply(Object message) {
     if (delivery == MessageProducer.DeliveryPolicy.REQUEST_REPLY) {
-      return submitter.submit(new GroupCommands.Reply(member, queue, id, message));
+      return consumerService.reply(new GroupCommands.Reply(member, queue, id, message));
     } else {
-      return submitter.submit(new GroupCommands.Reply(member, queue, id, true));
+      return consumerService.reply(new GroupCommands.Reply(member, queue, id, true));
     }
   }
 
   @Override
   public CompletableFuture<Void> ack() {
-    return submitter.submit(new GroupCommands.Reply(member, queue, id, true));
+    if (delivery == MessageProducer.DeliveryPolicy.REQUEST_REPLY) {
+      return consumerService.reply(new GroupCommands.Reply(member, queue, id, null));
+    } else {
+      return consumerService.reply(new GroupCommands.Reply(member, queue, id, true));
+    }
   }
 
   @Override
   public CompletableFuture<Void> fail() {
-    return submitter.submit(new GroupCommands.Reply(member, queue, id, false));
+    if (delivery == MessageProducer.DeliveryPolicy.REQUEST_REPLY) {
+      return consumerService.reply(new GroupCommands.Reply(member, queue, id, null));
+    } else {
+      return consumerService.reply(new GroupCommands.Reply(member, queue, id, false));
+    }
   }
 
   @Override

@@ -16,12 +16,8 @@
 package io.atomix.group.messaging.internal;
 
 import io.atomix.catalyst.util.Assert;
-import io.atomix.group.internal.GroupSubmitter;
 import io.atomix.group.messaging.MessageClient;
 import io.atomix.group.messaging.MessageProducer;
-
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Abstract message client.
@@ -29,56 +25,28 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public abstract class AbstractMessageClient implements MessageClient {
-  private final GroupSubmitter submitter;
-  private final Map<String, AbstractMessageProducer> producers = new ConcurrentHashMap<>();
+  private final MessageProducerService producerService;
 
-  protected AbstractMessageClient(GroupSubmitter submitter) {
-    this.submitter = Assert.notNull(submitter, "submitter");
+  protected AbstractMessageClient(MessageProducerService producerService) {
+    this.producerService = Assert.notNull(producerService, "producerService");
   }
 
-  protected abstract <T> AbstractMessageProducer<T> createProducer(String name, MessageProducer.Options options);
-
   /**
-   * Returns the client submitter.
+   * Returns the message producer service.
    *
-   * @return The client submitter.
+   * @return The message producer service.
    */
-  GroupSubmitter submitter() {
-    return submitter;
+  MessageProducerService producerService() {
+    return producerService;
   }
 
   @Override
   public <T> AbstractMessageProducer<T> producer(String name) {
-    return producer(name, null);
+    return producer(name, new MessageProducer.Options());
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T> AbstractMessageProducer<T> producer(String name, MessageProducer.Options options) {
-    AbstractMessageProducer<T> producer = producers.get(name);
-    if (producer == null) {
-      synchronized (producers) {
-        producer = producers.get(name);
-        if (producer == null) {
-          producer = createProducer(name, options != null ? options : new MessageProducer.Options());
-          producers.put(name, producer);
-        }
-      }
-    }
-
-    if (options != null) {
-      producer.setOptions(options);
-    }
-    return producer;
-  }
-
-  /**
-   * Closes the given producer.
-   *
-   * @param producer The producer to close.
-   */
-  void close(AbstractMessageProducer producer) {
-    producers.remove(producer.name());
-  }
+  public abstract <T> AbstractMessageProducer<T> producer(String name, MessageProducer.Options options);
 
 }

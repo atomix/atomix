@@ -29,7 +29,7 @@ public class GroupMessageProducer<T> extends AbstractMessageProducer<T> {
   }
 
   @Override
-  public CompletableFuture<Void> send(T message) {
+  public <U> CompletableFuture<U> send(T message) {
     return send(null, message);
   }
 

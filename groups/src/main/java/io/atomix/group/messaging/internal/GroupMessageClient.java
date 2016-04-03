@@ -15,7 +15,6 @@
  */
 package io.atomix.group.messaging.internal;
 
-import io.atomix.group.internal.GroupSubmitter;
 import io.atomix.group.messaging.MessageProducer;
 
 /**
@@ -25,12 +24,12 @@ import io.atomix.group.messaging.MessageProducer;
  */
 public class GroupMessageClient extends AbstractMessageClient {
 
-  public GroupMessageClient(GroupSubmitter submitter) {
-    super(submitter);
+  public GroupMessageClient(MessageProducerService producerService) {
+    super(producerService);
   }
 
   @Override
-  protected <T> AbstractMessageProducer<T> createProducer(String name, MessageProducer.Options options) {
+  public <T> AbstractMessageProducer<T> producer(String name, MessageProducer.Options options) {
     return new GroupMessageProducer<>(name, options, this);
   }
 

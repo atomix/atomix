@@ -28,6 +28,8 @@ import io.atomix.group.election.internal.GroupElection;
 import io.atomix.group.messaging.MessageClient;
 import io.atomix.group.messaging.internal.GroupMessage;
 import io.atomix.group.messaging.internal.GroupMessageClient;
+import io.atomix.group.messaging.internal.MessageConsumerService;
+import io.atomix.group.messaging.internal.MessageProducerService;
 import io.atomix.resource.AbstractResource;
 import io.atomix.resource.ResourceType;
 import io.atomix.resource.WriteConsistency;
@@ -65,11 +67,13 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
       return MembershipGroup.this.submit(command, WriteConsistency.SEQUENTIAL_EVENT);
     }
   };
+  private final MessageProducerService producerService = new MessageProducerService(submitter);
+  private final MessageConsumerService consumerService = new MessageConsumerService(submitter);
 
   public MembershipGroup(CopycatClient client, Properties options) {
     super(client, new ResourceType(DistributedGroup.class), options);
     this.options = new DistributedGroup.Options(Assert.notNull(options, "options"));
-    this.messages = new GroupMessageClient(submitter);
+    this.messages = new GroupMessageClient(producerService);
   }
 
   @Override
@@ -129,7 +133,7 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
     }).thenApply(info -> {
       LocalGroupMember member = (LocalGroupMember) members.get(info.memberId());
       if (member == null) {
-        member = new LocalGroupMember(info, this, submitter);
+        member = new LocalGroupMember(info, this, producerService, consumerService);
         members.put(info.memberId(), member);
       }
       return member;
@@ -159,8 +163,7 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
       client.onEvent("join", this::onJoinEvent);
       client.onEvent("leave", this::onLeaveEvent);
       client.onEvent("message", this::onMessageEvent);
-      client.onEvent("ack", this::onReplyEvent);
-      client.onEvent("fail", this::onFailEvent);
+      client.onEvent("ack", this::onAckEvent);
       client.onEvent("term", this::onTermEvent);
       client.onEvent("elect", this::onElectEvent);
       return result;
@@ -176,7 +179,7 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
       for (GroupMemberInfo info : members) {
         AbstractGroupMember member = this.members.get(info.memberId());
         if (member == null) {
-          member = new GroupMember(info, this, submitter);
+          member = new GroupMember(info, this, producerService);
           this.members.put(member.id(), member);
         }
       }
@@ -189,7 +192,7 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
   private void onJoinEvent(GroupMemberInfo info) {
     AbstractGroupMember member;
     if (joining.remove(info.memberId())) {
-      member = new LocalGroupMember(info, this, submitter);
+      member = new LocalGroupMember(info, this, producerService, consumerService);
       members.put(info.memberId(), member);
 
       // Trigger join listeners.
@@ -197,7 +200,7 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
     } else {
       member = members.get(info.memberId());
       if (member == null) {
-        member = new GroupMember(info, this, submitter);
+        member = new GroupMember(info, this, producerService);
         members.put(info.memberId(), member);
 
         // Trigger join listeners.
@@ -222,38 +225,14 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
    */
   @SuppressWarnings("unchecked")
   private void onMessageEvent(GroupMessage message) {
-    AbstractGroupMember localMember = members.get(message.member());
-    if (localMember != null && localMember instanceof LocalMember) {
-      ((LocalGroupMember) localMember).messages().consumer(message.queue()).onTask(message);
-    }
+    consumerService.onMessage(message);
   }
 
   /**
-   * Handles a reply event received from the cluster.
+   * Handles an ack event received from the cluster.
    */
-  private void onReplyEvent(GroupCommands.Reply reply) {
-    if (reply.member() != null) {
-      AbstractGroupMember member = members.get(reply.member());
-      if (member != null) {
-        member.messages().producer(reply.queue()).onReply(reply.id(), reply.message());
-      }
-    } else {
-      messages.producer(reply.queue()).onReply(reply.id(), reply.message());
-    }
-  }
-
-  /**
-   * Handles a fail event received from the cluster.
-   */
-  private void onFailEvent(GroupCommands.Send send) {
-    if (send.member() != null) {
-      AbstractGroupMember member = members.get(send.member());
-      if (member != null) {
-        member.messages().producer(send.queue()).onFail(send.id());
-      }
-    } else {
-      messages.producer(send.queue()).onFail(send.id());
-    }
+  private void onAckEvent(GroupCommands.Ack ack) {
+    producerService.onAck(ack);
   }
 
   /**

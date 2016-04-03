@@ -17,6 +17,8 @@ package io.atomix.group.internal;
 
 import io.atomix.group.LocalMember;
 import io.atomix.group.messaging.internal.MemberMessageService;
+import io.atomix.group.messaging.internal.MessageConsumerService;
+import io.atomix.group.messaging.internal.MessageProducerService;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -28,9 +30,9 @@ import java.util.concurrent.CompletableFuture;
 public class LocalGroupMember extends AbstractGroupMember implements LocalMember {
   private final MemberMessageService messages;
 
-  public LocalGroupMember(GroupMemberInfo info, MembershipGroup group, GroupSubmitter submitter) {
+  public LocalGroupMember(GroupMemberInfo info, MembershipGroup group, MessageProducerService producerService, MessageConsumerService consumerService) {
     super(info, group);
-    this.messages = new MemberMessageService(this, submitter);
+    this.messages = new MemberMessageService(this, producerService, consumerService);
   }
 
   @Override

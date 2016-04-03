@@ -30,7 +30,7 @@ class SyncMessageState extends MessageState {
   private int ack;
   private int fail;
 
-  public SyncMessageState(Commit<GroupCommands.Send> commit, QueueState queue) {
+  public SyncMessageState(Commit<GroupCommands.Message> commit, QueueState queue) {
     super(commit, queue);
   }
 

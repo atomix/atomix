@@ -33,7 +33,7 @@ class RequestReplyMessageState extends MessageState {
   private int fail;
   private List<Object> replies;
 
-  public RequestReplyMessageState(Commit<GroupCommands.Send> commit, QueueState queue) {
+  public RequestReplyMessageState(Commit<GroupCommands.Message> commit, QueueState queue) {
     super(commit, queue);
   }
 

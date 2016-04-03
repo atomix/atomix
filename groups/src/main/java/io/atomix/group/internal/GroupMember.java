@@ -17,6 +17,7 @@ package io.atomix.group.internal;
 
 import io.atomix.group.Member;
 import io.atomix.group.messaging.internal.MemberMessageClient;
+import io.atomix.group.messaging.internal.MessageProducerService;
 
 /**
  * Group member.
@@ -26,9 +27,9 @@ import io.atomix.group.messaging.internal.MemberMessageClient;
 public class GroupMember extends AbstractGroupMember implements Member {
   private final MemberMessageClient messages;
 
-  public GroupMember(GroupMemberInfo info, MembershipGroup group, GroupSubmitter submitter) {
+  public GroupMember(GroupMemberInfo info, MembershipGroup group, MessageProducerService producerService) {
     super(info, group);
-    this.messages = new MemberMessageClient(this, submitter);
+    this.messages = new MemberMessageClient(this, producerService);
   }
 
   @Override

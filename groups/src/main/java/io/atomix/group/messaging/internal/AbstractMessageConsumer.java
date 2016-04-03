@@ -27,15 +27,14 @@ import java.util.function.Consumer;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public abstract class AbstractMessageConsumer<T> implements MessageConsumer<T> {
-  protected final String name;
-  protected volatile Options options;
-  protected final AbstractMessageService service;
+  private final String name;
+  private final AbstractMessageService service;
   private volatile Listener<Message<T>> listener;
 
-  public AbstractMessageConsumer(String name, Options options, AbstractMessageService service) {
+  protected AbstractMessageConsumer(String name, Options options, AbstractMessageService service) {
     this.name = name;
-    this.options = options;
     this.service = service;
+    service.consumerService().registry().register(name, this);
   }
 
   /**
@@ -47,13 +46,6 @@ public abstract class AbstractMessageConsumer<T> implements MessageConsumer<T> {
     return name;
   }
 
-  /**
-   * Sets the producer options.
-   */
-  void setOptions(Options options) {
-    this.options = options;
-  }
-
   @Override
   public Listener<Message<T>> onMessage(Consumer<Message<T>> callback) {
     listener = new ConsumerListener<>(callback);
@@ -63,15 +55,15 @@ public abstract class AbstractMessageConsumer<T> implements MessageConsumer<T> {
   /**
    * Called when a message is received.
    *
-   * @param task The received message.
+   * @param message The received message.
    */
-  public void onTask(GroupMessage<T> task) {
-    listener.accept(task.setSubmitter(service.submitter()));
+  void onMessage(GroupMessage<T> message) {
+    listener.accept(message.setConsumerService(service.consumerService()));
   }
 
   @Override
   public void close() {
-    service.close(this);
+    service.consumerService().registry().close(name, this);
   }
 
   /**

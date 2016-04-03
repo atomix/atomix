@@ -116,7 +116,7 @@ public interface MessageProducer<T> extends AutoCloseable {
    * @param message The message to send.
    * @return A completable future to be completed once the message has been acknowledged.
    */
-  CompletableFuture<Void> send(T message);
+  <U> CompletableFuture<U> send(T message);
 
   @Override
   default void close() {

@@ -29,16 +29,20 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public abstract class AbstractMessageProducer<T> implements MessageProducer<T> {
-  protected final String name;
-  protected volatile Options options;
-  protected final AbstractMessageClient client;
+  private final int id;
+  private final String name;
+  private final DispatchPolicy dispatchPolicy;
+  private final DeliveryPolicy deliveryPolicy;
+  private final AbstractMessageClient client;
   private long messageId;
-  private final Map<Long, CompletableFuture<Void>> messageFutures = new ConcurrentHashMap<>();
+  private final Map<Long, CompletableFuture> messageFutures = new ConcurrentHashMap<>();
 
   protected AbstractMessageProducer(String name, Options options, AbstractMessageClient client) {
     this.name = name;
-    this.options = options;
+    this.dispatchPolicy = options.getDispatchPolicy();
+    this.deliveryPolicy = options.getDeliveryPolicy();
     this.client = client;
+    this.id = client.producerService().registry().register(this);
   }
 
   /**
@@ -51,41 +55,32 @@ public abstract class AbstractMessageProducer<T> implements MessageProducer<T> {
   }
 
   /**
-   * Sets the producer options.
-   */
-  void setOptions(Options options) {
-    this.options = options;
-  }
-
-  /**
-   * Called when a message reply is received.
+   * Called when a message acknowledgement is received.
    *
-   * @param messageId The message ID.
+   * @param ack The message acknowledgement.
    */
-  public void onReply(long messageId, Object reply) {
-    CompletableFuture<Void> messageFuture = messageFutures.remove(messageId);
+  @SuppressWarnings("unchecked")
+  void onAck(GroupCommands.Ack ack) {
+    CompletableFuture messageFuture = messageFutures.remove(messageId);
     if (messageFuture != null) {
-      messageFuture.complete(null);
-    }
-  }
-
-  /**
-   * Called when a message is failed.
-   *
-   * @param messageId The message ID.
-   */
-  public void onFail(long messageId) {
-    CompletableFuture<Void> messageFuture = messageFutures.remove(messageId);
-    if (messageFuture != null) {
-      messageFuture.completeExceptionally(new MessageFailedException("message failed"));
+      if (deliveryPolicy == DeliveryPolicy.SYNC) {
+        if ((Boolean) ack.message()) {
+          messageFuture.complete(null);
+        } else {
+          messageFuture.completeExceptionally(new MessageFailedException("message failed"));
+        }
+      } else if (deliveryPolicy == DeliveryPolicy.REQUEST_REPLY) {
+        messageFuture.complete(ack.message());
+      }
     }
   }
 
   /**
    * Submits the message to the given member.
    */
-  protected CompletableFuture<Void> send(String member, T message) {
-    if (options.getDeliveryPolicy() == DeliveryPolicy.ASYNC) {
+  @SuppressWarnings("unchecked")
+  protected <U> CompletableFuture<U> send(String member, T message) {
+    if (deliveryPolicy == DeliveryPolicy.ASYNC) {
       return sendAsync(member, message);
     } else {
       return sendSync(member, message);
@@ -95,13 +90,13 @@ public abstract class AbstractMessageProducer<T> implements MessageProducer<T> {
   /**
    * Sends an atomic message.
    */
-  private CompletableFuture<Void> sendSync(String member, T message) {
-    CompletableFuture<Void> future = new CompletableFuture<>();
+  private CompletableFuture sendSync(String member, T message) {
+    CompletableFuture<T> future = new CompletableFuture<>();
     final long messageId = ++this.messageId;
     messageFutures.put(messageId, future);
-    client.submitter().submit(new GroupCommands.Send(member, name, messageId, message, options.getDispatchPolicy(), options.getDeliveryPolicy())).whenComplete((result, error) -> {
+    client.producerService().send(new GroupCommands.Message(member, id, name, messageId, message, dispatchPolicy, deliveryPolicy)).whenComplete((result, error) -> {
       if (error != null) {
-        CompletableFuture<Void> messageFuture = messageFutures.remove(messageId);
+        CompletableFuture<Object> messageFuture = messageFutures.remove(messageId);
         if (messageFuture != null) {
           messageFuture.completeExceptionally(error);
         }
@@ -113,13 +108,13 @@ public abstract class AbstractMessageProducer<T> implements MessageProducer<T> {
   /**
    * Sends a sequential message.
    */
-  private CompletableFuture<Void> sendAsync(String member, T message) {
-    return client.submitter().submit(new GroupCommands.Send(member, name, messageId, message, options.getDispatchPolicy(), options.getDeliveryPolicy()));
+  private CompletableFuture sendAsync(String member, T message) {
+    return client.producerService().send(new GroupCommands.Message(member, id, name, messageId, message, dispatchPolicy, deliveryPolicy));
   }
 
   @Override
   public void close() {
-    client.close(this);
+    client.producerService().registry().close(id);
   }
 
 }

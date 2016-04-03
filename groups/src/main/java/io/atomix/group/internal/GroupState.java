@@ -257,7 +257,7 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
   /**
    * Handles a submit commit.
    */
-  public void send(Commit<GroupCommands.Send> commit) {
+  public void send(Commit<GroupCommands.Message> commit) {
     try {
       QueueState queue = queues.computeIfAbsent(commit.operation().queue(), t -> new QueueState(members));
       switch (commit.operation().deliveryPolicy()) {
