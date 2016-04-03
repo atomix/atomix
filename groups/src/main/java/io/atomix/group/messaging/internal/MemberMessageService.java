@@ -34,8 +34,20 @@ public class MemberMessageService extends AbstractMessageService {
   }
 
   @Override
+  public <T> AbstractMessageConsumer<T> consumer(String name) {
+    return consumer(name, new MessageConsumer.Options());
+  }
+
+  @Override
   public <T> AbstractMessageConsumer<T> consumer(String name, MessageConsumer.Options options) {
     return new MemberMessageConsumer<>(name, options, this);
+  }
+
+  @Override
+  public <T> AbstractMessageProducer<T> producer(String name) {
+    return producer(name, new MessageProducer.Options()
+      .withDelivery(MessageProducer.Delivery.DIRECT)
+      .withExecution(MessageProducer.Execution.REQUEST_REPLY));
   }
 
   @Override

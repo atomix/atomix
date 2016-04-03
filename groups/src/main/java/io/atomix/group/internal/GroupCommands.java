@@ -307,7 +307,7 @@ public final class GroupCommands {
      *
      * @return The message dispatch policy.
      */
-    public MessageProducer.Delivery dispatchPolicy() {
+    public MessageProducer.Delivery delivery() {
       return delivery;
     }
 

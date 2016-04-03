@@ -41,9 +41,7 @@ public abstract class AbstractMessageClient implements MessageClient {
   }
 
   @Override
-  public <T> AbstractMessageProducer<T> producer(String name) {
-    return producer(name, new MessageProducer.Options());
-  }
+  public abstract <T> AbstractMessageProducer<T> producer(String name);
 
   @Override
   @SuppressWarnings("unchecked")

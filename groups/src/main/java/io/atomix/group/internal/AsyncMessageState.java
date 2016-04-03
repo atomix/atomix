@@ -44,14 +44,14 @@ class AsyncMessageState extends MessageState {
       } else {
         return false;
       }
-    } else if (commit.operation().dispatchPolicy() == MessageProducer.Delivery.RANDOM) {
+    } else if (commit.operation().delivery() == MessageProducer.Delivery.RANDOM) {
       if (members.isEmpty()) {
         return false;
       } else {
         members.get(new Random(commit.operation().id()).nextInt(members.size())).submit(this);
         return true;
       }
-    } else if (commit.operation().dispatchPolicy() == MessageProducer.Delivery.BROADCAST) {
+    } else if (commit.operation().delivery() == MessageProducer.Delivery.BROADCAST) {
       if (members.isEmpty()) {
         return false;
       } else {

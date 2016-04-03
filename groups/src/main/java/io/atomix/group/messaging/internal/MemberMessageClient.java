@@ -33,6 +33,13 @@ public class MemberMessageClient extends AbstractMessageClient {
   }
 
   @Override
+  public <T> AbstractMessageProducer<T> producer(String name) {
+    return producer(name, new MessageProducer.Options()
+      .withDelivery(MessageProducer.Delivery.DIRECT)
+      .withExecution(MessageProducer.Execution.REQUEST_REPLY));
+  }
+
+  @Override
   public <T> AbstractMessageProducer<T> producer(String name, MessageProducer.Options options) {
     return new MemberMessageProducer<>(name, options, this, member);
   }

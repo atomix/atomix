@@ -19,8 +19,6 @@ import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.session.ServerSession;
 import io.atomix.group.messaging.MessageProducer;
 
-import java.util.List;
-
 /**
  * Group message state.
  *
@@ -29,10 +27,6 @@ import java.util.List;
 abstract class MessageState implements AutoCloseable {
   protected final Commit<GroupCommands.Message> commit;
   protected final QueueState queue;
-  private List<Object> replies;
-  private int members;
-  private int ack;
-  private int fail;
   private boolean complete;
 
   protected MessageState(Commit<GroupCommands.Message> commit, QueueState queue) {

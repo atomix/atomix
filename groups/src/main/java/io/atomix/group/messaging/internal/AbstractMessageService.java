@@ -42,9 +42,7 @@ public abstract class AbstractMessageService extends AbstractMessageClient imple
   }
 
   @Override
-  public <T> AbstractMessageConsumer<T> consumer(String name) {
-    return consumer(name, new MessageConsumer.Options());
-  }
+  public abstract <T> AbstractMessageConsumer<T> consumer(String name);
 
   @Override
   @SuppressWarnings("unchecked")

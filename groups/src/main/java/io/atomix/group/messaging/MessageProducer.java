@@ -51,6 +51,11 @@ public interface MessageProducer<T> extends AutoCloseable {
    */
   enum Delivery {
     /**
+     * Delivers a message directly to a specific member.
+     */
+    DIRECT,
+
+    /**
      * Delivers a message to a random member.
      */
     RANDOM,
@@ -75,7 +80,7 @@ public interface MessageProducer<T> extends AutoCloseable {
      * @return The producer options.
      */
     public Options withDelivery(Delivery delivery) {
-      this.delivery = Assert.notNull(delivery, "dispatchPolicy");
+      this.delivery = Assert.notNull(delivery, "delivery");
       return this;
     }
 

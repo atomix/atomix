@@ -45,7 +45,7 @@ class SyncMessageState extends MessageState {
         sendReply(false);
         return false;
       }
-    } else if (commit.operation().dispatchPolicy() == MessageProducer.Delivery.RANDOM) {
+    } else if (commit.operation().delivery() == MessageProducer.Delivery.RANDOM) {
       if (members.isEmpty()) {
         sendReply(false);
         return false;
@@ -53,7 +53,7 @@ class SyncMessageState extends MessageState {
         members.get(new Random(commit.operation().id()).nextInt(members.size())).submit(this);
         return true;
       }
-    } else if (commit.operation().dispatchPolicy() == MessageProducer.Delivery.BROADCAST) {
+    } else if (commit.operation().delivery() == MessageProducer.Delivery.BROADCAST) {
       if (members.isEmpty()) {
         sendReply(false);
         return false;

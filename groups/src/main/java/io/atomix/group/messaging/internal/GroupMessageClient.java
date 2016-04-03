@@ -29,6 +29,13 @@ public class GroupMessageClient extends AbstractMessageClient {
   }
 
   @Override
+  public <T> AbstractMessageProducer<T> producer(String name) {
+    return producer(name, new MessageProducer.Options()
+      .withDelivery(MessageProducer.Delivery.BROADCAST)
+      .withExecution(MessageProducer.Execution.SYNC));
+  }
+
+  @Override
   public <T> AbstractMessageProducer<T> producer(String name, MessageProducer.Options options) {
     return new GroupMessageProducer<>(name, options, this);
   }

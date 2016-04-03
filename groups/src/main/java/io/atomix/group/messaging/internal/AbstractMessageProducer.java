@@ -91,12 +91,12 @@ public abstract class AbstractMessageProducer<T> implements MessageProducer<T> {
    * Sends an atomic message.
    */
   private CompletableFuture sendSync(String member, T message) {
-    CompletableFuture<T> future = new CompletableFuture<>();
+    CompletableFuture future = new CompletableFuture();
     final long messageId = ++this.messageId;
     messageFutures.put(messageId, future);
     client.producerService().send(new GroupCommands.Message(member, id, name, messageId, message, delivery, execution)).whenComplete((result, error) -> {
       if (error != null) {
-        CompletableFuture<Object> messageFuture = messageFutures.remove(messageId);
+        CompletableFuture messageFuture = messageFutures.remove(messageId);
         if (messageFuture != null) {
           messageFuture.completeExceptionally(error);
         }
