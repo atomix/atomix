@@ -64,13 +64,17 @@ public abstract class AbstractMessageProducer<T> implements MessageProducer<T> {
     CompletableFuture messageFuture = messageFutures.remove(messageId);
     if (messageFuture != null) {
       if (execution == Execution.SYNC) {
-        if ((Boolean) ack.message()) {
+        if (ack.succeeded()) {
           messageFuture.complete(null);
         } else {
           messageFuture.completeExceptionally(new MessageFailedException("message failed"));
         }
       } else if (execution == Execution.REQUEST_REPLY) {
-        messageFuture.complete(ack.message());
+        if (ack.succeeded()) {
+          messageFuture.complete(ack.message());
+        } else {
+          messageFuture.completeExceptionally(new MessageFailedException("message failed"));
+        }
       }
     }
   }

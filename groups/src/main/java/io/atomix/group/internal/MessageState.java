@@ -66,7 +66,7 @@ abstract class MessageState implements AutoCloseable {
    * Returns the message delivery policy.
    */
   public MessageProducer.Execution delivery() {
-    return commit.operation().deliveryPolicy();
+    return commit.operation().execution();
   }
 
   /**
@@ -87,9 +87,9 @@ abstract class MessageState implements AutoCloseable {
   /**
    * Sends a response back to the message submitter.
    */
-  protected boolean sendReply(Object message) {
+  protected boolean sendReply(boolean succeeded, Object message) {
     if (!complete && session().state().active()) {
-      session().publish("ack", new GroupCommands.Ack(commit.operation().member(), commit.operation().producer(), commit.operation().queue(), commit.operation().id(), message));
+      session().publish("ack", new GroupCommands.Ack(commit.operation().member(), commit.operation().producer(), commit.operation().queue(), commit.operation().id(), succeeded, message));
       complete = true;
       return true;
     }

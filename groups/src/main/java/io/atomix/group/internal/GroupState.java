@@ -260,7 +260,7 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
   public void send(Commit<GroupCommands.Message> commit) {
     try {
       QueueState queue = queues.computeIfAbsent(commit.operation().queue(), t -> new QueueState(members));
-      switch (commit.operation().deliveryPolicy()) {
+      switch (commit.operation().execution()) {
         case SYNC:
           queue.submit(new SyncMessageState(commit, queue));
           break;

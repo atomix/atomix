@@ -42,12 +42,12 @@ class SyncMessageState extends MessageState {
         member.submit(this);
         return true;
       } else {
-        sendReply(false);
+        sendReply(false, null);
         return false;
       }
     } else if (commit.operation().delivery() == MessageProducer.Delivery.RANDOM) {
       if (members.isEmpty()) {
-        sendReply(false);
+        sendReply(false, null);
         return false;
       } else {
         members.get(new Random(commit.operation().id()).nextInt(members.size())).submit(this);
@@ -55,7 +55,7 @@ class SyncMessageState extends MessageState {
       }
     } else if (commit.operation().delivery() == MessageProducer.Delivery.BROADCAST) {
       if (members.isEmpty()) {
-        sendReply(false);
+        sendReply(false, null);
         return false;
       } else {
         this.members = members.size();
@@ -63,7 +63,7 @@ class SyncMessageState extends MessageState {
         return true;
       }
     } else {
-      sendReply(false);
+      sendReply(false, null);
       return false;
     }
   }
@@ -78,9 +78,9 @@ class SyncMessageState extends MessageState {
 
     if (ack + fail == members) {
       if (fail == 0) {
-        sendReply(true);
+        sendReply(true, null);
       } else {
-        sendReply(false);
+        sendReply(false, null);
       }
       queue.close(this);
     }
@@ -90,7 +90,7 @@ class SyncMessageState extends MessageState {
   public void expire() {
     fail++;
     if (ack + fail == members) {
-      sendReply(false);
+      sendReply(false, null);
       queue.close(this);
     }
   }

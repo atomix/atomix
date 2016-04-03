@@ -100,7 +100,7 @@ public interface MessageProducer<T> extends AutoCloseable {
      * @return The producer options.
      */
     public Options withExecution(Execution execution) {
-      this.execution = Assert.notNull(execution, "deliveryPolicy");
+      this.execution = Assert.notNull(execution, "execution");
       return this;
     }
 

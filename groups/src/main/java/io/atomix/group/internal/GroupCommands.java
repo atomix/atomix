@@ -303,20 +303,20 @@ public final class GroupCommands {
     }
 
     /**
-     * Returns the message dispatch policy.
+     * Returns the message delivery policy.
      *
-     * @return The message dispatch policy.
+     * @return The message delivery policy.
      */
     public MessageProducer.Delivery delivery() {
       return delivery;
     }
 
     /**
-     * Returns the message delivery policy.
+     * Returns the message execution policy.
      *
-     * @return The message delivery policy.
+     * @return The message execution policy.
      */
-    public MessageProducer.Execution deliveryPolicy() {
+    public MessageProducer.Execution execution() {
       return execution;
     }
 
@@ -411,16 +411,18 @@ public final class GroupCommands {
     private int producer;
     private String queue;
     private long id;
+    private boolean succeeded;
     private Object message;
 
     public Ack() {
     }
 
-    public Ack(String member, int producer, String queue, long id, Object message) {
+    public Ack(String member, int producer, String queue, long id, boolean succeeded, Object message) {
       super(member);
       this.producer = producer;
       this.queue = queue;
       this.id = id;
+      this.succeeded = succeeded;
       this.message = message;
     }
 
@@ -452,6 +454,15 @@ public final class GroupCommands {
     }
 
     /**
+     * Returns whether the message succeeded.
+     *
+     * @return Whether the message succeeded.
+     */
+    public boolean succeeded() {
+      return succeeded;
+    }
+
+    /**
      * Returns the reply message.
      *
      * @return The reply message.
@@ -463,7 +474,10 @@ public final class GroupCommands {
     @Override
     public void writeObject(BufferOutput buffer, Serializer serializer) {
       super.writeObject(buffer, serializer);
-      buffer.writeUnsignedShort(producer).writeString(queue).writeLong(id);
+      buffer.writeUnsignedShort(producer);
+      buffer.writeString(queue);
+      buffer.writeLong(id);
+      buffer.writeBoolean(succeeded);
       serializer.writeObject(message, buffer);
     }
 
@@ -473,6 +487,7 @@ public final class GroupCommands {
       producer = buffer.readUnsignedShort();
       queue = buffer.readString();
       id = buffer.readLong();
+      succeeded = buffer.readBoolean();
       message = serializer.readObject(buffer);
     }
   }
