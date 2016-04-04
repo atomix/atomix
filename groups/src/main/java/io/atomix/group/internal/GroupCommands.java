@@ -199,7 +199,14 @@ public final class GroupCommands {
   /**
    * List command.
    */
-  public static class Listen extends GroupCommand<Set<GroupMemberInfo>> {
+  public static class Listen extends MemberCommand<Set<GroupMemberInfo>> {
+    public Listen() {
+    }
+
+    public Listen(String member) {
+      super(member);
+    }
+
     @Override
     public CompactionMode compaction() {
       return CompactionMode.QUORUM;

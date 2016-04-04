@@ -68,4 +68,11 @@ public class GroupElection implements Election {
     electionListeners.accept(term);
   }
 
+  /**
+   * Called when a leader resigns.
+   */
+  public void onResign() {
+    term.setLeader(null);
+  }
+
 }

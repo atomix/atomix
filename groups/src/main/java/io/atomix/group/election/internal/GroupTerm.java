@@ -48,7 +48,7 @@ public class GroupTerm implements Term {
    * @param leader The term leader.
    */
   void setLeader(Member leader) {
-    this.leader = Assert.notNull(leader, "leader");
+    this.leader = leader;
   }
 
 }

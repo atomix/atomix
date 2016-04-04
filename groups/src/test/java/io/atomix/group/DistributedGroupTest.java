@@ -263,6 +263,35 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
   }
 
   /**
+   * Tests that a direct message is redelivered to a persistent member after it rejoins the group.
+   */
+  public void testDirectMessageRedeliverToPersistentMember() throws Throwable {
+    createServers(3);
+
+    DistributedGroup group1 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6000)));
+    DistributedGroup group2 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6001)));
+
+    LocalMember member = group2.join("test").get(10, TimeUnit.SECONDS);
+
+    assertEquals(group1.members().size(), 1);
+    assertEquals(group2.members().size(), 1);
+
+    member.messages().consumer("test").onMessage(message -> {
+      threadAssertEquals(message.message(), "Hello world!");
+      group1.join("test").thenAccept(localMember -> {
+        localMember.messages().consumer("test").onMessage(m -> {
+          threadAssertEquals(message.message(), "Hello world!");
+          m.ack();
+          resume();
+        });
+      });
+      resume();
+    });
+    group1.member(member.id()).messages().producer("test").send("Hello world!").thenRun(this::resume);
+    await(10000, 3);
+  }
+
+  /**
    * Tests that a message is failed when a member leaves before the message is processed.
    */
   public void testDirectMessageFailOnLeave() throws Throwable {

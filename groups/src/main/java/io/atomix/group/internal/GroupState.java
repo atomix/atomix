@@ -109,8 +109,6 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
    */
   private void resignLeader(boolean toCandidate) {
     if (leader != null) {
-      sessions.values().forEach(s -> s.resign(leader));
-
       if (toCandidate) {
         candidates.add(leader);
       }
@@ -173,6 +171,9 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
       }
       // If the member already exists and is a persistent member, update the member to point to the new session.
       else if (member.persistent()) {
+        // Pause the member to prevent messages from being pushed to it until the member change has been propagated.
+        member.pause();
+
         // Update the member's session to the commit session the member may have been reopened via a new session.
         member.setSession(commit.session());
 
@@ -241,7 +242,15 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
    */
   public Set<GroupMemberInfo> listen(Commit<GroupCommands.Listen> commit) {
     try {
-      sessions.put(commit.session().id(), new SessionState(commit.session()));
+      if (commit.operation().member() != null) {
+        MemberState member = members.get(commit.operation().member());
+        if (member != null) {
+          member.resume();
+        }
+      } else {
+        sessions.put(commit.session().id(), new SessionState(commit.session()));
+      }
+
       Set<GroupMemberInfo> members = new HashSet<>();
       for (MemberState member : this.members) {
         if (member.session() != null && member.session().state().active()) {

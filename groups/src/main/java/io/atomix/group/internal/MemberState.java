@@ -32,6 +32,7 @@ final class MemberState implements AutoCloseable {
   private final long index;
   private final String memberId;
   private final boolean persistent;
+  private boolean paused = true;
   private ServerSession session;
   private final Map<Long, MessageState> messages = new LinkedHashMap<>();
 
@@ -76,7 +77,7 @@ final class MemberState implements AutoCloseable {
    */
   public void setSession(ServerSession session) {
     this.session = session;
-    if (session != null && session.state().active()) {
+    if (!paused && session != null && session.state().active()) {
       for (MessageState message : messages.values()) {
         session.publish("message", new GroupMessage<>(message.index(), memberId, message.queue(), message.message()));
       }
@@ -91,11 +92,32 @@ final class MemberState implements AutoCloseable {
   }
 
   /**
+   * Pauses messaging in the member.
+   */
+  public void pause() {
+    paused = true;
+  }
+
+  /**
+   * Resumes messaging in the member.
+   */
+  public void resume() {
+    if (paused) {
+      paused = false;
+      if (session != null && session.state().active()) {
+        for (MessageState message : messages.values()) {
+          session.publish("message", new GroupMessage<>(message.index(), memberId, message.queue(), message.message()));
+        }
+      }
+    }
+  }
+
+  /**
    * Submits the given message to be processed by the member.
    */
   public void submit(MessageState message) {
     messages.put(message.index(), message);
-    if (session != null && session.state().active()) {
+    if (!paused && session != null && session.state().active()) {
       session.publish("message", new GroupMessage<>(message.index(), memberId, message.queue(), message.message()));
     }
   }

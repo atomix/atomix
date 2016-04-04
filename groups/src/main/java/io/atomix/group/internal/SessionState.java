@@ -72,15 +72,6 @@ final class SessionState {
     }
   }
 
-  /**
-   * Sends a resign event to the session for the given member.
-   */
-  public void resign(MemberState member) {
-    if (session.state().active()) {
-      session.publish("resign", member.id());
-    }
-  }
-
   @Override
   public int hashCode() {
     return session.hashCode();
