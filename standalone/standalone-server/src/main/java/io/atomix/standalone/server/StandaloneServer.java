@@ -15,18 +15,18 @@
  */
 package io.atomix.standalone.server;
 
-import java.util.List;
-import java.util.Properties;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.util.PropertiesReader;
 import io.atomix.manager.ResourceServer;
 import net.sourceforge.argparse4j.ArgumentParsers;
+import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
+
+import java.util.List;
+import java.util.Properties;
+import java.util.stream.Collectors;
 
 /**
  * Standalone Server.
@@ -36,11 +36,19 @@ import net.sourceforge.argparse4j.inf.Namespace;
 public class StandaloneServer {
   public static void main(String[] args) throws Exception {
     ArgumentParser parser = ArgumentParsers.newArgumentParser("AtomixServer")
-        .defaultHelp(true)
-        .description("Atomix server");
-    parser.addArgument("-config").help("Atomix configuration file");
-    parser.addArgument("-server").help("Server address in host:port format");
-    parser.addArgument("-seed").help("Comma-separated list of seed node addresses in host:port format");
+      .defaultHelp(true)
+      .description("Atomix server");
+    parser.addArgument("address")
+      .required(true)
+      .help("The server address");
+    parser.addArgument("-bootstrap")
+      .nargs("*")
+      .help("Bootstraps a new cluster");
+    parser.addArgument("-join")
+      .nargs("*")
+      .help("Joins an existing cluster");
+    parser.addArgument("-config")
+      .help("Atomix configuration file");
 
     Namespace ns = null;
     try {
@@ -50,26 +58,27 @@ public class StandaloneServer {
       System.exit(1);
     }
 
-    ResourceServer.Builder builder = null;
+    String address = ns.getString("address");
     String config = ns.getString("config");
 
-    if (config != null) {
-      Properties properties = PropertiesReader.load(config).properties();
-      builder = ResourceServer.builder(properties);
-    } else {
-      String server = ns.getString("server");
-      String seed = ns.getString("seed");
-      if (server == null || seed == null) {
-        System.err.println("Must supply -config or -server and -seed");
-        System.exit(1);
-      }
-
-      List<Address> seeds = Stream.of(seed.split(",")).map(a -> new Address(a)).collect(Collectors.toList());
-      builder = ResourceServer.builder(new Address(server), seeds);
-    }
+    Properties properties = PropertiesReader.load(config).properties();
+    ResourceServer.Builder builder = ResourceServer.builder(new Address(address), properties);
 
     ResourceServer server = builder.build();
-    server.start().join();
+
+    List<String> bootstrap = ns.getList("bootstrap");
+    if (bootstrap != null) {
+      List<Address> cluster = bootstrap.stream().map(Address::new).collect(Collectors.toList());
+      server.bootstrap(cluster).join();
+    } else {
+      List<String> join = ns.getList("join");
+      if (join != null) {
+        List<Address> cluster = join.stream().map(Address::new).collect(Collectors.toList());
+        server.join(cluster).join();
+      } else {
+        System.err.println("Must configure either -bootstrap or -join");
+      }
+    }
 
     synchronized (StandaloneServer.class) {
       while (server.isRunning()) {

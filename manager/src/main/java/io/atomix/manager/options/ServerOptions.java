@@ -15,16 +15,15 @@
  */
 package io.atomix.manager.options;
 
-import java.io.File;
-import java.lang.reflect.InvocationTargetException;
-import java.time.Duration;
-import java.util.Properties;
-
-import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.ConfigurationException;
 import io.atomix.catalyst.util.QualifiedProperties;
 import io.atomix.copycat.server.storage.StorageLevel;
+
+import java.io.File;
+import java.lang.reflect.InvocationTargetException;
+import java.time.Duration;
+import java.util.Properties;
 
 /**
  * Server options.
@@ -33,12 +32,9 @@ import io.atomix.copycat.server.storage.StorageLevel;
  */
 public class ServerOptions extends AtomixOptions {
   public static final String TRANSPORT = "server.transport";
-  public static final String ADDRESS = "server.address";
-  public static final String CLIENT_ADDRESS = "server.clientAddress";
-  public static final String SERVER_ADDRESS = "server.serverAddress";
-  public static final String ELECTION_TIMEOUT = "cluster.electionTimeout";
-  public static final String HEARTBEAT_INTERVAL = "cluster.heartbeatInterval";
-  public static final String SESSION_TIMEOUT = "cluster.sessionTimeout";
+  public static final String ELECTION_TIMEOUT = "raft.electionTimeout";
+  public static final String HEARTBEAT_INTERVAL = "raft.heartbeatInterval";
+  public static final String SESSION_TIMEOUT = "raft.sessionTimeout";
   public static final String STORAGE_DIRECTORY = "storage.directory";
   public static final String STORAGE_LEVEL = "storage.level";
   public static final String MAX_SEGMENT_SIZE = "storage.maxSegmentSize";
@@ -83,24 +79,6 @@ public class ServerOptions extends AtomixOptions {
     } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
       throw new ConfigurationException("failed to instantiate transport", e);
     }
-  }
-
-  /**
-   * Returns the server client address.
-   *
-   * @return The server client address.
-   */
-  public Address clientAddress() {
-    return new Address(reader.getString(CLIENT_ADDRESS, reader.getString(SERVER_ADDRESS, reader.getString(ADDRESS))));
-  }
-
-  /**
-   * Returns the server server address.
-   *
-   * @return The server server address.
-   */
-  public Address serverAddress() {
-    return new Address(reader.getString(SERVER_ADDRESS, reader.getString(ADDRESS)));
   }
 
   /**

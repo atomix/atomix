@@ -64,7 +64,7 @@ public class AtomixClientTest extends AbstractAtomixTest {
    * Tests submitting a command with a configured consistency level.
    */
   private void testSubmitCommand(WriteConsistency consistency) throws Throwable {
-    createReplicas(5, 3, 1, new ResourceType(TestResource.class));
+    createReplicas(3, new ResourceType(TestResource.class));
 
     Atomix client = createClient(new ResourceType(TestResource.class));
 
@@ -103,7 +103,7 @@ public class AtomixClientTest extends AbstractAtomixTest {
    * Tests submitting a query with a configured consistency level.
    */
   private void testSubmitQuery(ReadConsistency consistency) throws Throwable {
-    createReplicas(5, 3, 1, new ResourceType(TestResource.class));
+    createReplicas(3, new ResourceType(TestResource.class));
 
     Atomix client = createClient(new ResourceType(TestResource.class));
 
@@ -121,7 +121,7 @@ public class AtomixClientTest extends AbstractAtomixTest {
    * Tests getting a resource and submitting commands.
    */
   public void testGetConcurrency() throws Throwable {
-    createReplicas(5, 3, 1, new ResourceType(ValueResource.class));
+    createReplicas(3, new ResourceType(ValueResource.class));
 
     Atomix client1 = createClient(new ResourceType(ValueResource.class));
     Atomix client2 = createClient(new ResourceType(ValueResource.class));
@@ -142,7 +142,7 @@ public class AtomixClientTest extends AbstractAtomixTest {
    * Tests getting and creating a resource and submitting commands.
    */
   public void testGetCreateConcurrency() throws Throwable {
-    createReplicas(5, 3, 1, new ResourceType(ValueResource.class));
+    createReplicas(3, new ResourceType(ValueResource.class));
 
     Atomix client1 = createClient(new ResourceType(ValueResource.class));
     Atomix client2 = createClient(new ResourceType(ValueResource.class));
@@ -163,7 +163,7 @@ public class AtomixClientTest extends AbstractAtomixTest {
    * Tests getting resource keys.
    */
   public void testGetResourceKeys() throws Throwable {
-    createReplicas(5, 3, 1, new ResourceType(TestResource.class), new ResourceType(ValueResource.class));
+    createReplicas(3, new ResourceType(TestResource.class), new ResourceType(ValueResource.class));
     Atomix client = createClient(new ResourceType(TestResource.class), new ResourceType(ValueResource.class));
 
     client.keys().thenAccept(result -> {

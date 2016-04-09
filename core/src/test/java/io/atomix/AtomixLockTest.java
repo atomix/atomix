@@ -19,6 +19,7 @@ import io.atomix.concurrent.DistributedLock;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 /**
@@ -30,23 +31,41 @@ import java.util.function.Function;
 public class AtomixLockTest extends AbstractAtomixTest {
   @BeforeClass
   protected void setupCluster() throws Throwable {
-    createReplicas(3, 3, 0);
+    createReplicas(3);
   }
   
   public void testClientLockGet() throws Throwable {
-    Atomix client1 = createClient();
-    Atomix client2 = createClient();
-    testLock(client1, client2, getResource("test-client-lock-get", DistributedLock.class));
+    AtomixClient client1 = createClient();
+    AtomixClient client2 = createClient();
+
+    DistributedLock lock1 = client1.getLock("test-client-lock").get(10, TimeUnit.SECONDS);
+    lock1.lock().thenRun(this::resume);
+    await(5000);
+
+    DistributedLock lock2 = client2.getLock("test-client-lock").get(10, TimeUnit.SECONDS);
+    lock2.lock().thenRun(this::resume);
+    client1.close();
+    await(10000);
   }
 
   public void testReplicaLockGet() throws Throwable {
-    testLock(createClient(), replicas.get(0), getResource("test-replica-lock-get", DistributedLock.class));
+    AtomixClient client = createClient();
+    AtomixReplica replica = replicas.get(0);
+
+    DistributedLock lock1 = client.getLock("test-replica-lock").get(10, TimeUnit.SECONDS);
+    lock1.lock().thenRun(this::resume);
+    await(5000);
+
+    DistributedLock lock2 = replica.getLock("test-replica-lock").get(10, TimeUnit.SECONDS);
+    lock2.lock().thenRun(this::resume);
+    client.close();
+    await(10000);
   }
 
   /**
    * Tests a leader election.
    */
-  private void testLock(Atomix client1, Atomix client2, Function<Atomix, DistributedLock> factory) throws Throwable {
+  private void testLock(AtomixClient client1, AtomixClient client2, Function<Atomix, DistributedLock> factory) throws Throwable {
     DistributedLock lock1 = factory.apply(client1);
     DistributedLock lock2 = factory.apply(client2);
 

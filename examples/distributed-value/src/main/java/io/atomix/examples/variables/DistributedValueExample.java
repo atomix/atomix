@@ -15,7 +15,6 @@
  */
 package io.atomix.examples.variables;
 
-import io.atomix.Atomix;
 import io.atomix.AtomixReplica;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.NettyTransport;
@@ -47,15 +46,15 @@ public class DistributedValueExample {
     Address address = new Address(mainParts[0], Integer.valueOf(mainParts[1]));
 
     // Build a list of all member addresses to which to connect.
-    List<Address> members = new ArrayList<>();
+    List<Address> cluster = new ArrayList<>();
     for (int i = 1; i < args.length; i++) {
       String[] parts = args[i].split(":");
-      members.add(new Address(parts[0], Integer.valueOf(parts[1])));
+      cluster.add(new Address(parts[0], Integer.valueOf(parts[1])));
     }
 
     // Create a stateful Atomix replica. The replica communicates with other replicas in the cluster
     // to replicate state changes.
-    Atomix atomix = AtomixReplica.builder(address, members)
+    AtomixReplica atomix = AtomixReplica.builder(address)
       .withTransport(new NettyTransport())
       .withStorage(Storage.builder()
         .withStorageLevel(StorageLevel.DISK)
@@ -67,11 +66,11 @@ public class DistributedValueExample {
         .build())
       .build();
 
-    atomix.open().join();
+    atomix.bootstrap(cluster).join();
 
     atomix.<String>getValue("value").thenAccept(DistributedValueExample::recursiveSet);
 
-    while (atomix.isOpen()) {
+    for (;;) {
       Thread.sleep(1000);
     }
   }

@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
 public class ResourceRecoveryTest extends AbstractAtomixTest {
   @BeforeClass
   protected void setupCluster() throws Throwable {
-    createReplicas(5, 3, 1);
+    createReplicas(3);
   }
   
   public void testRecoverClientResources() throws Throwable {

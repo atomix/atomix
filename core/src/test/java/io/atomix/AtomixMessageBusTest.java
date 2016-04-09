@@ -29,7 +29,7 @@ import org.testng.annotations.Test;
 public class AtomixMessageBusTest extends AbstractAtomixTest {
   @BeforeClass
   protected void setupCluster() throws Throwable {
-    createReplicas(3, 3, 0);
+    createReplicas(3);
   }
   
   public void testClientMessageBusGet() throws Throwable {

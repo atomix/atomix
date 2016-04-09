@@ -55,7 +55,7 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class Atomix implements ResourceManager<Atomix>, Managed<Atomix> {
+public abstract class Atomix implements ResourceManager<Atomix> {
   static final Collection<ResourceType> RESOURCES = Arrays.asList(
     new ResourceType(DistributedMap.class),
     new ResourceType(DistributedMultiMap.class),

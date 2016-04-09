@@ -15,13 +15,11 @@
  */
 package io.atomix.manager.options;
 
-import java.util.Collection;
-import java.util.Properties;
-
 import io.atomix.catalyst.serializer.Serializer;
-import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.util.PropertiesReader;
 import io.atomix.catalyst.util.QualifiedProperties;
+
+import java.util.Properties;
 
 /**
  * Atomix options.
@@ -29,22 +27,12 @@ import io.atomix.catalyst.util.QualifiedProperties;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public abstract class AtomixOptions {
-  public static final String SEED = "cluster.seed";
   public static final String SERIALIZER = "serializer";
 
   protected final PropertiesReader reader;
 
   protected AtomixOptions(Properties properties) {
     this.reader = new PropertiesReader(properties);
-  }
-
-  /**
-   * Returns the collection of seed servers.
-   *
-   * @return The collection of seed servers.
-   */
-  public Collection<Address> servers() {
-    return reader.getCollection(SEED, p -> new Address(reader.getString(p)));
   }
 
   /**

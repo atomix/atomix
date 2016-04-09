@@ -32,7 +32,7 @@ public class AtomixSetTest extends AbstractAtomixTest {
 
   @BeforeClass
   protected void setupCluster() throws Throwable {
-    createReplicas(3, 3, 0);
+    createReplicas(3);
   }
   
   public void testClientSetGet() throws Throwable {

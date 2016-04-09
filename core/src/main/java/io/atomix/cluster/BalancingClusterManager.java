@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.util;
+package io.atomix.cluster;
 
-import io.atomix.Quorum;
+import io.atomix.AtomixReplica;
+import io.atomix.catalyst.util.Assert;
 import io.atomix.copycat.error.ConfigurationException;
 import io.atomix.copycat.server.cluster.Cluster;
 import io.atomix.copycat.server.cluster.Member;
@@ -30,19 +31,48 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * Handles balancing of Atomix clusters.
+ * Cluster manager implementation that automatically balances the cluster.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class ClusterBalancer implements AutoCloseable {
-  private static final Logger LOGGER = LoggerFactory.getLogger(ClusterBalancer.class);
+public class BalancingClusterManager implements ClusterManager {
+
+  /**
+   * Returns a new balancing cluster manager builder.
+   *
+   * @return A new balancing cluster manager builder.
+   */
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(BalancingClusterManager.class);
   private final int quorumHint;
   private final int backupCount;
   private boolean closed;
 
-  public ClusterBalancer(int quorumHint, int backupCount) {
+  public BalancingClusterManager(int quorumHint, int backupCount) {
     this.quorumHint = quorumHint;
     this.backupCount = backupCount;
+  }
+
+  @Override
+  public CompletableFuture<Void> start(Cluster cluster, AtomixReplica replica) {
+    cluster.members().forEach(m -> {
+      m.onTypeChange(t -> balance(cluster));
+      m.onStatusChange(s -> balance(cluster));
+    });
+
+    cluster.onLeaderElection(l -> balance(cluster));
+
+    cluster.onJoin(m -> {
+      m.onTypeChange(t -> balance(cluster));
+      m.onStatusChange(s -> balance(cluster));
+      balance(cluster);
+    });
+
+    cluster.onLeave(m -> balance(cluster));
+    return null;
   }
 
   /**
@@ -52,8 +82,11 @@ public class ClusterBalancer implements AutoCloseable {
    * @return A completable future to be completed once the cluster has been balanced.
    */
   public CompletableFuture<Void> balance(Cluster cluster) {
-    LOGGER.info("Balancing cluster...");
-    return balance(cluster, new CompletableFuture<>());
+    if (cluster.member().equals(cluster.leader())) {
+      LOGGER.info("Balancing cluster...");
+      return balance(cluster, new CompletableFuture<>());
+    }
+    return CompletableFuture.completedFuture(null);
   }
 
   /**
@@ -100,7 +133,7 @@ public class ClusterBalancer implements AutoCloseable {
       else if (availableReserveCount > 0) {
         Member promote = reserve.stream().filter(m -> m.status() == Member.Status.AVAILABLE).findFirst().get();
         LOGGER.info("Promoting {} to ACTIVE: not enough active members", promote.address());
-          promote.promote(Member.Type.ACTIVE).whenComplete(completeFunction);
+        promote.promote(Member.Type.ACTIVE).whenComplete(completeFunction);
         return future;
       }
     }
@@ -154,15 +187,10 @@ public class ClusterBalancer implements AutoCloseable {
     return future;
   }
 
-  /**
-   * Replaces the local member in the cluster.
-   *
-   * @param cluster The cluster in which to replace the local member.
-   * @return A completable future to be completed once the local member has been replaced.
-   */
-  public CompletableFuture<Void> replace(Cluster cluster) {
+  @Override
+  public CompletableFuture<Void> stop(Cluster cluster, AtomixReplica replica) {
     LOGGER.debug("Balancing cluster...");
-    return replace(cluster, new CompletableFuture<>());
+    return replace(cluster, new CompletableFuture<>()).whenComplete((result, error) -> closed = true);
   }
 
   /**
@@ -280,9 +308,120 @@ public class ClusterBalancer implements AutoCloseable {
     return future;
   }
 
-  @Override
-  public void close() {
-    closed = true;
+  /**
+   * Balancing cluster manager builder.
+   */
+  public static class Builder implements ClusterManager.Builder {
+    private int quorumHint = Quorum.ALL.size();
+    private int backupCount = 0;
+
+    /**
+     * Sets the cluster quorum hint.
+     * <p>
+     * The quorum hint specifies the optimal number of replicas to actively participate in the Raft
+     * consensus algorithm. As long as there are at least {@code quorumHint} replicas in the cluster,
+     * Atomix will automatically balance replicas to ensure that at least {@code quorumHint} replicas
+     * are active participants in the Raft algorithm at any given time. Replicas can be added to or
+     * removed from the cluster at will, and remaining replicas will be transparently promoted and demoted
+     * as necessary to maintain the desired quorum size.
+     * <p>
+     * The size of the quorum is relevant both to performance and fault-tolerance. When resources are
+     * created or deleted or resource state changes are submitted to the cluster, Atomix will synchronously
+     * replicate changes to a majority of the cluster before they can be committed and update state. For
+     * example, in a cluster where the {@code quorumHint} is {@code 3}, a
+     * {@link io.atomix.collections.DistributedMap#put(Object, Object)} command must be sent to the leader
+     * and then synchronously replicated to one other replica before it can be committed and applied to the
+     * map state machine. This also means that a cluster with {@code quorumHint} equal to {@code 3} can tolerate
+     * at most one failure.
+     * <p>
+     * Users should set the {@code quorumHint} to an odd number of replicas or use one of the {@link Quorum}
+     * magic constants for the greatest level of fault tolerance. Typically, in write-heavy workloads, the most
+     * performant configuration will be a {@code quorumHint} of {@code 3}. In read-heavy workloads, quorum hints
+     * of {@code 3} or {@code 5} can be used depending on the size of the cluster and desired level of fault tolerance.
+     * Additional active replicas may or may not improve read performance depending on usage and in particular
+     * {@link io.atomix.resource.ReadConsistency read consistency} levels.
+     *
+     * @param quorumHint The quorum hint. This must be the same on all replicas in the cluster.
+     * @return The replica builder.
+     * @throws IllegalArgumentException if the quorum hint is less than {@code -1}
+     */
+    public Builder withQuorumHint(int quorumHint) {
+      this.quorumHint = Assert.argNot(quorumHint, quorumHint < -1, "quorumHint must be positive or -1");
+      return this;
+    }
+
+    /**
+     * Sets the cluster quorum hint.
+     * <p>
+     * The quorum hint specifies the optimal number of replicas to actively participate in the Raft
+     * consensus algorithm. As long as there are at least {@code quorumHint} replicas in the cluster,
+     * Atomix will automatically balance replicas to ensure that at least {@code quorumHint} replicas
+     * are active participants in the Raft algorithm at any given time. Replicas can be added to or
+     * removed from the cluster at will, and remaining replicas will be transparently promoted and demoted
+     * as necessary to maintain the desired quorum size.
+     * <p>
+     * By default, the configured quorum hint is {@link Quorum#ALL}.
+     * <p>
+     * The size of the quorum is relevant both to performance and fault-tolerance. When resources are
+     * created or deleted or resource state changes are submitted to the cluster, Atomix will synchronously
+     * replicate changes to a majority of the cluster before they can be committed and update state. For
+     * example, in a cluster where the {@code quorumHint} is {@code 3}, a
+     * {@link io.atomix.collections.DistributedMap#put(Object, Object)} command must be sent to the leader
+     * and then synchronously replicated to one other replica before it can be committed and applied to the
+     * map state machine. This also means that a cluster with {@code quorumHint} equal to {@code 3} can tolerate
+     * at most one failure.
+     * <p>
+     * Users should set the {@code quorumHint} to an odd number of replicas or use one of the {@link Quorum}
+     * magic constants for the greatest level of fault tolerance. Typically, in write-heavy workloads, the most
+     * performant configuration will be a {@code quorumHint} of {@code 3}. In read-heavy workloads, quorum hints
+     * of {@code 3} or {@code 5} can be used depending on the size of the cluster and desired level of fault tolerance.
+     * Additional active replicas may or may not improve read performance depending on usage and in particular
+     * {@link io.atomix.resource.ReadConsistency read consistency} levels.
+     *
+     * @param quorum The quorum hint. This must be the same on all replicas in the cluster.
+     * @return The replica builder.
+     * @throws NullPointerException if the quorum hint is null
+     */
+    public Builder withQuorumHint(Quorum quorum) {
+      this.quorumHint = Assert.notNull(quorum, "quorum").size();
+      return this;
+    }
+
+    /**
+     * Sets the replica backup count.
+     * <p>
+     * The backup count specifies the maximum number of replicas per {@link #withQuorumHint(int) active} replica
+     * to participate in asynchronous replication of state. Backup replicas allow quorum-member replicas to be
+     * more quickly replaced in the event of a failure or an active replica leaving the cluster. Additionally,
+     * backup replicas may service {@link io.atomix.resource.ReadConsistency#SEQUENTIAL SEQUENTIAL} and
+     * {@link io.atomix.resource.ReadConsistency#CAUSAL CAUSAL} reads to allow read operations to be further
+     * spread across the cluster.
+     * <p>
+     * The backup count is used to calculate the number of backup replicas per non-leader active member. The
+     * number of actual backups is calculated by {@code (quorumHint - 1) * backupCount}. If the
+     * {@code backupCount} is {@code 1} and the {@code quorumHint} is {@code 3}, the number of backup replicas
+     * will be {@code 2}.
+     * <p>
+     * By default, the backup count is {@code 0}, indicating no backups should be maintained. However, it is
+     * recommended that each cluster have at least a backup count of {@code 1} to ensure active replicas can
+     * be quickly replaced in the event of a network partition or other failure. Quick replacement of active
+     * member nodes improves fault tolerance in cases where a majority of the active members in the cluster are
+     * not lost simultaneously.
+     *
+     * @param backupCount The number of backup replicas per active replica. This must be the same on all
+     *                    replicas in the cluster.
+     * @return The replica builder.
+     * @throws IllegalArgumentException if the {@code backupCount} is negative
+     */
+    public Builder withBackupCount(int backupCount) {
+      this.backupCount = Assert.argNot(backupCount, backupCount < 0, "backupCount must be positive");
+      return this;
+    }
+
+    @Override
+    public ClusterManager build() {
+      return new BalancingClusterManager(quorumHint, backupCount);
+    }
   }
 
 }
