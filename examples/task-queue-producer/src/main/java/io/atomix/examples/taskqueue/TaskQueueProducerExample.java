@@ -15,7 +15,6 @@
  */
 package io.atomix.examples.taskqueue;
 
-import io.atomix.Atomix;
 import io.atomix.AtomixClient;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.NettyTransport;
@@ -40,20 +39,20 @@ public class TaskQueueProducerExample {
       throw new IllegalArgumentException("must supply a set of host:port tuples");
 
     // Build a list of all member addresses to which to connect.
-    List<Address> members = new ArrayList<>();
+    List<Address> cluster = new ArrayList<>();
     for (String arg : args) {
       String[] parts = arg.split(":");
-      members.add(new Address(parts[0], Integer.valueOf(parts[1])));
+      cluster.add(new Address(parts[0], Integer.valueOf(parts[1])));
     }
 
     // Create a stateful Atomix replica. The replica communicates with other replicas in the cluster
     // to replicate state changes.
-    Atomix atomix = AtomixClient.builder(members)
+    AtomixClient atomix = AtomixClient.builder()
       .withTransport(new NettyTransport())
       .build();
 
     // Open the client. Once this operation completes resources can be created and managed.
-    atomix.open().join();
+    atomix.connect(cluster).join();
 
     // Create a task queue resource.
     @SuppressWarnings("unchecked")
@@ -65,7 +64,7 @@ public class TaskQueueProducerExample {
     }
 
     // Block while the replica is open.
-    while (atomix.isOpen()) {
+    for (;;) {
       Thread.sleep(1000);
     }
   }
