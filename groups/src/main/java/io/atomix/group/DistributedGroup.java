@@ -60,7 +60,7 @@ import java.util.function.Consumer;
  *   }
  * </pre>
  * <h2>Configuration</h2>
- * {@code DistributedGroup} instances can be configured to control {@link GroupMember#messages() communication}
+ * {@code DistributedGroup} instances can be configured to control {@link GroupMember#messaging() communication}
  * between members of the group. To configure groups, a {@link DistributedGroup.Options} instance must be provided
  * when constructing the initial group instance.
  * <p>
@@ -407,7 +407,7 @@ public interface DistributedGroup extends Resource<DistributedGroup> {
    *
    * @return The group message client.
    */
-  MessageClient messages();
+  MessageClient messaging();
 
   /**
    * Gets a group member by ID.

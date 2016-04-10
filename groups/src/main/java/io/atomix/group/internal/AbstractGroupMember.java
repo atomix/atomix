@@ -39,6 +39,6 @@ public abstract class AbstractGroupMember implements GroupMember {
   }
 
   @Override
-  public abstract AbstractMessageClient messages();
+  public abstract AbstractMessageClient messaging();
 
 }

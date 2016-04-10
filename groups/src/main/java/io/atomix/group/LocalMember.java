@@ -41,8 +41,13 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface LocalMember extends GroupMember {
 
+  /**
+   * Returns the local member message service.
+   *
+   * @return The local member message service.
+   */
   @Override
-  MessageService messages();
+  MessageService messaging();
 
   /**
    * Leaves the membership group.

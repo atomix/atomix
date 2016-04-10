@@ -36,10 +36,10 @@ public interface GroupMember {
   String id();
 
   /**
-   * Returns the member message service.
+   * Returns the member message client.
    *
-   * @return The member message service.
+   * @return The member message client.
    */
-  MessageClient messages();
+  MessageClient messaging();
 
 }

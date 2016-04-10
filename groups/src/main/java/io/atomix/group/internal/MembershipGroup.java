@@ -86,7 +86,7 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
   }
 
   @Override
-  public MessageClient messages() {
+  public MessageClient messaging() {
     return messages;
   }
 

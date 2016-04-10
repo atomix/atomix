@@ -36,7 +36,7 @@ public class LocalGroupMember extends AbstractGroupMember implements LocalMember
   }
 
   @Override
-  public MemberMessageService messages() {
+  public MemberMessageService messaging() {
     return messages;
   }
 

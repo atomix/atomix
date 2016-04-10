@@ -33,7 +33,7 @@ public class RemoteGroupMember extends AbstractGroupMember implements GroupMembe
   }
 
   @Override
-  public MemberMessageClient messages() {
+  public MemberMessageClient messaging() {
     return messages;
   }
 

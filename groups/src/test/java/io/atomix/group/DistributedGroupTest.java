@@ -227,12 +227,12 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
 
     await(5000, 2);
 
-    member.messages().consumer("test").onMessage(message -> {
+    member.messaging().consumer("test").onMessage(message -> {
       threadAssertEquals(message.message(), "Hello world!");
       message.ack();
       resume();
     });
-    group1.member(member.id()).messages().producer("test").send("Hello world!").thenRun(this::resume);
+    group1.member(member.id()).messaging().producer("test").send("Hello world!").thenRun(this::resume);
     await(10000, 2);
   }
 
@@ -258,12 +258,12 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
 
     await(5000, 2);
 
-    member.messages().consumer("test").onMessage(message -> {
+    member.messaging().consumer("test").onMessage(message -> {
       threadAssertEquals(message.message(), "Hello world!");
       message.fail();
       resume();
     });
-    group1.member(member.id()).messages().producer("test").send("Hello world!").whenComplete((result, error) -> {
+    group1.member(member.id()).messaging().producer("test").send("Hello world!").whenComplete((result, error) -> {
       threadAssertTrue(error instanceof MessageFailedException);
       resume();
     });
@@ -292,10 +292,10 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
 
     await(5000, 2);
 
-    member.messages().consumer("test").onMessage(message -> {
+    member.messaging().consumer("test").onMessage(message -> {
       threadAssertEquals(message.message(), "Hello world!");
       group1.join("test").thenAccept(localMember -> {
-        localMember.messages().consumer("test").onMessage(m -> {
+        localMember.messaging().consumer("test").onMessage(m -> {
           threadAssertEquals(message.message(), "Hello world!");
           m.ack();
           resume();
@@ -303,7 +303,7 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
       });
       resume();
     });
-    group1.member(member.id()).messages().producer("test").send("Hello world!").thenRun(this::resume);
+    group1.member(member.id()).messaging().producer("test").send("Hello world!").thenRun(this::resume);
     await(10000, 3);
   }
 
@@ -329,12 +329,12 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
 
     await(5000, 2);
 
-    member.messages().consumer("test").onMessage(message -> {
+    member.messaging().consumer("test").onMessage(message -> {
       member.leave().thenRun(this::resume);
       resume();
     });
 
-    group1.member(member.id()).messages().producer("test").send("Hello world!").whenComplete((result, error) -> {
+    group1.member(member.id()).messaging().producer("test").send("Hello world!").whenComplete((result, error) -> {
       threadAssertTrue(error instanceof MessageFailedException);
       resume();
     });
@@ -365,22 +365,22 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     LocalMember member2 = group2.join().get(10, TimeUnit.SECONDS);
     LocalMember member3 = group2.join().get(10, TimeUnit.SECONDS);
 
-    member1.messages().consumer("test").onMessage(message -> {
+    member1.messaging().consumer("test").onMessage(message -> {
       threadAssertEquals(message.message(), "Hello world!");
       message.ack();
       resume();
     });
-    member2.messages().consumer("test").onMessage(message -> {
+    member2.messaging().consumer("test").onMessage(message -> {
       threadAssertEquals(message.message(), "Hello world!");
       message.ack();
       resume();
     });
-    member3.messages().consumer("test").onMessage(message -> {
+    member3.messaging().consumer("test").onMessage(message -> {
       threadAssertEquals(message.message(), "Hello world!");
       message.ack();
       resume();
     });
-    group1.messages().producer("test").send("Hello world!").thenRun(this::resume);
+    group1.messaging().producer("test").send("Hello world!").thenRun(this::resume);
     await(10000, 4);
   }
 
@@ -410,12 +410,12 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
 
     await(5000, 2);
 
-    member1.messages().consumer("test").onMessage(message -> {
+    member1.messaging().consumer("test").onMessage(message -> {
       threadAssertEquals(message.message(), "Hello world!");
       member1.leave();
       resume();
     });
-    member2.messages().consumer("test").onMessage(message -> {
+    member2.messaging().consumer("test").onMessage(message -> {
       threadAssertEquals(message.message(), "Hello world!");
       member2.leave();
       resume();
@@ -423,7 +423,7 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
 
     MessageProducer.Options options = new MessageProducer.Options()
       .withDelivery(MessageProducer.Delivery.RANDOM);
-    group1.messages().producer("test", options).send("Hello world!").whenComplete((result, error) -> {
+    group1.messaging().producer("test", options).send("Hello world!").whenComplete((result, error) -> {
       threadAssertNotNull(error);
       resume();
     });

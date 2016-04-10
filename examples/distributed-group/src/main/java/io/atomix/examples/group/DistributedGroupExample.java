@@ -66,7 +66,7 @@ public class DistributedGroupExample {
     System.out.println("Joining membership group");
     group.join().thenAccept(member -> {
       System.out.println("Joined group with member ID: " + member.id());
-      MessageConsumer<String> consumer = member.messages().consumer("tasks");
+      MessageConsumer<String> consumer = member.messaging().consumer("tasks");
       consumer.onMessage(task -> {
         System.out.println("Received message");
         try {
@@ -80,7 +80,7 @@ public class DistributedGroupExample {
     group.onJoin(member -> {
       System.out.println(member.id() + " joined the group!");
 
-      member.messages().producer("tasks").send("hello").thenRun(() -> {
+      member.messaging().producer("tasks").send("hello").thenRun(() -> {
         System.out.println("Task complete!");
       });
     });
