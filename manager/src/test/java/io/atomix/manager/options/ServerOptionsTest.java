@@ -48,7 +48,6 @@ public class ServerOptionsTest {
     assertEquals(options.storageLevel(), StorageLevel.DISK);
     assertEquals(options.maxSegmentSize(), 1024 * 1024 * 32);
     assertEquals(options.maxEntriesPerSegment(), 1024 * 1024);
-    assertEquals(options.maxSnapshotSize(), 1024 * 1024 * 32);
     assertFalse(options.retainStaleSnapshots());
     assertEquals(options.compactionThreads(), Runtime.getRuntime().availableProcessors() / 2);
     assertEquals(options.minorCompactionInterval(), Duration.ofMinutes(1));
@@ -95,7 +94,6 @@ public class ServerOptionsTest {
     assertEquals(config.storageLevel(), StorageLevel.MEMORY);
     assertEquals(config.maxSegmentSize(), 1024);
     assertEquals(config.maxEntriesPerSegment(), 1024);
-    assertEquals(config.maxSnapshotSize(), 1024);
     assertTrue(config.retainStaleSnapshots());
     assertEquals(config.compactionThreads(), 1);
     assertEquals(config.minorCompactionInterval(), Duration.ofSeconds(1));
@@ -121,7 +119,6 @@ public class ServerOptionsTest {
     assertEquals(config.storageLevel(), StorageLevel.MEMORY);
     assertEquals(config.maxSegmentSize(), 1024);
     assertEquals(config.maxEntriesPerSegment(), 1024);
-    assertEquals(config.maxSnapshotSize(), 1024);
     assertTrue(config.retainStaleSnapshots());
     assertEquals(config.compactionThreads(), 1);
     assertEquals(config.minorCompactionInterval(), Duration.ofSeconds(1));

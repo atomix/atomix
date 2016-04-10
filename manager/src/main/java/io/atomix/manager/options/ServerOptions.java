@@ -39,7 +39,6 @@ public class ServerOptions extends AtomixOptions {
   public static final String STORAGE_LEVEL = "storage.level";
   public static final String MAX_SEGMENT_SIZE = "storage.maxSegmentSize";
   public static final String MAX_ENTRIES_PER_SEGMENT = "storage.maxEntriesPerSegment";
-  public static final String MAX_SNAPSHOT_SIZE = "storage.compaction.maxSnapshotSize";
   public static final String RETAIN_STALE_SNAPSHOTS = "storage.compaction.retainSnapshots";
   public static final String COMPACTION_THREADS = "storage.compaction.threads";
   public static final String MINOR_COMPACTION_INTERVAL = "storage.compaction.minor";
@@ -142,15 +141,6 @@ public class ServerOptions extends AtomixOptions {
    */
   public int maxEntriesPerSegment() {
     return reader.getInteger(MAX_ENTRIES_PER_SEGMENT, DEFAULT_MAX_ENTRIES_PER_SEGMENT);
-  }
-
-  /**
-   * Returns the maximum snapshot size in bytes.
-   *
-   * @return The maximum snapshot size in bytes.
-   */
-  public int maxSnapshotSize() {
-    return reader.getInteger(MAX_SNAPSHOT_SIZE, DEFAULT_MAX_SNAPSHOT_SIZE);
   }
 
   /**

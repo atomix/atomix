@@ -141,7 +141,6 @@ public final class ResourceServer {
         .withDirectory(serverProperties.storageDirectory())
         .withMaxSegmentSize(serverProperties.maxSegmentSize())
         .withMaxEntriesPerSegment(serverProperties.maxEntriesPerSegment())
-        .withMaxSnapshotSize(serverProperties.maxSnapshotSize())
         .withRetainStaleSnapshots(serverProperties.retainStaleSnapshots())
         .withCompactionThreads(serverProperties.compactionThreads())
         .withMinorCompactionInterval(serverProperties.minorCompactionInterval())
