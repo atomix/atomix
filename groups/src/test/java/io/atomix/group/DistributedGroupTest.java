@@ -23,8 +23,6 @@ import org.testng.annotations.Test;
 
 import java.util.concurrent.TimeUnit;
 
-import static org.testng.Assert.assertEquals;
-
 /**
  * Distributed group test.
  *
@@ -154,14 +152,13 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     DistributedGroup group1 = createResource();
     DistributedGroup group2 = createResource();
 
-    LocalMember localMember2;
+
+    LocalMember localMember2 = group2.join().get();
     group2.election().onElection(term -> {
-      if (term.leader().id().equals("member2")) {
+      if (term.leader().equals(localMember2)) {
         resume();
       }
     });
-
-    localMember2 = group2.join("member2").get();
 
     await(5000);
 
@@ -186,9 +183,15 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     DistributedGroup group1 = createResource();
     DistributedGroup group2 = createResource();
 
+
     LocalMember localMember2 = group2.join().get();
-    assertEquals(group2.members().size(), 1);
-    assertEquals(group2.election().term().leader(), localMember2);
+    group2.election().onElection(term -> {
+      if (term.leader().equals(localMember2)) {
+        resume();
+      }
+    });
+
+    await(5000);
 
     LocalMember localMember1 = group1.join().get();
     group1.election().onElection(term -> {
