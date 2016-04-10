@@ -123,6 +123,50 @@ import java.util.stream.Collectors;
 public final class AtomixReplica extends Atomix {
 
   /**
+   * Defines the behavior of a replica within the Atomix cluster.
+   * <p>
+   * Each replica can be configured with a replica type. The replica type defines how the replica behaves within
+   * the Atomix cluster. Throughout the lifetime of a cluster, each replica within the cluster may be promoted
+   * or demoted between types by the configured {@link ClusterManager}.
+   */
+  public enum Type {
+
+    /**
+     * Active replicas are full voting members of the Raft cluster.
+     * <p>
+     * Active replicas are stateful members of the cluster that participate fully in the Raft consensus
+     * algorithm. Each Atomix cluster must consist of at least one active replica, and all writes to the
+     * cluster go through an active member. The availability of the cluster is dependent on the number of
+     * active replicas at any given time. Atomix cluster can tolerate the failure of a minority of active
+     * replicas.
+     */
+    ACTIVE,
+
+    /**
+     * Passive replicas are stateful members of the Atomix cluster that participate in replication via
+     * an asynchronous gossip protocol.
+     * <p>
+     * Passive replicas serve as a mechanism to scale writes and to quickly replace failed or partitioned
+     * active members. Writes to the cluster are synchronously replicated to active replicas, and once committed
+     * are asynchronously replicated to passive replicas. This allows passive replicas to represent state slightly
+     * behind the Raft cluster. Reads from passive replicas are still guaranteed to be sequentially consistent.
+     * Resources created on a passive replica that execute sequential queries against the cluster will read from
+     * the local replica's state, thus increasing read latency significantly. In the event an active replica
+     * is partitioned or crashes, the configured {@link ClusterManager} can replace active replicas with passive
+     * replicas to reduce the amount of time required to catch a server up with the Raft cluster.
+     */
+    PASSIVE,
+
+    /**
+     * Reserve replicas are stateless members of the Atomix cluster.
+     * <p>
+     * Reserve replicas act as standby nodes for the rest of the Atomix cluster. {@link ClusterManager}s configured
+     * for the cluster may use reserve replicas to replace failed passive or active replicas as necessary.
+     */
+    RESERVE,
+  }
+
+  /**
    * Returns a new Atomix replica builder.
    * <p>
    * The replica {@link Address} is the address to which the replica will bind to communicate with both
@@ -272,6 +316,23 @@ public final class AtomixReplica extends Atomix {
     super(client);
     this.server = Assert.notNull(server, "server");
     this.clusterManager = Assert.notNull(clusterManager, "clusterManager");
+  }
+
+  /**
+   * Returns the replica type.
+   * <p>
+   * The replica type defines how the replica behaves within the Atomix cluster. {@link Type#ACTIVE} and
+   * {@link Type#PASSIVE} replicas are stateful and participate in replication of state changes within the
+   * cluster at different levels. {@link Type#RESERVE} replicas are stateless.
+   *
+   * @return The replica type.
+   */
+  public Type type() {
+    Member.Type type = server.server().cluster().member().type();
+    if (type == null || type == Member.Type.INACTIVE) {
+      return null;
+    }
+    return Type.valueOf(type.name());
   }
 
   /**
@@ -498,6 +559,17 @@ public final class AtomixReplica extends Atomix {
         .withConnectionStrategy(ConnectionStrategies.FIBONACCI_BACKOFF)
         .withRecoveryStrategy(RecoveryStrategies.RECOVER);
       this.serverBuilder = CopycatServer.builder(clientAddress, serverAddress).withSerializer(serializer.clone());
+    }
+
+    /**
+     * Sets the server member type.
+     *
+     * @param type The server member type.
+     * @return The replica builder.
+     */
+    public Builder withType(Type type) {
+      serverBuilder.withType(Member.Type.valueOf(Assert.notNull(type, "type").name()));
+      return this;
     }
 
     /**
