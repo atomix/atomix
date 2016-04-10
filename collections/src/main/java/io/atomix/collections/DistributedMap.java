@@ -15,7 +15,7 @@
  */
 package io.atomix.collections;
 
-import io.atomix.collections.state.MapCommands;
+import io.atomix.collections.internal.MapCommands;
 import io.atomix.collections.util.DistributedMapFactory;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.AbstractResource;

@@ -17,8 +17,8 @@ package io.atomix.collections.util;
 
 import io.atomix.catalyst.serializer.SerializableTypeResolver;
 import io.atomix.collections.DistributedSet;
-import io.atomix.collections.state.SetCommands;
-import io.atomix.collections.state.SetState;
+import io.atomix.collections.internal.SetCommands;
+import io.atomix.collections.internal.SetState;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.ResourceFactory;
 import io.atomix.resource.ResourceStateMachine;

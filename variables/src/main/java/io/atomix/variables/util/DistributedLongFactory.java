@@ -20,8 +20,8 @@ import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.ResourceFactory;
 import io.atomix.resource.ResourceStateMachine;
 import io.atomix.variables.DistributedLong;
-import io.atomix.variables.state.LongCommands;
-import io.atomix.variables.state.LongState;
+import io.atomix.variables.internal.LongCommands;
+import io.atomix.variables.internal.LongState;
 
 import java.util.Properties;
 

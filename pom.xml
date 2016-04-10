@@ -22,7 +22,7 @@
     <java.version>1.8</java.version>
     <slf4j.version>1.7.7</slf4j.version>
     <logback.version>1.1.2</logback.version>
-    <catalyst.version>1.0.6</catalyst.version>
+    <catalyst.version>1.0.7-SNAPSHOT</catalyst.version>
     <copycat.version>1.0.0-SNAPSHOT</copycat.version>
 
     <maven.source.plugin.version>2.2.1</maven.source.plugin.version>
@@ -65,9 +65,8 @@
   <modules>
     <module>resource</module>
     <module>manager</module>
-    <module>group</module>
+    <module>groups</module>
     <module>collections</module>
-    <module>messaging</module>
     <module>concurrent</module>
     <module>variables</module>
     <module>core</module>
@@ -157,7 +156,7 @@
           <doctitle>Atomix API Reference (${jv})</doctitle>
           <windowtitle>Atomix API Reference (${jv})</windowtitle>
           <aggregate>true</aggregate>
-          <excludePackageNames>io.atomix.examples*:*.state*:*.util*:io.atomix.testing*:*.config</excludePackageNames>
+          <excludePackageNames>io.atomix.examples*:*.internal*:io.atomix.testing*:*.config</excludePackageNames>
           <additionalparam>
             -Xdoclint:none
             -notimestamp

@@ -52,26 +52,12 @@ public class AtomixReplicaTest extends AbstractAtomixTest {
   /**
    * Tests submitting a command.
    */
-  public void testSubmitCommandWithSequentialConsistency() throws Throwable {
-    testSubmitCommand(WriteConsistency.SEQUENTIAL_EVENT);
-  }
-
-  /**
-   * Tests submitting a command.
-   */
-  public void testSubmitCommandWithAtomicConsistency() throws Throwable {
-    testSubmitCommand(WriteConsistency.ATOMIC);
-  }
-
-  /**
-   * Tests submitting a command with a configured consistency level.
-   */
-  private void testSubmitCommand(WriteConsistency consistency) throws Throwable {
+  public void testSubmitCommand() throws Throwable {
     Atomix replica = createReplicas(3, new ResourceType(TestResource.class)).iterator().next();
 
     TestResource resource = replica.getResource("test", TestResource.class).get(5, TimeUnit.SECONDS);
 
-    resource.with(consistency).command("Hello world!").thenAccept(result -> {
+    resource.command("Hello world!").thenAccept(result -> {
       threadAssertEquals(result, "Hello world!");
       resume();
     });
@@ -108,7 +94,7 @@ public class AtomixReplicaTest extends AbstractAtomixTest {
 
     TestResource resource = replica.getResource("test", TestResource.class).get(5, TimeUnit.SECONDS);
 
-    resource.with(consistency).query("Hello world!").thenAccept(result -> {
+    resource.query("Hello world!").thenAccept(result -> {
       threadAssertEquals(result, "Hello world!");
       resume();
     });

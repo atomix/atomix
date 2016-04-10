@@ -54,7 +54,7 @@ public enum ReadConsistency {
    * hasn't contacted a majority of the cluster within an election timeout, the leader will handle the query as if it were
    * submitted with {@link #ATOMIC} consistency.
    */
-  ATOMIC_LEASE(Query.ConsistencyLevel.BOUNDED_LINEARIZABLE),
+  ATOMIC_LEASE(Query.ConsistencyLevel.LINEARIZABLE_LEASE),
 
   /**
    * Guarantees sequential consistency for read operations.
@@ -65,18 +65,7 @@ public enum ReadConsistency {
    * client must submit its last known index with the query as well. If the server that receives the query has not advanced
    * past the provided client index, it will queue the query and await more entries from the leader.
    */
-  SEQUENTIAL(Query.ConsistencyLevel.SEQUENTIAL),
-
-  /**
-   * Guarantees causal consistency for read operations.
-   * <p>
-   * Causal consistency requires that clients always see non-overlapping state progress monotonically. This constraint allows
-   * reads from followers. When a causally consistent {@link Query} is submitted to the cluster, the first server that
-   * receives the query will attempt to handle it. If the server that receives the query is more than a heartbeat behind the
-   * leader, the query will be forwarded to the leader. If the server that receives the query has not advanced past the
-   * client's last write, the read will be queued until it can be satisfied.
-   */
-  CAUSAL(Query.ConsistencyLevel.CAUSAL);
+  SEQUENTIAL(Query.ConsistencyLevel.SEQUENTIAL);
 
   private final Query.ConsistencyLevel level;
 

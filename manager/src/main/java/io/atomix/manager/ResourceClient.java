@@ -22,17 +22,20 @@ import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.ConfigurationException;
 import io.atomix.catalyst.util.concurrent.Futures;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
-import io.atomix.copycat.client.*;
+import io.atomix.copycat.client.ConnectionStrategies;
+import io.atomix.copycat.client.CopycatClient;
+import io.atomix.copycat.client.RecoveryStrategies;
+import io.atomix.copycat.client.ServerSelectionStrategies;
+import io.atomix.manager.internal.GetResourceKeys;
+import io.atomix.manager.internal.ResourceExists;
+import io.atomix.manager.internal.ResourceManagerException;
 import io.atomix.manager.options.ClientOptions;
-import io.atomix.manager.state.GetResourceKeys;
-import io.atomix.manager.state.ResourceExists;
-import io.atomix.manager.state.ResourceManagerException;
 import io.atomix.manager.util.ResourceManagerTypeResolver;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceType;
-import io.atomix.resource.util.InstanceClient;
-import io.atomix.resource.util.ResourceInstance;
-import io.atomix.resource.util.ResourceRegistry;
+import io.atomix.resource.internal.InstanceClient;
+import io.atomix.resource.internal.ResourceInstance;
+import io.atomix.resource.internal.ResourceRegistry;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -333,8 +336,7 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
       clientBuilder = CopycatClient.builder()
         .withServerSelectionStrategy(ServerSelectionStrategies.ANY)
         .withConnectionStrategy(ConnectionStrategies.FIBONACCI_BACKOFF)
-        .withRecoveryStrategy(RecoveryStrategies.RECOVER)
-        .withRetryStrategy(RetryStrategies.FIBONACCI_BACKOFF);
+        .withRecoveryStrategy(RecoveryStrategies.RECOVER);
     }
 
     /**

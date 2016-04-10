@@ -20,7 +20,7 @@ import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.NettyTransport;
 import io.atomix.copycat.server.storage.Storage;
 import io.atomix.group.DistributedGroup;
-import io.atomix.group.LocalGroupMember;
+import io.atomix.group.LocalMember;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -64,7 +64,7 @@ public class LeaderElectionExample {
     DistributedGroup group = atomix.getGroup("group").get();
 
     // Join the group.
-    LocalGroupMember member = group.join().get();
+    LocalMember member = group.join().get();
 
     // Register a callback to be called when the local member is elected the leader.
     group.election().onElection(term -> {

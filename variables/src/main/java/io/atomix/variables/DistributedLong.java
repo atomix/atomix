@@ -18,7 +18,7 @@ package io.atomix.variables;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.ReadConsistency;
 import io.atomix.resource.ResourceTypeInfo;
-import io.atomix.variables.state.LongCommands;
+import io.atomix.variables.internal.LongCommands;
 import io.atomix.variables.util.DistributedLongFactory;
 
 import java.util.Properties;

@@ -22,10 +22,10 @@ import io.atomix.copycat.Operation;
 import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.StateMachineContext;
 import io.atomix.copycat.server.StateMachineExecutor;
-import io.atomix.resource.util.ResourceCommand;
-import io.atomix.resource.util.ResourceCommit;
-import io.atomix.resource.util.ResourceOperation;
-import io.atomix.resource.util.ResourceQuery;
+import io.atomix.resource.internal.ResourceCommand;
+import io.atomix.resource.internal.ResourceCommit;
+import io.atomix.resource.internal.ResourceOperation;
+import io.atomix.resource.internal.ResourceQuery;
 import org.slf4j.Logger;
 
 import java.time.Duration;

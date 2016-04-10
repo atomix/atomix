@@ -28,8 +28,6 @@
     <module>leader-election</module>
     <module>distributed-group</module>
     <module>distributed-value</module>
-    <module>task-queue-producer</module>
-    <module>task-queue-consumer</module>
     <module>distributed-lock</module>
   </modules>
 

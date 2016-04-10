@@ -17,11 +17,11 @@ package io.atomix.manager.util;
 
 import io.atomix.catalyst.serializer.SerializableTypeResolver;
 import io.atomix.catalyst.serializer.SerializerRegistry;
-import io.atomix.manager.state.*;
+import io.atomix.manager.internal.*;
 import io.atomix.resource.ResourceType;
-import io.atomix.resource.util.InstanceTypeResolver;
-import io.atomix.resource.util.ResourceCommand;
-import io.atomix.resource.util.ResourceQuery;
+import io.atomix.resource.internal.InstanceTypeResolver;
+import io.atomix.resource.internal.ResourceCommand;
+import io.atomix.resource.internal.ResourceQuery;
 
 /**
  * Resource manager serializable type resolver.

@@ -15,7 +15,7 @@
  */
 package io.atomix.concurrent;
 
-import io.atomix.concurrent.state.LockCommands;
+import io.atomix.concurrent.internal.LockCommands;
 import io.atomix.concurrent.util.DistributedLockFactory;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.AbstractResource;

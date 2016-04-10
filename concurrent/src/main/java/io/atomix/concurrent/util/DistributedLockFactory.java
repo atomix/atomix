@@ -17,8 +17,8 @@ package io.atomix.concurrent.util;
 
 import io.atomix.catalyst.serializer.SerializableTypeResolver;
 import io.atomix.concurrent.DistributedLock;
-import io.atomix.concurrent.state.LockCommands;
-import io.atomix.concurrent.state.LockState;
+import io.atomix.concurrent.internal.LockCommands;
+import io.atomix.concurrent.internal.LockState;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.ResourceFactory;
 import io.atomix.resource.ResourceStateMachine;

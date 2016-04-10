@@ -17,8 +17,8 @@ package io.atomix.collections.util;
 
 import io.atomix.catalyst.serializer.SerializableTypeResolver;
 import io.atomix.collections.DistributedMap;
-import io.atomix.collections.state.MapCommands;
-import io.atomix.collections.state.MapState;
+import io.atomix.collections.internal.MapCommands;
+import io.atomix.collections.internal.MapState;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.ResourceFactory;
 import io.atomix.resource.ResourceStateMachine;
