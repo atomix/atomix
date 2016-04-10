@@ -20,8 +20,8 @@ import io.atomix.catalyst.util.Listener;
 import io.atomix.catalyst.util.Listeners;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.group.DistributedGroup;
+import io.atomix.group.GroupMember;
 import io.atomix.group.LocalMember;
-import io.atomix.group.Member;
 import io.atomix.group.election.Election;
 import io.atomix.group.election.internal.GroupElection;
 import io.atomix.group.messaging.MessageClient;
@@ -32,10 +32,12 @@ import io.atomix.group.messaging.internal.MessageProducerService;
 import io.atomix.resource.AbstractResource;
 import io.atomix.resource.ResourceType;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
 
 /**
@@ -52,9 +54,8 @@ import java.util.function.Consumer;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class MembershipGroup extends AbstractResource<DistributedGroup> implements DistributedGroup {
-  private final Listeners<Member> joinListeners = new Listeners<>();
-  private final Listeners<Member> leaveListeners = new Listeners<>();
-  private final Set<String> joining = new CopyOnWriteArraySet<>();
+  private final Listeners<GroupMember> joinListeners = new Listeners<>();
+  private final Listeners<GroupMember> leaveListeners = new Listeners<>();
   private final DistributedGroup.Options options;
   private final GroupElection election = new GroupElection(this);
   private final GroupMessageClient messages;
@@ -90,13 +91,13 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
   }
 
   @Override
-  public Member member(String memberId) {
+  public GroupMember member(String memberId) {
     return members.get(memberId);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public Collection<Member> members() {
+  public Collection<GroupMember> members() {
     return (Collection) members.values();
   }
 
@@ -118,26 +119,23 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
    * @return A completable future to be completed once the member has joined the group.
    */
   private CompletableFuture<LocalMember> join(String memberId, boolean persistent) {
-    joining.add(memberId);
-    return submit(new GroupCommands.Join(memberId, persistent)).whenComplete((result, error) -> {
-      if (error != null) {
-        joining.remove(memberId);
-      }
-    }).thenApply(info -> {
-      LocalGroupMember member = (LocalGroupMember) members.get(info.memberId());
-      if (member == null) {
+    // When joining a group, the join request is guaranteed to complete prior to the join
+    // event being received.
+    return submit(new GroupCommands.Join(memberId, persistent)).thenApply(info -> {
+      AbstractGroupMember member = members.get(info.memberId());
+      if (member == null || !(member instanceof LocalGroupMember)) {
         member = new LocalGroupMember(info, this, producerService, consumerService);
         members.put(info.memberId(), member);
       }
 
       // Notify the cluster that the member is listening for events.
       submit(new GroupCommands.Listen(info.memberId()));
-      return member;
+      return (LocalGroupMember) member;
     });
   }
 
   @Override
-  public Listener<Member> onJoin(Consumer<Member> listener) {
+  public Listener<GroupMember> onJoin(Consumer<GroupMember> listener) {
     return joinListeners.add(listener);
   }
 
@@ -149,7 +147,7 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
   }
 
   @Override
-  public Listener<Member> onLeave(Consumer<Member> listener) {
+  public Listener<GroupMember> onLeave(Consumer<GroupMember> listener) {
     return leaveListeners.add(listener);
   }
 
@@ -175,7 +173,7 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
       for (GroupMemberInfo info : members) {
         AbstractGroupMember member = this.members.get(info.memberId());
         if (member == null) {
-          member = new GroupMember(info, this, producerService);
+          member = new RemoteGroupMember(info, this, producerService);
           this.members.put(member.id(), member);
         }
       }
@@ -186,22 +184,18 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
    * Handles a join event received from the cluster.
    */
   private void onJoinEvent(GroupMemberInfo info) {
-    AbstractGroupMember member;
-    if (joining.remove(info.memberId())) {
-      member = new LocalGroupMember(info, this, producerService, consumerService);
+    // If the join event was for a local member, the local member is guaranteed to have already
+    // been created since responses will always be received before events. Therefore, if the member
+    // is null we can create a remote member. If the member is a local member, only call join listeners.
+    // Local member join listeners are called here to ensure they're called *after* the join future
+    // completes as is guaranteed by the event framework.
+    AbstractGroupMember member = members.get(info.memberId());
+    if (member == null) {
+      member = new RemoteGroupMember(info, this, producerService);
       members.put(info.memberId(), member);
-
-      // Trigger join listeners.
       joinListeners.accept(member);
-    } else {
-      member = members.get(info.memberId());
-      if (member == null) {
-        member = new GroupMember(info, this, producerService);
-        members.put(info.memberId(), member);
-
-        // Trigger join listeners.
-        joinListeners.accept(member);
-      }
+    } else if (member instanceof LocalGroupMember) {
+      joinListeners.accept(member);
     }
   }
 
@@ -209,7 +203,7 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
    * Handles a leave event received from the cluster.
    */
   private void onLeaveEvent(String memberId) {
-    Member member = members.remove(memberId);
+    GroupMember member = members.remove(memberId);
     if (member != null) {
       // Trigger leave listeners.
       leaveListeners.accept(member);

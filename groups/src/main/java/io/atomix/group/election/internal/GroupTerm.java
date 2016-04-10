@@ -15,8 +15,7 @@
  */
 package io.atomix.group.election.internal;
 
-import io.atomix.catalyst.util.Assert;
-import io.atomix.group.Member;
+import io.atomix.group.GroupMember;
 import io.atomix.group.election.Term;
 
 /**
@@ -26,7 +25,7 @@ import io.atomix.group.election.Term;
  */
 public class GroupTerm implements Term {
   private final long term;
-  private volatile Member leader;
+  private volatile GroupMember leader;
 
   public GroupTerm(long term) {
     this.term = term;
@@ -38,7 +37,7 @@ public class GroupTerm implements Term {
   }
 
   @Override
-  public Member leader() {
+  public GroupMember leader() {
     return leader;
   }
 
@@ -47,7 +46,7 @@ public class GroupTerm implements Term {
    *
    * @param leader The term leader.
    */
-  void setLeader(Member leader) {
+  void setLeader(GroupMember leader) {
     this.leader = leader;
   }
 

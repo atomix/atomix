@@ -15,7 +15,7 @@
  */
 package io.atomix.group.internal;
 
-import io.atomix.group.Member;
+import io.atomix.group.GroupMember;
 import io.atomix.group.messaging.internal.MemberMessageClient;
 import io.atomix.group.messaging.internal.MessageProducerService;
 
@@ -24,10 +24,10 @@ import io.atomix.group.messaging.internal.MessageProducerService;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class GroupMember extends AbstractGroupMember implements Member {
+public class RemoteGroupMember extends AbstractGroupMember implements GroupMember {
   private final MemberMessageClient messages;
 
-  public GroupMember(GroupMemberInfo info, MembershipGroup group, MessageProducerService producerService) {
+  public RemoteGroupMember(GroupMemberInfo info, MembershipGroup group, MessageProducerService producerService) {
     super(info, group);
     this.messages = new MemberMessageClient(this, producerService);
   }
@@ -39,7 +39,7 @@ public class GroupMember extends AbstractGroupMember implements Member {
 
   @Override
   public boolean equals(Object object) {
-    return object instanceof GroupMember && ((GroupMember) object).memberId.equals(memberId);
+    return object instanceof RemoteGroupMember && ((RemoteGroupMember) object).memberId.equals(memberId);
   }
 
   @Override

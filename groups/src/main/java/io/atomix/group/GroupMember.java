@@ -23,7 +23,7 @@ import io.atomix.group.messaging.MessageClient;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public interface Member {
+public interface GroupMember {
 
   /**
    * Returns the member ID.

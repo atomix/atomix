@@ -18,7 +18,7 @@ package io.atomix.group.election.internal;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.catalyst.util.Listeners;
-import io.atomix.group.Member;
+import io.atomix.group.GroupMember;
 import io.atomix.group.internal.MembershipGroup;
 import io.atomix.group.election.Election;
 import io.atomix.group.election.Term;
@@ -63,7 +63,7 @@ public class GroupElection implements Election {
   /**
    * Called when a member is elected.
    */
-  public void onElection(Member leader) {
+  public void onElection(GroupMember leader) {
     term.setLeader(leader);
     electionListeners.accept(term);
   }

@@ -15,9 +15,8 @@
  */
 package io.atomix.group.internal;
 
-import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.util.Assert;
-import io.atomix.group.Member;
+import io.atomix.group.GroupMember;
 import io.atomix.group.messaging.internal.AbstractMessageClient;
 
 /**
@@ -25,7 +24,7 @@ import io.atomix.group.messaging.internal.AbstractMessageClient;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public abstract class AbstractGroupMember implements Member {
+public abstract class AbstractGroupMember implements GroupMember {
   protected final String memberId;
   protected final MembershipGroup group;
 

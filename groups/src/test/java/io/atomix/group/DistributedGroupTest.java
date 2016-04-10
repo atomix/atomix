@@ -22,7 +22,6 @@ import io.atomix.testing.AbstractCopycatTest;
 import org.testng.annotations.Test;
 
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.testng.Assert.assertEquals;
 
@@ -48,23 +47,14 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     DistributedGroup group1 = createResource();
     DistributedGroup group2 = createResource();
 
-    AtomicBoolean joined = new AtomicBoolean();
-    group2.join().join();
-    group2.onJoin(member -> {
-      try {
-        Thread.sleep(1000);
-      } catch (InterruptedException e) {
-      }
-      joined.set(true);
+    group1.onJoin(member -> {
+      threadAssertEquals(member.id(), "test");
       resume();
     });
 
-    group1.join().thenRun(() -> {
-      threadAssertTrue(joined.get());
-      resume();
-    });
+    group2.join("test").thenRun(this::resume);
 
-    await(0, 2);
+    await(10000, 2);
   }
 
   /**
@@ -76,16 +66,12 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     DistributedGroup group1 = createResource();
     DistributedGroup group2 = createResource();
 
+    group1.onJoin(m -> resume());
+    group2.onJoin(m -> resume());
+
     LocalMember localMember = group2.join().get();
-    assertEquals(group2.members().size(), 1);
 
-    group1.join().thenRun(() -> {
-      threadAssertEquals(group1.members().size(), 2);
-      threadAssertEquals(group2.members().size(), 2);
-      resume();
-    });
-
-    await(5000);
+    await(5000, 2);
 
     group1.onLeave(member -> resume());
     localMember.leave().thenRun(this::resume);
@@ -102,21 +88,14 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     DistributedGroup group1 = createResource();
     DistributedGroup group2 = createResource();
 
-    LocalMember localMember = group2.join().get();
-    assertEquals(group2.members().size(), 1);
+    group1.onJoin(m -> resume());
+    group2.onJoin(m -> resume());
 
-    group1.join().thenRun(() -> {
-      threadAssertEquals(group1.members().size(), 2);
-      threadAssertEquals(group2.members().size(), 2);
-      resume();
-    });
+    group2.join().join();
 
-    await(5000);
+    await(5000, 2);
 
-    group1.onLeave(member -> {
-      threadAssertEquals(member.id(), localMember.id());
-      resume();
-    });
+    group1.onLeave(member -> resume());
     group2.close().thenRun(this::resume);
 
     await(10000, 2);
@@ -131,14 +110,17 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     DistributedGroup group1 = createResource();
     DistributedGroup group2 = createResource();
 
-    group2.join("2").thenRun(this::resume);
-    await(5000);
+    group2.onJoin(m -> {
+      if (group2.members().size() == 1) {
+        resume();
+      }
+    });
 
-    assertEquals(group2.members().size(), 1);
+    group2.join("2").thenRun(this::resume);
+    await(5000, 2);
 
     group1.join("1").thenRun(() -> {
       threadAssertEquals(group1.members().size(), 2);
-      threadAssertEquals(group2.members().size(), 2);
       resume();
     });
 
@@ -172,9 +154,16 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     DistributedGroup group1 = createResource();
     DistributedGroup group2 = createResource();
 
-    LocalMember localMember2 = group2.join().get();
-    assertEquals(group2.members().size(), 1);
-    assertEquals(group2.election().term().leader(), localMember2);
+    LocalMember localMember2;
+    group2.election().onElection(term -> {
+      if (term.leader().id().equals("member2")) {
+        resume();
+      }
+    });
+
+    localMember2 = group2.join("member2").get();
+
+    await(5000);
 
     LocalMember localMember1 = group1.join().get();
     group1.election().onElection(term -> {
@@ -222,10 +211,18 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     DistributedGroup group1 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6000)));
     DistributedGroup group2 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6001)));
 
+    group1.onJoin(m -> {
+      threadAssertEquals(group1.members().size(), 1);
+      resume();
+    });
+    group2.onJoin(m -> {
+      threadAssertEquals(group2.members().size(), 1);
+      resume();
+    });
+
     LocalMember member = group2.join().get(10, TimeUnit.SECONDS);
 
-    assertEquals(group1.members().size(), 1);
-    assertEquals(group2.members().size(), 1);
+    await(5000, 2);
 
     member.messages().consumer("test").onMessage(message -> {
       threadAssertEquals(message.message(), "Hello world!");
@@ -245,10 +242,18 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     DistributedGroup group1 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6000)));
     DistributedGroup group2 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6001)));
 
+    group1.onJoin(m -> {
+      threadAssertEquals(group1.members().size(), 1);
+      resume();
+    });
+    group2.onJoin(m -> {
+      threadAssertEquals(group2.members().size(), 1);
+      resume();
+    });
+
     LocalMember member = group2.join().get(10, TimeUnit.SECONDS);
 
-    assertEquals(group1.members().size(), 1);
-    assertEquals(group2.members().size(), 1);
+    await(5000, 2);
 
     member.messages().consumer("test").onMessage(message -> {
       threadAssertEquals(message.message(), "Hello world!");
@@ -271,10 +276,18 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     DistributedGroup group1 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6000)));
     DistributedGroup group2 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6001)));
 
+    group1.onJoin(m -> {
+      threadAssertEquals(group1.members().size(), 1);
+      resume();
+    });
+    group2.onJoin(m -> {
+      threadAssertEquals(group2.members().size(), 1);
+      resume();
+    });
+
     LocalMember member = group2.join("test").get(10, TimeUnit.SECONDS);
 
-    assertEquals(group1.members().size(), 1);
-    assertEquals(group2.members().size(), 1);
+    await(5000, 2);
 
     member.messages().consumer("test").onMessage(message -> {
       threadAssertEquals(message.message(), "Hello world!");
@@ -300,10 +313,18 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     DistributedGroup group1 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6000)));
     DistributedGroup group2 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6001)));
 
+    group1.onJoin(m -> {
+      threadAssertEquals(group1.members().size(), 1);
+      resume();
+    });
+    group2.onJoin(m -> {
+      threadAssertEquals(group2.members().size(), 1);
+      resume();
+    });
+
     LocalMember member = group2.join().get(10, TimeUnit.SECONDS);
 
-    assertEquals(group1.members().size(), 1);
-    assertEquals(group2.members().size(), 1);
+    await(5000, 2);
 
     member.messages().consumer("test").onMessage(message -> {
       member.leave().thenRun(this::resume);
@@ -326,12 +347,20 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     DistributedGroup group1 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6000)));
     DistributedGroup group2 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6001)));
 
+    group1.onJoin(m -> {
+      if (group1.members().size() == 3) {
+        resume();
+      }
+    });
+    group2.onJoin(m -> {
+      if (group2.members().size() == 3) {
+        resume();
+      }
+    });
+
     LocalMember member1 = group1.join().get(10, TimeUnit.SECONDS);
     LocalMember member2 = group2.join().get(10, TimeUnit.SECONDS);
     LocalMember member3 = group2.join().get(10, TimeUnit.SECONDS);
-
-    assertEquals(group1.members().size(), 3);
-    assertEquals(group2.members().size(), 3);
 
     member1.messages().consumer("test").onMessage(message -> {
       threadAssertEquals(message.message(), "Hello world!");
@@ -362,11 +391,21 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     DistributedGroup group1 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6000)));
     DistributedGroup group2 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6001)));
 
+    group1.onJoin(m -> {
+      if (group1.members().size() == 2) {
+        resume();
+      }
+    });
+    group2.onJoin(m -> {
+      if (group2.members().size() == 2) {
+        resume();
+      }
+    });
+
     LocalMember member1 = group1.join().get(10, TimeUnit.SECONDS);
     LocalMember member2 = group2.join().get(10, TimeUnit.SECONDS);
 
-    assertEquals(group1.members().size(), 2);
-    assertEquals(group2.members().size(), 2);
+    await(5000, 2);
 
     member1.messages().consumer("test").onMessage(message -> {
       threadAssertEquals(message.message(), "Hello world!");

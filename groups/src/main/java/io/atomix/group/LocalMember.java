@@ -39,7 +39,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public interface LocalMember extends Member {
+public interface LocalMember extends GroupMember {
 
   @Override
   MessageService messages();

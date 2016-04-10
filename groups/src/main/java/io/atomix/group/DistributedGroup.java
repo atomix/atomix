@@ -60,7 +60,7 @@ import java.util.function.Consumer;
  *   }
  * </pre>
  * <h2>Configuration</h2>
- * {@code DistributedGroup} instances can be configured to control {@link Member#messages() communication}
+ * {@code DistributedGroup} instances can be configured to control {@link GroupMember#messages() communication}
  * between members of the group. To configure groups, a {@link DistributedGroup.Options} instance must be provided
  * when constructing the initial group instance.
  * <p>
@@ -120,7 +120,7 @@ import java.util.function.Consumer;
  * {@link LocalMember#leave() leave} the group to be removed from it. Persistent member {@link Message tasks} will remain
  * in a failed member's queue until the member recovers.
  * <p>
- * In order to support recovery, persistent members must be configured with a user-provided {@link Member#id() member ID}.
+ * In order to support recovery, persistent members must be configured with a user-provided {@link GroupMember#id() member ID}.
  * The member ID is provided when the member {@link #join(String) joins} the group, and providing a member ID is
  * all that's required to create a persistent member.
  * <pre>
@@ -307,7 +307,7 @@ import java.util.function.Consumer;
  * to the group's state and are therefore released from the state machine and will be removed from the log during
  * compaction.
  *
- * @see Member
+ * @see GroupMember
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
@@ -413,17 +413,17 @@ public interface DistributedGroup extends Resource<DistributedGroup> {
    * Gets a group member by ID.
    * <p>
    * If the member with the given ID has not {@link #join() joined} the membership group, the resulting
-   * {@link Member} will be {@code null}.
+   * {@link GroupMember} will be {@code null}.
    *
-   * @param memberId The member ID for which to return a {@link Member}.
+   * @param memberId The member ID for which to return a {@link GroupMember}.
    * @return The member with the given {@code memberId} or {@code null} if it is not a known member of the group.
    */
-  Member member(String memberId);
+  GroupMember member(String memberId);
 
   /**
    * Gets the collection of all members in the group.
    * <p>
-   * The group members are fetched from the cluster. If any {@link Member} instances have been referenced
+   * The group members are fetched from the cluster. If any {@link GroupMember} instances have been referenced
    * by this membership group instance, the same object will be returned for that member.
    * <p>
    * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
@@ -448,7 +448,7 @@ public interface DistributedGroup extends Resource<DistributedGroup> {
    *
    * @return The collection of all members in the group.
    */
-  Collection<Member> members();
+  Collection<GroupMember> members();
 
   /**
    * Joins the instance to the membership group.
@@ -456,7 +456,7 @@ public interface DistributedGroup extends Resource<DistributedGroup> {
    * When this instance joins the membership group, the membership lists of this and all other instances
    * in the group are guaranteed to be updated <em>before</em> the {@link CompletableFuture} returned by
    * this method is completed. Once this instance has joined the group, the returned future will be completed
-   * with the {@link Member} instance for this member.
+   * with the {@link GroupMember} instance for this member.
    * <p>
    * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
    * or to be notified in a separate thread once the operation completes. To block until the operation completes,
@@ -484,7 +484,7 @@ public interface DistributedGroup extends Resource<DistributedGroup> {
    * When this instance joins the membership group, the membership lists of this and all other instances
    * in the group are guaranteed to be updated <em>before</em> the {@link CompletableFuture} returned by
    * this method is completed. Once this instance has joined the group, the returned future will be completed
-   * with the {@link Member} instance for this member.
+   * with the {@link GroupMember} instance for this member.
    * <p>
    * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
    * or to be notified in a separate thread once the operation completes. To block until the operation completes,
@@ -519,7 +519,7 @@ public interface DistributedGroup extends Resource<DistributedGroup> {
    * @param listener The join listener.
    * @return The listener context.
    */
-  Listener<Member> onJoin(Consumer<Member> listener);
+  Listener<GroupMember> onJoin(Consumer<GroupMember> listener);
 
   /**
    * Removes the member with the given member ID from the group.
@@ -543,6 +543,6 @@ public interface DistributedGroup extends Resource<DistributedGroup> {
    * @param listener The leave listener.
    * @return The listener context.
    */
-  Listener<Member> onLeave(Consumer<Member> listener);
+  Listener<GroupMember> onLeave(Consumer<GroupMember> listener);
 
 }

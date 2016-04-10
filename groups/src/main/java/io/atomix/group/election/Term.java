@@ -15,7 +15,7 @@
  */
 package io.atomix.group.election;
 
-import io.atomix.group.Member;
+import io.atomix.group.GroupMember;
 
 /**
  * Group election term.
@@ -36,6 +36,6 @@ public interface Term {
    *
    * @return The group leader.
    */
-  Member leader();
+  GroupMember leader();
 
 }

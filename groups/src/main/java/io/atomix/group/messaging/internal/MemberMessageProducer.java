@@ -15,7 +15,7 @@
  */
 package io.atomix.group.messaging.internal;
 
-import io.atomix.group.Member;
+import io.atomix.group.GroupMember;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -25,9 +25,9 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class MemberMessageProducer<T> extends AbstractMessageProducer<T> {
-  private final Member member;
+  private final GroupMember member;
 
-  MemberMessageProducer(String name, Options options, AbstractMessageClient client, Member member) {
+  MemberMessageProducer(String name, Options options, AbstractMessageClient client, GroupMember member) {
     super(name, options, client);
     this.member = member;
   }

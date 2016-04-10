@@ -16,7 +16,7 @@
 package io.atomix.group.messaging.internal;
 
 import io.atomix.catalyst.util.Assert;
-import io.atomix.group.Member;
+import io.atomix.group.GroupMember;
 import io.atomix.group.messaging.MessageProducer;
 
 /**
@@ -25,9 +25,9 @@ import io.atomix.group.messaging.MessageProducer;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class MemberMessageClient extends AbstractMessageClient {
-  private final Member member;
+  private final GroupMember member;
 
-  public MemberMessageClient(Member member, MessageProducerService producerService) {
+  public MemberMessageClient(GroupMember member, MessageProducerService producerService) {
     super(producerService);
     this.member = Assert.notNull(member, "member");
   }
