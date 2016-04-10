@@ -15,7 +15,6 @@
  */
 package io.atomix.examples.election;
 
-import io.atomix.Atomix;
 import io.atomix.AtomixReplica;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.NettyTransport;
@@ -45,21 +44,21 @@ public class LeaderElectionExample {
     Address address = new Address(mainParts[0], Integer.valueOf(mainParts[1]));
 
     // Build a list of all member addresses to which to connect.
-    List<Address> members = new ArrayList<>();
+    List<Address> cluster = new ArrayList<>();
     for (int i = 1; i < args.length; i++) {
       String[] parts = args[i].split(":");
-      members.add(new Address(parts[0], Integer.valueOf(parts[1])));
+      cluster.add(new Address(parts[0], Integer.valueOf(parts[1])));
     }
 
     // Create a stateful Atomix replica. The replica communicates with other replicas in the cluster
     // to replicate state changes.
-    Atomix atomix = AtomixReplica.builder(address, members)
+    AtomixReplica atomix = AtomixReplica.builder(address)
       .withTransport(new NettyTransport())
       .withStorage(new Storage(args[0]))
       .build();
 
     // Open the replica. Once this operation completes resources can be created and managed.
-    atomix.open().join();
+    atomix.bootstrap(cluster).join();
 
     // Create a leader election resource.
     DistributedGroup group = atomix.getGroup("group").get();
@@ -68,14 +67,14 @@ public class LeaderElectionExample {
     LocalMember member = group.join().get();
 
     // Register a callback to be called when the local member is elected the leader.
-    group.election().onElection(leader -> {
-      if (leader.equals(member)) {
+    group.election().onElection(term -> {
+      if (term.leader().equals(member)) {
         System.out.println("Elected leader!");
       }
     });
 
     // Block while the replica is open.
-    while (atomix.isOpen()) {
+    for (;;) {
       Thread.sleep(1000);
     }
   }

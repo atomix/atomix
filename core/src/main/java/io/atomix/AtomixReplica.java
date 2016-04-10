@@ -20,13 +20,13 @@ import io.atomix.catalyst.transport.*;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.ConfigurationException;
 import io.atomix.catalyst.util.Listener;
-import io.atomix.catalyst.util.PropertiesReader;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
-import io.atomix.config.ReplicaOptions;
+import io.atomix.cluster.ClusterManager;
 import io.atomix.copycat.Command;
 import io.atomix.copycat.Query;
 import io.atomix.copycat.client.*;
 import io.atomix.copycat.server.CopycatServer;
+import io.atomix.copycat.server.cluster.Cluster;
 import io.atomix.copycat.server.cluster.Member;
 import io.atomix.copycat.server.storage.Storage;
 import io.atomix.copycat.session.Session;
@@ -34,11 +34,11 @@ import io.atomix.manager.ResourceClient;
 import io.atomix.manager.ResourceServer;
 import io.atomix.manager.internal.ResourceManagerException;
 import io.atomix.manager.internal.ResourceManagerState;
+import io.atomix.manager.options.ServerOptions;
 import io.atomix.manager.util.ResourceManagerTypeResolver;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceType;
 import io.atomix.resource.internal.ResourceRegistry;
-import io.atomix.util.ClusterBalancer;
 
 import java.time.Duration;
 import java.util.*;
@@ -55,7 +55,7 @@ import java.util.stream.Collectors;
  * consensus algorithm. From the perspective of resources, replicas behave like {@link AtomixClient}s in that
  * they may themselves create and modify distributed resources.
  * <p>
- * To create a replica, use the {@link #builder(Address, Address...)} builder factory. Each replica must
+ * To create a replica, use the {@link #builder(Address)} builder factory. Each replica must
  * be initially configured with a replica {@link Address} and a list of addresses for other members of the
  * core cluster. Note that the list of member addresses does not have to include the local replica nor does
  * it have to include all the replicas in the cluster. As long as the replica can reach one live member of
@@ -73,69 +73,6 @@ import java.util.stream.Collectors;
  * configured, the {@code NettyTransport} will be used and will thus be expected to be available on the classpath.
  * Similarly, if no storage module is configured, replicated commit logs will be written to
  * {@code System.getProperty("user.dir")} with a default log name.
- * <h2>Cluster management</h2>
- * Atomix clusters are managed by a custom implementation of the <a href="https://raft.github.io/">Raft consensus algorithm</a>.
- * Raft is a leader-based system that requires a quorum of nodes to synchronously acknowledge a write. Typically,
- * Raft clusters consist of {@code 3} or {@code 5} nodes.
- * <p>
- * But Atomix is designed to be embedded and scale in clusters much larger than the typical {@code 3} or {@code 5}
- * node consensus based cluster. To do so, Atomix assigns a portion of the cluster to participate in the Raft
- * algorithm, and the remainder of the replicas participate in asynchronous replication or await failures as standby
- * nodes. A typical Atomix cluster may consist of {@code 3} active Raft-voting replicas, {@code 2} backup replicas,
- * and any number of reserve nodes. As replicas are added to or removed from the cluster, Atomix transparently
- * balances the cluster to ensure it maintains the desired number of active and backup replicas.
- * <p>
- * Users are responsible for configuring the desired number of Raft participants in the cluster by setting the
- * {@link Builder#withQuorumHint(int) quorumHint}. The quorum hint indicates the desired minimum number of active
- * Raft participants in the cluster. If the cluster consists of enough replicas, Atomix will guarantee that the
- * cluster always has <em>at least</em> {@code quorumHint} replicas.
- * <p>
- * The size of the quorum is relevant both to performance and fault-tolerance. When resources are
- * created or deleted or resource state changes are submitted to the cluster, Atomix will synchronously
- * replicate changes to a majority of the cluster before they can be committed and update state. For
- * example, in a cluster where the {@code quorumHint} is {@code 3}, a
- * {@link io.atomix.collections.DistributedMap#put(Object, Object)} command must be sent to the leader
- * and then synchronously replicated to one other replica before it can be committed and applied to the
- * map state machine. This also means that a cluster with {@code quorumHint} equal to {@code 3} can tolerate
- * at most one failure.
- * <p>
- * Users should set the {@code quorumHint} to an odd number of replicas or use one of the {@link Quorum}
- * magic constants for the greatest level of fault tolerance. By default, the quorum hint is set to
- * {@link Quorum#SEED} which is based on the number of member nodes provided to the replica builder
- * {@link #builder(Address, Address...) factory}. Typically, in write-heavy workloads, the most
- * performant configuration will be a {@code quorumHint} of {@code 3}. In read-heavy workloads, quorum hints
- * of {@code 3} or {@code 5} can be used depending on the size of the cluster and desired level of fault tolerance.
- * Additional active replicas may or may not improve read performance depending on usage and in particular
- * {@link io.atomix.resource.ReadConsistency read consistency} levels.
- * <p>
- * In addition to the {@code quorumHint}, users can also configure the {@code backupCount} to specify the
- * desired number of backup replicas to maintain per active replica. The {@code backupCount} specifies the
- * maximum number of replicas per {@link Builder#withQuorumHint(int) active} replica to participate in
- * asynchronous replication of state. Backup replicas allow quorum-member replicas to be more quickly replaced
- * in the event of a failure or an active replica leaving the cluster. Additionally, backup replicas may
- * service {@link io.atomix.resource.ReadConsistency#SEQUENTIAL SEQUENTIAL} and
- * {@link io.atomix.resource.ReadConsistency#CAUSAL CAUSAL} reads to allow read operations to be further
- * spread across the cluster.
- * <pre>
- *   {@code
- *   Atomix atomix = AtomixReplica.builder(address, members)
- *     .withTransport(new NettyTransport())
- *     .withStorage(new Storage(StorageLevel.MEMORY))
- *     .withQuorumHint(3)
- *     .withBackupCount(1)
- *     .build();
- *   }
- * </pre>
- * The backup count is used to calculate the number of backup replicas per non-leader active member. The
- * number of actual backups is calculated by {@code (quorumHint - 1) * backupCount}. If the
- * {@code backupCount} is {@code 1} and the {@code quorumHint} is {@code 3}, the number of backup replicas
- * will be {@code 2}.
- * <p>
- * By default, the backup count is {@code 0}, indicating no backups should be maintained. However, it is
- * recommended that each cluster have at least a backup count of {@code 1} to ensure active replicas can
- * be quickly replaced in the event of a network partition or other failure. Quick replacement of active
- * member nodes improves fault tolerance in cases where a majority of the active members in the cluster are
- * not lost simultaneously.
  * <h2>Storage</h2>
  * Replicas manage resource and replicate and store resource state changes on disk. In order to do so, users
  * must configure the replica's {@link Storage} configuration via the {@link Builder#withStorage(Storage)} method.
@@ -162,7 +99,7 @@ import java.util.stream.Collectors;
  * based logs. If a majority of the active replicas in the cluster are lost or partitioned, writes can be overwritten.
  * Using memory-based storage amounts to recreating the entire replica each time it's started.
  * <h2>Replica lifecycle</h2>
- * When the replica is {@link #open() started}, the replica will attempt to contact members in the configured
+ * When the replica is {@link #bootstrap() started}, the replica will attempt to contact members in the configured
  * startup {@link Address} list. If any of the members are already in an active state, the replica will request
  * to join the cluster. During the process of joining the cluster, the replica will notify the current cluster
  * leader of its existence. If the leader already knows about the joining replica, the replica will immediately
@@ -175,7 +112,7 @@ import java.util.stream.Collectors;
  * Once the replica has joined the cluster, it will persist the updated cluster configuration to disk via
  * the replica's configured {@link Storage} module. This is important to note as in the event that the replica
  * crashes, <em>the replica will recover from its last known configuration</em> rather than the configuration
- * provided to the {@link #builder(Address, Address...) builder factory}. This allows Atomix cluster structures
+ * provided to the {@link #builder(Address) builder factory}. This allows Atomix cluster structures
  * to change transparently and independently of the code that configures any given replica. If a persistent
  * {@link io.atomix.copycat.server.storage.StorageLevel} is used, user code should simply configure the replica
  * consistently based on the <em>initial</em> replica configuration, and the replica will recover from the last
@@ -186,47 +123,6 @@ import java.util.stream.Collectors;
 public final class AtomixReplica extends Atomix {
 
   /**
-   * Returns a new Atomix replica builder from the given configuration file.
-   *
-   * @param properties The properties file from which to load the replica builder.
-   * @return The replica builder.
-   */
-  public static Builder builder(String properties) {
-    return builder(PropertiesReader.load(properties).properties());
-  }
-
-  /**
-   * Returns a new Atomix replica builder from the given properties.
-   *
-   * @param properties The properties from which to load the replica builder.
-   * @return The replica builder.
-   */
-  public static Builder builder(Properties properties) {
-    ReplicaOptions replicaProperties = new ReplicaOptions(properties);
-    Collection<Address> replicas = replicaProperties.servers();
-    return builder(replicaProperties.clientAddress(), replicaProperties.serverAddress(), replicas)
-      .withTransport(replicaProperties.transport())
-      .withStorage(Storage.builder()
-        .withStorageLevel(replicaProperties.storageLevel())
-        .withDirectory(replicaProperties.storageDirectory())
-        .withMaxSegmentSize(replicaProperties.maxSegmentSize())
-        .withMaxEntriesPerSegment(replicaProperties.maxEntriesPerSegment())
-        .withMaxSnapshotSize(replicaProperties.maxSnapshotSize())
-        .withRetainStaleSnapshots(replicaProperties.retainStaleSnapshots())
-        .withCompactionThreads(replicaProperties.compactionThreads())
-        .withMinorCompactionInterval(replicaProperties.minorCompactionInterval())
-        .withMajorCompactionInterval(replicaProperties.majorCompactionInterval())
-        .withCompactionThreshold(replicaProperties.compactionThreshold())
-        .build())
-      .withSerializer(replicaProperties.serializer())
-      .withQuorumHint(replicaProperties.quorumHint() != -1 ? replicaProperties.quorumHint() : replicas.size())
-      .withBackupCount(replicaProperties.backupCount())
-      .withElectionTimeout(replicaProperties.electionTimeout())
-      .withHeartbeatInterval(replicaProperties.heartbeatInterval())
-      .withSessionTimeout(replicaProperties.sessionTimeout());
-  }
-
-  /**
    * Returns a new Atomix replica builder.
    * <p>
    * The replica {@link Address} is the address to which the replica will bind to communicate with both
@@ -249,41 +145,10 @@ public final class AtomixReplica extends Atomix {
    * than the user-provided configuration. This behavior cannot be overridden.
    *
    * @param address The address through which clients and replicas connect to the replica.
-   * @param members The cluster members to which to connect.
    * @return The replica builder.
    */
-  public static Builder builder(Address address, Address... members) {
-    return builder(address, address, Arrays.asList(Assert.notNull(members, "members")));
-  }
-
-  /**
-   * Returns a new Atomix replica builder.
-   * <p>
-   * The replica {@link Address} is the address to which the replica will bind to communicate with both
-   * clients and other replicas and through which clients and replicas will connect to the constructed replica.
-   * <p>
-   * The provided set of members will be used to connect to the other members in the Raft cluster. The members
-   * do not have to be representative of the full cluster membership.
-   * <p>
-   * When starting a new cluster, the cluster should be formed by providing the {@code members} list of the
-   * replicas that make up the initial members of the cluster. If the replica being built is included in the
-   * initial membership list, its {@link Address} should be listed in the {@code members} list. Otherwise,
-   * if the replica is joining an existing cluster, its {@link Address} should not be listed in the membership
-   * list.
-   * <p>
-   * If the replica uses a persistent {@link io.atomix.copycat.server.storage.StorageLevel} like
-   * {@link io.atomix.copycat.server.storage.StorageLevel#DISK DISK} or {@link io.atomix.copycat.server.storage.StorageLevel#MAPPED MAPPED}
-   * then the provided membership list only applies to the first time the replica is started. Once the replica
-   * has been started and joined with other members of the cluster, the updated cluster configuration will be
-   * stored on disk, and if the replica crashes and is restarted it will use the persisted configuration rather
-   * than the user-provided configuration. This behavior cannot be overridden.
-   *
-   * @param address The address through which clients and replicas connect to the replica.
-   * @param members The cluster members to which to connect.
-   * @return The replica builder.
-   */
-  public static Builder builder(Address address, Collection<Address> members) {
-    return new Builder(address, address, members);
+  public static Builder builder(Address address) {
+    return builder(address, address);
   }
 
   /**
@@ -313,11 +178,40 @@ public final class AtomixReplica extends Atomix {
    *
    * @param clientAddress The address through which clients connect to the replica.
    * @param serverAddress The address through which other replicas connect to the replica.
-   * @param members The cluster members to which to connect.
    * @return The replica builder.
    */
-  public static Builder builder(Address clientAddress, Address serverAddress, Address... members) {
-    return builder(clientAddress, serverAddress, Arrays.asList(Assert.notNull(members, "members")));
+  public static Builder builder(Address clientAddress, Address serverAddress) {
+    return new Builder(clientAddress, serverAddress);
+  }
+
+  /**
+   * Returns a new Atomix replica builder.
+   * <p>
+   * The replica {@link Address} is the address to which the replica will bind to communicate with both
+   * clients and other replicas and through which clients and replicas will connect to the constructed replica.
+   * <p>
+   * The provided set of members will be used to connect to the other members in the Raft cluster. The members
+   * do not have to be representative of the full cluster membership.
+   * <p>
+   * When starting a new cluster, the cluster should be formed by providing the {@code members} list of the
+   * replicas that make up the initial members of the cluster. If the replica being built is included in the
+   * initial membership list, its {@link Address} should be listed in the {@code members} list. Otherwise,
+   * if the replica is joining an existing cluster, its {@link Address} should not be listed in the membership
+   * list.
+   * <p>
+   * If the replica uses a persistent {@link io.atomix.copycat.server.storage.StorageLevel} like
+   * {@link io.atomix.copycat.server.storage.StorageLevel#DISK DISK} or {@link io.atomix.copycat.server.storage.StorageLevel#MAPPED MAPPED}
+   * then the provided membership list only applies to the first time the replica is started. Once the replica
+   * has been started and joined with other members of the cluster, the updated cluster configuration will be
+   * stored on disk, and if the replica crashes and is restarted it will use the persisted configuration rather
+   * than the user-provided configuration. This behavior cannot be overridden.
+   *
+   * @param address The address through which clients and replicas connect to the replica.
+   * @param properties The replica properties.
+   * @return The replica builder.
+   */
+  public static Builder builder(Address address, Properties properties) {
+    return builder(address, address, properties);
   }
 
   /**
@@ -345,102 +239,221 @@ public final class AtomixReplica extends Atomix {
    * stored on disk, and if the replica crashes and is restarted it will use the persisted configuration rather
    * than the user-provided configuration. This behavior cannot be overridden.
    *
-   * @param clientAddress The address through which clients connect to the server.
-   * @param serverAddress The local server member address.
-   * @param members The cluster members to which to connect.
+   * @param clientAddress The address through which clients connect to the replica.
+   * @param serverAddress The address through which other replicas connect to the replica.
    * @return The replica builder.
    */
-  public static Builder builder(Address clientAddress, Address serverAddress, Collection<Address> members) {
-    return new Builder(clientAddress, serverAddress, members);
+  public static Builder builder(Address clientAddress, Address serverAddress, Properties properties) {
+    ServerOptions options = new ServerOptions(properties);
+    return new Builder(clientAddress, serverAddress)
+      .withTransport(options.transport())
+      .withStorage(Storage.builder()
+        .withStorageLevel(options.storageLevel())
+        .withDirectory(options.storageDirectory())
+        .withMaxSegmentSize(options.maxSegmentSize())
+        .withMaxEntriesPerSegment(options.maxEntriesPerSegment())
+        .withMaxSnapshotSize(options.maxSnapshotSize())
+        .withRetainStaleSnapshots(options.retainStaleSnapshots())
+        .withCompactionThreads(options.compactionThreads())
+        .withMinorCompactionInterval(options.minorCompactionInterval())
+        .withMajorCompactionInterval(options.majorCompactionInterval())
+        .withCompactionThreshold(options.compactionThreshold())
+        .build())
+      .withSerializer(options.serializer())
+      .withElectionTimeout(options.electionTimeout())
+      .withHeartbeatInterval(options.heartbeatInterval())
+      .withSessionTimeout(options.sessionTimeout());
   }
 
   private final ResourceServer server;
-  private final ClusterBalancer balancer;
+  private final ClusterManager clusterManager;
 
-  public AtomixReplica(Properties properties) {
-    this(builder(properties));
-  }
-
-  private AtomixReplica(Builder builder) {
-    this(builder.buildClient(), builder.buildServer(), builder.buildBalancer());
-  }
-
-  private AtomixReplica(ResourceClient client, ResourceServer server, ClusterBalancer balancer) {
+  private AtomixReplica(ResourceClient client, ResourceServer server, ClusterManager clusterManager) {
     super(client);
     this.server = Assert.notNull(server, "server");
-    this.balancer = Assert.notNull(balancer, "balancer");
+    this.clusterManager = Assert.notNull(clusterManager, "clusterManager");
   }
 
   /**
-   * Registers membership change listeners on the cluster.
-   */
-  private void registerListeners() {
-    server.server().cluster().members().forEach(m -> {
-      m.onTypeChange(t -> balance());
-      m.onStatusChange(s -> balance());
-    });
-
-    server.server().cluster().onLeaderElection(l -> balance());
-
-    server.server().cluster().onJoin(m -> {
-      m.onTypeChange(t -> balance());
-      m.onStatusChange(s -> balance());
-      balance();
-    });
-
-    server.server().cluster().onLeave(m -> balance());
-  }
-
-  /**
-   * Balances the cluster.
-   */
-  private void balance() {
-    if (server.server().cluster().member().equals(server.server().cluster().leader())) {
-      balancer.balance(server.server().cluster());
-    }
-  }
-
-  /**
-   * Starts the replica.
+   * Bootstraps a single-node cluster.
+   * <p>
+   * Bootstrapping a single-node cluster results in the server forming a new cluster to which additional servers
+   * can be joined.
+   * <p>
+   * Only {@link Member.Type#ACTIVE} members can be included in a bootstrap configuration. If the local server is
+   * not initialized as an active member, it cannot be part of the bootstrap configuration for the cluster.
+   * <p>
+   * When the cluster is bootstrapped, the local server will be transitioned into the active state and begin
+   * participating in the Raft consensus algorithm. When the cluster is first bootstrapped, no leader will exist.
+   * The bootstrapped members will elect a leader amongst themselves. Once a cluster has been bootstrapped, additional
+   * members may be {@link #join(Address...) joined} to the cluster. In the event that the bootstrapped members cannot
+   * reach a quorum to elect a leader, bootstrap will continue until successful.
+   * <p>
+   * It is critical that all servers in a bootstrap configuration be started with the same exact set of members.
+   * Bootstrapping multiple servers with different configurations may result in split brain.
+   * <p>
+   * The {@link CompletableFuture} returned by this method will be completed once the cluster has been bootstrapped,
+   * a leader has been elected, and the leader has been notified of the local server's client configurations.
    *
-   * @return A completable future to be completed once the replica has been started.
+   * @return A completable future to be completed once the cluster has been bootstrapped.
    */
-  public CompletableFuture<Atomix> start() {
-    return server.start()
-      .thenRun(this::registerListeners)
-      .thenCompose(v -> client.connect())
+  @SuppressWarnings("unchecked")
+  public CompletableFuture<AtomixReplica> bootstrap() {
+    return bootstrap(Collections.EMPTY_LIST);
+  }
+
+  /**
+   * Bootstraps the cluster using the provided cluster configuration.
+   * <p>
+   * Bootstrapping the cluster results in a new cluster being formed with the provided configuration. The initial
+   * nodes in a cluster must always be bootstrapped. This is necessary to prevent split brain. If the provided
+   * configuration is empty, the local server will form a single-node cluster.
+   * <p>
+   * Only {@link Member.Type#ACTIVE} members can be included in a bootstrap configuration. If the local server is
+   * not initialized as an active member, it cannot be part of the bootstrap configuration for the cluster.
+   * <p>
+   * When the cluster is bootstrapped, the local server will be transitioned into the active state and begin
+   * participating in the Raft consensus algorithm. When the cluster is first bootstrapped, no leader will exist.
+   * The bootstrapped members will elect a leader amongst themselves. Once a cluster has been bootstrapped, additional
+   * members may be {@link #join(Address...) joined} to the cluster. In the event that the bootstrapped members cannot
+   * reach a quorum to elect a leader, bootstrap will continue until successful.
+   * <p>
+   * It is critical that all servers in a bootstrap configuration be started with the same exact set of members.
+   * Bootstrapping multiple servers with different configurations may result in split brain.
+   * <p>
+   * The {@link CompletableFuture} returned by this method will be completed once the cluster has been bootstrapped,
+   * a leader has been elected, and the leader has been notified of the local server's client configurations.
+   *
+   * @param cluster The bootstrap cluster configuration.
+   * @return A completable future to be completed once the cluster has been bootstrapped.
+   */
+  public CompletableFuture<AtomixReplica> bootstrap(Address... cluster) {
+    return bootstrap(Arrays.asList(cluster));
+  }
+
+  /**
+   * Bootstraps the cluster using the provided cluster configuration.
+   * <p>
+   * Bootstrapping the cluster results in a new cluster being formed with the provided configuration. The initial
+   * nodes in a cluster must always be bootstrapped. This is necessary to prevent split brain. If the provided
+   * configuration is empty, the local server will form a single-node cluster.
+   * <p>
+   * Only {@link Member.Type#ACTIVE} members can be included in a bootstrap configuration. If the local server is
+   * not initialized as an active member, it cannot be part of the bootstrap configuration for the cluster.
+   * <p>
+   * When the cluster is bootstrapped, the local server will be transitioned into the active state and begin
+   * participating in the Raft consensus algorithm. When the cluster is first bootstrapped, no leader will exist.
+   * The bootstrapped members will elect a leader amongst themselves. Once a cluster has been bootstrapped, additional
+   * members may be {@link #join(Address...) joined} to the cluster. In the event that the bootstrapped members cannot
+   * reach a quorum to elect a leader, bootstrap will continue until successful.
+   * <p>
+   * It is critical that all servers in a bootstrap configuration be started with the same exact set of members.
+   * Bootstrapping multiple servers with different configurations may result in split brain.
+   * <p>
+   * The {@link CompletableFuture} returned by this method will be completed once the cluster has been bootstrapped,
+   * a leader has been elected, and the leader has been notified of the local server's client configurations.
+   *
+   * @param cluster The bootstrap cluster configuration.
+   * @return A completable future to be completed once the cluster has been bootstrapped.
+   */
+  public CompletableFuture<AtomixReplica> bootstrap(Collection<Address> cluster) {
+    return server.bootstrap(cluster)
+      .thenCompose(v -> clusterManager.start(server.server().cluster(), this))
+      .thenCompose(v -> client.connect(cluster))
       .thenApply(v -> this);
   }
 
   /**
-   * Stops the replica.
+   * Joins the cluster.
+   * <p>
+   * Joining the cluster results in the local server being added to an existing cluster that has already been
+   * bootstrapped. The provided configuration will be used to connect to the existing cluster and submit a join
+   * request. Once the server has been added to the existing cluster's configuration, the join operation is complete.
+   * <p>
+   * Any {@link Member.Type type} of server may join a cluster. In order to join a cluster, the provided list of
+   * bootstrapped members must be non-empty and must include at least one active member of the cluster. If no member
+   * in the configuration is reachable, the server will continue to attempt to join the cluster until successful. If
+   * the provided cluster configuration is empty, the returned {@link CompletableFuture} will be completed exceptionally.
+   * <p>
+   * When the server joins the cluster, the local server will be transitioned into its initial state as defined by
+   * the configured {@link Member.Type}. Once the server has joined, it will immediately begin participating in
+   * Raft and asynchronous replication according to its configuration.
+   * <p>
+   * It's important to note that the provided cluster configuration will only be used the first time the server attempts
+   * to join the cluster. Thereafter, in the event that the server crashes and is restarted by {@code join}ing the cluster
+   * again, the last known configuration will be used assuming the server is configured with persistent storage. Only when
+   * the server leaves the cluster will its configuration and log be reset.
+   * <p>
+   * In order to preserve safety during configuration changes, Copycat leaders do not allow concurrent configuration
+   * changes. In the event that an existing configuration change (a server joining or leaving the cluster or a
+   * member being {@link Member#promote() promoted} or {@link Member#demote() demoted}) is under way, the local
+   * server will retry attempts to join the cluster until successful. If the server fails to reach the leader,
+   * the join will be retried until successful.
    *
-   * @return A completable future to be completed once the replica has been stopped.
+   * @param cluster A collection of cluster member addresses to join.
+   * @return A completable future to be completed once the local server has joined the cluster.
    */
-  public CompletableFuture<Void> stop() {
-    return balancer.replace(server.server().cluster())
+  public CompletableFuture<AtomixReplica> join(Address... cluster) {
+    return join(Arrays.asList(cluster));
+  }
+
+  /**
+   * Joins the cluster.
+   * <p>
+   * Joining the cluster results in the local server being added to an existing cluster that has already been
+   * bootstrapped. The provided configuration will be used to connect to the existing cluster and submit a join
+   * request. Once the server has been added to the existing cluster's configuration, the join operation is complete.
+   * <p>
+   * Any {@link Member.Type type} of server may join a cluster. In order to join a cluster, the provided list of
+   * bootstrapped members must be non-empty and must include at least one active member of the cluster. If no member
+   * in the configuration is reachable, the server will continue to attempt to join the cluster until successful. If
+   * the provided cluster configuration is empty, the returned {@link CompletableFuture} will be completed exceptionally.
+   * <p>
+   * When the server joins the cluster, the local server will be transitioned into its initial state as defined by
+   * the configured {@link Member.Type}. Once the server has joined, it will immediately begin participating in
+   * Raft and asynchronous replication according to its configuration.
+   * <p>
+   * It's important to note that the provided cluster configuration will only be used the first time the server attempts
+   * to join the cluster. Thereafter, in the event that the server crashes and is restarted by {@code join}ing the cluster
+   * again, the last known configuration will be used assuming the server is configured with persistent storage. Only when
+   * the server leaves the cluster will its configuration and log be reset.
+   * <p>
+   * In order to preserve safety during configuration changes, Copycat leaders do not allow concurrent configuration
+   * changes. In the event that an existing configuration change (a server joining or leaving the cluster or a
+   * member being {@link Member#promote() promoted} or {@link Member#demote() demoted}) is under way, the local
+   * server will retry attempts to join the cluster until successful. If the server fails to reach the leader,
+   * the join will be retried until successful.
+   *
+   * @param cluster A collection of cluster member addresses to join.
+   * @return A completable future to be completed once the local server has joined the cluster.
+   */
+  public CompletableFuture<AtomixReplica> join(Collection<Address> cluster) {
+    return server.join(cluster)
+      .thenCompose(v -> clusterManager.start(server.server().cluster(), this))
+      .thenCompose(v -> client.connect(cluster))
+      .thenApply(v -> this);
+  }
+
+  /**
+   * Shuts down the server without leaving the Copycat cluster.
+   *
+   * @return A completable future to be completed once the server has been shutdown.
+   */
+  public CompletableFuture<Void> shutdown() {
+    return clusterManager.stop(server.server().cluster(), this)
       .thenCompose(v -> client.close())
-      .thenCompose(v -> server.stop());
+      .thenCompose(v -> server.shutdown());
   }
 
-  @Override
-  public CompletableFuture<Atomix> open() {
-    return start();
-  }
-
-  @Override
-  public boolean isOpen() {
-    return server.isRunning() && client.state() != CopycatClient.State.CLOSED;
-  }
-
-  @Override
-  public CompletableFuture<Void> close() {
-    return stop();
-  }
-
-  @Override
-  public boolean isClosed() {
-    return !server.isRunning() || client.state() == CopycatClient.State.CLOSED;
+  /**
+   * Leaves the Copycat cluster.
+   *
+   * @return A completable future to be completed once the server has left the cluster.
+   */
+  public CompletableFuture<Void> leave() {
+    return clusterManager.stop(server.server().cluster(), this)
+      .thenCompose(v -> client.close())
+      .thenCompose(v -> server.leave());
   }
 
   /**
@@ -448,7 +461,7 @@ public final class AtomixReplica extends Atomix {
    * <p>
    * The replica builder configures an {@link AtomixReplica} to listen for connections from clients and other
    * servers/replica, connect to other servers in a cluster, and manage a replicated log. To create a replica builder,
-   * use the {@link #builder(Address, Address...)} method:
+   * use the {@link #builder(Address)} method:
    * <pre>
    *   {@code
    *   Atomix replica = AtomixReplica.builder(address, members)
@@ -473,22 +486,19 @@ public final class AtomixReplica extends Atomix {
     private final ResourceRegistry registry = new ResourceRegistry(RESOURCES);
     private Transport clientTransport;
     private Transport serverTransport;
-    private final Collection<Address> members;
-    private int quorumHint;
-    private int backupCount;
+    private ClusterManager clusterManager;
     private LocalServerRegistry localRegistry = new LocalServerRegistry();
 
-    private Builder(Address clientAddress, Address serverAddress, Collection<Address> members) {
-      this.members = Assert.notNull(members, "members");
+    private Builder(Address clientAddress, Address serverAddress) {
       Serializer serializer = new Serializer();
       this.clientAddress = Assert.notNull(clientAddress, "clientAddress");
-      this.clientBuilder = CopycatClient.builder(members)
+      this.clientBuilder = CopycatClient.builder()
         .withSerializer(serializer.clone())
         .withServerSelectionStrategy(ServerSelectionStrategies.ANY)
         .withConnectionStrategy(ConnectionStrategies.FIBONACCI_BACKOFF)
         .withRecoveryStrategy(RecoveryStrategies.RECOVER)
         .withRetryStrategy(RetryStrategies.FIBONACCI_BACKOFF);
-      this.serverBuilder = CopycatServer.builder(clientAddress, serverAddress, members).withSerializer(serializer.clone());
+      this.serverBuilder = CopycatServer.builder(clientAddress, serverAddress).withSerializer(serializer.clone());
     }
 
     /**
@@ -555,111 +565,13 @@ public final class AtomixReplica extends Atomix {
     }
 
     /**
-     * Sets the cluster quorum hint.
-     * <p>
-     * The quorum hint specifies the optimal number of replicas to actively participate in the Raft
-     * consensus algorithm. As long as there are at least {@code quorumHint} replicas in the cluster,
-     * Atomix will automatically balance replicas to ensure that at least {@code quorumHint} replicas
-     * are active participants in the Raft algorithm at any given time. Replicas can be added to or
-     * removed from the cluster at will, and remaining replicas will be transparently promoted and demoted
-     * as necessary to maintain the desired quorum size.
-     * <p>
-     * By default, the configured quorum hint is {@link Quorum#SEED} which is based on the number of
-     * {@link Address members} provided to the {@link #builder(Address, Address...) builder factory}
-     * when constructing this builder.
-     * <p>
-     * The size of the quorum is relevant both to performance and fault-tolerance. When resources are
-     * created or deleted or resource state changes are submitted to the cluster, Atomix will synchronously
-     * replicate changes to a majority of the cluster before they can be committed and update state. For
-     * example, in a cluster where the {@code quorumHint} is {@code 3}, a
-     * {@link io.atomix.collections.DistributedMap#put(Object, Object)} command must be sent to the leader
-     * and then synchronously replicated to one other replica before it can be committed and applied to the
-     * map state machine. This also means that a cluster with {@code quorumHint} equal to {@code 3} can tolerate
-     * at most one failure.
-     * <p>
-     * Users should set the {@code quorumHint} to an odd number of replicas or use one of the {@link Quorum}
-     * magic constants for the greatest level of fault tolerance. Typically, in write-heavy workloads, the most
-     * performant configuration will be a {@code quorumHint} of {@code 3}. In read-heavy workloads, quorum hints
-     * of {@code 3} or {@code 5} can be used depending on the size of the cluster and desired level of fault tolerance.
-     * Additional active replicas may or may not improve read performance depending on usage and in particular
-     * {@link io.atomix.resource.ReadConsistency read consistency} levels.
+     * Sets the replica cluster manager.
      *
-     * @param quorumHint The quorum hint. This must be the same on all replicas in the cluster.
+     * @param clusterManager The replica cluster manager.
      * @return The replica builder.
-     * @throws IllegalArgumentException if the quorum hint is less than {@code -1}
      */
-    public Builder withQuorumHint(int quorumHint) {
-      this.quorumHint = Assert.argNot(quorumHint, quorumHint < -1, "quorumHint must be positive, 0, or -1");
-      return this;
-    }
-
-    /**
-     * Sets the cluster quorum hint.
-     * <p>
-     * The quorum hint specifies the optimal number of replicas to actively participate in the Raft
-     * consensus algorithm. As long as there are at least {@code quorumHint} replicas in the cluster,
-     * Atomix will automatically balance replicas to ensure that at least {@code quorumHint} replicas
-     * are active participants in the Raft algorithm at any given time. Replicas can be added to or
-     * removed from the cluster at will, and remaining replicas will be transparently promoted and demoted
-     * as necessary to maintain the desired quorum size.
-     * <p>
-     * By default, the configured quorum hint is {@link Quorum#SEED} which is based on the number of
-     * {@link Address members} provided to the {@link #builder(Address, Address...) builder factory}
-     * when constructing this builder.
-     * <p>
-     * The size of the quorum is relevant both to performance and fault-tolerance. When resources are
-     * created or deleted or resource state changes are submitted to the cluster, Atomix will synchronously
-     * replicate changes to a majority of the cluster before they can be committed and update state. For
-     * example, in a cluster where the {@code quorumHint} is {@code 3}, a
-     * {@link io.atomix.collections.DistributedMap#put(Object, Object)} command must be sent to the leader
-     * and then synchronously replicated to one other replica before it can be committed and applied to the
-     * map state machine. This also means that a cluster with {@code quorumHint} equal to {@code 3} can tolerate
-     * at most one failure.
-     * <p>
-     * Users should set the {@code quorumHint} to an odd number of replicas or use one of the {@link Quorum}
-     * magic constants for the greatest level of fault tolerance. Typically, in write-heavy workloads, the most
-     * performant configuration will be a {@code quorumHint} of {@code 3}. In read-heavy workloads, quorum hints
-     * of {@code 3} or {@code 5} can be used depending on the size of the cluster and desired level of fault tolerance.
-     * Additional active replicas may or may not improve read performance depending on usage and in particular
-     * {@link io.atomix.resource.ReadConsistency read consistency} levels.
-     *
-     * @param quorum The quorum hint. This must be the same on all replicas in the cluster.
-     * @return The replica builder.
-     * @throws NullPointerException if the quorum hint is null
-     */
-    public Builder withQuorumHint(Quorum quorum) {
-      this.quorumHint = Assert.notNull(quorum, "quorum").size();
-      return this;
-    }
-
-    /**
-     * Sets the replica backup count.
-     * <p>
-     * The backup count specifies the maximum number of replicas per {@link #withQuorumHint(int) active} replica
-     * to participate in asynchronous replication of state. Backup replicas allow quorum-member replicas to be
-     * more quickly replaced in the event of a failure or an active replica leaving the cluster. Additionally,
-     * backup replicas may service {@link io.atomix.resource.ReadConsistency#SEQUENTIAL SEQUENTIAL} and
-     * {@link io.atomix.resource.ReadConsistency#CAUSAL CAUSAL} reads to allow read operations to be further
-     * spread across the cluster.
-     * <p>
-     * The backup count is used to calculate the number of backup replicas per non-leader active member. The
-     * number of actual backups is calculated by {@code (quorumHint - 1) * backupCount}. If the
-     * {@code backupCount} is {@code 1} and the {@code quorumHint} is {@code 3}, the number of backup replicas
-     * will be {@code 2}.
-     * <p>
-     * By default, the backup count is {@code 0}, indicating no backups should be maintained. However, it is
-     * recommended that each cluster have at least a backup count of {@code 1} to ensure active replicas can
-     * be quickly replaced in the event of a network partition or other failure. Quick replacement of active
-     * member nodes improves fault tolerance in cases where a majority of the active members in the cluster are
-     * not lost simultaneously.
-     *
-     * @param backupCount The number of backup replicas per active replica. This must be the same on all
-     *                    replicas in the cluster.
-     * @return The replica builder.
-     * @throws IllegalArgumentException if the {@code backupCount} is negative
-     */
-    public Builder withBackupCount(int backupCount) {
-      this.backupCount = Assert.argNot(backupCount, backupCount < 0, "backupCount must be positive");
+    public Builder withClusterManager(ClusterManager clusterManager) {
+      this.clusterManager = Assert.notNull(clusterManager, "clusterManager");
       return this;
     }
 
@@ -838,9 +750,20 @@ public final class AtomixReplica extends Atomix {
     }
 
     /**
-     * Builds the replica transports.
+     * Builds the replica.
+     * <p>
+     * If no {@link Transport} was configured for the replica, the builder will attempt to create a
+     * {@code NettyTransport} instance. If {@code io.atomix.catalyst.transport.NettyTransport} is not available
+     * on the classpath, a {@link ConfigurationException} will be thrown.
+     * <p>
+     * Once the replica is built, it is not yet connected to the cluster. To connect the replica to the cluster,
+     * call the asynchronous {@link #bootstrap()} method.
+     *
+     * @return The built replica.
+     * @throws ConfigurationException if the replica is misconfigured
      */
-    private void buildTransport() {
+    @Override
+    public AtomixReplica build() {
       // If no transport was configured by the user, attempt to load the Netty transport.
       if (serverTransport == null) {
         try {
@@ -849,13 +772,6 @@ public final class AtomixReplica extends Atomix {
           throw new ConfigurationException("transport not configured");
         }
       }
-    }
-
-    /**
-     * Builds a client for the replica.
-     */
-    private ResourceClient buildClient() {
-      buildTransport();
 
       // Configure the client and server with a transport that routes all local client communication
       // directly through the local server, ensuring we don't incur unnecessary network traffic by
@@ -866,6 +782,7 @@ public final class AtomixReplica extends Atomix {
       CopycatClient client = clientBuilder.build();
       client.serializer().resolve(new ResourceManagerTypeResolver());
 
+      // Iterate through registered resource types and register serializable types on the client serializer.
       for (ResourceType type : registry.types()) {
         try {
           type.factory().newInstance().createSerializableTypeResolver().resolve(client.serializer().registry());
@@ -874,13 +791,18 @@ public final class AtomixReplica extends Atomix {
         }
       }
 
-      return new ResourceClient(new CombinedCopycatClient(client, serverTransport));
-    }
+      // Create a default cluster manager if none was specified.
+      ClusterManager clusterManager = this.clusterManager != null ? this.clusterManager : new ClusterManager() {
+        @Override
+        public CompletableFuture<Void> start(Cluster cluster, AtomixReplica replica) {
+          return CompletableFuture.completedFuture(null);
+        }
+        @Override
+        public CompletableFuture<Void> stop(Cluster cluster, AtomixReplica replica) {
+          return CompletableFuture.completedFuture(null);
+        }
+      };
 
-    /**
-     * Builds a server for the replica.
-     */
-    private ResourceServer buildServer() {
       // Construct the underlying CopycatServer. The server should have been configured with a CombinedTransport
       // that facilitates the local client connecting directly to the server.
       if (clientTransport != null) {
@@ -893,14 +815,10 @@ public final class AtomixReplica extends Atomix {
       // Set the server resource state machine.
       serverBuilder.withStateMachine(ResourceManagerState::new);
 
-      // If the quorum hint is ALL then set the local member to ACTIVE.
-      if (quorumHint == Quorum.ALL.size()) {
-        serverBuilder.withType(Member.Type.ACTIVE);
-      }
-
       CopycatServer server = serverBuilder.build();
       server.serializer().resolve(new ResourceManagerTypeResolver());
 
+      // Iterate through registered resource types and register serializable types on the server serializer.
       for (ResourceType type : registry.types()) {
         try {
           type.factory().newInstance().createSerializableTypeResolver().resolve(server.serializer().registry());
@@ -909,32 +827,7 @@ public final class AtomixReplica extends Atomix {
         }
       }
 
-      return new ResourceServer(server);
-    }
-
-    /**
-     * Builds a balancer for the replica.
-     */
-    private ClusterBalancer buildBalancer() {
-      return new ClusterBalancer(quorumHint == Quorum.SEED.size() ? members.size() : quorumHint, backupCount);
-    }
-
-    /**
-     * Builds the replica.
-     * <p>
-     * If no {@link Transport} was configured for the replica, the builder will attempt to create a
-     * {@code NettyTransport} instance. If {@code io.atomix.catalyst.transport.NettyTransport} is not available
-     * on the classpath, a {@link ConfigurationException} will be thrown.
-     * <p>
-     * Once the replica is built, it is not yet connected to the cluster. To connect the replica to the cluster,
-     * call the asynchronous {@link #open()} method.
-     *
-     * @return The built replica.
-     * @throws ConfigurationException if the replica is misconfigured
-     */
-    @Override
-    public AtomixReplica build() {
-      return new AtomixReplica(buildClient(), buildServer(), buildBalancer());
+      return new AtomixReplica(new ResourceClient(new CombinedCopycatClient(client, serverTransport)), new ResourceServer(server), clusterManager);
     }
   }
 
@@ -1001,8 +894,8 @@ public final class AtomixReplica extends Atomix {
     }
 
     @Override
-    public CompletableFuture<CopycatClient> connect() {
-      return client.connect();
+    public CompletableFuture<CopycatClient> connect(Collection<Address> members) {
+      return client.connect(members);
     }
 
     @Override

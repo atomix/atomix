@@ -15,22 +15,17 @@
  */
 package io.atomix.manager.options;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
+import io.atomix.catalyst.transport.NettyTransport;
+import io.atomix.catalyst.transport.Transport;
+import io.atomix.catalyst.util.PropertiesReader;
+import io.atomix.copycat.server.storage.StorageLevel;
+import org.testng.annotations.Test;
 
 import java.io.File;
 import java.time.Duration;
 import java.util.Properties;
 
-import org.testng.annotations.Test;
-
-import io.atomix.catalyst.transport.Address;
-import io.atomix.catalyst.transport.NettyTransport;
-import io.atomix.catalyst.transport.Transport;
-import io.atomix.catalyst.util.PropertiesReader;
-import io.atomix.copycat.server.storage.StorageLevel;
-import io.atomix.manager.options.ServerOptions;
+import static org.testng.Assert.*;
 
 /**
  * Server properties test.
@@ -59,7 +54,7 @@ public class ServerOptionsTest {
     assertEquals(options.minorCompactionInterval(), Duration.ofMinutes(1));
     assertEquals(options.majorCompactionInterval(), Duration.ofHours(1));
     assertEquals(options.compactionThreshold(), 0.5);
-    assertTrue(options.serializer().isWhitelistRequired());
+    assertFalse(options.serializer().isWhitelistRequired());
   }
 
   /**
@@ -73,9 +68,9 @@ public class ServerOptionsTest {
     properties.setProperty("cluster.seed.3", "localhost:5002");
     properties.setProperty("server.transport", "io.atomix.catalyst.transport.NettyTransport");
     properties.setProperty("server.transport.threads", "1");
-    properties.setProperty("cluster.electionTimeout", "200");
-    properties.setProperty("cluster.heartbeatInterval", "100");
-    properties.setProperty("cluster.sessionTimeout", "1000");
+    properties.setProperty("raft.electionTimeout", "200");
+    properties.setProperty("raft.heartbeatInterval", "100");
+    properties.setProperty("raft.sessionTimeout", "1000");
     properties.setProperty("storage.directory", "test");
     properties.setProperty("storage.level", "MEMORY");
     properties.setProperty("storage.maxSegmentSize", "1024");
@@ -92,12 +87,6 @@ public class ServerOptionsTest {
     Transport transport = config.transport();
     assertTrue(transport instanceof NettyTransport);
     assertEquals(((NettyTransport) transport).properties().threads(), 1);
-
-    assertEquals(config.serverAddress(), new Address("localhost", 5000));
-    assertEquals(config.servers().size(), 3);
-    assertTrue(config.servers().contains(new Address("localhost", 5000)));
-    assertTrue(config.servers().contains(new Address("localhost", 5001)));
-    assertTrue(config.servers().contains(new Address("localhost", 5002)));
 
     assertEquals(config.electionTimeout(), Duration.ofMillis(200));
     assertEquals(config.heartbeatInterval(), Duration.ofMillis(100));
@@ -124,12 +113,6 @@ public class ServerOptionsTest {
         PropertiesReader.loadFromClasspath("server-test.properties").properties());
     assertTrue(config.transport() instanceof NettyTransport);
     assertEquals(((NettyTransport) config.transport()).properties().threads(), 1);
-
-    assertEquals(config.serverAddress(), new Address("localhost", 5000));
-    assertEquals(config.servers().size(), 3);
-    assertTrue(config.servers().contains(new Address("localhost", 5000)));
-    assertTrue(config.servers().contains(new Address("localhost", 5001)));
-    assertTrue(config.servers().contains(new Address("localhost", 5002)));
 
     assertEquals(config.electionTimeout(), Duration.ofMillis(200));
     assertEquals(config.heartbeatInterval(), Duration.ofMillis(100));

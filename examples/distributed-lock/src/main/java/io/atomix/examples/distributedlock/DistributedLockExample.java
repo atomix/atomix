@@ -15,7 +15,6 @@
  */
 package io.atomix.examples.distributedlock;
 
-import io.atomix.Atomix;
 import io.atomix.AtomixClient;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.NettyTransport;
@@ -38,21 +37,17 @@ public class DistributedLockExample {
     if (args.length < 1)
       throw new IllegalArgumentException("must supply a set of host:port tuples");
 
-    List<Address> members = new ArrayList<>();
+    List<Address> cluster = new ArrayList<>();
     for (int i = 0; i < args.length; i++) {
       String[] parts = args[i].split(":");
-      members.add(new Address(parts[0], Integer.valueOf(parts[1])));
+      cluster.add(new Address(parts[0], Integer.valueOf(parts[1])));
     }
 
-    Atomix client = AtomixClient.builder(members)
+    AtomixClient client = AtomixClient.builder()
       .withTransport(new NettyTransport())
       .build();
 
-    client.open().get();
-
-    client.open().thenRun(() -> {
-      System.out.println("Client started!");
-    });
+    client.connect(cluster).get();
 
     DistributedLock lock = client.getLock("lock").get();
 

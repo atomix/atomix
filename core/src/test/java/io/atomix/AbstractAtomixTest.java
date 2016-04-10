@@ -69,7 +69,7 @@ public abstract class AbstractAtomixTest extends ConcurrentTestCase {
       await(30000);
     }
     for (AtomixReplica replica : replicas) {
-      replica.close().thenRun(this::resume);
+      replica.leave().thenRun(this::resume);
       await(30000);
     }
 
@@ -83,7 +83,7 @@ public abstract class AbstractAtomixTest extends ConcurrentTestCase {
   protected <T extends Resource<?>> Function<Atomix, T> getResource(String key, Class<? super T> type) {
     return a -> {
       try {
-        return a.<T>getResource(key, type).get(5, TimeUnit.SECONDS);
+        return a.getResource(key, type).get(5, TimeUnit.SECONDS);
       } catch (InterruptedException | ExecutionException | TimeoutException e) {
         throw new RuntimeException(e);
       }
@@ -102,13 +102,13 @@ public abstract class AbstractAtomixTest extends ConcurrentTestCase {
   /**
    * Creates a client.
    */
-  protected Atomix createClient(ResourceType... types) throws Throwable {
-    AtomixClient client = AtomixClient.builder(members)
+  protected AtomixClient createClient(ResourceType... types) throws Throwable {
+    AtomixClient client = AtomixClient.builder()
       .withTransport(new LocalTransport(registry))
       .withResourceTypes(types)
       .build();
     client.serializer().disableWhitelist();
-    client.open().thenRun(this::resume);
+    client.connect(members).thenRun(this::resume);
     clients.add(client);
     await(10000);
     return client;
@@ -117,12 +117,10 @@ public abstract class AbstractAtomixTest extends ConcurrentTestCase {
   /**
    * Creates an Atomix replica.
    */
-  protected AtomixReplica createReplica(Address address, List<Address> members, int quorumHint, int backupCount, ResourceType... types) {
-    AtomixReplica replica = AtomixReplica.builder(address, members)
+  protected AtomixReplica createReplica(Address address, ResourceType... types) {
+    AtomixReplica replica = AtomixReplica.builder(address)
       .withTransport(new LocalTransport(registry))
       .withStorage(new Storage(StorageLevel.MEMORY))
-      .withQuorumHint(quorumHint)
-      .withBackupCount(backupCount)
       .withResourceTypes(types)
       .build();
     replica.serializer().disableWhitelist();
@@ -133,17 +131,17 @@ public abstract class AbstractAtomixTest extends ConcurrentTestCase {
   /**
    * Creates a set of Atomix instances.
    */
-  protected List<Atomix> createReplicas(int nodes, int quorumHint, int backupCount, ResourceType... types) throws Throwable {
+  protected List<Atomix> createReplicas(int nodes, ResourceType... types) throws Throwable {
     List<Address> members = new ArrayList<>();
-    for (int i = 0; i < quorumHint; i++) {
+    for (int i = 0; i < nodes; i++) {
       members.add(nextAddress());
     }
     this.members.addAll(members);
 
     List<Atomix> replicas = new ArrayList<>();
     for (int i = 0; i < nodes; i++) {
-      AtomixReplica atomix = createReplica(members.size() > i ? members.get(i) : nextAddress(), members, quorumHint, backupCount, types);
-      atomix.open().thenRun(this::resume);
+      AtomixReplica atomix = createReplica(members.get(i), types);
+      atomix.bootstrap(members).thenRun(this::resume);
       replicas.add(atomix);
     }
 
