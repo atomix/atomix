@@ -296,7 +296,6 @@ public final class AtomixReplica extends Atomix {
         .withDirectory(options.storageDirectory())
         .withMaxSegmentSize(options.maxSegmentSize())
         .withMaxEntriesPerSegment(options.maxEntriesPerSegment())
-        .withMaxSnapshotSize(options.maxSnapshotSize())
         .withRetainStaleSnapshots(options.retainStaleSnapshots())
         .withCompactionThreads(options.compactionThreads())
         .withMinorCompactionInterval(options.minorCompactionInterval())
