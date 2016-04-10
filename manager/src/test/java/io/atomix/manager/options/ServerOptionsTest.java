@@ -18,7 +18,9 @@ package io.atomix.manager.options;
 import io.atomix.catalyst.transport.NettyTransport;
 import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.PropertiesReader;
+import io.atomix.copycat.client.CopycatClient;
 import io.atomix.copycat.server.storage.StorageLevel;
+import io.atomix.resource.*;
 import org.testng.annotations.Test;
 
 import java.io.File;
@@ -81,6 +83,7 @@ public class ServerOptionsTest {
     properties.setProperty("storage.compaction.major", "10000");
     properties.setProperty("storage.compaction.threshold", "0.2");
     properties.setProperty("serializer.whitelist", "false");
+    properties.setProperty("resource.test", "io.atomix.manager.options.ServerOptionsTest$TestResource");
 
     ServerOptions config = new ServerOptions(properties);
     Transport transport = config.transport();
@@ -101,6 +104,9 @@ public class ServerOptionsTest {
     assertEquals(config.compactionThreshold(), 0.2);
 
     assertFalse(config.serializer().isWhitelistRequired());
+
+    assertEquals(config.resourceTypes().size(), 1);
+    assertEquals(config.resourceTypes().iterator().next().id(), 1);
   }
 
   /**
@@ -126,6 +132,27 @@ public class ServerOptionsTest {
     assertEquals(config.compactionThreshold(), 0.2);
 
     assertFalse(config.serializer().isWhitelistRequired());
+
+    assertEquals(config.resourceTypes().size(), 1);
+    assertEquals(config.resourceTypes().iterator().next().id(), 1);
+  }
+
+  @ResourceTypeInfo(id=1, factory=TestResourceFactory.class)
+  public static class TestResource extends AbstractResource<TestResource> {
+    public TestResource(CopycatClient client, ResourceType type, Properties options) {
+      super(client, type, options);
+    }
+  }
+
+  public static class TestResourceFactory implements ResourceFactory<TestResource> {
+    @Override
+    public ResourceStateMachine createStateMachine(Properties config) {
+      return null;
+    }
+    @Override
+    public TestResource createInstance(CopycatClient client, Properties options) {
+      return null;
+    }
   }
 
 }
