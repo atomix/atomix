@@ -19,9 +19,9 @@ import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.catalyst.util.Listeners;
 import io.atomix.group.GroupMember;
-import io.atomix.group.internal.MembershipGroup;
 import io.atomix.group.election.Election;
 import io.atomix.group.election.Term;
+import io.atomix.group.internal.MembershipGroup;
 
 import java.util.function.Consumer;
 
@@ -33,7 +33,7 @@ import java.util.function.Consumer;
 public class GroupElection implements Election {
   private final MembershipGroup group;
   private final Listeners<Term> electionListeners = new Listeners<>();
-  private volatile GroupTerm term;
+  private volatile GroupTerm term = new GroupTerm(0);
 
   public GroupElection(MembershipGroup group) {
     this.group = Assert.notNull(group, "group");
@@ -45,9 +45,9 @@ public class GroupElection implements Election {
   }
 
   @Override
-  public Listener<Term> onElection(Consumer<Term> callback) {
+  public synchronized Listener<Term> onElection(Consumer<Term> callback) {
     Listener<Term> listener = electionListeners.add(callback);
-    if (term != null) {
+    if (term != null && term.leader() != null) {
       listener.accept(term);
     }
     return listener;
@@ -56,14 +56,14 @@ public class GroupElection implements Election {
   /**
    * Called when the term changes.
    */
-  public void onTerm(long term) {
+  public synchronized void onTerm(long term) {
     this.term = new GroupTerm(term);
   }
 
   /**
    * Called when a member is elected.
    */
-  public void onElection(GroupMember leader) {
+  public synchronized void onElection(GroupMember leader) {
     term.setLeader(leader);
     electionListeners.accept(term);
   }
