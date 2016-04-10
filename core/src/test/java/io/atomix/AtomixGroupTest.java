@@ -54,16 +54,23 @@ public class AtomixGroupTest extends AbstractAtomixTest {
     DistributedGroup group1 = factory.apply(client1);
     DistributedGroup group2 = factory.apply(client2);
 
+    group1.onJoin(m -> {
+      if (group1.members().size() == 2) {
+        resume();
+      }
+    });
+    group2.onJoin(m -> {
+      if (group1.members().size() == 2) {
+        resume();
+      }
+    });
+
     LocalMember localMember = group2.join().get(5, TimeUnit.SECONDS);
     assertEquals(group2.members().size(), 1);
 
-    group1.join().thenRun(() -> {
-      threadAssertEquals(group1.members().size(), 2);
-      threadAssertEquals(group2.members().size(), 2);
-      resume();
-    });
+    group1.join().thenRun(this::resume);
 
-    await(5000);
+    await(5000, 3);
 
     group1.onLeave(member -> resume());
     localMember.leave().thenRun(this::resume);
