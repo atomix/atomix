@@ -133,24 +133,25 @@ public final class ResourceServer {
    * @throws NullPointerException if any argument is null
    */
   public static Builder builder(Address clientAddress, Address serverAddress, Properties properties) {
-    ServerOptions serverProperties = new ServerOptions(properties);
+    ServerOptions options = new ServerOptions(properties);
     return new Builder(clientAddress, serverAddress)
-      .withTransport(serverProperties.transport())
+      .withTransport(options.transport())
       .withStorage(Storage.builder()
-        .withStorageLevel(serverProperties.storageLevel())
-        .withDirectory(serverProperties.storageDirectory())
-        .withMaxSegmentSize(serverProperties.maxSegmentSize())
-        .withMaxEntriesPerSegment(serverProperties.maxEntriesPerSegment())
-        .withRetainStaleSnapshots(serverProperties.retainStaleSnapshots())
-        .withCompactionThreads(serverProperties.compactionThreads())
-        .withMinorCompactionInterval(serverProperties.minorCompactionInterval())
-        .withMajorCompactionInterval(serverProperties.majorCompactionInterval())
-        .withCompactionThreshold(serverProperties.compactionThreshold())
+        .withStorageLevel(options.storageLevel())
+        .withDirectory(options.storageDirectory())
+        .withMaxSegmentSize(options.maxSegmentSize())
+        .withMaxEntriesPerSegment(options.maxEntriesPerSegment())
+        .withRetainStaleSnapshots(options.retainStaleSnapshots())
+        .withCompactionThreads(options.compactionThreads())
+        .withMinorCompactionInterval(options.minorCompactionInterval())
+        .withMajorCompactionInterval(options.majorCompactionInterval())
+        .withCompactionThreshold(options.compactionThreshold())
         .build())
-      .withSerializer(serverProperties.serializer())
-      .withElectionTimeout(serverProperties.electionTimeout())
-      .withHeartbeatInterval(serverProperties.heartbeatInterval())
-      .withSessionTimeout(serverProperties.sessionTimeout());
+      .withSerializer(options.serializer())
+      .withResourceTypes(options.resourceTypes())
+      .withElectionTimeout(options.electionTimeout())
+      .withHeartbeatInterval(options.heartbeatInterval())
+      .withSessionTimeout(options.sessionTimeout());
   }
 
   private final CopycatServer server;

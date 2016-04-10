@@ -291,6 +291,7 @@ public final class AtomixReplica extends Atomix {
     ServerOptions options = new ServerOptions(properties);
     return new Builder(clientAddress, serverAddress)
       .withTransport(options.transport())
+      .withResourceTypes(options.resourceTypes())
       .withStorage(Storage.builder()
         .withStorageLevel(options.storageLevel())
         .withDirectory(options.storageDirectory())

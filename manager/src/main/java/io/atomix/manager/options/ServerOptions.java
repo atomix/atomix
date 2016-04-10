@@ -19,10 +19,13 @@ import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.ConfigurationException;
 import io.atomix.catalyst.util.QualifiedProperties;
 import io.atomix.copycat.server.storage.StorageLevel;
+import io.atomix.resource.Resource;
+import io.atomix.resource.ResourceType;
 
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
+import java.util.Collection;
 import java.util.Properties;
 
 /**
@@ -78,6 +81,16 @@ public class ServerOptions extends AtomixOptions {
     } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
       throw new ConfigurationException("failed to instantiate transport", e);
     }
+  }
+
+  /**
+   * Returns a collection of resource types to register.
+   *
+   * @return A collection of resource types to register.
+   */
+  @SuppressWarnings("unchecked")
+  public Collection<ResourceType> resourceTypes() {
+    return reader.getCollection("resource", resource -> new ResourceType((Class<? extends Resource>) reader.getClass(resource)));
   }
 
   /**
