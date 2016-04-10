@@ -71,7 +71,7 @@ public abstract class AbstractCopycatTest<T extends Resource> extends Concurrent
     });
     servers.stream().forEach(s -> {
       try {
-        s.stop().join();
+        s.leave().join();
       } catch (Exception ignore) {
       }
     });
@@ -152,7 +152,7 @@ public abstract class AbstractCopycatTest<T extends Resource> extends Concurrent
       }
     };
 
-    CopycatServer server = CopycatServer.builder(address, members)
+    CopycatServer server = CopycatServer.builder(address)
       .withTransport(new LocalTransport(registry))
       .withStorage(new Storage(StorageLevel.MEMORY))
       .withStateMachine(stateMachine)
@@ -182,7 +182,7 @@ public abstract class AbstractCopycatTest<T extends Resource> extends Concurrent
     List<CopycatServer> servers = new ArrayList<>();
     for (int i = 0; i < live; i++) {
       CopycatServer server = createServer(members.get(i), config);
-      server.start().thenRun(this::resume);
+      server.bootstrap(members).thenRun(this::resume);
       servers.add(server);
     }
 

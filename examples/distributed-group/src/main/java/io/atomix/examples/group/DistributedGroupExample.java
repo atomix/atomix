@@ -15,7 +15,6 @@
  */
 package io.atomix.examples.group;
 
-import io.atomix.Atomix;
 import io.atomix.AtomixReplica;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.NettyTransport;
@@ -45,20 +44,20 @@ public class DistributedGroupExample {
 
     Address address = new Address(InetAddress.getLocalHost().getHostName(), port);
 
-    List<Address> members = new ArrayList<>();
+    List<Address> cluster = new ArrayList<>();
     for (int i = 1; i < args.length; i++) {
       String[] parts = args[i].split(":");
-      members.add(new Address(parts[0], Integer.valueOf(parts[1])));
+      cluster.add(new Address(parts[0], Integer.valueOf(parts[1])));
     }
 
-    Atomix atomix = AtomixReplica.builder(address, members)
+    AtomixReplica atomix = AtomixReplica.builder(address)
       .withTransport(new NettyTransport())
       .withStorage(Storage.builder()
         .withDirectory(System.getProperty("user.dir") + "/logs/" + UUID.randomUUID().toString())
         .build())
       .build();
 
-    atomix.open().join();
+    atomix.bootstrap(cluster).join();
 
     System.out.println("Creating membership group");
     DistributedGroup group = atomix.getGroup("group").get();
@@ -84,7 +83,7 @@ public class DistributedGroupExample {
       });
     });
 
-    while (atomix.isOpen()) {
+    for (;;) {
       Thread.sleep(1000);
     }
   }

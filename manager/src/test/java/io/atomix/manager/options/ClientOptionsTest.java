@@ -15,7 +15,6 @@
  */
 package io.atomix.manager.options;
 
-import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.NettyTransport;
 import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.PropertiesReader;
@@ -39,7 +38,7 @@ public class ClientOptionsTest {
   public void testPropertyDefaults() {
     ClientOptions options = new ClientOptions(new Properties());
     assertTrue(options.transport() instanceof NettyTransport);
-    assertTrue(options.serializer().isWhitelistRequired());
+    assertFalse(options.serializer().isWhitelistRequired());
   }
 
   /**
@@ -68,11 +67,6 @@ public class ClientOptionsTest {
     ClientOptions options = new ClientOptions(PropertiesReader.loadFromClasspath("client-test.properties").properties());
     assertTrue(options.transport() instanceof NettyTransport);
     assertEquals(((NettyTransport) options.transport()).properties().threads(), 1);
-
-    assertEquals(options.servers().size(), 3);
-    assertTrue(options.servers().contains(new Address("localhost", 5000)));
-    assertTrue(options.servers().contains(new Address("localhost", 5001)));
-    assertTrue(options.servers().contains(new Address("localhost", 5002)));
     assertFalse(options.serializer().isWhitelistRequired());
   }
 

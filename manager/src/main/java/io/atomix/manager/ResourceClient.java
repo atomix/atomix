@@ -20,7 +20,6 @@ import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.ConfigurationException;
-import io.atomix.catalyst.util.PropertiesReader;
 import io.atomix.catalyst.util.concurrent.Futures;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.copycat.client.*;
@@ -44,7 +43,7 @@ import java.util.stream.Collectors;
  * Provides an interface for creating and operating on {@link io.atomix.resource.Resource}s remotely.
  * <p>
  * This {@link ResourceClient} implementation facilitates working with {@link io.atomix.resource.Resource}s remotely as
- * a client of the Atomix cluster. To create a client, construct a client builder via {@link #builder(Address...)}.
+ * a client of the Atomix cluster. To create a client, construct a client builder via {@link #builder()}.
  * The builder requires a list of {@link Address}es to which to connect.
  * <pre>
  *   {@code
@@ -67,7 +66,7 @@ import java.util.stream.Collectors;
  * <p>
  * <b>Client lifecycle</b>
  * <p>
- * When a client is {@link #connect() connected}, the client will attempt to contact random servers in the provided
+ * When a client is {@link #connect(Collection) connected}, the client will attempt to contact random servers in the provided
  * {@link Address} list to open a new session. Opening a client session requires only that the client be able to
  * communicate with at least one server which can communicate with the leader. Once a session has been opened,
  * the client will periodically send keep-alive requests to the cluster to maintain its session. In the event
@@ -90,13 +89,16 @@ import java.util.stream.Collectors;
 public class ResourceClient implements ResourceManager<ResourceClient> {
 
   /**
-   * Returns a new ResourceClient builder from the given configuration file.
+   * Returns a new Atomix client builder.
+   * <p>
+   * The provided set of members will be used to connect to the Raft cluster. The members list does not have to represent
+   * the complete list of servers in the cluster, but it must have at least one reachable member.
    *
-   * @param properties The properties file from which to load the replica builder.
-   * @return The replica builder.
+   * @return The client builder.
+   * @throws NullPointerException if {@code members} is null
    */
-  public static Builder builder(String properties) {
-    return builder(PropertiesReader.load(properties).properties());
+  public static Builder builder() {
+    return new Builder();
   }
 
   /**
@@ -107,39 +109,12 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
    */
   public static Builder builder(Properties properties) {
     ClientOptions clientProperties = new ClientOptions(properties);
-    return builder(clientProperties.servers())
+    return new Builder()
       .withTransport(clientProperties.transport())
       .withSerializer(clientProperties.serializer());
   }
-  
-  /**
-   * Returns a new Atomix client builder.
-   * <p>
-   * The provided set of members will be used to connect to the Raft cluster. The members list does not have to represent
-   * the complete list of servers in the cluster, but it must have at least one reachable member.
-   *
-   * @param members The cluster members to which to connect.
-   * @return The client builder.
-   * @throws NullPointerException if {@code members} is null
-   */
-  public static Builder builder(Address... members) {
-    return new Builder(Arrays.asList(Assert.notNull(members, "members")));
-  }
 
-  /**
-   * Returns a new Atomix client builder.
-   * <p>
-   * The provided set of members will be used to connect to the Raft cluster. The members list does not have to represent
-   * the complete list of servers in the cluster, but it must have at least one reachable member.
-   *
-   * @param members The cluster members to which to connect.
-   * @return The client builder.
-   */
-  public static Builder builder(Collection<Address> members) {
-    return new Builder(members);
-  }
-
-  final CopycatClient client;
+  private final CopycatClient client;
   private final Map<Class<? extends Resource<?>>, ResourceType> types = new ConcurrentHashMap<>();
   private final Map<String, Resource<?>> instances = new HashMap<>();
   private final Map<String, CompletableFuture> futures = new HashMap<>();
@@ -300,10 +275,21 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
   /**
    * Connects the client to the cluster.
    *
+   * @param cluster The cluster configuration to which to connect the client.
    * @return A completable future to be completed once the client is connected.
    */
-  public CompletableFuture<ResourceClient> connect() {
-    return client.connect().thenApply(v -> this);
+  public CompletableFuture<ResourceClient> connect(Address... cluster) {
+    return connect(Arrays.asList(cluster));
+  }
+
+  /**
+   * Connects the client to the cluster.
+   *
+   * @param cluster The cluster configuration to which to connect the client.
+   * @return A completable future to be completed once the client is connected.
+   */
+  public CompletableFuture<ResourceClient> connect(Collection<Address> cluster) {
+    return client.connect(cluster).thenApply(v -> this);
   }
 
   /**
@@ -329,7 +315,7 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
    * Builds a {@link ResourceClient}.
    * <p>
    * The client builder configures a {@link ResourceClient} to connect to a cluster of {@link ResourceServer}s.
-   * To create a client builder, use the {@link #builder(Address...)} method.
+   * To create a client builder, use the {@link #builder()} method.
    * <pre>
    *   {@code
    *   ResourceClient client = ResourceClient.builder(servers)
@@ -343,8 +329,8 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
     private CopycatClient.Builder clientBuilder;
     private Transport transport;
 
-    protected Builder(Collection<Address> members) {
-      clientBuilder = CopycatClient.builder(members)
+    protected Builder() {
+      clientBuilder = CopycatClient.builder()
         .withServerSelectionStrategy(ServerSelectionStrategies.ANY)
         .withConnectionStrategy(ConnectionStrategies.FIBONACCI_BACKOFF)
         .withRecoveryStrategy(RecoveryStrategies.RECOVER)

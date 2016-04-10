@@ -31,7 +31,7 @@ import java.util.function.Function;
 public class AtomixLongTest extends AbstractAtomixTest {
   @BeforeClass
   protected void setupCluster() throws Throwable {
-    createReplicas(3, 3, 0);
+    createReplicas(3);
   }
   
   public void testClientLongGet() throws Throwable {

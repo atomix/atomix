@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix;
+package io.atomix.cluster;
 
-import io.atomix.catalyst.transport.Address;
+import io.atomix.AtomixReplica;
 
 /**
  * Magic quorum configuration constants.
@@ -27,17 +27,6 @@ import io.atomix.catalyst.transport.Address;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public enum Quorum {
-
-  /**
-   * Indicates that the seed members should represent the quorum size.
-   * <p>
-   * This is a magic quorum hint that is based on the number of replica
-   * {@link io.atomix.catalyst.transport.Address addresses} provided to the
-   * {@link AtomixReplica#builder(Address, Address...) replica builder factory} when constructing a new
-   * replica. If the number of {@code members} provided to the replica builder is {@code 3} then the
-   * configured quorum hint will be {@code 3}. This is the default quorum hint.
-   */
-  SEED(0),
 
   /**
    * Indicates that all members of the cluster should participate in the quorum.

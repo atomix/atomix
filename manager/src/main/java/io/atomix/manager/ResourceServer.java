@@ -15,21 +15,14 @@
  */
 package io.atomix.manager;
 
-import java.time.Duration;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Properties;
-import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
-
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.ConfigurationException;
-import io.atomix.catalyst.util.PropertiesReader;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.copycat.server.CopycatServer;
+import io.atomix.copycat.server.cluster.Member;
 import io.atomix.copycat.server.storage.Storage;
 import io.atomix.manager.options.ServerOptions;
 import io.atomix.manager.state.ResourceManagerException;
@@ -39,6 +32,13 @@ import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceType;
 import io.atomix.resource.util.ResourceRegistry;
 
+import java.time.Duration;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Properties;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+
 /**
  * Standalone Atomix server.
  * <p>
@@ -47,7 +47,7 @@ import io.atomix.resource.util.ResourceRegistry;
  * an interface for managing resources directly. Users can only access server resources through an
  * {@link ResourceClient} implementation.
  * <p>
- * To create a server, use the {@link #builder(Address, Address...)} builder factory. Each server must
+ * To create a server, use the {@link #builder(Address)} builder factory. Each server must
  * be initially configured with a server {@link Address} and a list of addresses for other members of the
  * core cluster. Note that the list of member addresses does not have to include the local server nor does
  * it have to include all the servers in the cluster. As long as the server can reach one live member of
@@ -68,7 +68,7 @@ import io.atomix.resource.util.ResourceRegistry;
  * <p>
  * <b>Server lifecycle</b>
  * <p>
- * When the server is {@link #start() started}, the server will attempt to contact members in the configured
+ * When the server is {@link #bootstrap() started}, the server will attempt to contact members in the configured
  * startup {@link Address} list. If any of the members are already in an active state, the server will request
  * to join the cluster. During the process of joining the cluster, the server will notify the current cluster
  * leader of its existence. If the leader already knows about the joining server, the server will immediately
@@ -83,25 +83,58 @@ import io.atomix.resource.util.ResourceRegistry;
 public final class ResourceServer {
 
   /**
-   * Returns a new ResourceServer builder from the given configuration file.
+   * Returns a new Atomix server builder.
+   * <p>
+   * The provided set of members will be used to connect to the other members in the Raft cluster.
    *
-   * @param properties The properties file from which to load the replica builder.
+   * @param address The local server member address.
    * @return The replica builder.
+   * @throws NullPointerException if {@code address} or {@code members} are null
    */
-  public static Builder builder(String properties) {
-    return builder(PropertiesReader.load(properties).properties());
+  public static Builder builder(Address address) {
+    return builder(address, address);
   }
 
   /**
-   * Returns a new ResourceServer builder from the given properties.
+   * Returns a new Atomix server builder.
+   * <p>
+   * The provided set of members will be used to connect to the other members in the Raft cluster.
    *
-   * @param properties The properties from which to load the replica builder.
+   * @param clientAddress The address through which clients connect to the server.
+   * @param serverAddress The address through which servers connect to each other.
    * @return The replica builder.
+   * @throws NullPointerException if any argument is null
    */
-  public static Builder builder(Properties properties) {
+  public static Builder builder(Address clientAddress, Address serverAddress) {
+    return new Builder(clientAddress, serverAddress);
+  }
+
+  /**
+   * Returns a new Atomix server builder.
+   * <p>
+   * The provided set of members will be used to connect to the other members in the Raft cluster.
+   *
+   * @param address The local server member address.
+   * @return The replica builder.
+   * @throws NullPointerException if {@code address} or {@code members} are null
+   */
+  public static Builder builder(Address address, Properties properties) {
+    return builder(address, address, properties);
+  }
+
+  /**
+   * Returns a new Atomix server builder.
+   * <p>
+   * The provided set of members will be used to connect to the other members in the Raft cluster.
+   *
+   * @param clientAddress The address through which clients connect to the server.
+   * @param serverAddress The address through which servers connect to each other.
+   * @return The replica builder.
+   * @throws NullPointerException if any argument is null
+   */
+  public static Builder builder(Address clientAddress, Address serverAddress, Properties properties) {
     ServerOptions serverProperties = new ServerOptions(properties);
-    Collection<Address> servers = serverProperties.servers();
-    return builder(serverProperties.clientAddress(), serverProperties.serverAddress(), servers)
+    return new Builder(clientAddress, serverAddress)
       .withTransport(serverProperties.transport())
       .withStorage(Storage.builder()
         .withStorageLevel(serverProperties.storageLevel())
@@ -119,64 +152,6 @@ public final class ResourceServer {
       .withElectionTimeout(serverProperties.electionTimeout())
       .withHeartbeatInterval(serverProperties.heartbeatInterval())
       .withSessionTimeout(serverProperties.sessionTimeout());
-  }
-  
-  /**
-   * Returns a new Atomix server builder.
-   * <p>
-   * The provided set of members will be used to connect to the other members in the Raft cluster.
-   *
-   * @param address The local server member address.
-   * @param members The cluster members to which to connect.
-   * @return The replica builder.
-   * @throws NullPointerException if {@code address} or {@code members} are null
-   */
-  public static Builder builder(Address address, Address... members) {
-    return builder(address, Arrays.asList(Assert.notNull(members, "members")));
-  }
-
-  /**
-   * Returns a new Atomix server builder.
-   * <p>
-   * The provided set of members will be used to connect to the other members in the Raft cluster.
-   *
-   * @param address The local server member address.
-   * @param members The cluster members to which to connect.
-   * @return The replica builder.
-   * @throws NullPointerException if {@code address} or {@code members} are null
-   */
-  public static Builder builder(Address address, Collection<Address> members) {
-    return new Builder(address, address, Assert.notNull(members, "members"));
-  }
-
-  /**
-   * Returns a new Atomix server builder.
-   * <p>
-   * The provided set of members will be used to connect to the other members in the Raft cluster.
-   *
-   * @param clientAddress The address through which clients connect to the server.
-   * @param serverAddress The address through which servers connect to each other.
-   * @param members The cluster members to which to connect.
-   * @return The replica builder.
-   * @throws NullPointerException if any argument is null
-   */
-  public static Builder builder(Address clientAddress, Address serverAddress, Address... members) {
-    return builder(clientAddress, serverAddress, Arrays.asList(Assert.notNull(members, "members")));
-  }
-
-  /**
-   * Returns a new Atomix server builder.
-   * <p>
-   * The provided set of members will be used to connect to the other members in the Raft cluster.
-   *
-   * @param clientAddress The address through which clients connect to the server.
-   * @param serverAddress The address through which servers connect to each other.
-   * @param members The cluster members to which to connect.
-   * @return The replica builder.
-   * @throws NullPointerException if any argument is null
-   */
-  public static Builder builder(Address clientAddress, Address serverAddress, Collection<Address> members) {
-    return new Builder(clientAddress, serverAddress, Assert.notNull(members, "members"));
   }
 
   private final CopycatServer server;
@@ -220,12 +195,157 @@ public final class ResourceServer {
   }
 
   /**
-   * Starts the server.
+   * Bootstraps a single-node cluster.
+   * <p>
+   * Bootstrapping a single-node cluster results in the server forming a new cluster to which additional servers
+   * can be joined.
+   * <p>
+   * Only {@link Member.Type#ACTIVE} members can be included in a bootstrap configuration. If the local server is
+   * not initialized as an active member, it cannot be part of the bootstrap configuration for the cluster.
+   * <p>
+   * When the cluster is bootstrapped, the local server will be transitioned into the active state and begin
+   * participating in the Raft consensus algorithm. When the cluster is first bootstrapped, no leader will exist.
+   * The bootstrapped members will elect a leader amongst themselves. Once a cluster has been bootstrapped, additional
+   * members may be {@link #join(Address...) joined} to the cluster. In the event that the bootstrapped members cannot
+   * reach a quorum to elect a leader, bootstrap will continue until successful.
+   * <p>
+   * It is critical that all servers in a bootstrap configuration be started with the same exact set of members.
+   * Bootstrapping multiple servers with different configurations may result in split brain.
+   * <p>
+   * The {@link CompletableFuture} returned by this method will be completed once the cluster has been bootstrapped,
+   * a leader has been elected, and the leader has been notified of the local server's client configurations.
    *
-   * @return A completable future to be completed once the server has been started.
+   * @return A completable future to be completed once the cluster has been bootstrapped.
    */
-  public CompletableFuture<ResourceServer> start() {
-    return server.start().thenApply(v -> this);
+  @SuppressWarnings("unchecked")
+  public CompletableFuture<ResourceServer> bootstrap() {
+    return server.bootstrap().thenApply(v -> this);
+  }
+
+  /**
+   * Bootstraps the cluster using the provided cluster configuration.
+   * <p>
+   * Bootstrapping the cluster results in a new cluster being formed with the provided configuration. The initial
+   * nodes in a cluster must always be bootstrapped. This is necessary to prevent split brain. If the provided
+   * configuration is empty, the local server will form a single-node cluster.
+   * <p>
+   * Only {@link Member.Type#ACTIVE} members can be included in a bootstrap configuration. If the local server is
+   * not initialized as an active member, it cannot be part of the bootstrap configuration for the cluster.
+   * <p>
+   * When the cluster is bootstrapped, the local server will be transitioned into the active state and begin
+   * participating in the Raft consensus algorithm. When the cluster is first bootstrapped, no leader will exist.
+   * The bootstrapped members will elect a leader amongst themselves. Once a cluster has been bootstrapped, additional
+   * members may be {@link #join(Address...) joined} to the cluster. In the event that the bootstrapped members cannot
+   * reach a quorum to elect a leader, bootstrap will continue until successful.
+   * <p>
+   * It is critical that all servers in a bootstrap configuration be started with the same exact set of members.
+   * Bootstrapping multiple servers with different configurations may result in split brain.
+   * <p>
+   * The {@link CompletableFuture} returned by this method will be completed once the cluster has been bootstrapped,
+   * a leader has been elected, and the leader has been notified of the local server's client configurations.
+   *
+   * @param cluster The bootstrap cluster configuration.
+   * @return A completable future to be completed once the cluster has been bootstrapped.
+   */
+  public CompletableFuture<ResourceServer> bootstrap(Address... cluster) {
+    return bootstrap(Arrays.asList(cluster));
+  }
+
+  /**
+   * Bootstraps the cluster using the provided cluster configuration.
+   * <p>
+   * Bootstrapping the cluster results in a new cluster being formed with the provided configuration. The initial
+   * nodes in a cluster must always be bootstrapped. This is necessary to prevent split brain. If the provided
+   * configuration is empty, the local server will form a single-node cluster.
+   * <p>
+   * Only {@link Member.Type#ACTIVE} members can be included in a bootstrap configuration. If the local server is
+   * not initialized as an active member, it cannot be part of the bootstrap configuration for the cluster.
+   * <p>
+   * When the cluster is bootstrapped, the local server will be transitioned into the active state and begin
+   * participating in the Raft consensus algorithm. When the cluster is first bootstrapped, no leader will exist.
+   * The bootstrapped members will elect a leader amongst themselves. Once a cluster has been bootstrapped, additional
+   * members may be {@link #join(Address...) joined} to the cluster. In the event that the bootstrapped members cannot
+   * reach a quorum to elect a leader, bootstrap will continue until successful.
+   * <p>
+   * It is critical that all servers in a bootstrap configuration be started with the same exact set of members.
+   * Bootstrapping multiple servers with different configurations may result in split brain.
+   * <p>
+   * The {@link CompletableFuture} returned by this method will be completed once the cluster has been bootstrapped,
+   * a leader has been elected, and the leader has been notified of the local server's client configurations.
+   *
+   * @param cluster The bootstrap cluster configuration.
+   * @return A completable future to be completed once the cluster has been bootstrapped.
+   */
+  public CompletableFuture<ResourceServer> bootstrap(Collection<Address> cluster) {
+    return server.bootstrap(cluster).thenApply(v -> this);
+  }
+
+  /**
+   * Joins the cluster.
+   * <p>
+   * Joining the cluster results in the local server being added to an existing cluster that has already been
+   * bootstrapped. The provided configuration will be used to connect to the existing cluster and submit a join
+   * request. Once the server has been added to the existing cluster's configuration, the join operation is complete.
+   * <p>
+   * Any {@link Member.Type type} of server may join a cluster. In order to join a cluster, the provided list of
+   * bootstrapped members must be non-empty and must include at least one active member of the cluster. If no member
+   * in the configuration is reachable, the server will continue to attempt to join the cluster until successful. If
+   * the provided cluster configuration is empty, the returned {@link CompletableFuture} will be completed exceptionally.
+   * <p>
+   * When the server joins the cluster, the local server will be transitioned into its initial state as defined by
+   * the configured {@link Member.Type}. Once the server has joined, it will immediately begin participating in
+   * Raft and asynchronous replication according to its configuration.
+   * <p>
+   * It's important to note that the provided cluster configuration will only be used the first time the server attempts
+   * to join the cluster. Thereafter, in the event that the server crashes and is restarted by {@code join}ing the cluster
+   * again, the last known configuration will be used assuming the server is configured with persistent storage. Only when
+   * the server leaves the cluster will its configuration and log be reset.
+   * <p>
+   * In order to preserve safety during configuration changes, Copycat leaders do not allow concurrent configuration
+   * changes. In the event that an existing configuration change (a server joining or leaving the cluster or a
+   * member being {@link Member#promote() promoted} or {@link Member#demote() demoted}) is under way, the local
+   * server will retry attempts to join the cluster until successful. If the server fails to reach the leader,
+   * the join will be retried until successful.
+   *
+   * @param cluster A collection of cluster member addresses to join.
+   * @return A completable future to be completed once the local server has joined the cluster.
+   */
+  public CompletableFuture<ResourceServer> join(Address... cluster) {
+    return join(Arrays.asList(cluster));
+  }
+
+  /**
+   * Joins the cluster.
+   * <p>
+   * Joining the cluster results in the local server being added to an existing cluster that has already been
+   * bootstrapped. The provided configuration will be used to connect to the existing cluster and submit a join
+   * request. Once the server has been added to the existing cluster's configuration, the join operation is complete.
+   * <p>
+   * Any {@link Member.Type type} of server may join a cluster. In order to join a cluster, the provided list of
+   * bootstrapped members must be non-empty and must include at least one active member of the cluster. If no member
+   * in the configuration is reachable, the server will continue to attempt to join the cluster until successful. If
+   * the provided cluster configuration is empty, the returned {@link CompletableFuture} will be completed exceptionally.
+   * <p>
+   * When the server joins the cluster, the local server will be transitioned into its initial state as defined by
+   * the configured {@link Member.Type}. Once the server has joined, it will immediately begin participating in
+   * Raft and asynchronous replication according to its configuration.
+   * <p>
+   * It's important to note that the provided cluster configuration will only be used the first time the server attempts
+   * to join the cluster. Thereafter, in the event that the server crashes and is restarted by {@code join}ing the cluster
+   * again, the last known configuration will be used assuming the server is configured with persistent storage. Only when
+   * the server leaves the cluster will its configuration and log be reset.
+   * <p>
+   * In order to preserve safety during configuration changes, Copycat leaders do not allow concurrent configuration
+   * changes. In the event that an existing configuration change (a server joining or leaving the cluster or a
+   * member being {@link Member#promote() promoted} or {@link Member#demote() demoted}) is under way, the local
+   * server will retry attempts to join the cluster until successful. If the server fails to reach the leader,
+   * the join will be retried until successful.
+   *
+   * @param cluster A collection of cluster member addresses to join.
+   * @return A completable future to be completed once the local server has joined the cluster.
+   */
+  public CompletableFuture<ResourceServer> join(Collection<Address> cluster) {
+    return server.join(cluster).thenApply(v -> this);
   }
 
   /**
@@ -238,12 +358,21 @@ public final class ResourceServer {
   }
 
   /**
-   * Stops the server.
+   * Shuts down the server without leaving the Copycat cluster.
    *
-   * @return A completable future to be completed once the server has been stopped.
+   * @return A completable future to be completed once the server has been shutdown.
    */
-  public CompletableFuture<Void> stop() {
-    return server.stop();
+  public CompletableFuture<Void> shutdown() {
+    return server.shutdown();
+  }
+
+  /**
+   * Leaves the Copycat cluster.
+   *
+   * @return A completable future to be completed once the server has left the cluster.
+   */
+  public CompletableFuture<Void> leave() {
+    return server.leave();
   }
 
   /**
@@ -251,7 +380,7 @@ public final class ResourceServer {
    * <p>
    * The server builder configures an {@link ResourceServer} to listen for connections from clients and other
    * servers, connect to other servers in a cluster, and manage a replicated log. To create a server builder,
-   * use the {@link #builder(Address, Address...)} method:
+   * use the {@link #builder(Address)} method:
    * <pre>
    *   {@code
    *   AtomixServer server = AtomixServer.builder(address, servers)
@@ -274,8 +403,8 @@ public final class ResourceServer {
     private final CopycatServer.Builder builder;
     private final ResourceRegistry registry = new ResourceRegistry();
 
-    private Builder(Address clientAddress, Address serverAddress, Collection<Address> members) {
-      this.builder = CopycatServer.builder(clientAddress, serverAddress, members).withName(SERVER_NAME);
+    private Builder(Address clientAddress, Address serverAddress) {
+      this.builder = CopycatServer.builder(clientAddress, serverAddress).withName(SERVER_NAME);
     }
 
     /**
@@ -483,7 +612,7 @@ public final class ResourceServer {
      * on the classpath, a {@link ConfigurationException} will be thrown.
      * <p>
      * Once the server is built, it is not yet connected to the cluster. To connect the server to the cluster,
-     * call the asynchronous {@link #open()} method.
+     * call the asynchronous {@link #bootstrap()} or {@link #join(Address...)} method.
      *
      * @return The built server.
      * @throws ConfigurationException if the server is misconfigured

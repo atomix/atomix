@@ -20,7 +20,6 @@ import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.PropertiesReader;
-import io.atomix.copycat.client.CopycatClient;
 import io.atomix.manager.ResourceClient;
 import io.atomix.manager.ResourceServer;
 import io.atomix.manager.options.ClientOptions;
@@ -37,7 +36,7 @@ import java.util.stream.Collectors;
  * Provides an interface for creating and operating on {@link io.atomix.resource.Resource}s remotely.
  * <p>
  * This {@link ResourceClient} implementation facilitates working with {@link io.atomix.resource.Resource}s remotely as
- * a client of the Atomix cluster. To create a client, construct a client builder via {@link #builder(Address...)}.
+ * a client of the Atomix cluster. To create a client, construct a client builder via {@link #builder()}.
  * The builder requires a list of {@link Address}es to which to connect.
  * <pre>
  *   {@code
@@ -58,7 +57,7 @@ import java.util.stream.Collectors;
  * no transport is explicitly configured. Thus, if no transport is configured then the Netty transport is expected
  * to be available on the classpath.
  * <h2>Client lifecycle</h2>
- * When a client is {@link #open() started}, the client will attempt to contact random servers in the provided
+ * When a client is {@link #connect() started}, the client will attempt to contact random servers in the provided
  * {@link Address} list to open a new session. Opening a client session requires only that the client be able to
  * communicate with at least one server which can communicate with the leader. Once a session has been opened,
  * the client will periodically send keep-alive requests to the cluster to maintain its session. In the event
@@ -98,7 +97,7 @@ public class AtomixClient extends Atomix {
    */
   public static Builder builder(Properties properties) {
     ClientOptions clientProperties = new ClientOptions(properties);
-    return builder(clientProperties.servers())
+    return builder()
       .withTransport(clientProperties.transport())
       .withSerializer(clientProperties.serializer());
   }
@@ -109,24 +108,10 @@ public class AtomixClient extends Atomix {
    * The provided set of members will be used to connect to the Raft cluster. The members list does not have to represent
    * the complete list of servers in the cluster, but it must have at least one reachable member.
    *
-   * @param members The cluster members to which to connect.
    * @return The client builder.
    */
-  public static Builder builder(Address... members) {
-    return new Builder(ResourceClient.builder(members));
-  }
-
-  /**
-   * Returns a new Atomix client builder.
-   * <p>
-   * The provided set of members will be used to connect to the Raft cluster. The members list does not have to represent
-   * the complete list of servers in the cluster, but it must have at least one reachable member.
-   *
-   * @param members The cluster members to which to connect.
-   * @return The client builder.
-   */
-  public static Builder builder(Collection<Address> members) {
-    return new Builder(ResourceClient.builder(members));
+  public static Builder builder() {
+    return new Builder(ResourceClient.builder());
   }
 
   /**
@@ -134,7 +119,7 @@ public class AtomixClient extends Atomix {
    */
   private static ResourceClient buildClient(Properties properties) {
     ClientOptions clientProperties = new ClientOptions(properties);
-    return ResourceClient.builder(clientProperties.servers())
+    return ResourceClient.builder()
       .withTransport(clientProperties.transport())
       .build();
   }
@@ -162,35 +147,33 @@ public class AtomixClient extends Atomix {
    *
    * @return A completable future to be completed once the client has been connected.
    */
-  public CompletableFuture<Atomix> connect() {
-    return client.connect().thenApply(v -> this);
+  public CompletableFuture<Atomix> connect(Address... cluster) {
+    return connect(Arrays.asList(Assert.notNull(cluster, "cluster")));
   }
 
-  @Override
-  public CompletableFuture<Atomix> open() {
-    return connect();
+  /**
+   * Connects the client to the cluster.
+   *
+   * @return A completable future to be completed once the client has been connected.
+   */
+  public CompletableFuture<Atomix> connect(Collection<Address> cluster) {
+    return client.connect(cluster).thenApply(v -> this);
   }
 
-  @Override
-  public boolean isOpen() {
-    return client.state() != CopycatClient.State.CLOSED;
-  }
-
-  @Override
+  /**
+   * Closes the client.
+   *
+   * @return A completable future to be completed once the client is closed.
+   */
   public CompletableFuture<Void> close() {
     return client.close();
-  }
-
-  @Override
-  public boolean isClosed() {
-    return client.state() == CopycatClient.State.CLOSED;
   }
 
   /**
    * Builder for programmatically constructing an {@link AtomixClient}.
    * <p>
    * The client builder configures an {@link AtomixClient} to connect to a cluster of {@link ResourceServer}s.
-   * To create a client builder, use the {@link #builder(Address...)} method.
+   * To create a client builder, use the {@link #builder()} method.
    * <pre>
    *   {@code
    *   Atomix client = AtomixClient.builder(servers)

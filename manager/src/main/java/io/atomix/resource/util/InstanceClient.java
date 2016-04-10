@@ -16,6 +16,7 @@
 package io.atomix.resource.util;
 
 import io.atomix.catalyst.serializer.Serializer;
+import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.Listener;
@@ -30,6 +31,7 @@ import io.atomix.manager.state.DeleteResource;
 import io.atomix.manager.state.GetResource;
 import io.atomix.resource.Resource;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -189,6 +191,11 @@ public final class InstanceClient implements CopycatClient {
       openFuture = client.submit(new GetResource(instance.key(), instance.type(), instance.config())).thenApply(this::completeOpen);
     }
     return openFuture;
+  }
+
+  @Override
+  public CompletableFuture<CopycatClient> connect(Collection<Address> members) {
+    throw new UnsupportedOperationException();
   }
 
   /**
