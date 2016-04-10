@@ -496,8 +496,7 @@ public final class AtomixReplica extends Atomix {
         .withSerializer(serializer.clone())
         .withServerSelectionStrategy(ServerSelectionStrategies.ANY)
         .withConnectionStrategy(ConnectionStrategies.FIBONACCI_BACKOFF)
-        .withRecoveryStrategy(RecoveryStrategies.RECOVER)
-        .withRetryStrategy(RetryStrategies.FIBONACCI_BACKOFF);
+        .withRecoveryStrategy(RecoveryStrategies.RECOVER);
       this.serverBuilder = CopycatServer.builder(clientAddress, serverAddress).withSerializer(serializer.clone());
     }
 

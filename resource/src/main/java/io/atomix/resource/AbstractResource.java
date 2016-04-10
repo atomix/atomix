@@ -110,9 +110,6 @@ public abstract class AbstractResource<T extends Resource<T>> implements Resourc
 
   /**
    * Submits a write operation for this resource to the cluster.
-   * <p>
-   * The write operation will be submitted with the configured {@link WriteConsistency#level()} if
-   * it does not explicitly override {@link Command#consistency()} to provide a static consistency level.
    *
    * @param command The command to submit.
    * @param <R> The command result type.
@@ -120,23 +117,7 @@ public abstract class AbstractResource<T extends Resource<T>> implements Resourc
    * @throws NullPointerException if {@code command} is null
    */
   protected <R> CompletableFuture<R> submit(Command<R> command) {
-    return client.submit(new ResourceCommand<>(Assert.notNull(command, "command"), WriteConsistency.ATOMIC.level()));
-  }
-
-  /**
-   * Submits a write operation for this resource to the cluster.
-   * <p>
-   * The write operation will be submitted with the {@link WriteConsistency#level()} if
-   * it does not explicitly override {@link Command#consistency()} to provide a static consistency level.
-   *
-   * @param command The command to submit.
-   * @param consistency The consistency with which to submit the command.
-   * @param <R> The command result type.
-   * @return A completable future to be completed with the command result.
-   * @throws NullPointerException if {@code command} is null
-   */
-  protected <R> CompletableFuture<R> submit(Command<R> command, WriteConsistency consistency) {
-    return client.submit(new ResourceCommand<>(Assert.notNull(command, "command"), consistency.level()));
+    return client.submit(new ResourceCommand<>(Assert.notNull(command, "command")));
   }
 
   /**

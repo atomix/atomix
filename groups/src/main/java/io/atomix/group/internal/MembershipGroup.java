@@ -18,7 +18,6 @@ package io.atomix.group.internal;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.catalyst.util.Listeners;
-import io.atomix.copycat.Command;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.group.DistributedGroup;
 import io.atomix.group.LocalMember;
@@ -32,7 +31,6 @@ import io.atomix.group.messaging.internal.MessageConsumerService;
 import io.atomix.group.messaging.internal.MessageProducerService;
 import io.atomix.resource.AbstractResource;
 import io.atomix.resource.ResourceType;
-import io.atomix.resource.WriteConsistency;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -61,12 +59,7 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
   private final GroupElection election = new GroupElection(this);
   private final GroupMessageClient messages;
   private final Map<String, AbstractGroupMember> members = new ConcurrentHashMap<>();
-  private final GroupSubmitter submitter = new GroupSubmitter() {
-    @Override
-    public <T extends Command<U>, U> CompletableFuture<U> submit(T command) {
-      return MembershipGroup.this.submit(command, WriteConsistency.SEQUENTIAL_EVENT);
-    }
-  };
+  private final GroupSubmitter submitter = this::submit;
   private final MessageProducerService producerService = new MessageProducerService(submitter);
   private final MessageConsumerService consumerService = new MessageConsumerService(submitter);
 

@@ -94,11 +94,6 @@ public final class GroupCommands {
    */
   public static abstract class GroupCommand<V> extends GroupOperation<V> implements Command<V> {
     @Override
-    public ConsistencyLevel consistency() {
-      return ConsistencyLevel.LINEARIZABLE;
-    }
-
-    @Override
     public CompactionMode compaction() {
       return CompactionMode.QUORUM;
     }
@@ -116,11 +111,6 @@ public final class GroupCommands {
     }
 
     @Override
-    public ConsistencyLevel consistency() {
-      return ConsistencyLevel.LINEARIZABLE;
-    }
-
-    @Override
     public CompactionMode compaction() {
       return CompactionMode.QUORUM;
     }
@@ -135,11 +125,6 @@ public final class GroupCommands {
     }
 
     public MemberQuery() {
-    }
-
-    @Override
-    public ConsistencyLevel consistency() {
-      return ConsistencyLevel.BOUNDED_LINEARIZABLE;
     }
   }
 

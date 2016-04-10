@@ -49,21 +49,7 @@ public class AtomixClientTest extends AbstractAtomixTest {
   /**
    * Tests submitting a command.
    */
-  public void testSubmitCommandWithSequentialConsistency() throws Throwable {
-    testSubmitCommand(WriteConsistency.SEQUENTIAL_EVENT);
-  }
-
-  /**
-   * Tests submitting a command.
-   */
   public void testSubmitCommandWithAtomicConsistency() throws Throwable {
-    testSubmitCommand(WriteConsistency.ATOMIC);
-  }
-
-  /**
-   * Tests submitting a command with a configured consistency level.
-   */
-  private void testSubmitCommand(WriteConsistency consistency) throws Throwable {
     createReplicas(3, new ResourceType(TestResource.class));
 
     Atomix client = createClient(new ResourceType(TestResource.class));

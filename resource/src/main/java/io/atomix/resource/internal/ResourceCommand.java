@@ -26,28 +26,16 @@ import java.util.Properties;
 
 /**
  * Wrapper for resource commands.
- * <p>
- * This class wraps {@link Command commands} submitted to the Atomix cluster on behalf of a resource.
- * Wrapping the command allows Atomix to control the command {@link io.atomix.copycat.Command.ConsistencyLevel}
- * based on the user resource configuration.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public final class ResourceCommand<T extends Command<U>, U> extends ResourceOperation<T, U> implements Command<U> {
-  private ConsistencyLevel consistency;
 
   public ResourceCommand() {
   }
 
-  public ResourceCommand(T command, ConsistencyLevel consistency) {
+  public ResourceCommand(T command) {
     super(command);
-    this.consistency = consistency;
-  }
-
-  @Override
-  public ConsistencyLevel consistency() {
-    ConsistencyLevel consistency = operation.consistency();
-    return consistency != null ? consistency : this.consistency;
   }
 
   @Override
@@ -58,18 +46,16 @@ public final class ResourceCommand<T extends Command<U>, U> extends ResourceOper
   @Override
   public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
     super.writeObject(buffer, serializer);
-    buffer.writeByte(consistency.ordinal());
   }
 
   @Override
   public void readObject(BufferInput<?> buffer, Serializer serializer) {
     super.readObject(buffer, serializer);
-    consistency = ConsistencyLevel.values()[buffer.readByte()];
   }
 
   @Override
   public String toString() {
-    return String.format("%s[command=%s, consistency=%s]", getClass().getSimpleName(), operation, consistency());
+    return String.format("%s[command=%s]", getClass().getSimpleName(), operation);
   }
 
   /**

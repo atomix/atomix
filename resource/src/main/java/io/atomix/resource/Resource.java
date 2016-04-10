@@ -44,9 +44,6 @@ import java.util.function.Consumer;
  * registered via the {@code ServiceLoader} pattern in a file at {@code META-INF/services/io.atomix.resource.Resource}
  * on the class path. The resource registration allows the Atomix resource manager to locate and load the resource
  * state machine on each server in the cluster.
- * <p>
- * Resources have varying consistency guarantees depending on the configured resource {@link WriteConsistency}
- * and {@link ReadConsistency} and the semantics of the specific resource implementation.
  *
  * @param <T> resource type
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
@@ -77,8 +74,6 @@ public interface Resource<T extends Resource<T>> extends Managed<T> {
    * Options are configurations that are specific to a local resource instance. The first time a resource
    * is created by a client, the client may provide {@code Options} specifying the behavior of the resource
    * instance. Those initial options configure the behavior of the resource instance on the local node only.
-   * For instance, options may include an {@link io.atomix.catalyst.transport.Address Address} to which to
-   * bind a server or a default {@link WriteConsistency} level.
    */
   class Options extends Properties {
     public Options() {

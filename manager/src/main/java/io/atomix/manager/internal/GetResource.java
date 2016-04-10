@@ -46,11 +46,6 @@ public class GetResource extends KeyOperation<Long> implements Command<Long> {
   }
 
   @Override
-  public ConsistencyLevel consistency() {
-    return ConsistencyLevel.LINEARIZABLE;
-  }
-
-  @Override
   public CompactionMode compaction() {
     return CompactionMode.QUORUM;
   }

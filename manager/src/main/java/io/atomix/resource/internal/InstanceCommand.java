@@ -37,18 +37,13 @@ public final class InstanceCommand<T extends Command<U>, U> extends InstanceOper
   }
 
   @Override
-  public ConsistencyLevel consistency() {
-    return operation.consistency();
-  }
-
-  @Override
   public CompactionMode compaction() {
     return operation.compaction();
   }
 
   @Override
   public String toString() {
-    return String.format("%s[resource=%d, command=%s, consistency=%s]", getClass().getSimpleName(), resource, operation, consistency());
+    return String.format("%s[resource=%d, command=%s]", getClass().getSimpleName(), resource, operation);
   }
 
 }

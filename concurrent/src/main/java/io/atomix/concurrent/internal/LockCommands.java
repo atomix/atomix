@@ -39,12 +39,6 @@ public final class LockCommands {
    * Abstract lock command.
    */
   public static abstract class LockCommand<V> implements Command<V>, CatalystSerializable {
-
-    @Override
-    public ConsistencyLevel consistency() {
-      return ConsistencyLevel.LINEARIZABLE;
-    }
-
     @Override
     public CompactionMode compaction() {
       return CompactionMode.QUORUM;
