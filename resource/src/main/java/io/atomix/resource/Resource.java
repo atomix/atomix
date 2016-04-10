@@ -215,42 +215,6 @@ public interface Resource<T extends Resource<T>> extends Managed<T> {
   ThreadContext context();
 
   /**
-   * Returns the configured write consistency level.
-   * <p>
-   * Resource consistency levels are configured via the {@link #with(WriteConsistency)} setter. By default,
-   * all resources submit commands under the {@link WriteConsistency#ATOMIC} consistency level. See the
-   * {@link WriteConsistency} documentation for information about guarantees provided by specific consistency
-   * levels.
-   *
-   * @return The configured resource consistency level.
-   */
-  WriteConsistency writeConsistency();
-
-  /**
-   * Sets the write consistency level.
-   * <p>
-   * The configured consistency level specifies how operations on the resource should be handled by the
-   * cluster. Consistency levels dictate the order in which reads, writes, and events should be handled
-   * by the Atomix cluster and the consistency requirements for completing different types of operations.
-   * <p>
-   * Note that consistency configurations apply only to a single instance of a distributed resource. Two
-   * instances of the same resource on the same or different nodes can have different consistency requirements,
-   * and the cluster will obey those differences.
-   * <p>
-   * By default, all resource operations are submitted to the cluster with the {@link WriteConsistency#ATOMIC}
-   * consistency level. Atomic consistency means that the distributed resource will behave as a single
-   * object for all instances. Users can decrease the default consistency level, but note that in some
-   * cases resource implementations may override the configured {@link WriteConsistency} for safety. For instance,
-   * a leader election may enforce atomic consistency at all times to ensure no two leaders can be
-   * elected at the same time.
-   *
-   * @param consistency The write consistency level.
-   * @return The resource instance.
-   * @throws NullPointerException if {@code consistency} is null
-   */
-  T with(WriteConsistency consistency);
-
-  /**
    * Returns the configured read consistency level.
    * <p>
    * Resource consistency levels are configured via the {@link #with(ReadConsistency)} setter. By default,
@@ -273,10 +237,10 @@ public interface Resource<T extends Resource<T>> extends Managed<T> {
    * instances of the same resource on the same or different nodes can have different consistency requirements,
    * and the cluster will obey those differences.
    * <p>
-   * By default, all resource operations are submitted to the cluster with the {@link WriteConsistency#ATOMIC}
+   * By default, all resource operations are submitted to the cluster with the {@link ReadConsistency#ATOMIC}
    * consistency level. Atomic consistency means that the distributed resource will behave as a single
    * object for all instances. Users can decrease the default consistency level, but note that in some
-   * cases resource implementations may override the configured {@link WriteConsistency} for safety. For instance,
+   * cases resource implementations may override the configured {@link ReadConsistency} for safety. For instance,
    * a leader election may enforce atomic consistency at all times to ensure no two leaders can be
    * elected at the same time.
    *

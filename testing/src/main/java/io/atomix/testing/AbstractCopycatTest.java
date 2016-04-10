@@ -18,7 +18,10 @@ package io.atomix.testing;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.LocalServerRegistry;
 import io.atomix.catalyst.transport.LocalTransport;
-import io.atomix.copycat.client.*;
+import io.atomix.copycat.client.ConnectionStrategies;
+import io.atomix.copycat.client.CopycatClient;
+import io.atomix.copycat.client.RecoveryStrategies;
+import io.atomix.copycat.client.ServerSelectionStrategies;
 import io.atomix.copycat.server.CopycatServer;
 import io.atomix.copycat.server.StateMachine;
 import io.atomix.copycat.server.storage.Storage;
@@ -120,7 +123,6 @@ public abstract class AbstractCopycatTest<T extends Resource> extends Concurrent
       .withServerSelectionStrategy(ServerSelectionStrategies.ANY)
       .withConnectionStrategy(ConnectionStrategies.FIBONACCI_BACKOFF)
       .withRecoveryStrategy(RecoveryStrategies.RECOVER)
-      .withRetryStrategy(RetryStrategies.FIBONACCI_BACKOFF)
       .build();
     ResourceType type = new ResourceType((Class<? extends Resource>) type());
     T resource = (T) type.factory().newInstance().createInstance(client, options);

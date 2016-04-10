@@ -22,7 +22,10 @@ import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.ConfigurationException;
 import io.atomix.catalyst.util.concurrent.Futures;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
-import io.atomix.copycat.client.*;
+import io.atomix.copycat.client.ConnectionStrategies;
+import io.atomix.copycat.client.CopycatClient;
+import io.atomix.copycat.client.RecoveryStrategies;
+import io.atomix.copycat.client.ServerSelectionStrategies;
 import io.atomix.manager.options.ClientOptions;
 import io.atomix.manager.state.GetResourceKeys;
 import io.atomix.manager.state.ResourceExists;
@@ -333,8 +336,7 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
       clientBuilder = CopycatClient.builder()
         .withServerSelectionStrategy(ServerSelectionStrategies.ANY)
         .withConnectionStrategy(ConnectionStrategies.FIBONACCI_BACKOFF)
-        .withRecoveryStrategy(RecoveryStrategies.RECOVER)
-        .withRetryStrategy(RetryStrategies.FIBONACCI_BACKOFF);
+        .withRecoveryStrategy(RecoveryStrategies.RECOVER);
     }
 
     /**

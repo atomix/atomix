@@ -43,7 +43,6 @@ public abstract class AbstractResource<T extends Resource<T>> implements Resourc
   protected final Options options;
   private volatile State state;
   private final Set<StateChangeListener> changeListeners = new CopyOnWriteArraySet<>();
-  private WriteConsistency writeConsistency = WriteConsistency.ATOMIC;
   private ReadConsistency readConsistency = ReadConsistency.ATOMIC;
 
   protected AbstractResource(CopycatClient client, Properties options) {
@@ -111,18 +110,6 @@ public abstract class AbstractResource<T extends Resource<T>> implements Resourc
   }
 
   @Override
-  public WriteConsistency writeConsistency() {
-    return writeConsistency;
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public T with(WriteConsistency consistency) {
-    this.writeConsistency = Assert.notNull(consistency, "consistency");
-    return (T) this;
-  }
-
-  @Override
   public ReadConsistency readConsistency() {
     return readConsistency;
   }
@@ -136,9 +123,6 @@ public abstract class AbstractResource<T extends Resource<T>> implements Resourc
 
   /**
    * Submits a write operation for this resource to the cluster.
-   * <p>
-   * The write operation will be submitted with the configured {@link WriteConsistency#level()} if
-   * it does not explicitly override {@link Command#consistency()} to provide a static consistency level.
    *
    * @param command The command to submit.
    * @param <R> The command result type.
@@ -146,23 +130,7 @@ public abstract class AbstractResource<T extends Resource<T>> implements Resourc
    * @throws NullPointerException if {@code command} is null
    */
   protected <R> CompletableFuture<R> submit(Command<R> command) {
-    return client.submit(new ResourceCommand<>(Assert.notNull(command, "command"), writeConsistency.level()));
-  }
-
-  /**
-   * Submits a write operation for this resource to the cluster.
-   * <p>
-   * The write operation will be submitted with the {@link WriteConsistency#level()} if
-   * it does not explicitly override {@link Command#consistency()} to provide a static consistency level.
-   *
-   * @param command The command to submit.
-   * @param consistency The consistency with which to submit the command.
-   * @param <R> The command result type.
-   * @return A completable future to be completed with the command result.
-   * @throws NullPointerException if {@code command} is null
-   */
-  protected <R> CompletableFuture<R> submit(Command<R> command, WriteConsistency consistency) {
-    return client.submit(new ResourceCommand<>(Assert.notNull(command, "command"), consistency.level()));
+    return client.submit(new ResourceCommand<>(Assert.notNull(command, "command")));
   }
 
   /**
