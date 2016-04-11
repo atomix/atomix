@@ -16,8 +16,6 @@
 package io.atomix.group;
 
 import io.atomix.catalyst.serializer.Serializer;
-import io.atomix.catalyst.transport.Address;
-import io.atomix.catalyst.transport.Server;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.group.election.Election;
@@ -363,12 +361,6 @@ public interface DistributedGroup extends Resource<DistributedGroup> {
       setProperty("expiration", String.valueOf(Assert.notNull(expiration, "expiration").toMillis()));
       return this;
     }
-  }
-
-  /**
-   * Configuration for local {@link DistributedGroup} instance.
-   */
-  class Options extends Resource.Options {
   }
 
   /**

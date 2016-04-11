@@ -15,7 +15,6 @@
  */
 package io.atomix.group.internal;
 
-import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.catalyst.util.Listeners;
 import io.atomix.copycat.client.CopycatClient;
@@ -56,7 +55,6 @@ import java.util.function.Consumer;
 public class MembershipGroup extends AbstractResource<DistributedGroup> implements DistributedGroup {
   private final Listeners<GroupMember> joinListeners = new Listeners<>();
   private final Listeners<GroupMember> leaveListeners = new Listeners<>();
-  private final DistributedGroup.Options options;
   private final GroupElection election = new GroupElection(this);
   private final GroupMessageClient messages;
   private final Map<String, AbstractGroupMember> members = new ConcurrentHashMap<>();
@@ -66,7 +64,6 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
 
   public MembershipGroup(CopycatClient client, Properties options) {
     super(client, new ResourceType(DistributedGroup.class), options);
-    this.options = new DistributedGroup.Options(Assert.notNull(options, "options"));
     this.messages = new GroupMessageClient(producerService);
   }
 
