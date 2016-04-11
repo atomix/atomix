@@ -15,7 +15,6 @@
  */
 package io.atomix.group;
 
-import io.atomix.catalyst.transport.Address;
 import io.atomix.group.messaging.MessageFailedException;
 import io.atomix.group.messaging.MessageProducer;
 import io.atomix.testing.AbstractCopycatTest;
@@ -211,8 +210,8 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
   public void testDirectMessage() throws Throwable {
     createServers(3);
 
-    DistributedGroup group1 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6000)));
-    DistributedGroup group2 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6001)));
+    DistributedGroup group1 = createResource(new DistributedGroup.Options());
+    DistributedGroup group2 = createResource(new DistributedGroup.Options());
 
     group1.onJoin(m -> {
       threadAssertEquals(group1.members().size(), 1);
@@ -242,8 +241,8 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
   public void testDirectMessageFail() throws Throwable {
     createServers(3);
 
-    DistributedGroup group1 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6000)));
-    DistributedGroup group2 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6001)));
+    DistributedGroup group1 = createResource(new DistributedGroup.Options());
+    DistributedGroup group2 = createResource(new DistributedGroup.Options());
 
     group1.onJoin(m -> {
       threadAssertEquals(group1.members().size(), 1);
@@ -276,8 +275,8 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
   public void testDirectMessageRedeliverToPersistentMember() throws Throwable {
     createServers(3);
 
-    DistributedGroup group1 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6000)));
-    DistributedGroup group2 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6001)));
+    DistributedGroup group1 = createResource(new DistributedGroup.Options());
+    DistributedGroup group2 = createResource(new DistributedGroup.Options());
 
     group1.onJoin(m -> {
       threadAssertEquals(group1.members().size(), 1);
@@ -313,8 +312,8 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
   public void testDirectMessageFailOnLeave() throws Throwable {
     createServers(3);
 
-    DistributedGroup group1 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6000)));
-    DistributedGroup group2 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6001)));
+    DistributedGroup group1 = createResource(new DistributedGroup.Options());
+    DistributedGroup group2 = createResource(new DistributedGroup.Options());
 
     group1.onJoin(m -> {
       threadAssertEquals(group1.members().size(), 1);
@@ -347,8 +346,8 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
   public void testGroupMessage() throws Throwable {
     createServers(3);
 
-    DistributedGroup group1 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6000)));
-    DistributedGroup group2 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6001)));
+    DistributedGroup group1 = createResource(new DistributedGroup.Options());
+    DistributedGroup group2 = createResource(new DistributedGroup.Options());
 
     group1.onJoin(m -> {
       if (group1.members().size() == 3) {
@@ -391,8 +390,8 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
   public void testGroupMessageFailOnLeave() throws Throwable {
     createServers(3);
 
-    DistributedGroup group1 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6000)));
-    DistributedGroup group2 = createResource(new DistributedGroup.Options().withAddress(new Address("localhost", 6001)));
+    DistributedGroup group1 = createResource(new DistributedGroup.Options());
+    DistributedGroup group2 = createResource(new DistributedGroup.Options());
 
     group1.onJoin(m -> {
       if (group1.members().size() == 2) {
