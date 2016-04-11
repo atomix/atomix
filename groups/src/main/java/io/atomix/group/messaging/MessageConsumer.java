@@ -20,7 +20,26 @@ import io.atomix.catalyst.util.Listener;
 import java.util.function.Consumer;
 
 /**
- * Message consumer.
+ * Consumes messages from a named message queue.
+ * <p>
+ * Consumers receive messages sent by {@link MessageProducer}s to specific named queues. Messages are
+ * <em>pushed</em> to consumers through Copycat's session event protocol.
+ * <p>
+ * To listen for messages received by a consumer, register a message listener via the {@link #onMessage(Consumer)}
+ * method:
+ * <pre>
+ *   {@code
+ *   MessageConsumer<String> consumer = localMember.messaging().consumer("foo");
+ *   consumer.onMessage(message -> {
+ *     // ...
+ *     message.ack();
+ *   });
+ *   }
+ * </pre>
+ * Consumer callbacks will be called with a unique {@link Message} object. Each message consumed by a consumer
+ * is guaranteed to have a unique {@link Message#id()}. It is the responsibility of every consumer to either
+ * {@link Message#ack() ack} or {@link Message#reply(Object) reply} to every message. Failure to ack or reply
+ * to a message will result in a memory leak and the failure to publish messages to a member.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
@@ -33,13 +52,26 @@ public interface MessageConsumer<T> extends AutoCloseable {
   }
 
   /**
-   * Registers a callback for handling message messages.
+   * Registers a listener for messages received by the consumer.
+   * <p>
+   * Messages are received by consumers through Copycat's session event protocol. Each message is guaranteed
+   * to be received by the consumer on the same thread, and consumed {@link Message}s are guaranteed to have
+   * unique {@link Message#id() ids}. It is the responsibility of every consumer to either {@link Message#ack() ack}
+   * or {@link Message#reply(Object) reply} to every message. Failure to ack or reply to a message will result
+   * in a memory leak and the failure to publish messages to a member.
    *
    * @param callback The message listener callback.
    * @return The message listener.
+   * @throws NullPointerException if the listener callback is {@code null}
    */
   Listener<Message<T>> onMessage(Consumer<Message<T>> callback);
 
+  /**
+   * Closes the consumer.
+   * <p>
+   * When the consumer is closed, the consumer will be removed from the list of consumers for the parent
+   * {@link MessageService} and messages will no longer be delivered to this consumer.
+   */
   @Override
   default void close() {
   }

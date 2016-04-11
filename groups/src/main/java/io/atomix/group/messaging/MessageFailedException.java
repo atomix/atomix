@@ -18,7 +18,8 @@ package io.atomix.group.messaging;
 import io.atomix.resource.ResourceException;
 
 /**
- * Group message failed exception.
+ * Exception thrown when a {@link Message} fails to be delivered or is explicitly {@link Message#fail() failed}
+ * by a consumer.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
