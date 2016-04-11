@@ -171,17 +171,14 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
       }
       // If the member already exists and is a persistent member, update the member to point to the new session.
       else if (member.persistent()) {
-        // Pause the member to prevent messages from being pushed to it until the member change has been propagated.
-        member.pause();
-
-        // Update the member's session to the commit session the member may have been reopened via a new session.
-        member.setSession(commit.session());
-
         // Iterate through available sessions and publish a join event to each session.
         // This will result in client-side groups updating the member object according to locality.
         for (SessionState session : sessions.values()) {
           session.join(member);
         }
+
+        // Update the member's session to the commit session the member may have been reopened via a new session.
+        member.setSession(commit.session());
 
         // If the member is the group leader, force it to resign and elect a new leader. This is necessary
         // in the event the member is being reopened on another node.
@@ -242,14 +239,7 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
    */
   public Set<GroupMemberInfo> listen(Commit<GroupCommands.Listen> commit) {
     try {
-      if (commit.operation().member() != null) {
-        MemberState member = members.get(commit.operation().member());
-        if (member != null) {
-          member.resume();
-        }
-      } else {
-        sessions.put(commit.session().id(), new SessionState(commit.session()));
-      }
+      sessions.put(commit.session().id(), new SessionState(commit.session()));
 
       Set<GroupMemberInfo> members = new HashSet<>();
       for (MemberState member : this.members) {

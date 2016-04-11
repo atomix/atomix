@@ -124,9 +124,6 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
         member = new LocalGroupMember(info, this, producerService, consumerService);
         members.put(info.memberId(), member);
       }
-
-      // Notify the cluster that the member is listening for events.
-      submit(new GroupCommands.Listen(info.memberId()));
       return (LocalGroupMember) member;
     });
   }
