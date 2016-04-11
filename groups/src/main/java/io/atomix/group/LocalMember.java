@@ -43,6 +43,18 @@ public interface LocalMember extends GroupMember {
 
   /**
    * Returns the local member message service.
+   * <p>
+   * The message service can be used to receive messages sent either directly or indirectly to this
+   * member by creating a {@link io.atomix.group.messaging.MessageConsumer}.
+   * <pre>
+   *   {@code
+   *   LocalMember localMember = group.join("foo").join();
+   *   MessageConsumer<String> consumer = localMember.messaging().consumer("bar");
+   *   consumer.onMessage(message -> {
+   *     message.ack();
+   *   });
+   *   }
+   * </pre>
    *
    * @return The local member message service.
    */

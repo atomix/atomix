@@ -19,7 +19,6 @@ import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.Server;
 import io.atomix.catalyst.util.Assert;
-import io.atomix.catalyst.util.ConfigurationException;
 import io.atomix.catalyst.util.Listener;
 import io.atomix.group.election.Election;
 import io.atomix.group.election.Term;
@@ -57,26 +56,6 @@ import java.util.function.Consumer;
  *   atomix.getGroup("my-group").thenAccept(group -> {
  *     ...
  *   });
- *   }
- * </pre>
- * <h2>Configuration</h2>
- * {@code DistributedGroup} instances can be configured to control {@link GroupMember#messaging() communication}
- * between members of the group. To configure groups, a {@link DistributedGroup.Options} instance must be provided
- * when constructing the initial group instance.
- * <p>
- * The {@link DistributedGroup.Options} define the configuration of the local {@code DistributedGroup} instance
- * only. The group options will <em>not</em> be replicated to or applied on any other node in the cluster. However,
- * group instances accessed via the {@code Atomix} API are static, so the options provided on the first instantiation
- * of a group will be used for the local instance until the resource is deleted.
- * <p>
- * The primary role of {@link DistributedGroup.Options} is configuring the group's method of communication with
- * other group instances around the cluster. In order to support direct messaging between members, the group
- * must be configured with an {@link Address} to which to bind the server for communication.
- * <pre>
- *   {@code
- *   DistributedGroup.Options options = new DistributedGroup.Options()
- *     .withAddress(new Address("localhost", 6000));
- *   DistributedGroup group = atomix.getGroup("message-group", options).get();
  *   }
  * </pre>
  * <h2>Joining the group</h2>
@@ -161,82 +140,135 @@ import java.util.function.Consumer;
  * guaranteed to be monotonically increasing. Each instance of a group is guaranteed to see the same leader for the
  * same term, and no two leaders can ever exist in the same term. In that sense, the terminology and constraints of
  * leader election in Atomix borrow heavily from the Raft consensus algorithm that underlies it.
+ * <h2>Messaging</h2>
+ * Members of a group and group instances can communicate with one another through the messaging API,
+ * {@link MessageService}. Direct messaging between group members is reliable and is done as writes to the Atomix cluster.
+ * Messages are held in memory within the Atomix cluster and are published to consumers using Copycat's session event
+ * framework. Messages are guaranteed to be delivered to consumers in the order in which they were sent by a producer.
+ * Because each message is dependent on at least one or more writes to the Atomix cluster, messaging is not intended
+ * to support high-throughput use cases. Group messaging is designed for coordinating group behaviors. For example,
+ * a leader can instruct a random member to perform a task through the messaging API.
+ * <h3>Direct messaging</h3>
+ * To send messages directly to a specific member of the group, use the associated {@link GroupMember}'s
+ * {@link MessageClient}.
  * <pre>
  *   {@code
- *   DistributedGroup group = atomix.getGroup("election-group").get();
- *
- *   // Partition the group into three partitions
- *   PartitionGroup partitions = group.partition(3);
- *
- *   // Await a leader election in partition 0
- *   partitions.partitions().get(0).election().onElection(term -> {
+ *   GroupMember member = group.member("foo");
+ *   MessageProducer<String> producer = member.messaging().producer("bar");
+ *   producer.send("baz").thenRun(() -> {
+ *     // Message acknowledged
+ *   });
+ *   }
+ * </pre>
+ * Users can specify the criteria by which a producer determines when a message is completed by configuring the
+ * producer's {@link io.atomix.group.messaging.MessageProducer.Execution Execution} policy. To configure the execution
+ * policy, pass {@link io.atomix.group.messaging.MessageProducer.Options MessageProducer.Options} when creating a
+ * {@link io.atomix.group.messaging.MessageProducer}.
+ * <pre>
+ *   {@code
+ *   MessageProducer.Options options = new MessageProducer.Options()
+ *     .withExecution(MessageProducer.Execution.SYNC);
+ *   MessageProducer<String> producer = member.messaging().producer("bar", options);
+ *   }
+ * </pre>
+ * Producers can be configured to send messages using three execution policies:
+ * <ul>
+ *   <li>{@link io.atomix.group.messaging.MessageProducer.Execution#SYNC SYNC} sends messages to consumers
+ *   and awaits acknowledgement from the consumer side of the queue. If a producer is producing to an entire group,
+ *   synchronous producers will await acknowledgement from all members of the group.</li>
+ *   <li>{@link io.atomix.group.messaging.MessageProducer.Execution#ASYNC ASYNC} awaits acknowledgement of
+ *   persistence in the cluster but not acknowledgement that messages have been received and processed by consumers.</li>
+ *   <li>{@link io.atomix.group.messaging.MessageProducer.Execution#REQUEST_REPLY REQUEST_REPLY} awaits
+ *   arbitrary responses from all consumers to which a message is sent. If a message is sent to a group of consumers,
+ *   message reply futures will be completed with a list of reply values.</li>
+ * </ul>
+ * When the {@link io.atomix.group.messaging.MessageProducer MessageProducer} is configured with the
+ * {@link io.atomix.group.messaging.MessageProducer.Execution#ASYNC ASYNC} execution policy, the {@link CompletableFuture}
+ * returned by the {@link io.atomix.group.messaging.MessageProducer#send(Object)} method will be completed as soon as
+ * the message is persisted in the cluster.
+ * <h3>Broadcast messaging</h3>
+ * Groups also provide a group-wide {@link MessageClient} that allows users to broadcast messages to all members of a
+ * group or send a direct message to a random member of a group. To use the group-wide message client, use the
+ * {@link #messaging()} getter.
+ * <pre>
+ *   {@code
+ *   MessageProducer<String> producer = group.messaging().producer("foo");
+ *   producer.send("Hello world!").thenRun(() -> {
+ *     // Message delivered to all group members
+ *   });
+ *   }
+ * </pre>
+ * By default, messages sent through the group-wide message producer will be sent to <em>all</em> members of the group.
+ * But just as {@link io.atomix.group.messaging.MessageProducer.Execution Execution} policies can be used to define the
+ * criteria by which message operations are completed, the {@link io.atomix.group.messaging.MessageProducer.Delivery Delivery}
+ * policy can be used to define how messages are delivered when using a group-wide producer.
+ * <pre>
+ *   {@code
+ *   MessageProducer.Options options = new MessageProducer.Options()
+ *     .withDelivery(MessageProducer.Delivery.RANDOM);
+ *   MessageProducer<String> producer = member.messaging().producer("bar", options);
+ *   }
+ * </pre>
+ * Group-wide producers can be configured with the following {@link io.atomix.group.messaging.MessageProducer.Delivery Delivery}
+ * policies:
+ * <ul>
+ *   <li>{@link io.atomix.group.messaging.MessageProducer.Delivery#RANDOM} producers send each message to a random
+ *   member of the group. In the event that a message is not successfully {@link Message#ack() acknowledged} by a
+ *   member and that member fails or leaves the group, random messages will be redelivered to remaining members
+ *   of the group.</li>
+ *   <li>{@link io.atomix.group.messaging.MessageProducer.Delivery#BROADCAST} producers send messages to all available
+ *   members of a group. This option applies only to producers constructed from {@link io.atomix.group.DistributedGroup}
+ *   messaging clients.</li>
+ * </ul>
+ * Delivery policies work in tandem with {@link io.atomix.group.messaging.MessageProducer.Execution Execution} policies
+ * described above. For example, a group-wide producer configured with the
+ * {@link io.atomix.group.messaging.MessageProducer.Execution#REQUEST_REPLY REQUEST_REPLY} execution policy and
+ * the {@link io.atomix.group.messaging.MessageProducer.Delivery#BROADCAST BROADCAST} delivery policy will send each
+ * message to all members of the group and aggregate replies into a {@link Collection} once all consumers have replied
+ * to the message.
+ * <p>
+ * <h3>Message consumers</h3>
+ * Messages delivered to a group member must be received by listeners registered on the {@link LocalMember}'s
+ * {@link MessageService}. Only the node to which a member belongs can listen for messages sent to that member. Thus,
+ * to listen for messages, join a group and create a {@link io.atomix.group.messaging.MessageConsumer}.
+ * <pre>
+ *   {@code
+ *   LocalMember localMember = group.join().join();
+ *   MessageConsumer<String> consumer = localMember.messaging().consumer("foo");
+ *   consumer.onMessage(message -> {
+ *     message.ack();
+ *   });
+ *   }
+ * </pre>
+ * When a message is received, consumers must always {@link Message#ack()} or {@link Message#reply(Object)} to the message.
+ * Failure to ack or reply to a message will result in a memory leak in the cluster and failure to deliver any additional
+ * messages to the consumer. When a consumer acknowledges a message, the message will be removed from memory in the cluster
+ * and the producer that sent the message will be notified according to its configuration.
+ * <h3>Persistent messaging</h3>
+ * Messages sent directly to specific members of a group are typically delivered only while that member is connected to
+ * the group. In the event that a member to which a message is sent fails, the message is failed. This can result in
+ * transparent failures when using the {@link io.atomix.group.messaging.MessageProducer.Execution#ASYNC ASYNC} execution
+ * policy. A message can be persisted but may never actually be delivered and acknowledged. To ensure that direct messages
+ * are eventually delivered, persistent members must be used.
+ * <pre>
+ *   {@code
+ *   LocalMember member = group.join("member-1").join();
+ *   MessageConsumer<String> consumer = member.messaging().consumer("foo");
+ *   consumer.onMessage(message -> {
  *     ...
  *   });
  *   }
  * </pre>
- * While terms and leaders are guaranteed to progress in the same order from the perspective of all clients of
- * the resource, Atomix cannot guarantee that two leaders cannot exist at any given time. The group state machine
- * will make a best effort attempt to ensure that all clients are notified of a term or leader change prior to the
- * change being completed, but arbitrary process pauses due to garbage collection and other effects can cause a client's
- * session to expire and thus prevent the client from being updated in real time. Only clients that can maintain their
- * session are guaranteed to have a consistent view of the membership, term, and leader in the group at any given
- * time.
+ * When a message is sent to a persistent member, the message will be persisted in the cluster until it can be delivered
+ * to that member regardless of whether the member is actively connected to the cluster. If the persistent member crashes,
+ * once the member rejoins the group pending messages will be delivered. Persistent members are also free to switch nodes
+ * to rejoin the group on live nodes, and pending messages will still be redelivered.
  * <p>
- * To guard against inconsistencies resulting from arbitrary process pauses, clients can use the monotonically
- * increasing term for coordination and managing optimistic access to external resources.
- * <h2>Direct messaging</h2>
- * Members of a group and group instances can communicate with one another through the direct messaging API,
- * {@link MessageService}. Direct messaging between group members is considered
- * <em>unreliable</em> and is done over the local node's configured {@link io.atomix.catalyst.transport.Transport}.
- * Messages between members of a group are ordered according only to the transport and are not guaranteed to be delivered.
- * While request-reply can be used to achieve some level of assurance that messages are delivered to specific members of
- * the group, direct message consumers should be idempotent and commutative.
- * <p>
- * In order to enable direct messaging for a group instance, the instance must be initialized with
- * {@link DistributedGroup.Options} that define the {@link Address} to which to bind a {@link Server} for messaging.
- * <pre>
- *   {@code
- *   DistributedGroup.Options options = new DistributedGroup.Options()
- *     .withAddress(new Address("localhost", 6000));
- *   DistributedGroup group = atomix.getGroup("message-group", options).get();
- *   }
- * </pre>
- * Once a group instance has been configured with an address for direct messaging, messages can be sent between
- * group members using the {@link MessageService} for any member of the group. Messages sent
- * between members must be associated with a {@link String} topic, and messages can be any value that is serializable by
- * the group instance's {@link io.atomix.catalyst.serializer.Serializer}.
- * <pre>
- *   {@code
- *   group.member("foo").connection().send("hello", "World!").thenAccept(reply -> {
- *     ...
- *   });
- *   }
- * </pre>
- * Direct messages can only be <em>received</em> by a {@link LocalMember} which must be created by
- * {@link #join() joining} the group. Local members register a listener for a link topic on the joined member's
- * {@link MessageService}. Message listeners are asynchronous. When a
- * {@link io.atomix.group.messaging.Message} is received by a local member, the member can perform any processing
- * it wishes and {@link io.atomix.group.messaging.Message#reply(Object) reply} to the message or
- * {@link io.atomix.group.messaging.Message#ack() acknowledge} completion of handling the message to send a response
- * back to the sender.
- * <pre>
- *   {@code
- *   // Join the group and run the given callback once successful
- *   group.join().thenAccept(member -> {
- *
- *     // Register a listener for the "hello" topic
- *     member.connection().onMessage("hello", message -> {
- *       // Handle the message and reply
- *       handleMessage(message);
- *       message.reply("Hello world!");
- *     });
- *
- *   });
- *   }
- * </pre>
- * It's critical that message listeners reply to messages, otherwise futures will be held in memory on the
- * sending side of the {@link MessageService} until the sender or receiver is removed from the
- * group.
+ * Users must take care, however, when using persistent members. {@link io.atomix.group.messaging.MessageProducer.Delivery#BROADCAST BROADCAST}
+ * messages sent to groups with persistent members that are not connected to the cluster will be persisted in memory in the
+ * cluster until they can be delivered. If the producer that broadcasts the message is configured to await acknowledgement
+ * or replies from members, producer {@link io.atomix.group.messaging.MessageProducer#send(Object) send} operations cannot
+ * be completed until dead members rejoin the group.
  * <h3>Serialization</h3>
  * Users are responsible for ensuring the serializability of tasks, messages, and properties set on the group
  * and members of the group. Serialization is controlled by the group's {@link io.atomix.catalyst.serializer.Serializer}
@@ -288,17 +320,12 @@ import java.util.function.Consumer;
  * member associated with that session will automatically be removed from the group and remaining instances
  * of the group will be notified.
  * <p>
- * Partitions are determined by consistent hashing using the group's members and the configured partition strategy.
- * Each time a member is added to the group, the member is added to a consistent hash ring. When a member leaves the
- * group, the member is removed from the ring. Partitions are mapped to a point on the ring, and the {@code n} members
- * following that point are the replicas for that partition. Virtual nodes are added to the ring to balance the
- * membership.
- * <p>
- * The group state machine facilitates messaging and remote execution by routing serialize messages and callbacks
- * to specific members of the group by publishing event messages to the desired resource session. Messages and
- * callbacks are logged and replicated like any other state change in the group. Once a message or callback has
- * been successfully published and received by the appropriate client, the associated commit is released from
- * the state machine and will be removed from the log during compaction.
+ * The group state machine facilitates direct and broadcast messaging through writes to the Atomix cluster. Each message
+ * sent to a group or a member of a group is committed as a single write to the cluster. Once persisted in the cluster,
+ * messages are delivered to clients through the state machine's session events API. The group state machine delivers
+ * messages to sessions based on the configured per-message delivery policy, and client-side group instances are responsible
+ * for dispatching received messages to the appropriate consumers. When a consumer acknowledges or replies to a message,
+ * another write is commited to the Atomix cluster, and the group state machine completes the associated message.
  * <p>
  * The group state machine manages compaction of the replicated log by tracking which state changes contribute to
  * the state of the group at any given time. For instance, when a member joins the group, the commit that added the
@@ -315,7 +342,7 @@ import java.util.function.Consumer;
 public interface DistributedGroup extends Resource<DistributedGroup> {
 
   /**
-   * Group configuration.
+   * Configuration for cluster-wide {@link DistributedGroup}s.
    */
   class Config extends Resource.Config {
     public Config() {
@@ -339,56 +366,10 @@ public interface DistributedGroup extends Resource<DistributedGroup> {
   }
 
   /**
-   * Group options.
+   * Configuration for local {@link DistributedGroup} instance.
    */
   class Options extends Resource.Options {
-    private static final String ADDRESS = "address";
-
-    public Options() {
-    }
-
-    public Options(Properties defaults) {
-      super(defaults);
-    }
-
-    /**
-     * Returns the message bus address.
-     *
-     * @return The message bus address.
-     */
-    public Address getAddress() {
-      String addressString = getProperty(ADDRESS);
-      if (addressString == null)
-        return null;
-
-      String[] split = addressString.split(":");
-      if (split.length != 2)
-        throw new ConfigurationException("malformed address string: " + addressString);
-
-      try {
-        return new Address(split[0], Integer.valueOf(split[1]));
-      } catch (NumberFormatException e) {
-        throw new ConfigurationException("malformed port: " + split[1]);
-      }
-    }
-
-    /**
-     * Sets the local message bus server address.
-     *
-     * @param address The local message bus server address.
-     * @return The message bus options.
-     */
-    public Options withAddress(Address address) {
-      setProperty(ADDRESS, String.format("%s:%s", address.host(), address.port()));
-      return this;
-    }
   }
-
-  @Override
-  Config config();
-
-  @Override
-  Options options();
 
   /**
    * Returns the group election.
@@ -403,7 +384,8 @@ public interface DistributedGroup extends Resource<DistributedGroup> {
   /**
    * Returns the group message client.
    * <p>
-   * The returned message client sends messages to all members of the group.
+   * The returned message client is group-wide and can be used to broadcast messages to all members of the group
+   * or to random members of the group.
    *
    * @return The group message client.
    */

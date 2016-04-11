@@ -36,9 +36,19 @@ public interface GroupMember {
   String id();
 
   /**
-   * Returns the member message client.
+   * Returns the direct message client for this member.
+   * <p>
+   * The message client can be used to send direct messages to this member. To send a direct message, create
+   * a producer via the returned {@link MessageClient}.
+   * <pre>
+   *   {@code
+   *   GroupMember member = group.member("foo");
+   *   MessageProducer<String> producer = member.messaging().producer("bar");
+   *   producer.send("baz");
+   *   }
+   * </pre>
    *
-   * @return The member message client.
+   * @return The direct message client for this member.
    */
   MessageClient messaging();
 

@@ -18,23 +18,33 @@ package io.atomix.group.election;
 import io.atomix.group.GroupMember;
 
 /**
- * Group election term.
+ * Represents a unique leader election term.
+ * <p>
+ * Each time a leader is elected in a group, it's elected for a unique, monotonically increasing {@link #term() term}.
+ * The elected leader will persist until it becomes disconnected from the cluster or explicitly leaves the group.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public interface Term {
 
   /**
-   * Returns the group term.
+   * Returns the term number.
+   * <p>
+   * The returned term number is guaranteed to be unique to this instance throughout the lifetime of the group
+   * and is guaranteed to be greater than all prior terms (monotonically increasing).
    *
-   * @return The group term.
+   * @return The election term number.
    */
   long term();
 
   /**
-   * Returns the group leader.
+   * Returns the leader for the term.
+   * <p>
+   * If no leader has been elected for the term, the returned leader will be {@code null}. Once a leader has been
+   * elected, the leader is guaranteed to persist for the remainder of this term until the leader either leaves the
+   * group or becomes disconnected from the cluster.
    *
-   * @return The group leader.
+   * @return The leader for this term or {@code null} if no leader has been elected yet.
    */
   GroupMember leader();
 

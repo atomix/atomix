@@ -22,19 +22,31 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Represents a reliable message received by a member to be processed and acknowledged.
  * <p>
- * Tasks are {@link MessageProducer#send(Object) submitted} by {@link DistributedGroup} users to any member of a group.
- * Tasks are replicated and persisted within the Atomix cluster before being pushed to clients on a queue. Once a message
+ * Messages are {@link MessageProducer#send(Object) sent} by {@link DistributedGroup} users to any member of a group.
+ * Messages are replicated and persisted within the Atomix cluster before being pushed to clients on a queue. Once a message
  * is received by a message listener, the message may be processed asynchronously and either {@link #ack() acknowledged} or
  * {@link #fail() failed} once processing is complete.
  * <pre>
  *   {@code
  *   DistributedGroup group = atomix.getGroup("message-group").get();
  *   group.join().thenAccept(member -> {
- *     member.tasks().onMessage(message -> {
+ *     MessageConsumer<String> consumer = member.messaging().consumer("foo");
+ *     consumer.onMessage(message -> {
  *       processTask(message).thenRun(() -> {
  *         message.ack();
  *       });
  *     });
+ *   });
+ *   }
+ * </pre>
+ * Consumers may also send replies to messages. To send a reply, use the {@link #reply(Object)} method. Note that
+ * replies may or may not be received by producers depending on their configuration. Producers must specify support
+ * for the {@link io.atomix.group.messaging.MessageProducer.Execution#REQUEST_REPLY REQUEST_REPLY} execution policy
+ * to receive replies.
+ * <pre>
+ *   {@code
+ *   consumer.onMessage(message -> {
+ *     message.reply("Hello world!");
  *   });
  *   }
  * </pre>
@@ -64,6 +76,9 @@ public interface Message<T> {
 
   /**
    * Replies to the message.
+   * <p>
+   * Replies are sent through the Atomix cluster as a write operation. Users can await the completion of the underlying
+   * write operation through the returned {@link CompletableFuture}.
    *
    * @param message The reply message.
    * @return A completable future to be completed once the reply has been sent.
