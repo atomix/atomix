@@ -60,7 +60,7 @@ public class AtomixGroupTest extends AbstractAtomixTest {
       }
     });
     group2.onJoin(m -> {
-      if (group1.members().size() == 2) {
+      if (group2.members().size() == 2) {
         resume();
       }
     });
