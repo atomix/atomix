@@ -6,7 +6,7 @@
 
 **Persistent • Consistent • Fault-tolerant • Asynchronous • Database • Coordination • Framework**
 
-##### [Getting started][Getting started] • [User Manual][User manual] • [Javadoc][Javadoc] • [Raft Algorithm][Copycat] • [Jepsen Tests](https://github.com/atomix/atomix-jepsen) • [Google Group][Google group]
+##### [Getting started][Getting started] • [User Manual][User manual] • [Javadoc][Javadoc] • [Raft Implementation][Copycat] • [Jepsen Tests](https://github.com/atomix/atomix-jepsen) • [Google Group][Google group]
 
 Atomix is a high-level asynchronous framework for building fault-tolerant distributed systems. It combines the consistency of [ZooKeeper](https://zookeeper.apache.org/) with the usability of [Hazelcast](http://hazelcast.org/) to provide tools for managing and coordinating stateful resources in a distributed system. Its strongly consistent, fault-tolerant data store is designed for such use cases as:
 
@@ -14,8 +14,8 @@ Atomix is a high-level asynchronous framework for building fault-tolerant distri
 * [Service discovery](http://atomix.io/atomix/docs/groups/#distributedgroup)
 * [Group membership](http://atomix.io/atomix/docs/groups/#distributedgroup)
 * [Leader election](http://atomix.io/atomix/docs/groups/#leader-election)
-* [Persistent messaging](http://atomix.io/atomix/docs/groups/#task-queues)
 * [Direct messaging](http://atomix.io/atomix/docs/groups/#direct-messaging)
+* [Broadcast messaging](http://atomix.io/atomix/docs/groups/#broadcast-messaging)
 * [Synchronization](http://atomix.io/atomix/docs/concurrency/#distributedlock)
 
 ### Examples
@@ -36,12 +36,12 @@ java -jar examples/leader-election/target/atomix-leader-election.jar logs/server
 java -jar examples/leader-election/target/atomix-leader-election.jar logs/server3 localhost:5002 localhost:5000 localhost:5001
 ```
 
-Each instance of the leader election example starts an [AtomixReplica](http://atomix.io/atomix/api/latest/io/atomix/AtomixReplica.html),
-connects to the other replicas in the cluster, creates a [DistributedLeaderElection](http://atomix.io/atomix/api/latest/io/atomix/coordination/DistributedLeaderElection.html),
-and awaits an election. The first time a node is elected leader it will print the message: `"Elected leader!"`. When one of
+Each instance of the leader election example starts an [`AtomixReplica`](http://atomix.io/atomix/api/latest/io/atomix/AtomixReplica.html),
+connects to the other replicas in the cluster, creates a [`DistributedGroup`](http://atomix.io/atomix/docs/groups/#distributedgroup),
+to perform an election. The first time a node is elected leader it will print the message: `"Elected leader!"`. When one of
 the processes is crashed, a new process will be elected a few seconds later and again print the message: `"Elected leader!"`.
 
-Note that the same election process can be done with [AtomixClient](http://atomix.io/atomix/api/latest/io/atomix/AtomixClient.html)s as well. Atomix
+Note that the same election process can be done with [`AtomixClient`](http://atomix.io/atomix/api/latest/io/atomix/AtomixClient.html)s as well. Atomix
 provides the concept of stateful nodes (replicas) which store resource state changes on disk and replicate changes to other
 replicas, and stateless nodes (clients) which operate on resources remotely. Both types of nodes can use the same resources
 in the same ways. This makes Atomix particularly well suited for embedding in server-side technologies without the overhead
@@ -49,7 +49,7 @@ of a Raft server on every node.
 
 See the [website][User manual] for documentation and examples.
 
-##### [Getting started][Getting started] • [User Manual][User manual] • [Javadoc][Javadoc] • [Raft Algorithm][Copycat] • [Jepsen Tests](https://github.com/atomix/atomix-jepsen) • [Google Group][Google group]
+##### [Getting started][Getting started] • [User Manual][User manual] • [Javadoc][Javadoc] • [Raft Implementation][Copycat] • [Jepsen Tests](https://github.com/atomix/atomix-jepsen) • [Google Group][Google group]
 
 [Website]: http://atomix.io/atomix/
 [Getting started]: http://atomix.io/atomix/docs/getting-started/
