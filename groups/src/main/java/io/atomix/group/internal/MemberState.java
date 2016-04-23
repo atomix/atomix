@@ -33,6 +33,7 @@ final class MemberState implements AutoCloseable {
   private final String memberId;
   private final boolean persistent;
   private ServerSession session;
+  private Object metadata;
   private final Map<Long, MessageState> messages = new LinkedHashMap<>();
 
   MemberState(Commit<GroupCommands.Join> commit) {
@@ -41,6 +42,7 @@ final class MemberState implements AutoCloseable {
     this.memberId = commit.operation().member();
     this.persistent = commit.operation().persist();
     this.session = commit.session();
+    this.metadata = commit.operation().metadata();
   }
 
   /**
@@ -61,7 +63,7 @@ final class MemberState implements AutoCloseable {
    * Returns group member info.
    */
   public GroupMemberInfo info() {
-    return new GroupMemberInfo(index, memberId);
+    return new GroupMemberInfo(index, memberId, metadata);
   }
 
   /**
@@ -88,6 +90,10 @@ final class MemberState implements AutoCloseable {
    */
   public boolean persistent() {
     return persistent;
+  }
+
+  public Object metadata() {
+    return metadata;
   }
 
   /**

@@ -19,6 +19,8 @@ import io.atomix.catalyst.util.Assert;
 import io.atomix.group.GroupMember;
 import io.atomix.group.messaging.internal.AbstractMessageClient;
 
+import java.util.Optional;
+
 /**
  * Abstract group member.
  *
@@ -27,10 +29,12 @@ import io.atomix.group.messaging.internal.AbstractMessageClient;
 public abstract class AbstractGroupMember implements GroupMember {
   protected final String memberId;
   protected final MembershipGroup group;
+  protected final Object metadata;
 
   public AbstractGroupMember(GroupMemberInfo info, MembershipGroup group) {
     this.memberId = info.memberId();
     this.group = Assert.notNull(group, "group");
+    this.metadata = info.metadata();
   }
 
   @Override
@@ -40,5 +44,12 @@ public abstract class AbstractGroupMember implements GroupMember {
 
   @Override
   public abstract AbstractMessageClient messaging();
+
+  @SuppressWarnings("unchecked")
+  public <T> Optional<T> metadata() {
+    return metadata == null
+        ? Optional.empty()
+        : Optional.of((T) metadata);
+  }
 
 }

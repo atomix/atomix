@@ -100,12 +100,17 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
 
   @Override
   public CompletableFuture<LocalMember> join() {
-    return join(UUID.randomUUID().toString(), false);
+    return join(UUID.randomUUID().toString(), false, null);
   }
 
   @Override
   public CompletableFuture<LocalMember> join(String memberId) {
-    return join(memberId, true);
+    return join(memberId, true, null);
+  }
+
+  @Override
+  public CompletableFuture<LocalMember> join(String memberId, Object metadata) {
+    return join(memberId == null ? UUID.randomUUID().toString() : memberId, false, metadata);
   }
 
   /**
@@ -115,10 +120,10 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
    * @param persistent Indicates whether the member ID is persistent.
    * @return A completable future to be completed once the member has joined the group.
    */
-  private CompletableFuture<LocalMember> join(String memberId, boolean persistent) {
+  private CompletableFuture<LocalMember> join(String memberId, boolean persistent, Object metadata) {
     // When joining a group, the join request is guaranteed to complete prior to the join
     // event being received.
-    return submit(new GroupCommands.Join(memberId, persistent)).thenApply(info -> {
+    return submit(new GroupCommands.Join(memberId, persistent, metadata)).thenApply(info -> {
       AbstractGroupMember member = members.get(info.memberId());
       if (member == null || !(member instanceof LocalGroupMember)) {
         member = new LocalGroupMember(info, this, producerService, consumerService);

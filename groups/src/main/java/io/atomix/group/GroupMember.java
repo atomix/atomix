@@ -17,6 +17,8 @@ package io.atomix.group;
 
 import io.atomix.group.messaging.MessageClient;
 
+import java.util.Optional;
+
 /**
  * A {@link DistributedGroup} member representing a member of the group controlled by a local
  * or remote process.
@@ -51,5 +53,7 @@ public interface GroupMember {
    * @return The direct message client for this member.
    */
   MessageClient messaging();
+
+  <T> Optional<T> metadata();
 
 }

@@ -133,13 +133,15 @@ public final class GroupCommands {
    */
   public static class Join extends MemberCommand<GroupMemberInfo> {
     private boolean persist;
+    private Object metadata;
 
     public Join() {
     }
 
-    public Join(String member, boolean persist) {
+    public Join(String member, boolean persist, Object metadata) {
       super(member);
       this.persist = persist;
+      this.metadata = metadata;
     }
 
     /**
@@ -151,16 +153,22 @@ public final class GroupCommands {
       return persist;
     }
 
+    public Object metadata() {
+      return metadata;
+    }
+
     @Override
     public void writeObject(BufferOutput buffer, Serializer serializer) {
       super.writeObject(buffer, serializer);
       buffer.writeBoolean(persist);
+      serializer.writeObject(metadata, buffer);
     }
 
     @Override
     public void readObject(BufferInput buffer, Serializer serializer) {
       super.readObject(buffer, serializer);
       persist = buffer.readBoolean();
+      metadata = serializer.readObject(buffer);
     }
   }
 

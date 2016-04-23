@@ -19,7 +19,10 @@ import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
 import io.atomix.catalyst.serializer.Serializer;
+import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.util.Assert;
+
+import java.util.Optional;
 
 /**
  * Group member info.
@@ -29,13 +32,15 @@ import io.atomix.catalyst.util.Assert;
 public class GroupMemberInfo implements CatalystSerializable {
   private long index;
   private String memberId;
+  private Object metadata;
 
   public GroupMemberInfo() {
   }
 
-  public GroupMemberInfo(long index, String memberId) {
+  public GroupMemberInfo(long index, String memberId, Object metadata) {
     this.index = Assert.argNot(index, index <= 0, "index must be positive");
     this.memberId = Assert.notNull(memberId, "memberId");
+    this.metadata = metadata;
   }
 
   /**
@@ -56,15 +61,21 @@ public class GroupMemberInfo implements CatalystSerializable {
     return memberId;
   }
 
+  public Object metadata() {
+    return metadata;
+  }
+
   @Override
   public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
     buffer.writeLong(index).writeString(memberId);
+    serializer.writeObject(metadata, buffer);
   }
 
   @Override
   public void readObject(BufferInput<?> buffer, Serializer serializer) {
     index = buffer.readLong();
     memberId = buffer.readString();
+    metadata = serializer.readObject(buffer);
   }
 
   @Override
