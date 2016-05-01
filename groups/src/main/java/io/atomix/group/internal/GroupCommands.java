@@ -153,6 +153,11 @@ public final class GroupCommands {
       return persist;
     }
 
+    /**
+     * Returns the member metadata.
+     *
+     * @return The member metadata.
+     */
     public Object metadata() {
       return metadata;
     }

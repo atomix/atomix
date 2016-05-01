@@ -427,10 +427,10 @@ public interface DistributedGroup extends Resource<DistributedGroup> {
   /**
    * Joins the instance to the membership group.
    * <p>
-   * When this instance joins the membership group, the membership lists of this and all other instances
-   * in the group are guaranteed to be updated <em>before</em> the {@link CompletableFuture} returned by
-   * this method is completed. Once this instance has joined the group, the returned future will be completed
-   * with the {@link GroupMember} instance for this member.
+   * Joining the group results in a <em>new</em> member being created and joining the group. Each {@link DistributedGroup}
+   * instance may represent multiple members of a group. The returned {@link CompletableFuture} will be completed
+   * with the joined {@link LocalMember} object once the member has joined the group, but does not guarantee that
+   * all other instances of the group have seen the newly joined member.
    * <p>
    * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
    * or to be notified in a separate thread once the operation completes. To block until the operation completes,
@@ -455,24 +455,29 @@ public interface DistributedGroup extends Resource<DistributedGroup> {
   /**
    * Joins the instance to the membership group with a user-provided member ID.
    * <p>
-   * When this instance joins the membership group, the membership lists of this and all other instances
-   * in the group are guaranteed to be updated <em>before</em> the {@link CompletableFuture} returned by
-   * this method is completed. Once this instance has joined the group, the returned future will be completed
-   * with the {@link GroupMember} instance for this member.
+   * Joining the group results in a <em>new</em> member being created and joining the group. Each {@link DistributedGroup}
+   * instance may represent multiple members of a group. The returned {@link CompletableFuture} will be completed
+   * with the joined {@link LocalMember} object once the member has joined the group, but does not guarantee that
+   * all other instances of the group have seen the newly joined member.
+   * <p>
+   * When joining a group with a user-provided {@code memberId}, a persistent member is created. In the event that this
+   * node crashes, the member may rejoin the group on any node with the same {@code memberId} and receive pending messages.
+   * While the persistent member is disconnected from the cluster, it will not appear in the group {@link #members()}
+   * list but its state will not be removed from the cluster.
    * <p>
    * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
    * or to be notified in a separate thread once the operation completes. To block until the operation completes,
    * use the {@link CompletableFuture#join()} method to block the calling thread:
    * <pre>
    *   {@code
-   *   group.join().join();
+   *   group.join("foo").join();
    *   }
    * </pre>
    * Alternatively, to execute the operation asynchronous and be notified once the lock is acquired in a different
    * thread, use one of the many completable future callbacks:
    * <pre>
    *   {@code
-   *   group.join().thenAccept(thisMember -> System.out.println("This member is: " + thisMember.id()));
+   *   group.join("foo").thenAccept(thisMember -> System.out.println("This member is: " + thisMember.id()));
    *   }
    * </pre>
    *
@@ -481,6 +486,76 @@ public interface DistributedGroup extends Resource<DistributedGroup> {
    */
   CompletableFuture<LocalMember> join(String memberId);
 
+  /**
+   * Joins the instance to the membership group with a user-provided member ID.
+   * <p>
+   * Joining the group results in a <em>new</em> member being created and joining the group. Each {@link DistributedGroup}
+   * instance may represent multiple members of a group. The returned {@link CompletableFuture} will be completed
+   * with the joined {@link LocalMember} object once the member has joined the group, but does not guarantee that
+   * all other instances of the group have seen the newly joined member.
+   * <p>
+   * {@code metadata} provided when a persistent member joins a group can be viewed by all other instances of the
+   * same group. Metadata objects mut be serializable either via Java's {@link java.io.Serializable} or by registering a
+   * Catalyst {@link io.atomix.catalyst.serializer.TypeSerializer} on the group's {@link #serializer()}.
+   * <p>
+   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
+   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
+   * use the {@link CompletableFuture#join()} method to block the calling thread:
+   * <pre>
+   *   {@code
+   *   group.join("foo").join();
+   *   }
+   * </pre>
+   * Alternatively, to execute the operation asynchronous and be notified once the lock is acquired in a different
+   * thread, use one of the many completable future callbacks:
+   * <pre>
+   *   {@code
+   *   group.join("foo").thenAccept(thisMember -> System.out.println("This member is: " + thisMember.id()));
+   *   }
+   * </pre>
+   *
+   * @param metadata Metadata to assign to the joined group member.
+   * @return A completable future to be completed once the member has joined.
+   */
+  CompletableFuture<LocalMember> join(Object metadata);
+
+  /**
+   * Joins the instance to the membership group with a user-provided member ID.
+   * <p>
+   * Joining the group results in a <em>new</em> member being created and joining the group. Each {@link DistributedGroup}
+   * instance may represent multiple members of a group. The returned {@link CompletableFuture} will be completed
+   * with the joined {@link LocalMember} object once the member has joined the group, but does not guarantee that
+   * all other instances of the group have seen the newly joined member.
+   * <p>
+   * When joining a group with a user-provided {@code memberId}, a persistent member is created. In the event that this
+   * node crashes, the member may rejoin the group on any node with the same {@code memberId} and receive pending messages.
+   * While the persistent member is disconnected from the cluster, it will not appear in the group {@link #members()}
+   * list but its state will not be removed from the cluster.
+   * <p>
+   * {@code metadata} provided when a persistent member joins a group can be viewed by all other instances of the
+   * same group. Metadata objects mut be serializable either via Java's {@link java.io.Serializable} or by registering a
+   * Catalyst {@link io.atomix.catalyst.serializer.TypeSerializer} on the group's {@link #serializer()}.
+   * <p>
+   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
+   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
+   * use the {@link CompletableFuture#join()} method to block the calling thread:
+   * <pre>
+   *   {@code
+   *   group.join("foo", new MyMetadata()).join();
+   *   }
+   * </pre>
+   * Alternatively, to execute the operation asynchronous and be notified once the lock is acquired in a different
+   * thread, use one of the many completable future callbacks:
+   * <pre>
+   *   {@code
+   *   group.join("foo", new MyMetadata()).thenAccept(thisMember -> System.out.println("This member is: " + thisMember.id()));
+   *   }
+   * </pre>
+   *
+   * @param memberId The unique member ID to assign to the member.
+   * @param metadata Metadata to assign to the joined group member.
+   * @return A completable future to be completed once the member has joined.
+   */
   CompletableFuture<LocalMember> join(String memberId, Object metadata);
 
   /**

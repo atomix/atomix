@@ -110,8 +110,13 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
   }
 
   @Override
+  public CompletableFuture<LocalMember> join(Object metadata) {
+    return join(UUID.randomUUID().toString(), false, metadata);
+  }
+
+  @Override
   public CompletableFuture<LocalMember> join(String memberId, Object metadata) {
-    return join(memberId == null ? UUID.randomUUID().toString() : memberId, false, metadata);
+    return join(memberId == null ? UUID.randomUUID().toString() : memberId, memberId != null, metadata);
   }
 
   /**
