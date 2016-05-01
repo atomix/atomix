@@ -16,6 +16,7 @@
 package io.atomix.group.messaging.internal;
 
 import io.atomix.catalyst.util.Assert;
+import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.group.messaging.MessageClient;
 import io.atomix.group.messaging.MessageProducer;
 
@@ -29,6 +30,15 @@ public abstract class AbstractMessageClient implements MessageClient {
 
   protected AbstractMessageClient(MessageProducerService producerService) {
     this.producerService = Assert.notNull(producerService, "producerService");
+  }
+
+  /**
+   * Returns the client context.
+   *
+   * @return The client context.
+   */
+  ThreadContext context() {
+    return producerService.client.context();
   }
 
   /**

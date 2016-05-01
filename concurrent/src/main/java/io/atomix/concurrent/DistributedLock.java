@@ -207,7 +207,7 @@ public class DistributedLock extends AbstractResource<DistributedLock> {
     CompletableFuture<Long> future = new CompletableFuture<>();
     int id = this.id.incrementAndGet();
     futures.put(id, future);
-    submit(new LockCommands.Lock(id, -1)).whenComplete((result, error) -> {
+    client.submit(new LockCommands.Lock(id, -1)).whenComplete((result, error) -> {
       if (error != null) {
         futures.remove(id);
         future.completeExceptionally(error);
@@ -261,7 +261,7 @@ public class DistributedLock extends AbstractResource<DistributedLock> {
     CompletableFuture<Long> future = new CompletableFuture<>();
     int id = this.id.incrementAndGet();
     futures.put(id, future);
-    submit(new LockCommands.Lock(id, 0)).whenComplete((result, error) -> {
+    client.submit(new LockCommands.Lock(id, 0)).whenComplete((result, error) -> {
       if (error != null) {
         futures.remove(id);
         future.completeExceptionally(error);
@@ -323,7 +323,7 @@ public class DistributedLock extends AbstractResource<DistributedLock> {
     CompletableFuture<Long> future = new CompletableFuture<>();
     int id = this.id.incrementAndGet();
     futures.put(id, future);
-    submit(new LockCommands.Lock(id, timeout.toMillis())).whenComplete((result, error) -> {
+    client.submit(new LockCommands.Lock(id, timeout.toMillis())).whenComplete((result, error) -> {
       if (error != null) {
         futures.remove(id);
         future.completeExceptionally(error);
@@ -362,7 +362,7 @@ public class DistributedLock extends AbstractResource<DistributedLock> {
     int lock = this.lock;
     this.lock = 0;
     if (lock != 0) {
-      return submit(new LockCommands.Unlock(lock));
+      return client.submit(new LockCommands.Unlock(lock));
     }
     return CompletableFuture.completedFuture(null);
   }

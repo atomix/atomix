@@ -196,11 +196,11 @@ public class AtomixClientTest extends AbstractAtomixTest {
     }
 
     public CompletableFuture<String> command(String value) {
-      return submit(new TestCommand(value));
+      return client.submit(new TestCommand(value));
     }
 
     public CompletableFuture<String> query(String value) {
-      return submit(new TestQuery(value));
+      return client.submit(new TestQuery(value));
     }
 
     /**
@@ -277,11 +277,11 @@ public class AtomixClientTest extends AbstractAtomixTest {
     }
 
     public CompletableFuture<Void> set(String value) {
-      return submit(new SetCommand(value));
+      return client.submit(new SetCommand(value));
     }
 
     public CompletableFuture<String> get() {
-      return submit(new GetQuery());
+      return client.submit(new GetQuery());
     }
 
     /**

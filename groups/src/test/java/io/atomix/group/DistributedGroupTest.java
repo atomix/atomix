@@ -205,6 +205,32 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
   }
 
   /**
+   * Tests sending a blocking message on a join event.
+   */
+  public void testBlockingMessageOnJoin() throws Throwable {
+    createServers(3);
+
+    DistributedGroup group1 = createResource(new DistributedGroup.Options());
+    DistributedGroup group2 = createResource(new DistributedGroup.Options());
+
+    group1.onJoin(m -> {
+      threadAssertEquals(group1.members().size(), 1);
+      m.messaging().producer("test").send("Hello world!").join();
+      resume();
+    });
+
+    LocalMember member = group2.join().get(10, TimeUnit.SECONDS);
+
+    member.messaging().consumer("test").onMessage(message -> {
+      threadAssertEquals(message.message(), "Hello world!");
+      message.ack();
+      resume();
+    });
+
+    await(5000, 2);
+  }
+
+  /**
    * Tests direct member messages.
    */
   public void testDirectMessage() throws Throwable {

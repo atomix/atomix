@@ -45,7 +45,7 @@ public abstract class AbstractDistributedValue<T extends AbstractDistributedValu
   /**
    * Gets the current value.
    * <p>
-   * The value will be read using the configured {@link #readConsistency() read consistency} level for
+   * The value will be read using the configured {@link ReadConsistency read consistency} level for
    * the resource. For {@link ReadConsistency#ATOMIC atomic reads}, reads will be forwarded to the cluster
    * leader. Weaker reads may be evaluated on non-leader nodes. However, consistency constraints guarantee
    * that state will never go back in time.
@@ -53,13 +53,13 @@ public abstract class AbstractDistributedValue<T extends AbstractDistributedValu
    * @return A completable future to be completed with the current value.
    */
   public CompletableFuture<U> get() {
-    return submit(new ValueCommands.Get<>());
+    return client.submit(new ValueCommands.Get<>());
   }
 
   /**
    * Gets the current value.
    * <p>
-   * The value will be read using the provided {@link #readConsistency() read consistency} level.
+   * The value will be read using the provided {@link ReadConsistency read consistency} level.
    * For {@link ReadConsistency#ATOMIC atomic reads}, reads will be forwarded to the cluster leader.
    * Weaker reads may be evaluated on non-leader nodes. However, consistency constraints guarantee
    * that state will never go back in time.
@@ -68,7 +68,7 @@ public abstract class AbstractDistributedValue<T extends AbstractDistributedValu
    * @return A completable future to be completed with the current value.
    */
   public CompletableFuture<U> get(ReadConsistency consistency) {
-    return submit(new ValueCommands.Get<>(), consistency);
+    return client.submit(new ValueCommands.Get<>(consistency.level()));
   }
 
   /**
@@ -83,7 +83,7 @@ public abstract class AbstractDistributedValue<T extends AbstractDistributedValu
    * @return A completable future to be completed once the value has been set.
    */
   public CompletableFuture<Void> set(U value) {
-    return submit(new ValueCommands.Set(value));
+    return client.submit(new ValueCommands.Set(value));
   }
 
   /**
@@ -104,7 +104,7 @@ public abstract class AbstractDistributedValue<T extends AbstractDistributedValu
    * @return A completable future to be completed once the value has been set.
    */
   public CompletableFuture<Void> set(U value, Duration ttl) {
-    return submit(new ValueCommands.Set(value, ttl.toMillis()));
+    return client.submit(new ValueCommands.Set(value, ttl.toMillis()));
   }
 
   /**
@@ -122,7 +122,7 @@ public abstract class AbstractDistributedValue<T extends AbstractDistributedValu
    * @return A completable future to be completed with the previous value.
    */
   public CompletableFuture<U> getAndSet(U value) {
-    return submit(new ValueCommands.GetAndSet<>(value));
+    return client.submit(new ValueCommands.GetAndSet<>(value));
   }
 
   /**
@@ -144,7 +144,7 @@ public abstract class AbstractDistributedValue<T extends AbstractDistributedValu
    * @return A completable future to be completed with the previous value.
    */
   public CompletableFuture<U> getAndSet(U value, Duration ttl) {
-    return submit(new ValueCommands.GetAndSet<>(value, ttl.toMillis()));
+    return client.submit(new ValueCommands.GetAndSet<>(value, ttl.toMillis()));
   }
 
   /**
@@ -165,7 +165,7 @@ public abstract class AbstractDistributedValue<T extends AbstractDistributedValu
    * @return A completable future to be completed with a boolean value indicating whether the value was updated.
    */
   public CompletableFuture<Boolean> compareAndSet(U expect, U update) {
-    return submit(new ValueCommands.CompareAndSet(expect, update));
+    return client.submit(new ValueCommands.CompareAndSet(expect, update));
   }
 
   /**
@@ -194,7 +194,7 @@ public abstract class AbstractDistributedValue<T extends AbstractDistributedValu
    * @return A completable future to be completed with a boolean value indicating whether the value was updated.
    */
   public CompletableFuture<Boolean> compareAndSet(U expect, U update, Duration ttl) {
-    return submit(new ValueCommands.CompareAndSet(expect, update, ttl.toMillis()));
+    return client.submit(new ValueCommands.CompareAndSet(expect, update, ttl.toMillis()));
   }
 
 }

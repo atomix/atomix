@@ -17,8 +17,11 @@ package io.atomix.resource.internal;
 
 import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
+import io.atomix.catalyst.serializer.CatalystSerializable;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.copycat.Query;
+
+import java.util.Properties;
 
 /**
  * Wrapper for resource queries.
@@ -30,37 +33,37 @@ import io.atomix.copycat.Query;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public final class ResourceQuery<T extends Query<U>, U> extends ResourceOperation<T, U> implements Query<U> {
-  private ConsistencyLevel consistency;
-
   public ResourceQuery() {
   }
 
-  public ResourceQuery(T query, ConsistencyLevel consistency) {
+  public ResourceQuery(T query) {
     super(query);
-    this.consistency = consistency;
   }
 
   @Override
   public ConsistencyLevel consistency() {
-    ConsistencyLevel consistency = operation.consistency();
-    return consistency != null ? consistency : this.consistency;
-  }
-
-  @Override
-  public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
-    super.writeObject(buffer, serializer);
-    buffer.writeByte(consistency.ordinal());
-  }
-
-  @Override
-  public void readObject(BufferInput<?> buffer, Serializer serializer) {
-    super.readObject(buffer, serializer);
-    consistency = ConsistencyLevel.values()[buffer.readByte()];
+    return operation.consistency();
   }
 
   @Override
   public String toString() {
-    return String.format("%s[query=%s, consistency=%s]", getClass().getSimpleName(), operation, consistency());
+    return String.format("%s[query=%s]", getClass().getSimpleName(), operation);
+  }
+
+  /**
+   * Resource configuration query.
+   */
+  public static class Config implements Query<Properties>, CatalystSerializable {
+    public Config() {
+    }
+
+    @Override
+    public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
+    }
+
+    @Override
+    public void readObject(BufferInput<?> buffer, Serializer serializer) {
+    }
   }
 
 }

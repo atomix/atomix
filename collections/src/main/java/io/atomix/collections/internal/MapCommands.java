@@ -62,13 +62,30 @@ public class MapCommands {
    * Abstract map query.
    */
   public static abstract class MapQuery<V> implements Query<V>, CatalystSerializable {
+    protected ConsistencyLevel consistency;
 
-    @Override
-    public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
+    protected MapQuery() {
+    }
+
+    protected MapQuery(ConsistencyLevel consistency) {
+      this.consistency = consistency;
     }
 
     @Override
-    public void readObject(BufferInput<?> buffer, Serializer serializer) {
+    public void writeObject(BufferOutput<?> output, Serializer serializer) {
+      if (consistency != null) {
+        output.writeByte(consistency.ordinal());
+      } else {
+        output.writeByte(-1);
+      }
+    }
+
+    @Override
+    public void readObject(BufferInput<?> input, Serializer serializer) {
+      int ordinal = input.readByte();
+      if (ordinal != -1) {
+        consistency = ConsistencyLevel.values()[ordinal];
+      }
     }
   }
 
@@ -116,6 +133,11 @@ public class MapCommands {
       this.key = Assert.notNull(key, "key");
     }
 
+    public KeyQuery(Object key, ConsistencyLevel consistency) {
+      super(consistency);
+      this.key = Assert.notNull(key, "key");
+    }
+
     /**
      * Returns the key.
      */
@@ -146,6 +168,10 @@ public class MapCommands {
     public ContainsKey(Object key) {
       super(key);
     }
+
+    public ContainsKey(Object key, ConsistencyLevel consistency) {
+      super(key, consistency);
+    }
   }
 
   /**
@@ -158,6 +184,11 @@ public class MapCommands {
     }
 
     public ContainsValue(Object value) {
+      this.value = Assert.notNull(value, "value");
+    }
+
+    public ContainsValue(Object value, ConsistencyLevel consistency) {
+      super(consistency);
       this.value = Assert.notNull(value, "value");
     }
 
@@ -298,6 +329,10 @@ public class MapCommands {
     public Get(Object key) {
       super(key);
     }
+
+    public Get(Object key, ConsistencyLevel consistency) {
+      super(key, consistency);
+    }
   }
 
   /**
@@ -311,6 +346,11 @@ public class MapCommands {
 
     public GetOrDefault(Object key, Object defaultValue) {
       super(key);
+      this.defaultValue = defaultValue;
+    }
+
+    public GetOrDefault(Object key, Object defaultValue, ConsistencyLevel consistency) {
+      super(key, consistency);
       this.defaultValue = defaultValue;
     }
 
@@ -432,37 +472,66 @@ public class MapCommands {
    * Is empty query.
    */
   public static class IsEmpty extends MapQuery<Boolean> {
+    public IsEmpty() {
+    }
+
+    public IsEmpty(ConsistencyLevel consistency) {
+      super(consistency);
+    }
   }
 
   /**
    * Size query.
    */
   public static class Size extends MapQuery<Integer> {
+    public Size() {
+    }
+
+    public Size(ConsistencyLevel consistency) {
+      super(consistency);
+    }
   }
 
   /**
    * Values query.
    */
   public static class Values extends MapQuery<Collection> {
+    public Values() {
+    }
+
+    public Values(ConsistencyLevel consistency) {
+      super(consistency);
+    }
   }
 
   /**
    * Key set query.
    */
   public static class KeySet extends MapQuery<Set> {
+    public KeySet() {
+    }
+
+    public KeySet(ConsistencyLevel consistency) {
+      super(consistency);
+    }
   }
 
   /**
    * Entry set query.
    */
   public static class EntrySet extends MapQuery<Set> {
+    public EntrySet() {
+    }
+
+    public EntrySet(ConsistencyLevel consistency) {
+      super(consistency);
+    }
   }
 
   /**
    * Clear command.
    */
   public static class Clear extends MapCommand<Void> {
-
     @Override
     public CompactionMode compaction() {
       return CompactionMode.SEQUENTIAL;
