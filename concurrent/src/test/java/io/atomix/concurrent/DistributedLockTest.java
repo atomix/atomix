@@ -94,9 +94,11 @@ public class DistributedLockTest extends AbstractCopycatTest<DistributedLock> {
     DistributedLock lock2 = createResource();
 
     lock1.lock().thenRun(() -> {
+      resume();
       lock1.unlock().join();
       resume();
     });
+    await(10000);
 
     lock2.lock().thenRun(this::resume);
     await(10000, 2);
