@@ -28,7 +28,7 @@ import java.util.concurrent.CompletableFuture;
  */
 public class MessageProducerService {
   private final MessageProducerRegistry registry = new MessageProducerRegistry();
-  final CopycatClient client;
+  private final CopycatClient client;
 
   public MessageProducerService(CopycatClient client) {
     this.client = Assert.notNull(client, "client");
