@@ -61,13 +61,30 @@ public class MultiMapCommands {
    * Abstract map query.
    */
   public static abstract class MultiMapQuery<V> implements Query<V>, CatalystSerializable {
+    protected ConsistencyLevel consistency;
 
-    @Override
-    public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
+    protected MultiMapQuery() {
+    }
+
+    protected MultiMapQuery(ConsistencyLevel consistency) {
+      this.consistency = consistency;
     }
 
     @Override
-    public void readObject(BufferInput<?> buffer, Serializer serializer) {
+    public void writeObject(BufferOutput<?> output, Serializer serializer) {
+      if (consistency != null) {
+        output.writeByte(consistency.ordinal());
+      } else {
+        output.writeByte(-1);
+      }
+    }
+
+    @Override
+    public void readObject(BufferInput<?> input, Serializer serializer) {
+      int ordinal = input.readByte();
+      if (ordinal != -1) {
+        consistency = ConsistencyLevel.values()[ordinal];
+      }
     }
   }
 
@@ -115,6 +132,11 @@ public class MultiMapCommands {
       this.key = Assert.notNull(key, "key");
     }
 
+    protected KeyQuery(Object key, ConsistencyLevel consistency) {
+      super(consistency);
+      this.key = Assert.notNull(key, "key");
+    }
+
     /**
      * Returns the key.
      */
@@ -145,6 +167,11 @@ public class MultiMapCommands {
     }
 
     protected ValueQuery(Object value) {
+      this.value = value;
+    }
+
+    protected ValueQuery(Object value, ConsistencyLevel consistency) {
+      super(consistency);
       this.value = value;
     }
 
@@ -182,6 +209,11 @@ public class MultiMapCommands {
       this.value = value;
     }
 
+    protected EntryQuery(Object key, Object value, ConsistencyLevel consistency) {
+      super(key, consistency);
+      this.value = value;
+    }
+
     /**
      * Returns the value.
      *
@@ -214,6 +246,10 @@ public class MultiMapCommands {
     public ContainsKey(Object key) {
       super(key);
     }
+
+    public ContainsKey(Object key, ConsistencyLevel consistency) {
+      super(key, consistency);
+    }
   }
 
   /**
@@ -226,6 +262,10 @@ public class MultiMapCommands {
     public ContainsEntry(Object key, Object value) {
       super(key, value);
     }
+
+    public ContainsEntry(Object key, Object value, ConsistencyLevel consistency) {
+      super(key, value, consistency);
+    }
   }
 
   /**
@@ -237,6 +277,10 @@ public class MultiMapCommands {
 
     public ContainsValue(Object value) {
       super(value);
+    }
+
+    public ContainsValue(Object value, ConsistencyLevel consistency) {
+      super(value, consistency);
     }
   }
 
@@ -345,6 +389,10 @@ public class MultiMapCommands {
     public Get(Object key) {
       super(key);
     }
+
+    public Get(Object key, ConsistencyLevel consistency) {
+      super(key, consistency);
+    }
   }
 
   /**
@@ -408,6 +456,12 @@ public class MultiMapCommands {
    * Is empty query.
    */
   public static class IsEmpty extends MultiMapQuery<Boolean> {
+    public IsEmpty() {
+    }
+
+    public IsEmpty(ConsistencyLevel consistency) {
+      super(consistency);
+    }
   }
 
   /**
@@ -419,6 +473,10 @@ public class MultiMapCommands {
 
     public Size(Object key) {
       super(key);
+    }
+
+    public Size(Object key, ConsistencyLevel consistency) {
+      super(key, consistency);
     }
   }
 

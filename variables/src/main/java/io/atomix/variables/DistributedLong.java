@@ -73,7 +73,7 @@ public class DistributedLong extends AbstractDistributedValue<DistributedLong, L
    * @return A completable future to be completed with the result.
    */
   public CompletableFuture<Long> addAndGet(long delta) {
-    return submit(new LongCommands.AddAndGet(delta));
+    return client.submit(new LongCommands.AddAndGet(delta));
   }
 
   /**
@@ -90,7 +90,7 @@ public class DistributedLong extends AbstractDistributedValue<DistributedLong, L
    * @return A completable future to be completed with the result.
    */
   public CompletableFuture<Long> getAndAdd(long delta) {
-    return submit(new LongCommands.GetAndAdd(delta));
+    return client.submit(new LongCommands.GetAndAdd(delta));
   }
 
   /**
@@ -106,7 +106,7 @@ public class DistributedLong extends AbstractDistributedValue<DistributedLong, L
    * @return A completable future to be completed with the result.
    */
   public CompletableFuture<Long> incrementAndGet() {
-    return submit(new LongCommands.IncrementAndGet());
+    return client.submit(new LongCommands.IncrementAndGet());
   }
 
   /**
@@ -122,7 +122,7 @@ public class DistributedLong extends AbstractDistributedValue<DistributedLong, L
    * @return A completable future to be completed with the result.
    */
   public CompletableFuture<Long> decrementAndGet() {
-    return submit(new LongCommands.DecrementAndGet());
+    return client.submit(new LongCommands.DecrementAndGet());
   }
 
   /**
@@ -138,7 +138,7 @@ public class DistributedLong extends AbstractDistributedValue<DistributedLong, L
    * @return A completable future to be completed with the result.
    */
   public CompletableFuture<Long> getAndIncrement() {
-    return submit(new LongCommands.GetAndIncrement());
+    return client.submit(new LongCommands.GetAndIncrement());
   }
 
   /**
@@ -154,7 +154,7 @@ public class DistributedLong extends AbstractDistributedValue<DistributedLong, L
    * @return A completable future to be completed with the result.
    */
   public CompletableFuture<Long> getAndDecrement() {
-    return submit(new LongCommands.GetAndDecrement());
+    return client.submit(new LongCommands.GetAndDecrement());
   }
 
 }

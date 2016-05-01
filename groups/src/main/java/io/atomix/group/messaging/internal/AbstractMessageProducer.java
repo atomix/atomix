@@ -15,6 +15,7 @@
  */
 package io.atomix.group.messaging.internal;
 
+import io.atomix.catalyst.util.concurrent.BlockingFuture;
 import io.atomix.group.internal.GroupCommands;
 import io.atomix.group.messaging.MessageFailedException;
 import io.atomix.group.messaging.MessageProducer;
@@ -95,7 +96,7 @@ public abstract class AbstractMessageProducer<T> implements MessageProducer<T> {
    * Sends an atomic message.
    */
   private CompletableFuture sendSync(String member, T message) {
-    CompletableFuture future = new CompletableFuture();
+    CompletableFuture future = new BlockingFuture();
     final long messageId = ++this.messageId;
     messageFutures.put(messageId, future);
     client.producerService().send(new GroupCommands.Message(member, id, name, messageId, message, delivery, execution)).whenComplete((result, error) -> {

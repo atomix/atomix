@@ -38,7 +38,7 @@ public class ResourceManagerTypeResolver implements SerializableTypeResolver {
     // Register resource state machine types.
     registry.register(ResourceCommand.class, -50);
     registry.register(ResourceQuery.class, -51);
-    registry.register(ResourceCommand.Config.class, -52);
+    registry.register(ResourceQuery.Config.class, -52);
     registry.register(ResourceCommand.Delete.class, -53);
     registry.register(ResourceType.class, -54);
 

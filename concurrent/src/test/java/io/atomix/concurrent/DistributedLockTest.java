@@ -84,4 +84,24 @@ public class DistributedLockTest extends AbstractCopycatTest<DistributedLock> {
     await(10000);
   }
 
+  /**
+   * Tests unlocking a lock with a blocking call in the event thread.
+   */
+  public void testBlockingUnlock() throws Throwable {
+    createServers(3);
+
+    DistributedLock lock1 = createResource();
+    DistributedLock lock2 = createResource();
+
+    lock1.lock().thenRun(() -> {
+      resume();
+      lock1.unlock().join();
+      resume();
+    });
+    await(10000);
+
+    lock2.lock().thenRun(this::resume);
+    await(10000, 2);
+  }
+
 }

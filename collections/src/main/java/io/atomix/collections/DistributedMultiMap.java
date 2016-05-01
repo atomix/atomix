@@ -134,7 +134,7 @@ public class DistributedMultiMap<K, V> extends AbstractResource<DistributedMulti
    * @return A completable future to be completed with a boolean value indicating whether the map is empty.
    */
   public CompletableFuture<Boolean> isEmpty() {
-    return submit(new MultiMapCommands.IsEmpty());
+    return client.submit(new MultiMapCommands.IsEmpty());
   }
 
   /**
@@ -143,7 +143,7 @@ public class DistributedMultiMap<K, V> extends AbstractResource<DistributedMulti
    * @return A completable future to be completed with a boolean value indicating whether the map is empty.
    */
   public CompletableFuture<Boolean> isEmpty(ReadConsistency consistency) {
-    return submit(new MultiMapCommands.IsEmpty(), consistency);
+    return client.submit(new MultiMapCommands.IsEmpty(consistency.level()));
   }
 
   /**
@@ -152,7 +152,7 @@ public class DistributedMultiMap<K, V> extends AbstractResource<DistributedMulti
    * @return A completable future to be completed with the number of entries in the map.
    */
   public CompletableFuture<Integer> size() {
-    return submit(new MultiMapCommands.Size());
+    return client.submit(new MultiMapCommands.Size());
   }
 
   /**
@@ -162,7 +162,7 @@ public class DistributedMultiMap<K, V> extends AbstractResource<DistributedMulti
    * @return A completable future to be completed with the number of entries in the map.
    */
   public CompletableFuture<Integer> size(ReadConsistency consistency) {
-    return submit(new MultiMapCommands.Size(), consistency);
+    return client.submit(new MultiMapCommands.Size(consistency.level()));
   }
 
   /**
@@ -172,7 +172,7 @@ public class DistributedMultiMap<K, V> extends AbstractResource<DistributedMulti
    * @return A completable future to be completed with the number of entries in the map.
    */
   public CompletableFuture<Integer> size(K key) {
-    return submit(new MultiMapCommands.Size(key));
+    return client.submit(new MultiMapCommands.Size(key));
   }
 
   /**
@@ -183,7 +183,7 @@ public class DistributedMultiMap<K, V> extends AbstractResource<DistributedMulti
    * @return A completable future to be completed with the number of entries in the map.
    */
   public CompletableFuture<Integer> size(K key, ReadConsistency consistency) {
-    return submit(new MultiMapCommands.Size(key), consistency);
+    return client.submit(new MultiMapCommands.Size(key, consistency.level()));
   }
 
   /**
@@ -193,7 +193,7 @@ public class DistributedMultiMap<K, V> extends AbstractResource<DistributedMulti
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Boolean> containsKey(K key) {
-    return submit(new MultiMapCommands.ContainsKey(key));
+    return client.submit(new MultiMapCommands.ContainsKey(key));
   }
 
   /**
@@ -204,7 +204,7 @@ public class DistributedMultiMap<K, V> extends AbstractResource<DistributedMulti
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Boolean> containsKey(K key, ReadConsistency consistency) {
-    return submit(new MultiMapCommands.ContainsKey(key), consistency);
+    return client.submit(new MultiMapCommands.ContainsKey(key, consistency.level()));
   }
 
   /**
@@ -215,7 +215,7 @@ public class DistributedMultiMap<K, V> extends AbstractResource<DistributedMulti
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Boolean> containsEntry(K key, V value) {
-    return submit(new MultiMapCommands.ContainsEntry(key, value));
+    return client.submit(new MultiMapCommands.ContainsEntry(key, value));
   }
 
   /**
@@ -227,7 +227,7 @@ public class DistributedMultiMap<K, V> extends AbstractResource<DistributedMulti
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Boolean> containsEntry(K key, V value, ReadConsistency consistency) {
-    return submit(new MultiMapCommands.ContainsEntry(key, value), consistency);
+    return client.submit(new MultiMapCommands.ContainsEntry(key, value, consistency.level()));
   }
 
   /**
@@ -237,7 +237,7 @@ public class DistributedMultiMap<K, V> extends AbstractResource<DistributedMulti
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Boolean> containsValue(V value) {
-    return submit(new MultiMapCommands.ContainsValue(value));
+    return client.submit(new MultiMapCommands.ContainsValue(value));
   }
 
   /**
@@ -248,7 +248,7 @@ public class DistributedMultiMap<K, V> extends AbstractResource<DistributedMulti
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Boolean> containsValue(V value, ReadConsistency consistency) {
-    return submit(new MultiMapCommands.ContainsValue(value), consistency);
+    return client.submit(new MultiMapCommands.ContainsValue(value, consistency.level()));
   }
 
   /**
@@ -259,8 +259,7 @@ public class DistributedMultiMap<K, V> extends AbstractResource<DistributedMulti
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<Collection<V>> get(K key) {
-    return submit(new MultiMapCommands.Get(key))
-      .thenApply(result -> result);
+    return client.submit(new MultiMapCommands.Get(key)).thenApply(result -> result);
   }
 
   /**
@@ -272,8 +271,7 @@ public class DistributedMultiMap<K, V> extends AbstractResource<DistributedMulti
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<Collection<V>> get(K key, ReadConsistency consistency) {
-    return submit(new MultiMapCommands.Get(key), consistency)
-      .thenApply(result -> result);
+    return client.submit(new MultiMapCommands.Get(key, consistency.level())).thenApply(result -> result);
   }
 
   /**
@@ -284,8 +282,7 @@ public class DistributedMultiMap<K, V> extends AbstractResource<DistributedMulti
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Boolean> put(K key, V value) {
-    return submit(new MultiMapCommands.Put(key, value))
-      .thenApply(result -> result);
+    return client.submit(new MultiMapCommands.Put(key, value)).thenApply(result -> result);
   }
 
   /**
@@ -298,7 +295,7 @@ public class DistributedMultiMap<K, V> extends AbstractResource<DistributedMulti
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<Boolean> put(K key, V value, Duration ttl) {
-    return submit(new MultiMapCommands.Put(key, value, ttl.toMillis()));
+    return client.submit(new MultiMapCommands.Put(key, value, ttl.toMillis()));
   }
 
   /**
@@ -308,8 +305,7 @@ public class DistributedMultiMap<K, V> extends AbstractResource<DistributedMulti
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Collection<V>> remove(Object key) {
-    return submit(new MultiMapCommands.Remove(key))
-      .thenApply(result -> (Collection) result);
+    return client.submit(new MultiMapCommands.Remove(key)).thenApply(result -> (Collection) result);
   }
 
   /**
@@ -320,8 +316,7 @@ public class DistributedMultiMap<K, V> extends AbstractResource<DistributedMulti
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Boolean> remove(Object key, Object value) {
-    return submit(new MultiMapCommands.Remove(key, value))
-      .thenApply(result -> (boolean) result);
+    return client.submit(new MultiMapCommands.Remove(key, value)).thenApply(result -> (boolean) result);
   }
 
   /**
@@ -331,7 +326,7 @@ public class DistributedMultiMap<K, V> extends AbstractResource<DistributedMulti
    * @return A completable future to be completed once the value has been removed.
    */
   public CompletableFuture<Void> removeValue(Object value) {
-    return submit(new MultiMapCommands.RemoveValue(value));
+    return client.submit(new MultiMapCommands.RemoveValue(value));
   }
 
   /**
@@ -340,7 +335,7 @@ public class DistributedMultiMap<K, V> extends AbstractResource<DistributedMulti
    * @return A completable future to be completed once the operation is complete.
    */
   public CompletableFuture<Void> clear() {
-    return submit(new MultiMapCommands.Clear());
+    return client.submit(new MultiMapCommands.Clear());
   }
 
 }

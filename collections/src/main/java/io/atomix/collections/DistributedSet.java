@@ -65,7 +65,7 @@ public class DistributedSet<T> extends AbstractResource<DistributedSet<T>> {
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Boolean> add(T value) {
-    return submit(new SetCommands.Add(value));
+    return client.submit(new SetCommands.Add(value));
   }
 
   /**
@@ -77,7 +77,7 @@ public class DistributedSet<T> extends AbstractResource<DistributedSet<T>> {
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<Boolean> add(T value, Duration ttl) {
-    return submit(new SetCommands.Add(value, ttl.toMillis()));
+    return client.submit(new SetCommands.Add(value, ttl.toMillis()));
   }
 
   /**
@@ -87,7 +87,7 @@ public class DistributedSet<T> extends AbstractResource<DistributedSet<T>> {
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Boolean> remove(T value) {
-    return submit(new SetCommands.Remove(value));
+    return client.submit(new SetCommands.Remove(value));
   }
 
   /**
@@ -97,7 +97,7 @@ public class DistributedSet<T> extends AbstractResource<DistributedSet<T>> {
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Boolean> contains(Object value) {
-    return submit(new SetCommands.Contains(value));
+    return client.submit(new SetCommands.Contains(value));
   }
 
   /**
@@ -108,7 +108,7 @@ public class DistributedSet<T> extends AbstractResource<DistributedSet<T>> {
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Boolean> contains(Object value, ReadConsistency consistency) {
-    return submit(new SetCommands.Contains(value), consistency);
+    return client.submit(new SetCommands.Contains(value, consistency.level()));
   }
 
   /**
@@ -117,7 +117,7 @@ public class DistributedSet<T> extends AbstractResource<DistributedSet<T>> {
    * @return A completable future to be completed with the set count.
    */
   public CompletableFuture<Integer> size() {
-    return submit(new SetCommands.Size());
+    return client.submit(new SetCommands.Size());
   }
 
   /**
@@ -127,7 +127,7 @@ public class DistributedSet<T> extends AbstractResource<DistributedSet<T>> {
    * @return A completable future to be completed with the set count.
    */
   public CompletableFuture<Integer> size(ReadConsistency consistency) {
-    return submit(new SetCommands.Size(), consistency);
+    return client.submit(new SetCommands.Size(consistency.level()));
   }
 
   /**
@@ -136,7 +136,7 @@ public class DistributedSet<T> extends AbstractResource<DistributedSet<T>> {
    * @return A completable future to be completed with a boolean value indicating whether the set is empty.
    */
   public CompletableFuture<Boolean> isEmpty() {
-    return submit(new SetCommands.IsEmpty());
+    return client.submit(new SetCommands.IsEmpty());
   }
 
   /**
@@ -146,7 +146,7 @@ public class DistributedSet<T> extends AbstractResource<DistributedSet<T>> {
    * @return A completable future to be completed with a boolean value indicating whether the set is empty.
    */
   public CompletableFuture<Boolean> isEmpty(ReadConsistency consistency) {
-    return submit(new SetCommands.IsEmpty(), consistency);
+    return client.submit(new SetCommands.IsEmpty(consistency.level()));
   }
 
   /**
@@ -155,7 +155,7 @@ public class DistributedSet<T> extends AbstractResource<DistributedSet<T>> {
    * @return A completable future to be completed once the operation is complete.
    */
   public CompletableFuture<Void> clear() {
-    return submit(new SetCommands.Clear());
+    return client.submit(new SetCommands.Clear());
   }
 
 }

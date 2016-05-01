@@ -109,7 +109,7 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
    * @return A completable future to be completed with a boolean value indicating whether the map is empty.
    */
   public CompletableFuture<Boolean> isEmpty() {
-    return submit(new MapCommands.IsEmpty());
+    return client.submit(new MapCommands.IsEmpty());
   }
 
   /**
@@ -151,7 +151,7 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
    * @return A completable future to be completed with a boolean value indicating whether the map is empty.
    */
   public CompletableFuture<Boolean> isEmpty(ReadConsistency consistency) {
-    return submit(new MapCommands.IsEmpty(), consistency);
+    return client.submit(new MapCommands.IsEmpty(consistency.level()));
   }
 
   /**
@@ -191,7 +191,7 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
    * @return A completable future to be completed with the number of entries in the map.
    */
   public CompletableFuture<Integer> size() {
-    return submit(new MapCommands.Size());
+    return client.submit(new MapCommands.Size());
   }
 
   /**
@@ -231,7 +231,7 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
    * @return A completable future to be completed with the number of entries in the map.
    */
   public CompletableFuture<Integer> size(ReadConsistency consistency) {
-    return submit(new MapCommands.Size(), consistency);
+    return client.submit(new MapCommands.Size(consistency.level()));
   }
 
   /**
@@ -275,7 +275,7 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
    * @throws NullPointerException if {@code key} is {@code null}
    */
   public CompletableFuture<Boolean> containsKey(Object key) {
-    return submit(new MapCommands.ContainsKey(key));
+    return client.submit(new MapCommands.ContainsKey(key));
   }
 
   /**
@@ -319,7 +319,7 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
    * @throws NullPointerException if {@code key} is {@code null}
    */
   public CompletableFuture<Boolean> containsKey(Object key, ReadConsistency consistency) {
-    return submit(new MapCommands.ContainsKey(key), consistency);
+    return client.submit(new MapCommands.ContainsKey(key, consistency.level()));
   }
 
   /**
@@ -363,7 +363,7 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
    * @throws NullPointerException if {@code key} is {@code null}
    */
   public CompletableFuture<Boolean> containsValue(Object value) {
-    return submit(new MapCommands.ContainsValue(value));
+    return client.submit(new MapCommands.ContainsValue(value));
   }
 
   /**
@@ -407,7 +407,7 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
    * @throws NullPointerException if {@code key} is {@code null}
    */
   public CompletableFuture<Boolean> containsValue(Object value, ReadConsistency consistency) {
-    return submit(new MapCommands.ContainsValue(value), consistency);
+    return client.submit(new MapCommands.ContainsValue(value, consistency.level()));
   }
 
   /**
@@ -450,8 +450,7 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<V> get(Object key) {
-    return submit(new MapCommands.Get(key))
-      .thenApply(result -> (V) result);
+    return client.submit(new MapCommands.Get(key)).thenApply(result -> (V) result);
   }
 
   /**
@@ -494,8 +493,7 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<V> get(Object key, ReadConsistency consistency) {
-    return submit(new MapCommands.Get(key), consistency)
-      .thenApply(result -> (V) result);
+    return client.submit(new MapCommands.Get(key, consistency.level())).thenApply(result -> (V) result);
   }
 
   /**
@@ -542,8 +540,7 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<V> getOrDefault(Object key, V defaultValue) {
-    return submit(new MapCommands.GetOrDefault(key, defaultValue))
-      .thenApply(result -> (V) result);
+    return client.submit(new MapCommands.GetOrDefault(key, defaultValue)).thenApply(result -> (V) result);
   }
 
   /**
@@ -590,8 +587,7 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<V> getOrDefault(Object key, V defaultValue, ReadConsistency consistency) {
-    return submit(new MapCommands.GetOrDefault(key, defaultValue), consistency)
-      .thenApply(result -> (V) result);
+    return client.submit(new MapCommands.GetOrDefault(key, defaultValue, consistency.level())).thenApply(result -> (V) result);
   }
 
   /**
@@ -625,8 +621,7 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<V> put(K key, V value) {
-    return submit(new MapCommands.Put(key, value))
-      .thenApply(result -> (V) result);
+    return client.submit(new MapCommands.Put(key, value)).thenApply(result -> (V) result);
   }
 
   /**
@@ -665,8 +660,7 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<V> put(K key, V value, Duration ttl) {
-    return submit(new MapCommands.Put(key, value, ttl.toMillis()))
-      .thenApply(result -> (V) result);
+    return client.submit(new MapCommands.Put(key, value, ttl.toMillis())).thenApply(result -> (V) result);
   }
 
   /**
@@ -699,8 +693,7 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<V> putIfAbsent(K key, V value) {
-    return submit(new MapCommands.PutIfAbsent(key, value))
-      .thenApply(result -> (V) result);
+    return client.submit(new MapCommands.PutIfAbsent(key, value)).thenApply(result -> (V) result);
   }
 
   /**
@@ -738,7 +731,7 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<V> putIfAbsent(K key, V value, Duration ttl) {
-    return submit(new MapCommands.PutIfAbsent(key, value, ttl.toMillis())).thenApply(result -> (V) result);
+    return client.submit(new MapCommands.PutIfAbsent(key, value, ttl.toMillis())).thenApply(result -> (V) result);
   }
 
   /**
@@ -773,8 +766,7 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<V> remove(Object key) {
-    return submit(new MapCommands.Remove(key))
-      .thenApply(result -> (V) result);
+    return client.submit(new MapCommands.Remove(key)).thenApply(result -> (V) result);
   }
 
   /**
@@ -811,7 +803,7 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
    * @throws NullPointerException if {@code key} is {@code null}
    */
   public CompletableFuture<Boolean> remove(K key, V value) {
-    return submit(new MapCommands.RemoveIfPresent(key, value));
+    return client.submit(new MapCommands.RemoveIfPresent(key, value));
   }
 
   /**
@@ -844,8 +836,7 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<V> replace(K key, V value) {
-    return submit(new MapCommands.Replace(key, value))
-      .thenApply(result -> (V) result);
+    return client.submit(new MapCommands.Replace(key, value)).thenApply(result -> (V) result);
   }
 
   /**
@@ -884,7 +875,7 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<V> replace(K key, V value, Duration ttl) {
-    return submit(new MapCommands.Replace(key, value, ttl.toMillis())).thenApply(result -> (V) result);
+    return client.submit(new MapCommands.Replace(key, value, ttl.toMillis())).thenApply(result -> (V) result);
   }
 
   /**
@@ -920,7 +911,7 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
    * @throws NullPointerException if {@code key} is {@code null}
    */
   public CompletableFuture<Boolean> replace(K key, V oldValue, V newValue) {
-    return submit(new MapCommands.ReplaceIfPresent(key, oldValue, newValue));
+    return client.submit(new MapCommands.ReplaceIfPresent(key, oldValue, newValue));
   }
 
   /**
@@ -963,7 +954,7 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<Boolean> replace(K key, V oldValue, V newValue, Duration ttl) {
-    return submit(new MapCommands.ReplaceIfPresent(key, oldValue, newValue, ttl.toMillis()));
+    return client.submit(new MapCommands.ReplaceIfPresent(key, oldValue, newValue, ttl.toMillis()));
   }
 
   /**
@@ -994,7 +985,7 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<Set<K>> keySet() {
-    return submit(new MapCommands.KeySet()).thenApply(keys -> (Set<K>) keys);
+    return client.submit(new MapCommands.KeySet()).thenApply(keys -> (Set<K>) keys);
   }
 
   /**
@@ -1025,7 +1016,7 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<Collection<V>> values() {
-    return submit(new MapCommands.Values()).thenApply(values -> (Collection<V>) values);
+    return client.submit(new MapCommands.Values()).thenApply(values -> (Collection<V>) values);
   }
 
   /**
@@ -1056,7 +1047,7 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<Set<Map.Entry<K, V>>> entrySet() {
-    return submit(new MapCommands.EntrySet()).thenApply(entries -> (Set<Map.Entry<K, V>>) entries);
+    return client.submit(new MapCommands.EntrySet()).thenApply(entries -> (Set<Map.Entry<K, V>>) entries);
   }
 
   /**
@@ -1083,7 +1074,7 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
    * @return A completable future to be completed once the operation is complete.
    */
   public CompletableFuture<Void> clear() {
-    return submit(new MapCommands.Clear());
+    return client.submit(new MapCommands.Clear());
   }
 
 }

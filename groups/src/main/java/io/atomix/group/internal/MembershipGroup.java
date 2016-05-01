@@ -58,12 +58,13 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
   private final GroupElection election = new GroupElection(this);
   private final GroupMessageClient messages;
   private final Map<String, AbstractGroupMember> members = new ConcurrentHashMap<>();
-  private final GroupSubmitter submitter = this::submit;
-  private final MessageProducerService producerService = new MessageProducerService(submitter);
-  private final MessageConsumerService consumerService = new MessageConsumerService(submitter);
+  private final MessageProducerService producerService;
+  private final MessageConsumerService consumerService;
 
   public MembershipGroup(CopycatClient client, Properties options) {
     super(client, new ResourceType(DistributedGroup.class), options);
+    this.producerService = new MessageProducerService(this.client);
+    this.consumerService = new MessageConsumerService(this.client);
     this.messages = new GroupMessageClient(producerService);
   }
 
@@ -118,7 +119,7 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
   private CompletableFuture<LocalMember> join(String memberId, boolean persistent) {
     // When joining a group, the join request is guaranteed to complete prior to the join
     // event being received.
-    return submit(new GroupCommands.Join(memberId, persistent)).thenApply(info -> {
+    return client.submit(new GroupCommands.Join(memberId, persistent)).thenApply(info -> {
       AbstractGroupMember member = members.get(info.memberId());
       if (member == null || !(member instanceof LocalGroupMember)) {
         member = new LocalGroupMember(info, this, producerService, consumerService);
@@ -135,7 +136,7 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
 
   @Override
   public CompletableFuture<Void> remove(String memberId) {
-    return submit(new GroupCommands.Leave(memberId)).thenRun(() -> {
+    return client.submit(new GroupCommands.Leave(memberId)).thenRun(() -> {
       members.remove(memberId);
     });
   }
@@ -163,7 +164,7 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
    * Synchronizes the membership group.
    */
   private CompletableFuture<Void> sync() {
-    return submit(new GroupCommands.Listen()).thenAccept(members -> {
+    return client.submit(new GroupCommands.Listen()).thenAccept(members -> {
       for (GroupMemberInfo info : members) {
         AbstractGroupMember member = this.members.get(info.memberId());
         if (member == null) {

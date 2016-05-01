@@ -58,13 +58,30 @@ public class QueueCommands {
    * Abstract queue query.
    */
   private static abstract class QueueQuery<V> implements Query<V>, CatalystSerializable {
+    protected ConsistencyLevel consistency;
 
-    @Override
-    public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
+    protected QueueQuery() {
+    }
+
+    protected QueueQuery(ConsistencyLevel consistency) {
+      this.consistency = consistency;
     }
 
     @Override
-    public void readObject(BufferInput<?> buffer, Serializer serializer) {
+    public void writeObject(BufferOutput<?> output, Serializer serializer) {
+      if (consistency != null) {
+        output.writeByte(consistency.ordinal());
+      } else {
+        output.writeByte(-1);
+      }
+    }
+
+    @Override
+    public void readObject(BufferInput<?> input, Serializer serializer) {
+      int ordinal = input.readByte();
+      if (ordinal != -1) {
+        consistency = ConsistencyLevel.values()[ordinal];
+      }
     }
   }
 
@@ -112,6 +129,11 @@ public class QueueCommands {
       this.value = value;
     }
 
+    protected ValueQuery(Object value, ConsistencyLevel consistency) {
+      super(consistency);
+      this.value = value;
+    }
+
     /**
      * Returns the value.
      */
@@ -141,6 +163,10 @@ public class QueueCommands {
 
     public Contains(Object value) {
       super(value);
+    }
+
+    public Contains(Object value, ConsistencyLevel consistency) {
+      super(value, consistency);
     }
   }
 
@@ -217,12 +243,24 @@ public class QueueCommands {
    * Size query.
    */
   public static class Size extends QueueQuery<Integer> {
+    public Size() {
+    }
+
+    public Size(ConsistencyLevel consistency) {
+      super(consistency);
+    }
   }
 
   /**
    * Is empty query.
    */
   public static class IsEmpty extends QueueQuery<Boolean> {
+    public IsEmpty() {
+    }
+
+    public IsEmpty(ConsistencyLevel consistency) {
+      super(consistency);
+    }
   }
 
   /**

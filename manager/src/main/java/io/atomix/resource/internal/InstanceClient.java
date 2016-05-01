@@ -195,7 +195,11 @@ public final class InstanceClient implements CopycatClient {
 
   @Override
   public CompletableFuture<CopycatClient> connect(Collection<Address> members) {
-    throw new UnsupportedOperationException();
+    if (members == null) {
+      return connect();
+    } else {
+      throw new UnsupportedOperationException();
+    }
   }
 
   /**

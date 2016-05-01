@@ -58,13 +58,30 @@ public class SetCommands {
    * Abstract set query.
    */
   private static abstract class SetQuery<V> implements Query<V>, CatalystSerializable {
+    protected ConsistencyLevel consistency;
 
-    @Override
-    public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
+    protected SetQuery() {
+    }
+
+    protected SetQuery(ConsistencyLevel consistency) {
+      this.consistency = consistency;
     }
 
     @Override
-    public void readObject(BufferInput<?> buffer, Serializer serializer) {
+    public void writeObject(BufferOutput<?> output, Serializer serializer) {
+      if (consistency != null) {
+        output.writeByte(consistency.ordinal());
+      } else {
+        output.writeByte(-1);
+      }
+    }
+
+    @Override
+    public void readObject(BufferInput<?> input, Serializer serializer) {
+      int ordinal = input.readByte();
+      if (ordinal != -1) {
+        consistency = ConsistencyLevel.values()[ordinal];
+      }
     }
   }
 
@@ -112,6 +129,11 @@ public class SetCommands {
       this.value = value;
     }
 
+    public ValueQuery(Object value, ConsistencyLevel consistency) {
+      super(consistency);
+      this.value = value;
+    }
+
     /**
      * Returns the value.
      */
@@ -141,6 +163,10 @@ public class SetCommands {
 
     public Contains(Object value) {
       super(value);
+    }
+
+    public Contains(Object value, ConsistencyLevel consistency) {
+      super(value, consistency);
     }
   }
 
@@ -223,12 +249,24 @@ public class SetCommands {
    * Size query.
    */
   public static class Size extends SetQuery<Integer> {
+    public Size() {
+    }
+
+    public Size(ConsistencyLevel consistency) {
+      super(consistency);
+    }
   }
 
   /**
    * Is empty query.
    */
   public static class IsEmpty extends SetQuery<Boolean> {
+    public IsEmpty() {
+    }
+
+    public IsEmpty(ConsistencyLevel consistency) {
+      super(consistency);
+    }
   }
 
   /**

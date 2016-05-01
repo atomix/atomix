@@ -58,7 +58,12 @@ public abstract class AbstractMessageConsumer<T> implements MessageConsumer<T> {
    * @param message The received message.
    */
   void onMessage(GroupMessage<T> message) {
-    listener.accept(message.setConsumerService(service.consumerService()));
+    Listener<Message<T>> listener = this.listener;
+    if (listener != null) {
+      listener.accept(message.setConsumerService(service.consumerService()));
+    } else {
+      message.fail();
+    }
   }
 
   @Override

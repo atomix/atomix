@@ -119,13 +119,13 @@ public abstract class ResourceStateMachine extends StateMachine implements Sessi
   public final void init(StateMachineExecutor executor) {
     executor.serializer().register(ResourceCommand.class, -50);
     executor.serializer().register(ResourceQuery.class, -51);
-    executor.serializer().register(ResourceCommand.Config.class, -52);
+    executor.serializer().register(ResourceQuery.Config.class, -52);
     executor.serializer().register(ResourceCommand.Delete.class, -53);
 
-    executor.register(ResourceCommand.Config.class, this::config);
-    executor.<ResourceCommand.Delete>register(ResourceCommand.Delete.class, this::delete);
-
-    super.init(new ResourceStateMachineExecutor(executor));
+    ResourceStateMachineExecutor wrappedExecutor = new ResourceStateMachineExecutor(executor);
+    wrappedExecutor.register(ResourceQuery.Config.class, this::config);
+    wrappedExecutor.<ResourceCommand.Delete>register(ResourceCommand.Delete.class, this::delete);
+    super.init(wrappedExecutor);
   }
 
   @Override
@@ -147,7 +147,7 @@ public abstract class ResourceStateMachine extends StateMachine implements Sessi
   /**
    * Returns the resource configuration.
    */
-  private Properties config(Commit<ResourceCommand.Config> commit) {
+  private Properties config(Commit<ResourceQuery.Config> commit) {
     try {
       return config;
     } finally {

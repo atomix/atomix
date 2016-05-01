@@ -16,8 +16,8 @@
 package io.atomix.group.messaging.internal;
 
 import io.atomix.catalyst.util.Assert;
+import io.atomix.copycat.client.CopycatClient;
 import io.atomix.group.internal.GroupCommands;
-import io.atomix.group.internal.GroupSubmitter;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -28,10 +28,10 @@ import java.util.concurrent.CompletableFuture;
  */
 public class MessageProducerService {
   private final MessageProducerRegistry registry = new MessageProducerRegistry();
-  private final GroupSubmitter submitter;
+  private final CopycatClient client;
 
-  public MessageProducerService(GroupSubmitter submitter) {
-    this.submitter = Assert.notNull(submitter, "submitter");
+  public MessageProducerService(CopycatClient client) {
+    this.client = Assert.notNull(client, "client");
   }
 
   /**
@@ -50,7 +50,7 @@ public class MessageProducerService {
    * @return A completable future to be completed once the message has been sent.
    */
   public CompletableFuture<Void> send(GroupCommands.Message message) {
-    return submitter.submit(message);
+    return client.submit(message);
   }
 
   /**

@@ -69,7 +69,7 @@ public class DistributedQueue<T> extends AbstractResource<DistributedQueue<T>> {
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Boolean> add(T value) {
-    return submit(new QueueCommands.Add(value));
+    return client.submit(new QueueCommands.Add(value));
   }
 
   /**
@@ -79,7 +79,7 @@ public class DistributedQueue<T> extends AbstractResource<DistributedQueue<T>> {
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Boolean> offer(T value) {
-    return submit(new QueueCommands.Offer(value));
+    return client.submit(new QueueCommands.Offer(value));
   }
 
   /**
@@ -89,7 +89,7 @@ public class DistributedQueue<T> extends AbstractResource<DistributedQueue<T>> {
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<T> peek() {
-    return submit(new QueueCommands.Peek()).thenApply(v -> (T) v);
+    return client.submit(new QueueCommands.Peek()).thenApply(v -> (T) v);
   }
 
   /**
@@ -99,7 +99,7 @@ public class DistributedQueue<T> extends AbstractResource<DistributedQueue<T>> {
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<T> poll() {
-    return submit(new QueueCommands.Poll()).thenApply(v -> (T) v);
+    return client.submit(new QueueCommands.Poll()).thenApply(v -> (T) v);
   }
 
   /**
@@ -109,7 +109,7 @@ public class DistributedQueue<T> extends AbstractResource<DistributedQueue<T>> {
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<T> element() {
-    return submit(new QueueCommands.Element()).thenApply(v -> (T) v);
+    return client.submit(new QueueCommands.Element()).thenApply(v -> (T) v);
   }
 
   /**
@@ -119,7 +119,7 @@ public class DistributedQueue<T> extends AbstractResource<DistributedQueue<T>> {
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<T> remove() {
-    return submit(new QueueCommands.Remove()).thenApply(v -> (T) v);
+    return client.submit(new QueueCommands.Remove()).thenApply(v -> (T) v);
   }
 
   /**
@@ -129,7 +129,7 @@ public class DistributedQueue<T> extends AbstractResource<DistributedQueue<T>> {
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Boolean> remove(T value) {
-    return submit(new QueueCommands.Remove(value)).thenApply(v -> (boolean) v);
+    return client.submit(new QueueCommands.Remove(value)).thenApply(v -> (boolean) v);
   }
 
   /**
@@ -139,7 +139,7 @@ public class DistributedQueue<T> extends AbstractResource<DistributedQueue<T>> {
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Boolean> contains(Object value) {
-    return submit(new QueueCommands.Contains(value));
+    return client.submit(new QueueCommands.Contains(value));
   }
 
   /**
@@ -150,7 +150,7 @@ public class DistributedQueue<T> extends AbstractResource<DistributedQueue<T>> {
    * @return A completable future to be completed with the result once complete.
    */
   public CompletableFuture<Boolean> contains(Object value, ReadConsistency consistency) {
-    return submit(new QueueCommands.Contains(value), consistency);
+    return client.submit(new QueueCommands.Contains(value, consistency.level()));
   }
 
   /**
@@ -159,7 +159,7 @@ public class DistributedQueue<T> extends AbstractResource<DistributedQueue<T>> {
    * @return A completable future to be completed with the set count.
    */
   public CompletableFuture<Integer> size() {
-    return submit(new QueueCommands.Size());
+    return client.submit(new QueueCommands.Size());
   }
 
   /**
@@ -169,7 +169,7 @@ public class DistributedQueue<T> extends AbstractResource<DistributedQueue<T>> {
    * @return A completable future to be completed with the set count.
    */
   public CompletableFuture<Integer> size(ReadConsistency consistency) {
-    return submit(new QueueCommands.Size(), consistency);
+    return client.submit(new QueueCommands.Size(consistency.level()));
   }
 
   /**
@@ -178,7 +178,7 @@ public class DistributedQueue<T> extends AbstractResource<DistributedQueue<T>> {
    * @return A completable future to be completed with a boolean value indicating whether the set is empty.
    */
   public CompletableFuture<Boolean> isEmpty() {
-    return submit(new QueueCommands.IsEmpty());
+    return client.submit(new QueueCommands.IsEmpty());
   }
 
   /**
@@ -188,7 +188,7 @@ public class DistributedQueue<T> extends AbstractResource<DistributedQueue<T>> {
    * @return A completable future to be completed with a boolean value indicating whether the set is empty.
    */
   public CompletableFuture<Boolean> isEmpty(ReadConsistency consistency) {
-    return submit(new QueueCommands.IsEmpty(), consistency);
+    return client.submit(new QueueCommands.IsEmpty(consistency.level()));
   }
 
   /**
@@ -197,7 +197,7 @@ public class DistributedQueue<T> extends AbstractResource<DistributedQueue<T>> {
    * @return A completable future to be completed once the operation is complete.
    */
   public CompletableFuture<Void> clear() {
-    return submit(new QueueCommands.Clear());
+    return client.submit(new QueueCommands.Clear());
   }
 
 }

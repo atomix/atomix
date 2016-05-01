@@ -78,13 +78,30 @@ public class ValueCommands {
    * Abstract value query.
    */
   public static abstract class ValueQuery<V> implements Query<V>, CatalystSerializable {
+    private ConsistencyLevel consistency;
 
-    @Override
-    public void writeObject(BufferOutput<?> bufferOutput, Serializer serializer) {
+    protected ValueQuery() {
+    }
+
+    protected ValueQuery(ConsistencyLevel consistency) {
+      this.consistency = consistency;
     }
 
     @Override
-    public void readObject(BufferInput<?> bufferInput, Serializer serializer) {
+    public void writeObject(BufferOutput<?> output, Serializer serializer) {
+      if (consistency != null) {
+        output.writeByte(consistency.ordinal());
+      } else {
+        output.writeByte(-1);
+      }
+    }
+
+    @Override
+    public void readObject(BufferInput<?> input, Serializer serializer) {
+      int ordinal = input.readByte();
+      if (ordinal != -1) {
+        consistency = ConsistencyLevel.values()[ordinal];
+      }
     }
   }
 
@@ -92,6 +109,12 @@ public class ValueCommands {
    * Get query.
    */
   public static class Get<T> extends ValueQuery<T> {
+    public Get() {
+    }
+
+    public Get(ConsistencyLevel consistency) {
+      super(consistency);
+    }
   }
 
   /**
