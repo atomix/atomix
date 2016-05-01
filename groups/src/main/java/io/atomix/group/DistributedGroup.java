@@ -481,6 +481,8 @@ public interface DistributedGroup extends Resource<DistributedGroup> {
    */
   CompletableFuture<LocalMember> join(String memberId);
 
+  CompletableFuture<LocalMember> join(String memberId, Object metadata);
+
   /**
    * Adds a listener for members joining the group.
    * <p>

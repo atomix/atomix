@@ -15,6 +15,7 @@
  */
 package io.atomix.group;
 
+import io.atomix.catalyst.transport.Address;
 import io.atomix.group.messaging.MessageFailedException;
 import io.atomix.group.messaging.MessageProducer;
 import io.atomix.testing.AbstractCopycatTest;
@@ -332,6 +333,26 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     await(10000, 3);
   }
 
+  public void testMetadataGetsSubmitted() throws Throwable {
+    createServers(3);
+
+    final Address something = new Address("localhost", 1337);
+    DistributedGroup group = createResource(new DistributedGroup.Options());
+
+    group.onJoin(ignore -> {
+      threadAssertEquals(group.members().size(), 1);
+      group.members().forEach(member -> {
+        threadAssertTrue(member.metadata().isPresent());
+        final Address meta = member.<Address>metadata().get();
+        threadAssertEquals(meta, something);
+      });
+      resume();
+    });
+
+    group.join(null, something).get(10, TimeUnit.SECONDS);
+
+    await(5000, 1);
+  }
   /**
    * Tests that a message is failed when a member leaves before the message is processed.
    */
