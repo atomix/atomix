@@ -54,6 +54,16 @@ public interface GroupMember {
    */
   MessageClient messaging();
 
+  /**
+   * Returns the metadata associated with this member.
+   * <p>
+   * Metadata is provided when the member {@link DistributedGroup#join(Object) join}s the group. If metadata was
+   * provided by the member when it joined the group, it is guaranteed to be visible to all nodes once the member
+   * has been added to the group.
+   *
+   * @param <T> The metadata type.
+   * @return The member metadata.
+   */
   <T> Optional<T> metadata();
 
 }
