@@ -15,6 +15,7 @@
  */
 package io.atomix.concurrent;
 
+import io.atomix.catalyst.util.concurrent.BlockingFuture;
 import io.atomix.concurrent.internal.LockCommands;
 import io.atomix.concurrent.util.DistributedLockFactory;
 import io.atomix.copycat.client.CopycatClient;
@@ -204,7 +205,7 @@ public class DistributedLock extends AbstractResource<DistributedLock> {
    * @return A completable future to be completed once the lock has been acquired.
    */
   public CompletableFuture<Long> lock() {
-    CompletableFuture<Long> future = new CompletableFuture<>();
+    CompletableFuture<Long> future = new BlockingFuture<>();
     int id = this.id.incrementAndGet();
     futures.put(id, future);
     client.submit(new LockCommands.Lock(id, -1)).whenComplete((result, error) -> {
@@ -258,7 +259,7 @@ public class DistributedLock extends AbstractResource<DistributedLock> {
    * @return A completable future to be completed with a boolean indicating whether the lock was acquired.
    */
   public CompletableFuture<Long> tryLock() {
-    CompletableFuture<Long> future = new CompletableFuture<>();
+    CompletableFuture<Long> future = new BlockingFuture<>();
     int id = this.id.incrementAndGet();
     futures.put(id, future);
     client.submit(new LockCommands.Lock(id, 0)).whenComplete((result, error) -> {
@@ -320,7 +321,7 @@ public class DistributedLock extends AbstractResource<DistributedLock> {
    * @return A completable future to be completed with a value indicating whether the lock was acquired.
    */
   public CompletableFuture<Long> tryLock(Duration timeout) {
-    CompletableFuture<Long> future = new CompletableFuture<>();
+    CompletableFuture<Long> future = new BlockingFuture<>();
     int id = this.id.incrementAndGet();
     futures.put(id, future);
     client.submit(new LockCommands.Lock(id, timeout.toMillis())).whenComplete((result, error) -> {
