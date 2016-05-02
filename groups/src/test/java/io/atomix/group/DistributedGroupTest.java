@@ -144,6 +144,32 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
   }
 
   /**
+   * Tests that a new leader is elected when a persistent member is expired.
+   */
+  public void testPersistentExpireElectLeader() throws Throwable {
+    createServers(3);
+
+    DistributedGroup group1 = createResource();
+    DistributedGroup group2 = createResource();
+
+    group1.election().onElection(term -> {
+      if (term.leader().id().equals("a")) {
+        group1.close().thenRun(this::resume);
+      }
+    });
+    group2.election().onElection(term -> {
+      if (term.leader().id().equals("b")) {
+        resume();
+      }
+    });
+
+    group1.join("a").join();
+    group2.join("b").join();
+
+    await(5000, 2);
+  }
+
+  /**
    * Tests electing a group leader.
    */
   public void testElectLeave() throws Throwable {
