@@ -80,7 +80,7 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
         }
 
         // If the member is the current leader, resign its leadership.
-        if (leader.equals(member)) {
+        if (leader != null && leader.equals(member)) {
           resignLeader(false);
           elect = true;
         }
