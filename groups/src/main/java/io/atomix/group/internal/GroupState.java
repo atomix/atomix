@@ -50,6 +50,7 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
     sessions.remove(session.id());
 
     // Iterate through all open members.
+    boolean elect = false;
     Iterator<MemberState> iterator = members.iterator();
     while (iterator.hasNext()) {
       // If the member is associated with the closed session, remove it from the members list.
@@ -77,13 +78,18 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
             });
           }
         }
+
+        // If the member is the current leader, resign its leadership.
+        if (leader != null && leader.equals(member)) {
+          resignLeader(false);
+          elect = true;
+        }
       }
     }
 
-    // If the current leader is one of the members that left the cluster, resign the leadership
-    // and elect a new leader. This must be done after all the removed members are removed from internal state.
-    if (leader != null && left.containsKey(leader.index())) {
-      resignLeader(false);
+    // If a new election needs to take place, increment the term and elect a new leader. This must be done
+    // after all removed members are removed from the internal state to ensure a member being removed is not elected.
+    if (elect) {
       incrementTerm();
       electLeader();
     }
@@ -96,6 +102,7 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
       sessions.values().forEach(s -> s.leave(member));
     });
   }
+
   /**
    * Increments the term.
    */
