@@ -102,6 +102,7 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
       sessions.values().forEach(s -> s.leave(member));
     });
   }
+
   /**
    * Increments the term.
    */

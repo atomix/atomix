@@ -170,6 +170,41 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
   }
 
   /**
+   * Tests that a persistent member is removed from the members list.
+   */
+  public void testPersistentMemberLeave() throws Throwable {
+    createServers(3);
+
+    DistributedGroup group1 = createResource();
+    DistributedGroup group2 = createResource();
+
+    group1.onJoin(member -> {
+      if (group1.members().size() == 2) {
+        resume();
+      }
+    });
+    group2.onJoin(member -> {
+      if (group1.members().size() == 2) {
+        resume();
+      }
+    });
+
+    group1.join("a").join();
+    group2.join("b").join();
+
+    await(5000, 2);
+
+    group2.onLeave(member -> {
+      threadAssertEquals(group2.members().size(), 1);
+      resume();
+    });
+
+    group1.close().thenRun(this::resume);
+
+    await(5000, 2);
+  }
+
+  /**
    * Tests electing a group leader.
    */
   public void testElectLeave() throws Throwable {
@@ -177,7 +212,6 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
 
     DistributedGroup group1 = createResource();
     DistributedGroup group2 = createResource();
-
 
     LocalMember localMember2 = group2.join().get();
     group2.election().onElection(term -> {
