@@ -184,7 +184,7 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
       }
     });
     group2.onJoin(member -> {
-      if (group1.members().size() == 2) {
+      if (group2.members().size() == 2) {
         resume();
       }
     });
