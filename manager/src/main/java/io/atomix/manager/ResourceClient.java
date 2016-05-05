@@ -23,6 +23,7 @@ import io.atomix.catalyst.util.ConfigurationException;
 import io.atomix.catalyst.util.concurrent.Futures;
 import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.copycat.client.ConnectionStrategies;
+import io.atomix.copycat.client.ConnectionStrategy;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.copycat.client.RecoveryStrategies;
 import io.atomix.copycat.client.ServerSelectionStrategies;
@@ -353,6 +354,18 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
     public Builder withTransport(Transport transport) {
       clientBuilder.withTransport(transport);
       this.transport = transport;
+      return this;
+    }
+
+    /**
+     * Sets the Atomix connection strategy.
+     *
+     * @param connectionStrategy The client connection strategy.
+     * @return The Atomix builder.
+     * @throws NullPointerException If the {@code connection strategy} is {@code null}
+     */
+    public Builder withConnectionStrategy(ConnectionStrategy connectionStrategy) {
+      clientBuilder.withConnectionStrategy(connectionStrategy);
       return this;
     }
 
