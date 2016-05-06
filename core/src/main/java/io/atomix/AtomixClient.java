@@ -20,6 +20,7 @@ import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.PropertiesReader;
+import io.atomix.copycat.client.ConnectionStrategy;
 import io.atomix.manager.ResourceClient;
 import io.atomix.manager.ResourceServer;
 import io.atomix.manager.options.ClientOptions;
@@ -202,6 +203,18 @@ public class AtomixClient extends Atomix {
      */
     public Builder withTransport(Transport transport) {
       builder.withTransport(transport);
+      return this;
+    }
+
+    /**
+     * Sets the Atomix connection strategy.
+     *
+     * @param connectionStrategy The Atomix connection strategy.
+     * @return The Atomix builder.
+     * @throws NullPointerException If the {@code connection strategy} is {@code null}
+     */
+    public Builder withConnectionStrategy(ConnectionStrategy connectionStrategy) {
+      builder.withConnectionStrategy(connectionStrategy);
       return this;
     }
 
