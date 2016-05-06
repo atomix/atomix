@@ -56,7 +56,6 @@ public class ServerOptions extends AtomixOptions {
   private static final StorageLevel DEFAULT_STORAGE_LEVEL = StorageLevel.DISK;
   private static final int DEFAULT_MAX_SEGMENT_SIZE = 1024 * 1024 * 32;
   private static final int DEFAULT_MAX_ENTRIES_PER_SEGMENT = 1024 * 1024;
-  private static final int DEFAULT_MAX_SNAPSHOT_SIZE = 1024 * 1024 * 32;
   private static final boolean DEFAULT_RETAIN_STALE_SNAPSHOTS = false;
   private static final int DEFAULT_COMPACTION_THREADS = Runtime.getRuntime().availableProcessors() / 2;
   private static final Duration DEFAULT_MINOR_COMPACTION_INTERVAL = Duration.ofMinutes(1);
