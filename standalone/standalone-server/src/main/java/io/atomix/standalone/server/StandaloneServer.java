@@ -19,7 +19,6 @@ import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.util.PropertiesReader;
 import io.atomix.manager.ResourceServer;
 import net.sourceforge.argparse4j.ArgumentParsers;
-import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
@@ -38,16 +37,20 @@ public class StandaloneServer {
     ArgumentParser parser = ArgumentParsers.newArgumentParser("AtomixServer")
       .defaultHelp(true)
       .description("Atomix server");
-    parser.addArgument("address")
+    parser.addArgument("-address")
       .required(true)
+      .metavar("HOST:PORT")
       .help("The server address");
     parser.addArgument("-bootstrap")
       .nargs("*")
+      .metavar("HOST:PORT")
       .help("Bootstraps a new cluster");
     parser.addArgument("-join")
       .nargs("*")
+      .metavar("HOST:PORT")
       .help("Joins an existing cluster");
     parser.addArgument("-config")
+      .metavar("FILE")
       .help("Atomix configuration file");
 
     Namespace ns = null;
@@ -61,10 +64,13 @@ public class StandaloneServer {
     String address = ns.getString("address");
     String config = ns.getString("config");
 
-    Properties properties = PropertiesReader.load(config).properties();
-    ResourceServer.Builder builder = ResourceServer.builder(new Address(address), properties);
-
-    ResourceServer server = builder.build();
+    ResourceServer server;
+    if (config != null) {
+      Properties properties = PropertiesReader.load(config).properties();
+      server = ResourceServer.builder(new Address(address), properties).build();
+    } else {
+      server = ResourceServer.builder(new Address(address)).build();
+    }
 
     List<String> bootstrap = ns.getList("bootstrap");
     if (bootstrap != null) {
