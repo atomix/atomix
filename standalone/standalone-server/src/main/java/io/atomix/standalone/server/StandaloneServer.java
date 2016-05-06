@@ -46,7 +46,7 @@ public class StandaloneServer {
       .metavar("HOST:PORT")
       .help("Bootstraps a new cluster");
     parser.addArgument("-join")
-      .nargs("*")
+      .nargs("+")
       .metavar("HOST:PORT")
       .help("Joins an existing cluster");
     parser.addArgument("-config")
