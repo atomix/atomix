@@ -156,7 +156,7 @@
           <doctitle>Atomix API Reference (${jv})</doctitle>
           <windowtitle>Atomix API Reference (${jv})</windowtitle>
           <aggregate>true</aggregate>
-          <excludePackageNames>io.atomix.examples*:*.internal*:io.atomix.testing*:*.config</excludePackageNames>
+          <excludePackageNames>io.atomix.examples*:*.internal*:*.config</excludePackageNames>
           <additionalparam>
             -Xdoclint:none
             -notimestamp
@@ -167,6 +167,7 @@
             -group "Distributed resources" io.atomix.variables:io.atomix.collections:io.atomix.group:io.atomix.concurrent
             -group "Resource management" io.atomix.manager
             -group "Resource API" io.atomix.resource
+            -group "Test API" io.atomix.testing
           </additionalparam>
         </configuration>
       </plugin>
