@@ -46,7 +46,7 @@ public class ClientOptionsTest {
    */
   public void testProperties() {
     Properties properties = new Properties();
-    properties.setProperty("client.transport", "io.atomix.catalyst.transport.NettyTransport");
+    properties.setProperty("client.transport", "io.atomix.catalyst.transport.netty.NettyTransport");
     properties.setProperty("client.transport.threads", "1");
     properties.setProperty("cluster.seed.1", "localhost:5000");
     properties.setProperty("cluster.seed.2", "localhost:5001");

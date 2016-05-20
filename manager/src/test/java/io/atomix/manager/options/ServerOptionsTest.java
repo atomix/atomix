@@ -67,7 +67,7 @@ public class ServerOptionsTest {
     properties.setProperty("cluster.seed.1", "localhost:5000");
     properties.setProperty("cluster.seed.2", "localhost:5001");
     properties.setProperty("cluster.seed.3", "localhost:5002");
-    properties.setProperty("server.transport", "io.atomix.catalyst.transport.NettyTransport");
+    properties.setProperty("server.transport", "io.atomix.catalyst.transport.netty.NettyTransport");
     properties.setProperty("server.transport.threads", "1");
     properties.setProperty("raft.electionTimeout", "200");
     properties.setProperty("raft.heartbeatInterval", "100");

@@ -607,7 +607,7 @@ public final class ResourceServer {
      * Builds the server.
      * <p>
      * If no {@link Transport} was configured for the server, the builder will attempt to create a
-     * {@code NettyTransport} instance. If {@code io.atomix.catalyst.transport.NettyTransport} is not available
+     * {@code NettyTransport} instance. If {@code io.atomix.catalyst.transport.netty.NettyTransport} is not available
      * on the classpath, a {@link ConfigurationException} will be thrown.
      * <p>
      * Once the server is built, it is not yet connected to the cluster. To connect the server to the cluster,
