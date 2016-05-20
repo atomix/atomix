@@ -17,8 +17,8 @@ package io.atomix.resource;
 
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.util.Assert;
-import io.atomix.catalyst.util.Listener;
-import io.atomix.catalyst.util.concurrent.ThreadContext;
+import io.atomix.catalyst.concurrent.Listener;
+import io.atomix.catalyst.concurrent.ThreadContext;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.internal.ResourceCommand;
 import io.atomix.resource.internal.ResourceCopycatClient;

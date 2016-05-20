@@ -15,7 +15,7 @@
  */
 package io.atomix.concurrent.internal;
 
-import io.atomix.catalyst.util.concurrent.Scheduled;
+import io.atomix.catalyst.concurrent.Scheduled;
 import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.session.ServerSession;
 import io.atomix.copycat.server.session.SessionListener;

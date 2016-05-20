@@ -16,15 +16,12 @@
 package io.atomix;
 
 import io.atomix.catalyst.transport.Address;
-import io.atomix.catalyst.transport.LocalServerRegistry;
-import io.atomix.catalyst.transport.LocalTransport;
+import io.atomix.catalyst.transport.local.LocalServerRegistry;
+import io.atomix.catalyst.transport.local.LocalTransport;
 import io.atomix.copycat.server.storage.Storage;
 import io.atomix.copycat.server.storage.StorageLevel;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceType;
-import net.jodah.concurrentunit.ConcurrentTestCase;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +29,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
+
+import net.jodah.concurrentunit.ConcurrentTestCase;
+
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
 
 /**
  * Abstract Atomix test.

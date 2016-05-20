@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.resource.internal;
+package io.atomix.manager.resource.internal;
 
+import io.atomix.catalyst.concurrent.Futures;
+import io.atomix.catalyst.concurrent.Listener;
+import io.atomix.catalyst.concurrent.ThreadContext;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.Assert;
-import io.atomix.catalyst.util.Listener;
-import io.atomix.catalyst.util.concurrent.Futures;
-import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.copycat.Command;
 import io.atomix.copycat.Query;
 import io.atomix.copycat.client.CopycatClient;
@@ -30,6 +30,7 @@ import io.atomix.manager.internal.CloseResource;
 import io.atomix.manager.internal.DeleteResource;
 import io.atomix.manager.internal.GetResource;
 import io.atomix.resource.Resource;
+import io.atomix.resource.internal.ResourceCommand;
 
 import java.util.Collection;
 import java.util.HashSet;

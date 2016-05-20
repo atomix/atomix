@@ -15,7 +15,7 @@
  */
 package io.atomix.group.messaging.internal;
 
-import io.atomix.catalyst.util.concurrent.BlockingFuture;
+import io.atomix.catalyst.concurrent.BlockingFuture;
 import io.atomix.group.internal.GroupCommands;
 import io.atomix.group.messaging.MessageFailedException;
 import io.atomix.group.messaging.MessageProducer;

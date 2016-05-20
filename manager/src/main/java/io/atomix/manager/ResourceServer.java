@@ -15,22 +15,21 @@
  */
 package io.atomix.manager;
 
+import io.atomix.catalyst.concurrent.ThreadContext;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.ConfigurationException;
-import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.copycat.server.CopycatServer;
 import io.atomix.copycat.server.cluster.Member;
 import io.atomix.copycat.server.storage.Storage;
-import io.atomix.manager.options.ServerOptions;
-import io.atomix.manager.internal.ResourceManagerException;
 import io.atomix.manager.internal.ResourceManagerState;
+import io.atomix.manager.options.ServerOptions;
 import io.atomix.manager.util.ResourceManagerTypeResolver;
 import io.atomix.resource.Resource;
+import io.atomix.resource.ResourceRegistry;
 import io.atomix.resource.ResourceType;
-import io.atomix.resource.internal.ResourceRegistry;
 
 import java.time.Duration;
 import java.util.Arrays;

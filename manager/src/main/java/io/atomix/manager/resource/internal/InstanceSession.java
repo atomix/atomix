@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.resource.internal;
+package io.atomix.manager.resource.internal;
 
 import io.atomix.catalyst.util.Assert;
-import io.atomix.catalyst.util.Listener;
-import io.atomix.catalyst.util.concurrent.ThreadContext;
+import io.atomix.catalyst.concurrent.Listener;
+import io.atomix.catalyst.concurrent.ThreadContext;
 import io.atomix.copycat.session.Session;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceStateMachine;

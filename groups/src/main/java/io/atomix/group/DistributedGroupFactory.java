@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.group.internal;
+package io.atomix.group;
 
 import io.atomix.catalyst.serializer.SerializableTypeResolver;
 import io.atomix.copycat.client.CopycatClient;
-import io.atomix.group.DistributedGroup;
 import io.atomix.group.internal.MembershipGroup;
 import io.atomix.group.internal.GroupCommands;
 import io.atomix.group.internal.GroupState;
+import io.atomix.group.internal.GroupCommands.TypeResolver;
 import io.atomix.resource.ResourceFactory;
 import io.atomix.resource.ResourceStateMachine;
 

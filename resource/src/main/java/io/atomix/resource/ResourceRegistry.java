@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.resource.internal;
+package io.atomix.resource;
 
 import io.atomix.catalyst.util.Assert;
-import io.atomix.resource.ResourceType;
 
 import java.util.Collection;
 import java.util.Map;

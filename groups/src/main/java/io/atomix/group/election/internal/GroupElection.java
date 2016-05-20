@@ -16,8 +16,8 @@
 package io.atomix.group.election.internal;
 
 import io.atomix.catalyst.util.Assert;
-import io.atomix.catalyst.util.Listener;
-import io.atomix.catalyst.util.Listeners;
+import io.atomix.catalyst.concurrent.Listener;
+import io.atomix.catalyst.concurrent.Listeners;
 import io.atomix.group.GroupMember;
 import io.atomix.group.election.Election;
 import io.atomix.group.election.Term;
