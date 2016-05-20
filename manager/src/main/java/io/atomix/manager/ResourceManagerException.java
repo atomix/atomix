@@ -13,9 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.manager.internal;
+package io.atomix.manager;
 
-import io.atomix.AtomixException;
 
 /**
  * Atomix resource manager exception.

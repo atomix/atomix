@@ -17,7 +17,7 @@ package io.atomix.examples.election;
 
 import io.atomix.AtomixReplica;
 import io.atomix.catalyst.transport.Address;
-import io.atomix.catalyst.transport.NettyTransport;
+import io.atomix.catalyst.transport.netty.NettyTransport;
 import io.atomix.copycat.server.storage.Storage;
 import io.atomix.group.DistributedGroup;
 import io.atomix.group.LocalMember;

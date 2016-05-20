@@ -15,8 +15,8 @@
  */
 package io.atomix.group.internal;
 
-import io.atomix.catalyst.util.Listener;
-import io.atomix.catalyst.util.Listeners;
+import io.atomix.catalyst.concurrent.Listener;
+import io.atomix.catalyst.concurrent.Listeners;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.group.DistributedGroup;
 import io.atomix.group.GroupMember;

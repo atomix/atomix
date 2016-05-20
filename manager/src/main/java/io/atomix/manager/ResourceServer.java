@@ -15,22 +15,21 @@
  */
 package io.atomix.manager;
 
+import io.atomix.catalyst.concurrent.ThreadContext;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.ConfigurationException;
-import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.copycat.server.CopycatServer;
 import io.atomix.copycat.server.cluster.Member;
 import io.atomix.copycat.server.storage.Storage;
-import io.atomix.manager.options.ServerOptions;
-import io.atomix.manager.internal.ResourceManagerException;
 import io.atomix.manager.internal.ResourceManagerState;
+import io.atomix.manager.options.ServerOptions;
 import io.atomix.manager.util.ResourceManagerTypeResolver;
 import io.atomix.resource.Resource;
+import io.atomix.resource.ResourceRegistry;
 import io.atomix.resource.ResourceType;
-import io.atomix.resource.internal.ResourceRegistry;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -608,7 +607,7 @@ public final class ResourceServer {
      * Builds the server.
      * <p>
      * If no {@link Transport} was configured for the server, the builder will attempt to create a
-     * {@code NettyTransport} instance. If {@code io.atomix.catalyst.transport.NettyTransport} is not available
+     * {@code NettyTransport} instance. If {@code io.atomix.catalyst.transport.netty.NettyTransport} is not available
      * on the classpath, a {@link ConfigurationException} will be thrown.
      * <p>
      * Once the server is built, it is not yet connected to the cluster. To connect the server to the cluster,

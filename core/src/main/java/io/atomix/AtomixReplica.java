@@ -15,33 +15,48 @@
  */
 package io.atomix;
 
+import io.atomix.catalyst.concurrent.Listener;
+import io.atomix.catalyst.concurrent.ThreadContext;
 import io.atomix.catalyst.serializer.Serializer;
-import io.atomix.catalyst.transport.*;
+import io.atomix.catalyst.transport.Address;
+import io.atomix.catalyst.transport.Client;
+import io.atomix.catalyst.transport.Connection;
+import io.atomix.catalyst.transport.Server;
+import io.atomix.catalyst.transport.Transport;
+import io.atomix.catalyst.transport.local.LocalServerRegistry;
+import io.atomix.catalyst.transport.local.LocalTransport;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.ConfigurationException;
-import io.atomix.catalyst.util.Listener;
-import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.cluster.ClusterManager;
 import io.atomix.copycat.Command;
 import io.atomix.copycat.Query;
-import io.atomix.copycat.client.*;
+import io.atomix.copycat.client.ConnectionStrategies;
+import io.atomix.copycat.client.CopycatClient;
+import io.atomix.copycat.client.RecoveryStrategies;
+import io.atomix.copycat.client.ServerSelectionStrategies;
+import io.atomix.copycat.client.ServerSelectionStrategy;
 import io.atomix.copycat.server.CopycatServer;
 import io.atomix.copycat.server.cluster.Cluster;
 import io.atomix.copycat.server.cluster.Member;
 import io.atomix.copycat.server.storage.Storage;
 import io.atomix.copycat.session.Session;
 import io.atomix.manager.ResourceClient;
+import io.atomix.manager.ResourceManagerException;
 import io.atomix.manager.ResourceServer;
-import io.atomix.manager.internal.ResourceManagerException;
 import io.atomix.manager.internal.ResourceManagerState;
 import io.atomix.manager.options.ServerOptions;
 import io.atomix.manager.util.ResourceManagerTypeResolver;
 import io.atomix.resource.Resource;
+import io.atomix.resource.ResourceRegistry;
 import io.atomix.resource.ResourceType;
-import io.atomix.resource.internal.ResourceRegistry;
 
 import java.time.Duration;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -824,7 +839,7 @@ public final class AtomixReplica extends Atomix {
      * Builds the replica.
      * <p>
      * If no {@link Transport} was configured for the replica, the builder will attempt to create a
-     * {@code NettyTransport} instance. If {@code io.atomix.catalyst.transport.NettyTransport} is not available
+     * {@code NettyTransport} instance. If {@code io.atomix.catalyst.transport.netty.NettyTransport} is not available
      * on the classpath, a {@link ConfigurationException} will be thrown.
      * <p>
      * Once the replica is built, it is not yet connected to the cluster. To connect the replica to the cluster,
@@ -838,7 +853,7 @@ public final class AtomixReplica extends Atomix {
       // If no transport was configured by the user, attempt to load the Netty transport.
       if (serverTransport == null) {
         try {
-          serverTransport = (Transport) Class.forName("io.atomix.catalyst.transport.NettyTransport").newInstance();
+          serverTransport = (Transport) Class.forName("io.atomix.catalyst.transport.netty.NettyTransport").newInstance();
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
           throw new ConfigurationException("transport not configured");
         }

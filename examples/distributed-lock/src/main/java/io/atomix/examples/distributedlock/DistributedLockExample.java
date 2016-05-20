@@ -17,7 +17,7 @@ package io.atomix.examples.distributedlock;
 
 import io.atomix.AtomixClient;
 import io.atomix.catalyst.transport.Address;
-import io.atomix.catalyst.transport.NettyTransport;
+import io.atomix.catalyst.transport.netty.NettyTransport;
 import io.atomix.concurrent.DistributedLock;
 
 import java.util.ArrayList;

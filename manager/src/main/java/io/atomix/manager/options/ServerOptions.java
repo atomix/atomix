@@ -48,7 +48,7 @@ public class ServerOptions extends AtomixOptions {
   public static final String MAJOR_COMPACTION_INTERVAL = "storage.compaction.major";
   public static final String COMPACTION_THRESHOLD = "storage.compaction.threshold";
 
-  private static final String DEFAULT_TRANSPORT = "io.atomix.catalyst.transport.NettyTransport";
+  private static final String DEFAULT_TRANSPORT = "io.atomix.catalyst.transport.netty.NettyTransport";
   private static final Duration DEFAULT_ELECTION_TIMEOUT = Duration.ofMillis(500);
   private static final Duration DEFAULT_HEARTBEAT_INTERVAL = Duration.ofMillis(250);
   private static final Duration DEFAULT_SESSION_TIMEOUT = Duration.ofSeconds(5);

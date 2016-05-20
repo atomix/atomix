@@ -15,10 +15,9 @@
  */
 package io.atomix;
 
+import io.atomix.catalyst.concurrent.ThreadContext;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.util.Assert;
-import io.atomix.catalyst.util.Managed;
-import io.atomix.catalyst.util.concurrent.ThreadContext;
 import io.atomix.collections.DistributedMap;
 import io.atomix.collections.DistributedMultiMap;
 import io.atomix.collections.DistributedQueue;
