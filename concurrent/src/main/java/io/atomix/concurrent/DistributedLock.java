@@ -15,7 +15,7 @@
  */
 package io.atomix.concurrent;
 
-import io.atomix.catalyst.util.concurrent.BlockingFuture;
+import io.atomix.catalyst.concurrent.BlockingFuture;
 import io.atomix.concurrent.internal.LockCommands;
 import io.atomix.concurrent.util.DistributedLockFactory;
 import io.atomix.copycat.client.CopycatClient;

@@ -20,8 +20,8 @@ import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.ConfigurationException;
-import io.atomix.catalyst.util.concurrent.Futures;
-import io.atomix.catalyst.util.concurrent.ThreadContext;
+import io.atomix.catalyst.concurrent.Futures;
+import io.atomix.catalyst.concurrent.ThreadContext;
 import io.atomix.copycat.client.ConnectionStrategies;
 import io.atomix.copycat.client.ConnectionStrategy;
 import io.atomix.copycat.client.CopycatClient;
@@ -29,14 +29,13 @@ import io.atomix.copycat.client.RecoveryStrategies;
 import io.atomix.copycat.client.ServerSelectionStrategies;
 import io.atomix.manager.internal.GetResourceKeys;
 import io.atomix.manager.internal.ResourceExists;
-import io.atomix.manager.internal.ResourceManagerException;
 import io.atomix.manager.options.ClientOptions;
+import io.atomix.manager.resource.internal.InstanceClient;
+import io.atomix.manager.resource.internal.ResourceInstance;
 import io.atomix.manager.util.ResourceManagerTypeResolver;
 import io.atomix.resource.Resource;
+import io.atomix.resource.ResourceRegistry;
 import io.atomix.resource.ResourceType;
-import io.atomix.resource.internal.InstanceClient;
-import io.atomix.resource.internal.ResourceInstance;
-import io.atomix.resource.internal.ResourceRegistry;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -438,7 +437,7 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
     public ResourceClient build() {
       if (transport == null) {
         try {
-          transport = (Transport) Class.forName("io.atomix.catalyst.transport.NettyTransport").newInstance();
+          transport = (Transport) Class.forName("io.atomix.catalyst.transport.netty.NettyTransport").newInstance();
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
           throw new ConfigurationException("transport not configured");
         }

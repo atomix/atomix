@@ -15,7 +15,7 @@
  */
 package io.atomix.group.messaging.internal;
 
-import io.atomix.catalyst.util.Listener;
+import io.atomix.catalyst.concurrent.Listener;
 import io.atomix.group.messaging.Message;
 import io.atomix.group.messaging.MessageConsumer;
 

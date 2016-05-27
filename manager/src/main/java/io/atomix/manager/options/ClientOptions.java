@@ -30,7 +30,7 @@ import java.util.Properties;
 public final class ClientOptions extends AtomixOptions {
   public static final String TRANSPORT = "client.transport";
 
-  private static final String DEFAULT_TRANSPORT = "io.atomix.catalyst.transport.NettyTransport";
+  private static final String DEFAULT_TRANSPORT = "io.atomix.catalyst.transport.netty.NettyTransport";
 
   public ClientOptions(Properties properties) {
     super(properties);

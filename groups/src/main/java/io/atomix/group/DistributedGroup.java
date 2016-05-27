@@ -17,10 +17,9 @@ package io.atomix.group;
 
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.util.Assert;
-import io.atomix.catalyst.util.Listener;
+import io.atomix.catalyst.concurrent.Listener;
 import io.atomix.group.election.Election;
 import io.atomix.group.election.Term;
-import io.atomix.group.internal.DistributedGroupFactory;
 import io.atomix.group.messaging.Message;
 import io.atomix.group.messaging.MessageClient;
 import io.atomix.group.messaging.MessageService;

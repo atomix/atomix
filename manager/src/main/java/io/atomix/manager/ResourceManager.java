@@ -16,7 +16,7 @@
 package io.atomix.manager;
 
 import io.atomix.catalyst.serializer.Serializer;
-import io.atomix.catalyst.util.concurrent.ThreadContext;
+import io.atomix.catalyst.concurrent.ThreadContext;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceType;
 

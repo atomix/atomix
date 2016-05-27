@@ -18,8 +18,8 @@ package io.atomix.manager.util;
 import io.atomix.catalyst.serializer.SerializableTypeResolver;
 import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.manager.internal.*;
+import io.atomix.manager.resource.internal.InstanceTypeResolver;
 import io.atomix.resource.ResourceType;
-import io.atomix.resource.internal.InstanceTypeResolver;
 import io.atomix.resource.internal.ResourceCommand;
 import io.atomix.resource.internal.ResourceQuery;
 

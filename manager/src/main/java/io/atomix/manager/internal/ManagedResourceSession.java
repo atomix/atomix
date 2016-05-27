@@ -15,10 +15,10 @@
  */
 package io.atomix.manager.internal;
 
-import io.atomix.catalyst.util.Listener;
+import io.atomix.catalyst.concurrent.Listener;
 import io.atomix.copycat.server.session.ServerSession;
 import io.atomix.copycat.session.Session;
-import io.atomix.resource.internal.InstanceEvent;
+import io.atomix.manager.resource.internal.InstanceEvent;
 
 import java.util.function.Consumer;
 

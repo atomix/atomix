@@ -15,9 +15,9 @@
  */
 package io.atomix.resource;
 
+import io.atomix.catalyst.concurrent.Scheduled;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.util.Assert;
-import io.atomix.catalyst.util.concurrent.Scheduled;
 import io.atomix.copycat.Operation;
 import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.StateMachineContext;
@@ -26,7 +26,6 @@ import io.atomix.resource.internal.ResourceCommand;
 import io.atomix.resource.internal.ResourceCommit;
 import io.atomix.resource.internal.ResourceOperation;
 import io.atomix.resource.internal.ResourceQuery;
-import org.slf4j.Logger;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -34,6 +33,8 @@ import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import java.util.function.Function;
+
+import org.slf4j.Logger;
 
 /**
  * Custom executor for executing {@link ResourceStateMachine} {@link ResourceOperation operations}.

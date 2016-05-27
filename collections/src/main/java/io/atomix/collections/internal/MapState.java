@@ -16,7 +16,7 @@
 package io.atomix.collections.internal;
 
 import io.atomix.catalyst.util.Assert;
-import io.atomix.catalyst.util.concurrent.Scheduled;
+import io.atomix.catalyst.concurrent.Scheduled;
 import io.atomix.copycat.server.Commit;
 import io.atomix.resource.ResourceStateMachine;
 

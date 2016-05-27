@@ -18,7 +18,7 @@ package io.atomix.manager.internal;
 
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.util.Assert;
-import io.atomix.catalyst.util.concurrent.Scheduled;
+import io.atomix.catalyst.concurrent.Scheduled;
 import io.atomix.copycat.Operation;
 import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.StateMachineContext;

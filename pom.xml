@@ -24,7 +24,6 @@
     <logback.version>1.1.2</logback.version>
     <catalyst.version>1.1.1</catalyst.version>
     <copycat.version>1.1.0</copycat.version>
-
     <maven.source.plugin.version>2.2.1</maven.source.plugin.version>
     <maven.compiler.plugin.version>3.0</maven.compiler.plugin.version>
     <maven.failsafe.plugin.version>2.14</maven.failsafe.plugin.version>
