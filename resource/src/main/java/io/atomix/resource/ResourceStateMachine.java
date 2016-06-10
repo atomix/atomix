@@ -122,6 +122,8 @@ public abstract class ResourceStateMachine extends StateMachine implements Sessi
     executor.serializer().register(ResourceQuery.Config.class, -52);
     executor.serializer().register(ResourceCommand.Delete.class, -53);
 
+    executor.context().sessions().addListener(this);
+
     ResourceStateMachineExecutor wrappedExecutor = new ResourceStateMachineExecutor(executor);
     wrappedExecutor.register(ResourceQuery.Config.class, this::config);
     wrappedExecutor.<ResourceCommand.Delete>register(ResourceCommand.Delete.class, this::delete);

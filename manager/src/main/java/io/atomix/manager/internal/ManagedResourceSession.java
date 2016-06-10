@@ -16,6 +16,7 @@
 package io.atomix.manager.internal;
 
 import io.atomix.catalyst.concurrent.Listener;
+import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.session.ServerSession;
 import io.atomix.copycat.session.Session;
 import io.atomix.manager.resource.internal.InstanceEvent;
@@ -29,10 +30,12 @@ import java.util.function.Consumer;
  */
 final class ManagedResourceSession implements ServerSession {
   private final long resource;
+  final Commit commit;
   private final ServerSession parent;
 
-  public ManagedResourceSession(long resource, ServerSession parent) {
+  public ManagedResourceSession(long resource, Commit commit, ServerSession parent) {
     this.resource = resource;
+    this.commit = commit;
     this.parent = parent;
   }
 

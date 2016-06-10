@@ -16,12 +16,11 @@
 
 package io.atomix.manager.internal;
 
+import io.atomix.catalyst.concurrent.Scheduled;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.util.Assert;
-import io.atomix.catalyst.concurrent.Scheduled;
 import io.atomix.copycat.Operation;
 import io.atomix.copycat.server.Commit;
-import io.atomix.copycat.server.StateMachineContext;
 import io.atomix.copycat.server.StateMachineExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,19 +42,21 @@ import java.util.function.Supplier;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 class ResourceManagerStateMachineExecutor implements StateMachineExecutor {
-  private final StateMachineExecutor parent;
+  final StateMachineExecutor parent;
+  final ResourceManagerStateMachineContext context;
   private final Logger logger;
   private final Map<Class, Function> operations = new HashMap<>();
   private final Set<Scheduled> tasks = new HashSet<>();
 
   ResourceManagerStateMachineExecutor(long resource, StateMachineExecutor parent) {
     this.parent = parent;
+    this.context = new ResourceManagerStateMachineContext(parent.context());
     this.logger = LoggerFactory.getLogger(String.format("%s-%d", getClass().getName(), resource));
   }
 
   @Override
-  public StateMachineContext context() {
-    return parent.context();
+  public ResourceManagerStateMachineContext context() {
+    return context;
   }
 
   @Override
@@ -137,6 +138,7 @@ class ResourceManagerStateMachineExecutor implements StateMachineExecutor {
   @Override
   public void close() {
     tasks.forEach(Scheduled::cancel);
+    context.close();
   }
 
 }
