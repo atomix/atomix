@@ -17,6 +17,8 @@ package io.atomix;
 
 import io.atomix.collections.DistributedMap;
 import io.atomix.collections.DistributedSet;
+import io.atomix.copycat.client.session.ClientSession;
+import io.atomix.resource.Resource;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -62,23 +64,29 @@ public class ResourceRecoveryTest extends AbstractAtomixTest {
     DistributedSet<String> set = atomix.getResource("test-set-" + id, DistributedSet.class).get();
     set.add("Hello world!").get(5, TimeUnit.SECONDS);
 
-    atomix.client.client().recover().whenComplete((result, error) -> {
+    map.onStateChange(state -> {
+      if (state == Resource.State.CONNECTED) {
+        map.get("foo").thenAccept(result -> {
+          threadAssertEquals(result, "Hello world!");
+          resume();
+        });
+      }
+    });
+
+    set.onStateChange(state -> {
+      if (state == Resource.State.CONNECTED) {
+        set.contains("Hello world!").thenAccept(result -> {
+          threadAssertTrue(result);
+          resume();
+        });
+      }
+    });
+
+    ((ClientSession) atomix.client.client().session()).expire().whenComplete((result, error) -> {
       threadAssertNull(error);
       resume();
     });
-    await(10000);
-
-    map.get("foo").thenAccept(result -> {
-      threadAssertEquals(result, "Hello world!");
-      resume();
-    });
-    await(1000);
-
-    set.contains("Hello world!").thenAccept(result -> {
-      threadAssertTrue(result);
-      resume();
-    });
-    await(1000);
+    await(10000, 3);
   }
 
 }
