@@ -9,7 +9,7 @@
 
   <groupId>io.atomix</groupId>
   <artifactId>atomix-parent</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
+  <version>1.0.0-rc8</version>
   <packaging>pom</packaging>
   <name>Atomix Parent Pom</name>
   <description>Distributed coordination framework based on the Raft consensus algorithm.</description>
