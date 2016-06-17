@@ -16,11 +16,14 @@
 package io.atomix.group;
 
 import io.atomix.catalyst.transport.Address;
+import io.atomix.copycat.client.CopycatClient;
+import io.atomix.copycat.client.session.ClientSession;
 import io.atomix.group.messaging.MessageFailedException;
 import io.atomix.group.messaging.MessageProducer;
 import io.atomix.testing.AbstractCopycatTest;
 import org.testng.annotations.Test;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static org.testng.Assert.assertEquals;
@@ -596,4 +599,63 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     await(10000, 2);
   }
 
+  public void testRecovery() throws Throwable {
+    createServers(3);
+    final CopycatClient client1 = createCopycatClient();
+    final CopycatClient client2 = createCopycatClient();
+    final DistributedGroup group1 = createResource(client1, new DistributedGroup.Options());
+    final DistributedGroup group2 = createResource(client2, new DistributedGroup.Options());
+    group1.onJoin(m -> {
+      if (group1.members().size() == 2) {
+        resume();
+      }
+    });
+    group2.onJoin(m -> {
+      if (group2.members().size() == 2) {
+        resume();
+      }
+    });
+    final CountDownLatch leave = new CountDownLatch(1);
+    group1.onLeave(m -> leave.countDown());
+
+    group1.join().get(10, TimeUnit.SECONDS);
+    final LocalMember member2 = group2.join().get(10, TimeUnit.SECONDS);
+    await(5000, 2);
+
+    client1.onStateChange(s -> {
+      if (s == CopycatClient.State.SUSPENDED) {
+        resume();
+      }
+    });
+
+    client1.onStateChange(s -> {
+      if (s == CopycatClient.State.CONNECTED) {
+        resume();
+      }
+    });
+
+    final long startExpire = System.currentTimeMillis();
+    ((ClientSession) client1.session()).expire().whenComplete((v, e) -> {
+      threadAssertNull(e);
+      resume();
+    });
+
+    await(5000, 3);
+
+    // wait for the old session to expire in the state machine
+    final long remainingExpire = 5000 - (System.currentTimeMillis() - startExpire);
+    Thread.sleep(Math.max(0, remainingExpire));
+
+    member2.leave().thenRun(this::resume);
+    await(5000, 1);
+
+    // recovered client should receive events via new session
+    threadAssertTrue(leave.await(5, TimeUnit.SECONDS));
+    threadAssertEquals(1, group1.members().size());
+
+    // recovered client should rejoin the cluster
+    threadAssertEquals(1, group2.members().size());
+
+    await(5000, 1);
+  }
 }

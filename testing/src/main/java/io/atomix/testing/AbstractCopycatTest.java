@@ -93,6 +93,18 @@ public abstract class AbstractCopycatTest<T extends Resource> extends Concurrent
   }
 
   /**
+   * Creates a new copycat client instance
+   */
+  protected CopycatClient createCopycatClient() {
+    return CopycatClient.builder(members)
+        .withTransport(new LocalTransport(registry))
+        .withServerSelectionStrategy(ServerSelectionStrategies.ANY)
+        .withConnectionStrategy(ConnectionStrategies.FIBONACCI_BACKOFF)
+        .withRecoveryStrategy(RecoveryStrategies.RECOVER)
+        .build();
+  }
+
+  /**
    * Creates a new resource instance.
    */
   protected T createResource() throws Throwable {
@@ -101,29 +113,24 @@ public abstract class AbstractCopycatTest<T extends Resource> extends Concurrent
 
   /**
    * Creates a new resource instance.
+   * @todo config was never used... this should be fixed
    */
   protected T createResource(Resource.Config config) throws Throwable {
-    return createResource(config, new Resource.Options());
+    return createResource(createCopycatClient(), new Resource.Options());
   }
 
   /**
    * Creates a new resource instance.
    */
   protected T createResource(Resource.Options options) throws Throwable  {
-    return createResource(new Resource.Config(), options);
+    return createResource(createCopycatClient(), options);
   }
 
   /**
    * Creates a new resource instance.
    */
   @SuppressWarnings("unchecked")
-  protected T createResource(Resource.Config config, Resource.Options options) throws Throwable {
-    CopycatClient client = CopycatClient.builder(members)
-      .withTransport(new LocalTransport(registry))
-      .withServerSelectionStrategy(ServerSelectionStrategies.ANY)
-      .withConnectionStrategy(ConnectionStrategies.FIBONACCI_BACKOFF)
-      .withRecoveryStrategy(RecoveryStrategies.RECOVER)
-      .build();
+  protected T createResource(CopycatClient client, Resource.Options options) throws Throwable {
     ResourceType type = new ResourceType((Class<? extends Resource>) type());
     T resource = (T) type.factory().newInstance().createInstance(client, options);
     type.factory().newInstance().createSerializableTypeResolver().resolve(client.serializer().registry());
