@@ -18,11 +18,7 @@ package io.atomix;
 import io.atomix.catalyst.concurrent.Listener;
 import io.atomix.catalyst.concurrent.ThreadContext;
 import io.atomix.catalyst.serializer.Serializer;
-import io.atomix.catalyst.transport.Address;
-import io.atomix.catalyst.transport.Client;
-import io.atomix.catalyst.transport.Connection;
-import io.atomix.catalyst.transport.Server;
-import io.atomix.catalyst.transport.Transport;
+import io.atomix.catalyst.transport.*;
 import io.atomix.catalyst.transport.local.LocalServerRegistry;
 import io.atomix.catalyst.transport.local.LocalTransport;
 import io.atomix.catalyst.util.Assert;
@@ -30,11 +26,7 @@ import io.atomix.catalyst.util.ConfigurationException;
 import io.atomix.cluster.ClusterManager;
 import io.atomix.copycat.Command;
 import io.atomix.copycat.Query;
-import io.atomix.copycat.client.ConnectionStrategies;
-import io.atomix.copycat.client.CopycatClient;
-import io.atomix.copycat.client.RecoveryStrategies;
-import io.atomix.copycat.client.ServerSelectionStrategies;
-import io.atomix.copycat.client.ServerSelectionStrategy;
+import io.atomix.copycat.client.*;
 import io.atomix.copycat.server.CopycatServer;
 import io.atomix.copycat.server.cluster.Cluster;
 import io.atomix.copycat.server.cluster.Member;
@@ -51,12 +43,7 @@ import io.atomix.resource.ResourceRegistry;
 import io.atomix.resource.ResourceType;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -516,9 +503,24 @@ public final class AtomixReplica extends Atomix {
    * @return A completable future to be completed once the server has been shutdown.
    */
   public CompletableFuture<Void> shutdown() {
-    return clusterManager.stop(server.server().cluster(), this)
-      .thenCompose(v -> client.close())
-      .thenCompose(v -> server.shutdown());
+    CompletableFuture<Void> future = new CompletableFuture<>();
+    clusterManager.stop(server.server().cluster(), this)
+      .whenComplete((managerResult, managerError) -> {
+        client.close().whenComplete((clientResult, clientError) -> {
+          server.shutdown().whenComplete((serverResult, serverError) -> {
+            if (managerError != null) {
+              future.completeExceptionally(managerError);
+            } else if (clientError != null) {
+              future.completeExceptionally(clientError);
+            } else if (serverError != null) {
+              future.completeExceptionally(serverError);
+            } else {
+              future.complete(null);
+            }
+          });
+        });
+      });
+    return future;
   }
 
   /**
@@ -527,9 +529,24 @@ public final class AtomixReplica extends Atomix {
    * @return A completable future to be completed once the server has left the cluster.
    */
   public CompletableFuture<Void> leave() {
-    return clusterManager.stop(server.server().cluster(), this)
-      .thenCompose(v -> client.close())
-      .thenCompose(v -> server.leave());
+    CompletableFuture<Void> future = new CompletableFuture<>();
+    clusterManager.stop(server.server().cluster(), this)
+      .whenComplete((managerResult, managerError) -> {
+        client.close().whenComplete((clientResult, clientError) -> {
+          server.leave().whenComplete((serverResult, serverError) -> {
+            if (managerError != null) {
+              future.completeExceptionally(managerError);
+            } else if (clientError != null) {
+              future.completeExceptionally(clientError);
+            } else if (serverError != null) {
+              future.completeExceptionally(serverError);
+            } else {
+              future.complete(null);
+            }
+          });
+        });
+      });
+    return future;
   }
 
   /**
