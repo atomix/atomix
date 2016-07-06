@@ -197,7 +197,7 @@ public final class GroupCommands {
   /**
    * List command.
    */
-  public static class Listen extends MemberCommand<Set<GroupMemberInfo>> {
+  public static class Listen extends MemberCommand<GroupStatus> {
     public Listen() {
     }
 
@@ -208,6 +208,49 @@ public final class GroupCommands {
     @Override
     public CompactionMode compaction() {
       return CompactionMode.QUORUM;
+    }
+  }
+
+  /**
+   * Group status.
+   */
+  public static class GroupStatus implements CatalystSerializable {
+    private long term;
+    private String leader;
+    private Set<GroupMemberInfo> members;
+
+    public GroupStatus() {
+    }
+
+    public GroupStatus(long term, String leader, Set<GroupMemberInfo> members) {
+      this.term = term;
+      this.leader = leader;
+      this.members = members;
+    }
+
+    public long term() {
+      return term;
+    }
+
+    public String leader() {
+      return leader;
+    }
+
+    public Set<GroupMemberInfo> members() {
+      return members;
+    }
+
+    @Override
+    public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
+      buffer.writeLong(term).writeString(leader);
+      serializer.writeObject(members, buffer);
+    }
+
+    @Override
+    public void readObject(BufferInput<?> buffer, Serializer serializer) {
+      term = buffer.readLong();
+      leader = buffer.readString();
+      members = serializer.readObject(buffer);
     }
   }
 
@@ -525,6 +568,7 @@ public final class GroupCommands {
       registry.register(Ack.class, -139);
       registry.register(GroupMessage.class, -140);
       registry.register(GroupMemberInfo.class, -158);
+      registry.register(GroupStatus.class, -159);
     }
   }
 

@@ -54,10 +54,24 @@ public class GroupElection implements Election {
   }
 
   /**
+   * Sets the group term.
+   */
+  public synchronized void setTerm(long term) {
+    onTerm(term);
+  }
+
+  /**
    * Called when the term changes.
    */
   public synchronized void onTerm(long term) {
     this.term = new GroupTerm(term);
+  }
+
+  /**
+   * Sets the group leader.
+   */
+  public synchronized void setLeader(GroupMember leader) {
+    term.setLeader(leader);
   }
 
   /**
