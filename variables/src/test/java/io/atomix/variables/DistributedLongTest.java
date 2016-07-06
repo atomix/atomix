@@ -36,6 +36,22 @@ public class DistributedLongTest extends AbstractCopycatTest<DistributedLong> {
   }
 
   /**
+   * Tests a value change event.
+   */
+  public void testChangeEvent() throws Throwable {
+    createServers(3);
+    DistributedLong value = createResource();
+    value.onChange(event -> {
+      threadAssertEquals(event.oldValue(), 0L);
+      threadAssertEquals(event.newValue(), 1L);
+      resume();
+    }).thenRun(this::resume);
+    await(5000);
+    value.compareAndSet(0L, 1L).thenRun(this::resume);
+    await(5000, 2);
+  }
+
+  /**
    * Tests setting and getting a value.
    */
   public void testAtomicIncrementAndGet() throws Throwable {

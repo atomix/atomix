@@ -76,8 +76,10 @@ public class ValueState<T> extends AbstractValueState<T> {
    */
   public void set(Commit<ValueCommands.Set<T>> commit) {
     cleanCurrent();
+    T oldValue = value;
     value = commit.operation().value();
     setCurrent(commit);
+    sendEvents(oldValue, value);
   }
 
   /**
@@ -85,9 +87,11 @@ public class ValueState<T> extends AbstractValueState<T> {
    */
   public boolean compareAndSet(Commit<ValueCommands.CompareAndSet<T>> commit) {
     if ((value == null && commit.operation().expect() == null) || (value != null && commit.operation().expect() != null && value.equals(commit.operation().expect()))) {
+      T oldValue = value;
       value = commit.operation().update();
       cleanCurrent();
       setCurrent(commit);
+      sendEvents(oldValue, value);
       return true;
     } else {
       commit.close();
@@ -99,11 +103,12 @@ public class ValueState<T> extends AbstractValueState<T> {
    * Handles a get and set commit.
    */
   public T getAndSet(Commit<ValueCommands.GetAndSet<T>> commit) {
-    T result = value;
+    T oldValue = value;
     value = commit.operation().value();
     cleanCurrent();
     setCurrent(commit);
-    return result;
+    sendEvents(oldValue, value);
+    return oldValue;
   }
 
   @Override
