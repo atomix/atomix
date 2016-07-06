@@ -174,12 +174,20 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
    * Synchronizes the membership group.
    */
   private CompletableFuture<Void> sync() {
-    return client.submit(new GroupCommands.Listen()).thenAccept(members -> {
-      for (GroupMemberInfo info : members) {
+    return client.submit(new GroupCommands.Listen()).thenAccept(status-> {
+      for (GroupMemberInfo info : status.members()) {
         AbstractGroupMember member = this.members.get(info.memberId());
         if (member == null) {
           member = new RemoteGroupMember(info, this, producerService);
           this.members.put(member.id(), member);
+        }
+      }
+
+      election.setTerm(status.term());
+      if (status.leader() != null) {
+        GroupMember leader = this.members.get(status.leader());
+        if (leader != null) {
+          election.setLeader(leader);
         }
       }
     });

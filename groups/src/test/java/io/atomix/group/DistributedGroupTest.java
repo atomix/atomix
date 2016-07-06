@@ -23,6 +23,8 @@ import org.testng.annotations.Test;
 
 import java.util.concurrent.TimeUnit;
 
+import static org.testng.Assert.assertEquals;
+
 /**
  * Distributed group test.
  *
@@ -266,6 +268,26 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
   }
 
   /**
+   * Tests that a leader exists when a new group instance is created.
+   */
+  public void testLeaderOnJoin() throws Throwable {
+    createServers(3);
+
+    DistributedGroup group1 = createResource();
+    LocalMember member1 = group1.join().join();
+    group1.election().onElection(term -> {
+      if (term.leader().equals(member1)) {
+        resume();
+      }
+    });
+    await(10000);
+
+    DistributedGroup group2 = createResource();
+    assertEquals(group2.election().term().term(), group1.election().term().term());
+    assertEquals(group2.election().term().leader().id(), group1.election().term().leader().id());
+  }
+
+  /**
    * Tests sending a blocking message on a join event.
    */
   public void testBlockingMessageOnJoin() throws Throwable {
@@ -351,6 +373,44 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     });
     group1.member(member.id()).messaging().producer("test").send("Hello world!").whenComplete((result, error) -> {
       threadAssertTrue(error instanceof MessageFailedException);
+      resume();
+    });
+    await(10000, 2);
+  }
+
+  /**
+   * Tests a direct request-reply message.
+   */
+  public void testDirectRequestReply() throws Throwable {
+    createServers(3);
+
+    DistributedGroup group1 = createResource(new DistributedGroup.Options());
+    DistributedGroup group2 = createResource(new DistributedGroup.Options());
+
+    group1.onJoin(m -> {
+      threadAssertEquals(group1.members().size(), 1);
+      resume();
+    });
+    group2.onJoin(m -> {
+      threadAssertEquals(group2.members().size(), 1);
+      resume();
+    });
+
+    LocalMember member = group2.join().get(10, TimeUnit.SECONDS);
+
+    await(5000, 2);
+
+    member.messaging().consumer("test").onMessage(message -> {
+      threadAssertEquals(message.message(), "Hello world!");
+      message.reply("Hello world back!");
+      resume();
+    });
+
+    MessageProducer.Options options = new MessageProducer.Options()
+      .withDelivery(MessageProducer.Delivery.DIRECT)
+      .withExecution(MessageProducer.Execution.REQUEST_REPLY);
+    group1.member(member.id()).messaging().producer("test", options).send("Hello world!").thenAccept(response -> {
+      threadAssertEquals(response, "Hello world back!");
       resume();
     });
     await(10000, 2);

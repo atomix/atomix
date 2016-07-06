@@ -244,7 +244,7 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
   /**
    * Handles a listen commit.
    */
-  public Set<GroupMemberInfo> listen(Commit<GroupCommands.Listen> commit) {
+  public GroupCommands.GroupStatus listen(Commit<GroupCommands.Listen> commit) {
     try {
       sessions.put(commit.session().id(), new SessionState(commit.session()));
 
@@ -254,7 +254,7 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
           members.add(member.info());
         }
       }
-      return members;
+      return new GroupCommands.GroupStatus(term, leader != null ? leader.id() : null, members);
     } finally {
       commit.close();
     }
