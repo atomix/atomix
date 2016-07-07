@@ -203,6 +203,14 @@ public interface Resource<T extends Resource<T>> extends Managed<T> {
   Listener<State> onStateChange(Consumer<State> callback);
 
   /**
+   * Registers a listener which gets called after the resource recovery process
+   *
+   * @param callback The callback to call when the resource finishes recovery process.
+   * @return The recovery listener.
+   */
+  Listener<Integer> onRecovery(Consumer<Integer> callback);
+
+  /**
    * Returns the resource thread context.
    *
    * @return The resource thread context.

@@ -60,6 +60,7 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
   private final Map<String, AbstractGroupMember> members = new ConcurrentHashMap<>();
   private final MessageProducerService producerService;
   private final MessageConsumerService consumerService;
+  private final Map<String, GroupCommands.Join> joinCommands = new ConcurrentHashMap<>();
 
   public MembershipGroup(CopycatClient client, Properties options) {
     super(client, new ResourceType(DistributedGroup.class), options);
@@ -129,10 +130,12 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
   private CompletableFuture<LocalMember> join(String memberId, boolean persistent, Object metadata) {
     // When joining a group, the join request is guaranteed to complete prior to the join
     // event being received.
-    return client.submit(new GroupCommands.Join(memberId, persistent, metadata)).thenApply(info -> {
+    final GroupCommands.Join cmd = new GroupCommands.Join(memberId, persistent, metadata);
+    return client.submit(cmd).thenApply(info -> {
       AbstractGroupMember member = members.get(info.memberId());
       if (member == null || !(member instanceof LocalGroupMember)) {
         member = new LocalGroupMember(info, this, producerService, consumerService);
+        joinCommands.put(memberId, cmd);
         members.put(info.memberId(), member);
       }
       return (LocalGroupMember) member;
@@ -147,6 +150,7 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
   @Override
   public CompletableFuture<Void> remove(String memberId) {
     return client.submit(new GroupCommands.Leave(memberId)).thenRun(() -> {
+      joinCommands.remove(memberId);
       members.remove(memberId);
     });
   }
@@ -168,6 +172,28 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
       return result;
     }).thenCompose(v -> sync())
       .thenApply(v -> this);
+  }
+
+  @Override
+  protected CompletableFuture<Void> recover(Integer attempt) {
+    final int persistentCount =
+        (int) joinCommands.values().stream().filter(v -> !v.persist()).count();
+    final CompletableFuture[] closeFutures = new CompletableFuture[persistentCount];
+    final CompletableFuture[] joinFutures = new CompletableFuture[joinCommands.size()];
+    int i = 0;
+    for (GroupCommands.Join cmd : joinCommands.values()) {
+      if (cmd.persist()) {
+        joinFutures[i] = join(cmd.member(), cmd.persist(), cmd.metadata());
+      } else {
+        closeFutures[i] = remove(cmd.member());
+        joinFutures[i] = join(cmd.metadata());
+      }
+      i++;
+    }
+    members.clear();
+    return sync()
+      .thenCompose(v -> CompletableFuture.allOf(closeFutures))
+      .thenCompose(v -> CompletableFuture.allOf(joinFutures));
   }
 
   /**

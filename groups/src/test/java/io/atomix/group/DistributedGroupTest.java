@@ -605,6 +605,7 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     final CopycatClient client2 = createCopycatClient();
     final DistributedGroup group1 = createResource(client1, new DistributedGroup.Options());
     final DistributedGroup group2 = createResource(client2, new DistributedGroup.Options());
+
     group1.onJoin(m -> {
       if (group1.members().size() == 2) {
         resume();
@@ -615,6 +616,7 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
         resume();
       }
     });
+
     final CountDownLatch leave = new CountDownLatch(1);
     group1.onLeave(m -> leave.countDown());
 
@@ -622,16 +624,9 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     final LocalMember member2 = group2.join().get(10, TimeUnit.SECONDS);
     await(5000, 2);
 
-    client1.onStateChange(s -> {
-      if (s == CopycatClient.State.SUSPENDED) {
-        resume();
-      }
-    });
-
-    client1.onStateChange(s -> {
-      if (s == CopycatClient.State.CONNECTED) {
-        resume();
-      }
+    group1.onRecovery(attempt -> {
+      threadAssertEquals(1, attempt);
+      resume();
     });
 
     final long startExpire = System.currentTimeMillis();
@@ -640,7 +635,7 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
       resume();
     });
 
-    await(5000, 3);
+    await(5000, 2);
 
     // wait for the old session to expire in the state machine
     final long remainingExpire = 5000 - (System.currentTimeMillis() - startExpire);
@@ -655,7 +650,5 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
 
     // recovered client should rejoin the cluster
     threadAssertEquals(1, group2.members().size());
-
-    await(5000, 1);
   }
 }
