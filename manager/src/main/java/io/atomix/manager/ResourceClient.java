@@ -300,7 +300,7 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
    *
    * @return A completable future to be completed once the client has been closed.
    */
-  public CompletableFuture<Void> close() {
+  public synchronized CompletableFuture<Void> close() {
     CompletableFuture<?>[] futures = new CompletableFuture[instances.size()];
     int i = 0;
     for (Resource<?> instance : instances.values()) {
