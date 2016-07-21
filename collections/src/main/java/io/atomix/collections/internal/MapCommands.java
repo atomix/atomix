@@ -262,7 +262,7 @@ public class MapCommands {
 
     @Override
     public CompactionMode compaction() {
-      return ttl > 0 ? CompactionMode.SEQUENTIAL : CompactionMode.QUORUM;
+      return ttl > 0 ? CompactionMode.EXPIRING : CompactionMode.QUORUM;
     }
 
     /**
