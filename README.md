@@ -25,7 +25,7 @@ example is the leader election example. This example demonstrates a set of repli
 
 To run the leader election example:
 
-1. Clone this repository: `git clone --branch master git@github.com:atomix/atomix.git`
+1. Clone this repository: `git clone --branch master https://github.com/atomix/atomix.git`
 1. Navigate to the project directory: `cd atomix`
 1. Compile the project: `mvn package`
 1. Run the following three commands in three separate processes from the same root directory of the project:
