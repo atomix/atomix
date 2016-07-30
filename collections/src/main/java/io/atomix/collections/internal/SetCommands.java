@@ -15,6 +15,8 @@
  */
 package io.atomix.collections.internal;
 
+import java.util.Set;
+
 import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.serializer.CatalystSerializable;
@@ -268,12 +270,17 @@ public class SetCommands {
       super(consistency);
     }
   }
+  
+  /**
+   * Iterator query.
+   */
+  public static class Iterator<V> extends SetQuery<Set<V>> {
+  }
 
   /**
    * Clear command.
    */
   public static class Clear extends SetCommand<Void> {
-
     @Override
     public CompactionMode compaction() {
       return CompactionMode.SEQUENTIAL;
@@ -292,6 +299,7 @@ public class SetCommands {
       registry.register(IsEmpty.class, -103);
       registry.register(Size.class, -104);
       registry.register(Clear.class, -105);
+      registry.register(Iterator.class, -106);
     }
   }
 

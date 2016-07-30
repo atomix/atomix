@@ -15,12 +15,17 @@
  */
 package io.atomix.collections;
 
-import io.atomix.resource.ResourceType;
-import io.atomix.testing.AbstractCopycatTest;
-import org.testng.annotations.Test;
-
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
+
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
+import org.testng.annotations.Test;
+
+import io.atomix.testing.AbstractCopycatTest;
 
 /**
  * Distributed map test.
@@ -57,4 +62,27 @@ public class DistributedSetTest extends AbstractCopycatTest<DistributedSet> {
     assertFalse(set2.contains("Hello world!").get());
   }
 
+  /**
+   * Tests {@link DistributedSet#iterator()}.
+   */
+  public void testIterator() throws Throwable {
+    createServers(3);
+
+    DistributedSet<String> set = createResource();
+
+    set.add("test1").thenRun(this::resume);
+    set.add("test2").thenRun(this::resume);
+    await(10, TimeUnit.SECONDS, 2);
+
+    set.iterator().thenAccept(iterator -> {
+      System.out.println(iterator);
+      Iterable<String> iterable = () -> iterator;
+      List<String> values = StreamSupport.stream(iterable.spliterator(), false).collect(Collectors.toList());
+      System.out.println(values);
+      threadAssertTrue(values.contains("test1"));
+      threadAssertTrue(values.contains("test2"));
+      resume();
+    });
+    await(10000);
+  }
 }
