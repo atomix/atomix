@@ -952,7 +952,6 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
    * @return A completable future to be completed with the result once complete.
    * @throws NullPointerException if {@code key} is {@code null}
    */
-  @SuppressWarnings("unchecked")
   public CompletableFuture<Boolean> replace(K key, V oldValue, V newValue, Duration ttl) {
     return client.submit(new MapCommands.ReplaceIfPresent(key, oldValue, newValue, ttl.toMillis()));
   }
