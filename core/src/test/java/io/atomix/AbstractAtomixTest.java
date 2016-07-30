@@ -82,10 +82,11 @@ public abstract class AbstractAtomixTest extends ConcurrentTestCase {
   /**
    * Creates a resource factory for the given type.
    */
+  @SuppressWarnings("unchecked")
   protected <T extends Resource<?>> Function<Atomix, T> getResource(String key, Class<? super T> type) {
     return a -> {
       try {
-        return a.getResource(key, type).get(5, TimeUnit.SECONDS);
+        return (T) a.getResource(key, type).get(5, TimeUnit.SECONDS);
       } catch (InterruptedException | ExecutionException | TimeoutException e) {
         throw new RuntimeException(e);
       }
