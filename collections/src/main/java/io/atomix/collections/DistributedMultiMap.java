@@ -293,7 +293,6 @@ public class DistributedMultiMap<K, V> extends AbstractResource<DistributedMulti
    * @param ttl The duration after which to expire the key.
    * @return A completable future to be completed with the result once complete.
    */
-  @SuppressWarnings("unchecked")
   public CompletableFuture<Boolean> put(K key, V value, Duration ttl) {
     return client.submit(new MultiMapCommands.Put(key, value, ttl.toMillis()));
   }
@@ -304,8 +303,9 @@ public class DistributedMultiMap<K, V> extends AbstractResource<DistributedMulti
    * @param key The key to remove.
    * @return A completable future to be completed with the result once complete.
    */
+  @SuppressWarnings("unchecked")
   public CompletableFuture<Collection<V>> remove(Object key) {
-    return client.submit(new MultiMapCommands.Remove(key)).thenApply(result -> (Collection) result);
+    return client.submit(new MultiMapCommands.Remove(key)).thenApply(result -> (Collection<V>) result);
   }
 
   /**

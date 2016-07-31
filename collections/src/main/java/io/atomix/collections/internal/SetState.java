@@ -15,15 +15,17 @@
  */
 package io.atomix.collections.internal;
 
-import io.atomix.catalyst.concurrent.Scheduled;
-import io.atomix.copycat.server.Commit;
-import io.atomix.resource.ResourceStateMachine;
-
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
+
+import io.atomix.catalyst.concurrent.Scheduled;
+import io.atomix.copycat.server.Commit;
+import io.atomix.resource.ResourceStateMachine;
 
 /**
  * Distributed set state machine.
@@ -96,7 +98,7 @@ public class SetState extends ResourceStateMachine {
    */
   public int size(Commit<SetCommands.Size> commit) {
     try {
-      return map != null ? map.size() : 0;
+      return map.size();
     } finally {
       commit.close();
     }
@@ -107,7 +109,18 @@ public class SetState extends ResourceStateMachine {
    */
   public boolean isEmpty(Commit<SetCommands.IsEmpty> commit) {
     try {
-      return map == null || map.isEmpty();
+      return map.isEmpty();
+    } finally {
+      commit.close();
+    }
+  }
+  
+  /**
+   * Handles an iterator commit.
+   */
+  public Set<Object> iterator(Commit<SetCommands.Iterator<Object>> commit) {
+    try {
+      return new HashSet<>(map.keySet());
     } finally {
       commit.close();
     }
