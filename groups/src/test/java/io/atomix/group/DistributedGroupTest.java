@@ -598,7 +598,10 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     await(10000, 2);
   }
 
-  public void testRecovery2() throws Throwable {
+  /**
+   * Tests the recovery of a group resource/member in a group.
+   */
+  public void testRecovery() throws Throwable {
     createServers(3);
 
     final CopycatClient client1 = createCopycatClient();
