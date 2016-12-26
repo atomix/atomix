@@ -23,7 +23,6 @@ import io.atomix.group.messaging.MessageProducer;
 import io.atomix.testing.AbstractCopycatTest;
 import org.testng.annotations.Test;
 
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static org.testng.Assert.assertEquals;
@@ -599,56 +598,66 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     await(10000, 2);
   }
 
-  public void testRecovery() throws Throwable {
+  public void testRecovery2() throws Throwable {
     createServers(3);
+
     final CopycatClient client1 = createCopycatClient();
     final CopycatClient client2 = createCopycatClient();
+
     final DistributedGroup group1 = createResource(client1, new DistributedGroup.Options());
     final DistributedGroup group2 = createResource(client2, new DistributedGroup.Options());
 
+    // Group1 on join handler
     group1.onJoin(m -> {
       if (group1.members().size() == 2) {
         resume();
       }
     });
+
+    // Group2 on join handler
     group2.onJoin(m -> {
       if (group2.members().size() == 2) {
         resume();
       }
     });
 
-    final CountDownLatch leave = new CountDownLatch(1);
-    group1.onLeave(m -> leave.countDown());
+    // Join both members to the group
+    final LocalMember member1 = group1.join().get(5, TimeUnit.SECONDS);
+    final LocalMember member2 = group2.join().get(5, TimeUnit.SECONDS);
 
-    group1.join().get(10, TimeUnit.SECONDS);
-    final LocalMember member2 = group2.join().get(10, TimeUnit.SECONDS);
+    // Wait for both group instances to receive join events for both members
     await(5000, 2);
 
+    // Set a recovery handler for group1
     group1.onRecovery(attempt -> {
       threadAssertEquals(1, attempt);
       resume();
     });
 
-    final long startExpire = System.currentTimeMillis();
+    // Expire client 1's session, which should cause group1 to expire
     ((ClientSession) client1.session()).expire().whenComplete((v, e) -> {
       threadAssertNull(e);
       resume();
     });
 
+    // Wait for the client's session to expire and be recovered
     await(5000, 2);
 
-    // wait for the old session to expire in the state machine
-    final long remainingExpire = 5000 - (System.currentTimeMillis() - startExpire);
-    Thread.sleep(Math.max(0, remainingExpire));
+    // Ensure one member remains once a node is removed
+    group1.onLeave(m -> {
+      assertEquals(1, group1.members().size());
+      assertEquals(member1, group1.members().iterator().next());
+      resume();
+    });
+    group2.onLeave(m -> {
+      assertEquals(1, group2.members().size());
+      assertEquals(member1, group2.members().iterator().next());
+      resume();
+    });
 
+    // Remove member2 from the group
     member2.leave().thenRun(this::resume);
-    await(5000, 1);
-
-    // recovered client should receive events via new session
-    threadAssertTrue(leave.await(5, TimeUnit.SECONDS));
-    threadAssertEquals(1, group1.members().size());
-
-    // recovered client should rejoin the cluster
-    threadAssertEquals(1, group2.members().size());
+    await(5000, 3);
   }
+
 }
