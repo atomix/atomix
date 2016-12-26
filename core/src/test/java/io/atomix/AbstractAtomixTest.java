@@ -22,6 +22,9 @@ import io.atomix.copycat.server.storage.Storage;
 import io.atomix.copycat.server.storage.StorageLevel;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceType;
+import net.jodah.concurrentunit.ConcurrentTestCase;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,11 +32,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
-
-import net.jodah.concurrentunit.ConcurrentTestCase;
-
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
 
 /**
  * Abstract Atomix test.
@@ -67,11 +65,11 @@ public abstract class AbstractAtomixTest extends ConcurrentTestCase {
 
   protected void cleanup() throws Throwable {
     for (AtomixClient client : clients) {
-      client.close().thenRun(this::resume);
+      client.close().whenComplete((result, error) -> resume());
       await(30000);
     }
     for (AtomixReplica replica : replicas) {
-      replica.leave().thenRun(this::resume);
+      replica.leave().whenComplete((result, error) -> resume());
       await(30000);
     }
 
