@@ -599,6 +599,66 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
   }
 
   /**
+   * Tests that a member already exists when a join event is received.
+   */
+  public void testMemberExistsOnJoinEvent() throws Throwable {
+    createServers(3);
+
+    final CopycatClient client1 = createCopycatClient();
+    final CopycatClient client2 = createCopycatClient();
+
+    final DistributedGroup group1 = createResource(client1, new DistributedGroup.Options());
+    final DistributedGroup group2 = createResource(client2, new DistributedGroup.Options());
+
+    group1.onJoin(m -> {
+      threadAssertEquals(1, group1.members().size());
+      resume();
+    });
+    group2.onJoin(m -> {
+      threadAssertEquals(1, group2.members().size());
+      resume();
+    });
+
+    group1.join().thenRun(this::resume);
+
+    await(5000, 3);
+  }
+
+  /**
+   * Tests that the local onLeave handler is called when a member leaves the group.
+   */
+  public void testLocalOnLeave() throws Throwable {
+    createServers(3);
+
+    final CopycatClient client1 = createCopycatClient();
+    final CopycatClient client2 = createCopycatClient();
+
+    final DistributedGroup group1 = createResource(client1, new DistributedGroup.Options());
+    final DistributedGroup group2 = createResource(client2, new DistributedGroup.Options());
+
+    // Group join handlers
+    group1.onJoin(m -> resume());
+    group2.onJoin(m -> resume());
+
+    // Join both members to the group
+    final LocalMember member1 = group1.join().get(5, TimeUnit.SECONDS);
+    final LocalMember member2 = group2.join().get(5, TimeUnit.SECONDS);
+
+    await(5000, 4);
+
+    group1.onLeave(m -> {
+      resume();
+    });
+    group2.onLeave(m -> {
+      resume();
+    });
+
+    member1.leave().thenRun(this::resume);
+
+    await(5000, 3);
+  }
+
+  /**
    * Tests the recovery of a group resource/member in a group.
    */
   public void testRecovery() throws Throwable {
@@ -612,6 +672,7 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
 
     // Group1 on join handler
     group1.onJoin(m -> {
+      System.out.println(group1.members().size());
       if (group1.members().size() == 2) {
         resume();
       }
@@ -619,6 +680,7 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
 
     // Group2 on join handler
     group2.onJoin(m -> {
+      System.out.println(group2.members().size());
       if (group2.members().size() == 2) {
         resume();
       }
@@ -644,17 +706,15 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     });
 
     // Wait for the client's session to expire and be recovered
-    await(5000, 2);
+    await(5000, 4);
 
     // Ensure one member remains once a node is removed
     group1.onLeave(m -> {
-      assertEquals(1, group1.members().size());
-      assertEquals(member1, group1.members().iterator().next());
+      threadAssertEquals(1, group1.members().size());
       resume();
     });
     group2.onLeave(m -> {
-      assertEquals(1, group2.members().size());
-      assertEquals(member1, group2.members().iterator().next());
+      threadAssertEquals(1, group2.members().size());
       resume();
     });
 
