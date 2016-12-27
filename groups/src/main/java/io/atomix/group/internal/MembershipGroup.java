@@ -31,10 +31,7 @@ import io.atomix.group.messaging.internal.MessageProducerService;
 import io.atomix.resource.AbstractResource;
 import io.atomix.resource.ResourceType;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Properties;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
@@ -60,6 +57,7 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
   private final Map<String, AbstractGroupMember> members = new ConcurrentHashMap<>();
   private final MessageProducerService producerService;
   private final MessageConsumerService consumerService;
+  private final Map<String, GroupCommands.Join> localJoins = new ConcurrentHashMap<>();
 
   public MembershipGroup(CopycatClient client, Properties options) {
     super(client, new ResourceType(DistributedGroup.class), options);
@@ -129,10 +127,12 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
   private CompletableFuture<LocalMember> join(String memberId, boolean persistent, Object metadata) {
     // When joining a group, the join request is guaranteed to complete prior to the join
     // event being received.
-    return client.submit(new GroupCommands.Join(memberId, persistent, metadata)).thenApply(info -> {
+    final GroupCommands.Join cmd = new GroupCommands.Join(memberId, persistent, metadata);
+    return client.submit(cmd).thenApply(info -> {
       AbstractGroupMember member = members.get(info.memberId());
       if (member == null || !(member instanceof LocalGroupMember)) {
         member = new LocalGroupMember(info, this, producerService, consumerService);
+        localJoins.put(memberId, cmd);
         members.put(info.memberId(), member);
       }
       return (LocalGroupMember) member;
@@ -147,7 +147,11 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
   @Override
   public CompletableFuture<Void> remove(String memberId) {
     return client.submit(new GroupCommands.Leave(memberId)).thenRun(() -> {
-      members.remove(memberId);
+      localJoins.remove(memberId);
+      GroupMember member = members.remove(memberId);
+      if (member != null) {
+        leaveListeners.accept(member);
+      }
     });
   }
 
@@ -170,11 +174,42 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
       .thenApply(v -> this);
   }
 
+  @Override
+  protected CompletableFuture<Void> recover(Integer attempt) {
+    // When recovering the membership group, we need to ensure that all local non-persistent members are
+    // removed from the group prior to fetching the group membership from the cluster again, and prior to
+    // adding recovered members that the membership list is updated to ensure the list is consistent
+    // when join event handlers are called.
+    Map<String, GroupCommands.Join> joins = new HashMap<>(localJoins);
+    return sync()
+      .thenCompose(v -> {
+        List<CompletableFuture> futures = new ArrayList<>(joins.size());
+        for (GroupCommands.Join join : joins.values()) {
+          if (!join.persist()) {
+            futures.add(remove(join.member()));
+          }
+        }
+        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()]));
+      })
+      .thenCompose(v -> sync())
+      .thenCompose(v -> {
+        List<CompletableFuture> futures = new ArrayList<>(joins.size());
+        for (GroupCommands.Join join : joins.values()) {
+          if (join.persist()) {
+            futures.add(join(join.member(), join.persist(), join.metadata()));
+          } else {
+            futures.add(join(join.metadata()));
+          }
+        }
+        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()]));
+      });
+  }
+
   /**
    * Synchronizes the membership group.
    */
   private CompletableFuture<Void> sync() {
-    return client.submit(new GroupCommands.Listen()).thenAccept(status-> {
+    return client.submit(new GroupCommands.Listen()).thenAccept(status -> {
       for (GroupMemberInfo info : status.members()) {
         AbstractGroupMember member = this.members.get(info.memberId());
         if (member == null) {

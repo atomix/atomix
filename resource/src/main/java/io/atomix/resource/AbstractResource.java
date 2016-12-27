@@ -28,6 +28,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 /**
@@ -42,6 +43,8 @@ public abstract class AbstractResource<T extends Resource<T>> implements Resourc
   protected final Options options;
   private volatile State state;
   private final Set<StateChangeListener> changeListeners = new CopyOnWriteArraySet<>();
+  private final Set<RecoveryListener> recoveryListeners = new CopyOnWriteArraySet<>();
+  private final AtomicInteger recoveryAttempt = new AtomicInteger(0);
 
   protected AbstractResource(CopycatClient client, Properties options) {
     this(client, null, options);
@@ -68,7 +71,15 @@ public abstract class AbstractResource<T extends Resource<T>> implements Resourc
    * Called when a client state change occurs.
    */
   private void onStateChange(CopycatClient.State state) {
-    this.state = State.valueOf(state.name());
+    final State newState = State.valueOf(state.name());
+    if (this.state == State.SUSPENDED && newState == State.CONNECTED) {
+      final int attempt = recoveryAttempt.incrementAndGet();
+      recover(attempt).whenComplete((v, e) -> {
+        // @todo what should on error? close client?
+        recoveryListeners.forEach(l -> l.accept(attempt));
+      });
+    }
+    this.state = newState;
     changeListeners.forEach(l -> l.accept(this.state));
   }
 
@@ -100,6 +111,11 @@ public abstract class AbstractResource<T extends Resource<T>> implements Resourc
   @Override
   public Listener<State> onStateChange(Consumer<State> callback) {
     return new StateChangeListener(Assert.notNull(callback, "callback"));
+  }
+
+  @Override
+  public Listener<Integer> onRecovery(Consumer<Integer> callback) {
+    return new RecoveryListener(Assert.notNull(callback, "callback"));
   }
 
   @Override
@@ -153,6 +169,10 @@ public abstract class AbstractResource<T extends Resource<T>> implements Resourc
     return String.format("%s[id=%s]", getClass().getSimpleName(), client.session().id());
   }
 
+  protected CompletableFuture<Void> recover(Integer attempt) {
+    return CompletableFuture.completedFuture(null);
+  }
+
   /**
    * Resource state change listener.
    */
@@ -175,4 +195,25 @@ public abstract class AbstractResource<T extends Resource<T>> implements Resourc
     }
   }
 
+  /**
+   * Resource state change listener.
+   */
+  private class RecoveryListener implements Listener<Integer> {
+    private final Consumer<Integer> callback;
+
+    private RecoveryListener(Consumer<Integer> callback) {
+      this.callback = callback;
+      recoveryListeners.add(this);
+    }
+
+    @Override
+    public void accept(Integer attempt) {
+      callback.accept(attempt);
+    }
+
+    @Override
+    public void close() {
+      recoveryListeners.remove(this);
+    }
+  }
 }

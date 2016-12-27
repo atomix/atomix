@@ -15,6 +15,12 @@
  */
 package io.atomix.collections;
 
+import java.time.Duration;
+import java.util.Iterator;
+import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+
 import io.atomix.collections.internal.SetCommands;
 import io.atomix.collections.util.DistributedSetFactory;
 import io.atomix.copycat.client.CopycatClient;
@@ -22,37 +28,31 @@ import io.atomix.resource.AbstractResource;
 import io.atomix.resource.ReadConsistency;
 import io.atomix.resource.ResourceTypeInfo;
 
-import java.time.Duration;
-import java.util.Properties;
-import java.util.concurrent.CompletableFuture;
-
 /**
  * Distributed collection of unique values.
  * <p>
- * The distributed set is closely modeled on Java's {@link java.util.HashSet}. All methods present
- * in the {@link java.util.Set} interface are present in this interface. Set items are held in
- * memory on each stateful node and backed by replicated logs on disk, thus the size of a set
- * is limited by the memory available to the smallest node in the cluster. Internally, {@code DistributedSet}
- * uses a {@link java.util.HashMap} to store set items in memory in the replicated state machine.
+ * The distributed set is closely modeled on Java's {@link java.util.HashSet}. All methods present in the
+ * {@link java.util.Set} interface are present in this interface. Set items are held in memory on each stateful node and
+ * backed by replicated logs on disk, thus the size of a set is limited by the memory available to the smallest node in
+ * the cluster. Internally, {@code DistributedSet} uses a {@link java.util.HashMap} to store set items in memory in the
+ * replicated state machine.
  * <p>
- * To create a distributed set, use the {@code getSet} factory method:
- * <pre>
+ * To create a distributed set, use the {@code getSet} factory method: <pre>
  *   {@code
  *   DistributedSet<String> set = atomix.getSet("foo").get();
  *   }
- * </pre>
- * All set modification operations are linearizable, so items added to or removed from the set will
- * be immediately reflected from the perspective of all clients operating on the set. The set is
- * shared by processes based on the set name.
+ * </pre> All set modification operations are linearizable, so items added to or removed from the set will be
+ * immediately reflected from the perspective of all clients operating on the set. The set is shared by processes based
+ * on the set name.
  * <p>
- * Sets support relaxed consistency levels for some read operations line {@link #size(ReadConsistency)}
- * and {@link #contains(Object, ReadConsistency)}. By default, read operations on a set are linearizable
- * but require some level of communication between nodes.
+ * Sets support relaxed consistency levels for some read operations line {@link #size(ReadConsistency)} and
+ * {@link #contains(Object, ReadConsistency)}. By default, read operations on a set are linearizable but require some
+ * level of communication between nodes.
  *
  * @param <T> The set value type.
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@ResourceTypeInfo(id=-13, factory=DistributedSetFactory.class)
+@ResourceTypeInfo(id = -13, factory = DistributedSetFactory.class)
 public class DistributedSet<T> extends AbstractResource<DistributedSet<T>> {
   public DistributedSet(CopycatClient client, Properties options) {
     super(client, options);
@@ -75,7 +75,6 @@ public class DistributedSet<T> extends AbstractResource<DistributedSet<T>> {
    * @param ttl The time to live duration.
    * @return A completable future to be completed with the result once complete.
    */
-  @SuppressWarnings("unchecked")
   public CompletableFuture<Boolean> add(T value, Duration ttl) {
     return client.submit(new SetCommands.Add(value, ttl.toMillis()));
   }
@@ -147,6 +146,15 @@ public class DistributedSet<T> extends AbstractResource<DistributedSet<T>> {
    */
   public CompletableFuture<Boolean> isEmpty(ReadConsistency consistency) {
     return client.submit(new SetCommands.IsEmpty(consistency.level()));
+  }
+
+  /**
+   * Returns an Iterator over the values in the set.
+   * 
+   * @return A CompletableFuture to be completed when the iterator is available
+   */
+  public CompletableFuture<Iterator<T>> iterator() {
+    return client.submit(new SetCommands.Iterator<T>()).thenApply(keys -> ((Set<T>)keys).iterator());
   }
 
   /**
