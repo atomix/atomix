@@ -23,6 +23,7 @@ import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.copycat.Command;
 import io.atomix.copycat.Query;
+import io.atomix.variables.events.ValueChangeEvent;
 
 /**
  * Distributed value commands.
@@ -261,6 +262,18 @@ public class ValueCommands {
   }
 
   /**
+   * Register command.
+   */
+  public static class Register extends ValueCommand<Void> {
+  }
+
+  /**
+   * Unregister command.
+   */
+  public static class Unregister extends ValueCommand<Void> {
+  }
+
+  /**
    * Value command type resolver.
    */
   public static class TypeResolver implements SerializableTypeResolver {
@@ -270,6 +283,9 @@ public class ValueCommands {
       registry.register(ValueCommands.Get.class, -111);
       registry.register(ValueCommands.GetAndSet.class, -112);
       registry.register(ValueCommands.Set.class, -113);
+      registry.register(ValueChangeEvent.class, -120);
+      registry.register(Register.class, -121);
+      registry.register(Unregister.class, -122);
     }
   }
 

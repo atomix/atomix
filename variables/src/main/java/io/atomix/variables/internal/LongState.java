@@ -21,7 +21,6 @@ import io.atomix.copycat.server.storage.snapshot.SnapshotReader;
 import io.atomix.copycat.server.storage.snapshot.SnapshotWriter;
 
 import java.util.Properties;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Long state machine.
@@ -29,7 +28,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class LongState extends AbstractValueState<Long> implements Snapshottable {
-  private AtomicLong value = new AtomicLong(0);
+  private Long value = 0L;
 
   public LongState(Properties config) {
     super(config);
@@ -37,12 +36,12 @@ public class LongState extends AbstractValueState<Long> implements Snapshottable
 
   @Override
   public void snapshot(SnapshotWriter writer) {
-    writer.writeLong(value.get());
+    writer.writeLong(value);
   }
 
   @Override
   public void install(SnapshotReader reader) {
-    value = new AtomicLong(reader.readLong());
+    value = reader.readLong();
   }
 
   /**
@@ -51,7 +50,9 @@ public class LongState extends AbstractValueState<Long> implements Snapshottable
   @Override
   public void set(Commit<ValueCommands.Set<Long>> commit) {
     try {
-      value.set(commit.operation().value());
+      Long oldValue = value;
+      value = commit.operation().value();
+      sendEvents(oldValue, value);
     } finally {
       commit.close();
     }
@@ -63,7 +64,7 @@ public class LongState extends AbstractValueState<Long> implements Snapshottable
   @Override
   public Long get(Commit<ValueCommands.Get<Long>> commit) {
     try {
-      return value.get();
+      return value;
     } finally {
       commit.close();
     }
@@ -75,7 +76,10 @@ public class LongState extends AbstractValueState<Long> implements Snapshottable
   @Override
   public Long getAndSet(Commit<ValueCommands.GetAndSet<Long>> commit) {
     try {
-      return value.getAndSet(commit.operation().value());
+      Long oldValue = value;
+      value = commit.operation().value();
+      sendEvents(oldValue, value);
+      return oldValue;
     } finally {
       commit.close();
     }
@@ -88,8 +92,13 @@ public class LongState extends AbstractValueState<Long> implements Snapshottable
   public boolean compareAndSet(Commit<ValueCommands.CompareAndSet<Long>> commit) {
     try {
       Long expect = commit.operation().expect();
-      Long update = commit.operation().update();
-      return value.compareAndSet(expect, update);
+      if ((value == null && expect == null) || (value != null && value.equals(expect))) {
+        Long oldValue = value;
+        value = commit.operation().update();
+        sendEvents(oldValue, value);
+        return true;
+      }
+      return false;
     } finally {
       commit.close();
     }
@@ -100,7 +109,10 @@ public class LongState extends AbstractValueState<Long> implements Snapshottable
    */
   public long incrementAndGet(Commit<LongCommands.IncrementAndGet> commit) {
     try {
-      return value.incrementAndGet();
+      Long oldValue = value;
+      value = oldValue + 1;
+      sendEvents(oldValue, value);
+      return value;
     } finally {
       commit.close();
     }
@@ -111,7 +123,10 @@ public class LongState extends AbstractValueState<Long> implements Snapshottable
    */
   public long decrementAndGet(Commit<LongCommands.DecrementAndGet> commit) {
     try {
-      return value.decrementAndGet();
+      Long oldValue = value;
+      value = oldValue - 1;
+      sendEvents(oldValue, value);
+      return value;
     } finally {
       commit.close();
     }
@@ -122,7 +137,10 @@ public class LongState extends AbstractValueState<Long> implements Snapshottable
    */
   public long getAndIncrement(Commit<LongCommands.GetAndIncrement> commit) {
     try {
-      return value.getAndIncrement();
+      Long oldValue = value;
+      value = oldValue + 1;
+      sendEvents(oldValue, value);
+      return oldValue;
     } finally {
       commit.close();
     }
@@ -133,7 +151,10 @@ public class LongState extends AbstractValueState<Long> implements Snapshottable
    */
   public long getAndDecrement(Commit<LongCommands.GetAndDecrement> commit) {
     try {
-      return value.getAndDecrement();
+      Long oldValue = value;
+      value = oldValue - 1;
+      sendEvents(oldValue, value);
+      return oldValue;
     } finally {
       commit.close();
     }
@@ -144,7 +165,10 @@ public class LongState extends AbstractValueState<Long> implements Snapshottable
    */
   public long addAndGet(Commit<LongCommands.AddAndGet> commit) {
     try {
-      return value.addAndGet(commit.operation().delta());
+      Long oldValue = value;
+      value = oldValue + commit.operation().delta();
+      sendEvents(oldValue, value);
+      return value;
     } finally {
       commit.close();
     }
@@ -155,7 +179,10 @@ public class LongState extends AbstractValueState<Long> implements Snapshottable
    */
   public long getAndAdd(Commit<LongCommands.GetAndAdd> commit) {
     try {
-      return value.getAndAdd(commit.operation().delta());
+      Long oldValue = value;
+      value = oldValue + commit.operation().delta();
+      sendEvents(oldValue, value);
+      return oldValue;
     } finally {
       commit.close();
     }
