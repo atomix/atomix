@@ -151,7 +151,10 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
   public CompletableFuture<Void> remove(String memberId) {
     return client.submit(new GroupCommands.Leave(memberId)).thenRun(() -> {
       joinCommands.remove(memberId);
-      members.remove(memberId);
+      GroupMember member = members.remove(memberId);
+      if (member != null) {
+        leaveListeners.accept(member);
+      }
     });
   }
 
