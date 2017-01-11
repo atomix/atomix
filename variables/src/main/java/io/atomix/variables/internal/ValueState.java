@@ -17,6 +17,7 @@ package io.atomix.variables.internal;
 
 import io.atomix.catalyst.concurrent.Scheduled;
 import io.atomix.copycat.server.Commit;
+import io.atomix.variables.DistributedValue;
 
 import java.time.Duration;
 import java.util.Properties;
@@ -79,7 +80,7 @@ public class ValueState<T> extends AbstractValueState<T> {
     T oldValue = value;
     value = commit.operation().value();
     setCurrent(commit);
-    sendEvents(oldValue, value);
+    notify(new DistributedValue.ChangeEvent<>(oldValue, value));
   }
 
   /**
@@ -91,7 +92,7 @@ public class ValueState<T> extends AbstractValueState<T> {
       value = commit.operation().update();
       cleanCurrent();
       setCurrent(commit);
-      sendEvents(oldValue, value);
+      notify(new DistributedValue.ChangeEvent<>(oldValue, value));
       return true;
     } else {
       commit.close();
@@ -107,7 +108,7 @@ public class ValueState<T> extends AbstractValueState<T> {
     value = commit.operation().value();
     cleanCurrent();
     setCurrent(commit);
-    sendEvents(oldValue, value);
+    notify(new DistributedValue.ChangeEvent<>(oldValue, value));
     return oldValue;
   }
 

@@ -56,6 +56,82 @@ public final class ResourceCommand<T extends Command<U>, U> extends ResourceOper
   }
 
   /**
+   * Resource register command.
+   */
+  public static class Register implements Command<Void>, CatalystSerializable {
+    private int eventId;
+
+    public Register() {
+    }
+
+    public Register(int eventId) {
+      this.eventId = eventId;
+    }
+
+    /**
+     * Returns the event ID.
+     *
+     * @return The event ID.
+     */
+    public int event() {
+      return eventId;
+    }
+
+    @Override
+    public CompactionMode compaction() {
+      return CompactionMode.QUORUM;
+    }
+
+    @Override
+    public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
+      buffer.writeByte(eventId);
+    }
+
+    @Override
+    public void readObject(BufferInput<?> buffer, Serializer serializer) {
+      eventId = buffer.readByte();
+    }
+  }
+
+  /**
+   * Resource unregister command.
+   */
+  public static class Unregister implements Command<Void>, CatalystSerializable {
+    private int eventId;
+
+    public Unregister() {
+    }
+
+    public Unregister(int eventId) {
+      this.eventId = eventId;
+    }
+
+    /**
+     * Returns the event ID.
+     *
+     * @return The event ID.
+     */
+    public int event() {
+      return eventId;
+    }
+
+    @Override
+    public CompactionMode compaction() {
+      return CompactionMode.QUORUM;
+    }
+
+    @Override
+    public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
+      buffer.writeByte(eventId);
+    }
+
+    @Override
+    public void readObject(BufferInput<?> buffer, Serializer serializer) {
+      eventId = buffer.readByte();
+    }
+  }
+
+  /**
    * Resource delete command.
    */
   public static class Delete implements Command<Void>, CatalystSerializable {

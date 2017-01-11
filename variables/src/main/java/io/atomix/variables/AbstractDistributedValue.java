@@ -15,18 +15,19 @@
  */
 package io.atomix.variables;
 
+import io.atomix.catalyst.buffer.BufferInput;
+import io.atomix.catalyst.buffer.BufferOutput;
 import io.atomix.catalyst.concurrent.Listener;
+import io.atomix.catalyst.serializer.CatalystSerializable;
+import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.AbstractResource;
 import io.atomix.resource.ReadConsistency;
-import io.atomix.variables.events.ValueChangeEvent;
 import io.atomix.variables.internal.ValueCommands;
 
 import java.time.Duration;
 import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
 
 /**
@@ -42,27 +43,9 @@ import java.util.function.Consumer;
  */
 @SuppressWarnings("unchecked")
 public abstract class AbstractDistributedValue<T extends AbstractDistributedValue<T, U>, U> extends AbstractResource<T> {
-  private final Set<Consumer<ValueChangeEvent<T>>> changeListeners = new CopyOnWriteArraySet<>();
 
   protected AbstractDistributedValue(CopycatClient client, Properties options) {
     super(client, options);
-  }
-
-  @Override
-  public CompletableFuture<T> open() {
-    return super.open().thenApply(result -> {
-      client.<ValueChangeEvent<T>>onEvent("change", this::onChange);
-      return result;
-    });
-  }
-
-  /**
-   * Handles a value change event.
-   */
-  private void onChange(ValueChangeEvent<T> event) {
-    for (Consumer<ValueChangeEvent<T>> listener : changeListeners) {
-      listener.accept(event);
-    }
   }
 
   /**
@@ -71,27 +54,8 @@ public abstract class AbstractDistributedValue<T extends AbstractDistributedValu
    * @param callback The callback to be called when the value changes.
    * @return The change event.
    */
-  public synchronized CompletableFuture<Listener<ValueChangeEvent<T>>> onChange(Consumer<ValueChangeEvent<T>> callback) {
-    changeListeners.add(callback);
-    return client.submit(new ValueCommands.Register()).whenComplete((result, error) -> {
-      if (error != null) {
-        changeListeners.remove(callback);
-      }
-    }).thenApply(v -> new Listener<ValueChangeEvent<T>>() {
-      @Override
-      public void accept(ValueChangeEvent<T> event) {
-        callback.accept(event);
-      }
-      @Override
-      public void close() {
-        synchronized (this) {
-          changeListeners.remove(callback);
-          if (changeListeners.isEmpty()) {
-            client.submit(new ValueCommands.Unregister());
-          }
-        }
-      }
-    });
+  public synchronized CompletableFuture<Listener<ChangeEvent<T>>> onChange(Consumer<ChangeEvent<T>> callback) {
+    return onEvent(Events.CHANGE, callback);
   }
 
   /**
@@ -247,6 +211,74 @@ public abstract class AbstractDistributedValue<T extends AbstractDistributedValu
    */
   public CompletableFuture<Boolean> compareAndSet(U expect, U update, Duration ttl) {
     return client.submit(new ValueCommands.CompareAndSet(expect, update, ttl.toMillis()));
+  }
+
+  /**
+   * Distributed value event types.
+   */
+  public enum Events implements EventType {
+    CHANGE;
+
+    @Override
+    public int id() {
+      return ordinal();
+    }
+  }
+
+  /**
+   * Distributed value change event.
+   */
+  public static class ChangeEvent<T> implements Event, CatalystSerializable {
+    private T oldValue;
+    private T newValue;
+
+    public ChangeEvent() {
+    }
+
+    public ChangeEvent(T oldValue, T newValue) {
+      this.oldValue = oldValue;
+      this.newValue = newValue;
+    }
+
+    @Override
+    public EventType type() {
+      return Events.CHANGE;
+    }
+
+    /**
+     * Returns the old value.
+     *
+     * @return The old value.
+     */
+    public T oldValue() {
+      return oldValue;
+    }
+
+    /**
+     * Returns the new value.
+     *
+     * @return The new value.
+     */
+    public T newValue() {
+      return newValue;
+    }
+
+    @Override
+    public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
+      serializer.writeObject(oldValue, buffer);
+      serializer.writeObject(newValue, buffer);
+    }
+
+    @Override
+    public void readObject(BufferInput<?> buffer, Serializer serializer) {
+      oldValue = serializer.readObject(buffer);
+      newValue = serializer.readObject(buffer);
+    }
+
+    @Override
+    public String toString() {
+      return String.format("%s[oldValue=%s, newValue=%s]", getClass().getSimpleName(), oldValue, newValue);
+    }
   }
 
 }

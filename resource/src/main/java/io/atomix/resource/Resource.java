@@ -85,6 +85,43 @@ public interface Resource<T extends Resource<T>> extends Managed<T> {
   }
 
   /**
+   * Resource event type.
+   * <p>
+   * An event type should be created for each distinct {@link Event} supported by a resource type.
+   * The event type provides an {@link #id()} that is used internally by Atomix to invoke event
+   * handlers within the resource client.
+   */
+  interface EventType {
+    /**
+     * Returns the event type ID.
+     * <p>
+     * The event type ID is used to identify event types when published from the server state
+     * machine to the client. Event type IDs must be unique within a resource type.
+     *
+     * @return The event type ID. This must be unique within a resource type.
+     */
+    int id();
+  }
+
+  /**
+   * Resource event interface.
+   * <p>
+   * Resources should implement this interface for event messages sent from {@link ResourceStateMachine}s
+   * to resource clients. Each event type should be associated with a unique {@link EventType} that indicates
+   * the event identifier.
+   */
+  interface Event {
+    /**
+     * Returns the resource event type.
+     * <p>
+     * The event type should be unique to the specific event as it's used as an event identifier.
+     *
+     * @return The resource event type.
+     */
+    EventType type();
+  }
+
+  /**
    * Resource session state constants.
    * <p>
    * The resource state is indicative of the resource's ability to communicate with the cluster within the
