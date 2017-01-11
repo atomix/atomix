@@ -15,6 +15,7 @@
  */
 package io.atomix.group.messaging;
 
+import io.atomix.catalyst.annotations.Experimental;
 import io.atomix.catalyst.concurrent.Listener;
 
 import java.util.function.Consumer;
@@ -43,6 +44,7 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
+@Experimental
 public interface MessageConsumer<T> extends AutoCloseable {
 
   /**
