@@ -16,6 +16,7 @@
 package io.atomix.cluster;
 
 import io.atomix.AtomixReplica;
+import io.atomix.catalyst.annotations.Experimental;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.copycat.error.ConfigurationException;
 import io.atomix.copycat.server.cluster.Cluster;
@@ -35,6 +36,7 @@ import java.util.stream.Collectors;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
+@Experimental
 public class BalancingClusterManager implements ClusterManager {
 
   /**
