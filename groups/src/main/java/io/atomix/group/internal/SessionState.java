@@ -46,6 +46,24 @@ final class SessionState {
   }
 
   /**
+   * Indicates that the given member's status has changed to ALIVE.
+   */
+  public void alive(MemberState member) {
+    if (session.state().active()) {
+      session.publish("alive", member.id());
+    }
+  }
+
+  /**
+   * Indicates that the given member's status has changed to DEAD.
+   */
+  public void dead(MemberState member) {
+    if (session.state().active()) {
+      session.publish("dead", member.id());
+    }
+  }
+
+  /**
    * Sends a leave event to the session for the given member.
    */
   public void leave(MemberState member) {
