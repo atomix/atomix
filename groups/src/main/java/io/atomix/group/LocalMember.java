@@ -15,6 +15,7 @@
  */
 package io.atomix.group;
 
+import io.atomix.catalyst.annotations.Experimental;
 import io.atomix.group.messaging.MessageService;
 
 import java.util.concurrent.CompletableFuture;
@@ -59,6 +60,7 @@ public interface LocalMember extends GroupMember {
    * @return The local member message service.
    */
   @Override
+  @Experimental
   MessageService messaging();
 
   /**

@@ -15,6 +15,7 @@
  */
 package io.atomix.group;
 
+import io.atomix.catalyst.annotations.Experimental;
 import io.atomix.group.messaging.MessageClient;
 
 import java.util.Optional;
@@ -52,6 +53,7 @@ public interface GroupMember {
    *
    * @return The direct message client for this member.
    */
+  @Experimental
   MessageClient messaging();
 
   /**

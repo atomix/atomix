@@ -15,6 +15,7 @@
  */
 package io.atomix.group.messaging;
 
+import io.atomix.catalyst.annotations.Experimental;
 import io.atomix.catalyst.util.Assert;
 
 import java.util.concurrent.CompletableFuture;
@@ -72,6 +73,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
+@Experimental
 public interface MessageProducer<T> extends AutoCloseable {
 
   /**

@@ -15,6 +15,8 @@
  */
 package io.atomix.group.messaging;
 
+import io.atomix.catalyst.annotations.Experimental;
+
 /**
  * Provides an interface for producing messages to a group or a member of a group.
  * <p>
@@ -38,6 +40,7 @@ package io.atomix.group.messaging;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
+@Experimental
 public interface MessageClient {
 
   /**

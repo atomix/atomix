@@ -15,6 +15,8 @@
  */
 package io.atomix.group.messaging;
 
+import io.atomix.catalyst.annotations.Experimental;
+
 /**
  * Provides an interface for consuming messages sent either directly or indirectly to a group member.
  * <p>
@@ -49,6 +51,7 @@ package io.atomix.group.messaging;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
+@Experimental
 public interface MessageService extends MessageClient {
 
   /**
