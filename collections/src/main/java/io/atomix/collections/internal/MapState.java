@@ -15,13 +15,17 @@
  */
 package io.atomix.collections.internal;
 
-import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.concurrent.Scheduled;
 import io.atomix.copycat.server.Commit;
+import io.atomix.copycat.server.session.ServerSession;
+import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceStateMachine;
 
 import java.time.Duration;
 import java.util.*;
+
+import static io.atomix.collections.DistributedMap.EntryEvent;
+import static io.atomix.collections.DistributedMap.Events;
 
 /**
  * Map state machine.
@@ -30,9 +34,91 @@ import java.util.*;
  */
 public class MapState extends ResourceStateMachine {
   private final Map<Object, Value> map = new HashMap<>();
+  private final Map<Object, Map<Integer, Map<Long, Commit<MapCommands.KeyListen>>>> listeners = new HashMap<>();
 
   public MapState(Properties config) {
     super(config);
+  }
+
+  @Override
+  public void close(ServerSession session) {
+    // Remove the session from event listeners.
+    Iterator<Map.Entry<Object, Map<Integer, Map<Long, Commit<MapCommands.KeyListen>>>>> keyIterator = listeners.entrySet().iterator();
+    while (keyIterator.hasNext()) {
+      Map.Entry<Object, Map<Integer, Map<Long, Commit<MapCommands.KeyListen>>>> keyEntry = keyIterator.next();
+      Iterator<Map.Entry<Integer, Map<Long, Commit<MapCommands.KeyListen>>>> eventIterator = keyEntry.getValue().entrySet().iterator();
+      while (eventIterator.hasNext()) {
+        Map.Entry<Integer, Map<Long, Commit<MapCommands.KeyListen>>> eventEntry = eventIterator.next();
+        Map<Long, Commit<MapCommands.KeyListen>> sessions = eventEntry.getValue();
+        Commit<MapCommands.KeyListen> commit = sessions.remove(session.id());
+        if (commit != null) {
+          commit.release();
+          if (sessions.isEmpty()) {
+            eventIterator.remove();
+          }
+        }
+      }
+      if (keyEntry.getValue().isEmpty()) {
+        keyIterator.remove();
+      }
+    }
+  }
+
+  /**
+   * Notifies clients of an entry event.
+   *
+   * @param event The entry event.
+   */
+  protected void notify(EntryEvent event) {
+    Map<Integer, Map<Long, Commit<MapCommands.KeyListen>>> keyListeners = listeners.get(event.entry().getKey());
+    if (keyListeners != null) {
+      Map<Long, Commit<MapCommands.KeyListen>> eventListeners = keyListeners.get(event.type().id());
+      if (eventListeners != null) {
+        for (Commit<MapCommands.KeyListen> listener : eventListeners.values()) {
+          listener.session().publish("key", event);
+        }
+      }
+    }
+    super.notify(event);
+  }
+
+  /**
+   * Registers a key change listener.
+   */
+  public void listen(Commit<MapCommands.KeyListen> commit) {
+    Map<Integer, Map<Long, Commit<MapCommands.KeyListen>>> listeners = this.listeners.computeIfAbsent(commit.command().key(), k -> new HashMap<>());
+    Map<Long, Commit<MapCommands.KeyListen>> sessions = listeners.computeIfAbsent(commit.command().event(), e -> new HashMap<>());
+    if (!sessions.containsKey(commit.session().id())) {
+      sessions.put(commit.session().id(), commit);
+    } else {
+      commit.release();
+    }
+  }
+
+  /**
+   * Unregisters a key change listener.
+   */
+  public void unlisten(Commit<MapCommands.KeyUnlisten> commit) {
+    try {
+      Map<Integer, Map<Long, Commit<MapCommands.KeyListen>>> listeners = this.listeners.get(commit.command().key());
+      if (listeners != null) {
+        Map<Long, Commit<MapCommands.KeyListen>> sessions = listeners.get(commit.command().event());
+        if (sessions != null) {
+          Commit<MapCommands.KeyListen> listen = sessions.remove(commit.session().id());
+          if (listen != null) {
+            listen.release();
+            if (sessions.isEmpty()) {
+              listeners.remove(commit.command().event());
+              if (listeners.isEmpty()) {
+                this.listeners.remove(commit.command().key());
+              }
+            }
+          }
+        }
+      }
+    } finally {
+      commit.release();
+    }
   }
 
   /**
@@ -100,10 +186,13 @@ public class MapState extends ResourceStateMachine {
         try {
           if (value.timer != null)
             value.timer.cancel();
+          notify(new EntryEvent<>(Events.UPDATE, new MapEntry<>(commit.operation().key(), commit.operation().value())));
           return value.commit.operation().value();
         } finally {
           value.commit.close();
         }
+      } else {
+        notify(new EntryEvent<>(Events.ADD, new MapEntry<>(commit.operation().key(), commit.operation().value())));
       }
       return null;
     } catch (Exception e) {
@@ -124,6 +213,7 @@ public class MapState extends ResourceStateMachine {
         }) : null;
 
         map.put(commit.operation().key(), new Value(commit, timer));
+        notify(new EntryEvent<>(Events.ADD, new MapEntry<>(commit.operation().key(), commit.operation().value())));
         return null;
       } else {
         commit.close();
@@ -145,6 +235,7 @@ public class MapState extends ResourceStateMachine {
         try {
           if (value.timer != null)
             value.timer.cancel();
+          notify(new EntryEvent<>(Events.REMOVE, new MapEntry<>(value.commit.operation().key(), value.commit.operation().value())));
           return value.commit.operation().value();
         } finally {
           value.commit.close();
@@ -170,6 +261,7 @@ public class MapState extends ResourceStateMachine {
           map.remove(commit.operation().key());
           if (value.timer != null)
             value.timer.cancel();
+          notify(new EntryEvent<>(Events.REMOVE, new MapEntry<>(value.commit.operation().key(), value.commit.operation().value())));
           return true;
         } finally {
           value.commit.close();
@@ -194,6 +286,7 @@ public class MapState extends ResourceStateMachine {
           commit.close();
         }) : null;
         map.put(commit.operation().key(), new Value(commit, timer));
+        notify(new EntryEvent<>(Events.UPDATE, new MapEntry<>(commit.operation().key(), commit.operation().value())));
         return value.commit.operation().value();
       } finally {
         value.commit.close();
@@ -222,6 +315,7 @@ public class MapState extends ResourceStateMachine {
         map.remove(commit.operation().key()).commit.close();
       }) : null;
       map.put(commit.operation().key(), new Value(commit, timer));
+      notify(new EntryEvent<>(Events.UPDATE, new MapEntry<>(commit.operation().key(), commit.operation().value())));
       value.commit.close();
       return true;
     } else {
@@ -263,7 +357,7 @@ public class MapState extends ResourceStateMachine {
     try {
       Set<Map.Entry<Object, Object>> entries = new HashSet<>();
       for (Map.Entry<Object, Value> entry : map.entrySet()) {
-        entries.add(new MapEntry(entry.getKey(), entry.getValue().commit.operation().value()));
+        entries.add(new MapEntry<>(entry.getKey(), entry.getValue().commit.operation().value()));
       }
       return entries;
     } finally {
@@ -327,36 +421,6 @@ public class MapState extends ResourceStateMachine {
     private Value(Commit<? extends MapCommands.TtlCommand> commit, Scheduled timer) {
       this.commit = commit;
       this.timer = timer;
-    }
-  }
-
-  /**
-   * Map entry.
-   */
-  private static class MapEntry implements Map.Entry<Object, Object> {
-    private final Object key;
-    private Object value;
-
-    private MapEntry(Object key, Object value) {
-      this.key = Assert.notNull(key, "key");
-      this.value = value;
-    }
-
-    @Override
-    public Object getKey() {
-      return key;
-    }
-
-    @Override
-    public Object getValue() {
-      return value;
-    }
-
-    @Override
-    public Object setValue(Object value) {
-      Object oldValue = this.value;
-      this.value = value;
-      return oldValue;
     }
   }
 

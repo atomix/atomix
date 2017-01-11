@@ -22,10 +22,12 @@ import io.atomix.catalyst.serializer.SerializableTypeResolver;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.catalyst.util.Assert;
+import io.atomix.collections.DistributedMap;
 import io.atomix.copycat.Command;
 import io.atomix.copycat.Query;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -539,6 +541,86 @@ public class MapCommands {
   }
 
   /**
+   * Map key listen command.
+   */
+  public static abstract class EventCommand extends MapCommand<Void> {
+    private int event;
+    private Object key;
+
+    protected EventCommand() {
+    }
+
+    protected EventCommand(int event, Object key) {
+      this.event = event;
+      this.key = key;
+    }
+
+    /**
+     * Returns the event type for which to listen.
+     *
+     * @return The event type for which to listen.
+     */
+    public int event() {
+      return event;
+    }
+
+    /**
+     * Returns the key to which to listen.
+     *
+     * @return The key to which to listen.
+     */
+    public Object key() {
+      return key;
+    }
+
+    @Override
+    public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
+      buffer.writeByte(event);
+      serializer.writeObject(key, buffer);
+    }
+
+    @Override
+    public void readObject(BufferInput<?> buffer, Serializer serializer) {
+      event = buffer.readByte();
+      key = serializer.readObject(buffer);
+    }
+  }
+
+  /**
+   * Map key listen command.
+   */
+  public static class KeyListen extends EventCommand {
+    public KeyListen() {
+    }
+
+    public KeyListen(int event, Object key) {
+      super(event, key);
+    }
+
+    @Override
+    public CompactionMode compaction() {
+      return CompactionMode.QUORUM;
+    }
+  }
+
+  /**
+   * Map key unlisten command.
+   */
+  public static class KeyUnlisten extends EventCommand {
+    public KeyUnlisten() {
+    }
+
+    public KeyUnlisten(int event, Object key) {
+      super(event, key);
+    }
+
+    @Override
+    public CompactionMode compaction() {
+      return CompactionMode.TOMBSTONE;
+    }
+  }
+
+  /**
    * Map command type resolver.
    */
   public static class TypeResolver implements SerializableTypeResolver {
@@ -560,6 +642,9 @@ public class MapCommands {
       registry.register(IsEmpty.class, -75);
       registry.register(Size.class, -76);
       registry.register(Clear.class, -77);
+      registry.register(DistributedMap.EntryEvent.class, -78);
+      registry.register(KeyListen.class, -168);
+      registry.register(KeyUnlisten.class, -169);
     }
   }
 
