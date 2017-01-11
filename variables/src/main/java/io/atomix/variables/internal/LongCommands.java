@@ -22,7 +22,7 @@ import io.atomix.catalyst.serializer.SerializableTypeResolver;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.serializer.SerializerRegistry;
 import io.atomix.copycat.Command;
-import io.atomix.variables.events.ValueChangeEvent;
+import io.atomix.variables.DistributedValue;
 
 /**
  * Long commands.
@@ -153,7 +153,7 @@ public final class LongCommands {
       registry.register(GetAndDecrement.class, -117);
       registry.register(AddAndGet.class, -118);
       registry.register(GetAndAdd.class, -119);
-      registry.register(ValueChangeEvent.class, -120);
+      registry.register(DistributedValue.ChangeEvent.class, -120);
       registry.register(ValueCommands.Register.class, -121);
       registry.register(ValueCommands.Unregister.class, -122);
     }

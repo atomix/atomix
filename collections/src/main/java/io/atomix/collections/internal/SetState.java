@@ -15,17 +15,15 @@
  */
 package io.atomix.collections.internal;
 
-import java.time.Duration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-
 import io.atomix.catalyst.concurrent.Scheduled;
 import io.atomix.copycat.server.Commit;
 import io.atomix.resource.ResourceStateMachine;
+
+import java.time.Duration;
+import java.util.*;
+
+import static io.atomix.collections.DistributedSet.Events;
+import static io.atomix.collections.DistributedSet.ValueEvent;
 
 /**
  * Distributed set state machine.
@@ -61,6 +59,7 @@ public class SetState extends ResourceStateMachine {
           map.remove(commit.operation().value()).commit.close();
         }) : null;
         map.put(commit.operation().value(), new Value(commit, timer));
+        notify(new ValueEvent<>(Events.ADD, commit.operation().value()));
       } else {
         commit.close();
       }
@@ -82,6 +81,7 @@ public class SetState extends ResourceStateMachine {
           if (value.timer != null) {
             value.timer.cancel();
           }
+          notify(new ValueEvent<>(Events.REMOVE, commit.operation().value()));
           return true;
         } finally {
           value.commit.close();

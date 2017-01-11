@@ -15,17 +15,16 @@
  */
 package io.atomix.collections;
 
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
+import io.atomix.testing.AbstractCopycatTest;
+import org.testng.annotations.Test;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import org.testng.annotations.Test;
-
-import io.atomix.testing.AbstractCopycatTest;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
 
 /**
  * Distributed map test.
@@ -85,4 +84,33 @@ public class DistributedSetTest extends AbstractCopycatTest<DistributedSet> {
     });
     await(10000);
   }
+
+  /**
+   * Tests various set events.
+   */
+  public void testSetEvents() throws Throwable {
+    createServers(3);
+
+    DistributedSet<String> set1 = createResource();
+    DistributedSet<String> set2 = createResource();
+
+    set1.onAdd(event -> {
+      threadAssertEquals("Hello world!", event.value());
+      resume();
+    }).thenRun(this::resume);
+    await(5000);
+
+    set1.onRemove(event -> {
+      threadAssertEquals("Hello world!", event.value());
+      resume();
+    }).thenRun(this::resume);
+    await(5000);
+
+    set2.add("Hello world!").thenRun(this::resume);
+    await(5000, 2);
+
+    set2.remove("Hello world!").thenRun(this::resume);
+    await(5000, 2);
+  }
+
 }

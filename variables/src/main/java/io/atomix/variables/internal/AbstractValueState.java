@@ -19,7 +19,6 @@ import io.atomix.catalyst.concurrent.Scheduled;
 import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.session.ServerSession;
 import io.atomix.resource.ResourceStateMachine;
-import io.atomix.variables.events.ValueChangeEvent;
 
 import java.time.Duration;
 import java.util.HashSet;
@@ -39,29 +38,6 @@ public class AbstractValueState<T> extends ResourceStateMachine {
 
   public AbstractValueState(Properties config) {
     super(config);
-  }
-
-  /**
-   * Sends events to event listeners.
-   */
-  protected final void sendEvents(T oldValue, T newValue) {
-    for (ServerSession listener : listeners) {
-      listener.publish("change", new ValueChangeEvent<>(oldValue, newValue));
-    }
-  }
-
-  /**
-   * Registers a listener.
-   */
-  public void register(Commit<ValueCommands.Register> commit) {
-    listeners.add(commit.session());
-  }
-
-  /**
-   * Unregisters a listener.
-   */
-  public void unregister(Commit<ValueCommands.Unregister> commit) {
-    listeners.remove(commit.session());
   }
 
   /**

@@ -19,6 +19,7 @@ import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.Snapshottable;
 import io.atomix.copycat.server.storage.snapshot.SnapshotReader;
 import io.atomix.copycat.server.storage.snapshot.SnapshotWriter;
+import io.atomix.variables.DistributedLong;
 
 import java.util.Properties;
 
@@ -52,7 +53,7 @@ public class LongState extends AbstractValueState<Long> implements Snapshottable
     try {
       Long oldValue = value;
       value = commit.operation().value();
-      sendEvents(oldValue, value);
+      notify(new DistributedLong.ChangeEvent<>(oldValue, value));
     } finally {
       commit.close();
     }
@@ -78,7 +79,7 @@ public class LongState extends AbstractValueState<Long> implements Snapshottable
     try {
       Long oldValue = value;
       value = commit.operation().value();
-      sendEvents(oldValue, value);
+      notify(new DistributedLong.ChangeEvent<>(oldValue, value));
       return oldValue;
     } finally {
       commit.close();
@@ -95,7 +96,7 @@ public class LongState extends AbstractValueState<Long> implements Snapshottable
       if ((value == null && expect == null) || (value != null && value.equals(expect))) {
         Long oldValue = value;
         value = commit.operation().update();
-        sendEvents(oldValue, value);
+        notify(new DistributedLong.ChangeEvent<>(oldValue, value));
         return true;
       }
       return false;
@@ -111,7 +112,7 @@ public class LongState extends AbstractValueState<Long> implements Snapshottable
     try {
       Long oldValue = value;
       value = oldValue + 1;
-      sendEvents(oldValue, value);
+      notify(new DistributedLong.ChangeEvent<>(oldValue, value));
       return value;
     } finally {
       commit.close();
@@ -125,7 +126,7 @@ public class LongState extends AbstractValueState<Long> implements Snapshottable
     try {
       Long oldValue = value;
       value = oldValue - 1;
-      sendEvents(oldValue, value);
+      notify(new DistributedLong.ChangeEvent<>(oldValue, value));
       return value;
     } finally {
       commit.close();
@@ -139,7 +140,7 @@ public class LongState extends AbstractValueState<Long> implements Snapshottable
     try {
       Long oldValue = value;
       value = oldValue + 1;
-      sendEvents(oldValue, value);
+      notify(new DistributedLong.ChangeEvent<>(oldValue, value));
       return oldValue;
     } finally {
       commit.close();
@@ -153,7 +154,7 @@ public class LongState extends AbstractValueState<Long> implements Snapshottable
     try {
       Long oldValue = value;
       value = oldValue - 1;
-      sendEvents(oldValue, value);
+      notify(new DistributedLong.ChangeEvent<>(oldValue, value));
       return oldValue;
     } finally {
       commit.close();
@@ -167,7 +168,7 @@ public class LongState extends AbstractValueState<Long> implements Snapshottable
     try {
       Long oldValue = value;
       value = oldValue + commit.operation().delta();
-      sendEvents(oldValue, value);
+      notify(new DistributedLong.ChangeEvent<>(oldValue, value));
       return value;
     } finally {
       commit.close();
@@ -181,7 +182,7 @@ public class LongState extends AbstractValueState<Long> implements Snapshottable
     try {
       Long oldValue = value;
       value = oldValue + commit.operation().delta();
-      sendEvents(oldValue, value);
+      notify(new DistributedLong.ChangeEvent<>(oldValue, value));
       return oldValue;
     } finally {
       commit.close();

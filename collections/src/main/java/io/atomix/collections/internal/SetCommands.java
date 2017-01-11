@@ -23,6 +23,7 @@ import io.atomix.catalyst.serializer.CatalystSerializable;
 import io.atomix.catalyst.serializer.SerializableTypeResolver;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.serializer.SerializerRegistry;
+import io.atomix.collections.DistributedSet;
 import io.atomix.copycat.Command;
 import io.atomix.copycat.Query;
 
@@ -300,6 +301,7 @@ public class SetCommands {
       registry.register(Size.class, -104);
       registry.register(Clear.class, -105);
       registry.register(Iterator.class, -106);
+      registry.register(DistributedSet.ValueEvent.class, -48);
     }
   }
 

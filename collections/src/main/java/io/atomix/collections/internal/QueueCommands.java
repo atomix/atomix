@@ -21,6 +21,7 @@ import io.atomix.catalyst.serializer.CatalystSerializable;
 import io.atomix.catalyst.serializer.SerializableTypeResolver;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.serializer.SerializerRegistry;
+import io.atomix.collections.DistributedQueue;
 import io.atomix.copycat.Command;
 import io.atomix.copycat.Query;
 
@@ -290,6 +291,7 @@ public class QueueCommands {
       registry.register(IsEmpty.class, -97);
       registry.register(Size.class, -98);
       registry.register(Clear.class, -99);
+      registry.register(DistributedQueue.ValueEvent.class, -79);
     }
   }
 

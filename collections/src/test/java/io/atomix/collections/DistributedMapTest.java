@@ -374,4 +374,59 @@ public class DistributedMapTest extends AbstractCopycatTest<DistributedMap> {
     await(10000);
   }
 
+  /**
+   * Tests various map events.
+   */
+  public void testMapEvents() throws Throwable {
+    createServers(3);
+
+    DistributedMap<String, String> map1 = createResource();
+    DistributedMap<String, String> map2 = createResource();
+
+    map1.onAdd(event -> {
+      threadAssertEquals(event.entry().getKey(), "foo");
+      threadAssertEquals(event.entry().getValue(), "Hello world!");
+      resume();
+    }).thenRun(this::resume);
+    map1.onAdd("foo", event -> {
+      threadAssertEquals(event.entry().getKey(), "foo");
+      threadAssertEquals(event.entry().getValue(), "Hello world!");
+      resume();
+    }).thenRun(this::resume);
+    await(5000, 2);
+
+    map1.onUpdate(event -> {
+      threadAssertEquals(event.entry().getKey(), "foo");
+      threadAssertEquals(event.entry().getValue(), "Hello world again!");
+      resume();
+    }).thenRun(this::resume);
+    map1.onUpdate("foo", event -> {
+      threadAssertEquals(event.entry().getKey(), "foo");
+      threadAssertEquals(event.entry().getValue(), "Hello world again!");
+      resume();
+    }).thenRun(this::resume);
+    await(5000, 2);
+
+    map1.onRemove(event -> {
+      threadAssertEquals(event.entry().getKey(), "foo");
+      threadAssertEquals(event.entry().getValue(), "Hello world again!");
+      resume();
+    }).thenRun(this::resume);
+    map1.onRemove("foo", event -> {
+      threadAssertEquals(event.entry().getKey(), "foo");
+      threadAssertEquals(event.entry().getValue(), "Hello world again!");
+      resume();
+    }).thenRun(this::resume);
+    await(5000, 2);
+
+    map2.put("foo", "Hello world!").thenRun(this::resume);
+    await(5000, 3);
+
+    map2.put("foo", "Hello world again!").thenRun(this::resume);
+    await(5000, 3);
+
+    map2.remove("foo").thenRun(this::resume);
+    await(5000, 3);
+  }
+
 }

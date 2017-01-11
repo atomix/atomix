@@ -15,7 +15,13 @@
  */
 package io.atomix.collections;
 
+import io.atomix.catalyst.buffer.BufferInput;
+import io.atomix.catalyst.buffer.BufferOutput;
+import io.atomix.catalyst.concurrent.Listener;
+import io.atomix.catalyst.serializer.CatalystSerializable;
+import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.collections.internal.MapCommands;
+import io.atomix.collections.internal.MapEntry;
 import io.atomix.collections.util.DistributedMapFactory;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.AbstractResource;
@@ -28,6 +34,9 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.function.Consumer;
 
 /**
  * Stores a map of keys to values.
@@ -61,6 +70,7 @@ import java.util.concurrent.CompletableFuture;
  */
 @ResourceTypeInfo(id=-11, factory=DistributedMapFactory.class)
 public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>> {
+  private final Map<K, Map<Integer, Set<Consumer>>> eventListeners = new ConcurrentHashMap<>();
 
   public DistributedMap(CopycatClient client) {
     this(client, new Options());
@@ -1074,6 +1084,216 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
    */
   public CompletableFuture<Void> clear() {
     return client.submit(new MapCommands.Clear());
+  }
+
+  /**
+   * Registers a new event listener for the given event type.
+   * <p>
+   * Resource implementations should use this method to register event listeners for non-lifecycle
+   * resource events. Calling this method will cause the local session to be automatically registered
+   * with the state machine to listen for new events published in the state machine via the
+   * {@code notify} method.
+   *
+   * @param type The event type for which to register the event listener.
+   * @param callback The event listener callback.
+   * @param <T> The event type.
+   * @return A completable future to be completed once the event listener has been registered.
+   */
+  protected synchronized <T extends Event> CompletableFuture<Listener<T>> onEvent(K key, EventType type, Consumer<T> callback) {
+    Map<Integer, Set<Consumer>> keyListeners = this.eventListeners.computeIfAbsent(key, k -> new ConcurrentHashMap<>());
+    Set<Consumer> eventListeners = keyListeners.computeIfAbsent(type.id(), id -> new CopyOnWriteArraySet<>());
+    eventListeners.add(callback);
+    return client.submit(new MapCommands.KeyListen(type.id(), key)).whenComplete((result, error) -> {
+      if (error != null) {
+        synchronized (this) {
+          eventListeners.remove(callback);
+          if (eventListeners.isEmpty()) {
+            keyListeners.remove(type.id());
+            if (keyListeners.isEmpty()) {
+              this.eventListeners.remove(key);
+            }
+            client.submit(new MapCommands.KeyUnlisten(type.id(), key));
+          }
+        }
+      }
+    }).thenApply(v -> new Listener<T>() {
+      @Override
+      public void accept(T event) {
+        callback.accept(event);
+      }
+
+      @Override
+      public void close() {
+        synchronized (this) {
+          eventListeners.remove(callback);
+          if (eventListeners.isEmpty()) {
+            keyListeners.remove(type.id());
+            if (keyListeners.isEmpty()) {
+              DistributedMap.this.eventListeners.remove(key);
+            }
+            client.submit(new MapCommands.KeyUnlisten(type.id(), key));
+          }
+        }
+      }
+    });
+  }
+
+  /**
+   * Registers a {@link #put(Object, Object)} event listener.
+   *
+   * @param callback The put event callback.
+   * @return The event listener context.
+   */
+  public CompletableFuture<Listener<EntryEvent<K, V>>> onAdd(Consumer<EntryEvent<K, V>> callback) {
+    return onEvent(Events.ADD, callback);
+  }
+
+  /**
+   * Registers a {@link #put(Object, Object)} event listener.
+   *
+   * @param callback The put event callback.
+   * @return The event listener context.
+   */
+  public CompletableFuture<Listener<EntryEvent<K, V>>> onAdd(K key, Consumer<EntryEvent<K, V>> callback) {
+    return onEvent(Events.ADD, callback);
+  }
+
+  /**
+   * Registers a {@link #put(Object, Object)} event listener.
+   *
+   * @param callback The put event listener callback.
+   * @return The event listener context.
+   */
+  public CompletableFuture<Listener<EntryEvent<K, V>>> onUpdate(Consumer<EntryEvent<K, V>> callback) {
+    return onEvent(Events.UPDATE, callback);
+  }
+
+  /**
+   * Registers a {@link #put(Object, Object)} event listener.
+   *
+   * @param callback The put event listener callback.
+   * @return The event listener context.
+   */
+  public CompletableFuture<Listener<EntryEvent<K, V>>> onUpdate(K key, Consumer<EntryEvent<K, V>> callback) {
+    return onEvent(Events.UPDATE, callback);
+  }
+
+  /**
+   * Registers a {@link #remove(Object)} event listener.
+   *
+   * @param callback The remove event listener callback.
+   * @return The event listener context.
+   */
+  public CompletableFuture<Listener<EntryEvent<K, V>>> onRemove(Consumer<EntryEvent<K, V>> callback) {
+    return onEvent(Events.REMOVE, callback);
+  }
+
+  /**
+   * Registers a {@link #remove(Object)} event listener.
+   *
+   * @param callback The remove event listener callback.
+   * @return The event listener context.
+   */
+  public CompletableFuture<Listener<EntryEvent<K, V>>> onRemove(K key, Consumer<EntryEvent<K, V>> callback) {
+    return onEvent(Events.REMOVE, callback);
+  }
+
+  @Override
+  public CompletableFuture<DistributedMap<K, V>> open() {
+    return super.open().thenApply(m -> {
+      client.<EntryEvent>onEvent("key", this::onEvent);
+      return this;
+    });
+  }
+
+  /**
+   * Handles an event from the cluster.
+   */
+  @SuppressWarnings("unchecked")
+  private void onEvent(EntryEvent event) {
+    Map<Integer, Set<Consumer>> keyListeners = eventListeners.get(event.entry.getKey());
+    if (keyListeners != null) {
+      Set<Consumer> eventListeners = keyListeners.get(event.type.id());
+      if (eventListeners != null) {
+        for (Consumer listener : eventListeners) {
+          listener.accept(event);
+        }
+      }
+    }
+  }
+
+  /**
+   * Distributed queue events.
+   */
+  public enum Events implements EventType {
+
+    /**
+     * Entry add event.
+     */
+    ADD,
+
+    /**
+     * Entry update event.
+     */
+    UPDATE,
+
+    /**
+     * Entry remove event.
+     */
+    REMOVE;
+
+    @Override
+    public int id() {
+      return ordinal();
+    }
+  }
+
+  /**
+   * Map entry event.
+   *
+   * @param <K> The entry key type.
+   * @param <V> The entry value type.
+   */
+  public static class EntryEvent<K, V> implements Event, CatalystSerializable {
+    private EventType type;
+    private Map.Entry<K, V> entry;
+
+    public EntryEvent() {
+    }
+
+    public EntryEvent(EventType type, Map.Entry<K, V> entry) {
+      this.type = type;
+      this.entry = entry;
+    }
+
+    @Override
+    public EventType type() {
+      return type;
+    }
+
+    /**
+     * Returns the event entry.
+     *
+     * @return The event entry.
+     */
+    public Map.Entry<K, V> entry() {
+      return entry;
+    }
+
+    @Override
+    public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
+      buffer.writeByte(type.id());
+      serializer.writeObject(entry.getKey(), buffer);
+      serializer.writeObject(entry.getValue(), buffer);
+    }
+
+    @Override
+    public void readObject(BufferInput<?> buffer, Serializer serializer) {
+      type = Events.values()[buffer.readByte()];
+      K key = serializer.readObject(buffer);
+      V value = serializer.readObject(buffer);
+      entry = new MapEntry<>(key, value);
+    }
   }
 
 }

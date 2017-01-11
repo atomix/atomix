@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.variables.events;
+package io.atomix.resource.internal;
 
 import io.atomix.catalyst.buffer.BufferInput;
 import io.atomix.catalyst.buffer.BufferOutput;
@@ -21,55 +21,55 @@ import io.atomix.catalyst.serializer.CatalystSerializable;
 import io.atomix.catalyst.serializer.Serializer;
 
 /**
- * Value change event.
+ * Resource event wrapper.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class ValueChangeEvent<T> implements CatalystSerializable {
-  private T oldValue;
-  private T newValue;
+public class ResourceEvent implements CatalystSerializable {
+  private int eventId;
+  private Object event;
 
-  public ValueChangeEvent() {
+  public ResourceEvent() {
   }
 
-  public ValueChangeEvent(T oldValue, T newValue) {
-    this.oldValue = oldValue;
-    this.newValue = newValue;
-  }
-
-  /**
-   * Returns the old value.
-   *
-   * @return The old value.
-   */
-  public T oldValue() {
-    return oldValue;
+  public ResourceEvent(int eventId, Object event) {
+    this.eventId = eventId;
+    this.event = event;
   }
 
   /**
-   * Returns the new value.
+   * Returns the event ID.
    *
-   * @return The new value.
+   * @return The event ID.
    */
-  public T newValue() {
-    return newValue;
+  public int id() {
+    return eventId;
+  }
+
+  /**
+   * Returns the event value.
+   *
+   * @return The event value.
+   */
+  public Object event() {
+    return event;
   }
 
   @Override
-  public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
-    serializer.writeObject(oldValue, buffer);
-    serializer.writeObject(newValue, buffer);
+  public void writeObject(BufferOutput<?> output, Serializer serializer) {
+    output.writeByte(eventId);
+    serializer.writeObject(event, output);
   }
 
   @Override
-  public void readObject(BufferInput<?> buffer, Serializer serializer) {
-    oldValue = serializer.readObject(buffer);
-    newValue = serializer.readObject(buffer);
+  public void readObject(BufferInput<?> input, Serializer serializer) {
+    eventId = input.readByte();
+    event = serializer.readObject(input);
   }
 
   @Override
   public String toString() {
-    return String.format("%s[oldValue=%s, newValue=%s]", getClass().getSimpleName(), oldValue, newValue);
+    return String.format("%s[id=%d, event=%s]", getClass().getSimpleName(), eventId, event);
   }
 
 }
