@@ -15,7 +15,6 @@
  */
 package io.atomix.collections;
 
-import io.atomix.resource.ResourceType;
 import io.atomix.testing.AbstractCopycatTest;
 import org.testng.annotations.Test;
 
@@ -171,6 +170,56 @@ public class DistributedQueueTest extends AbstractCopycatTest<DistributedQueue> 
     queue2.remove("Hello world!").join();
     assertFalse(queue1.contains("Hello world!").get());
     assertFalse(queue2.contains("Hello world!").get());
+  }
+
+  /**
+   * Tests various queue events.
+   */
+  public void testQueueEvents() throws Throwable {
+    createServers(3);
+
+    DistributedQueue<String> queue1 = createResource();
+    DistributedQueue<String> queue2 = createResource();
+
+    queue1.onAdd(event -> {
+      if (event.value().equals("Hello world!")) {
+        resume();
+      }
+    }).thenRun(this::resume);
+    await(5000);
+
+    queue1.onAdd(event -> {
+      if (event.value().equals("Hello world again!")) {
+        resume();
+      }
+    }).thenRun(this::resume);
+    await(5000);
+
+    queue1.onRemove(event -> {
+      if (event.value().equals("Hello world!")) {
+        resume();
+      }
+    }).thenRun(this::resume);
+    await(5000);
+
+    queue1.onRemove(event -> {
+      if (event.value().equals("Hello world again!")) {
+        resume();
+      }
+    }).thenRun(this::resume);
+    await(5000);
+
+    queue2.add("Hello world!").thenRun(this::resume);
+    await(5000, 2);
+
+    queue2.offer("Hello world again!").thenRun(this::resume);
+    await(5000, 2);
+
+    queue2.remove().thenRun(this::resume);
+    await(5000, 2);
+
+    queue2.poll().thenRun(this::resume);
+    await(5000, 2);
   }
 
 }

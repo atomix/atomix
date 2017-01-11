@@ -23,6 +23,9 @@ import java.util.Iterator;
 import java.util.Properties;
 import java.util.Queue;
 
+import static io.atomix.collections.DistributedQueue.Events;
+import static io.atomix.collections.DistributedQueue.QueueEvent;
+
 /**
  * Distributed set state machine.
  *
@@ -46,7 +49,7 @@ public class QueueState extends ResourceStateMachine {
       }
       return false;
     } finally {
-      commit.close();
+      commit.release();
     }
   }
 
@@ -56,11 +59,12 @@ public class QueueState extends ResourceStateMachine {
   public boolean add(Commit<QueueCommands.Add> commit) {
     try {
       queue.add(commit);
+      notify(new QueueEvent<>(Events.ADD, commit.command().value()));
     } catch (Exception e) {
-      commit.close();
+      commit.release();
       throw e;
     }
-    return false;
+    return true;
   }
 
   /**
@@ -68,12 +72,17 @@ public class QueueState extends ResourceStateMachine {
    */
   public boolean offer(Commit<QueueCommands.Offer> commit) {
     try {
-      queue.offer(commit);
+      if (queue.offer(commit)) {
+        notify(new QueueEvent<>(Events.ADD, commit.command().value()));
+        return true;
+      } else {
+        commit.release();
+        return false;
+      }
     } catch (Exception e) {
-      commit.close();
+      commit.release();
       throw e;
     }
-    return false;
   }
 
   /**
@@ -87,7 +96,7 @@ public class QueueState extends ResourceStateMachine {
       }
       return null;
     } finally {
-      commit.close();
+      commit.release();
     }
   }
 
@@ -99,14 +108,15 @@ public class QueueState extends ResourceStateMachine {
       Commit<? extends QueueCommands.ValueCommand> value = queue.poll();
       if (value != null) {
         try {
+          notify(new QueueEvent<>(Events.REMOVE, value.command().value()));
           return value.operation().value();
         } finally {
-          value.close();
+          value.release();
         }
       }
       return null;
     } finally {
-      commit.close();
+      commit.release();
     }
   }
 
@@ -120,12 +130,12 @@ public class QueueState extends ResourceStateMachine {
         try {
           return value.operation().value();
         } finally {
-          value.close();
+          value.release();
         }
       }
       return null;
     } finally {
-      commit.close();
+      commit.release();
     }
   }
 
@@ -140,7 +150,8 @@ public class QueueState extends ResourceStateMachine {
           Commit<? extends QueueCommands.ValueCommand> value = iterator.next();
           if (value.operation().value().equals(commit.operation().value())) {
             iterator.remove();
-            value.close();
+            notify(new QueueEvent<>(Events.REMOVE, value.command().value()));
+            value.release();
             return true;
           }
         }
@@ -149,15 +160,16 @@ public class QueueState extends ResourceStateMachine {
         Commit<? extends QueueCommands.ValueCommand> value = queue.remove();
         if (value != null) {
           try {
+            notify(new QueueEvent<>(Events.REMOVE, value.command().value()));
             return value.operation().value();
           } finally {
-            value.close();
+            value.release();
           }
         }
         return null;
       }
     } finally {
-      commit.close();
+      commit.release();
     }
   }
 
@@ -168,7 +180,7 @@ public class QueueState extends ResourceStateMachine {
     try {
       return queue.size();
     } finally {
-      commit.close();
+      commit.release();
     }
   }
 
@@ -179,7 +191,7 @@ public class QueueState extends ResourceStateMachine {
     try {
       return queue.isEmpty();
     } finally {
-      commit.close();
+      commit.release();
     }
   }
 
@@ -190,7 +202,7 @@ public class QueueState extends ResourceStateMachine {
     try {
       delete();
     } finally {
-      commit.close();
+      commit.release();
     }
   }
 
@@ -199,7 +211,7 @@ public class QueueState extends ResourceStateMachine {
     Iterator<Commit<? extends QueueCommands.ValueCommand>> iterator = queue.iterator();
     while (iterator.hasNext()) {
       Commit<? extends QueueCommands.ValueCommand> value = iterator.next();
-      value.close();
+      value.release();
       iterator.remove();
     }
   }
