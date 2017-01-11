@@ -24,7 +24,7 @@ import java.util.Properties;
 import java.util.Queue;
 
 import static io.atomix.collections.DistributedQueue.Events;
-import static io.atomix.collections.DistributedQueue.QueueEvent;
+import static io.atomix.collections.DistributedQueue.ValueEvent;
 
 /**
  * Distributed set state machine.
@@ -59,7 +59,7 @@ public class QueueState extends ResourceStateMachine {
   public boolean add(Commit<QueueCommands.Add> commit) {
     try {
       queue.add(commit);
-      notify(new QueueEvent<>(Events.ADD, commit.command().value()));
+      notify(new ValueEvent<>(Events.ADD, commit.command().value()));
     } catch (Exception e) {
       commit.release();
       throw e;
@@ -73,7 +73,7 @@ public class QueueState extends ResourceStateMachine {
   public boolean offer(Commit<QueueCommands.Offer> commit) {
     try {
       if (queue.offer(commit)) {
-        notify(new QueueEvent<>(Events.ADD, commit.command().value()));
+        notify(new ValueEvent<>(Events.ADD, commit.command().value()));
         return true;
       } else {
         commit.release();
@@ -108,7 +108,7 @@ public class QueueState extends ResourceStateMachine {
       Commit<? extends QueueCommands.ValueCommand> value = queue.poll();
       if (value != null) {
         try {
-          notify(new QueueEvent<>(Events.REMOVE, value.command().value()));
+          notify(new ValueEvent<>(Events.REMOVE, value.command().value()));
           return value.operation().value();
         } finally {
           value.release();
@@ -150,7 +150,7 @@ public class QueueState extends ResourceStateMachine {
           Commit<? extends QueueCommands.ValueCommand> value = iterator.next();
           if (value.operation().value().equals(commit.operation().value())) {
             iterator.remove();
-            notify(new QueueEvent<>(Events.REMOVE, value.command().value()));
+            notify(new ValueEvent<>(Events.REMOVE, value.command().value()));
             value.release();
             return true;
           }
@@ -160,7 +160,7 @@ public class QueueState extends ResourceStateMachine {
         Commit<? extends QueueCommands.ValueCommand> value = queue.remove();
         if (value != null) {
           try {
-            notify(new QueueEvent<>(Events.REMOVE, value.command().value()));
+            notify(new ValueEvent<>(Events.REMOVE, value.command().value()));
             return value.operation().value();
           } finally {
             value.release();

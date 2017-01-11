@@ -212,7 +212,7 @@ public class DistributedQueue<T> extends AbstractResource<DistributedQueue<T>> {
    * @param callback The event listener callback to be called when an item is added to the queue.
    * @return A completable future to be completed once the listener has been registered with the cluster.
    */
-  public CompletableFuture<Listener<QueueEvent<T>>> onAdd(Consumer<QueueEvent<T>> callback) {
+  public CompletableFuture<Listener<ValueEvent<T>>> onAdd(Consumer<ValueEvent<T>> callback) {
     return onEvent(Events.ADD, callback);
   }
 
@@ -222,7 +222,7 @@ public class DistributedQueue<T> extends AbstractResource<DistributedQueue<T>> {
    * @param callback The event listener callback to be called when an item is removed from the quue.
    * @return A completable future to be completed once the listener has been registered with the cluster.
    */
-  public CompletableFuture<Listener<QueueEvent<T>>> onRemove(Consumer<QueueEvent<T>> callback) {
+  public CompletableFuture<Listener<ValueEvent<T>>> onRemove(Consumer<ValueEvent<T>> callback) {
     return onEvent(Events.REMOVE, callback);
   }
 
@@ -247,16 +247,16 @@ public class DistributedQueue<T> extends AbstractResource<DistributedQueue<T>> {
   }
 
   /**
-   * Generic queue event.
+   * Generic queue value event.
    */
-  public static class QueueEvent<T> implements Event, CatalystSerializable {
+  public static class ValueEvent<T> implements Event, CatalystSerializable {
     private EventType type;
     private T value;
 
-    public QueueEvent() {
+    public ValueEvent() {
     }
 
-    public QueueEvent(EventType type, T value) {
+    public ValueEvent(EventType type, T value) {
       this.type = type;
       this.value = value;
     }

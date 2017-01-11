@@ -20,7 +20,13 @@ import java.util.Iterator;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
+import io.atomix.catalyst.buffer.BufferInput;
+import io.atomix.catalyst.buffer.BufferOutput;
+import io.atomix.catalyst.concurrent.Listener;
+import io.atomix.catalyst.serializer.CatalystSerializable;
+import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.collections.internal.SetCommands;
 import io.atomix.collections.util.DistributedSetFactory;
 import io.atomix.copycat.client.CopycatClient;
@@ -164,6 +170,88 @@ public class DistributedSet<T> extends AbstractResource<DistributedSet<T>> {
    */
   public CompletableFuture<Void> clear() {
     return client.submit(new SetCommands.Clear());
+  }
+
+  /**
+   * Registers a queue item add event listener.
+   *
+   * @param callback The event listener callback to be called when an item is added to the queue.
+   * @return A completable future to be completed once the listener has been registered with the cluster.
+   */
+  public CompletableFuture<Listener<ValueEvent<T>>> onAdd(Consumer<ValueEvent<T>> callback) {
+    return onEvent(Events.ADD, callback);
+  }
+
+  /**
+   * Registers a queue item remove event listener.
+   *
+   * @param callback The event listener callback to be called when an item is removed from the quue.
+   * @return A completable future to be completed once the listener has been registered with the cluster.
+   */
+  public CompletableFuture<Listener<ValueEvent<T>>> onRemove(Consumer<ValueEvent<T>> callback) {
+    return onEvent(Events.REMOVE, callback);
+  }
+
+  /**
+   * Distributed set event types.
+   */
+  public enum Events implements EventType {
+    /**
+     * Set add event.
+     */
+    ADD,
+
+    /**
+     * Set remove event.
+     */
+    REMOVE;
+
+    @Override
+    public int id() {
+      return ordinal();
+    }
+  }
+
+  /**
+   * Generic set value event.
+   */
+  public static class ValueEvent<T> implements Event, CatalystSerializable {
+    private EventType type;
+    private T value;
+
+    public ValueEvent() {
+    }
+
+    public ValueEvent(EventType type, T value) {
+      this.type = type;
+      this.value = value;
+    }
+
+    @Override
+    public EventType type() {
+      return type;
+    }
+
+    /**
+     * Returns the event value.
+     *
+     * @return The event value.
+     */
+    public T value() {
+      return value;
+    }
+
+    @Override
+    public void writeObject(BufferOutput<?> buffer, Serializer serializer) {
+      buffer.writeByte(type.id());
+      serializer.writeObject(value, buffer);
+    }
+
+    @Override
+    public void readObject(BufferInput<?> buffer, Serializer serializer) {
+      type = Events.values()[buffer.readByte()];
+      value = serializer.readObject(buffer);
+    }
   }
 
 }

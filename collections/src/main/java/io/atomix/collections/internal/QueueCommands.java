@@ -291,7 +291,7 @@ public class QueueCommands {
       registry.register(IsEmpty.class, -97);
       registry.register(Size.class, -98);
       registry.register(Clear.class, -99);
-      registry.register(DistributedQueue.QueueEvent.class, -79);
+      registry.register(DistributedQueue.ValueEvent.class, -79);
     }
   }
 
