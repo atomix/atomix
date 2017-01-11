@@ -114,7 +114,7 @@ public abstract class AbstractMessageProducer<T> implements MessageProducer<T> {
    * Sends a sequential message.
    */
   private CompletableFuture sendAsync(String member, T message) {
-    return client.producerService().send(new GroupCommands.Message(member, id, name, messageId, message, delivery, execution));
+    return client.producerService().send(new GroupCommands.Message(member, id, name, ++messageId, message, delivery, execution));
   }
 
   @Override
