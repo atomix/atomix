@@ -15,6 +15,7 @@
  */
 package io.atomix.group;
 
+import io.atomix.catalyst.concurrent.Listener;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.copycat.client.session.ClientSession;
@@ -23,6 +24,7 @@ import io.atomix.group.messaging.MessageProducer;
 import io.atomix.testing.AbstractCopycatTest;
 import org.testng.annotations.Test;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 import static org.testng.Assert.assertEquals;
@@ -109,8 +111,8 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
   public void testPersistentExpire() throws Throwable {
     createServers(3);
 
-    DistributedGroup group1 = createResource();
-    DistributedGroup group2 = createResource();
+    DistributedGroup group1 = createResource(new DistributedGroup.Config().withMemberExpiration(Duration.ofSeconds(1)));
+    DistributedGroup group2 = createResource(new DistributedGroup.Config().withMemberExpiration(Duration.ofSeconds(1)));
 
     group2.onJoin(m -> {
       if (group2.members().size() == 1) {
@@ -721,6 +723,51 @@ public class DistributedGroupTest extends AbstractCopycatTest<DistributedGroup> 
     // Remove member2 from the group
     member2.leave().thenRun(this::resume);
     await(5000, 3);
+  }
+
+  /**
+   * Tests a persistent member status change.
+   */
+  public void testPersistentMemberStatusChange() throws Throwable {
+    createServers(3);
+
+    final CopycatClient client1 = createCopycatClient();
+    final CopycatClient client2 = createCopycatClient();
+
+    final DistributedGroup group1 = createResource(client1, new DistributedGroup.Options().withAutoRecover(false));
+    final DistributedGroup group2 = createResource(client2, new DistributedGroup.Options().withAutoRecover(false));
+
+    Listener<GroupMember> listener = group2.onJoin(member -> {
+      threadAssertEquals("test", member.id());
+      member.onStatusChange(status -> {
+        if (status == GroupMember.Status.DEAD) {
+          resume();
+        }
+      });
+      resume();
+    });
+
+    group1.join("test").thenRun(this::resume);
+    await(5000, 2);
+
+    // Close the client's session.
+    ((ClientSession) client1.session()).expire().whenComplete((v, e) -> {
+      threadAssertNull(e);
+      resume();
+    });
+    await(10000, 2);
+
+    listener.close();
+
+    final CopycatClient client3 = createCopycatClient();
+    final DistributedGroup group3 = createResource(client3, new DistributedGroup.Options());
+
+    group2.member("test").onStatusChange(status -> {
+      threadAssertEquals(GroupMember.Status.ALIVE, status);
+      resume();
+    });
+    group3.join("test").thenRun(this::resume);
+    await(5000, 2);
   }
 
 }

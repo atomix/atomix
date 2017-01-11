@@ -39,11 +39,23 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
 
   public GroupState(Properties config) {
     super(config);
-    expiration = Duration.ofMillis(Long.valueOf(config.getProperty("expiration", "0")));
+    expiration = Duration.ofMillis(Long.valueOf(config.getProperty("expiration", "-1")));
   }
 
   @Override
-  public void close(ServerSession session) {
+  public void unregister(ServerSession session) {
+    // If an instance's session is explicitly closed, remove all members owned by the instance.
+    remove(session, true);
+  }
+
+  @Override
+  public void expire(ServerSession session) {
+    // If an instance's session is expired, remove non-persistent members and set expiration
+    // timers for persistent members.
+    remove(session, false);
+  }
+
+  public void remove(ServerSession session, boolean force) {
     Map<Long, MemberState> left = new HashMap<>();
 
     // Remove the session from the sessions set.
@@ -57,7 +69,7 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
       MemberState member = iterator.next();
       if (member.session() != null && member.session().equals(session)) {
         // If the member is not persistent, remove the member from the membership group.
-        if (!member.persistent()) {
+        if (force || !member.persistent()) {
           iterator.remove();
           candidates.remove(member);
           left.put(member.index(), member);
@@ -71,11 +83,14 @@ public class GroupState extends ResourceStateMachine implements SessionListener 
           if (expiration.isZero()) {
             sessions.values().forEach(s -> s.leave(member));
           } else {
-            executor.schedule(expiration, () -> {
-              if (member.session() == null) {
-                sessions.values().forEach(s -> s.leave(member));
-              }
-            });
+            sessions.values().forEach(s -> s.dead(member));
+            if (!expiration.isNegative()) {
+              executor.schedule(expiration, () -> {
+                if (member.session() == null) {
+                  sessions.values().forEach(s -> s.leave(member));
+                }
+              });
+            }
           }
         }
 

@@ -15,11 +15,14 @@
  */
 package io.atomix.group.internal;
 
+import io.atomix.catalyst.concurrent.Listener;
+import io.atomix.catalyst.concurrent.Listeners;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.group.GroupMember;
 import io.atomix.group.messaging.internal.AbstractMessageClient;
 
 import java.util.Optional;
+import java.util.function.Consumer;
 
 /**
  * Abstract group member.
@@ -30,6 +33,8 @@ public abstract class AbstractGroupMember implements GroupMember {
   protected final String memberId;
   protected final MembershipGroup group;
   protected final Object metadata;
+  protected volatile Status status = Status.ALIVE;
+  protected final Listeners<Status> statusListeners = new Listeners<>();
 
   public AbstractGroupMember(GroupMemberInfo info, MembershipGroup group) {
     this.memberId = info.memberId();
@@ -40,6 +45,26 @@ public abstract class AbstractGroupMember implements GroupMember {
   @Override
   public String id() {
     return memberId;
+  }
+
+  @Override
+  public Status status() {
+    return status;
+  }
+
+  /**
+   * Called when a status change event is received for the member.
+   */
+  void onStatusChange(Status status) {
+    if (this.status != status) {
+      this.status = status;
+      statusListeners.accept(status);
+    }
+  }
+
+  @Override
+  public Listener<Status> onStatusChange(Consumer<Status> callback) {
+    return statusListeners.add(callback);
   }
 
   @Override

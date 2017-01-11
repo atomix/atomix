@@ -15,9 +15,9 @@
  */
 package io.atomix.group;
 
+import io.atomix.catalyst.concurrent.Listener;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.util.Assert;
-import io.atomix.catalyst.concurrent.Listener;
 import io.atomix.group.election.Election;
 import io.atomix.group.election.Term;
 import io.atomix.group.messaging.Message;
@@ -358,6 +358,31 @@ public interface DistributedGroup extends Resource<DistributedGroup> {
      */
     public Config withMemberExpiration(Duration expiration) {
       setProperty("expiration", String.valueOf(Assert.notNull(expiration, "expiration").toMillis()));
+      return this;
+    }
+  }
+
+  /**
+   * Distributed group options.
+   */
+  class Options extends Resource.Options {
+    private boolean autoRecover = true;
+
+    public Options() {
+    }
+
+    public Options(Properties defaults) {
+      super(defaults);
+    }
+
+    /**
+     * Sets whether to automatically recover sessions and client-side state.
+     *
+     * @param autoRecover Whether to automatically recover sessions and client-side state.
+     * @return The group options.
+     */
+    public Options withAutoRecover(boolean autoRecover) {
+      setProperty("recover", String.valueOf(autoRecover));
       return this;
     }
   }

@@ -15,6 +15,7 @@
  */
 package io.atomix.group.internal;
 
+import io.atomix.catalyst.concurrent.Futures;
 import io.atomix.catalyst.concurrent.Listener;
 import io.atomix.catalyst.concurrent.Listeners;
 import io.atomix.copycat.client.CopycatClient;
@@ -54,6 +55,7 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
   private final Listeners<GroupMember> leaveListeners = new Listeners<>();
   private final GroupElection election = new GroupElection(this);
   private final GroupMessageClient messages;
+  private final DistributedGroup.Options options;
   private final Map<String, AbstractGroupMember> members = new ConcurrentHashMap<>();
   private final MessageProducerService producerService;
   private final MessageConsumerService consumerService;
@@ -64,6 +66,7 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
     this.producerService = new MessageProducerService(this.client);
     this.consumerService = new MessageConsumerService(this.client);
     this.messages = new GroupMessageClient(producerService);
+    this.options = new DistributedGroup.Options(options);
   }
 
   @Override
@@ -162,9 +165,11 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
 
   @Override
   public CompletableFuture<DistributedGroup> open() {
-    return client.connect().thenApply(result -> {
+    return super.open().thenApply(result -> {
       client.onEvent("join", this::onJoinEvent);
       client.onEvent("leave", this::onLeaveEvent);
+      client.onEvent("alive", this::onAliveEvent);
+      client.onEvent("dead", this::onDeadEvent);
       client.onEvent("message", this::onMessageEvent);
       client.onEvent("ack", this::onAckEvent);
       client.onEvent("term", this::onTermEvent);
@@ -176,6 +181,11 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
 
   @Override
   protected CompletableFuture<Void> recover(Integer attempt) {
+    Boolean recover = Boolean.parseBoolean(options.getProperty("recover", "true"));
+    if (!recover) {
+      return Futures.completedFuture(null);
+    }
+
     // When recovering the membership group, we need to ensure that all local non-persistent members are
     // removed from the group prior to fetching the group membership from the cluster again, and prior to
     // adding recovered members that the membership list is updated to ensure the list is consistent
@@ -242,8 +252,11 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
       member = new RemoteGroupMember(info, this, producerService);
       members.put(info.memberId(), member);
       joinListeners.accept(member);
-    } else if (member instanceof LocalGroupMember) {
-      joinListeners.accept(member);
+    } else {
+      member.onStatusChange(GroupMember.Status.ALIVE);
+      if (member instanceof LocalGroupMember) {
+        joinListeners.accept(member);
+      }
     }
   }
 
@@ -255,6 +268,26 @@ public class MembershipGroup extends AbstractResource<DistributedGroup> implemen
     if (member != null) {
       // Trigger leave listeners.
       leaveListeners.accept(member);
+    }
+  }
+
+  /**
+   * Handles a member status change to ALIVE.
+   */
+  private void onAliveEvent(String memberId) {
+    AbstractGroupMember member = members.get(memberId);
+    if (member != null) {
+      member.onStatusChange(GroupMember.Status.ALIVE);
+    }
+  }
+
+  /**
+   * Handles a member status change to DEAD.
+   */
+  private void onDeadEvent(String memberId) {
+    AbstractGroupMember member = members.get(memberId);
+    if (member != null) {
+      member.onStatusChange(GroupMember.Status.DEAD);
     }
   }
 

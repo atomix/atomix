@@ -16,9 +16,11 @@
 package io.atomix.group;
 
 import io.atomix.catalyst.annotations.Experimental;
+import io.atomix.catalyst.concurrent.Listener;
 import io.atomix.group.messaging.MessageClient;
 
 import java.util.Optional;
+import java.util.function.Consumer;
 
 /**
  * A {@link DistributedGroup} member representing a member of the group controlled by a local
@@ -29,6 +31,22 @@ import java.util.Optional;
 public interface GroupMember {
 
   /**
+   * Status constants for indicating whether a member is currently connected to the group.
+   */
+  enum Status {
+    /**
+     * Indicates that the member is alive and communicating with the group.
+     */
+    ALIVE,
+
+    /**
+     * Indicates that the member's session was expired. This status only applies to persistent members
+     * that have been disconnected from the cluster.
+     */
+    DEAD,
+  }
+
+  /**
    * Returns the member ID.
    * <p>
    * The member ID is guaranteed to be unique across the cluster. Depending on how the member was
@@ -37,6 +55,37 @@ public interface GroupMember {
    * @return The member ID.
    */
   String id();
+
+  /**
+   * Returns the member's last known status.
+   * <p>
+   * The member's status indicates whether the member is {@link Status#ALIVE} or {@link Status#DEAD} based
+   * on whether the member's session is open. Note that the consistency of client-side events is
+   * {@code SEQUENTIAL}, meaning all group instances will see status changes in the same order some time
+   * after the event actually occurred (asynchronously). So, even if a member's status is {@link Status#DEAD}
+   * from the perspective of one node, it may be {@link Status#ALIVE} from the perspective of another.
+   * Users should elect leaders to coordinate change in response to member status changes.
+   *
+   * @return The member status.
+   */
+  Status status();
+
+  /**
+   * Registers a member status change listener.
+   * <p>
+   * The status change listener will be called when a member's session expires.
+   * <p>
+   * The member's status indicates whether the member is {@link Status#ALIVE} or {@link Status#DEAD} based
+   * on whether the member's session is open. Note that the consistency of client-side events is
+   * {@code SEQUENTIAL}, meaning all group instances will see status changes in the same order some time
+   * after the event actually occurred (asynchronously). So, even if a member's status is {@link Status#DEAD}
+   * from the perspective of one node, it may be {@link Status#ALIVE} from the perspective of another.
+   * Users should elect leaders to coordinate change in response to member status changes.
+   *
+   * @param callback The callback to be called when the member's status changes.
+   * @return The status listener context.
+   */
+  Listener<Status> onStatusChange(Consumer<Status> callback);
 
   /**
    * Returns the direct message client for this member.
