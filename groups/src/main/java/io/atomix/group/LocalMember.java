@@ -15,6 +15,7 @@
  */
 package io.atomix.group;
 
+import io.atomix.catalyst.annotations.Beta;
 import io.atomix.catalyst.annotations.Experimental;
 import io.atomix.group.messaging.MessageService;
 
@@ -40,6 +41,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
+@Beta
 public interface LocalMember extends GroupMember {
 
   /**

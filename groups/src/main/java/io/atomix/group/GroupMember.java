@@ -15,6 +15,7 @@
  */
 package io.atomix.group;
 
+import io.atomix.catalyst.annotations.Beta;
 import io.atomix.catalyst.annotations.Experimental;
 import io.atomix.catalyst.concurrent.Listener;
 import io.atomix.group.messaging.MessageClient;
@@ -28,6 +29,7 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
+@Beta
 public interface GroupMember {
 
   /**
