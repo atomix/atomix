@@ -1155,7 +1155,7 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
    * @return The event listener context.
    */
   public CompletableFuture<Listener<EntryEvent<K, V>>> onAdd(K key, Consumer<EntryEvent<K, V>> callback) {
-    return onEvent(Events.ADD, callback);
+    return onEvent(key, Events.ADD, callback);
   }
 
   /**
@@ -1175,7 +1175,7 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
    * @return The event listener context.
    */
   public CompletableFuture<Listener<EntryEvent<K, V>>> onUpdate(K key, Consumer<EntryEvent<K, V>> callback) {
-    return onEvent(Events.UPDATE, callback);
+    return onEvent(key, Events.UPDATE, callback);
   }
 
   /**
@@ -1195,7 +1195,7 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
    * @return The event listener context.
    */
   public CompletableFuture<Listener<EntryEvent<K, V>>> onRemove(K key, Consumer<EntryEvent<K, V>> callback) {
-    return onEvent(Events.REMOVE, callback);
+    return onEvent(key, Events.REMOVE, callback);
   }
 
   @Override
