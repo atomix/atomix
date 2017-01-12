@@ -98,7 +98,7 @@ public abstract class AbstractResource<T extends Resource<T>> implements Resourc
           }
         }
       }
-    }).thenApply(v -> new Listener<T>() {
+    }).<Listener<T>>thenApply(v -> new Listener<T>() {
       @Override
       public void accept(T event) {
         callback.accept(event);

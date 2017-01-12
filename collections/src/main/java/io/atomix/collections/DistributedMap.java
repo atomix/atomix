@@ -1116,7 +1116,7 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
           }
         }
       }
-    }).thenApply(v -> new Listener<T>() {
+    }).<Listener<T>>thenApply(v -> new Listener<T>() {
       @Override
       public void accept(T event) {
         callback.accept(event);
