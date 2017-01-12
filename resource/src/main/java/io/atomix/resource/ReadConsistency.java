@@ -65,7 +65,17 @@ public enum ReadConsistency {
    * client must submit its last known index with the query as well. If the server that receives the query has not advanced
    * past the provided client index, it will queue the query and await more entries from the leader.
    */
-  SEQUENTIAL(Query.ConsistencyLevel.SEQUENTIAL);
+  SEQUENTIAL(Query.ConsistencyLevel.SEQUENTIAL),
+
+  /**
+   * Reads state from a local cache if possible, otherwise guarantees sequential consistency.
+   * <p>
+   * This is a special consistency level specifically for use in resources that support local caching. When state is read
+   * using {@code LOCAL} read consistency, cached resources will attempt to service the read from the local cache and
+   * fall back to {@link #SEQUENTIAL} communication with the cluster. State changes in the local cache must be similarly
+   * guaranteed to occur in sequential order.
+   */
+  LOCAL(Query.ConsistencyLevel.SEQUENTIAL);
 
   private final Query.ConsistencyLevel level;
 

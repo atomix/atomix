@@ -26,6 +26,7 @@ import io.atomix.collections.util.DistributedMapFactory;
 import io.atomix.copycat.client.CopycatClient;
 import io.atomix.resource.AbstractResource;
 import io.atomix.resource.ReadConsistency;
+import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceTypeInfo;
 
 import java.time.Duration;
@@ -68,8 +69,65 @@ import java.util.function.Consumer;
  * @param <V> The map entry type.
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@ResourceTypeInfo(id=-11, factory=DistributedMapFactory.class)
+@ResourceTypeInfo(id = -11, factory = DistributedMapFactory.class)
 public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>> {
+
+  /**
+   * Distributed map options.
+   */
+  public static class Options extends Resource.Options {
+    public Options() {
+    }
+
+    public Options(Properties defaults) {
+      super(defaults);
+    }
+
+    /**
+     * Enables the local map cache.
+     * <p>
+     * When local caching is enabled, the {@link DistributedMap} will update a local in-memory map each
+     * time a change event is received. The instance will hold the full map in memory and will service
+     * all {@link ReadConsistency#LOCAL} reads from the local map. Thus, this feature should be used with
+     * caution. <em>Do not enable caching on large maps.</em>
+     *
+     * @return The map options.
+     */
+    public Options withLocalCache() {
+      return withLocalCache(true);
+    }
+
+    /**
+     * Sets whether to enable local caching.
+     * <p>
+     * When local caching is enabled, the {@link DistributedMap} will update a local in-memory map each
+     * time a change event is received. The instance will hold the full map in memory and will service
+     * all {@link ReadConsistency#LOCAL} reads from the local map. Thus, this feature should be used with
+     * caution. <em>Do not enable caching on large maps.</em>
+     *
+     * @param enableCache Whether to enable local caching.
+     * @return The map options.
+     */
+    public Options withLocalCache(boolean enableCache) {
+      setProperty("cache", String.valueOf(enableCache));
+      return this;
+    }
+
+    /**
+     * Returns whether local caching is enabled.
+     * <p>
+     * When local caching is enabled, the {@link DistributedMap} will update a local in-memory map each
+     * time a change event is received.
+     *
+     * @return Whether local caching is enabled.
+     */
+    public boolean isLocalCache() {
+      return Boolean.parseBoolean(getProperty("cache", "false"));
+    }
+  }
+
+  private final Options options;
+  private final Map<K, V> cache;
   private final Map<K, Map<Integer, Set<Consumer>>> eventListeners = new ConcurrentHashMap<>();
 
   public DistributedMap(CopycatClient client) {
@@ -78,6 +136,17 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
 
   public DistributedMap(CopycatClient client, Properties options) {
     super(client, options);
+    this.options = new Options(options);
+    if (this.options.isLocalCache()) {
+      this.cache = new ConcurrentHashMap<>();
+    } else {
+      this.cache = null;
+    }
+  }
+
+  @Override
+  public Options options() {
+    return options;
   }
 
   /**
@@ -323,7 +392,7 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
    *   }
    * </pre>
    *
-   * @param key The key to check.
+   * @param key         The key to check.
    * @param consistency The read consistency level.
    * @return A completable future to be completed with a boolean indicating whether {@code key} is present in the map.
    * @throws NullPointerException if {@code key} is {@code null}
@@ -411,7 +480,7 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
    *   }
    * </pre>
    *
-   * @param value The value for which to search keys.
+   * @param value       The value for which to search keys.
    * @param consistency The read consistency level.
    * @return A completable future to be completed with a boolean indicating whether {@code key} is present in the map.
    * @throws NullPointerException if {@code key} is {@code null}
@@ -496,13 +565,16 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
    *   }
    * </pre>
    *
-   * @param key The key to get.
+   * @param key         The key to get.
    * @param consistency The read consistency level.
    * @return A completable future to be completed with the result once complete.
    * @throws NullPointerException if {@code key} is {@code null}
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<V> get(Object key, ReadConsistency consistency) {
+    if (consistency == ReadConsistency.LOCAL && cache != null) {
+      return CompletableFuture.completedFuture(cache.get(key));
+    }
     return client.submit(new MapCommands.Get(key, consistency.level())).thenApply(result -> (V) result);
   }
 
@@ -543,7 +615,7 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
    *   }
    * </pre>
    *
-   * @param key The key to get.
+   * @param key          The key to get.
    * @param defaultValue The default value to return if the key does not exist.
    * @return A completable future to be completed with the result once complete.
    * @throws NullPointerException if {@code key} is {@code null}
@@ -589,14 +661,17 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
    *   }
    * </pre>
    *
-   * @param key The key to get.
+   * @param key          The key to get.
    * @param defaultValue The default value to return if the key does not exist.
-   * @param consistency The read consistency level.
+   * @param consistency  The read consistency level.
    * @return A completable future to be completed with the result once complete.
    * @throws NullPointerException if {@code key} is {@code null}
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<V> getOrDefault(Object key, V defaultValue, ReadConsistency consistency) {
+    if (consistency == ReadConsistency.LOCAL && cache != null) {
+      return CompletableFuture.completedFuture(cache.getOrDefault(key, defaultValue));
+    }
     return client.submit(new MapCommands.GetOrDefault(key, defaultValue, consistency.level())).thenApply(result -> (V) result);
   }
 
@@ -662,9 +737,9 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
    *   }
    * </pre>
    *
-   * @param key The key to set.
+   * @param key   The key to set.
    * @param value The value to set.
-   * @param ttl The duration after which to expire the key.
+   * @param ttl   The duration after which to expire the key.
    * @return A completable future to be completed with the result once complete.
    * @throws NullPointerException if {@code key} is {@code null}
    */
@@ -735,7 +810,7 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
    *
    * @param key   The key to set.
    * @param value The value to set if the given key does not exist.
-   * @param ttl The time to live duration.
+   * @param ttl   The time to live duration.
    * @return A completable future to be completed with the result once complete.
    * @throws NullPointerException if {@code key} is {@code null}
    */
@@ -839,7 +914,7 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
    *   }
    * </pre>
    *
-   * @param key The key to replace.
+   * @param key   The key to replace.
    * @param value The value with which to replace the key if it exists.
    * @return A completable future to be completed with the result once complete.
    * @throws NullPointerException if {@code key} is {@code null}
@@ -877,9 +952,9 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
    *   }
    * </pre>
    *
-   * @param key The key to replace.
+   * @param key   The key to replace.
    * @param value The value with which to replace the key if it exists.
-   * @param ttl The duration after which to expire the key/value.
+   * @param ttl   The duration after which to expire the key/value.
    * @return A completable future to be completed with the result once complete.
    * @throws NullPointerException if {@code key} is {@code null}
    */
@@ -914,7 +989,7 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
    *   }
    * </pre>
    *
-   * @param key The key to replace.
+   * @param key      The key to replace.
    * @param oldValue The value to check.
    * @param newValue The value to replace.
    * @return A completable future to be completed with the result once complete.
@@ -955,10 +1030,10 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
    *   }
    * </pre>
    *
-   * @param key The key to replace.
+   * @param key      The key to replace.
    * @param oldValue The value to check.
    * @param newValue The value to replace.
-   * @param ttl The duration after which to expire the key/value.
+   * @param ttl      The duration after which to expire the key/value.
    * @return A completable future to be completed with the result once complete.
    * @throws NullPointerException if {@code key} is {@code null}
    */
@@ -998,6 +1073,45 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
   }
 
   /**
+   * Reads the set of all keys in the map.
+   * <p>
+   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
+   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
+   * use the {@link CompletableFuture#get()} or {@link CompletableFuture#join()} method to block the calling thread:
+   * <pre>
+   *   {@code
+   *   Set<String> keys = map.keySet().get();
+   *   }
+   * </pre>
+   * Alternatively, to execute the operation asynchronous and be notified once the operation is complete in a different
+   * thread, use one of the many completable future callbacks:
+   * <pre>
+   *   {@code
+   *   map.keySet().thenAccept(keys -> {
+   *     keys.forEach(key -> ...);
+   *   });
+   *   map.replace("key", "Hello world!", "Hello world again!", Duration.ofSeconds(10)).thenAccept(oldValue -> {
+   *     ...
+   *   });
+   *   }
+   * </pre>
+   * <p>
+   * If the provided {@link ReadConsistency} is {@link ReadConsistency#LOCAL} and local caching is enabled for
+   * the map, reads will be serviced via the cache. Otherwise, reads will fall back to {@link ReadConsistency#SEQUENTIAL}
+   * if the cache is not enabled.
+   *
+   * @param consistency The read consistency level.
+   * @return A completable future to be completed with the result once complete.
+   */
+  @SuppressWarnings("unchecked")
+  public CompletableFuture<Set<K>> keySet(ReadConsistency consistency) {
+    if (consistency == ReadConsistency.LOCAL && cache != null) {
+      return CompletableFuture.completedFuture(cache.keySet());
+    }
+    return client.submit(new MapCommands.KeySet(consistency.level())).thenApply(keys -> (Set<K>) keys);
+  }
+
+  /**
    * Reads the collection of all values in the map.
    * <p>
    * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
@@ -1029,6 +1143,45 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
   }
 
   /**
+   * Reads the collection of all values in the map.
+   * <p>
+   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
+   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
+   * use the {@link CompletableFuture#get()} or {@link CompletableFuture#join()} method to block the calling thread:
+   * <pre>
+   *   {@code
+   *   Set<String> keys = map.keySet().get();
+   *   }
+   * </pre>
+   * Alternatively, to execute the operation asynchronous and be notified once the operation is complete in a different
+   * thread, use one of the many completable future callbacks:
+   * <pre>
+   *   {@code
+   *   map.keySet().thenAccept(keys -> {
+   *     keys.forEach(key -> ...);
+   *   });
+   *   map.replace("key", "Hello world!", "Hello world again!", Duration.ofSeconds(10)).thenAccept(oldValue -> {
+   *     ...
+   *   });
+   *   }
+   * </pre>
+   * <p>
+   * If the provided {@link ReadConsistency} is {@link ReadConsistency#LOCAL} and local caching is enabled for
+   * the map, reads will be serviced via the cache. Otherwise, reads will fall back to {@link ReadConsistency#SEQUENTIAL}
+   * if the cache is not enabled.
+   *
+   * @param consistency The read consistency level.
+   * @return A completable future to be completed with the result once complete.
+   */
+  @SuppressWarnings("unchecked")
+  public CompletableFuture<Collection<V>> values(ReadConsistency consistency) {
+    if (consistency == ReadConsistency.LOCAL && cache != null) {
+      return CompletableFuture.completedFuture(cache.values());
+    }
+    return client.submit(new MapCommands.Values(consistency.level())).thenApply(values -> (Collection<V>) values);
+  }
+
+  /**
    * Reads the set of all entries in the map.
    * <p>
    * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
@@ -1057,6 +1210,45 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
   @SuppressWarnings("unchecked")
   public CompletableFuture<Set<Map.Entry<K, V>>> entrySet() {
     return client.submit(new MapCommands.EntrySet()).thenApply(entries -> (Set<Map.Entry<K, V>>) entries);
+  }
+
+  /**
+   * Reads the set of all entries in the map.
+   * <p>
+   * This method returns a {@link CompletableFuture} which can be used to block until the operation completes
+   * or to be notified in a separate thread once the operation completes. To block until the operation completes,
+   * use the {@link CompletableFuture#get()} or {@link CompletableFuture#join()} method to block the calling thread:
+   * <pre>
+   *   {@code
+   *   Set<String> keys = map.keySet().get();
+   *   }
+   * </pre>
+   * Alternatively, to execute the operation asynchronous and be notified once the operation is complete in a different
+   * thread, use one of the many completable future callbacks:
+   * <pre>
+   *   {@code
+   *   map.keySet().thenAccept(keys -> {
+   *     keys.forEach(key -> ...);
+   *   });
+   *   map.replace("key", "Hello world!", "Hello world again!", Duration.ofSeconds(10)).thenAccept(oldValue -> {
+   *     ...
+   *   });
+   *   }
+   * </pre>
+   * <p>
+   * If the provided {@link ReadConsistency} is {@link ReadConsistency#LOCAL} and local caching is enabled for
+   * the map, reads will be serviced via the cache. Otherwise, reads will fall back to {@link ReadConsistency#SEQUENTIAL}
+   * if the cache is not enabled.
+   *
+   * @param consistency The read consistency level.
+   * @return A completable future to be completed with the result once complete.
+   */
+  @SuppressWarnings("unchecked")
+  public CompletableFuture<Set<Map.Entry<K, V>>> entrySet(ReadConsistency consistency) {
+    if (consistency == ReadConsistency.LOCAL && cache != null) {
+      return CompletableFuture.completedFuture(cache.entrySet());
+    }
+    return client.submit(new MapCommands.EntrySet(consistency.level())).thenApply(entries -> (Set<Map.Entry<K, V>>) entries);
   }
 
   /**
@@ -1094,9 +1286,9 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
    * with the state machine to listen for new events published in the state machine via the
    * {@code notify} method.
    *
-   * @param type The event type for which to register the event listener.
+   * @param type     The event type for which to register the event listener.
    * @param callback The event listener callback.
-   * @param <T> The event type.
+   * @param <T>      The event type.
    * @return A completable future to be completed once the event listener has been registered.
    */
   protected synchronized <T extends Event> CompletableFuture<Listener<T>> onEvent(K key, EventType type, Consumer<T> callback) {
@@ -1200,10 +1392,18 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
 
   @Override
   public CompletableFuture<DistributedMap<K, V>> open() {
-    return super.open().thenApply(m -> {
+    CompletableFuture<DistributedMap<K, V>> future = super.open().thenApply(m -> {
       client.<EntryEvent>onEvent("key", this::onEvent);
       return this;
     });
+
+    if (options.isLocalCache()) {
+      return future.thenCompose(v -> onAdd(this::onAdd))
+        .thenCompose(v -> onUpdate(this::onUpdate))
+        .thenCompose(v -> onRemove(this::onRemove))
+        .thenApply(v -> this);
+    }
+    return future;
   }
 
   /**
@@ -1220,6 +1420,27 @@ public class DistributedMap<K, V> extends AbstractResource<DistributedMap<K, V>>
         }
       }
     }
+  }
+
+  /**
+   * Updates the cache when an entry is added to the map.
+   */
+  private void onAdd(EntryEvent<K, V> event) {
+    cache.put(event.entry.getKey(), event.entry.getValue());
+  }
+
+  /**
+   * Updates the cache when an entry is updated in the map.
+   */
+  private void onUpdate(EntryEvent<K, V> event) {
+    cache.put(event.entry.getKey(), event.entry.getValue());
+  }
+
+  /**
+   * Updates the cache when an entry is removed from the map.
+   */
+  private void onRemove(EntryEvent<K, V> event) {
+    cache.remove(event.entry.getKey());
   }
 
   /**

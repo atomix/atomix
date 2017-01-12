@@ -15,6 +15,7 @@
  */
 package io.atomix.collections;
 
+import io.atomix.resource.ReadConsistency;
 import io.atomix.testing.AbstractCopycatTest;
 import org.testng.annotations.Test;
 
@@ -372,6 +373,29 @@ public class DistributedMapTest extends AbstractCopycatTest<DistributedMap> {
       });
     });
     await(10000);
+  }
+
+  /**
+   * Tests reading from the local map cache.
+   */
+  public void testMapCache() throws Throwable {
+    createServers(3);
+
+    DistributedMap<String, String> map1 = createResource(new DistributedMap.Options().withLocalCache());
+    DistributedMap<String, String> map2 = createResource(new DistributedMap.Options().withLocalCache());
+
+    map1.onAdd(event -> {
+      resume();
+    });
+
+    map2.put("foo", "Hello world!").thenRun(this::resume);
+    await(5000, 2);
+
+    map1.get("foo", ReadConsistency.LOCAL).thenAccept(result -> {
+      threadAssertEquals("Hello world!", result);
+      resume();
+    });
+    await(5000);
   }
 
   /**
