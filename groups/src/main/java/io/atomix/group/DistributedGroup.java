@@ -15,6 +15,7 @@
  */
 package io.atomix.group;
 
+import io.atomix.catalyst.annotations.Beta;
 import io.atomix.catalyst.concurrent.Listener;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.util.Assert;
@@ -335,6 +336,7 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
+@Beta
 @ResourceTypeInfo(id=-20, factory=DistributedGroupFactory.class)
 public interface DistributedGroup extends Resource<DistributedGroup> {
 
