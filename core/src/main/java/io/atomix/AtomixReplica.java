@@ -766,6 +766,7 @@ public final class AtomixReplica extends Atomix {
      * @throws NullPointerException if {@code sessionTimeout} is null
      */
     public Builder withSessionTimeout(Duration sessionTimeout) {
+      clientBuilder.withSessionTimeout(sessionTimeout);
       serverBuilder.withSessionTimeout(sessionTimeout);
       return this;
     }

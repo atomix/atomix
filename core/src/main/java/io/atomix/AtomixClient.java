@@ -27,6 +27,7 @@ import io.atomix.manager.options.ClientOptions;
 import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceType;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Properties;
@@ -228,6 +229,17 @@ public class AtomixClient extends Atomix {
      */
     public Builder withSerializer(Serializer serializer) {
       builder.withSerializer(serializer);
+      return this;
+    }
+
+    /**
+     * Sets the client session timeout.
+     *
+     * @param sessionTimeout The client session timeout.
+     * @return The client builder.
+     */
+    public Builder withSessionTimeout(Duration sessionTimeout) {
+      builder.withSessionTimeout(sessionTimeout);
       return this;
     }
 
