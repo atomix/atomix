@@ -37,6 +37,7 @@ import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceRegistry;
 import io.atomix.resource.ResourceType;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -378,6 +379,17 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
      */
     public Builder withSerializer(Serializer serializer) {
       clientBuilder.withSerializer(serializer);
+      return this;
+    }
+
+    /**
+     * Sets the client session timeout.
+     *
+     * @param sessionTimeout The client session timeout.
+     * @return The client builder.
+     */
+    public Builder withSessionTimeout(Duration sessionTimeout) {
+      clientBuilder.withSessionTimeout(sessionTimeout);
       return this;
     }
 
