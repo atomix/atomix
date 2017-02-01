@@ -212,6 +212,7 @@ public class ResourceManagerState extends StateMachine implements SessionListene
       // Delete the resource state machine and close the resource state machine executor.
       resource.stateMachine.delete();
       resource.executor.close();
+      resource.commit.close();
 
       keys.remove(resource.key);
       return true;
@@ -282,19 +283,6 @@ public class ResourceManagerState extends StateMachine implements SessionListene
       this.commit = commit;
       this.stateMachine = stateMachine;
       this.executor = executor;
-    }
-  }
-
-  /**
-   * Session holder.
-   */
-  private static class SessionHolder {
-    private final Commit commit;
-    private final ManagedResourceSession session;
-
-    private SessionHolder(Commit commit, ManagedResourceSession session) {
-      this.commit = commit;
-      this.session = session;
     }
   }
 
