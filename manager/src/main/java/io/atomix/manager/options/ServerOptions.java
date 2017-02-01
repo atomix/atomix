@@ -57,7 +57,7 @@ public class ServerOptions extends AtomixOptions {
   private static final int DEFAULT_MAX_SEGMENT_SIZE = 1024 * 1024 * 32;
   private static final int DEFAULT_MAX_ENTRIES_PER_SEGMENT = 1024 * 1024;
   private static final boolean DEFAULT_RETAIN_STALE_SNAPSHOTS = false;
-  private static final int DEFAULT_COMPACTION_THREADS = Runtime.getRuntime().availableProcessors() / 2;
+  private static final int DEFAULT_COMPACTION_THREADS = Math.max(1, Runtime.getRuntime().availableProcessors() / 2);
   private static final Duration DEFAULT_MINOR_COMPACTION_INTERVAL = Duration.ofMinutes(1);
   private static final Duration DEFAULT_MAJOR_COMPACTION_INTERVAL = Duration.ofHours(1);
   private static final double DEFAULT_COMPACTION_THRESHOLD = 0.5;
