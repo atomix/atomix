@@ -18,7 +18,6 @@ package io.atomix.collections.internal;
 import io.atomix.catalyst.concurrent.Scheduled;
 import io.atomix.copycat.server.Commit;
 import io.atomix.copycat.server.session.ServerSession;
-import io.atomix.resource.Resource;
 import io.atomix.resource.ResourceStateMachine;
 
 import java.time.Duration;
@@ -177,22 +176,29 @@ public class MapState extends ResourceStateMachine {
    */
   public Object put(Commit<MapCommands.Put> commit) {
     try {
-      Scheduled timer = commit.operation().ttl() > 0 ? executor.schedule(Duration.ofMillis(commit.operation().ttl()), () -> {
-        map.remove(commit.operation().key()).commit.close();
+      final Object key = commit.command().key();
+      final long ttl = commit.command().ttl();
+
+      final Scheduled timer = ttl > 0 ? executor.schedule(Duration.ofMillis(ttl), () -> {
+        Value removed = map.remove(key);
+        if (removed != null) {
+          notify(new EntryEvent<>(Events.REMOVE, new MapEntry<>(key, removed.commit.command().value())));
+          removed.commit.close();
+        }
       }) : null;
 
-      Value value = map.put(commit.operation().key(), new Value(commit, timer));
+      Value value = map.put(key, new Value(commit, timer));
       if (value != null) {
         try {
           if (value.timer != null)
             value.timer.cancel();
-          notify(new EntryEvent<>(Events.UPDATE, new MapEntry<>(commit.operation().key(), commit.operation().value())));
+          notify(new EntryEvent<>(Events.UPDATE, new MapEntry<>(key, commit.operation().value())));
           return value.commit.operation().value();
         } finally {
           value.commit.close();
         }
       } else {
-        notify(new EntryEvent<>(Events.ADD, new MapEntry<>(commit.operation().key(), commit.operation().value())));
+        notify(new EntryEvent<>(Events.ADD, new MapEntry<>(key, commit.operation().value())));
       }
       return null;
     } catch (Exception e) {
@@ -206,18 +212,25 @@ public class MapState extends ResourceStateMachine {
    */
   public Object putIfAbsent(Commit<MapCommands.PutIfAbsent> commit) {
     try {
-      Value value = map.get(commit.operation().key());
+      final Object key = commit.command().key();
+      final long ttl = commit.command().ttl();
+
+      final Value value = map.get(key);
       if (value == null) {
-        Scheduled timer = commit.operation().ttl() > 0 ? executor.schedule(Duration.ofMillis(commit.operation().ttl()), () -> {
-          map.remove(commit.operation().key()).commit.close();
+        final Scheduled timer = ttl > 0 ? executor.schedule(Duration.ofMillis(ttl), () -> {
+          Value removed = map.remove(key);
+          if (removed != null) {
+            notify(new EntryEvent<>(Events.REMOVE, new MapEntry<>(key, removed.commit.command().value())));
+            removed.commit.close();
+          }
         }) : null;
 
-        map.put(commit.operation().key(), new Value(commit, timer));
-        notify(new EntryEvent<>(Events.ADD, new MapEntry<>(commit.operation().key(), commit.operation().value())));
+        map.put(key, new Value(commit, timer));
+        notify(new EntryEvent<>(Events.ADD, new MapEntry<>(key, commit.command().value())));
         return null;
       } else {
         commit.close();
-        return value.commit.operation().value();
+        return value.commit.command().value();
       }
     } catch (Exception e) {
       commit.close();
@@ -279,14 +292,22 @@ public class MapState extends ResourceStateMachine {
     Value value = map.get(commit.operation().key());
     if (value != null) {
       try {
+        final Object key = commit.command().key();
+        final long ttl = commit.command().ttl();
+
         if (value.timer != null)
           value.timer.cancel();
-        Scheduled timer = commit.operation().ttl() > 0 ? executor.schedule(Duration.ofMillis(commit.operation().ttl()), () -> {
-          map.remove(commit.operation().key());
-          commit.close();
+
+        final Scheduled timer = ttl > 0 ? executor.schedule(Duration.ofMillis(ttl), () -> {
+          Value removed = map.remove(key);
+          if (removed != null) {
+            notify(new EntryEvent<>(Events.REMOVE, new MapEntry<>(key, removed.commit.command().value())));
+            removed.commit.close();
+          }
         }) : null;
-        map.put(commit.operation().key(), new Value(commit, timer));
-        notify(new EntryEvent<>(Events.UPDATE, new MapEntry<>(commit.operation().key(), commit.operation().value())));
+
+        map.put(key, new Value(commit, timer));
+        notify(new EntryEvent<>(Events.UPDATE, new MapEntry<>(key, commit.command().value())));
         return value.commit.operation().value();
       } finally {
         value.commit.close();
@@ -301,7 +322,9 @@ public class MapState extends ResourceStateMachine {
    * Handles a replace if present commit.
    */
   public boolean replaceIfPresent(Commit<MapCommands.ReplaceIfPresent> commit) {
-    Value value = map.get(commit.operation().key());
+    final Object key = commit.command().key();
+
+    Value value = map.get(key);
     if (value == null) {
       commit.close();
       return false;
@@ -311,11 +334,18 @@ public class MapState extends ResourceStateMachine {
       || (value.commit.operation().value() != null && value.commit.operation().value().equals(commit.operation().replace()))) {
       if (value.timer != null)
         value.timer.cancel();
-      Scheduled timer = commit.operation().ttl() > 0 ? executor.schedule(Duration.ofMillis(commit.operation().ttl()), () -> {
-        map.remove(commit.operation().key()).commit.close();
+
+      final long ttl = commit.command().ttl();
+      final Scheduled timer = ttl > 0 ? executor.schedule(Duration.ofMillis(ttl), () -> {
+        Value removed = map.remove(key);
+        if (removed != null) {
+          notify(new EntryEvent<>(Events.REMOVE, new MapEntry<>(key, removed.commit.command().value())));
+          removed.commit.close();
+        }
       }) : null;
-      map.put(commit.operation().key(), new Value(commit, timer));
-      notify(new EntryEvent<>(Events.UPDATE, new MapEntry<>(commit.operation().key(), commit.operation().value())));
+
+      map.put(key, new Value(commit, timer));
+      notify(new EntryEvent<>(Events.UPDATE, new MapEntry<>(key, commit.operation().value())));
       value.commit.close();
       return true;
     } else {
