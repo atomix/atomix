@@ -158,7 +158,7 @@ public class DistributedLock extends AbstractResource<DistributedLock> {
    * Handles a received lock event.
    */
   private void handleEvent(LockCommands.LockEvent event) {
-    CompletableFuture<Long> future = futures.get(event.id());
+    CompletableFuture<Long> future = futures.remove(event.id());
     if (future != null) {
       this.lock = event.id();
       future.complete(event.version());
@@ -169,7 +169,7 @@ public class DistributedLock extends AbstractResource<DistributedLock> {
    * Handles a received failure event.
    */
   private void handleFail(LockCommands.LockEvent event) {
-    CompletableFuture<Long> future = futures.get(event.id());
+    CompletableFuture<Long> future = futures.remove(event.id());
     if (future != null) {
       future.complete(null);
     }
