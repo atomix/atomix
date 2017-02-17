@@ -321,6 +321,15 @@ public final class AtomixReplica extends Atomix {
   }
 
   /**
+   * Returns the underlying {@link ResourceServer}.
+   *
+   * @return the underlying {@link ResourceServer}.
+   */
+  public ResourceServer server() {
+    return server;
+  }
+
+  /**
    * Returns the replica type.
    * <p>
    * The replica type defines how the replica behaves within the Atomix cluster. {@link Type#ACTIVE} and
