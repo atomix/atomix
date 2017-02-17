@@ -9,7 +9,7 @@
 
   <groupId>io.atomix</groupId>
   <artifactId>atomix-parent</artifactId>
-  <version>1.0.1-SNAPSHOT</version>
+  <version>1.0.1-rc1</version>
   <packaging>pom</packaging>
   <name>Atomix Parent Pom</name>
   <description>Distributed coordination framework based on the Raft consensus algorithm.</description>
@@ -23,7 +23,7 @@
     <slf4j.version>1.7.7</slf4j.version>
     <logback.version>1.1.2</logback.version>
     <catalyst.version>1.1.2</catalyst.version>
-    <copycat.version>1.2.1-SNAPSHOT</copycat.version>
+    <copycat.version>1.2.1-rc1</copycat.version>
     <maven.source.plugin.version>2.2.1</maven.source.plugin.version>
     <maven.compiler.plugin.version>3.0</maven.compiler.plugin.version>
     <maven.failsafe.plugin.version>2.14</maven.failsafe.plugin.version>
