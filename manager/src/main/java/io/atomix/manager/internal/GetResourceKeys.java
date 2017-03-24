@@ -56,4 +56,9 @@ public class GetResourceKeys implements Query<Set<String>>, CatalystSerializable
     type = buffer.readShort();
   }
 
+  @Override
+  public String toString() {
+    return String.format("%s[type=%d]", getClass().getSimpleName(), type);
+  }
+
 }

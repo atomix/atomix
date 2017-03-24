@@ -59,4 +59,9 @@ public abstract class KeyOperation<T> implements Operation<T>, CatalystSerializa
     key = buffer.readUTF8();
   }
 
+  @Override
+  public String toString() {
+    return String.format("%s[key=%s]", getClass().getSimpleName(), key);
+  }
+
 }

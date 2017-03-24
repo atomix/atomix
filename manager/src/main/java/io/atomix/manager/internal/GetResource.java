@@ -83,4 +83,9 @@ public class GetResource extends KeyOperation<Long> implements Command<Long> {
     config = serializer.readObject(buffer);
   }
 
+  @Override
+  public String toString() {
+    return String.format("%s[key=%s, type=%s]", getClass().getSimpleName(), key, type);
+  }
+
 }
