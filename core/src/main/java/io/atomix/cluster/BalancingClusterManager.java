@@ -396,7 +396,7 @@ public class BalancingClusterManager implements ClusterManager {
      * to participate in asynchronous replication of state. Backup replicas allow quorum-member replicas to be
      * more quickly replaced in the event of a failure or an active replica leaving the cluster. Additionally,
      * backup replicas may service {@link io.atomix.resource.ReadConsistency#SEQUENTIAL SEQUENTIAL} and
-     * {@link io.atomix.resource.ReadConsistency#CAUSAL CAUSAL} reads to allow read operations to be further
+     * {@link io.atomix.resource.ReadConsistency#LOCAL LOCAL} reads to allow read operations to be further
      * spread across the cluster.
      * <p>
      * The backup count is used to calculate the number of backup replicas per non-leader active member. The

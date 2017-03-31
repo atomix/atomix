@@ -27,7 +27,6 @@ import io.atomix.copycat.Command;
 import io.atomix.copycat.Query;
 
 import java.util.Collection;
-import java.util.Map;
 import java.util.Set;
 
 /**

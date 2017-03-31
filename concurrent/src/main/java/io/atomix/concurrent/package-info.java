@@ -12,8 +12,7 @@
  */
 
 /**
- * Provides distributed coordination resources such as {@link io.atomix.coordination.DistributedLock} and
- * {@link io.atomix.coordination.DistributedGroup}.
+ * Provides distributed coordination resources such as {@link io.atomix.concurrent.DistributedLock}.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

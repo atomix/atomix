@@ -59,7 +59,7 @@ import java.util.stream.Collectors;
  * no transport is explicitly configured. Thus, if no transport is configured then the Netty transport is expected
  * to be available on the classpath.
  * <h2>Client lifecycle</h2>
- * When a client is {@link #connect() started}, the client will attempt to contact random servers in the provided
+ * When a client is {@link #connect(Address...) started}, the client will attempt to contact random servers in the provided
  * {@link Address} list to open a new session. Opening a client session requires only that the client be able to
  * communicate with at least one server which can communicate with the leader. Once a session has been opened,
  * the client will periodically send keep-alive requests to the cluster to maintain its session. In the event
