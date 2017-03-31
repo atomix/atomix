@@ -15,7 +15,7 @@
  */
 
 /**
- * Provides APIs for creating custom resources via {@link ResourceClient}.
+ * Provides APIs for creating custom resources via {@link io.atomix.manager.ResourceClient}.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

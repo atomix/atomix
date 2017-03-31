@@ -20,7 +20,6 @@ import io.atomix.copycat.client.CopycatClient;
 import io.atomix.group.internal.MembershipGroup;
 import io.atomix.group.internal.GroupCommands;
 import io.atomix.group.internal.GroupState;
-import io.atomix.group.internal.GroupCommands.TypeResolver;
 import io.atomix.resource.ResourceFactory;
 import io.atomix.resource.ResourceStateMachine;
 

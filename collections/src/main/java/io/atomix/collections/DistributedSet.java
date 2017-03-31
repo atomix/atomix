@@ -185,7 +185,7 @@ public class DistributedSet<T> extends AbstractResource<DistributedSet<T>> {
   /**
    * Registers a queue item remove event listener.
    *
-   * @param callback The event listener callback to be called when an item is removed from the quue.
+   * @param callback The event listener callback to be called when an item is removed from the queue.
    * @return A completable future to be completed once the listener has been registered with the cluster.
    */
   public CompletableFuture<Listener<ValueEvent<T>>> onRemove(Consumer<ValueEvent<T>> callback) {
