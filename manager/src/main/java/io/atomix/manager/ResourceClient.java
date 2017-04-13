@@ -15,18 +15,14 @@
  */
 package io.atomix.manager;
 
+import io.atomix.catalyst.concurrent.Futures;
+import io.atomix.catalyst.concurrent.ThreadContext;
 import io.atomix.catalyst.serializer.Serializer;
 import io.atomix.catalyst.transport.Address;
 import io.atomix.catalyst.transport.Transport;
 import io.atomix.catalyst.util.Assert;
 import io.atomix.catalyst.util.ConfigurationException;
-import io.atomix.catalyst.concurrent.Futures;
-import io.atomix.catalyst.concurrent.ThreadContext;
-import io.atomix.copycat.client.ConnectionStrategies;
-import io.atomix.copycat.client.ConnectionStrategy;
-import io.atomix.copycat.client.CopycatClient;
-import io.atomix.copycat.client.RecoveryStrategies;
-import io.atomix.copycat.client.ServerSelectionStrategies;
+import io.atomix.copycat.client.*;
 import io.atomix.manager.internal.GetResourceKeys;
 import io.atomix.manager.internal.ResourceExists;
 import io.atomix.manager.options.ClientOptions;
@@ -120,8 +116,8 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
 
   private final CopycatClient client;
   private final Map<Class<? extends Resource<?>>, ResourceType> types = new ConcurrentHashMap<>();
-  private final Map<String, Resource<?>> instances = new HashMap<>();
-  private final Map<String, CompletableFuture> futures = new HashMap<>();
+  private final Map<String, Resource<?>> instances = new ConcurrentHashMap<>();
+  private final Map<String, CompletableFuture> futures = new ConcurrentHashMap<>();
 
   /**
    * @throws NullPointerException if {@code client} or {@code registry} are null
@@ -249,12 +245,7 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
     resource = (T) check;
 
     // Ensure if a singleton instance is already being created, the existing open future is returned.
-    CompletableFuture<T> future = futures.get(key);
-    if (future == null) {
-      future = resource.open();
-      futures.put(key, future);
-    }
-    return future;
+    return futures.computeIfAbsent(key, k -> resource.open());
   }
 
   /**
