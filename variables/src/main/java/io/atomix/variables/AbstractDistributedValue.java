@@ -54,7 +54,7 @@ public abstract class AbstractDistributedValue<T extends AbstractDistributedValu
    * @param callback The callback to be called when the value changes.
    * @return The change event.
    */
-  public synchronized CompletableFuture<Listener<ChangeEvent<T>>> onChange(Consumer<ChangeEvent<T>> callback) {
+  public synchronized CompletableFuture<Listener<ChangeEvent<U>>> onChange(Consumer<ChangeEvent<U>> callback) {
     return onEvent(Events.CHANGE, callback);
   }
 
