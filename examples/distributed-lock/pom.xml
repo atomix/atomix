@@ -19,7 +19,7 @@
   <parent>
     <groupId>io.atomix</groupId>
     <artifactId>atomix-examples-parent</artifactId>
-    <version>1.0.6</version>
+    <version>1.0.7-SNAPSHOT</version>
   </parent>
 
   <artifactId>atomix-distributed-lock-example</artifactId>
