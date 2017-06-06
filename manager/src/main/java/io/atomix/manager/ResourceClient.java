@@ -254,7 +254,6 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
    * @param instance The instance to close.
    */
   private synchronized void close(ResourceInstance instance) {
-    instances.remove(instance.key());
     futures.remove(instance.key());
   }
 
@@ -294,9 +293,11 @@ public class ResourceClient implements ResourceManager<ResourceClient> {
    */
   public synchronized CompletableFuture<Void> close() {
     CompletableFuture<?>[] futures = new CompletableFuture[instances.size()];
+    Resource instance;
     int i = 0;
-    for (Resource<?> instance : instances.values()) {
-      futures[i++] = instance.close();
+    for(Iterator itr = this.instances.values().iterator(); itr.hasNext(); itr.remove()) {
+    	instance = (Resource)itr.next();
+    	futures[i++] = instance.close();
     }
     return CompletableFuture.allOf(futures).thenCompose(v -> client.close());
   }
