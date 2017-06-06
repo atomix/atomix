@@ -21,6 +21,7 @@ import org.testng.annotations.Test;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.LongUnaryOperator;
 
 /**
  * Distributed atomic long test.
@@ -106,11 +107,11 @@ public class DistributedLongTest extends AbstractCopycatTest<DistributedLong> {
   /**
    * Returns an atomic set/get test callback.
    */
-  private Consumer<DistributedLong> atomic(Function<DistributedLong, CompletableFuture<Long>> commandFunction, Function<Long, Long> resultFunction) {
+  private Consumer<DistributedLong> atomic(Function<DistributedLong, CompletableFuture<Long>> commandFunction, LongUnaryOperator resultFunction) {
     return (a) -> {
       a.get().thenAccept(value -> {
         commandFunction.apply(a).thenAccept(result -> {
-          threadAssertEquals(result, resultFunction.apply(value));
+          threadAssertEquals(result, resultFunction.applyAsLong(value));
           resume();
         });
       });
