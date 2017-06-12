@@ -13,30 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.onosproject.store.cluster.messaging;
-
-import static com.google.common.base.Preconditions.checkNotNull;
-
-import java.util.Objects;
-
-import org.onlab.packet.IpAddress;
+package io.atomix.messaging;
 
 import com.google.common.base.MoreObjects;
+
+import java.net.InetAddress;
+import java.util.Objects;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Representation of a TCP/UDP communication end point.
  */
 public final class Endpoint {
-
     private final int port;
-    private final IpAddress ip;
+    private final InetAddress ip;
 
-    public Endpoint(IpAddress host, int port) {
+    public Endpoint(InetAddress host, int port) {
         this.ip = checkNotNull(host);
         this.port = port;
     }
 
-    public IpAddress host() {
+    public InetAddress host() {
         return ip;
     }
 
@@ -70,6 +68,6 @@ public final class Endpoint {
         }
         Endpoint that = (Endpoint) obj;
         return this.port == that.port &&
-               Objects.equals(this.ip, that.ip);
+                Objects.equals(this.ip, that.ip);
     }
 }
