@@ -15,8 +15,6 @@
  */
 package io.atomix.protocols.raft.protocol;
 
-import io.atomix.cluster.MessageSubject;
-
 /**
  * Base interface for requests.
  *
@@ -25,58 +23,10 @@ import io.atomix.cluster.MessageSubject;
 public interface RaftRequest {
 
     /**
-     * Request type.
-     */
-    enum Type {
-        CONNECT("connect"),
-        OPEN_SESSION("open-session"),
-        CLOSE_SESSION("close-session"),
-        KEEP_ALIVE("keep-alive"),
-        COMMAND("command"),
-        QUERY("query"),
-        PUBLISH("publish"),
-        RESET("reset"),
-        METADATA("metadata");
-
-        private final String friendlyName;
-
-        Type(String friendlyName) {
-            this.friendlyName = friendlyName;
-        }
-
-        /**
-         * Returns the friendly name for the request type.
-         *
-         * @return the friendly name for the request type
-         */
-        public String friendlyName() {
-            return friendlyName;
-        }
-
-        /**
-         * Returns the message subject for the given cluster.
-         *
-         * @param cluster the cluster for which to return the message subject
-         * @return the message subject for the given cluster
-         */
-        public MessageSubject subject(String cluster) {
-            return new MessageSubject(String.format("%s-%s", cluster, friendlyName));
-        }
-    }
-
-    /**
-     * Returns the request type.
-     *
-     * @return the request type
-     */
-    Type type();
-
-    /**
      * Request builder.
      *
      * @param <T> The builder type.
      */
     interface Builder<T extends Builder<T, U>, U extends RaftRequest> extends io.atomix.util.Builder<U> {
     }
-
 }

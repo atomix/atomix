@@ -15,12 +15,12 @@
  */
 package io.atomix.protocols.raft.session.impl;
 
-import io.atomix.cluster.ClusterCommunicationService;
 import io.atomix.protocols.raft.RaftCommand;
 import io.atomix.protocols.raft.RaftOperation;
 import io.atomix.protocols.raft.RaftQuery;
 import io.atomix.protocols.raft.client.CommunicationStrategies;
 import io.atomix.protocols.raft.client.CommunicationStrategy;
+import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.util.serializer.Serializer;
 
@@ -59,9 +59,8 @@ public class DefaultRaftSession implements RaftSession {
 
     public DefaultRaftSession(
             String clientId,
-            String clusterName,
             RaftSessionState state,
-            ClusterCommunicationService communicationService,
+            RaftClientProtocol protocol,
             NodeSelectorManager selectorManager,
             RaftSessionManager sessionManager,
             CommunicationStrategy communicationStrategy,
@@ -71,9 +70,9 @@ public class DefaultRaftSession implements RaftSession {
         this.state = checkNotNull(state, "state cannot be null");
         this.sessionManager = checkNotNull(sessionManager, "sessionManager cannot be null");
         RaftSessionSequencer sequencer = new RaftSessionSequencer(state);
-        this.sessionListener = new RaftSessionListener(clientId, clusterName, communicationService, state, sequencer, serializer, orderedExecutor);
-        RaftConnection leaderConnection = new RaftLeaderConnection(clusterName, state, communicationService, selectorManager.createSelector(CommunicationStrategies.LEADER));
-        RaftConnection sessionConnection = new RaftSessionConnection(clusterName, state, communicationService, selectorManager.createSelector(communicationStrategy));
+        this.sessionListener = new RaftSessionListener(protocol, state, sequencer, serializer, orderedExecutor);
+        RaftConnection leaderConnection = new RaftLeaderConnection(state, protocol.dispatcher(), selectorManager.createSelector(CommunicationStrategies.LEADER));
+        RaftConnection sessionConnection = new RaftSessionConnection(state, protocol.dispatcher(), selectorManager.createSelector(communicationStrategy));
         this.sessionSubmitter = new RaftSessionSubmitter(leaderConnection, sessionConnection, state, sequencer, sessionManager, serializer, orderedExecutor, scheduledExecutor);
     }
 

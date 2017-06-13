@@ -46,11 +46,6 @@ public class ResetRequest extends SessionRequest {
     this.index = index;
   }
 
-  @Override
-  public Type type() {
-    return Type.RESET;
-  }
-
   /**
    * Returns the event index.
    *

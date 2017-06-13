@@ -33,11 +33,6 @@ public class MetadataRequest extends SessionRequest {
     super(session);
   }
 
-  @Override
-  public Type type() {
-    return Type.METADATA;
-  }
-
   /**
    * Metadata request builder.
    */

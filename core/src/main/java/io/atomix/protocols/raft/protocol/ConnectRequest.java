@@ -49,11 +49,6 @@ public class ConnectRequest extends AbstractRaftRequest {
     this.connection = connection;
   }
 
-  @Override
-  public Type type() {
-    return Type.CONNECT;
-  }
-
   /**
    * Returns the connecting session ID.
    *

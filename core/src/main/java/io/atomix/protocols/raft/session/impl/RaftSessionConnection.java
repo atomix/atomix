@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.session.impl;
 
-import io.atomix.cluster.ClusterCommunicationService;
+import io.atomix.protocols.raft.protocol.RaftClientProtocolDispatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,12 +25,10 @@ import org.slf4j.LoggerFactory;
 public class RaftSessionConnection extends RaftConnection {
   private static final Logger LOGGER = LoggerFactory.getLogger(RaftSessionConnection.class);
 
-  private final RaftSessionState state;
   private final String sessionString;
 
-  public RaftSessionConnection(String clusterName, RaftSessionState state, ClusterCommunicationService communicationService, NodeSelector selector) {
-    super(clusterName, communicationService, selector);
-    this.state = state;
+  public RaftSessionConnection(RaftSessionState state, RaftClientProtocolDispatcher dispatcher, NodeSelector selector) {
+    super(dispatcher, selector);
     this.sessionString = String.valueOf(state.getSessionId());
   }
 

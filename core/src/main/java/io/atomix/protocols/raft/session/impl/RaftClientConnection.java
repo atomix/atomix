@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.session.impl;
 
-import io.atomix.cluster.ClusterCommunicationService;
+import io.atomix.protocols.raft.protocol.RaftClientProtocolDispatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,8 +27,8 @@ public class RaftClientConnection extends RaftConnection {
 
   private final String clientId;
 
-  public RaftClientConnection(String clientId, String clusterName, ClusterCommunicationService communicationService, NodeSelector selector) {
-    super(clusterName, communicationService, selector);
+  public RaftClientConnection(String clientId, RaftClientProtocolDispatcher dispatcher, NodeSelector selector) {
+    super(dispatcher, selector);
     this.clientId = clientId;
   }
 

@@ -15,19 +15,16 @@
  */
 package io.atomix.protocols.raft.session.impl;
 
-import io.atomix.cluster.ClusterCommunicationService;
 import io.atomix.cluster.NodeId;
 import io.atomix.protocols.raft.client.CommunicationStrategies;
 import io.atomix.protocols.raft.client.CommunicationStrategy;
-import io.atomix.protocols.raft.session.RaftSession;
-import io.atomix.protocols.raft.error.UnknownSessionException;
 import io.atomix.protocols.raft.protocol.CloseSessionRequest;
-import io.atomix.protocols.raft.protocol.CloseSessionResponse;
 import io.atomix.protocols.raft.protocol.KeepAliveRequest;
-import io.atomix.protocols.raft.protocol.KeepAliveResponse;
 import io.atomix.protocols.raft.protocol.OpenSessionRequest;
-import io.atomix.protocols.raft.protocol.OpenSessionResponse;
+import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.protocol.RaftResponse;
+import io.atomix.protocols.raft.error.UnknownSessionException;
+import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.util.concurrent.Futures;
 import io.atomix.util.concurrent.OrderedExecutor;
 import io.atomix.util.serializer.Serializer;
@@ -57,8 +54,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class RaftSessionManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(RaftSessionManager.class);
     private final String clientId;
-    private final String clusterName;
-    private final ClusterCommunicationService communicationService;
+    private final RaftClientProtocol protocol;
     private final RaftConnection connection;
     private final ScheduledExecutorService threadPoolExecutor;
     private final NodeSelectorManager selectorManager;
@@ -66,12 +62,11 @@ public class RaftSessionManager {
     private final AtomicBoolean open = new AtomicBoolean();
     private ScheduledFuture<?> keepAliveFuture;
 
-    public RaftSessionManager(String clientId, String clusterName, ClusterCommunicationService communicationService, NodeSelectorManager selectorManager, ScheduledExecutorService threadPoolExecutor) {
+    public RaftSessionManager(String clientId, RaftClientProtocol protocol, NodeSelectorManager selectorManager, ScheduledExecutorService threadPoolExecutor) {
         this.clientId = checkNotNull(clientId, "clientId cannot be null");
-        this.clusterName = checkNotNull(clusterName, "clusterName cannot be null");
-        this.communicationService = checkNotNull(communicationService, "communicationService cannot be null");
+        this.protocol = checkNotNull(protocol, "protocol cannot be null");
         this.selectorManager = checkNotNull(selectorManager, "selectorManager cannot be null");
-        this.connection = new RaftClientConnection(clientId, clusterName, communicationService, selectorManager.createSelector(CommunicationStrategies.ANY));
+        this.connection = new RaftClientConnection(clientId, protocol.dispatcher(), selectorManager.createSelector(CommunicationStrategies.ANY));
         this.threadPoolExecutor = checkNotNull(threadPoolExecutor, "threadPoolExecutor cannot be null");
     }
 
@@ -128,7 +123,7 @@ public class RaftSessionManager {
         LOGGER.trace("{} - Sending {}", clientId, request);
         CompletableFuture<RaftSession> future = new CompletableFuture<>();
         Executor sessionExecutor = new OrderedExecutor(threadPoolExecutor);
-        connection.<OpenSessionRequest, OpenSessionResponse>sendAndReceive(request).whenCompleteAsync((response, error) -> {
+        connection.openSession(request).whenCompleteAsync((response, error) -> {
             if (error == null) {
                 if (response.status() == RaftResponse.Status.OK) {
                     RaftSessionState state = new RaftSessionState(
@@ -137,9 +132,8 @@ public class RaftSessionManager {
                     keepAliveSessions();
                     future.complete(new DefaultRaftSession(
                             clientId,
-                            clusterName,
                             state,
-                            communicationService,
+                            protocol,
                             selectorManager,
                             this,
                             communicationStrategy,
@@ -175,7 +169,7 @@ public class RaftSessionManager {
 
         LOGGER.trace("Sending {}", request);
         CompletableFuture<Void> future = new CompletableFuture<>();
-        connection.<CloseSessionRequest, CloseSessionResponse>sendAndReceive(request).whenComplete((response, error) -> {
+        connection.closeSession(request).whenComplete((response, error) -> {
             if (error == null) {
                 if (response.status() == RaftResponse.Status.OK) {
                     sessions.remove(sessionId);
@@ -212,7 +206,7 @@ public class RaftSessionManager {
                 .build();
 
         LOGGER.trace("{} - Sending {}", clientId, request);
-        connection.<KeepAliveRequest, KeepAliveResponse>sendAndReceive(request).whenComplete((response, error) -> {
+        connection.keepAlive(request).whenComplete((response, error) -> {
             if (error == null) {
                 LOGGER.trace("{} - Received {}", clientId, response);
                 if (response.status() == RaftResponse.Status.OK) {
@@ -261,7 +255,7 @@ public class RaftSessionManager {
                 .build();
 
         LOGGER.trace("{} - Sending {}", clientId, request);
-        connection.<KeepAliveRequest, KeepAliveResponse>sendAndReceive(request).whenComplete((response, error) -> {
+        connection.keepAlive(request).whenComplete((response, error) -> {
             if (open.get()) {
                 if (error == null) {
                     LOGGER.trace("{} - Received {}", clientId, response);

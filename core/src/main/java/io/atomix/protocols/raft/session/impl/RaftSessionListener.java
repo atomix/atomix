@@ -16,12 +16,9 @@
 package io.atomix.protocols.raft.session.impl;
 
 import com.google.common.collect.Sets;
-import io.atomix.cluster.ClusterCommunicationService;
-import io.atomix.cluster.MessageSubject;
 import io.atomix.protocols.raft.protocol.PublishRequest;
-import io.atomix.protocols.raft.protocol.RaftRequest;
+import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.protocol.ResetRequest;
-import io.atomix.util.serializer.KryoNamespaces;
 import io.atomix.util.serializer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,26 +37,21 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 final class RaftSessionListener {
     private static final Logger LOG = LoggerFactory.getLogger(RaftSessionListener.class);
-    private static final Serializer SERIALIZER = Serializer.using(KryoNamespaces.RAFT);
 
-    private final ClusterCommunicationService communicationService;
+    private final RaftClientProtocol protocol;
     private final RaftSessionState state;
-    private final MessageSubject publishSubject;
-    private final MessageSubject resetSubject;
     private final Set<Consumer> listeners = Sets.newLinkedHashSet();
     private final RaftSessionSequencer sequencer;
     private final Serializer serializer;
     private final Executor executor;
 
-    public RaftSessionListener(String clientId, String clusterName, ClusterCommunicationService communicationService, RaftSessionState state, RaftSessionSequencer sequencer, Serializer serializer, Executor executor) {
-        this.communicationService = checkNotNull(communicationService, "communicationService cannot be null");
+    public RaftSessionListener(RaftClientProtocol protocol, RaftSessionState state, RaftSessionSequencer sequencer, Serializer serializer, Executor executor) {
+        this.protocol = checkNotNull(protocol, "protocol cannot be null");
         this.state = checkNotNull(state, "state cannot be null");
-        this.publishSubject = new MessageSubject(String.format("%s-%d", clientId, state.getSessionId()));
-        this.resetSubject = RaftRequest.Type.RESET.subject(clusterName);
         this.sequencer = checkNotNull(sequencer, "sequencer cannot be null");
         this.serializer = checkNotNull(serializer, "serializer cannot be null");
         this.executor = checkNotNull(executor, "executor cannot be null");
-        communicationService.addSubscriber(publishSubject, SERIALIZER::decode, this::handlePublish, executor);
+        protocol.listener().registerPublishListener(state.getSessionId(), this::handlePublish, executor);
     }
 
     /**
@@ -114,7 +106,7 @@ final class RaftSessionListener {
                     .withSession(state.getSessionId())
                     .withIndex(eventIndex)
                     .build();
-            communicationService.broadcast(resetRequest, resetSubject, SERIALIZER::encode);
+            protocol.dispatcher().reset(resetRequest);
             return;
         }
 
@@ -137,7 +129,7 @@ final class RaftSessionListener {
      * @return A completable future to be completed once the listener is closed.
      */
     public CompletableFuture<Void> close() {
-        communicationService.removeSubscriber(publishSubject);
+        protocol.listener().unregisterPublishListener(state.getSessionId());
         return CompletableFuture.completedFuture(null);
     }
 }

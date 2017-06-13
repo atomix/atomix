@@ -16,10 +16,12 @@
 package io.atomix.protocols.raft.protocol;
 
 import io.atomix.protocols.raft.RaftQuery;
+import io.atomix.util.ArraySizeHashPrinter;
 
 import java.util.Arrays;
 import java.util.Objects;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -62,11 +64,6 @@ public class QueryRequest extends OperationRequest {
         this.consistency = consistency;
     }
 
-    @Override
-    public Type type() {
-        return Type.QUERY;
-    }
-
     /**
      * Returns the query index.
      *
@@ -104,7 +101,13 @@ public class QueryRequest extends OperationRequest {
 
     @Override
     public String toString() {
-        return String.format("%s[session=%d, sequence=%d, index=%d, consistency=%s, bytes=byte[%d]]", getClass().getSimpleName(), session, sequence, index, consistency, bytes.length);
+        return toStringHelper(this)
+                .add("session", session)
+                .add("sequence", sequence)
+                .add("index", index)
+                .add("consistency", consistency)
+                .add("bytes", ArraySizeHashPrinter.of(bytes))
+                .toString();
     }
 
     /**

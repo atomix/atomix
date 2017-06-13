@@ -47,11 +47,6 @@ public class OpenSessionRequest extends AbstractRaftRequest {
     this.timeout = timeout;
   }
 
-  @Override
-  public Type type() {
-    return Type.OPEN_SESSION;
-  }
-
   /**
    * Returns the client identifier.
    *

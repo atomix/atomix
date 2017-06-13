@@ -15,25 +15,32 @@
  */
 package io.atomix.protocols.raft.session.impl;
 
-import io.atomix.cluster.ClusterCommunicationService;
 import io.atomix.cluster.NodeId;
 import io.atomix.messaging.MessagingException;
-import io.atomix.protocols.raft.error.RaftError;
+import io.atomix.protocols.raft.protocol.CloseSessionRequest;
+import io.atomix.protocols.raft.protocol.CloseSessionResponse;
+import io.atomix.protocols.raft.protocol.CommandRequest;
+import io.atomix.protocols.raft.protocol.CommandResponse;
+import io.atomix.protocols.raft.protocol.KeepAliveRequest;
+import io.atomix.protocols.raft.protocol.KeepAliveResponse;
+import io.atomix.protocols.raft.protocol.MetadataRequest;
+import io.atomix.protocols.raft.protocol.MetadataResponse;
+import io.atomix.protocols.raft.protocol.OpenSessionRequest;
+import io.atomix.protocols.raft.protocol.OpenSessionResponse;
+import io.atomix.protocols.raft.protocol.QueryRequest;
+import io.atomix.protocols.raft.protocol.QueryResponse;
+import io.atomix.protocols.raft.protocol.RaftClientProtocolDispatcher;
 import io.atomix.protocols.raft.protocol.RaftRequest;
 import io.atomix.protocols.raft.protocol.RaftResponse;
-import io.atomix.util.serializer.KryoNamespaces;
-import io.atomix.util.serializer.Serializer;
+import io.atomix.protocols.raft.error.RaftError;
 import org.slf4j.Logger;
 
 import java.net.ConnectException;
 import java.nio.channels.ClosedChannelException;
 import java.util.Collection;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -43,18 +50,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public abstract class RaftConnection {
-    protected static final Serializer SERIALIZER = Serializer.using(KryoNamespaces.RAFT);
-
-    protected final String clusterName;
-    protected final ClusterCommunicationService communicationService;
+    protected final RaftClientProtocolDispatcher dispatcher;
     protected final NodeSelector selector;
-    protected final Map<String, Function> handlers = new ConcurrentHashMap<>();
     private NodeId node;
     protected volatile boolean open;
 
-    public RaftConnection(String clusterName, ClusterCommunicationService communicationService, NodeSelector selector) {
-        this.clusterName = checkNotNull(clusterName, "clusterName cannot be null");
-        this.communicationService = checkNotNull(communicationService, "communicationService cannot be null");
+    public RaftConnection(RaftClientProtocolDispatcher dispatcher, NodeSelector selector) {
+        this.dispatcher = checkNotNull(dispatcher, "dispatcher cannot be null");
         this.selector = checkNotNull(selector, "selector cannot be null");
     }
 
@@ -113,42 +115,88 @@ public abstract class RaftConnection {
     }
 
     /**
-     * Sends a request to the cluster.
+     * Sends an open session request to the given node.
      *
-     * @param request The request to send.
-     * @return A completable future to be completed with the response.
+     * @param request the request to send
+     * @return a future to be completed with the response
      */
-    public CompletableFuture<Void> send(Object request) {
-        CompletableFuture<Void> future = new CompletableFuture<>();
-        sendRequest((RaftRequest) request, (r, n) -> communicationService.unicast(r, r.type().subject(clusterName), SERIALIZER::encode, n), future);
+    public CompletableFuture<OpenSessionResponse> openSession(OpenSessionRequest request) {
+        CompletableFuture<OpenSessionResponse> future = new CompletableFuture<>();
+        sendRequest(request, dispatcher::openSession, future);
         return future;
     }
 
     /**
-     * Sends a request to the cluster and awaits a response.
+     * Sends a close session request to the given node.
      *
-     * @param request The request to send.
-     * @param <T>     The request type.
-     * @param <U>     The response type.
-     * @return A completable future to be completed with the response.
+     * @param request the request to send
+     * @return a future to be completed with the response
      */
-    public <T, U> CompletableFuture<U> sendAndReceive(T request) {
-        CompletableFuture<U> future = new CompletableFuture<>();
-        sendRequest((RaftRequest) request, (r, n) -> communicationService.sendAndReceive(r, r.type().subject(clusterName), SERIALIZER::encode, SERIALIZER::decode, n), future);
+    public CompletableFuture<CloseSessionResponse> closeSession(CloseSessionRequest request) {
+        CompletableFuture<CloseSessionResponse> future = new CompletableFuture<>();
+        sendRequest(request, dispatcher::closeSession, future);
+        return future;
+    }
+
+    /**
+     * Sends a keep alive request to the given node.
+     *
+     * @param request the request to send
+     * @return a future to be completed with the response
+     */
+    public CompletableFuture<KeepAliveResponse> keepAlive(KeepAliveRequest request) {
+        CompletableFuture<KeepAliveResponse> future = new CompletableFuture<>();
+        sendRequest(request, dispatcher::keepAlive, future);
+        return future;
+    }
+
+    /**
+     * Sends a query request to the given node.
+     *
+     * @param request the request to send
+     * @return a future to be completed with the response
+     */
+    public CompletableFuture<QueryResponse> query(QueryRequest request) {
+        CompletableFuture<QueryResponse> future = new CompletableFuture<>();
+        sendRequest(request, dispatcher::query, future);
+        return future;
+    }
+
+    /**
+     * Sends a command request to the given node.
+     *
+     * @param request the request to send
+     * @return a future to be completed with the response
+     */
+    public CompletableFuture<CommandResponse> command(CommandRequest request) {
+        CompletableFuture<CommandResponse> future = new CompletableFuture<>();
+        sendRequest(request, dispatcher::command, future);
+        return future;
+    }
+
+    /**
+     * Sends a metadata request to the given node.
+     *
+     * @param request the request to send
+     * @return a future to be completed with the response
+     */
+    public CompletableFuture<MetadataResponse> metadata(MetadataRequest request) {
+        CompletableFuture<MetadataResponse> future = new CompletableFuture<>();
+        sendRequest(request, dispatcher::metadata, future);
         return future;
     }
 
     /**
      * Sends the given request attempt to the cluster.
      */
-    protected <T extends RaftRequest, U> void sendRequest(T request, BiFunction<RaftRequest, NodeId, CompletableFuture<U>> sender, CompletableFuture<U> future) {
+    protected <T extends RaftRequest, U extends RaftResponse> void sendRequest(T request, BiFunction<NodeId, T, CompletableFuture<U>> sender, CompletableFuture<U> future) {
         if (open) {
             NodeId node = next();
             if (node != null) {
                 logger().trace("{} - Sending {}", name(), request);
-                sender.apply(request, node).whenComplete((r, e) -> {
+                sender.apply(node, request).whenComplete((r, e) -> {
                     if (e != null || r != null) {
-                        handleResponse(request, sender, node, (RaftResponse) r, e, future);
+                        handleResponse(request, sender, node, r, e, future);
                     } else {
                         future.complete(null);
                     }

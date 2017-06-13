@@ -19,7 +19,7 @@
  * <p>
  * Clients communicate with the Copycat cluster within the context of a session. Sessions are used to
  * achieve linearizable semantics and first-in-first-out ordering of client operations by coordinating
- * {@link io.atomix.copycat.Command commands} and {@link io.atomix.copycat.Query queries} submitted by
+ * {@link io.atomix.protocols.raft.RaftCommand commands} and {@link io.atomix.protocols.raft.RaftQuery queries} submitted by
  * the client to the cluster. Additionally, sessions facilitate listening for event notifications from
  * the cluster. When state changes occur in the server-side replicated state machine, state machines
  * can publish messages notifying the client of events. The session aids in guaranteeing sequential

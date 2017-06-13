@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.session.impl;
 
-import io.atomix.cluster.ClusterCommunicationService;
+import io.atomix.protocols.raft.protocol.RaftClientProtocolDispatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,8 +26,8 @@ public class RaftLeaderConnection extends RaftConnection {
   private static final Logger LOGGER = LoggerFactory.getLogger(RaftLeaderConnection.class);
   private final String sessionString;
 
-  public RaftLeaderConnection(String clusterName, RaftSessionState state, ClusterCommunicationService communicationService, NodeSelector selector) {
-    super(clusterName, communicationService, selector);
+  public RaftLeaderConnection(RaftSessionState state, RaftClientProtocolDispatcher dispatcher, NodeSelector selector) {
+    super(dispatcher, selector);
     this.sessionString = String.valueOf(state.getSessionId());
   }
 

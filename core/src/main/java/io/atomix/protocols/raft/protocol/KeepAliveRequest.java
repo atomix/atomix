@@ -59,11 +59,6 @@ public class KeepAliveRequest extends AbstractRaftRequest {
     this.connections = connections;
   }
 
-  @Override
-  public Type type() {
-    return Type.KEEP_ALIVE;
-  }
-
   /**
    * Returns the session identifiers.
    *

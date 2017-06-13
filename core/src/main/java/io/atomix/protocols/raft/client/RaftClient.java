@@ -15,9 +15,9 @@
  */
 package io.atomix.protocols.raft.client;
 
-import io.atomix.cluster.ClusterCommunicationService;
 import io.atomix.cluster.NodeId;
 import io.atomix.protocols.raft.client.impl.DefaultRaftClient;
+import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.session.RaftSession;
 
 import java.util.Arrays;
@@ -81,9 +81,9 @@ public interface RaftClient {
     }
 
     /**
-     * Returns the client identifier.
+     * Returns the globally unique client identifier.
      *
-     * @return The client identifier.
+     * @return the globally unique client identifier
      */
     String id();
 
@@ -166,8 +166,7 @@ public interface RaftClient {
     final class Builder implements io.atomix.util.Builder<RaftClient> {
         private final Collection<NodeId> cluster;
         private String clientId = UUID.randomUUID().toString();
-        private String clusterName = "raft";
-        private ClusterCommunicationService clusterCommunicator;
+        private RaftClientProtocol protocol;
         private int threadPoolSize = Runtime.getRuntime().availableProcessors();
 
         private Builder(Collection<NodeId> cluster) {
@@ -185,19 +184,19 @@ public interface RaftClient {
          * @throws NullPointerException if {@code clientId} is null
          */
         public Builder withClientId(String clientId) {
-            this.clientId = checkNotNull(clientId, "clientId");
+            this.clientId = checkNotNull(clientId, "clientId cannot be null");
             return this;
         }
 
         /**
-         * Sets the cluster name.
+         * Sets the client protocol.
          *
-         * @param clusterName the cluster name
+         * @param protocol the client protocol
          * @return the client builder
-         * @throws NullPointerException if the cluster name is null
+         * @throws NullPointerException if the protocol is null
          */
-        public Builder withClusterName(String clusterName) {
-            this.clusterName = checkNotNull(clusterName, "clusterName cannot be null");
+        public Builder withProtocol(RaftClientProtocol protocol) {
+            this.protocol = checkNotNull(protocol, "protocol cannot be null");
             return this;
         }
 
@@ -216,15 +215,8 @@ public interface RaftClient {
 
         @Override
         public RaftClient build() {
-            checkNotNull(clusterName, "clusterName cannot be null");
             ScheduledExecutorService executor = Executors.newScheduledThreadPool(threadPoolSize);
-            return new DefaultRaftClient(
-                    clientId,
-                    clusterName,
-                    cluster,
-                    clusterCommunicator,
-                    executor);
+            return new DefaultRaftClient(clientId, cluster, protocol, executor);
         }
     }
-
 }

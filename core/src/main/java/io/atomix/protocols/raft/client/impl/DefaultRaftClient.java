@@ -15,13 +15,13 @@
  */
 package io.atomix.protocols.raft.client.impl;
 
-import io.atomix.cluster.ClusterCommunicationService;
 import io.atomix.cluster.NodeId;
 import io.atomix.protocols.raft.client.RaftClient;
 import io.atomix.protocols.raft.client.RaftMetadataClient;
+import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.session.RaftSession;
-import io.atomix.protocols.raft.session.impl.RaftSessionManager;
 import io.atomix.protocols.raft.session.impl.NodeSelectorManager;
+import io.atomix.protocols.raft.session.impl.RaftSessionManager;
 
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
@@ -36,11 +36,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class DefaultRaftClient implements RaftClient {
-    private static final String DEFAULT_HOST = "0.0.0.0";
-    private static final int DEFAULT_PORT = 8700;
-    private final String id;
+    private final String clientId;
     private final Collection<NodeId> cluster;
-    private final ClusterCommunicationService communicationService;
     private final ScheduledExecutorService threadPoolExecutor;
     private final RaftMetadataClient metadata;
     private final NodeSelectorManager selectorManager = new NodeSelectorManager();
@@ -48,21 +45,19 @@ public class DefaultRaftClient implements RaftClient {
 
     public DefaultRaftClient(
             String clientId,
-            String clusterName,
             Collection<NodeId> cluster,
-            ClusterCommunicationService communicationService,
+            RaftClientProtocol protocol,
             ScheduledExecutorService threadPoolExecutor) {
-        this.id = checkNotNull(clientId, "clientId cannot be null");
+        this.clientId = checkNotNull(clientId, "clientId cannot be null");
         this.cluster = checkNotNull(cluster, "cluster cannot be null");
-        this.communicationService = checkNotNull(communicationService, "communicationService cannot be null");
         this.threadPoolExecutor = checkNotNull(threadPoolExecutor, "threadPoolExecutor cannot be null");
-        this.metadata = new DefaultRaftMetadataClient(clientId, clusterName, communicationService, selectorManager);
-        this.sessionManager = new RaftSessionManager(clientId, clusterName, communicationService, selectorManager, threadPoolExecutor);
+        this.metadata = new DefaultRaftMetadataClient(clientId, protocol, selectorManager);
+        this.sessionManager = new RaftSessionManager(clientId, protocol, selectorManager, threadPoolExecutor);
     }
 
     @Override
     public String id() {
-        return id;
+        return clientId;
     }
 
     @Override
@@ -109,19 +104,9 @@ public class DefaultRaftClient implements RaftClient {
     }
 
     @Override
-    public int hashCode() {
-        return 23 + 37 * id.hashCode();
-    }
-
-    @Override
-    public boolean equals(Object object) {
-        return object instanceof DefaultRaftClient && ((DefaultRaftClient) object).id.equals(id);
-    }
-
-    @Override
     public String toString() {
         return toStringHelper(this)
-                .add("id", id)
+                .add("id", clientId)
                 .toString();
     }
 
@@ -134,5 +119,4 @@ public class DefaultRaftClient implements RaftClient {
             return sessionManager.openSession(name, type, communicationStrategy, serializer, timeout).join();
         }
     }
-
 }

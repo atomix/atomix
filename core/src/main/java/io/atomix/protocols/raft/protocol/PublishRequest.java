@@ -60,11 +60,6 @@ public class PublishRequest extends SessionRequest {
     this.events = events;
   }
 
-  @Override
-  public Type type() {
-    return Type.PUBLISH;
-  }
-
   /**
    * Returns the event index.
    *

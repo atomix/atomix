@@ -15,16 +15,16 @@
  */
 package io.atomix.protocols.raft.client.impl;
 
-import io.atomix.cluster.ClusterCommunicationService;
 import io.atomix.cluster.NodeId;
 import io.atomix.protocols.raft.client.CommunicationStrategies;
 import io.atomix.protocols.raft.client.RaftMetadataClient;
-import io.atomix.protocols.raft.session.impl.RaftClientConnection;
-import io.atomix.protocols.raft.session.impl.NodeSelectorManager;
-import io.atomix.protocols.raft.metadata.RaftSessionMetadata;
 import io.atomix.protocols.raft.protocol.MetadataRequest;
 import io.atomix.protocols.raft.protocol.MetadataResponse;
+import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.protocol.RaftResponse;
+import io.atomix.protocols.raft.metadata.RaftSessionMetadata;
+import io.atomix.protocols.raft.session.impl.NodeSelectorManager;
+import io.atomix.protocols.raft.session.impl.RaftClientConnection;
 
 import java.util.Collection;
 import java.util.Set;
@@ -40,9 +40,9 @@ public class DefaultRaftMetadataClient implements RaftMetadataClient {
   private final NodeSelectorManager selectorManager;
   private final RaftClientConnection connection;
 
-  public DefaultRaftMetadataClient(String clientId, String clusterName, ClusterCommunicationService communicationService, NodeSelectorManager selectorManager) {
+  public DefaultRaftMetadataClient(String clientId, RaftClientProtocol protocol, NodeSelectorManager selectorManager) {
     this.selectorManager = checkNotNull(selectorManager, "selectorManager cannot be null");
-    this.connection = new RaftClientConnection(clientId, clusterName, communicationService, selectorManager.createSelector(CommunicationStrategies.LEADER));
+    this.connection = new RaftClientConnection(clientId, protocol.dispatcher(), selectorManager.createSelector(CommunicationStrategies.LEADER));
   }
 
   @Override
@@ -62,7 +62,7 @@ public class DefaultRaftMetadataClient implements RaftMetadataClient {
    */
   private CompletableFuture<MetadataResponse> getMetadata() {
     CompletableFuture<MetadataResponse> future = new CompletableFuture<>();
-    connection.<MetadataRequest, MetadataResponse>sendAndReceive(MetadataRequest.builder().build()).whenComplete((response, error) -> {
+    connection.metadata(MetadataRequest.builder().build()).whenComplete((response, error) -> {
       if (error == null) {
         if (response.status() == RaftResponse.Status.OK) {
           future.complete(response);

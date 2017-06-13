@@ -16,33 +16,22 @@
 package io.atomix.protocols.raft.protocol;
 
 /**
- * Close session request.
- *
- * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
+ * Raft client protocol.
  */
-public class CloseSessionRequest extends SessionRequest {
+public interface RaftClientProtocol {
 
-  /**
-   * Returns a new unregister request builder.
-   *
-   * @return A new unregister request builder.
-   */
-  public static Builder builder() {
-    return new Builder();
-  }
+    /**
+     * Returns the protocol listener.
+     *
+     * @return the protocol listener
+     */
+    RaftClientProtocolListener listener();
 
-  public CloseSessionRequest(long session) {
-    super(session);
-  }
+    /**
+     * Returns the protocol dispatcher.
+     *
+     * @return the protocol dispatcher
+     */
+    RaftClientProtocolDispatcher dispatcher();
 
-  /**
-   * Unregister request builder.
-   */
-  public static class Builder extends SessionRequest.Builder<Builder, CloseSessionRequest> {
-    @Override
-    public CloseSessionRequest build() {
-      validate();
-      return new CloseSessionRequest(session);
-    }
-  }
 }
