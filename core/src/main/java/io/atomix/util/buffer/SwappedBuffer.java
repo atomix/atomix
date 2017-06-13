@@ -15,7 +15,7 @@
  */
 package io.atomix.util.buffer;
 
-import io.atomix.catalyst.util.reference.ReferenceManager;
+import io.atomix.util.concurrent.ReferenceManager;
 
 import java.nio.ByteOrder;
 

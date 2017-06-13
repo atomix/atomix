@@ -15,8 +15,7 @@
  */
 package io.atomix.util.buffer;
 
-import io.atomix.catalyst.buffer.util.HeapMemory;
-import io.atomix.catalyst.buffer.util.HeapMemoryAllocator;
+import io.atomix.util.memory.HeapMemory;
 
 /**
  * Java heap bytes.
@@ -28,7 +27,7 @@ public class UnsafeHeapBytes extends AbstractBytes {
     /**
      * Allocates a new heap byte array.
      * <p>
-     * When the array is constructed, {@link HeapMemoryAllocator} will be used to allocate
+     * When the array is constructed, {@link io.atomix.util.memory.HeapMemoryAllocator} will be used to allocate
      * {@code count} bytes on the Java heap.
      *
      * @param size The count of the buffer to allocate (in bytes).

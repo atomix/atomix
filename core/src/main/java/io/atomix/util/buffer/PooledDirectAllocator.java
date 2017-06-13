@@ -15,7 +15,7 @@
  */
 package io.atomix.util.buffer;
 
-import io.atomix.catalyst.util.reference.ReferencePool;
+import io.atomix.util.concurrent.ReferencePool;
 
 /**
  * Pooled direct buffer allocator.

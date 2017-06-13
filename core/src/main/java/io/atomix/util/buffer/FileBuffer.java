@@ -15,7 +15,7 @@
  */
 package io.atomix.util.buffer;
 
-import io.atomix.catalyst.buffer.util.Memory;
+import io.atomix.util.memory.Memory;
 
 import java.io.File;
 import java.nio.channels.FileChannel;

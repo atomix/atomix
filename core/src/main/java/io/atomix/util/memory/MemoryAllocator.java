@@ -15,12 +15,10 @@
  */
 package io.atomix.util.memory;
 
-import io.atomix.catalyst.buffer.Bytes;
-
 /**
  * Memory allocator.
  * <p>
- * Memory allocators handle allocation of memory for {@link Bytes} objects, providing descriptors
+ * Memory allocators handle allocation of memory for {@link io.atomix.util.buffer.Bytes} objects, providing descriptors
  * that point to memory addresses.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>

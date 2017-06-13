@@ -15,10 +15,9 @@
  */
 package io.atomix.util.buffer;
 
-import io.atomix.catalyst.buffer.util.HeapMemory;
-import io.atomix.catalyst.buffer.util.HeapMemoryAllocator;
-import io.atomix.catalyst.buffer.util.Memory;
-import io.atomix.catalyst.util.reference.ReferenceManager;
+import io.atomix.util.concurrent.ReferenceManager;
+import io.atomix.util.memory.HeapMemory;
+import io.atomix.util.memory.Memory;
 
 /**
  * Heap byte buffer implementation.
@@ -30,7 +29,7 @@ public class UnsafeHeapBuffer extends AbstractBuffer {
     /**
      * Allocates a heap buffer with an initial capacity of {@code 4096} and a maximum capacity of {@link HeapMemory#MAX_SIZE}.
      * <p>
-     * When the buffer is constructed, {@link HeapMemoryAllocator} will be used to allocate
+     * When the buffer is constructed, {@link io.atomix.util.memory.HeapMemoryAllocator} will be used to allocate
      * {@code capacity} bytes of memory on the Java heap. The resulting buffer will be initialized with a capacity of
      * {@code 4096} and have a maximum capacity of {@link HeapMemory#MAX_SIZE}. The buffer's {@code capacity} will dynamically
      * expand as bytes are written to the buffer. The underlying {@link UnsafeHeapBytes} will be initialized
@@ -47,7 +46,7 @@ public class UnsafeHeapBuffer extends AbstractBuffer {
     /**
      * Allocates a heap buffer with the given initial capacity.
      * <p>
-     * When the buffer is constructed, {@link HeapMemoryAllocator} will be used to allocate
+     * When the buffer is constructed, {@link io.atomix.util.memory.HeapMemoryAllocator} will be used to allocate
      * {@code capacity} bytes of memory on the Java heap. The resulting buffer will have an initial capacity of {@code capacity}.
      * The underlying {@link UnsafeHeapBytes} will be initialized to the next power of {@code 2}.
      *
@@ -65,7 +64,7 @@ public class UnsafeHeapBuffer extends AbstractBuffer {
     /**
      * Allocates a new heap buffer.
      * <p>
-     * When the buffer is constructed, {@link HeapMemoryAllocator} will be used to allocate
+     * When the buffer is constructed, {@link io.atomix.util.memory.HeapMemoryAllocator} will be used to allocate
      * {@code capacity} bytes of memory on the Java heap. The resulting buffer will have an initial capacity of
      * {@code initialCapacity} and will be doubled up to {@code maxCapacity} as bytes are written to the buffer. The
      * underlying {@link UnsafeHeapBytes} will be initialized to the next power of {@code 2}.

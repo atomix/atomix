@@ -15,8 +15,8 @@
  */
 package io.atomix.util.buffer;
 
-import io.atomix.catalyst.buffer.util.Memory;
-import io.atomix.catalyst.util.reference.ReferenceManager;
+import io.atomix.util.concurrent.ReferenceManager;
+import io.atomix.util.memory.Memory;
 
 import java.nio.BufferOverflowException;
 import java.nio.BufferUnderflowException;
@@ -26,7 +26,9 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static io.atomix.catalyst.buffer.Bytes.*;
+import static io.atomix.util.buffer.Bytes.BOOLEAN;
+import static io.atomix.util.buffer.Bytes.BYTE;
+import static io.atomix.util.buffer.Bytes.SHORT;
 
 /**
  * Abstract buffer implementation.

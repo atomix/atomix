@@ -15,7 +15,7 @@
  */
 package io.atomix.util.buffer;
 
-import io.atomix.catalyst.buffer.util.HeapMemory;
+import io.atomix.util.memory.HeapMemory;
 
 /**
  * Unpooled heap allocator.

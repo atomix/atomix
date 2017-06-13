@@ -15,10 +15,10 @@
  */
 package io.atomix.util.buffer;
 
-import io.atomix.catalyst.util.Assert;
-
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Byte buffer bytes.
@@ -32,7 +32,7 @@ public abstract class ByteBufferBytes extends AbstractBytes {
 
     public Bytes reset(ByteBuffer buffer) {
         buffer.clear();
-        this.buffer = Assert.notNull(buffer, "buffer");
+        this.buffer = checkNotNull(buffer, "buffer cannot be null");
         return this;
     }
 

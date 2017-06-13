@@ -15,8 +15,7 @@
  */
 package io.atomix.util.buffer;
 
-import io.atomix.catalyst.buffer.util.DirectMemory;
-import io.atomix.catalyst.buffer.util.DirectMemoryAllocator;
+import io.atomix.util.memory.DirectMemory;
 
 /**
  * Direct byte buffer bytes.
@@ -28,7 +27,7 @@ public class UnsafeDirectBytes extends NativeBytes {
     /**
      * Allocates a direct {@link java.nio.ByteBuffer} based byte array.
      * <p>
-     * When the array is constructed, {@link DirectMemoryAllocator} will be used to allocate
+     * When the array is constructed, {@link io.atomix.util.memory.DirectMemoryAllocator} will be used to allocate
      * {@code count} bytes of off-heap memory. Memory is accessed by the buffer directly via {@link sun.misc.Unsafe}.
      *
      * @param size The count of the buffer to allocate (in bytes).

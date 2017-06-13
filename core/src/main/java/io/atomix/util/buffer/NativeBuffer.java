@@ -15,8 +15,8 @@
  */
 package io.atomix.util.buffer;
 
-import io.atomix.catalyst.buffer.util.NativeMemory;
-import io.atomix.catalyst.util.reference.ReferenceManager;
+import io.atomix.util.concurrent.ReferenceManager;
+import io.atomix.util.memory.NativeMemory;
 
 /**
  * Native byte buffer implementation.

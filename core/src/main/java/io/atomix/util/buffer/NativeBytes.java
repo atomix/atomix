@@ -15,8 +15,8 @@
  */
 package io.atomix.util.buffer;
 
-import io.atomix.catalyst.buffer.util.HeapMemory;
-import io.atomix.catalyst.buffer.util.NativeMemory;
+import io.atomix.util.memory.HeapMemory;
+import io.atomix.util.memory.NativeMemory;
 
 import java.nio.ByteOrder;
 

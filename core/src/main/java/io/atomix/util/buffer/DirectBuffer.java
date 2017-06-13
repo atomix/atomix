@@ -15,8 +15,8 @@
  */
 package io.atomix.util.buffer;
 
-import io.atomix.util.buffer.util.HeapMemory;
-import io.atomix.util.buffer.util.Memory;
+import io.atomix.util.memory.HeapMemory;
+import io.atomix.util.memory.Memory;
 
 /**
  * Direct {@link java.nio.ByteBuffer} based buffer.
@@ -28,7 +28,7 @@ public class DirectBuffer extends ByteBufferBuffer {
     /**
      * Allocates a direct buffer with an initial capacity of {@code 4096} and a maximum capacity of {@link Long#MAX_VALUE}.
      * <p>
-     * When the buffer is constructed, {@link io.atomix.util.buffer.util.DirectMemoryAllocator} will be used to allocate
+     * When the buffer is constructed, {@link io.atomix.util.memory.DirectMemoryAllocator} will be used to allocate
      * {@code capacity} bytes of off-heap memory. The resulting buffer will be initialized with a capacity of {@code 4096}
      * and have a maximum capacity of {@link Long#MAX_VALUE}. The buffer's {@code capacity} will dynamically expand as
      * bytes are written to the buffer. The underlying {@link UnsafeDirectBytes} will be initialized to the next power of {@code 2}.
@@ -44,7 +44,7 @@ public class DirectBuffer extends ByteBufferBuffer {
     /**
      * Allocates a direct buffer with the given initial capacity.
      * <p>
-     * When the buffer is constructed, {@link io.atomix.util.buffer.util.DirectMemoryAllocator} will be used to allocate
+     * When the buffer is constructed, {@link io.atomix.util.memory.DirectMemoryAllocator} will be used to allocate
      * {@code capacity} bytes of off-heap memory. The resulting buffer will have an initial capacity of {@code capacity}.
      * The underlying {@link UnsafeDirectBytes} will be initialized to the next power of {@code 2}.
      *
@@ -62,7 +62,7 @@ public class DirectBuffer extends ByteBufferBuffer {
     /**
      * Allocates a new direct buffer.
      * <p>
-     * When the buffer is constructed, {@link io.atomix.util.buffer.util.DirectMemoryAllocator} will be used to allocate
+     * When the buffer is constructed, {@link io.atomix.util.memory.DirectMemoryAllocator} will be used to allocate
      * {@code capacity} bytes of off-heap memory. The resulting buffer will have an initial capacity of {@code initialCapacity}
      * and will be doubled up to {@code maxCapacity} as bytes are written to the buffer. The underlying {@link UnsafeDirectBytes}
      * will be initialized to the next power of {@code 2}.

@@ -15,13 +15,23 @@
  */
 package io.atomix.util.buffer;
 
+import io.atomix.util.AtomixIOException;
+
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
-import static io.atomix.catalyst.buffer.Bytes.*;
+import static io.atomix.util.buffer.Bytes.BOOLEAN;
+import static io.atomix.util.buffer.Bytes.BYTE;
+import static io.atomix.util.buffer.Bytes.CHARACTER;
+import static io.atomix.util.buffer.Bytes.DOUBLE;
+import static io.atomix.util.buffer.Bytes.FLOAT;
+import static io.atomix.util.buffer.Bytes.INTEGER;
+import static io.atomix.util.buffer.Bytes.LONG;
+import static io.atomix.util.buffer.Bytes.MEDIUM;
+import static io.atomix.util.buffer.Bytes.SHORT;
 
 /**
  * Input stream buffer input.
@@ -52,7 +62,7 @@ public class InputStreamBufferInput implements BufferInput<BufferInput<?>> {
         try {
             return is.available();
         } catch (IOException e) {
-            throw new CatalystIOException(e);
+            throw new AtomixIOException(e);
         }
     }
 
@@ -66,7 +76,7 @@ public class InputStreamBufferInput implements BufferInput<BufferInput<?>> {
         try {
             position += is.skip(bytes);
         } catch (IOException e) {
-            throw new CatalystIOException(e);
+            throw new AtomixIOException(e);
         }
         return this;
     }
@@ -77,7 +87,7 @@ public class InputStreamBufferInput implements BufferInput<BufferInput<?>> {
             try {
                 position += is.read(bytes.array());
             } catch (IOException e) {
-                throw new CatalystIOException(e);
+                throw new AtomixIOException(e);
             }
         } else {
             byte[] buffer = new byte[(int) bytes.size()];
@@ -87,7 +97,7 @@ public class InputStreamBufferInput implements BufferInput<BufferInput<?>> {
                     bytes.write(0, buffer, 0, read);
                 }
             } catch (IOException e) {
-                throw new CatalystIOException(e);
+                throw new AtomixIOException(e);
             }
         }
         return this;
@@ -98,7 +108,7 @@ public class InputStreamBufferInput implements BufferInput<BufferInput<?>> {
         try {
             position += is.read(bytes);
         } catch (IOException e) {
-            throw new CatalystIOException(e);
+            throw new AtomixIOException(e);
         }
         return this;
     }
@@ -109,7 +119,7 @@ public class InputStreamBufferInput implements BufferInput<BufferInput<?>> {
             try {
                 position += is.read(bytes.array(), (int) offset, (int) length);
             } catch (IOException e) {
-                throw new CatalystIOException(e);
+                throw new AtomixIOException(e);
             }
         } else {
             byte[] buffer = new byte[1024];
@@ -123,7 +133,7 @@ public class InputStreamBufferInput implements BufferInput<BufferInput<?>> {
                     remaining -= read;
                 }
             } catch (IOException e) {
-                throw new CatalystIOException(e);
+                throw new AtomixIOException(e);
             }
         }
         return this;
@@ -134,7 +144,7 @@ public class InputStreamBufferInput implements BufferInput<BufferInput<?>> {
         try {
             position += is.read(bytes, (int) offset, (int) length);
         } catch (IOException e) {
-            throw new CatalystIOException(e);
+            throw new AtomixIOException(e);
         }
         return this;
     }
@@ -145,7 +155,7 @@ public class InputStreamBufferInput implements BufferInput<BufferInput<?>> {
             try {
                 position += is.read(buffer.array());
             } catch (IOException e) {
-                throw new CatalystIOException(e);
+                throw new AtomixIOException(e);
             }
         } else {
             byte[] bytes = new byte[1024];
@@ -155,7 +165,7 @@ public class InputStreamBufferInput implements BufferInput<BufferInput<?>> {
                     buffer.write(bytes, 0, read);
                 }
             } catch (IOException e) {
-                throw new CatalystIOException(e);
+                throw new AtomixIOException(e);
             }
         }
         return this;
@@ -168,7 +178,7 @@ public class InputStreamBufferInput implements BufferInput<BufferInput<?>> {
             position += BYTE;
             return value;
         } catch (IOException e) {
-            throw new CatalystIOException(e);
+            throw new AtomixIOException(e);
         }
     }
 
@@ -179,7 +189,7 @@ public class InputStreamBufferInput implements BufferInput<BufferInput<?>> {
             position += BYTE;
             return value;
         } catch (IOException e) {
-            throw new CatalystIOException(e);
+            throw new AtomixIOException(e);
         }
     }
 
@@ -190,7 +200,7 @@ public class InputStreamBufferInput implements BufferInput<BufferInput<?>> {
             position += CHARACTER;
             return value;
         } catch (IOException e) {
-            throw new CatalystIOException(e);
+            throw new AtomixIOException(e);
         }
     }
 
@@ -201,7 +211,7 @@ public class InputStreamBufferInput implements BufferInput<BufferInput<?>> {
             position += SHORT;
             return value;
         } catch (IOException e) {
-            throw new CatalystIOException(e);
+            throw new AtomixIOException(e);
         }
     }
 
@@ -212,7 +222,7 @@ public class InputStreamBufferInput implements BufferInput<BufferInput<?>> {
             position += SHORT;
             return value;
         } catch (IOException e) {
-            throw new CatalystIOException(e);
+            throw new AtomixIOException(e);
         }
     }
 
@@ -225,7 +235,7 @@ public class InputStreamBufferInput implements BufferInput<BufferInput<?>> {
             position += MEDIUM;
             return value;
         } catch (IOException e) {
-            throw new CatalystIOException(e);
+            throw new AtomixIOException(e);
         }
     }
 
@@ -238,7 +248,7 @@ public class InputStreamBufferInput implements BufferInput<BufferInput<?>> {
             position += MEDIUM;
             return value;
         } catch (IOException e) {
-            throw new CatalystIOException(e);
+            throw new AtomixIOException(e);
         }
     }
 
@@ -249,7 +259,7 @@ public class InputStreamBufferInput implements BufferInput<BufferInput<?>> {
             position += INTEGER;
             return value;
         } catch (IOException e) {
-            throw new CatalystIOException(e);
+            throw new AtomixIOException(e);
         }
     }
 
@@ -260,7 +270,7 @@ public class InputStreamBufferInput implements BufferInput<BufferInput<?>> {
             position += INTEGER;
             return value;
         } catch (IOException e) {
-            throw new CatalystIOException(e);
+            throw new AtomixIOException(e);
         }
     }
 
@@ -271,7 +281,7 @@ public class InputStreamBufferInput implements BufferInput<BufferInput<?>> {
             position += LONG;
             return value;
         } catch (IOException e) {
-            throw new CatalystIOException(e);
+            throw new AtomixIOException(e);
         }
     }
 
@@ -282,7 +292,7 @@ public class InputStreamBufferInput implements BufferInput<BufferInput<?>> {
             position += FLOAT;
             return value;
         } catch (IOException e) {
-            throw new CatalystIOException(e);
+            throw new AtomixIOException(e);
         }
     }
 
@@ -293,7 +303,7 @@ public class InputStreamBufferInput implements BufferInput<BufferInput<?>> {
             position += DOUBLE;
             return value;
         } catch (IOException e) {
-            throw new CatalystIOException(e);
+            throw new AtomixIOException(e);
         }
     }
 
@@ -304,7 +314,7 @@ public class InputStreamBufferInput implements BufferInput<BufferInput<?>> {
             position += BOOLEAN;
             return value;
         } catch (IOException e) {
-            throw new CatalystIOException(e);
+            throw new AtomixIOException(e);
         }
     }
 
@@ -321,7 +331,7 @@ public class InputStreamBufferInput implements BufferInput<BufferInput<?>> {
                 position += BOOLEAN + SHORT + is.read(bytes, 0, bytes.length);
                 return new String(bytes, charset);
             } catch (IOException e) {
-                throw new CatalystIOException(e);
+                throw new AtomixIOException(e);
             }
         } else {
             position += BOOLEAN;
@@ -339,7 +349,7 @@ public class InputStreamBufferInput implements BufferInput<BufferInput<?>> {
         try {
             is.close();
         } catch (IOException e) {
-            throw new CatalystIOException(e);
+            throw new AtomixIOException(e);
         }
     }
 

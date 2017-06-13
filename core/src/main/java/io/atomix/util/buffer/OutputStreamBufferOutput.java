@@ -15,6 +15,8 @@
  */
 package io.atomix.util.buffer;
 
+import io.atomix.util.AtomixIOException;
+
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -45,7 +47,7 @@ public class OutputStreamBufferOutput implements BufferOutput<BufferOutput<?>> {
             try {
                 os.write(bytes.array());
             } catch (IOException e) {
-                throw new CatalystIOException(e);
+                throw new AtomixIOException(e);
             }
         } else {
             byte[] buffer = new byte[(int) bytes.size()];
@@ -53,7 +55,7 @@ public class OutputStreamBufferOutput implements BufferOutput<BufferOutput<?>> {
             try {
                 os.write(buffer);
             } catch (IOException e) {
-                throw new CatalystIOException(e);
+                throw new AtomixIOException(e);
             }
         }
         return this;
@@ -64,7 +66,7 @@ public class OutputStreamBufferOutput implements BufferOutput<BufferOutput<?>> {
         try {
             os.write(bytes);
         } catch (IOException e) {
-            throw new CatalystIOException(e);
+            throw new AtomixIOException(e);
         }
         return this;
     }
@@ -75,7 +77,7 @@ public class OutputStreamBufferOutput implements BufferOutput<BufferOutput<?>> {
             try {
                 os.write(((UnsafeHeapBytes) bytes).array(), (int) offset, (int) length);
             } catch (IOException e) {
-                throw new CatalystIOException(e);
+                throw new AtomixIOException(e);
             }
         } else {
             byte[] buffer = new byte[(int) bytes.size()];
@@ -83,7 +85,7 @@ public class OutputStreamBufferOutput implements BufferOutput<BufferOutput<?>> {
             try {
                 os.write(buffer, (int) offset, (int) length);
             } catch (IOException e) {
-                throw new CatalystIOException(e);
+                throw new AtomixIOException(e);
             }
         }
         return this;
@@ -94,7 +96,7 @@ public class OutputStreamBufferOutput implements BufferOutput<BufferOutput<?>> {
         try {
             os.write(bytes, (int) offset, (int) length);
         } catch (IOException e) {
-            throw new CatalystIOException(e);
+            throw new AtomixIOException(e);
         }
         return this;
     }
@@ -105,7 +107,7 @@ public class OutputStreamBufferOutput implements BufferOutput<BufferOutput<?>> {
             try {
                 os.write(((UnsafeHeapBuffer) buffer).array());
             } catch (IOException e) {
-                throw new CatalystIOException(e);
+                throw new AtomixIOException(e);
             }
         } else {
             byte[] bytes = new byte[(int) buffer.remaining()];
@@ -113,7 +115,7 @@ public class OutputStreamBufferOutput implements BufferOutput<BufferOutput<?>> {
             try {
                 os.write(bytes);
             } catch (IOException e) {
-                throw new CatalystIOException(e);
+                throw new AtomixIOException(e);
             }
         }
         return this;
@@ -124,7 +126,7 @@ public class OutputStreamBufferOutput implements BufferOutput<BufferOutput<?>> {
         try {
             os.writeByte(b);
         } catch (IOException e) {
-            throw new CatalystIOException(e);
+            throw new AtomixIOException(e);
         }
         return this;
     }
@@ -134,7 +136,7 @@ public class OutputStreamBufferOutput implements BufferOutput<BufferOutput<?>> {
         try {
             os.writeByte(b);
         } catch (IOException e) {
-            throw new CatalystIOException(e);
+            throw new AtomixIOException(e);
         }
         return this;
     }
@@ -144,7 +146,7 @@ public class OutputStreamBufferOutput implements BufferOutput<BufferOutput<?>> {
         try {
             os.writeChar(c);
         } catch (IOException e) {
-            throw new CatalystIOException(e);
+            throw new AtomixIOException(e);
         }
         return this;
     }
@@ -154,7 +156,7 @@ public class OutputStreamBufferOutput implements BufferOutput<BufferOutput<?>> {
         try {
             os.writeShort(s);
         } catch (IOException e) {
-            throw new CatalystIOException(e);
+            throw new AtomixIOException(e);
         }
         return this;
     }
@@ -164,7 +166,7 @@ public class OutputStreamBufferOutput implements BufferOutput<BufferOutput<?>> {
         try {
             os.writeShort(s);
         } catch (IOException e) {
-            throw new CatalystIOException(e);
+            throw new AtomixIOException(e);
         }
         return this;
     }
@@ -176,7 +178,7 @@ public class OutputStreamBufferOutput implements BufferOutput<BufferOutput<?>> {
             os.writeByte((byte) (m >>> 8));
             os.writeByte((byte) m);
         } catch (IOException e) {
-            throw new CatalystIOException(e);
+            throw new AtomixIOException(e);
         }
         return this;
     }
@@ -191,7 +193,7 @@ public class OutputStreamBufferOutput implements BufferOutput<BufferOutput<?>> {
         try {
             os.writeInt(i);
         } catch (IOException e) {
-            throw new CatalystIOException(e);
+            throw new AtomixIOException(e);
         }
         return this;
     }
@@ -201,7 +203,7 @@ public class OutputStreamBufferOutput implements BufferOutput<BufferOutput<?>> {
         try {
             os.writeInt((int) i);
         } catch (IOException e) {
-            throw new CatalystIOException(e);
+            throw new AtomixIOException(e);
         }
         return this;
     }
@@ -211,7 +213,7 @@ public class OutputStreamBufferOutput implements BufferOutput<BufferOutput<?>> {
         try {
             os.writeLong(l);
         } catch (IOException e) {
-            throw new CatalystIOException(e);
+            throw new AtomixIOException(e);
         }
         return this;
     }
@@ -221,7 +223,7 @@ public class OutputStreamBufferOutput implements BufferOutput<BufferOutput<?>> {
         try {
             os.writeFloat(f);
         } catch (IOException e) {
-            throw new CatalystIOException(e);
+            throw new AtomixIOException(e);
         }
         return this;
     }
@@ -231,7 +233,7 @@ public class OutputStreamBufferOutput implements BufferOutput<BufferOutput<?>> {
         try {
             os.writeDouble(d);
         } catch (IOException e) {
-            throw new CatalystIOException(e);
+            throw new AtomixIOException(e);
         }
         return this;
     }
@@ -241,7 +243,7 @@ public class OutputStreamBufferOutput implements BufferOutput<BufferOutput<?>> {
         try {
             os.writeBoolean(b);
         } catch (IOException e) {
-            throw new CatalystIOException(e);
+            throw new AtomixIOException(e);
         }
         return this;
     }
@@ -273,7 +275,7 @@ public class OutputStreamBufferOutput implements BufferOutput<BufferOutput<?>> {
         try {
             os.flush();
         } catch (IOException e) {
-            throw new CatalystIOException(e);
+            throw new AtomixIOException(e);
         }
         return this;
     }
@@ -283,7 +285,7 @@ public class OutputStreamBufferOutput implements BufferOutput<BufferOutput<?>> {
         try {
             os.close();
         } catch (IOException e) {
-            throw new CatalystIOException(e);
+            throw new AtomixIOException(e);
         }
     }
 

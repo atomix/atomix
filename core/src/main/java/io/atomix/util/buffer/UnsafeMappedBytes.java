@@ -15,8 +15,8 @@
  */
 package io.atomix.util.buffer;
 
-import io.atomix.catalyst.buffer.util.MappedMemory;
-import io.atomix.catalyst.buffer.util.MappedMemoryAllocator;
+import io.atomix.util.memory.MappedMemory;
+import io.atomix.util.memory.MappedMemoryAllocator;
 
 import java.io.File;
 import java.io.IOException;
