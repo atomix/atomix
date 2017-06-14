@@ -11,36 +11,39 @@
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
- * limitations under the License.
+ * limitations under the License
  */
 package io.atomix.protocols.raft.protocol;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
+import io.atomix.protocols.raft.error.RaftError;
 
 /**
- * Base request for all client requests.
+ * Configuration installation response.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class AbstractRaftRequest implements RaftRequest {
+public class ConfigureResponse extends AbstractRaftResponse {
 
     /**
-     * Abstract request builder.
+     * Returns a new configure response builder.
      *
-     * @param <T> The builder type.
-     * @param <U> The request type.
+     * @return A new configure response builder.
      */
-    protected static abstract class Builder<T extends Builder<T, U>, U extends AbstractRaftRequest> implements RaftRequest.Builder<T, U> {
+    public static Builder builder() {
+        return new Builder();
+    }
 
-        /**
-         * Validates the builder.
-         */
-        protected void validate() {
-        }
+    public ConfigureResponse(Status status, RaftError error) {
+        super(status, error);
+    }
 
+    /**
+     * Heartbeat response builder.
+     */
+    public static class Builder extends AbstractRaftResponse.Builder<Builder, ConfigureResponse> {
         @Override
-        public String toString() {
-            return toStringHelper(this).toString();
+        public ConfigureResponse build() {
+            return new ConfigureResponse(status, error);
         }
     }
 }

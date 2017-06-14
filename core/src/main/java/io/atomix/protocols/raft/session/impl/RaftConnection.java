@@ -17,6 +17,7 @@ package io.atomix.protocols.raft.session.impl;
 
 import io.atomix.cluster.NodeId;
 import io.atomix.messaging.MessagingException;
+import io.atomix.protocols.raft.error.RaftError;
 import io.atomix.protocols.raft.protocol.CloseSessionRequest;
 import io.atomix.protocols.raft.protocol.CloseSessionResponse;
 import io.atomix.protocols.raft.protocol.CommandRequest;
@@ -32,8 +33,8 @@ import io.atomix.protocols.raft.protocol.QueryResponse;
 import io.atomix.protocols.raft.protocol.RaftClientProtocolDispatcher;
 import io.atomix.protocols.raft.protocol.RaftRequest;
 import io.atomix.protocols.raft.protocol.RaftResponse;
-import io.atomix.protocols.raft.error.RaftError;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.ConnectException;
 import java.nio.channels.ClosedChannelException;
@@ -49,30 +50,20 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public abstract class RaftConnection {
-    protected final RaftClientProtocolDispatcher dispatcher;
-    protected final NodeSelector selector;
-    private NodeId node;
-    protected volatile boolean open;
+public class RaftConnection {
+    private static final Logger LOGGER = LoggerFactory.getLogger(RaftConnection.class);
 
-    public RaftConnection(RaftClientProtocolDispatcher dispatcher, NodeSelector selector) {
+    private final String name;
+    private final RaftClientProtocolDispatcher dispatcher;
+    private final NodeSelector selector;
+    private NodeId node;
+    private volatile boolean open;
+
+    public RaftConnection(String name, RaftClientProtocolDispatcher dispatcher, NodeSelector selector) {
+        this.name = checkNotNull(name, "name cannot be null");
         this.dispatcher = checkNotNull(dispatcher, "dispatcher cannot be null");
         this.selector = checkNotNull(selector, "selector cannot be null");
     }
-
-    /**
-     * Returns the connection name.
-     *
-     * @return The connection name.
-     */
-    protected abstract String name();
-
-    /**
-     * Returns the connection logger.
-     *
-     * @return The connection logger.
-     */
-    protected abstract Logger logger();
 
     /**
      * Returns the current selector leader.
@@ -193,7 +184,7 @@ public abstract class RaftConnection {
         if (open) {
             NodeId node = next();
             if (node != null) {
-                logger().trace("{} - Sending {}", name(), request);
+                LOGGER.trace("{} - Sending {}", name, request);
                 sender.apply(node, request).whenComplete((r, e) -> {
                     if (e != null || r != null) {
                         handleResponse(request, sender, node, r, e, future);
@@ -214,7 +205,7 @@ public abstract class RaftConnection {
     protected <T extends RaftRequest> void resendRequest(Throwable cause, T request, BiFunction sender, NodeId node, CompletableFuture future) {
         // If the connection has not changed, reset it and connect to the next server.
         if (this.node == node) {
-            logger().trace("{} - Resetting connection. Reason: {}", name(), cause);
+            LOGGER.trace("{} - Resetting connection. Reason: {}", name, cause);
             this.node = null;
         }
 
@@ -236,7 +227,7 @@ public abstract class RaftConnection {
                     || response.error() == RaftError.Type.UNKNOWN_SESSION_ERROR
                     || response.error() == RaftError.Type.UNKNOWN_STATE_MACHINE_ERROR
                     || response.error() == RaftError.Type.INTERNAL_ERROR) {
-                logger().trace("{} - Received {}", name(), response);
+                LOGGER.trace("{} - Received {}", name, response);
                 future.complete(response);
             } else {
                 resendRequest(response.error().createException(), request, sender, node, future);
@@ -244,7 +235,7 @@ public abstract class RaftConnection {
         } else if (error instanceof ConnectException || error instanceof TimeoutException || error instanceof MessagingException || error instanceof ClosedChannelException) {
             resendRequest(error, request, sender, node, future);
         } else {
-            logger().debug("{} - {} failed! Reason: {}", name(), request, error);
+            LOGGER.debug("{} - {} failed! Reason: {}", name, request, error);
             future.completeExceptionally(error);
         }
     }
@@ -264,15 +255,13 @@ public abstract class RaftConnection {
             return node;
         }
 
-        // TODO: Does this need to be here?
-        reset();
-
         if (!selector.hasNext()) {
-            logger().debug("{} - Failed to connect to the cluster", name());
+            LOGGER.debug("{} - Failed to connect to the cluster", name);
+            reset();
             return null;
         } else {
             this.node = selector.next();
-            logger().debug("{} - Connecting to {}", name(), node);
+            LOGGER.debug("{} - Connecting to {}", name, node);
             return node;
         }
     }

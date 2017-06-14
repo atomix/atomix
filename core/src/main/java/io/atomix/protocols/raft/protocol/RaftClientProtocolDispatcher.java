@@ -27,7 +27,7 @@ public interface RaftClientProtocolDispatcher {
     /**
      * Sends an open session request to the given node.
      *
-     * @param nodeId the node to which to send the request
+     * @param nodeId  the node to which to send the request
      * @param request the request to send
      * @return a future to be completed with the response
      */
@@ -36,7 +36,7 @@ public interface RaftClientProtocolDispatcher {
     /**
      * Sends a close session request to the given node.
      *
-     * @param nodeId the node to which to send the request
+     * @param nodeId  the node to which to send the request
      * @param request the request to send
      * @return a future to be completed with the response
      */
@@ -45,7 +45,7 @@ public interface RaftClientProtocolDispatcher {
     /**
      * Sends a keep alive request to the given node.
      *
-     * @param nodeId the node to which to send the request
+     * @param nodeId  the node to which to send the request
      * @param request the request to send
      * @return a future to be completed with the response
      */
@@ -54,7 +54,7 @@ public interface RaftClientProtocolDispatcher {
     /**
      * Sends a query request to the given node.
      *
-     * @param nodeId the node to which to send the request
+     * @param nodeId  the node to which to send the request
      * @param request the request to send
      * @return a future to be completed with the response
      */
@@ -63,7 +63,7 @@ public interface RaftClientProtocolDispatcher {
     /**
      * Sends a command request to the given node.
      *
-     * @param nodeId the node to which to send the request
+     * @param nodeId  the node to which to send the request
      * @param request the request to send
      * @return a future to be completed with the response
      */
@@ -72,7 +72,7 @@ public interface RaftClientProtocolDispatcher {
     /**
      * Sends a metadata request to the given node.
      *
-     * @param nodeId the node to which to send the request
+     * @param nodeId  the node to which to send the request
      * @param request the request to send
      * @return a future to be completed with the response
      */

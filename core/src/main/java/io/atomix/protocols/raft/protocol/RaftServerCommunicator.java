@@ -20,33 +20,34 @@ import io.atomix.util.serializer.KryoNamespaces;
 import io.atomix.util.serializer.Serializer;
 
 /**
- * Raft client protocol that uses a cluster communicator.
+ * Raft server protocol that uses a {@link ClusterCommunicationService}.
  */
-public class RaftClientCommunicator implements RaftClientProtocol {
-    private final RaftClientProtocolListener listener;
-    private final RaftClientProtocolDispatcher dispatcher;
+public class RaftServerCommunicator implements RaftServerProtocol {
+    private final RaftServerProtocolListener listener;
+    private final RaftServerProtocolDispatcher dispatcher;
 
-    public RaftClientCommunicator(ClusterCommunicationService clusterCommunicator) {
+    public RaftServerCommunicator(ClusterCommunicationService clusterCommunicator) {
         this(null, clusterCommunicator);
     }
 
-    public RaftClientCommunicator(String prefix, ClusterCommunicationService clusterCommunicator) {
+    public RaftServerCommunicator(String prefix, ClusterCommunicationService clusterCommunicator) {
         this(prefix, Serializer.using(KryoNamespaces.RAFT), clusterCommunicator);
     }
 
-    public RaftClientCommunicator(String prefix, Serializer serializer, ClusterCommunicationService clusterCommunicator) {
+    public RaftServerCommunicator(String prefix, Serializer serializer, ClusterCommunicationService clusterCommunicator) {
         RaftMessageContext context = new RaftMessageContext(prefix);
-        this.listener = new RaftClientMessageListener(context, serializer, clusterCommunicator);
-        this.dispatcher = new RaftClientMessageDispatcher(context, serializer, clusterCommunicator);
+        this.listener = new RaftServerMessageListener(context, serializer, clusterCommunicator);
+        this.dispatcher = new RaftServerMessageDispatcher(context, serializer, clusterCommunicator);
     }
 
     @Override
-    public RaftClientProtocolListener listener() {
+    public RaftServerProtocolListener listener() {
         return listener;
     }
 
     @Override
-    public RaftClientProtocolDispatcher dispatcher() {
+    public RaftServerProtocolDispatcher dispatcher() {
         return dispatcher;
     }
+
 }

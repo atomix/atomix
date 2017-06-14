@@ -32,27 +32,27 @@ import io.atomix.protocols.raft.error.RaftError;
  */
 public class CommandResponse extends OperationResponse {
 
-  /**
-   * Returns a new submit response builder.
-   *
-   * @return A new submit response builder.
-   */
-  public static Builder builder() {
-    return new Builder();
-  }
-
-  public CommandResponse(Status status, RaftError error, long index, long eventIndex, Object result, long lastSequence) {
-    super(status, error, index, eventIndex, result, lastSequence);
-  }
-
-  /**
-   * Command response builder.
-   */
-  public static class Builder extends OperationResponse.Builder<Builder, CommandResponse> {
-    @Override
-    public CommandResponse build() {
-      validate();
-      return new CommandResponse(status, error, index, eventIndex, result, lastSequence);
+    /**
+     * Returns a new submit response builder.
+     *
+     * @return A new submit response builder.
+     */
+    public static Builder builder() {
+        return new Builder();
     }
-  }
+
+    public CommandResponse(Status status, RaftError error, long index, long eventIndex, Object result, long lastSequence) {
+        super(status, error, index, eventIndex, result, lastSequence);
+    }
+
+    /**
+     * Command response builder.
+     */
+    public static class Builder extends OperationResponse.Builder<Builder, CommandResponse> {
+        @Override
+        public CommandResponse build() {
+            validate();
+            return new CommandResponse(status, error, index, eventIndex, result, lastSequence);
+        }
+    }
 }

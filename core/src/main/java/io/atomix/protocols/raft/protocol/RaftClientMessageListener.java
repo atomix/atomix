@@ -27,11 +27,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Raft client listener that uses a cluster communicator for messaging.
  */
 public class RaftClientMessageListener implements RaftClientProtocolListener {
-    private final RaftClientCommunicator.MessageContext context;
+    private final RaftMessageContext context;
     private final Serializer serializer;
     private final ClusterCommunicationService clusterCommunicator;
 
-    public RaftClientMessageListener(RaftClientCommunicator.MessageContext context, Serializer serializer, ClusterCommunicationService clusterCommunicator) {
+    public RaftClientMessageListener(RaftMessageContext context, Serializer serializer, ClusterCommunicationService clusterCommunicator) {
         this.context = checkNotNull(context, "context cannot be null");
         this.serializer = checkNotNull(serializer, "serializer cannot be null");
         this.clusterCommunicator = checkNotNull(clusterCommunicator, "clusterCommunicator cannot be null");

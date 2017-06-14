@@ -20,7 +20,7 @@ package io.atomix.protocols.raft.protocol;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface RaftRequest {
+public interface RaftRequest extends RaftMessage {
 
     /**
      * Request builder.

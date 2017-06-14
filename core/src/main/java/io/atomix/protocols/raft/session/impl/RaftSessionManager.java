@@ -18,12 +18,12 @@ package io.atomix.protocols.raft.session.impl;
 import io.atomix.cluster.NodeId;
 import io.atomix.protocols.raft.client.CommunicationStrategies;
 import io.atomix.protocols.raft.client.CommunicationStrategy;
+import io.atomix.protocols.raft.error.UnknownSessionException;
 import io.atomix.protocols.raft.protocol.CloseSessionRequest;
 import io.atomix.protocols.raft.protocol.KeepAliveRequest;
 import io.atomix.protocols.raft.protocol.OpenSessionRequest;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.protocol.RaftResponse;
-import io.atomix.protocols.raft.error.UnknownSessionException;
 import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.util.concurrent.Futures;
 import io.atomix.util.concurrent.OrderedExecutor;
@@ -66,7 +66,7 @@ public class RaftSessionManager {
         this.clientId = checkNotNull(clientId, "clientId cannot be null");
         this.protocol = checkNotNull(protocol, "protocol cannot be null");
         this.selectorManager = checkNotNull(selectorManager, "selectorManager cannot be null");
-        this.connection = new RaftClientConnection(clientId, protocol.dispatcher(), selectorManager.createSelector(CommunicationStrategies.ANY));
+        this.connection = new RaftConnection(clientId, protocol.dispatcher(), selectorManager.createSelector(CommunicationStrategies.ANY));
         this.threadPoolExecutor = checkNotNull(threadPoolExecutor, "threadPoolExecutor cannot be null");
     }
 
@@ -101,7 +101,7 @@ public class RaftSessionManager {
      * Opens a new session.
      *
      * @param name                  The session name.
-     * @param stateMachine                  The session type.
+     * @param stateMachine          The session type.
      * @param communicationStrategy The strategy with which to communicate with servers.
      * @param timeout               The session timeout.
      * @return A completable future to be completed once the session has been opened.
@@ -202,7 +202,6 @@ public class RaftSessionManager {
                 .withSessionIds(new long[]{sessionId})
                 .withCommandSequences(new long[]{sessionState.getCommandResponse()})
                 .withEventIndexes(new long[]{sessionState.getEventIndex()})
-                .withConnections(new long[]{sessionState.getConnection()})
                 .build();
 
         LOGGER.trace("{} - Sending {}", clientId, request);
@@ -243,7 +242,6 @@ public class RaftSessionManager {
             sessionIds[i] = sessionState.getSessionId();
             commandResponses[i] = sessionState.getCommandResponse();
             eventIndexes[i] = sessionState.getEventIndex();
-            connections[i] = sessionState.getConnection();
             i++;
         }
 
@@ -251,7 +249,6 @@ public class RaftSessionManager {
                 .withSessionIds(sessionIds)
                 .withCommandSequences(commandResponses)
                 .withEventIndexes(eventIndexes)
-                .withConnections(connections)
                 .build();
 
         LOGGER.trace("{} - Sending {}", clientId, request);

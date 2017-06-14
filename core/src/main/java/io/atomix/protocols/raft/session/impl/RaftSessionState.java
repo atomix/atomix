@@ -29,230 +29,192 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public final class RaftSessionState {
-  private final long sessionId;
-  private final String name;
-  private final String type;
-  private final long timeout;
-  private volatile RaftSession.State state = RaftSession.State.CONNECTED;
-  private Long suspendedTime;
-  private long commandRequest;
-  private volatile long commandResponse;
-  private long responseIndex;
-  private volatile long eventIndex;
-  private volatile long connection;
-  private final Set<Consumer<RaftSession.State>> changeListeners = new CopyOnWriteArraySet<>();
+    private final long sessionId;
+    private final String name;
+    private final String type;
+    private final long timeout;
+    private volatile RaftSession.State state = RaftSession.State.CONNECTED;
+    private Long suspendedTime;
+    private long commandRequest;
+    private volatile long commandResponse;
+    private long responseIndex;
+    private volatile long eventIndex;
+    private final Set<Consumer<RaftSession.State>> changeListeners = new CopyOnWriteArraySet<>();
 
-  RaftSessionState(long sessionId, String name, String type, long timeout) {
-    this.sessionId = sessionId;
-    this.name = name;
-    this.type = type;
-    this.timeout = timeout;
-    this.responseIndex = sessionId;
-    this.eventIndex = sessionId;
-  }
-
-  /**
-   * Returns the client session ID.
-   *
-   * @return The client session ID.
-   */
-  public long getSessionId() {
-    return sessionId;
-  }
-
-  /**
-   * Returns the session name.
-   *
-   * @return The session name.
-   */
-  public String getSessionName() {
-    return name;
-  }
-
-  /**
-   * Returns the session type.
-   *
-   * @return The session type.
-   */
-  public String getSessionType() {
-    return type;
-  }
-
-  /**
-   * Returns the session timeout.
-   *
-   * @return The session timeout.
-   */
-  public long getSessionTimeout() {
-    return timeout;
-  }
-
-  /**
-   * Returns the session state.
-   *
-   * @return The session state.
-   */
-  public RaftSession.State getState() {
-    return state;
-  }
-
-  /**
-   * Updates the session state.
-   *
-   * @param state The updates session state.
-   */
-  public void setState(RaftSession.State state) {
-    if (this.state != state) {
-      this.state = state;
-      if (state == RaftSession.State.SUSPENDED) {
-        if (suspendedTime == null) {
-          suspendedTime = System.currentTimeMillis();
-        }
-      } else {
-        suspendedTime = null;
-      }
-      changeListeners.forEach(l -> l.accept(state));
-    } else if (this.state == RaftSession.State.SUSPENDED) {
-      if (System.currentTimeMillis() - suspendedTime > timeout) {
-        setState(RaftSession.State.CLOSED);
-      }
+    RaftSessionState(long sessionId, String name, String type, long timeout) {
+        this.sessionId = sessionId;
+        this.name = name;
+        this.type = type;
+        this.timeout = timeout;
+        this.responseIndex = sessionId;
+        this.eventIndex = sessionId;
     }
-  }
 
-  /**
-   * Registers a state change listener on the session manager.
-   *
-   * @param listener The state change listener callback.
-   */
-  public void addStateChangeListener(Consumer<RaftSession.State> listener) {
-    changeListeners.add(checkNotNull(listener));
-  }
+    /**
+     * Returns the client session ID.
+     *
+     * @return The client session ID.
+     */
+    public long getSessionId() {
+        return sessionId;
+    }
 
-  /**
-   * Removes a state change listener.
-   *
-   * @param listener the listener to remove
-   */
-  public void removeStateChangeListener(Consumer<RaftSession.State> listener) {
-    changeListeners.remove(checkNotNull(listener));
-  }
+    /**
+     * Returns the session name.
+     *
+     * @return The session name.
+     */
+    public String getSessionName() {
+        return name;
+    }
 
-  /**
-   * Sets the last command request sequence number.
-   *
-   * @param commandRequest The last command request sequence number.
-   * @return The client session state.
-   */
-  public RaftSessionState setCommandRequest(long commandRequest) {
-    this.commandRequest = commandRequest;
-    return this;
-  }
+    /**
+     * Returns the session type.
+     *
+     * @return The session type.
+     */
+    public String getSessionType() {
+        return type;
+    }
 
-  /**
-   * Returns the last command request sequence number for the session.
-   *
-   * @return The last command request sequence number for the session.
-   */
-  public long getCommandRequest() {
-    return commandRequest;
-  }
+    /**
+     * Returns the session timeout.
+     *
+     * @return The session timeout.
+     */
+    public long getSessionTimeout() {
+        return timeout;
+    }
 
-  /**
-   * Returns the next command request sequence number for the session.
-   *
-   * @return The next command request sequence number for the session.
-   */
-  public long nextCommandRequest() {
-    return ++commandRequest;
-  }
+    /**
+     * Returns the session state.
+     *
+     * @return The session state.
+     */
+    public RaftSession.State getState() {
+        return state;
+    }
 
-  /**
-   * Sets the last command sequence number for which a response has been received.
-   *
-   * @param commandResponse The last command sequence number for which a response has been received.
-   * @return The client session state.
-   */
-  public RaftSessionState setCommandResponse(long commandResponse) {
-    this.commandResponse = commandResponse;
-    return this;
-  }
+    /**
+     * Updates the session state.
+     *
+     * @param state The updates session state.
+     */
+    public void setState(RaftSession.State state) {
+        if (this.state != state) {
+            this.state = state;
+            if (state == RaftSession.State.SUSPENDED) {
+                if (suspendedTime == null) {
+                    suspendedTime = System.currentTimeMillis();
+                }
+            } else {
+                suspendedTime = null;
+            }
+            changeListeners.forEach(l -> l.accept(state));
+        } else if (this.state == RaftSession.State.SUSPENDED) {
+            if (System.currentTimeMillis() - suspendedTime > timeout) {
+                setState(RaftSession.State.CLOSED);
+            }
+        }
+    }
 
-  /**
-   * Returns the last command sequence number for which a response has been received.
-   *
-   * @return The last command sequence number for which a response has been received.
-   */
-  public long getCommandResponse() {
-    return commandResponse;
-  }
+    /**
+     * Registers a state change listener on the session manager.
+     *
+     * @param listener The state change listener callback.
+     */
+    public void addStateChangeListener(Consumer<RaftSession.State> listener) {
+        changeListeners.add(checkNotNull(listener));
+    }
 
-  /**
-   * Sets the highest index for which a response has been received.
-   *
-   * @param responseIndex The highest index for which a command or query response has been received.
-   * @return The client session state.
-   */
-  public RaftSessionState setResponseIndex(long responseIndex) {
-    this.responseIndex = Math.max(this.responseIndex, responseIndex);
-    return this;
-  }
+    /**
+     * Removes a state change listener.
+     *
+     * @param listener the listener to remove
+     */
+    public void removeStateChangeListener(Consumer<RaftSession.State> listener) {
+        changeListeners.remove(checkNotNull(listener));
+    }
 
-  /**
-   * Returns the highest index for which a response has been received.
-   *
-   * @return The highest index for which a command or query response has been received.
-   */
-  public long getResponseIndex() {
-    return responseIndex;
-  }
+    /**
+     * Sets the last command request sequence number.
+     *
+     * @param commandRequest The last command request sequence number.
+     */
+    public void setCommandRequest(long commandRequest) {
+        this.commandRequest = commandRequest;
+    }
 
-  /**
-   * Sets the highest index for which an event has been received in sequence.
-   *
-   * @param eventIndex The highest index for which an event has been received in sequence.
-   * @return The client session state.
-   */
-  public RaftSessionState setEventIndex(long eventIndex) {
-    this.eventIndex = eventIndex;
-    return this;
-  }
+    /**
+     * Returns the last command request sequence number for the session.
+     *
+     * @return The last command request sequence number for the session.
+     */
+    public long getCommandRequest() {
+        return commandRequest;
+    }
 
-  /**
-   * Returns the highest index for which an event has been received in sequence.
-   *
-   * @return The highest index for which an event has been received in sequence.
-   */
-  public long getEventIndex() {
-    return eventIndex;
-  }
+    /**
+     * Returns the next command request sequence number for the session.
+     *
+     * @return The next command request sequence number for the session.
+     */
+    public long nextCommandRequest() {
+        return ++commandRequest;
+    }
 
-  /**
-   * Sets the session's current connection.
-   *
-   * @param connection The session's current connection.
-   * @return The client session state.
-   */
-  public RaftSessionState setConnection(int connection) {
-    this.connection = connection;
-    return this;
-  }
+    /**
+     * Sets the last command sequence number for which a response has been received.
+     *
+     * @param commandResponse The last command sequence number for which a response has been received.
+     */
+    public void setCommandResponse(long commandResponse) {
+        this.commandResponse = commandResponse;
+    }
 
-  /**
-   * Returns the session's current connection.
-   *
-   * @return The session's current connection.
-   */
-  public long getConnection() {
-    return connection;
-  }
+    /**
+     * Returns the last command sequence number for which a response has been received.
+     *
+     * @return The last command sequence number for which a response has been received.
+     */
+    public long getCommandResponse() {
+        return commandResponse;
+    }
 
-  /**
-   * Returns the session's next connection ID.
-   *
-   * @return The session's next connection ID.
-   */
-  public long nextConnection() {
-    return ++connection;
-  }
+    /**
+     * Sets the highest index for which a response has been received.
+     *
+     * @param responseIndex The highest index for which a command or query response has been received.
+     */
+    public void setResponseIndex(long responseIndex) {
+        this.responseIndex = Math.max(this.responseIndex, responseIndex);
+    }
+
+    /**
+     * Returns the highest index for which a response has been received.
+     *
+     * @return The highest index for which a command or query response has been received.
+     */
+    public long getResponseIndex() {
+        return responseIndex;
+    }
+
+    /**
+     * Sets the highest index for which an event has been received in sequence.
+     *
+     * @param eventIndex The highest index for which an event has been received in sequence.
+     */
+    public void setEventIndex(long eventIndex) {
+        this.eventIndex = eventIndex;
+    }
+
+    /**
+     * Returns the highest index for which an event has been received in sequence.
+     *
+     * @return The highest index for which an event has been received in sequence.
+     */
+    public long getEventIndex() {
+        return eventIndex;
+    }
 
 }

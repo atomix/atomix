@@ -71,8 +71,8 @@ public class DefaultRaftSession implements RaftSession {
         this.sessionManager = checkNotNull(sessionManager, "sessionManager cannot be null");
         RaftSessionSequencer sequencer = new RaftSessionSequencer(state);
         this.sessionListener = new RaftSessionListener(protocol, state, sequencer, serializer, orderedExecutor);
-        RaftConnection leaderConnection = new RaftLeaderConnection(state, protocol.dispatcher(), selectorManager.createSelector(CommunicationStrategies.LEADER));
-        RaftConnection sessionConnection = new RaftSessionConnection(state, protocol.dispatcher(), selectorManager.createSelector(communicationStrategy));
+        RaftConnection leaderConnection = new RaftConnection(String.valueOf(state.getSessionId()), protocol.dispatcher(), selectorManager.createSelector(CommunicationStrategies.LEADER));
+        RaftConnection sessionConnection = new RaftConnection(String.valueOf(state.getSessionId()), protocol.dispatcher(), selectorManager.createSelector(communicationStrategy));
         this.sessionSubmitter = new RaftSessionSubmitter(leaderConnection, sessionConnection, state, sequencer, sessionManager, serializer, orderedExecutor, scheduledExecutor);
     }
 

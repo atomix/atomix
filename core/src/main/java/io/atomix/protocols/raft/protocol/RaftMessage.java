@@ -16,31 +16,7 @@
 package io.atomix.protocols.raft.protocol;
 
 /**
- * Cluster metadata request.
+ * Base type for Raft protocol messages.
  */
-public class MetadataRequest extends SessionRequest {
-
-    /**
-     * Returns a new metadata request builder.
-     *
-     * @return A new metadata request builder.
-     */
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    public MetadataRequest(long session) {
-        super(session);
-    }
-
-    /**
-     * Metadata request builder.
-     */
-    public static class Builder extends SessionRequest.Builder<Builder, MetadataRequest> {
-        @Override
-        public MetadataRequest build() {
-            validate();
-            return new MetadataRequest(session);
-        }
-    }
+public interface RaftMessage {
 }

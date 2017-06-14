@@ -30,22 +30,22 @@ import java.util.List;
  */
 public interface CommunicationStrategy {
 
-  /**
-   * Returns a prioritized list of servers to which the client can connect and submit operations.
-   * <p>
-   * The client will iterate the provided {@link NodeId} list in order, attempting to connect to
-   * each listed server until all servers have been exhausted. Implementations should provide a
-   * complete list of servers with which the client can communicate. Limiting the server list
-   * only to a single server such as the {@code leader} may result in the client failing, such as in
-   * the event that no leader exists or the client is partitioned from the leader.
-   *
-   * @param leader The current cluster leader. The {@code leader} may be {@code null} if no current
-   *               leader exists.
-   * @param servers The full list of available servers. The provided server list is representative
-   *                of the most recent membership update received by the client. The server list
-   *                may evolve over time as the structure of the cluster changes.
-   * @return A collection of servers to which the client can connect.
-   */
-  List<NodeId> selectConnections(NodeId leader, List<NodeId> servers);
+    /**
+     * Returns a prioritized list of servers to which the client can connect and submit operations.
+     * <p>
+     * The client will iterate the provided {@link NodeId} list in order, attempting to connect to
+     * each listed server until all servers have been exhausted. Implementations should provide a
+     * complete list of servers with which the client can communicate. Limiting the server list
+     * only to a single server such as the {@code leader} may result in the client failing, such as in
+     * the event that no leader exists or the client is partitioned from the leader.
+     *
+     * @param leader  The current cluster leader. The {@code leader} may be {@code null} if no current
+     *                leader exists.
+     * @param servers The full list of available servers. The provided server list is representative
+     *                of the most recent membership update received by the client. The server list
+     *                may evolve over time as the structure of the cluster changes.
+     * @return A collection of servers to which the client can connect.
+     */
+    List<NodeId> selectConnections(NodeId leader, List<NodeId> servers);
 
 }

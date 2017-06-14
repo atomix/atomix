@@ -33,173 +33,174 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public final class NodeSelector implements Iterator<NodeId>, AutoCloseable {
 
-  /**1
-   * Address selector state.
-   */
-  public enum State {
+    /**
+     * 1
+     * Address selector state.
+     */
+    public enum State {
+
+        /**
+         * Indicates that the selector has been reset.
+         */
+        RESET,
+
+        /**
+         * Indicates that the selector is being iterated.
+         */
+        ITERATE,
+
+        /**
+         * Indicates that selector iteration is complete.
+         */
+        COMPLETE
+
+    }
+
+    private final NodeSelectorManager selectors;
+    private NodeId leader;
+    private Collection<NodeId> servers = new LinkedList<>();
+    private volatile NodeId selection;
+    private final CommunicationStrategy strategy;
+    private Collection<NodeId> selections = new LinkedList<>();
+    private Iterator<NodeId> selectionsIterator;
+
+    public NodeSelector(NodeId leader, Collection<NodeId> servers, CommunicationStrategy strategy, NodeSelectorManager selectors) {
+        this.leader = leader;
+        this.servers = checkNotNull(servers, "servers cannot be null");
+        this.strategy = checkNotNull(strategy, "strategy cannot be null");
+        this.selectors = checkNotNull(selectors, "selectors cannot be null");
+        this.selections = strategy.selectConnections(leader, new ArrayList<>(servers));
+    }
 
     /**
-     * Indicates that the selector has been reset.
+     * Returns the address selector state.
+     *
+     * @return The address selector state.
      */
-    RESET,
+    public State state() {
+        if (selectionsIterator == null) {
+            return State.RESET;
+        } else if (hasNext()) {
+            return State.ITERATE;
+        } else {
+            return State.COMPLETE;
+        }
+    }
 
     /**
-     * Indicates that the selector is being iterated.
+     * Returns the current address selection.
+     *
+     * @return The current address selection.
      */
-    ITERATE,
+    public NodeId current() {
+        return selection;
+    }
 
     /**
-     * Indicates that selector iteration is complete.
+     * Returns the current selector leader.
+     *
+     * @return The current selector leader.
      */
-    COMPLETE
-
-  }
-
-  private final NodeSelectorManager selectors;
-  private NodeId leader;
-  private Collection<NodeId> servers = new LinkedList<>();
-  private volatile NodeId selection;
-  private final CommunicationStrategy strategy;
-  private Collection<NodeId> selections = new LinkedList<>();
-  private Iterator<NodeId> selectionsIterator;
-
-  public NodeSelector(NodeId leader, Collection<NodeId> servers, CommunicationStrategy strategy, NodeSelectorManager selectors) {
-    this.leader = leader;
-    this.servers = checkNotNull(servers, "servers cannot be null");
-    this.strategy = checkNotNull(strategy, "strategy cannot be null");
-    this.selectors = checkNotNull(selectors, "selectors cannot be null");
-    this.selections = strategy.selectConnections(leader, new ArrayList<>(servers));
-  }
-
-  /**
-   * Returns the address selector state.
-   *
-   * @return The address selector state.
-   */
-  public State state() {
-    if (selectionsIterator == null) {
-      return State.RESET;
-    } else if (hasNext()) {
-      return State.ITERATE;
-    } else {
-      return State.COMPLETE;
+    public NodeId leader() {
+        return leader;
     }
-  }
 
-  /**
-   * Returns the current address selection.
-   *
-   * @return The current address selection.
-   */
-  public NodeId current() {
-    return selection;
-  }
-
-  /**
-   * Returns the current selector leader.
-   *
-   * @return The current selector leader.
-   */
-  public NodeId leader() {
-    return leader;
-  }
-
-  /**
-   * Returns the current set of servers.
-   *
-   * @return The current set of servers.
-   */
-  public Collection<NodeId> servers() {
-    return servers;
-  }
-
-  /**
-   * Resets the addresses.
-   *
-   * @return The address selector.
-   */
-  public NodeSelector reset() {
-    if (selectionsIterator != null) {
-      this.selections = strategy.selectConnections(leader, new ArrayList<>(servers));
-      this.selectionsIterator = null;
+    /**
+     * Returns the current set of servers.
+     *
+     * @return The current set of servers.
+     */
+    public Collection<NodeId> servers() {
+        return servers;
     }
-    return this;
-  }
 
-  /**
-   * Resets the connection addresses.
-   *
-   * @param servers The collection of server addresses.
-   * @return The address selector.
-   */
-  public NodeSelector reset(NodeId leader, Collection<NodeId> servers) {
-    if (changed(leader, servers)) {
-      this.leader = leader;
-      this.servers = servers;
-      this.selections = strategy.selectConnections(leader, new ArrayList<>(servers));
-      this.selectionsIterator = null;
+    /**
+     * Resets the addresses.
+     *
+     * @return The address selector.
+     */
+    public NodeSelector reset() {
+        if (selectionsIterator != null) {
+            this.selections = strategy.selectConnections(leader, new ArrayList<>(servers));
+            this.selectionsIterator = null;
+        }
+        return this;
     }
-    return this;
-  }
 
-  /**
-   * Returns a boolean value indicating whether the selector state would be changed by the given members.
-   */
-  private boolean changed(NodeId leader, Collection<NodeId> servers) {
-    checkNotNull(servers, "servers");
-    checkArgument(!servers.isEmpty(), "servers cannot be empty");
-    if (this.leader != null && leader == null) {
-      return true;
-    } else if (this.leader == null && leader != null) {
-      checkArgument(servers.contains(leader), "leader must be present in the servers list");
-      return true;
-    } else if (this.leader != null && !this.leader.equals(leader)) {
-      checkArgument(servers.contains(leader), "leader must be present in the servers list");
-      return true;
-    } else if (!matches(this.servers, servers)) {
-      return true;
+    /**
+     * Resets the connection addresses.
+     *
+     * @param servers The collection of server addresses.
+     * @return The address selector.
+     */
+    public NodeSelector reset(NodeId leader, Collection<NodeId> servers) {
+        if (changed(leader, servers)) {
+            this.leader = leader;
+            this.servers = servers;
+            this.selections = strategy.selectConnections(leader, new ArrayList<>(servers));
+            this.selectionsIterator = null;
+        }
+        return this;
     }
-    return false;
-  }
 
-  /**
-   * Returns a boolean value indicating whether the servers in the first list match the servers in the second list.
-   */
-  private boolean matches(Collection<NodeId> left, Collection<NodeId> right) {
-    if (left.size() != right.size())
-      return false;
-
-    for (NodeId address : left) {
-      if (!right.contains(address)) {
+    /**
+     * Returns a boolean value indicating whether the selector state would be changed by the given members.
+     */
+    private boolean changed(NodeId leader, Collection<NodeId> servers) {
+        checkNotNull(servers, "servers");
+        checkArgument(!servers.isEmpty(), "servers cannot be empty");
+        if (this.leader != null && leader == null) {
+            return true;
+        } else if (this.leader == null && leader != null) {
+            checkArgument(servers.contains(leader), "leader must be present in the servers list");
+            return true;
+        } else if (this.leader != null && !this.leader.equals(leader)) {
+            checkArgument(servers.contains(leader), "leader must be present in the servers list");
+            return true;
+        } else if (!matches(this.servers, servers)) {
+            return true;
+        }
         return false;
-      }
     }
-    return true;
-  }
 
-  @Override
-  public boolean hasNext() {
-    return selectionsIterator == null ? !selections.isEmpty() : selectionsIterator.hasNext();
-  }
+    /**
+     * Returns a boolean value indicating whether the servers in the first list match the servers in the second list.
+     */
+    private boolean matches(Collection<NodeId> left, Collection<NodeId> right) {
+        if (left.size() != right.size())
+            return false;
 
-  @Override
-  public NodeId next() {
-    if (selectionsIterator == null) {
-      selectionsIterator = selections.iterator();
+        for (NodeId address : left) {
+            if (!right.contains(address)) {
+                return false;
+            }
+        }
+        return true;
     }
-    NodeId selection = selectionsIterator.next();
-    this.selection = selection;
-    return selection;
-  }
 
-  @Override
-  public void close() {
-    selectors.remove(this);
-  }
+    @Override
+    public boolean hasNext() {
+        return selectionsIterator == null ? !selections.isEmpty() : selectionsIterator.hasNext();
+    }
 
-  @Override
-  public String toString() {
-    return String.format("%s[strategy=%s]", getClass().getSimpleName(), strategy);
-  }
+    @Override
+    public NodeId next() {
+        if (selectionsIterator == null) {
+            selectionsIterator = selections.iterator();
+        }
+        NodeId selection = selectionsIterator.next();
+        this.selection = selection;
+        return selection;
+    }
+
+    @Override
+    public void close() {
+        selectors.remove(this);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s[strategy=%s]", getClass().getSimpleName(), strategy);
+    }
 
 }

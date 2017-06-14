@@ -15,28 +15,23 @@
  */
 package io.atomix.protocols.raft.protocol;
 
-import java.util.concurrent.Executor;
-import java.util.function.Consumer;
-
 /**
- * Raft client protocol listener.
+ * Raft server protocol.
  */
-public interface RaftClientProtocolListener {
+public interface RaftServerProtocol {
 
     /**
-     * Registers a publish request listener.
+     * Returns the server protocol listener.
      *
-     * @param sessionId the session for which to listen for the publish request
-     * @param listener  the listener to register
-     * @param executor  the executor with which to execute the listener callback
+     * @return the server protocol listener
      */
-    void registerPublishListener(long sessionId, Consumer<PublishRequest> listener, Executor executor);
+    RaftServerProtocolListener listener();
 
     /**
-     * Unregisters the publish request listener for the given session.
+     * Returns the server protocol dispatcher.
      *
-     * @param sessionId the session for which to unregister the listener
+     * @return the server protocol dispatcher
      */
-    void unregisterPublishListener(long sessionId);
+    RaftServerProtocolDispatcher dispatcher();
 
 }

@@ -18,10 +18,9 @@ package io.atomix.protocols.raft.session.impl;
 import io.atomix.messaging.MessagingException;
 import io.atomix.protocols.raft.RaftCommand;
 import io.atomix.protocols.raft.RaftQuery;
-import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.protocols.raft.error.CommandException;
-import io.atomix.protocols.raft.error.RaftError;
 import io.atomix.protocols.raft.error.QueryException;
+import io.atomix.protocols.raft.error.RaftError;
 import io.atomix.protocols.raft.error.UnknownSessionException;
 import io.atomix.protocols.raft.protocol.CommandRequest;
 import io.atomix.protocols.raft.protocol.CommandResponse;
@@ -30,6 +29,7 @@ import io.atomix.protocols.raft.protocol.OperationResponse;
 import io.atomix.protocols.raft.protocol.QueryRequest;
 import io.atomix.protocols.raft.protocol.QueryResponse;
 import io.atomix.protocols.raft.protocol.RaftResponse;
+import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.util.serializer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -336,7 +336,7 @@ final class RaftSessionSubmitter {
 
         @Override
         protected void send() {
-            leaderConnection.<CommandRequest, CommandResponse>sendAndReceive(request).whenComplete(this);
+            leaderConnection.command(request).whenComplete(this);
         }
 
         @Override
@@ -419,7 +419,7 @@ final class RaftSessionSubmitter {
 
         @Override
         protected void send() {
-            sessionConnection.<QueryRequest, QueryResponse>sendAndReceive(request).whenComplete(this);
+            sessionConnection.query(request).whenComplete(this);
         }
 
         @Override

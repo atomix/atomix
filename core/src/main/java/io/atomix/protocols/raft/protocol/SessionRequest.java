@@ -29,65 +29,65 @@ import static com.google.common.base.Preconditions.checkArgument;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class SessionRequest extends AbstractRaftRequest {
-  protected final long session;
+    protected final long session;
 
-  protected SessionRequest(long session) {
-    this.session = session;
-  }
-
-  /**
-   * Returns the session ID.
-   *
-   * @return The session ID.
-   */
-  public long session() {
-    return session;
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(getClass(), session);
-  }
-
-  @Override
-  public boolean equals(Object object) {
-    if (object.getClass() == getClass()) {
-      SessionRequest request = (SessionRequest) object;
-      return request.session == session;
+    protected SessionRequest(long session) {
+        this.session = session;
     }
-    return false;
-  }
-
-  @Override
-  public String toString() {
-    return toStringHelper(this)
-            .add("session", session)
-            .toString();
-  }
-
-  /**
-   * Session request builder.
-   */
-  public static abstract class Builder<T extends Builder<T, U>, U extends SessionRequest> extends AbstractRaftRequest.Builder<T, U> {
-    protected long session;
 
     /**
-     * Sets the session ID.
+     * Returns the session ID.
      *
-     * @param session The session ID.
-     * @return The request builder.
-     * @throws IllegalArgumentException if {@code session} is less than 0
+     * @return The session ID.
      */
-    @SuppressWarnings("unchecked")
-    public T withSession(long session) {
-      checkArgument(session > 0, "session must be positive");
-      this.session = session;
-      return (T) this;
+    public long session() {
+        return session;
     }
 
     @Override
-    protected void validate() {
-      checkArgument(session > 0, "session must be positive");
+    public int hashCode() {
+        return Objects.hash(getClass(), session);
     }
-  }
+
+    @Override
+    public boolean equals(Object object) {
+        if (object.getClass() == getClass()) {
+            SessionRequest request = (SessionRequest) object;
+            return request.session == session;
+        }
+        return false;
+    }
+
+    @Override
+    public String toString() {
+        return toStringHelper(this)
+                .add("session", session)
+                .toString();
+    }
+
+    /**
+     * Session request builder.
+     */
+    public static abstract class Builder<T extends Builder<T, U>, U extends SessionRequest> extends AbstractRaftRequest.Builder<T, U> {
+        protected long session;
+
+        /**
+         * Sets the session ID.
+         *
+         * @param session The session ID.
+         * @return The request builder.
+         * @throws IllegalArgumentException if {@code session} is less than 0
+         */
+        @SuppressWarnings("unchecked")
+        public T withSession(long session) {
+            checkArgument(session > 0, "session must be positive");
+            this.session = session;
+            return (T) this;
+        }
+
+        @Override
+        protected void validate() {
+            checkArgument(session > 0, "session must be positive");
+        }
+    }
 }

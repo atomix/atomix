@@ -38,160 +38,133 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class KeepAliveRequest extends AbstractRaftRequest {
 
-  /**
-   * Returns a new keep alive request builder.
-   *
-   * @return A new keep alive request builder.
-   */
-  public static Builder builder() {
-    return new Builder();
-  }
-
-  private final long[] sessionIds;
-  private final long[] commandSequences;
-  private final long[] eventIndexes;
-  private final long[] connections;
-
-  public KeepAliveRequest(long[] sessionIds, long[] commandSequences, long[] eventIndexes, long[] connections) {
-    this.sessionIds = sessionIds;
-    this.commandSequences = commandSequences;
-    this.eventIndexes = eventIndexes;
-    this.connections = connections;
-  }
-
-  /**
-   * Returns the session identifiers.
-   *
-   * @return The session identifiers.
-   */
-  public long[] sessionIds() {
-    return sessionIds;
-  }
-
-  /**
-   * Returns the command sequence numbers.
-   *
-   * @return The command sequence numbers.
-   */
-  public long[] commandSequences() {
-    return commandSequences;
-  }
-
-  /**
-   * Returns the event indexes.
-   *
-   * @return The event indexes.
-   */
-  public long[] eventIndexes() {
-    return eventIndexes;
-  }
-
-  /**
-   * Returns the session connections.
-   *
-   * @return The session connections.
-   */
-  public long[] connections() {
-    return connections;
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(getClass(), sessionIds, commandSequences, eventIndexes, connections);
-  }
-
-  @Override
-  public boolean equals(Object object) {
-    if (object instanceof KeepAliveRequest) {
-      KeepAliveRequest request = (KeepAliveRequest) object;
-      return Arrays.equals(request.sessionIds, sessionIds)
-        && Arrays.equals(request.commandSequences, commandSequences)
-        && Arrays.equals(request.eventIndexes, eventIndexes)
-        && Arrays.equals(request.connections, connections);
-    }
-    return false;
-  }
-
-  @Override
-  public String toString() {
-    return toStringHelper(this)
-            .add("sessionIds", ArraySizeHashPrinter.of(sessionIds))
-            .add("commandSequences", ArraySizeHashPrinter.of(commandSequences))
-            .add("eventIndexes", ArraySizeHashPrinter.of(eventIndexes))
-            .add("connections", ArraySizeHashPrinter.of(connections))
-            .toString();
-  }
-
-  /**
-   * Keep alive request builder.
-   */
-  public static class Builder extends AbstractRaftRequest.Builder<Builder, KeepAliveRequest> {
-    private long[] sessionIds;
-    private long[] commandSequences;
-    private long[] eventIndexes;
-    private long[] connections;
-
     /**
-     * Sets the session identifiers.
+     * Returns a new keep alive request builder.
      *
-     * @param sessionIds The session identifiers.
-     * @return The request builders.
-     * @throws NullPointerException if {@code sessionIds} is {@code null}
+     * @return A new keep alive request builder.
      */
-    public Builder withSessionIds(long[] sessionIds) {
-      this.sessionIds = checkNotNull(sessionIds, "sessionIds cannot be null");
-      return this;
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    private final long[] sessionIds;
+    private final long[] commandSequences;
+    private final long[] eventIndexes;
+
+    public KeepAliveRequest(long[] sessionIds, long[] commandSequences, long[] eventIndexes) {
+        this.sessionIds = sessionIds;
+        this.commandSequences = commandSequences;
+        this.eventIndexes = eventIndexes;
     }
 
     /**
-     * Sets the command sequence numbers.
+     * Returns the session identifiers.
      *
-     * @param commandSequences The command sequence numbers.
-     * @return The request builder.
-     * @throws NullPointerException if {@code commandSequences} is {@code null}
+     * @return The session identifiers.
      */
-    public Builder withCommandSequences(long[] commandSequences) {
-      this.commandSequences = checkNotNull(commandSequences, "commandSequences cannot be null");
-      return this;
+    public long[] sessionIds() {
+        return sessionIds;
     }
 
     /**
-     * Sets the event indexes.
+     * Returns the command sequence numbers.
      *
-     * @param eventIndexes The event indexes.
-     * @return The request builder.
-     * @throws NullPointerException if {@code eventIndexes} is {@code null}
+     * @return The command sequence numbers.
      */
-    public Builder withEventIndexes(long[] eventIndexes) {
-      this.eventIndexes = checkNotNull(eventIndexes, "eventIndexes cannot be null");
-      return this;
+    public long[] commandSequences() {
+        return commandSequences;
     }
 
     /**
-     * Sets the client connections.
+     * Returns the event indexes.
      *
-     * @param connections The client connections.
-     * @return The request builder.
-     * @throws NullPointerException if {@code connections} is {@code null}
+     * @return The event indexes.
      */
-    public Builder withConnections(long[] connections) {
-      this.connections = checkNotNull(connections, "connections cannot be null");
-      return this;
+    public long[] eventIndexes() {
+        return eventIndexes;
     }
 
     @Override
-    protected void validate() {
-      super.validate();
-      this.sessionIds = checkNotNull(sessionIds, "sessionIds cannot be null");
-      this.commandSequences = checkNotNull(commandSequences, "commandSequences cannot be null");
-      this.eventIndexes = checkNotNull(eventIndexes, "eventIndexes cannot be null");
-      this.connections = checkNotNull(connections, "connections cannot be null");
+    public int hashCode() {
+        return Objects.hash(getClass(), sessionIds, commandSequences, eventIndexes);
     }
 
     @Override
-    public KeepAliveRequest build() {
-      validate();
-      return new KeepAliveRequest(sessionIds, commandSequences, eventIndexes, connections);
+    public boolean equals(Object object) {
+        if (object instanceof KeepAliveRequest) {
+            KeepAliveRequest request = (KeepAliveRequest) object;
+            return Arrays.equals(request.sessionIds, sessionIds)
+                    && Arrays.equals(request.commandSequences, commandSequences)
+                    && Arrays.equals(request.eventIndexes, eventIndexes);
+        }
+        return false;
     }
-  }
+
+    @Override
+    public String toString() {
+        return toStringHelper(this)
+                .add("sessionIds", ArraySizeHashPrinter.of(sessionIds))
+                .add("commandSequences", ArraySizeHashPrinter.of(commandSequences))
+                .add("eventIndexes", ArraySizeHashPrinter.of(eventIndexes))
+                .toString();
+    }
+
+    /**
+     * Keep alive request builder.
+     */
+    public static class Builder extends AbstractRaftRequest.Builder<Builder, KeepAliveRequest> {
+        private long[] sessionIds;
+        private long[] commandSequences;
+        private long[] eventIndexes;
+
+        /**
+         * Sets the session identifiers.
+         *
+         * @param sessionIds The session identifiers.
+         * @return The request builders.
+         * @throws NullPointerException if {@code sessionIds} is {@code null}
+         */
+        public Builder withSessionIds(long[] sessionIds) {
+            this.sessionIds = checkNotNull(sessionIds, "sessionIds cannot be null");
+            return this;
+        }
+
+        /**
+         * Sets the command sequence numbers.
+         *
+         * @param commandSequences The command sequence numbers.
+         * @return The request builder.
+         * @throws NullPointerException if {@code commandSequences} is {@code null}
+         */
+        public Builder withCommandSequences(long[] commandSequences) {
+            this.commandSequences = checkNotNull(commandSequences, "commandSequences cannot be null");
+            return this;
+        }
+
+        /**
+         * Sets the event indexes.
+         *
+         * @param eventIndexes The event indexes.
+         * @return The request builder.
+         * @throws NullPointerException if {@code eventIndexes} is {@code null}
+         */
+        public Builder withEventIndexes(long[] eventIndexes) {
+            this.eventIndexes = checkNotNull(eventIndexes, "eventIndexes cannot be null");
+            return this;
+        }
+
+        @Override
+        protected void validate() {
+            super.validate();
+            this.sessionIds = checkNotNull(sessionIds, "sessionIds cannot be null");
+            this.commandSequences = checkNotNull(commandSequences, "commandSequences cannot be null");
+            this.eventIndexes = checkNotNull(eventIndexes, "eventIndexes cannot be null");
+        }
+
+        @Override
+        public KeepAliveRequest build() {
+            validate();
+            return new KeepAliveRequest(sessionIds, commandSequences, eventIndexes);
+        }
+    }
 }

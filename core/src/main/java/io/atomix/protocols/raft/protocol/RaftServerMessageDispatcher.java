@@ -25,25 +25,17 @@ import java.util.concurrent.CompletableFuture;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Raft client protocol dispatcher that uses a cluster communicator to dispatch messages.
+ * Raft server protocol dispatcher that uses a {@link ClusterCommunicationService} to communicate.
  */
-public class RaftClientMessageDispatcher implements RaftClientProtocolDispatcher {
+public class RaftServerMessageDispatcher implements RaftServerProtocolDispatcher {
     private final RaftMessageContext context;
     private final Serializer serializer;
     private final ClusterCommunicationService clusterCommunicator;
 
-    public RaftClientMessageDispatcher(RaftMessageContext context, Serializer serializer, ClusterCommunicationService clusterCommunicator) {
+    public RaftServerMessageDispatcher(RaftMessageContext context, Serializer serializer, ClusterCommunicationService clusterCommunicator) {
         this.context = checkNotNull(context, "context cannot be null");
         this.serializer = checkNotNull(serializer, "serializer cannot be null");
         this.clusterCommunicator = checkNotNull(clusterCommunicator, "clusterCommunicator cannot be null");
-    }
-
-    private static MessageSubject getSubject(String prefix, String type) {
-        if (prefix == null) {
-            return new MessageSubject(type);
-        } else {
-            return new MessageSubject(String.format("%s-%s", prefix, type));
-        }
     }
 
     private <T, U> CompletableFuture<U> sendAndReceive(MessageSubject subject, T request, NodeId nodeId) {
@@ -81,7 +73,47 @@ public class RaftClientMessageDispatcher implements RaftClientProtocolDispatcher
     }
 
     @Override
-    public void reset(ResetRequest request) {
-        clusterCommunicator.broadcast(request, context.resetSubject, serializer::encode);
+    public CompletableFuture<JoinResponse> join(NodeId nodeId, JoinRequest request) {
+        return sendAndReceive(context.joinSubject, request, nodeId);
+    }
+
+    @Override
+    public CompletableFuture<LeaveResponse> leave(NodeId nodeId, LeaveRequest request) {
+        return sendAndReceive(context.leaveSubject, request, nodeId);
+    }
+
+    @Override
+    public CompletableFuture<ConfigureResponse> configure(NodeId nodeId, ConfigureRequest request) {
+        return sendAndReceive(context.configureSubject, request, nodeId);
+    }
+
+    @Override
+    public CompletableFuture<ReconfigureResponse> reconfigure(NodeId nodeId, ReconfigureRequest request) {
+        return sendAndReceive(context.reconfigureSubject, request, nodeId);
+    }
+
+    @Override
+    public CompletableFuture<InstallResponse> install(NodeId nodeId, InstallRequest request) {
+        return sendAndReceive(context.installSubject, request, nodeId);
+    }
+
+    @Override
+    public CompletableFuture<PollResponse> poll(NodeId nodeId, PollRequest request) {
+        return sendAndReceive(context.pollSubject, request, nodeId);
+    }
+
+    @Override
+    public CompletableFuture<VoteResponse> vote(NodeId nodeId, VoteRequest request) {
+        return sendAndReceive(context.voteSubject, request, nodeId);
+    }
+
+    @Override
+    public CompletableFuture<AppendResponse> append(NodeId nodeId, AppendRequest request) {
+        return sendAndReceive(context.appendSubject, request, nodeId);
+    }
+
+    @Override
+    public void publish(NodeId nodeId, PublishRequest request) {
+        clusterCommunicator.unicast(request, context.publishSubject(request.session()), serializer::encode, nodeId);
     }
 }

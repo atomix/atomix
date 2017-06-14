@@ -40,52 +40,52 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  */
 public class CommandRequest extends OperationRequest {
 
-  /**
-   * Returns a new submit request builder.
-   *
-   * @return A new submit request builder.
-   */
-  public static Builder builder() {
-    return new Builder();
-  }
-
-  public CommandRequest(long session, long sequence, byte[] bytes) {
-    super(session, sequence, bytes);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(getClass(), session, sequence, bytes);
-  }
-
-  @Override
-  public boolean equals(Object object) {
-    if (object instanceof CommandRequest) {
-      CommandRequest request = (CommandRequest) object;
-      return request.session == session
-        && request.sequence == sequence
-        && Arrays.equals(request.bytes, bytes);
+    /**
+     * Returns a new submit request builder.
+     *
+     * @return A new submit request builder.
+     */
+    public static Builder builder() {
+        return new Builder();
     }
-    return false;
-  }
 
-  @Override
-  public String toString() {
-    return toStringHelper(this)
-            .add("session", session)
-            .add("sequence", sequence)
-            .add("bytes", ArraySizeHashPrinter.of(bytes))
-            .toString();
-  }
+    public CommandRequest(long session, long sequence, byte[] bytes) {
+        super(session, sequence, bytes);
+    }
 
-  /**
-   * Command request builder.
-   */
-  public static class Builder extends OperationRequest.Builder<Builder, CommandRequest> {
     @Override
-    public CommandRequest build() {
-      validate();
-      return new CommandRequest(session, sequence, bytes);
+    public int hashCode() {
+        return Objects.hash(getClass(), session, sequence, bytes);
     }
-  }
+
+    @Override
+    public boolean equals(Object object) {
+        if (object instanceof CommandRequest) {
+            CommandRequest request = (CommandRequest) object;
+            return request.session == session
+                    && request.sequence == sequence
+                    && Arrays.equals(request.bytes, bytes);
+        }
+        return false;
+    }
+
+    @Override
+    public String toString() {
+        return toStringHelper(this)
+                .add("session", session)
+                .add("sequence", sequence)
+                .add("bytes", ArraySizeHashPrinter.of(bytes))
+                .toString();
+    }
+
+    /**
+     * Command request builder.
+     */
+    public static class Builder extends OperationRequest.Builder<Builder, CommandRequest> {
+        @Override
+        public CommandRequest build() {
+            validate();
+            return new CommandRequest(session, sequence, bytes);
+        }
+    }
 }
