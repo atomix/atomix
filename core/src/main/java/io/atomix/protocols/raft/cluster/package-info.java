@@ -19,4 +19,4 @@
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-package io.atomix.protocols.raft.server.cluster;
+package io.atomix.protocols.raft.cluster;

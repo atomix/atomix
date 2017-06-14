@@ -41,7 +41,6 @@ import io.atomix.protocols.raft.protocol.QueryRequest;
 import io.atomix.protocols.raft.protocol.QueryResponse;
 import io.atomix.protocols.raft.protocol.ReconfigureRequest;
 import io.atomix.protocols.raft.protocol.ReconfigureResponse;
-import io.atomix.protocols.raft.protocol.ResetRequest;
 import io.atomix.protocols.raft.protocol.VoteRequest;
 import io.atomix.protocols.raft.protocol.VoteResponse;
 import io.atomix.protocols.raft.server.RaftServer;
@@ -94,13 +93,6 @@ public interface ServerState extends Managed<ServerState> {
    * @return A completable future to be completed with the request response.
    */
   CompletableFuture<CloseSessionResponse> closeSession(CloseSessionRequest request);
-
-  /**
-   * Handles a reset request.
-   *
-   * @param request The request to handle
-   */
-  void reset(ResetRequest request);
 
   /**
    * Handles a configure request.

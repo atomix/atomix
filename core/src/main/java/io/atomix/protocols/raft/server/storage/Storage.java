@@ -19,7 +19,8 @@ import io.atomix.protocols.raft.server.storage.snapshot.SnapshotFile;
 import io.atomix.protocols.raft.server.storage.snapshot.SnapshotStore;
 import io.atomix.protocols.raft.server.storage.system.MetaStore;
 import io.atomix.util.Assert;
-import io.atomix.util.temp.ThreadContext;
+import io.atomix.util.serializer.KryoNamespaces;
+import io.atomix.util.serializer.Serializer;
 
 import java.io.File;
 import java.io.IOException;
@@ -200,7 +201,7 @@ public class Storage {
    * @return The metastore.
    */
   public MetaStore openMetaStore(String name) {
-    return new MetaStore(name, this, ThreadContext.currentContextOrThrow().serializer());
+    return new MetaStore(name, this, Serializer.using(KryoNamespaces.RAFT));
   }
 
   /**
@@ -226,7 +227,7 @@ public class Storage {
    * @return The snapshot store.
    */
   public SnapshotStore openSnapshotStore(String name) {
-    return new SnapshotStore(name, this, ThreadContext.currentContextOrThrow().serializer());
+    return new SnapshotStore(name, this, Serializer.using(KryoNamespaces.RAFT));
   }
 
   /**

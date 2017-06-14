@@ -42,7 +42,6 @@ import io.atomix.protocols.raft.protocol.QueryResponse;
 import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.protocol.ReconfigureRequest;
 import io.atomix.protocols.raft.protocol.ReconfigureResponse;
-import io.atomix.protocols.raft.protocol.ResetRequest;
 import io.atomix.protocols.raft.protocol.VoteRequest;
 import io.atomix.protocols.raft.protocol.VoteResponse;
 import io.atomix.protocols.raft.server.RaftServer;
@@ -109,10 +108,6 @@ class InactiveState extends AbstractState {
   @Override
   public CompletableFuture<CloseSessionResponse> closeSession(CloseSessionRequest request) {
     return Futures.exceptionalFuture(new IllegalStateException("inactive state"));
-  }
-
-  @Override
-  public void reset(ResetRequest request) {
   }
 
   @Override

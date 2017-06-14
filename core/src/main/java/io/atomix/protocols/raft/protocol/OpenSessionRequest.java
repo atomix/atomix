@@ -15,6 +15,8 @@
  */
 package io.atomix.protocols.raft.protocol;
 
+import io.atomix.cluster.NodeId;
+
 import java.util.Objects;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -35,25 +37,25 @@ public class OpenSessionRequest extends AbstractRaftRequest {
         return new Builder();
     }
 
-    private final String client;
+    private final NodeId node;
     private final String name;
     private final String stateMachine;
     private final long timeout;
 
-    public OpenSessionRequest(String client, String name, String stateMachine, long timeout) {
-        this.client = client;
+    public OpenSessionRequest(NodeId node, String name, String stateMachine, long timeout) {
+        this.node = node;
         this.name = name;
         this.stateMachine = stateMachine;
         this.timeout = timeout;
     }
 
     /**
-     * Returns the client identifier.
+     * Returns the client node identifier.
      *
-     * @return The client identifier.
+     * @return The client node identifier.
      */
-    public String client() {
-        return client;
+    public NodeId node() {
+        return node;
     }
 
     /**
@@ -92,7 +94,8 @@ public class OpenSessionRequest extends AbstractRaftRequest {
     public boolean equals(Object object) {
         if (object instanceof OpenSessionRequest) {
             OpenSessionRequest request = (OpenSessionRequest) object;
-            return request.name.equals(name)
+            return request.node.equals(node)
+                    && request.name.equals(name)
                     && request.stateMachine.equals(stateMachine)
                     && request.timeout == timeout;
         }
@@ -102,7 +105,7 @@ public class OpenSessionRequest extends AbstractRaftRequest {
     @Override
     public String toString() {
         return toStringHelper(this)
-                .add("client", client)
+                .add("node", node)
                 .add("name", name)
                 .add("stateMachine", stateMachine)
                 .add("timeout", timeout)
@@ -113,20 +116,20 @@ public class OpenSessionRequest extends AbstractRaftRequest {
      * Open session request builder.
      */
     public static class Builder extends AbstractRaftRequest.Builder<Builder, OpenSessionRequest> {
-        private String client;
+        private NodeId node;
         private String name;
         private String stateMachine;
         private long timeout;
 
         /**
-         * Sets the client identifier.
+         * Sets the client node identifier.
          *
-         * @param client The client identifier.
+         * @param node The client node identifier.
          * @return The open session request builder.
-         * @throws NullPointerException if {@code client} is {@code null}
+         * @throws NullPointerException if {@code node} is {@code null}
          */
-        public Builder withClient(String client) {
-            this.client = checkNotNull(client, "client");
+        public Builder withNode(NodeId node) {
+            this.node = checkNotNull(node, "node cannot be null");
             return this;
         }
 
@@ -138,7 +141,7 @@ public class OpenSessionRequest extends AbstractRaftRequest {
          * @throws NullPointerException if {@code name} is {@code null}
          */
         public Builder withName(String name) {
-            this.name = checkNotNull(name, "name");
+            this.name = checkNotNull(name, "name cannot be null");
             return this;
         }
 
@@ -150,7 +153,7 @@ public class OpenSessionRequest extends AbstractRaftRequest {
          * @throws NullPointerException if {@code type} is {@code null}
          */
         public Builder withStateMachine(String stateMachine) {
-            this.stateMachine = checkNotNull(stateMachine, "stateMachine");
+            this.stateMachine = checkNotNull(stateMachine, "stateMachine cannot be null");
             return this;
         }
 
@@ -170,9 +173,9 @@ public class OpenSessionRequest extends AbstractRaftRequest {
         @Override
         protected void validate() {
             super.validate();
-            checkNotNull(client, "client");
-            checkNotNull(name, "name");
-            checkNotNull(stateMachine, "stateMachine");
+            checkNotNull(node, "client cannot be null");
+            checkNotNull(name, "name cannot be null");
+            checkNotNull(stateMachine, "stateMachine cannot be null");
             checkArgument(timeout >= 0, "timeout must be positive");
         }
 
@@ -182,7 +185,7 @@ public class OpenSessionRequest extends AbstractRaftRequest {
         @Override
         public OpenSessionRequest build() {
             validate();
-            return new OpenSessionRequest(client, name, stateMachine, timeout);
+            return new OpenSessionRequest(node, name, stateMachine, timeout);
         }
     }
 }

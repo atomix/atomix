@@ -166,6 +166,7 @@ public interface RaftClient {
     final class Builder implements io.atomix.util.Builder<RaftClient> {
         private final Collection<NodeId> cluster;
         private String clientId = UUID.randomUUID().toString();
+        private NodeId nodeId;
         private RaftClientProtocol protocol;
         private int threadPoolSize = Runtime.getRuntime().availableProcessors();
 
@@ -185,6 +186,18 @@ public interface RaftClient {
          */
         public Builder withClientId(String clientId) {
             this.clientId = checkNotNull(clientId, "clientId cannot be null");
+            return this;
+        }
+
+        /**
+         * Sets the local node identifier.
+         *
+         * @param nodeId The local node identifier.
+         * @return The client builder.
+         * @throws NullPointerException if {@code nodeId} is null
+         */
+        public Builder withNodeId(NodeId nodeId) {
+            this.nodeId = checkNotNull(nodeId, "nodeId cannot be null");
             return this;
         }
 
@@ -215,8 +228,9 @@ public interface RaftClient {
 
         @Override
         public RaftClient build() {
+            checkNotNull(nodeId, "nodeId cannot be null");
             ScheduledExecutorService executor = Executors.newScheduledThreadPool(threadPoolSize);
-            return new DefaultRaftClient(clientId, cluster, protocol, executor);
+            return new DefaultRaftClient(clientId, nodeId, cluster, protocol, executor);
         }
     }
 }

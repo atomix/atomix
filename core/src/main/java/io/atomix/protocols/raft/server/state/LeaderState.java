@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.raft.server.state;
 
+import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.error.RaftError;
 import io.atomix.protocols.raft.error.RaftException;
 import io.atomix.protocols.raft.protocol.AppendRequest;
@@ -43,7 +44,6 @@ import io.atomix.protocols.raft.protocol.ReconfigureResponse;
 import io.atomix.protocols.raft.protocol.VoteRequest;
 import io.atomix.protocols.raft.protocol.VoteResponse;
 import io.atomix.protocols.raft.server.RaftServer;
-import io.atomix.protocols.raft.server.cluster.RaftMember;
 import io.atomix.protocols.raft.server.storage.Indexed;
 import io.atomix.protocols.raft.server.storage.LogWriter;
 import io.atomix.protocols.raft.server.storage.entry.CloseSessionEntry;
@@ -629,7 +629,7 @@ final class LeaderState extends ActiveState {
         final LogWriter writer = context.getLogWriter();
         try {
             writer.lock();
-            entry = writer.append(term, new OpenSessionEntry(timestamp, request.client(), request.name(), request.stateMachine(), timeout));
+            entry = writer.append(term, new OpenSessionEntry(timestamp, request.node(), request.name(), request.stateMachine(), timeout));
             LOGGER.debug("{} - Appended {}", context.getCluster().member().id(), entry);
         } finally {
             writer.unlock();

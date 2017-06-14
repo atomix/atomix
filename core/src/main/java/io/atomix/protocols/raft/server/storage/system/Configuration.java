@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.server.storage.system;
 
-import io.atomix.protocols.raft.server.cluster.RaftMember;
+import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.util.Assert;
 
 import java.util.Collection;

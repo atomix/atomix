@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.raft.server.storage.entry;
 
+import io.atomix.cluster.NodeId;
 import io.atomix.util.buffer.BufferInput;
 import io.atomix.util.buffer.BufferOutput;
 
@@ -22,14 +23,14 @@ import io.atomix.util.buffer.BufferOutput;
  * Open session entry.
  */
 public class OpenSessionEntry extends TimestampedEntry<OpenSessionEntry> {
-  private final String client;
+  private final NodeId node;
   private final String name;
   private final String type;
   private final long timeout;
 
-  public OpenSessionEntry(long timestamp, String client, String name, String type, long timeout) {
+  public OpenSessionEntry(long timestamp, NodeId node, String name, String type, long timeout) {
     super(timestamp);
-    this.client = client;
+    this.node = node;
     this.name = name;
     this.type = type;
     this.timeout = timeout;
@@ -41,12 +42,12 @@ public class OpenSessionEntry extends TimestampedEntry<OpenSessionEntry> {
   }
 
   /**
-   * Returns the client identifier.
+   * Returns the client node identifier.
    *
-   * @return The client identifier.
+   * @return The client node identifier.
    */
-  public String client() {
-    return client;
+  public NodeId node() {
+    return node;
   }
 
   /**
@@ -78,7 +79,7 @@ public class OpenSessionEntry extends TimestampedEntry<OpenSessionEntry> {
 
   @Override
   public String toString() {
-    return String.format("%s[client=%s, name=%s, type=%s, timeout=%d, timestamp=%d]", getClass().getSimpleName(), client, name, type, timeout, timestamp);
+    return String.format("%s[node=%s, name=%s, type=%s, timeout=%d, timestamp=%d]", getClass().getSimpleName(), node, name, type, timeout, timestamp);
   }
 
   /**
@@ -88,7 +89,7 @@ public class OpenSessionEntry extends TimestampedEntry<OpenSessionEntry> {
     @Override
     public void writeObject(BufferOutput output, OpenSessionEntry entry) {
       output.writeLong(entry.timestamp);
-      output.writeString(entry.client);
+      output.writeString(entry.node.id());
       output.writeString(entry.name);
       output.writeString(entry.type);
       output.writeLong(entry.timeout);
@@ -96,7 +97,7 @@ public class OpenSessionEntry extends TimestampedEntry<OpenSessionEntry> {
 
     @Override
     public OpenSessionEntry readObject(BufferInput input, Class<OpenSessionEntry> type) {
-      return new OpenSessionEntry(input.readLong(), input.readString(), input.readString(), input.readString(), input.readLong());
+      return new OpenSessionEntry(input.readLong(), NodeId.nodeId(input.readString()), input.readString(), input.readString(), input.readLong());
     }
   }
 }

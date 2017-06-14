@@ -38,163 +38,164 @@ import java.nio.charset.Charset;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class SnapshotWriter implements BufferOutput<SnapshotWriter> {
-  final Buffer buffer;
-  private final Snapshot snapshot;
-  private final Serializer serializer;
+    final Buffer buffer;
+    private final Snapshot snapshot;
+    private final Serializer serializer;
 
-  SnapshotWriter(Buffer buffer, Snapshot snapshot, Serializer serializer) {
-    this.buffer = Assert.notNull(buffer, "buffer");
-    this.snapshot = Assert.notNull(snapshot, "snapshot");
-    this.serializer = Assert.notNull(serializer, "serializer");
-  }
+    SnapshotWriter(Buffer buffer, Snapshot snapshot, Serializer serializer) {
+        this.buffer = Assert.notNull(buffer, "buffer");
+        this.snapshot = Assert.notNull(snapshot, "snapshot");
+        this.serializer = Assert.notNull(serializer, "serializer");
+    }
 
-  /**
-   * Writes an object to the snapshot.
-   *
-   * @param object The object to write.
-   * @return The snapshot writer.
-   */
-  public SnapshotWriter writeObject(Object object) {
-    serializer.writeObject(object, buffer);
-    return this;
-  }
+    /**
+     * Writes an object to the snapshot.
+     *
+     * @param object The object to write.
+     * @return The snapshot writer.
+     */
+    public SnapshotWriter writeObject(Object object) {
+        byte[] bytes = serializer.encode(object);
+        buffer.writeInt(bytes.length).write(bytes);
+        return this;
+    }
 
-  @Override
-  public SnapshotWriter write(Bytes bytes) {
-    buffer.write(bytes);
-    return this;
-  }
+    @Override
+    public SnapshotWriter write(Bytes bytes) {
+        buffer.write(bytes);
+        return this;
+    }
 
-  @Override
-  public SnapshotWriter write(byte[] bytes) {
-    buffer.write(bytes);
-    return this;
-  }
+    @Override
+    public SnapshotWriter write(byte[] bytes) {
+        buffer.write(bytes);
+        return this;
+    }
 
-  @Override
-  public SnapshotWriter write(Bytes bytes, long offset, long length) {
-    buffer.write(bytes, offset, length);
-    return this;
-  }
+    @Override
+    public SnapshotWriter write(Bytes bytes, long offset, long length) {
+        buffer.write(bytes, offset, length);
+        return this;
+    }
 
-  @Override
-  public SnapshotWriter write(byte[] bytes, long offset, long length) {
-    buffer.write(bytes, offset, length);
-    return this;
-  }
+    @Override
+    public SnapshotWriter write(byte[] bytes, long offset, long length) {
+        buffer.write(bytes, offset, length);
+        return this;
+    }
 
-  @Override
-  public SnapshotWriter write(Buffer buffer) {
-    this.buffer.write(buffer);
-    return this;
-  }
+    @Override
+    public SnapshotWriter write(Buffer buffer) {
+        this.buffer.write(buffer);
+        return this;
+    }
 
-  @Override
-  public SnapshotWriter writeByte(int b) {
-    buffer.writeByte(b);
-    return this;
-  }
+    @Override
+    public SnapshotWriter writeByte(int b) {
+        buffer.writeByte(b);
+        return this;
+    }
 
-  @Override
-  public SnapshotWriter writeUnsignedByte(int b) {
-    buffer.writeUnsignedByte(b);
-    return this;
-  }
+    @Override
+    public SnapshotWriter writeUnsignedByte(int b) {
+        buffer.writeUnsignedByte(b);
+        return this;
+    }
 
-  @Override
-  public SnapshotWriter writeChar(char c) {
-    buffer.writeChar(c);
-    return this;
-  }
+    @Override
+    public SnapshotWriter writeChar(char c) {
+        buffer.writeChar(c);
+        return this;
+    }
 
-  @Override
-  public SnapshotWriter writeShort(short s) {
-    buffer.writeShort(s);
-    return this;
-  }
+    @Override
+    public SnapshotWriter writeShort(short s) {
+        buffer.writeShort(s);
+        return this;
+    }
 
-  @Override
-  public SnapshotWriter writeUnsignedShort(int s) {
-    buffer.writeUnsignedShort(s);
-    return this;
-  }
+    @Override
+    public SnapshotWriter writeUnsignedShort(int s) {
+        buffer.writeUnsignedShort(s);
+        return this;
+    }
 
-  @Override
-  public SnapshotWriter writeMedium(int m) {
-    buffer.writeMedium(m);
-    return this;
-  }
+    @Override
+    public SnapshotWriter writeMedium(int m) {
+        buffer.writeMedium(m);
+        return this;
+    }
 
-  @Override
-  public SnapshotWriter writeUnsignedMedium(int m) {
-    buffer.writeUnsignedMedium(m);
-    return this;
-  }
+    @Override
+    public SnapshotWriter writeUnsignedMedium(int m) {
+        buffer.writeUnsignedMedium(m);
+        return this;
+    }
 
-  @Override
-  public SnapshotWriter writeInt(int i) {
-    buffer.writeInt(i);
-    return this;
-  }
+    @Override
+    public SnapshotWriter writeInt(int i) {
+        buffer.writeInt(i);
+        return this;
+    }
 
-  @Override
-  public SnapshotWriter writeUnsignedInt(long i) {
-    buffer.writeUnsignedInt(i);
-    return this;
-  }
+    @Override
+    public SnapshotWriter writeUnsignedInt(long i) {
+        buffer.writeUnsignedInt(i);
+        return this;
+    }
 
-  @Override
-  public SnapshotWriter writeLong(long l) {
-    buffer.writeLong(l);
-    return this;
-  }
+    @Override
+    public SnapshotWriter writeLong(long l) {
+        buffer.writeLong(l);
+        return this;
+    }
 
-  @Override
-  public SnapshotWriter writeFloat(float f) {
-    buffer.writeFloat(f);
-    return this;
-  }
+    @Override
+    public SnapshotWriter writeFloat(float f) {
+        buffer.writeFloat(f);
+        return this;
+    }
 
-  @Override
-  public SnapshotWriter writeDouble(double d) {
-    buffer.writeDouble(d);
-    return this;
-  }
+    @Override
+    public SnapshotWriter writeDouble(double d) {
+        buffer.writeDouble(d);
+        return this;
+    }
 
-  @Override
-  public SnapshotWriter writeBoolean(boolean b) {
-    buffer.writeBoolean(b);
-    return this;
-  }
+    @Override
+    public SnapshotWriter writeBoolean(boolean b) {
+        buffer.writeBoolean(b);
+        return this;
+    }
 
-  @Override
-  public SnapshotWriter writeString(String s) {
-    buffer.writeString(s);
-    return this;
-  }
+    @Override
+    public SnapshotWriter writeString(String s) {
+        buffer.writeString(s);
+        return this;
+    }
 
-  @Override
-  public SnapshotWriter writeString(String s, Charset charset) {
-    buffer.writeString(s, charset);
-    return this;
-  }
+    @Override
+    public SnapshotWriter writeString(String s, Charset charset) {
+        buffer.writeString(s, charset);
+        return this;
+    }
 
-  @Override
-  public SnapshotWriter writeUTF8(String s) {
-    buffer.writeUTF8(s);
-    return this;
-  }
+    @Override
+    public SnapshotWriter writeUTF8(String s) {
+        buffer.writeUTF8(s);
+        return this;
+    }
 
-  @Override
-  public SnapshotWriter flush() {
-    buffer.flush();
-    return this;
-  }
+    @Override
+    public SnapshotWriter flush() {
+        buffer.flush();
+        return this;
+    }
 
-  @Override
-  public void close() {
-    snapshot.closeWriter(this);
-    buffer.close();
-  }
+    @Override
+    public void close() {
+        snapshot.closeWriter(this);
+        buffer.close();
+    }
 
 }

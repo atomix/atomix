@@ -16,14 +16,14 @@
 package io.atomix.protocols.raft.server.state;
 
 import io.atomix.cluster.NodeId;
+import io.atomix.protocols.raft.cluster.RaftCluster;
+import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.protocol.RaftRequest;
 import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.protocol.RaftServerProtocol;
 import io.atomix.protocols.raft.protocol.RaftServerProtocolDispatcher;
 import io.atomix.protocols.raft.protocol.RaftServerProtocolListener;
 import io.atomix.protocols.raft.server.RaftServer;
-import io.atomix.protocols.raft.server.cluster.RaftCluster;
-import io.atomix.protocols.raft.server.cluster.RaftMember;
 import io.atomix.protocols.raft.server.storage.Log;
 import io.atomix.protocols.raft.server.storage.LogReader;
 import io.atomix.protocols.raft.server.storage.LogWriter;
@@ -534,7 +534,6 @@ public class ServerContext implements AutoCloseable {
         listener.registerOpenSessionHandler(request -> runOnContext(() -> state.openSession(request)));
         listener.registerCloseSessionHandler(request -> runOnContext(() -> state.closeSession(request)));
         listener.registerKeepAliveHandler(request -> runOnContext(() -> state.keepAlive(request)));
-        listener.registerResetListener(request -> state.reset(request), threadContext);
         listener.registerConfigureHandler(request -> runOnContext(() -> state.configure(request)));
         listener.registerInstallHandler(request -> runOnContext(() -> state.install(request)));
         listener.registerJoinHandler(request -> runOnContext(() -> state.join(request)));
@@ -568,7 +567,6 @@ public class ServerContext implements AutoCloseable {
         listener.unregisterOpenSessionHandler();
         listener.unregisterCloseSessionHandler();
         listener.unregisterKeepAliveHandler();
-        listener.unregisterResetListener();
         listener.unregisterConfigureHandler();
         listener.unregisterInstallHandler();
         listener.unregisterJoinHandler();

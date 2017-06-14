@@ -45,6 +45,7 @@ public class DefaultRaftClient implements RaftClient {
 
     public DefaultRaftClient(
             String clientId,
+            NodeId nodeId,
             Collection<NodeId> cluster,
             RaftClientProtocol protocol,
             ScheduledExecutorService threadPoolExecutor) {
@@ -52,7 +53,7 @@ public class DefaultRaftClient implements RaftClient {
         this.cluster = checkNotNull(cluster, "cluster cannot be null");
         this.threadPoolExecutor = checkNotNull(threadPoolExecutor, "threadPoolExecutor cannot be null");
         this.metadata = new DefaultRaftMetadataClient(clientId, protocol, selectorManager);
-        this.sessionManager = new RaftSessionManager(clientId, protocol, selectorManager, threadPoolExecutor);
+        this.sessionManager = new RaftSessionManager(clientId, nodeId, protocol, selectorManager, threadPoolExecutor);
     }
 
     @Override

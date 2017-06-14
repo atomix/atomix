@@ -28,7 +28,6 @@ class RaftMessageContext {
     final MessageSubject querySubject;
     final MessageSubject commandSubject;
     final MessageSubject metadataSubject;
-    final MessageSubject resetSubject;
     final MessageSubject joinSubject;
     final MessageSubject leaveSubject;
     final MessageSubject configureSubject;
@@ -46,7 +45,6 @@ class RaftMessageContext {
         this.querySubject = getSubject(prefix, "query");
         this.commandSubject = getSubject(prefix, "command");
         this.metadataSubject = getSubject(prefix, "metadata");
-        this.resetSubject = getSubject(prefix, "reset");
         this.joinSubject = getSubject(prefix, "join");
         this.leaveSubject = getSubject(prefix, "leave");
         this.configureSubject = getSubject(prefix, "configure");
@@ -76,6 +74,20 @@ class RaftMessageContext {
             return new MessageSubject(String.format("publish-%d", sessionId));
         } else {
             return new MessageSubject(String.format("%s-publish-%d", prefix, sessionId));
+        }
+    }
+
+    /**
+     * Returns the reset subject for the given session.
+     *
+     * @param sessionId the session for which to return the reset subject
+     * @return the reset subject for the given session
+     */
+    MessageSubject resetSubject(long sessionId) {
+        if (prefix == null) {
+            return new MessageSubject(String.format("reset-%d", sessionId));
+        } else {
+            return new MessageSubject(String.format("%s-reset-%d", prefix, sessionId));
         }
     }
 }

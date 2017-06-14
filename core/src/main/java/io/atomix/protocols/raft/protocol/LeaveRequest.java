@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.protocol;
 
-import io.atomix.protocols.raft.server.cluster.RaftMember;
+import io.atomix.protocols.raft.cluster.RaftMember;
 
 /**
  * Server leave configuration request.

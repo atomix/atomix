@@ -180,12 +180,12 @@ public class RaftServerMessageListener implements RaftServerProtocolListener {
     }
 
     @Override
-    public void registerResetListener(Consumer<ResetRequest> listener, Executor executor) {
-        clusterCommunicator.addSubscriber(context.resetSubject, serializer::decode, listener, executor);
+    public void registerResetListener(long sessionId, Consumer<ResetRequest> listener, Executor executor) {
+        clusterCommunicator.addSubscriber(context.resetSubject(sessionId), serializer::decode, listener, executor);
     }
 
     @Override
-    public void unregisterResetListener() {
-        clusterCommunicator.removeSubscriber(context.openSessionSubject);
+    public void unregisterResetListener(long sessionId) {
+        clusterCommunicator.removeSubscriber(context.resetSubject(sessionId));
     }
 }

@@ -16,7 +16,7 @@
 package io.atomix.protocols.raft.server.storage.entry;
 
 import io.atomix.cluster.NodeId;
-import io.atomix.protocols.raft.server.cluster.RaftMember;
+import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.server.state.RaftMemberState;
 import io.atomix.util.Assert;
 import io.atomix.util.buffer.BufferInput;

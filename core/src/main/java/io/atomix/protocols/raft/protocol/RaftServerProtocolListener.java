@@ -196,14 +196,17 @@ public interface RaftServerProtocolListener {
     /**
      * Registers a reset request listener.
      *
+     * @param sessionId the session ID for which to register the listener
      * @param listener the reset request listener to add
      * @param executor the executor with which to execute the listener
      */
-    void registerResetListener(Consumer<ResetRequest> listener, Executor executor);
+    void registerResetListener(long sessionId, Consumer<ResetRequest> listener, Executor executor);
 
     /**
      * Unregisters the given reset request listener.
+     *
+     * @param sessionId the session ID for which to unregister the listener
      */
-    void unregisterResetListener();
+    void unregisterResetListener(long sessionId);
 
 }

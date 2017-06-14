@@ -54,6 +54,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class RaftSessionManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(RaftSessionManager.class);
     private final String clientId;
+    private final NodeId nodeId;
     private final RaftClientProtocol protocol;
     private final RaftConnection connection;
     private final ScheduledExecutorService threadPoolExecutor;
@@ -62,8 +63,9 @@ public class RaftSessionManager {
     private final AtomicBoolean open = new AtomicBoolean();
     private ScheduledFuture<?> keepAliveFuture;
 
-    public RaftSessionManager(String clientId, RaftClientProtocol protocol, NodeSelectorManager selectorManager, ScheduledExecutorService threadPoolExecutor) {
+    public RaftSessionManager(String clientId, NodeId nodeId, RaftClientProtocol protocol, NodeSelectorManager selectorManager, ScheduledExecutorService threadPoolExecutor) {
         this.clientId = checkNotNull(clientId, "clientId cannot be null");
+        this.nodeId = checkNotNull(nodeId, "nodeId cannot be null");
         this.protocol = checkNotNull(protocol, "protocol cannot be null");
         this.selectorManager = checkNotNull(selectorManager, "selectorManager cannot be null");
         this.connection = new RaftConnection(clientId, protocol.dispatcher(), selectorManager.createSelector(CommunicationStrategies.ANY));
@@ -114,7 +116,7 @@ public class RaftSessionManager {
             Duration timeout) {
         LOGGER.trace("{} - Opening session; name: {}, type: {}", clientId, name, stateMachine);
         OpenSessionRequest request = OpenSessionRequest.builder()
-                .withClient(clientId)
+                .withNode(nodeId)
                 .withStateMachine(stateMachine)
                 .withName(name)
                 .withTimeout(timeout.toMillis())

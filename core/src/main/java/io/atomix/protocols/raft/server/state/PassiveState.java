@@ -26,7 +26,6 @@ import io.atomix.protocols.raft.protocol.OperationResponse;
 import io.atomix.protocols.raft.protocol.QueryRequest;
 import io.atomix.protocols.raft.protocol.QueryResponse;
 import io.atomix.protocols.raft.protocol.RaftResponse;
-import io.atomix.protocols.raft.protocol.ResetRequest;
 import io.atomix.protocols.raft.server.RaftServer;
 import io.atomix.protocols.raft.server.storage.Indexed;
 import io.atomix.protocols.raft.server.storage.LogReader;
@@ -78,14 +77,6 @@ class PassiveState extends ReserveState {
       } finally {
         writer.unlock();
       }
-    }
-  }
-
-  @Override
-  public void reset(ResetRequest request) {
-    ServerSessionContext session = context.getStateMachine().getSessions().getSession(request.session());
-    if (session != null) {
-      session.getStateMachineExecutor().reset(request.index(), session);
     }
   }
 

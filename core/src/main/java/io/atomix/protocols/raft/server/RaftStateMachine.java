@@ -20,6 +20,7 @@ import io.atomix.protocols.raft.error.CommandException;
 import io.atomix.protocols.raft.server.session.SessionListener;
 import io.atomix.protocols.raft.server.session.Sessions;
 import io.atomix.util.Assert;
+import io.atomix.util.serializer.Serializer;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -165,12 +166,23 @@ import java.util.function.Function;
  * @see StateMachineExecutor
  */
 public abstract class RaftStateMachine implements Snapshottable {
+    protected final Serializer serializer;
     protected StateMachineExecutor executor;
     protected StateMachineContext context;
     protected Clock clock;
     protected Sessions sessions;
 
-    protected RaftStateMachine() {
+    protected RaftStateMachine(Serializer serializer) {
+        this.serializer = serializer;
+    }
+
+    /**
+     * Returns the state machine serializer.
+     *
+     * @return The state machine serializer.
+     */
+    public Serializer serializer() {
+        return serializer;
     }
 
     /**

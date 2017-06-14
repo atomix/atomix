@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.protocols.raft.server.cluster;
+package io.atomix.protocols.raft.cluster;
 
 import io.atomix.cluster.NodeId;
 import io.atomix.util.temp.Listener;
