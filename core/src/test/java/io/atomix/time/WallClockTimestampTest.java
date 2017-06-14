@@ -16,8 +16,8 @@
 package io.atomix.time;
 
 import com.google.common.testing.EqualsTester;
+import io.atomix.util.serializer.KryoNamespace;
 import org.junit.Test;
-import org.onlab.util.KryoNamespace;
 
 import java.nio.ByteBuffer;
 

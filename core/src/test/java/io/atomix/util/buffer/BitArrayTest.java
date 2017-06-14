@@ -15,7 +15,6 @@
  */
 package io.atomix.util.buffer;
 
-import io.atomix.util.buffer.util.BitArray;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
