@@ -29,264 +29,264 @@ import java.nio.charset.StandardCharsets;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class OutputStreamBufferOutput implements BufferOutput<BufferOutput<?>> {
-    private final DataOutputStream os;
+  private final DataOutputStream os;
 
-    public OutputStreamBufferOutput(OutputStream os) {
-        this(new DataOutputStream(os));
-    }
+  public OutputStreamBufferOutput(OutputStream os) {
+    this(new DataOutputStream(os));
+  }
 
-    public OutputStreamBufferOutput(DataOutputStream os) {
-        if (os == null)
-            throw new NullPointerException("output stream cannot be null");
-        this.os = os;
-    }
+  public OutputStreamBufferOutput(DataOutputStream os) {
+    if (os == null)
+      throw new NullPointerException("output stream cannot be null");
+    this.os = os;
+  }
 
-    @Override
-    public BufferOutput<?> write(Bytes bytes) {
-        if (bytes instanceof UnsafeHeapBytes) {
-            try {
-                os.write(bytes.array());
-            } catch (IOException e) {
-                throw new AtomixIOException(e);
-            }
-        } else {
-            byte[] buffer = new byte[(int) bytes.size()];
-            bytes.read(0, buffer, 0, buffer.length);
-            try {
-                os.write(buffer);
-            } catch (IOException e) {
-                throw new AtomixIOException(e);
-            }
-        }
-        return this;
+  @Override
+  public BufferOutput<?> write(Bytes bytes) {
+    if (bytes instanceof UnsafeHeapBytes) {
+      try {
+        os.write(bytes.array());
+      } catch (IOException e) {
+        throw new AtomixIOException(e);
+      }
+    } else {
+      byte[] buffer = new byte[(int) bytes.size()];
+      bytes.read(0, buffer, 0, buffer.length);
+      try {
+        os.write(buffer);
+      } catch (IOException e) {
+        throw new AtomixIOException(e);
+      }
     }
+    return this;
+  }
 
-    @Override
-    public BufferOutput<?> write(byte[] bytes) {
-        try {
-            os.write(bytes);
-        } catch (IOException e) {
-            throw new AtomixIOException(e);
-        }
-        return this;
+  @Override
+  public BufferOutput<?> write(byte[] bytes) {
+    try {
+      os.write(bytes);
+    } catch (IOException e) {
+      throw new AtomixIOException(e);
     }
+    return this;
+  }
 
-    @Override
-    public BufferOutput<?> write(Bytes bytes, long offset, long length) {
-        if (bytes instanceof UnsafeHeapBytes) {
-            try {
-                os.write(((UnsafeHeapBytes) bytes).array(), (int) offset, (int) length);
-            } catch (IOException e) {
-                throw new AtomixIOException(e);
-            }
-        } else {
-            byte[] buffer = new byte[(int) bytes.size()];
-            bytes.read(0, buffer, 0, buffer.length);
-            try {
-                os.write(buffer, (int) offset, (int) length);
-            } catch (IOException e) {
-                throw new AtomixIOException(e);
-            }
-        }
-        return this;
+  @Override
+  public BufferOutput<?> write(Bytes bytes, long offset, long length) {
+    if (bytes instanceof UnsafeHeapBytes) {
+      try {
+        os.write(((UnsafeHeapBytes) bytes).array(), (int) offset, (int) length);
+      } catch (IOException e) {
+        throw new AtomixIOException(e);
+      }
+    } else {
+      byte[] buffer = new byte[(int) bytes.size()];
+      bytes.read(0, buffer, 0, buffer.length);
+      try {
+        os.write(buffer, (int) offset, (int) length);
+      } catch (IOException e) {
+        throw new AtomixIOException(e);
+      }
     }
+    return this;
+  }
 
-    @Override
-    public BufferOutput<?> write(byte[] bytes, long offset, long length) {
-        try {
-            os.write(bytes, (int) offset, (int) length);
-        } catch (IOException e) {
-            throw new AtomixIOException(e);
-        }
-        return this;
+  @Override
+  public BufferOutput<?> write(byte[] bytes, long offset, long length) {
+    try {
+      os.write(bytes, (int) offset, (int) length);
+    } catch (IOException e) {
+      throw new AtomixIOException(e);
     }
+    return this;
+  }
 
-    @Override
-    public BufferOutput<?> write(Buffer buffer) {
-        if (buffer instanceof UnsafeHeapBuffer) {
-            try {
-                os.write(((UnsafeHeapBuffer) buffer).array());
-            } catch (IOException e) {
-                throw new AtomixIOException(e);
-            }
-        } else {
-            byte[] bytes = new byte[(int) buffer.remaining()];
-            buffer.read(bytes);
-            try {
-                os.write(bytes);
-            } catch (IOException e) {
-                throw new AtomixIOException(e);
-            }
-        }
-        return this;
+  @Override
+  public BufferOutput<?> write(Buffer buffer) {
+    if (buffer instanceof UnsafeHeapBuffer) {
+      try {
+        os.write(((UnsafeHeapBuffer) buffer).array());
+      } catch (IOException e) {
+        throw new AtomixIOException(e);
+      }
+    } else {
+      byte[] bytes = new byte[(int) buffer.remaining()];
+      buffer.read(bytes);
+      try {
+        os.write(bytes);
+      } catch (IOException e) {
+        throw new AtomixIOException(e);
+      }
     }
+    return this;
+  }
 
-    @Override
-    public BufferOutput<?> writeByte(int b) {
-        try {
-            os.writeByte(b);
-        } catch (IOException e) {
-            throw new AtomixIOException(e);
-        }
-        return this;
+  @Override
+  public BufferOutput<?> writeByte(int b) {
+    try {
+      os.writeByte(b);
+    } catch (IOException e) {
+      throw new AtomixIOException(e);
     }
+    return this;
+  }
 
-    @Override
-    public BufferOutput<?> writeUnsignedByte(int b) {
-        try {
-            os.writeByte(b);
-        } catch (IOException e) {
-            throw new AtomixIOException(e);
-        }
-        return this;
+  @Override
+  public BufferOutput<?> writeUnsignedByte(int b) {
+    try {
+      os.writeByte(b);
+    } catch (IOException e) {
+      throw new AtomixIOException(e);
     }
+    return this;
+  }
 
-    @Override
-    public BufferOutput<?> writeChar(char c) {
-        try {
-            os.writeChar(c);
-        } catch (IOException e) {
-            throw new AtomixIOException(e);
-        }
-        return this;
+  @Override
+  public BufferOutput<?> writeChar(char c) {
+    try {
+      os.writeChar(c);
+    } catch (IOException e) {
+      throw new AtomixIOException(e);
     }
+    return this;
+  }
 
-    @Override
-    public BufferOutput<?> writeShort(short s) {
-        try {
-            os.writeShort(s);
-        } catch (IOException e) {
-            throw new AtomixIOException(e);
-        }
-        return this;
+  @Override
+  public BufferOutput<?> writeShort(short s) {
+    try {
+      os.writeShort(s);
+    } catch (IOException e) {
+      throw new AtomixIOException(e);
     }
+    return this;
+  }
 
-    @Override
-    public BufferOutput<?> writeUnsignedShort(int s) {
-        try {
-            os.writeShort(s);
-        } catch (IOException e) {
-            throw new AtomixIOException(e);
-        }
-        return this;
+  @Override
+  public BufferOutput<?> writeUnsignedShort(int s) {
+    try {
+      os.writeShort(s);
+    } catch (IOException e) {
+      throw new AtomixIOException(e);
     }
+    return this;
+  }
 
-    @Override
-    public BufferOutput<?> writeMedium(int m) {
-        try {
-            os.writeByte((byte) (m >>> 16));
-            os.writeByte((byte) (m >>> 8));
-            os.writeByte((byte) m);
-        } catch (IOException e) {
-            throw new AtomixIOException(e);
-        }
-        return this;
+  @Override
+  public BufferOutput<?> writeMedium(int m) {
+    try {
+      os.writeByte((byte) (m >>> 16));
+      os.writeByte((byte) (m >>> 8));
+      os.writeByte((byte) m);
+    } catch (IOException e) {
+      throw new AtomixIOException(e);
     }
+    return this;
+  }
 
-    @Override
-    public BufferOutput<?> writeUnsignedMedium(int m) {
-        return writeMedium(m);
-    }
+  @Override
+  public BufferOutput<?> writeUnsignedMedium(int m) {
+    return writeMedium(m);
+  }
 
-    @Override
-    public BufferOutput<?> writeInt(int i) {
-        try {
-            os.writeInt(i);
-        } catch (IOException e) {
-            throw new AtomixIOException(e);
-        }
-        return this;
+  @Override
+  public BufferOutput<?> writeInt(int i) {
+    try {
+      os.writeInt(i);
+    } catch (IOException e) {
+      throw new AtomixIOException(e);
     }
+    return this;
+  }
 
-    @Override
-    public BufferOutput<?> writeUnsignedInt(long i) {
-        try {
-            os.writeInt((int) i);
-        } catch (IOException e) {
-            throw new AtomixIOException(e);
-        }
-        return this;
+  @Override
+  public BufferOutput<?> writeUnsignedInt(long i) {
+    try {
+      os.writeInt((int) i);
+    } catch (IOException e) {
+      throw new AtomixIOException(e);
     }
+    return this;
+  }
 
-    @Override
-    public BufferOutput<?> writeLong(long l) {
-        try {
-            os.writeLong(l);
-        } catch (IOException e) {
-            throw new AtomixIOException(e);
-        }
-        return this;
+  @Override
+  public BufferOutput<?> writeLong(long l) {
+    try {
+      os.writeLong(l);
+    } catch (IOException e) {
+      throw new AtomixIOException(e);
     }
+    return this;
+  }
 
-    @Override
-    public BufferOutput<?> writeFloat(float f) {
-        try {
-            os.writeFloat(f);
-        } catch (IOException e) {
-            throw new AtomixIOException(e);
-        }
-        return this;
+  @Override
+  public BufferOutput<?> writeFloat(float f) {
+    try {
+      os.writeFloat(f);
+    } catch (IOException e) {
+      throw new AtomixIOException(e);
     }
+    return this;
+  }
 
-    @Override
-    public BufferOutput<?> writeDouble(double d) {
-        try {
-            os.writeDouble(d);
-        } catch (IOException e) {
-            throw new AtomixIOException(e);
-        }
-        return this;
+  @Override
+  public BufferOutput<?> writeDouble(double d) {
+    try {
+      os.writeDouble(d);
+    } catch (IOException e) {
+      throw new AtomixIOException(e);
     }
+    return this;
+  }
 
-    @Override
-    public BufferOutput<?> writeBoolean(boolean b) {
-        try {
-            os.writeBoolean(b);
-        } catch (IOException e) {
-            throw new AtomixIOException(e);
-        }
-        return this;
+  @Override
+  public BufferOutput<?> writeBoolean(boolean b) {
+    try {
+      os.writeBoolean(b);
+    } catch (IOException e) {
+      throw new AtomixIOException(e);
     }
+    return this;
+  }
 
-    @Override
-    public BufferOutput<?> writeString(String s) {
-        return writeString(s, Charset.defaultCharset());
-    }
+  @Override
+  public BufferOutput<?> writeString(String s) {
+    return writeString(s, Charset.defaultCharset());
+  }
 
-    @Override
-    public BufferOutput<?> writeString(String s, Charset charset) {
-        if (s == null) {
-            return writeBoolean(Boolean.FALSE);
-        } else {
-            byte[] bytes = s.getBytes(charset);
-            writeBoolean(Boolean.TRUE);
-            return writeUnsignedShort(bytes.length)
-                    .write(bytes, 0, bytes.length);
-        }
+  @Override
+  public BufferOutput<?> writeString(String s, Charset charset) {
+    if (s == null) {
+      return writeBoolean(Boolean.FALSE);
+    } else {
+      byte[] bytes = s.getBytes(charset);
+      writeBoolean(Boolean.TRUE);
+      return writeUnsignedShort(bytes.length)
+          .write(bytes, 0, bytes.length);
     }
+  }
 
-    @Override
-    public BufferOutput<?> writeUTF8(String s) {
-        return writeString(s, StandardCharsets.UTF_8);
-    }
+  @Override
+  public BufferOutput<?> writeUTF8(String s) {
+    return writeString(s, StandardCharsets.UTF_8);
+  }
 
-    @Override
-    public BufferOutput<?> flush() {
-        try {
-            os.flush();
-        } catch (IOException e) {
-            throw new AtomixIOException(e);
-        }
-        return this;
+  @Override
+  public BufferOutput<?> flush() {
+    try {
+      os.flush();
+    } catch (IOException e) {
+      throw new AtomixIOException(e);
     }
+    return this;
+  }
 
-    @Override
-    public void close() {
-        try {
-            os.close();
-        } catch (IOException e) {
-            throw new AtomixIOException(e);
-        }
+  @Override
+  public void close() {
+    try {
+      os.close();
+    } catch (IOException e) {
+      throw new AtomixIOException(e);
     }
+  }
 
 }

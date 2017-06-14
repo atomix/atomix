@@ -27,27 +27,27 @@ import java.util.Collection;
  */
 public class JoinResponse extends ConfigurationResponse {
 
-    /**
-     * Returns a new join response builder.
-     *
-     * @return A new join response builder.
-     */
-    public static Builder builder() {
-        return new Builder();
-    }
+  /**
+   * Returns a new join response builder.
+   *
+   * @return A new join response builder.
+   */
+  public static Builder builder() {
+    return new Builder();
+  }
 
-    public JoinResponse(Status status, RaftError error, long index, long term, long timestamp, Collection<RaftMember> members) {
-        super(status, error, index, term, timestamp, members);
-    }
+  public JoinResponse(Status status, RaftError error, long index, long term, long timestamp, Collection<RaftMember> members) {
+    super(status, error, index, term, timestamp, members);
+  }
 
-    /**
-     * Join response builder.
-     */
-    public static class Builder extends ConfigurationResponse.Builder<Builder, JoinResponse> {
-        @Override
-        public JoinResponse build() {
-            validate();
-            return new JoinResponse(status, error, index, term, timestamp, members);
-        }
+  /**
+   * Join response builder.
+   */
+  public static class Builder extends ConfigurationResponse.Builder<Builder, JoinResponse> {
+    @Override
+    public JoinResponse build() {
+      validate();
+      return new JoinResponse(status, error, index, term, timestamp, members);
     }
+  }
 }

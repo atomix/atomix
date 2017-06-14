@@ -46,116 +46,116 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class QueryRequest extends OperationRequest {
 
+  /**
+   * Returns a new query request builder.
+   *
+   * @return A new query request builder.
+   */
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  private final long index;
+  private final RaftQuery.ConsistencyLevel consistency;
+
+  public QueryRequest(long session, long sequence, byte[] bytes, long index, RaftQuery.ConsistencyLevel consistency) {
+    super(session, sequence, bytes);
+    this.index = index;
+    this.consistency = consistency;
+  }
+
+  /**
+   * Returns the query index.
+   *
+   * @return The query index.
+   */
+  public long index() {
+    return index;
+  }
+
+  /**
+   * Returns the query consistency level.
+   *
+   * @return The query consistency level.
+   */
+  public RaftQuery.ConsistencyLevel consistency() {
+    return consistency;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getClass(), session, sequence, index, bytes);
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (object instanceof QueryRequest) {
+      QueryRequest request = (QueryRequest) object;
+      return request.session == session
+          && request.sequence == sequence
+          && request.consistency == consistency
+          && Arrays.equals(request.bytes, bytes);
+    }
+    return false;
+  }
+
+  @Override
+  public String toString() {
+    return toStringHelper(this)
+        .add("session", session)
+        .add("sequence", sequence)
+        .add("index", index)
+        .add("consistency", consistency)
+        .add("bytes", ArraySizeHashPrinter.of(bytes))
+        .toString();
+  }
+
+  /**
+   * Query request builder.
+   */
+  public static class Builder extends OperationRequest.Builder<Builder, QueryRequest> {
+    private long index;
+    private RaftQuery.ConsistencyLevel consistency = RaftQuery.ConsistencyLevel.LINEARIZABLE;
+
     /**
-     * Returns a new query request builder.
+     * Sets the request index.
      *
-     * @return A new query request builder.
+     * @param index The request index.
+     * @return The request builder.
+     * @throws IllegalArgumentException if {@code index} is less than {@code 0}
      */
-    public static Builder builder() {
-        return new Builder();
+    public Builder withIndex(long index) {
+      checkArgument(index >= 0, "index must be positive");
+      this.index = index;
+      return this;
     }
 
-    private final long index;
-    private final RaftQuery.ConsistencyLevel consistency;
-
-    public QueryRequest(long session, long sequence, byte[] bytes, long index, RaftQuery.ConsistencyLevel consistency) {
-        super(session, sequence, bytes);
-        this.index = index;
-        this.consistency = consistency;
-    }
-
     /**
-     * Returns the query index.
+     * Sets the query consistency level.
      *
-     * @return The query index.
+     * @param consistency The query consistency level.
+     * @return The request builder.
      */
-    public long index() {
-        return index;
-    }
-
-    /**
-     * Returns the query consistency level.
-     *
-     * @return The query consistency level.
-     */
-    public RaftQuery.ConsistencyLevel consistency() {
-        return consistency;
+    public Builder withConsistency(RaftQuery.ConsistencyLevel consistency) {
+      this.consistency = checkNotNull(consistency, "consistency cannot be null");
+      return this;
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(getClass(), session, sequence, index, bytes);
-    }
-
-    @Override
-    public boolean equals(Object object) {
-        if (object instanceof QueryRequest) {
-            QueryRequest request = (QueryRequest) object;
-            return request.session == session
-                    && request.sequence == sequence
-                    && request.consistency == consistency
-                    && Arrays.equals(request.bytes, bytes);
-        }
-        return false;
-    }
-
-    @Override
-    public String toString() {
-        return toStringHelper(this)
-                .add("session", session)
-                .add("sequence", sequence)
-                .add("index", index)
-                .add("consistency", consistency)
-                .add("bytes", ArraySizeHashPrinter.of(bytes))
-                .toString();
+    protected void validate() {
+      super.validate();
+      checkArgument(index >= 0, "index must be positive");
+      checkNotNull(consistency, "consistency cannot be null");
     }
 
     /**
-     * Query request builder.
+     * @throws IllegalStateException if {@code query} is null
      */
-    public static class Builder extends OperationRequest.Builder<Builder, QueryRequest> {
-        private long index;
-        private RaftQuery.ConsistencyLevel consistency = RaftQuery.ConsistencyLevel.LINEARIZABLE;
-
-        /**
-         * Sets the request index.
-         *
-         * @param index The request index.
-         * @return The request builder.
-         * @throws IllegalArgumentException if {@code index} is less than {@code 0}
-         */
-        public Builder withIndex(long index) {
-            checkArgument(index >= 0, "index must be positive");
-            this.index = index;
-            return this;
-        }
-
-        /**
-         * Sets the query consistency level.
-         *
-         * @param consistency The query consistency level.
-         * @return The request builder.
-         */
-        public Builder withConsistency(RaftQuery.ConsistencyLevel consistency) {
-            this.consistency = checkNotNull(consistency, "consistency cannot be null");
-            return this;
-        }
-
-        @Override
-        protected void validate() {
-            super.validate();
-            checkArgument(index >= 0, "index must be positive");
-            checkNotNull(consistency, "consistency cannot be null");
-        }
-
-        /**
-         * @throws IllegalStateException if {@code query} is null
-         */
-        @Override
-        public QueryRequest build() {
-            validate();
-            return new QueryRequest(session, sequence, bytes, index, consistency);
-        }
+    @Override
+    public QueryRequest build() {
+      validate();
+      return new QueryRequest(session, sequence, bytes, index, consistency);
     }
+  }
 
 }

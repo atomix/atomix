@@ -28,164 +28,164 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class OpenSessionRequest extends AbstractRaftRequest {
 
+  /**
+   * Returns a new open session request builder.
+   *
+   * @return A new open session request builder.
+   */
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  private final NodeId node;
+  private final String name;
+  private final String stateMachine;
+  private final long timeout;
+
+  public OpenSessionRequest(NodeId node, String name, String stateMachine, long timeout) {
+    this.node = node;
+    this.name = name;
+    this.stateMachine = stateMachine;
+    this.timeout = timeout;
+  }
+
+  /**
+   * Returns the client node identifier.
+   *
+   * @return The client node identifier.
+   */
+  public NodeId node() {
+    return node;
+  }
+
+  /**
+   * Returns the state machine name.
+   *
+   * @return The state machine name.
+   */
+  public String name() {
+    return name;
+  }
+
+  /**
+   * Returns the state machine type;
+   *
+   * @return The state machine type.
+   */
+  public String stateMachine() {
+    return stateMachine;
+  }
+
+  /**
+   * Returns the session timeout.
+   *
+   * @return The session timeout.
+   */
+  public long timeout() {
+    return timeout;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getClass(), name, stateMachine, timeout);
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (object instanceof OpenSessionRequest) {
+      OpenSessionRequest request = (OpenSessionRequest) object;
+      return request.node.equals(node)
+          && request.name.equals(name)
+          && request.stateMachine.equals(stateMachine)
+          && request.timeout == timeout;
+    }
+    return false;
+  }
+
+  @Override
+  public String toString() {
+    return toStringHelper(this)
+        .add("node", node)
+        .add("name", name)
+        .add("stateMachine", stateMachine)
+        .add("timeout", timeout)
+        .toString();
+  }
+
+  /**
+   * Open session request builder.
+   */
+  public static class Builder extends AbstractRaftRequest.Builder<Builder, OpenSessionRequest> {
+    private NodeId node;
+    private String name;
+    private String stateMachine;
+    private long timeout;
+
     /**
-     * Returns a new open session request builder.
+     * Sets the client node identifier.
      *
-     * @return A new open session request builder.
+     * @param node The client node identifier.
+     * @return The open session request builder.
+     * @throws NullPointerException if {@code node} is {@code null}
      */
-    public static Builder builder() {
-        return new Builder();
+    public Builder withNode(NodeId node) {
+      this.node = checkNotNull(node, "node cannot be null");
+      return this;
     }
 
-    private final NodeId node;
-    private final String name;
-    private final String stateMachine;
-    private final long timeout;
-
-    public OpenSessionRequest(NodeId node, String name, String stateMachine, long timeout) {
-        this.node = node;
-        this.name = name;
-        this.stateMachine = stateMachine;
-        this.timeout = timeout;
+    /**
+     * Sets the state machine name.
+     *
+     * @param name The state machine name.
+     * @return The open session request builder.
+     * @throws NullPointerException if {@code name} is {@code null}
+     */
+    public Builder withName(String name) {
+      this.name = checkNotNull(name, "name cannot be null");
+      return this;
     }
 
     /**
-     * Returns the client node identifier.
+     * Sets the state machine type.
      *
-     * @return The client node identifier.
+     * @param stateMachine The state machine type.
+     * @return The open session request builder.
+     * @throws NullPointerException if {@code type} is {@code null}
      */
-    public NodeId node() {
-        return node;
+    public Builder withStateMachine(String stateMachine) {
+      this.stateMachine = checkNotNull(stateMachine, "stateMachine cannot be null");
+      return this;
     }
 
     /**
-     * Returns the state machine name.
+     * Sets the session timeout.
      *
-     * @return The state machine name.
+     * @param timeout The session timeout.
+     * @return The open session request builder.
+     * @throws IllegalArgumentException if {@code timeout} is not positive
      */
-    public String name() {
-        return name;
-    }
-
-    /**
-     * Returns the state machine type;
-     *
-     * @return The state machine type.
-     */
-    public String stateMachine() {
-        return stateMachine;
-    }
-
-    /**
-     * Returns the session timeout.
-     *
-     * @return The session timeout.
-     */
-    public long timeout() {
-        return timeout;
+    public Builder withTimeout(long timeout) {
+      checkArgument(timeout >= 0, "timeout must be positive");
+      this.timeout = timeout;
+      return this;
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(getClass(), name, stateMachine, timeout);
-    }
-
-    @Override
-    public boolean equals(Object object) {
-        if (object instanceof OpenSessionRequest) {
-            OpenSessionRequest request = (OpenSessionRequest) object;
-            return request.node.equals(node)
-                    && request.name.equals(name)
-                    && request.stateMachine.equals(stateMachine)
-                    && request.timeout == timeout;
-        }
-        return false;
-    }
-
-    @Override
-    public String toString() {
-        return toStringHelper(this)
-                .add("node", node)
-                .add("name", name)
-                .add("stateMachine", stateMachine)
-                .add("timeout", timeout)
-                .toString();
+    protected void validate() {
+      super.validate();
+      checkNotNull(node, "client cannot be null");
+      checkNotNull(name, "name cannot be null");
+      checkNotNull(stateMachine, "stateMachine cannot be null");
+      checkArgument(timeout >= 0, "timeout must be positive");
     }
 
     /**
-     * Open session request builder.
+     * @throws IllegalStateException is session is not positive
      */
-    public static class Builder extends AbstractRaftRequest.Builder<Builder, OpenSessionRequest> {
-        private NodeId node;
-        private String name;
-        private String stateMachine;
-        private long timeout;
-
-        /**
-         * Sets the client node identifier.
-         *
-         * @param node The client node identifier.
-         * @return The open session request builder.
-         * @throws NullPointerException if {@code node} is {@code null}
-         */
-        public Builder withNode(NodeId node) {
-            this.node = checkNotNull(node, "node cannot be null");
-            return this;
-        }
-
-        /**
-         * Sets the state machine name.
-         *
-         * @param name The state machine name.
-         * @return The open session request builder.
-         * @throws NullPointerException if {@code name} is {@code null}
-         */
-        public Builder withName(String name) {
-            this.name = checkNotNull(name, "name cannot be null");
-            return this;
-        }
-
-        /**
-         * Sets the state machine type.
-         *
-         * @param stateMachine The state machine type.
-         * @return The open session request builder.
-         * @throws NullPointerException if {@code type} is {@code null}
-         */
-        public Builder withStateMachine(String stateMachine) {
-            this.stateMachine = checkNotNull(stateMachine, "stateMachine cannot be null");
-            return this;
-        }
-
-        /**
-         * Sets the session timeout.
-         *
-         * @param timeout The session timeout.
-         * @return The open session request builder.
-         * @throws IllegalArgumentException if {@code timeout} is not positive
-         */
-        public Builder withTimeout(long timeout) {
-            checkArgument(timeout >= 0, "timeout must be positive");
-            this.timeout = timeout;
-            return this;
-        }
-
-        @Override
-        protected void validate() {
-            super.validate();
-            checkNotNull(node, "client cannot be null");
-            checkNotNull(name, "name cannot be null");
-            checkNotNull(stateMachine, "stateMachine cannot be null");
-            checkArgument(timeout >= 0, "timeout must be positive");
-        }
-
-        /**
-         * @throws IllegalStateException is session is not positive
-         */
-        @Override
-        public OpenSessionRequest build() {
-            validate();
-            return new OpenSessionRequest(node, name, stateMachine, timeout);
-        }
+    @Override
+    public OpenSessionRequest build() {
+      validate();
+      return new OpenSessionRequest(node, name, stateMachine, timeout);
     }
+  }
 }

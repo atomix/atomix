@@ -24,69 +24,69 @@ package io.atomix.util.buffer;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class SlicedBuffer extends AbstractBuffer {
-    private final Buffer root;
+  private final Buffer root;
 
-    public SlicedBuffer(Buffer root, Bytes bytes, long offset, long initialCapacity, long maxCapacity) {
-        super(bytes, offset, initialCapacity, maxCapacity, null);
-        this.root = root;
-        root.acquire();
-    }
+  public SlicedBuffer(Buffer root, Bytes bytes, long offset, long initialCapacity, long maxCapacity) {
+    super(bytes, offset, initialCapacity, maxCapacity, null);
+    this.root = root;
+    root.acquire();
+  }
 
-    /**
-     * Returns the root buffer.
-     *
-     * @return The root buffer.
-     */
-    public Buffer root() {
-        return root;
-    }
+  /**
+   * Returns the root buffer.
+   *
+   * @return The root buffer.
+   */
+  public Buffer root() {
+    return root;
+  }
 
-    @Override
-    public boolean isDirect() {
-        return root.isDirect();
-    }
+  @Override
+  public boolean isDirect() {
+    return root.isDirect();
+  }
 
-    @Override
-    protected void compact(long from, long to, long length) {
-        if (root instanceof AbstractBuffer) {
-            ((AbstractBuffer) root).compact(from, to, length);
-        }
+  @Override
+  protected void compact(long from, long to, long length) {
+    if (root instanceof AbstractBuffer) {
+      ((AbstractBuffer) root).compact(from, to, length);
     }
+  }
 
-    @Override
-    public boolean isFile() {
-        return root.isFile();
-    }
+  @Override
+  public boolean isFile() {
+    return root.isFile();
+  }
 
-    @Override
-    public boolean isReadOnly() {
-        return root.isReadOnly();
-    }
+  @Override
+  public boolean isReadOnly() {
+    return root.isReadOnly();
+  }
 
-    @Override
-    public Buffer compact() {
-        return null;
-    }
+  @Override
+  public Buffer compact() {
+    return null;
+  }
 
-    @Override
-    public Buffer duplicate() {
-        return new SlicedBuffer(root, bytes, offset(), capacity(), maxCapacity());
-    }
+  @Override
+  public Buffer duplicate() {
+    return new SlicedBuffer(root, bytes, offset(), capacity(), maxCapacity());
+  }
 
-    @Override
-    public Buffer acquire() {
-        root.acquire();
-        return this;
-    }
+  @Override
+  public Buffer acquire() {
+    root.acquire();
+    return this;
+  }
 
-    @Override
-    public boolean release() {
-        return root.release();
-    }
+  @Override
+  public boolean release() {
+    return root.release();
+  }
 
-    @Override
-    public void close() {
-        root.release();
-    }
+  @Override
+  public void close() {
+    root.release();
+  }
 
 }

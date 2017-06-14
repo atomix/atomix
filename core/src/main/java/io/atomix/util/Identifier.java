@@ -24,69 +24,69 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class Identifier<T extends Comparable<T>> {
 
-    protected final T identifier; // backing identifier value
+  protected final T identifier; // backing identifier value
 
-    /**
-     * Constructor for serialization.
-     */
-    protected Identifier() {
-        this.identifier = null;
-    }
+  /**
+   * Constructor for serialization.
+   */
+  protected Identifier() {
+    this.identifier = null;
+  }
 
-    /**
-     * Constructs an identifier backed by the specified value.
-     *
-     * @param value the backing value
-     */
-    protected Identifier(T value) {
-        this.identifier = checkNotNull(value, "Identifier cannot be null.");
-    }
+  /**
+   * Constructs an identifier backed by the specified value.
+   *
+   * @param value the backing value
+   */
+  protected Identifier(T value) {
+    this.identifier = checkNotNull(value, "Identifier cannot be null.");
+  }
 
-    /**
-     * Returns the backing identifier value.
-     *
-     * @return identifier
-     */
-    public T id() {
-        return identifier;
-    }
+  /**
+   * Returns the backing identifier value.
+   *
+   * @return identifier
+   */
+  public T id() {
+    return identifier;
+  }
 
-    /**
-     * Returns the hashcode of the identifier.
-     *
-     * @return hashcode
-     */
-    @Override
-    public int hashCode() {
-        return identifier.hashCode();
-    }
+  /**
+   * Returns the hashcode of the identifier.
+   *
+   * @return hashcode
+   */
+  @Override
+  public int hashCode() {
+    return identifier.hashCode();
+  }
 
-    /**
-     * Compares two device key identifiers for equality.
-     *
-     * @param obj to compare against
-     * @return true if the objects are equal, false otherwise.
-     */
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj instanceof Identifier) {
-            Identifier that = (Identifier) obj;
-            return this.getClass() == that.getClass() &&
-                    Objects.equals(this.identifier, that.identifier);
-        }
-        return false;
+  /**
+   * Compares two device key identifiers for equality.
+   *
+   * @param obj to compare against
+   * @return true if the objects are equal, false otherwise.
+   */
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
     }
+    if (obj instanceof Identifier) {
+      Identifier that = (Identifier) obj;
+      return this.getClass() == that.getClass() &&
+          Objects.equals(this.identifier, that.identifier);
+    }
+    return false;
+  }
 
-    /**
-     * Returns a string representation of a DeviceKeyId.
-     *
-     * @return string
-     */
-    public String toString() {
-        return identifier.toString();
-    }
+  /**
+   * Returns a string representation of a DeviceKeyId.
+   *
+   * @return string
+   */
+  public String toString() {
+    return identifier.toString();
+  }
 
 }

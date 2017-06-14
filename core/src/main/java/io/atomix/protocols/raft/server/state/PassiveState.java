@@ -63,8 +63,8 @@ class PassiveState extends ReserveState {
   @Override
   public CompletableFuture<ServerState> open() {
     return super.open()
-      .thenRun(this::truncateUncommittedEntries)
-      .thenApply(v -> this);
+        .thenRun(this::truncateUncommittedEntries)
+        .thenApply(v -> this);
   }
 
   /**
@@ -101,11 +101,11 @@ class PassiveState extends ReserveState {
     if (request.term() < context.getTerm()) {
       LOGGER.debug("{} - Rejected {}: request term is less than the current term ({})", context.getCluster().member().id(), request, context.getTerm());
       return AppendResponse.builder()
-        .withStatus(RaftResponse.Status.OK)
-        .withTerm(context.getTerm())
-        .withSucceeded(false)
-        .withLogIndex(context.getLogWriter().lastIndex())
-        .build();
+          .withStatus(RaftResponse.Status.OK)
+          .withTerm(context.getTerm())
+          .withSucceeded(false)
+          .withLogIndex(context.getLogWriter().lastIndex())
+          .build();
     } else {
       return checkPreviousEntry(request);
     }
@@ -119,11 +119,11 @@ class PassiveState extends ReserveState {
     if (request.logIndex() != 0 && request.logIndex() > lastIndex) {
       LOGGER.debug("{} - Rejected {}: Previous index ({}) is greater than the local log's last index ({})", context.getCluster().member().id(), request, request.logIndex(), lastIndex);
       return AppendResponse.builder()
-        .withStatus(RaftResponse.Status.OK)
-        .withTerm(context.getTerm())
-        .withSucceeded(false)
-        .withLogIndex(lastIndex)
-        .build();
+          .withStatus(RaftResponse.Status.OK)
+          .withTerm(context.getTerm())
+          .withSucceeded(false)
+          .withLogIndex(lastIndex)
+          .build();
     }
     return appendEntries(request);
   }
@@ -181,11 +181,11 @@ class PassiveState extends ReserveState {
     context.getStateMachine().applyAll(context.getCommitIndex());
 
     return AppendResponse.builder()
-      .withStatus(RaftResponse.Status.OK)
-      .withTerm(context.getTerm())
-      .withSucceeded(true)
-      .withLogIndex(lastEntryIndex)
-      .build();
+        .withStatus(RaftResponse.Status.OK)
+        .withTerm(context.getTerm())
+        .withSucceeded(true)
+        .withLogIndex(lastEntryIndex)
+        .build();
   }
 
   @Override
@@ -212,13 +212,13 @@ class PassiveState extends ReserveState {
       }
 
       final Indexed<QueryEntry> entry = new Indexed<>(
-        request.index(),
-        context.getTerm(),
-        new QueryEntry(
-          System.currentTimeMillis(),
-          request.session(),
-          request.sequence(),
-          request.bytes()), 0);
+          request.index(),
+          context.getTerm(),
+          new QueryEntry(
+              System.currentTimeMillis(),
+              request.session(),
+              request.sequence(),
+              request.bytes()), 0);
 
       return applyQuery(entry).thenApply(this::logResponse);
     } else {
@@ -232,18 +232,18 @@ class PassiveState extends ReserveState {
   private CompletableFuture<QueryResponse> queryForward(QueryRequest request) {
     if (context.getLeader() == null) {
       return CompletableFuture.completedFuture(logResponse(QueryResponse.builder()
-        .withStatus(RaftResponse.Status.ERROR)
-        .withError(RaftError.Type.NO_LEADER_ERROR)
-        .build()));
+          .withStatus(RaftResponse.Status.ERROR)
+          .withError(RaftError.Type.NO_LEADER_ERROR)
+          .build()));
     }
 
     LOGGER.trace("{} - Forwarding {}", context.getCluster().member().id(), request);
     return forward(request, context.getProtocolDispatcher()::query)
-      .exceptionally(error -> QueryResponse.builder()
-        .withStatus(RaftResponse.Status.ERROR)
-        .withError(RaftError.Type.NO_LEADER_ERROR)
-        .build())
-      .thenApply(this::logResponse);
+        .exceptionally(error -> QueryResponse.builder()
+            .withStatus(RaftResponse.Status.ERROR)
+            .withError(RaftError.Type.NO_LEADER_ERROR)
+            .build())
+        .thenApply(this::logResponse);
   }
 
   /**
@@ -281,21 +281,21 @@ class PassiveState extends ReserveState {
 
       if (error == null) {
         future.complete(builder.withStatus(RaftResponse.Status.OK)
-          .withResult(result != null ? result.result : null)
-          .build());
+            .withResult(result != null ? result.result : null)
+            .build());
       } else if (error instanceof CompletionException && error.getCause() instanceof RaftException) {
         future.complete(builder.withStatus(RaftResponse.Status.ERROR)
-          .withError(((RaftException) error.getCause()).getType())
-          .build());
+            .withError(((RaftException) error.getCause()).getType())
+            .build());
       } else if (error instanceof RaftException) {
         future.complete(builder.withStatus(RaftResponse.Status.ERROR)
-          .withError(((RaftException) error).getType())
-          .build());
+            .withError(((RaftException) error).getType())
+            .build());
       } else {
         LOGGER.warn("An unexpected error occurred: {}", error);
         future.complete(builder.withStatus(RaftResponse.Status.ERROR)
-          .withError(RaftError.Type.INTERNAL_ERROR)
-          .build());
+            .withError(RaftError.Type.INTERNAL_ERROR)
+            .build());
       }
     }
   }
@@ -309,9 +309,9 @@ class PassiveState extends ReserveState {
     // If the request is for a lesser term, reject the request.
     if (request.term() < context.getTerm()) {
       return CompletableFuture.completedFuture(logResponse(InstallResponse.builder()
-        .withStatus(RaftResponse.Status.ERROR)
-        .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
-        .build()));
+          .withStatus(RaftResponse.Status.ERROR)
+          .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
+          .build()));
     }
 
     // Get the pending snapshot for the associated snapshot ID.
@@ -335,9 +335,9 @@ class PassiveState extends ReserveState {
       // For new snapshots, the initial snapshot offset must be 0.
       if (request.offset() > 0) {
         return CompletableFuture.completedFuture(logResponse(InstallResponse.builder()
-          .withStatus(RaftResponse.Status.ERROR)
-          .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
-          .build()));
+            .withStatus(RaftResponse.Status.ERROR)
+            .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
+            .build()));
       }
 
       pendingSnapshot = context.getSnapshotStore().createSnapshot(request.id(), request.index());
@@ -347,9 +347,9 @@ class PassiveState extends ReserveState {
     // If the request offset is greater than the next expected snapshot offset, fail the request.
     if (request.offset() > nextSnapshotOffset) {
       return CompletableFuture.completedFuture(logResponse(InstallResponse.builder()
-        .withStatus(RaftResponse.Status.ERROR)
-        .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
-        .build()));
+          .withStatus(RaftResponse.Status.ERROR)
+          .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
+          .build()));
     }
 
     // Write the data to the snapshot.
@@ -367,8 +367,8 @@ class PassiveState extends ReserveState {
     }
 
     return CompletableFuture.completedFuture(logResponse(InstallResponse.builder()
-      .withStatus(RaftResponse.Status.OK)
-      .build()));
+        .withStatus(RaftResponse.Status.OK)
+        .build()));
   }
 
   @Override

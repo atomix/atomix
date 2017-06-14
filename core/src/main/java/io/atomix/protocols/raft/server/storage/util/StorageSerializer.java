@@ -35,7 +35,7 @@ public interface StorageSerializer<T> {
    * Reads the object from the given input.
    *
    * @param input The input from which to read the object.
-   * @param type The object type.
+   * @param type  The object type.
    * @return The object.
    */
   T readObject(BufferInput input, Class<T> type);

@@ -24,26 +24,26 @@ import io.atomix.util.concurrent.ReferenceManager;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class UnsafeDirectBufferPool extends BufferPool {
-    public UnsafeDirectBufferPool() {
-        super(new DirectBufferFactory());
-    }
+  public UnsafeDirectBufferPool() {
+    super(new DirectBufferFactory());
+  }
 
+  @Override
+  public void release(Buffer reference) {
+    reference.rewind();
+    super.release(reference);
+  }
+
+  /**
+   * Direct buffer factory.
+   */
+  private static class DirectBufferFactory implements ReferenceFactory<Buffer> {
     @Override
-    public void release(Buffer reference) {
-        reference.rewind();
-        super.release(reference);
+    public Buffer createReference(ReferenceManager<Buffer> manager) {
+      UnsafeDirectBuffer buffer = new UnsafeDirectBuffer(UnsafeDirectBytes.allocate(1024), manager);
+      buffer.reset(0, 1024, Long.MAX_VALUE);
+      return buffer;
     }
-
-    /**
-     * Direct buffer factory.
-     */
-    private static class DirectBufferFactory implements ReferenceFactory<Buffer> {
-        @Override
-        public Buffer createReference(ReferenceManager<Buffer> manager) {
-            UnsafeDirectBuffer buffer = new UnsafeDirectBuffer(UnsafeDirectBytes.allocate(1024), manager);
-            buffer.reset(0, 1024, Long.MAX_VALUE);
-            return buffer;
-        }
-    }
+  }
 
 }

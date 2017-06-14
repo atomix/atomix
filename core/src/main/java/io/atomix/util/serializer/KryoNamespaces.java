@@ -77,109 +77,109 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public final class KryoNamespaces {
 
-    public static final int BASIC_MAX_SIZE = 50;
-    public static final KryoNamespace BASIC = KryoNamespace.newBuilder()
-            .nextId(KryoNamespace.FLOATING_ID)
-            .register(byte[].class)
-            .register(AtomicBoolean.class)
-            .register(AtomicInteger.class)
-            .register(AtomicLong.class)
-            .register(Collections.unmodifiableSet(Collections.emptySet()).getClass())
-            .register(HashMap.class)
-            .register(ConcurrentHashMap.class)
-            .register(CopyOnWriteArraySet.class)
-            .register(ArrayList.class,
-                      LinkedList.class,
-                      HashSet.class,
-                      LinkedHashSet.class
-            )
-            .register(HashMultiset.class)
-            .register(Maps.immutableEntry("a", "b").getClass())
-            .register(Collections.singletonList(1).getClass())
-            .register(Duration.class)
-            .register(Collections.emptySet().getClass())
-            .register(Optional.class)
-            .register(Collections.emptyList().getClass())
-            .register(Collections.singleton(Object.class).getClass())
-            .register(int[].class)
-            .register(long[].class)
-            .register(short[].class)
-            .register(double[].class)
-            .register(float[].class)
-            .register(char[].class)
-            .register(String[].class)
-            .register(boolean[].class)
-            .build("BASIC");
+  public static final int BASIC_MAX_SIZE = 50;
+  public static final KryoNamespace BASIC = KryoNamespace.newBuilder()
+      .nextId(KryoNamespace.FLOATING_ID)
+      .register(byte[].class)
+      .register(AtomicBoolean.class)
+      .register(AtomicInteger.class)
+      .register(AtomicLong.class)
+      .register(Collections.unmodifiableSet(Collections.emptySet()).getClass())
+      .register(HashMap.class)
+      .register(ConcurrentHashMap.class)
+      .register(CopyOnWriteArraySet.class)
+      .register(ArrayList.class,
+          LinkedList.class,
+          HashSet.class,
+          LinkedHashSet.class
+      )
+      .register(HashMultiset.class)
+      .register(Maps.immutableEntry("a", "b").getClass())
+      .register(Collections.singletonList(1).getClass())
+      .register(Duration.class)
+      .register(Collections.emptySet().getClass())
+      .register(Optional.class)
+      .register(Collections.emptyList().getClass())
+      .register(Collections.singleton(Object.class).getClass())
+      .register(int[].class)
+      .register(long[].class)
+      .register(short[].class)
+      .register(double[].class)
+      .register(float[].class)
+      .register(char[].class)
+      .register(String[].class)
+      .register(boolean[].class)
+      .build("BASIC");
 
-    /**
-     * KryoNamespace which can serialize API bundle classes.
-     */
-    public static final int API_MAX_SIZE = 499;
-    public static final KryoNamespace API = KryoNamespace.newBuilder()
-            .nextId(KryoNamespace.INITIAL_ID)
-            .register(BASIC)
-            .nextId(KryoNamespace.INITIAL_ID + BASIC_MAX_SIZE)
-            .register(
-                    Node.State.class,
-                    NodeId.class,
-                    PartitionId.class,
-                    Version.class,
-                    Versioned.class,
-                    Timestamp.class,
-                    WallClock.class,
-                    LogicalClock.class,
-                    VectorClock.class,
-                    WallClockTimestamp.class,
-                    LogicalTimestamp.class,
-                    VectorTimestamp.class
-            )
-            .build("API");
+  /**
+   * KryoNamespace which can serialize API bundle classes.
+   */
+  public static final int API_MAX_SIZE = 499;
+  public static final KryoNamespace API = KryoNamespace.newBuilder()
+      .nextId(KryoNamespace.INITIAL_ID)
+      .register(BASIC)
+      .nextId(KryoNamespace.INITIAL_ID + BASIC_MAX_SIZE)
+      .register(
+          Node.State.class,
+          NodeId.class,
+          PartitionId.class,
+          Version.class,
+          Versioned.class,
+          Timestamp.class,
+          WallClock.class,
+          LogicalClock.class,
+          VectorClock.class,
+          WallClockTimestamp.class,
+          LogicalTimestamp.class,
+          VectorTimestamp.class
+      )
+      .build("API");
 
-    public static final KryoNamespace RAFT = KryoNamespace.newBuilder()
-            .nextId(KryoNamespace.INITIAL_ID)
-            .register(BASIC)
-            .nextId(KryoNamespace.INITIAL_ID + BASIC_MAX_SIZE)
-            .register(
-                    OpenSessionRequest.class,
-                    OpenSessionResponse.class,
-                    CloseSessionRequest.class,
-                    CloseSessionResponse.class,
-                    KeepAliveRequest.class,
-                    KeepAliveResponse.class,
-                    CommandRequest.class,
-                    CommandResponse.class,
-                    QueryRequest.class,
-                    QueryResponse.class,
-                    PublishRequest.class,
-                    ResetRequest.class,
-                    MetadataRequest.class,
-                    MetadataResponse.class,
-                    JoinRequest.class,
-                    JoinResponse.class,
-                    LeaveRequest.class,
-                    LeaveResponse.class,
-                    ConfigureRequest.class,
-                    ConfigureResponse.class,
-                    ReconfigureRequest.class,
-                    ReconfigureResponse.class,
-                    InstallRequest.class,
-                    InstallResponse.class,
-                    PollRequest.class,
-                    PollResponse.class,
-                    VoteRequest.class,
-                    VoteResponse.class,
-                    AppendRequest.class,
-                    AppendResponse.class,
-                    Configuration.class
-            )
-            .build();
+  public static final KryoNamespace RAFT = KryoNamespace.newBuilder()
+      .nextId(KryoNamespace.INITIAL_ID)
+      .register(BASIC)
+      .nextId(KryoNamespace.INITIAL_ID + BASIC_MAX_SIZE)
+      .register(
+          OpenSessionRequest.class,
+          OpenSessionResponse.class,
+          CloseSessionRequest.class,
+          CloseSessionResponse.class,
+          KeepAliveRequest.class,
+          KeepAliveResponse.class,
+          CommandRequest.class,
+          CommandResponse.class,
+          QueryRequest.class,
+          QueryResponse.class,
+          PublishRequest.class,
+          ResetRequest.class,
+          MetadataRequest.class,
+          MetadataResponse.class,
+          JoinRequest.class,
+          JoinResponse.class,
+          LeaveRequest.class,
+          LeaveResponse.class,
+          ConfigureRequest.class,
+          ConfigureResponse.class,
+          ReconfigureRequest.class,
+          ReconfigureResponse.class,
+          InstallRequest.class,
+          InstallResponse.class,
+          PollRequest.class,
+          PollResponse.class,
+          VoteRequest.class,
+          VoteResponse.class,
+          AppendRequest.class,
+          AppendResponse.class,
+          Configuration.class
+      )
+      .build();
 
-    /**
-     * Kryo registration Id for user custom registration.
-     */
-    public static final int BEGIN_USER_CUSTOM_ID = API_MAX_SIZE + 1;
+  /**
+   * Kryo registration Id for user custom registration.
+   */
+  public static final int BEGIN_USER_CUSTOM_ID = API_MAX_SIZE + 1;
 
-    // not to be instantiated
-    private KryoNamespaces() {
-    }
+  // not to be instantiated
+  private KryoNamespaces() {
+  }
 }

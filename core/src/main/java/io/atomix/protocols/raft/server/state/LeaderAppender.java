@@ -230,8 +230,8 @@ final class LeaderAppender extends AbstractAppender {
   protected boolean hasMoreEntries(MemberState member) {
     // If the member's nextIndex is an entry in the local log then more entries can be sent.
     return member.getMember().type() != RaftMember.Type.RESERVE
-      && member.getMember().type() != RaftMember.Type.PASSIVE
-      && member.getNextIndex() <= context.getLogWriter().lastIndex();
+        && member.getMember().type() != RaftMember.Type.PASSIVE
+        && member.getNextIndex() <= context.getLogWriter().lastIndex();
   }
 
   /**
@@ -244,7 +244,7 @@ final class LeaderAppender extends AbstractAppender {
   private long heartbeatTime() {
     int quorumIndex = quorumIndex();
     if (quorumIndex >= 0) {
-      return context.getClusterState().getActiveMemberStates((m1, m2)-> Long.compare(m2.getHeartbeatTime(), m1.getHeartbeatTime())).get(quorumIndex).getHeartbeatTime();
+      return context.getClusterState().getActiveMemberStates((m1, m2) -> Long.compare(m2.getHeartbeatTime(), m1.getHeartbeatTime())).get(quorumIndex).getHeartbeatTime();
     }
     return System.currentTimeMillis();
   }
@@ -308,7 +308,7 @@ final class LeaderAppender extends AbstractAppender {
     // to the replica. This will allow us to determine the median index
     // for all known replicated entries across all cluster members.
     List<MemberState> members = context.getClusterState().getActiveMemberStates((m1, m2) ->
-      Long.compare(m2.getMatchIndex() != 0 ? m2.getMatchIndex() : 0L, m1.getMatchIndex() != 0 ? m1.getMatchIndex() : 0L));
+        Long.compare(m2.getMatchIndex() != 0 ? m2.getMatchIndex() : 0L, m1.getMatchIndex() != 0 ? m1.getMatchIndex() : 0L));
 
     // If the active members list is empty (a configuration change occurred between an append request/response)
     // ensure all commit futures are completed and cleared.

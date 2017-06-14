@@ -24,14 +24,14 @@ import io.atomix.util.memory.HeapMemory;
  */
 public class UnpooledHeapAllocator extends UnpooledAllocator {
 
-    @Override
-    protected long maxCapacity() {
-        return HeapMemory.MAX_SIZE;
-    }
+  @Override
+  protected long maxCapacity() {
+    return HeapMemory.MAX_SIZE;
+  }
 
-    @Override
-    public Buffer allocate(long initialCapacity, long maxCapacity) {
-        return HeapBuffer.allocate(initialCapacity, maxCapacity);
-    }
+  @Override
+  public Buffer allocate(long initialCapacity, long maxCapacity) {
+    return HeapBuffer.allocate(initialCapacity, maxCapacity);
+  }
 
 }

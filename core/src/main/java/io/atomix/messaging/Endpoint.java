@@ -26,48 +26,48 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Representation of a TCP/UDP communication end point.
  */
 public final class Endpoint {
-    private final int port;
-    private final InetAddress ip;
+  private final int port;
+  private final InetAddress ip;
 
-    public Endpoint(InetAddress host, int port) {
-        this.ip = checkNotNull(host);
-        this.port = port;
-    }
+  public Endpoint(InetAddress host, int port) {
+    this.ip = checkNotNull(host);
+    this.port = port;
+  }
 
-    public InetAddress host() {
-        return ip;
-    }
+  public InetAddress host() {
+    return ip;
+  }
 
-    public int port() {
-        return port;
-    }
+  public int port() {
+    return port;
+  }
 
-    @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(getClass())
-                .add("ip", ip)
-                .add("port", port)
-                .toString();
-    }
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(getClass())
+        .add("ip", ip)
+        .add("port", port)
+        .toString();
+  }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(ip, port);
-    }
+  @Override
+  public int hashCode() {
+    return Objects.hash(ip, port);
+  }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        Endpoint that = (Endpoint) obj;
-        return this.port == that.port &&
-                Objects.equals(this.ip, that.ip);
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
     }
+    if (obj == null) {
+      return false;
+    }
+    if (getClass() != obj.getClass()) {
+      return false;
+    }
+    Endpoint that = (Endpoint) obj;
+    return this.port == that.port &&
+        Objects.equals(this.ip, that.ip);
+  }
 }

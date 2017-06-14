@@ -23,15 +23,17 @@ import java.util.Collection;
  */
 public interface Partition {
 
-    /**
-     * Returns the partition identifier.
-     * @return partition identifier
-     */
-    PartitionId getId();
+  /**
+   * Returns the partition identifier.
+   *
+   * @return partition identifier
+   */
+  PartitionId getId();
 
-    /**
-     * Returns the controller nodes that are members of this partition.
-     * @return collection of controller node identifiers
-     */
-    Collection<NodeId> getMembers();
+  /**
+   * Returns the controller nodes that are members of this partition.
+   *
+   * @return collection of controller node identifiers
+   */
+  Collection<NodeId> getMembers();
 }

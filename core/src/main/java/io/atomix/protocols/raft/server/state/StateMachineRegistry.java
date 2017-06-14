@@ -41,7 +41,7 @@ public class StateMachineRegistry {
   /**
    * Registers a new state machine type.
    *
-   * @param type The state machine type to register.
+   * @param type    The state machine type to register.
    * @param factory The state machine factory.
    * @return The state machine registry.
    */

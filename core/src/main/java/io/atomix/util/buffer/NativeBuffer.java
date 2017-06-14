@@ -25,19 +25,19 @@ import io.atomix.util.memory.NativeMemory;
  */
 public abstract class NativeBuffer extends AbstractBuffer {
 
-    protected NativeBuffer(NativeBytes bytes, ReferenceManager<Buffer> referenceManager) {
-        super(bytes, referenceManager);
-    }
+  protected NativeBuffer(NativeBytes bytes, ReferenceManager<Buffer> referenceManager) {
+    super(bytes, referenceManager);
+  }
 
-    protected NativeBuffer(NativeBytes bytes, long offset, long initialCapacity, long maxCapacity) {
-        super(bytes, offset, initialCapacity, maxCapacity, null);
-    }
+  protected NativeBuffer(NativeBytes bytes, long offset, long initialCapacity, long maxCapacity) {
+    super(bytes, offset, initialCapacity, maxCapacity, null);
+  }
 
-    @Override
-    protected void compact(long from, long to, long length) {
-        NativeMemory memory = ((NativeBytes) bytes).memory;
-        memory.unsafe().copyMemory(memory.address(from), memory.address(to), length);
-        memory.unsafe().setMemory(memory.address(from), length, (byte) 0);
-    }
+  @Override
+  protected void compact(long from, long to, long length) {
+    NativeMemory memory = ((NativeBytes) bytes).memory;
+    memory.unsafe().copyMemory(memory.address(from), memory.address(to), length);
+    memory.unsafe().setMemory(memory.address(from), length, (byte) 0);
+  }
 
 }

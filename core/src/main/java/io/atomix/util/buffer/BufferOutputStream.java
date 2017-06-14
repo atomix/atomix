@@ -22,35 +22,35 @@ import java.io.OutputStream;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class BufferOutputStream extends OutputStream {
-    private final BufferOutput<?> buffer;
+  private final BufferOutput<?> buffer;
 
-    public BufferOutputStream(BufferOutput<?> buffer) {
-        this.buffer = buffer;
-    }
+  public BufferOutputStream(BufferOutput<?> buffer) {
+    this.buffer = buffer;
+  }
 
-    @Override
-    public void write(int b) throws IOException {
-        buffer.writeByte(b);
-    }
+  @Override
+  public void write(int b) throws IOException {
+    buffer.writeByte(b);
+  }
 
-    @Override
-    public void write(byte[] b) throws IOException {
-        buffer.write(b);
-    }
+  @Override
+  public void write(byte[] b) throws IOException {
+    buffer.write(b);
+  }
 
-    @Override
-    public void write(byte[] b, int off, int len) throws IOException {
-        buffer.write(b, off, len);
-    }
+  @Override
+  public void write(byte[] b, int off, int len) throws IOException {
+    buffer.write(b, off, len);
+  }
 
-    @Override
-    public void flush() throws IOException {
-        buffer.flush();
-    }
+  @Override
+  public void flush() throws IOException {
+    buffer.flush();
+  }
 
-    @Override
-    public void close() throws IOException {
-        buffer.close();
-    }
+  @Override
+  public void close() throws IOException {
+    buffer.close();
+  }
 
 }

@@ -25,9 +25,8 @@ package io.atomix.protocols.raft.server.storage;
  * {@link io.atomix.catalyst.buffer.Buffer} to which to write entries. See the specific storage levels for more
  * information.
  *
- * @see Storage
- *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
+ * @see Storage
  */
 public enum StorageLevel {
 

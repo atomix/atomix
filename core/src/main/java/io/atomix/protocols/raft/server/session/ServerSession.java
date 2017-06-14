@@ -49,61 +49,61 @@ import java.util.function.Consumer;
  */
 public interface ServerSession {
 
-    /**
-     * Returns the session identifier.
-     *
-     * @return The session identifier.
-     */
-    long id();
+  /**
+   * Returns the session identifier.
+   *
+   * @return The session identifier.
+   */
+  long id();
 
-    /**
-     * Returns the session state.
-     *
-     * @return The session state.
-     */
-    State state();
+  /**
+   * Returns the session state.
+   *
+   * @return The session state.
+   */
+  State state();
 
-    /**
-     * Adds a state change listener to the session.
-     *
-     * @param listener the state change listener to add
-     */
-    void addStateChangeListener(Consumer<State> listener);
+  /**
+   * Adds a state change listener to the session.
+   *
+   * @param listener the state change listener to add
+   */
+  void addStateChangeListener(Consumer<State> listener);
 
-    /**
-     * Removes a state change listener from the session.
-     *
-     * @param listener the state change listener to remove
-     */
-    void removeStateChangeListener(Consumer<State> listener);
+  /**
+   * Removes a state change listener from the session.
+   *
+   * @param listener the state change listener to remove
+   */
+  void removeStateChangeListener(Consumer<State> listener);
 
-    /**
-     * Publishes a {@code null} named event to the session.
-     *
-     * @param event The event to publish.
-     * @throws NullPointerException   If {@code event} is {@code null}
-     * @throws io.atomix.protocols.raft.error.UnknownSessionException If the session is closed
-     */
-    void publish(Object event);
+  /**
+   * Publishes a {@code null} named event to the session.
+   *
+   * @param event The event to publish.
+   * @throws NullPointerException                                   If {@code event} is {@code null}
+   * @throws io.atomix.protocols.raft.error.UnknownSessionException If the session is closed
+   */
+  void publish(Object event);
 
-    /**
-     * Session state enums.
-     */
-    enum State {
-        OPEN(true),
-        SUSPICIOUS(true),
-        EXPIRED(false),
-        CLOSED(false);
+  /**
+   * Session state enums.
+   */
+  enum State {
+    OPEN(true),
+    SUSPICIOUS(true),
+    EXPIRED(false),
+    CLOSED(false);
 
-        private final boolean active;
+    private final boolean active;
 
-        State(boolean active) {
-            this.active = active;
-        }
-
-        public boolean active() {
-            return active;
-        }
+    State(boolean active) {
+      this.active = active;
     }
+
+    public boolean active() {
+      return active;
+    }
+  }
 
 }

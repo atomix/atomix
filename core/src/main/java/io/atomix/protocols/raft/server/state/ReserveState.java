@@ -55,262 +55,262 @@ import java.util.concurrent.CompletableFuture;
  */
 class ReserveState extends InactiveState {
 
-    public ReserveState(ServerContext context) {
-        super(context);
+  public ReserveState(ServerContext context) {
+    super(context);
+  }
+
+  @Override
+  public RaftServer.State type() {
+    return RaftServer.State.RESERVE;
+  }
+
+  @Override
+  public CompletableFuture<ServerState> open() {
+    return super.open().thenRun(() -> {
+      if (type() == RaftServer.State.RESERVE) {
+        context.reset();
+      }
+    }).thenApply(v -> this);
+  }
+
+  @Override
+  public CompletableFuture<MetadataResponse> metadata(MetadataRequest request) {
+    context.checkThread();
+    logRequest(request);
+
+    if (context.getLeader() == null) {
+      return CompletableFuture.completedFuture(logResponse(MetadataResponse.builder()
+          .withStatus(RaftResponse.Status.ERROR)
+          .withError(RaftError.Type.NO_LEADER_ERROR)
+          .build()));
+    } else {
+      return forward(request, context.getProtocolDispatcher()::metadata)
+          .exceptionally(error -> MetadataResponse.builder()
+              .withStatus(RaftResponse.Status.ERROR)
+              .withError(RaftError.Type.NO_LEADER_ERROR)
+              .build())
+          .thenApply(this::logResponse);
     }
+  }
 
-    @Override
-    public RaftServer.State type() {
-        return RaftServer.State.RESERVE;
+  @Override
+  public CompletableFuture<AppendResponse> append(AppendRequest request) {
+    context.checkThread();
+    logRequest(request);
+    updateTermAndLeader(request.term(), request.leader());
+
+    // Update the local commitIndex and globalIndex.
+    context.setCommitIndex(request.commitIndex());
+
+    return CompletableFuture.completedFuture(logResponse(AppendResponse.builder()
+        .withStatus(RaftResponse.Status.OK)
+        .withTerm(context.getTerm())
+        .withSucceeded(true)
+        .withLogIndex(0)
+        .build()));
+  }
+
+  @Override
+  public CompletableFuture<PollResponse> poll(PollRequest request) {
+    context.checkThread();
+    logRequest(request);
+
+    return CompletableFuture.completedFuture(logResponse(PollResponse.builder()
+        .withStatus(RaftResponse.Status.ERROR)
+        .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
+        .build()));
+  }
+
+  @Override
+  public CompletableFuture<VoteResponse> vote(VoteRequest request) {
+    context.checkThread();
+    logRequest(request);
+    updateTermAndLeader(request.term(), null);
+
+    return CompletableFuture.completedFuture(logResponse(VoteResponse.builder()
+        .withStatus(RaftResponse.Status.ERROR)
+        .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
+        .build()));
+  }
+
+  @Override
+  public CompletableFuture<CommandResponse> command(CommandRequest request) {
+    context.checkThread();
+    logRequest(request);
+
+    if (context.getLeader() == null) {
+      return CompletableFuture.completedFuture(logResponse(CommandResponse.builder()
+          .withStatus(RaftResponse.Status.ERROR)
+          .withError(RaftError.Type.NO_LEADER_ERROR)
+          .build()));
+    } else {
+      return forward(request, context.getProtocolDispatcher()::command)
+          .exceptionally(error -> CommandResponse.builder()
+              .withStatus(RaftResponse.Status.ERROR)
+              .withError(RaftError.Type.NO_LEADER_ERROR)
+              .build())
+          .thenApply(this::logResponse);
     }
+  }
 
-    @Override
-    public CompletableFuture<ServerState> open() {
-        return super.open().thenRun(() -> {
-            if (type() == RaftServer.State.RESERVE) {
-                context.reset();
-            }
-        }).thenApply(v -> this);
+  @Override
+  public CompletableFuture<QueryResponse> query(QueryRequest request) {
+    context.checkThread();
+    logRequest(request);
+
+    if (context.getLeader() == null) {
+      return CompletableFuture.completedFuture(logResponse(QueryResponse.builder()
+          .withStatus(RaftResponse.Status.ERROR)
+          .withError(RaftError.Type.NO_LEADER_ERROR)
+          .build()));
+    } else {
+      return forward(request, context.getProtocolDispatcher()::query)
+          .exceptionally(error -> QueryResponse.builder()
+              .withStatus(RaftResponse.Status.ERROR)
+              .withError(RaftError.Type.NO_LEADER_ERROR)
+              .build())
+          .thenApply(this::logResponse);
     }
+  }
 
-    @Override
-    public CompletableFuture<MetadataResponse> metadata(MetadataRequest request) {
-        context.checkThread();
-        logRequest(request);
+  @Override
+  public CompletableFuture<KeepAliveResponse> keepAlive(KeepAliveRequest request) {
+    context.checkThread();
+    logRequest(request);
 
-        if (context.getLeader() == null) {
-            return CompletableFuture.completedFuture(logResponse(MetadataResponse.builder()
-                    .withStatus(RaftResponse.Status.ERROR)
-                    .withError(RaftError.Type.NO_LEADER_ERROR)
-                    .build()));
-        } else {
-            return forward(request, context.getProtocolDispatcher()::metadata)
-                    .exceptionally(error -> MetadataResponse.builder()
-                            .withStatus(RaftResponse.Status.ERROR)
-                            .withError(RaftError.Type.NO_LEADER_ERROR)
-                            .build())
-                    .thenApply(this::logResponse);
-        }
+    if (context.getLeader() == null) {
+      return CompletableFuture.completedFuture(logResponse(KeepAliveResponse.builder()
+          .withStatus(RaftResponse.Status.ERROR)
+          .withError(RaftError.Type.NO_LEADER_ERROR)
+          .build()));
+    } else {
+      return forward(request, context.getProtocolDispatcher()::keepAlive)
+          .exceptionally(error -> KeepAliveResponse.builder()
+              .withStatus(RaftResponse.Status.ERROR)
+              .withError(RaftError.Type.NO_LEADER_ERROR)
+              .build())
+          .thenApply(this::logResponse);
     }
+  }
 
-    @Override
-    public CompletableFuture<AppendResponse> append(AppendRequest request) {
-        context.checkThread();
-        logRequest(request);
-        updateTermAndLeader(request.term(), request.leader());
+  @Override
+  public CompletableFuture<OpenSessionResponse> openSession(OpenSessionRequest request) {
+    context.checkThread();
+    logRequest(request);
 
-        // Update the local commitIndex and globalIndex.
-        context.setCommitIndex(request.commitIndex());
-
-        return CompletableFuture.completedFuture(logResponse(AppendResponse.builder()
-                .withStatus(RaftResponse.Status.OK)
-                .withTerm(context.getTerm())
-                .withSucceeded(true)
-                .withLogIndex(0)
-                .build()));
+    if (context.getLeader() == null) {
+      return CompletableFuture.completedFuture(logResponse(OpenSessionResponse.builder()
+          .withStatus(RaftResponse.Status.ERROR)
+          .withError(RaftError.Type.NO_LEADER_ERROR)
+          .build()));
+    } else {
+      return forward(request, context.getProtocolDispatcher()::openSession)
+          .exceptionally(error -> OpenSessionResponse.builder()
+              .withStatus(RaftResponse.Status.ERROR)
+              .withError(RaftError.Type.NO_LEADER_ERROR)
+              .build())
+          .thenApply(this::logResponse);
     }
+  }
 
-    @Override
-    public CompletableFuture<PollResponse> poll(PollRequest request) {
-        context.checkThread();
-        logRequest(request);
+  @Override
+  public CompletableFuture<CloseSessionResponse> closeSession(CloseSessionRequest request) {
+    context.checkThread();
+    logRequest(request);
 
-        return CompletableFuture.completedFuture(logResponse(PollResponse.builder()
-                .withStatus(RaftResponse.Status.ERROR)
-                .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
-                .build()));
+    if (context.getLeader() == null) {
+      return CompletableFuture.completedFuture(logResponse(CloseSessionResponse.builder()
+          .withStatus(RaftResponse.Status.ERROR)
+          .withError(RaftError.Type.NO_LEADER_ERROR)
+          .build()));
+    } else {
+      return forward(request, context.getProtocolDispatcher()::closeSession)
+          .exceptionally(error -> CloseSessionResponse.builder()
+              .withStatus(RaftResponse.Status.ERROR)
+              .withError(RaftError.Type.NO_LEADER_ERROR)
+              .build())
+          .thenApply(this::logResponse);
     }
+  }
 
-    @Override
-    public CompletableFuture<VoteResponse> vote(VoteRequest request) {
-        context.checkThread();
-        logRequest(request);
-        updateTermAndLeader(request.term(), null);
+  @Override
+  public CompletableFuture<JoinResponse> join(JoinRequest request) {
+    context.checkThread();
+    logRequest(request);
 
-        return CompletableFuture.completedFuture(logResponse(VoteResponse.builder()
-                .withStatus(RaftResponse.Status.ERROR)
-                .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
-                .build()));
+    if (context.getLeader() == null) {
+      return CompletableFuture.completedFuture(logResponse(JoinResponse.builder()
+          .withStatus(RaftResponse.Status.ERROR)
+          .withError(RaftError.Type.NO_LEADER_ERROR)
+          .build()));
+    } else {
+      return forward(request, context.getProtocolDispatcher()::join)
+          .exceptionally(error -> JoinResponse.builder()
+              .withStatus(RaftResponse.Status.ERROR)
+              .withError(RaftError.Type.NO_LEADER_ERROR)
+              .build())
+          .thenApply(this::logResponse);
     }
+  }
 
-    @Override
-    public CompletableFuture<CommandResponse> command(CommandRequest request) {
-        context.checkThread();
-        logRequest(request);
+  @Override
+  public CompletableFuture<ReconfigureResponse> reconfigure(ReconfigureRequest request) {
+    context.checkThread();
+    logRequest(request);
 
-        if (context.getLeader() == null) {
-            return CompletableFuture.completedFuture(logResponse(CommandResponse.builder()
-                    .withStatus(RaftResponse.Status.ERROR)
-                    .withError(RaftError.Type.NO_LEADER_ERROR)
-                    .build()));
-        } else {
-            return forward(request, context.getProtocolDispatcher()::command)
-                    .exceptionally(error -> CommandResponse.builder()
-                            .withStatus(RaftResponse.Status.ERROR)
-                            .withError(RaftError.Type.NO_LEADER_ERROR)
-                            .build())
-                    .thenApply(this::logResponse);
-        }
+    if (context.getLeader() == null) {
+      return CompletableFuture.completedFuture(logResponse(ReconfigureResponse.builder()
+          .withStatus(RaftResponse.Status.ERROR)
+          .withError(RaftError.Type.NO_LEADER_ERROR)
+          .build()));
+    } else {
+      return forward(request, context.getProtocolDispatcher()::reconfigure)
+          .exceptionally(error -> ReconfigureResponse.builder()
+              .withStatus(RaftResponse.Status.ERROR)
+              .withError(RaftError.Type.NO_LEADER_ERROR)
+              .build())
+          .thenApply(this::logResponse);
     }
+  }
 
-    @Override
-    public CompletableFuture<QueryResponse> query(QueryRequest request) {
-        context.checkThread();
-        logRequest(request);
+  @Override
+  public CompletableFuture<LeaveResponse> leave(LeaveRequest request) {
+    context.checkThread();
+    logRequest(request);
 
-        if (context.getLeader() == null) {
-            return CompletableFuture.completedFuture(logResponse(QueryResponse.builder()
-                    .withStatus(RaftResponse.Status.ERROR)
-                    .withError(RaftError.Type.NO_LEADER_ERROR)
-                    .build()));
-        } else {
-            return forward(request, context.getProtocolDispatcher()::query)
-                    .exceptionally(error -> QueryResponse.builder()
-                            .withStatus(RaftResponse.Status.ERROR)
-                            .withError(RaftError.Type.NO_LEADER_ERROR)
-                            .build())
-                    .thenApply(this::logResponse);
-        }
+    if (context.getLeader() == null) {
+      return CompletableFuture.completedFuture(logResponse(LeaveResponse.builder()
+          .withStatus(RaftResponse.Status.ERROR)
+          .withError(RaftError.Type.NO_LEADER_ERROR)
+          .build()));
+    } else {
+      return forward(request, context.getProtocolDispatcher()::leave)
+          .exceptionally(error -> LeaveResponse.builder()
+              .withStatus(RaftResponse.Status.ERROR)
+              .withError(RaftError.Type.NO_LEADER_ERROR)
+              .build())
+          .thenApply(this::logResponse);
     }
+  }
 
-    @Override
-    public CompletableFuture<KeepAliveResponse> keepAlive(KeepAliveRequest request) {
-        context.checkThread();
-        logRequest(request);
+  @Override
+  public CompletableFuture<InstallResponse> install(InstallRequest request) {
+    context.checkThread();
+    logRequest(request);
 
-        if (context.getLeader() == null) {
-            return CompletableFuture.completedFuture(logResponse(KeepAliveResponse.builder()
-                    .withStatus(RaftResponse.Status.ERROR)
-                    .withError(RaftError.Type.NO_LEADER_ERROR)
-                    .build()));
-        } else {
-            return forward(request, context.getProtocolDispatcher()::keepAlive)
-                    .exceptionally(error -> KeepAliveResponse.builder()
-                            .withStatus(RaftResponse.Status.ERROR)
-                            .withError(RaftError.Type.NO_LEADER_ERROR)
-                            .build())
-                    .thenApply(this::logResponse);
-        }
-    }
+    return CompletableFuture.completedFuture(logResponse(InstallResponse.builder()
+        .withStatus(RaftResponse.Status.ERROR)
+        .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
+        .build()));
+  }
 
-    @Override
-    public CompletableFuture<OpenSessionResponse> openSession(OpenSessionRequest request) {
-        context.checkThread();
-        logRequest(request);
-
-        if (context.getLeader() == null) {
-            return CompletableFuture.completedFuture(logResponse(OpenSessionResponse.builder()
-                    .withStatus(RaftResponse.Status.ERROR)
-                    .withError(RaftError.Type.NO_LEADER_ERROR)
-                    .build()));
-        } else {
-            return forward(request, context.getProtocolDispatcher()::openSession)
-                    .exceptionally(error -> OpenSessionResponse.builder()
-                            .withStatus(RaftResponse.Status.ERROR)
-                            .withError(RaftError.Type.NO_LEADER_ERROR)
-                            .build())
-                    .thenApply(this::logResponse);
-        }
-    }
-
-    @Override
-    public CompletableFuture<CloseSessionResponse> closeSession(CloseSessionRequest request) {
-        context.checkThread();
-        logRequest(request);
-
-        if (context.getLeader() == null) {
-            return CompletableFuture.completedFuture(logResponse(CloseSessionResponse.builder()
-                    .withStatus(RaftResponse.Status.ERROR)
-                    .withError(RaftError.Type.NO_LEADER_ERROR)
-                    .build()));
-        } else {
-            return forward(request, context.getProtocolDispatcher()::closeSession)
-                    .exceptionally(error -> CloseSessionResponse.builder()
-                            .withStatus(RaftResponse.Status.ERROR)
-                            .withError(RaftError.Type.NO_LEADER_ERROR)
-                            .build())
-                    .thenApply(this::logResponse);
-        }
-    }
-
-    @Override
-    public CompletableFuture<JoinResponse> join(JoinRequest request) {
-        context.checkThread();
-        logRequest(request);
-
-        if (context.getLeader() == null) {
-            return CompletableFuture.completedFuture(logResponse(JoinResponse.builder()
-                    .withStatus(RaftResponse.Status.ERROR)
-                    .withError(RaftError.Type.NO_LEADER_ERROR)
-                    .build()));
-        } else {
-            return forward(request, context.getProtocolDispatcher()::join)
-                    .exceptionally(error -> JoinResponse.builder()
-                            .withStatus(RaftResponse.Status.ERROR)
-                            .withError(RaftError.Type.NO_LEADER_ERROR)
-                            .build())
-                    .thenApply(this::logResponse);
-        }
-    }
-
-    @Override
-    public CompletableFuture<ReconfigureResponse> reconfigure(ReconfigureRequest request) {
-        context.checkThread();
-        logRequest(request);
-
-        if (context.getLeader() == null) {
-            return CompletableFuture.completedFuture(logResponse(ReconfigureResponse.builder()
-                    .withStatus(RaftResponse.Status.ERROR)
-                    .withError(RaftError.Type.NO_LEADER_ERROR)
-                    .build()));
-        } else {
-            return forward(request, context.getProtocolDispatcher()::reconfigure)
-                    .exceptionally(error -> ReconfigureResponse.builder()
-                            .withStatus(RaftResponse.Status.ERROR)
-                            .withError(RaftError.Type.NO_LEADER_ERROR)
-                            .build())
-                    .thenApply(this::logResponse);
-        }
-    }
-
-    @Override
-    public CompletableFuture<LeaveResponse> leave(LeaveRequest request) {
-        context.checkThread();
-        logRequest(request);
-
-        if (context.getLeader() == null) {
-            return CompletableFuture.completedFuture(logResponse(LeaveResponse.builder()
-                    .withStatus(RaftResponse.Status.ERROR)
-                    .withError(RaftError.Type.NO_LEADER_ERROR)
-                    .build()));
-        } else {
-            return forward(request, context.getProtocolDispatcher()::leave)
-                    .exceptionally(error -> LeaveResponse.builder()
-                            .withStatus(RaftResponse.Status.ERROR)
-                            .withError(RaftError.Type.NO_LEADER_ERROR)
-                            .build())
-                    .thenApply(this::logResponse);
-        }
-    }
-
-    @Override
-    public CompletableFuture<InstallResponse> install(InstallRequest request) {
-        context.checkThread();
-        logRequest(request);
-
-        return CompletableFuture.completedFuture(logResponse(InstallResponse.builder()
-                .withStatus(RaftResponse.Status.ERROR)
-                .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
-                .build()));
-    }
-
-    @Override
-    public CompletableFuture<Void> close() {
-        return super.close().thenRun(() -> {
-            if (type() == RaftServer.State.RESERVE) {
-                context.reset();
-            }
-        });
-    }
+  @Override
+  public CompletableFuture<Void> close() {
+    return super.close().thenRun(() -> {
+      if (type() == RaftServer.State.RESERVE) {
+        context.reset();
+      }
+    });
+  }
 
 }

@@ -25,14 +25,14 @@ import io.atomix.util.memory.HeapMemory;
  */
 public class PooledHeapAllocator extends PooledAllocator {
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    public PooledHeapAllocator() {
-        super((ReferencePool) new UnsafeHeapBufferPool());
-    }
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  public PooledHeapAllocator() {
+    super((ReferencePool) new UnsafeHeapBufferPool());
+  }
 
-    @Override
-    protected long maxCapacity() {
-        return HeapMemory.MAX_SIZE;
-    }
+  @Override
+  protected long maxCapacity() {
+    return HeapMemory.MAX_SIZE;
+  }
 
 }

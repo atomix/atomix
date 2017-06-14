@@ -21,14 +21,14 @@ package io.atomix.time;
  * An epoch is a specific type of {@link LogicalTimestamp} that represents a long term section of logical time.
  */
 public class Epoch extends LogicalTimestamp {
-    
-    /**
-     * Creates a new epoch timestamp.
-     *
-     * @param value the epoch value
-     */
-    public Epoch(long value) {
-        super(value);
-    }
+
+  /**
+   * Creates a new epoch timestamp.
+   *
+   * @param value the epoch value
+   */
+  public Epoch(long value) {
+    super(value);
+  }
 
 }

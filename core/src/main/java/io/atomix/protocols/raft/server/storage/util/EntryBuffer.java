@@ -46,7 +46,7 @@ public class EntryBuffer {
    * Looks up an entry in the buffer.
    *
    * @param index The entry index.
-   * @param <T> The entry type.
+   * @param <T>   The entry type.
    * @return The entry or {@code null} if the entry is not present in the index.
    */
   @SuppressWarnings("unchecked")

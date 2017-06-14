@@ -28,66 +28,66 @@ import java.util.concurrent.CopyOnWriteArraySet;
  * Address selectors.
  */
 public final class NodeSelectorManager {
-    private final Set<NodeSelector> selectors = new CopyOnWriteArraySet<>();
-    private volatile NodeId leader;
-    private volatile Collection<NodeId> servers = Collections.emptyList();
+  private final Set<NodeSelector> selectors = new CopyOnWriteArraySet<>();
+  private volatile NodeId leader;
+  private volatile Collection<NodeId> servers = Collections.emptyList();
 
-    /**
-     * Returns the current cluster leader.
-     *
-     * @return The current cluster leader.
-     */
-    public NodeId leader() {
-        return leader;
-    }
+  /**
+   * Returns the current cluster leader.
+   *
+   * @return The current cluster leader.
+   */
+  public NodeId leader() {
+    return leader;
+  }
 
-    /**
-     * Returns the set of servers in the cluster.
-     *
-     * @return The set of servers in the cluster.
-     */
-    public Collection<NodeId> servers() {
-        return servers;
-    }
+  /**
+   * Returns the set of servers in the cluster.
+   *
+   * @return The set of servers in the cluster.
+   */
+  public Collection<NodeId> servers() {
+    return servers;
+  }
 
-    /**
-     * Creates a new address selector.
-     *
-     * @param selectionStrategy The server selection strategy.
-     * @return A new address selector.
-     */
-    public NodeSelector createSelector(CommunicationStrategy selectionStrategy) {
-        NodeSelector selector = new NodeSelector(leader, servers, selectionStrategy, this);
-        selectors.add(selector);
-        return selector;
-    }
+  /**
+   * Creates a new address selector.
+   *
+   * @param selectionStrategy The server selection strategy.
+   * @return A new address selector.
+   */
+  public NodeSelector createSelector(CommunicationStrategy selectionStrategy) {
+    NodeSelector selector = new NodeSelector(leader, servers, selectionStrategy, this);
+    selectors.add(selector);
+    return selector;
+  }
 
-    /**
-     * Resets all child selectors.
-     */
-    public void resetAll() {
-        selectors.forEach(NodeSelector::reset);
-    }
+  /**
+   * Resets all child selectors.
+   */
+  public void resetAll() {
+    selectors.forEach(NodeSelector::reset);
+  }
 
-    /**
-     * Resets all child selectors.
-     *
-     * @param leader  The current cluster leader.
-     * @param servers The collection of all active servers.
-     */
-    public void resetAll(NodeId leader, Collection<NodeId> servers) {
-        this.leader = leader;
-        this.servers = new LinkedList<>(servers);
-        selectors.forEach(s -> s.reset(leader, servers));
-    }
+  /**
+   * Resets all child selectors.
+   *
+   * @param leader  The current cluster leader.
+   * @param servers The collection of all active servers.
+   */
+  public void resetAll(NodeId leader, Collection<NodeId> servers) {
+    this.leader = leader;
+    this.servers = new LinkedList<>(servers);
+    selectors.forEach(s -> s.reset(leader, servers));
+  }
 
-    /**
-     * Removes the given selector.
-     *
-     * @param selector The address selector to remove.
-     */
-    void remove(NodeSelector selector) {
-        selectors.remove(selector);
-    }
+  /**
+   * Removes the given selector.
+   *
+   * @param selector The address selector to remove.
+   */
+  void remove(NodeSelector selector) {
+    selectors.remove(selector);
+  }
 
 }

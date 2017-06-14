@@ -21,36 +21,36 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * Logical clock.
  */
 public class LogicalClock implements Clock<LogicalTimestamp> {
-    private LogicalTimestamp currentTimestamp;
-    
-    public LogicalClock() {
-        this(new LogicalTimestamp(0));
+  private LogicalTimestamp currentTimestamp;
+
+  public LogicalClock() {
+    this(new LogicalTimestamp(0));
+  }
+
+  public LogicalClock(LogicalTimestamp currentTimestamp) {
+    this.currentTimestamp = currentTimestamp;
+  }
+
+  @Override
+  public LogicalTimestamp time() {
+    return currentTimestamp;
+  }
+
+  /**
+   * Updates the clock using the given timestamp.
+   *
+   * @param timestamp the timestamp with which to update the clock
+   */
+  public void update(LogicalTimestamp timestamp) {
+    if (timestamp.value() > currentTimestamp.value()) {
+      this.currentTimestamp = timestamp;
     }
-    
-    public LogicalClock(LogicalTimestamp currentTimestamp) {
-        this.currentTimestamp = currentTimestamp;
-    }
-    
-    @Override
-    public LogicalTimestamp time() {
-        return currentTimestamp;
-    }
-    
-    /**
-     * Updates the clock using the given timestamp.
-     *
-     * @param timestamp the timestamp with which to update the clock
-     */
-    public void update(LogicalTimestamp timestamp) {
-        if (timestamp.value() > currentTimestamp.value()) {
-            this.currentTimestamp = timestamp;
-        }
-    }
-    
-    @Override
-    public String toString() {
-        return toStringHelper(this)
-                .add("time", time())
-                .toString();
-    }
+  }
+
+  @Override
+  public String toString() {
+    return toStringHelper(this)
+        .add("time", time())
+        .toString();
+  }
 }

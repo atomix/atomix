@@ -167,182 +167,182 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @see StateMachineExecutor
  */
 public abstract class RaftStateMachine implements Snapshottable {
-    protected final Serializer serializer;
-    protected StateMachineExecutor executor;
-    protected StateMachineContext context;
-    protected Clock clock;
-    protected Sessions sessions;
+  protected final Serializer serializer;
+  protected StateMachineExecutor executor;
+  protected StateMachineContext context;
+  protected Clock clock;
+  protected Sessions sessions;
 
-    protected RaftStateMachine(Serializer serializer) {
-        this.serializer = serializer;
+  protected RaftStateMachine(Serializer serializer) {
+    this.serializer = serializer;
+  }
+
+  /**
+   * Returns the state machine serializer.
+   *
+   * @return The state machine serializer.
+   */
+  public Serializer serializer() {
+    return serializer;
+  }
+
+  /**
+   * Initializes the state machine.
+   *
+   * @param executor The state machine executor.
+   * @throws NullPointerException if {@code context} is null
+   */
+  public void init(StateMachineExecutor executor) {
+    this.executor = checkNotNull(executor, "executor cannot be null");
+    this.context = executor.context();
+    this.clock = context.clock();
+    this.sessions = context.sessions();
+    if (this instanceof SessionListener) {
+      executor.context().sessions().addListener((SessionListener) this);
     }
+    configure(executor);
+  }
 
-    /**
-     * Returns the state machine serializer.
-     *
-     * @return The state machine serializer.
-     */
-    public Serializer serializer() {
-        return serializer;
+  /**
+   * Configures the state machine.
+   * <p>
+   * By default, this method will configure state machine operations by extracting public methods with
+   * a single {@link RaftCommit} parameter via reflection. Override this method to explicitly register
+   * state machine operations via the provided {@link StateMachineExecutor}.
+   *
+   * @param executor The state machine executor.
+   */
+  protected void configure(StateMachineExecutor executor) {
+    registerOperations();
+  }
+
+  /**
+   * Closes the state machine.
+   */
+  public void close() {
+
+  }
+
+  /**
+   * Registers operations for the class.
+   */
+  private void registerOperations() {
+    Class<?> type = getClass();
+    for (Method method : type.getMethods()) {
+      if (isOperationMethod(method)) {
+        registerMethod(method);
+      }
     }
+  }
 
-    /**
-     * Initializes the state machine.
-     *
-     * @param executor The state machine executor.
-     * @throws NullPointerException if {@code context} is null
-     */
-    public void init(StateMachineExecutor executor) {
-        this.executor = checkNotNull(executor, "executor cannot be null");
-        this.context = executor.context();
-        this.clock = context.clock();
-        this.sessions = context.sessions();
-        if (this instanceof SessionListener) {
-            executor.context().sessions().addListener((SessionListener) this);
-        }
-        configure(executor);
+  /**
+   * Returns a boolean value indicating whether the given method is an operation method.
+   */
+  private boolean isOperationMethod(Method method) {
+    Class<?>[] paramTypes = method.getParameterTypes();
+    return paramTypes.length == 1 && paramTypes[0] == RaftCommit.class;
+  }
+
+  /**
+   * Registers an operation for the given method.
+   */
+  private void registerMethod(Method method) {
+    Type genericType = method.getGenericParameterTypes()[0];
+    Class<?> argumentType = resolveArgument(genericType);
+    if (argumentType != null && RaftOperation.class.isAssignableFrom(argumentType)) {
+      registerMethod(argumentType, method);
     }
+  }
 
-    /**
-     * Configures the state machine.
-     * <p>
-     * By default, this method will configure state machine operations by extracting public methods with
-     * a single {@link RaftCommit} parameter via reflection. Override this method to explicitly register
-     * state machine operations via the provided {@link StateMachineExecutor}.
-     *
-     * @param executor The state machine executor.
-     */
-    protected void configure(StateMachineExecutor executor) {
-        registerOperations();
+  /**
+   * Resolves the generic argument for the given type.
+   */
+  private Class<?> resolveArgument(Type type) {
+    if (type instanceof ParameterizedType) {
+      ParameterizedType paramType = (ParameterizedType) type;
+      return resolveClass(paramType.getActualTypeArguments()[0]);
+    } else if (type instanceof TypeVariable) {
+      return resolveClass(type);
+    } else if (type instanceof Class) {
+      TypeVariable<?>[] typeParams = ((Class<?>) type).getTypeParameters();
+      return resolveClass(typeParams[0]);
     }
+    return null;
+  }
 
-    /**
-     * Closes the state machine.
-     */
-    public void close() {
-
+  /**
+   * Resolves the generic class for the given type.
+   */
+  private Class<?> resolveClass(Type type) {
+    if (type instanceof Class) {
+      return (Class<?>) type;
+    } else if (type instanceof ParameterizedType) {
+      return resolveClass(((ParameterizedType) type).getRawType());
+    } else if (type instanceof WildcardType) {
+      Type[] bounds = ((WildcardType) type).getUpperBounds();
+      if (bounds.length > 0) {
+        return (Class<?>) bounds[0];
+      }
     }
+    return null;
+  }
 
-    /**
-     * Registers operations for the class.
-     */
-    private void registerOperations() {
-        Class<?> type = getClass();
-        for (Method method : type.getMethods()) {
-            if (isOperationMethod(method)) {
-                registerMethod(method);
-            }
-        }
+  /**
+   * Registers the given method for the given operation type.
+   */
+  private void registerMethod(Class<?> type, Method method) {
+    Class<?> returnType = method.getReturnType();
+    if (returnType == void.class || returnType == Void.class) {
+      registerVoidMethod(type, method);
+    } else {
+      registerValueMethod(type, method);
     }
+  }
 
-    /**
-     * Returns a boolean value indicating whether the given method is an operation method.
-     */
-    private boolean isOperationMethod(Method method) {
-        Class<?>[] paramTypes = method.getParameterTypes();
-        return paramTypes.length == 1 && paramTypes[0] == RaftCommit.class;
-    }
+  /**
+   * Registers an operation with a void return value.
+   */
+  @SuppressWarnings("unchecked")
+  private void registerVoidMethod(Class type, Method method) {
+    executor.register(type, wrapVoidMethod(method));
+  }
 
-    /**
-     * Registers an operation for the given method.
-     */
-    private void registerMethod(Method method) {
-        Type genericType = method.getGenericParameterTypes()[0];
-        Class<?> argumentType = resolveArgument(genericType);
-        if (argumentType != null && RaftOperation.class.isAssignableFrom(argumentType)) {
-            registerMethod(argumentType, method);
-        }
-    }
+  /**
+   * Wraps a void method.
+   */
+  private Consumer wrapVoidMethod(Method method) {
+    return c -> {
+      try {
+        method.invoke(this, c);
+      } catch (InvocationTargetException e) {
+        throw new CommandException(e);
+      } catch (IllegalAccessException e) {
+        throw new AssertionError(e);
+      }
+    };
+  }
 
-    /**
-     * Resolves the generic argument for the given type.
-     */
-    private Class<?> resolveArgument(Type type) {
-        if (type instanceof ParameterizedType) {
-            ParameterizedType paramType = (ParameterizedType) type;
-            return resolveClass(paramType.getActualTypeArguments()[0]);
-        } else if (type instanceof TypeVariable) {
-            return resolveClass(type);
-        } else if (type instanceof Class) {
-            TypeVariable<?>[] typeParams = ((Class<?>) type).getTypeParameters();
-            return resolveClass(typeParams[0]);
-        }
-        return null;
-    }
+  /**
+   * Registers an operation with a non-void return value.
+   */
+  @SuppressWarnings("unchecked")
+  private void registerValueMethod(Class type, Method method) {
+    executor.register(type, wrapValueMethod(method));
+  }
 
-    /**
-     * Resolves the generic class for the given type.
-     */
-    private Class<?> resolveClass(Type type) {
-        if (type instanceof Class) {
-            return (Class<?>) type;
-        } else if (type instanceof ParameterizedType) {
-            return resolveClass(((ParameterizedType) type).getRawType());
-        } else if (type instanceof WildcardType) {
-            Type[] bounds = ((WildcardType) type).getUpperBounds();
-            if (bounds.length > 0) {
-                return (Class<?>) bounds[0];
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Registers the given method for the given operation type.
-     */
-    private void registerMethod(Class<?> type, Method method) {
-        Class<?> returnType = method.getReturnType();
-        if (returnType == void.class || returnType == Void.class) {
-            registerVoidMethod(type, method);
-        } else {
-            registerValueMethod(type, method);
-        }
-    }
-
-    /**
-     * Registers an operation with a void return value.
-     */
-    @SuppressWarnings("unchecked")
-    private void registerVoidMethod(Class type, Method method) {
-        executor.register(type, wrapVoidMethod(method));
-    }
-
-    /**
-     * Wraps a void method.
-     */
-    private Consumer wrapVoidMethod(Method method) {
-        return c -> {
-            try {
-                method.invoke(this, c);
-            } catch (InvocationTargetException e) {
-                throw new CommandException(e);
-            } catch (IllegalAccessException e) {
-                throw new AssertionError(e);
-            }
-        };
-    }
-
-    /**
-     * Registers an operation with a non-void return value.
-     */
-    @SuppressWarnings("unchecked")
-    private void registerValueMethod(Class type, Method method) {
-        executor.register(type, wrapValueMethod(method));
-    }
-
-    /**
-     * Wraps a value method.
-     */
-    private Function wrapValueMethod(Method method) {
-        return c -> {
-            try {
-                return method.invoke(this, c);
-            } catch (InvocationTargetException e) {
-                throw new CommandException(e);
-            } catch (IllegalAccessException e) {
-                throw new AssertionError(e);
-            }
-        };
-    }
+  /**
+   * Wraps a value method.
+   */
+  private Function wrapValueMethod(Method method) {
+    return c -> {
+      try {
+        return method.invoke(this, c);
+      } catch (InvocationTargetException e) {
+        throw new CommandException(e);
+      } catch (IllegalAccessException e) {
+        throw new AssertionError(e);
+      }
+    };
+  }
 
 }

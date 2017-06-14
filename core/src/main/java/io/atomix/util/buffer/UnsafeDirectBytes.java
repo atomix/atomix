@@ -24,32 +24,32 @@ import io.atomix.util.memory.DirectMemory;
  */
 public class UnsafeDirectBytes extends NativeBytes {
 
-    /**
-     * Allocates a direct {@link java.nio.ByteBuffer} based byte array.
-     * <p>
-     * When the array is constructed, {@link io.atomix.util.memory.DirectMemoryAllocator} will be used to allocate
-     * {@code count} bytes of off-heap memory. Memory is accessed by the buffer directly via {@link sun.misc.Unsafe}.
-     *
-     * @param size The count of the buffer to allocate (in bytes).
-     * @return The native buffer.
-     * @throws IllegalArgumentException If {@code count} is greater than the maximum allowed count for
-     *                                  a {@link java.nio.ByteBuffer} - {@code Integer.MAX_VALUE - 5}
-     */
-    public static UnsafeDirectBytes allocate(long size) {
-        return new UnsafeDirectBytes(DirectMemory.allocate(size));
-    }
+  /**
+   * Allocates a direct {@link java.nio.ByteBuffer} based byte array.
+   * <p>
+   * When the array is constructed, {@link io.atomix.util.memory.DirectMemoryAllocator} will be used to allocate
+   * {@code count} bytes of off-heap memory. Memory is accessed by the buffer directly via {@link sun.misc.Unsafe}.
+   *
+   * @param size The count of the buffer to allocate (in bytes).
+   * @return The native buffer.
+   * @throws IllegalArgumentException If {@code count} is greater than the maximum allowed count for
+   *                                  a {@link java.nio.ByteBuffer} - {@code Integer.MAX_VALUE - 5}
+   */
+  public static UnsafeDirectBytes allocate(long size) {
+    return new UnsafeDirectBytes(DirectMemory.allocate(size));
+  }
 
-    protected UnsafeDirectBytes(DirectMemory memory) {
-        super(memory);
-    }
+  protected UnsafeDirectBytes(DirectMemory memory) {
+    super(memory);
+  }
 
-    /**
-     * Copies the bytes to a new byte array.
-     *
-     * @return A new {@link UnsafeHeapBytes} instance backed by a copy of this instance's array.
-     */
-    public UnsafeDirectBytes copy() {
-        return new UnsafeDirectBytes((DirectMemory) memory.copy());
-    }
+  /**
+   * Copies the bytes to a new byte array.
+   *
+   * @return A new {@link UnsafeHeapBytes} instance backed by a copy of this instance's array.
+   */
+  public UnsafeDirectBytes copy() {
+    return new UnsafeDirectBytes((DirectMemory) memory.copy());
+  }
 
 }

@@ -165,32 +165,32 @@ public class SnapshotStore implements AutoCloseable {
   /**
    * Creates a temporary in-memory snapshot.
    *
-   * @param id The in-memory snapshot identifier.
+   * @param id    The in-memory snapshot identifier.
    * @param index The snapshot index.
    * @return The snapshot.
    */
   public Snapshot createTemporarySnapshot(long id, long index) {
     SnapshotDescriptor descriptor = SnapshotDescriptor.builder()
-      .withId(id)
-      .withIndex(index)
-      .withTimestamp(System.currentTimeMillis())
-      .build();
+        .withId(id)
+        .withIndex(index)
+        .withTimestamp(System.currentTimeMillis())
+        .build();
     return createSnapshot(descriptor, StorageLevel.MEMORY);
   }
 
   /**
    * Creates a new snapshot.
    *
-   * @param id The snapshot identifier.
+   * @param id    The snapshot identifier.
    * @param index The snapshot index.
    * @return The snapshot.
    */
   public Snapshot createSnapshot(long id, long index) {
     SnapshotDescriptor descriptor = SnapshotDescriptor.builder()
-      .withId(id)
-      .withIndex(index)
-      .withTimestamp(System.currentTimeMillis())
-      .build();
+        .withId(id)
+        .withIndex(index)
+        .withTimestamp(System.currentTimeMillis())
+        .build();
     return createSnapshot(descriptor, storage.level());
   }
 

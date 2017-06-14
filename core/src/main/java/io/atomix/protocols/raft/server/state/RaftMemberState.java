@@ -40,217 +40,217 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public final class RaftMemberState implements RaftMember, AutoCloseable {
-    private final NodeId id;
-    private final transient int hash;
-    private RaftMember.Type type;
-    private Status status = Status.AVAILABLE;
-    private Instant updated;
-    private transient Scheduled configureTimeout;
-    private transient RaftClusterState cluster;
-    private transient Set<Consumer<Type>> typeChangeListeners = new CopyOnWriteArraySet<>();
-    private transient Set<Consumer<Status>> statusChangeListeners = new CopyOnWriteArraySet<>();
+  private final NodeId id;
+  private final transient int hash;
+  private RaftMember.Type type;
+  private Status status = Status.AVAILABLE;
+  private Instant updated;
+  private transient Scheduled configureTimeout;
+  private transient RaftClusterState cluster;
+  private transient Set<Consumer<Type>> typeChangeListeners = new CopyOnWriteArraySet<>();
+  private transient Set<Consumer<Status>> statusChangeListeners = new CopyOnWriteArraySet<>();
 
-    public RaftMemberState(NodeId id, RaftMember.Type type, RaftMember.Status status, Instant updated) {
-        this.id = checkNotNull(id, "id cannot be null");
-        this.hash = Hashing.murmur3_32()
-                .hashUnencodedChars(id.id())
-                .asInt();
-        this.type = checkNotNull(type, "type cannot be null");
-        this.status = checkNotNull(status, "status cannot be null");
-        this.updated = checkNotNull(updated, "updated cannot be null");
+  public RaftMemberState(NodeId id, RaftMember.Type type, RaftMember.Status status, Instant updated) {
+    this.id = checkNotNull(id, "id cannot be null");
+    this.hash = Hashing.murmur3_32()
+        .hashUnencodedChars(id.id())
+        .asInt();
+    this.type = checkNotNull(type, "type cannot be null");
+    this.status = checkNotNull(status, "status cannot be null");
+    this.updated = checkNotNull(updated, "updated cannot be null");
+  }
+
+  /**
+   * Sets the member's parent cluster.
+   */
+  RaftMemberState setCluster(RaftClusterState cluster) {
+    this.cluster = cluster;
+    return this;
+  }
+
+  @Override
+  public NodeId id() {
+    return id;
+  }
+
+  @Override
+  public int hash() {
+    return hash;
+  }
+
+  @Override
+  public RaftMember.Type type() {
+    return type;
+  }
+
+  @Override
+  public Status status() {
+    return status;
+  }
+
+  @Override
+  public Instant updated() {
+    return updated;
+  }
+
+  @Override
+  public void addTypeChangeListener(Consumer<Type> listener) {
+    typeChangeListeners.add(listener);
+  }
+
+  @Override
+  public void removeTypeChangeListener(Consumer<Type> listener) {
+    typeChangeListeners.remove(listener);
+  }
+
+  @Override
+  public void addStatusChangeListener(Consumer<Status> listener) {
+    statusChangeListeners.add(listener);
+  }
+
+  @Override
+  public void removeStatusChangeListener(Consumer<Status> listener) {
+    statusChangeListeners.remove(listener);
+  }
+
+  @Override
+  public CompletableFuture<Void> promote() {
+    return configure(Type.values()[type.ordinal() + 1]);
+  }
+
+  @Override
+  public CompletableFuture<Void> promote(Type type) {
+    return configure(type);
+  }
+
+  @Override
+  public CompletableFuture<Void> demote() {
+    return configure(Type.values()[type.ordinal() - 1]);
+  }
+
+  @Override
+  public CompletableFuture<Void> demote(Type type) {
+    return configure(type);
+  }
+
+  @Override
+  public CompletableFuture<Void> remove() {
+    return configure(Type.INACTIVE);
+  }
+
+  /**
+   * Updates the member type.
+   *
+   * @param type The member type.
+   * @return The member.
+   */
+  RaftMemberState update(RaftMember.Type type, Instant time) {
+    if (this.type != type) {
+      this.type = checkNotNull(type, "type cannot be null");
+      if (time.isAfter(updated)) {
+        this.updated = checkNotNull(time, "time cannot be null");
+      }
+      if (typeChangeListeners != null) {
+        typeChangeListeners.forEach(l -> l.accept(type));
+      }
     }
+    return this;
+  }
 
-    /**
-     * Sets the member's parent cluster.
-     */
-    RaftMemberState setCluster(RaftClusterState cluster) {
-        this.cluster = cluster;
-        return this;
+  /**
+   * Updates the member status.
+   *
+   * @param status The member status.
+   * @return The member.
+   */
+  RaftMemberState update(Status status, Instant time) {
+    if (this.status != status) {
+      this.status = checkNotNull(status, "status cannot be null");
+      if (time.isAfter(updated)) {
+        this.updated = checkNotNull(time, "time cannot be null");
+      }
+      if (statusChangeListeners != null) {
+        statusChangeListeners.forEach(l -> l.accept(status));
+      }
     }
+    return this;
+  }
 
-    @Override
-    public NodeId id() {
-        return id;
-    }
+  /**
+   * Demotes the server to the given type.
+   */
+  CompletableFuture<Void> configure(RaftMember.Type type) {
+    CompletableFuture<Void> future = new CompletableFuture<>();
+    cluster.getContext().getThreadContext().execute(() -> configure(type, future));
+    return future;
+  }
 
-    @Override
-    public int hash() {
-        return hash;
-    }
+  /**
+   * Recursively reconfigures the cluster.
+   */
+  private void configure(RaftMember.Type type, CompletableFuture<Void> future) {
+    // Set a timer to retry the attempt to leave the cluster.
+    configureTimeout = cluster.getContext().getThreadContext().schedule(cluster.getContext().getElectionTimeout(), () -> {
+      configure(type, future);
+    });
 
-    @Override
-    public RaftMember.Type type() {
-        return type;
-    }
-
-    @Override
-    public Status status() {
-        return status;
-    }
-
-    @Override
-    public Instant updated() {
-        return updated;
-    }
-
-    @Override
-    public void addTypeChangeListener(Consumer<Type> listener) {
-        typeChangeListeners.add(listener);
-    }
-
-    @Override
-    public void removeTypeChangeListener(Consumer<Type> listener) {
-        typeChangeListeners.remove(listener);
-    }
-
-    @Override
-    public void addStatusChangeListener(Consumer<Status> listener) {
-        statusChangeListeners.add(listener);
-    }
-
-    @Override
-    public void removeStatusChangeListener(Consumer<Status> listener) {
-        statusChangeListeners.remove(listener);
-    }
-
-    @Override
-    public CompletableFuture<Void> promote() {
-        return configure(Type.values()[type.ordinal() + 1]);
-    }
-
-    @Override
-    public CompletableFuture<Void> promote(Type type) {
-        return configure(type);
-    }
-
-    @Override
-    public CompletableFuture<Void> demote() {
-        return configure(Type.values()[type.ordinal() - 1]);
-    }
-
-    @Override
-    public CompletableFuture<Void> demote(Type type) {
-        return configure(type);
-    }
-
-    @Override
-    public CompletableFuture<Void> remove() {
-        return configure(Type.INACTIVE);
-    }
-
-    /**
-     * Updates the member type.
-     *
-     * @param type The member type.
-     * @return The member.
-     */
-    RaftMemberState update(RaftMember.Type type, Instant time) {
-        if (this.type != type) {
-            this.type = checkNotNull(type, "type cannot be null");
-            if (time.isAfter(updated)) {
-                this.updated = checkNotNull(time, "time cannot be null");
-            }
-            if (typeChangeListeners != null) {
-                typeChangeListeners.forEach(l -> l.accept(type));
-            }
+    // Attempt to leave the cluster by submitting a LeaveRequest directly to the server state.
+    // Non-leader states should forward the request to the leader if there is one. Leader states
+    // will log, replicate, and commit the reconfiguration.
+    cluster.getContext().getServerState().reconfigure(ReconfigureRequest.builder()
+        .withIndex(cluster.getConfiguration().index())
+        .withTerm(cluster.getConfiguration().term())
+        .withMember(new RaftMemberState(id, type, status, updated))
+        .build()).whenComplete((response, error) -> {
+      if (error == null) {
+        if (response.status() == RaftResponse.Status.OK) {
+          cancelConfigureTimer();
+          cluster.configure(new Configuration(response.index(), response.term(), response.timestamp(), response.members()));
+          future.complete(null);
+        } else if (response.error() == null || response.error() == RaftError.Type.NO_LEADER_ERROR) {
+          cancelConfigureTimer();
+          configureTimeout = cluster.getContext().getThreadContext().schedule(cluster.getContext().getElectionTimeout().multipliedBy(2), () -> configure(type, future));
+        } else {
+          cancelConfigureTimer();
+          future.completeExceptionally(response.error().createException());
         }
-        return this;
-    }
+      }
+    });
+  }
 
-    /**
-     * Updates the member status.
-     *
-     * @param status The member status.
-     * @return The member.
-     */
-    RaftMemberState update(Status status, Instant time) {
-        if (this.status != status) {
-            this.status = checkNotNull(status, "status cannot be null");
-            if (time.isAfter(updated)) {
-                this.updated = checkNotNull(time, "time cannot be null");
-            }
-            if (statusChangeListeners != null) {
-                statusChangeListeners.forEach(l -> l.accept(status));
-            }
-        }
-        return this;
+  /**
+   * Cancels the configure timeout.
+   */
+  private void cancelConfigureTimer() {
+    if (configureTimeout != null) {
+      configureTimeout.cancel();
+      configureTimeout = null;
     }
+  }
 
-    /**
-     * Demotes the server to the given type.
-     */
-    CompletableFuture<Void> configure(RaftMember.Type type) {
-        CompletableFuture<Void> future = new CompletableFuture<>();
-        cluster.getContext().getThreadContext().execute(() -> configure(type, future));
-        return future;
-    }
+  @Override
+  public void close() {
+    cancelConfigureTimer();
+  }
 
-    /**
-     * Recursively reconfigures the cluster.
-     */
-    private void configure(RaftMember.Type type, CompletableFuture<Void> future) {
-        // Set a timer to retry the attempt to leave the cluster.
-        configureTimeout = cluster.getContext().getThreadContext().schedule(cluster.getContext().getElectionTimeout(), () -> {
-            configure(type, future);
-        });
+  @Override
+  public int hashCode() {
+    return Objects.hash(getClass(), id);
+  }
 
-        // Attempt to leave the cluster by submitting a LeaveRequest directly to the server state.
-        // Non-leader states should forward the request to the leader if there is one. Leader states
-        // will log, replicate, and commit the reconfiguration.
-        cluster.getContext().getServerState().reconfigure(ReconfigureRequest.builder()
-                .withIndex(cluster.getConfiguration().index())
-                .withTerm(cluster.getConfiguration().term())
-                .withMember(new RaftMemberState(id, type, status, updated))
-                .build()).whenComplete((response, error) -> {
-            if (error == null) {
-                if (response.status() == RaftResponse.Status.OK) {
-                    cancelConfigureTimer();
-                    cluster.configure(new Configuration(response.index(), response.term(), response.timestamp(), response.members()));
-                    future.complete(null);
-                } else if (response.error() == null || response.error() == RaftError.Type.NO_LEADER_ERROR) {
-                    cancelConfigureTimer();
-                    configureTimeout = cluster.getContext().getThreadContext().schedule(cluster.getContext().getElectionTimeout().multipliedBy(2), () -> configure(type, future));
-                } else {
-                    cancelConfigureTimer();
-                    future.completeExceptionally(response.error().createException());
-                }
-            }
-        });
-    }
+  @Override
+  public boolean equals(Object object) {
+    return object instanceof RaftMemberState && ((RaftMemberState) object).id.equals(id);
+  }
 
-    /**
-     * Cancels the configure timeout.
-     */
-    private void cancelConfigureTimer() {
-        if (configureTimeout != null) {
-            configureTimeout.cancel();
-            configureTimeout = null;
-        }
-    }
-
-    @Override
-    public void close() {
-        cancelConfigureTimer();
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(getClass(), id);
-    }
-
-    @Override
-    public boolean equals(Object object) {
-        return object instanceof RaftMemberState && ((RaftMemberState) object).id.equals(id);
-    }
-
-    @Override
-    public String toString() {
-        return toStringHelper(this)
-                .add("id", id)
-                .add("type", type)
-                .add("status", status)
-                .add("updated", updated)
-                .toString();
-    }
+  @Override
+  public String toString() {
+    return toStringHelper(this)
+        .add("id", id)
+        .add("type", type)
+        .add("status", status)
+        .add("updated", updated)
+        .toString();
+  }
 
 }

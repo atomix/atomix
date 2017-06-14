@@ -22,27 +22,27 @@ package io.atomix.protocols.raft.protocol;
  */
 public class CloseSessionRequest extends SessionRequest {
 
-    /**
-     * Returns a new unregister request builder.
-     *
-     * @return A new unregister request builder.
-     */
-    public static Builder builder() {
-        return new Builder();
-    }
+  /**
+   * Returns a new unregister request builder.
+   *
+   * @return A new unregister request builder.
+   */
+  public static Builder builder() {
+    return new Builder();
+  }
 
-    public CloseSessionRequest(long session) {
-        super(session);
-    }
+  public CloseSessionRequest(long session) {
+    super(session);
+  }
 
-    /**
-     * Unregister request builder.
-     */
-    public static class Builder extends SessionRequest.Builder<Builder, CloseSessionRequest> {
-        @Override
-        public CloseSessionRequest build() {
-            validate();
-            return new CloseSessionRequest(session);
-        }
+  /**
+   * Unregister request builder.
+   */
+  public static class Builder extends SessionRequest.Builder<Builder, CloseSessionRequest> {
+    @Override
+    public CloseSessionRequest build() {
+      validate();
+      return new CloseSessionRequest(session);
     }
+  }
 }

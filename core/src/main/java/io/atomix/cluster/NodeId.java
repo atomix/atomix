@@ -22,34 +22,34 @@ import io.atomix.util.Identifier;
  */
 public final class NodeId extends Identifier<String> implements Comparable<NodeId> {
 
-    /**
-     * Constructor for serialization.
-     */
-    private NodeId() {
-        super("");
-    }
+  /**
+   * Constructor for serialization.
+   */
+  private NodeId() {
+    super("");
+  }
 
-    /**
-     * Creates a new cluster node identifier from the specified string.
-     *
-     * @param id string identifier
-     */
-    public NodeId(String id) {
-        super(id);
-    }
+  /**
+   * Creates a new cluster node identifier from the specified string.
+   *
+   * @param id string identifier
+   */
+  public NodeId(String id) {
+    super(id);
+  }
 
-    /**
-     * Creates a new cluster node identifier from the specified string.
-     *
-     * @param id string identifier
-     * @return node id
-     */
-    public static NodeId nodeId(String id) {
-        return new NodeId(id);
-    }
+  /**
+   * Creates a new cluster node identifier from the specified string.
+   *
+   * @param id string identifier
+   * @return node id
+   */
+  public static NodeId nodeId(String id) {
+    return new NodeId(id);
+  }
 
-    @Override
-    public int compareTo(NodeId that) {
-        return identifier.compareTo(that.identifier);
-    }
+  @Override
+  public int compareTo(NodeId that) {
+    return identifier.compareTo(that.identifier);
+  }
 }

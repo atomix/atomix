@@ -20,11 +20,11 @@ package io.atomix.time;
  */
 public interface Clock<T extends Timestamp> {
 
-    /**
-     * Returns the current time of the clock.
-     *
-     * @return the current time
-     */
-    T time();
+  /**
+   * Returns the current time of the clock.
+   *
+   * @return the current time
+   */
+  T time();
 
 }

@@ -26,43 +26,43 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public final class MessageSubject {
 
-    private final String value;
+  private final String value;
 
-    public MessageSubject(String value) {
-        this.value = checkNotNull(value);
-    }
+  public MessageSubject(String value) {
+    this.value = checkNotNull(value);
+  }
 
-    public String value() {
-        return value;
-    }
+  public String value() {
+    return value;
+  }
 
-    @Override
-    public String toString() {
-        return value;
-    }
+  @Override
+  public String toString() {
+    return value;
+  }
 
-    @Override
-    public int hashCode() {
-        return value.hashCode();
-    }
+  @Override
+  public int hashCode() {
+    return value.hashCode();
+  }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        MessageSubject that = (MessageSubject) obj;
-        return Objects.equals(this.value, that.value);
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
     }
+    if (obj == null) {
+      return false;
+    }
+    if (getClass() != obj.getClass()) {
+      return false;
+    }
+    MessageSubject that = (MessageSubject) obj;
+    return Objects.equals(this.value, that.value);
+  }
 
-    // for serializer
-    protected MessageSubject() {
-        this.value = "";
-    }
+  // for serializer
+  protected MessageSubject() {
+    this.value = "";
+  }
 }

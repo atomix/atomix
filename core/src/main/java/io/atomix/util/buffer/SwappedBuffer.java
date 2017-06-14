@@ -25,69 +25,69 @@ import java.nio.ByteOrder;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class SwappedBuffer extends AbstractBuffer {
-    private final Buffer root;
+  private final Buffer root;
 
-    SwappedBuffer(Buffer root, Bytes bytes, ReferenceManager<Buffer> referenceManager) {
-        super(bytes, referenceManager);
-        this.root = root;
-    }
+  SwappedBuffer(Buffer root, Bytes bytes, ReferenceManager<Buffer> referenceManager) {
+    super(bytes, referenceManager);
+    this.root = root;
+  }
 
-    public SwappedBuffer(Buffer buffer, long offset, long initialCapacity, long maxCapacity, ReferenceManager<Buffer> referenceManager) {
-        super(buffer.bytes().order(buffer.order() == ByteOrder.BIG_ENDIAN ? ByteOrder.LITTLE_ENDIAN : ByteOrder.BIG_ENDIAN), offset, initialCapacity, maxCapacity, referenceManager);
-        this.root = buffer instanceof SwappedBuffer ? ((SwappedBuffer) buffer).root : buffer;
-        root.acquire();
-    }
+  public SwappedBuffer(Buffer buffer, long offset, long initialCapacity, long maxCapacity, ReferenceManager<Buffer> referenceManager) {
+    super(buffer.bytes().order(buffer.order() == ByteOrder.BIG_ENDIAN ? ByteOrder.LITTLE_ENDIAN : ByteOrder.BIG_ENDIAN), offset, initialCapacity, maxCapacity, referenceManager);
+    this.root = buffer instanceof SwappedBuffer ? ((SwappedBuffer) buffer).root : buffer;
+    root.acquire();
+  }
 
-    /**
-     * Returns the root buffer.
-     *
-     * @return The root buffer.
-     */
-    public Buffer root() {
-        return root;
-    }
+  /**
+   * Returns the root buffer.
+   *
+   * @return The root buffer.
+   */
+  public Buffer root() {
+    return root;
+  }
 
-    @Override
-    public boolean isDirect() {
-        return root.isDirect();
-    }
+  @Override
+  public boolean isDirect() {
+    return root.isDirect();
+  }
 
-    @Override
-    public boolean isFile() {
-        return root.isFile();
-    }
+  @Override
+  public boolean isFile() {
+    return root.isFile();
+  }
 
-    @Override
-    public boolean isReadOnly() {
-        return root.isReadOnly();
-    }
+  @Override
+  public boolean isReadOnly() {
+    return root.isReadOnly();
+  }
 
-    @Override
-    protected void compact(long from, long to, long length) {
-        if (root instanceof AbstractBuffer) {
-            ((AbstractBuffer) root).compact(from, to, length);
-        }
+  @Override
+  protected void compact(long from, long to, long length) {
+    if (root instanceof AbstractBuffer) {
+      ((AbstractBuffer) root).compact(from, to, length);
     }
+  }
 
-    @Override
-    public Buffer duplicate() {
-        return new SwappedBuffer(root, offset(), capacity(), maxCapacity(), referenceManager);
-    }
+  @Override
+  public Buffer duplicate() {
+    return new SwappedBuffer(root, offset(), capacity(), maxCapacity(), referenceManager);
+  }
 
-    @Override
-    public Buffer acquire() {
-        root.acquire();
-        return this;
-    }
+  @Override
+  public Buffer acquire() {
+    root.acquire();
+    return this;
+  }
 
-    @Override
-    public boolean release() {
-        return root.release();
-    }
+  @Override
+  public boolean release() {
+    return root.release();
+  }
 
-    @Override
-    public void close() {
-        root.release();
-    }
+  @Override
+  public void close() {
+    root.release();
+  }
 
 }

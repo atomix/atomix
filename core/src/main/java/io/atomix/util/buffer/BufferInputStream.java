@@ -24,67 +24,67 @@ import java.io.InputStream;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class BufferInputStream extends InputStream {
-    private final BufferInput<?> buffer;
+  private final BufferInput<?> buffer;
 
-    public BufferInputStream(BufferInput<?> buffer) {
-        this.buffer = buffer;
-    }
+  public BufferInputStream(BufferInput<?> buffer) {
+    this.buffer = buffer;
+  }
 
-    @Override
-    public int read() throws IOException {
-        if (buffer.hasRemaining()) {
-            return buffer.readByte();
-        }
-        return -1;
+  @Override
+  public int read() throws IOException {
+    if (buffer.hasRemaining()) {
+      return buffer.readByte();
     }
+    return -1;
+  }
 
-    @Override
-    public int read(byte[] b) throws IOException {
-        if (buffer.hasRemaining()) {
-            int read = Math.min(b.length, (int) buffer.remaining());
-            buffer.read(b);
-            return read;
-        }
-        return -1;
+  @Override
+  public int read(byte[] b) throws IOException {
+    if (buffer.hasRemaining()) {
+      int read = Math.min(b.length, (int) buffer.remaining());
+      buffer.read(b);
+      return read;
     }
+    return -1;
+  }
 
-    @Override
-    public int read(byte[] b, int off, int len) throws IOException {
-        int read = Math.min(len, (int) buffer.remaining());
-        buffer.read(b, off, read);
-        return read;
-    }
+  @Override
+  public int read(byte[] b, int off, int len) throws IOException {
+    int read = Math.min(len, (int) buffer.remaining());
+    buffer.read(b, off, read);
+    return read;
+  }
 
-    @Override
-    public long skip(long n) throws IOException {
-        long skipped = Math.min(n, buffer.remaining());
-        buffer.skip(skipped);
-        return skipped;
-    }
+  @Override
+  public long skip(long n) throws IOException {
+    long skipped = Math.min(n, buffer.remaining());
+    buffer.skip(skipped);
+    return skipped;
+  }
 
-    @Override
-    public int available() throws IOException {
-        return (int) buffer.remaining();
-    }
+  @Override
+  public int available() throws IOException {
+    return (int) buffer.remaining();
+  }
 
-    @Override
-    public synchronized void mark(int readlimit) {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public synchronized void mark(int readlimit) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public synchronized void reset() throws IOException {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public synchronized void reset() throws IOException {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public boolean markSupported() {
-        return false;
-    }
+  @Override
+  public boolean markSupported() {
+    return false;
+  }
 
-    @Override
-    public void close() throws IOException {
-        buffer.close();
-    }
+  @Override
+  public void close() throws IOException {
+    buffer.close();
+  }
 
 }

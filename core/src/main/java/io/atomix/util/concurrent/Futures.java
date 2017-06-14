@@ -25,107 +25,107 @@ import java.util.concurrent.Executor;
  */
 public final class Futures {
 
-    /**
-     * Creates a future that is synchronously completed.
-     *
-     * @param result The future result.
-     * @return The completed future.
-     */
-    public static <T> CompletableFuture<T> completedFuture(T result) {
-        return CompletableFuture.completedFuture(result);
+  /**
+   * Creates a future that is synchronously completed.
+   *
+   * @param result The future result.
+   * @return The completed future.
+   */
+  public static <T> CompletableFuture<T> completedFuture(T result) {
+    return CompletableFuture.completedFuture(result);
+  }
+
+  /**
+   * Creates a future that is asynchronously completed.
+   *
+   * @param result   The future result.
+   * @param executor The executor on which to complete the future.
+   * @return The completed future.
+   */
+  public static <T> CompletableFuture<T> completedFutureAsync(T result, Executor executor) {
+    CompletableFuture<T> future = new CompletableFuture<>();
+    executor.execute(() -> future.complete(result));
+    return future;
+  }
+
+  /**
+   * Creates a future that is synchronously completed exceptionally.
+   *
+   * @param t The future exception.
+   * @return The exceptionally completed future.
+   */
+  public static <T> CompletableFuture<T> exceptionalFuture(Throwable t) {
+    CompletableFuture<T> future = new CompletableFuture<>();
+    future.completeExceptionally(t);
+    return future;
+  }
+
+  /**
+   * Creates a future that is asynchronously completed exceptionally.
+   *
+   * @param t        The future exception.
+   * @param executor The executor on which to complete the future.
+   * @return The exceptionally completed future.
+   */
+  public static <T> CompletableFuture<T> exceptionalFutureAsync(Throwable t, Executor executor) {
+    CompletableFuture<T> future = new CompletableFuture<>();
+    executor.execute(() -> {
+      future.completeExceptionally(t);
+    });
+    return future;
+  }
+
+  /**
+   * Returns a future that completes callbacks in add order.
+   *
+   * @param <T> future value type
+   * @return a new completable future that will complete added callbacks in the order in which they were added
+   */
+  public static <T> CompletableFuture<T> orderedFuture() {
+    return new OrderedFuture<>();
+  }
+
+  /**
+   * Returns a future that's completed using the given {@code orderedExecutor} if the future is not blocked or the
+   * given {@code threadPoolExecutor} if the future is blocked.
+   * <p>
+   * This method allows futures to maintain single-thread semantics via the provided {@code orderedExecutor} while
+   * ensuring user code can block without blocking completion of futures. When the returned future or any of its
+   * descendants is blocked on a {@link CompletableFuture#get()} or {@link CompletableFuture#join()} call, completion
+   * of the returned future will be done using the provided {@code threadPoolExecutor}.
+   *
+   * @param future             the future to convert into an asynchronous future
+   * @param orderedExecutor    the ordered executor with which to attempt to complete the future
+   * @param threadPoolExecutor the backup executor with which to complete blocked futures
+   * @param <T>                future value type
+   * @return a new completable future to be completed using the provided {@code executor} once the provided
+   * {@code future} is complete
+   */
+  public static <T> CompletableFuture<T> blockingAwareFuture(
+      CompletableFuture<T> future,
+      Executor orderedExecutor,
+      Executor threadPoolExecutor) {
+    if (future.isDone()) {
+      return future;
     }
 
-    /**
-     * Creates a future that is asynchronously completed.
-     *
-     * @param result   The future result.
-     * @param executor The executor on which to complete the future.
-     * @return The completed future.
-     */
-    public static <T> CompletableFuture<T> completedFutureAsync(T result, Executor executor) {
-        CompletableFuture<T> future = new CompletableFuture<>();
-        executor.execute(() -> future.complete(result));
-        return future;
-    }
-
-    /**
-     * Creates a future that is synchronously completed exceptionally.
-     *
-     * @param t The future exception.
-     * @return The exceptionally completed future.
-     */
-    public static <T> CompletableFuture<T> exceptionalFuture(Throwable t) {
-        CompletableFuture<T> future = new CompletableFuture<>();
-        future.completeExceptionally(t);
-        return future;
-    }
-
-    /**
-     * Creates a future that is asynchronously completed exceptionally.
-     *
-     * @param t        The future exception.
-     * @param executor The executor on which to complete the future.
-     * @return The exceptionally completed future.
-     */
-    public static <T> CompletableFuture<T> exceptionalFutureAsync(Throwable t, Executor executor) {
-        CompletableFuture<T> future = new CompletableFuture<>();
-        executor.execute(() -> {
-            future.completeExceptionally(t);
-        });
-        return future;
-    }
-
-    /**
-     * Returns a future that completes callbacks in add order.
-     *
-     * @param <T> future value type
-     * @return a new completable future that will complete added callbacks in the order in which they were added
-     */
-    public static <T> CompletableFuture<T> orderedFuture() {
-        return new OrderedFuture<>();
-    }
-
-    /**
-     * Returns a future that's completed using the given {@code orderedExecutor} if the future is not blocked or the
-     * given {@code threadPoolExecutor} if the future is blocked.
-     * <p>
-     * This method allows futures to maintain single-thread semantics via the provided {@code orderedExecutor} while
-     * ensuring user code can block without blocking completion of futures. When the returned future or any of its
-     * descendants is blocked on a {@link CompletableFuture#get()} or {@link CompletableFuture#join()} call, completion
-     * of the returned future will be done using the provided {@code threadPoolExecutor}.
-     *
-     * @param future             the future to convert into an asynchronous future
-     * @param orderedExecutor    the ordered executor with which to attempt to complete the future
-     * @param threadPoolExecutor the backup executor with which to complete blocked futures
-     * @param <T>                future value type
-     * @return a new completable future to be completed using the provided {@code executor} once the provided
-     * {@code future} is complete
-     */
-    public static <T> CompletableFuture<T> blockingAwareFuture(
-            CompletableFuture<T> future,
-            Executor orderedExecutor,
-            Executor threadPoolExecutor) {
-        if (future.isDone()) {
-            return future;
+    BlockingAwareFuture<T> newFuture = new BlockingAwareFuture<T>();
+    future.whenComplete((result, error) -> {
+      Runnable completer = () -> {
+        if (future.isCompletedExceptionally()) {
+          newFuture.completeExceptionally(error);
+        } else {
+          newFuture.complete(result);
         }
+      };
 
-        BlockingAwareFuture<T> newFuture = new BlockingAwareFuture<T>();
-        future.whenComplete((result, error) -> {
-            Runnable completer = () -> {
-                if (future.isCompletedExceptionally()) {
-                    newFuture.completeExceptionally(error);
-                } else {
-                    newFuture.complete(result);
-                }
-            };
-
-            if (newFuture.isBlocked()) {
-                threadPoolExecutor.execute(completer);
-            } else {
-                orderedExecutor.execute(completer);
-            }
-        });
-        return newFuture;
-    }
+      if (newFuture.isBlocked()) {
+        threadPoolExecutor.execute(completer);
+      } else {
+        orderedExecutor.execute(completer);
+      }
+    });
+    return newFuture;
+  }
 
 }

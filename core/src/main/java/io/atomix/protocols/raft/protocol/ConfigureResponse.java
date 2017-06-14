@@ -24,26 +24,26 @@ import io.atomix.protocols.raft.error.RaftError;
  */
 public class ConfigureResponse extends AbstractRaftResponse {
 
-    /**
-     * Returns a new configure response builder.
-     *
-     * @return A new configure response builder.
-     */
-    public static Builder builder() {
-        return new Builder();
-    }
+  /**
+   * Returns a new configure response builder.
+   *
+   * @return A new configure response builder.
+   */
+  public static Builder builder() {
+    return new Builder();
+  }
 
-    public ConfigureResponse(Status status, RaftError error) {
-        super(status, error);
-    }
+  public ConfigureResponse(Status status, RaftError error) {
+    super(status, error);
+  }
 
-    /**
-     * Heartbeat response builder.
-     */
-    public static class Builder extends AbstractRaftResponse.Builder<Builder, ConfigureResponse> {
-        @Override
-        public ConfigureResponse build() {
-            return new ConfigureResponse(status, error);
-        }
+  /**
+   * Heartbeat response builder.
+   */
+  public static class Builder extends AbstractRaftResponse.Builder<Builder, ConfigureResponse> {
+    @Override
+    public ConfigureResponse build() {
+      return new ConfigureResponse(status, error);
     }
+  }
 }

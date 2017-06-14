@@ -24,36 +24,37 @@ import static com.google.common.base.Preconditions.checkArgument;
  */
 public class PartitionId extends Identifier<Integer> implements Comparable<PartitionId> {
 
-    /**
-     * Creates a partition identifier from an integer.
-     *
-     * @param id input integer
-     */
-    public PartitionId(int id) {
-        super(id);
-        checkArgument(id >= 0, "partition id must be non-negative");
-    }
+  /**
+   * Creates a partition identifier from an integer.
+   *
+   * @param id input integer
+   */
+  public PartitionId(int id) {
+    super(id);
+    checkArgument(id >= 0, "partition id must be non-negative");
+  }
 
-    /**
-     * Creates a partition identifier from an integer.
-     *
-     * @param id input integer
-     * @return partition identification
-     */
-    public static PartitionId from(int id) {
-        return new PartitionId(id);
-    }
+  /**
+   * Creates a partition identifier from an integer.
+   *
+   * @param id input integer
+   * @return partition identification
+   */
+  public static PartitionId from(int id) {
+    return new PartitionId(id);
+  }
 
-    /**
-     * Returns the partition identifier as an integer.
-     * @return number
-     */
-    public int asInt() {
-        return id();
-    }
+  /**
+   * Returns the partition identifier as an integer.
+   *
+   * @return number
+   */
+  public int asInt() {
+    return id();
+  }
 
-    @Override
-    public int compareTo(PartitionId that) {
-        return Integer.compare(this.identifier, that.identifier);
-    }
+  @Override
+  public int compareTo(PartitionId that) {
+    return Integer.compare(this.identifier, that.identifier);
+  }
 }

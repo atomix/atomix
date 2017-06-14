@@ -28,27 +28,27 @@ import io.atomix.protocols.raft.cluster.RaftMember;
  */
 public class JoinRequest extends ConfigurationRequest {
 
-    /**
-     * Returns a new join request builder.
-     *
-     * @return A new join request builder.
-     */
-    public static Builder builder() {
-        return new Builder();
-    }
+  /**
+   * Returns a new join request builder.
+   *
+   * @return A new join request builder.
+   */
+  public static Builder builder() {
+    return new Builder();
+  }
 
-    public JoinRequest(RaftMember member) {
-        super(member);
-    }
+  public JoinRequest(RaftMember member) {
+    super(member);
+  }
 
-    /**
-     * Join request builder.
-     */
-    public static class Builder extends ConfigurationRequest.Builder<Builder, JoinRequest> {
-        @Override
-        public JoinRequest build() {
-            validate();
-            return new JoinRequest(member);
-        }
+  /**
+   * Join request builder.
+   */
+  public static class Builder extends ConfigurationRequest.Builder<Builder, JoinRequest> {
+    @Override
+    public JoinRequest build() {
+      validate();
+      return new JoinRequest(member);
     }
+  }
 }

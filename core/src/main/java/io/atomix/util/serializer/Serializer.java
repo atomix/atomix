@@ -21,43 +21,43 @@ package io.atomix.util.serializer;
  */
 public interface Serializer {
 
-    /**
-     * Serialize the specified object.
-     *
-     * @param object object to serialize.
-     * @param <T>    encoded type
-     * @return serialized bytes.
-     */
-    <T> byte[] encode(T object);
+  /**
+   * Serialize the specified object.
+   *
+   * @param object object to serialize.
+   * @param <T>    encoded type
+   * @return serialized bytes.
+   */
+  <T> byte[] encode(T object);
 
-    /**
-     * Deserialize the specified bytes.
-     *
-     * @param bytes byte array to deserialize.
-     * @param <T>   decoded type
-     * @return deserialized object.
-     */
-    <T> T decode(byte[] bytes);
+  /**
+   * Deserialize the specified bytes.
+   *
+   * @param bytes byte array to deserialize.
+   * @param <T>   decoded type
+   * @return deserialized object.
+   */
+  <T> T decode(byte[] bytes);
 
-    /**
-     * Creates a new Serializer instance from a KryoNamespace.
-     *
-     * @param kryo kryo namespace
-     * @return Serializer instance
-     */
-    static Serializer using(Namespace kryo) {
-        return new Serializer() {
+  /**
+   * Creates a new Serializer instance from a KryoNamespace.
+   *
+   * @param kryo kryo namespace
+   * @return Serializer instance
+   */
+  static Serializer using(Namespace kryo) {
+    return new Serializer() {
 
-            @Override
-            public <T> byte[] encode(T object) {
-                return kryo.serialize(object);
-            }
+      @Override
+      public <T> byte[] encode(T object) {
+        return kryo.serialize(object);
+      }
 
-            @Override
-            public <T> T decode(byte[] bytes) {
-                return kryo.deserialize(bytes);
-            }
-        };
-    }
+      @Override
+      public <T> T decode(byte[] bytes) {
+        return kryo.deserialize(bytes);
+      }
+    };
+  }
 
 }

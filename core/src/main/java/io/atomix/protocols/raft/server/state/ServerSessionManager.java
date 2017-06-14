@@ -25,39 +25,39 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 class ServerSessionManager {
-    private final Map<Long, ServerSessionContext> sessions = new ConcurrentHashMap<>();
+  private final Map<Long, ServerSessionContext> sessions = new ConcurrentHashMap<>();
 
-    /**
-     * Registers a session.
-     */
-    synchronized void registerSession(ServerSessionContext session) {
-        sessions.put(session.id(), session);
-    }
+  /**
+   * Registers a session.
+   */
+  synchronized void registerSession(ServerSessionContext session) {
+    sessions.put(session.id(), session);
+  }
 
-    /**
-     * Unregisters a session.
-     */
-    synchronized void unregisterSession(long sessionId) {
-        sessions.remove(sessionId);
-    }
+  /**
+   * Unregisters a session.
+   */
+  synchronized void unregisterSession(long sessionId) {
+    sessions.remove(sessionId);
+  }
 
-    /**
-     * Gets a session by session ID.
-     *
-     * @param sessionId The session ID.
-     * @return The session or {@code null} if the session doesn't exist.
-     */
-    ServerSessionContext getSession(long sessionId) {
-        return sessions.get(sessionId);
-    }
+  /**
+   * Gets a session by session ID.
+   *
+   * @param sessionId The session ID.
+   * @return The session or {@code null} if the session doesn't exist.
+   */
+  ServerSessionContext getSession(long sessionId) {
+    return sessions.get(sessionId);
+  }
 
-    /**
-     * Returns the collection of registered sessions.
-     *
-     * @return The collection of registered sessions.
-     */
-    Collection<ServerSessionContext> getSessions() {
-        return sessions.values();
-    }
+  /**
+   * Returns the collection of registered sessions.
+   *
+   * @return The collection of registered sessions.
+   */
+  Collection<ServerSessionContext> getSessions() {
+    return sessions.values();
+  }
 
 }

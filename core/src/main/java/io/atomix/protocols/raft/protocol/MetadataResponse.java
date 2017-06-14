@@ -31,85 +31,85 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class MetadataResponse extends AbstractRaftResponse {
 
+  /**
+   * Returns a new metadata response builder.
+   *
+   * @return A new metadata response builder.
+   */
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  private final Set<RaftSessionMetadata> sessions;
+
+  public MetadataResponse(Status status, RaftError error, Set<RaftSessionMetadata> sessions) {
+    super(status, error);
+    this.sessions = sessions;
+  }
+
+  /**
+   * Returns the session metadata.
+   *
+   * @return Session metadata.
+   */
+  public Set<RaftSessionMetadata> sessions() {
+    return sessions;
+  }
+
+  @Override
+  public String toString() {
+    if (status == Status.OK) {
+      return toStringHelper(this)
+          .add("status", status)
+          .add("sessions", sessions)
+          .toString();
+    } else {
+      return toStringHelper(this)
+          .add("status", status)
+          .add("error", error)
+          .toString();
+    }
+  }
+
+  /**
+   * Metadata response builder.
+   */
+  public static class Builder extends AbstractRaftResponse.Builder<Builder, MetadataResponse> {
+    private Set<RaftSessionMetadata> sessions;
+
     /**
-     * Returns a new metadata response builder.
+     * Sets the session metadata.
      *
-     * @return A new metadata response builder.
+     * @param sessions The client metadata.
+     * @return The metadata response builder.
      */
-    public static Builder builder() {
-        return new Builder();
+    public Builder withSessions(RaftSessionMetadata... sessions) {
+      return withSessions(Arrays.asList(checkNotNull(sessions, "sessions cannot be null")));
     }
 
-    private final Set<RaftSessionMetadata> sessions;
-
-    public MetadataResponse(Status status, RaftError error, Set<RaftSessionMetadata> sessions) {
-        super(status, error);
-        this.sessions = sessions;
-    }
-
     /**
-     * Returns the session metadata.
+     * Sets the session metadata.
      *
-     * @return Session metadata.
+     * @param sessions The client metadata.
+     * @return The metadata response builder.
      */
-    public Set<RaftSessionMetadata> sessions() {
-        return sessions;
+    public Builder withSessions(Collection<RaftSessionMetadata> sessions) {
+      this.sessions = new HashSet<>(checkNotNull(sessions, "sessions cannot be null"));
+      return this;
     }
 
     @Override
-    public String toString() {
-        if (status == Status.OK) {
-            return toStringHelper(this)
-                    .add("status", status)
-                    .add("sessions", sessions)
-                    .toString();
-        } else {
-            return toStringHelper(this)
-                    .add("status", status)
-                    .add("error", error)
-                    .toString();
-        }
+    protected void validate() {
+      super.validate();
+      if (status == Status.OK) {
+        checkNotNull(sessions, "sessions cannot be null");
+      }
     }
 
-    /**
-     * Metadata response builder.
-     */
-    public static class Builder extends AbstractRaftResponse.Builder<Builder, MetadataResponse> {
-        private Set<RaftSessionMetadata> sessions;
-
-        /**
-         * Sets the session metadata.
-         *
-         * @param sessions The client metadata.
-         * @return The metadata response builder.
-         */
-        public Builder withSessions(RaftSessionMetadata... sessions) {
-            return withSessions(Arrays.asList(checkNotNull(sessions, "sessions cannot be null")));
-        }
-
-        /**
-         * Sets the session metadata.
-         *
-         * @param sessions The client metadata.
-         * @return The metadata response builder.
-         */
-        public Builder withSessions(Collection<RaftSessionMetadata> sessions) {
-            this.sessions = new HashSet<>(checkNotNull(sessions, "sessions cannot be null"));
-            return this;
-        }
-
-        @Override
-        protected void validate() {
-            super.validate();
-            if (status == Status.OK) {
-                checkNotNull(sessions, "sessions cannot be null");
-            }
-        }
-
-        @Override
-        public MetadataResponse build() {
-            validate();
-            return new MetadataResponse(status, error, sessions);
-        }
+    @Override
+    public MetadataResponse build() {
+      validate();
+      return new MetadataResponse(status, error, sessions);
     }
+  }
 }

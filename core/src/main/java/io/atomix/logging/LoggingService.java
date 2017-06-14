@@ -20,8 +20,8 @@ package io.atomix.logging;
  */
 public interface LoggingService {
 
-    Logger getLogger(String name);
+  Logger getLogger(String name);
 
-    Logger getLogger(Class<?> clazz);
+  Logger getLogger(Class<?> clazz);
 
 }

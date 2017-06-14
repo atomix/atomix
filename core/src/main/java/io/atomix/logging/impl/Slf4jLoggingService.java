@@ -23,14 +23,14 @@ import io.atomix.logging.LoggingService;
  */
 public class Slf4jLoggingService implements LoggingService {
 
-    @Override
-    public Logger getLogger(String name) {
-        return new Slf4jLogger(name);
-    }
+  @Override
+  public Logger getLogger(String name) {
+    return new Slf4jLogger(name);
+  }
 
-    @Override
-    public Logger getLogger(Class<?> clazz) {
-        return new Slf4jLogger(clazz);
-    }
+  @Override
+  public Logger getLogger(Class<?> clazz) {
+    return new Slf4jLogger(clazz);
+  }
 
 }

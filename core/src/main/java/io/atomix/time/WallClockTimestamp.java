@@ -27,55 +27,55 @@ import static com.google.common.base.Preconditions.checkArgument;
  * wallclock time on the controller where it is generated.
  */
 public class WallClockTimestamp implements Timestamp {
-    private final long unixTimestamp;
+  private final long unixTimestamp;
 
-    public WallClockTimestamp() {
-        unixTimestamp = System.currentTimeMillis();
+  public WallClockTimestamp() {
+    unixTimestamp = System.currentTimeMillis();
+  }
+
+  public WallClockTimestamp(long timestamp) {
+    unixTimestamp = timestamp;
+  }
+
+  @Override
+  public int compareTo(Timestamp o) {
+    checkArgument(o instanceof WallClockTimestamp,
+        "Must be WallClockTimestamp", o);
+    WallClockTimestamp that = (WallClockTimestamp) o;
+
+    return ComparisonChain.start()
+        .compare(this.unixTimestamp, that.unixTimestamp)
+        .result();
+  }
+
+  @Override
+  public int hashCode() {
+    return Long.hashCode(unixTimestamp);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
     }
-
-    public WallClockTimestamp(long timestamp) {
-        unixTimestamp = timestamp;
+    if (!(obj instanceof WallClockTimestamp)) {
+      return false;
     }
+    WallClockTimestamp that = (WallClockTimestamp) obj;
+    return Objects.equals(this.unixTimestamp, that.unixTimestamp);
+  }
 
-    @Override
-    public int compareTo(Timestamp o) {
-        checkArgument(o instanceof WallClockTimestamp,
-                "Must be WallClockTimestamp", o);
-        WallClockTimestamp that = (WallClockTimestamp) o;
+  @Override
+  public String toString() {
+    return new DateTime(unixTimestamp).toString();
+  }
 
-        return ComparisonChain.start()
-                .compare(this.unixTimestamp, that.unixTimestamp)
-                .result();
-    }
-
-    @Override
-    public int hashCode() {
-        return Long.hashCode(unixTimestamp);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (!(obj instanceof WallClockTimestamp)) {
-            return false;
-        }
-        WallClockTimestamp that = (WallClockTimestamp) obj;
-        return Objects.equals(this.unixTimestamp, that.unixTimestamp);
-    }
-
-    @Override
-    public String toString() {
-        return new DateTime(unixTimestamp).toString();
-    }
-
-    /**
-     * Returns the unixTimestamp.
-     *
-     * @return unix timestamp
-     */
-    public long unixTimestamp() {
-        return unixTimestamp;
-    }
+  /**
+   * Returns the unixTimestamp.
+   *
+   * @return unix timestamp
+   */
+  public long unixTimestamp() {
+    return unixTimestamp;
+  }
 }

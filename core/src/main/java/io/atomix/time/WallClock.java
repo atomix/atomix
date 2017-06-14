@@ -21,15 +21,15 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * Wall clock.
  */
 public class WallClock implements Clock<WallClockTimestamp> {
-    @Override
-    public WallClockTimestamp time() {
-        return new WallClockTimestamp();
-    }
-    
-    @Override
-    public String toString() {
-        return toStringHelper(this)
-                .add("time", time())
-                .toString();
-    }
+  @Override
+  public WallClockTimestamp time() {
+    return new WallClockTimestamp();
+  }
+
+  @Override
+  public String toString() {
+    return toStringHelper(this)
+        .add("time", time())
+        .toString();
+  }
 }

@@ -73,7 +73,7 @@ public interface Reader extends Iterator<Indexed<? extends Entry<?>>>, AutoClose
    * Returns the entry at the given index.
    *
    * @param index The entry index.
-   * @param <T> The entry type.
+   * @param <T>   The entry type.
    * @return The entry at the given index or {@code null} if the entry doesn't exist.
    * @throws IndexOutOfBoundsException if the given index is outside the range of the log
    */

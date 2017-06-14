@@ -22,18 +22,18 @@ package io.atomix.util.memory;
  */
 public class DirectMemory extends NativeMemory {
 
-    /**
-     * Allocates direct memory via {@link DirectMemoryAllocator}.
-     *
-     * @param size The count of the memory to allocate.
-     * @return The allocated memory.
-     */
-    public static DirectMemory allocate(long size) {
-        return new DirectMemoryAllocator().allocate(size);
-    }
+  /**
+   * Allocates direct memory via {@link DirectMemoryAllocator}.
+   *
+   * @param size The count of the memory to allocate.
+   * @return The allocated memory.
+   */
+  public static DirectMemory allocate(long size) {
+    return new DirectMemoryAllocator().allocate(size);
+  }
 
-    public DirectMemory(long address, long size, DirectMemoryAllocator allocator) {
-        super(address, size, allocator);
-    }
+  public DirectMemory(long address, long size, DirectMemoryAllocator allocator) {
+    super(address, size, allocator);
+  }
 
 }

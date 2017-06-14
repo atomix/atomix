@@ -24,65 +24,65 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface RaftClientProtocolDispatcher {
 
-    /**
-     * Sends an open session request to the given node.
-     *
-     * @param nodeId  the node to which to send the request
-     * @param request the request to send
-     * @return a future to be completed with the response
-     */
-    CompletableFuture<OpenSessionResponse> openSession(NodeId nodeId, OpenSessionRequest request);
+  /**
+   * Sends an open session request to the given node.
+   *
+   * @param nodeId  the node to which to send the request
+   * @param request the request to send
+   * @return a future to be completed with the response
+   */
+  CompletableFuture<OpenSessionResponse> openSession(NodeId nodeId, OpenSessionRequest request);
 
-    /**
-     * Sends a close session request to the given node.
-     *
-     * @param nodeId  the node to which to send the request
-     * @param request the request to send
-     * @return a future to be completed with the response
-     */
-    CompletableFuture<CloseSessionResponse> closeSession(NodeId nodeId, CloseSessionRequest request);
+  /**
+   * Sends a close session request to the given node.
+   *
+   * @param nodeId  the node to which to send the request
+   * @param request the request to send
+   * @return a future to be completed with the response
+   */
+  CompletableFuture<CloseSessionResponse> closeSession(NodeId nodeId, CloseSessionRequest request);
 
-    /**
-     * Sends a keep alive request to the given node.
-     *
-     * @param nodeId  the node to which to send the request
-     * @param request the request to send
-     * @return a future to be completed with the response
-     */
-    CompletableFuture<KeepAliveResponse> keepAlive(NodeId nodeId, KeepAliveRequest request);
+  /**
+   * Sends a keep alive request to the given node.
+   *
+   * @param nodeId  the node to which to send the request
+   * @param request the request to send
+   * @return a future to be completed with the response
+   */
+  CompletableFuture<KeepAliveResponse> keepAlive(NodeId nodeId, KeepAliveRequest request);
 
-    /**
-     * Sends a query request to the given node.
-     *
-     * @param nodeId  the node to which to send the request
-     * @param request the request to send
-     * @return a future to be completed with the response
-     */
-    CompletableFuture<QueryResponse> query(NodeId nodeId, QueryRequest request);
+  /**
+   * Sends a query request to the given node.
+   *
+   * @param nodeId  the node to which to send the request
+   * @param request the request to send
+   * @return a future to be completed with the response
+   */
+  CompletableFuture<QueryResponse> query(NodeId nodeId, QueryRequest request);
 
-    /**
-     * Sends a command request to the given node.
-     *
-     * @param nodeId  the node to which to send the request
-     * @param request the request to send
-     * @return a future to be completed with the response
-     */
-    CompletableFuture<CommandResponse> command(NodeId nodeId, CommandRequest request);
+  /**
+   * Sends a command request to the given node.
+   *
+   * @param nodeId  the node to which to send the request
+   * @param request the request to send
+   * @return a future to be completed with the response
+   */
+  CompletableFuture<CommandResponse> command(NodeId nodeId, CommandRequest request);
 
-    /**
-     * Sends a metadata request to the given node.
-     *
-     * @param nodeId  the node to which to send the request
-     * @param request the request to send
-     * @return a future to be completed with the response
-     */
-    CompletableFuture<MetadataResponse> metadata(NodeId nodeId, MetadataRequest request);
+  /**
+   * Sends a metadata request to the given node.
+   *
+   * @param nodeId  the node to which to send the request
+   * @param request the request to send
+   * @return a future to be completed with the response
+   */
+  CompletableFuture<MetadataResponse> metadata(NodeId nodeId, MetadataRequest request);
 
-    /**
-     * Broadcasts a reset request to all nodes in the cluster.
-     *
-     * @param request the reset request to broadcast
-     */
-    void reset(ResetRequest request);
+  /**
+   * Broadcasts a reset request to all nodes in the cluster.
+   *
+   * @param request the reset request to broadcast
+   */
+  void reset(ResetRequest request);
 
 }

@@ -30,86 +30,86 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  */
 @Beta
 public class VectorClock<T extends Identifier> implements Clock<VectorTimestamp<T>> {
-    private final T localIdentifier;
-    private final Map<T, VectorTimestamp<T>> vector = new HashMap<>();
-    
-    public VectorClock(T localIdentifier) {
-        this(new VectorTimestamp<T>(localIdentifier, 0));
+  private final T localIdentifier;
+  private final Map<T, VectorTimestamp<T>> vector = new HashMap<>();
+
+  public VectorClock(T localIdentifier) {
+    this(new VectorTimestamp<T>(localIdentifier, 0));
+  }
+
+  public VectorClock(VectorTimestamp<T> localTimestamp) {
+    this(localTimestamp, Collections.emptyList());
+  }
+
+  public VectorClock(VectorTimestamp<T> localTimestamp, Collection<VectorTimestamp<T>> vector) {
+    this.localIdentifier = localTimestamp.identifier();
+    this.vector.put(localTimestamp.identifier(), localTimestamp);
+    for (VectorTimestamp<T> timestamp : vector) {
+      this.vector.put(timestamp.identifier(), timestamp);
     }
-    
-    public VectorClock(VectorTimestamp<T> localTimestamp) {
-        this(localTimestamp, Collections.emptyList());
+  }
+
+  @Override
+  public VectorTimestamp<T> time() {
+    return vector.get(localIdentifier);
+  }
+
+  /**
+   * Returns the local logical timestamp.
+   *
+   * @return the logical timestamp for the local identifier
+   */
+  public LogicalTimestamp localTimestamp() {
+    return time();
+  }
+
+  /**
+   * Returns the logical timestamp for the given identifier.
+   *
+   * @param identifier the identifier for which to return the timestamp
+   * @return the logical timestamp for the given identifier
+   */
+  public LogicalTimestamp timestamp(T identifier) {
+    return vector.get(identifier);
+  }
+
+  /**
+   * Returns a collection of identifier-timestamp pairs.
+   *
+   * @return a collection of identifier-timestamp pairs
+   */
+  public Collection<VectorTimestamp<T>> vector() {
+    return vector.values();
+  }
+
+  /**
+   * Updates the given timestamp.
+   *
+   * @param timestamp the timestamp to update
+   */
+  public void update(VectorTimestamp<T> timestamp) {
+    VectorTimestamp<T> currentTimestamp = vector.get(timestamp.identifier());
+    if (currentTimestamp == null || currentTimestamp.value() < timestamp.value()) {
+      vector.put(timestamp.identifier(), timestamp);
     }
-    
-    public VectorClock(VectorTimestamp<T> localTimestamp, Collection<VectorTimestamp<T>> vector) {
-        this.localIdentifier = localTimestamp.identifier();
-        this.vector.put(localTimestamp.identifier(), localTimestamp);
-        for (VectorTimestamp<T> timestamp : vector) {
-            this.vector.put(timestamp.identifier(), timestamp);
-        }
+  }
+
+  /**
+   * Updates the vector clock.
+   *
+   * @param clock the vector clock with which to update this clock
+   */
+  public void update(VectorClock<T> clock) {
+    for (VectorTimestamp<T> timestamp : clock.vector.values()) {
+      update(timestamp);
     }
-    
-    @Override
-    public VectorTimestamp<T> time() {
-        return vector.get(localIdentifier);
-    }
-    
-    /**
-     * Returns the local logical timestamp.
-     *
-     * @return the logical timestamp for the local identifier
-     */
-    public LogicalTimestamp localTimestamp() {
-        return time();
-    }
-    
-    /**
-     * Returns the logical timestamp for the given identifier.
-     *
-     * @param identifier the identifier for which to return the timestamp
-     * @return the logical timestamp for the given identifier
-     */
-    public LogicalTimestamp timestamp(T identifier) {
-        return vector.get(identifier);
-    }
-    
-    /**
-     * Returns a collection of identifier-timestamp pairs.
-     *
-     * @return a collection of identifier-timestamp pairs
-     */
-    public Collection<VectorTimestamp<T>> vector() {
-        return vector.values();
-    }
-    
-    /**
-     * Updates the given timestamp.
-     *
-     * @param timestamp the timestamp to update
-     */
-    public void update(VectorTimestamp<T> timestamp) {
-        VectorTimestamp<T> currentTimestamp = vector.get(timestamp.identifier());
-        if (currentTimestamp == null || currentTimestamp.value() < timestamp.value()) {
-            vector.put(timestamp.identifier(), timestamp);
-        }
-    }
-    
-    /**
-     * Updates the vector clock.
-     *
-     * @param clock the vector clock with which to update this clock
-     */
-    public void update(VectorClock<T> clock) {
-        for (VectorTimestamp<T> timestamp : clock.vector.values()) {
-            update(timestamp);
-        }
-    }
-    
-    @Override
-    public String toString() {
-        return toStringHelper(this)
-                .add("time", time())
-                .add("vector", vector())
-                .toString();
-    }
+  }
+
+  @Override
+  public String toString() {
+    return toStringHelper(this)
+        .add("time", time())
+        .add("vector", vector())
+        .toString();
+  }
 }

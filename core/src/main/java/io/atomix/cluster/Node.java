@@ -22,66 +22,66 @@ import java.net.InetAddress;
  */
 public interface Node {
 
+  /**
+   * Represents the operational state of the instance.
+   */
+  enum State {
+
     /**
-     * Represents the operational state of the instance.
+     * Signifies that the instance is active and that all components are
+     * operating normally.
      */
-    enum State {
+    READY,
 
-        /**
-         * Signifies that the instance is active and that all components are
-         * operating normally.
-         */
-        READY,
+    /**
+     * Signifies that the instance is active and operating normally.
+     */
+    ACTIVE,
 
-        /**
-         * Signifies that the instance is active and operating normally.
-         */
-        ACTIVE,
+    /**
+     * Signifies that the instance is inactive, which means either down or
+     * up, but not operational.
+     */
+    INACTIVE;
 
-        /**
-         * Signifies that the instance is inactive, which means either down or
-         * up, but not operational.
-         */
-        INACTIVE;
-
-        /**
-         * Indicates whether the state represents node which is active or ready.
-         *
-         * @return true if active or ready
-         */
-        public boolean isActive() {
-            return this == ACTIVE || this == READY;
-        }
-
-        /**
-         * Indicates whether the state represents a node which is ready.
-         *
-         * @return true if active and ready
-         */
-        public boolean isReady() {
-            return this == READY;
-        }
+    /**
+     * Indicates whether the state represents node which is active or ready.
+     *
+     * @return true if active or ready
+     */
+    public boolean isActive() {
+      return this == ACTIVE || this == READY;
     }
 
     /**
-     * Returns the instance identifier.
+     * Indicates whether the state represents a node which is ready.
      *
-     * @return instance identifier
+     * @return true if active and ready
      */
-    NodeId id();
+    public boolean isReady() {
+      return this == READY;
+    }
+  }
 
-    /**
-     * Returns the IP address of the controller instance.
-     *
-     * @return IP address
-     */
-    InetAddress ip();
+  /**
+   * Returns the instance identifier.
+   *
+   * @return instance identifier
+   */
+  NodeId id();
 
-    /**
-     * Returns the TCP port on which the node listens for connections.
-     *
-     * @return TCP port
-     */
-    int tcpPort();
+  /**
+   * Returns the IP address of the controller instance.
+   *
+   * @return IP address
+   */
+  InetAddress ip();
+
+  /**
+   * Returns the TCP port on which the node listens for connections.
+   *
+   * @return TCP port
+   */
+  int tcpPort();
 
 }

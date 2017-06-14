@@ -36,88 +36,88 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class DefaultRaftClient implements RaftClient {
-    private final String clientId;
-    private final Collection<NodeId> cluster;
-    private final ScheduledExecutorService threadPoolExecutor;
-    private final RaftMetadataClient metadata;
-    private final NodeSelectorManager selectorManager = new NodeSelectorManager();
-    private final RaftSessionManager sessionManager;
+  private final String clientId;
+  private final Collection<NodeId> cluster;
+  private final ScheduledExecutorService threadPoolExecutor;
+  private final RaftMetadataClient metadata;
+  private final NodeSelectorManager selectorManager = new NodeSelectorManager();
+  private final RaftSessionManager sessionManager;
 
-    public DefaultRaftClient(
-            String clientId,
-            NodeId nodeId,
-            Collection<NodeId> cluster,
-            RaftClientProtocol protocol,
-            ScheduledExecutorService threadPoolExecutor) {
-        this.clientId = checkNotNull(clientId, "clientId cannot be null");
-        this.cluster = checkNotNull(cluster, "cluster cannot be null");
-        this.threadPoolExecutor = checkNotNull(threadPoolExecutor, "threadPoolExecutor cannot be null");
-        this.metadata = new DefaultRaftMetadataClient(clientId, protocol, selectorManager);
-        this.sessionManager = new RaftSessionManager(clientId, nodeId, protocol, selectorManager, threadPoolExecutor);
+  public DefaultRaftClient(
+      String clientId,
+      NodeId nodeId,
+      Collection<NodeId> cluster,
+      RaftClientProtocol protocol,
+      ScheduledExecutorService threadPoolExecutor) {
+    this.clientId = checkNotNull(clientId, "clientId cannot be null");
+    this.cluster = checkNotNull(cluster, "cluster cannot be null");
+    this.threadPoolExecutor = checkNotNull(threadPoolExecutor, "threadPoolExecutor cannot be null");
+    this.metadata = new DefaultRaftMetadataClient(clientId, protocol, selectorManager);
+    this.sessionManager = new RaftSessionManager(clientId, nodeId, protocol, selectorManager, threadPoolExecutor);
+  }
+
+  @Override
+  public String id() {
+    return clientId;
+  }
+
+  @Override
+  public RaftMetadataClient metadata() {
+    return metadata;
+  }
+
+  @Override
+  public synchronized CompletableFuture<RaftClient> connect(Collection<NodeId> cluster) {
+    CompletableFuture<RaftClient> future = new CompletableFuture<>();
+
+    // If the provided cluster list is null or empty, use the default list.
+    if (cluster == null || cluster.isEmpty()) {
+      cluster = this.cluster;
     }
 
+    // If the default list is null or empty, use the default host:port.
+    if (cluster == null || cluster.isEmpty()) {
+      throw new IllegalArgumentException("No cluster specified");
+    }
+
+    // Reset the connection list to allow the selection strategy to prioritize connections.
+    sessionManager.resetConnections(null, cluster);
+
+    // Register the session manager.
+    sessionManager.open().whenCompleteAsync((result, error) -> {
+      if (error == null) {
+        future.complete(this);
+      } else {
+        future.completeExceptionally(error);
+      }
+    }, threadPoolExecutor);
+    return future;
+  }
+
+  @Override
+  public RaftSession.Builder sessionBuilder() {
+    return new SessionBuilder();
+  }
+
+  @Override
+  public synchronized CompletableFuture<Void> close() {
+    return sessionManager.close();
+  }
+
+  @Override
+  public String toString() {
+    return toStringHelper(this)
+        .add("id", clientId)
+        .toString();
+  }
+
+  /**
+   * Default Copycat session builder.
+   */
+  private class SessionBuilder extends RaftSession.Builder {
     @Override
-    public String id() {
-        return clientId;
+    public RaftSession build() {
+      return sessionManager.openSession(name, type, communicationStrategy, serializer, timeout).join();
     }
-
-    @Override
-    public RaftMetadataClient metadata() {
-        return metadata;
-    }
-
-    @Override
-    public synchronized CompletableFuture<RaftClient> connect(Collection<NodeId> cluster) {
-        CompletableFuture<RaftClient> future = new CompletableFuture<>();
-
-        // If the provided cluster list is null or empty, use the default list.
-        if (cluster == null || cluster.isEmpty()) {
-            cluster = this.cluster;
-        }
-
-        // If the default list is null or empty, use the default host:port.
-        if (cluster == null || cluster.isEmpty()) {
-            throw new IllegalArgumentException("No cluster specified");
-        }
-
-        // Reset the connection list to allow the selection strategy to prioritize connections.
-        sessionManager.resetConnections(null, cluster);
-
-        // Register the session manager.
-        sessionManager.open().whenCompleteAsync((result, error) -> {
-            if (error == null) {
-                future.complete(this);
-            } else {
-                future.completeExceptionally(error);
-            }
-        }, threadPoolExecutor);
-        return future;
-    }
-
-    @Override
-    public RaftSession.Builder sessionBuilder() {
-        return new SessionBuilder();
-    }
-
-    @Override
-    public synchronized CompletableFuture<Void> close() {
-        return sessionManager.close();
-    }
-
-    @Override
-    public String toString() {
-        return toStringHelper(this)
-                .add("id", clientId)
-                .toString();
-    }
-
-    /**
-     * Default Copycat session builder.
-     */
-    private class SessionBuilder extends RaftSession.Builder {
-        @Override
-        public RaftSession build() {
-            return sessionManager.openSession(name, type, communicationStrategy, serializer, timeout).join();
-        }
-    }
+  }
 }

@@ -23,31 +23,31 @@ import io.atomix.util.serializer.Serializer;
  * Raft server protocol that uses a {@link ClusterCommunicationService}.
  */
 public class RaftServerCommunicator implements RaftServerProtocol {
-    private final RaftServerProtocolListener listener;
-    private final RaftServerProtocolDispatcher dispatcher;
+  private final RaftServerProtocolListener listener;
+  private final RaftServerProtocolDispatcher dispatcher;
 
-    public RaftServerCommunicator(ClusterCommunicationService clusterCommunicator) {
-        this(null, clusterCommunicator);
-    }
+  public RaftServerCommunicator(ClusterCommunicationService clusterCommunicator) {
+    this(null, clusterCommunicator);
+  }
 
-    public RaftServerCommunicator(String prefix, ClusterCommunicationService clusterCommunicator) {
-        this(prefix, Serializer.using(KryoNamespaces.RAFT), clusterCommunicator);
-    }
+  public RaftServerCommunicator(String prefix, ClusterCommunicationService clusterCommunicator) {
+    this(prefix, Serializer.using(KryoNamespaces.RAFT), clusterCommunicator);
+  }
 
-    public RaftServerCommunicator(String prefix, Serializer serializer, ClusterCommunicationService clusterCommunicator) {
-        RaftMessageContext context = new RaftMessageContext(prefix);
-        this.listener = new RaftServerMessageListener(context, serializer, clusterCommunicator);
-        this.dispatcher = new RaftServerMessageDispatcher(context, serializer, clusterCommunicator);
-    }
+  public RaftServerCommunicator(String prefix, Serializer serializer, ClusterCommunicationService clusterCommunicator) {
+    RaftMessageContext context = new RaftMessageContext(prefix);
+    this.listener = new RaftServerMessageListener(context, serializer, clusterCommunicator);
+    this.dispatcher = new RaftServerMessageDispatcher(context, serializer, clusterCommunicator);
+  }
 
-    @Override
-    public RaftServerProtocolListener listener() {
-        return listener;
-    }
+  @Override
+  public RaftServerProtocolListener listener() {
+    return listener;
+  }
 
-    @Override
-    public RaftServerProtocolDispatcher dispatcher() {
-        return dispatcher;
-    }
+  @Override
+  public RaftServerProtocolDispatcher dispatcher() {
+    return dispatcher;
+  }
 
 }

@@ -22,11 +22,11 @@ package io.atomix.protocols.raft.protocol;
  */
 public interface RaftRequest extends RaftMessage {
 
-    /**
-     * Request builder.
-     *
-     * @param <T> The builder type.
-     */
-    interface Builder<T extends Builder<T, U>, U extends RaftRequest> extends io.atomix.util.Builder<U> {
-    }
+  /**
+   * Request builder.
+   *
+   * @param <T> The builder type.
+   */
+  interface Builder<T extends Builder<T, U>, U extends RaftRequest> extends io.atomix.util.Builder<U> {
+  }
 }

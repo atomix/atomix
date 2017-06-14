@@ -20,18 +20,18 @@ package io.atomix.protocols.raft.protocol;
  */
 public interface RaftServerProtocol {
 
-    /**
-     * Returns the server protocol listener.
-     *
-     * @return the server protocol listener
-     */
-    RaftServerProtocolListener listener();
+  /**
+   * Returns the server protocol listener.
+   *
+   * @return the server protocol listener
+   */
+  RaftServerProtocolListener listener();
 
-    /**
-     * Returns the server protocol dispatcher.
-     *
-     * @return the server protocol dispatcher
-     */
-    RaftServerProtocolDispatcher dispatcher();
+  /**
+   * Returns the server protocol dispatcher.
+   *
+   * @return the server protocol dispatcher
+   */
+  RaftServerProtocolDispatcher dispatcher();
 
 }

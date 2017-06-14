@@ -70,11 +70,11 @@ abstract class ActiveState extends PassiveState {
       if (request.logIndex() > lastIndex) {
         LOGGER.debug("{} - Rejected {}: Previous index ({}) is greater than the local log's last index ({})", context.getCluster().member().id(), request, request.logIndex(), lastIndex);
         return AppendResponse.builder()
-          .withStatus(RaftResponse.Status.OK)
-          .withTerm(context.getTerm())
-          .withSucceeded(false)
-          .withLogIndex(lastIndex)
-          .build();
+            .withStatus(RaftResponse.Status.OK)
+            .withTerm(context.getTerm())
+            .withSucceeded(false)
+            .withLogIndex(lastIndex)
+            .build();
       }
 
       final LogReader reader = context.getLogReader();
@@ -87,11 +87,11 @@ abstract class ActiveState extends PassiveState {
         if (entry == null || entry.term() != request.logTerm()) {
           LOGGER.debug("{} - Rejected {}: Request log term does not match local log term {} for the same entry", context.getCluster().member().id(), request, entry != null ? entry.term() : "unknown");
           return AppendResponse.builder()
-            .withStatus(RaftResponse.Status.OK)
-            .withTerm(context.getTerm())
-            .withSucceeded(false)
-            .withLogIndex(request.logIndex() <= lastIndex ? request.logIndex() - 1 : lastIndex)
-            .build();
+              .withStatus(RaftResponse.Status.OK)
+              .withTerm(context.getTerm())
+              .withSucceeded(false)
+              .withLogIndex(request.logIndex() <= lastIndex ? request.logIndex() - 1 : lastIndex)
+              .build();
         }
       } finally {
         reader.unlock();
@@ -146,11 +146,11 @@ abstract class ActiveState extends PassiveState {
     context.getStateMachine().applyAll(context.getCommitIndex());
 
     return AppendResponse.builder()
-      .withStatus(RaftResponse.Status.OK)
-      .withTerm(context.getTerm())
-      .withSucceeded(true)
-      .withLogIndex(lastEntryIndex)
-      .build();
+        .withStatus(RaftResponse.Status.OK)
+        .withTerm(context.getTerm())
+        .withSucceeded(true)
+        .withLogIndex(lastEntryIndex)
+        .build();
   }
 
   @Override
@@ -171,22 +171,22 @@ abstract class ActiveState extends PassiveState {
     if (request.term() < context.getTerm()) {
       LOGGER.debug("{} - Rejected {}: candidate's term is less than the current term", context.getCluster().member().id(), request);
       return PollResponse.builder()
-        .withStatus(RaftResponse.Status.OK)
-        .withTerm(context.getTerm())
-        .withAccepted(false)
-        .build();
+          .withStatus(RaftResponse.Status.OK)
+          .withTerm(context.getTerm())
+          .withAccepted(false)
+          .build();
     } else if (isLogUpToDate(request.logIndex(), request.logTerm(), request)) {
       return PollResponse.builder()
-        .withStatus(RaftResponse.Status.OK)
-        .withTerm(context.getTerm())
-        .withAccepted(true)
-        .build();
+          .withStatus(RaftResponse.Status.OK)
+          .withTerm(context.getTerm())
+          .withAccepted(true)
+          .build();
     } else {
       return PollResponse.builder()
-        .withStatus(RaftResponse.Status.OK)
-        .withTerm(context.getTerm())
-        .withAccepted(false)
-        .build();
+          .withStatus(RaftResponse.Status.OK)
+          .withTerm(context.getTerm())
+          .withAccepted(false)
+          .build();
     }
   }
 
@@ -216,64 +216,64 @@ abstract class ActiveState extends PassiveState {
     if (request.term() < context.getTerm()) {
       LOGGER.trace("{} - Rejected {}: candidate's term is less than the current term", context.getCluster().member().id(), request);
       return VoteResponse.builder()
-        .withStatus(RaftResponse.Status.OK)
-        .withTerm(context.getTerm())
-        .withVoted(false)
-        .build();
+          .withStatus(RaftResponse.Status.OK)
+          .withTerm(context.getTerm())
+          .withVoted(false)
+          .build();
     }
     // If a leader was already determined for this term then reject the request.
     else if (context.getLeader() != null) {
       LOGGER.trace("{} - Rejected {}: leader already exists", context.getCluster().member().id(), request);
       return VoteResponse.builder()
-        .withStatus(RaftResponse.Status.OK)
-        .withTerm(context.getTerm())
-        .withVoted(false)
-        .build();
+          .withStatus(RaftResponse.Status.OK)
+          .withTerm(context.getTerm())
+          .withVoted(false)
+          .build();
     }
     // If the requesting candidate is not a known member of the cluster (to this
     // node) then don't vote for it. Only vote for candidates that we know about.
     else if (!context.getClusterState().getRemoteMemberStates().stream().map(m -> m.getMember().id()).collect(Collectors.toSet()).contains(request.candidate())) {
       LOGGER.trace("{} - Rejected {}: candidate is not known to the local member", context.getCluster().member().id(), request);
       return VoteResponse.builder()
-        .withStatus(RaftResponse.Status.OK)
-        .withTerm(context.getTerm())
-        .withVoted(false)
-        .build();
+          .withStatus(RaftResponse.Status.OK)
+          .withTerm(context.getTerm())
+          .withVoted(false)
+          .build();
     }
     // If no vote has been cast, check the log and cast a vote if necessary.
     else if (context.getLastVotedFor() == null) {
       if (isLogUpToDate(request.logIndex(), request.logTerm(), request)) {
         context.setLastVotedFor(request.candidate());
         return VoteResponse.builder()
-          .withStatus(RaftResponse.Status.OK)
-          .withTerm(context.getTerm())
-          .withVoted(true)
-          .build();
+            .withStatus(RaftResponse.Status.OK)
+            .withTerm(context.getTerm())
+            .withVoted(true)
+            .build();
       } else {
         return VoteResponse.builder()
-          .withStatus(RaftResponse.Status.OK)
-          .withTerm(context.getTerm())
-          .withVoted(false)
-          .build();
+            .withStatus(RaftResponse.Status.OK)
+            .withTerm(context.getTerm())
+            .withVoted(false)
+            .build();
       }
     }
     // If we already voted for the requesting server, respond successfully.
     else if (context.getLastVotedFor() == request.candidate()) {
       LOGGER.debug("{} - Accepted {}: already voted for {}", context.getCluster().member().id(), request, context.getCluster().member(context.getLastVotedFor()).id());
       return VoteResponse.builder()
-        .withStatus(RaftResponse.Status.OK)
-        .withTerm(context.getTerm())
-        .withVoted(true)
-        .build();
+          .withStatus(RaftResponse.Status.OK)
+          .withTerm(context.getTerm())
+          .withVoted(true)
+          .build();
     }
     // In this case, we've already voted for someone else.
     else {
       LOGGER.debug("{} - Rejected {}: already voted for {}", context.getCluster().member().id(), request, context.getCluster().member(context.getLastVotedFor()).id());
       return VoteResponse.builder()
-        .withStatus(RaftResponse.Status.OK)
-        .withTerm(context.getTerm())
-        .withVoted(false)
-        .build();
+          .withStatus(RaftResponse.Status.OK)
+          .withTerm(context.getTerm())
+          .withVoted(false)
+          .build();
     }
   }
 

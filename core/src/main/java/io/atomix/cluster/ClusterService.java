@@ -26,44 +26,44 @@ import java.util.Set;
  */
 public interface ClusterService extends ListenerService<ClusterEvent, ClusterEventListener> {
 
-    /**
-     * Returns the local controller node.
-     *
-     * @return local controller node
-     */
-    Node getLocalNode();
+  /**
+   * Returns the local controller node.
+   *
+   * @return local controller node
+   */
+  Node getLocalNode();
 
-    /**
-     * Returns the set of current cluster members.
-     *
-     * @return set of cluster members
-     */
-    Set<Node> getNodes();
+  /**
+   * Returns the set of current cluster members.
+   *
+   * @return set of cluster members
+   */
+  Set<Node> getNodes();
 
-    /**
-     * Returns the specified controller node.
-     *
-     * @param nodeId controller node identifier
-     * @return controller node
-     */
-    Node getNode(NodeId nodeId);
+  /**
+   * Returns the specified controller node.
+   *
+   * @param nodeId controller node identifier
+   * @return controller node
+   */
+  Node getNode(NodeId nodeId);
 
-    /**
-     * Returns the availability state of the specified controller node. Note
-     * that this does not imply that all the core and application components
-     * have been fully activated; only that the node has joined the cluster.
-     *
-     * @param nodeId controller node identifier
-     * @return availability state
-     */
-    Node.State getState(NodeId nodeId);
+  /**
+   * Returns the availability state of the specified controller node. Note
+   * that this does not imply that all the core and application components
+   * have been fully activated; only that the node has joined the cluster.
+   *
+   * @param nodeId controller node identifier
+   * @return availability state
+   */
+  Node.State getState(NodeId nodeId);
 
-    /**
-     * Returns the system time when the availability state was last updated.
-     *
-     * @param nodeId controller node identifier
-     * @return system time when the availability state was last updated.
-     */
-    DateTime getLastUpdated(NodeId nodeId);
+  /**
+   * Returns the system time when the availability state was last updated.
+   *
+   * @param nodeId controller node identifier
+   * @return system time when the availability state was last updated.
+   */
+  DateTime getLastUpdated(NodeId nodeId);
 
 }

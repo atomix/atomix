@@ -29,24 +29,24 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * The segment descriptor manages metadata related to a single segment of the log. Descriptors are stored within the
  * first {@code 64} bytes of each segment in the following order:
  * <ul>
- *   <li>{@code id} (64-bit signed integer) - A unique segment identifier. This is a monotonically increasing number within
- *   each log. Segments with in-sequence identifiers should contain in-sequence indexes.</li>
- *   <li>{@code index} (64-bit signed integer) - The effective first index of the segment. This indicates the index at which
- *   the first entry should be written to the segment. Indexes are monotonically increasing thereafter.</li>
- *   <li>{@code version} (64-bit signed integer) - The version of the segment. Versions are monotonically increasing
- *   starting at {@code 1}. Versions will only be incremented whenever the segment is rewritten to another memory/disk
- *   space, e.g. after log compaction.</li>
- *   <li>{@code maxSegmentSize} (32-bit unsigned integer) - The maximum number of bytes allowed in the segment.</li>
- *   <li>{@code maxEntries} (32-bit signed integer) - The total number of expected entries in the segment. This is the final
- *   number of entries allowed within the segment both before and after compaction. This entry count is used to determine
- *   the count of internal indexing and deduplication facilities.</li>
- *   <li>{@code updated} (64-bit signed integer) - The last update to the segment in terms of milliseconds since the epoch.
- *   When the segment is first constructed, the {@code updated} time is {@code 0}. Once all entries in the segment have
- *   been committed, the {@code updated} time should be set to the current time. Log compaction should not result in a
- *   change to {@code updated}.</li>
- *   <li>{@code locked} (8-bit boolean) - A boolean indicating whether the segment is locked. Segments will be locked once
- *   all entries have been committed to the segment. The lock state of each segment is used to determine log compaction
- *   and recovery behavior.</li>
+ * <li>{@code id} (64-bit signed integer) - A unique segment identifier. This is a monotonically increasing number within
+ * each log. Segments with in-sequence identifiers should contain in-sequence indexes.</li>
+ * <li>{@code index} (64-bit signed integer) - The effective first index of the segment. This indicates the index at which
+ * the first entry should be written to the segment. Indexes are monotonically increasing thereafter.</li>
+ * <li>{@code version} (64-bit signed integer) - The version of the segment. Versions are monotonically increasing
+ * starting at {@code 1}. Versions will only be incremented whenever the segment is rewritten to another memory/disk
+ * space, e.g. after log compaction.</li>
+ * <li>{@code maxSegmentSize} (32-bit unsigned integer) - The maximum number of bytes allowed in the segment.</li>
+ * <li>{@code maxEntries} (32-bit signed integer) - The total number of expected entries in the segment. This is the final
+ * number of entries allowed within the segment both before and after compaction. This entry count is used to determine
+ * the count of internal indexing and deduplication facilities.</li>
+ * <li>{@code updated} (64-bit signed integer) - The last update to the segment in terms of milliseconds since the epoch.
+ * When the segment is first constructed, the {@code updated} time is {@code 0}. Once all entries in the segment have
+ * been committed, the {@code updated} time should be set to the current time. Log compaction should not result in a
+ * change to {@code updated}.</li>
+ * <li>{@code locked} (8-bit boolean) - A boolean indicating whether the segment is locked. Segments will be locked once
+ * all entries have been committed to the segment. The lock state of each segment is used to determine log compaction
+ * and recovery behavior.</li>
  * </ul>
  * The remainder of the 64 segment header bytes are reserved for future metadata.
  *
@@ -56,22 +56,22 @@ public final class SegmentDescriptor implements AutoCloseable {
   public static final int BYTES = 64;
 
   // The lengths of each field in the header.
-  private static final int          ID_LENGTH = Bytes.LONG;    // 64-bit signed integer
-  private static final int     VERSION_LENGTH = Bytes.LONG;    // 64-bit signed integer
-  private static final int       INDEX_LENGTH = Bytes.LONG;    // 64-bit signed integer
-  private static final int    MAX_SIZE_LENGTH = Bytes.INTEGER; // 32-bit unsigned integer
+  private static final int ID_LENGTH = Bytes.LONG;    // 64-bit signed integer
+  private static final int VERSION_LENGTH = Bytes.LONG;    // 64-bit signed integer
+  private static final int INDEX_LENGTH = Bytes.LONG;    // 64-bit signed integer
+  private static final int MAX_SIZE_LENGTH = Bytes.INTEGER; // 32-bit unsigned integer
   private static final int MAX_ENTRIES_LENGTH = Bytes.INTEGER; // 32-bit signed integer
-  private static final int     UPDATED_LENGTH = Bytes.LONG;    // 64-bit signed integer
-  private static final int      LOCKED_LENGTH = Bytes.BOOLEAN; // 8-bit boolean
+  private static final int UPDATED_LENGTH = Bytes.LONG;    // 64-bit signed integer
+  private static final int LOCKED_LENGTH = Bytes.BOOLEAN; // 8-bit boolean
 
   // The positions of each field in the header.
-  private static final long          ID_POSITION = 0;                                         // 0
-  private static final long     VERSION_POSITION = ID_POSITION + ID_LENGTH;                   // 8
-  private static final long       INDEX_POSITION = VERSION_POSITION + VERSION_LENGTH;         // 16
-  private static final long    MAX_SIZE_POSITION = INDEX_POSITION + INDEX_LENGTH;             // 24
+  private static final long ID_POSITION = 0;                                         // 0
+  private static final long VERSION_POSITION = ID_POSITION + ID_LENGTH;                   // 8
+  private static final long INDEX_POSITION = VERSION_POSITION + VERSION_LENGTH;         // 16
+  private static final long MAX_SIZE_POSITION = INDEX_POSITION + INDEX_LENGTH;             // 24
   private static final long MAX_ENTRIES_POSITION = MAX_SIZE_POSITION + MAX_SIZE_LENGTH;       // 28
-  private static final long     UPDATED_POSITION = MAX_ENTRIES_POSITION + MAX_ENTRIES_LENGTH; // 32
-  private static final long      LOCKED_POSITION = UPDATED_POSITION + UPDATED_LENGTH;         // 40
+  private static final long UPDATED_POSITION = MAX_ENTRIES_POSITION + MAX_ENTRIES_LENGTH; // 32
+  private static final long LOCKED_POSITION = UPDATED_POSITION + UPDATED_LENGTH;         // 40
 
   /**
    * Returns a descriptor builder.
@@ -221,15 +221,15 @@ public final class SegmentDescriptor implements AutoCloseable {
    */
   SegmentDescriptor copyTo(Buffer buffer) {
     this.buffer = buffer
-      .writeLong(id)
-      .writeLong(version)
-      .writeLong(index)
-      .writeUnsignedInt(maxSegmentSize)
-      .writeInt(maxEntries)
-      .writeLong(updated)
-      .writeBoolean(locked)
-      .skip(BYTES - buffer.position())
-      .flush();
+        .writeLong(id)
+        .writeLong(version)
+        .writeLong(index)
+        .writeUnsignedInt(maxSegmentSize)
+        .writeInt(maxEntries)
+        .writeLong(updated)
+        .writeBoolean(locked)
+        .skip(BYTES - buffer.position())
+        .flush();
     return this;
   }
 

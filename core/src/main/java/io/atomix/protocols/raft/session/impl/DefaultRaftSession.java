@@ -52,132 +52,132 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class DefaultRaftSession implements RaftSession {
-    private final RaftSessionState state;
-    private final RaftSessionManager sessionManager;
-    private final RaftSessionListener sessionListener;
-    private final RaftSessionSubmitter sessionSubmitter;
+  private final RaftSessionState state;
+  private final RaftSessionManager sessionManager;
+  private final RaftSessionListener sessionListener;
+  private final RaftSessionSubmitter sessionSubmitter;
 
-    public DefaultRaftSession(
-            String clientId,
-            RaftSessionState state,
-            RaftClientProtocol protocol,
-            NodeSelectorManager selectorManager,
-            RaftSessionManager sessionManager,
-            CommunicationStrategy communicationStrategy,
-            Serializer serializer,
-            Executor orderedExecutor,
-            ScheduledExecutorService scheduledExecutor) {
-        this.state = checkNotNull(state, "state cannot be null");
-        this.sessionManager = checkNotNull(sessionManager, "sessionManager cannot be null");
-        RaftSessionSequencer sequencer = new RaftSessionSequencer(state);
-        this.sessionListener = new RaftSessionListener(protocol, state, sequencer, serializer, orderedExecutor);
-        RaftConnection leaderConnection = new RaftConnection(String.valueOf(state.getSessionId()), protocol.dispatcher(), selectorManager.createSelector(CommunicationStrategies.LEADER));
-        RaftConnection sessionConnection = new RaftConnection(String.valueOf(state.getSessionId()), protocol.dispatcher(), selectorManager.createSelector(communicationStrategy));
-        this.sessionSubmitter = new RaftSessionSubmitter(leaderConnection, sessionConnection, state, sequencer, sessionManager, serializer, orderedExecutor, scheduledExecutor);
-    }
+  public DefaultRaftSession(
+      String clientId,
+      RaftSessionState state,
+      RaftClientProtocol protocol,
+      NodeSelectorManager selectorManager,
+      RaftSessionManager sessionManager,
+      CommunicationStrategy communicationStrategy,
+      Serializer serializer,
+      Executor orderedExecutor,
+      ScheduledExecutorService scheduledExecutor) {
+    this.state = checkNotNull(state, "state cannot be null");
+    this.sessionManager = checkNotNull(sessionManager, "sessionManager cannot be null");
+    RaftSessionSequencer sequencer = new RaftSessionSequencer(state);
+    this.sessionListener = new RaftSessionListener(protocol, state, sequencer, serializer, orderedExecutor);
+    RaftConnection leaderConnection = new RaftConnection(String.valueOf(state.getSessionId()), protocol.dispatcher(), selectorManager.createSelector(CommunicationStrategies.LEADER));
+    RaftConnection sessionConnection = new RaftConnection(String.valueOf(state.getSessionId()), protocol.dispatcher(), selectorManager.createSelector(communicationStrategy));
+    this.sessionSubmitter = new RaftSessionSubmitter(leaderConnection, sessionConnection, state, sequencer, sessionManager, serializer, orderedExecutor, scheduledExecutor);
+  }
 
-    @Override
-    public String name() {
-        return state.getSessionName();
-    }
+  @Override
+  public String name() {
+    return state.getSessionName();
+  }
 
-    @Override
-    public String type() {
-        return state.getSessionType();
-    }
+  @Override
+  public String type() {
+    return state.getSessionType();
+  }
 
-    @Override
-    public State state() {
-        return state.getState();
-    }
+  @Override
+  public State state() {
+    return state.getState();
+  }
 
-    @Override
-    public void addStateChangeListener(Consumer<State> listener) {
-        state.addStateChangeListener(listener);
-    }
+  @Override
+  public void addStateChangeListener(Consumer<State> listener) {
+    state.addStateChangeListener(listener);
+  }
 
-    @Override
-    public void removeStateChangeListener(Consumer<State> listener) {
-        state.removeStateChangeListener(listener);
-    }
+  @Override
+  public void removeStateChangeListener(Consumer<State> listener) {
+    state.removeStateChangeListener(listener);
+  }
 
-    /**
-     * Submits an operation to the session.
-     *
-     * @param operation The operation to submit.
-     * @param <T>       The operation result type.
-     * @return A completable future to be completed with the operation result.
-     */
-    public <T> CompletableFuture<T> submit(RaftOperation<T> operation) {
-        if (operation instanceof RaftQuery) {
-            return submit((RaftQuery<T>) operation);
-        } else if (operation instanceof RaftCommand) {
-            return submit((RaftCommand<T>) operation);
-        } else {
-            throw new UnsupportedOperationException("unknown operation type: " + operation.getClass());
-        }
+  /**
+   * Submits an operation to the session.
+   *
+   * @param operation The operation to submit.
+   * @param <T>       The operation result type.
+   * @return A completable future to be completed with the operation result.
+   */
+  public <T> CompletableFuture<T> submit(RaftOperation<T> operation) {
+    if (operation instanceof RaftQuery) {
+      return submit((RaftQuery<T>) operation);
+    } else if (operation instanceof RaftCommand) {
+      return submit((RaftCommand<T>) operation);
+    } else {
+      throw new UnsupportedOperationException("unknown operation type: " + operation.getClass());
     }
+  }
 
-    /**
-     * Submits a command to the session.
-     *
-     * @param command The command to submit.
-     * @param <T>     The command result type.
-     * @return A completable future to be completed with the command result.
-     */
-    public <T> CompletableFuture<T> submit(RaftCommand<T> command) {
-        return sessionSubmitter.submit(command);
-    }
+  /**
+   * Submits a command to the session.
+   *
+   * @param command The command to submit.
+   * @param <T>     The command result type.
+   * @return A completable future to be completed with the command result.
+   */
+  public <T> CompletableFuture<T> submit(RaftCommand<T> command) {
+    return sessionSubmitter.submit(command);
+  }
 
-    /**
-     * Submits a query to the session.
-     *
-     * @param query The query to submit.
-     * @param <T>   The query result type.
-     * @return A completable future to be completed with the query result.
-     */
-    public <T> CompletableFuture<T> submit(RaftQuery<T> query) {
-        return sessionSubmitter.submit(query);
-    }
+  /**
+   * Submits a query to the session.
+   *
+   * @param query The query to submit.
+   * @param <T>   The query result type.
+   * @return A completable future to be completed with the query result.
+   */
+  public <T> CompletableFuture<T> submit(RaftQuery<T> query) {
+    return sessionSubmitter.submit(query);
+  }
 
-    @Override
-    public <T> void addEventListener(Consumer<T> callback) {
-        sessionListener.addEventListener(callback);
-    }
+  @Override
+  public <T> void addEventListener(Consumer<T> callback) {
+    sessionListener.addEventListener(callback);
+  }
 
-    @Override
-    public <T> void removeEventListener(Consumer<T> callback) {
-        sessionListener.removeEventListener(callback);
-    }
+  @Override
+  public <T> void removeEventListener(Consumer<T> callback) {
+    sessionListener.removeEventListener(callback);
+  }
 
-    @Override
-    public boolean isOpen() {
-        return state.getState() != State.CLOSED;
-    }
+  @Override
+  public boolean isOpen() {
+    return state.getState() != State.CLOSED;
+  }
 
-    @Override
-    public CompletableFuture<Void> close() {
-        return sessionManager.closeSession(state.getSessionId()).whenComplete((result, error) -> state.setState(State.CLOSED));
-    }
+  @Override
+  public CompletableFuture<Void> close() {
+    return sessionManager.closeSession(state.getSessionId()).whenComplete((result, error) -> state.setState(State.CLOSED));
+  }
 
-    @Override
-    public int hashCode() {
-        int hashCode = 31;
-        long id = state.getSessionId();
-        hashCode = 37 * hashCode + (int) (id ^ (id >>> 32));
-        return hashCode;
-    }
+  @Override
+  public int hashCode() {
+    int hashCode = 31;
+    long id = state.getSessionId();
+    hashCode = 37 * hashCode + (int) (id ^ (id >>> 32));
+    return hashCode;
+  }
 
-    @Override
-    public boolean equals(Object object) {
-        return object instanceof DefaultRaftSession && ((DefaultRaftSession) object).state.getSessionId() == state.getSessionId();
-    }
+  @Override
+  public boolean equals(Object object) {
+    return object instanceof DefaultRaftSession && ((DefaultRaftSession) object).state.getSessionId() == state.getSessionId();
+  }
 
-    @Override
-    public String toString() {
-        return toStringHelper(this)
-                .add("id", state.getSessionId())
-                .toString();
-    }
+  @Override
+  public String toString() {
+    return toStringHelper(this)
+        .add("id", state.getSessionId())
+        .toString();
+  }
 
 }

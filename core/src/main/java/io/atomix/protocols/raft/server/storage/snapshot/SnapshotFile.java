@@ -63,19 +63,19 @@ public final class SnapshotFile {
 
     // The first part of the file name should be the provided snapshot file name.
     // Subtract from the number of parts to ensure PART_SEPARATOR can be used in snapshot names.
-    if (!parts[parts.length-4].equals(name)) {
+    if (!parts[parts.length - 4].equals(name)) {
       return false;
     }
 
     // The second part of the file name should be numeric.
     // Subtract from the number of parts to ensure PART_SEPARATOR can be used in snapshot names.
-    if (!isNumeric(parts[parts.length-3])) {
+    if (!isNumeric(parts[parts.length - 3])) {
       return false;
     }
 
     // The third part of the file name should be numeric.
     // Subtract from the number of parts to ensure PART_SEPARATOR can be used in snapshot names.
-    if (!isNumeric(parts[parts.length-2])) {
+    if (!isNumeric(parts[parts.length - 2])) {
       return false;
     }
 

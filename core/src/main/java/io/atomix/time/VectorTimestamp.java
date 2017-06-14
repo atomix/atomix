@@ -27,56 +27,56 @@ import static com.google.common.base.Preconditions.checkArgument;
  * Vector clock timestamp.
  */
 public class VectorTimestamp<T extends Identifier> extends LogicalTimestamp {
-    private final T identifier;
-    
-    public VectorTimestamp(T identifier, long value) {
-        super(value);
-        this.identifier = identifier;
+  private final T identifier;
+
+  public VectorTimestamp(T identifier, long value) {
+    super(value);
+    this.identifier = identifier;
+  }
+
+  /**
+   * Returns the timestamp identifier.
+   *
+   * @return the timestamp identifier
+   */
+  public T identifier() {
+    return identifier;
+  }
+
+  @Override
+  public int compareTo(Timestamp o) {
+    checkArgument(o instanceof VectorTimestamp, "Must be VectorTimestamp", o);
+    VectorTimestamp that = (VectorTimestamp) o;
+
+    return ComparisonChain.start()
+        .compare(this.identifier.id(), that.identifier.id())
+        .compare(this.value(), that.value())
+        .result();
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(identifier(), value());
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
     }
-    
-    /**
-     * Returns the timestamp identifier.
-     *
-     * @return the timestamp identifier
-     */
-    public T identifier() {
-        return identifier;
+    if (!(obj instanceof VectorTimestamp)) {
+      return false;
     }
-    
-    @Override
-    public int compareTo(Timestamp o) {
-        checkArgument(o instanceof VectorTimestamp, "Must be VectorTimestamp", o);
-        VectorTimestamp that = (VectorTimestamp) o;
-        
-        return ComparisonChain.start()
-                .compare(this.identifier.id(), that.identifier.id())
-                .compare(this.value(), that.value())
-                .result();
-    }
-    
-    @Override
-    public int hashCode() {
-        return Objects.hash(identifier(), value());
-    }
-    
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (!(obj instanceof VectorTimestamp)) {
-            return false;
-        }
-        VectorTimestamp that = (VectorTimestamp) obj;
-        return Objects.equals(this.identifier, that.identifier)
-                && Objects.equals(this.value(), that.value());
-    }
-    
-    @Override
-    public String toString() {
-        return toStringHelper(this)
-                .add("identifier", identifier())
-                .add("value", value())
-                .toString();
-    }
+    VectorTimestamp that = (VectorTimestamp) obj;
+    return Objects.equals(this.identifier, that.identifier)
+        && Objects.equals(this.value(), that.value());
+  }
+
+  @Override
+  public String toString() {
+    return toStringHelper(this)
+        .add("identifier", identifier())
+        .add("value", value())
+        .toString();
+  }
 }

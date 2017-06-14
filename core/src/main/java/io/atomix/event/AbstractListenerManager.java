@@ -20,25 +20,25 @@ package io.atomix.event;
  */
 public abstract class AbstractListenerManager<E extends Event, L extends EventListener<E>> implements ListenerService<E, L> {
 
-    protected final ListenerRegistry<E, L> listenerRegistry = new ListenerRegistry<>();
+  protected final ListenerRegistry<E, L> listenerRegistry = new ListenerRegistry<>();
 
-    @Override
-    public void addListener(L listener) {
-        listenerRegistry.addListener(listener);
-    }
+  @Override
+  public void addListener(L listener) {
+    listenerRegistry.addListener(listener);
+  }
 
-    @Override
-    public void removeListener(L listener) {
-        listenerRegistry.removeListener(listener);
-    }
+  @Override
+  public void removeListener(L listener) {
+    listenerRegistry.removeListener(listener);
+  }
 
-    /**
-     * Posts the specified event to the local event dispatcher.
-     *
-     * @param event event to be posted; may be null
-     */
-    protected void post(E event) {
-        listenerRegistry.process(event);
-    }
+  /**
+   * Posts the specified event to the local event dispatcher.
+   *
+   * @param event event to be posted; may be null
+   */
+  protected void post(E event) {
+    listenerRegistry.process(event);
+  }
 
 }

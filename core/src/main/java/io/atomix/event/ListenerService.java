@@ -20,18 +20,18 @@ package io.atomix.event;
  */
 public interface ListenerService<E extends Event, L extends EventListener<E>> {
 
-    /**
-     * Adds the specified listener.
-     *
-     * @param listener listener to be added
-     */
-    void addListener(L listener);
+  /**
+   * Adds the specified listener.
+   *
+   * @param listener listener to be added
+   */
+  void addListener(L listener);
 
-    /**
-     * Removes the specified listener.
-     *
-     * @param listener listener to be removed
-     */
-    void removeListener(L listener);
+  /**
+   * Removes the specified listener.
+   *
+   * @param listener listener to be removed
+   */
+  void removeListener(L listener);
 
 }

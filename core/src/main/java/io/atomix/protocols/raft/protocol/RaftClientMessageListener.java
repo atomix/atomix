@@ -27,23 +27,23 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Raft client listener that uses a cluster communicator for messaging.
  */
 public class RaftClientMessageListener implements RaftClientProtocolListener {
-    private final RaftMessageContext context;
-    private final Serializer serializer;
-    private final ClusterCommunicationService clusterCommunicator;
+  private final RaftMessageContext context;
+  private final Serializer serializer;
+  private final ClusterCommunicationService clusterCommunicator;
 
-    public RaftClientMessageListener(RaftMessageContext context, Serializer serializer, ClusterCommunicationService clusterCommunicator) {
-        this.context = checkNotNull(context, "context cannot be null");
-        this.serializer = checkNotNull(serializer, "serializer cannot be null");
-        this.clusterCommunicator = checkNotNull(clusterCommunicator, "clusterCommunicator cannot be null");
-    }
+  public RaftClientMessageListener(RaftMessageContext context, Serializer serializer, ClusterCommunicationService clusterCommunicator) {
+    this.context = checkNotNull(context, "context cannot be null");
+    this.serializer = checkNotNull(serializer, "serializer cannot be null");
+    this.clusterCommunicator = checkNotNull(clusterCommunicator, "clusterCommunicator cannot be null");
+  }
 
-    @Override
-    public void registerPublishListener(long sessionId, Consumer<PublishRequest> listener, Executor executor) {
-        clusterCommunicator.addSubscriber(context.publishSubject(sessionId), serializer::decode, listener, executor);
-    }
+  @Override
+  public void registerPublishListener(long sessionId, Consumer<PublishRequest> listener, Executor executor) {
+    clusterCommunicator.addSubscriber(context.publishSubject(sessionId), serializer::decode, listener, executor);
+  }
 
-    @Override
-    public void unregisterPublishListener(long sessionId) {
-        clusterCommunicator.removeSubscriber(context.publishSubject(sessionId));
-    }
+  @Override
+  public void unregisterPublishListener(long sessionId) {
+    clusterCommunicator.removeSubscriber(context.publishSubject(sessionId));
+  }
 }

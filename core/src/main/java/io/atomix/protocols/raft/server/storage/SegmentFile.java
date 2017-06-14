@@ -32,7 +32,7 @@ public final class SegmentFile {
 
   /**
    * Returns a boolean value indicating whether the given file appears to be a parsable segment file.
-   * 
+   *
    * @throws NullPointerException if {@code file} is null
    */
   public static boolean isSegmentFile(String name, File file) {

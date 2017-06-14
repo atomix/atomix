@@ -39,162 +39,162 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class SnapshotReader implements BufferInput<SnapshotReader> {
-    private final Buffer buffer;
-    private final Snapshot snapshot;
-    private final Serializer serializer;
+  private final Buffer buffer;
+  private final Snapshot snapshot;
+  private final Serializer serializer;
 
-    SnapshotReader(Buffer buffer, Snapshot snapshot, Serializer serializer) {
-        this.buffer = checkNotNull(buffer, "buffer cannot be null");
-        this.snapshot = checkNotNull(snapshot, "snapshot cannot be null");
-        this.serializer = checkNotNull(serializer, "serializer cannot be null");
-    }
+  SnapshotReader(Buffer buffer, Snapshot snapshot, Serializer serializer) {
+    this.buffer = checkNotNull(buffer, "buffer cannot be null");
+    this.snapshot = checkNotNull(snapshot, "snapshot cannot be null");
+    this.serializer = checkNotNull(serializer, "serializer cannot be null");
+  }
 
-    @Override
-    public long position() {
-        return buffer.position();
-    }
+  @Override
+  public long position() {
+    return buffer.position();
+  }
 
-    @Override
-    public long remaining() {
-        return buffer.remaining();
-    }
+  @Override
+  public long remaining() {
+    return buffer.remaining();
+  }
 
-    @Override
-    public boolean hasRemaining() {
-        return buffer.hasRemaining();
-    }
+  @Override
+  public boolean hasRemaining() {
+    return buffer.hasRemaining();
+  }
 
-    @Override
-    public SnapshotReader skip(long bytes) {
-        buffer.skip(bytes);
-        return this;
-    }
+  @Override
+  public SnapshotReader skip(long bytes) {
+    buffer.skip(bytes);
+    return this;
+  }
 
-    /**
-     * Reads an object from the buffer.
-     *
-     * @param <T> The type of the object to read.
-     * @return The read object.
-     */
-    public <T> T readObject() {
-        byte[] bytes = buffer.readBytes(buffer.readInt());
-        return serializer.decode(bytes);
-    }
+  /**
+   * Reads an object from the buffer.
+   *
+   * @param <T> The type of the object to read.
+   * @return The read object.
+   */
+  public <T> T readObject() {
+    byte[] bytes = buffer.readBytes(buffer.readInt());
+    return serializer.decode(bytes);
+  }
 
-    @Override
-    public SnapshotReader read(Bytes bytes) {
-        buffer.read(bytes);
-        return this;
-    }
+  @Override
+  public SnapshotReader read(Bytes bytes) {
+    buffer.read(bytes);
+    return this;
+  }
 
-    @Override
-    public SnapshotReader read(byte[] bytes) {
-        buffer.read(bytes);
-        return this;
-    }
+  @Override
+  public SnapshotReader read(byte[] bytes) {
+    buffer.read(bytes);
+    return this;
+  }
 
-    @Override
-    public SnapshotReader read(Bytes bytes, long offset, long length) {
-        buffer.read(bytes, offset, length);
-        return this;
-    }
+  @Override
+  public SnapshotReader read(Bytes bytes, long offset, long length) {
+    buffer.read(bytes, offset, length);
+    return this;
+  }
 
-    @Override
-    public SnapshotReader read(byte[] bytes, long offset, long length) {
-        buffer.read(bytes, offset, length);
-        return this;
-    }
+  @Override
+  public SnapshotReader read(byte[] bytes, long offset, long length) {
+    buffer.read(bytes, offset, length);
+    return this;
+  }
 
-    @Override
-    public SnapshotReader read(Buffer buffer) {
-        this.buffer.read(buffer);
-        return this;
-    }
+  @Override
+  public SnapshotReader read(Buffer buffer) {
+    this.buffer.read(buffer);
+    return this;
+  }
 
-    @Override
-    public int readByte() {
-        return buffer.readByte();
-    }
+  @Override
+  public int readByte() {
+    return buffer.readByte();
+  }
 
-    @Override
-    public int readUnsignedByte() {
-        return buffer.readUnsignedByte();
-    }
+  @Override
+  public int readUnsignedByte() {
+    return buffer.readUnsignedByte();
+  }
 
-    @Override
-    public char readChar() {
-        return buffer.readChar();
-    }
+  @Override
+  public char readChar() {
+    return buffer.readChar();
+  }
 
-    @Override
-    public short readShort() {
-        return buffer.readShort();
-    }
+  @Override
+  public short readShort() {
+    return buffer.readShort();
+  }
 
-    @Override
-    public int readUnsignedShort() {
-        return buffer.readUnsignedShort();
-    }
+  @Override
+  public int readUnsignedShort() {
+    return buffer.readUnsignedShort();
+  }
 
-    @Override
-    public int readMedium() {
-        return buffer.readMedium();
-    }
+  @Override
+  public int readMedium() {
+    return buffer.readMedium();
+  }
 
-    @Override
-    public int readUnsignedMedium() {
-        return buffer.readUnsignedMedium();
-    }
+  @Override
+  public int readUnsignedMedium() {
+    return buffer.readUnsignedMedium();
+  }
 
-    @Override
-    public int readInt() {
-        return buffer.readInt();
-    }
+  @Override
+  public int readInt() {
+    return buffer.readInt();
+  }
 
-    @Override
-    public long readUnsignedInt() {
-        return buffer.readUnsignedInt();
-    }
+  @Override
+  public long readUnsignedInt() {
+    return buffer.readUnsignedInt();
+  }
 
-    @Override
-    public long readLong() {
-        return buffer.readLong();
-    }
+  @Override
+  public long readLong() {
+    return buffer.readLong();
+  }
 
-    @Override
-    public float readFloat() {
-        return buffer.readFloat();
-    }
+  @Override
+  public float readFloat() {
+    return buffer.readFloat();
+  }
 
-    @Override
-    public double readDouble() {
-        return buffer.readDouble();
-    }
+  @Override
+  public double readDouble() {
+    return buffer.readDouble();
+  }
 
-    @Override
-    public boolean readBoolean() {
-        return buffer.readBoolean();
-    }
+  @Override
+  public boolean readBoolean() {
+    return buffer.readBoolean();
+  }
 
-    @Override
-    public String readString() {
-        return buffer.readString();
-    }
+  @Override
+  public String readString() {
+    return buffer.readString();
+  }
 
-    @Override
-    public String readString(Charset charset) {
-        return buffer.readString(charset);
-    }
+  @Override
+  public String readString(Charset charset) {
+    return buffer.readString(charset);
+  }
 
-    @Override
-    public String readUTF8() {
-        return buffer.readUTF8();
-    }
+  @Override
+  public String readUTF8() {
+    return buffer.readUTF8();
+  }
 
-    @Override
-    public void close() {
-        buffer.close();
-        snapshot.closeReader(this);
-    }
+  @Override
+  public void close() {
+    buffer.close();
+    snapshot.closeReader(this);
+  }
 
 }

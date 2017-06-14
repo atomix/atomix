@@ -23,20 +23,20 @@ import java.util.function.Consumer;
  */
 public interface RaftClientProtocolListener {
 
-    /**
-     * Registers a publish request listener.
-     *
-     * @param sessionId the session for which to listen for the publish request
-     * @param listener  the listener to register
-     * @param executor  the executor with which to execute the listener callback
-     */
-    void registerPublishListener(long sessionId, Consumer<PublishRequest> listener, Executor executor);
+  /**
+   * Registers a publish request listener.
+   *
+   * @param sessionId the session for which to listen for the publish request
+   * @param listener  the listener to register
+   * @param executor  the executor with which to execute the listener callback
+   */
+  void registerPublishListener(long sessionId, Consumer<PublishRequest> listener, Executor executor);
 
-    /**
-     * Unregisters the publish request listener for the given session.
-     *
-     * @param sessionId the session for which to unregister the listener
-     */
-    void unregisterPublishListener(long sessionId);
+  /**
+   * Unregisters the publish request listener for the given session.
+   *
+   * @param sessionId the session for which to unregister the listener
+   */
+  void unregisterPublishListener(long sessionId);
 
 }

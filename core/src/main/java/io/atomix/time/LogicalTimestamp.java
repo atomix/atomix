@@ -28,53 +28,53 @@ import static com.google.common.base.Preconditions.checkArgument;
  * LogicalTimestamps are ordered by their sequence values.
  */
 public class LogicalTimestamp implements Timestamp {
-    private final long value;
+  private final long value;
 
-    public LogicalTimestamp(long value) {
-        this.value = value;
+  public LogicalTimestamp(long value) {
+    this.value = value;
+  }
+
+  @Override
+  public int compareTo(Timestamp o) {
+    checkArgument(o instanceof LogicalTimestamp,
+        "Must be LogicalTimestamp", o);
+    LogicalTimestamp that = (LogicalTimestamp) o;
+
+    return ComparisonChain.start()
+        .compare(this.value, that.value)
+        .result();
+  }
+
+  @Override
+  public int hashCode() {
+    return Long.hashCode(value);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
     }
-
-    @Override
-    public int compareTo(Timestamp o) {
-        checkArgument(o instanceof LogicalTimestamp,
-                "Must be LogicalTimestamp", o);
-        LogicalTimestamp that = (LogicalTimestamp) o;
-
-        return ComparisonChain.start()
-                .compare(this.value, that.value)
-                .result();
+    if (!(obj instanceof LogicalTimestamp)) {
+      return false;
     }
+    LogicalTimestamp that = (LogicalTimestamp) obj;
+    return Objects.equals(this.value, that.value);
+  }
 
-    @Override
-    public int hashCode() {
-        return Long.hashCode(value);
-    }
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(getClass())
+        .add("value", value)
+        .toString();
+  }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (!(obj instanceof LogicalTimestamp)) {
-            return false;
-        }
-        LogicalTimestamp that = (LogicalTimestamp) obj;
-        return Objects.equals(this.value, that.value);
-    }
-
-    @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(getClass())
-                .add("value", value)
-                .toString();
-    }
-
-    /**
-     * Returns the sequence value.
-     *
-     * @return sequence value
-     */
-    public long value() {
-        return this.value;
-    }
+  /**
+   * Returns the sequence value.
+   *
+   * @return sequence value
+   */
+  public long value() {
+    return this.value;
+  }
 }

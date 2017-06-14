@@ -25,84 +25,84 @@ import java.util.Objects;
  */
 public class ClusterEvent extends AbstractEvent<ClusterEvent.Type, Node> {
 
+  /**
+   * Type of cluster-related events.
+   */
+  public enum Type {
     /**
-     * Type of cluster-related events.
+     * Signifies that a new cluster instance has been administratively added.
      */
-    public enum Type {
-        /**
-         * Signifies that a new cluster instance has been administratively added.
-         */
-        INSTANCE_ADDED,
-
-        /**
-         * Signifies that a cluster instance has been administratively removed.
-         */
-        INSTANCE_REMOVED,
-
-        /**
-         * Signifies that a cluster instance became active.
-         */
-        INSTANCE_ACTIVATED,
-
-        /**
-         * Signifies that a cluster instance became ready.
-         */
-        INSTANCE_READY,
-
-        /**
-         * Signifies that a cluster instance became inactive.
-         */
-        INSTANCE_DEACTIVATED
-    }
+    INSTANCE_ADDED,
 
     /**
-     * Creates an event of a given type and for the specified instance and the
-     * current time.
-     *
-     * @param type     cluster event type
-     * @param instance cluster device subject
+     * Signifies that a cluster instance has been administratively removed.
      */
-    public ClusterEvent(Type type, Node instance) {
-        super(type, instance);
-    }
+    INSTANCE_REMOVED,
 
     /**
-     * Creates an event of a given type and for the specified device and time.
-     *
-     * @param type     device event type
-     * @param instance event device subject
-     * @param time     occurrence time
+     * Signifies that a cluster instance became active.
      */
-    public ClusterEvent(Type type, Node instance, long time) {
-        super(type, instance, time);
-    }
+    INSTANCE_ACTIVATED,
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(type(), subject(), time());
-    }
+    /**
+     * Signifies that a cluster instance became ready.
+     */
+    INSTANCE_READY,
 
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj instanceof ClusterEvent) {
-            final ClusterEvent other = (ClusterEvent) obj;
-            return Objects.equals(this.type(), other.type()) &&
-                    Objects.equals(this.subject(), other.subject()) &&
-                    Objects.equals(this.time(), other.time());
-        }
-        return false;
-    }
+    /**
+     * Signifies that a cluster instance became inactive.
+     */
+    INSTANCE_DEACTIVATED
+  }
 
-    @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this.getClass())
-                .add("type", type())
-                .add("subject", subject())
-                .add("time", time())
-                .toString();
+  /**
+   * Creates an event of a given type and for the specified instance and the
+   * current time.
+   *
+   * @param type     cluster event type
+   * @param instance cluster device subject
+   */
+  public ClusterEvent(Type type, Node instance) {
+    super(type, instance);
+  }
+
+  /**
+   * Creates an event of a given type and for the specified device and time.
+   *
+   * @param type     device event type
+   * @param instance event device subject
+   * @param time     occurrence time
+   */
+  public ClusterEvent(Type type, Node instance, long time) {
+    super(type, instance, time);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(type(), subject(), time());
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
     }
+    if (obj instanceof ClusterEvent) {
+      final ClusterEvent other = (ClusterEvent) obj;
+      return Objects.equals(this.type(), other.type()) &&
+          Objects.equals(this.subject(), other.subject()) &&
+          Objects.equals(this.time(), other.time());
+    }
+    return false;
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this.getClass())
+        .add("type", type())
+        .add("subject", subject())
+        .add("time", time())
+        .toString();
+  }
 
 }

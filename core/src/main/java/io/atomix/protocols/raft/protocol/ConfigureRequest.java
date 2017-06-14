@@ -37,192 +37,192 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class ConfigureRequest extends AbstractRaftRequest {
 
+  /**
+   * Returns a new configuration request builder.
+   *
+   * @return A new configuration request builder.
+   */
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  private final long term;
+  private final NodeId leader;
+  private final long index;
+  private final long timestamp;
+  private final Collection<RaftMember> members;
+
+  public ConfigureRequest(long term, NodeId leader, long index, long timestamp, Collection<RaftMember> members) {
+    this.term = term;
+    this.leader = leader;
+    this.index = index;
+    this.timestamp = timestamp;
+    this.members = members;
+  }
+
+  /**
+   * Returns the requesting node's current term.
+   *
+   * @return The requesting node's current term.
+   */
+  public long term() {
+    return term;
+  }
+
+  /**
+   * Returns the requesting leader address.
+   *
+   * @return The leader's address.
+   */
+  public NodeId leader() {
+    return leader;
+  }
+
+  /**
+   * Returns the configuration index.
+   *
+   * @return The configuration index.
+   */
+  public long index() {
+    return index;
+  }
+
+  /**
+   * Returns the configuration timestamp.
+   *
+   * @return The configuration timestamp.
+   */
+  public long timestamp() {
+    return timestamp;
+  }
+
+  /**
+   * Returns the configuration members.
+   *
+   * @return The configuration members.
+   */
+  public Collection<RaftMember> members() {
+    return members;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getClass(), term, leader, index, members);
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (object instanceof ConfigureRequest) {
+      ConfigureRequest request = (ConfigureRequest) object;
+      return request.term == term
+          && request.leader == leader
+          && request.index == index
+          && request.timestamp == timestamp
+          && request.members.equals(members);
+    }
+    return false;
+  }
+
+  @Override
+  public String toString() {
+    return toStringHelper(this)
+        .add("term", term)
+        .add("leader", leader)
+        .add("index", index)
+        .add("timestamp", timestamp)
+        .add("members", members)
+        .toString();
+  }
+
+  /**
+   * Heartbeat request builder.
+   */
+  public static class Builder extends AbstractRaftRequest.Builder<Builder, ConfigureRequest> {
+    private long term;
+    private NodeId leader;
+    private long index;
+    private long timestamp;
+    private Collection<RaftMember> members;
+
     /**
-     * Returns a new configuration request builder.
+     * Sets the request term.
      *
-     * @return A new configuration request builder.
+     * @param term The request term.
+     * @return The append request builder.
+     * @throws IllegalArgumentException if the {@code term} is not positive
      */
-    public static Builder builder() {
-        return new Builder();
+    public Builder withTerm(long term) {
+      checkArgument(term > 0, "term must be positive");
+      this.term = term;
+      return this;
     }
 
-    private final long term;
-    private final NodeId leader;
-    private final long index;
-    private final long timestamp;
-    private final Collection<RaftMember> members;
-
-    public ConfigureRequest(long term, NodeId leader, long index, long timestamp, Collection<RaftMember> members) {
-        this.term = term;
-        this.leader = leader;
-        this.index = index;
-        this.timestamp = timestamp;
-        this.members = members;
+    /**
+     * Sets the request leader.
+     *
+     * @param leader The request leader.
+     * @return The append request builder.
+     * @throws IllegalArgumentException if the {@code leader} is not positive
+     */
+    public Builder withLeader(NodeId leader) {
+      this.leader = checkNotNull(leader, "leader cannot be null");
+      return this;
     }
 
     /**
-     * Returns the requesting node's current term.
+     * Sets the request index.
      *
-     * @return The requesting node's current term.
+     * @param index The request index.
+     * @return The request builder.
      */
-    public long term() {
-        return term;
+    public Builder withIndex(long index) {
+      checkArgument(index >= 0, "index must be positive");
+      this.index = index;
+      return this;
     }
 
     /**
-     * Returns the requesting leader address.
+     * Sets the request timestamp.
      *
-     * @return The leader's address.
+     * @param timestamp The request timestamp.
+     * @return The request builder.
      */
-    public NodeId leader() {
-        return leader;
+    public Builder withTime(long timestamp) {
+      checkArgument(timestamp > 0, "timestamp must be positive");
+      this.timestamp = timestamp;
+      return this;
     }
 
     /**
-     * Returns the configuration index.
+     * Sets the request members.
      *
-     * @return The configuration index.
+     * @param members The request members.
+     * @return The request builder.
+     * @throws NullPointerException if {@code member} is null
      */
-    public long index() {
-        return index;
-    }
-
-    /**
-     * Returns the configuration timestamp.
-     *
-     * @return The configuration timestamp.
-     */
-    public long timestamp() {
-        return timestamp;
-    }
-
-    /**
-     * Returns the configuration members.
-     *
-     * @return The configuration members.
-     */
-    public Collection<RaftMember> members() {
-        return members;
+    public Builder withMembers(Collection<RaftMember> members) {
+      this.members = checkNotNull(members, "members cannot be null");
+      return this;
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(getClass(), term, leader, index, members);
-    }
-
-    @Override
-    public boolean equals(Object object) {
-        if (object instanceof ConfigureRequest) {
-            ConfigureRequest request = (ConfigureRequest) object;
-            return request.term == term
-                    && request.leader == leader
-                    && request.index == index
-                    && request.timestamp == timestamp
-                    && request.members.equals(members);
-        }
-        return false;
-    }
-
-    @Override
-    public String toString() {
-        return toStringHelper(this)
-                .add("term", term)
-                .add("leader", leader)
-                .add("index", index)
-                .add("timestamp", timestamp)
-                .add("members", members)
-                .toString();
+    protected void validate() {
+      super.validate();
+      checkArgument(term > 0, "term must be positive");
+      checkNotNull(leader, "leader cannot be null");
+      checkArgument(index >= 0, "index must be positive");
+      checkArgument(timestamp > 0, "timestamp must be positive");
+      checkNotNull(members, "members cannot be null");
     }
 
     /**
-     * Heartbeat request builder.
+     * @throws IllegalStateException if member is null
      */
-    public static class Builder extends AbstractRaftRequest.Builder<Builder, ConfigureRequest> {
-        private long term;
-        private NodeId leader;
-        private long index;
-        private long timestamp;
-        private Collection<RaftMember> members;
-
-        /**
-         * Sets the request term.
-         *
-         * @param term The request term.
-         * @return The append request builder.
-         * @throws IllegalArgumentException if the {@code term} is not positive
-         */
-        public Builder withTerm(long term) {
-            checkArgument(term > 0, "term must be positive");
-            this.term = term;
-            return this;
-        }
-
-        /**
-         * Sets the request leader.
-         *
-         * @param leader The request leader.
-         * @return The append request builder.
-         * @throws IllegalArgumentException if the {@code leader} is not positive
-         */
-        public Builder withLeader(NodeId leader) {
-            this.leader = checkNotNull(leader, "leader cannot be null");
-            return this;
-        }
-
-        /**
-         * Sets the request index.
-         *
-         * @param index The request index.
-         * @return The request builder.
-         */
-        public Builder withIndex(long index) {
-            checkArgument(index >= 0, "index must be positive");
-            this.index = index;
-            return this;
-        }
-
-        /**
-         * Sets the request timestamp.
-         *
-         * @param timestamp The request timestamp.
-         * @return The request builder.
-         */
-        public Builder withTime(long timestamp) {
-            checkArgument(timestamp > 0, "timestamp must be positive");
-            this.timestamp = timestamp;
-            return this;
-        }
-
-        /**
-         * Sets the request members.
-         *
-         * @param members The request members.
-         * @return The request builder.
-         * @throws NullPointerException if {@code member} is null
-         */
-        public Builder withMembers(Collection<RaftMember> members) {
-            this.members = checkNotNull(members, "members cannot be null");
-            return this;
-        }
-
-        @Override
-        protected void validate() {
-            super.validate();
-            checkArgument(term > 0, "term must be positive");
-            checkNotNull(leader, "leader cannot be null");
-            checkArgument(index >= 0, "index must be positive");
-            checkArgument(timestamp > 0, "timestamp must be positive");
-            checkNotNull(members, "members cannot be null");
-        }
-
-        /**
-         * @throws IllegalStateException if member is null
-         */
-        @Override
-        public ConfigureRequest build() {
-            validate();
-            return new ConfigureRequest(term, leader, index, timestamp, members);
-        }
+    @Override
+    public ConfigureRequest build() {
+      validate();
+      return new ConfigureRequest(term, leader, index, timestamp, members);
     }
+  }
 
 }

@@ -44,7 +44,7 @@ import static com.google.common.base.Preconditions.checkState;
 public class SegmentManager implements AutoCloseable {
   private static final Logger LOGGER = LoggerFactory.getLogger(SegmentManager.class);
   private static final int DEFAULT_BUFFER_SIZE = 1024 * 1024;
-  
+
   private final String name;
   private final Storage storage;
   private final NavigableMap<Long, Segment> segments = new ConcurrentSkipListMap<>();
@@ -103,12 +103,12 @@ public class SegmentManager implements AutoCloseable {
       currentSegment = segments.lastEntry().getValue();
     } else {
       SegmentDescriptor descriptor = SegmentDescriptor.builder()
-        .withId(1)
-        .withVersion(1)
-        .withIndex(1)
-        .withMaxSegmentSize(storage.maxSegmentSize())
-        .withMaxEntries(storage.maxEntriesPerSegment())
-        .build();
+          .withId(1)
+          .withVersion(1)
+          .withIndex(1)
+          .withMaxSegmentSize(storage.maxSegmentSize())
+          .withMaxEntries(storage.maxEntriesPerSegment())
+          .build();
 
       descriptor.lock();
 
@@ -122,7 +122,7 @@ public class SegmentManager implements AutoCloseable {
 
   /**
    * Asserts that the manager is open.
-   * 
+   *
    * @throws IllegalStateException if the segment manager is not open
    */
   private void assertOpen() {
@@ -138,12 +138,12 @@ public class SegmentManager implements AutoCloseable {
       currentSegment = lastSegment;
     } else {
       SegmentDescriptor descriptor = SegmentDescriptor.builder()
-        .withId(1)
-        .withVersion(1)
-        .withIndex(1)
-        .withMaxSegmentSize(storage.maxSegmentSize())
-        .withMaxEntries(storage.maxEntriesPerSegment())
-        .build();
+          .withId(1)
+          .withVersion(1)
+          .withIndex(1)
+          .withMaxSegmentSize(storage.maxSegmentSize())
+          .withMaxEntries(storage.maxEntriesPerSegment())
+          .build();
       descriptor.lock();
 
       currentSegment = createSegment(descriptor);
@@ -154,7 +154,7 @@ public class SegmentManager implements AutoCloseable {
 
   /**
    * Returns the first segment in the log.
-   * 
+   *
    * @throws IllegalStateException if the segment manager is not open
    */
   public synchronized Segment firstSegment() {
@@ -165,7 +165,7 @@ public class SegmentManager implements AutoCloseable {
 
   /**
    * Returns the last segment in the log.
-   * 
+   *
    * @throws IllegalStateException if the segment manager is not open
    */
   public synchronized Segment lastSegment() {
@@ -195,12 +195,12 @@ public class SegmentManager implements AutoCloseable {
     assertOpen();
     Segment lastSegment = lastSegment();
     SegmentDescriptor descriptor = SegmentDescriptor.builder()
-      .withId(lastSegment != null ? lastSegment.descriptor().id() + 1 : 1)
-      .withVersion(1)
-      .withIndex(currentSegment.lastIndex() + 1)
-      .withMaxSegmentSize(storage.maxSegmentSize())
-      .withMaxEntries(storage.maxEntriesPerSegment())
-      .build();
+        .withId(lastSegment != null ? lastSegment.descriptor().id() + 1 : 1)
+        .withVersion(1)
+        .withIndex(currentSegment.lastIndex() + 1)
+        .withMaxSegmentSize(storage.maxSegmentSize())
+        .withMaxEntries(storage.maxEntriesPerSegment())
+        .build();
     descriptor.lock();
 
     currentSegment = createSegment(descriptor);

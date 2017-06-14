@@ -48,7 +48,7 @@ public class Log implements Closeable {
    * Creates a new log reader.
    *
    * @param index The index at which to start the reader.
-   * @param mode The mode in which to open the log reader.
+   * @param mode  The mode in which to open the log reader.
    * @return A new log reader.
    */
   public LogReader createReader(long index, Reader.Mode mode) {

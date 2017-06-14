@@ -49,7 +49,7 @@ public interface Writer extends AutoCloseable {
    * Appends an indexed entry to the log.
    *
    * @param entry The indexed entry to append.
-   * @param <T> The entry type.
+   * @param <T>   The entry type.
    * @return The appended indexed entry.
    */
   <T extends Entry<T>> Indexed<T> append(Indexed<T> entry);
@@ -57,9 +57,9 @@ public interface Writer extends AutoCloseable {
   /**
    * Appends an entry to the writer.
    *
-   * @param term The term in which to append the entry.
+   * @param term  The term in which to append the entry.
    * @param entry The entry to append.
-   * @param <T> The entry type.
+   * @param <T>   The entry type.
    * @return The indexed entry.
    */
   <T extends Entry<T>> Indexed<T> append(long term, T entry);

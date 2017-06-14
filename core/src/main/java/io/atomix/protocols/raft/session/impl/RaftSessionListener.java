@@ -36,100 +36,100 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 final class RaftSessionListener {
-    private static final Logger LOG = LoggerFactory.getLogger(RaftSessionListener.class);
+  private static final Logger LOG = LoggerFactory.getLogger(RaftSessionListener.class);
 
-    private final RaftClientProtocol protocol;
-    private final RaftSessionState state;
-    private final Set<Consumer> listeners = Sets.newLinkedHashSet();
-    private final RaftSessionSequencer sequencer;
-    private final Serializer serializer;
-    private final Executor executor;
+  private final RaftClientProtocol protocol;
+  private final RaftSessionState state;
+  private final Set<Consumer> listeners = Sets.newLinkedHashSet();
+  private final RaftSessionSequencer sequencer;
+  private final Serializer serializer;
+  private final Executor executor;
 
-    public RaftSessionListener(RaftClientProtocol protocol, RaftSessionState state, RaftSessionSequencer sequencer, Serializer serializer, Executor executor) {
-        this.protocol = checkNotNull(protocol, "protocol cannot be null");
-        this.state = checkNotNull(state, "state cannot be null");
-        this.sequencer = checkNotNull(sequencer, "sequencer cannot be null");
-        this.serializer = checkNotNull(serializer, "serializer cannot be null");
-        this.executor = checkNotNull(executor, "executor cannot be null");
-        protocol.listener().registerPublishListener(state.getSessionId(), this::handlePublish, executor);
+  public RaftSessionListener(RaftClientProtocol protocol, RaftSessionState state, RaftSessionSequencer sequencer, Serializer serializer, Executor executor) {
+    this.protocol = checkNotNull(protocol, "protocol cannot be null");
+    this.state = checkNotNull(state, "state cannot be null");
+    this.sequencer = checkNotNull(sequencer, "sequencer cannot be null");
+    this.serializer = checkNotNull(serializer, "serializer cannot be null");
+    this.executor = checkNotNull(executor, "executor cannot be null");
+    protocol.listener().registerPublishListener(state.getSessionId(), this::handlePublish, executor);
+  }
+
+  /**
+   * Adds an event listener to the session.
+   *
+   * @param listener the event listener callback
+   */
+  public void addEventListener(Consumer listener) {
+    executor.execute(() -> listeners.add(listener));
+  }
+
+  /**
+   * Removes an event listener from the session.
+   *
+   * @param listener the event listener callback
+   */
+  public void removeEventListener(Consumer listener) {
+    executor.execute(() -> listeners.remove(listener));
+  }
+
+  /**
+   * Handles a publish request.
+   *
+   * @param request The publish request to handle.
+   */
+  @SuppressWarnings("unchecked")
+  private void handlePublish(PublishRequest request) {
+    LOG.trace("{} - Received {}", state.getSessionId(), request);
+
+    // If the request is for another session ID, this may be a session that was previously opened
+    // for this client.
+    if (request.session() != state.getSessionId()) {
+      LOG.trace("{} - Inconsistent session ID: {}", state.getSessionId(), request.session());
+      return;
     }
 
-    /**
-     * Adds an event listener to the session.
-     *
-     * @param listener the event listener callback
-     */
-    public void addEventListener(Consumer listener) {
-        executor.execute(() -> listeners.add(listener));
+    // Store eventIndex in a local variable to prevent multiple volatile reads.
+    long eventIndex = state.getEventIndex();
+
+    // If the request event index has already been processed, return.
+    if (request.eventIndex() <= eventIndex) {
+      LOG.trace("{} - Duplicate event index {}", state.getSessionId(), request.eventIndex());
+      return;
     }
 
-    /**
-     * Removes an event listener from the session.
-     *
-     * @param listener the event listener callback
-     */
-    public void removeEventListener(Consumer listener) {
-        executor.execute(() -> listeners.remove(listener));
+    // If the request's previous event index doesn't equal the previous received event index,
+    // respond with an undefined error and the last index received. This will cause the cluster
+    // to resend events starting at eventIndex + 1.
+    if (request.previousIndex() != eventIndex) {
+      LOG.trace("{} - Inconsistent event index: {}", state.getSessionId(), request.previousIndex());
+      ResetRequest resetRequest = ResetRequest.builder()
+          .withSession(state.getSessionId())
+          .withIndex(eventIndex)
+          .build();
+      protocol.dispatcher().reset(resetRequest);
+      return;
     }
 
-    /**
-     * Handles a publish request.
-     *
-     * @param request The publish request to handle.
-     */
-    @SuppressWarnings("unchecked")
-    private void handlePublish(PublishRequest request) {
-        LOG.trace("{} - Received {}", state.getSessionId(), request);
+    // Store the event index. This will be used to verify that events are received in sequential order.
+    state.setEventIndex(request.eventIndex());
 
-        // If the request is for another session ID, this may be a session that was previously opened
-        // for this client.
-        if (request.session() != state.getSessionId()) {
-            LOG.trace("{} - Inconsistent session ID: {}", state.getSessionId(), request.session());
-            return;
+    sequencer.sequenceEvent(request, () -> {
+      for (byte[] bytes : request.events()) {
+        Object event = serializer.decode(bytes);
+        for (Consumer listener : listeners) {
+          listener.accept(event);
         }
+      }
+    });
+  }
 
-        // Store eventIndex in a local variable to prevent multiple volatile reads.
-        long eventIndex = state.getEventIndex();
-
-        // If the request event index has already been processed, return.
-        if (request.eventIndex() <= eventIndex) {
-            LOG.trace("{} - Duplicate event index {}", state.getSessionId(), request.eventIndex());
-            return;
-        }
-
-        // If the request's previous event index doesn't equal the previous received event index,
-        // respond with an undefined error and the last index received. This will cause the cluster
-        // to resend events starting at eventIndex + 1.
-        if (request.previousIndex() != eventIndex) {
-            LOG.trace("{} - Inconsistent event index: {}", state.getSessionId(), request.previousIndex());
-            ResetRequest resetRequest = ResetRequest.builder()
-                    .withSession(state.getSessionId())
-                    .withIndex(eventIndex)
-                    .build();
-            protocol.dispatcher().reset(resetRequest);
-            return;
-        }
-
-        // Store the event index. This will be used to verify that events are received in sequential order.
-        state.setEventIndex(request.eventIndex());
-
-        sequencer.sequenceEvent(request, () -> {
-            for (byte[] bytes : request.events()) {
-                Object event = serializer.decode(bytes);
-                for (Consumer listener : listeners) {
-                    listener.accept(event);
-                }
-            }
-        });
-    }
-
-    /**
-     * Closes the session event listener.
-     *
-     * @return A completable future to be completed once the listener is closed.
-     */
-    public CompletableFuture<Void> close() {
-        protocol.listener().unregisterPublishListener(state.getSessionId());
-        return CompletableFuture.completedFuture(null);
-    }
+  /**
+   * Closes the session event listener.
+   *
+   * @return A completable future to be completed once the listener is closed.
+   */
+  public CompletableFuture<Void> close() {
+    protocol.listener().unregisterPublishListener(state.getSessionId());
+    return CompletableFuture.completedFuture(null);
+  }
 }

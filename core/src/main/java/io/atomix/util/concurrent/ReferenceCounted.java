@@ -25,31 +25,31 @@ package io.atomix.util.concurrent;
  */
 public interface ReferenceCounted<T> extends AutoCloseable {
 
-    /**
-     * Acquires a reference.
-     *
-     * @return The acquired reference.
-     */
-    T acquire();
+  /**
+   * Acquires a reference.
+   *
+   * @return The acquired reference.
+   */
+  T acquire();
 
-    /**
-     * Releases a reference.
-     *
-     * @return Indicates whether all references to the object have been released.
-     */
-    boolean release();
+  /**
+   * Releases a reference.
+   *
+   * @return Indicates whether all references to the object have been released.
+   */
+  boolean release();
 
-    /**
-     * Returns the number of open references.
-     *
-     * @return The number of open references.
-     */
-    int references();
+  /**
+   * Returns the number of open references.
+   *
+   * @return The number of open references.
+   */
+  int references();
 
-    /**
-     * Defines an exception free close implementation.
-     */
-    @Override
-    void close();
+  /**
+   * Defines an exception free close implementation.
+   */
+  @Override
+  void close();
 
 }

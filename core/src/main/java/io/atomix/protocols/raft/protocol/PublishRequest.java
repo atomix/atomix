@@ -40,150 +40,150 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class PublishRequest extends SessionRequest {
 
+  /**
+   * Returns a new publish request builder.
+   *
+   * @return A new publish request builder.
+   */
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  private final long eventIndex;
+  private final long previousIndex;
+  private final List<byte[]> events;
+
+  public PublishRequest(long session, long eventIndex, long previousIndex, List<byte[]> events) {
+    super(session);
+    this.eventIndex = eventIndex;
+    this.previousIndex = previousIndex;
+    this.events = events;
+  }
+
+  /**
+   * Returns the event index.
+   *
+   * @return The event index.
+   */
+  public long eventIndex() {
+    return eventIndex;
+  }
+
+  /**
+   * Returns the previous event index.
+   *
+   * @return The previous event index.
+   */
+  public long previousIndex() {
+    return previousIndex;
+  }
+
+  /**
+   * Returns the request events.
+   *
+   * @return The request events.
+   */
+  public List<byte[]> events() {
+    return events;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getClass(), session, eventIndex, previousIndex, events);
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (object instanceof PublishRequest) {
+      PublishRequest request = (PublishRequest) object;
+      return request.session == session
+          && request.eventIndex == eventIndex
+          && request.previousIndex == previousIndex
+          && request.events.equals(events);
+    }
+    return false;
+  }
+
+  @Override
+  public String toString() {
+    return toStringHelper(this)
+        .add("session", session)
+        .add("eventIndex", eventIndex)
+        .add("previousIndex", previousIndex)
+        .add("events", events.stream().map(ArraySizeHashPrinter::of).collect(Collectors.toList()))
+        .toString();
+  }
+
+  /**
+   * Publish request builder.
+   */
+  public static class Builder extends SessionRequest.Builder<Builder, PublishRequest> {
+    private long eventIndex;
+    private long previousIndex;
+    private List<byte[]> events;
+
     /**
-     * Returns a new publish request builder.
+     * Sets the event index.
      *
-     * @return A new publish request builder.
+     * @param eventIndex The event index.
+     * @return The request builder.
+     * @throws IllegalArgumentException if {@code index} is less than 1
      */
-    public static Builder builder() {
-        return new Builder();
+    public Builder withEventIndex(long eventIndex) {
+      checkArgument(eventIndex > 0, "eventIndex must be positive");
+      this.eventIndex = eventIndex;
+      return this;
     }
 
-    private final long eventIndex;
-    private final long previousIndex;
-    private final List<byte[]> events;
-
-    public PublishRequest(long session, long eventIndex, long previousIndex, List<byte[]> events) {
-        super(session);
-        this.eventIndex = eventIndex;
-        this.previousIndex = previousIndex;
-        this.events = events;
+    /**
+     * Sets the previous event index.
+     *
+     * @param previousIndex The previous event index.
+     * @return The request builder.
+     * @throws IllegalArgumentException if {@code index} is less than 1
+     */
+    public Builder withPreviousIndex(long previousIndex) {
+      checkArgument(previousIndex >= 0, "previousIndex must be positive");
+      this.previousIndex = previousIndex;
+      return this;
     }
 
     /**
-     * Returns the event index.
+     * Sets the request events.
      *
-     * @return The event index.
+     * @param events The request events.
+     * @return The publish request builder.
      */
-    public long eventIndex() {
-        return eventIndex;
+    public Builder withEvents(byte[]... events) {
+      return withEvents(Arrays.asList(checkNotNull(events, "events cannot be null")));
     }
 
     /**
-     * Returns the previous event index.
+     * Sets the request events.
      *
-     * @return The previous event index.
+     * @param events The request events.
+     * @return The publish request builder.
      */
-    public long previousIndex() {
-        return previousIndex;
-    }
-
-    /**
-     * Returns the request events.
-     *
-     * @return The request events.
-     */
-    public List<byte[]> events() {
-        return events;
+    public Builder withEvents(List<byte[]> events) {
+      this.events = checkNotNull(events, "events cannot be null");
+      return this;
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(getClass(), session, eventIndex, previousIndex, events);
-    }
-
-    @Override
-    public boolean equals(Object object) {
-        if (object instanceof PublishRequest) {
-            PublishRequest request = (PublishRequest) object;
-            return request.session == session
-                    && request.eventIndex == eventIndex
-                    && request.previousIndex == previousIndex
-                    && request.events.equals(events);
-        }
-        return false;
-    }
-
-    @Override
-    public String toString() {
-        return toStringHelper(this)
-                .add("session", session)
-                .add("eventIndex", eventIndex)
-                .add("previousIndex", previousIndex)
-                .add("events", events.stream().map(ArraySizeHashPrinter::of).collect(Collectors.toList()))
-                .toString();
+    protected void validate() {
+      super.validate();
+      checkArgument(eventIndex > 0, "eventIndex must be positive");
+      checkArgument(previousIndex >= 0, "previousIndex must be positive");
+      checkNotNull(events, "events cannot be null");
     }
 
     /**
-     * Publish request builder.
+     * @throws IllegalStateException if sequence is less than 1 or message is null
      */
-    public static class Builder extends SessionRequest.Builder<Builder, PublishRequest> {
-        private long eventIndex;
-        private long previousIndex;
-        private List<byte[]> events;
-
-        /**
-         * Sets the event index.
-         *
-         * @param eventIndex The event index.
-         * @return The request builder.
-         * @throws IllegalArgumentException if {@code index} is less than 1
-         */
-        public Builder withEventIndex(long eventIndex) {
-            checkArgument(eventIndex > 0, "eventIndex must be positive");
-            this.eventIndex = eventIndex;
-            return this;
-        }
-
-        /**
-         * Sets the previous event index.
-         *
-         * @param previousIndex The previous event index.
-         * @return The request builder.
-         * @throws IllegalArgumentException if {@code index} is less than 1
-         */
-        public Builder withPreviousIndex(long previousIndex) {
-            checkArgument(previousIndex >= 0, "previousIndex must be positive");
-            this.previousIndex = previousIndex;
-            return this;
-        }
-
-        /**
-         * Sets the request events.
-         *
-         * @param events The request events.
-         * @return The publish request builder.
-         */
-        public Builder withEvents(byte[]... events) {
-            return withEvents(Arrays.asList(checkNotNull(events, "events cannot be null")));
-        }
-
-        /**
-         * Sets the request events.
-         *
-         * @param events The request events.
-         * @return The publish request builder.
-         */
-        public Builder withEvents(List<byte[]> events) {
-            this.events = checkNotNull(events, "events cannot be null");
-            return this;
-        }
-
-        @Override
-        protected void validate() {
-            super.validate();
-            checkArgument(eventIndex > 0, "eventIndex must be positive");
-            checkArgument(previousIndex >= 0, "previousIndex must be positive");
-            checkNotNull(events, "events cannot be null");
-        }
-
-        /**
-         * @throws IllegalStateException if sequence is less than 1 or message is null
-         */
-        @Override
-        public PublishRequest build() {
-            validate();
-            return new PublishRequest(session, eventIndex, previousIndex, events);
-        }
+    @Override
+    public PublishRequest build() {
+      validate();
+      return new PublishRequest(session, eventIndex, previousIndex, events);
     }
+  }
 }

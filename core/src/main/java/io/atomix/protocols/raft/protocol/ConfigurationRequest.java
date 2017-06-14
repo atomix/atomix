@@ -32,64 +32,64 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class ConfigurationRequest extends AbstractRaftRequest {
-    protected final RaftMember member;
+  protected final RaftMember member;
 
-    protected ConfigurationRequest(RaftMember member) {
-        this.member = member;
+  protected ConfigurationRequest(RaftMember member) {
+    this.member = member;
+  }
+
+  /**
+   * Returns the member to configure.
+   *
+   * @return The member to configure.
+   */
+  public RaftMember member() {
+    return member;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getClass(), member);
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (getClass().isAssignableFrom(object.getClass())) {
+      return ((ConfigurationRequest) object).member.equals(member);
     }
+    return false;
+  }
+
+  @Override
+  public String toString() {
+    return toStringHelper(this)
+        .add("member", member)
+        .toString();
+  }
+
+  /**
+   * Configuration request builder.
+   */
+  public static abstract class Builder<T extends Builder<T, U>, U extends ConfigurationRequest> extends AbstractRaftRequest.Builder<T, U> {
+    protected RaftMember member;
 
     /**
-     * Returns the member to configure.
+     * Sets the request member.
      *
-     * @return The member to configure.
+     * @param member The request member.
+     * @return The request builder.
+     * @throws NullPointerException if {@code member} is null
      */
-    public RaftMember member() {
-        return member;
+    @SuppressWarnings("unchecked")
+    public T withMember(RaftMember member) {
+      this.member = checkNotNull(member, "member cannot be null");
+      return (T) this;
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(getClass(), member);
+    protected void validate() {
+      super.validate();
+      checkNotNull(member, "member cannot be null");
     }
-
-    @Override
-    public boolean equals(Object object) {
-        if (getClass().isAssignableFrom(object.getClass())) {
-            return ((ConfigurationRequest) object).member.equals(member);
-        }
-        return false;
-    }
-
-    @Override
-    public String toString() {
-        return toStringHelper(this)
-                .add("member", member)
-                .toString();
-    }
-
-    /**
-     * Configuration request builder.
-     */
-    public static abstract class Builder<T extends Builder<T, U>, U extends ConfigurationRequest> extends AbstractRaftRequest.Builder<T, U> {
-        protected RaftMember member;
-
-        /**
-         * Sets the request member.
-         *
-         * @param member The request member.
-         * @return The request builder.
-         * @throws NullPointerException if {@code member} is null
-         */
-        @SuppressWarnings("unchecked")
-        public T withMember(RaftMember member) {
-            this.member = checkNotNull(member, "member cannot be null");
-            return (T) this;
-        }
-
-        @Override
-        protected void validate() {
-            super.validate();
-            checkNotNull(member, "member cannot be null");
-        }
-    }
+  }
 }

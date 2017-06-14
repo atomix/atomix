@@ -39,61 +39,61 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class ConfigurationEntry extends TimestampedEntry<ConfigurationEntry> {
-    private final Collection<RaftMember> members;
+  private final Collection<RaftMember> members;
 
-    public ConfigurationEntry(long timestamp, Collection<RaftMember> members) {
-        super(timestamp);
-        this.members = checkNotNull(members, "members cannot be null");
+  public ConfigurationEntry(long timestamp, Collection<RaftMember> members) {
+    super(timestamp);
+    this.members = checkNotNull(members, "members cannot be null");
+  }
+
+  @Override
+  public Type<ConfigurationEntry> type() {
+    return Type.CONFIGURATION;
+  }
+
+  /**
+   * Returns the members.
+   *
+   * @return The members.
+   */
+  public Collection<RaftMember> members() {
+    return members;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[timestamp=%d, members=%s]", getClass().getSimpleName(), timestamp(), members);
+  }
+
+  /**
+   * Configuration entry serializer.
+   */
+  public static class Serializer implements TimestampedEntry.Serializer<ConfigurationEntry> {
+    @Override
+    public void writeObject(BufferOutput output, ConfigurationEntry entry) {
+      output.writeLong(entry.timestamp);
+      output.writeInt(entry.members.size());
+      for (RaftMember member : entry.members) {
+        output.writeString(member.id().id());
+        output.writeByte(member.type().ordinal());
+        output.writeByte(member.status().ordinal());
+        output.writeLong(member.updated().toEpochMilli());
+      }
     }
 
     @Override
-    public Type<ConfigurationEntry> type() {
-        return Type.CONFIGURATION;
+    public ConfigurationEntry readObject(BufferInput input, Class<ConfigurationEntry> type) {
+      long timestamp = input.readLong();
+      int size = input.readInt();
+      List<RaftMember> members = new ArrayList<>(size);
+      for (int i = 0; i < size; i++) {
+        NodeId id = NodeId.nodeId(input.readString());
+        RaftMember.Type memberType = RaftMember.Type.values()[input.readByte()];
+        RaftMember.Status memberStatus = RaftMember.Status.values()[input.readByte()];
+        Instant updated = Instant.ofEpochMilli(input.readLong());
+        members.add(new RaftMemberState(id, memberType, memberStatus, updated));
+      }
+      return new ConfigurationEntry(timestamp, members);
     }
-
-    /**
-     * Returns the members.
-     *
-     * @return The members.
-     */
-    public Collection<RaftMember> members() {
-        return members;
-    }
-
-    @Override
-    public String toString() {
-        return String.format("%s[timestamp=%d, members=%s]", getClass().getSimpleName(), timestamp(), members);
-    }
-
-    /**
-     * Configuration entry serializer.
-     */
-    public static class Serializer implements TimestampedEntry.Serializer<ConfigurationEntry> {
-        @Override
-        public void writeObject(BufferOutput output, ConfigurationEntry entry) {
-            output.writeLong(entry.timestamp);
-            output.writeInt(entry.members.size());
-            for (RaftMember member : entry.members) {
-                output.writeString(member.id().id());
-                output.writeByte(member.type().ordinal());
-                output.writeByte(member.status().ordinal());
-                output.writeLong(member.updated().toEpochMilli());
-            }
-        }
-
-        @Override
-        public ConfigurationEntry readObject(BufferInput input, Class<ConfigurationEntry> type) {
-            long timestamp = input.readLong();
-            int size = input.readInt();
-            List<RaftMember> members = new ArrayList<>(size);
-            for (int i = 0; i < size; i++) {
-                NodeId id = NodeId.nodeId(input.readString());
-                RaftMember.Type memberType = RaftMember.Type.values()[input.readByte()];
-                RaftMember.Status memberStatus = RaftMember.Status.values()[input.readByte()];
-                Instant updated = Instant.ofEpochMilli(input.readLong());
-                members.add(new RaftMemberState(id, memberType, memberStatus, updated));
-            }
-            return new ConfigurationEntry(timestamp, members);
-        }
-    }
+  }
 }

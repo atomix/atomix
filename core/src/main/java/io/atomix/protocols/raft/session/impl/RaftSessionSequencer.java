@@ -56,203 +56,203 @@ import java.util.Queue;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 final class RaftSessionSequencer {
-    private static final Logger LOGGER = LoggerFactory.getLogger(RaftSessionSequencer.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(RaftSessionSequencer.class);
 
-    private final RaftSessionState state;
-    @VisibleForTesting
-    long requestSequence;
-    @VisibleForTesting
-    long responseSequence;
-    @VisibleForTesting
-    long eventIndex;
-    private final Queue<EventCallback> eventCallbacks = new ArrayDeque<>();
-    private final Map<Long, ResponseCallback> responseCallbacks = new HashMap<>();
+  private final RaftSessionState state;
+  @VisibleForTesting
+  long requestSequence;
+  @VisibleForTesting
+  long responseSequence;
+  @VisibleForTesting
+  long eventIndex;
+  private final Queue<EventCallback> eventCallbacks = new ArrayDeque<>();
+  private final Map<Long, ResponseCallback> responseCallbacks = new HashMap<>();
 
-    RaftSessionSequencer(RaftSessionState state) {
-        this.state = state;
+  RaftSessionSequencer(RaftSessionState state) {
+    this.state = state;
+  }
+
+  /**
+   * Returns the next request sequence number.
+   *
+   * @return The next request sequence number.
+   */
+  public long nextRequest() {
+    return ++requestSequence;
+  }
+
+  /**
+   * Sequences an event.
+   * <p>
+   * This method relies on the session event protocol to ensure that events are applied in sequential order.
+   * When an event is received, if no operations are outstanding, the event is immediately completed since
+   * the event could not have occurred concurrently with any other operation. Otherwise, the event is queued
+   * and the next response in the sequence of responses is checked to determine whether the event can be
+   * completed.
+   *
+   * @param request  The publish request.
+   * @param callback The callback to sequence.
+   */
+  public void sequenceEvent(PublishRequest request, Runnable callback) {
+    if (requestSequence == responseSequence) {
+      LOGGER.trace("{} - Completing {}", state.getSessionId(), request);
+      callback.run();
+      eventIndex = request.eventIndex();
+    } else {
+      eventCallbacks.add(new EventCallback(request, callback));
+      completeResponses();
+    }
+  }
+
+  /**
+   * Sequences a response.
+   * <p>
+   * When an operation is sequenced, it's first sequenced in the order in which it was submitted to the cluster.
+   * Once placed in sequential request order, if a response's {@code eventIndex} is greater than the last completed
+   * {@code eventIndex}, we attempt to sequence pending events. If after sequencing pending events the response's
+   * {@code eventIndex} is equal to the last completed {@code eventIndex} then the response can be immediately
+   * completed. If not enough events are pending to meet the sequence requirement, the sequencing of responses is
+   * stopped until events are received.
+   *
+   * @param sequence The request sequence number.
+   * @param response The response to sequence.
+   * @param callback The callback to sequence.
+   */
+  public void sequenceResponse(long sequence, OperationResponse response, Runnable callback) {
+    // If the request sequence number is equal to the next response sequence number, attempt to complete the response.
+    if (sequence == responseSequence + 1) {
+      if (completeResponse(response, callback)) {
+        ++responseSequence;
+        completeResponses();
+      } else {
+        responseCallbacks.put(sequence, new ResponseCallback(response, callback));
+      }
+    }
+    // If the response has not yet been sequenced, store it in the response callbacks map.
+    // Otherwise, the response for the operation with this sequence number has already been handled.
+    else if (sequence > responseSequence) {
+      responseCallbacks.put(sequence, new ResponseCallback(response, callback));
+    }
+  }
+
+  /**
+   * Completes all sequenced responses.
+   */
+  private void completeResponses() {
+    // Iterate through queued responses and complete as many as possible.
+    ResponseCallback response = responseCallbacks.get(responseSequence + 1);
+    while (response != null) {
+      // If the response was completed, remove the response callback from the response queue,
+      // increment the response sequence number, and check the next response.
+      if (completeResponse(response.response, response.callback)) {
+        responseCallbacks.remove(++responseSequence);
+        response = responseCallbacks.get(responseSequence + 1);
+      } else {
+        break;
+      }
     }
 
-    /**
-     * Returns the next request sequence number.
-     *
-     * @return The next request sequence number.
-     */
-    public long nextRequest() {
-        return ++requestSequence;
+    // Once we've completed as many responses as possible, if no more operations are outstanding
+    // and events remain in the event queue, complete the events.
+    if (requestSequence == responseSequence) {
+      EventCallback eventCallback = eventCallbacks.poll();
+      while (eventCallback != null) {
+        LOGGER.trace("{} - Completing {}", state.getSessionId(), eventCallback.request);
+        eventCallback.run();
+        eventIndex = eventCallback.request.eventIndex();
+        eventCallback = eventCallbacks.poll();
+      }
+    }
+  }
+
+  /**
+   * Completes a sequenced response if possible.
+   */
+  private boolean completeResponse(OperationResponse response, Runnable callback) {
+    // If the response is null, that indicates an exception occurred. The best we can do is complete
+    // the response in sequential order.
+    if (response == null) {
+      LOGGER.trace("{} - Completing failed request", state.getSessionId());
+      callback.run();
+      return true;
     }
 
-    /**
-     * Sequences an event.
-     * <p>
-     * This method relies on the session event protocol to ensure that events are applied in sequential order.
-     * When an event is received, if no operations are outstanding, the event is immediately completed since
-     * the event could not have occurred concurrently with any other operation. Otherwise, the event is queued
-     * and the next response in the sequence of responses is checked to determine whether the event can be
-     * completed.
-     *
-     * @param request  The publish request.
-     * @param callback The callback to sequence.
-     */
-    public void sequenceEvent(PublishRequest request, Runnable callback) {
-        if (requestSequence == responseSequence) {
-            LOGGER.trace("{} - Completing {}", state.getSessionId(), request);
-            callback.run();
-            eventIndex = request.eventIndex();
-        } else {
-            eventCallbacks.add(new EventCallback(request, callback));
-            completeResponses();
+    // If the response's event index is greater than the current event index, that indicates that events that were
+    // published prior to the response have not yet been completed. Attempt to complete pending events.
+    long responseEventIndex = response.eventIndex();
+    if (responseEventIndex > eventIndex) {
+      // For each pending event with an eventIndex less than or equal to the response eventIndex, complete the event.
+      // This is safe since we know that sequenced responses should see sequential order of events.
+      EventCallback eventCallback = eventCallbacks.peek();
+      while (eventCallback != null && eventCallback.request.eventIndex() <= responseEventIndex) {
+        eventCallbacks.remove();
+        LOGGER.trace("{} - Completing {}", state.getSessionId(), eventCallback.request);
+        eventCallback.run();
+        eventIndex = eventCallback.request.eventIndex();
+        eventCallback = eventCallbacks.peek();
+      }
+
+      // If the response event index is still greater than the last sequenced event index, check
+      // enqueued events to determine whether any events can be skipped. This is necessary to
+      // ensure that a response with a missing event can still trigger prior events.
+      if (responseEventIndex > eventIndex) {
+        for (EventCallback event : eventCallbacks) {
+          // If the event's previous index is consistent with the current event index and the event
+          // index is greater than the response event index, set the response event index to the
+          // event's previous index.
+          if (event.request.previousIndex() <= eventIndex && event.request.eventIndex() >= response.eventIndex()) {
+            responseEventIndex = event.request.previousIndex();
+            break;
+          }
         }
+      }
     }
 
-    /**
-     * Sequences a response.
-     * <p>
-     * When an operation is sequenced, it's first sequenced in the order in which it was submitted to the cluster.
-     * Once placed in sequential request order, if a response's {@code eventIndex} is greater than the last completed
-     * {@code eventIndex}, we attempt to sequence pending events. If after sequencing pending events the response's
-     * {@code eventIndex} is equal to the last completed {@code eventIndex} then the response can be immediately
-     * completed. If not enough events are pending to meet the sequence requirement, the sequencing of responses is
-     * stopped until events are received.
-     *
-     * @param sequence The request sequence number.
-     * @param response The response to sequence.
-     * @param callback The callback to sequence.
-     */
-    public void sequenceResponse(long sequence, OperationResponse response, Runnable callback) {
-        // If the request sequence number is equal to the next response sequence number, attempt to complete the response.
-        if (sequence == responseSequence + 1) {
-            if (completeResponse(response, callback)) {
-                ++responseSequence;
-                completeResponses();
-            } else {
-                responseCallbacks.put(sequence, new ResponseCallback(response, callback));
-            }
-        }
-        // If the response has not yet been sequenced, store it in the response callbacks map.
-        // Otherwise, the response for the operation with this sequence number has already been handled.
-        else if (sequence > responseSequence) {
-            responseCallbacks.put(sequence, new ResponseCallback(response, callback));
-        }
+    // If after completing pending events the eventIndex is greater than or equal to the response's eventIndex, complete the response.
+    // Note that the event protocol initializes the eventIndex to the session ID.
+    if (responseEventIndex <= eventIndex || (eventIndex == 0 && responseEventIndex == state.getSessionId())) {
+      LOGGER.trace("{} - Completing {}", state.getSessionId(), response);
+      callback.run();
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  /**
+   * Response callback holder.
+   */
+  private static final class ResponseCallback implements Runnable {
+    private final OperationResponse response;
+    private final Runnable callback;
+
+    private ResponseCallback(OperationResponse response, Runnable callback) {
+      this.response = response;
+      this.callback = callback;
     }
 
-    /**
-     * Completes all sequenced responses.
-     */
-    private void completeResponses() {
-        // Iterate through queued responses and complete as many as possible.
-        ResponseCallback response = responseCallbacks.get(responseSequence + 1);
-        while (response != null) {
-            // If the response was completed, remove the response callback from the response queue,
-            // increment the response sequence number, and check the next response.
-            if (completeResponse(response.response, response.callback)) {
-                responseCallbacks.remove(++responseSequence);
-                response = responseCallbacks.get(responseSequence + 1);
-            } else {
-                break;
-            }
-        }
+    @Override
+    public void run() {
+      callback.run();
+    }
+  }
 
-        // Once we've completed as many responses as possible, if no more operations are outstanding
-        // and events remain in the event queue, complete the events.
-        if (requestSequence == responseSequence) {
-            EventCallback eventCallback = eventCallbacks.poll();
-            while (eventCallback != null) {
-                LOGGER.trace("{} - Completing {}", state.getSessionId(), eventCallback.request);
-                eventCallback.run();
-                eventIndex = eventCallback.request.eventIndex();
-                eventCallback = eventCallbacks.poll();
-            }
-        }
+  /**
+   * Event callback holder.
+   */
+  private static final class EventCallback implements Runnable {
+    private final PublishRequest request;
+    private final Runnable callback;
+
+    private EventCallback(PublishRequest request, Runnable callback) {
+      this.request = request;
+      this.callback = callback;
     }
 
-    /**
-     * Completes a sequenced response if possible.
-     */
-    private boolean completeResponse(OperationResponse response, Runnable callback) {
-        // If the response is null, that indicates an exception occurred. The best we can do is complete
-        // the response in sequential order.
-        if (response == null) {
-            LOGGER.trace("{} - Completing failed request", state.getSessionId());
-            callback.run();
-            return true;
-        }
-
-        // If the response's event index is greater than the current event index, that indicates that events that were
-        // published prior to the response have not yet been completed. Attempt to complete pending events.
-        long responseEventIndex = response.eventIndex();
-        if (responseEventIndex > eventIndex) {
-            // For each pending event with an eventIndex less than or equal to the response eventIndex, complete the event.
-            // This is safe since we know that sequenced responses should see sequential order of events.
-            EventCallback eventCallback = eventCallbacks.peek();
-            while (eventCallback != null && eventCallback.request.eventIndex() <= responseEventIndex) {
-                eventCallbacks.remove();
-                LOGGER.trace("{} - Completing {}", state.getSessionId(), eventCallback.request);
-                eventCallback.run();
-                eventIndex = eventCallback.request.eventIndex();
-                eventCallback = eventCallbacks.peek();
-            }
-
-            // If the response event index is still greater than the last sequenced event index, check
-            // enqueued events to determine whether any events can be skipped. This is necessary to
-            // ensure that a response with a missing event can still trigger prior events.
-            if (responseEventIndex > eventIndex) {
-                for (EventCallback event : eventCallbacks) {
-                    // If the event's previous index is consistent with the current event index and the event
-                    // index is greater than the response event index, set the response event index to the
-                    // event's previous index.
-                    if (event.request.previousIndex() <= eventIndex && event.request.eventIndex() >= response.eventIndex()) {
-                        responseEventIndex = event.request.previousIndex();
-                        break;
-                    }
-                }
-            }
-        }
-
-        // If after completing pending events the eventIndex is greater than or equal to the response's eventIndex, complete the response.
-        // Note that the event protocol initializes the eventIndex to the session ID.
-        if (responseEventIndex <= eventIndex || (eventIndex == 0 && responseEventIndex == state.getSessionId())) {
-            LOGGER.trace("{} - Completing {}", state.getSessionId(), response);
-            callback.run();
-            return true;
-        } else {
-            return false;
-        }
+    @Override
+    public void run() {
+      callback.run();
     }
-
-    /**
-     * Response callback holder.
-     */
-    private static final class ResponseCallback implements Runnable {
-        private final OperationResponse response;
-        private final Runnable callback;
-
-        private ResponseCallback(OperationResponse response, Runnable callback) {
-            this.response = response;
-            this.callback = callback;
-        }
-
-        @Override
-        public void run() {
-            callback.run();
-        }
-    }
-
-    /**
-     * Event callback holder.
-     */
-    private static final class EventCallback implements Runnable {
-        private final PublishRequest request;
-        private final Runnable callback;
-
-        private EventCallback(PublishRequest request, Runnable callback) {
-            this.request = request;
-            this.callback = callback;
-        }
-
-        @Override
-        public void run() {
-            callback.run();
-        }
-    }
+  }
 
 }

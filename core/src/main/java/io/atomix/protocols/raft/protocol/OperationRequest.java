@@ -30,72 +30,72 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public abstract class OperationRequest extends SessionRequest {
-    protected final long sequence;
-    protected final byte[] bytes;
+  protected final long sequence;
+  protected final byte[] bytes;
 
-    protected OperationRequest(long session, long sequence, byte[] bytes) {
-        super(session);
-        this.sequence = sequence;
-        this.bytes = bytes;
-    }
+  protected OperationRequest(long session, long sequence, byte[] bytes) {
+    super(session);
+    this.sequence = sequence;
+    this.bytes = bytes;
+  }
+
+  /**
+   * Returns the request sequence number.
+   *
+   * @return The request sequence number.
+   */
+  public long sequence() {
+    return sequence;
+  }
+
+  /**
+   * Returns the request operation.
+   *
+   * @return The request operation.
+   */
+  public byte[] bytes() {
+    return bytes;
+  }
+
+  /**
+   * Operation request builder.
+   */
+  public static abstract class Builder<T extends Builder<T, U>, U extends OperationRequest> extends SessionRequest.Builder<T, U> {
+    protected long sequence;
+    protected byte[] bytes;
 
     /**
-     * Returns the request sequence number.
+     * Sets the request sequence number.
      *
-     * @return The request sequence number.
+     * @param sequence The request sequence number.
+     * @return The request builder.
+     * @throws IllegalArgumentException If the request sequence number is not positive.
      */
-    public long sequence() {
-        return sequence;
+    @SuppressWarnings("unchecked")
+    public T withSequence(long sequence) {
+      checkArgument(sequence >= 0, "sequence must be positive");
+      this.sequence = sequence;
+      return (T) this;
     }
 
     /**
-     * Returns the request operation.
+     * Sets the request bytes.
      *
-     * @return The request operation.
+     * @param bytes The request operation bytes.
+     * @return The request builder.
+     * @throws NullPointerException if the request {@code bytes} are {@code null}
      */
-    public byte[] bytes() {
-        return bytes;
+    @SuppressWarnings("unchecked")
+    public T withBytes(byte[] bytes) {
+      this.bytes = checkNotNull(bytes, "bytes cannot be null");
+      return (T) this;
     }
 
-    /**
-     * Operation request builder.
-     */
-    public static abstract class Builder<T extends Builder<T, U>, U extends OperationRequest> extends SessionRequest.Builder<T, U> {
-        protected long sequence;
-        protected byte[] bytes;
-
-        /**
-         * Sets the request sequence number.
-         *
-         * @param sequence The request sequence number.
-         * @return The request builder.
-         * @throws IllegalArgumentException If the request sequence number is not positive.
-         */
-        @SuppressWarnings("unchecked")
-        public T withSequence(long sequence) {
-            checkArgument(sequence >= 0, "sequence must be positive");
-            this.sequence = sequence;
-            return (T) this;
-        }
-
-        /**
-         * Sets the request bytes.
-         *
-         * @param bytes The request operation bytes.
-         * @return The request builder.
-         * @throws NullPointerException if the request {@code bytes} are {@code null}
-         */
-        @SuppressWarnings("unchecked")
-        public T withBytes(byte[] bytes) {
-            this.bytes = checkNotNull(bytes, "bytes cannot be null");
-            return (T) this;
-        }
-
-        @Override
-        protected void validate() {
-            super.validate();
-            checkNotNull(bytes, "bytes cannot be null");
-            checkArgument(sequence >= 0, "sequence must be positive");
-        }
+    @Override
+    protected void validate() {
+      super.validate();
+      checkNotNull(bytes, "bytes cannot be null");
+      checkArgument(sequence >= 0, "sequence must be positive");
     }
+  }
 }

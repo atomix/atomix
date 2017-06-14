@@ -27,32 +27,32 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface RaftMetadataClient {
 
-    /**
-     * Returns the current cluster leader.
-     *
-     * @return The current cluster leader.
-     */
-    NodeId leader();
+  /**
+   * Returns the current cluster leader.
+   *
+   * @return The current cluster leader.
+   */
+  NodeId leader();
 
-    /**
-     * Returns the set of known servers in the cluster.
-     *
-     * @return The set of known servers in the cluster.
-     */
-    Collection<NodeId> servers();
+  /**
+   * Returns the set of known servers in the cluster.
+   *
+   * @return The set of known servers in the cluster.
+   */
+  Collection<NodeId> servers();
 
-    /**
-     * Returns a list of open sessions.
-     *
-     * @return A completable future to be completed with a list of open sessions.
-     */
-    CompletableFuture<Set<RaftSessionMetadata>> getSessions();
+  /**
+   * Returns a list of open sessions.
+   *
+   * @return A completable future to be completed with a list of open sessions.
+   */
+  CompletableFuture<Set<RaftSessionMetadata>> getSessions();
 
-    /**
-     * Returns a list of open sessions of the given type.
-     *
-     * @return A completable future to be completed with a list of open sessions of the given type.
-     */
-    CompletableFuture<Set<RaftSessionMetadata>> getSessions(String type);
+  /**
+   * Returns a list of open sessions of the given type.
+   *
+   * @return A completable future to be completed with a list of open sessions of the given type.
+   */
+  CompletableFuture<Set<RaftSessionMetadata>> getSessions(String type);
 
 }

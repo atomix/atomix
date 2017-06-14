@@ -24,13 +24,13 @@ import io.atomix.util.concurrent.ReferencePool;
  */
 public class PooledDirectAllocator extends PooledAllocator {
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    public PooledDirectAllocator() {
-        super((ReferencePool) new UnsafeDirectBufferPool());
-    }
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  public PooledDirectAllocator() {
+    super((ReferencePool) new UnsafeDirectBufferPool());
+  }
 
-    @Override
-    protected long maxCapacity() {
-        return Long.MAX_VALUE;
-    }
+  @Override
+  protected long maxCapacity() {
+    return Long.MAX_VALUE;
+  }
 }

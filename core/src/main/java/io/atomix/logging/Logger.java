@@ -20,66 +20,66 @@ package io.atomix.logging;
  */
 public interface Logger {
 
-    String getName();
+  String getName();
 
-    boolean isTraceEnabled();
+  boolean isTraceEnabled();
 
-    void trace(String message);
+  void trace(String message);
 
-    void trace(String message, Object arg);
+  void trace(String message, Object arg);
 
-    void trace(String message, Object arg1, Object arg2);
+  void trace(String message, Object arg1, Object arg2);
 
-    void trace(String message, Object... args);
+  void trace(String message, Object... args);
 
-    void trace(String message, Throwable t);
+  void trace(String message, Throwable t);
 
-    boolean isDebugEnabled();
+  boolean isDebugEnabled();
 
-    void debug(String message);
+  void debug(String message);
 
-    void debug(String message, Object arg);
+  void debug(String message, Object arg);
 
-    void debug(String message, Object arg1, Object arg2);
+  void debug(String message, Object arg1, Object arg2);
 
-    void debug(String message, Object... args);
+  void debug(String message, Object... args);
 
-    void debug(String message, Throwable t);
+  void debug(String message, Throwable t);
 
-    boolean isInfoEnabled();
+  boolean isInfoEnabled();
 
-    void info(String message);
+  void info(String message);
 
-    void info(String message, Object arg1);
+  void info(String message, Object arg1);
 
-    void info(String message, Object arg1, Object arg2);
+  void info(String message, Object arg1, Object arg2);
 
-    void info(String message, Object... args);
+  void info(String message, Object... args);
 
-    void info(String message, Throwable t);
+  void info(String message, Throwable t);
 
-    boolean isWarnEnabled();
+  boolean isWarnEnabled();
 
-    void warn(String message);
+  void warn(String message);
 
-    void warn(String message, Object arg1);
+  void warn(String message, Object arg1);
 
-    void warn(String message, Object... args);
+  void warn(String message, Object... args);
 
-    void warn(String message, Object arg1, Object arg2);
+  void warn(String message, Object arg1, Object arg2);
 
-    void warn(String message, Throwable t);
+  void warn(String message, Throwable t);
 
-    boolean isErrorEnabled();
+  boolean isErrorEnabled();
 
-    void error(String message);
+  void error(String message);
 
-    void error(String message, Object arg1);
+  void error(String message, Object arg1);
 
-    void error(String message, Object arg1, Object arg2);
+  void error(String message, Object arg1, Object arg2);
 
-    void error(String message, Object... args);
+  void error(String message, Object... args);
 
-    void error(String message, Throwable t);
+  void error(String message, Throwable t);
 
 }

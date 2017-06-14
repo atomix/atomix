@@ -56,10 +56,9 @@ import java.util.function.Function;
  * on a single state machine within the cluster, and so scheduling callbacks in reaction to query execution would
  * not be deterministic.
  *
+ * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  * @see RaftStateMachine
  * @see StateMachineContext
- *
- * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public interface StateMachineExecutor extends ThreadContext {
 
@@ -95,9 +94,9 @@ public interface StateMachineExecutor extends ThreadContext {
    * <p>
    * The callback is guaranteed to always be executed in the same thread.
    *
-   * @param type The operation type.
+   * @param type     The operation type.
    * @param callback The operation callback.
-   * @param <T> The operation type.
+   * @param <T>      The operation type.
    * @return The state machine executor.
    * @throws NullPointerException if {@code type} or {@code callback} are null
    */
@@ -112,9 +111,9 @@ public interface StateMachineExecutor extends ThreadContext {
    * <p>
    * The callback is guaranteed to always be executed in the same thread.
    *
-   * @param type The operation type.
+   * @param type     The operation type.
    * @param callback The operation callback.
-   * @param <T> The operation type.
+   * @param <T>      The operation type.
    * @return The state machine executor.
    * @throws NullPointerException if {@code type} or {@code callback} are null
    */

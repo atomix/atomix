@@ -33,60 +33,60 @@ import java.nio.channels.FileChannel;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class MappedMemory extends NativeMemory {
-    public static final long MAX_SIZE = Integer.MAX_VALUE;
+  public static final long MAX_SIZE = Integer.MAX_VALUE;
 
-    /**
-     * Allocates memory mapped to a file on disk.
-     *
-     * @param file The file to which to map memory.
-     * @param size The count of the memory to map.
-     * @return The mapped memory.
-     * @throws IllegalArgumentException If {@code count} is greater than {@link Integer#MAX_VALUE}
-     */
-    public static MappedMemory allocate(File file, long size) {
-        return new MappedMemoryAllocator(file).allocate(size);
-    }
+  /**
+   * Allocates memory mapped to a file on disk.
+   *
+   * @param file The file to which to map memory.
+   * @param size The count of the memory to map.
+   * @return The mapped memory.
+   * @throws IllegalArgumentException If {@code count} is greater than {@link Integer#MAX_VALUE}
+   */
+  public static MappedMemory allocate(File file, long size) {
+    return new MappedMemoryAllocator(file).allocate(size);
+  }
 
-    /**
-     * Allocates memory mapped to a file on disk.
-     *
-     * @param file The file to which to map memory.
-     * @param mode The mode with which to map memory.
-     * @param size The count of the memory to map.
-     * @return The mapped memory.
-     * @throws IllegalArgumentException If {@code count} is greater than {@link Integer#MAX_VALUE}
-     */
-    public static MappedMemory allocate(File file, FileChannel.MapMode mode, long size) {
-        if (size > MAX_SIZE)
-            throw new IllegalArgumentException("size cannot be greater than " + MAX_SIZE);
-        return new MappedMemoryAllocator(file, mode).allocate(size);
-    }
+  /**
+   * Allocates memory mapped to a file on disk.
+   *
+   * @param file The file to which to map memory.
+   * @param mode The mode with which to map memory.
+   * @param size The count of the memory to map.
+   * @return The mapped memory.
+   * @throws IllegalArgumentException If {@code count} is greater than {@link Integer#MAX_VALUE}
+   */
+  public static MappedMemory allocate(File file, FileChannel.MapMode mode, long size) {
+    if (size > MAX_SIZE)
+      throw new IllegalArgumentException("size cannot be greater than " + MAX_SIZE);
+    return new MappedMemoryAllocator(file, mode).allocate(size);
+  }
 
-    private final MappedByteBuffer buffer;
+  private final MappedByteBuffer buffer;
 
-    public MappedMemory(MappedByteBuffer buffer, MappedMemoryAllocator allocator) {
-        super(((DirectBuffer) buffer).address(), buffer.capacity(), allocator);
-        this.buffer = buffer;
-    }
+  public MappedMemory(MappedByteBuffer buffer, MappedMemoryAllocator allocator) {
+    super(((DirectBuffer) buffer).address(), buffer.capacity(), allocator);
+    this.buffer = buffer;
+  }
 
-    /**
-     * Flushes the mapped buffer to disk.
-     */
-    public void flush() {
-        buffer.force();
-    }
+  /**
+   * Flushes the mapped buffer to disk.
+   */
+  public void flush() {
+    buffer.force();
+  }
 
-    @Override
-    public void free() {
-        Cleaner cleaner = ((DirectBuffer) buffer).cleaner();
-        if (cleaner != null)
-            cleaner.clean();
-        ((MappedMemoryAllocator) allocator).release();
-    }
+  @Override
+  public void free() {
+    Cleaner cleaner = ((DirectBuffer) buffer).cleaner();
+    if (cleaner != null)
+      cleaner.clean();
+    ((MappedMemoryAllocator) allocator).release();
+  }
 
-    public void close() {
-        free();
-        ((MappedMemoryAllocator) allocator).close();
-    }
+  public void close() {
+    free();
+    ((MappedMemoryAllocator) allocator).close();
+  }
 
 }

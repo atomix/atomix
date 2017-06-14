@@ -23,85 +23,85 @@ import java.io.DataOutput;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class BufferDataOutput extends BufferOutputStream implements DataOutput {
-    protected final BufferOutput<?> buffer;
+  protected final BufferOutput<?> buffer;
 
-    public BufferDataOutput(BufferOutput<?> buffer) {
-        super(buffer);
-        if (buffer == null)
-            throw new NullPointerException("buffer cannot be null");
-        this.buffer = buffer;
-    }
+  public BufferDataOutput(BufferOutput<?> buffer) {
+    super(buffer);
+    if (buffer == null)
+      throw new NullPointerException("buffer cannot be null");
+    this.buffer = buffer;
+  }
 
-    @Override
-    public void write(int b) {
-        buffer.writeByte(b);
-    }
+  @Override
+  public void write(int b) {
+    buffer.writeByte(b);
+  }
 
-    @Override
-    public void write(byte[] b) {
-        buffer.write(b);
-    }
+  @Override
+  public void write(byte[] b) {
+    buffer.write(b);
+  }
 
-    @Override
-    public void write(byte[] b, int off, int len) {
-        buffer.write(b, off, len);
-    }
+  @Override
+  public void write(byte[] b, int off, int len) {
+    buffer.write(b, off, len);
+  }
 
-    @Override
-    public void writeBoolean(boolean b) {
-        buffer.writeBoolean(b);
-    }
+  @Override
+  public void writeBoolean(boolean b) {
+    buffer.writeBoolean(b);
+  }
 
-    @Override
-    public void writeByte(int b) {
-        buffer.writeByte(b);
-    }
+  @Override
+  public void writeByte(int b) {
+    buffer.writeByte(b);
+  }
 
-    @Override
-    public void writeShort(int s) {
-        buffer.writeShort((short) s);
-    }
+  @Override
+  public void writeShort(int s) {
+    buffer.writeShort((short) s);
+  }
 
-    @Override
-    public void writeChar(int c) {
-        buffer.writeChar((char) c);
-    }
+  @Override
+  public void writeChar(int c) {
+    buffer.writeChar((char) c);
+  }
 
-    @Override
-    public void writeInt(int i) {
-        buffer.writeInt(i);
-    }
+  @Override
+  public void writeInt(int i) {
+    buffer.writeInt(i);
+  }
 
-    @Override
-    public void writeLong(long l) {
-        buffer.writeLong(l);
-    }
+  @Override
+  public void writeLong(long l) {
+    buffer.writeLong(l);
+  }
 
-    @Override
-    public void writeFloat(float f) {
-        buffer.writeFloat(f);
-    }
+  @Override
+  public void writeFloat(float f) {
+    buffer.writeFloat(f);
+  }
 
-    @Override
-    public void writeDouble(double d) {
-        buffer.writeDouble(d);
-    }
+  @Override
+  public void writeDouble(double d) {
+    buffer.writeDouble(d);
+  }
 
-    @Override
-    public void writeBytes(String s) {
-        buffer.write(s.getBytes());
-    }
+  @Override
+  public void writeBytes(String s) {
+    buffer.write(s.getBytes());
+  }
 
-    @Override
-    public void writeChars(String s) {
-        for (char c : s.toCharArray()) {
-            buffer.writeChar(c);
-        }
+  @Override
+  public void writeChars(String s) {
+    for (char c : s.toCharArray()) {
+      buffer.writeChar(c);
     }
+  }
 
-    @Override
-    public void writeUTF(String s) {
-        buffer.writeUTF8(s);
-    }
+  @Override
+  public void writeUTF(String s) {
+    buffer.writeUTF8(s);
+  }
 
 }

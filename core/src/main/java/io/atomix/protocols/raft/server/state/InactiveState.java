@@ -86,8 +86,8 @@ class InactiveState extends AbstractState {
     }
 
     return CompletableFuture.completedFuture(logResponse(ConfigureResponse.builder()
-      .withStatus(RaftResponse.Status.OK)
-      .build()));
+        .withStatus(RaftResponse.Status.OK)
+        .build()));
   }
 
   @Override

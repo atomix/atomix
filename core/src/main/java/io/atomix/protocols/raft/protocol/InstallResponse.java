@@ -28,27 +28,27 @@ import io.atomix.protocols.raft.error.RaftError;
  */
 public class InstallResponse extends AbstractRaftResponse {
 
-    /**
-     * Returns a new install response builder.
-     *
-     * @return A new install response builder.
-     */
-    public static Builder builder() {
-        return new Builder();
-    }
+  /**
+   * Returns a new install response builder.
+   *
+   * @return A new install response builder.
+   */
+  public static Builder builder() {
+    return new Builder();
+  }
 
-    public InstallResponse(Status status, RaftError error) {
-        super(status, error);
-    }
+  public InstallResponse(Status status, RaftError error) {
+    super(status, error);
+  }
 
-    /**
-     * Install response builder.
-     */
-    public static class Builder extends AbstractRaftResponse.Builder<Builder, InstallResponse> {
-        @Override
-        public InstallResponse build() {
-            validate();
-            return new InstallResponse(status, error);
-        }
+  /**
+   * Install response builder.
+   */
+  public static class Builder extends AbstractRaftResponse.Builder<Builder, InstallResponse> {
+    @Override
+    public InstallResponse build() {
+      validate();
+      return new InstallResponse(status, error);
     }
+  }
 }

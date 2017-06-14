@@ -41,115 +41,116 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class MetaStore implements AutoCloseable {
-    private static final Logger LOGGER = LoggerFactory.getLogger(MetaStore.class);
-    private final Serializer serializer;
-    private final FileBuffer metadataBuffer;
-    private final Buffer configurationBuffer;
+  private static final Logger LOGGER = LoggerFactory.getLogger(MetaStore.class);
+  private final Serializer serializer;
+  private final FileBuffer metadataBuffer;
+  private final Buffer configurationBuffer;
 
-    public MetaStore(String name, Storage storage, Serializer serializer) {
-        this.serializer = checkNotNull(serializer, "serializer cannot be null");
+  public MetaStore(String name, Storage storage, Serializer serializer) {
+    this.serializer = checkNotNull(serializer, "serializer cannot be null");
 
-        if (!(storage.directory().isDirectory() || storage.directory().mkdirs())) {
-            throw new IllegalArgumentException(String.format("Can't create storage directory [%s].", storage.directory()));
-        }
-
-        // Note that for raft safety, irrespective of the storage level, <term, vote> metadata is always persisted on disk.
-        File metaFile = new File(storage.directory(), String.format("%s.meta", name));
-        metadataBuffer = FileBuffer.allocate(metaFile, 12);
-
-        if (storage.level() == StorageLevel.MEMORY) {
-            configurationBuffer = HeapBuffer.allocate(32);
-        } else {
-            File confFile = new File(storage.directory(), String.format("%s.conf", name));
-            configurationBuffer = FileBuffer.allocate(confFile, 32);
-        }
+    if (!(storage.directory().isDirectory() || storage.directory().mkdirs())) {
+      throw new IllegalArgumentException(String.format("Can't create storage directory [%s].", storage.directory()));
     }
 
-    /**
-     * Stores the current server term.
-     *
-     * @param term The current server term.     */
-    public synchronized void storeTerm(long term) {
-        LOGGER.trace("Store term {}", term);
-        metadataBuffer.writeLong(0, term).flush();
-    }
+    // Note that for raft safety, irrespective of the storage level, <term, vote> metadata is always persisted on disk.
+    File metaFile = new File(storage.directory(), String.format("%s.meta", name));
+    metadataBuffer = FileBuffer.allocate(metaFile, 12);
 
-    /**
-     * Loads the stored server term.
-     *
-     * @return The stored server term.
-     */
-    public synchronized long loadTerm() {
-        return metadataBuffer.readLong(0);
+    if (storage.level() == StorageLevel.MEMORY) {
+      configurationBuffer = HeapBuffer.allocate(32);
+    } else {
+      File confFile = new File(storage.directory(), String.format("%s.conf", name));
+      configurationBuffer = FileBuffer.allocate(confFile, 32);
     }
+  }
 
-    /**
-     * Stores the last voted server.
-     *
-     * @param vote The server vote.
-     */
-    public synchronized void storeVote(NodeId vote) {
-        LOGGER.trace("Store vote {}", vote);
-        metadataBuffer.writeString(8, vote != null ? vote.id() : null).flush();
-    }
+  /**
+   * Stores the current server term.
+   *
+   * @param term The current server term.
+   */
+  public synchronized void storeTerm(long term) {
+    LOGGER.trace("Store term {}", term);
+    metadataBuffer.writeLong(0, term).flush();
+  }
 
-    /**
-     * Loads the last vote for the server.
-     *
-     * @return The last vote for the server.
-     */
-    public synchronized NodeId loadVote() {
-        return NodeId.nodeId(metadataBuffer.readString(8));
-    }
+  /**
+   * Loads the stored server term.
+   *
+   * @return The stored server term.
+   */
+  public synchronized long loadTerm() {
+    return metadataBuffer.readLong(0);
+  }
 
-    /**
-     * Stores the current cluster configuration.
-     *
-     * @param configuration The current cluster configuration.
-     */
-    public synchronized void storeConfiguration(Configuration configuration) {
-        LOGGER.trace("Store configuration {}", configuration);
-        byte[] bytes = serializer.encode(configuration);
-        configurationBuffer.position(0)
-                .writeInt(bytes.length)
-                .write(bytes);
-        configurationBuffer.flush();
-    }
+  /**
+   * Stores the last voted server.
+   *
+   * @param vote The server vote.
+   */
+  public synchronized void storeVote(NodeId vote) {
+    LOGGER.trace("Store vote {}", vote);
+    metadataBuffer.writeString(8, vote != null ? vote.id() : null).flush();
+  }
 
-    /**
-     * Loads the current cluster configuration.
-     *
-     * @return The current cluster configuration.
-     */
-    public synchronized Configuration loadConfiguration() {
-        if (configurationBuffer.position(0).readByte() == 1) {
-            return serializer.decode(configurationBuffer.readBytes(configurationBuffer.readInt()));
-        }
-        return null;
-    }
+  /**
+   * Loads the last vote for the server.
+   *
+   * @return The last vote for the server.
+   */
+  public synchronized NodeId loadVote() {
+    return NodeId.nodeId(metadataBuffer.readString(8));
+  }
 
-    @Override
-    public synchronized void close() {
-        metadataBuffer.close();
-        configurationBuffer.close();
-    }
+  /**
+   * Stores the current cluster configuration.
+   *
+   * @param configuration The current cluster configuration.
+   */
+  public synchronized void storeConfiguration(Configuration configuration) {
+    LOGGER.trace("Store configuration {}", configuration);
+    byte[] bytes = serializer.encode(configuration);
+    configurationBuffer.position(0)
+        .writeInt(bytes.length)
+        .write(bytes);
+    configurationBuffer.flush();
+  }
 
-    @Override
-    public String toString() {
-        if (configurationBuffer instanceof FileBuffer) {
-            return String.format(
-                    "%s[%s,%s]",
-                    getClass().getSimpleName(),
-                    metadataBuffer.file(),
-                    ((FileBuffer) configurationBuffer).file()
-            );
-        } else {
-            return String.format(
-                    "%s[%s]",
-                    getClass().getSimpleName(),
-                    metadataBuffer.file()
-            );
-        }
+  /**
+   * Loads the current cluster configuration.
+   *
+   * @return The current cluster configuration.
+   */
+  public synchronized Configuration loadConfiguration() {
+    if (configurationBuffer.position(0).readByte() == 1) {
+      return serializer.decode(configurationBuffer.readBytes(configurationBuffer.readInt()));
     }
+    return null;
+  }
+
+  @Override
+  public synchronized void close() {
+    metadataBuffer.close();
+    configurationBuffer.close();
+  }
+
+  @Override
+  public String toString() {
+    if (configurationBuffer instanceof FileBuffer) {
+      return String.format(
+          "%s[%s,%s]",
+          getClass().getSimpleName(),
+          metadataBuffer.file(),
+          ((FileBuffer) configurationBuffer).file()
+      );
+    } else {
+      return String.format(
+          "%s[%s]",
+          getClass().getSimpleName(),
+          metadataBuffer.file()
+      );
+    }
+  }
 
 }

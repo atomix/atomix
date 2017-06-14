@@ -33,101 +33,101 @@ import java.util.function.BiFunction;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class AbstractState implements ServerState {
-    protected final Logger LOGGER = LoggerFactory.getLogger(getClass());
-    protected final ServerContext context;
-    private boolean open = true;
+  protected final Logger LOGGER = LoggerFactory.getLogger(getClass());
+  protected final ServerContext context;
+  private boolean open = true;
 
-    protected AbstractState(ServerContext context) {
-        this.context = context;
+  protected AbstractState(ServerContext context) {
+    this.context = context;
+  }
+
+  /**
+   * Returns the Copycat state represented by this state.
+   *
+   * @return The Copycat state represented by this state.
+   */
+  public abstract RaftServer.State type();
+
+  /**
+   * Logs a request.
+   */
+  protected final <R extends RaftRequest> R logRequest(R request) {
+    LOGGER.trace("{} - Received {}", context.getCluster().member().id(), request);
+    return request;
+  }
+
+  /**
+   * Logs a response.
+   */
+  protected final <R extends RaftResponse> R logResponse(R response) {
+    LOGGER.trace("{} - Sending {}", context.getCluster().member().id(), response);
+    return response;
+  }
+
+  @Override
+  public CompletableFuture<ServerState> open() {
+    context.checkThread();
+    open = true;
+    return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
+  public boolean isOpen() {
+    return open;
+  }
+
+  /**
+   * Forwards the given request to the leader if possible.
+   */
+  protected <T extends RaftRequest, U extends RaftResponse> CompletableFuture<U> forward(T request, BiFunction<NodeId, T, CompletableFuture<U>> function) {
+    CompletableFuture<U> future = new CompletableFuture<>();
+    RaftMemberState leader = context.getLeader();
+    if (leader == null) {
+      return Futures.exceptionalFuture(new NoLeaderException("No leader found"));
     }
 
-    /**
-     * Returns the Copycat state represented by this state.
-     *
-     * @return The Copycat state represented by this state.
-     */
-    public abstract RaftServer.State type();
+    function.apply(leader.id(), request).whenComplete((response, error) -> {
+      if (error == null) {
+        future.complete(response);
+      } else {
+        future.completeExceptionally(error);
+      }
+    });
+    return future;
+  }
 
-    /**
-     * Logs a request.
-     */
-    protected final <R extends RaftRequest> R logRequest(R request) {
-        LOGGER.trace("{} - Received {}", context.getCluster().member().id(), request);
-        return request;
+  /**
+   * Updates the term and leader.
+   */
+  protected boolean updateTermAndLeader(long term, NodeId leader) {
+    // If the request indicates a term that is greater than the current term or no leader has been
+    // set for the current term, update leader and term.
+    if (term > context.getTerm() || (term == context.getTerm() && context.getLeader() == null && leader != null)) {
+      context.setTerm(term);
+      context.setLeader(leader);
+
+      // Reset the current cluster configuration to the last committed configuration when a leader change occurs.
+      context.getClusterState().reset();
+      return true;
     }
+    return false;
+  }
 
-    /**
-     * Logs a response.
-     */
-    protected final <R extends RaftResponse> R logResponse(R response) {
-        LOGGER.trace("{} - Sending {}", context.getCluster().member().id(), response);
-        return response;
-    }
+  @Override
+  public CompletableFuture<Void> close() {
+    context.checkThread();
+    open = false;
+    return CompletableFuture.completedFuture(null);
+  }
 
-    @Override
-    public CompletableFuture<ServerState> open() {
-        context.checkThread();
-        open = true;
-        return CompletableFuture.completedFuture(null);
-    }
+  @Override
+  public boolean isClosed() {
+    return !open;
+  }
 
-    @Override
-    public boolean isOpen() {
-        return open;
-    }
-
-    /**
-     * Forwards the given request to the leader if possible.
-     */
-    protected <T extends RaftRequest, U extends RaftResponse> CompletableFuture<U> forward(T request, BiFunction<NodeId, T, CompletableFuture<U>> function) {
-        CompletableFuture<U> future = new CompletableFuture<>();
-        RaftMemberState leader = context.getLeader();
-        if (leader == null) {
-            return Futures.exceptionalFuture(new NoLeaderException("No leader found"));
-        }
-
-        function.apply(leader.id(), request).whenComplete((response, error) -> {
-            if (error == null) {
-                future.complete(response);
-            } else {
-                future.completeExceptionally(error);
-            }
-        });
-        return future;
-    }
-
-    /**
-     * Updates the term and leader.
-     */
-    protected boolean updateTermAndLeader(long term, NodeId leader) {
-        // If the request indicates a term that is greater than the current term or no leader has been
-        // set for the current term, update leader and term.
-        if (term > context.getTerm() || (term == context.getTerm() && context.getLeader() == null && leader != null)) {
-            context.setTerm(term);
-            context.setLeader(leader);
-
-            // Reset the current cluster configuration to the last committed configuration when a leader change occurs.
-            context.getClusterState().reset();
-            return true;
-        }
-        return false;
-    }
-
-    @Override
-    public CompletableFuture<Void> close() {
-        context.checkThread();
-        open = false;
-        return CompletableFuture.completedFuture(null);
-    }
-
-    @Override
-    public boolean isClosed() {
-        return !open;
-    }
-
-    @Override
-    public String toString() {
-        return String.format("%s[context=%s]", getClass().getSimpleName(), context);
-    }
+  @Override
+  public String toString() {
+    return String.format("%s[context=%s]", getClass().getSimpleName(), context);
+  }
 
 }

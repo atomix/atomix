@@ -32,12 +32,12 @@ import static io.atomix.util.buffer.Bytes.LONG;
  * <p>
  * The format of an entry in the log is as follows:
  * <ul>
- *   <li>64-bit index</li>
- *   <li>8-bit boolean indicating whether a term change is contained in the entry</li>
- *   <li>64-bit optional term</li>
- *   <li>32-bit signed entry length, including the entry type ID</li>
- *   <li>8-bit signed entry type ID</li>
- *   <li>n-bit entry bytes</li>
+ * <li>64-bit index</li>
+ * <li>8-bit boolean indicating whether a term change is contained in the entry</li>
+ * <li>64-bit optional term</li>
+ * <li>32-bit signed entry length, including the entry type ID</li>
+ * <li>8-bit signed entry type ID</li>
+ * <li>n-bit entry bytes</li>
  * </ul>
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
@@ -171,7 +171,7 @@ public class SegmentWriter implements Writer {
    */
   public boolean isFull() {
     return size() >= segment.descriptor().maxSegmentSize()
-      || nextIndex() - firstIndex >= segment.descriptor().maxEntries();
+        || nextIndex() - firstIndex >= segment.descriptor().maxEntries();
   }
 
   /**
@@ -185,7 +185,7 @@ public class SegmentWriter implements Writer {
    * Appends an already indexed entry to the segment.
    *
    * @param entry The indexed entry to append.
-   * @param <T> The entry type.
+   * @param <T>   The entry type.
    * @return The updated indexed entry.
    */
   public <T extends Entry<T>> Indexed<T> append(Indexed<T> entry) {
@@ -242,7 +242,7 @@ public class SegmentWriter implements Writer {
 
     // Rewind the in-memory buffer and write the length, checksum, and offset.
     memory.rewind()
-      .writeUnsignedInt(checksum);
+        .writeUnsignedInt(checksum);
 
     // If the term has not yet been written, write the term to this entry and update the last term.
     if (skipTerm) {
@@ -256,7 +256,7 @@ public class SegmentWriter implements Writer {
 
     // Write the entry length and entry to the segment.
     buffer.writeInt(totalLength)
-      .write(memory.rewind());
+        .write(memory.rewind());
 
     // Return the indexed entry with the correct index/term/length.
     lastEntry = new Indexed<>(index, term, entry, totalLength);

@@ -22,12 +22,12 @@ package io.atomix.util.concurrent;
  */
 public interface ReferenceFactory<T extends ReferenceCounted<?>> {
 
-    /**
-     * Creates a new reference.
-     *
-     * @param manager The reference manager.
-     * @return The created reference.
-     */
-    T createReference(ReferenceManager<T> manager);
+  /**
+   * Creates a new reference.
+   *
+   * @param manager The reference manager.
+   * @return The created reference.
+   */
+  T createReference(ReferenceManager<T> manager);
 
 }

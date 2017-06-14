@@ -25,26 +25,26 @@ import io.atomix.util.concurrent.ReferenceManager;
  */
 public class UnsafeHeapBufferPool extends BufferPool {
 
-    public UnsafeHeapBufferPool() {
-        super(new HeapBufferFactory());
-    }
+  public UnsafeHeapBufferPool() {
+    super(new HeapBufferFactory());
+  }
 
+  @Override
+  public void release(Buffer reference) {
+    reference.rewind();
+    super.release(reference);
+  }
+
+  /**
+   * Heap buffer factory.
+   */
+  private static class HeapBufferFactory implements ReferenceFactory<Buffer> {
     @Override
-    public void release(Buffer reference) {
-        reference.rewind();
-        super.release(reference);
+    public Buffer createReference(ReferenceManager<Buffer> manager) {
+      UnsafeHeapBuffer buffer = new UnsafeHeapBuffer(UnsafeHeapBytes.allocate(1024), manager);
+      buffer.reset(0, 1024, Long.MAX_VALUE);
+      return buffer;
     }
-
-    /**
-     * Heap buffer factory.
-     */
-    private static class HeapBufferFactory implements ReferenceFactory<Buffer> {
-        @Override
-        public Buffer createReference(ReferenceManager<Buffer> manager) {
-            UnsafeHeapBuffer buffer = new UnsafeHeapBuffer(UnsafeHeapBytes.allocate(1024), manager);
-            buffer.reset(0, 1024, Long.MAX_VALUE);
-            return buffer;
-        }
-    }
+  }
 
 }

@@ -53,7 +53,7 @@ public interface ThreadContext extends AutoCloseable, Executor {
     Thread thread = Thread.currentThread();
     return thread instanceof AtomixThread ? ((AtomixThread) thread).getContext() : null;
   }
-  
+
   /**
    * @throws IllegalStateException if the current thread is not a catalyst thread
    */
@@ -107,7 +107,7 @@ public interface ThreadContext extends AutoCloseable, Executor {
    * Schedules a runnable on the context.
    *
    * @param callback The callback to schedule.
-   * @param delay The delay at which to schedule the runnable.
+   * @param delay    The delay at which to schedule the runnable.
    */
   Scheduled schedule(Duration delay, Runnable callback);
 

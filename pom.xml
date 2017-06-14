@@ -215,7 +215,7 @@
           </additionalparam>
         </configuration>
       </plugin>
-      
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-release-plugin</artifactId>
@@ -224,7 +224,7 @@
           <allowTimestampedSnapshots>true</allowTimestampedSnapshots>
         </configuration>
       </plugin>
-      
+
       <!-- Coverage -->
       <plugin>
         <groupId>org.eluder.coveralls</groupId>

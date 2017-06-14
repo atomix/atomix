@@ -23,32 +23,32 @@ import io.atomix.util.concurrent.ReferencePool;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class PooledAllocator implements BufferAllocator {
-    private final ReferencePool<AbstractBuffer> pool;
+  private final ReferencePool<AbstractBuffer> pool;
 
-    protected PooledAllocator(ReferencePool<AbstractBuffer> pool) {
-        this.pool = pool;
-    }
+  protected PooledAllocator(ReferencePool<AbstractBuffer> pool) {
+    this.pool = pool;
+  }
 
-    /**
-     * Returns the maximum buffer capacity.
-     *
-     * @return The maximum buffer capacity.
-     */
-    protected abstract long maxCapacity();
+  /**
+   * Returns the maximum buffer capacity.
+   *
+   * @return The maximum buffer capacity.
+   */
+  protected abstract long maxCapacity();
 
-    @Override
-    public Buffer allocate() {
-        return allocate(4096, maxCapacity());
-    }
+  @Override
+  public Buffer allocate() {
+    return allocate(4096, maxCapacity());
+  }
 
-    @Override
-    public Buffer allocate(long capacity) {
-        return allocate(capacity, maxCapacity());
-    }
+  @Override
+  public Buffer allocate(long capacity) {
+    return allocate(capacity, maxCapacity());
+  }
 
-    @Override
-    public Buffer allocate(long initialCapacity, long maxCapacity) {
-        return pool.acquire().reset(0, initialCapacity, maxCapacity).clear();
-    }
+  @Override
+  public Buffer allocate(long initialCapacity, long maxCapacity) {
+    return pool.acquire().reset(0, initialCapacity, maxCapacity).clear();
+  }
 
 }

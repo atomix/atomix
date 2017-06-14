@@ -28,14 +28,14 @@ public abstract class Entry<T extends Entry<T>> {
    * Entry type.
    */
   public static class Type<T extends Entry<T>> {
-    public static final Type<OpenSessionEntry>    OPEN_SESSION = new Type<>(0x01, OpenSessionEntry.class, new OpenSessionEntry.Serializer());
-    public static final Type<KeepAliveEntry>        KEEP_ALIVE = new Type<>(0x02, KeepAliveEntry.class, new KeepAliveEntry.Serializer());
-    public static final Type<CloseSessionEntry>  CLOSE_SESSION = new Type<>(0x03, CloseSessionEntry.class, new CloseSessionEntry.Serializer());
-    public static final Type<QueryEntry>                 QUERY = new Type<>(0x04, QueryEntry.class, null);
-    public static final Type<CommandEntry>             COMMAND = new Type<>(0x05, CommandEntry.class, new CommandEntry.Serializer());
+    public static final Type<OpenSessionEntry> OPEN_SESSION = new Type<>(0x01, OpenSessionEntry.class, new OpenSessionEntry.Serializer());
+    public static final Type<KeepAliveEntry> KEEP_ALIVE = new Type<>(0x02, KeepAliveEntry.class, new KeepAliveEntry.Serializer());
+    public static final Type<CloseSessionEntry> CLOSE_SESSION = new Type<>(0x03, CloseSessionEntry.class, new CloseSessionEntry.Serializer());
+    public static final Type<QueryEntry> QUERY = new Type<>(0x04, QueryEntry.class, null);
+    public static final Type<CommandEntry> COMMAND = new Type<>(0x05, CommandEntry.class, new CommandEntry.Serializer());
     public static final Type<ConfigurationEntry> CONFIGURATION = new Type<>(0x06, ConfigurationEntry.class, new ConfigurationEntry.Serializer());
-    public static final Type<InitializeEntry>       INITIALIZE = new Type<>(0x07, InitializeEntry.class, new InitializeEntry.Serializer());
-    public static final Type<MetadataEntry>           METADATA = new Type<>(0x08, MetadataEntry.class, null);
+    public static final Type<InitializeEntry> INITIALIZE = new Type<>(0x07, InitializeEntry.class, new InitializeEntry.Serializer());
+    public static final Type<MetadataEntry> METADATA = new Type<>(0x08, MetadataEntry.class, null);
 
     /**
      * Returns the entry type for the given ID.

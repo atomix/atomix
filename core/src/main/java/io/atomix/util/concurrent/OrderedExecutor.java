@@ -25,36 +25,36 @@ import java.util.concurrent.Executor;
  * pool, ensuring blocked threads in the shared thread pool don't block individual ordered executors.
  */
 public class OrderedExecutor implements Executor {
-    private final Executor parent;
-    private final LinkedList<Runnable> tasks = new LinkedList<>();
-    private boolean running;
+  private final Executor parent;
+  private final LinkedList<Runnable> tasks = new LinkedList<>();
+  private boolean running;
 
-    public OrderedExecutor(Executor parent) {
-        this.parent = parent;
-    }
+  public OrderedExecutor(Executor parent) {
+    this.parent = parent;
+  }
 
-    private void run() {
-        for (;;) {
-            final Runnable task;
-            synchronized (tasks) {
-                task = tasks.poll();
-                if (task == null) {
-                    running = false;
-                    return;
-                }
-            }
-            task.run();
+  private void run() {
+    for (; ; ) {
+      final Runnable task;
+      synchronized (tasks) {
+        task = tasks.poll();
+        if (task == null) {
+          running = false;
+          return;
         }
+      }
+      task.run();
     }
+  }
 
-    @Override
-    public void execute(Runnable command) {
-        synchronized (tasks) {
-            tasks.add(command);
-            if (!running) {
-                running = true;
-                parent.execute(this::run);
-            }
-        }
+  @Override
+  public void execute(Runnable command) {
+    synchronized (tasks) {
+      tasks.add(command);
+      if (!running) {
+        running = true;
+        parent.execute(this::run);
+      }
     }
+  }
 }

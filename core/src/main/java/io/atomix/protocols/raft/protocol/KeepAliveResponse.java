@@ -36,121 +36,121 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class KeepAliveResponse extends AbstractRaftResponse {
 
+  /**
+   * Returns a new keep alive response builder.
+   *
+   * @return A new keep alive response builder.
+   */
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  private final NodeId leader;
+  private final Collection<NodeId> members;
+
+  public KeepAliveResponse(Status status, RaftError error, NodeId leader, Collection<NodeId> members) {
+    super(status, error);
+    this.leader = leader;
+    this.members = members;
+  }
+
+  /**
+   * Returns the cluster leader.
+   *
+   * @return The cluster leader.
+   */
+  public NodeId leader() {
+    return leader;
+  }
+
+  /**
+   * Returns the cluster members.
+   *
+   * @return The cluster members.
+   */
+  public Collection<NodeId> members() {
+    return members;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getClass(), status, leader, members);
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (object instanceof KeepAliveResponse) {
+      KeepAliveResponse response = (KeepAliveResponse) object;
+      return response.status == status
+          && ((response.leader == null && leader == null)
+          || (response.leader != null && leader != null && response.leader.equals(leader)))
+          && ((response.members == null && members == null)
+          || (response.members != null && members != null && response.members.equals(members)));
+    }
+    return false;
+  }
+
+  @Override
+  public String toString() {
+    if (status == Status.OK) {
+      return toStringHelper(this)
+          .add("status", status)
+          .add("leader", leader)
+          .add("members", members)
+          .toString();
+    } else {
+      return toStringHelper(this)
+          .add("status", status)
+          .add("error", error)
+          .toString();
+    }
+  }
+
+  /**
+   * Status response builder.
+   */
+  public static class Builder extends AbstractRaftResponse.Builder<Builder, KeepAliveResponse> {
+    private NodeId leader;
+    private Collection<NodeId> members;
+
     /**
-     * Returns a new keep alive response builder.
+     * Sets the response leader.
      *
-     * @return A new keep alive response builder.
+     * @param leader The response leader.
+     * @return The response builder.
      */
-    public static Builder builder() {
-        return new Builder();
+    public Builder withLeader(NodeId leader) {
+      this.leader = leader;
+      return this;
     }
 
-    private final NodeId leader;
-    private final Collection<NodeId> members;
-
-    public KeepAliveResponse(Status status, RaftError error, NodeId leader, Collection<NodeId> members) {
-        super(status, error);
-        this.leader = leader;
-        this.members = members;
-    }
-
     /**
-     * Returns the cluster leader.
+     * Sets the response members.
      *
-     * @return The cluster leader.
+     * @param members The response members.
+     * @return The response builder.
+     * @throws NullPointerException if {@code members} is null
      */
-    public NodeId leader() {
-        return leader;
-    }
-
-    /**
-     * Returns the cluster members.
-     *
-     * @return The cluster members.
-     */
-    public Collection<NodeId> members() {
-        return members;
+    public Builder withMembers(Collection<NodeId> members) {
+      this.members = checkNotNull(members, "members cannot be null");
+      return this;
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(getClass(), status, leader, members);
-    }
-
-    @Override
-    public boolean equals(Object object) {
-        if (object instanceof KeepAliveResponse) {
-            KeepAliveResponse response = (KeepAliveResponse) object;
-            return response.status == status
-                    && ((response.leader == null && leader == null)
-                    || (response.leader != null && leader != null && response.leader.equals(leader)))
-                    && ((response.members == null && members == null)
-                    || (response.members != null && members != null && response.members.equals(members)));
-        }
-        return false;
-    }
-
-    @Override
-    public String toString() {
-        if (status == Status.OK) {
-            return toStringHelper(this)
-                    .add("status", status)
-                    .add("leader", leader)
-                    .add("members", members)
-                    .toString();
-        } else {
-            return toStringHelper(this)
-                    .add("status", status)
-                    .add("error", error)
-                    .toString();
-        }
+    protected void validate() {
+      super.validate();
+      if (status == Status.OK) {
+        checkNotNull(members, "members cannot be null");
+      }
     }
 
     /**
-     * Status response builder.
+     * @throws IllegalStateException if status is OK and members is null
      */
-    public static class Builder extends AbstractRaftResponse.Builder<Builder, KeepAliveResponse> {
-        private NodeId leader;
-        private Collection<NodeId> members;
-
-        /**
-         * Sets the response leader.
-         *
-         * @param leader The response leader.
-         * @return The response builder.
-         */
-        public Builder withLeader(NodeId leader) {
-            this.leader = leader;
-            return this;
-        }
-
-        /**
-         * Sets the response members.
-         *
-         * @param members The response members.
-         * @return The response builder.
-         * @throws NullPointerException if {@code members} is null
-         */
-        public Builder withMembers(Collection<NodeId> members) {
-            this.members = checkNotNull(members, "members cannot be null");
-            return this;
-        }
-
-        @Override
-        protected void validate() {
-            super.validate();
-            if (status == Status.OK) {
-                checkNotNull(members, "members cannot be null");
-            }
-        }
-
-        /**
-         * @throws IllegalStateException if status is OK and members is null
-         */
-        @Override
-        public KeepAliveResponse build() {
-            validate();
-            return new KeepAliveResponse(status, error, leader, members);
-        }
+    @Override
+    public KeepAliveResponse build() {
+      validate();
+      return new KeepAliveResponse(status, error, leader, members);
     }
+  }
 }
