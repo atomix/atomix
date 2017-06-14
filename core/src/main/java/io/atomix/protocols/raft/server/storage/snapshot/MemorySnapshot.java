@@ -18,6 +18,8 @@ package io.atomix.protocols.raft.server.storage.snapshot;
 import io.atomix.protocols.raft.server.storage.StorageLevel;
 import io.atomix.util.Assert;
 import io.atomix.util.buffer.HeapBuffer;
+import io.atomix.util.serializer.KryoNamespaces;
+import io.atomix.util.serializer.Serializer;
 
 /**
  * In-memory snapshot backed by a {@link HeapBuffer}.
@@ -54,9 +56,9 @@ final class MemorySnapshot extends Snapshot {
   }
 
   @Override
-  public SnapshotWriter writer() {
+  public SnapshotWriter writer(Serializer serializer) {
     checkWriter();
-    return new SnapshotWriter(buffer.reset().slice(), this, store.serializer());
+    return new SnapshotWriter(buffer.reset().slice(), this, serializer);
   }
 
   @Override
@@ -66,15 +68,15 @@ final class MemorySnapshot extends Snapshot {
   }
 
   @Override
-  public synchronized SnapshotReader reader() {
-    return openReader(new SnapshotReader(buffer.reset().slice(), this, store.serializer()), descriptor);
+  public synchronized SnapshotReader reader(Serializer serializer) {
+    return openReader(new SnapshotReader(buffer.reset().slice(), this, serializer), descriptor);
   }
 
   @Override
   public Snapshot persist() {
     if (store.storage.level() != StorageLevel.MEMORY) {
       try (Snapshot newSnapshot = store.createSnapshot(id(), index())) {
-        try (SnapshotWriter newSnapshotWriter = newSnapshot.writer()) {
+        try (SnapshotWriter newSnapshotWriter = newSnapshot.writer(Serializer.using(KryoNamespaces.RAFT))) {
           buffer.flip();
           newSnapshotWriter.write(buffer.array(), 0, buffer.remaining());
         }

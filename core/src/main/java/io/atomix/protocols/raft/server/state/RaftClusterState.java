@@ -16,19 +16,17 @@
 package io.atomix.protocols.raft.server.state;
 
 import io.atomix.cluster.NodeId;
+import io.atomix.protocols.raft.cluster.RaftCluster;
+import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.error.RaftError;
 import io.atomix.protocols.raft.protocol.JoinRequest;
 import io.atomix.protocols.raft.protocol.LeaveRequest;
 import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.server.RaftServer;
-import io.atomix.protocols.raft.cluster.RaftCluster;
-import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.server.storage.system.Configuration;
 import io.atomix.util.Assert;
 import io.atomix.util.concurrent.Futures;
 import io.atomix.util.temp.CatalystThreadFactory;
-import io.atomix.util.temp.Listener;
-import io.atomix.util.temp.Listeners;
 import io.atomix.util.temp.Scheduled;
 import io.atomix.util.temp.SingleThreadContext;
 import org.slf4j.Logger;
@@ -71,8 +69,8 @@ final class RaftClusterState implements RaftCluster, AutoCloseable {
     private volatile CompletableFuture<Void> joinFuture;
     private volatile Scheduled leaveTimeout;
     private volatile CompletableFuture<Void> leaveFuture;
-    private final Listeners<RaftMember> joinListeners = new Listeners<>();
-    private final Listeners<RaftMember> leaveListeners = new Listeners<>();
+    private final Set<Consumer<RaftMember>> joinListeners = new CopyOnWriteArraySet<>();
+    private final Set<Consumer<RaftMember>> leaveListeners = new CopyOnWriteArraySet<>();
 
     RaftClusterState(RaftMember.Type type, NodeId localNodeId, ServerContext context) {
         Instant time = Instant.now();
@@ -138,8 +136,13 @@ final class RaftClusterState implements RaftCluster, AutoCloseable {
     }
 
     @Override
-    public Listener<RaftMember> onLeaderElection(Consumer<RaftMember> callback) {
-        return context.onLeaderElection(callback);
+    public void addLeaderElectionListener(Consumer<RaftMember> callback) {
+        context.addLeaderElectionListener(callback);
+    }
+
+    @Override
+    public void removeLeaderElectionListener(Consumer<RaftMember> listener) {
+        context.removeLeaderElectionListener(listener);
     }
 
     @Override
@@ -162,13 +165,23 @@ final class RaftClusterState implements RaftCluster, AutoCloseable {
     }
 
     @Override
-    public Listener<RaftMember> onJoin(Consumer<RaftMember> callback) {
-        return joinListeners.add(callback);
+    public void addJoinListener(Consumer<RaftMember> listener) {
+        joinListeners.add(listener);
     }
 
     @Override
-    public Listener<RaftMember> onLeave(Consumer<RaftMember> callback) {
-        return leaveListeners.add(callback);
+    public void removeJoinListener(Consumer<RaftMember> listener) {
+        joinListeners.remove(listener);
+    }
+
+    @Override
+    public void addLeaveListener(Consumer<RaftMember> listener) {
+        leaveListeners.add(listener);
+    }
+
+    @Override
+    public void removeLeaveListener(Consumer<RaftMember> listener) {
+        leaveListeners.remove(listener);
     }
 
     /**
@@ -585,7 +598,7 @@ final class RaftClusterState implements RaftCluster, AutoCloseable {
                     this.members.add(state.getMember());
                     this.remoteMembers.add(state);
                     membersMap.put(member.id(), state);
-                    joinListeners.accept(state.getMember());
+                    joinListeners.forEach(l -> l.accept(member));
                 }
 
                 // If the member type has changed, update the member type and reset its state.
@@ -632,7 +645,7 @@ final class RaftClusterState implements RaftCluster, AutoCloseable {
                     memberType.remove(member);
                 }
                 membersMap.remove(member.getMember().id());
-                leaveListeners.accept(member.getMember());
+                leaveListeners.forEach(l -> l.accept(member.getMember()));
             } else {
                 i++;
             }

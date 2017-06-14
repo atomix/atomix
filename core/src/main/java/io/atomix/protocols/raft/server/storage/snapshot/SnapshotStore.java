@@ -20,7 +20,6 @@ import io.atomix.protocols.raft.server.storage.StorageLevel;
 import io.atomix.util.Assert;
 import io.atomix.util.buffer.FileBuffer;
 import io.atomix.util.buffer.HeapBuffer;
-import io.atomix.util.serializer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,14 +72,12 @@ public class SnapshotStore implements AutoCloseable {
   private static final Logger LOGGER = LoggerFactory.getLogger(SnapshotStore.class);
   private final String name;
   final Storage storage;
-  private final Serializer serializer;
   private final Map<Long, Snapshot> indexSnapshots = new ConcurrentHashMap<>();
   private final Map<Long, Snapshot> stateMachineSnapshots = new ConcurrentHashMap<>();
 
-  public SnapshotStore(String name, Storage storage, Serializer serializer) {
+  public SnapshotStore(String name, Storage storage) {
     this.name = Assert.notNull(name, "name");
     this.storage = Assert.notNull(storage, "storage");
-    this.serializer = Assert.notNull(serializer, "serializer");
     open();
   }
 
@@ -104,15 +101,6 @@ public class SnapshotStore implements AutoCloseable {
     for (Snapshot snapshot : stateMachineSnapshots.values()) {
       indexSnapshots.put(snapshot.index(), snapshot);
     }
-  }
-
-  /**
-   * Returns the snapshot store serializer.
-   *
-   * @return The snapshot store serializer.
-   */
-  public Serializer serializer() {
-    return serializer;
   }
 
   /**

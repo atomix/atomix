@@ -32,8 +32,6 @@ import io.atomix.protocols.raft.server.storage.Storage;
 import io.atomix.protocols.raft.server.storage.snapshot.SnapshotStore;
 import io.atomix.protocols.raft.server.storage.system.MetaStore;
 import io.atomix.util.Assert;
-import io.atomix.util.temp.Listener;
-import io.atomix.util.temp.Listeners;
 import io.atomix.util.temp.SingleThreadContext;
 import io.atomix.util.temp.ThreadContext;
 import org.slf4j.Logger;
@@ -41,7 +39,9 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
@@ -58,8 +58,8 @@ import java.util.function.Supplier;
  */
 public class ServerContext implements AutoCloseable {
     private static final Logger LOGGER = LoggerFactory.getLogger(ServerContext.class);
-    private final Listeners<RaftServer.State> stateChangeListeners = new Listeners<>();
-    private final Listeners<RaftMember> electionListeners = new Listeners<>();
+    private final Set<Consumer<RaftServer.State>> stateChangeListeners = new CopyOnWriteArraySet<>();
+    private final Set<Consumer<RaftMember>> electionListeners = new CopyOnWriteArraySet<>();
     protected final String name;
     protected final ThreadContext threadContext;
     protected final StateMachineRegistry registry;
@@ -128,23 +128,39 @@ public class ServerContext implements AutoCloseable {
     }
 
     /**
-     * Registers a state change listener.
+     * Adds a state change listener.
      *
      * @param listener The state change listener.
-     * @return The listener context.
      */
-    public Listener<RaftServer.State> onStateChange(Consumer<RaftServer.State> listener) {
-        return stateChangeListeners.add(listener);
+    public void addStateChangeListener(Consumer<RaftServer.State> listener) {
+        stateChangeListeners.add(listener);
     }
 
     /**
-     * Registers a leader election listener.
+     * Removes a state change listener.
+     *
+     * @param listener The state change listener.
+     */
+    public void removeStateChangeListener(Consumer<RaftServer.State> listener) {
+        stateChangeListeners.remove(listener);
+    }
+
+    /**
+     * Adds a leader election listener.
      *
      * @param listener The leader election listener.
-     * @return The listener context.
      */
-    public Listener<RaftMember> onLeaderElection(Consumer<RaftMember> listener) {
-        return electionListeners.add(listener);
+    public void addLeaderElectionListener(Consumer<RaftMember> listener) {
+        electionListeners.add(listener);
+    }
+
+    /**
+     * Removes a leader election listener.
+     *
+     * @param listener The leader election listener.
+     */
+    public void removeLeaderElectionListener(Consumer<RaftMember> listener) {
+        electionListeners.remove(listener);
     }
 
     /**

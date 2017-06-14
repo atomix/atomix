@@ -16,7 +16,6 @@
 package io.atomix.protocols.raft.cluster;
 
 import io.atomix.cluster.NodeId;
-import io.atomix.util.temp.Listener;
 
 import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
@@ -38,8 +37,8 @@ import java.util.function.Consumer;
  * communicate with the member (which may be a different {@link NodeId}).
  * <p>
  * Users can listen for {@link RaftMember.Type} and {@link RaftMember.Status} changes via the
- * {@link #onTypeChange(Consumer)} and {@link #onStatusChange(Consumer)} methods respectively. Member types
- * can be modified by virtually any member of the cluster via the {@link #promote()} and {@link #demote()}
+ * {@link #addTypeChangeListener(Consumer)} and {@link #addStatusChangeListener(Consumer)} methods respectively.
+ * Member types can be modified by virtually any member of the cluster via the {@link #promote()} and {@link #demote()}
  * methods. This allows servers to modify the way dead nodes interact with the cluster and modify the
  * Raft quorum size without requiring the member being modified to be available. The member status is
  * controlled only by the cluster {@link RaftCluster#leader() leader}. When the leader fails to contact a
@@ -165,16 +164,22 @@ public interface RaftMember {
     Type type();
 
     /**
-     * Registers a callback to be called when the member's type changes.
+     * Adds a listener to be called when the member's type changes.
      * <p>
      * The type change callback will be called when the local server receives notification of the change in type
      * to this member. Type changes may occur at different times from the perspective of different servers but are
      * guaranteed to occur in the same order on all servers.
      *
-     * @param callback The callback to be called when the member's type changes.
-     * @return The member type change listener.
+     * @param listener The listener to be called when the member's type changes.
      */
-    Listener<Type> onTypeChange(Consumer<Type> callback);
+    void addTypeChangeListener(Consumer<Type> listener);
+
+    /**
+     * Removes a type change listener from the member.
+     *
+     * @param listener The listener to remove from the member.
+     */
+    void removeTypeChangeListener(Consumer<Type> listener);
 
     /**
      * Returns the member status.
@@ -200,16 +205,22 @@ public interface RaftMember {
     Instant updated();
 
     /**
-     * Registers a callback to be called when the member's status changes.
+     * Adds a listener to be called when the member's status changes.
      * <p>
      * The status change callback will be called when the local server receives notification of the change in status
      * to this member. Status changes may occur at different times from the perspective of different servers but are
      * guaranteed to occur in the same order on all servers.
      *
-     * @param callback The callback to be called when the member's status changes.
-     * @return The member status change listener.
+     * @param listener The listener to be called when the member's status changes.
      */
-    Listener<Status> onStatusChange(Consumer<Status> callback);
+    void addStatusChangeListener(Consumer<Status> listener);
+
+    /**
+     * Removes a status change listener.
+     *
+     * @param listener The status change listener to remove.
+     */
+    void removeStatusChangeListener(Consumer<Status> listener);
 
     /**
      * Promotes the member to the next highest type.

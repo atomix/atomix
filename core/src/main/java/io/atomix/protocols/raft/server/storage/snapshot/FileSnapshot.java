@@ -66,7 +66,7 @@ final class FileSnapshot extends Snapshot {
         descriptor.copyTo(buffer);
 
         int length = buffer.position(SnapshotDescriptor.BYTES).readInt();
-        return openWriter(new SnapshotWriter(buffer.skip(length).mark(), this, store.serializer()), descriptor);
+        return openWriter(new SnapshotWriter(buffer.skip(length).mark(), this, serializer), descriptor);
     }
 
     @Override
@@ -82,7 +82,7 @@ final class FileSnapshot extends Snapshot {
         Buffer buffer = FileBuffer.allocate(file.file(), SnapshotDescriptor.BYTES);
         SnapshotDescriptor descriptor = new SnapshotDescriptor(buffer);
         int length = buffer.position(SnapshotDescriptor.BYTES).readInt();
-        return openReader(new SnapshotReader(buffer.mark().limit(SnapshotDescriptor.BYTES + Integer.BYTES + length), this, store.serializer()), descriptor);
+        return openReader(new SnapshotReader(buffer.mark().limit(SnapshotDescriptor.BYTES + Integer.BYTES + length), this, serializer), descriptor);
     }
 
     @Override

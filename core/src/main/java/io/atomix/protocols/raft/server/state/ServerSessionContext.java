@@ -20,8 +20,6 @@ import io.atomix.protocols.raft.protocol.PublishRequest;
 import io.atomix.protocols.raft.protocol.RaftServerProtocol;
 import io.atomix.protocols.raft.server.session.ServerSession;
 import io.atomix.util.Assert;
-import io.atomix.util.temp.Listener;
-import io.atomix.util.temp.Listeners;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,6 +28,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -61,7 +61,7 @@ class ServerSessionContext implements ServerSession {
     private final Map<Long, OperationResult> results = new HashMap<>();
     private final Queue<EventHolder> events = new LinkedList<>();
     private EventHolder event;
-    private final Listeners<State> changeListeners = new Listeners<>();
+    private final Set<Consumer<State>> changeListeners = new CopyOnWriteArraySet<>();
 
     ServerSessionContext(long id, NodeId node, String name, String type, long timeout, ServerStateMachineExecutor executor, ServerContext server) {
         this.id = id;
@@ -165,8 +165,13 @@ class ServerSessionContext implements ServerSession {
     }
 
     @Override
-    public Listener<State> onStateChange(Consumer<State> callback) {
-        return changeListeners.add(callback);
+    public void addStateChangeListener(Consumer<State> listener) {
+        changeListeners.add(listener);
+    }
+
+    @Override
+    public void removeStateChangeListener(Consumer<State> listener) {
+        changeListeners.remove(listener);
     }
 
     /**

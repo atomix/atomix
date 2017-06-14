@@ -29,6 +29,8 @@ import io.atomix.protocols.raft.server.storage.entry.Entry;
 import io.atomix.protocols.raft.server.storage.snapshot.Snapshot;
 import io.atomix.protocols.raft.server.storage.snapshot.SnapshotReader;
 import io.atomix.util.Assert;
+import io.atomix.util.serializer.KryoNamespaces;
+import io.atomix.util.serializer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -453,7 +455,7 @@ abstract class AbstractAppender implements AutoCloseable {
         InstallRequest request;
         synchronized (snapshot) {
             // Open a new snapshot reader.
-            try (SnapshotReader reader = snapshot.reader()) {
+            try (SnapshotReader reader = snapshot.reader(Serializer.using(KryoNamespaces.RAFT))) {
                 // Skip to the next batch of bytes according to the snapshot chunk size and current offset.
                 reader.skip(member.getNextSnapshotOffset() * MAX_BATCH_SIZE);
                 byte[] data = new byte[Math.min(MAX_BATCH_SIZE, (int) reader.remaining())];

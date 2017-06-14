@@ -15,8 +15,6 @@
  */
 package io.atomix.protocols.raft.server.session;
 
-import io.atomix.util.temp.Listener;
-
 import java.util.function.Consumer;
 
 /**
@@ -65,7 +63,19 @@ public interface ServerSession {
      */
     State state();
 
-    Listener<State> onStateChange(Consumer<State> callback);
+    /**
+     * Adds a state change listener to the session.
+     *
+     * @param listener the state change listener to add
+     */
+    void addStateChangeListener(Consumer<State> listener);
+
+    /**
+     * Removes a state change listener from the session.
+     *
+     * @param listener the state change listener to remove
+     */
+    void removeStateChangeListener(Consumer<State> listener);
 
     /**
      * Publishes a {@code null} named event to the session.

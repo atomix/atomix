@@ -201,7 +201,7 @@ class ServerStateMachineExecutor implements StateMachineExecutor {
             LOGGER.info("{} - Taking snapshot {}", server.getCluster().member().id(), index);
             context.update(index, Instant.ofEpochMilli(timestamp), ServerStateMachineContext.Type.SNAPSHOT);
             pendingSnapshot = server.getSnapshotStore().createTemporarySnapshot(context.id(), index);
-            try (SnapshotWriter writer = pendingSnapshot.writer()) {
+            try (SnapshotWriter writer = pendingSnapshot.writer(serializer())) {
                 writer.writeInt(sessions.sessions.size());
                 for (ServerSessionContext session : sessions.sessions.values()) {
                     writer.writeLong(session.id());
@@ -254,7 +254,7 @@ class ServerStateMachineExecutor implements StateMachineExecutor {
         Snapshot snapshot = server.getSnapshotStore().getSnapshotById(context.id());
         if (snapshot != null && snapshot.index() > snapshotIndex && snapshot.index() <= index) {
             LOGGER.info("{} - Installing snapshot {}", server.getCluster().member().id(), snapshot.index());
-            try (SnapshotReader reader = snapshot.reader()) {
+            try (SnapshotReader reader = snapshot.reader(serializer())) {
                 int sessionCount = reader.readInt();
                 sessions.sessions.clear();
                 for (int i = 0; i < sessionCount; i++) {

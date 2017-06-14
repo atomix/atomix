@@ -16,17 +16,16 @@
 package io.atomix.protocols.raft.server;
 
 import io.atomix.cluster.NodeId;
-import io.atomix.protocols.raft.error.ConfigurationException;
-import io.atomix.protocols.raft.protocol.RaftServerProtocol;
 import io.atomix.protocols.raft.cluster.RaftCluster;
 import io.atomix.protocols.raft.cluster.RaftMember;
+import io.atomix.protocols.raft.error.ConfigurationException;
+import io.atomix.protocols.raft.protocol.RaftServerProtocol;
 import io.atomix.protocols.raft.server.state.ServerContext;
 import io.atomix.protocols.raft.server.state.StateMachineRegistry;
 import io.atomix.protocols.raft.server.storage.Storage;
 import io.atomix.util.Assert;
 import io.atomix.util.concurrent.Futures;
 import io.atomix.util.temp.CatalystThreadFactory;
-import io.atomix.util.temp.Listener;
 import io.atomix.util.temp.SingleThreadContext;
 import io.atomix.util.temp.ThreadContext;
 import org.slf4j.Logger;
@@ -257,7 +256,7 @@ public class RaftServer {
     protected final ServerContext context;
     private volatile CompletableFuture<RaftServer> openFuture;
     private volatile CompletableFuture<Void> closeFuture;
-    private Listener<RaftMember> electionListener;
+    private Consumer<RaftMember> electionListener;
     private volatile boolean started;
 
     protected RaftServer(String name, RaftServerProtocol protocol, ServerContext context) {
@@ -343,12 +342,10 @@ public class RaftServer {
      * </pre>
      *
      * @param listener The state change listener.
-     * @return The listener context. This can be used to unregister the election listener via
-     * {@link Listener#close()}.
      * @throws NullPointerException If {@code listener} is {@code null}
      */
-    public Listener<State> onStateChange(Consumer<State> listener) {
-        return context.onStateChange(listener);
+    public void addStateChangeListener(Consumer<State> listener) {
+        context.addStateChangeListener(listener);
     }
 
     /**
@@ -532,14 +529,14 @@ public class RaftServer {
                                 started = true;
                                 future.complete(this);
                             } else {
-                                electionListener = cluster().onLeaderElection(leader -> {
+                                electionListener = leader -> {
                                     if (electionListener != null) {
                                         started = true;
                                         future.complete(this);
-                                        electionListener.close();
+                                        cluster().removeLeaderElectionListener(electionListener);
                                         electionListener = null;
                                     }
-                                });
+                                };
                             }
                         } else {
                             future.completeExceptionally(error);

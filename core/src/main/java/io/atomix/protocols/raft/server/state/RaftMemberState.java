@@ -17,19 +17,19 @@ package io.atomix.protocols.raft.server.state;
 
 import com.google.common.hash.Hashing;
 import io.atomix.cluster.NodeId;
+import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.error.RaftError;
 import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.protocol.ReconfigureRequest;
-import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.server.storage.system.Configuration;
 import io.atomix.util.Assert;
-import io.atomix.util.temp.Listener;
-import io.atomix.util.temp.Listeners;
 import io.atomix.util.temp.Scheduled;
 
 import java.time.Instant;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -47,8 +47,8 @@ public final class RaftMemberState implements RaftMember, AutoCloseable {
     private Instant updated;
     private transient Scheduled configureTimeout;
     private transient RaftClusterState cluster;
-    private transient Listeners<Type> typeChangeListeners;
-    private transient Listeners<Status> statusChangeListeners;
+    private transient Set<Consumer<Type>> typeChangeListeners = new CopyOnWriteArraySet<>();
+    private transient Set<Consumer<Status>> statusChangeListeners = new CopyOnWriteArraySet<>();
 
     public RaftMemberState(NodeId id, RaftMember.Type type, RaftMember.Status status, Instant updated) {
         this.id = Assert.notNull(id, "id");
@@ -94,17 +94,23 @@ public final class RaftMemberState implements RaftMember, AutoCloseable {
     }
 
     @Override
-    public Listener<Type> onTypeChange(Consumer<Type> callback) {
-        if (typeChangeListeners == null)
-            typeChangeListeners = new Listeners<>();
-        return typeChangeListeners.add(callback);
+    public void addTypeChangeListener(Consumer<Type> listener) {
+        typeChangeListeners.add(listener);
     }
 
     @Override
-    public Listener<Status> onStatusChange(Consumer<Status> callback) {
-        if (statusChangeListeners == null)
-            statusChangeListeners = new Listeners<>();
-        return statusChangeListeners.add(callback);
+    public void removeTypeChangeListener(Consumer<Type> listener) {
+        typeChangeListeners.remove(listener);
+    }
+
+    @Override
+    public void addStatusChangeListener(Consumer<Status> listener) {
+        statusChangeListeners.add(listener);
+    }
+
+    @Override
+    public void removeStatusChangeListener(Consumer<Status> listener) {
+        statusChangeListeners.remove(listener);
     }
 
     @Override
@@ -145,7 +151,7 @@ public final class RaftMemberState implements RaftMember, AutoCloseable {
                 this.updated = Assert.notNull(time, "time");
             }
             if (typeChangeListeners != null) {
-                typeChangeListeners.accept(type);
+                typeChangeListeners.forEach(l -> l.accept(type));
             }
         }
         return this;
@@ -164,7 +170,7 @@ public final class RaftMemberState implements RaftMember, AutoCloseable {
                 this.updated = Assert.notNull(time, "time");
             }
             if (statusChangeListeners != null) {
-                statusChangeListeners.accept(status);
+                statusChangeListeners.forEach(l -> l.accept(status));
             }
         }
         return this;

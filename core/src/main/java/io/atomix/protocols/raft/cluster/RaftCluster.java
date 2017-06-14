@@ -17,7 +17,6 @@ package io.atomix.protocols.raft.cluster;
 
 import io.atomix.cluster.NodeId;
 import io.atomix.protocols.raft.server.RaftServer;
-import io.atomix.util.temp.Listener;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -96,7 +95,7 @@ public interface RaftCluster {
     long term();
 
     /**
-     * Registers a callback to be called when a leader is elected.
+     * Adds a listener to be called when a leader is elected.
      * <p>
      * The provided {@code callback} will be called when a new leader is elected for a term. Because Raft ensures only a single leader
      * can be elected for any given term, each election callback will be called at most once per term. However, note that a leader may
@@ -112,10 +111,16 @@ public interface RaftCluster {
      * a member of the {@link RaftCluster}. When a leader election callback is called, the correct {@link #term()} for the leader is guaranteed
      * to have already been set. Thus, to get the term for the provided leader, simply read the cluster {@link #term()}.
      *
-     * @param callback The callback to be called when a new leader is elected.
-     * @return The leader election listener.
+     * @param listener The listener to be called when a new leader is elected.
      */
-    Listener<RaftMember> onLeaderElection(Consumer<RaftMember> callback);
+    void addLeaderElectionListener(Consumer<RaftMember> listener);
+
+    /**
+     * Removes a leader election listener from the cluster.
+     *
+     * @param listener The leader election listener to remove.
+     */
+    void removeLeaderElectionListener(Consumer<RaftMember> listener);
 
     /**
      * Returns the local cluster member.
@@ -296,23 +301,17 @@ public interface RaftCluster {
      * changes are sequentially consistent, meaning each server in the cluster will see members join in the same
      * order, but different servers may see members join at different points in time. Users should not in any case
      * assume that because one server has seen a member join the cluster all servers have.
-     * <p>
-     * The returned {@link Listener} can be used to stop listening for servers joining the cluster.
-     * <p>
-     * <pre>
-     *   {@code
-     *   // Start listening for members joining the cluster.
-     *   Listener<Member> listener = server.cluster().onJoin(member -> System.out.println(member.address() + " joined!"));
      *
-     *   // Stop listening for members joining the cluster.
-     *   listener.close();
-     *   }
-     * </pre>
-     *
-     * @param callback The callback to be called when a member joins the cluster.
-     * @return The join listener.
+     * @param listener The listener to be called when a member joins the cluster.
      */
-    Listener<RaftMember> onJoin(Consumer<RaftMember> callback);
+    void addJoinListener(Consumer<RaftMember> listener);
+
+    /**
+     * Removes a join listener from the cluster.
+     *
+     * @param listener The listener to remove from the cluster.
+     */
+    void removeJoinListener(Consumer<RaftMember> listener);
 
     /**
      * Registers a callback to be called when a member leaves the cluster.
@@ -321,22 +320,16 @@ public interface RaftCluster {
      * changes are sequentially consistent, meaning each server in the cluster will see members leave in the same
      * order, but different servers may see members leave at different points in time. Users should not in any case
      * assume that because one server has seen a member leave the cluster all servers have.
-     * <p>
-     * The returned {@link Listener} can be used to stop listening for servers leaving the cluster.
-     * <p>
-     * <pre>
-     *   {@code
-     *   // Start listening for members leaving the cluster.
-     *   Listener<Member> listener = server.cluster().onLeave(member -> System.out.println(member.address() + " left!"));
      *
-     *   // Stop listening for members leaving the cluster.
-     *   listener.close();
-     *   }
-     * </pre>
-     *
-     * @param callback The callback to be called when a member leaves the cluster.
-     * @return The leave listener.
+     * @param listener The listener to be called when a member leaves the cluster.
      */
-    Listener<RaftMember> onLeave(Consumer<RaftMember> callback);
+    void addLeaveListener(Consumer<RaftMember> listener);
+
+    /**
+     * Removes a leave listener from the cluster.
+     *
+     * @param listener The listener to remove from the cluster.
+     */
+    void removeLeaveListener(Consumer<RaftMember> listener);
 
 }

@@ -34,6 +34,8 @@ import io.atomix.protocols.raft.server.storage.entry.Entry;
 import io.atomix.protocols.raft.server.storage.entry.QueryEntry;
 import io.atomix.protocols.raft.server.storage.snapshot.Snapshot;
 import io.atomix.protocols.raft.server.storage.snapshot.SnapshotWriter;
+import io.atomix.util.serializer.KryoNamespaces;
+import io.atomix.util.serializer.Serializer;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -351,7 +353,7 @@ class PassiveState extends ReserveState {
     }
 
     // Write the data to the snapshot.
-    try (SnapshotWriter writer = pendingSnapshot.writer()) {
+    try (SnapshotWriter writer = pendingSnapshot.writer(Serializer.using(KryoNamespaces.RAFT))) {
       writer.write(request.data());
     }
 
