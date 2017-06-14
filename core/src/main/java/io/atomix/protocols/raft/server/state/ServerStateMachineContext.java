@@ -20,6 +20,8 @@ import io.atomix.protocols.raft.server.StateMachineContext;
 import java.time.Clock;
 import java.time.Instant;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
+
 /**
  * Server state machine context.
  *
@@ -109,7 +111,10 @@ class ServerStateMachineContext implements StateMachineContext {
 
   @Override
   public String toString() {
-    return String.format("%s[index=%d, time=%s]", getClass().getSimpleName(), index, clock);
+    return toStringHelper(this)
+        .add("index", index)
+        .add("time", clock)
+        .toString();
   }
 
 }

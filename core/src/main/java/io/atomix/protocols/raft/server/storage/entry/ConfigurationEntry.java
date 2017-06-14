@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -62,7 +63,10 @@ public class ConfigurationEntry extends TimestampedEntry<ConfigurationEntry> {
 
   @Override
   public String toString() {
-    return String.format("%s[timestamp=%d, members=%s]", getClass().getSimpleName(), timestamp(), members);
+    return toStringHelper(this)
+        .add("timestamp", timestamp)
+        .add("members", members)
+        .toString();
   }
 
   /**

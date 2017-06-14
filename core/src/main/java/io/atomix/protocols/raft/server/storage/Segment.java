@@ -20,6 +20,8 @@ import io.atomix.util.buffer.FileBuffer;
 import io.atomix.util.buffer.MappedBuffer;
 import io.atomix.util.buffer.SlicedBuffer;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
+
 /**
  * Log segment.
  *
@@ -194,6 +196,9 @@ public class Segment implements AutoCloseable {
 
   @Override
   public String toString() {
-    return String.format("%s[id=%d, version=%d]", getClass().getSimpleName(), id(), version());
+    return toStringHelper(this)
+        .add("id", id())
+        .add("version", version())
+        .toString();
   }
 }

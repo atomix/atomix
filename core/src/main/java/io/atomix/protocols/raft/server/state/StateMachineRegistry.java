@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -73,7 +74,9 @@ public class StateMachineRegistry {
 
   @Override
   public String toString() {
-    return String.format("%s[stateMachines=%s]", getClass().getSimpleName(), stateMachines);
+    return toStringHelper(this)
+        .add("stateMachines", stateMachines)
+        .toString();
   }
 
 }

@@ -27,6 +27,8 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
+
 /**
  * Abstract state.
  *
@@ -127,7 +129,9 @@ public abstract class AbstractState implements ServerState {
 
   @Override
   public String toString() {
-    return String.format("%s[context=%s]", getClass().getSimpleName(), context);
+    return toStringHelper(this)
+        .add("context", context)
+        .toString();
   }
 
 }

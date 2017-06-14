@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
@@ -113,7 +114,9 @@ final class FileSnapshot extends Snapshot {
 
   @Override
   public String toString() {
-    return String.format("%s[index=%d]", getClass().getSimpleName(), index());
+    return toStringHelper(this)
+        .add("index", index())
+        .toString();
   }
 
 }

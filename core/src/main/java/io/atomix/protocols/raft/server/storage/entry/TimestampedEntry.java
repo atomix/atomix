@@ -15,6 +15,8 @@
  */
 package io.atomix.protocols.raft.server.storage.entry;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
+
 /**
  * Base class for timestamped entries.
  *
@@ -38,7 +40,9 @@ public abstract class TimestampedEntry<T extends TimestampedEntry<T>> extends En
 
   @Override
   public String toString() {
-    return String.format("%s[timestamp=%d]", getClass().getSimpleName(), timestamp);
+    return toStringHelper(this)
+        .add("timestamp", timestamp)
+        .toString();
   }
 
   /**

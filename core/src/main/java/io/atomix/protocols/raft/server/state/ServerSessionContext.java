@@ -32,6 +32,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkState;
 
 /**
@@ -487,7 +488,9 @@ class ServerSessionContext implements ServerSession {
 
   @Override
   public String toString() {
-    return String.format("%s[id=%d]", getClass().getSimpleName(), id);
+    return toStringHelper(this)
+        .add("id", id)
+        .toString();
   }
 
   /**

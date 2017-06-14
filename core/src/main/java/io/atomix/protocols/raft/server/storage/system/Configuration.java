@@ -19,6 +19,7 @@ import io.atomix.protocols.raft.cluster.RaftMember;
 
 import java.util.Collection;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -89,7 +90,11 @@ public class Configuration {
 
   @Override
   public String toString() {
-    return String.format("%s[index=%d, time=%d, members=%s]", getClass().getSimpleName(), index, time, members);
+    return toStringHelper(this)
+        .add("index", index)
+        .add("time", time)
+        .add("members", members)
+        .toString();
   }
 
 }

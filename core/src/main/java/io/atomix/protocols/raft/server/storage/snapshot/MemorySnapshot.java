@@ -20,6 +20,7 @@ import io.atomix.util.buffer.HeapBuffer;
 import io.atomix.util.serializer.KryoNamespaces;
 import io.atomix.util.serializer.Serializer;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -100,7 +101,9 @@ final class MemorySnapshot extends Snapshot {
 
   @Override
   public String toString() {
-    return String.format("%s[index=%d]", getClass().getSimpleName(), descriptor.index());
+    return toStringHelper(this)
+        .add("index", index())
+        .toString();
   }
 
 }

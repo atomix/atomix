@@ -44,6 +44,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -352,7 +353,9 @@ public class RaftSessionManager {
 
   @Override
   public String toString() {
-    return String.format("%s[client=%s]", getClass().getSimpleName(), clientId);
+    return toStringHelper(this)
+        .add("client", clientId)
+        .toString();
   }
 
 }

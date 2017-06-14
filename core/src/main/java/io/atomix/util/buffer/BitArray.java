@@ -15,6 +15,8 @@
  */
 package io.atomix.util.buffer;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
+
 /**
  * Direct memory bit set.
  * <p>
@@ -141,7 +143,9 @@ public class BitArray implements AutoCloseable {
 
   @Override
   public String toString() {
-    return String.format("%s[size=%d]", getClass().getSimpleName(), size);
+    return toStringHelper(this)
+        .add("size", size)
+        .toString();
   }
 
 }

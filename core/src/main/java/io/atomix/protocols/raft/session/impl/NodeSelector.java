@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -200,7 +201,9 @@ public final class NodeSelector implements Iterator<NodeId>, AutoCloseable {
 
   @Override
   public String toString() {
-    return String.format("%s[strategy=%s]", getClass().getSimpleName(), strategy);
+    return toStringHelper(this)
+        .add("strategy", strategy)
+        .toString();
   }
 
 }

@@ -23,6 +23,8 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
+
 /**
  * Server commit.
  *
@@ -70,7 +72,12 @@ final class ServerCommit implements RaftCommit<RaftOperation<?>> {
 
   @Override
   public String toString() {
-    return String.format("%s[index=%d, session=%s, time=%s, operation=%s]", getClass().getSimpleName(), index(), session(), time(), operation());
+    return toStringHelper(this)
+        .add("index", index)
+        .add("session", session)
+        .add("time", instant)
+        .add("operation", operation)
+        .toString();
   }
 
 }

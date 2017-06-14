@@ -38,14 +38,6 @@ public class RaftClientMessageDispatcher implements RaftClientProtocolDispatcher
     this.clusterCommunicator = checkNotNull(clusterCommunicator, "clusterCommunicator cannot be null");
   }
 
-  private static MessageSubject getSubject(String prefix, String type) {
-    if (prefix == null) {
-      return new MessageSubject(type);
-    } else {
-      return new MessageSubject(String.format("%s-%s", prefix, type));
-    }
-  }
-
   private <T, U> CompletableFuture<U> sendAndReceive(MessageSubject subject, T request, NodeId nodeId) {
     return clusterCommunicator.sendAndReceive(request, subject, serializer::encode, serializer::decode, nodeId);
   }

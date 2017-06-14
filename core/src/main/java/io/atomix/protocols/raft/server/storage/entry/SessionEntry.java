@@ -15,6 +15,8 @@
  */
 package io.atomix.protocols.raft.server.storage.entry;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
+
 /**
  * Base class for session-related entries.
  *
@@ -35,6 +37,14 @@ public abstract class SessionEntry<T extends SessionEntry<T>> extends Timestampe
    */
   public long session() {
     return session;
+  }
+
+  @Override
+  public String toString() {
+    return toStringHelper(this)
+        .add("timestamp", timestamp)
+        .add("session", session)
+        .toString();
   }
 
   /**

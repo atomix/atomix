@@ -18,6 +18,8 @@ package io.atomix.protocols.raft.server.storage.entry;
 import io.atomix.util.buffer.BufferInput;
 import io.atomix.util.buffer.BufferOutput;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
+
 /**
  * Close session entry.
  */
@@ -34,7 +36,10 @@ public class CloseSessionEntry extends SessionEntry<CloseSessionEntry> {
 
   @Override
   public String toString() {
-    return String.format("%s[session=%d, timestamp=%d]", getClass().getSimpleName(), session, timestamp);
+    return toStringHelper(this)
+        .add("session", session)
+        .add("timestamp", timestamp)
+        .toString();
   }
 
   /**

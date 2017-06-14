@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -137,20 +138,7 @@ public class MetaStore implements AutoCloseable {
 
   @Override
   public String toString() {
-    if (configurationBuffer instanceof FileBuffer) {
-      return String.format(
-          "%s[%s,%s]",
-          getClass().getSimpleName(),
-          metadataBuffer.file(),
-          ((FileBuffer) configurationBuffer).file()
-      );
-    } else {
-      return String.format(
-          "%s[%s]",
-          getClass().getSimpleName(),
-          metadataBuffer.file()
-      );
-    }
+    return toStringHelper(this).toString();
   }
 
 }

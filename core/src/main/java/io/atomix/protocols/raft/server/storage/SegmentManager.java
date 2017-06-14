@@ -30,6 +30,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
@@ -529,7 +530,10 @@ public class SegmentManager implements AutoCloseable {
 
   @Override
   public String toString() {
-    return String.format("%s[directory=%s, segments=%d]", getClass().getSimpleName(), storage.directory(), segments.size());
+    return toStringHelper(this)
+        .add("directory", storage.directory())
+        .add("segments", segments.values())
+        .toString();
   }
 
 }

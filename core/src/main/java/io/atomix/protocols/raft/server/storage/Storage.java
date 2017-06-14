@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.function.Predicate;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -288,7 +289,9 @@ public class Storage {
 
   @Override
   public String toString() {
-    return String.format("%s[directory=%s]", getClass().getSimpleName(), directory);
+    return toStringHelper(this)
+        .add("directory", directory())
+        .toString();
   }
 
   /**

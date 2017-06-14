@@ -15,6 +15,10 @@
  */
 package io.atomix.protocols.raft.server.storage.entry;
 
+import io.atomix.util.ArraySizeHashPrinter;
+
+import static com.google.common.base.MoreObjects.toStringHelper;
+
 /**
  * Represents a state machine query.
  * <p>
@@ -38,6 +42,11 @@ public class QueryEntry extends OperationEntry<QueryEntry> {
 
   @Override
   public String toString() {
-    return String.format("%s[session=%d, sequence=%d, timestamp=%d, query=byte[%d]]", getClass().getSimpleName(), session(), sequence(), timestamp(), bytes.length);
+    return toStringHelper(this)
+        .add("timestamp", timestamp)
+        .add("session", session)
+        .add("sequence", sequence)
+        .add("query", ArraySizeHashPrinter.of(bytes))
+        .toString();
   }
 }

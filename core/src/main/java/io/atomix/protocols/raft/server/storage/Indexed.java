@@ -20,6 +20,8 @@ import io.atomix.protocols.raft.server.storage.util.StorageSerializer;
 import io.atomix.util.buffer.BufferInput;
 import io.atomix.util.buffer.BufferOutput;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
+
 /**
  * Indexed log entry.
  *
@@ -96,7 +98,11 @@ public class Indexed<T extends Entry<T>> {
 
   @Override
   public String toString() {
-    return String.format("%s[index=%d, term=%d, entry=%s]", getClass().getSimpleName(), index, term, entry);
+    return toStringHelper(this)
+        .add("index", index)
+        .add("term", term)
+        .add("entry", entry)
+        .toString();
   }
 
   /**

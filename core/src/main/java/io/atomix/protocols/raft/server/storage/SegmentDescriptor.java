@@ -21,6 +21,7 @@ import io.atomix.util.buffer.FileBuffer;
 import io.atomix.util.buffer.HeapBuffer;
 import io.atomix.util.buffer.MappedBuffer;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -251,7 +252,13 @@ public final class SegmentDescriptor implements AutoCloseable {
 
   @Override
   public String toString() {
-    return String.format("%s[id=%d, version=%d, index=%d, updated=%d, locked=%b]", getClass().getSimpleName(), id, version, index, updated, locked);
+    return toStringHelper(this)
+        .add("id", id)
+        .add("version", version)
+        .add("index", index)
+        .add("updated", updated)
+        .add("locked", locked)
+        .toString();
   }
 
   /**

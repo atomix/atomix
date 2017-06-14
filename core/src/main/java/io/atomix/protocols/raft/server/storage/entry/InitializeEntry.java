@@ -18,6 +18,8 @@ package io.atomix.protocols.raft.server.storage.entry;
 import io.atomix.util.buffer.BufferInput;
 import io.atomix.util.buffer.BufferOutput;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
+
 /**
  * Indicates a leader change has occurred.
  * <p>
@@ -40,7 +42,9 @@ public class InitializeEntry extends TimestampedEntry<InitializeEntry> {
 
   @Override
   public String toString() {
-    return String.format("%s[timestamp=%s]", getClass().getSimpleName(), timestamp());
+    return toStringHelper(this)
+        .add("timestamp", timestamp)
+        .toString();
   }
 
   /**

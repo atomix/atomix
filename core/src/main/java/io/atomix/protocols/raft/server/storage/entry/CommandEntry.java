@@ -15,8 +15,11 @@
  */
 package io.atomix.protocols.raft.server.storage.entry;
 
+import io.atomix.util.ArraySizeHashPrinter;
 import io.atomix.util.buffer.BufferInput;
 import io.atomix.util.buffer.BufferOutput;
+
+import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
  * Stores a state machine command.
@@ -39,7 +42,12 @@ public class CommandEntry extends OperationEntry<CommandEntry> {
 
   @Override
   public String toString() {
-    return String.format("%s[session=%d, sequence=%d, timestamp=%d, command=byte[%d]]", getClass().getSimpleName(), session(), sequence(), timestamp(), bytes.length);
+    return toStringHelper(this)
+        .add("session", session)
+        .add("sequence", sequence)
+        .add("timestamp", timestamp)
+        .add("command", ArraySizeHashPrinter.of(bytes))
+        .toString();
   }
 
   /**

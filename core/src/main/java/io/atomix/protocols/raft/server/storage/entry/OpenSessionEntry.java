@@ -19,6 +19,8 @@ import io.atomix.cluster.NodeId;
 import io.atomix.util.buffer.BufferInput;
 import io.atomix.util.buffer.BufferOutput;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
+
 /**
  * Open session entry.
  */
@@ -79,7 +81,13 @@ public class OpenSessionEntry extends TimestampedEntry<OpenSessionEntry> {
 
   @Override
   public String toString() {
-    return String.format("%s[node=%s, name=%s, type=%s, timeout=%d, timestamp=%d]", getClass().getSimpleName(), node, name, type, timeout, timestamp);
+    return toStringHelper(this)
+        .add("timestamp", timestamp)
+        .add("node", node)
+        .add("name", name)
+        .add("type", type)
+        .add("timeout", timeout)
+        .toString();
   }
 
   /**
