@@ -18,7 +18,7 @@ package io.atomix.version;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
-import io.atomix.util.ByteArraySizeHashPrinter;
+import io.atomix.util.ArraySizeHashPrinter;
 import org.joda.time.DateTime;
 
 import java.util.function.Function;
@@ -29,7 +29,6 @@ import java.util.function.Function;
  * @param <V> value type.
  */
 public class Versioned<V> {
-
     private final V value;
     private final long version;
     private final long creationTime;
@@ -140,7 +139,7 @@ public class Versioned<V> {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
-            .add("value", value instanceof byte[] ? new ByteArraySizeHashPrinter((byte[]) value) : value)
+            .add("value", value instanceof byte[] ? ArraySizeHashPrinter.of((byte[]) value) : value)
             .add("version", version)
             .add("creationTime", new DateTime(creationTime))
             .toString();
