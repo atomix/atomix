@@ -13,17 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft;
-
-import java.io.Serializable;
+package io.atomix.protocols.raft.server.storage.entry;
 
 /**
- * Base type for Raft state operations.
+ * Base class for session-related entries.
  *
- * @param <T> operation result type
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
- * @see RaftCommand
- * @see RaftQuery
  */
-public interface RaftOperation<T> extends Serializable {
+public abstract class SessionEntry<T extends SessionEntry<T>> extends TimestampedEntry<T> {
+  protected final long session;
+
+  protected SessionEntry(long timestamp, long session) {
+    super(timestamp);
+    this.session = session;
+  }
+
+  /**
+   * Returns the session ID.
+   *
+   * @return The session ID.
+   */
+  public long session() {
+    return session;
+  }
+
+  /**
+   * Session entry serializer.
+   */
+  public interface Serializer<T extends SessionEntry> extends TimestampedEntry.Serializer<T> {
+  }
 }

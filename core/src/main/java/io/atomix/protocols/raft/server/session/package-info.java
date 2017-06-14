@@ -13,17 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft;
-
-import java.io.Serializable;
 
 /**
- * Base type for Raft state operations.
+ * Interfaces for managing client {@link io.atomix.copycat.session.Session sessions} on a {@link io.atomix.copycat.server.CopycatServer Copycat server}.
+ * <p>
+ * Client session information is exposed to server {@link io.atomix.copycat.server.StateMachine state machines} in the form of a
+ * {@link io.atomix.copycat.server.session.ServerSession} object. Server sessions provide functionality in addition to normal session state
+ * information to allow replicated state machines to {@link io.atomix.copycat.server.session.ServerSession#publish(String, Object) publish}
+ * event notifications to clients through their session.
  *
- * @param <T> operation result type
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
- * @see RaftCommand
- * @see RaftQuery
  */
-public interface RaftOperation<T> extends Serializable {
-}
+package io.atomix.protocols.raft.server.session;

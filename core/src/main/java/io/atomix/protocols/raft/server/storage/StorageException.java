@@ -13,17 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft;
-
-import java.io.Serializable;
+package io.atomix.protocols.raft.server.storage;
 
 /**
- * Base type for Raft state operations.
+ * Log exception.
  *
- * @param <T> operation result type
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
- * @see RaftCommand
- * @see RaftQuery
  */
-public interface RaftOperation<T> extends Serializable {
+public class StorageException extends RuntimeException {
+
+  public StorageException() {
+  }
+
+  public StorageException(String message) {
+    super(message);
+  }
+
+  public StorageException(String message, Throwable cause) {
+    super(message, cause);
+  }
+
+  public StorageException(Throwable cause) {
+    super(cause);
+  }
+
 }

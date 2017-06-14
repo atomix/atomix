@@ -13,17 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft;
-
-import java.io.Serializable;
 
 /**
- * Base type for Raft state operations.
+ * Standalone, feature-complete implementation of the <a href="https://raft.github.io/">Raft consensus algorithm</a>.
+ * <p>
+ * For information on the implementation of the Raft consensus algorithm, see the documentation on
+ * <a href="http://atomix.io/copycat/docs/internals/">Copycat internals</a>.
  *
- * @param <T> operation result type
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
- * @see RaftCommand
- * @see RaftQuery
  */
-public interface RaftOperation<T> extends Serializable {
-}
+package io.atomix.protocols.raft.server;

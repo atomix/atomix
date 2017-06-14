@@ -13,17 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft;
-
-import java.io.Serializable;
 
 /**
- * Base type for Raft state operations.
+ * Internal classes that manage {@link io.atomix.copycat.server.CopycatServer} state.
  *
- * @param <T> operation result type
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
- * @see RaftCommand
- * @see RaftQuery
  */
-public interface RaftOperation<T> extends Serializable {
-}
+package io.atomix.protocols.raft.server.state;
