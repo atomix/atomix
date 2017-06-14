@@ -18,7 +18,7 @@ package io.atomix.protocols.raft.server.state;
 import io.atomix.protocols.raft.server.storage.Log;
 import io.atomix.protocols.raft.server.storage.LogReader;
 import io.atomix.protocols.raft.server.storage.Reader;
-import io.atomix.util.temp.ThreadContext;
+import io.atomix.util.concurrent.ThreadContext;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;

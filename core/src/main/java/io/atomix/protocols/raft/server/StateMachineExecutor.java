@@ -17,7 +17,7 @@
 package io.atomix.protocols.raft.server;
 
 import io.atomix.protocols.raft.RaftOperation;
-import io.atomix.util.temp.ThreadContext;
+import io.atomix.util.concurrent.ThreadContext;
 
 import java.util.function.Consumer;
 import java.util.function.Function;

@@ -36,8 +36,8 @@ import io.atomix.protocols.raft.server.storage.entry.QueryEntry;
 import io.atomix.protocols.raft.server.storage.snapshot.Snapshot;
 import io.atomix.util.concurrent.ComposableFuture;
 import io.atomix.util.concurrent.Futures;
-import io.atomix.util.temp.ThreadContext;
-import io.atomix.util.temp.ThreadPoolContext;
+import io.atomix.util.concurrent.ThreadContext;
+import io.atomix.util.concurrent.ThreadPoolContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

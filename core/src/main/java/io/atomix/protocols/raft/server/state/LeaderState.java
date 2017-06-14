@@ -56,7 +56,7 @@ import io.atomix.protocols.raft.server.storage.entry.OpenSessionEntry;
 import io.atomix.protocols.raft.server.storage.entry.QueryEntry;
 import io.atomix.protocols.raft.server.storage.system.Configuration;
 import io.atomix.util.concurrent.Futures;
-import io.atomix.util.temp.Scheduled;
+import io.atomix.util.concurrent.Scheduled;
 
 import java.time.Duration;
 import java.time.Instant;

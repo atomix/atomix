@@ -22,7 +22,7 @@ import io.atomix.protocols.raft.error.RaftError;
 import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.protocol.ReconfigureRequest;
 import io.atomix.protocols.raft.server.storage.system.Configuration;
-import io.atomix.util.temp.Scheduled;
+import io.atomix.util.concurrent.Scheduled;
 
 import java.time.Instant;
 import java.util.Objects;

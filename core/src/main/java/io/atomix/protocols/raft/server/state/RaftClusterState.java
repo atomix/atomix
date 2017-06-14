@@ -25,9 +25,9 @@ import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.server.RaftServer;
 import io.atomix.protocols.raft.server.storage.system.Configuration;
 import io.atomix.util.concurrent.Futures;
-import io.atomix.util.temp.CatalystThreadFactory;
-import io.atomix.util.temp.Scheduled;
-import io.atomix.util.temp.SingleThreadContext;
+import io.atomix.util.concurrent.AtomixThreadFactory;
+import io.atomix.util.concurrent.Scheduled;
+import io.atomix.util.concurrent.SingleThreadContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,7 +58,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 final class RaftClusterState implements RaftCluster, AutoCloseable {
     private static final Logger LOGGER = LoggerFactory.getLogger(RaftClusterState.class);
     private final ServerContext context;
-    private final CatalystThreadFactory threadFactory;
+    private final AtomixThreadFactory threadFactory;
     private final RaftMemberState member;
     private volatile Configuration configuration;
     private final Map<NodeId, MemberState> membersMap = new ConcurrentHashMap<>();
@@ -77,7 +77,7 @@ final class RaftClusterState implements RaftCluster, AutoCloseable {
         Instant time = Instant.now();
         this.member = new RaftMemberState(localNodeId, type, RaftMember.Status.AVAILABLE, time).setCluster(this);
         this.context = checkNotNull(context, "context cannot be null");
-        this.threadFactory = new CatalystThreadFactory("copycat-server-" + localNodeId + "-appender-%d");
+        this.threadFactory = new AtomixThreadFactory("copycat-server-" + localNodeId + "-appender-%d");
 
         // If a configuration is stored, use the stored configuration, otherwise configure the server with the user provided configuration.
         configuration = context.getMetaStore().loadConfiguration();

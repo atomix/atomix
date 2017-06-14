@@ -24,9 +24,9 @@ import io.atomix.protocols.raft.server.state.ServerContext;
 import io.atomix.protocols.raft.server.state.StateMachineRegistry;
 import io.atomix.protocols.raft.server.storage.Storage;
 import io.atomix.util.concurrent.Futures;
-import io.atomix.util.temp.CatalystThreadFactory;
-import io.atomix.util.temp.SingleThreadContext;
-import io.atomix.util.temp.ThreadContext;
+import io.atomix.util.concurrent.AtomixThreadFactory;
+import io.atomix.util.concurrent.SingleThreadContext;
+import io.atomix.util.concurrent.ThreadContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -816,7 +816,7 @@ public class RaftServer {
             }
 
             ThreadContext threadContext = new SingleThreadContext(String.format("copycat-server-%s-%s", localNodeId, name));
-            ScheduledExecutorService threadPool = Executors.newScheduledThreadPool(threadPoolSize, new CatalystThreadFactory("copycat-" + name + "-state-%d"));
+            ScheduledExecutorService threadPool = Executors.newScheduledThreadPool(threadPoolSize, new AtomixThreadFactory("copycat-" + name + "-state-%d"));
 
             ServerContext context = new ServerContext(name, type, localNodeId, protocol, storage, stateMachineRegistry, threadPool, threadContext);
             context.setElectionTimeout(electionTimeout)

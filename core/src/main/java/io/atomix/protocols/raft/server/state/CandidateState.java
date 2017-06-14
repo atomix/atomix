@@ -23,7 +23,7 @@ import io.atomix.protocols.raft.protocol.VoteResponse;
 import io.atomix.protocols.raft.server.RaftServer;
 import io.atomix.protocols.raft.server.storage.Indexed;
 import io.atomix.protocols.raft.server.util.Quorum;
-import io.atomix.util.temp.Scheduled;
+import io.atomix.util.concurrent.Scheduled;
 
 import java.time.Duration;
 import java.util.HashSet;

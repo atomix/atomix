@@ -31,8 +31,8 @@ import io.atomix.protocols.raft.server.storage.Reader;
 import io.atomix.protocols.raft.server.storage.Storage;
 import io.atomix.protocols.raft.server.storage.snapshot.SnapshotStore;
 import io.atomix.protocols.raft.server.storage.system.MetaStore;
-import io.atomix.util.temp.SingleThreadContext;
-import io.atomix.util.temp.ThreadContext;
+import io.atomix.util.concurrent.SingleThreadContext;
+import io.atomix.util.concurrent.ThreadContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

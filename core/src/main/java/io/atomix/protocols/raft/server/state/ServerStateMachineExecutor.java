@@ -30,8 +30,8 @@ import io.atomix.protocols.raft.server.storage.snapshot.Snapshot;
 import io.atomix.protocols.raft.server.storage.snapshot.SnapshotReader;
 import io.atomix.protocols.raft.server.storage.snapshot.SnapshotWriter;
 import io.atomix.util.serializer.Serializer;
-import io.atomix.util.temp.Scheduled;
-import io.atomix.util.temp.ThreadContext;
+import io.atomix.util.concurrent.Scheduled;
+import io.atomix.util.concurrent.ThreadContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
