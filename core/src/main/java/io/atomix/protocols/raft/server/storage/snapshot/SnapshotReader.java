@@ -16,13 +16,14 @@
 package io.atomix.protocols.raft.server.storage.snapshot;
 
 import io.atomix.protocols.raft.server.RaftServer;
-import io.atomix.util.Assert;
 import io.atomix.util.buffer.Buffer;
 import io.atomix.util.buffer.BufferInput;
 import io.atomix.util.buffer.Bytes;
 import io.atomix.util.serializer.Serializer;
 
 import java.nio.charset.Charset;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Reads bytes from a state machine {@link Snapshot}.
@@ -43,9 +44,9 @@ public class SnapshotReader implements BufferInput<SnapshotReader> {
     private final Serializer serializer;
 
     SnapshotReader(Buffer buffer, Snapshot snapshot, Serializer serializer) {
-        this.buffer = Assert.notNull(buffer, "buffer");
-        this.snapshot = Assert.notNull(snapshot, "snapshot");
-        this.serializer = Assert.notNull(serializer, "serializer");
+        this.buffer = checkNotNull(buffer, "buffer cannot be null");
+        this.snapshot = checkNotNull(snapshot, "snapshot cannot be null");
+        this.serializer = checkNotNull(serializer, "serializer cannot be null");
     }
 
     @Override

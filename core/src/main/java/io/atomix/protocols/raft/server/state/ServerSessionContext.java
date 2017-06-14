@@ -19,7 +19,6 @@ import io.atomix.cluster.NodeId;
 import io.atomix.protocols.raft.protocol.PublishRequest;
 import io.atomix.protocols.raft.protocol.RaftServerProtocol;
 import io.atomix.protocols.raft.server.session.ServerSession;
-import io.atomix.util.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,6 +31,8 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Raft session.
@@ -357,9 +358,9 @@ class ServerSessionContext implements ServerSession {
     public void publish(Object message) {
         // Store volatile state in a local variable.
         State state = this.state;
-        Assert.stateNot(state == State.CLOSED, "session is closed");
-        Assert.stateNot(state == State.EXPIRED, "session is expired");
-        Assert.state(executor.context().context() == ServerStateMachineContext.Type.COMMAND, "session events can only be published during command execution");
+        checkState(state != State.EXPIRED, "session is expired");
+        checkState(state != State.CLOSED, "session is closed");
+        checkState(executor.context().context() == ServerStateMachineContext.Type.COMMAND, "session events can only be published during command execution");
 
         // If the client acked an index greater than the current event sequence number since we know the
         // client must have received it from another server.

@@ -29,7 +29,6 @@ import io.atomix.protocols.raft.server.session.SessionListener;
 import io.atomix.protocols.raft.server.storage.snapshot.Snapshot;
 import io.atomix.protocols.raft.server.storage.snapshot.SnapshotReader;
 import io.atomix.protocols.raft.server.storage.snapshot.SnapshotWriter;
-import io.atomix.util.Assert;
 import io.atomix.util.serializer.Serializer;
 import io.atomix.util.temp.Scheduled;
 import io.atomix.util.temp.ThreadContext;
@@ -48,6 +47,9 @@ import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Raft server state machine executor.
@@ -655,28 +657,28 @@ class ServerStateMachineExecutor implements StateMachineExecutor {
 
     @Override
     public void execute(Runnable callback) {
-        Assert.state(context.context() == ServerStateMachineContext.Type.COMMAND, "callbacks can only be scheduled during command execution");
+        checkState(context.context() == ServerStateMachineContext.Type.COMMAND, "callbacks can only be scheduled during command execution");
         tasks.add(callback);
     }
 
     @Override
     public Scheduled schedule(Duration delay, Runnable callback) {
-        Assert.state(context.context() == ServerStateMachineContext.Type.COMMAND, "callbacks can only be scheduled during command execution");
+        checkState(context.context() == ServerStateMachineContext.Type.COMMAND, "callbacks can only be scheduled during command execution");
         LOGGER.trace("Scheduled callback {} with delay {}", callback, delay);
         return new ServerScheduledTask(callback, delay.toMillis()).schedule();
     }
 
     @Override
     public Scheduled schedule(Duration initialDelay, Duration interval, Runnable callback) {
-        Assert.state(context.context() == ServerStateMachineContext.Type.COMMAND, "callbacks can only be scheduled during command execution");
+        checkState(context.context() == ServerStateMachineContext.Type.COMMAND, "callbacks can only be scheduled during command execution");
         LOGGER.trace("Scheduled repeating callback {} with initial delay {} and interval {}", callback, initialDelay, interval);
         return new ServerScheduledTask(callback, initialDelay.toMillis(), interval.toMillis()).schedule();
     }
 
     @Override
     public <T extends RaftOperation<Void>> StateMachineExecutor register(Class<T> type, Consumer<RaftCommit<T>> callback) {
-        Assert.notNull(type, "type");
-        Assert.notNull(callback, "callback");
+        checkNotNull(type, "type cannot be null");
+        checkNotNull(callback, "callback cannot be null");
         operations.put(type, (Function<RaftCommit<T>, Void>) commit -> {
             callback.accept(commit);
             return null;
@@ -687,8 +689,8 @@ class ServerStateMachineExecutor implements StateMachineExecutor {
 
     @Override
     public <T extends RaftOperation<U>, U> StateMachineExecutor register(Class<T> type, Function<RaftCommit<T>, U> callback) {
-        Assert.notNull(type, "type");
-        Assert.notNull(callback, "callback");
+        checkNotNull(type, "type cannot be null");
+        checkNotNull(callback, "callback cannot be null");
         operations.put(type, callback);
         LOGGER.trace("Registered value operation callback {}", type);
         return this;

@@ -15,11 +15,11 @@
  */
 package io.atomix.protocols.raft.server.storage.snapshot;
 
-import io.atomix.util.Assert;
-
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Represents a snapshot file on disk.
@@ -39,8 +39,8 @@ public final class SnapshotFile {
    * @throws NullPointerException if {@code file} is null
    */
   public static boolean isSnapshotFile(String name, File file) {
-    Assert.notNull(name, "name");
-    Assert.notNull(file, "file");
+    checkNotNull(name, "name cannot be null");
+    checkNotNull(file, "file cannot be null");
     String fileName = file.getName();
 
     // The file name should contain an extension separator.
@@ -102,7 +102,7 @@ public final class SnapshotFile {
    * Creates a snapshot file for the given directory, log name, and snapshot index.
    */
   static File createSnapshotFile(String name, File directory, long id, long index, long timestamp) {
-    return new File(directory, String.format("%s-%d-%d-%s.%s", Assert.notNull(name, "name"), id, index, TIMESTAMP_FORMAT.format(new Date(timestamp)), EXTENSION));
+    return new File(directory, String.format("%s-%d-%d-%s.%s", checkNotNull(name, "name cannot be null"), id, index, TIMESTAMP_FORMAT.format(new Date(timestamp)), EXTENSION));
   }
 
   /**

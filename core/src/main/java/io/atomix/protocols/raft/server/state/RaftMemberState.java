@@ -22,7 +22,6 @@ import io.atomix.protocols.raft.error.RaftError;
 import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.protocol.ReconfigureRequest;
 import io.atomix.protocols.raft.server.storage.system.Configuration;
-import io.atomix.util.Assert;
 import io.atomix.util.temp.Scheduled;
 
 import java.time.Instant;
@@ -33,6 +32,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Cluster member.
@@ -51,13 +51,13 @@ public final class RaftMemberState implements RaftMember, AutoCloseable {
     private transient Set<Consumer<Status>> statusChangeListeners = new CopyOnWriteArraySet<>();
 
     public RaftMemberState(NodeId id, RaftMember.Type type, RaftMember.Status status, Instant updated) {
-        this.id = Assert.notNull(id, "id");
+        this.id = checkNotNull(id, "id cannot be null");
         this.hash = Hashing.murmur3_32()
                 .hashUnencodedChars(id.id())
                 .asInt();
-        this.type = Assert.notNull(type, "type");
-        this.status = Assert.notNull(status, "status");
-        this.updated = Assert.notNull(updated, "updated");
+        this.type = checkNotNull(type, "type cannot be null");
+        this.status = checkNotNull(status, "status cannot be null");
+        this.updated = checkNotNull(updated, "updated cannot be null");
     }
 
     /**
@@ -75,7 +75,7 @@ public final class RaftMemberState implements RaftMember, AutoCloseable {
 
     @Override
     public int hash() {
-        return 0;
+        return hash;
     }
 
     @Override
@@ -146,9 +146,9 @@ public final class RaftMemberState implements RaftMember, AutoCloseable {
      */
     RaftMemberState update(RaftMember.Type type, Instant time) {
         if (this.type != type) {
-            this.type = Assert.notNull(type, "type");
+            this.type = checkNotNull(type, "type cannot be null");
             if (time.isAfter(updated)) {
-                this.updated = Assert.notNull(time, "time");
+                this.updated = checkNotNull(time, "time cannot be null");
             }
             if (typeChangeListeners != null) {
                 typeChangeListeners.forEach(l -> l.accept(type));
@@ -165,9 +165,9 @@ public final class RaftMemberState implements RaftMember, AutoCloseable {
      */
     RaftMemberState update(Status status, Instant time) {
         if (this.status != status) {
-            this.status = Assert.notNull(status, "status");
+            this.status = checkNotNull(status, "status cannot be null");
             if (time.isAfter(updated)) {
-                this.updated = Assert.notNull(time, "time");
+                this.updated = checkNotNull(time, "time cannot be null");
             }
             if (statusChangeListeners != null) {
                 statusChangeListeners.forEach(l -> l.accept(status));

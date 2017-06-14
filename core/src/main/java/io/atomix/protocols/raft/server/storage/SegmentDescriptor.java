@@ -15,12 +15,13 @@
  */
 package io.atomix.protocols.raft.server.storage;
 
-import io.atomix.util.Assert;
 import io.atomix.util.buffer.Buffer;
 import io.atomix.util.buffer.Bytes;
 import io.atomix.util.buffer.FileBuffer;
 import io.atomix.util.buffer.HeapBuffer;
 import io.atomix.util.buffer.MappedBuffer;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Stores information about a {@link Segment} of the log.
@@ -107,7 +108,7 @@ public final class SegmentDescriptor implements AutoCloseable {
    * @throws NullPointerException if {@code buffer} is null
    */
   public SegmentDescriptor(Buffer buffer) {
-    this.buffer = Assert.notNull(buffer, "buffer");
+    this.buffer = checkNotNull(buffer, "buffer cannot be null");
     this.id = buffer.readLong();
     this.version = buffer.readLong();
     this.index = buffer.readLong();
@@ -260,7 +261,7 @@ public final class SegmentDescriptor implements AutoCloseable {
     private final Buffer buffer;
 
     private Builder(Buffer buffer) {
-      this.buffer = Assert.notNull(buffer, "buffer");
+      this.buffer = checkNotNull(buffer, "buffer cannot be null");
     }
 
     /**

@@ -15,7 +15,6 @@
  */
 package io.atomix.protocols.raft.server.storage;
 
-import io.atomix.util.Assert;
 import io.atomix.util.buffer.Buffer;
 import io.atomix.util.buffer.FileBuffer;
 import io.atomix.util.buffer.HeapBuffer;
@@ -30,6 +29,9 @@ import java.util.NavigableMap;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentSkipListMap;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Manages creation and deletion of {@link Segment}s of the {@link Log}.
@@ -53,8 +55,8 @@ public class SegmentManager implements AutoCloseable {
    * @throws NullPointerException if {@code segments} is null
    */
   public SegmentManager(String name, Storage storage) {
-    this.name = Assert.notNull(name, "name");
-    this.storage = Assert.notNull(storage, "storage");
+    this.name = checkNotNull(name, "name cannot be null");
+    this.storage = checkNotNull(storage, "storage cannot be null");
     open();
   }
 
@@ -124,7 +126,7 @@ public class SegmentManager implements AutoCloseable {
    * @throws IllegalStateException if the segment manager is not open
    */
   private void assertOpen() {
-    Assert.state(currentSegment != null, "segment manager not open");
+    checkState(currentSegment != null, "segment manager not open");
   }
 
   /**

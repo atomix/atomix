@@ -23,7 +23,6 @@ import io.atomix.protocols.raft.protocol.RaftServerProtocol;
 import io.atomix.protocols.raft.server.state.ServerContext;
 import io.atomix.protocols.raft.server.state.StateMachineRegistry;
 import io.atomix.protocols.raft.server.storage.Storage;
-import io.atomix.util.Assert;
 import io.atomix.util.concurrent.Futures;
 import io.atomix.util.temp.CatalystThreadFactory;
 import io.atomix.util.temp.SingleThreadContext;
@@ -41,6 +40,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -260,9 +260,9 @@ public class RaftServer {
     private volatile boolean started;
 
     protected RaftServer(String name, RaftServerProtocol protocol, ServerContext context) {
-        this.name = Assert.notNull(name, "name");
-        this.protocol = Assert.notNull(protocol, "protocol");
-        this.context = Assert.notNull(context, "context");
+        this.name = checkNotNull(name, "name cannot be null");
+        this.protocol = checkNotNull(protocol, "protocol cannot be null");
+        this.context = checkNotNull(context, "context cannot be null");
     }
 
     /**
@@ -681,7 +681,7 @@ public class RaftServer {
         private int threadPoolSize = DEFAULT_THREAD_POOL_SIZE;
 
         private Builder(NodeId localNodeId) {
-            this.localNodeId = Assert.notNull(localNodeId, "localNodeId");
+            this.localNodeId = checkNotNull(localNodeId, "localNodeId cannot be null");
         }
 
         /**
@@ -693,7 +693,7 @@ public class RaftServer {
          * @return The server builder.
          */
         public Builder withName(String name) {
-            this.name = Assert.notNull(name, "name");
+            this.name = checkNotNull(name, "name cannot be null");
             return this;
         }
 
@@ -704,7 +704,7 @@ public class RaftServer {
          * @return The server builder.
          */
         public Builder withType(RaftMember.Type type) {
-            this.type = Assert.notNull(type, "type");
+            this.type = checkNotNull(type, "type cannot be null");
             return this;
         }
 
@@ -727,7 +727,7 @@ public class RaftServer {
          * @throws NullPointerException if {@code storage} is null
          */
         public Builder withStorage(Storage storage) {
-            this.storage = Assert.notNull(storage, "storage");
+            this.storage = checkNotNull(storage, "storage cannot be null");
             return this;
         }
 
@@ -753,9 +753,10 @@ public class RaftServer {
          * @throws NullPointerException     if {@code electionTimeout} is null
          */
         public Builder withElectionTimeout(Duration electionTimeout) {
-            Assert.argNot(electionTimeout.isNegative() || electionTimeout.isZero(), "electionTimeout must be positive");
-            Assert.argNot(electionTimeout.toMillis() <= heartbeatInterval.toMillis(), "electionTimeout must be greater than heartbeatInterval");
-            this.electionTimeout = Assert.notNull(electionTimeout, "electionTimeout");
+            checkNotNull(electionTimeout, "electionTimeout cannot be null");
+            checkArgument(!electionTimeout.isNegative() && !electionTimeout.isZero(), "electionTimeout must be positive");
+            checkArgument(electionTimeout.toMillis() > heartbeatInterval.toMillis(), "electionTimeout must be greater than heartbeatInterval");
+            this.electionTimeout = electionTimeout;
             return this;
         }
 
@@ -768,9 +769,10 @@ public class RaftServer {
          * @throws NullPointerException     if {@code heartbeatInterval} is null
          */
         public Builder withHeartbeatInterval(Duration heartbeatInterval) {
-            Assert.argNot(heartbeatInterval.isNegative() || heartbeatInterval.isZero(), "sessionTimeout must be positive");
-            Assert.argNot(heartbeatInterval.toMillis() >= electionTimeout.toMillis(), "heartbeatInterval must be less than electionTimeout");
-            this.heartbeatInterval = Assert.notNull(heartbeatInterval, "heartbeatInterval");
+            checkNotNull(heartbeatInterval, "heartbeatInterval cannot be null");
+            checkArgument(!heartbeatInterval.isNegative() && !heartbeatInterval.isZero(), "sessionTimeout must be positive");
+            checkArgument(heartbeatInterval.toMillis() < electionTimeout.toMillis(), "heartbeatInterval must be less than electionTimeout");
+            this.heartbeatInterval = heartbeatInterval;
             return this;
         }
 
@@ -783,9 +785,10 @@ public class RaftServer {
          * @throws NullPointerException     if {@code sessionTimeout} is null
          */
         public Builder withSessionTimeout(Duration sessionTimeout) {
-            Assert.argNot(sessionTimeout.isNegative() || sessionTimeout.isZero(), "sessionTimeout must be positive");
-            Assert.argNot(sessionTimeout.toMillis() <= electionTimeout.toMillis(), "sessionTimeout must be greater than electionTimeout");
-            this.sessionTimeout = Assert.notNull(sessionTimeout, "sessionTimeout");
+            checkNotNull(sessionTimeout, "sessionTimeout cannot be null");
+            checkArgument(!sessionTimeout.isNegative() && !sessionTimeout.isZero(), "sessionTimeout must be positive");
+            checkArgument(sessionTimeout.toMillis() > electionTimeout.toMillis(), "sessionTimeout must be greater than electionTimeout");
+            this.sessionTimeout = sessionTimeout;
             return this;
         }
 
@@ -796,7 +799,8 @@ public class RaftServer {
          * @return The server builder.
          */
         public Builder withThreadPoolSize(int threadPoolSize) {
-            this.threadPoolSize = Assert.arg(threadPoolSize, threadPoolSize > 0, "threadPoolSize must be positive");
+            checkArgument(threadPoolSize > 0, "threadPoolSize must be positive");
+            this.threadPoolSize = threadPoolSize;
             return this;
         }
 

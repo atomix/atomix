@@ -15,10 +15,11 @@
  */
 package io.atomix.protocols.raft.server.storage.snapshot;
 
-import io.atomix.util.Assert;
 import io.atomix.util.buffer.Buffer;
 import io.atomix.util.buffer.FileBuffer;
 import io.atomix.util.buffer.HeapBuffer;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Stores information about a {@link Snapshot} of the state machine.
@@ -64,7 +65,7 @@ public final class SnapshotDescriptor implements AutoCloseable {
      * @throws NullPointerException if {@code buffer} is null
      */
     public SnapshotDescriptor(Buffer buffer) {
-        this.buffer = Assert.notNull(buffer, "buffer");
+        this.buffer = checkNotNull(buffer, "buffer cannot be null");
         this.id = buffer.readLong();
         this.index = buffer.readLong();
         this.timestamp = buffer.readLong();
@@ -155,7 +156,7 @@ public final class SnapshotDescriptor implements AutoCloseable {
         private final Buffer buffer;
 
         private Builder(Buffer buffer) {
-            this.buffer = Assert.notNull(buffer, "buffer");
+            this.buffer = checkNotNull(buffer, "buffer cannot be null");
         }
 
         /**

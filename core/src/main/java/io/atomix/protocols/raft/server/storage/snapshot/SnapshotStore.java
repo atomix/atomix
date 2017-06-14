@@ -17,7 +17,6 @@ package io.atomix.protocols.raft.server.storage.snapshot;
 
 import io.atomix.protocols.raft.server.storage.Storage;
 import io.atomix.protocols.raft.server.storage.StorageLevel;
-import io.atomix.util.Assert;
 import io.atomix.util.buffer.FileBuffer;
 import io.atomix.util.buffer.HeapBuffer;
 import org.slf4j.Logger;
@@ -29,6 +28,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Persists server snapshots via the {@link Storage} module.
@@ -76,8 +77,8 @@ public class SnapshotStore implements AutoCloseable {
   private final Map<Long, Snapshot> stateMachineSnapshots = new ConcurrentHashMap<>();
 
   public SnapshotStore(String name, Storage storage) {
-    this.name = Assert.notNull(name, "name");
-    this.storage = Assert.notNull(storage, "storage");
+    this.name = checkNotNull(name, "name cannot be null");
+    this.storage = checkNotNull(storage, "storage cannot be null");
     open();
   }
 
@@ -228,7 +229,7 @@ public class SnapshotStore implements AutoCloseable {
    * Completes writing a snapshot.
    */
   protected synchronized void completeSnapshot(Snapshot snapshot) {
-    Assert.notNull(snapshot, "snapshot");
+    checkNotNull(snapshot, "snapshot cannot be null");
 
     // Only store the snapshot if no existing snapshot exists.
     Snapshot existingSnapshot = stateMachineSnapshots.get(snapshot.id());

@@ -15,9 +15,9 @@
  */
 package io.atomix.protocols.raft.server.storage;
 
-import io.atomix.util.Assert;
-
 import java.io.File;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Segment file utility.
@@ -36,8 +36,8 @@ public final class SegmentFile {
    * @throws NullPointerException if {@code file} is null
    */
   public static boolean isSegmentFile(String name, File file) {
-    Assert.notNull(name, "name");
-    Assert.notNull(file, "file");
+    checkNotNull(name, "name cannot be null");
+    checkNotNull(file, "file cannot be null");
     String fileName = file.getName();
     if (fileName.lastIndexOf(EXTENSION_SEPARATOR) == -1 || fileName.lastIndexOf(PART_SEPARATOR) == -1 || fileName.lastIndexOf(EXTENSION_SEPARATOR) < fileName.lastIndexOf(PART_SEPARATOR) || !fileName.endsWith(EXTENSION))
       return false;
@@ -64,7 +64,7 @@ public final class SegmentFile {
    * Creates a segment file for the given directory, log name, segment ID, and segment version.
    */
   static File createSegmentFile(String name, File directory, long id, long version) {
-    return new File(directory, String.format("%s-%d-%d.log", Assert.notNull(name, "name"), id, version));
+    return new File(directory, String.format("%s-%d-%d.log", checkNotNull(name, "name cannot be null"), id, version));
   }
 
   /**

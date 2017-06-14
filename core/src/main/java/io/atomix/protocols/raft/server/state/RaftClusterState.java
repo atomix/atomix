@@ -24,7 +24,6 @@ import io.atomix.protocols.raft.protocol.LeaveRequest;
 import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.server.RaftServer;
 import io.atomix.protocols.raft.server.storage.system.Configuration;
-import io.atomix.util.Assert;
 import io.atomix.util.concurrent.Futures;
 import io.atomix.util.temp.CatalystThreadFactory;
 import io.atomix.util.temp.Scheduled;
@@ -48,6 +47,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Manages the persistent state of the Copycat cluster from the perspective of a single server.
@@ -75,7 +76,7 @@ final class RaftClusterState implements RaftCluster, AutoCloseable {
     RaftClusterState(RaftMember.Type type, NodeId localNodeId, ServerContext context) {
         Instant time = Instant.now();
         this.member = new RaftMemberState(localNodeId, type, RaftMember.Status.AVAILABLE, time).setCluster(this);
-        this.context = Assert.notNull(context, "context");
+        this.context = checkNotNull(context, "context cannot be null");
         this.threadFactory = new CatalystThreadFactory("copycat-server-" + localNodeId + "-appender-%d");
 
         // If a configuration is stored, use the stored configuration, otherwise configure the server with the user provided configuration.
@@ -573,7 +574,7 @@ final class RaftClusterState implements RaftCluster, AutoCloseable {
      * @return The cluster state.
      */
     RaftClusterState configure(Configuration configuration) {
-        Assert.notNull(configuration, "configuration");
+        checkNotNull(configuration, "configuration cannot be null");
 
         // If the configuration index is less than the currently configured index, ignore it.
         // Configurations can be persisted and applying old configurations can revert newer configurations.

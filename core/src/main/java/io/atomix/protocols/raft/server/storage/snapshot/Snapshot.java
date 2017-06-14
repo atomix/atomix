@@ -15,8 +15,10 @@
  */
 package io.atomix.protocols.raft.server.storage.snapshot;
 
-import io.atomix.util.Assert;
 import io.atomix.util.serializer.Serializer;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Manages reading and writing a single snapshot file.
@@ -57,7 +59,7 @@ public abstract class Snapshot implements AutoCloseable {
     private SnapshotWriter writer;
 
     protected Snapshot(SnapshotStore store) {
-        this.store = Assert.notNull(store, "store");
+        this.store = checkNotNull(store, "store cannot be null");
     }
 
     /**
@@ -103,7 +105,7 @@ public abstract class Snapshot implements AutoCloseable {
      * Checks that the snapshot can be written.
      */
     protected void checkWriter() {
-        Assert.state(writer == null, "cannot create multiple writers for the same snapshot");
+        checkState(writer == null, "cannot create multiple writers for the same snapshot");
     }
 
     /**
@@ -111,8 +113,8 @@ public abstract class Snapshot implements AutoCloseable {
      */
     protected SnapshotWriter openWriter(SnapshotWriter writer, SnapshotDescriptor descriptor) {
         checkWriter();
-        Assert.stateNot(descriptor.locked(), "cannot write to locked snapshot descriptor");
-        this.writer = Assert.notNull(writer, "writer");
+        checkState(!descriptor.locked(), "cannot write to locked snapshot descriptor");
+        this.writer = checkNotNull(writer, "writer cannot be null");
         return writer;
     }
 
@@ -140,7 +142,7 @@ public abstract class Snapshot implements AutoCloseable {
      * Opens the given snapshot reader.
      */
     protected SnapshotReader openReader(SnapshotReader reader, SnapshotDescriptor descriptor) {
-        Assert.state(descriptor.locked(), "cannot read from unlocked snapshot descriptor");
+        checkState(descriptor.locked(), "cannot read from unlocked snapshot descriptor");
         return reader;
     }
 

@@ -16,11 +16,12 @@
 package io.atomix.protocols.raft.server.state;
 
 import io.atomix.protocols.raft.server.RaftStateMachine;
-import io.atomix.util.Assert;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * State machine registry.
@@ -45,7 +46,7 @@ public class StateMachineRegistry {
    * @return The state machine registry.
    */
   public StateMachineRegistry register(String type, Supplier<RaftStateMachine> factory) {
-    stateMachines.put(Assert.notNull(type, "type"), Assert.notNull(factory, "factory"));
+    stateMachines.put(checkNotNull(type, "type cannot be null"), checkNotNull(factory, "factory cannot be null"));
     return this;
   }
 

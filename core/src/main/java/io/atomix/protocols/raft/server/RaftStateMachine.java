@@ -19,7 +19,6 @@ import io.atomix.protocols.raft.RaftOperation;
 import io.atomix.protocols.raft.error.CommandException;
 import io.atomix.protocols.raft.server.session.SessionListener;
 import io.atomix.protocols.raft.server.session.Sessions;
-import io.atomix.util.Assert;
 import io.atomix.util.serializer.Serializer;
 
 import java.lang.reflect.InvocationTargetException;
@@ -31,6 +30,8 @@ import java.lang.reflect.WildcardType;
 import java.time.Clock;
 import java.util.function.Consumer;
 import java.util.function.Function;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Base class for user-provided Raft state machines.
@@ -192,7 +193,7 @@ public abstract class RaftStateMachine implements Snapshottable {
      * @throws NullPointerException if {@code context} is null
      */
     public void init(StateMachineExecutor executor) {
-        this.executor = Assert.notNull(executor, "executor");
+        this.executor = checkNotNull(executor, "executor cannot be null");
         this.context = executor.context();
         this.clock = context.clock();
         this.sessions = context.sessions();

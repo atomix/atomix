@@ -18,10 +18,11 @@ package io.atomix.protocols.raft.server.state;
 import io.atomix.protocols.raft.server.storage.Log;
 import io.atomix.protocols.raft.server.storage.LogReader;
 import io.atomix.protocols.raft.server.storage.Reader;
-import io.atomix.util.Assert;
 import io.atomix.util.temp.ThreadContext;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Cluster member state.
@@ -50,8 +51,8 @@ final class MemberState {
     private final TimeBuffer timeBuffer = new TimeBuffer(8);
 
     MemberState(RaftMemberState member, RaftClusterState cluster, ThreadContext context) {
-        this.member = Assert.notNull(member, "member").setCluster(cluster);
-        this.context = Assert.notNull(context, "context");
+        this.member = checkNotNull(member, "member cannot be null").setCluster(cluster);
+        this.context = checkNotNull(context, "context cannot be null");
     }
 
     /**
@@ -192,7 +193,8 @@ final class MemberState {
      * @param matchIndex The member's match index.
      */
     void setMatchIndex(long matchIndex) {
-        this.matchIndex = Assert.argNot(matchIndex, matchIndex < 0, "matchIndex cannot be less than 0");
+        checkArgument(matchIndex >= 0, "matchIndex must be positive");
+        this.matchIndex = matchIndex;
     }
 
     /**
@@ -211,7 +213,8 @@ final class MemberState {
      * @return The member state.
      */
     MemberState setNextIndex(long nextIndex) {
-        this.nextIndex = Assert.argNot(nextIndex, nextIndex <= 0, "nextIndex cannot be less than or equal to 0");
+        checkArgument(nextIndex > 0, "nextIndex must be positive");
+        this.nextIndex = nextIndex;
         return this;
     }
 

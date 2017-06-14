@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.server.storage.entry;
 
-import io.atomix.util.Assert;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Stores a state machine operation.
@@ -35,7 +35,7 @@ public abstract class OperationEntry<T extends OperationEntry<T>> extends Sessio
   protected OperationEntry(long timestamp, long session, long sequence, byte[] bytes) {
     super(timestamp, session);
     this.sequence = sequence;
-    this.bytes = Assert.notNull(bytes, "bytes");
+    this.bytes = checkNotNull(bytes, "bytes cannot be null");
   }
 
   /**

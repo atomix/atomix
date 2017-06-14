@@ -16,10 +16,11 @@
 package io.atomix.protocols.raft.server.storage.snapshot;
 
 import io.atomix.protocols.raft.server.storage.StorageLevel;
-import io.atomix.util.Assert;
 import io.atomix.util.buffer.HeapBuffer;
 import io.atomix.util.serializer.KryoNamespaces;
 import io.atomix.util.serializer.Serializer;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * In-memory snapshot backed by a {@link HeapBuffer}.
@@ -34,10 +35,10 @@ final class MemorySnapshot extends Snapshot {
   MemorySnapshot(HeapBuffer buffer, SnapshotDescriptor descriptor, SnapshotStore store) {
     super(store);
     buffer.mark();
-    this.buffer = Assert.notNull(buffer, "buffer");
+    this.buffer = checkNotNull(buffer, "buffer cannot be null");
     this.buffer.position(SnapshotDescriptor.BYTES).mark();
-    this.descriptor = Assert.notNull(descriptor, "descriptor");
-    this.store = Assert.notNull(store, "store");
+    this.descriptor = checkNotNull(descriptor, "descriptor cannot be null");
+    this.store = checkNotNull(store, "store cannot be null");
   }
 
   @Override

@@ -28,7 +28,6 @@ import io.atomix.protocols.raft.server.storage.LogReader;
 import io.atomix.protocols.raft.server.storage.entry.Entry;
 import io.atomix.protocols.raft.server.storage.snapshot.Snapshot;
 import io.atomix.protocols.raft.server.storage.snapshot.SnapshotReader;
-import io.atomix.util.Assert;
 import io.atomix.util.serializer.KryoNamespaces;
 import io.atomix.util.serializer.Serializer;
 import org.slf4j.Logger;
@@ -37,6 +36,8 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Abstract appender.
@@ -50,7 +51,7 @@ abstract class AbstractAppender implements AutoCloseable {
     protected boolean open = true;
 
     AbstractAppender(ServerContext context) {
-        this.context = Assert.notNull(context, "context");
+        this.context = checkNotNull(context, "context cannot be null");
     }
 
     /**

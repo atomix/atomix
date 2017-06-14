@@ -18,7 +18,6 @@ package io.atomix.protocols.raft.server.storage.entry;
 import io.atomix.cluster.NodeId;
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.server.state.RaftMemberState;
-import io.atomix.util.Assert;
 import io.atomix.util.buffer.BufferInput;
 import io.atomix.util.buffer.BufferOutput;
 
@@ -26,6 +25,8 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Stores a cluster configuration.
@@ -42,7 +43,7 @@ public class ConfigurationEntry extends TimestampedEntry<ConfigurationEntry> {
 
     public ConfigurationEntry(long timestamp, Collection<RaftMember> members) {
         super(timestamp);
-        this.members = Assert.notNull(members, "members");
+        this.members = checkNotNull(members, "members cannot be null");
     }
 
     @Override

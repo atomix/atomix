@@ -31,7 +31,6 @@ import io.atomix.protocols.raft.server.storage.Reader;
 import io.atomix.protocols.raft.server.storage.Storage;
 import io.atomix.protocols.raft.server.storage.snapshot.SnapshotStore;
 import io.atomix.protocols.raft.server.storage.system.MetaStore;
-import io.atomix.util.Assert;
 import io.atomix.util.temp.SingleThreadContext;
 import io.atomix.util.temp.ThreadContext;
 import org.slf4j.Logger;
@@ -47,6 +46,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Manages the volatile state and state transitions of a Copycat server.
@@ -85,13 +88,13 @@ public class ServerContext implements AutoCloseable {
 
     @SuppressWarnings("unchecked")
     public ServerContext(String name, RaftMember.Type type, NodeId localNodeId, RaftServerProtocol protocol, Storage storage, StateMachineRegistry registry, ScheduledExecutorService threadPool, ThreadContext threadContext) {
-        this.name = Assert.notNull(name, "name");
-        this.protocol = Assert.notNull(protocol, "protocol");
-        this.storage = Assert.notNull(storage, "storage");
-        this.threadContext = Assert.notNull(threadContext, "threadContext");
-        this.registry = Assert.notNull(registry, "registry");
+        this.name = checkNotNull(name, "name cannot be null");
+        this.protocol = checkNotNull(protocol, "protocol cannot be null");
+        this.storage = checkNotNull(storage, "storage cannot be null");
+        this.threadContext = checkNotNull(threadContext, "threadContext cannot be null");
+        this.registry = checkNotNull(registry, "registry cannot be null");
         this.stateContext = new SingleThreadContext(String.format("copycat-server-%s-%s-state", localNodeId, name));
-        this.threadPool = Assert.notNull(threadPool, "threadPool");
+        this.threadPool = checkNotNull(threadPool, "threadPool cannot be null");
 
         // Open the meta store.
         CountDownLatch metaLatch = new CountDownLatch(1);
@@ -235,7 +238,7 @@ public class ServerContext implements AutoCloseable {
      * @return The Raft context.
      */
     public ServerContext setHeartbeatInterval(Duration heartbeatInterval) {
-        this.heartbeatInterval = Assert.notNull(heartbeatInterval, "heartbeatInterval");
+        this.heartbeatInterval = checkNotNull(heartbeatInterval, "heartbeatInterval cannot be null");
         return this;
     }
 
@@ -264,7 +267,7 @@ public class ServerContext implements AutoCloseable {
      * @return The Raft state machine.
      */
     public ServerContext setSessionTimeout(Duration sessionTimeout) {
-        this.sessionTimeout = Assert.notNull(sessionTimeout, "sessionTimeout");
+        this.sessionTimeout = checkNotNull(sessionTimeout, "sessionTimeout cannot be null");
         return this;
     }
 
@@ -372,9 +375,9 @@ public class ServerContext implements AutoCloseable {
      */
     ServerContext setLastVotedFor(NodeId candidate) {
         // If we've already voted for another candidate in this term then the last voted for candidate cannot be overridden.
-        Assert.stateNot(lastVotedFor != null && candidate != null, "Already voted for another candidate");
+        checkState(!(lastVotedFor != null && candidate != null), "Already voted for another candidate");
         RaftMemberState member = cluster.member(candidate);
-        Assert.state(member != null, "unknown candidate: %d", candidate);
+        checkState(member != null, "Unknown candidate: %d", candidate);
         this.lastVotedFor = candidate;
         meta.storeVote(this.lastVotedFor);
 
@@ -402,7 +405,7 @@ public class ServerContext implements AutoCloseable {
      * @return The Raft context.
      */
     ServerContext setCommitIndex(long commitIndex) {
-        Assert.argNot(commitIndex < 0, "commit index must be positive");
+        checkArgument(commitIndex >= 0, "commitIndex must be positive");
         long previousCommitIndex = this.commitIndex;
         if (commitIndex > previousCommitIndex) {
             this.commitIndex = commitIndex;

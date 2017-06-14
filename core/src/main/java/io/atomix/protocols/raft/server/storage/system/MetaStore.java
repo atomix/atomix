@@ -18,7 +18,6 @@ package io.atomix.protocols.raft.server.storage.system;
 import io.atomix.cluster.NodeId;
 import io.atomix.protocols.raft.server.storage.Storage;
 import io.atomix.protocols.raft.server.storage.StorageLevel;
-import io.atomix.util.Assert;
 import io.atomix.util.buffer.Buffer;
 import io.atomix.util.buffer.FileBuffer;
 import io.atomix.util.buffer.HeapBuffer;
@@ -27,6 +26,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Manages persistence of server configurations.
@@ -46,9 +47,8 @@ public class MetaStore implements AutoCloseable {
     private final Buffer configurationBuffer;
 
     public MetaStore(String name, Storage storage, Serializer serializer) {
-        this.serializer = Assert.notNull(serializer, "serializer");
+        this.serializer = checkNotNull(serializer, "serializer cannot be null");
 
-        Assert.notNull(storage.directory(), "null storage directory");
         if (!(storage.directory().isDirectory() || storage.directory().mkdirs())) {
             throw new IllegalArgumentException(String.format("Can't create storage directory [%s].", storage.directory()));
         }

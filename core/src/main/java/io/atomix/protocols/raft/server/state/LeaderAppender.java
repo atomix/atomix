@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.raft.server.state;
 
+import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.error.InternalException;
 import io.atomix.protocols.raft.protocol.AppendRequest;
 import io.atomix.protocols.raft.protocol.AppendResponse;
@@ -23,15 +24,15 @@ import io.atomix.protocols.raft.protocol.ConfigureResponse;
 import io.atomix.protocols.raft.protocol.InstallRequest;
 import io.atomix.protocols.raft.protocol.InstallResponse;
 import io.atomix.protocols.raft.server.RaftServer;
-import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.server.storage.snapshot.Snapshot;
-import io.atomix.util.Assert;
 
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * The leader appender is responsible for sending {@link AppendRequest}s on behalf of a leader to followers.
@@ -55,7 +56,7 @@ final class LeaderAppender extends AbstractAppender {
 
   LeaderAppender(LeaderState leader) {
     super(leader.context);
-    this.leader = Assert.notNull(leader, "leader");
+    this.leader = checkNotNull(leader, "leader cannot be null");
     this.leaderTime = System.currentTimeMillis();
     this.leaderIndex = context.getLogWriter().nextIndex();
     this.heartbeatTime = leaderTime;

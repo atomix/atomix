@@ -18,12 +18,10 @@ package io.atomix.protocols.raft.server.state;
 import io.atomix.protocols.raft.RaftOperation;
 import io.atomix.protocols.raft.server.RaftCommit;
 import io.atomix.protocols.raft.server.session.ServerSession;
-import io.atomix.util.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Server commit.
@@ -32,7 +30,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 final class ServerCommit implements RaftCommit<RaftOperation<?>> {
   private static final Logger LOGGER = LoggerFactory.getLogger(ServerCommit.class);
-  private final AtomicInteger references = new AtomicInteger(1);
   private final long index;
   private final ServerSessionContext session;
   private final Instant instant;
@@ -45,41 +42,29 @@ final class ServerCommit implements RaftCommit<RaftOperation<?>> {
     this.operation = operation;
   }
 
-  /**
-   * Checks whether the commit is open and throws an exception if not.
-   */
-  private void checkOpen() {
-    Assert.state(references.get() > 0, "commit not open");
-  }
-
   @Override
   public long index() {
-    checkOpen();
     return index;
   }
 
   @Override
   public ServerSession session() {
-    checkOpen();
     return session;
   }
 
   @Override
   public Instant time() {
-    checkOpen();
     return instant;
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public Class type() {
-    checkOpen();
     return operation != null ? operation.getClass() : null;
   }
 
   @Override
   public RaftOperation<?> operation() {
-    checkOpen();
     return operation;
   }
 

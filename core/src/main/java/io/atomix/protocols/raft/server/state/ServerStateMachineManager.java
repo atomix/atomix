@@ -34,7 +34,6 @@ import io.atomix.protocols.raft.server.storage.entry.MetadataEntry;
 import io.atomix.protocols.raft.server.storage.entry.OpenSessionEntry;
 import io.atomix.protocols.raft.server.storage.entry.QueryEntry;
 import io.atomix.protocols.raft.server.storage.snapshot.Snapshot;
-import io.atomix.util.Assert;
 import io.atomix.util.concurrent.ComposableFuture;
 import io.atomix.util.concurrent.Futures;
 import io.atomix.util.temp.ThreadContext;
@@ -51,6 +50,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Internal server state machine.
@@ -74,7 +76,7 @@ public class ServerStateMachineManager implements AutoCloseable {
     private volatile long lastApplied;
 
     public ServerStateMachineManager(ServerContext state, ScheduledExecutorService threadPool, ThreadContext threadContext) {
-        this.state = Assert.notNull(state, "state");
+        this.state = checkNotNull(state, "state cannot be null");
         this.log = state.getLog();
         this.reader = log.createReader(1, Reader.Mode.COMMITS);
         this.threadPool = threadPool;
@@ -110,10 +112,10 @@ public class ServerStateMachineManager implements AutoCloseable {
     private void setLastApplied(long lastApplied) {
         // lastApplied should be either equal to or one greater than this.lastApplied.
         if (lastApplied > this.lastApplied) {
-            Assert.arg(lastApplied == this.lastApplied + 1, "lastApplied must be sequential");
+            checkArgument(lastApplied == this.lastApplied + 1, "lastApplied must be sequential");
             this.lastApplied = lastApplied;
         } else {
-            Assert.arg(lastApplied == this.lastApplied, "lastApplied cannot be decreased");
+            checkArgument(lastApplied == this.lastApplied, "lastApplied cannot be decreased");
         }
     }
 

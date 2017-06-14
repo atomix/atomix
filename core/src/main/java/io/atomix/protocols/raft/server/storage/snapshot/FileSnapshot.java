@@ -15,7 +15,6 @@
  */
 package io.atomix.protocols.raft.server.storage.snapshot;
 
-import io.atomix.util.Assert;
 import io.atomix.util.buffer.Buffer;
 import io.atomix.util.buffer.FileBuffer;
 import io.atomix.util.serializer.Serializer;
@@ -23,6 +22,9 @@ import io.atomix.util.serializer.Serializer;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * File-based snapshot backed by a {@link FileBuffer}.
@@ -35,8 +37,8 @@ final class FileSnapshot extends Snapshot {
 
     FileSnapshot(SnapshotFile file, SnapshotStore store) {
         super(store);
-        this.file = Assert.notNull(file, "file");
-        this.store = Assert.notNull(store, "store");
+        this.file = checkNotNull(file, "file cannot be null");
+        this.store = checkNotNull(store, "store cannot be null");
     }
 
     @Override
@@ -78,7 +80,7 @@ final class FileSnapshot extends Snapshot {
 
     @Override
     public synchronized SnapshotReader reader(Serializer serializer) {
-        Assert.state(file.file().exists(), "missing snapshot file: %s", file.file());
+        checkState(file.file().exists(), "missing snapshot file: %s", file.file());
         Buffer buffer = FileBuffer.allocate(file.file(), SnapshotDescriptor.BYTES);
         SnapshotDescriptor descriptor = new SnapshotDescriptor(buffer);
         int length = buffer.position(SnapshotDescriptor.BYTES).readInt();
@@ -89,7 +91,7 @@ final class FileSnapshot extends Snapshot {
     public Snapshot complete() {
         Buffer buffer = FileBuffer.allocate(file.file(), SnapshotDescriptor.BYTES);
         try (SnapshotDescriptor descriptor = new SnapshotDescriptor(buffer)) {
-            Assert.stateNot(descriptor.locked(), "cannot complete locked snapshot descriptor");
+            checkState(!descriptor.locked(), "cannot complete locked snapshot descriptor");
             descriptor.lock();
         }
         return super.complete();
