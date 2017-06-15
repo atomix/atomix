@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.session.impl;
+package io.atomix.protocols.raft.proxy.impl;
 
 import io.atomix.messaging.MessagingException;
 import io.atomix.protocols.raft.RaftCommand;
@@ -29,7 +29,7 @@ import io.atomix.protocols.raft.protocol.OperationResponse;
 import io.atomix.protocols.raft.protocol.QueryRequest;
 import io.atomix.protocols.raft.protocol.QueryResponse;
 import io.atomix.protocols.raft.protocol.RaftResponse;
-import io.atomix.protocols.raft.session.RaftSession;
+import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.util.serializer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,8 +57,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-final class RaftSessionSubmitter {
-  private static final Logger LOG = LoggerFactory.getLogger(RaftSessionSubmitter.class);
+final class RaftProxySubmitter {
+  private static final Logger LOG = LoggerFactory.getLogger(RaftProxySubmitter.class);
   private static final int[] FIBONACCI = new int[]{1, 1, 2, 3, 5};
   private static final Predicate<Throwable> EXCEPTION_PREDICATE = e ->
       e instanceof ConnectException
@@ -68,21 +68,21 @@ final class RaftSessionSubmitter {
 
   private final RaftConnection leaderConnection;
   private final RaftConnection sessionConnection;
-  private final RaftSessionState state;
-  private final RaftSessionSequencer sequencer;
-  private final RaftSessionManager manager;
+  private final RaftProxyState state;
+  private final RaftProxySequencer sequencer;
+  private final RaftProxyManager manager;
   private final Serializer serializer;
   private final Executor orderedExecutor;
   private final ScheduledExecutorService scheduledExecutor;
   private final Map<Long, OperationAttempt> attempts = new LinkedHashMap<>();
   private final AtomicLong keepAliveIndex = new AtomicLong();
 
-  public RaftSessionSubmitter(
+  public RaftProxySubmitter(
       RaftConnection leaderConnection,
       RaftConnection sessionConnection,
-      RaftSessionState state,
-      RaftSessionSequencer sequencer,
-      RaftSessionManager manager,
+      RaftProxyState state,
+      RaftProxySequencer sequencer,
+      RaftProxyManager manager,
       Serializer serializer,
       Executor orderedExecutor,
       ScheduledExecutorService scheduledExecutor) {
@@ -170,7 +170,7 @@ final class RaftSessionSubmitter {
    * @param attempt The attempt to submit.
    */
   private <T extends OperationRequest, U extends OperationResponse, V> void submit(OperationAttempt<T, U, V> attempt) {
-    if (state.getState() == RaftSession.State.CLOSED) {
+    if (state.getState() == RaftProxy.State.CLOSED) {
       attempt.fail(new UnknownSessionException("session closed"));
     } else {
       LOG.trace("{} - Sending {}", state.getSessionId(), attempt.request);
@@ -384,7 +384,7 @@ final class RaftSessionSubmitter {
     public void fail(Throwable cause) {
       super.fail(cause);
       if (cause instanceof UnknownSessionException) {
-        state.setState(RaftSession.State.CLOSED);
+        state.setState(RaftProxy.State.CLOSED);
         CommandRequest request = CommandRequest.builder()
             .withSession(this.request.session())
             .withSequence(this.request.sequence())

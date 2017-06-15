@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.session;
+package io.atomix.protocols.raft.proxy;
 
 import io.atomix.protocols.raft.RaftCommand;
 import io.atomix.protocols.raft.RaftOperation;
@@ -33,15 +33,15 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Copycat client proxy.
  */
-public interface RaftSession {
+public interface RaftProxy {
 
   /**
    * Indicates the state of the client's communication with the Copycat cluster.
    * <p>
    * Throughout the lifetime of a client, the client will transition through various states according to its
-   * ability to communicate with the cluster within the context of a {@link RaftSession}. In some cases, client
+   * ability to communicate with the cluster within the context of a {@link RaftProxy}. In some cases, client
    * state changes may be indicative of a loss of guarantees. Users of the client should
-   * {@link RaftSession#addStateChangeListener(Consumer) watch the state of the client} to determine when guarantees
+   * {@link RaftProxy#addStateChangeListener(Consumer) watch the state of the client} to determine when guarantees
    * are lost and react to changes in the client's ability to communicate with the cluster.
    * <p>
    * <pre>
@@ -217,7 +217,7 @@ public interface RaftSession {
   /**
    * Copycat session builder.
    */
-  abstract class Builder implements io.atomix.util.Builder<RaftSession> {
+  abstract class Builder implements io.atomix.util.Builder<RaftProxy> {
     protected String name;
     protected String type;
     protected Serializer serializer = Serializer.using(KryoNamespaces.RAFT);

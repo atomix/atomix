@@ -23,8 +23,8 @@ import io.atomix.protocols.raft.protocol.MetadataRequest;
 import io.atomix.protocols.raft.protocol.MetadataResponse;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.protocol.RaftResponse;
-import io.atomix.protocols.raft.session.impl.NodeSelectorManager;
-import io.atomix.protocols.raft.session.impl.RaftConnection;
+import io.atomix.protocols.raft.proxy.impl.NodeSelectorManager;
+import io.atomix.protocols.raft.proxy.impl.RaftConnection;
 
 import java.util.Collection;
 import java.util.Set;

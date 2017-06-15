@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.session.impl;
+package io.atomix.protocols.raft.proxy.impl;
 
-import io.atomix.protocols.raft.session.RaftSession;
+import io.atomix.protocols.raft.proxy.RaftProxy;
 
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -28,20 +28,20 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public final class RaftSessionState {
+public final class RaftProxyState {
   private final long sessionId;
   private final String name;
   private final String type;
   private final long timeout;
-  private volatile RaftSession.State state = RaftSession.State.CONNECTED;
+  private volatile RaftProxy.State state = RaftProxy.State.CONNECTED;
   private Long suspendedTime;
   private long commandRequest;
   private volatile long commandResponse;
   private long responseIndex;
   private volatile long eventIndex;
-  private final Set<Consumer<RaftSession.State>> changeListeners = new CopyOnWriteArraySet<>();
+  private final Set<Consumer<RaftProxy.State>> changeListeners = new CopyOnWriteArraySet<>();
 
-  RaftSessionState(long sessionId, String name, String type, long timeout) {
+  RaftProxyState(long sessionId, String name, String type, long timeout) {
     this.sessionId = sessionId;
     this.name = name;
     this.type = type;
@@ -91,7 +91,7 @@ public final class RaftSessionState {
    *
    * @return The session state.
    */
-  public RaftSession.State getState() {
+  public RaftProxy.State getState() {
     return state;
   }
 
@@ -100,10 +100,10 @@ public final class RaftSessionState {
    *
    * @param state The updates session state.
    */
-  public void setState(RaftSession.State state) {
+  public void setState(RaftProxy.State state) {
     if (this.state != state) {
       this.state = state;
-      if (state == RaftSession.State.SUSPENDED) {
+      if (state == RaftProxy.State.SUSPENDED) {
         if (suspendedTime == null) {
           suspendedTime = System.currentTimeMillis();
         }
@@ -111,9 +111,9 @@ public final class RaftSessionState {
         suspendedTime = null;
       }
       changeListeners.forEach(l -> l.accept(state));
-    } else if (this.state == RaftSession.State.SUSPENDED) {
+    } else if (this.state == RaftProxy.State.SUSPENDED) {
       if (System.currentTimeMillis() - suspendedTime > timeout) {
-        setState(RaftSession.State.CLOSED);
+        setState(RaftProxy.State.CLOSED);
       }
     }
   }
@@ -123,7 +123,7 @@ public final class RaftSessionState {
    *
    * @param listener The state change listener callback.
    */
-  public void addStateChangeListener(Consumer<RaftSession.State> listener) {
+  public void addStateChangeListener(Consumer<RaftProxy.State> listener) {
     changeListeners.add(checkNotNull(listener));
   }
 
@@ -132,7 +132,7 @@ public final class RaftSessionState {
    *
    * @param listener the listener to remove
    */
-  public void removeStateChangeListener(Consumer<RaftSession.State> listener) {
+  public void removeStateChangeListener(Consumer<RaftProxy.State> listener) {
     changeListeners.remove(checkNotNull(listener));
   }
 

@@ -18,7 +18,7 @@ package io.atomix.protocols.raft.client;
 import io.atomix.cluster.NodeId;
 import io.atomix.protocols.raft.client.impl.DefaultRaftClient;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
-import io.atomix.protocols.raft.session.RaftSession;
+import io.atomix.protocols.raft.proxy.RaftProxy;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -99,7 +99,7 @@ public interface RaftClient {
    *
    * @return A new session builder.
    */
-  RaftSession.Builder sessionBuilder();
+  RaftProxy.Builder sessionBuilder();
 
   /**
    * Connects the client to Copycat cluster via the default server address.

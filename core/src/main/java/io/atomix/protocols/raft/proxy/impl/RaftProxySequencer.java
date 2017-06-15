@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.session.impl;
+package io.atomix.protocols.raft.proxy.impl;
 
 import com.google.common.annotations.VisibleForTesting;
 import io.atomix.protocols.raft.protocol.OperationResponse;
@@ -55,10 +55,10 @@ import java.util.Queue;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-final class RaftSessionSequencer {
-  private static final Logger LOGGER = LoggerFactory.getLogger(RaftSessionSequencer.class);
+final class RaftProxySequencer {
+  private static final Logger LOGGER = LoggerFactory.getLogger(RaftProxySequencer.class);
 
-  private final RaftSessionState state;
+  private final RaftProxyState state;
   @VisibleForTesting
   long requestSequence;
   @VisibleForTesting
@@ -68,7 +68,7 @@ final class RaftSessionSequencer {
   private final Queue<EventCallback> eventCallbacks = new ArrayDeque<>();
   private final Map<Long, ResponseCallback> responseCallbacks = new HashMap<>();
 
-  RaftSessionSequencer(RaftSessionState state) {
+  RaftProxySequencer(RaftProxyState state) {
     this.state = state;
   }
 

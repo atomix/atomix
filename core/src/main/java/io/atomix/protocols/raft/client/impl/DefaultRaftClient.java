@@ -19,9 +19,9 @@ import io.atomix.cluster.NodeId;
 import io.atomix.protocols.raft.client.RaftClient;
 import io.atomix.protocols.raft.client.RaftMetadataClient;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
-import io.atomix.protocols.raft.session.RaftSession;
-import io.atomix.protocols.raft.session.impl.NodeSelectorManager;
-import io.atomix.protocols.raft.session.impl.RaftSessionManager;
+import io.atomix.protocols.raft.proxy.RaftProxy;
+import io.atomix.protocols.raft.proxy.impl.NodeSelectorManager;
+import io.atomix.protocols.raft.proxy.impl.RaftProxyManager;
 
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
@@ -41,7 +41,7 @@ public class DefaultRaftClient implements RaftClient {
   private final ScheduledExecutorService threadPoolExecutor;
   private final RaftMetadataClient metadata;
   private final NodeSelectorManager selectorManager = new NodeSelectorManager();
-  private final RaftSessionManager sessionManager;
+  private final RaftProxyManager sessionManager;
 
   public DefaultRaftClient(
       String clientId,
@@ -53,7 +53,7 @@ public class DefaultRaftClient implements RaftClient {
     this.cluster = checkNotNull(cluster, "cluster cannot be null");
     this.threadPoolExecutor = checkNotNull(threadPoolExecutor, "threadPoolExecutor cannot be null");
     this.metadata = new DefaultRaftMetadataClient(clientId, protocol, selectorManager);
-    this.sessionManager = new RaftSessionManager(clientId, nodeId, protocol, selectorManager, threadPoolExecutor);
+    this.sessionManager = new RaftProxyManager(clientId, nodeId, protocol, selectorManager, threadPoolExecutor);
   }
 
   @Override
@@ -95,7 +95,7 @@ public class DefaultRaftClient implements RaftClient {
   }
 
   @Override
-  public RaftSession.Builder sessionBuilder() {
+  public RaftProxy.Builder sessionBuilder() {
     return new SessionBuilder();
   }
 
@@ -114,9 +114,9 @@ public class DefaultRaftClient implements RaftClient {
   /**
    * Default Copycat session builder.
    */
-  private class SessionBuilder extends RaftSession.Builder {
+  private class SessionBuilder extends RaftProxy.Builder {
     @Override
-    public RaftSession build() {
+    public RaftProxy build() {
       return sessionManager.openSession(name, type, communicationStrategy, serializer, timeout).join();
     }
   }

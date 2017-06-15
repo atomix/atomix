@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.session.impl;
+package io.atomix.protocols.raft.proxy.impl;
 
 import io.atomix.cluster.NodeId;
 import io.atomix.protocols.raft.client.CommunicationStrategies;
@@ -24,7 +24,7 @@ import io.atomix.protocols.raft.protocol.KeepAliveRequest;
 import io.atomix.protocols.raft.protocol.OpenSessionRequest;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.protocol.RaftResponse;
-import io.atomix.protocols.raft.session.RaftSession;
+import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.util.concurrent.Futures;
 import io.atomix.util.concurrent.OrderedExecutor;
 import io.atomix.util.serializer.Serializer;
@@ -52,19 +52,19 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class RaftSessionManager {
-  private static final Logger LOGGER = LoggerFactory.getLogger(RaftSessionManager.class);
+public class RaftProxyManager {
+  private static final Logger LOGGER = LoggerFactory.getLogger(RaftProxyManager.class);
   private final String clientId;
   private final NodeId nodeId;
   private final RaftClientProtocol protocol;
   private final RaftConnection connection;
   private final ScheduledExecutorService threadPoolExecutor;
   private final NodeSelectorManager selectorManager;
-  private final Map<Long, RaftSessionState> sessions = new ConcurrentHashMap<>();
+  private final Map<Long, RaftProxyState> sessions = new ConcurrentHashMap<>();
   private final AtomicBoolean open = new AtomicBoolean();
   private ScheduledFuture<?> keepAliveFuture;
 
-  public RaftSessionManager(String clientId, NodeId nodeId, RaftClientProtocol protocol, NodeSelectorManager selectorManager, ScheduledExecutorService threadPoolExecutor) {
+  public RaftProxyManager(String clientId, NodeId nodeId, RaftClientProtocol protocol, NodeSelectorManager selectorManager, ScheduledExecutorService threadPoolExecutor) {
     this.clientId = checkNotNull(clientId, "clientId cannot be null");
     this.nodeId = checkNotNull(nodeId, "nodeId cannot be null");
     this.protocol = checkNotNull(protocol, "protocol cannot be null");
@@ -109,7 +109,7 @@ public class RaftSessionManager {
    * @param timeout               The session timeout.
    * @return A completable future to be completed once the session has been opened.
    */
-  public CompletableFuture<RaftSession> openSession(
+  public CompletableFuture<RaftProxy> openSession(
       String name,
       String stateMachine,
       CommunicationStrategy communicationStrategy,
@@ -124,17 +124,16 @@ public class RaftSessionManager {
         .build();
 
     LOGGER.trace("{} - Sending {}", clientId, request);
-    CompletableFuture<RaftSession> future = new CompletableFuture<>();
+    CompletableFuture<RaftProxy> future = new CompletableFuture<>();
     Executor sessionExecutor = new OrderedExecutor(threadPoolExecutor);
     connection.openSession(request).whenCompleteAsync((response, error) -> {
       if (error == null) {
         if (response.status() == RaftResponse.Status.OK) {
-          RaftSessionState state = new RaftSessionState(
+          RaftProxyState state = new RaftProxyState(
               response.session(), name, stateMachine, response.timeout());
           sessions.put(state.getSessionId(), state);
           keepAliveSessions();
-          future.complete(new DefaultRaftSession(
-              clientId,
+          future.complete(new DefaultRaftProxy(
               state,
               protocol,
               selectorManager,
@@ -160,7 +159,7 @@ public class RaftSessionManager {
    * @return A completable future to be completed once the session is closed.
    */
   public CompletableFuture<Void> closeSession(long sessionId) {
-    RaftSessionState state = sessions.get(sessionId);
+    RaftProxyState state = sessions.get(sessionId);
     if (state == null) {
       return Futures.exceptionalFuture(new UnknownSessionException("Unknown session: " + sessionId));
     }
@@ -194,7 +193,7 @@ public class RaftSessionManager {
    * @return A completable future to be completed once the session's indexes have been reset.
    */
   CompletableFuture<Void> resetIndexes(long sessionId) {
-    RaftSessionState sessionState = sessions.get(sessionId);
+    RaftProxyState sessionState = sessions.get(sessionId);
     if (sessionState == null) {
       return Futures.exceptionalFuture(new IllegalArgumentException("Unknown session: " + sessionId));
     }
@@ -234,14 +233,14 @@ public class RaftSessionManager {
    * Sends a keep-alive request to the cluster.
    */
   private synchronized void keepAliveSessions(boolean retryOnFailure) {
-    Map<Long, RaftSessionState> sessions = new HashMap<>(this.sessions);
+    Map<Long, RaftProxyState> sessions = new HashMap<>(this.sessions);
     long[] sessionIds = new long[sessions.size()];
     long[] commandResponses = new long[sessions.size()];
     long[] eventIndexes = new long[sessions.size()];
     long[] connections = new long[sessions.size()];
 
     int i = 0;
-    for (RaftSessionState sessionState : sessions.values()) {
+    for (RaftProxyState sessionState : sessions.values()) {
       sessionIds[i] = sessionState.getSessionId();
       commandResponses[i] = sessionState.getCommandResponse();
       eventIndexes[i] = sessionState.getEventIndex();
@@ -262,7 +261,7 @@ public class RaftSessionManager {
           // If the request was successful, update the address selector and schedule the next keep-alive.
           if (response.status() == RaftResponse.Status.OK) {
             selectorManager.resetAll(response.leader(), response.members());
-            sessions.values().forEach(s -> s.setState(RaftSession.State.CONNECTED));
+            sessions.values().forEach(s -> s.setState(RaftProxy.State.CONNECTED));
             scheduleKeepAlive();
           }
           // If a leader is still set in the address selector, unset the leader and attempt to send another keep-alive.
@@ -273,7 +272,7 @@ public class RaftSessionManager {
           }
           // If no leader was set, set the session state to unstable and schedule another keep-alive.
           else {
-            sessions.values().forEach(s -> s.setState(RaftSession.State.SUSPENDED));
+            sessions.values().forEach(s -> s.setState(RaftProxy.State.SUSPENDED));
             selectorManager.resetAll();
             scheduleKeepAlive();
           }
@@ -286,7 +285,7 @@ public class RaftSessionManager {
         }
         // If no leader was set, set the session state to unstable and schedule another keep-alive.
         else {
-          sessions.values().forEach(s -> s.setState(RaftSession.State.SUSPENDED));
+          sessions.values().forEach(s -> s.setState(RaftProxy.State.SUSPENDED));
           selectorManager.resetAll();
           scheduleKeepAlive();
         }
@@ -298,7 +297,7 @@ public class RaftSessionManager {
    * Schedules a keep-alive request.
    */
   private void scheduleKeepAlive() {
-    OptionalLong minTimeout = sessions.values().stream().mapToLong(RaftSessionState::getSessionTimeout).min();
+    OptionalLong minTimeout = sessions.values().stream().mapToLong(RaftProxyState::getSessionTimeout).min();
     if (minTimeout.isPresent()) {
       synchronized (this) {
         if (keepAliveFuture != null) {

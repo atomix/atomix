@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.session.impl;
+package io.atomix.protocols.raft.proxy.impl;
 
 import com.google.common.collect.Sets;
 import io.atomix.protocols.raft.protocol.PublishRequest;
@@ -35,17 +35,17 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-final class RaftSessionListener {
-  private static final Logger LOG = LoggerFactory.getLogger(RaftSessionListener.class);
+final class RaftProxyListener {
+  private static final Logger LOG = LoggerFactory.getLogger(RaftProxyListener.class);
 
   private final RaftClientProtocol protocol;
-  private final RaftSessionState state;
+  private final RaftProxyState state;
   private final Set<Consumer> listeners = Sets.newLinkedHashSet();
-  private final RaftSessionSequencer sequencer;
+  private final RaftProxySequencer sequencer;
   private final Serializer serializer;
   private final Executor executor;
 
-  public RaftSessionListener(RaftClientProtocol protocol, RaftSessionState state, RaftSessionSequencer sequencer, Serializer serializer, Executor executor) {
+  public RaftProxyListener(RaftClientProtocol protocol, RaftProxyState state, RaftProxySequencer sequencer, Serializer serializer, Executor executor) {
     this.protocol = checkNotNull(protocol, "protocol cannot be null");
     this.state = checkNotNull(state, "state cannot be null");
     this.sequencer = checkNotNull(sequencer, "sequencer cannot be null");

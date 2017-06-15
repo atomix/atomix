@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.session.impl;
+package io.atomix.protocols.raft.proxy.impl;
 
 import io.atomix.protocols.raft.RaftCommand;
 import io.atomix.protocols.raft.RaftOperation;
@@ -21,7 +21,7 @@ import io.atomix.protocols.raft.RaftQuery;
 import io.atomix.protocols.raft.client.CommunicationStrategies;
 import io.atomix.protocols.raft.client.CommunicationStrategy;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
-import io.atomix.protocols.raft.session.RaftSession;
+import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.util.serializer.Serializer;
 
 import java.util.concurrent.CompletableFuture;
@@ -51,29 +51,28 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class DefaultRaftSession implements RaftSession {
-  private final RaftSessionState state;
-  private final RaftSessionManager sessionManager;
-  private final RaftSessionListener sessionListener;
-  private final RaftSessionSubmitter sessionSubmitter;
+public class DefaultRaftProxy implements RaftProxy {
+  private final RaftProxyState state;
+  private final RaftProxyManager sessionManager;
+  private final RaftProxyListener sessionListener;
+  private final RaftProxySubmitter sessionSubmitter;
 
-  public DefaultRaftSession(
-      String clientId,
-      RaftSessionState state,
+  public DefaultRaftProxy(
+      RaftProxyState state,
       RaftClientProtocol protocol,
       NodeSelectorManager selectorManager,
-      RaftSessionManager sessionManager,
+      RaftProxyManager sessionManager,
       CommunicationStrategy communicationStrategy,
       Serializer serializer,
       Executor orderedExecutor,
       ScheduledExecutorService scheduledExecutor) {
     this.state = checkNotNull(state, "state cannot be null");
     this.sessionManager = checkNotNull(sessionManager, "sessionManager cannot be null");
-    RaftSessionSequencer sequencer = new RaftSessionSequencer(state);
-    this.sessionListener = new RaftSessionListener(protocol, state, sequencer, serializer, orderedExecutor);
+    RaftProxySequencer sequencer = new RaftProxySequencer(state);
+    this.sessionListener = new RaftProxyListener(protocol, state, sequencer, serializer, orderedExecutor);
     RaftConnection leaderConnection = new RaftConnection(String.valueOf(state.getSessionId()), protocol.dispatcher(), selectorManager.createSelector(CommunicationStrategies.LEADER));
     RaftConnection sessionConnection = new RaftConnection(String.valueOf(state.getSessionId()), protocol.dispatcher(), selectorManager.createSelector(communicationStrategy));
-    this.sessionSubmitter = new RaftSessionSubmitter(leaderConnection, sessionConnection, state, sequencer, sessionManager, serializer, orderedExecutor, scheduledExecutor);
+    this.sessionSubmitter = new RaftProxySubmitter(leaderConnection, sessionConnection, state, sequencer, sessionManager, serializer, orderedExecutor, scheduledExecutor);
   }
 
   @Override
@@ -170,7 +169,7 @@ public class DefaultRaftSession implements RaftSession {
 
   @Override
   public boolean equals(Object object) {
-    return object instanceof DefaultRaftSession && ((DefaultRaftSession) object).state.getSessionId() == state.getSessionId();
+    return object instanceof DefaultRaftProxy && ((DefaultRaftProxy) object).state.getSessionId() == state.getSessionId();
   }
 
   @Override

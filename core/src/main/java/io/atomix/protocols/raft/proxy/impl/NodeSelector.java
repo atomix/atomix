@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.protocols.raft.session.impl;
+package io.atomix.protocols.raft.proxy.impl;
 
 import io.atomix.cluster.NodeId;
 import io.atomix.protocols.raft.client.CommunicationStrategy;
