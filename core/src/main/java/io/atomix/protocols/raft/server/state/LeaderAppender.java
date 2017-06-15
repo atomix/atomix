@@ -24,7 +24,7 @@ import io.atomix.protocols.raft.protocol.ConfigureResponse;
 import io.atomix.protocols.raft.protocol.InstallRequest;
 import io.atomix.protocols.raft.protocol.InstallResponse;
 import io.atomix.protocols.raft.server.RaftServer;
-import io.atomix.protocols.raft.server.storage.snapshot.Snapshot;
+import io.atomix.protocols.raft.storage.snapshot.Snapshot;
 
 import java.time.Instant;
 import java.util.HashMap;

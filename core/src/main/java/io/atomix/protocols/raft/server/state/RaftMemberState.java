@@ -21,7 +21,7 @@ import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.error.RaftError;
 import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.protocol.ReconfigureRequest;
-import io.atomix.protocols.raft.server.storage.system.Configuration;
+import io.atomix.protocols.raft.storage.system.Configuration;
 import io.atomix.util.concurrent.Scheduled;
 
 import java.time.Instant;

@@ -16,8 +16,8 @@
 package io.atomix.protocols.raft.protocol;
 
 import io.atomix.cluster.NodeId;
-import io.atomix.protocols.raft.server.storage.Indexed;
-import io.atomix.protocols.raft.server.storage.entry.Entry;
+import io.atomix.protocols.raft.storage.Indexed;
+import io.atomix.protocols.raft.storage.entry.Entry;
 
 import java.util.Arrays;
 import java.util.List;

@@ -156,8 +156,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *   }
  *   }
  * </pre>
- * For snapshottable state machines, Copycat will periodically request a {@link io.atomix.protocols.raft.server.storage.snapshot.Snapshot Snapshot}
- * of the state machine's state by calling the {@link Snapshottable#snapshot(io.atomix.protocols.raft.server.storage.snapshot.SnapshotWriter)}
+ * For snapshottable state machines, Copycat will periodically request a {@link io.atomix.protocols.raft.storage.snapshot.Snapshot Snapshot}
+ * of the state machine's state by calling the {@link Snapshottable#snapshot(io.atomix.protocols.raft.storage.snapshot.SnapshotWriter)}
  * method. Once the state machine has written a snapshot of its state, Copycat will automatically remove all commands
  * associated with the state machine from the underlying log.
  *

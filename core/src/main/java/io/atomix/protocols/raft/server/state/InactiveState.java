@@ -45,7 +45,7 @@ import io.atomix.protocols.raft.protocol.ReconfigureResponse;
 import io.atomix.protocols.raft.protocol.VoteRequest;
 import io.atomix.protocols.raft.protocol.VoteResponse;
 import io.atomix.protocols.raft.server.RaftServer;
-import io.atomix.protocols.raft.server.storage.system.Configuration;
+import io.atomix.protocols.raft.storage.system.Configuration;
 import io.atomix.util.concurrent.Futures;
 
 import java.util.concurrent.CompletableFuture;

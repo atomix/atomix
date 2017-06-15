@@ -15,8 +15,8 @@
  */
 package io.atomix.protocols.raft.server;
 
-import io.atomix.protocols.raft.server.storage.snapshot.SnapshotReader;
-import io.atomix.protocols.raft.server.storage.snapshot.SnapshotWriter;
+import io.atomix.protocols.raft.storage.snapshot.SnapshotReader;
+import io.atomix.protocols.raft.storage.snapshot.SnapshotWriter;
 
 /**
  * Support for periodically persisting {@link RaftStateMachine} snapshots to disk.
@@ -70,7 +70,7 @@ public interface Snapshottable {
   /**
    * Takes a snapshot of the state machine state.
    * <p>
-   * This method will be called each time the underlying {@link io.atomix.protocols.raft.server.storage.Log Log}
+   * This method will be called each time the underlying {@link io.atomix.protocols.raft.storage.Log Log}
    * rotates segments. Once the snapshot has been written, the snapshot will be stored on disk and eventually
    * completed. Note that snapshots are normally not immediately completed upon completion of this method as
    * servers must wait for certain conditions to be met before persisting a snapshot. Therefore, state machines

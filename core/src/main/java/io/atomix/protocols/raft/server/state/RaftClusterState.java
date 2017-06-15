@@ -23,7 +23,7 @@ import io.atomix.protocols.raft.protocol.JoinRequest;
 import io.atomix.protocols.raft.protocol.LeaveRequest;
 import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.server.RaftServer;
-import io.atomix.protocols.raft.server.storage.system.Configuration;
+import io.atomix.protocols.raft.storage.system.Configuration;
 import io.atomix.util.concurrent.Futures;
 import io.atomix.util.concurrent.AtomixThreadFactory;
 import io.atomix.util.concurrent.Scheduled;

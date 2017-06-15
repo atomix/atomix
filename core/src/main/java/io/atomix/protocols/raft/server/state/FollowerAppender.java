@@ -16,7 +16,7 @@
 package io.atomix.protocols.raft.server.state;
 
 import io.atomix.protocols.raft.cluster.RaftMember;
-import io.atomix.protocols.raft.server.storage.snapshot.Snapshot;
+import io.atomix.protocols.raft.storage.snapshot.Snapshot;
 
 /**
  * Follower appender.

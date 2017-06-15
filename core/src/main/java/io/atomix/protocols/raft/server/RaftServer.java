@@ -22,7 +22,7 @@ import io.atomix.protocols.raft.error.ConfigurationException;
 import io.atomix.protocols.raft.protocol.RaftServerProtocol;
 import io.atomix.protocols.raft.server.state.ServerContext;
 import io.atomix.protocols.raft.server.state.StateMachineRegistry;
-import io.atomix.protocols.raft.server.storage.Storage;
+import io.atomix.protocols.raft.storage.Storage;
 import io.atomix.util.concurrent.Futures;
 import io.atomix.util.concurrent.AtomixThreadFactory;
 import io.atomix.util.concurrent.SingleThreadContext;
@@ -72,10 +72,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * between stateful and stateless states.
  * <h2>Storage</h2>
  * As {@link io.atomix.protocols.raft.RaftCommand}s are received by the server, they're written to the Raft
- * {@link io.atomix.protocols.raft.server.storage.Log} and replicated to other members
+ * {@link io.atomix.protocols.raft.storage.Log} and replicated to other members
  * of the cluster. By default, the log is stored on disk, but users can override the default {@link Storage} configuration
  * via {@link RaftServer.Builder#withStorage(Storage)}. Most notably, to configure the storage module to store entries in
- * memory instead of disk, configure the {@link io.atomix.protocols.raft.server.storage.StorageLevel}.
+ * memory instead of disk, configure the {@link io.atomix.protocols.raft.storage.StorageLevel}.
  * <pre>
  * {@code
  * CopycatServer server = CopycatServer.builder(address)
@@ -269,9 +269,9 @@ public class RaftServer {
    * Returns the server name.
    * <p>
    * The server name is provided to the server via the {@link Builder#withName(String) builder configuration}.
-   * The name is used internally to manage the server's on-disk state. {@link io.atomix.protocols.raft.server.storage.Log Log},
-   * {@link io.atomix.protocols.raft.server.storage.snapshot.SnapshotStore snapshot},
-   * and {@link io.atomix.protocols.raft.server.storage.system.MetaStore configuration} files stored on disk use
+   * The name is used internally to manage the server's on-disk state. {@link io.atomix.protocols.raft.storage.Log Log},
+   * {@link io.atomix.protocols.raft.storage.snapshot.SnapshotStore snapshot},
+   * and {@link io.atomix.protocols.raft.storage.system.MetaStore configuration} files stored on disk use
    * the server name as the prefix.
    *
    * @return The server name.
@@ -299,7 +299,7 @@ public class RaftServer {
    * <p>
    * The {@link RaftCluster} is representative of the server's current view of the cluster configuration. The first time
    * the server is {@link #bootstrap() started}, the cluster configuration will be initialized using the {@link NodeId}
-   * list provided to the server {@link #builder(NodeId) builder}. For {@link io.atomix.protocols.raft.server.storage.StorageLevel#DISK persistent}
+   * list provided to the server {@link #builder(NodeId) builder}. For {@link io.atomix.protocols.raft.storage.StorageLevel#DISK persistent}
    * servers, subsequent starts will result in the last known cluster configuration being loaded from disk.
    * <p>
    * The returned {@link RaftCluster} can be used to modify the state of the cluster to which this server belongs. Note,
