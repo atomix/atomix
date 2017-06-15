@@ -95,11 +95,11 @@ public interface RaftClient {
   RaftMetadataClient metadata();
 
   /**
-   * Returns a new session builder.
+   * Returns a new proxy builder.
    *
-   * @return A new session builder.
+   * @return A new proxy builder.
    */
-  RaftProxy.Builder sessionBuilder();
+  RaftProxy.Builder proxyBuilder();
 
   /**
    * Connects the client to Copycat cluster via the default server address.
