@@ -17,7 +17,7 @@ package io.atomix.protocols.raft.server.state;
 
 import io.atomix.protocols.raft.RaftOperation;
 import io.atomix.protocols.raft.server.RaftCommit;
-import io.atomix.protocols.raft.server.session.ServerSession;
+import io.atomix.protocols.raft.session.RaftSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,11 +33,11 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 final class ServerCommit implements RaftCommit<RaftOperation<?>> {
   private static final Logger LOGGER = LoggerFactory.getLogger(ServerCommit.class);
   private final long index;
-  private final ServerSessionContext session;
+  private final RaftSessionContext session;
   private final Instant instant;
   private final RaftOperation operation;
 
-  public ServerCommit(long index, RaftOperation operation, ServerSessionContext session, long timestamp) {
+  public ServerCommit(long index, RaftOperation operation, RaftSessionContext session, long timestamp) {
     this.index = index;
     this.session = session;
     this.instant = Instant.ofEpochMilli(timestamp);
@@ -50,7 +50,7 @@ final class ServerCommit implements RaftCommit<RaftOperation<?>> {
   }
 
   @Override
-  public ServerSession session() {
+  public RaftSession session() {
     return session;
   }
 

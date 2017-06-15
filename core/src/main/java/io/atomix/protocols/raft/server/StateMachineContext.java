@@ -16,7 +16,7 @@
 
 package io.atomix.protocols.raft.server;
 
-import io.atomix.protocols.raft.server.session.Sessions;
+import io.atomix.protocols.raft.session.RaftSessions;
 
 import java.time.Clock;
 
@@ -25,7 +25,7 @@ import java.time.Clock;
  * <p>
  * The context is reflective of the current position and state of the Raft state machine. In particular,
  * it exposes the current approximate {@link StateMachineContext#clock() time} and all open
- * {@link Sessions}.
+ * {@link RaftSessions}.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
@@ -75,6 +75,6 @@ public interface StateMachineContext {
    *
    * @return The state machine sessions.
    */
-  Sessions sessions();
+  RaftSessions sessions();
 
 }

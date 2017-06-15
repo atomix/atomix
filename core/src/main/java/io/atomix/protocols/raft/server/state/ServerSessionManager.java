@@ -25,12 +25,12 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 class ServerSessionManager {
-  private final Map<Long, ServerSessionContext> sessions = new ConcurrentHashMap<>();
+  private final Map<Long, RaftSessionContext> sessions = new ConcurrentHashMap<>();
 
   /**
    * Registers a session.
    */
-  synchronized void registerSession(ServerSessionContext session) {
+  synchronized void registerSession(RaftSessionContext session) {
     sessions.put(session.id(), session);
   }
 
@@ -47,7 +47,7 @@ class ServerSessionManager {
    * @param sessionId The session ID.
    * @return The session or {@code null} if the session doesn't exist.
    */
-  ServerSessionContext getSession(long sessionId) {
+  RaftSessionContext getSession(long sessionId) {
     return sessions.get(sessionId);
   }
 
@@ -56,7 +56,7 @@ class ServerSessionManager {
    *
    * @return The collection of registered sessions.
    */
-  Collection<ServerSessionContext> getSessions() {
+  Collection<RaftSessionContext> getSessions() {
     return sessions.values();
   }
 

@@ -24,4 +24,4 @@
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-package io.atomix.protocols.raft.server.session;
+package io.atomix.protocols.raft.session;

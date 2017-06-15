@@ -321,7 +321,7 @@ public class ServerStateMachineManager implements AutoCloseable {
       long commandSequence = commandSequences[i];
       long eventIndex = eventIndexes[i];
 
-      ServerSessionContext session = sessionManager.getSession(sessionId);
+      RaftSessionContext session = sessionManager.getSession(sessionId);
       if (session != null) {
         session.getStateMachineExecutor().keepAlive(entry.index(), entry.entry().timestamp(), session, commandSequence, eventIndex);
       }
@@ -352,7 +352,7 @@ public class ServerStateMachineManager implements AutoCloseable {
       stateMachines.put(entry.entry().name(), stateMachineExecutor);
     }
 
-    ServerSessionContext session = new ServerSessionContext(
+    RaftSessionContext session = new RaftSessionContext(
         entry.index(),
         entry.entry().node(),
         entry.entry().name(),
@@ -367,7 +367,7 @@ public class ServerStateMachineManager implements AutoCloseable {
    * Applies a close session entry to the state machine.
    */
   private CompletableFuture<Void> applyCloseSession(Indexed<CloseSessionEntry> entry) {
-    ServerSessionContext session = sessionManager.getSession(entry.entry().session());
+    RaftSessionContext session = sessionManager.getSession(entry.entry().session());
 
     // If the server session is null, the session either never existed or already expired.
     if (session == null) {
@@ -385,7 +385,7 @@ public class ServerStateMachineManager implements AutoCloseable {
   private CompletableFuture<MetadataResult> applyMetadata(Indexed<MetadataEntry> entry) {
     // If the session ID is non-zero, read the metadata for the associated state machine.
     if (entry.entry().session() > 0) {
-      ServerSessionContext session = sessionManager.getSession(entry.entry().session());
+      RaftSessionContext session = sessionManager.getSession(entry.entry().session());
 
       // If the session is null, return an UnknownSessionException.
       if (session == null) {
@@ -393,7 +393,7 @@ public class ServerStateMachineManager implements AutoCloseable {
       }
 
       Set<RaftSessionMetadata> sessions = new HashSet<>();
-      for (ServerSessionContext s : sessionManager.getSessions()) {
+      for (RaftSessionContext s : sessionManager.getSessions()) {
         if (s.name().equals(session.name())) {
           sessions.add(new RaftSessionMetadata(s.id(), s.name(), s.type()));
         }
@@ -401,7 +401,7 @@ public class ServerStateMachineManager implements AutoCloseable {
       return CompletableFuture.completedFuture(new MetadataResult(sessions));
     } else {
       Set<RaftSessionMetadata> sessions = new HashSet<>();
-      for (ServerSessionContext session : sessionManager.getSessions()) {
+      for (RaftSessionContext session : sessionManager.getSessions()) {
         sessions.add(new RaftSessionMetadata(session.id(), session.name(), session.type()));
       }
       return CompletableFuture.completedFuture(new MetadataResult(sessions));
@@ -413,7 +413,7 @@ public class ServerStateMachineManager implements AutoCloseable {
    * <p>
    * Command entries result in commands being executed on the user provided {@link RaftStateMachine} and a
    * response being sent back to the client by completing the returned future. All command responses are
-   * cached in the command's {@link ServerSessionContext} for fault tolerance. In the event that the same command
+   * cached in the command's {@link RaftSessionContext} for fault tolerance. In the event that the same command
    * is applied to the state machine more than once, the original response will be returned.
    * <p>
    * Command entries are written with a sequence number. The sequence number is used to ensure that
@@ -425,7 +425,7 @@ public class ServerStateMachineManager implements AutoCloseable {
    */
   private CompletableFuture<OperationResult> applyCommand(Indexed<CommandEntry> entry) {
     // First check to ensure that the session exists.
-    ServerSessionContext session = sessionManager.getSession(entry.entry().session());
+    RaftSessionContext session = sessionManager.getSession(entry.entry().session());
 
     // If the session is null, return an UnknownSessionException. Commands applied to the state machine must
     // have a session. We ensure that session register/unregister entries are not compacted from the log
@@ -457,7 +457,7 @@ public class ServerStateMachineManager implements AutoCloseable {
    * fault-tolerance and consistency across the cluster.
    */
   private CompletableFuture<OperationResult> applyQuery(Indexed<QueryEntry> entry) {
-    ServerSessionContext session = sessionManager.getSession(entry.entry().session());
+    RaftSessionContext session = sessionManager.getSession(entry.entry().session());
 
     // If the session is null then that indicates that the session already timed out or it never existed.
     // Return with an UnknownSessionException.

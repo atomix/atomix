@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.protocols.raft.server.session;
+package io.atomix.protocols.raft.session;
 
 import java.util.function.Consumer;
 
@@ -47,7 +47,7 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public interface ServerSession {
+public interface RaftSession {
 
   /**
    * Returns the session identifier.

@@ -16,7 +16,7 @@
 package io.atomix.protocols.raft.server;
 
 import io.atomix.protocols.raft.RaftOperation;
-import io.atomix.protocols.raft.server.session.ServerSession;
+import io.atomix.protocols.raft.session.RaftSession;
 
 import java.time.Instant;
 
@@ -46,12 +46,12 @@ public interface RaftCommit<T extends RaftOperation> {
    * Returns the session that submitted the operation.
    * <p>
    * The returned {@link Session} is representative of the session that submitted the operation
-   * that resulted in this {@link RaftCommit}. The session can be used to {@link ServerSession#publish(String, Object)}
+   * that resulted in this {@link RaftCommit}. The session can be used to {@link RaftSession#publish(String, Object)}
    * event messages to the client.
    *
    * @return The session that created the commit.
    */
-  ServerSession session();
+  RaftSession session();
 
   /**
    * Returns the time at which the operation was committed.

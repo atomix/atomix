@@ -67,7 +67,7 @@ class ServerStateMachineContext implements StateMachineContext {
    */
   void commit() {
     long index = this.index;
-    for (ServerSessionContext session : sessions.sessions.values()) {
+    for (RaftSessionContext session : sessions.sessions.values()) {
       session.commit(index);
     }
   }

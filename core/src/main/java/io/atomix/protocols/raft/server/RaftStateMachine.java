@@ -17,8 +17,9 @@ package io.atomix.protocols.raft.server;
 
 import io.atomix.protocols.raft.RaftOperation;
 import io.atomix.protocols.raft.error.CommandException;
-import io.atomix.protocols.raft.server.session.SessionListener;
-import io.atomix.protocols.raft.server.session.Sessions;
+import io.atomix.protocols.raft.session.RaftSession;
+import io.atomix.protocols.raft.session.RaftSessionListener;
+import io.atomix.protocols.raft.session.RaftSessions;
 import io.atomix.util.serializer.Serializer;
 
 import java.lang.reflect.InvocationTargetException;
@@ -81,7 +82,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * </pre>
  * When operations are applied to the state machine they're wrapped in a {@link RaftCommit} object. The commit provides the
  * context of how the command or query was committed to the cluster, including the log {@link RaftCommit#index()}, the
- * {@link io.atomix.protocols.raft.server.session.ServerSession} from which the operation was submitted, and the approximate
+ * {@link RaftSession} from which the operation was submitted, and the approximate
  * wall-clock {@link RaftCommit#time()} at which the commit was written to the Raft log. Note that the commit time is
  * guaranteed to progress monotonically, but it may not be representative of the progress of actual time. See the
  * {@link RaftCommit} documentation for more information.
@@ -110,8 +111,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *   }
  * </pre>
  * <p>
- * During command or scheduled callbacks, {@link Sessions} can be used to send state machine events back to the client.
- * For instance, a lock state machine might use a client's {@link io.atomix.protocols.raft.server.session.ServerSession}
+ * During command or scheduled callbacks, {@link RaftSessions} can be used to send state machine events back to the client.
+ * For instance, a lock state machine might use a client's {@link RaftSession}
  * to send a lock event to the client.
  * <pre>
  *   {@code
@@ -127,7 +128,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *   }
  *   }
  * </pre>
- * Attempts to {@link io.atomix.protocols.raft.server.session.ServerSession#publish(Object) publish}
+ * Attempts to {@link RaftSession#publish(Object) publish}
  * events during the execution will result in an {@link IllegalStateException}.
  * <p>
  * Even though state machines on multiple servers may appear to publish the same event, Copycat's protocol ensures that only
@@ -171,7 +172,7 @@ public abstract class RaftStateMachine implements Snapshottable {
   protected StateMachineExecutor executor;
   protected StateMachineContext context;
   protected Clock clock;
-  protected Sessions sessions;
+  protected RaftSessions sessions;
 
   protected RaftStateMachine(Serializer serializer) {
     this.serializer = serializer;
@@ -197,8 +198,8 @@ public abstract class RaftStateMachine implements Snapshottable {
     this.context = executor.context();
     this.clock = context.clock();
     this.sessions = context.sessions();
-    if (this instanceof SessionListener) {
-      executor.context().sessions().addListener((SessionListener) this);
+    if (this instanceof RaftSessionListener) {
+      executor.context().sessions().addListener((RaftSessionListener) this);
     }
     configure(executor);
   }

@@ -490,7 +490,7 @@ final class LeaderState extends ActiveState {
     logRequest(request);
 
     // Get the client's server session. If the session doesn't exist, return an unknown session error.
-    ServerSessionContext session = context.getStateMachine().getSessions().getSession(request.session());
+    RaftSessionContext session = context.getStateMachine().getSessions().getSession(request.session());
     if (session == null) {
       return CompletableFuture.completedFuture(logResponse(CommandResponse.builder()
           .withStatus(RaftResponse.Status.ERROR)

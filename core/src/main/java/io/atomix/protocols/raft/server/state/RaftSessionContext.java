@@ -18,7 +18,7 @@ package io.atomix.protocols.raft.server.state;
 import io.atomix.cluster.NodeId;
 import io.atomix.protocols.raft.protocol.PublishRequest;
 import io.atomix.protocols.raft.protocol.RaftServerProtocol;
-import io.atomix.protocols.raft.server.session.ServerSession;
+import io.atomix.protocols.raft.session.RaftSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,8 +40,8 @@ import static com.google.common.base.Preconditions.checkState;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-class ServerSessionContext implements ServerSession {
-  private static final Logger LOGGER = LoggerFactory.getLogger(ServerSessionContext.class);
+class RaftSessionContext implements RaftSession {
+  private static final Logger LOGGER = LoggerFactory.getLogger(RaftSessionContext.class);
   private final long id;
   private final NodeId node;
   private final String name;
@@ -65,7 +65,7 @@ class ServerSessionContext implements ServerSession {
   private EventHolder event;
   private final Set<Consumer<State>> changeListeners = new CopyOnWriteArraySet<>();
 
-  ServerSessionContext(long id, NodeId node, String name, String type, long timeout, ServerStateMachineExecutor executor, ServerContext server) {
+  RaftSessionContext(long id, NodeId node, String name, String type, long timeout, ServerStateMachineExecutor executor, ServerContext server) {
     this.id = id;
     this.node = node;
     this.name = name;
@@ -412,7 +412,7 @@ class ServerSessionContext implements ServerSession {
    * @param index The index to clear.
    * @return The server session.
    */
-  private ServerSessionContext clearEvents(long index) {
+  private RaftSessionContext clearEvents(long index) {
     if (index > completeIndex) {
       EventHolder event = events.peek();
       while (event != null && event.eventIndex <= index) {
@@ -431,7 +431,7 @@ class ServerSessionContext implements ServerSession {
    * @param index The index from which to resend events.
    * @return The server session.
    */
-  ServerSessionContext resendEvents(long index) {
+  RaftSessionContext resendEvents(long index) {
     clearEvents(index);
     for (EventHolder event : events) {
       sendEvent(event);
@@ -483,7 +483,7 @@ class ServerSessionContext implements ServerSession {
 
   @Override
   public boolean equals(Object object) {
-    return object instanceof ServerSession && ((ServerSession) object).id() == id;
+    return object instanceof RaftSession && ((RaftSession) object).id() == id;
   }
 
   @Override

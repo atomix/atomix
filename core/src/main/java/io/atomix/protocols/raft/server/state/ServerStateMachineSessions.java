@@ -15,9 +15,9 @@
  */
 package io.atomix.protocols.raft.server.state;
 
-import io.atomix.protocols.raft.server.session.ServerSession;
-import io.atomix.protocols.raft.server.session.SessionListener;
-import io.atomix.protocols.raft.server.session.Sessions;
+import io.atomix.protocols.raft.session.RaftSession;
+import io.atomix.protocols.raft.session.RaftSessionListener;
+import io.atomix.protocols.raft.session.RaftSessions;
 
 import java.util.HashSet;
 import java.util.Iterator;
@@ -28,10 +28,10 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * State machine sessions.
  */
-class ServerStateMachineSessions implements Sessions {
+class ServerStateMachineSessions implements RaftSessions {
   private final ServerSessionManager sessionManager;
-  final Map<Long, ServerSessionContext> sessions = new ConcurrentHashMap<>();
-  final Set<SessionListener> listeners = new HashSet<>();
+  final Map<Long, RaftSessionContext> sessions = new ConcurrentHashMap<>();
+  final Set<RaftSessionListener> listeners = new HashSet<>();
 
   public ServerStateMachineSessions(ServerSessionManager sessionManager) {
     this.sessionManager = sessionManager;
@@ -42,7 +42,7 @@ class ServerStateMachineSessions implements Sessions {
    *
    * @param session The session to add.
    */
-  void add(ServerSessionContext session) {
+  void add(RaftSessionContext session) {
     sessions.put(session.id(), session);
     sessionManager.registerSession(session);
   }
@@ -52,31 +52,31 @@ class ServerStateMachineSessions implements Sessions {
    *
    * @param session The session to remove.
    */
-  void remove(ServerSessionContext session) {
+  void remove(RaftSessionContext session) {
     sessions.remove(session.id());
     sessionManager.unregisterSession(session.id());
   }
 
   @Override
-  public ServerSession session(long sessionId) {
+  public RaftSession session(long sessionId) {
     return sessions.get(sessionId);
   }
 
   @Override
-  public Sessions addListener(SessionListener listener) {
+  public RaftSessions addListener(RaftSessionListener listener) {
     listeners.add(listener);
     return this;
   }
 
   @Override
-  public Sessions removeListener(SessionListener listener) {
+  public RaftSessions removeListener(RaftSessionListener listener) {
     listeners.remove(listener);
     return this;
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public Iterator<ServerSession> iterator() {
+  public Iterator<RaftSession> iterator() {
     return (Iterator) sessions.values().iterator();
   }
 }
