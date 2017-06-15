@@ -15,6 +15,9 @@
  */
 package io.atomix.protocols.raft.storage;
 
+import io.atomix.protocols.raft.storage.log.Log;
+import io.atomix.protocols.raft.storage.log.Segment;
+
 /**
  * {@link Log} storage level configuration values which control how logs are stored on disk or in memory.
  * <p>

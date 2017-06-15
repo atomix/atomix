@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.storage;
+package io.atomix.protocols.raft.storage.log;
 
-import io.atomix.protocols.raft.storage.entry.Entry;
-import io.atomix.protocols.raft.storage.util.StorageSerializer;
+import io.atomix.protocols.raft.storage.log.entry.Entry;
+import io.atomix.protocols.raft.storage.log.util.StorageSerializer;
 import io.atomix.util.buffer.BufferInput;
 import io.atomix.util.buffer.BufferOutput;
 

@@ -25,10 +25,10 @@ import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.protocol.VoteRequest;
 import io.atomix.protocols.raft.protocol.VoteResponse;
 import io.atomix.protocols.raft.RaftServer;
-import io.atomix.protocols.raft.storage.Indexed;
-import io.atomix.protocols.raft.storage.LogReader;
-import io.atomix.protocols.raft.storage.LogWriter;
-import io.atomix.protocols.raft.storage.entry.Entry;
+import io.atomix.protocols.raft.storage.log.Indexed;
+import io.atomix.protocols.raft.storage.log.LogReader;
+import io.atomix.protocols.raft.storage.log.LogWriter;
+import io.atomix.protocols.raft.storage.log.entry.Entry;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;

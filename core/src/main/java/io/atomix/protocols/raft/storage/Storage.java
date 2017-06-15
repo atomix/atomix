@@ -15,6 +15,10 @@
  */
 package io.atomix.protocols.raft.storage;
 
+import io.atomix.protocols.raft.storage.log.Log;
+import io.atomix.protocols.raft.storage.log.Segment;
+import io.atomix.protocols.raft.storage.log.SegmentDescriptor;
+import io.atomix.protocols.raft.storage.log.SegmentFile;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotFile;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotStore;
 import io.atomix.protocols.raft.storage.system.MetaStore;
@@ -149,7 +153,7 @@ public class Storage {
   /**
    * Returns the maximum number of entries per segment.
    * <p>
-   * The maximum entries per segment dictates the maximum number of {@link io.atomix.protocols.raft.storage.entry.Entry entries}
+   * The maximum entries per segment dictates the maximum number of {@link io.atomix.protocols.raft.storage.log.entry.Entry entries}
    * that are allowed to be stored in any {@link Segment} in a {@link Log}.
    *
    * @return The maximum number of entries per segment.
@@ -319,7 +323,7 @@ public class Storage {
     /**
      * Sets the log storage level, returning the builder for method chaining.
      * <p>
-     * The storage level indicates how individual {@link io.atomix.protocols.raft.storage.entry.Entry entries}
+     * The storage level indicates how individual {@link io.atomix.protocols.raft.storage.log.entry.Entry entries}
      * should be persisted in the log.
      *
      * @param storageLevel The log storage level.

@@ -13,41 +13,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.storage.entry;
+package io.atomix.protocols.raft.storage.log.entry;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
- * Base class for timestamped entries.
+ * Base class for session-related entries.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class TimestampedEntry<T extends TimestampedEntry<T>> extends Entry<T> {
-  protected final long timestamp;
+public abstract class SessionEntry<T extends SessionEntry<T>> extends TimestampedEntry<T> {
+  protected final long session;
 
-  protected TimestampedEntry(long timestamp) {
-    this.timestamp = timestamp;
+  protected SessionEntry(long timestamp, long session) {
+    super(timestamp);
+    this.session = session;
   }
 
   /**
-   * Returns the entry timestamp.
+   * Returns the session ID.
    *
-   * @return The entry timestamp.
+   * @return The session ID.
    */
-  public long timestamp() {
-    return timestamp;
+  public long session() {
+    return session;
   }
 
   @Override
   public String toString() {
     return toStringHelper(this)
         .add("timestamp", timestamp)
+        .add("session", session)
         .toString();
   }
 
   /**
-   * Timestamped entry serializer.
+   * Session entry serializer.
    */
-  public interface Serializer<T extends TimestampedEntry> extends Entry.Serializer<T> {
+  public interface Serializer<T extends SessionEntry> extends TimestampedEntry.Serializer<T> {
   }
 }

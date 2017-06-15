@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.storage;
+package io.atomix.protocols.raft.storage.log;
 
 import io.atomix.util.buffer.Buffer;
 import io.atomix.util.buffer.FileBuffer;

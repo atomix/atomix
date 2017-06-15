@@ -13,30 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.storage.entry;
+package io.atomix.protocols.raft.storage.log.entry;
+
+import io.atomix.util.ArraySizeHashPrinter;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
- * Base class for session-related entries.
+ * Represents a state machine query.
+ * <p>
+ * The {@code QueryEntry} is a special entry that is typically not ever written to the Raft log.
+ * Query entries are simply used to represent the context within which a query is applied to the
+ * state machine. Query entry {@link #sequence() sequence} numbers and indexes
+ * are used to sequence queries as they're applied to the user state machine.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class SessionEntry<T extends SessionEntry<T>> extends TimestampedEntry<T> {
-  protected final long session;
+public class QueryEntry extends OperationEntry<QueryEntry> {
 
-  protected SessionEntry(long timestamp, long session) {
-    super(timestamp);
-    this.session = session;
+  public QueryEntry(long timestamp, long session, long sequence, byte[] bytes) {
+    super(timestamp, session, sequence, bytes);
   }
 
-  /**
-   * Returns the session ID.
-   *
-   * @return The session ID.
-   */
-  public long session() {
-    return session;
+  @Override
+  public Type<QueryEntry> type() {
+    return Type.QUERY;
   }
 
   @Override
@@ -44,12 +45,8 @@ public abstract class SessionEntry<T extends SessionEntry<T>> extends Timestampe
     return toStringHelper(this)
         .add("timestamp", timestamp)
         .add("session", session)
+        .add("sequence", sequence)
+        .add("query", ArraySizeHashPrinter.of(bytes))
         .toString();
-  }
-
-  /**
-   * Session entry serializer.
-   */
-  public interface Serializer<T extends SessionEntry> extends TimestampedEntry.Serializer<T> {
   }
 }

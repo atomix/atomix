@@ -15,9 +15,9 @@
  */
 package io.atomix.protocols.raft.cluster.impl;
 
-import io.atomix.protocols.raft.storage.Log;
-import io.atomix.protocols.raft.storage.LogReader;
-import io.atomix.protocols.raft.storage.Reader;
+import io.atomix.protocols.raft.storage.log.Log;
+import io.atomix.protocols.raft.storage.log.LogReader;
+import io.atomix.protocols.raft.storage.log.Reader;
 import io.atomix.util.concurrent.ThreadContext;
 
 import static com.google.common.base.MoreObjects.toStringHelper;

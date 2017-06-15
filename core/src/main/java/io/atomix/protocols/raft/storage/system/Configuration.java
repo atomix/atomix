@@ -50,7 +50,7 @@ public class Configuration {
   /**
    * Returns the configuration index.
    * <p>
-   * The index is the index of the {@link io.atomix.protocols.raft.storage.entry.ConfigurationEntry ConfigurationEntry}
+   * The index is the index of the {@link io.atomix.protocols.raft.storage.log.entry.ConfigurationEntry ConfigurationEntry}
    * which resulted in this configuration.
    *
    * @return The configuration index.

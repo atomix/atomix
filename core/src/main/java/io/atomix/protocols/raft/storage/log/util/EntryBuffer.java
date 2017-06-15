@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.protocols.raft.storage.util;
+package io.atomix.protocols.raft.storage.log.util;
 
-import io.atomix.protocols.raft.storage.Indexed;
-import io.atomix.protocols.raft.storage.entry.Entry;
+import io.atomix.protocols.raft.storage.log.Indexed;
+import io.atomix.protocols.raft.storage.log.entry.Entry;
 
 /**
  * Log entry buffer.

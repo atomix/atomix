@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.storage.entry;
+package io.atomix.protocols.raft.storage.log.entry;
 
-import io.atomix.protocols.raft.storage.util.StorageSerializer;
+import io.atomix.protocols.raft.storage.log.Log;
+import io.atomix.protocols.raft.storage.log.util.StorageSerializer;
 
 /**
- * Stores a state change in a {@link io.atomix.protocols.raft.storage.Log}.
+ * Stores a state change in a {@link Log}.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
