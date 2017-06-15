@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.storage.snapshot;
 
-import io.atomix.protocols.raft.server.RaftServer;
+import io.atomix.protocols.raft.RaftServer;
 import io.atomix.util.buffer.Buffer;
 import io.atomix.util.buffer.BufferOutput;
 import io.atomix.util.buffer.Bytes;

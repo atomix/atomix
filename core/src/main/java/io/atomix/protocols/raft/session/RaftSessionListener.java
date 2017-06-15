@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.session;
 
-import io.atomix.protocols.raft.server.RaftStateMachine;
+import io.atomix.protocols.raft.RaftStateMachine;
 
 /**
  * Support for listening for state changes in server sessions.

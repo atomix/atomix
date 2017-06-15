@@ -16,7 +16,7 @@
 package io.atomix.protocols.raft.cluster;
 
 import io.atomix.cluster.NodeId;
-import io.atomix.protocols.raft.server.RaftServer;
+import io.atomix.protocols.raft.RaftServer;
 
 import java.util.Arrays;
 import java.util.Collection;

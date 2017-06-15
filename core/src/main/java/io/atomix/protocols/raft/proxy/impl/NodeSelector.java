@@ -16,7 +16,7 @@
 package io.atomix.protocols.raft.proxy.impl;
 
 import io.atomix.cluster.NodeId;
-import io.atomix.protocols.raft.client.CommunicationStrategy;
+import io.atomix.protocols.raft.CommunicationStrategy;
 
 import java.util.ArrayList;
 import java.util.Collection;

@@ -18,8 +18,8 @@ package io.atomix.protocols.raft.proxy;
 import io.atomix.protocols.raft.RaftCommand;
 import io.atomix.protocols.raft.RaftOperation;
 import io.atomix.protocols.raft.RaftQuery;
-import io.atomix.protocols.raft.client.CommunicationStrategies;
-import io.atomix.protocols.raft.client.CommunicationStrategy;
+import io.atomix.protocols.raft.CommunicationStrategies;
+import io.atomix.protocols.raft.CommunicationStrategy;
 import io.atomix.util.serializer.KryoNamespaces;
 import io.atomix.util.serializer.Serializer;
 

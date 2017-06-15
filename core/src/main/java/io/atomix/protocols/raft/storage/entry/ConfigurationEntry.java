@@ -17,7 +17,7 @@ package io.atomix.protocols.raft.storage.entry;
 
 import io.atomix.cluster.NodeId;
 import io.atomix.protocols.raft.cluster.RaftMember;
-import io.atomix.protocols.raft.server.state.RaftMemberState;
+import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
 import io.atomix.util.buffer.BufferInput;
 import io.atomix.util.buffer.BufferOutput;
 
@@ -95,7 +95,7 @@ public class ConfigurationEntry extends TimestampedEntry<ConfigurationEntry> {
         RaftMember.Type memberType = RaftMember.Type.values()[input.readByte()];
         RaftMember.Status memberStatus = RaftMember.Status.values()[input.readByte()];
         Instant updated = Instant.ofEpochMilli(input.readLong());
-        members.add(new RaftMemberState(id, memberType, memberStatus, updated));
+        members.add(new DefaultRaftMember(id, memberType, memberStatus, updated));
       }
       return new ConfigurationEntry(timestamp, members);
     }
