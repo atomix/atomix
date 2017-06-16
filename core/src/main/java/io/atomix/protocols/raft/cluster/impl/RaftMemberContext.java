@@ -15,9 +15,8 @@
  */
 package io.atomix.protocols.raft.cluster.impl;
 
-import io.atomix.protocols.raft.storage.log.Log;
-import io.atomix.protocols.raft.storage.log.LogReader;
-import io.atomix.protocols.raft.storage.log.Reader;
+import io.atomix.protocols.raft.storage.log.RaftLog;
+import io.atomix.protocols.raft.storage.log.RaftLogReader;
 import io.atomix.util.concurrent.ThreadContext;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -47,7 +46,7 @@ public final class RaftMemberContext {
   private boolean configuring;
   private boolean installing;
   private volatile int failures;
-  private volatile LogReader reader;
+  private volatile RaftLogReader reader;
   private final TimeBuffer timeBuffer = new TimeBuffer(8);
 
   RaftMemberContext(DefaultRaftMember member, RaftClusterContext cluster, ThreadContext context) {
@@ -58,7 +57,7 @@ public final class RaftMemberContext {
   /**
    * Resets the member state.
    */
-  public void resetState(Log log) {
+  public void resetState(RaftLog log) {
     nextSnapshotIndex = 0;
     nextSnapshotOffset = 0;
     matchIndex = 0;
@@ -74,10 +73,10 @@ public final class RaftMemberContext {
 
     switch (member.type()) {
       case PASSIVE:
-        reader = log.createReader(log.writer().lastIndex() + 1, Reader.Mode.COMMITS);
+        reader = log.createReader(log.writer().lastIndex() + 1, RaftLogReader.Mode.COMMITS);
         break;
       case ACTIVE:
-        reader = log.createReader(log.writer().lastIndex() + 1, Reader.Mode.ALL);
+        reader = log.createReader(log.writer().lastIndex() + 1, RaftLogReader.Mode.ALL);
         break;
     }
   }
@@ -105,7 +104,7 @@ public final class RaftMemberContext {
    *
    * @return The member log reader.
    */
-  public LogReader getLogReader() {
+  public RaftLogReader getLogReader() {
     return reader;
   }
 

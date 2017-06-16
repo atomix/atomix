@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.raft.roles;
 
+import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
 import io.atomix.protocols.raft.cluster.impl.RaftMemberContext;
 import io.atomix.protocols.raft.impl.RaftServerContext;
@@ -23,9 +24,9 @@ import io.atomix.protocols.raft.protocol.AppendResponse;
 import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.protocol.VoteRequest;
 import io.atomix.protocols.raft.protocol.VoteResponse;
-import io.atomix.protocols.raft.RaftServer;
-import io.atomix.protocols.raft.storage.log.Indexed;
+import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.protocols.raft.utils.Quorum;
+import io.atomix.storage.journal.Indexed;
 import io.atomix.util.concurrent.Scheduled;
 
 import java.time.Duration;
@@ -127,11 +128,11 @@ public final class CandidateRole extends ActiveRole {
 
     // First, load the last log entry to get its term. We load the entry
     // by its index since the index is required by the protocol.
-    final Indexed<?> lastEntry = context.getLogWriter().lastEntry();
+    final Indexed<RaftLogEntry> lastEntry = context.getLogWriter().lastEntry();
 
     final long lastTerm;
     if (lastEntry != null) {
-      lastTerm = lastEntry.term();
+      lastTerm = lastEntry.entry().term();
     } else {
       lastTerm = 0;
     }

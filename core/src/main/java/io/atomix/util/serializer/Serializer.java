@@ -40,22 +40,21 @@ public interface Serializer {
   <T> T decode(byte[] bytes);
 
   /**
-   * Creates a new Serializer instance from a KryoNamespace.
+   * Creates a new Serializer instance from a Namespace.
    *
-   * @param kryo kryo namespace
+   * @param namespace serializer namespace
    * @return Serializer instance
    */
-  static Serializer using(Namespace kryo) {
+  static Serializer using(Namespace namespace) {
     return new Serializer() {
-
       @Override
       public <T> byte[] encode(T object) {
-        return kryo.serialize(object);
+        return namespace.serialize(object);
       }
 
       @Override
       public <T> T decode(byte[] bytes) {
-        return kryo.deserialize(bytes);
+        return namespace.deserialize(bytes);
       }
     };
   }

@@ -15,7 +15,7 @@
  */
 
 /**
- * {@link io.atomix.protocols.raft.storage.log.entry.Entry} implementations used internally to replicate
+ * {@link io.atomix.protocols.raft.storage.log.entry.RaftLogEntry} implementations used internally to replicate
  * state changes, sessions, and configuration changes in the cluster.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>

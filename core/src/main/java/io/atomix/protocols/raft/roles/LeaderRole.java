@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.raft.roles;
 
+import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
 import io.atomix.protocols.raft.cluster.impl.RaftMemberContext;
@@ -48,10 +49,8 @@ import io.atomix.protocols.raft.protocol.ReconfigureRequest;
 import io.atomix.protocols.raft.protocol.ReconfigureResponse;
 import io.atomix.protocols.raft.protocol.VoteRequest;
 import io.atomix.protocols.raft.protocol.VoteResponse;
-import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.session.impl.RaftSessionContext;
-import io.atomix.protocols.raft.storage.log.Indexed;
-import io.atomix.protocols.raft.storage.log.LogWriter;
+import io.atomix.protocols.raft.storage.log.RaftLogWriter;
 import io.atomix.protocols.raft.storage.log.entry.CloseSessionEntry;
 import io.atomix.protocols.raft.storage.log.entry.CommandEntry;
 import io.atomix.protocols.raft.storage.log.entry.ConfigurationEntry;
@@ -60,7 +59,9 @@ import io.atomix.protocols.raft.storage.log.entry.KeepAliveEntry;
 import io.atomix.protocols.raft.storage.log.entry.MetadataEntry;
 import io.atomix.protocols.raft.storage.log.entry.OpenSessionEntry;
 import io.atomix.protocols.raft.storage.log.entry.QueryEntry;
+import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.protocols.raft.storage.system.Configuration;
+import io.atomix.storage.journal.Indexed;
 import io.atomix.util.concurrent.Futures;
 import io.atomix.util.concurrent.Scheduled;
 
@@ -121,13 +122,13 @@ public final class LeaderRole extends ActiveRole {
   private void appendInitialEntries() {
     final long term = context.getTerm();
 
-    final LogWriter writer = context.getLogWriter();
+    final RaftLogWriter writer = context.getLogWriter();
+    writer.lock().lock();
     try {
-      writer.lock();
-      Indexed<InitializeEntry> indexed = writer.append(term, new InitializeEntry(appender.time()));
+      Indexed<RaftLogEntry> indexed = writer.append(new InitializeEntry(term, appender.time()));
       LOGGER.debug("{} - Appended {}", context.getCluster().member().id(), indexed.index());
     } finally {
-      writer.unlock();
+      writer.lock().unlock();
     }
 
     // Append a configuration entry to propagate the leader's cluster configuration.
@@ -208,20 +209,20 @@ public final class LeaderRole extends ActiveRole {
 
     final long term = context.getTerm();
 
-    final LogWriter writer = context.getLogWriter();
+    final RaftLogWriter writer = context.getLogWriter();
     final Indexed<ConfigurationEntry> entry;
+    writer.lock().lock();
     try {
-      writer.lock();
-      entry = writer.append(term, new ConfigurationEntry(System.currentTimeMillis(), members));
+      entry = writer.append(new ConfigurationEntry(term, System.currentTimeMillis(), members));
       LOGGER.debug("{} - Appended {}", context.getCluster().member().id(), entry);
     } finally {
-      writer.unlock();
+      writer.lock().unlock();
     }
 
     // Store the index of the configuration entry in order to prevent other configurations from
     // being logged and committed concurrently. This is an important safety property of Raft.
     configuring = entry.index();
-    context.getClusterState().configure(new Configuration(entry.index(), entry.term(), entry.entry().timestamp(), entry.entry().members()));
+    context.getClusterState().configure(new Configuration(entry.index(), entry.entry().term(), entry.entry().timestamp(), entry.entry().members()));
 
     return appender.appendEntries(entry.index()).whenComplete((commitIndex, commitError) -> {
       context.checkThread();
@@ -469,8 +470,7 @@ public final class LeaderRole extends ActiveRole {
     CompletableFuture<MetadataResponse> future = new CompletableFuture<>();
     Indexed<MetadataEntry> entry = new Indexed<>(
         context.getStateMachine().getLastApplied(),
-        context.getTerm(),
-        new MetadataEntry(System.currentTimeMillis(), request.session()), 0);
+        new MetadataEntry(context.getTerm(), System.currentTimeMillis(), request.session()), 0);
     context.getStateMachine().<RaftMetadataResult>apply(entry).whenComplete((result, error) -> {
       context.checkThread();
       if (isOpen()) {
@@ -524,13 +524,13 @@ public final class LeaderRole extends ActiveRole {
 
     final Indexed<CommandEntry> entry;
 
-    final LogWriter writer = context.getLogWriter();
+    final RaftLogWriter writer = context.getLogWriter();
+    writer.lock().lock();
     try {
-      writer.lock();
-      entry = writer.append(term, new CommandEntry(timestamp, request.session(), request.sequence(), request.bytes()));
+      entry = writer.append(new CommandEntry(term, timestamp, request.session(), request.sequence(), request.bytes()));
       LOGGER.debug("{} - Appended {}", context.getCluster().member().id(), entry);
     } finally {
-      writer.unlock();
+      writer.lock().unlock();
     }
 
     // Replicate the command to followers.
@@ -564,8 +564,8 @@ public final class LeaderRole extends ActiveRole {
 
     final Indexed<QueryEntry> entry = new Indexed<>(
         request.index(),
-        context.getTerm(),
         new QueryEntry(
+            context.getTerm(),
             System.currentTimeMillis(),
             request.session(),
             request.sequence(),
@@ -632,13 +632,13 @@ public final class LeaderRole extends ActiveRole {
     logRequest(request);
 
     final Indexed<OpenSessionEntry> entry;
-    final LogWriter writer = context.getLogWriter();
+    final RaftLogWriter writer = context.getLogWriter();
+    writer.lock().lock();
     try {
-      writer.lock();
-      entry = writer.append(term, new OpenSessionEntry(timestamp, request.node(), request.name(), request.stateMachine(), timeout));
+      entry = writer.append(new OpenSessionEntry(term, timestamp, request.node(), request.name(), request.stateMachine(), timeout));
       LOGGER.debug("{} - Appended {}", context.getCluster().member().id(), entry);
     } finally {
-      writer.unlock();
+      writer.lock().unlock();
     }
 
     CompletableFuture<OpenSessionResponse> future = new CompletableFuture<>();
@@ -693,13 +693,13 @@ public final class LeaderRole extends ActiveRole {
     logRequest(request);
 
     final Indexed<KeepAliveEntry> entry;
-    final LogWriter writer = context.getLogWriter();
+    final RaftLogWriter writer = context.getLogWriter();
+    writer.lock().lock();
     try {
-      writer.lock();
-      entry = writer.append(term, new KeepAliveEntry(timestamp, request.sessionIds(), request.commandSequences(), request.eventIndexes()));
+      entry = writer.append(new KeepAliveEntry(term, timestamp, request.sessionIds(), request.commandSequences(), request.eventIndexes()));
       LOGGER.debug("{} - Appended {}", context.getCluster().member().id(), entry);
     } finally {
-      writer.unlock();
+      writer.lock().unlock();
     }
 
     CompletableFuture<KeepAliveResponse> future = new CompletableFuture<>();
@@ -760,13 +760,13 @@ public final class LeaderRole extends ActiveRole {
     logRequest(request);
 
     final Indexed<CloseSessionEntry> entry;
-    final LogWriter writer = context.getLogWriter();
+    final RaftLogWriter writer = context.getLogWriter();
+    writer.lock().lock();
     try {
-      writer.lock();
-      entry = writer.append(term, new CloseSessionEntry(timestamp, request.session()));
+      entry = writer.append(new CloseSessionEntry(term, timestamp, request.session()));
       LOGGER.debug("{} - Appended {}", context.getCluster().member().id(), entry);
     } finally {
-      writer.unlock();
+      writer.lock().unlock();
     }
 
     CompletableFuture<CloseSessionResponse> future = new CompletableFuture<>();

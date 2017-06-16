@@ -16,6 +16,7 @@
 package io.atomix.protocols.raft.storage.snapshot;
 
 import io.atomix.protocols.raft.RaftServer;
+import io.atomix.storage.StorageLevel;
 import io.atomix.util.buffer.Buffer;
 import io.atomix.util.buffer.BufferOutput;
 import io.atomix.util.buffer.Bytes;
@@ -30,7 +31,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * <p>
  * This class provides the primary interface for writing snapshot buffers to disk or memory.
  * Snapshot bytes are written to an underlying {@link Buffer} which is backed by either memory
- * or disk based on the configured {@link io.atomix.protocols.raft.storage.StorageLevel}.
+ * or disk based on the configured {@link StorageLevel}.
  * <p>
  * In addition to standard {@link BufferOutput} methods, snapshot readers support writing serializable objects
  * to the snapshot via the {@link #writeObject(Object)} method. Serializable types must be registered on the

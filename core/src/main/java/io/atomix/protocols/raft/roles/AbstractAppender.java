@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.raft.roles;
 
+import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
 import io.atomix.protocols.raft.cluster.impl.RaftMemberContext;
 import io.atomix.protocols.raft.impl.RaftServerContext;
@@ -25,12 +26,11 @@ import io.atomix.protocols.raft.protocol.ConfigureResponse;
 import io.atomix.protocols.raft.protocol.InstallRequest;
 import io.atomix.protocols.raft.protocol.InstallResponse;
 import io.atomix.protocols.raft.protocol.RaftResponse;
-import io.atomix.protocols.raft.RaftServer;
-import io.atomix.protocols.raft.storage.log.Indexed;
-import io.atomix.protocols.raft.storage.log.LogReader;
-import io.atomix.protocols.raft.storage.log.entry.Entry;
+import io.atomix.protocols.raft.storage.log.RaftLogReader;
+import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.protocols.raft.storage.snapshot.Snapshot;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotReader;
+import io.atomix.storage.journal.Indexed;
 import io.atomix.util.serializer.KryoNamespaces;
 import io.atomix.util.serializer.Serializer;
 import org.slf4j.Logger;
@@ -73,10 +73,10 @@ abstract class AbstractAppender implements AutoCloseable {
   protected AppendRequest buildAppendRequest(RaftMemberContext member, long lastIndex) {
     member.getThreadContext().checkThread();
 
-    final LogReader reader = member.getLogReader();
+    final RaftLogReader reader = member.getLogReader();
 
     // Lock the entry reader.
-    reader.lock();
+    reader.lock().lock();
     try {
       // If the log is empty then send an empty commit.
       // If the next index hasn't yet been set then we send an empty commit first.
@@ -90,7 +90,7 @@ abstract class AbstractAppender implements AutoCloseable {
       }
     } finally {
       // Unlock the entry reader.
-      reader.unlock();
+      reader.lock().unlock();
     }
   }
 
@@ -103,17 +103,17 @@ abstract class AbstractAppender implements AutoCloseable {
   protected AppendRequest buildAppendEmptyRequest(RaftMemberContext member) {
     member.getThreadContext().checkThread();
 
-    final LogReader reader = member.getLogReader();
+    final RaftLogReader reader = member.getLogReader();
 
     // Read the previous entry from the reader.
-    Indexed<? extends Entry<?>> prevEntry = reader.currentEntry();
+    Indexed<RaftLogEntry> prevEntry = reader.currentEntry();
 
     DefaultRaftMember leader = server.getLeader();
     return AppendRequest.builder()
         .withTerm(server.getTerm())
         .withLeader(leader != null ? leader.id() : null)
         .withLogIndex(prevEntry != null ? prevEntry.index() : 0)
-        .withLogTerm(prevEntry != null ? prevEntry.term() : 0)
+        .withLogTerm(prevEntry != null ? prevEntry.entry().term() : 0)
         .withEntries(Collections.EMPTY_LIST)
         .withCommitIndex(server.getCommitIndex())
         .build();
@@ -126,20 +126,20 @@ abstract class AbstractAppender implements AutoCloseable {
   protected AppendRequest buildAppendEntriesRequest(RaftMemberContext member, long lastIndex) {
     member.getThreadContext().checkThread();
 
-    final LogReader reader = member.getLogReader();
+    final RaftLogReader reader = member.getLogReader();
 
-    final Indexed<? extends Entry<?>> prevEntry = reader.currentEntry();
+    final Indexed<RaftLogEntry> prevEntry = reader.currentEntry();
 
     final DefaultRaftMember leader = server.getLeader();
     AppendRequest.Builder builder = AppendRequest.builder()
         .withTerm(server.getTerm())
         .withLeader(leader != null ? leader.id() : null)
         .withLogIndex(prevEntry != null ? prevEntry.index() : 0)
-        .withLogTerm(prevEntry != null ? prevEntry.term() : 0)
+        .withLogTerm(prevEntry != null ? prevEntry.entry().term() : 0)
         .withCommitIndex(server.getCommitIndex());
 
     // Build a list of entries to send to the member.
-    final List<Indexed<? extends Entry<?>>> entries = new ArrayList<>();
+    final List<Indexed<RaftLogEntry>> entries = new ArrayList<>();
 
     // Build a list of entries up to the MAX_BATCH_SIZE. Note that entries in the log may
     // be null if they've been compacted and the member to which we're sending entries is just
@@ -162,7 +162,7 @@ abstract class AbstractAppender implements AutoCloseable {
       }
 
       // Otherwise, read the next entry and add it to the batch.
-      Indexed<? extends Entry<?>> entry = reader.next();
+      Indexed<RaftLogEntry> entry = reader.next();
       entries.add(entry);
       size += entry.size();
       if (nextIndex == lastIndex || size >= MAX_BATCH_SIZE) {
@@ -340,8 +340,8 @@ abstract class AbstractAppender implements AutoCloseable {
    * Resets the next index when a response fails.
    */
   protected void resetNextIndex(RaftMemberContext member) {
-    final LogReader reader = member.getLogReader();
-    reader.lock();
+    final RaftLogReader reader = member.getLogReader();
+    reader.lock().lock();
     try {
       if (member.getMatchIndex() != 0) {
         reader.reset(member.getMatchIndex());
@@ -350,7 +350,7 @@ abstract class AbstractAppender implements AutoCloseable {
       }
       log.trace("{} - Reset next index for {} to {} + 1", server.getCluster().member().id(), member, member.getMatchIndex());
     } finally {
-      reader.unlock();
+      reader.lock().unlock();
     }
   }
 

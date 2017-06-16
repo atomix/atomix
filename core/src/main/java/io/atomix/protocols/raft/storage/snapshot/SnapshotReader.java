@@ -16,6 +16,7 @@
 package io.atomix.protocols.raft.storage.snapshot;
 
 import io.atomix.protocols.raft.RaftServer;
+import io.atomix.storage.StorageLevel;
 import io.atomix.util.buffer.Buffer;
 import io.atomix.util.buffer.BufferInput;
 import io.atomix.util.buffer.Bytes;
@@ -30,7 +31,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * <p>
  * This class provides the primary interface for reading snapshot buffers from disk or memory.
  * Snapshot bytes are read from an underlying {@link Buffer} which is backed by either memory
- * or disk based on the configured {@link io.atomix.protocols.raft.storage.StorageLevel}.
+ * or disk based on the configured {@link StorageLevel}.
  * <p>
  * In addition to standard {@link BufferInput} methods, snapshot readers support reading serializable objects
  * from the snapshot via the {@link #readObject()} method. Serializable types must be registered on the

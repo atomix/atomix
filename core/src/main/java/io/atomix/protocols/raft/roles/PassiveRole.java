@@ -29,13 +29,13 @@ import io.atomix.protocols.raft.protocol.OperationResponse;
 import io.atomix.protocols.raft.protocol.QueryRequest;
 import io.atomix.protocols.raft.protocol.QueryResponse;
 import io.atomix.protocols.raft.protocol.RaftResponse;
-import io.atomix.protocols.raft.storage.log.Indexed;
-import io.atomix.protocols.raft.storage.log.LogReader;
-import io.atomix.protocols.raft.storage.log.LogWriter;
-import io.atomix.protocols.raft.storage.log.entry.Entry;
+import io.atomix.protocols.raft.storage.log.RaftLogReader;
+import io.atomix.protocols.raft.storage.log.RaftLogWriter;
 import io.atomix.protocols.raft.storage.log.entry.QueryEntry;
+import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.protocols.raft.storage.snapshot.Snapshot;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotWriter;
+import io.atomix.storage.journal.Indexed;
 import io.atomix.util.serializer.KryoNamespaces;
 import io.atomix.util.serializer.Serializer;
 
@@ -74,12 +74,12 @@ public class PassiveRole extends ReserveRole {
    */
   private void truncateUncommittedEntries() {
     if (type() == RaftServer.Role.PASSIVE) {
-      final LogWriter writer = context.getLogWriter();
-      writer.lock();
+      final RaftLogWriter writer = context.getLogWriter();
+      writer.lock().lock();
       try {
         writer.truncate(context.getCommitIndex());
       } finally {
-        writer.unlock();
+        writer.lock().unlock();
       }
     }
   }
@@ -144,14 +144,14 @@ public class PassiveRole extends ReserveRole {
     long commitIndex = Math.max(context.getCommitIndex(), Math.min(request.commitIndex(), lastEntryIndex));
 
     // Get the server log reader/writer.
-    final LogReader reader = context.getLogReader();
-    final LogWriter writer = context.getLogWriter();
+    final RaftLogReader reader = context.getLogReader();
+    final RaftLogWriter writer = context.getLogWriter();
 
     // If the request entries are non-empty, write them to the log.
     if (!request.entries().isEmpty()) {
-      writer.lock();
+      writer.lock().lock();
       try {
-        for (Indexed<? extends Entry> entry : request.entries()) {
+        for (Indexed<RaftLogEntry> entry : request.entries()) {
           // If the entry index is greater than the commitIndex, break the loop.
           if (entry.index() > commitIndex) {
             break;
@@ -160,14 +160,14 @@ public class PassiveRole extends ReserveRole {
           // Read the existing entry from the log. If the entry does not exist in the log,
           // append it. If the entry's term is different than the term of the entry in the log,
           // overwrite the entry in the log. This will force the log to be truncated if necessary.
-          Indexed<? extends Entry<?>> existing = reader.get(entry.index());
-          if (existing == null || existing.term() != entry.term()) {
+          Indexed<? extends RaftLogEntry> existing = reader.get(entry.index());
+          if (existing == null || existing.entry().term() != entry.entry().term()) {
             writer.append(entry);
             LOGGER.debug("{} - Appended {}", context.getCluster().member().id(), entry);
           }
         }
       } finally {
-        writer.unlock();
+        writer.lock().unlock();
       }
     }
 
@@ -215,8 +215,8 @@ public class PassiveRole extends ReserveRole {
 
       final Indexed<QueryEntry> entry = new Indexed<>(
           request.index(),
-          context.getTerm(),
           new QueryEntry(
+              context.getTerm(),
               System.currentTimeMillis(),
               request.session(),
               request.sequence(),

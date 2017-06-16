@@ -15,7 +15,9 @@
  */
 package io.atomix.protocols.raft.storage.log.entry;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import io.atomix.util.ArraySizeHashPrinter;
+
+import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
  * Stores a state machine operation.
@@ -28,14 +30,14 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class OperationEntry<T extends OperationEntry<T>> extends SessionEntry<T> {
+public abstract class OperationEntry extends SessionEntry {
   protected final long sequence;
   protected final byte[] bytes;
 
-  protected OperationEntry(long timestamp, long session, long sequence, byte[] bytes) {
-    super(timestamp, session);
+  public OperationEntry(long term, long timestamp, long session, long sequence, byte[] bytes) {
+    super(term, timestamp, session);
     this.sequence = sequence;
-    this.bytes = checkNotNull(bytes, "bytes cannot be null");
+    this.bytes = bytes;
   }
 
   /**
@@ -56,9 +58,14 @@ public abstract class OperationEntry<T extends OperationEntry<T>> extends Sessio
     return sequence;
   }
 
-  /**
-   * Operation entry serializer.
-   */
-  public interface Serializer<T extends OperationEntry> extends SessionEntry.Serializer<T> {
+  @Override
+  public String toString() {
+    return toStringHelper(this)
+        .add("term", term)
+        .add("timestamp", timestamp)
+        .add("session", session)
+        .add("sequence", sequence)
+        .add("operation", ArraySizeHashPrinter.of(bytes))
+        .toString();
   }
 }

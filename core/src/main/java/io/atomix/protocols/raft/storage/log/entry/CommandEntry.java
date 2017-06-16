@@ -16,8 +16,6 @@
 package io.atomix.protocols.raft.storage.log.entry;
 
 import io.atomix.util.ArraySizeHashPrinter;
-import io.atomix.util.buffer.BufferInput;
-import io.atomix.util.buffer.BufferOutput;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
@@ -29,43 +27,19 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class CommandEntry extends OperationEntry<CommandEntry> {
-
-  public CommandEntry(long timestamp, long session, long sequence, byte[] bytes) {
-    super(timestamp, session, sequence, bytes);
-  }
-
-  @Override
-  public Type<CommandEntry> type() {
-    return Type.COMMAND;
+public class CommandEntry extends OperationEntry {
+  public CommandEntry(long term, long timestamp, long session, long sequence, byte[] bytes) {
+    super(term, timestamp, session, sequence, bytes);
   }
 
   @Override
   public String toString() {
     return toStringHelper(this)
+        .add("term", term)
+        .add("timestamp", timestamp)
         .add("session", session)
         .add("sequence", sequence)
-        .add("timestamp", timestamp)
         .add("command", ArraySizeHashPrinter.of(bytes))
         .toString();
-  }
-
-  /**
-   * Command entry serializer.
-   */
-  public static class Serializer implements OperationEntry.Serializer<CommandEntry> {
-    @Override
-    public void writeObject(BufferOutput output, CommandEntry entry) {
-      output.writeLong(entry.timestamp);
-      output.writeLong(entry.session);
-      output.writeLong(entry.sequence);
-      output.writeInt(entry.bytes.length);
-      output.write(entry.bytes);
-    }
-
-    @Override
-    public CommandEntry readObject(BufferInput input, Class<CommandEntry> type) {
-      return new CommandEntry(input.readLong(), input.readLong(), input.readLong(), input.readBytes(input.readInt()));
-    }
   }
 }

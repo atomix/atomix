@@ -16,8 +16,6 @@
 package io.atomix.protocols.raft.storage.log.entry;
 
 import io.atomix.util.ArraySizeHashPrinter;
-import io.atomix.util.buffer.BufferInput;
-import io.atomix.util.buffer.BufferOutput;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
@@ -26,21 +24,16 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class KeepAliveEntry extends TimestampedEntry<KeepAliveEntry> {
+public class KeepAliveEntry extends TimestampedEntry {
   private final long[] sessionIds;
   private final long[] commandSequences;
   private final long[] eventIndexes;
 
-  public KeepAliveEntry(long timestamp, long[] sessionIds, long[] commandSequences, long[] eventIndexes) {
-    super(timestamp);
+  public KeepAliveEntry(long term, long timestamp, long[] sessionIds, long[] commandSequences, long[] eventIndexes) {
+    super(term, timestamp);
     this.sessionIds = sessionIds;
     this.commandSequences = commandSequences;
     this.eventIndexes = eventIndexes;
-  }
-
-  @Override
-  public Type<KeepAliveEntry> type() {
-    return Type.KEEP_ALIVE;
   }
 
   /**
@@ -73,59 +66,11 @@ public class KeepAliveEntry extends TimestampedEntry<KeepAliveEntry> {
   @Override
   public String toString() {
     return toStringHelper(this)
+        .add("term", term)
+        .add("timestamp", timestamp)
         .add("sessionIds", ArraySizeHashPrinter.of(sessionIds))
         .add("commandSequences", ArraySizeHashPrinter.of(commandSequences))
         .add("eventIndexes", ArraySizeHashPrinter.of(eventIndexes))
-        .add("timestamp", timestamp)
         .toString();
-  }
-
-  /**
-   * Keep-alive entry serializer.
-   */
-  public static class Serializer implements TimestampedEntry.Serializer<KeepAliveEntry> {
-    @Override
-    public void writeObject(BufferOutput output, KeepAliveEntry entry) {
-      output.writeLong(entry.timestamp);
-
-      output.writeInt(entry.sessionIds.length);
-      for (long sessionId : entry.sessionIds) {
-        output.writeLong(sessionId);
-      }
-
-      output.writeInt(entry.commandSequences.length);
-      for (long commandSequence : entry.commandSequences) {
-        output.writeLong(commandSequence);
-      }
-
-      output.writeInt(entry.eventIndexes.length);
-      for (long eventIndex : entry.eventIndexes) {
-        output.writeLong(eventIndex);
-      }
-    }
-
-    @Override
-    public KeepAliveEntry readObject(BufferInput input, Class<KeepAliveEntry> type) {
-      long timestamp = input.readLong();
-
-      int sessionsLength = input.readInt();
-      long[] sessionIds = new long[sessionsLength];
-      for (int i = 0; i < sessionsLength; i++) {
-        sessionIds[i] = input.readLong();
-      }
-
-      int commandSequencesLength = input.readInt();
-      long[] commandSequences = new long[commandSequencesLength];
-      for (int i = 0; i < commandSequencesLength; i++) {
-        commandSequences[i] = input.readLong();
-      }
-
-      int eventIndexesLength = input.readInt();
-      long[] eventIndexes = new long[eventIndexesLength];
-      for (int i = 0; i < eventIndexesLength; i++) {
-        eventIndexes[i] = input.readLong();
-      }
-      return new KeepAliveEntry(timestamp, sessionIds, commandSequences, eventIndexes);
-    }
   }
 }

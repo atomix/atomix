@@ -13,28 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.storage.log;
-
-import io.atomix.protocols.raft.storage.log.entry.Entry;
+package io.atomix.storage.journal;
 
 import java.util.concurrent.locks.Lock;
 
 /**
- * Log reader.
+ * Segmented journal reader.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class LogReader implements Reader {
-  private final SegmentManager segments;
+public class SegmentedJournalReader<E> implements JournalReader<E> {
+  private final SegmentedJournal<E> journal;
   private final Lock lock;
-  private final Mode mode;
-  private Segment currentSegment;
-  private SegmentReader currentReader;
+  private JournalSegment<E> currentSegment;
+  private JournalSegmentReader<E> currentReader;
 
-  public LogReader(SegmentManager segments, Lock lock, long index, Mode mode) {
-    this.segments = segments;
+  public SegmentedJournalReader(SegmentedJournal<E> journal, Lock lock, long index) {
+    this.journal = journal;
     this.lock = lock;
-    this.mode = mode;
     initialize(index);
   }
 
@@ -42,8 +38,8 @@ public class LogReader implements Reader {
    * Initializes the reader to the given index.
    */
   private void initialize(long index) {
-    currentSegment = segments.segment(index);
-    currentReader = currentSegment.createReader(mode);
+    currentSegment = journal.segment(index);
+    currentReader = currentSegment.createReader();
     long nextIndex = nextIndex();
     while (index > nextIndex && hasNext()) {
       next();
@@ -52,28 +48,8 @@ public class LogReader implements Reader {
   }
 
   @Override
-  public Mode mode() {
-    return mode;
-  }
-
-  /**
-   * Locks the reader.
-   *
-   * @return The log reader.
-   */
-  public Reader lock() {
-    lock.lock();
-    return this;
-  }
-
-  /**
-   * Unlocks the reader.
-   *
-   * @return The log reader.
-   */
-  public Reader unlock() {
-    lock.unlock();
-    return this;
+  public Lock lock() {
+    return lock;
   }
 
   @Override
@@ -82,7 +58,7 @@ public class LogReader implements Reader {
   }
 
   @Override
-  public Indexed<? extends Entry<?>> currentEntry() {
+  public Indexed<E> currentEntry() {
     return currentReader.currentEntry();
   }
 
@@ -95,18 +71,17 @@ public class LogReader implements Reader {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
-  public <T extends Entry<T>> Indexed<T> get(long index) {
-    return (Indexed<T>) reset(index);
+  public Indexed<E> get(long index) {
+    return reset(index);
   }
 
   @Override
-  public Indexed<? extends Entry<?>> reset(long index) {
+  public Indexed<E> reset(long index) {
     if (index < currentReader.firstIndex()) {
-      currentSegment = segments.previousSegment(currentSegment.index());
+      currentSegment = journal.previousSegment(currentSegment.index());
       while (currentSegment != null) {
         currentReader.close();
-        currentReader = currentSegment.createReader(mode);
+        currentReader = currentSegment.createReader();
         if (currentReader.firstIndex() < index) {
           break;
         }
@@ -118,24 +93,24 @@ public class LogReader implements Reader {
   @Override
   public void reset() {
     currentReader.close();
-    currentSegment = segments.firstSegment();
-    currentReader = currentSegment.createReader(mode);
+    currentSegment = journal.firstSegment();
+    currentReader = currentSegment.createReader();
   }
 
   @Override
   public boolean hasNext() {
     if (!currentReader.hasNext()) {
-      Segment nextSegment = segments.nextSegment(currentSegment.index());
+      JournalSegment nextSegment = journal.nextSegment(currentSegment.index());
       if (nextSegment != null) {
         currentSegment = nextSegment;
-        currentReader = currentSegment.createReader(mode);
+        currentReader = currentSegment.createReader();
       }
     }
     return currentReader.hasNext();
   }
 
   @Override
-  public Indexed<? extends Entry<?>> next() {
+  public Indexed<E> next() {
     return currentReader.next();
   }
 

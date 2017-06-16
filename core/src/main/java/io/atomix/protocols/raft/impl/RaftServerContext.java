@@ -16,16 +16,16 @@
 package io.atomix.protocols.raft.impl;
 
 import io.atomix.cluster.NodeId;
+import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.cluster.RaftCluster;
 import io.atomix.protocols.raft.cluster.RaftMember;
-import io.atomix.protocols.raft.cluster.impl.RaftClusterContext;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
+import io.atomix.protocols.raft.cluster.impl.RaftClusterContext;
 import io.atomix.protocols.raft.protocol.RaftRequest;
 import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.protocol.RaftServerProtocol;
 import io.atomix.protocols.raft.protocol.RaftServerProtocolDispatcher;
 import io.atomix.protocols.raft.protocol.RaftServerProtocolListener;
-import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.roles.AbstractRole;
 import io.atomix.protocols.raft.roles.ActiveRole;
 import io.atomix.protocols.raft.roles.CandidateRole;
@@ -36,11 +36,10 @@ import io.atomix.protocols.raft.roles.PassiveRole;
 import io.atomix.protocols.raft.roles.RaftRole;
 import io.atomix.protocols.raft.roles.ReserveRole;
 import io.atomix.protocols.raft.roles.StateMachineRegistry;
-import io.atomix.protocols.raft.storage.log.Log;
-import io.atomix.protocols.raft.storage.log.LogReader;
-import io.atomix.protocols.raft.storage.log.LogWriter;
-import io.atomix.protocols.raft.storage.log.Reader;
 import io.atomix.protocols.raft.storage.Storage;
+import io.atomix.protocols.raft.storage.log.RaftLog;
+import io.atomix.protocols.raft.storage.log.RaftLogReader;
+import io.atomix.protocols.raft.storage.log.RaftLogWriter;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotStore;
 import io.atomix.protocols.raft.storage.system.MetaStore;
 import io.atomix.util.concurrent.SingleThreadContext;
@@ -82,9 +81,9 @@ public class RaftServerContext implements AutoCloseable {
   protected final RaftServerProtocol protocol;
   protected final Storage storage;
   private MetaStore meta;
-  private Log log;
-  private LogWriter writer;
-  private LogReader reader;
+  private RaftLog log;
+  private RaftLogWriter writer;
+  private RaftLogReader reader;
   private SnapshotStore snapshot;
   private RaftServerStateMachineManager stateMachine;
   protected final ScheduledExecutorService threadPool;
@@ -111,7 +110,7 @@ public class RaftServerContext implements AutoCloseable {
     // Open the meta store.
     CountDownLatch metaLatch = new CountDownLatch(1);
     threadContext.execute(() -> {
-      this.meta = storage.openMetaStore(name);
+      this.meta = storage.openMetaStore();
       metaLatch.countDown();
     });
 
@@ -489,7 +488,7 @@ public class RaftServerContext implements AutoCloseable {
    *
    * @return The server log.
    */
-  public Log getLog() {
+  public RaftLog getLog() {
     return log;
   }
 
@@ -498,7 +497,7 @@ public class RaftServerContext implements AutoCloseable {
    *
    * @return The log writer.
    */
-  public LogWriter getLogWriter() {
+  public RaftLogWriter getLogWriter() {
     return writer;
   }
 
@@ -507,7 +506,7 @@ public class RaftServerContext implements AutoCloseable {
    *
    * @return The log reader.
    */
-  public LogReader getLogReader() {
+  public RaftLogReader getLogReader() {
     return reader;
   }
 
@@ -520,22 +519,22 @@ public class RaftServerContext implements AutoCloseable {
     // Delete the existing log.
     if (log != null) {
       log.close();
-      storage.deleteLog(name);
+      storage.deleteLog();
     }
 
     // Delete the existing snapshot store.
     if (snapshot != null) {
       snapshot.close();
-      storage.deleteSnapshotStore(name);
+      storage.deleteSnapshotStore();
     }
 
     // Open the log.
-    log = storage.openLog(name);
+    log = storage.openLog();
     writer = log.writer();
-    reader = log.createReader(1, Reader.Mode.ALL);
+    reader = log.createReader(1, RaftLogReader.Mode.ALL);
 
     // Open the snapshot store.
-    snapshot = storage.openSnapshotStore(name);
+    snapshot = storage.openSnapshotStore();
 
     // Create a new internal server state machine.
     this.stateMachine = new RaftServerStateMachineManager(this, threadPool, stateContext);
@@ -723,13 +722,13 @@ public class RaftServerContext implements AutoCloseable {
    */
   public void delete() {
     // Delete the log.
-    storage.deleteLog(name);
+    storage.deleteLog();
 
     // Delete the snapshot store.
-    storage.deleteSnapshotStore(name);
+    storage.deleteSnapshotStore();
 
     // Delete the metadata store.
-    storage.deleteMetaStore(name);
+    storage.deleteMetaStore();
   }
 
   @Override

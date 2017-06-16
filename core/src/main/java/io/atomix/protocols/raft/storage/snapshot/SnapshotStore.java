@@ -16,7 +16,7 @@
 package io.atomix.protocols.raft.storage.snapshot;
 
 import io.atomix.protocols.raft.storage.Storage;
-import io.atomix.protocols.raft.storage.StorageLevel;
+import io.atomix.storage.StorageLevel;
 import io.atomix.util.buffer.FileBuffer;
 import io.atomix.util.buffer.HeapBuffer;
 import org.slf4j.Logger;
@@ -38,7 +38,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * to the configured {@link Storage#level() storage level}. Each server with a snapshottable state machine
  * persists the state machine state to allow commands to be removed from disk.
  * <p>
- * When a snapshot store is {@link Storage#openSnapshotStore(String) created}, the store will load any
+ * When a snapshot store is {@link Storage#openSnapshotStore() created}, the store will load any
  * existing snapshots from disk and make them available for reading. Only snapshots that have been
  * written and {@link Snapshot#complete() completed} will be read from disk. Incomplete snapshots are
  * automatically deleted from disk when the snapshot store is opened.
@@ -71,13 +71,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class SnapshotStore implements AutoCloseable {
   private static final Logger LOGGER = LoggerFactory.getLogger(SnapshotStore.class);
-  private final String name;
   final Storage storage;
   private final Map<Long, Snapshot> indexSnapshots = new ConcurrentHashMap<>();
   private final Map<Long, Snapshot> stateMachineSnapshots = new ConcurrentHashMap<>();
 
-  public SnapshotStore(String name, Storage storage) {
-    this.name = checkNotNull(name, "name cannot be null");
+  public SnapshotStore(Storage storage) {
     this.storage = checkNotNull(storage, "storage cannot be null");
     open();
   }
@@ -139,7 +137,7 @@ public class SnapshotStore implements AutoCloseable {
     for (File file : storage.directory().listFiles(File::isFile)) {
 
       // If the file looks like a segment file, attempt to load the segment.
-      if (SnapshotFile.isSnapshotFile(name, file)) {
+      if (SnapshotFile.isSnapshotFile(storage.prefix(), file)) {
         SnapshotFile snapshotFile = new SnapshotFile(file);
         SnapshotDescriptor descriptor = new SnapshotDescriptor(FileBuffer.allocate(file, SnapshotDescriptor.BYTES));
 
@@ -219,7 +217,7 @@ public class SnapshotStore implements AutoCloseable {
    * Creates a disk snapshot.
    */
   private Snapshot createDiskSnapshot(SnapshotDescriptor descriptor) {
-    SnapshotFile file = new SnapshotFile(SnapshotFile.createSnapshotFile(name, storage.directory(), descriptor.id(), descriptor.index(), descriptor.timestamp()));
+    SnapshotFile file = new SnapshotFile(SnapshotFile.createSnapshotFile(storage.prefix(), storage.directory(), descriptor.id(), descriptor.index(), descriptor.timestamp()));
     Snapshot snapshot = new FileSnapshot(file, this);
     LOGGER.debug("Created disk snapshot: {}", snapshot);
     return snapshot;

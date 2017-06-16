@@ -15,27 +15,26 @@
  */
 package io.atomix.protocols.raft.impl;
 
+import io.atomix.protocols.raft.RaftStateMachine;
 import io.atomix.protocols.raft.error.InternalException;
 import io.atomix.protocols.raft.error.UnknownSessionException;
 import io.atomix.protocols.raft.error.UnknownStateMachineException;
 import io.atomix.protocols.raft.metadata.RaftSessionMetadata;
-import io.atomix.protocols.raft.RaftStateMachine;
 import io.atomix.protocols.raft.session.impl.RaftSessionContext;
 import io.atomix.protocols.raft.session.impl.RaftSessionManager;
-import io.atomix.protocols.raft.storage.log.Indexed;
-import io.atomix.protocols.raft.storage.log.Log;
-import io.atomix.protocols.raft.storage.log.LogReader;
-import io.atomix.protocols.raft.storage.log.Reader;
+import io.atomix.protocols.raft.storage.log.RaftLog;
+import io.atomix.protocols.raft.storage.log.RaftLogReader;
 import io.atomix.protocols.raft.storage.log.entry.CloseSessionEntry;
 import io.atomix.protocols.raft.storage.log.entry.CommandEntry;
 import io.atomix.protocols.raft.storage.log.entry.ConfigurationEntry;
-import io.atomix.protocols.raft.storage.log.entry.Entry;
 import io.atomix.protocols.raft.storage.log.entry.InitializeEntry;
 import io.atomix.protocols.raft.storage.log.entry.KeepAliveEntry;
 import io.atomix.protocols.raft.storage.log.entry.MetadataEntry;
 import io.atomix.protocols.raft.storage.log.entry.OpenSessionEntry;
 import io.atomix.protocols.raft.storage.log.entry.QueryEntry;
+import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.protocols.raft.storage.snapshot.Snapshot;
+import io.atomix.storage.journal.Indexed;
 import io.atomix.util.concurrent.ComposableFuture;
 import io.atomix.util.concurrent.Futures;
 import io.atomix.util.concurrent.ThreadContext;
@@ -71,8 +70,8 @@ public class RaftServerStateMachineManager implements AutoCloseable {
   private final RaftServerContext state;
   private final ScheduledExecutorService threadPool;
   private final ThreadContext threadContext;
-  private final Log log;
-  private final LogReader reader;
+  private final RaftLog log;
+  private final RaftLogReader reader;
   private final RaftSessionManager sessionManager = new RaftSessionManager();
   private final Map<String, RaftServerStateMachineExecutor> stateMachines = new HashMap<>();
   private volatile long lastApplied;
@@ -80,7 +79,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
   public RaftServerStateMachineManager(RaftServerContext state, ScheduledExecutorService threadPool, ThreadContext threadContext) {
     this.state = checkNotNull(state, "state cannot be null");
     this.log = state.getLog();
-    this.reader = log.createReader(1, Reader.Mode.COMMITS);
+    this.reader = log.createReader(1, RaftLogReader.Mode.COMMITS);
     this.threadPool = threadPool;
     this.threadContext = threadContext;
     threadContext.schedule(Duration.ofMillis(COMPACT_INTERVAL_MILLIS), this::compactLog);
@@ -167,7 +166,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
   private <T> CompletableFuture<T> applyIndex(long index) {
     threadContext.checkThread();
 
-    reader.lock();
+    reader.lock().lock();
 
     try {
       // Apply entries prior to this entry.
@@ -176,7 +175,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
 
         // If the next index is less than or equal to the given index, read and apply the entry.
         if (nextIndex < index) {
-          Indexed<? extends Entry<?>> entry = reader.next();
+          Indexed<RaftLogEntry> entry = reader.next();
           applyEntry(entry);
           setLastApplied(entry.index());
         }
@@ -185,7 +184,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
           // Read the entry from the log. If the entry is non-null then apply it, otherwise
           // simply update the last applied index and return a null result.
           try {
-            Indexed<? extends Entry<?>> entry = reader.next();
+            Indexed<RaftLogEntry> entry = reader.next();
             if (entry.index() != index) {
               throw new IllegalStateException("inconsistent index applying entry " + index + ": " + entry);
             }
@@ -202,7 +201,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
       }
       return CompletableFuture.completedFuture(null);
     } finally {
-      reader.unlock();
+      reader.lock().unlock();
     }
   }
 
@@ -215,7 +214,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
    * @param entry The entry to apply.
    * @return A completable future to be completed with the result.
    */
-  public <T> CompletableFuture<T> apply(Indexed<? extends Entry<?>> entry) {
+  public <T> CompletableFuture<T> apply(Indexed<? extends RaftLogEntry> entry) {
     ThreadContext context = ThreadContext.currentContextOrThrow();
     return applyEntry(entry, context);
   }
@@ -223,7 +222,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
   /**
    * Applies an entry to the state machine, returning a future that's completed on the given context.
    */
-  private <T> CompletableFuture<T> applyEntry(Indexed<? extends Entry<?>> entry, ThreadContext context) {
+  private <T> CompletableFuture<T> applyEntry(Indexed<? extends RaftLogEntry> entry, ThreadContext context) {
     ComposableFuture<T> future = new ComposableFuture<T>();
     BiConsumer<T, Throwable> callback = (result, error) -> {
       if (error == null) {
@@ -246,23 +245,23 @@ public class RaftServerStateMachineManager implements AutoCloseable {
    * @return A completable future to be completed with the result.
    */
   @SuppressWarnings("unchecked")
-  private <T> CompletableFuture<T> applyEntry(Indexed<? extends Entry<?>> entry) {
+  private <T> CompletableFuture<T> applyEntry(Indexed<? extends RaftLogEntry> entry) {
     LOGGER.trace("{} - Applying {}", state.getCluster().member().id(), entry);
-    if (entry.type() == Entry.Type.QUERY) {
+    if (entry.type() == QueryEntry.class) {
       return (CompletableFuture<T>) applyQuery(entry.cast());
-    } else if (entry.type() == Entry.Type.COMMAND) {
+    } else if (entry.type() == CommandEntry.class) {
       return (CompletableFuture<T>) applyCommand(entry.cast());
-    } else if (entry.type() == Entry.Type.OPEN_SESSION) {
+    } else if (entry.type() == OpenSessionEntry.class) {
       return (CompletableFuture<T>) applyOpenSession(entry.cast());
-    } else if (entry.type() == Entry.Type.KEEP_ALIVE) {
+    } else if (entry.type() == KeepAliveEntry.class) {
       return (CompletableFuture<T>) applyKeepAlive(entry.cast());
-    } else if (entry.type() == Entry.Type.CLOSE_SESSION) {
+    } else if (entry.type() == CloseSessionEntry.class) {
       return (CompletableFuture<T>) applyCloseSession(entry.cast());
-    } else if (entry.type() == Entry.Type.METADATA) {
+    } else if (entry.type() == MetadataEntry.class) {
       return (CompletableFuture<T>) applyMetadata(entry.cast());
-    } else if (entry.type() == Entry.Type.COMMAND) {
+    } else if (entry.type() == InitializeEntry.class) {
       return (CompletableFuture<T>) applyInitialize(entry.cast());
-    } else if (entry.type() == Entry.Type.COMMAND) {
+    } else if (entry.type() == ConfigurationEntry.class) {
       return (CompletableFuture<T>) applyConfiguration(entry.cast());
     }
     return Futures.exceptionalFuture(new InternalException("Unknown entry type"));
@@ -338,14 +337,14 @@ public class RaftServerStateMachineManager implements AutoCloseable {
     // Get the state machine executor or create one if it doesn't already exist.
     RaftServerStateMachineExecutor stateMachineExecutor = stateMachines.get(entry.entry().name());
     if (stateMachineExecutor == null) {
-      Supplier<RaftStateMachine> stateMachineSupplier = state.getStateMachineRegistry().getFactory(entry.entry().typeName());
+      Supplier<RaftStateMachine> stateMachineSupplier = state.getStateMachineRegistry().getFactory(entry.entry().type());
       if (stateMachineSupplier == null) {
-        return Futures.exceptionalFuture(new UnknownStateMachineException("Unknown state machine type " + entry.entry().typeName()));
+        return Futures.exceptionalFuture(new UnknownStateMachineException("Unknown state machine type " + entry.entry().type()));
       }
       stateMachineExecutor = new RaftServerStateMachineExecutor(
           entry.index(),
           entry.entry().name(),
-          entry.entry().typeName(),
+          entry.entry().type(),
           stateMachineSupplier.get(),
           state,
           sessionManager,
@@ -358,7 +357,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
         entry.index(),
         entry.entry().node(),
         entry.entry().name(),
-        entry.entry().typeName(),
+        entry.entry().type(),
         entry.entry().timeout(),
         stateMachineExecutor,
         state);

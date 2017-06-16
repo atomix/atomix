@@ -22,11 +22,11 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class SessionEntry<T extends SessionEntry<T>> extends TimestampedEntry<T> {
+public abstract class SessionEntry extends TimestampedEntry {
   protected final long session;
 
-  protected SessionEntry(long timestamp, long session) {
-    super(timestamp);
+  public SessionEntry(long term, long timestamp, long session) {
+    super(term, timestamp);
     this.session = session;
   }
 
@@ -42,14 +42,9 @@ public abstract class SessionEntry<T extends SessionEntry<T>> extends Timestampe
   @Override
   public String toString() {
     return toStringHelper(this)
+        .add("term", term)
         .add("timestamp", timestamp)
         .add("session", session)
         .toString();
-  }
-
-  /**
-   * Session entry serializer.
-   */
-  public interface Serializer<T extends SessionEntry> extends TimestampedEntry.Serializer<T> {
   }
 }

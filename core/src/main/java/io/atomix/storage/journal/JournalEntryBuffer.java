@@ -13,22 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License
  */
-package io.atomix.protocols.raft.storage.log.util;
+package io.atomix.storage.journal;
 
-import io.atomix.protocols.raft.storage.log.Indexed;
-import io.atomix.protocols.raft.storage.log.entry.Entry;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 
 /**
  * Log entry buffer.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class EntryBuffer {
-  private final Indexed<?>[] buffer;
+final class JournalEntryBuffer<E> {
+  private final AtomicReferenceArray<Indexed<E>> buffer;
+  private final int size;
 
   @SuppressWarnings("unchecked")
-  public EntryBuffer(int size) {
-    this.buffer = new Indexed[size];
+  JournalEntryBuffer(int size) {
+    this.buffer = new AtomicReferenceArray<>(size);
+    this.size = size;
   }
 
   /**
@@ -37,8 +38,8 @@ public class EntryBuffer {
    * @param entry The entry to append.
    * @return The entry buffer.
    */
-  public EntryBuffer append(Indexed<?> entry) {
-    buffer[offset(entry.index())] = entry;
+  public JournalEntryBuffer append(Indexed<E> entry) {
+    buffer.set(offset(entry.index()), entry);
     return this;
   }
 
@@ -46,34 +47,29 @@ public class EntryBuffer {
    * Looks up an entry in the buffer.
    *
    * @param index The entry index.
-   * @param <T>   The entry type.
    * @return The entry or {@code null} if the entry is not present in the index.
    */
-  @SuppressWarnings("unchecked")
-  public <T extends Entry<T>> Indexed<T> get(long index) {
-    Indexed<?> entry = buffer[offset(index)];
-    return entry != null && entry.index() == index ? (Indexed<T>) entry : null;
+  public Indexed<E> get(long index) {
+    Indexed<E> entry = buffer.get(offset(index));
+    return entry != null && entry.index() == index ? entry : null;
   }
 
   /**
-   * Clears the buffer and resets the index to the given index.
-   *
-   * @return The entry buffer.
+   * Clears the buffer.
    */
-  public EntryBuffer clear() {
-    for (int i = 0; i < buffer.length; i++) {
-      buffer[i] = null;
+  public void clear() {
+    for (int i = 0; i < buffer.length(); i++) {
+      buffer.set(i, null);
     }
-    return this;
   }
 
   /**
    * Returns the buffer index for the given offset.
    */
   private int offset(long index) {
-    int offset = (int) (index % buffer.length);
+    int offset = (int) (index % size);
     if (offset < 0) {
-      offset += buffer.length;
+      offset += size;
     }
     return offset;
   }

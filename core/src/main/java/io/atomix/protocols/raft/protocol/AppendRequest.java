@@ -16,8 +16,8 @@
 package io.atomix.protocols.raft.protocol;
 
 import io.atomix.cluster.NodeId;
-import io.atomix.protocols.raft.storage.log.Indexed;
-import io.atomix.protocols.raft.storage.log.entry.Entry;
+import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
+import io.atomix.storage.journal.Indexed;
 
 import java.util.Arrays;
 import java.util.List;
@@ -51,10 +51,10 @@ public class AppendRequest extends AbstractRaftRequest {
   private final NodeId leader;
   private final long logIndex;
   private final long logTerm;
-  private final List<Indexed<? extends Entry<?>>> entries;
+  private final List<Indexed<RaftLogEntry>> entries;
   private final long commitIndex;
 
-  public AppendRequest(long term, NodeId leader, long logIndex, long logTerm, List<Indexed<? extends Entry<?>>> entries, long commitIndex) {
+  public AppendRequest(long term, NodeId leader, long logIndex, long logTerm, List<Indexed<RaftLogEntry>> entries, long commitIndex) {
     this.term = term;
     this.leader = leader;
     this.logIndex = logIndex;
@@ -104,7 +104,7 @@ public class AppendRequest extends AbstractRaftRequest {
    *
    * @return A list of log entries.
    */
-  public List<Indexed<? extends Entry<?>>> entries() {
+  public List<Indexed<RaftLogEntry>> entries() {
     return entries;
   }
 
@@ -156,7 +156,7 @@ public class AppendRequest extends AbstractRaftRequest {
     private NodeId leader;
     private long logIndex;
     private long logTerm;
-    private List<Indexed<? extends Entry<?>>> entries;
+    private List<Indexed<RaftLogEntry>> entries;
     private long commitIndex = -1;
 
     /**
@@ -217,7 +217,7 @@ public class AppendRequest extends AbstractRaftRequest {
      * @return The append request builder.
      * @throws NullPointerException if {@code entries} is null
      */
-    public Builder withEntries(Indexed<? extends Entry<?>>... entries) {
+    public Builder withEntries(Indexed<RaftLogEntry>... entries) {
       return withEntries(Arrays.asList(checkNotNull(entries, "entries cannot be null")));
     }
 
@@ -229,7 +229,7 @@ public class AppendRequest extends AbstractRaftRequest {
      * @throws NullPointerException if {@code entries} is null
      */
     @SuppressWarnings("unchecked")
-    public Builder withEntries(List<Indexed<? extends Entry<?>>> entries) {
+    public Builder withEntries(List<Indexed<RaftLogEntry>> entries) {
       this.entries = checkNotNull(entries, "entries cannot be null");
       return this;
     }
@@ -241,7 +241,7 @@ public class AppendRequest extends AbstractRaftRequest {
      * @return The request builder.
      * @throws NullPointerException if {@code entry} is {@code null}
      */
-    public Builder addEntry(Indexed<? extends Entry<?>> entry) {
+    public Builder addEntry(Indexed<RaftLogEntry> entry) {
       this.entries.add(checkNotNull(entry, "entry"));
       return this;
     }

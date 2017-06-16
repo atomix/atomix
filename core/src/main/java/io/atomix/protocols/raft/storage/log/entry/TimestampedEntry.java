@@ -22,10 +22,11 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class TimestampedEntry<T extends TimestampedEntry<T>> extends Entry<T> {
+public abstract class TimestampedEntry extends RaftLogEntry {
   protected final long timestamp;
 
-  protected TimestampedEntry(long timestamp) {
+  public TimestampedEntry(long term, long timestamp) {
+    super(term);
     this.timestamp = timestamp;
   }
 
@@ -41,13 +42,8 @@ public abstract class TimestampedEntry<T extends TimestampedEntry<T>> extends En
   @Override
   public String toString() {
     return toStringHelper(this)
+        .add("term", term)
         .add("timestamp", timestamp)
         .toString();
-  }
-
-  /**
-   * Timestamped entry serializer.
-   */
-  public interface Serializer<T extends TimestampedEntry> extends Entry.Serializer<T> {
   }
 }

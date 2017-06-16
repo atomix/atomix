@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.raft.roles;
 
+import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.impl.RaftServerContext;
 import io.atomix.protocols.raft.protocol.AppendRequest;
 import io.atomix.protocols.raft.protocol.AppendResponse;
@@ -24,11 +25,10 @@ import io.atomix.protocols.raft.protocol.RaftRequest;
 import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.protocol.VoteRequest;
 import io.atomix.protocols.raft.protocol.VoteResponse;
-import io.atomix.protocols.raft.RaftServer;
-import io.atomix.protocols.raft.storage.log.Indexed;
-import io.atomix.protocols.raft.storage.log.LogReader;
-import io.atomix.protocols.raft.storage.log.LogWriter;
-import io.atomix.protocols.raft.storage.log.entry.Entry;
+import io.atomix.protocols.raft.storage.log.RaftLogReader;
+import io.atomix.protocols.raft.storage.log.RaftLogWriter;
+import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
+import io.atomix.storage.journal.Indexed;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -78,15 +78,15 @@ public abstract class ActiveRole extends PassiveRole {
             .build();
       }
 
-      final LogReader reader = context.getLogReader();
+      final RaftLogReader reader = context.getLogReader();
 
       // Lock the reader.
       reader.lock();
       try {
         // If the previous entry term doesn't match the local previous term then reject the request.
-        Indexed<? extends Entry<?>> entry = reader.get(request.logIndex());
-        if (entry == null || entry.term() != request.logTerm()) {
-          LOGGER.debug("{} - Rejected {}: Request log term does not match local log term {} for the same entry", context.getCluster().member().id(), request, entry != null ? entry.term() : "unknown");
+        Indexed<RaftLogEntry> entry = reader.get(request.logIndex());
+        if (entry == null || entry.entry().term() != request.logTerm()) {
+          LOGGER.debug("{} - Rejected {}: Request log term does not match local log term {} for the same entry", context.getCluster().member().id(), request, entry != null ? entry.entry().term() : "unknown");
           return AppendResponse.builder()
               .withStatus(RaftResponse.Status.OK)
               .withTerm(context.getTerm())
@@ -95,7 +95,7 @@ public abstract class ActiveRole extends PassiveRole {
               .build();
         }
       } finally {
-        reader.unlock();
+        reader.lock().unlock();
       }
     }
     return appendEntries(request);
@@ -113,25 +113,25 @@ public abstract class ActiveRole extends PassiveRole {
     long commitIndex = Math.max(context.getCommitIndex(), Math.min(request.commitIndex(), lastEntryIndex));
 
     // Get the server log reader/writer.
-    final LogReader reader = context.getLogReader();
-    final LogWriter writer = context.getLogWriter();
+    final RaftLogReader reader = context.getLogReader();
+    final RaftLogWriter writer = context.getLogWriter();
 
     // If the request entries are non-empty, write them to the log.
     if (!request.entries().isEmpty()) {
       writer.lock();
       try {
-        for (Indexed<? extends Entry> entry : request.entries()) {
+        for (Indexed<RaftLogEntry> entry : request.entries()) {
           // Read the existing entry from the log. If the entry does not exist in the log,
           // append it. If the entry's term is different than the term of the entry in the log,
           // overwrite the entry in the log. This will force the log to be truncated if necessary.
-          Indexed<? extends Entry<?>> existing = reader.get(entry.index());
-          if (existing == null || existing.term() != entry.term()) {
+          Indexed<RaftLogEntry> existing = reader.get(entry.index());
+          if (existing == null || existing.entry().term() != entry.entry().term()) {
             writer.append(entry);
             LOGGER.debug("{} - Appended {}", context.getCluster().member().id(), entry);
           }
         }
       } finally {
-        writer.unlock();
+        writer.lock().unlock();
       }
     }
 
@@ -283,7 +283,7 @@ public abstract class ActiveRole extends PassiveRole {
    */
   boolean isLogUpToDate(long lastIndex, long lastTerm, RaftRequest request) {
     // Read the last entry from the log.
-    final Indexed<?> lastEntry = context.getLogWriter().lastEntry();
+    final Indexed<RaftLogEntry> lastEntry = context.getLogWriter().lastEntry();
 
     // If the log is empty then vote for the candidate.
     if (lastEntry == null) {
@@ -292,8 +292,8 @@ public abstract class ActiveRole extends PassiveRole {
     }
 
     // If the candidate's last log term is lower than the local log's last entry term, reject the request.
-    if (lastTerm < lastEntry.term()) {
-      LOGGER.trace("{} - Rejected {}: candidate's last log entry ({}) is at a lower term than the local log ({})", context.getCluster().member().id(), request, lastTerm, lastEntry.term());
+    if (lastTerm < lastEntry.entry().term()) {
+      LOGGER.trace("{} - Rejected {}: candidate's last log entry ({}) is at a lower term than the local log ({})", context.getCluster().member().id(), request, lastTerm, lastEntry.entry().term());
       return false;
     }
 
@@ -301,7 +301,7 @@ public abstract class ActiveRole extends PassiveRole {
     // candidate's last index is less than the local log's last index. If the candidate's last log term is
     // greater than the local log's last term then it's considered up to date, and if both have the same term
     // then the candidate's last index must be greater than the local log's last index.
-    if (lastTerm == lastEntry.term() && lastIndex < lastEntry.index()) {
+    if (lastTerm == lastEntry.entry().term() && lastIndex < lastEntry.index()) {
       LOGGER.trace("{} - Rejected {}: candidate's last log entry ({}) is at a lower index than the local log ({})", context.getCluster().member().id(), request, lastIndex, lastEntry.index());
       return false;
     }

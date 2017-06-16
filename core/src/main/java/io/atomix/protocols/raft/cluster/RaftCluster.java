@@ -17,6 +17,7 @@ package io.atomix.protocols.raft.cluster;
 
 import io.atomix.cluster.NodeId;
 import io.atomix.protocols.raft.RaftServer;
+import io.atomix.storage.StorageLevel;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -57,14 +58,14 @@ import java.util.function.Consumer;
  * When a member is removed from the cluster, the configuration change removing the member will be replicated to all
  * the servers in the cluster and persisted to disk. Once a member has been removed, for that member to rejoin the cluster
  * it must fully restart and request to rejoin the cluster. For servers configured with a persistent
- * {@link io.atomix.protocols.raft.storage.StorageLevel}, cluster configurations are stored on disk.
+ * {@link StorageLevel}, cluster configurations are stored on disk.
  * <p>
  * Additionally, members can be {@link RaftMember#promote() promoted} and {@link RaftMember#demote() demoted} by any
  * other member of the cluster. When a member state is changed, a cluster configuration change request is sent
  * to the cluster leader where it's logged and replicated through the Raft consensus algorithm. <em>During</em>
  * the configuration change, servers' cluster configurations will be updated. Once the configuration change is
  * complete, it will be persisted to disk on all servers and is guaranteed not to be lost even in the event of a
- * full cluster shutdown (assuming the server uses a persistent {@link io.atomix.protocols.raft.storage.StorageLevel}).
+ * full cluster shutdown (assuming the server uses a persistent {@link StorageLevel}).
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
@@ -87,7 +88,7 @@ public interface RaftCluster {
    * <p>
    * The term is representative of the epoch determined by the underlying Raft consensus algorithm. The term is a monotonically
    * increasing number used by Raft to represent a point in logical time. If the cluster is persistent (i.e. all servers use a persistent
-   * {@link io.atomix.protocols.raft.storage.StorageLevel}), the term is guaranteed to be unique and monotonically increasing even across
+   * {@link StorageLevel}), the term is guaranteed to be unique and monotonically increasing even across
    * cluster restarts. Additionally, for any given term, Raft guarantees that only a single {@link #leader() leader} can be elected.
    *
    * @return The current cluster term.

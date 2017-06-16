@@ -13,43 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.storage.log;
+package io.atomix.storage.journal;
 
-import io.atomix.util.buffer.Buffer;
-import io.atomix.util.buffer.FileBuffer;
-import io.atomix.util.buffer.MappedBuffer;
-import io.atomix.util.buffer.SlicedBuffer;
+import io.atomix.util.serializer.Serializer;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Log segment.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class Segment implements AutoCloseable {
-  private final SegmentFile file;
-  private final SegmentDescriptor descriptor;
-  private final SegmentManager manager;
-  private final Buffer buffer;
-  private final SegmentWriter writer;
+public class JournalSegment<E> implements AutoCloseable {
+  protected final JournalSegmentFile file;
+  protected final JournalSegmentDescriptor descriptor;
+  protected final Serializer serializer;
+  protected final SegmentedJournal<E> journal;
+  private final JournalSegmentWriter<E> writer;
   private volatile boolean open = true;
 
-  public Segment(SegmentFile file, SegmentDescriptor descriptor, SegmentManager manager) {
+  public JournalSegment(JournalSegmentFile file, JournalSegmentDescriptor descriptor, Serializer serializer, SegmentedJournal<E> journal) {
     this.file = file;
     this.descriptor = descriptor;
-    this.manager = manager;
-    this.buffer = manager.openSegment(descriptor, "rw");
-    this.writer = new SegmentWriter(this, buffer);
-  }
-
-  /**
-   * Returns the segment manager.
-   *
-   * @return The segment manager.
-   */
-  SegmentManager manager() {
-    return manager;
+    this.serializer = serializer;
+    this.journal = journal;
+    this.writer = new JournalSegmentWriter<>(journal, descriptor, serializer);
   }
 
   /**
@@ -93,7 +82,7 @@ public class Segment implements AutoCloseable {
    *
    * @return The segment file.
    */
-  public SegmentFile file() {
+  public JournalSegmentFile file() {
     return file;
   }
 
@@ -102,7 +91,7 @@ public class Segment implements AutoCloseable {
    *
    * @return The segment descriptor.
    */
-  public SegmentDescriptor descriptor() {
+  public JournalSegmentDescriptor descriptor() {
     return descriptor;
   }
 
@@ -147,7 +136,7 @@ public class Segment implements AutoCloseable {
    *
    * @return The segment writer.
    */
-  public SegmentWriter writer() {
+  public JournalSegmentWriter<E> writer() {
     checkOpen();
     return writer;
   }
@@ -155,21 +144,18 @@ public class Segment implements AutoCloseable {
   /**
    * Creates a new segment reader.
    *
-   * @param mode The mode in which to open the segment reader.
    * @return A new segment reader.
    */
-  public SegmentReader createReader(Reader.Mode mode) {
+  JournalSegmentReader<E> createReader() {
     checkOpen();
-    return new SegmentReader(this, manager.openSegment(descriptor, "r"), mode);
+    return new JournalSegmentReader<>(journal, descriptor, serializer);
   }
 
   /**
    * Checks whether the segment is open.
    */
   private void checkOpen() {
-    if (!open) {
-      throw new IllegalStateException("segment not open");
-    }
+    checkState(open, "Segment not open");
   }
 
   /**
@@ -177,7 +163,7 @@ public class Segment implements AutoCloseable {
    */
   @Override
   public void close() {
-    buffer.close();
+    writer.close();
     descriptor.close();
     open = false;
   }
@@ -186,12 +172,7 @@ public class Segment implements AutoCloseable {
    * Deletes the segment.
    */
   public void delete() {
-    Buffer buffer = this.buffer instanceof SlicedBuffer ? ((SlicedBuffer) this.buffer).root() : this.buffer;
-    if (buffer instanceof FileBuffer) {
-      ((FileBuffer) buffer).delete();
-    } else if (buffer instanceof MappedBuffer) {
-      ((MappedBuffer) buffer).delete();
-    }
+    writer.delete();
   }
 
   @Override

@@ -16,31 +16,24 @@
 package io.atomix.protocols.raft.storage.log.entry;
 
 import io.atomix.cluster.NodeId;
-import io.atomix.util.buffer.BufferInput;
-import io.atomix.util.buffer.BufferOutput;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
  * Open session entry.
  */
-public class OpenSessionEntry extends TimestampedEntry<OpenSessionEntry> {
+public class OpenSessionEntry extends TimestampedEntry {
   private final NodeId node;
   private final String name;
   private final String type;
   private final long timeout;
 
-  public OpenSessionEntry(long timestamp, NodeId node, String name, String type, long timeout) {
-    super(timestamp);
+  public OpenSessionEntry(long term, long timestamp, NodeId node, String name, String type, long timeout) {
+    super(term, timestamp);
     this.node = node;
     this.name = name;
     this.type = type;
     this.timeout = timeout;
-  }
-
-  @Override
-  public Type<OpenSessionEntry> type() {
-    return Type.OPEN_SESSION;
   }
 
   /**
@@ -66,7 +59,7 @@ public class OpenSessionEntry extends TimestampedEntry<OpenSessionEntry> {
    *
    * @return The session's state machine type name.
    */
-  public String typeName() {
+  public String type() {
     return type;
   }
 
@@ -88,24 +81,5 @@ public class OpenSessionEntry extends TimestampedEntry<OpenSessionEntry> {
         .add("type", type)
         .add("timeout", timeout)
         .toString();
-  }
-
-  /**
-   * Open session entry serializer.
-   */
-  public static class Serializer implements TimestampedEntry.Serializer<OpenSessionEntry> {
-    @Override
-    public void writeObject(BufferOutput output, OpenSessionEntry entry) {
-      output.writeLong(entry.timestamp);
-      output.writeString(entry.node.id());
-      output.writeString(entry.name);
-      output.writeString(entry.type);
-      output.writeLong(entry.timeout);
-    }
-
-    @Override
-    public OpenSessionEntry readObject(BufferInput input, Class<OpenSessionEntry> type) {
-      return new OpenSessionEntry(input.readLong(), NodeId.nodeId(input.readString()), input.readString(), input.readString(), input.readLong());
-    }
   }
 }

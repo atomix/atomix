@@ -13,9 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.storage.log;
-
-import io.atomix.protocols.raft.storage.log.entry.Entry;
+package io.atomix.storage.journal;
 
 import java.util.concurrent.locks.Lock;
 
@@ -24,37 +22,22 @@ import java.util.concurrent.locks.Lock;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class LogWriter implements Writer {
-  private final SegmentManager segments;
+public class SegmentedJournalWriter<E> implements JournalWriter<E> {
+  private final SegmentedJournal<E> journal;
   private final Lock lock;
-  private volatile Segment currentSegment;
-  private volatile SegmentWriter currentWriter;
+  private volatile JournalSegment<E> currentSegment;
+  private volatile JournalSegmentWriter<E> currentWriter;
 
-  public LogWriter(SegmentManager segments, Lock lock) {
-    this.segments = segments;
+  public SegmentedJournalWriter(SegmentedJournal<E> journal, Lock lock) {
+    this.journal = journal;
     this.lock = lock;
-    this.currentSegment = segments.lastSegment();
+    this.currentSegment = journal.lastSegment();
     this.currentWriter = currentSegment.writer();
   }
 
-  /**
-   * Locks the writer.
-   *
-   * @return The log writer.
-   */
-  public LogWriter lock() {
-    lock.lock();
-    return this;
-  }
-
-  /**
-   * Unlocks the writer.
-   *
-   * @return The log writer.
-   */
-  public LogWriter unlock() {
-    lock.unlock();
-    return this;
+  @Override
+  public Lock lock() {
+    return lock;
   }
 
   @Override
@@ -63,7 +46,7 @@ public class LogWriter implements Writer {
   }
 
   @Override
-  public Indexed<? extends Entry<?>> lastEntry() {
+  public Indexed<E> lastEntry() {
     return currentWriter.lastEntry();
   }
 
@@ -72,54 +55,41 @@ public class LogWriter implements Writer {
     return currentWriter.nextIndex();
   }
 
-  /**
-   * Commits entries up to the given index.
-   *
-   * @param index The index up to which to commit entries.
-   * @return The log writer.
-   */
-  public LogWriter commit(long index) {
-    segments.commitIndex(index);
-    return this;
-  }
-
   @Override
-  public <T extends Entry<T>> Indexed<T> append(Indexed<T> entry) {
+  public <T extends E> Indexed<T> append(T entry) {
     if (currentWriter.isFull()) {
-      currentSegment = segments.nextSegment();
+      currentSegment = journal.nextSegment();
       currentWriter = currentSegment.writer();
     }
     return currentWriter.append(entry);
   }
 
   @Override
-  public <T extends Entry<T>> Indexed<T> append(long term, T entry) {
+  public void append(Indexed<E> entry) {
     if (currentWriter.isFull()) {
-      currentSegment = segments.nextSegment();
+      currentSegment = journal.nextSegment();
       currentWriter = currentSegment.writer();
     }
-    return currentWriter.append(term, entry);
+    currentWriter.append(entry);
   }
 
   @Override
-  public LogWriter truncate(long index) {
+  public void truncate(long index) {
     // Delete all segments with first indexes greater than the given index.
     while (index < currentWriter.firstIndex() - 1) {
       currentWriter.close();
-      segments.removeSegment(currentSegment);
-      currentSegment = segments.lastSegment();
+      journal.removeSegment(currentSegment);
+      currentSegment = journal.lastSegment();
       currentWriter = currentSegment.writer();
     }
 
     // Truncate the current index.
     currentWriter.truncate(index);
-    return this;
   }
 
   @Override
-  public LogWriter flush() {
+  public void flush() {
     currentWriter.flush();
-    return this;
   }
 
   @Override

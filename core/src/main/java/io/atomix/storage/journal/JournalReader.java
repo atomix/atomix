@@ -13,40 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.storage.log;
-
-import io.atomix.protocols.raft.storage.log.entry.Entry;
+package io.atomix.storage.journal;
 
 import java.util.Iterator;
+import java.util.concurrent.locks.Lock;
 
 /**
  * Log reader.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public interface Reader extends Iterator<Indexed<? extends Entry<?>>>, AutoCloseable {
+public interface JournalReader<E> extends Iterator<Indexed<E>>, AutoCloseable {
 
   /**
-   * Reader mode.
-   */
-  enum Mode {
-    /**
-     * Reads all entries.
-     */
-    ALL,
-
-    /**
-     * Reads only committed entries.
-     */
-    COMMITS,
-  }
-
-  /**
-   * Returns the reader mode.
+   * Returns the reader lock.
    *
-   * @return The reader mode.
+   * @return The reader lock.
    */
-  Mode mode();
+  Lock lock();
 
   /**
    * Returns the current reader index.
@@ -60,7 +44,7 @@ public interface Reader extends Iterator<Indexed<? extends Entry<?>>>, AutoClose
    *
    * @return The last read entry.
    */
-  Indexed<? extends Entry<?>> currentEntry();
+  Indexed<E> currentEntry();
 
   /**
    * Returns the next reader index.
@@ -73,11 +57,10 @@ public interface Reader extends Iterator<Indexed<? extends Entry<?>>>, AutoClose
    * Returns the entry at the given index.
    *
    * @param index The entry index.
-   * @param <T>   The entry type.
    * @return The entry at the given index or {@code null} if the entry doesn't exist.
-   * @throws IndexOutOfBoundsException if the given index is outside the range of the log
+   * @throws IndexOutOfBoundsException if the given index is outside the range of the journal
    */
-  <T extends Entry<T>> Indexed<T> get(long index);
+  Indexed<E> get(long index);
 
   /**
    * Resets the reader to the given index.
@@ -85,7 +68,23 @@ public interface Reader extends Iterator<Indexed<? extends Entry<?>>>, AutoClose
    * @param index The index to which to reset the reader.
    * @return The last entry read at the reset index.
    */
-  Indexed<? extends Entry<?>> reset(long index);
+  Indexed<E> reset(long index);
+
+  /**
+   * Returns whether the reader has a next entry to read.
+   *
+   * @return Whether the reader has a next entry to read.
+   */
+  @Override
+  boolean hasNext();
+
+  /**
+   * Returns the next entry in the reader.
+   *
+   * @return The next entry in the reader.
+   */
+  @Override
+  Indexed<E> next();
 
   /**
    * Resets the reader to the start.

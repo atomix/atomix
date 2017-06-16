@@ -13,19 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.storage.log;
+package io.atomix.storage.journal;
 
-import io.atomix.protocols.raft.storage.log.entry.Entry;
 import io.atomix.util.buffer.Buffer;
+import io.atomix.util.buffer.FileBuffer;
 import io.atomix.util.buffer.HeapBuffer;
+import io.atomix.util.buffer.MappedBuffer;
+import io.atomix.util.buffer.SlicedBuffer;
+import io.atomix.util.serializer.Serializer;
 
+import java.util.concurrent.locks.Lock;
 import java.util.zip.CRC32;
 import java.util.zip.Checksum;
-
-import static io.atomix.util.buffer.Bytes.BOOLEAN;
-import static io.atomix.util.buffer.Bytes.BYTE;
-import static io.atomix.util.buffer.Bytes.INTEGER;
-import static io.atomix.util.buffer.Bytes.LONG;
 
 /**
  * Segment writer.
@@ -42,17 +41,21 @@ import static io.atomix.util.buffer.Bytes.LONG;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class SegmentWriter implements Writer {
-  private final Segment segment;
+public class JournalSegmentWriter<E> implements JournalWriter<E> {
+  private final SegmentedJournal<E> journal;
+  private final JournalSegmentDescriptor descriptor;
   private final Buffer buffer;
+  private final Serializer serializer;
   private final HeapBuffer memory = HeapBuffer.allocate();
   private final long firstIndex;
-  private Indexed<? extends Entry<?>> lastEntry;
+  private Indexed<E> lastEntry;
 
-  public SegmentWriter(Segment segment, Buffer buffer) {
-    this.segment = segment;
-    this.buffer = buffer;
-    this.firstIndex = segment.descriptor().index();
+  public JournalSegmentWriter(SegmentedJournal<E> journal, JournalSegmentDescriptor descriptor, Serializer serializer) {
+    this.journal = journal;
+    this.descriptor = descriptor;
+    this.buffer = journal.openSegment(descriptor, "rw");
+    this.serializer = serializer;
+    this.firstIndex = descriptor.index();
     reset(0);
   }
 
@@ -72,39 +75,21 @@ public class SegmentWriter implements Writer {
     // If the length is non-zero, read the entry.
     while (length > 0 && (index == 0 || nextIndex <= index)) {
 
+      // Read the checksum of the entry.
+      final long checksum = buffer.readUnsignedInt();
+
       // Read the entry into memory.
       buffer.read(memory.clear().limit(length));
       memory.flip();
 
-      // Read the checksum of the entry.
-      final long checksum = memory.readUnsignedInt();
-
-      // Read the term if defined, otherwise use the term from the previous entry.
-      final long term;
-      if (memory.readBoolean()) {
-        term = memory.readLong();
-      } else if (lastEntry != null) {
-        term = lastEntry.term();
-      } else {
-        throw new IllegalStateException("Corrupted log: No entry term found");
-      }
-
-      // Read the entry type.
-      final int typeId = memory.readByte();
-
-      // Calculate the entry position and length.
-      final int entryPosition = (int) memory.position();
-      final int entryLength = length - entryPosition;
-
       // Compute the checksum for the entry bytes.
       final Checksum crc32 = new CRC32();
-      crc32.update(memory.array(), entryPosition, entryLength);
+      crc32.update(memory.array(), 0, length);
 
       // If the stored checksum equals the computed checksum, return the entry.
       if (checksum == crc32.getValue()) {
-        final Entry.Type<?> type = Entry.Type.forId(typeId);
-        final Entry entry = type.serializer().readObject(memory, type.type());
-        lastEntry = new Indexed<>(nextIndex, term, entry, length);
+        final E entry = serializer.decode(memory.array());
+        lastEntry = new Indexed<>(nextIndex, entry, length);
         nextIndex++;
       } else {
         break;
@@ -118,22 +103,18 @@ public class SegmentWriter implements Writer {
     buffer.reset();
   }
 
-  /**
-   * Returns the segment to which the writer belongs.
-   *
-   * @return The segment to which the writer belongs.
-   */
-  public Segment segment() {
-    return segment;
+  @Override
+  public Lock lock() {
+    throw new UnsupportedOperationException();
   }
 
   @Override
   public long lastIndex() {
-    return lastEntry != null ? lastEntry.index() : segment.index() - 1;
+    return lastEntry != null ? lastEntry.index() : descriptor.index() - 1;
   }
 
   @Override
-  public Indexed<? extends Entry<?>> lastEntry() {
+  public Indexed<E> lastEntry() {
     return lastEntry;
   }
 
@@ -170,8 +151,8 @@ public class SegmentWriter implements Writer {
    * @return Indicates whether the segment is full.
    */
   public boolean isFull() {
-    return size() >= segment.descriptor().maxSegmentSize()
-        || nextIndex() - firstIndex >= segment.descriptor().maxEntries();
+    return size() >= descriptor.maxSegmentSize()
+        || nextIndex() - firstIndex >= descriptor.maxEntries();
   }
 
   /**
@@ -181,14 +162,9 @@ public class SegmentWriter implements Writer {
     return firstIndex;
   }
 
-  /**
-   * Appends an already indexed entry to the segment.
-   *
-   * @param entry The indexed entry to append.
-   * @param <T>   The entry type.
-   * @return The updated indexed entry.
-   */
-  public <T extends Entry<T>> Indexed<T> append(Indexed<T> entry) {
+  @Override
+  @SuppressWarnings("unchecked")
+  public void append(Indexed<E> entry) {
     final long nextIndex = nextIndex();
 
     // If the entry's index is greater than the next index in the segment, skip some entries.
@@ -200,81 +176,50 @@ public class SegmentWriter implements Writer {
     if (entry.index() < nextIndex) {
       truncate(entry.index() - 1);
     }
-
-    // Append the entry to the segment.
-    return append(entry.term(), entry.entry());
+    append(entry.entry());
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T extends Entry<T>> Indexed<T> append(long term, T entry) {
-    // Clear the in-memory buffer state.
-    memory.clear();
-
+  public <T extends E> Indexed<T> append(T entry) {
     // Store the entry index.
     final long index = nextIndex();
 
-    // Determine whether to skip writing the term to the entry.
-    final boolean skipTerm = lastEntry != null && term == lastEntry.term();
-
-    // Calculate the length of the entry header bytes.
-    final int headerLength = INTEGER + BOOLEAN + (skipTerm ? 0 : LONG) + BYTE;
-
-    // Clear the memory and skip the header.
-    memory.clear().skip(headerLength);
-
-    // Serialize the entry into the in-memory buffer.
-    entry.type().serializer().writeObject(memory, entry);
-
-    // Flip the in-memory buffer indexes.
-    memory.flip();
-
-    // The total length of the entry is the in-memory buffer limit.
-    final int totalLength = (int) memory.limit();
-
-    // Calculate the length of the serialized bytes based on the in-memory buffer limit and header length.
-    final int entryLength = totalLength - headerLength;
+    // Serialize the entry.
+    final byte[] bytes = serializer.encode(entry);
+    final int length = bytes.length;
 
     // Compute the checksum for the entry.
     final Checksum crc32 = new CRC32();
-    crc32.update(memory.array(), headerLength, entryLength);
+    crc32.update(bytes, 0, length);
     final long checksum = crc32.getValue();
 
-    // Rewind the in-memory buffer and write the length, checksum, and offset.
-    memory.rewind()
-        .writeUnsignedInt(checksum);
-
-    // If the term has not yet been written, write the term to this entry and update the last term.
-    if (skipTerm) {
-      memory.writeBoolean(false);
-    } else {
-      memory.writeBoolean(true).writeLong(term);
-    }
-
-    // Write the entry type to the memory buffer.
-    memory.writeByte(entry.type().id());
-
     // Write the entry length and entry to the segment.
-    buffer.writeInt(totalLength)
-        .write(memory.rewind());
+    buffer.writeInt(length)
+        .writeUnsignedInt(checksum)
+        .write(bytes);
 
-    // Return the indexed entry with the correct index/term/length.
-    lastEntry = new Indexed<>(index, term, entry, totalLength);
-    return (Indexed<T>) lastEntry;
+    // Update the last entry with the correct index/term/length.
+    Indexed<E> indexedEntry = new Indexed<>(index, entry, length);
+    this.lastEntry = indexedEntry;
+
+    // Store the entry in the journal buffer and return the indexed entry.
+    journal.buffer().append(indexedEntry);
+    return (Indexed<T>) indexedEntry;
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public SegmentWriter truncate(long index) {
+  public void truncate(long index) {
     // If the index is greater than or equal to the last index, skip the truncate.
     if (index >= lastIndex()) {
-      return this;
+      return;
     }
 
     // If the index is less than the segment index, clear the segment buffer.
-    if (index < segment.index()) {
+    if (index < descriptor.index()) {
       buffer.zero().clear();
-      return this;
+      return;
     }
 
     // Reset the last entry.
@@ -285,17 +230,27 @@ public class SegmentWriter implements Writer {
 
     // Zero entries after the given index.
     buffer.zero(buffer.position());
-    return this;
   }
 
   @Override
-  public SegmentWriter flush() {
+  public void flush() {
     buffer.flush();
-    return this;
   }
 
   @Override
   public void close() {
     buffer.close();
+  }
+
+  /**
+   * Deletes the segment.
+   */
+  void delete() {
+    Buffer buffer = this.buffer instanceof SlicedBuffer ? ((SlicedBuffer) this.buffer).root() : this.buffer;
+    if (buffer instanceof FileBuffer) {
+      ((FileBuffer) buffer).delete();
+    } else if (buffer instanceof MappedBuffer) {
+      ((MappedBuffer) buffer).delete();
+    }
   }
 }

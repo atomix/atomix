@@ -15,11 +15,6 @@
  */
 package io.atomix.protocols.raft.storage.log.entry;
 
-import io.atomix.util.buffer.BufferInput;
-import io.atomix.util.buffer.BufferOutput;
-
-import static com.google.common.base.MoreObjects.toStringHelper;
-
 /**
  * Indicates a leader change has occurred.
  * <p>
@@ -30,35 +25,8 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class InitializeEntry extends TimestampedEntry<InitializeEntry> {
-  public InitializeEntry(long timestamp) {
-    super(timestamp);
-  }
-
-  @Override
-  public Type<InitializeEntry> type() {
-    return Type.INITIALIZE;
-  }
-
-  @Override
-  public String toString() {
-    return toStringHelper(this)
-        .add("timestamp", timestamp)
-        .toString();
-  }
-
-  /**
-   * Initialize entry serializer.
-   */
-  public static class Serializer implements TimestampedEntry.Serializer<InitializeEntry> {
-    @Override
-    public void writeObject(BufferOutput output, InitializeEntry entry) {
-      output.writeLong(entry.timestamp);
-    }
-
-    @Override
-    public InitializeEntry readObject(BufferInput input, Class<InitializeEntry> type) {
-      return new InitializeEntry(input.readLong());
-    }
+public class InitializeEntry extends TimestampedEntry {
+  public InitializeEntry(long term, long timestamp) {
+    super(term, timestamp);
   }
 }

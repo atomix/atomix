@@ -13,28 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.storage;
+package io.atomix.protocols.raft.storage.log.entry;
+
+import io.atomix.protocols.raft.storage.log.RaftLog;
+
+import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
- * Log exception.
+ * Stores a state change in a {@link RaftLog}.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class StorageException extends RuntimeException {
+public abstract class RaftLogEntry {
+  protected final long term;
 
-  public StorageException() {
+  public RaftLogEntry(long term) {
+    this.term = term;
   }
 
-  public StorageException(String message) {
-    super(message);
+  /**
+   * Returns the entry term.
+   *
+   * @return The entry term.
+   */
+  public long term() {
+    return term;
   }
 
-  public StorageException(String message, Throwable cause) {
-    super(message, cause);
+  @Override
+  public String toString() {
+    return toStringHelper(this)
+        .add("term", term)
+        .toString();
   }
-
-  public StorageException(Throwable cause) {
-    super(cause);
-  }
-
 }

@@ -15,13 +15,14 @@
  */
 package io.atomix.protocols.raft.storage;
 
-import io.atomix.protocols.raft.storage.log.Log;
-import io.atomix.protocols.raft.storage.log.Segment;
-import io.atomix.protocols.raft.storage.log.SegmentDescriptor;
-import io.atomix.protocols.raft.storage.log.SegmentFile;
+import io.atomix.protocols.raft.storage.log.RaftLog;
+import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotFile;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotStore;
 import io.atomix.protocols.raft.storage.system.MetaStore;
+import io.atomix.storage.StorageLevel;
+import io.atomix.storage.journal.JournalSegmentDescriptor;
+import io.atomix.storage.journal.JournalSegmentFile;
 import io.atomix.util.serializer.KryoNamespaces;
 import io.atomix.util.serializer.Serializer;
 
@@ -35,9 +36,9 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Immutable log configuration and {@link Log} factory.
+ * Immutable log configuration and {@link RaftLog} factory.
  * <p>
- * This class provides a factory for {@link Log} objects. {@code Storage} objects are immutable and
+ * This class provides a factory for {@link RaftLog} objects. {@code Storage} objects are immutable and
  * can be created only via the {@link Storage.Builder}. To create a new
  * {@code Storage.Builder}, use the static {@link #builder()} factory method:
  * <pre>
@@ -50,7 +51,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * </pre>
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
- * @see Log
+ * @see RaftLog
  */
 public class Storage {
 
@@ -63,63 +64,52 @@ public class Storage {
     return new Builder();
   }
 
-  private static final String DEFAULT_DIRECTORY = System.getProperty("user.dir");
-  private static final int DEFAULT_MAX_SEGMENT_SIZE = 1024 * 1024 * 32;
-  private static final int DEFAULT_MAX_ENTRIES_PER_SEGMENT = 1024 * 1024;
-  private static final int DEFAULT_ENTRY_BUFFER_SIZE = 1024;
-  private static final boolean DEFAULT_FLUSH_ON_COMMIT = false;
-  private static final boolean DEFAULT_RETAIN_STALE_SNAPSHOTS = false;
+  private final String prefix;
+  private final StorageLevel storageLevel;
+  private final File directory;
+  private final Serializer serializer;
+  private final int maxSegmentSize;
+  private final int maxEntriesPerSegment;
+  private final int entryBufferSize;
+  private final boolean flushOnCommit;
+  private final boolean retainStaleSnapshots;
 
-  private StorageLevel storageLevel = StorageLevel.DISK;
-  private File directory = new File(DEFAULT_DIRECTORY);
-  private int maxSegmentSize = DEFAULT_MAX_SEGMENT_SIZE;
-  private int maxEntriesPerSegment = DEFAULT_MAX_ENTRIES_PER_SEGMENT;
-  private int entryBufferSize = DEFAULT_ENTRY_BUFFER_SIZE;
-  private boolean flushOnCommit = DEFAULT_FLUSH_ON_COMMIT;
-  private boolean retainStaleSnapshots = DEFAULT_RETAIN_STALE_SNAPSHOTS;
-
-  public Storage() {
-  }
-
-  public Storage(StorageLevel storageLevel) {
-    this.storageLevel = checkNotNull(storageLevel, "storageLevel cannot be null");
-  }
-
-  /**
-   * @throws NullPointerException if {@code directory} is null
-   */
-  public Storage(String directory) {
-    this(new File(checkNotNull(directory, "directory cannot be null")));
-  }
-
-  /**
-   * @throws NullPointerException if {@code directory} is null
-   */
-  public Storage(File directory) {
-    this(directory, StorageLevel.DISK);
+  private Storage(
+      String prefix,
+      StorageLevel storageLevel,
+      File directory,
+      Serializer serializer,
+      int maxSegmentSize,
+      int maxEntriesPerSegment,
+      int entryBufferSize,
+      boolean flushOnCommit,
+      boolean retainStaleSnapshots) {
+    this.prefix = prefix;
+    this.storageLevel = storageLevel;
+    this.directory = directory;
+    this.serializer = serializer;
+    this.maxSegmentSize = maxSegmentSize;
+    this.maxEntriesPerSegment = maxEntriesPerSegment;
+    this.entryBufferSize = entryBufferSize;
+    this.flushOnCommit = flushOnCommit;
+    this.retainStaleSnapshots = retainStaleSnapshots;
   }
 
   /**
-   * @throws NullPointerException if {@code directory} is null
+   * Returns the storage filename prefix.
+   *
+   * @return The storage filename prefix.
    */
-  public Storage(String directory, StorageLevel storageLevel) {
-    this(new File(checkNotNull(directory, "directory cannot be null")), storageLevel);
-  }
-
-  /**
-   * @throws NullPointerException if {@code directory} is null
-   */
-  public Storage(File directory, StorageLevel storageLevel) {
-    this.directory = checkNotNull(directory, "directory cannot be null");
-    this.storageLevel = checkNotNull(storageLevel, "storageLevel cannot be null");
+  public String prefix() {
+    return prefix;
   }
 
   /**
    * Returns the storage directory.
    * <p>
-   * The storage directory is the directory to which all {@link Log}s write {@link Segment} files. Segment files
+   * The storage directory is the directory to which all {@link RaftLog}s write files. Segment files
    * for multiple logs may be stored in the storage directory, and files for each log instance will be identified
-   * by the {@code name} provided when the log is {@link #openLog(String) opened}.
+   * by the {@code name} provided when the log is {@link #openLog() opened}.
    *
    * @return The storage directory.
    */
@@ -130,7 +120,7 @@ public class Storage {
   /**
    * Returns the storage level.
    * <p>
-   * The storage level dictates how entries within individual log {@link Segment}s should be stored.
+   * The storage level dictates how entries within individual log {@link RaftLog}s should be stored.
    *
    * @return The storage level.
    */
@@ -141,7 +131,7 @@ public class Storage {
   /**
    * Returns the maximum log segment size.
    * <p>
-   * The maximum segment size dictates the maximum size any {@link Segment} in a {@link Log} may consume
+   * The maximum segment size dictates the maximum size any segment in a {@link RaftLog} may consume
    * in bytes.
    *
    * @return The maximum segment size in bytes.
@@ -153,8 +143,8 @@ public class Storage {
   /**
    * Returns the maximum number of entries per segment.
    * <p>
-   * The maximum entries per segment dictates the maximum number of {@link io.atomix.protocols.raft.storage.log.entry.Entry entries}
-   * that are allowed to be stored in any {@link Segment} in a {@link Log}.
+   * The maximum entries per segment dictates the maximum number of {@link RaftLogEntry entries}
+   * that are allowed to be stored in any segment in a {@link RaftLog}.
    *
    * @return The maximum number of entries per segment.
    */
@@ -202,11 +192,10 @@ public class Storage {
    * The meta store will be loaded using based on the configured {@link StorageLevel}. If the storage level is persistent
    * then the meta store will be loaded from disk, otherwise a new meta store will be created.
    *
-   * @param name The metastore name.
    * @return The metastore.
    */
-  public MetaStore openMetaStore(String name) {
-    return new MetaStore(name, this, Serializer.using(KryoNamespaces.RAFT));
+  public MetaStore openMetaStore() {
+    return new MetaStore(this, Serializer.using(KryoNamespaces.RAFT));
   }
 
   /**
@@ -214,12 +203,10 @@ public class Storage {
    * <p>
    * The meta store will be deleted by simply reading {@code meta} file names from disk and deleting metadata
    * files directly. Deleting the meta store does not involve reading any metadata files into memory.
-   *
-   * @param name The metastore name.
    */
-  public void deleteMetaStore(String name) {
-    deleteFiles(f -> f.getName().equals(String.format("%s.meta", name)) ||
-        f.getName().equals(String.format("%s.conf", name)));
+  public void deleteMetaStore() {
+    deleteFiles(f -> f.getName().equals(String.format("%s.meta", prefix)) ||
+        f.getName().equals(String.format("%s.conf", prefix)));
   }
 
   /**
@@ -228,11 +215,10 @@ public class Storage {
    * The snapshot store will be loaded using based on the configured {@link StorageLevel}. If the storage level is persistent
    * then the snapshot store will be loaded from disk, otherwise a new snapshot store will be created.
    *
-   * @param name The snapshot store name.
    * @return The snapshot store.
    */
-  public SnapshotStore openSnapshotStore(String name) {
-    return new SnapshotStore(name, this);
+  public SnapshotStore openSnapshotStore() {
+    return new SnapshotStore(this);
   }
 
   /**
@@ -240,39 +226,42 @@ public class Storage {
    * <p>
    * The snapshot store will be deleted by simply reading {@code snapshot} file names from disk and deleting snapshot
    * files directly. Deleting the snapshot store does not involve reading any snapshot files into memory.
-   *
-   * @param name The snapshot store name.
    */
-  public void deleteSnapshotStore(String name) {
-    deleteFiles(f -> SnapshotFile.isSnapshotFile(name, f));
+  public void deleteSnapshotStore() {
+    deleteFiles(f -> SnapshotFile.isSnapshotFile(prefix, f));
   }
 
   /**
-   * Opens a new {@link Log}, recovering the log from disk if it exists.
+   * Opens a new {@link RaftLog}, recovering the log from disk if it exists.
    * <p>
-   * When a log is opened, the log will attempt to load {@link Segment}s from the storage {@link #directory()}
+   * When a log is opened, the log will attempt to load segments from the storage {@link #directory()}
    * according to the provided log {@code name}. If segments for the given log name are present on disk, segments
    * will be loaded and indexes will be rebuilt from disk. If no segments are found, an empty log will be created.
    * <p>
    * When log files are loaded from disk, the file names are expected to be based on the provided log {@code name}.
    *
-   * @param name The log name.
    * @return The opened log.
    */
-  public Log openLog(String name) {
-    return new Log(name, this);
+  public RaftLog openLog() {
+    return RaftLog.builder()
+        .withName(prefix)
+        .withDirectory(directory)
+        .withStorageLevel(storageLevel)
+        .withSerializer(serializer)
+        .withMaxSegmentSize(maxSegmentSize)
+        .withMaxEntriesPerSegment(maxEntriesPerSegment)
+        .withEntryBufferSize(entryBufferSize)
+        .build();
   }
 
   /**
-   * Deletes a {@link Log} from disk.
+   * Deletes a {@link RaftLog} from disk.
    * <p>
    * The log will be deleted by simply reading {@code log} file names from disk and deleting log files directly.
    * Deleting log files does not involve rebuilding indexes or reading any logs into memory.
-   *
-   * @param name The log name.
    */
-  public void deleteLog(String name) {
-    deleteFiles(f -> SegmentFile.isSegmentFile(name, f));
+  public void deleteLog() {
+    deleteFiles(f -> JournalSegmentFile.isSegmentFile(prefix, f));
   }
 
   /**
@@ -315,22 +304,49 @@ public class Storage {
    * </pre>
    */
   public static class Builder implements io.atomix.util.Builder<Storage> {
-    private final Storage storage = new Storage();
+    private static final String DEFAULT_PREFIX = "atomix";
+    private static final String DEFAULT_DIRECTORY = System.getProperty("user.dir");
+    private static final int DEFAULT_MAX_SEGMENT_SIZE = 1024 * 1024 * 32;
+    private static final int DEFAULT_MAX_ENTRIES_PER_SEGMENT = 1024 * 1024;
+    private static final int DEFAULT_ENTRY_BUFFER_SIZE = 1024;
+    private static final boolean DEFAULT_FLUSH_ON_COMMIT = false;
+    private static final boolean DEFAULT_RETAIN_STALE_SNAPSHOTS = false;
+
+    private String prefix = DEFAULT_PREFIX;
+    private StorageLevel storageLevel = StorageLevel.DISK;
+    private File directory = new File(DEFAULT_DIRECTORY);
+    private Serializer serializer = Serializer.using(KryoNamespaces.API);
+    private int maxSegmentSize = DEFAULT_MAX_SEGMENT_SIZE;
+    private int maxEntriesPerSegment = DEFAULT_MAX_ENTRIES_PER_SEGMENT;
+    private int entryBufferSize = DEFAULT_ENTRY_BUFFER_SIZE;
+    private boolean flushOnCommit = DEFAULT_FLUSH_ON_COMMIT;
+    private boolean retainStaleSnapshots = DEFAULT_RETAIN_STALE_SNAPSHOTS;
 
     private Builder() {
     }
 
     /**
+     * Sets the storage prefix.
+     *
+     * @param prefix The storage prefix.
+     * @return The storage builder.
+     */
+    public Builder withPrefix(String prefix) {
+      this.prefix = checkNotNull(prefix, "prefix cannot be null");
+      return this;
+    }
+
+    /**
      * Sets the log storage level, returning the builder for method chaining.
      * <p>
-     * The storage level indicates how individual {@link io.atomix.protocols.raft.storage.log.entry.Entry entries}
+     * The storage level indicates how individual {@link RaftLogEntry entries}
      * should be persisted in the log.
      *
      * @param storageLevel The log storage level.
      * @return The storage builder.
      */
     public Builder withStorageLevel(StorageLevel storageLevel) {
-      storage.storageLevel = checkNotNull(storageLevel, "storageLevel");
+      this.storageLevel = checkNotNull(storageLevel, "storageLevel");
       return this;
     }
 
@@ -359,7 +375,19 @@ public class Storage {
      * @throws NullPointerException If the {@code directory} is {@code null}
      */
     public Builder withDirectory(File directory) {
-      storage.directory = checkNotNull(directory, "directory");
+      this.directory = checkNotNull(directory, "directory");
+      return this;
+    }
+
+    /**
+     * Sets the storage serializer.
+     *
+     * @param serializer The storage serializer.
+     * @return The storage builder.
+     * @throws NullPointerException If the {@code serializer} is {@code null}
+     */
+    public Builder withSerializer(Serializer serializer) {
+      this.serializer = checkNotNull(serializer, "serializer cannot be null");
       return this;
     }
 
@@ -377,8 +405,8 @@ public class Storage {
      * @throws IllegalArgumentException If the {@code maxSegmentSize} is not positive
      */
     public Builder withMaxSegmentSize(int maxSegmentSize) {
-      checkArgument(maxSegmentSize > SegmentDescriptor.BYTES, "maxSegmentSize must be greater than " + SegmentDescriptor.BYTES);
-      storage.maxSegmentSize = maxSegmentSize;
+      checkArgument(maxSegmentSize > JournalSegmentDescriptor.BYTES, "maxSegmentSize must be greater than " + JournalSegmentDescriptor.BYTES);
+      this.maxSegmentSize = maxSegmentSize;
       return this;
     }
 
@@ -400,7 +428,7 @@ public class Storage {
       checkArgument(maxEntriesPerSegment > 0, "max entries per segment must be positive");
       checkArgument(maxEntriesPerSegment > DEFAULT_MAX_ENTRIES_PER_SEGMENT,
           "max entries per segment cannot be greater than " + DEFAULT_MAX_ENTRIES_PER_SEGMENT);
-      storage.maxEntriesPerSegment = maxEntriesPerSegment;
+      this.maxEntriesPerSegment = maxEntriesPerSegment;
       return this;
     }
 
@@ -417,7 +445,7 @@ public class Storage {
      */
     public Builder withEntryBufferSize(int entryBufferSize) {
       checkArgument(entryBufferSize > 0, "entryBufferSize must be positive");
-      storage.entryBufferSize = entryBufferSize;
+      this.entryBufferSize = entryBufferSize;
       return this;
     }
 
@@ -445,7 +473,7 @@ public class Storage {
      * @return The storage builder.
      */
     public Builder withFlushOnCommit(boolean flushOnCommit) {
-      storage.flushOnCommit = flushOnCommit;
+      this.flushOnCommit = flushOnCommit;
       return this;
     }
 
@@ -477,7 +505,7 @@ public class Storage {
      * @return The storage builder.
      */
     public Builder withRetainStaleSnapshots(boolean retainStaleSnapshots) {
-      storage.retainStaleSnapshots = retainStaleSnapshots;
+      this.retainStaleSnapshots = retainStaleSnapshots;
       return this;
     }
 
@@ -488,7 +516,16 @@ public class Storage {
      */
     @Override
     public Storage build() {
-      return storage;
+      return new Storage(
+          prefix,
+          storageLevel,
+          directory,
+          serializer,
+          maxSegmentSize,
+          maxEntriesPerSegment,
+          entryBufferSize,
+          flushOnCommit,
+          retainStaleSnapshots);
     }
   }
 

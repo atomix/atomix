@@ -17,7 +17,7 @@ package io.atomix.protocols.raft.storage.system;
 
 import io.atomix.cluster.NodeId;
 import io.atomix.protocols.raft.storage.Storage;
-import io.atomix.protocols.raft.storage.StorageLevel;
+import io.atomix.storage.StorageLevel;
 import io.atomix.util.buffer.Buffer;
 import io.atomix.util.buffer.FileBuffer;
 import io.atomix.util.buffer.HeapBuffer;
@@ -47,7 +47,7 @@ public class MetaStore implements AutoCloseable {
   private final FileBuffer metadataBuffer;
   private final Buffer configurationBuffer;
 
-  public MetaStore(String name, Storage storage, Serializer serializer) {
+  public MetaStore(Storage storage, Serializer serializer) {
     this.serializer = checkNotNull(serializer, "serializer cannot be null");
 
     if (!(storage.directory().isDirectory() || storage.directory().mkdirs())) {
@@ -55,13 +55,13 @@ public class MetaStore implements AutoCloseable {
     }
 
     // Note that for raft safety, irrespective of the storage level, <term, vote> metadata is always persisted on disk.
-    File metaFile = new File(storage.directory(), String.format("%s.meta", name));
+    File metaFile = new File(storage.directory(), String.format("%s.meta", storage.prefix()));
     metadataBuffer = FileBuffer.allocate(metaFile, 12);
 
     if (storage.level() == StorageLevel.MEMORY) {
       configurationBuffer = HeapBuffer.allocate(32);
     } else {
-      File confFile = new File(storage.directory(), String.format("%s.conf", name));
+      File confFile = new File(storage.directory(), String.format("%s.conf", storage.prefix()));
       configurationBuffer = FileBuffer.allocate(confFile, 32);
     }
   }

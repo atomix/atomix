@@ -13,14 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.storage.log;
+package io.atomix.storage.journal;
 
-import io.atomix.protocols.raft.storage.log.entry.Entry;
 import io.atomix.util.buffer.Buffer;
 import io.atomix.util.buffer.HeapBuffer;
+import io.atomix.util.serializer.Serializer;
 
 import java.nio.BufferUnderflowException;
 import java.util.NoSuchElementException;
+import java.util.concurrent.locks.Lock;
 import java.util.zip.CRC32;
 import java.util.zip.Checksum;
 
@@ -29,26 +30,26 @@ import java.util.zip.Checksum;
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public class SegmentReader implements Reader {
-  private final Segment segment;
+public class JournalSegmentReader<E> implements JournalReader<E> {
+  private final SegmentedJournal<E> journal;
   private final Buffer buffer;
-  private final Mode mode;
+  private final Serializer serializer;
   private final HeapBuffer memory = HeapBuffer.allocate();
   private final long firstIndex;
-  private volatile Indexed<? extends Entry<?>> currentEntry;
-  private volatile Indexed<? extends Entry<?>> nextEntry;
+  private volatile Indexed<E> currentEntry;
+  private volatile Indexed<E> nextEntry;
 
-  public SegmentReader(Segment segment, Buffer buffer, Mode mode) {
-    this.segment = segment;
-    this.buffer = buffer;
-    this.mode = mode;
-    this.firstIndex = segment.descriptor().index();
+  public JournalSegmentReader(SegmentedJournal<E> journal, JournalSegmentDescriptor descriptor, Serializer serializer) {
+    this.journal = journal;
+    this.buffer = journal.openSegment(descriptor, "r");
+    this.serializer = serializer;
+    this.firstIndex = descriptor.index();
     readNext();
   }
 
   @Override
-  public Mode mode() {
-    return mode;
+  public Lock lock() {
+    throw new UnsupportedOperationException();
   }
 
   /**
@@ -66,7 +67,7 @@ public class SegmentReader implements Reader {
   }
 
   @Override
-  public Indexed<? extends Entry<?>> currentEntry() {
+  public Indexed<E> currentEntry() {
     return currentEntry;
   }
 
@@ -77,18 +78,26 @@ public class SegmentReader implements Reader {
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T extends Entry<T>> Indexed<T> get(long index) {
+  public Indexed<E> get(long index) {
     // If the current entry is set, use it to determine whether to reset the reader.
     if (currentEntry != null) {
       // If the index matches the current entry index, return the current entry.
       if (index == currentEntry.index()) {
-        return (Indexed<T>) currentEntry;
+        return currentEntry;
       }
 
       // If the index is less than the current entry index, reset the reader.
       if (index < currentEntry.index()) {
         reset();
       }
+    }
+
+    // If the entry is in the journal buffer, update the current entry and return it.
+    Indexed<E> bufferedEntry = journal.buffer().get(index);
+    if (bufferedEntry != null) {
+      this.currentEntry = bufferedEntry;
+      readNext();
+      return bufferedEntry;
     }
 
     // Seek to the given index.
@@ -102,13 +111,13 @@ public class SegmentReader implements Reader {
 
     // If the current entry's index matches the given index, return it. Otherwise, return null.
     if (currentEntry != null && index == currentEntry.index()) {
-      return (Indexed<T>) currentEntry;
+      return currentEntry;
     }
     return null;
   }
 
   @Override
-  public Indexed<? extends Entry<?>> reset(long index) {
+  public Indexed<E> reset(long index) {
     return get(index);
   }
 
@@ -130,7 +139,7 @@ public class SegmentReader implements Reader {
   }
 
   @Override
-  public Indexed<? extends Entry<?>> next() {
+  public Indexed<E> next() {
     if (!hasNext()) {
       throw new NoSuchElementException();
     }
@@ -156,13 +165,11 @@ public class SegmentReader implements Reader {
     // Compute the index of the next entry in the segment.
     final long index = nextIndex();
 
-    // If the reader is configured to only read commits, stop reading and return once the
-    // reader reaches uncommitted entries.
-    switch (mode) {
-      case COMMITS:
-        if (index > segment.manager().commitIndex()) {
-          return;
-        }
+    // If the entry is in the journal buffer, store it as the next entry and return.
+    Indexed<E> bufferedEntry = journal.buffer().get(index);
+    if (bufferedEntry != null) {
+      nextEntry = bufferedEntry;
+      return;
     }
 
     // Mark the buffer so it can be reset if necessary.
@@ -179,37 +186,21 @@ public class SegmentReader implements Reader {
         return;
       }
 
+      // Read the checksum of the entry.
+      long checksum = memory.readUnsignedInt();
+
       // Read the entry into memory.
       buffer.read(memory.clear().limit(length));
       memory.flip();
 
-      // Read the checksum of the entry.
-      long checksum = memory.readUnsignedInt();
-
-      // Read the term if defined.
-      final long term;
-      if (memory.readBoolean()) {
-        term = memory.readLong();
-      } else {
-        term = currentEntry.term();
-      }
-
-      // Read the entry type.
-      final int typeId = memory.readByte();
-
-      // Calculate the entry position and length.
-      final int entryPosition = (int) memory.position();
-      final int entryLength = length - entryPosition;
-
       // Compute the checksum for the entry bytes.
       final Checksum crc32 = new CRC32();
-      crc32.update(memory.array(), entryPosition, entryLength);
+      crc32.update(memory.array(), 0, length);
 
       // If the stored checksum equals the computed checksum, return the entry.
       if (checksum == crc32.getValue()) {
-        final Entry.Type<?> type = Entry.Type.forId(typeId);
-        final Entry entry = type.serializer().readObject(memory, type.type());
-        nextEntry = new Indexed<>(index, term, entry, length);
+        E entry = serializer.decode(memory.array());
+        nextEntry = new Indexed<>(index, entry, length);
       } else {
         buffer.reset();
         nextEntry = null;

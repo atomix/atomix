@@ -29,20 +29,15 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class QueryEntry extends OperationEntry<QueryEntry> {
-
-  public QueryEntry(long timestamp, long session, long sequence, byte[] bytes) {
-    super(timestamp, session, sequence, bytes);
-  }
-
-  @Override
-  public Type<QueryEntry> type() {
-    return Type.QUERY;
+public class QueryEntry extends OperationEntry {
+  public QueryEntry(long term, long timestamp, long session, long sequence, byte[] bytes) {
+    super(term, timestamp, session, sequence, bytes);
   }
 
   @Override
   public String toString() {
     return toStringHelper(this)
+        .add("term", term)
         .add("timestamp", timestamp)
         .add("session", session)
         .add("sequence", sequence)

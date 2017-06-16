@@ -15,46 +15,22 @@
  */
 package io.atomix.protocols.raft.storage.log.entry;
 
-import io.atomix.util.buffer.BufferInput;
-import io.atomix.util.buffer.BufferOutput;
-
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
  * Close session entry.
  */
-public class CloseSessionEntry extends SessionEntry<CloseSessionEntry> {
-
-  public CloseSessionEntry(long timestamp, long session) {
-    super(timestamp, session);
-  }
-
-  @Override
-  public Type<CloseSessionEntry> type() {
-    return Type.CLOSE_SESSION;
+public class CloseSessionEntry extends SessionEntry {
+  public CloseSessionEntry(long term, long timestamp, long session) {
+    super(term, timestamp, session);
   }
 
   @Override
   public String toString() {
     return toStringHelper(this)
+        .add("term", term)
         .add("session", session)
         .add("timestamp", timestamp)
         .toString();
-  }
-
-  /**
-   * Close session entry serializer.
-   */
-  public static class Serializer implements SessionEntry.Serializer<CloseSessionEntry> {
-    @Override
-    public void writeObject(BufferOutput output, CloseSessionEntry entry) {
-      output.writeLong(entry.timestamp);
-      output.writeLong(entry.session);
-    }
-
-    @Override
-    public CloseSessionEntry readObject(BufferInput input, Class<CloseSessionEntry> type) {
-      return new CloseSessionEntry(input.readLong(), input.readLong());
-    }
   }
 }

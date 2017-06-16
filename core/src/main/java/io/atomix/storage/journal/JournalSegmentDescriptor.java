@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.storage.log;
+package io.atomix.storage.journal;
 
 import io.atomix.util.buffer.Buffer;
 import io.atomix.util.buffer.Bytes;
@@ -25,7 +25,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Stores information about a {@link Segment} of the log.
+ * Stores information about a {@link JournalSegment} of the log.
  * <p>
  * The segment descriptor manages metadata related to a single segment of the log. Descriptors are stored within the
  * first {@code 64} bytes of each segment in the following order:
@@ -53,7 +53,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public final class SegmentDescriptor implements AutoCloseable {
+public final class JournalSegmentDescriptor implements AutoCloseable {
   public static final int BYTES = 64;
 
   // The lengths of each field in the header.
@@ -108,7 +108,7 @@ public final class SegmentDescriptor implements AutoCloseable {
   /**
    * @throws NullPointerException if {@code buffer} is null
    */
-  public SegmentDescriptor(Buffer buffer) {
+  public JournalSegmentDescriptor(Buffer buffer) {
     this.buffer = checkNotNull(buffer, "buffer cannot be null");
     this.id = buffer.readLong();
     this.version = buffer.readLong();
@@ -220,7 +220,7 @@ public final class SegmentDescriptor implements AutoCloseable {
   /**
    * Copies the segment to a new buffer.
    */
-  SegmentDescriptor copyTo(Buffer buffer) {
+  JournalSegmentDescriptor copyTo(Buffer buffer) {
     this.buffer = buffer
         .writeLong(id)
         .writeLong(version)
@@ -331,8 +331,8 @@ public final class SegmentDescriptor implements AutoCloseable {
      *
      * @return The built segment descriptor.
      */
-    public SegmentDescriptor build() {
-      return new SegmentDescriptor(buffer.writeLong(32, 0).rewind());
+    public JournalSegmentDescriptor build() {
+      return new JournalSegmentDescriptor(buffer.writeLong(32, 0).rewind());
     }
 
   }

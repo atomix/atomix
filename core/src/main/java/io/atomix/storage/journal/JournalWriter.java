@@ -13,16 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.storage.log;
+package io.atomix.storage.journal;
 
-import io.atomix.protocols.raft.storage.log.entry.Entry;
+import java.util.concurrent.locks.Lock;
 
 /**
  * Log writer.
  *
  * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
-public interface Writer extends AutoCloseable {
+public interface JournalWriter<E> extends AutoCloseable {
+
+  /**
+   * Returns the writer lock.
+   *
+   * @return The writer lock.
+   */
+  Lock lock();
 
   /**
    * Returns the last written index.
@@ -36,7 +43,7 @@ public interface Writer extends AutoCloseable {
    *
    * @return The last entry written.
    */
-  Indexed<? extends Entry<?>> lastEntry();
+  Indexed<E> lastEntry();
 
   /**
    * Returns the next index to be written.
@@ -46,38 +53,31 @@ public interface Writer extends AutoCloseable {
   long nextIndex();
 
   /**
+   * Appends an entry to the journal.
+   *
+   * @param entry The entry to append.
+   * @return The appended indexed entry.
+   */
+  <T extends E> Indexed<T> append(T entry);
+
+  /**
    * Appends an indexed entry to the log.
    *
    * @param entry The indexed entry to append.
-   * @param <T>   The entry type.
-   * @return The appended indexed entry.
    */
-  <T extends Entry<T>> Indexed<T> append(Indexed<T> entry);
-
-  /**
-   * Appends an entry to the writer.
-   *
-   * @param term  The term in which to append the entry.
-   * @param entry The entry to append.
-   * @param <T>   The entry type.
-   * @return The indexed entry.
-   */
-  <T extends Entry<T>> Indexed<T> append(long term, T entry);
+  void append(Indexed<E> entry);
 
   /**
    * Truncates the log to the given index.
    *
    * @param index The index to which to truncate the log.
-   * @return The updated writer.
    */
-  Writer truncate(long index);
+  void truncate(long index);
 
   /**
    * Flushes written entries to disk.
-   *
-   * @return The flushed writer.
    */
-  Writer flush();
+  void flush();
 
   @Override
   void close();
