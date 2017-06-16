@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.protocol;
 
-import io.atomix.cluster.ClusterCommunicationService;
+import io.atomix.messaging.ClusterCommunicationService;
 import io.atomix.util.serializer.KryoNamespaces;
 import io.atomix.util.serializer.Serializer;
 

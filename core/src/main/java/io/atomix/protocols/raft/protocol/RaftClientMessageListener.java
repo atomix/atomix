@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.protocol;
 
-import io.atomix.cluster.ClusterCommunicationService;
+import io.atomix.messaging.ClusterCommunicationService;
 import io.atomix.util.serializer.Serializer;
 
 import java.util.concurrent.Executor;

@@ -15,8 +15,8 @@
  */
 package io.atomix.protocols.raft.protocol;
 
-import io.atomix.cluster.ClusterCommunicationService;
-import io.atomix.cluster.MessageSubject;
+import io.atomix.messaging.ClusterCommunicationService;
+import io.atomix.messaging.MessageSubject;
 import io.atomix.cluster.NodeId;
 import io.atomix.util.serializer.Serializer;
 

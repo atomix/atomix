@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.protocol;
 
-import io.atomix.cluster.MessageSubject;
+import io.atomix.messaging.MessageSubject;
 
 /**
  * Protocol message context.
