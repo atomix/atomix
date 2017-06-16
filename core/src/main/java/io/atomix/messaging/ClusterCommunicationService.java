@@ -55,6 +55,19 @@ public interface ClusterCommunicationService {
   /**
    * Sends a message to the specified controller node.
    *
+   * @param message message to send
+   * @param subject message subject
+   * @param encoder function for encoding message to byte[]
+   * @param <M> message type
+   * @return future that is completed when the message is sent
+   */
+  <M> CompletableFuture<Void> unicast(M message,
+                                      MessageSubject subject,
+                                      Function<M, byte[]> encoder);
+
+  /**
+   * Sends a message to the specified controller node.
+   *
    * @param message  message to send
    * @param subject  message subject
    * @param encoder  function for encoding message to byte[]
@@ -73,6 +86,18 @@ public interface ClusterCommunicationService {
    * @param message message to send
    * @param subject message subject
    * @param encoder function for encoding message to byte[]
+   * @param <M>     message type
+   */
+  <M> void multicast(M message,
+                     MessageSubject subject,
+                     Function<M, byte[]> encoder);
+
+  /**
+   * Multicasts a message to a set of controller nodes.
+   *
+   * @param message message to send
+   * @param subject message subject
+   * @param encoder function for encoding message to byte[]
    * @param nodeIds recipient node identifiers
    * @param <M>     message type
    */
@@ -80,6 +105,22 @@ public interface ClusterCommunicationService {
                      MessageSubject subject,
                      Function<M, byte[]> encoder,
                      Set<NodeId> nodeIds);
+
+  /**
+   * Sends a message and expects a reply.
+   *
+   * @param message  message to send
+   * @param subject  message subject
+   * @param encoder  function for encoding request to byte[]
+   * @param decoder  function for decoding response from byte[]
+   * @param <M>      request type
+   * @param <R>      reply type
+   * @return reply future
+   */
+  <M, R> CompletableFuture<R> sendAndReceive(M message,
+                                             MessageSubject subject,
+                                             Function<M, byte[]> encoder,
+                                             Function<byte[], R> decoder);
 
   /**
    * Sends a message and expects a reply.
@@ -109,8 +150,9 @@ public interface ClusterCommunicationService {
    * @param executor executor to run this handler on
    * @param <M>      incoming message type
    * @param <R>      reply message type
+   * @return future to be completed once the subscription has been propagated
    */
-  <M, R> void addSubscriber(MessageSubject subject,
+  <M, R> CompletableFuture<Void> addSubscriber(MessageSubject subject,
                             Function<byte[], M> decoder,
                             Function<M, R> handler,
                             Function<R, byte[]> encoder,
@@ -125,8 +167,9 @@ public interface ClusterCommunicationService {
    * @param encoder encoder for serializing reply
    * @param <M>     incoming message type
    * @param <R>     reply message type
+   * @return future to be completed once the subscription has been propagated
    */
-  <M, R> void addSubscriber(MessageSubject subject,
+  <M, R> CompletableFuture<Void> addSubscriber(MessageSubject subject,
                             Function<byte[], M> decoder,
                             Function<M, CompletableFuture<R>> handler,
                             Function<R, byte[]> encoder);
@@ -139,8 +182,9 @@ public interface ClusterCommunicationService {
    * @param handler  handler for handling message
    * @param executor executor to run this handler on
    * @param <M>      incoming message type
+   * @return future to be completed once the subscription has been propagated
    */
-  <M> void addSubscriber(MessageSubject subject,
+  <M> CompletableFuture<Void> addSubscriber(MessageSubject subject,
                          Function<byte[], M> decoder,
                          Consumer<M> handler,
                          Executor executor);
