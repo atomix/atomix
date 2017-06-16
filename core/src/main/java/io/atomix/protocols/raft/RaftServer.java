@@ -19,6 +19,7 @@ import io.atomix.cluster.NodeId;
 import io.atomix.protocols.raft.cluster.RaftCluster;
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.error.ConfigurationException;
+import io.atomix.protocols.raft.impl.DefaultRaftServer;
 import io.atomix.protocols.raft.impl.RaftServerContext;
 import io.atomix.protocols.raft.protocol.RaftServerProtocol;
 import io.atomix.protocols.raft.roles.StateMachineRegistry;
@@ -26,16 +27,11 @@ import io.atomix.protocols.raft.storage.Storage;
 import io.atomix.protocols.raft.storage.log.RaftLog;
 import io.atomix.storage.StorageLevel;
 import io.atomix.util.concurrent.AtomixThreadFactory;
-import io.atomix.util.concurrent.Futures;
 import io.atomix.util.concurrent.SingleThreadContext;
 import io.atomix.util.concurrent.ThreadContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -168,8 +164,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @see RaftStateMachine
  * @see Storage
  */
-public class RaftServer {
-  private static final Logger LOGGER = LoggerFactory.getLogger(RaftServer.class);
+public interface RaftServer {
 
   /**
    * Returns a new Copycat server builder using the default host:port.
@@ -178,7 +173,7 @@ public class RaftServer {
    *
    * @return The server builder.
    */
-  public static Builder builder() {
+  static Builder builder() {
     return builder(null);
   }
 
@@ -190,7 +185,7 @@ public class RaftServer {
    * @param localNodeId The local node identifier.
    * @return The server builder.
    */
-  public static Builder builder(NodeId localNodeId) {
+  static Builder builder(NodeId localNodeId) {
     return new Builder(localNodeId);
   }
 
@@ -202,7 +197,7 @@ public class RaftServer {
    *
    * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
    */
-  public enum Role {
+  enum Role {
 
     /**
      * Represents the state of an inactive server.
@@ -253,20 +248,6 @@ public class RaftServer {
 
   }
 
-  protected final String name;
-  protected final RaftServerProtocol protocol;
-  protected final RaftServerContext context;
-  private volatile CompletableFuture<RaftServer> openFuture;
-  private volatile CompletableFuture<Void> closeFuture;
-  private Consumer<RaftMember> electionListener;
-  private volatile boolean started;
-
-  protected RaftServer(String name, RaftServerProtocol protocol, RaftServerContext context) {
-    this.name = checkNotNull(name, "name cannot be null");
-    this.protocol = checkNotNull(protocol, "protocol cannot be null");
-    this.context = checkNotNull(context, "context cannot be null");
-  }
-
   /**
    * Returns the server name.
    * <p>
@@ -278,9 +259,7 @@ public class RaftServer {
    *
    * @return The server name.
    */
-  public String name() {
-    return name;
-  }
+  String name();
 
   /**
    * Returns the server storage.
@@ -292,9 +271,7 @@ public class RaftServer {
    *
    * @return The server storage.
    */
-  public Storage storage() {
-    return context.getStorage();
-  }
+  Storage storage();
 
   /**
    * Returns the server's cluster configuration.
@@ -310,54 +287,32 @@ public class RaftServer {
    *
    * @return The server's cluster configuration.
    */
-  public RaftCluster cluster() {
-    return context.getCluster();
-  }
+  RaftCluster cluster();
 
   /**
-   * Returns the Copycat server state.
+   * Returns the server role.
    * <p>
    * The initial state of a Raft server is {@link Role#INACTIVE}. Once the server is {@link #bootstrap() started} and
    * until it is explicitly shutdown, the server will be in one of the active states - {@link Role#PASSIVE},
    * {@link Role#FOLLOWER}, {@link Role#CANDIDATE}, or {@link Role#LEADER}.
    *
-   * @return The Copycat server state.
+   * @return The server role.
    */
-  public Role state() {
-    return context.getState();
-  }
+  Role role();
 
   /**
-   * Registers a state change listener.
-   * <p>
-   * Throughout the lifetime of the cluster, the server will periodically transition between various {@link Role states}.
-   * Users can listen for and react to state change events. To determine when this server is elected leader, simply
-   * listen for the {@link Role#LEADER} state.
-   * <pre>
-   *   {@code
-   *   server.onStateChange(state -> {
-   *     if (state == CopycatServer.State.LEADER) {
-   *       System.out.println("Server elected leader!");
-   *     }
-   *   });
-   *   }
-   * </pre>
+   * Adds a role change listener.
    *
-   * @param listener The state change listener.
-   * @throws NullPointerException If {@code listener} is {@code null}
+   * @param listener The role change listener to add.
    */
-  public void addStateChangeListener(Consumer<Role> listener) {
-    context.addStateChangeListener(listener);
-  }
+  void addRoleChangeListener(Consumer<Role> listener);
 
   /**
-   * Returns the server execution context.
+   * Removes a role change listener.
    *
-   * @return The server thread context.
+   * @param listener The role change listener to remove.
    */
-  public ThreadContext context() {
-    return context.getThreadContext();
-  }
+  void removeRoleChangeListener(Consumer<Role> listener);
 
   /**
    * Bootstraps a single-node cluster.
@@ -382,10 +337,7 @@ public class RaftServer {
    *
    * @return A completable future to be completed once the cluster has been bootstrapped.
    */
-  @SuppressWarnings("unchecked")
-  public CompletableFuture<RaftServer> bootstrap() {
-    return bootstrap(Collections.EMPTY_LIST);
-  }
+  CompletableFuture<RaftServer> bootstrap();
 
   /**
    * Bootstraps the cluster using the provided cluster configuration.
@@ -412,9 +364,7 @@ public class RaftServer {
    * @param cluster The bootstrap cluster configuration.
    * @return A completable future to be completed once the cluster has been bootstrapped.
    */
-  public CompletableFuture<RaftServer> bootstrap(NodeId... cluster) {
-    return bootstrap(Arrays.asList(cluster));
-  }
+  CompletableFuture<RaftServer> bootstrap(NodeId... cluster);
 
   /**
    * Bootstraps the cluster using the provided cluster configuration.
@@ -441,9 +391,7 @@ public class RaftServer {
    * @param cluster The bootstrap cluster configuration.
    * @return A completable future to be completed once the cluster has been bootstrapped.
    */
-  public CompletableFuture<RaftServer> bootstrap(Collection<NodeId> cluster) {
-    return start(() -> cluster().bootstrap(cluster));
-  }
+  CompletableFuture<RaftServer> bootstrap(Collection<NodeId> cluster);
 
   /**
    * Joins the cluster.
@@ -475,9 +423,7 @@ public class RaftServer {
    * @param cluster A collection of cluster member addresses to join.
    * @return A completable future to be completed once the local server has joined the cluster.
    */
-  public CompletableFuture<RaftServer> join(NodeId... cluster) {
-    return join(Arrays.asList(cluster));
-  }
+  CompletableFuture<RaftServer> join(NodeId... cluster);
 
   /**
    * Joins the cluster.
@@ -509,128 +455,28 @@ public class RaftServer {
    * @param cluster A collection of cluster member addresses to join.
    * @return A completable future to be completed once the local server has joined the cluster.
    */
-  public CompletableFuture<RaftServer> join(Collection<NodeId> cluster) {
-    return start(() -> cluster().join(cluster));
-  }
-
-  /**
-   * Starts the server.
-   */
-  private CompletableFuture<RaftServer> start(Supplier<CompletableFuture<Void>> joiner) {
-    if (started)
-      return CompletableFuture.completedFuture(this);
-
-    if (openFuture == null) {
-      synchronized (this) {
-        if (openFuture == null) {
-          CompletableFuture<RaftServer> future = new CompletableFuture<>();
-          openFuture = future;
-          joiner.get().whenComplete((result, error) -> {
-            if (error == null) {
-              if (cluster().leader() != null) {
-                started = true;
-                future.complete(this);
-              } else {
-                electionListener = leader -> {
-                  if (electionListener != null) {
-                    started = true;
-                    future.complete(this);
-                    cluster().removeLeaderElectionListener(electionListener);
-                    electionListener = null;
-                  }
-                };
-              }
-            } else {
-              future.completeExceptionally(error);
-            }
-          });
-          return future.whenComplete((r, e) -> openFuture = null);
-        }
-      }
-    }
-
-    return openFuture.whenComplete((result, error) -> {
-      if (error == null) {
-        LOGGER.info("Server started successfully!");
-      } else {
-        LOGGER.warn("Failed to start server!");
-      }
-    });
-  }
+  CompletableFuture<RaftServer> join(Collection<NodeId> cluster);
 
   /**
    * Returns a boolean indicating whether the server is running.
    *
    * @return Indicates whether the server is running.
    */
-  public boolean isRunning() {
-    return started;
-  }
+  boolean isRunning();
 
   /**
    * Shuts down the server without leaving the Copycat cluster.
    *
    * @return A completable future to be completed once the server has been shutdown.
    */
-  public CompletableFuture<Void> shutdown() {
-    if (!started) {
-      return Futures.exceptionalFuture(new IllegalStateException("context not open"));
-    }
-
-    CompletableFuture<Void> future = new CompletableFuture<>();
-    context.getThreadContext().execute(() -> {
-      started = false;
-      context.transition(Role.INACTIVE);
-      future.complete(null);
-    });
-
-    return future.whenCompleteAsync((result, error) -> {
-      context.close();
-      started = false;
-    });
-  }
+  CompletableFuture<Void> shutdown();
 
   /**
    * Leaves the Copycat cluster.
    *
    * @return A completable future to be completed once the server has left the cluster.
    */
-  public CompletableFuture<Void> leave() {
-    if (!started) {
-      return CompletableFuture.completedFuture(null);
-    }
-
-    if (closeFuture == null) {
-      synchronized (this) {
-        if (closeFuture == null) {
-          closeFuture = new CompletableFuture<>();
-          if (openFuture == null) {
-            cluster().leave().whenComplete((leaveResult, leaveError) -> {
-              shutdown().whenComplete((shutdownResult, shutdownError) -> {
-                context.delete();
-                closeFuture.complete(null);
-              });
-            });
-          } else {
-            openFuture.whenComplete((openResult, openError) -> {
-              if (openError == null) {
-                cluster().leave().whenComplete((leaveResult, leaveError) -> {
-                  shutdown().whenComplete((shutdownResult, shutdownError) -> {
-                    context.delete();
-                    closeFuture.complete(null);
-                  });
-                });
-              } else {
-                closeFuture.complete(null);
-              }
-            });
-          }
-        }
-      }
-    }
-
-    return closeFuture;
-  }
+  CompletableFuture<Void> leave();
 
   /**
    * Builds a single-use Copycat server.
@@ -664,7 +510,7 @@ public class RaftServer {
    *   }
    * </pre>
    */
-  public static class Builder implements io.atomix.util.Builder<RaftServer> {
+  class Builder implements io.atomix.util.Builder<RaftServer> {
     private static final String DEFAULT_NAME = "copycat";
     private static final Duration DEFAULT_ELECTION_TIMEOUT = Duration.ofMillis(750);
     private static final Duration DEFAULT_HEARTBEAT_INTERVAL = Duration.ofMillis(250);
@@ -825,7 +671,7 @@ public class RaftServer {
           .setHeartbeatInterval(heartbeatInterval)
           .setSessionTimeout(sessionTimeout);
 
-      return new RaftServer(name, protocol, context);
+      return new DefaultRaftServer(name, protocol, context);
     }
   }
 
