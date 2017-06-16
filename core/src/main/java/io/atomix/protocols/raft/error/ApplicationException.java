@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-present Open Networking Laboratory
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,6 @@ package io.atomix.protocols.raft.error;
  * Indicates that an exception occurred in the user state machine.
  * <p>
  * Application exceptions are thrown when an exception occurs within a user-provided state machine.
- *
- * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class ApplicationException extends RaftException {
   private static final RaftError.Type TYPE = RaftError.Type.APPLICATION_ERROR;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-present Open Networking Laboratory
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,6 @@ import static com.google.common.base.Preconditions.checkArgument;
  * <p>
  * Reset requests are sent by clients to servers if the client receives an event message out of
  * sequence to force the server to resend events from the correct index.
- *
- * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class ResetRequest extends SessionRequest {
 

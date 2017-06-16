@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-present Open Networking Laboratory
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import java.io.Serializable;
  * Base type for Raft state operations.
  *
  * @param <T> operation result type
- * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  * @see RaftCommand
  * @see RaftQuery
  */

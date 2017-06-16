@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-present Open Networking Laboratory
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,8 +36,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * In addition to standard {@link BufferInput} methods, snapshot readers support reading serializable objects
  * from the snapshot via the {@link #readObject()} method. Serializable types must be registered on the
  * {@link RaftServer} serializer to be supported in snapshots.
- *
- * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class SnapshotReader implements BufferInput<SnapshotReader> {
   private final Buffer buffer;

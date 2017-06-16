@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-present Open Networking Laboratory
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,6 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * <p>
  * The {@code CommandEntry} is used to store an individual state machine command from an individual
  * client along with information relevant to sequencing the command in the server state machine.
- *
- * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class CommandEntry extends OperationEntry {
   public CommandEntry(long term, long timestamp, long session, long sequence, byte[] bytes) {

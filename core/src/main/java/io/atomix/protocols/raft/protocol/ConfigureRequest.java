@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-present Open Networking Laboratory
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,8 +32,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * to passive and reserve members of the cluster. Prior to the start of replication from an active
  * member to a passive or reserve member, the active member must update the passive/reserve member's
  * configuration to ensure it is in the expected state.
- *
- * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class ConfigureRequest extends AbstractRaftRequest {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-present Open Networking Laboratory
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,8 +45,6 @@ import java.util.function.Consumer;
  * member for a few rounds of heartbeats, the leader will commit a configuration change marking that
  * member as {@link RaftMember.Status#UNAVAILABLE}. Once the member can be reached again, the leader will
  * update its status back to {@link RaftMember.Status#AVAILABLE}.
- *
- * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public interface RaftMember {
 

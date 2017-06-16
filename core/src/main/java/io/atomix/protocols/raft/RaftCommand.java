@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-present Open Networking Laboratory
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ package io.atomix.protocols.raft;
  * of the cluster before applying it to its state machine and responding with the result.
  *
  * @param <T> command result type
- * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface RaftCommand<T> extends RaftOperation<T> {
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-present Open Networking Laboratory
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,8 +66,6 @@ import java.util.function.Consumer;
  * the configuration change, servers' cluster configurations will be updated. Once the configuration change is
  * complete, it will be persisted to disk on all servers and is guaranteed not to be lost even in the event of a
  * full cluster shutdown (assuming the server uses a persistent {@link StorageLevel}).
- *
- * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public interface RaftCluster {
 

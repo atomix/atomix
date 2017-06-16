@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-present Open Networking Laboratory
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,7 @@
  */
 
 /**
- * {@link io.atomix.copycat.protocol.Request} and {@link io.atomix.copycat.protocol.Response} implementations for all
- * client-server communication.
- *
- * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
+ * {@link io.atomix.protocols.raft.protocol.RaftRequest} and {@link io.atomix.protocols.raft.protocol.RaftResponse}
+ * implementations for all client-server communication.
  */
 package io.atomix.protocols.raft.protocol;

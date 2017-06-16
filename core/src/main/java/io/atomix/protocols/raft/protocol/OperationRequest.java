@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-present Open Networking Laboratory
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * will be applied to replicated state machines in the sequence in which they were sent by the client.
  * Sequence numbers must always be sequential, and in the event that an operation request fails, it must
  * be resent by the client.
- *
- * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public abstract class OperationRequest extends SessionRequest {
   protected final long sequence;

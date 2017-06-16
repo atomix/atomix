@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-present Open Networking Laboratory
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,6 @@ package io.atomix.protocols.raft.error;
 
 /**
  * Indicates that the server that received a request is not the leader and does not know of a leader.
- *
- * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class NoLeaderException extends RaftException {
   private static final RaftError.Type TYPE = RaftError.Type.NO_LEADER_ERROR;

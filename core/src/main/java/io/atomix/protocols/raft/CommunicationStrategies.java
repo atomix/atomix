@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-present Open Networking Laboratory
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,8 +28,6 @@ import java.util.List;
  * to. Clients can communicate with followers, leaders, or both. Selection strategies offer the
  * option for clients to spread connections across the cluster for scalability or connect to the
  * cluster's leader for performance.
- *
- * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public enum CommunicationStrategies implements CommunicationStrategy {
 

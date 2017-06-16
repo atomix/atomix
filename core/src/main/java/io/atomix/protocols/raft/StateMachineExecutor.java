@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-present Open Networking Laboratory
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,10 +26,10 @@ import java.util.function.Function;
  * <p>
  * The state machine executor is responsible for managing input to and output from a {@link RaftStateMachine}.
  * As operations are committed to the Raft log, the executor is responsible for applying them to the state machine.
- * {@link Command commands} are guaranteed to be applied to the state machine in the order in which
+ * {@link RaftCommand commands} are guaranteed to be applied to the state machine in the order in which
  * they appear in the Raft log and always in the same thread, so state machines don't have to be thread safe.
- * {@link Query queries} are not generally written to the Raft log and will instead be applied according to their
- * {@link Query.ConsistencyLevel}.
+ * {@link RaftQuery queries} are not generally written to the Raft log and will instead be applied according to their
+ * {@link RaftQuery.ConsistencyLevel}.
  * <p>
  * State machines can use the executor to provide deterministic scheduling during the execution of command callbacks.
  * <pre>
@@ -49,13 +49,12 @@ import java.util.function.Function;
  * Prior to the execution of a command, any expired scheduled callbacks will be executed based on the command's
  * logged timestamp.
  * <p>
- * It's important to note that callbacks can only be scheduled during {@link Command} operations or by recursive
+ * It's important to note that callbacks can only be scheduled during {@link RaftCommand} operations or by recursive
  * scheduling. If a state machine attempts to schedule a callback via the executor during the execution of a
- * {@link Query}, a {@link IllegalStateException} will be thrown. This is because queries are usually only applied
+ * {@link RaftQuery}, a {@link IllegalStateException} will be thrown. This is because queries are usually only applied
  * on a single state machine within the cluster, and so scheduling callbacks in reaction to query execution would
  * not be deterministic.
  *
- * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  * @see RaftStateMachine
  * @see StateMachineContext
  */
@@ -66,7 +65,7 @@ public interface StateMachineExecutor extends ThreadContext {
    * <p>
    * The context is reflective of the current position and state of the Raft state machine. In particular,
    * it exposes the current approximate {@link StateMachineContext#clock() time} and all open
-   * {@link Sessions}.
+   * {@link io.atomix.protocols.raft.session.RaftSessions}.
    *
    * @return The state machine context.
    */

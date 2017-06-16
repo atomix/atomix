@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-present Open Networking Laboratory
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,8 +53,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Manages the persistent state of the Copycat cluster from the perspective of a single server.
- *
- * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public final class RaftClusterContext implements RaftCluster, AutoCloseable {
   private static final Logger LOGGER = LoggerFactory.getLogger(RaftClusterContext.class);

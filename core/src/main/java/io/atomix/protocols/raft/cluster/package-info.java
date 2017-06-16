@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-present Open Networking Laboratory
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,5 @@
 
 /**
  * Interfaces for managing and interacting with the Copycat cluster.
- *
- * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 package io.atomix.protocols.raft.cluster;

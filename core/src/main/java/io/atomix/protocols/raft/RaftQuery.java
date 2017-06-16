@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-present Open Networking Laboratory
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,15 +32,8 @@ package io.atomix.protocols.raft;
  * <p>
  * By default, all queries should use the strongest consistency level, {@link ConsistencyLevel#LINEARIZABLE}.
  * It is essential that users understand the trade-offs in the various consistency levels before using them.
- * <h2>Serialization</h2>
- * Queries must be serializable both by the client and by all servers in the cluster. By default, all operations use
- * Java serialization. However, default serialization in slow because it requires the full class name and does not allocate
- * memory efficiently. For this reason, it's recommended that commands implement {@link io.atomix.catalyst.serializer.CatalystSerializable}
- * or register a custom {@link io.atomix.catalyst.serializer.TypeSerializer} for better performance. Serializable types
- * can be registered on the associated client/server {@link io.atomix.catalyst.serializer.Serializer} instance.
  *
  * @param <T> query result type
- * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  * @see ConsistencyLevel
  */
 public interface RaftQuery<T> extends RaftOperation<T> {

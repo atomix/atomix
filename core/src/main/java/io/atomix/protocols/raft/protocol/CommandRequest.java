@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-present Open Networking Laboratory
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,8 +35,6 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * Command requests should always be submitted to the server to which the client is connected and will
  * be forwarded to the current cluster leader. In the event that no leader is available, the request
  * will fail and should be resubmitted by the client.
- *
- * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class CommandRequest extends OperationRequest {
 

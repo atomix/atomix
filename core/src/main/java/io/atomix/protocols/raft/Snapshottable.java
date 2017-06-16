@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-present Open Networking Laboratory
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,8 +63,6 @@ import io.atomix.protocols.raft.storage.snapshot.SnapshotWriter;
  * and other commands, and state machine implementations should take care not to overwrite non-snapshot command
  * state with snapshots. For simpler state machines, <em>users should use either snapshotting or log cleaning
  * but not both</em>.
- *
- * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public interface Snapshottable {
 

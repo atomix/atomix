@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-present Open Networking Laboratory
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,8 +28,6 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * Configuration change entries store a collection of {@link RaftMember members} which each represent a
  * server in the cluster. Each time the set of members changes or a property of a single member changes,
  * a new {@code ConfigurationEntry} must be logged for the configuration change.
- *
- * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class ConfigurationEntry extends TimestampedEntry {
   protected final Collection<RaftMember> members;

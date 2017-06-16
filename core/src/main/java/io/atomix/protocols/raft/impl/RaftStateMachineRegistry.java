@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.roles;
+package io.atomix.protocols.raft.impl;
 
 import io.atomix.protocols.raft.RaftStateMachine;
 
@@ -27,7 +27,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * State machine registry.
  */
-public class StateMachineRegistry {
+public class RaftStateMachineRegistry {
   private final Map<String, Supplier<RaftStateMachine>> stateMachines = new ConcurrentHashMap<>();
 
   /**
@@ -46,7 +46,7 @@ public class StateMachineRegistry {
    * @param factory The state machine factory.
    * @return The state machine registry.
    */
-  public StateMachineRegistry register(String type, Supplier<RaftStateMachine> factory) {
+  public RaftStateMachineRegistry register(String type, Supplier<RaftStateMachine> factory) {
     stateMachines.put(checkNotNull(type, "type cannot be null"), checkNotNull(factory, "factory cannot be null"));
     return this;
   }
@@ -57,7 +57,7 @@ public class StateMachineRegistry {
    * @param type The state machine type to unregister.
    * @return The state machine registry.
    */
-  public StateMachineRegistry unregister(String type) {
+  public RaftStateMachineRegistry unregister(String type) {
     stateMachines.remove(type);
     return this;
   }

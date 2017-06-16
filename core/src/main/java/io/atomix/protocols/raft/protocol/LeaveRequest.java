@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-present Open Networking Laboratory
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,6 @@ import io.atomix.protocols.raft.cluster.RaftMember;
  * The leave request is the mechanism by which servers remove themselves from a cluster. When a server
  * wants to leave a cluster, it must submit a leave request to the leader. The leader will attempt to commit
  * the configuration change and, if successful, respond to the join request with the updated configuration.
- *
- * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class LeaveRequest extends ConfigurationRequest {
 

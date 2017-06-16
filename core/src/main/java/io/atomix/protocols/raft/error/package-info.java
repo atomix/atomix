@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-present Open Networking Laboratory
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,5 @@
  * Copycat protocol errors are designed to be transported across networks in the most efficient manner possible. Each protocol exception
  * is associated with a 1-byte identifier. Rather than serializing complete {@link java.lang.Exception} objects, the protocol exception is
  * sent using only its identifier and the exception is recreated by the receiving side of a connection.
- *
- * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 package io.atomix.protocols.raft.error;

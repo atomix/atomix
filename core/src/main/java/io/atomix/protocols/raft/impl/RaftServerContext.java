@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-present Open Networking Laboratory
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,6 @@ import io.atomix.protocols.raft.roles.LeaderRole;
 import io.atomix.protocols.raft.roles.PassiveRole;
 import io.atomix.protocols.raft.roles.RaftRole;
 import io.atomix.protocols.raft.roles.ReserveRole;
-import io.atomix.protocols.raft.roles.StateMachineRegistry;
 import io.atomix.protocols.raft.storage.Storage;
 import io.atomix.protocols.raft.storage.log.RaftLog;
 import io.atomix.protocols.raft.storage.log.RaftLogReader;
@@ -67,8 +66,6 @@ import static com.google.common.base.Preconditions.checkState;
  * <p>
  * This class is the primary vehicle for managing the state of a server. All state that is shared across roles (i.e. follower, candidate, leader)
  * is stored in the cluster state. This includes Raft-specific state like the current leader and term, the log, and the cluster configuration.
- *
- * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class RaftServerContext implements AutoCloseable {
   private static final Logger LOGGER = LoggerFactory.getLogger(RaftServerContext.class);
@@ -76,7 +73,7 @@ public class RaftServerContext implements AutoCloseable {
   private final Set<Consumer<RaftMember>> electionListeners = new CopyOnWriteArraySet<>();
   protected final String name;
   protected final ThreadContext threadContext;
-  protected final StateMachineRegistry registry;
+  protected final RaftStateMachineRegistry registry;
   protected final RaftClusterContext cluster;
   protected final RaftServerProtocol protocol;
   protected final Storage storage;
@@ -98,7 +95,7 @@ public class RaftServerContext implements AutoCloseable {
   private long commitIndex;
 
   @SuppressWarnings("unchecked")
-  public RaftServerContext(String name, RaftMember.Type type, NodeId localNodeId, RaftServerProtocol protocol, Storage storage, StateMachineRegistry registry, ScheduledExecutorService threadPool, ThreadContext threadContext) {
+  public RaftServerContext(String name, RaftMember.Type type, NodeId localNodeId, RaftServerProtocol protocol, Storage storage, RaftStateMachineRegistry registry, ScheduledExecutorService threadPool, ThreadContext threadContext) {
     this.name = checkNotNull(name, "name cannot be null");
     this.protocol = checkNotNull(protocol, "protocol cannot be null");
     this.storage = checkNotNull(storage, "storage cannot be null");
@@ -452,7 +449,7 @@ public class RaftServerContext implements AutoCloseable {
    *
    * @return The server state machine registry.
    */
-  public StateMachineRegistry getStateMachineRegistry() {
+  public RaftStateMachineRegistry getStateMachineRegistry() {
     return registry;
   }
 

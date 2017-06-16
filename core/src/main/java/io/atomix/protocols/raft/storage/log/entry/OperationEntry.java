@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-present Open Networking Laboratory
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,6 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * were submitted by the client (FIFO order). Additionally, each operation is written with the leader's
  * {@link #timestamp() timestamp} at the time the entry was logged. This gives state machines an
  * approximation of time with which to react to the application of operations to the state machine.
- *
- * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class OperationEntry extends SessionEntry {
   protected final long sequence;

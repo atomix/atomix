@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-present Open Networking Laboratory
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,6 @@ package io.atomix.protocols.raft.error;
 
 /**
  * Catch-all exception for unknown Raft protocol errors.
- *
- * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class InternalException extends RaftException {
   private static final RaftError.Type TYPE = RaftError.Type.INTERNAL_ERROR;

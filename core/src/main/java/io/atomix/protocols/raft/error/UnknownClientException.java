@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,8 +17,6 @@ package io.atomix.protocols.raft.error;
 
 /**
  * Indicates that an operation or other request from an unknown client was received.
- *
- * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class UnknownClientException extends RaftException {
   private static final RaftError.Type TYPE = RaftError.Type.UNKNOWN_CLIENT_ERROR;

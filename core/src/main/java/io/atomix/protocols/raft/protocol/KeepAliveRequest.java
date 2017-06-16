@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-present Open Networking Laboratory
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,8 +33,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * The {@link #commandSequences()} number indicates the highest command sequence number for which the client
  * has received a response, and the {@link #eventIndexes()} numbers indicate the highest index for which the
  * client has received an event in proper sequence.
- *
- * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class KeepAliveRequest extends AbstractRaftRequest {
 

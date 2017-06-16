@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-present Open Networking Laboratory
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,8 +28,6 @@ import static com.google.common.base.Preconditions.checkArgument;
  * Vote responses are sent by active servers in response to vote requests by candidate to indicate
  * whether the responding server voted for the requesting candidate. This is indicated by the
  * {@link #voted()} field of the response.
- *
- * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class VoteResponse extends AbstractRaftResponse {
 

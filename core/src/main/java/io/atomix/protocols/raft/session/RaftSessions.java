@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-present Open Networking Laboratory
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,7 @@ package io.atomix.protocols.raft.session;
  * state machine. Session sets are guaranteed to be deterministic. All state machines will see the same set of
  * open sessions at the same point in the log except in cases where a session has already been closed and removed.
  * If a session has already been closed on another server, the session is guaranteed to have been expired on all
- * servers and thus operations like {@link RaftSession#publish(String, Object)} are effectively no-ops.
- *
- * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
+ * servers and thus operations like {@link RaftSession#publish(Object)} are effectively no-ops.
  */
 public interface RaftSessions extends Iterable<RaftSession> {
 

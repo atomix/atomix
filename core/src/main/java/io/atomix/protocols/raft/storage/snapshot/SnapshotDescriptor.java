@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-present Open Networking Laboratory
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Snapshot descriptors represent the header of a snapshot file which stores metadata about
  * the snapshot contents. This API provides methods for reading and a builder for writing
  * snapshot headers/descriptors.
- *
- * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public final class SnapshotDescriptor implements AutoCloseable {
   public static final int BYTES = 64;

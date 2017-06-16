@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-present Open Networking Laboratory
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,12 +25,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Represents a persisted server configuration.
- * <p>
- * This class represents a cluster configuration stored on disk. Configurations are managed by
- * a {@link MetaStore}, stored on disk when {@link io.atomix.protocols.raft.server.cluster.Cluster Cluster}
- * configurations change, and loaded from disk on server startup.
- *
- * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public class Configuration {
   private final long index;

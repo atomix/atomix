@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-present Open Networking Laboratory
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -161,7 +161,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * method. Once the state machine has written a snapshot of its state, Copycat will automatically remove all commands
  * associated with the state machine from the underlying log.
  *
- * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  * @see RaftCommit
  * @see StateMachineContext
  * @see StateMachineExecutor

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-present Open Networking Laboratory
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,8 +35,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * indicates the index of the prior event messages sent to the client. Clients must ensure that event
  * messages are received in sequence by tracking the last index for which they received an event message
  * and validating {@link #previousIndex()} against that index.
- *
- * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class PublishRequest extends SessionRequest {
 

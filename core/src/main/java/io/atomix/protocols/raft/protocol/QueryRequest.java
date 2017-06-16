@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-present Open Networking Laboratory
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,8 +41,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * is {@link RaftQuery.ConsistencyLevel#SEQUENTIAL}, otherwise it will be forwarded to the cluster leader.
  * Queries are always guaranteed to see state progress monotonically within a single {@link #session()}
  * even when switching servers.
- *
- * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class QueryRequest extends OperationRequest {
 

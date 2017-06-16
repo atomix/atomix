@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-present Open Networking Laboratory
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,6 @@
  */
 
 /**
- * Interfaces for managing client {@link io.atomix.copycat.session.Session sessions} on a {@link io.atomix.copycat.server.CopycatServer Copycat server}.
- * <p>
- * Client session information is exposed to server {@link io.atomix.copycat.server.StateMachine state machines} in the form of a
- * {@link io.atomix.copycat.server.session.ServerSession} object. Server sessions provide functionality in addition to normal session state
- * information to allow replicated state machines to {@link io.atomix.copycat.server.session.ServerSession#publish(String, Object) publish}
- * event notifications to clients through their session.
- *
- * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
+ * Interfaces for managing client sessions on a Raft server.
  */
 package io.atomix.protocols.raft.session;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-present Open Networking Laboratory
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import io.atomix.protocols.raft.error.ConfigurationException;
 import io.atomix.protocols.raft.impl.DefaultRaftServer;
 import io.atomix.protocols.raft.impl.RaftServerContext;
 import io.atomix.protocols.raft.protocol.RaftServerProtocol;
-import io.atomix.protocols.raft.roles.StateMachineRegistry;
+import io.atomix.protocols.raft.impl.RaftStateMachineRegistry;
 import io.atomix.protocols.raft.storage.Storage;
 import io.atomix.protocols.raft.storage.log.RaftLog;
 import io.atomix.storage.StorageLevel;
@@ -160,7 +160,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *   }
  * </pre>
  *
- * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  * @see RaftStateMachine
  * @see Storage
  */
@@ -525,7 +524,7 @@ public interface RaftServer {
     private Duration electionTimeout = DEFAULT_ELECTION_TIMEOUT;
     private Duration heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL;
     private Duration sessionTimeout = DEFAULT_SESSION_TIMEOUT;
-    private final StateMachineRegistry stateMachineRegistry = new StateMachineRegistry();
+    private final RaftStateMachineRegistry stateMachineRegistry = new RaftStateMachineRegistry();
     private int threadPoolSize = DEFAULT_THREAD_POOL_SIZE;
 
     private Builder(NodeId localNodeId) {

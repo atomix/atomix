@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-present Open Networking Laboratory
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,6 @@ import io.atomix.protocols.raft.error.RaftError;
  * command responses may not be sent or received in sequential order. If a command response has to await
  * the completion of an event, or if the response is proxied through another server, responses may be
  * received out of order. Clients should resequence concurrent responses to ensure they're handled in FIFO order.
- *
- * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class CommandResponse extends OperationResponse {
 

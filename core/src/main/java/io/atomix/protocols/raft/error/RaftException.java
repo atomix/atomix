@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-present Open Networking Laboratory
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,6 @@ package io.atomix.protocols.raft.error;
  * <p>
  * This is the base exception type for all Copycat protocol exceptions. Protocol exceptions must be
  * associated with a {@link RaftError.Type} which is used for more efficient serialization.
- *
- * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class RaftException extends RuntimeException {
   private final RaftError.Type type;

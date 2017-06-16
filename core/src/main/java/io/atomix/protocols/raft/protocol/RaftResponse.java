@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-present Open Networking Laboratory
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,6 @@ import io.atomix.protocols.raft.error.RaftError;
  * Each response has a non-null {@link RaftResponse.Status} of either {@link RaftResponse.Status#OK} or
  * {@link RaftResponse.Status#ERROR}. Responses where {@link #status()} is {@link RaftResponse.Status#ERROR}
  * may provide an optional {@link #error()} code.
- *
- * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface RaftResponse extends RaftMessage {
 

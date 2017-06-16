@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-present Open Networking Laboratory
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,6 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * Query entries are simply used to represent the context within which a query is applied to the
  * state machine. Query entry {@link #sequence() sequence} numbers and indexes
  * are used to sequence queries as they're applied to the user state machine.
- *
- * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class QueryEntry extends OperationEntry {
   public QueryEntry(long term, long timestamp, long session, long sequence, byte[] bytes) {

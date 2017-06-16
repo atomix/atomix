@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-present Open Networking Laboratory
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,8 +30,6 @@ import io.atomix.protocols.raft.RaftStateMachine;
  * for reads. Additionally, state machines can push messages to specific clients via sessions. Typically, all
  * state machines that rely on session-based messaging should implement this interface to track when a session
  * is {@link #close(RaftSession) closed}.
- *
- * @author <a href="http://github.com/kuujo>Jordan Halterman</a>
  */
 public interface RaftSessionListener {
 
@@ -40,7 +38,7 @@ public interface RaftSessionListener {
    * <p>
    * A session is registered when a new client connects to the cluster or an existing client recovers its
    * session after being partitioned from the cluster. It's important to note that when this method is called,
-   * the {@link RaftSession} is <em>not yet open</em> and so events cannot be {@link RaftSession#publish(String, Object) published}
+   * the {@link RaftSession} is <em>not yet open</em> and so events cannot be {@link RaftSession#publish(Object) published}
    * to the registered session. This is because clients cannot reliably track messages pushed from server state machines
    * to the client until the session has been fully registered. Session event messages may still be published to
    * other already-registered sessions in reaction to a session being registered.
@@ -58,7 +56,7 @@ public interface RaftSessionListener {
    * and notify the client before the event message is sent. Published event messages sent via this method will
    * be sent the next time an operation is applied to the state machine.
    *
-   * @param session The session that was registered. State machines <em>cannot</em> {@link RaftSession#publish(String, Object)} session
+   * @param session The session that was registered. State machines <em>cannot</em> {@link RaftSession#publish(Object)} session
    *                events to this session.
    */
   void register(RaftSession session);
@@ -71,11 +69,11 @@ public interface RaftSessionListener {
    * by a server. This method will always be called for a given session before {@link #close(RaftSession)}, and
    * {@link #close(RaftSession)} will always be called following this method.
    * <p>
-   * State machines are free to {@link RaftSession#publish(String, Object)} session event messages to any session except
+   * State machines are free to {@link RaftSession#publish(Object)} session event messages to any session except
    * the one being unregistered. Session event messages sent to the session being unregistered will be lost since the session is
    * closed once this method call completes.
    *
-   * @param session The session that was unregistered. State machines <em>cannot</em> {@link RaftSession#publish(String, Object)} session
+   * @param session The session that was unregistered. State machines <em>cannot</em> {@link RaftSession#publish(Object)} session
    *                events to this session.
    */
   void unregister(RaftSession session);
@@ -88,11 +86,11 @@ public interface RaftSessionListener {
    * This method will always be called for a given session before {@link #close(RaftSession)}, and {@link #close(RaftSession)}
    * will always be called following this method.
    * <p>
-   * State machines are free to {@link RaftSession#publish(String, Object)} session event messages to any session except
+   * State machines are free to {@link RaftSession#publish(Object)} session event messages to any session except
    * the one that expired. Session event messages sent to the session that expired will be lost since the session is closed once this
    * method call completes.
    *
-   * @param session The session that was expired. State machines <em>cannot</em> {@link RaftSession#publish(String, Object)} session
+   * @param session The session that was expired. State machines <em>cannot</em> {@link RaftSession#publish(Object)} session
    *                events to this session.
    */
   void expire(RaftSession session);
@@ -106,11 +104,11 @@ public interface RaftSessionListener {
    * {@link #unregister(RaftSession)} or {@link #expire(RaftSession)}, and one of those methods will always be called
    * before this method.
    * <p>
-   * State machines are free to {@link RaftSession#publish(String, Object)} session event messages to any session except
+   * State machines are free to {@link RaftSession#publish(Object)} session event messages to any session except
    * the one that was closed. Session event messages sent to the session that was closed will be lost since the session is closed once this
    * method call completes.
    *
-   * @param session The session that was closed. State machines <em>cannot</em> {@link RaftSession#publish(String, Object)} session
+   * @param session The session that was closed. State machines <em>cannot</em> {@link RaftSession#publish(Object)} session
    *                events to this session.
    */
   void close(RaftSession session);
