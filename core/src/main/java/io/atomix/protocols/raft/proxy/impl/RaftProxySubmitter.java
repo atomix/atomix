@@ -30,6 +30,7 @@ import io.atomix.protocols.raft.protocol.QueryRequest;
 import io.atomix.protocols.raft.protocol.QueryResponse;
 import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.proxy.RaftProxy;
+import io.atomix.util.concurrent.ThreadContext;
 import io.atomix.util.serializer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,9 +43,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
@@ -70,8 +68,7 @@ final class RaftProxySubmitter {
   private final RaftProxySequencer sequencer;
   private final RaftProxyManager manager;
   private final Serializer serializer;
-  private final Executor orderedExecutor;
-  private final ScheduledExecutorService scheduledExecutor;
+  private final ThreadContext context;
   private final Map<Long, OperationAttempt> attempts = new LinkedHashMap<>();
   private final AtomicLong keepAliveIndex = new AtomicLong();
 
@@ -82,16 +79,14 @@ final class RaftProxySubmitter {
       RaftProxySequencer sequencer,
       RaftProxyManager manager,
       Serializer serializer,
-      Executor orderedExecutor,
-      ScheduledExecutorService scheduledExecutor) {
+      ThreadContext context) {
     this.leaderConnection = checkNotNull(leaderConnection, "leaderConnection");
     this.sessionConnection = checkNotNull(sessionConnection, "sessionConnection");
     this.state = checkNotNull(state, "state");
     this.sequencer = checkNotNull(sequencer, "sequencer");
     this.manager = checkNotNull(manager, "manager");
     this.serializer = checkNotNull(serializer, "serializer cannot be null");
-    this.orderedExecutor = checkNotNull(orderedExecutor, "executor cannot be null");
-    this.scheduledExecutor = checkNotNull(scheduledExecutor, "scheduledExecutor cannot be null");
+    this.context = checkNotNull(context, "context cannot be null");
   }
 
   /**
@@ -103,7 +98,7 @@ final class RaftProxySubmitter {
    */
   public <T> CompletableFuture<T> submit(RaftCommand<T> command) {
     CompletableFuture<T> future = new CompletableFuture<>();
-    orderedExecutor.execute(() -> submitCommand(command, future));
+    context.execute(() -> submitCommand(command, future));
     return future;
   }
 
@@ -136,7 +131,7 @@ final class RaftProxySubmitter {
    */
   public <T> CompletableFuture<T> submit(RaftQuery<T> query) {
     CompletableFuture<T> future = new CompletableFuture<>();
-    orderedExecutor.execute(() -> submitQuery(query, future));
+    context.execute(() -> submitQuery(query, future));
     return future;
   }
 
@@ -202,7 +197,7 @@ final class RaftProxySubmitter {
         } else {
           attempt.retry(Duration.ofSeconds(FIBONACCI[Math.min(attempt.attempt - 1, FIBONACCI.length - 1)]));
         }
-      }, orderedExecutor);
+      }, context);
     } else {
       for (Map.Entry<Long, OperationAttempt> entry : attempts.entrySet()) {
         OperationAttempt operation = entry.getValue();
@@ -307,7 +302,7 @@ final class RaftProxySubmitter {
      * Immediately retries the attempt.
      */
     public void retry() {
-      orderedExecutor.execute(() -> submit(next()));
+      context.execute(() -> submit(next()));
     }
 
     /**
@@ -316,7 +311,7 @@ final class RaftProxySubmitter {
      * @param after The duration after which to retry the attempt.
      */
     public void retry(Duration after) {
-      scheduledExecutor.schedule(() -> submit(next()), after.toMillis(), TimeUnit.MILLISECONDS);
+      context.schedule(after, () -> submit(next()));
     }
   }
 
@@ -388,7 +383,7 @@ final class RaftProxySubmitter {
             .withSequence(this.request.sequence())
             .withBytes(new byte[0])
             .build();
-        orderedExecutor.execute(() -> submit(new CommandAttempt<>(sequence, this.attempt + 1, request, future)));
+        context.execute(() -> submit(new CommandAttempt<>(sequence, this.attempt + 1, request, future)));
       }
     }
 
