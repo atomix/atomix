@@ -37,14 +37,39 @@ public class LogicalClock implements Clock<LogicalTimestamp> {
   }
 
   /**
+   * Increments the clock and returns the new timestamp.
+   *
+   * @return the updated clock time
+   */
+  public LogicalTimestamp increment() {
+    return update(new LogicalTimestamp(currentTimestamp.value() + 1));
+  }
+
+  /**
    * Updates the clock using the given timestamp.
    *
    * @param timestamp the timestamp with which to update the clock
+   * @return the updated clock time
    */
-  public void update(LogicalTimestamp timestamp) {
+  public LogicalTimestamp update(LogicalTimestamp timestamp) {
     if (timestamp.value() > currentTimestamp.value()) {
       this.currentTimestamp = timestamp;
     }
+    return currentTimestamp;
+  }
+
+  /**
+   * Increments the clock and updates it using the given timestamp.
+   *
+   * @param timestamp the timestamp with which to update the clock
+   * @return the updated clock time
+   */
+  public LogicalTimestamp incrementAndUpdate(LogicalTimestamp timestamp) {
+    long nextValue = currentTimestamp.value() + 1;
+    if (timestamp.value() > nextValue) {
+      return update(timestamp);
+    }
+    return increment();
   }
 
   @Override

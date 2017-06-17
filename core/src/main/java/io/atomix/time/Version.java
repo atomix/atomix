@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.version;
+package io.atomix.time;
 
 import com.google.common.collect.ComparisonChain;
-import io.atomix.time.Timestamp;
 
 import java.util.Objects;
 
@@ -35,6 +34,15 @@ public class Version implements Timestamp {
 
   public Version(long version) {
     this.version = version;
+  }
+
+  /**
+   * Returns the version.
+   *
+   * @return the version
+   */
+  public long value() {
+    return this.version;
   }
 
   @Override
@@ -70,14 +78,5 @@ public class Version implements Timestamp {
     return toStringHelper(getClass())
         .add("version", version)
         .toString();
-  }
-
-  /**
-   * Returns the lock version.
-   *
-   * @return the lock version
-   */
-  public long value() {
-    return this.version;
   }
 }

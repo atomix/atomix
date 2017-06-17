@@ -34,6 +34,24 @@ public class LogicalTimestamp implements Timestamp {
     this.value = value;
   }
 
+  /**
+   * Returns the sequence value.
+   *
+   * @return sequence value
+   */
+  public long value() {
+    return this.value;
+  }
+
+  /**
+   * Returns the timestamp as a version.
+   *
+   * @return the timestamp as a version
+   */
+  public Version asVersion() {
+    return new Version(value);
+  }
+
   @Override
   public int compareTo(Timestamp o) {
     checkArgument(o instanceof LogicalTimestamp,
@@ -67,14 +85,5 @@ public class LogicalTimestamp implements Timestamp {
     return MoreObjects.toStringHelper(getClass())
         .add("value", value)
         .toString();
-  }
-
-  /**
-   * Returns the sequence value.
-   *
-   * @return sequence value
-   */
-  public long value() {
-    return this.value;
   }
 }

@@ -16,6 +16,7 @@
 package io.atomix.version;
 
 import com.google.common.testing.EqualsTester;
+import io.atomix.time.Versioned;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;

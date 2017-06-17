@@ -58,8 +58,8 @@ import io.atomix.time.VectorClock;
 import io.atomix.time.VectorTimestamp;
 import io.atomix.time.WallClock;
 import io.atomix.time.WallClockTimestamp;
-import io.atomix.version.Version;
-import io.atomix.version.Versioned;
+import io.atomix.time.Version;
+import io.atomix.time.Versioned;
 
 import java.time.Duration;
 import java.util.ArrayList;

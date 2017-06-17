@@ -13,8 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.atomix.protocols.gossip.protocol;
 
 /**
- * Atomix version utilities.
+ * Gossip protocol.
  */
-package io.atomix.version;
+public interface GossipProtocol {
+
+  /**
+   * Returns the gossip protocol listener.
+   *
+   * @return the gossip protocol listener
+   */
+  GossipProtocolListener listener();
+
+  /**
+   * Returns the gossip protocol dispatcher.
+   *
+   * @return the gossip protocol dispatcher
+   */
+  GossipProtocolDispatcher dispatcher();
+
+}

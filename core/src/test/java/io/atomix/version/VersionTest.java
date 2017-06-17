@@ -15,6 +15,8 @@
  */
 package io.atomix.version;
 
+import io.atomix.time.Version;
+
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
