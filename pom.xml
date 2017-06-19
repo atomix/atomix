@@ -78,7 +78,12 @@
   </issueManagement>
 
   <modules>
+    <module>cluster</module>
     <module>core</module>
+    <module>messaging</module>
+    <module>protocols</module>
+    <module>serializers</module>
+    <module>utils</module>
     <module>all</module>
   </modules>
 

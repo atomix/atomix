@@ -17,8 +17,8 @@ package io.atomix.protocols.raft.storage.snapshot;
 
 import io.atomix.protocols.raft.storage.Storage;
 import io.atomix.storage.StorageLevel;
-import io.atomix.util.buffer.FileBuffer;
-import io.atomix.util.buffer.HeapBuffer;
+import io.atomix.storage.buffer.FileBuffer;
+import io.atomix.storage.buffer.HeapBuffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

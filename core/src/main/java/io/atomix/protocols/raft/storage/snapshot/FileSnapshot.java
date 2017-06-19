@@ -15,8 +15,8 @@
  */
 package io.atomix.protocols.raft.storage.snapshot;
 
-import io.atomix.util.buffer.Buffer;
-import io.atomix.util.buffer.FileBuffer;
+import io.atomix.storage.buffer.Buffer;
+import io.atomix.storage.buffer.FileBuffer;
 import io.atomix.util.serializer.Serializer;
 
 import java.io.IOException;

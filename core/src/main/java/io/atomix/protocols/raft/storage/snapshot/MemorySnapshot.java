@@ -16,7 +16,7 @@
 package io.atomix.protocols.raft.storage.snapshot;
 
 import io.atomix.storage.StorageLevel;
-import io.atomix.util.buffer.HeapBuffer;
+import io.atomix.storage.buffer.HeapBuffer;
 import io.atomix.util.serializer.KryoNamespaces;
 import io.atomix.util.serializer.Serializer;
 

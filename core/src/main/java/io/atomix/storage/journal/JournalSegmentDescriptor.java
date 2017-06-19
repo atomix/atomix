@@ -15,11 +15,11 @@
  */
 package io.atomix.storage.journal;
 
-import io.atomix.util.buffer.Buffer;
-import io.atomix.util.buffer.Bytes;
-import io.atomix.util.buffer.FileBuffer;
-import io.atomix.util.buffer.HeapBuffer;
-import io.atomix.util.buffer.MappedBuffer;
+import io.atomix.storage.buffer.Buffer;
+import io.atomix.storage.buffer.Bytes;
+import io.atomix.storage.buffer.FileBuffer;
+import io.atomix.storage.buffer.HeapBuffer;
+import io.atomix.storage.buffer.MappedBuffer;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;

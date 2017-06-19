@@ -17,9 +17,9 @@ package io.atomix.protocols.raft.storage.snapshot;
 
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.storage.StorageLevel;
-import io.atomix.util.buffer.Buffer;
-import io.atomix.util.buffer.BufferOutput;
-import io.atomix.util.buffer.Bytes;
+import io.atomix.storage.buffer.Buffer;
+import io.atomix.storage.buffer.BufferOutput;
+import io.atomix.storage.buffer.Bytes;
 import io.atomix.util.serializer.Serializer;
 
 import java.nio.charset.Charset;

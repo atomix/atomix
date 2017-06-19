@@ -15,9 +15,9 @@
  */
 package io.atomix.protocols.raft.storage.snapshot;
 
-import io.atomix.util.buffer.Buffer;
-import io.atomix.util.buffer.FileBuffer;
-import io.atomix.util.buffer.HeapBuffer;
+import io.atomix.storage.buffer.Buffer;
+import io.atomix.storage.buffer.FileBuffer;
+import io.atomix.storage.buffer.HeapBuffer;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 

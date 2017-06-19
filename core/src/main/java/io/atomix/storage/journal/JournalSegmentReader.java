@@ -15,8 +15,8 @@
  */
 package io.atomix.storage.journal;
 
-import io.atomix.util.buffer.Buffer;
-import io.atomix.util.buffer.HeapBuffer;
+import io.atomix.storage.buffer.Buffer;
+import io.atomix.storage.buffer.HeapBuffer;
 import io.atomix.util.serializer.Serializer;
 
 import java.nio.BufferUnderflowException;

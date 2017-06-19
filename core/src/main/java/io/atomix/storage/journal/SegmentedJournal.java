@@ -17,10 +17,10 @@ package io.atomix.storage.journal;
 
 import io.atomix.protocols.raft.storage.Storage;
 import io.atomix.storage.StorageLevel;
-import io.atomix.util.buffer.Buffer;
-import io.atomix.util.buffer.FileBuffer;
-import io.atomix.util.buffer.HeapBuffer;
-import io.atomix.util.buffer.MappedBuffer;
+import io.atomix.storage.buffer.Buffer;
+import io.atomix.storage.buffer.FileBuffer;
+import io.atomix.storage.buffer.HeapBuffer;
+import io.atomix.storage.buffer.MappedBuffer;
 import io.atomix.util.serializer.KryoNamespaces;
 import io.atomix.util.serializer.Serializer;
 import org.slf4j.Logger;
