@@ -29,21 +29,18 @@ public class GossipEvent<K, V> implements Event<GossipEvent.Type, K> {
    */
   public enum Type {
     UPDATE,
-    DELETE,
   }
 
   private final long time;
-  private final Type type;
   private final K subject;
   private final V value;
 
-  public GossipEvent(Type type, K subject, V value) {
-    this(System.currentTimeMillis(), type, subject, value);
+  public GossipEvent(K subject, V value) {
+    this(System.currentTimeMillis(), subject, value);
   }
 
-  public GossipEvent(long time, Type type, K subject, V value) {
+  public GossipEvent(long time, K subject, V value) {
     this.time = time;
-    this.type = type;
     this.subject = subject;
     this.value = value;
   }
@@ -55,7 +52,7 @@ public class GossipEvent<K, V> implements Event<GossipEvent.Type, K> {
 
   @Override
   public Type type() {
-    return type;
+    return Type.UPDATE;
   }
 
   @Override
@@ -76,7 +73,6 @@ public class GossipEvent<K, V> implements Event<GossipEvent.Type, K> {
   public String toString() {
     return toStringHelper(this)
         .add("time", time)
-        .add("type", type)
         .add("subject", subject)
         .add("value", value)
         .toString();

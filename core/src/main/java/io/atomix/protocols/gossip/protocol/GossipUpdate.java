@@ -15,6 +15,9 @@
  */
 package io.atomix.protocols.gossip.protocol;
 
+import com.google.common.base.MoreObjects;
+import com.google.common.base.Objects;
+import io.atomix.time.Timestamp;
 import io.atomix.time.Version;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -25,14 +28,13 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 public class GossipUpdate<K, V> {
   private final K subject;
   private final V value;
-  private final Version version;
-  private final boolean tombstone;
+  private final Timestamp timestamp;
+  private final transient long creationTime = System.currentTimeMillis();
 
-  public GossipUpdate(K subject, V value, Version version, boolean tombstone) {
+  public GossipUpdate(K subject, V value, Timestamp timestamp) {
     this.subject = subject;
     this.value = value;
-    this.version = version;
-    this.tombstone = tombstone;
+    this.timestamp = timestamp;
   }
 
   /**
@@ -54,12 +56,21 @@ public class GossipUpdate<K, V> {
   }
 
   /**
-   * Returns the update version.
+   * Returns the update timestamp.
    *
-   * @return the version for the update
+   * @return the timestamp for the update
    */
-  public Version version() {
-    return version;
+  public Timestamp timestamp() {
+    return timestamp;
+  }
+
+  /**
+   * Returns the update creation time.
+   *
+   * @return the update creation time
+   */
+  public long creationTime() {
+    return creationTime;
   }
 
   /**
@@ -68,7 +79,36 @@ public class GossipUpdate<K, V> {
    * @return whether the update is a tombstone
    */
   public boolean isTombstone() {
-    return tombstone;
+    return value == null;
+  }
+
+  /**
+   * Tests if this value is newer than the specified update.
+   *
+   * @param other the value to be compared
+   * @return true if this value is newer than other
+   */
+  public boolean isNewerThan(GossipUpdate<K, V> other) {
+    return other == null || this.timestamp.isNewerThan(other.timestamp);
+  }
+
+  /**
+   * Tests if this update is newer than the specified timestamp.
+   *
+   * @param timestamp timestamp to be compared
+   * @return true if this instance is newer
+   */
+  public boolean isNewerThan(Timestamp timestamp) {
+    return this.timestamp.isNewerThan(timestamp);
+  }
+
+  /**
+   * Returns summary of a update for use during anti-entropy exchanges.
+   *
+   * @return Digest with timestamp and whether this value is null or not
+   */
+  public Digest digest() {
+    return new Digest(timestamp, isTombstone());
   }
 
   @Override
@@ -76,8 +116,71 @@ public class GossipUpdate<K, V> {
     return toStringHelper(this)
         .add("subject", subject)
         .add("value", value)
-        .add("version", version)
-        .add("tombstone", tombstone)
+        .add("timestamp", timestamp)
         .toString();
+  }
+
+  /**
+   * Gossip update digest.
+   */
+  public static class Digest {
+    private final Timestamp timestamp;
+    private final boolean isTombstone;
+
+    public Digest(Timestamp timestamp, boolean isTombstone) {
+      this.timestamp = timestamp;
+      this.isTombstone = isTombstone;
+    }
+
+    /**
+     * Returns the update timestamp.
+     *
+     * @return the update timestamp
+     */
+    public Timestamp timestamp() {
+      return timestamp;
+    }
+
+    /**
+     * Returns whether the update is a tombstone.
+     *
+     * @return whether the update is a tombstone
+     */
+    public boolean isTombstone() {
+      return isTombstone;
+    }
+
+    /**
+     * Returns whether the update is newer than the given update digest.
+     *
+     * @param other the digest for the update with which to compare the digest
+     * @return indicates whether the update associated with this digest is newer than the given update digest
+     */
+    public boolean isNewerThan(Digest other) {
+      return timestamp.isNewerThan(other.timestamp);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hashCode(timestamp, isTombstone);
+    }
+
+    @Override
+    public boolean equals(Object other) {
+      if (other instanceof Digest) {
+        Digest that = (Digest) other;
+        return Objects.equal(this.timestamp, that.timestamp) &&
+            Objects.equal(this.isTombstone, that.isTombstone);
+      }
+      return false;
+    }
+
+    @Override
+    public String toString() {
+      return MoreObjects.toStringHelper(getClass())
+          .add("timestamp", timestamp)
+          .add("isTombstone", isTombstone)
+          .toString();
+    }
   }
 }
