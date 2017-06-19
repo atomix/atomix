@@ -15,18 +15,17 @@
  */
 package io.atomix.protocols.raft.proxy.impl;
 
+import io.atomix.protocols.raft.CommunicationStrategies;
+import io.atomix.protocols.raft.CommunicationStrategy;
 import io.atomix.protocols.raft.RaftCommand;
 import io.atomix.protocols.raft.RaftOperation;
 import io.atomix.protocols.raft.RaftQuery;
-import io.atomix.protocols.raft.CommunicationStrategies;
-import io.atomix.protocols.raft.CommunicationStrategy;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.proxy.RaftProxy;
+import io.atomix.util.concurrent.ThreadContext;
 import io.atomix.util.serializer.Serializer;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Consumer;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -62,15 +61,14 @@ public class DefaultRaftProxy implements RaftProxy {
       RaftProxyManager sessionManager,
       CommunicationStrategy communicationStrategy,
       Serializer serializer,
-      Executor orderedExecutor,
-      ScheduledExecutorService scheduledExecutor) {
+      ThreadContext context) {
     this.state = checkNotNull(state, "state cannot be null");
     this.sessionManager = checkNotNull(sessionManager, "sessionManager cannot be null");
     RaftProxySequencer sequencer = new RaftProxySequencer(state);
-    this.sessionListener = new RaftProxyListener(protocol, state, sequencer, serializer, orderedExecutor);
+    this.sessionListener = new RaftProxyListener(protocol, state, sequencer, serializer, context);
     RaftConnection leaderConnection = new RaftConnection(String.valueOf(state.getSessionId()), protocol.dispatcher(), selectorManager.createSelector(CommunicationStrategies.LEADER));
     RaftConnection sessionConnection = new RaftConnection(String.valueOf(state.getSessionId()), protocol.dispatcher(), selectorManager.createSelector(communicationStrategy));
-    this.sessionSubmitter = new RaftProxySubmitter(leaderConnection, sessionConnection, state, sequencer, sessionManager, serializer, orderedExecutor, scheduledExecutor);
+    this.sessionSubmitter = new RaftProxySubmitter(leaderConnection, sessionConnection, state, sequencer, sessionManager, serializer, context);
   }
 
   @Override

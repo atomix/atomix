@@ -27,6 +27,8 @@ import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.util.concurrent.Futures;
 import io.atomix.util.concurrent.OrderedExecutor;
+import io.atomix.util.concurrent.SingleThreadContext;
+import io.atomix.util.concurrent.ThreadContext;
 import io.atomix.util.serializer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -123,7 +125,7 @@ public class RaftProxyManager {
 
     LOGGER.trace("{} - Sending {}", clientId, request);
     CompletableFuture<RaftProxy> future = new CompletableFuture<>();
-    Executor sessionExecutor = new OrderedExecutor(threadPoolExecutor);
+    ThreadContext proxyContext = new SingleThreadContext(threadPoolExecutor);
     connection.openSession(request).whenCompleteAsync((response, error) -> {
       if (error == null) {
         if (response.status() == RaftResponse.Status.OK) {
@@ -138,15 +140,14 @@ public class RaftProxyManager {
               this,
               communicationStrategy,
               serializer,
-              sessionExecutor,
-              threadPoolExecutor));
+              proxyContext));
         } else {
           future.completeExceptionally(response.error().createException());
         }
       } else {
         future.completeExceptionally(error);
       }
-    }, sessionExecutor);
+    }, proxyContext);
     return future;
   }
 
