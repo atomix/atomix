@@ -23,8 +23,8 @@
   </parent>
 
   <packaging>bundle</packaging>
-  <artifactId>atomix-failure-detector</artifactId>
-  <name>Atomix Protocols :: Failure Detector</name>
+  <artifactId>atomix-failure-detection</artifactId>
+  <name>Atomix Protocols :: Failure Detection</name>
 
   <build>
     <plugins>
