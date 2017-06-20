@@ -88,7 +88,6 @@
     <module>storage</module>
     <module>time</module>
     <module>utils</module>
-    <module>all</module>
   </modules>
 
   <dependencies>
