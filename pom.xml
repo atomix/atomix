@@ -49,6 +49,7 @@
     <maven.assembly.plugin.version>2.4</maven.assembly.plugin.version>
     <maven.javadoc.plugin.version>2.10.1</maven.javadoc.plugin.version>
     <maven.bundle.plugin.version>2.5.3</maven.bundle.plugin.version>
+    <maven.checkstyle.plugin.version>2.17</maven.checkstyle.plugin.version>
   </properties>
 
   <licenses>
@@ -80,46 +81,18 @@
   <modules>
     <module>cluster</module>
     <module>core</module>
+    <module>event</module>
+    <module>logging</module>
     <module>messaging</module>
     <module>protocols</module>
-    <module>serializers</module>
+    <module>serializer</module>
+    <module>storage</module>
+    <module>time</module>
     <module>utils</module>
     <module>all</module>
   </modules>
 
   <dependencies>
-    <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
-      <version>${guava.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-lang3</artifactId>
-      <version>${commons.lang3.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-math3</artifactId>
-      <version>${commons.math3.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.esotericsoftware</groupId>
-      <artifactId>kryo</artifactId>
-      <version>${kryo.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>joda-time</groupId>
-      <artifactId>joda-time</artifactId>
-      <version>${joda-time.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-      <version>${slf4j.version}</version>
-    </dependency>
-
-    <!-- Test dependencies -->
     <dependency>
       <groupId>org.testng</groupId>
       <artifactId>testng</artifactId>
@@ -173,6 +146,7 @@
           </execution>
         </executions>
       </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -182,12 +156,14 @@
           <target>${java.version}</target>
         </configuration>
       </plugin>
+
       <plugin>
         <groupId>org.apache.felix</groupId>
         <artifactId>maven-bundle-plugin</artifactId>
         <version>${maven.bundle.plugin.version}</version>
         <extensions>true</extensions>
       </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
@@ -205,18 +181,19 @@
           <doctitle>Atomix API Reference (${jv})</doctitle>
           <windowtitle>Atomix API Reference (${jv})</windowtitle>
           <aggregate>true</aggregate>
-          <excludePackageNames>io.atomix.examples*:*.internal*:*.config</excludePackageNames>
+          <excludePackageNames>io.atomix.examples*:*.impl*</excludePackageNames>
           <additionalparam>
             -Xdoclint:none
             -notimestamp
             -link http://docs.oracle.com/javase/8/docs/api/
-            -link http://atomix.io/catalyst/api/latest/
-            -link http://atomix.io/copycat/api/latest/
             -group "Atomix core" io.atomix
-            -group "Distributed resources" io.atomix.variables:io.atomix.collections:io.atomix.group:io.atomix.concurrent
-            -group "Resource management" io.atomix.manager
-            -group "Resource API" io.atomix.resource
-            -group "Test API" io.atomix.testing
+            -group "Cluster" io.atomix.cluster*
+            -group "Storage" io.atomix.storage*
+            -group "Time" io.atomix.time*
+            -group "Distributed primitives" io.atomix.primitives*
+            -group "Raft protocol" io.atomix.protocols.raft*
+            -group "Gossip protocol" io.atomix.protocols.gossip*
+            -group "Utilities" io.atomix.logging:io.atomix.serializer*:io.atomix.time:io.atomix.storage:io.atomix.buffer
           </additionalparam>
         </configuration>
       </plugin>
@@ -227,6 +204,16 @@
         <version>2.1</version><!--$NO-MVN-MAN-VER$ -->
         <configuration>
           <allowTimestampedSnapshots>true</allowTimestampedSnapshots>
+        </configuration>
+      </plugin>
+
+      <!-- Coding standards -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>2.17</version>
+        <configuration>
+          <configLocation>google_checks.xml</configLocation>
         </configuration>
       </plugin>
 

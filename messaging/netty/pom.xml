@@ -26,6 +26,14 @@
   <artifactId>atomix-netty</artifactId>
   <name>Atomix Messaging :: Netty</name>
 
+  <dependencies>
+    <dependency>
+      <groupId>io.atomix</groupId>
+      <artifactId>atomix-messaging</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+  </dependencies>
+
   <build>
     <plugins>
       <plugin>

@@ -27,6 +27,7 @@
   <name>Atomix Messaging Parent</name>
 
   <modules>
+    <module>api</module>
     <module>netty</module>
   </modules>
 </project>
