@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.protocols.raft.cluster.MemberId;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -39,7 +39,7 @@ public enum CommunicationStrategies implements CommunicationStrategy {
    */
   ANY {
     @Override
-    public List<NodeId> selectConnections(NodeId leader, List<NodeId> servers) {
+    public List<MemberId> selectConnections(MemberId leader, List<MemberId> servers) {
       Collections.shuffle(servers);
       return servers;
     }
@@ -56,7 +56,7 @@ public enum CommunicationStrategies implements CommunicationStrategy {
    */
   LEADER {
     @Override
-    public List<NodeId> selectConnections(NodeId leader, List<NodeId> servers) {
+    public List<MemberId> selectConnections(MemberId leader, List<MemberId> servers) {
       if (leader != null) {
         return Collections.singletonList(leader);
       }
@@ -74,13 +74,13 @@ public enum CommunicationStrategies implements CommunicationStrategy {
    */
   FOLLOWERS {
     @Override
-    public List<NodeId> selectConnections(NodeId leader, List<NodeId> servers) {
+    public List<MemberId> selectConnections(MemberId leader, List<MemberId> servers) {
       Collections.shuffle(servers);
       if (leader != null && servers.size() > 1) {
-        List<NodeId> results = new ArrayList<>(servers.size());
-        for (NodeId address : servers) {
-          if (!address.equals(leader)) {
-            results.add(address);
+        List<MemberId> results = new ArrayList<>(servers.size());
+        for (MemberId memberId : servers) {
+          if (!memberId.equals(leader)) {
+            results.add(memberId);
           }
         }
         return results;

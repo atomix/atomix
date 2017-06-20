@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.protocol;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.protocols.raft.cluster.MemberId;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -31,7 +31,7 @@ public interface RaftClientProtocolDispatcher {
    * @param request the request to send
    * @return a future to be completed with the response
    */
-  CompletableFuture<OpenSessionResponse> openSession(NodeId nodeId, OpenSessionRequest request);
+  CompletableFuture<OpenSessionResponse> openSession(MemberId nodeId, OpenSessionRequest request);
 
   /**
    * Sends a close session request to the given node.
@@ -40,7 +40,7 @@ public interface RaftClientProtocolDispatcher {
    * @param request the request to send
    * @return a future to be completed with the response
    */
-  CompletableFuture<CloseSessionResponse> closeSession(NodeId nodeId, CloseSessionRequest request);
+  CompletableFuture<CloseSessionResponse> closeSession(MemberId nodeId, CloseSessionRequest request);
 
   /**
    * Sends a keep alive request to the given node.
@@ -49,7 +49,7 @@ public interface RaftClientProtocolDispatcher {
    * @param request the request to send
    * @return a future to be completed with the response
    */
-  CompletableFuture<KeepAliveResponse> keepAlive(NodeId nodeId, KeepAliveRequest request);
+  CompletableFuture<KeepAliveResponse> keepAlive(MemberId nodeId, KeepAliveRequest request);
 
   /**
    * Sends a query request to the given node.
@@ -58,7 +58,7 @@ public interface RaftClientProtocolDispatcher {
    * @param request the request to send
    * @return a future to be completed with the response
    */
-  CompletableFuture<QueryResponse> query(NodeId nodeId, QueryRequest request);
+  CompletableFuture<QueryResponse> query(MemberId nodeId, QueryRequest request);
 
   /**
    * Sends a command request to the given node.
@@ -67,7 +67,7 @@ public interface RaftClientProtocolDispatcher {
    * @param request the request to send
    * @return a future to be completed with the response
    */
-  CompletableFuture<CommandResponse> command(NodeId nodeId, CommandRequest request);
+  CompletableFuture<CommandResponse> command(MemberId nodeId, CommandRequest request);
 
   /**
    * Sends a metadata request to the given node.
@@ -76,7 +76,7 @@ public interface RaftClientProtocolDispatcher {
    * @param request the request to send
    * @return a future to be completed with the response
    */
-  CompletableFuture<MetadataResponse> metadata(NodeId nodeId, MetadataRequest request);
+  CompletableFuture<MetadataResponse> metadata(MemberId nodeId, MetadataRequest request);
 
   /**
    * Broadcasts a reset request to all nodes in the cluster.

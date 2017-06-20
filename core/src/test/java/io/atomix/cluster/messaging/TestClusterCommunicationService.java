@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.messaging;
+package io.atomix.cluster.messaging;
 
 import com.google.common.collect.Maps;
 import io.atomix.cluster.NodeId;
+import io.atomix.messaging.MessagingException;
 import io.atomix.utils.concurrent.Futures;
 
 import java.util.Map;

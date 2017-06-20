@@ -16,7 +16,6 @@
 
 package io.atomix.protocols.raft.impl;
 
-import io.atomix.cluster.NodeId;
 import io.atomix.logging.Logger;
 import io.atomix.logging.LoggerFactory;
 import io.atomix.protocols.raft.RaftCommand;
@@ -25,6 +24,7 @@ import io.atomix.protocols.raft.RaftOperation;
 import io.atomix.protocols.raft.RaftQuery;
 import io.atomix.protocols.raft.RaftStateMachine;
 import io.atomix.protocols.raft.StateMachineExecutor;
+import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.error.ApplicationException;
 import io.atomix.protocols.raft.error.UnknownSessionException;
 import io.atomix.protocols.raft.session.RaftSessionListener;
@@ -33,9 +33,9 @@ import io.atomix.protocols.raft.session.impl.RaftSessionManager;
 import io.atomix.protocols.raft.storage.snapshot.Snapshot;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotReader;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotWriter;
+import io.atomix.serializer.Serializer;
 import io.atomix.utils.concurrent.Scheduled;
 import io.atomix.utils.concurrent.ThreadContext;
-import io.atomix.serializer.Serializer;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -261,7 +261,7 @@ public class RaftServerStateMachineExecutor implements StateMachineExecutor {
         sessions.sessions.clear();
         for (int i = 0; i < sessionCount; i++) {
           long sessionId = reader.readLong();
-          NodeId node = NodeId.nodeId(reader.readString());
+          MemberId node = MemberId.nodeId(reader.readString());
           long sessionTimeout = reader.readLong();
           long sessionTimestamp = reader.readLong();
           RaftSessionContext session = new RaftSessionContext(

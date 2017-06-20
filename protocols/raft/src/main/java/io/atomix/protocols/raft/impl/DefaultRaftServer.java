@@ -15,11 +15,11 @@
  */
 package io.atomix.protocols.raft.impl;
 
-import io.atomix.cluster.NodeId;
 import io.atomix.logging.Logger;
 import io.atomix.logging.LoggerFactory;
 import io.atomix.protocols.raft.RaftServer;
 import io.atomix.protocols.raft.RaftStateMachine;
+import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.RaftCluster;
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.protocol.RaftServerProtocol;
@@ -95,22 +95,22 @@ public class DefaultRaftServer implements RaftServer {
   }
 
   @Override
-  public CompletableFuture<RaftServer> bootstrap(NodeId... cluster) {
+  public CompletableFuture<RaftServer> bootstrap(MemberId... cluster) {
     return bootstrap(Arrays.asList(cluster));
   }
 
   @Override
-  public CompletableFuture<RaftServer> bootstrap(Collection<NodeId> cluster) {
+  public CompletableFuture<RaftServer> bootstrap(Collection<MemberId> cluster) {
     return start(() -> cluster().bootstrap(cluster));
   }
 
   @Override
-  public CompletableFuture<RaftServer> join(NodeId... cluster) {
+  public CompletableFuture<RaftServer> join(MemberId... cluster) {
     return join(Arrays.asList(cluster));
   }
 
   @Override
-  public CompletableFuture<RaftServer> join(Collection<NodeId> cluster) {
+  public CompletableFuture<RaftServer> join(Collection<MemberId> cluster) {
     return start(() -> cluster().join(cluster));
   }
 

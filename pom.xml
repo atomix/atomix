@@ -79,7 +79,6 @@
   </issueManagement>
 
   <modules>
-    <module>cluster</module>
     <module>core</module>
     <module>event</module>
     <module>logging</module>

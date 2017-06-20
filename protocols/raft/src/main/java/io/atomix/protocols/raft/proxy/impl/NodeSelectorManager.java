@@ -15,8 +15,8 @@
  */
 package io.atomix.protocols.raft.proxy.impl;
 
-import io.atomix.cluster.NodeId;
 import io.atomix.protocols.raft.CommunicationStrategy;
+import io.atomix.protocols.raft.cluster.MemberId;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -29,15 +29,15 @@ import java.util.concurrent.CopyOnWriteArraySet;
  */
 public final class NodeSelectorManager {
   private final Set<NodeSelector> selectors = new CopyOnWriteArraySet<>();
-  private volatile NodeId leader;
-  private volatile Collection<NodeId> servers = Collections.emptyList();
+  private volatile MemberId leader;
+  private volatile Collection<MemberId> servers = Collections.emptyList();
 
   /**
    * Returns the current cluster leader.
    *
    * @return The current cluster leader.
    */
-  public NodeId leader() {
+  public MemberId leader() {
     return leader;
   }
 
@@ -46,7 +46,7 @@ public final class NodeSelectorManager {
    *
    * @return The set of servers in the cluster.
    */
-  public Collection<NodeId> servers() {
+  public Collection<MemberId> servers() {
     return servers;
   }
 
@@ -75,7 +75,7 @@ public final class NodeSelectorManager {
    * @param leader  The current cluster leader.
    * @param servers The collection of all active servers.
    */
-  public void resetAll(NodeId leader, Collection<NodeId> servers) {
+  public void resetAll(MemberId leader, Collection<MemberId> servers) {
     this.leader = leader;
     this.servers = new LinkedList<>(servers);
     selectors.forEach(s -> s.reset(leader, servers));

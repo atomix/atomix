@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.protocols.raft.cluster.MemberId;
 
 import java.util.List;
 
@@ -31,7 +31,7 @@ public interface CommunicationStrategy {
   /**
    * Returns a prioritized list of servers to which the client can connect and submit operations.
    * <p>
-   * The client will iterate the provided {@link NodeId} list in order, attempting to connect to
+   * The client will iterate the provided {@link MemberId} list in order, attempting to connect to
    * each listed server until all servers have been exhausted. Implementations should provide a
    * complete list of servers with which the client can communicate. Limiting the server list
    * only to a single server such as the {@code leader} may result in the client failing, such as in
@@ -44,6 +44,6 @@ public interface CommunicationStrategy {
    *                may evolve over time as the structure of the cluster changes.
    * @return A collection of servers to which the client can connect.
    */
-  List<NodeId> selectConnections(NodeId leader, List<NodeId> servers);
+  List<MemberId> selectConnections(MemberId leader, List<MemberId> servers);
 
 }

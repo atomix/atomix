@@ -15,14 +15,14 @@
  */
 package io.atomix.protocols.raft;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.RaftCluster;
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.error.ConfigurationException;
 import io.atomix.protocols.raft.impl.DefaultRaftServer;
 import io.atomix.protocols.raft.impl.RaftServerContext;
-import io.atomix.protocols.raft.protocol.RaftServerProtocol;
 import io.atomix.protocols.raft.impl.RaftStateMachineRegistry;
+import io.atomix.protocols.raft.protocol.RaftServerProtocol;
 import io.atomix.protocols.raft.storage.Storage;
 import io.atomix.protocols.raft.storage.log.RaftLog;
 import io.atomix.storage.StorageLevel;
@@ -45,7 +45,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Provides a standalone implementation of the <a href="http://raft.github.io/">Raft consensus algorithm</a>.
  * <p>
  * To create a new server, use the server {@link RaftServer.Builder}. Servers require
- * cluster membership information in order to perform communication. Each server must be provided a local {@link NodeId}
+ * cluster membership information in order to perform communication. Each server must be provided a local {@link MemberId}
  * to which to bind the internal {@link io.atomix.protocols.raft.protocol.RaftServerProtocol} and a set of addresses
  * for other members in the cluster.
  * <h2>State machines</h2>
@@ -89,7 +89,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * state machine snapshots in addition to logs. See the {@link Storage} documentation for more information.
  * <h2>Bootstrapping the cluster</h2>
  * Once a server has been built, it must either be {@link #bootstrap() bootstrapped} to form a new cluster or
- * {@link #join(NodeId...) joined} to an existing cluster. The simplest way to bootstrap a new cluster is to bootstrap
+ * {@link #join(MemberId...) joined} to an existing cluster. The simplest way to bootstrap a new cluster is to bootstrap
  * a single server to which additional servers can be joined.
  * <pre>
  *   {@code
@@ -100,7 +100,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *   }
  * </pre>
  * Alternatively, the bootstrapped cluster can include multiple servers by providing an initial configuration to the
- * {@link #bootstrap(NodeId...)} method on each server. When bootstrapping a multi-node cluster, the bootstrap configuration
+ * {@link #bootstrap(MemberId...)} method on each server. When bootstrapping a multi-node cluster, the bootstrap configuration
  * must be identical on all servers for safety.
  * <pre>
  *   {@code
@@ -119,7 +119,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * <h2>Adding a server to an existing cluster</h2>
  * Once a single- or multi-node cluster has been {@link #bootstrap() bootstrapped}, often times users need to
  * add additional servers to the cluster. For example, some users prefer to bootstrap a single-node cluster and
- * add additional nodes to that server. Servers can join existing bootstrapped clusters using the {@link #join(NodeId...)}
+ * add additional nodes to that server. Servers can join existing bootstrapped clusters using the {@link #join(MemberId...)}
  * method. When joining an existing cluster, the server simply needs to specify at least one reachable server in the
  * existing cluster.
  * <pre>
@@ -179,13 +179,13 @@ public interface RaftServer {
   /**
    * Returns a new Copycat server builder.
    * <p>
-   * The provided {@link NodeId} is the address to which to bind the server being constructed.
+   * The provided {@link MemberId} is the address to which to bind the server being constructed.
    *
-   * @param localNodeId The local node identifier.
+   * @param localMemberId The local node identifier.
    * @return The server builder.
    */
-  static Builder builder(NodeId localNodeId) {
-    return new Builder(localNodeId);
+  static Builder builder(MemberId localMemberId) {
+    return new Builder(localMemberId);
   }
 
   /**
@@ -276,12 +276,12 @@ public interface RaftServer {
    * Returns the server's cluster configuration.
    * <p>
    * The {@link RaftCluster} is representative of the server's current view of the cluster configuration. The first time
-   * the server is {@link #bootstrap() started}, the cluster configuration will be initialized using the {@link NodeId}
-   * list provided to the server {@link #builder(NodeId) builder}. For {@link StorageLevel#DISK persistent}
+   * the server is {@link #bootstrap() started}, the cluster configuration will be initialized using the {@link MemberId}
+   * list provided to the server {@link #builder(MemberId) builder}. For {@link StorageLevel#DISK persistent}
    * servers, subsequent starts will result in the last known cluster configuration being loaded from disk.
    * <p>
    * The returned {@link RaftCluster} can be used to modify the state of the cluster to which this server belongs. Note,
-   * however, that users need not explicitly {@link RaftCluster#join(NodeId...) join} or {@link RaftCluster#leave() leave} the
+   * however, that users need not explicitly {@link RaftCluster#join(MemberId...) join} or {@link RaftCluster#leave() leave} the
    * cluster since starting and stopping the server results in joining and leaving the cluster respectively.
    *
    * @return The server's cluster configuration.
@@ -325,7 +325,7 @@ public interface RaftServer {
    * When the cluster is bootstrapped, the local server will be transitioned into the active state and begin
    * participating in the Raft consensus algorithm. When the cluster is first bootstrapped, no leader will exist.
    * The bootstrapped members will elect a leader amongst themselves. Once a cluster has been bootstrapped, additional
-   * members may be {@link #join(NodeId...) joined} to the cluster. In the event that the bootstrapped members cannot
+   * members may be {@link #join(MemberId...) joined} to the cluster. In the event that the bootstrapped members cannot
    * reach a quorum to elect a leader, bootstrap will continue until successful.
    * <p>
    * It is critical that all servers in a bootstrap configuration be started with the same exact set of members.
@@ -351,7 +351,7 @@ public interface RaftServer {
    * When the cluster is bootstrapped, the local server will be transitioned into the active state and begin
    * participating in the Raft consensus algorithm. When the cluster is first bootstrapped, no leader will exist.
    * The bootstrapped members will elect a leader amongst themselves. Once a cluster has been bootstrapped, additional
-   * members may be {@link #join(NodeId...) joined} to the cluster. In the event that the bootstrapped members cannot
+   * members may be {@link #join(MemberId...) joined} to the cluster. In the event that the bootstrapped members cannot
    * reach a quorum to elect a leader, bootstrap will continue until successful.
    * <p>
    * It is critical that all servers in a bootstrap configuration be started with the same exact set of members.
@@ -363,7 +363,7 @@ public interface RaftServer {
    * @param cluster The bootstrap cluster configuration.
    * @return A completable future to be completed once the cluster has been bootstrapped.
    */
-  CompletableFuture<RaftServer> bootstrap(NodeId... cluster);
+  CompletableFuture<RaftServer> bootstrap(MemberId... cluster);
 
   /**
    * Bootstraps the cluster using the provided cluster configuration.
@@ -378,7 +378,7 @@ public interface RaftServer {
    * When the cluster is bootstrapped, the local server will be transitioned into the active state and begin
    * participating in the Raft consensus algorithm. When the cluster is first bootstrapped, no leader will exist.
    * The bootstrapped members will elect a leader amongst themselves. Once a cluster has been bootstrapped, additional
-   * members may be {@link #join(NodeId...) joined} to the cluster. In the event that the bootstrapped members cannot
+   * members may be {@link #join(MemberId...) joined} to the cluster. In the event that the bootstrapped members cannot
    * reach a quorum to elect a leader, bootstrap will continue until successful.
    * <p>
    * It is critical that all servers in a bootstrap configuration be started with the same exact set of members.
@@ -390,7 +390,7 @@ public interface RaftServer {
    * @param cluster The bootstrap cluster configuration.
    * @return A completable future to be completed once the cluster has been bootstrapped.
    */
-  CompletableFuture<RaftServer> bootstrap(Collection<NodeId> cluster);
+  CompletableFuture<RaftServer> bootstrap(Collection<MemberId> cluster);
 
   /**
    * Joins the cluster.
@@ -422,7 +422,7 @@ public interface RaftServer {
    * @param cluster A collection of cluster member addresses to join.
    * @return A completable future to be completed once the local server has joined the cluster.
    */
-  CompletableFuture<RaftServer> join(NodeId... cluster);
+  CompletableFuture<RaftServer> join(MemberId... cluster);
 
   /**
    * Joins the cluster.
@@ -454,7 +454,7 @@ public interface RaftServer {
    * @param cluster A collection of cluster member addresses to join.
    * @return A completable future to be completed once the local server has joined the cluster.
    */
-  CompletableFuture<RaftServer> join(Collection<NodeId> cluster);
+  CompletableFuture<RaftServer> join(Collection<MemberId> cluster);
 
   /**
    * Returns a boolean indicating whether the server is running.
@@ -483,7 +483,7 @@ public interface RaftServer {
    * This builder should be used to programmatically configure and construct a new {@link RaftServer} instance.
    * The builder provides methods for configuring all aspects of a Copycat server. The {@code CopycatServer.Builder}
    * class cannot be instantiated directly. To create a new builder, use one of the
-   * {@link RaftServer#builder(NodeId) server builder factory} methods.
+   * {@link RaftServer#builder(MemberId) server builder factory} methods.
    * <pre>
    *   {@code
    *   CopycatServer.Builder builder = CopycatServer.builder(address);
@@ -518,7 +518,7 @@ public interface RaftServer {
 
     private String name = DEFAULT_NAME;
     private RaftMember.Type type = RaftMember.Type.ACTIVE;
-    private NodeId localNodeId;
+    private MemberId localMemberId;
     private RaftServerProtocol protocol;
     private Storage storage;
     private Duration electionTimeout = DEFAULT_ELECTION_TIMEOUT;
@@ -527,8 +527,8 @@ public interface RaftServer {
     private final RaftStateMachineRegistry stateMachineRegistry = new RaftStateMachineRegistry();
     private int threadPoolSize = DEFAULT_THREAD_POOL_SIZE;
 
-    private Builder(NodeId localNodeId) {
-      this.localNodeId = checkNotNull(localNodeId, "localNodeId cannot be null");
+    private Builder(MemberId localMemberId) {
+      this.localMemberId = checkNotNull(localMemberId, "localMemberId cannot be null");
     }
 
     /**
@@ -662,10 +662,10 @@ public interface RaftServer {
         storage = Storage.builder().build();
       }
 
-      ThreadContext threadContext = new SingleThreadContext(String.format("copycat-server-%s-%s", localNodeId, name));
+      ThreadContext threadContext = new SingleThreadContext(String.format("copycat-server-%s-%s", localMemberId, name));
       ScheduledExecutorService threadPool = Executors.newScheduledThreadPool(threadPoolSize, new AtomixThreadFactory("copycat-" + name + "-state-%d"));
 
-      RaftServerContext context = new RaftServerContext(name, type, localNodeId, protocol, storage, stateMachineRegistry, threadPool, threadContext);
+      RaftServerContext context = new RaftServerContext(name, type, localMemberId, protocol, storage, stateMachineRegistry, threadPool, threadContext);
       context.setElectionTimeout(electionTimeout)
           .setHeartbeatInterval(heartbeatInterval)
           .setSessionTimeout(sessionTimeout);

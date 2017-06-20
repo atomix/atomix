@@ -17,7 +17,6 @@ package io.atomix.protocols.raft.proxy.impl;
 
 import io.atomix.logging.Logger;
 import io.atomix.logging.LoggerFactory;
-import io.atomix.messaging.MessagingException;
 import io.atomix.protocols.raft.RaftCommand;
 import io.atomix.protocols.raft.RaftQuery;
 import io.atomix.protocols.raft.error.CommandException;
@@ -59,7 +58,6 @@ final class RaftProxySubmitter {
   private static final Predicate<Throwable> EXCEPTION_PREDICATE = e ->
       e instanceof ConnectException
           || e instanceof TimeoutException
-          || e instanceof MessagingException
           || e instanceof ClosedChannelException;
 
   private final RaftConnection leaderConnection;

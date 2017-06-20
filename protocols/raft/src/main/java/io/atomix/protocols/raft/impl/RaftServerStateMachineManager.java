@@ -353,7 +353,7 @@ public class RaftServerStateMachineManager implements AutoCloseable {
 
     RaftSessionContext session = new RaftSessionContext(
         entry.index(),
-        entry.entry().node(),
+        entry.entry().member(),
         entry.entry().name(),
         entry.entry().type(),
         entry.entry().timeout(),

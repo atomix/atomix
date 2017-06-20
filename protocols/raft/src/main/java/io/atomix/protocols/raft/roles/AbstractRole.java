@@ -15,15 +15,15 @@
  */
 package io.atomix.protocols.raft.roles;
 
-import io.atomix.cluster.NodeId;
 import io.atomix.logging.Logger;
 import io.atomix.logging.LoggerFactory;
+import io.atomix.protocols.raft.RaftServer;
+import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
 import io.atomix.protocols.raft.error.NoLeaderException;
 import io.atomix.protocols.raft.impl.RaftServerContext;
 import io.atomix.protocols.raft.protocol.RaftRequest;
 import io.atomix.protocols.raft.protocol.RaftResponse;
-import io.atomix.protocols.raft.RaftServer;
 import io.atomix.utils.concurrent.Futures;
 
 import java.util.concurrent.CompletableFuture;
@@ -81,7 +81,7 @@ public abstract class AbstractRole implements RaftRole {
   /**
    * Forwards the given request to the leader if possible.
    */
-  protected <T extends RaftRequest, U extends RaftResponse> CompletableFuture<U> forward(T request, BiFunction<NodeId, T, CompletableFuture<U>> function) {
+  protected <T extends RaftRequest, U extends RaftResponse> CompletableFuture<U> forward(T request, BiFunction<MemberId, T, CompletableFuture<U>> function) {
     CompletableFuture<U> future = new CompletableFuture<>();
     DefaultRaftMember leader = context.getLeader();
     if (leader == null) {
@@ -101,7 +101,7 @@ public abstract class AbstractRole implements RaftRole {
   /**
    * Updates the term and leader.
    */
-  protected boolean updateTermAndLeader(long term, NodeId leader) {
+  protected boolean updateTermAndLeader(long term, MemberId leader) {
     // If the request indicates a term that is greater than the current term or no leader has been
     // set for the current term, update leader and term.
     if (term > context.getTerm() || (term == context.getTerm() && context.getLeader() == null && leader != null)) {

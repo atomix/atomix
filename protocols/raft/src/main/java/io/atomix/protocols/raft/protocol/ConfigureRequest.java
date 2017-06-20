@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.protocol;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.RaftMember;
 
 import java.util.Collection;
@@ -45,12 +45,12 @@ public class ConfigureRequest extends AbstractRaftRequest {
   }
 
   private final long term;
-  private final NodeId leader;
+  private final MemberId leader;
   private final long index;
   private final long timestamp;
   private final Collection<RaftMember> members;
 
-  public ConfigureRequest(long term, NodeId leader, long index, long timestamp, Collection<RaftMember> members) {
+  public ConfigureRequest(long term, MemberId leader, long index, long timestamp, Collection<RaftMember> members) {
     this.term = term;
     this.leader = leader;
     this.index = index;
@@ -72,7 +72,7 @@ public class ConfigureRequest extends AbstractRaftRequest {
    *
    * @return The leader's address.
    */
-  public NodeId leader() {
+  public MemberId leader() {
     return leader;
   }
 
@@ -137,7 +137,7 @@ public class ConfigureRequest extends AbstractRaftRequest {
    */
   public static class Builder extends AbstractRaftRequest.Builder<Builder, ConfigureRequest> {
     private long term;
-    private NodeId leader;
+    private MemberId leader;
     private long index;
     private long timestamp;
     private Collection<RaftMember> members;
@@ -162,7 +162,7 @@ public class ConfigureRequest extends AbstractRaftRequest {
      * @return The append request builder.
      * @throws IllegalArgumentException if the {@code leader} is not positive
      */
-    public Builder withLeader(NodeId leader) {
+    public Builder withLeader(MemberId leader) {
       this.leader = checkNotNull(leader, "leader cannot be null");
       return this;
     }

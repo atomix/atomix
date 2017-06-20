@@ -15,11 +15,11 @@
  */
 package io.atomix.protocols.raft.proxy.impl;
 
-import io.atomix.cluster.NodeId;
 import io.atomix.logging.Logger;
 import io.atomix.logging.LoggerFactory;
 import io.atomix.protocols.raft.CommunicationStrategies;
 import io.atomix.protocols.raft.CommunicationStrategy;
+import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.error.UnknownSessionException;
 import io.atomix.protocols.raft.protocol.CloseSessionRequest;
 import io.atomix.protocols.raft.protocol.KeepAliveRequest;
@@ -53,7 +53,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class RaftProxyManager {
   private static final Logger LOGGER = LoggerFactory.getLogger(RaftProxyManager.class);
   private final String clientId;
-  private final NodeId nodeId;
+  private final MemberId nodeId;
   private final RaftClientProtocol protocol;
   private final RaftConnection connection;
   private final ScheduledExecutorService threadPoolExecutor;
@@ -62,7 +62,7 @@ public class RaftProxyManager {
   private final AtomicBoolean open = new AtomicBoolean();
   private ScheduledFuture<?> keepAliveFuture;
 
-  public RaftProxyManager(String clientId, NodeId nodeId, RaftClientProtocol protocol, NodeSelectorManager selectorManager, ScheduledExecutorService threadPoolExecutor) {
+  public RaftProxyManager(String clientId, MemberId nodeId, RaftClientProtocol protocol, NodeSelectorManager selectorManager, ScheduledExecutorService threadPoolExecutor) {
     this.clientId = checkNotNull(clientId, "clientId cannot be null");
     this.nodeId = checkNotNull(nodeId, "nodeId cannot be null");
     this.protocol = checkNotNull(protocol, "protocol cannot be null");
@@ -84,7 +84,7 @@ public class RaftProxyManager {
    * @param leader  The leader address.
    * @param servers The collection of servers.
    */
-  public void resetConnections(NodeId leader, Collection<NodeId> servers) {
+  public void resetConnections(MemberId leader, Collection<MemberId> servers) {
     selectorManager.resetAll(leader, servers);
   }
 
@@ -115,7 +115,7 @@ public class RaftProxyManager {
       Duration timeout) {
     LOGGER.trace("{} - Opening session; name: {}, type: {}", clientId, name, stateMachine);
     OpenSessionRequest request = OpenSessionRequest.builder()
-        .withNode(nodeId)
+        .withMember(nodeId)
         .withStateMachine(stateMachine)
         .withName(name)
         .withTimeout(timeout.toMillis())

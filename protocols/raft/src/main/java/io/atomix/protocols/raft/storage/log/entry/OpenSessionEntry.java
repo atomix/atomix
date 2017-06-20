@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.storage.log.entry;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.protocols.raft.cluster.MemberId;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
@@ -23,14 +23,14 @@ import static com.google.common.base.MoreObjects.toStringHelper;
  * Open session entry.
  */
 public class OpenSessionEntry extends TimestampedEntry {
-  private final NodeId node;
+  private final MemberId member;
   private final String name;
   private final String type;
   private final long timeout;
 
-  public OpenSessionEntry(long term, long timestamp, NodeId node, String name, String type, long timeout) {
+  public OpenSessionEntry(long term, long timestamp, MemberId member, String name, String type, long timeout) {
     super(term, timestamp);
-    this.node = node;
+    this.member = member;
     this.name = name;
     this.type = type;
     this.timeout = timeout;
@@ -41,8 +41,8 @@ public class OpenSessionEntry extends TimestampedEntry {
    *
    * @return The client node identifier.
    */
-  public NodeId node() {
-    return node;
+  public MemberId member() {
+    return member;
   }
 
   /**
@@ -76,7 +76,7 @@ public class OpenSessionEntry extends TimestampedEntry {
   public String toString() {
     return toStringHelper(this)
         .add("timestamp", timestamp)
-        .add("node", node)
+        .add("node", member)
         .add("name", name)
         .add("type", type)
         .add("timeout", timeout)

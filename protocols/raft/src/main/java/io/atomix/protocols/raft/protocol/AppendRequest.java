@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.protocol;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
 import io.atomix.storage.journal.Indexed;
 
@@ -46,13 +46,13 @@ public class AppendRequest extends AbstractRaftRequest {
   }
 
   private final long term;
-  private final NodeId leader;
+  private final MemberId leader;
   private final long logIndex;
   private final long logTerm;
   private final List<Indexed<RaftLogEntry>> entries;
   private final long commitIndex;
 
-  public AppendRequest(long term, NodeId leader, long logIndex, long logTerm, List<Indexed<RaftLogEntry>> entries, long commitIndex) {
+  public AppendRequest(long term, MemberId leader, long logIndex, long logTerm, List<Indexed<RaftLogEntry>> entries, long commitIndex) {
     this.term = term;
     this.leader = leader;
     this.logIndex = logIndex;
@@ -75,7 +75,7 @@ public class AppendRequest extends AbstractRaftRequest {
    *
    * @return The leader's address.
    */
-  public NodeId leader() {
+  public MemberId leader() {
     return leader;
   }
 
@@ -151,7 +151,7 @@ public class AppendRequest extends AbstractRaftRequest {
    */
   public static class Builder extends AbstractRaftRequest.Builder<Builder, AppendRequest> {
     private long term;
-    private NodeId leader;
+    private MemberId leader;
     private long logIndex;
     private long logTerm;
     private List<Indexed<RaftLogEntry>> entries;
@@ -177,7 +177,7 @@ public class AppendRequest extends AbstractRaftRequest {
      * @return The append request builder.
      * @throws IllegalArgumentException if the {@code leader} is not positive
      */
-    public Builder withLeader(NodeId leader) {
+    public Builder withLeader(MemberId leader) {
       this.leader = checkNotNull(leader, "leader cannot be null");
       return this;
     }

@@ -15,15 +15,14 @@
  */
 package io.atomix.protocols.raft.protocol;
 
-import io.atomix.messaging.ClusterCommunicationService;
+import com.google.common.base.Preconditions;
+import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.serializer.Serializer;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import java.util.function.Function;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Raft server protocol listener that uses {@link ClusterCommunicationService} for communication.
@@ -34,9 +33,9 @@ public class RaftServerMessageListener implements RaftServerProtocolListener {
   private final ClusterCommunicationService clusterCommunicator;
 
   public RaftServerMessageListener(RaftMessageContext context, Serializer serializer, ClusterCommunicationService clusterCommunicator) {
-    this.context = checkNotNull(context, "context cannot be null");
-    this.serializer = checkNotNull(serializer, "serializer cannot be null");
-    this.clusterCommunicator = checkNotNull(clusterCommunicator, "clusterCommunicator cannot be null");
+    this.context = Preconditions.checkNotNull(context, "context cannot be null");
+    this.serializer = Preconditions.checkNotNull(serializer, "serializer cannot be null");
+    this.clusterCommunicator = Preconditions.checkNotNull(clusterCommunicator, "clusterCommunicator cannot be null");
   }
 
   @Override

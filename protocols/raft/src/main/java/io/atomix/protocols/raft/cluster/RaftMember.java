@@ -15,8 +15,6 @@
  */
 package io.atomix.protocols.raft.cluster;
 
-import io.atomix.cluster.NodeId;
-
 import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -32,9 +30,9 @@ import java.util.function.Consumer;
  * {@link RaftMember.Type} is indicative of the manner in which the member interacts with other members of
  * the cluster. The {@link RaftMember.Status} is indicative of the leader's ability to communicate with the
  * member. Additionally, each member is identified by an {@link #id() address} and unique {@link #id() ID}
- * which is generated from the {@link NodeId} hash code. The member's {@link NodeId} represents the
+ * which is generated from the {@link MemberId} hash code. The member's {@link MemberId} represents the
  * address through which the server communicates with other servers and not through which clients
- * communicate with the member (which may be a different {@link NodeId}).
+ * communicate with the member (which may be a different {@link MemberId}).
  * <p>
  * Users can listen for {@link RaftMember.Type} and {@link RaftMember.Status} changes via the
  * {@link #addTypeChangeListener(Consumer)} and {@link #addStatusChangeListener(Consumer)} methods respectively.
@@ -139,7 +137,7 @@ public interface RaftMember {
    *
    * @return The member node ID.
    */
-  NodeId id();
+  MemberId id();
 
   /**
    * Returns the member hash.

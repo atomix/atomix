@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.impl.DefaultRaftClient;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.proxy.RaftProxy;
@@ -60,7 +60,7 @@ public interface RaftClient {
    * @param cluster The cluster to which to connect.
    * @return The client builder.
    */
-  static Builder builder(NodeId... cluster) {
+  static Builder builder(MemberId... cluster) {
     return builder(Arrays.asList(cluster));
   }
 
@@ -74,7 +74,7 @@ public interface RaftClient {
    * @param cluster The cluster to which to connect.
    * @return The client builder.
    */
-  static Builder builder(Collection<NodeId> cluster) {
+  static Builder builder(Collection<MemberId> cluster) {
     return new Builder(cluster);
   }
 
@@ -111,7 +111,7 @@ public interface RaftClient {
    * @return A completable future to be completed once the client is registered.
    */
   default CompletableFuture<RaftClient> connect() {
-    return connect((Collection<NodeId>) null);
+    return connect((Collection<MemberId>) null);
   }
 
   /**
@@ -123,7 +123,7 @@ public interface RaftClient {
    * @param members A set of server addresses to which to connect.
    * @return A completable future to be completed once the client is registered.
    */
-  default CompletableFuture<RaftClient> connect(NodeId... members) {
+  default CompletableFuture<RaftClient> connect(MemberId... members) {
     if (members == null || members.length == 0) {
       return connect();
     } else {
@@ -140,7 +140,7 @@ public interface RaftClient {
    * @param members A set of server addresses to which to connect.
    * @return A completable future to be completed once the client is registered.
    */
-  CompletableFuture<RaftClient> connect(Collection<NodeId> members);
+  CompletableFuture<RaftClient> connect(Collection<MemberId> members);
 
   /**
    * Closes the client.
@@ -162,13 +162,13 @@ public interface RaftClient {
    * </pre>
    */
   final class Builder implements io.atomix.utils.Builder<RaftClient> {
-    private final Collection<NodeId> cluster;
+    private final Collection<MemberId> cluster;
     private String clientId = UUID.randomUUID().toString();
-    private NodeId nodeId;
+    private MemberId nodeId;
     private RaftClientProtocol protocol;
     private int threadPoolSize = Runtime.getRuntime().availableProcessors();
 
-    private Builder(Collection<NodeId> cluster) {
+    private Builder(Collection<MemberId> cluster) {
       this.cluster = checkNotNull(cluster, "cluster cannot be null");
     }
 
@@ -194,7 +194,7 @@ public interface RaftClient {
      * @return The client builder.
      * @throws NullPointerException if {@code nodeId} is null
      */
-    public Builder withNodeId(NodeId nodeId) {
+    public Builder withMemberId(MemberId nodeId) {
       this.nodeId = checkNotNull(nodeId, "nodeId cannot be null");
       return this;
     }

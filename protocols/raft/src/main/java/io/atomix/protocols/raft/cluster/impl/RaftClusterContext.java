@@ -15,10 +15,10 @@
  */
 package io.atomix.protocols.raft.cluster.impl;
 
-import io.atomix.cluster.NodeId;
 import io.atomix.logging.Logger;
 import io.atomix.logging.LoggerFactory;
 import io.atomix.protocols.raft.RaftServer;
+import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.RaftCluster;
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.error.RaftError;
@@ -60,7 +60,7 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
   private final AtomixThreadFactory threadFactory;
   private final DefaultRaftMember member;
   private volatile Configuration configuration;
-  private final Map<NodeId, RaftMemberContext> membersMap = new ConcurrentHashMap<>();
+  private final Map<MemberId, RaftMemberContext> membersMap = new ConcurrentHashMap<>();
   private final Set<RaftMember> members = new CopyOnWriteArraySet<>();
   private final List<RaftMemberContext> remoteMembers = new CopyOnWriteArrayList<>();
   private List<RaftMemberContext> assignedMembers = new ArrayList<>();
@@ -72,11 +72,11 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
   private final Set<Consumer<RaftMember>> joinListeners = new CopyOnWriteArraySet<>();
   private final Set<Consumer<RaftMember>> leaveListeners = new CopyOnWriteArraySet<>();
 
-  public RaftClusterContext(RaftMember.Type type, NodeId localNodeId, RaftServerContext context) {
+  public RaftClusterContext(RaftMember.Type type, MemberId localMemberId, RaftServerContext context) {
     Instant time = Instant.now();
-    this.member = new DefaultRaftMember(localNodeId, type, RaftMember.Status.AVAILABLE, time).setCluster(this);
+    this.member = new DefaultRaftMember(localMemberId, type, RaftMember.Status.AVAILABLE, time).setCluster(this);
     this.context = checkNotNull(context, "context cannot be null");
-    this.threadFactory = new AtomixThreadFactory("copycat-server-" + localNodeId + "-appender-%d");
+    this.threadFactory = new AtomixThreadFactory("copycat-server-" + localMemberId + "-appender-%d");
 
     // If a configuration is stored, use the stored configuration, otherwise configure the server with the user provided configuration.
     configuration = context.getMetaStore().loadConfiguration();
@@ -157,7 +157,7 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
   }
 
   @Override
-  public DefaultRaftMember member(NodeId id) {
+  public DefaultRaftMember member(MemberId id) {
     if (member.id().equals(id)) {
       return member;
     }
@@ -199,7 +199,7 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
    * @param id The member ID.
    * @return The member state.
    */
-  public RaftMemberContext getMemberState(NodeId id) {
+  public RaftMemberContext getMemberState(MemberId id) {
     return membersMap.get(id);
   }
 
@@ -209,7 +209,7 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
    * @param id The member ID.
    * @return The member.
    */
-  public DefaultRaftMember getRemoteMember(NodeId id) {
+  public DefaultRaftMember getRemoteMember(MemberId id) {
     RaftMemberContext member = membersMap.get(id);
     return member != null ? member.getMember() : null;
   }
@@ -307,7 +307,7 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
   }
 
   @Override
-  public CompletableFuture<Void> bootstrap(Collection<NodeId> cluster) {
+  public CompletableFuture<Void> bootstrap(Collection<MemberId> cluster) {
     if (joinFuture != null)
       return joinFuture;
 
@@ -332,7 +332,7 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
   }
 
   @Override
-  public synchronized CompletableFuture<Void> join(Collection<NodeId> cluster) {
+  public synchronized CompletableFuture<Void> join(Collection<MemberId> cluster) {
     if (joinFuture != null)
       return joinFuture;
 

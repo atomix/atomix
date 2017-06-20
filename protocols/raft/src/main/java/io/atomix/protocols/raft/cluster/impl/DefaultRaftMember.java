@@ -16,7 +16,7 @@
 package io.atomix.protocols.raft.cluster.impl;
 
 import com.google.common.hash.Hashing;
-import io.atomix.cluster.NodeId;
+import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.error.RaftError;
 import io.atomix.protocols.raft.protocol.RaftResponse;
@@ -38,7 +38,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Cluster member.
  */
 public final class DefaultRaftMember implements RaftMember, AutoCloseable {
-  private final NodeId id;
+  private final MemberId id;
   private final transient int hash;
   private RaftMember.Type type;
   private Status status = Status.AVAILABLE;
@@ -48,7 +48,7 @@ public final class DefaultRaftMember implements RaftMember, AutoCloseable {
   private transient Set<Consumer<Type>> typeChangeListeners = new CopyOnWriteArraySet<>();
   private transient Set<Consumer<Status>> statusChangeListeners = new CopyOnWriteArraySet<>();
 
-  public DefaultRaftMember(NodeId id, RaftMember.Type type, RaftMember.Status status, Instant updated) {
+  public DefaultRaftMember(MemberId id, RaftMember.Type type, RaftMember.Status status, Instant updated) {
     this.id = checkNotNull(id, "id cannot be null");
     this.hash = Hashing.murmur3_32()
         .hashUnencodedChars(id.id())
@@ -67,7 +67,7 @@ public final class DefaultRaftMember implements RaftMember, AutoCloseable {
   }
 
   @Override
-  public NodeId id() {
+  public MemberId id() {
     return id;
   }
 

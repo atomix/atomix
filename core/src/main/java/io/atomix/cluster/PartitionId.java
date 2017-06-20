@@ -15,9 +15,8 @@
  */
 package io.atomix.cluster;
 
+import com.google.common.base.Preconditions;
 import io.atomix.utils.Identifier;
-
-import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  * {@link Partition} identifier.
@@ -31,7 +30,7 @@ public class PartitionId extends Identifier<Integer> implements Comparable<Parti
    */
   public PartitionId(int id) {
     super(id);
-    checkArgument(id >= 0, "partition id must be non-negative");
+    Preconditions.checkArgument(id >= 0, "partition id must be non-negative");
   }
 
   /**

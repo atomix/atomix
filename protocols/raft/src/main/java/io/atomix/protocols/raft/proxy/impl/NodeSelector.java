@@ -15,8 +15,8 @@
  */
 package io.atomix.protocols.raft.proxy.impl;
 
-import io.atomix.cluster.NodeId;
 import io.atomix.protocols.raft.CommunicationStrategy;
+import io.atomix.protocols.raft.cluster.MemberId;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -30,7 +30,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Client address selector.
  */
-public final class NodeSelector implements Iterator<NodeId>, AutoCloseable {
+public final class NodeSelector implements Iterator<MemberId>, AutoCloseable {
 
   /**
    * 1
@@ -56,14 +56,14 @@ public final class NodeSelector implements Iterator<NodeId>, AutoCloseable {
   }
 
   private final NodeSelectorManager selectors;
-  private NodeId leader;
-  private Collection<NodeId> servers = new LinkedList<>();
-  private volatile NodeId selection;
+  private MemberId leader;
+  private Collection<MemberId> servers = new LinkedList<>();
+  private volatile MemberId selection;
   private final CommunicationStrategy strategy;
-  private Collection<NodeId> selections = new LinkedList<>();
-  private Iterator<NodeId> selectionsIterator;
+  private Collection<MemberId> selections = new LinkedList<>();
+  private Iterator<MemberId> selectionsIterator;
 
-  public NodeSelector(NodeId leader, Collection<NodeId> servers, CommunicationStrategy strategy, NodeSelectorManager selectors) {
+  public NodeSelector(MemberId leader, Collection<MemberId> servers, CommunicationStrategy strategy, NodeSelectorManager selectors) {
     this.leader = leader;
     this.servers = checkNotNull(servers, "servers cannot be null");
     this.strategy = checkNotNull(strategy, "strategy cannot be null");
@@ -91,7 +91,7 @@ public final class NodeSelector implements Iterator<NodeId>, AutoCloseable {
    *
    * @return The current address selection.
    */
-  public NodeId current() {
+  public MemberId current() {
     return selection;
   }
 
@@ -100,7 +100,7 @@ public final class NodeSelector implements Iterator<NodeId>, AutoCloseable {
    *
    * @return The current selector leader.
    */
-  public NodeId leader() {
+  public MemberId leader() {
     return leader;
   }
 
@@ -109,7 +109,7 @@ public final class NodeSelector implements Iterator<NodeId>, AutoCloseable {
    *
    * @return The current set of servers.
    */
-  public Collection<NodeId> servers() {
+  public Collection<MemberId> servers() {
     return servers;
   }
 
@@ -132,7 +132,7 @@ public final class NodeSelector implements Iterator<NodeId>, AutoCloseable {
    * @param servers The collection of server addresses.
    * @return The address selector.
    */
-  public NodeSelector reset(NodeId leader, Collection<NodeId> servers) {
+  public NodeSelector reset(MemberId leader, Collection<MemberId> servers) {
     if (changed(leader, servers)) {
       this.leader = leader;
       this.servers = servers;
@@ -145,7 +145,7 @@ public final class NodeSelector implements Iterator<NodeId>, AutoCloseable {
   /**
    * Returns a boolean value indicating whether the selector state would be changed by the given members.
    */
-  private boolean changed(NodeId leader, Collection<NodeId> servers) {
+  private boolean changed(MemberId leader, Collection<MemberId> servers) {
     checkNotNull(servers, "servers");
     checkArgument(!servers.isEmpty(), "servers cannot be empty");
     if (this.leader != null && leader == null) {
@@ -165,11 +165,11 @@ public final class NodeSelector implements Iterator<NodeId>, AutoCloseable {
   /**
    * Returns a boolean value indicating whether the servers in the first list match the servers in the second list.
    */
-  private boolean matches(Collection<NodeId> left, Collection<NodeId> right) {
+  private boolean matches(Collection<MemberId> left, Collection<MemberId> right) {
     if (left.size() != right.size())
       return false;
 
-    for (NodeId address : left) {
+    for (MemberId address : left) {
       if (!right.contains(address)) {
         return false;
       }
@@ -183,11 +183,11 @@ public final class NodeSelector implements Iterator<NodeId>, AutoCloseable {
   }
 
   @Override
-  public NodeId next() {
+  public MemberId next() {
     if (selectionsIterator == null) {
       selectionsIterator = selections.iterator();
     }
-    NodeId selection = selectionsIterator.next();
+    MemberId selection = selectionsIterator.next();
     this.selection = selection;
     return selection;
   }

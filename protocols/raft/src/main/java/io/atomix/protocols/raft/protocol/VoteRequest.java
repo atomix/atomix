@@ -15,7 +15,7 @@
  */
 package io.atomix.protocols.raft.protocol;
 
-import io.atomix.cluster.NodeId;
+import io.atomix.protocols.raft.cluster.MemberId;
 
 import java.util.Objects;
 
@@ -42,11 +42,11 @@ public class VoteRequest extends AbstractRaftRequest {
   }
 
   private final long term;
-  private final NodeId candidate;
+  private final MemberId candidate;
   private final long logIndex;
   private final long logTerm;
 
-  public VoteRequest(long term, NodeId candidate, long logIndex, long logTerm) {
+  public VoteRequest(long term, MemberId candidate, long logIndex, long logTerm) {
     this.term = term;
     this.candidate = candidate;
     this.logIndex = logIndex;
@@ -67,7 +67,7 @@ public class VoteRequest extends AbstractRaftRequest {
    *
    * @return The candidate's address.
    */
-  public NodeId candidate() {
+  public MemberId candidate() {
     return candidate;
   }
 
@@ -121,7 +121,7 @@ public class VoteRequest extends AbstractRaftRequest {
    */
   public static class Builder extends AbstractRaftRequest.Builder<Builder, VoteRequest> {
     private long term = -1;
-    private NodeId candidate;
+    private MemberId candidate;
     private long logIndex = -1;
     private long logTerm = -1;
 
@@ -145,7 +145,7 @@ public class VoteRequest extends AbstractRaftRequest {
      * @return The poll request builder.
      * @throws IllegalArgumentException if {@code candidate} is not positive
      */
-    public Builder withCandidate(NodeId candidate) {
+    public Builder withCandidate(MemberId candidate) {
       this.candidate = checkNotNull(candidate, "candidate cannot be null");
       return this;
     }

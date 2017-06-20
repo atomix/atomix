@@ -15,9 +15,9 @@
  */
 package io.atomix.protocols.raft.impl;
 
-import io.atomix.cluster.NodeId;
 import io.atomix.protocols.raft.RaftClient;
 import io.atomix.protocols.raft.RaftMetadataClient;
+import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.proxy.impl.NodeSelectorManager;
@@ -35,7 +35,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class DefaultRaftClient implements RaftClient {
   private final String clientId;
-  private final Collection<NodeId> cluster;
+  private final Collection<MemberId> cluster;
   private final ScheduledExecutorService threadPoolExecutor;
   private final RaftMetadataClient metadata;
   private final NodeSelectorManager selectorManager = new NodeSelectorManager();
@@ -43,8 +43,8 @@ public class DefaultRaftClient implements RaftClient {
 
   public DefaultRaftClient(
       String clientId,
-      NodeId nodeId,
-      Collection<NodeId> cluster,
+      MemberId nodeId,
+      Collection<MemberId> cluster,
       RaftClientProtocol protocol,
       ScheduledExecutorService threadPoolExecutor) {
     this.clientId = checkNotNull(clientId, "clientId cannot be null");
@@ -65,7 +65,7 @@ public class DefaultRaftClient implements RaftClient {
   }
 
   @Override
-  public synchronized CompletableFuture<RaftClient> connect(Collection<NodeId> cluster) {
+  public synchronized CompletableFuture<RaftClient> connect(Collection<MemberId> cluster) {
     CompletableFuture<RaftClient> future = new CompletableFuture<>();
 
     // If the provided cluster list is null or empty, use the default list.

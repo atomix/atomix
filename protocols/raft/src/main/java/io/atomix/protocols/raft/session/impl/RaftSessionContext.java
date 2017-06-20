@@ -15,15 +15,15 @@
  */
 package io.atomix.protocols.raft.session.impl;
 
-import io.atomix.cluster.NodeId;
 import io.atomix.logging.Logger;
 import io.atomix.logging.LoggerFactory;
+import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.impl.RaftOperationResult;
+import io.atomix.protocols.raft.impl.RaftServerContext;
 import io.atomix.protocols.raft.impl.RaftServerStateMachineContext;
 import io.atomix.protocols.raft.impl.RaftServerStateMachineExecutor;
 import io.atomix.protocols.raft.protocol.PublishRequest;
 import io.atomix.protocols.raft.protocol.RaftServerProtocol;
-import io.atomix.protocols.raft.impl.RaftServerContext;
 import io.atomix.protocols.raft.session.RaftSession;
 
 import java.util.HashMap;
@@ -45,7 +45,7 @@ import static com.google.common.base.Preconditions.checkState;
 public class RaftSessionContext implements RaftSession {
   private static final Logger LOGGER = LoggerFactory.getLogger(RaftSessionContext.class);
   private final long id;
-  private final NodeId node;
+  private final MemberId member;
   private final String name;
   private final String type;
   private final long timeout;
@@ -67,9 +67,9 @@ public class RaftSessionContext implements RaftSession {
   private EventHolder event;
   private final Set<Consumer<State>> changeListeners = new CopyOnWriteArraySet<>();
 
-  public RaftSessionContext(long id, NodeId node, String name, String type, long timeout, RaftServerStateMachineExecutor executor, RaftServerContext server) {
+  public RaftSessionContext(long id, MemberId member, String name, String type, long timeout, RaftServerStateMachineExecutor executor, RaftServerContext server) {
     this.id = id;
-    this.node = node;
+    this.member = member;
     this.name = name;
     this.type = type;
     this.timeout = timeout;
@@ -92,8 +92,8 @@ public class RaftSessionContext implements RaftSession {
    *
    * @return The node to which the session belongs.
    */
-  public NodeId node() {
-    return node;
+  public MemberId member() {
+    return member;
   }
 
   /**
@@ -456,7 +456,7 @@ public class RaftSessionContext implements RaftSession {
           .build();
 
       LOGGER.trace("{} - Sending {}", id, request);
-      protocol.dispatcher().publish(node, request);
+      protocol.dispatcher().publish(member, request);
     }
   }
 

@@ -15,10 +15,9 @@
  */
 package io.atomix.protocols.raft.proxy.impl;
 
-import io.atomix.cluster.NodeId;
 import io.atomix.logging.Logger;
 import io.atomix.logging.LoggerFactory;
-import io.atomix.messaging.MessagingException;
+import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.error.RaftError;
 import io.atomix.protocols.raft.protocol.CloseSessionRequest;
 import io.atomix.protocols.raft.protocol.CloseSessionResponse;
@@ -54,7 +53,7 @@ public class RaftConnection {
   private final String name;
   private final RaftClientProtocolDispatcher dispatcher;
   private final NodeSelector selector;
-  private NodeId node;
+  private MemberId node;
   private volatile boolean open;
 
   public RaftConnection(String name, RaftClientProtocolDispatcher dispatcher, NodeSelector selector) {
@@ -68,7 +67,7 @@ public class RaftConnection {
    *
    * @return The current selector leader.
    */
-  public NodeId leader() {
+  public MemberId leader() {
     return selector.leader();
   }
 
@@ -77,7 +76,7 @@ public class RaftConnection {
    *
    * @return The current set of servers.
    */
-  public Collection<NodeId> servers() {
+  public Collection<MemberId> servers() {
     return selector.servers();
   }
 
@@ -98,7 +97,7 @@ public class RaftConnection {
    * @param servers The current servers.
    * @return The client connection.
    */
-  public RaftConnection reset(NodeId leader, Collection<NodeId> servers) {
+  public RaftConnection reset(MemberId leader, Collection<MemberId> servers) {
     selector.reset(leader, servers);
     return this;
   }
@@ -178,9 +177,9 @@ public class RaftConnection {
   /**
    * Sends the given request attempt to the cluster.
    */
-  protected <T extends RaftRequest, U extends RaftResponse> void sendRequest(T request, BiFunction<NodeId, T, CompletableFuture<U>> sender, CompletableFuture<U> future) {
+  protected <T extends RaftRequest, U extends RaftResponse> void sendRequest(T request, BiFunction<MemberId, T, CompletableFuture<U>> sender, CompletableFuture<U> future) {
     if (open) {
-      NodeId node = next();
+      MemberId node = next();
       if (node != null) {
         LOGGER.trace("{} - Sending {}", name, request);
         sender.apply(node, request).whenComplete((r, e) -> {
@@ -200,7 +199,7 @@ public class RaftConnection {
    * Resends a request due to a request failure, resetting the connection if necessary.
    */
   @SuppressWarnings("unchecked")
-  protected <T extends RaftRequest> void resendRequest(Throwable cause, T request, BiFunction sender, NodeId node, CompletableFuture future) {
+  protected <T extends RaftRequest> void resendRequest(Throwable cause, T request, BiFunction sender, MemberId node, CompletableFuture future) {
     // If the connection has not changed, reset it and connect to the next server.
     if (this.node == node) {
       LOGGER.trace("{} - Resetting connection. Reason: {}", name, cause);
@@ -215,7 +214,7 @@ public class RaftConnection {
    * Handles a response from the cluster.
    */
   @SuppressWarnings("unchecked")
-  protected <T extends RaftRequest> void handleResponse(T request, BiFunction sender, NodeId node, RaftResponse response, Throwable error, CompletableFuture future) {
+  protected <T extends RaftRequest> void handleResponse(T request, BiFunction sender, MemberId node, RaftResponse response, Throwable error, CompletableFuture future) {
     if (error == null) {
       if (response.status() == RaftResponse.Status.OK
           || response.error() == RaftError.Type.COMMAND_ERROR
@@ -230,7 +229,7 @@ public class RaftConnection {
       } else {
         resendRequest(response.error().createException(), request, sender, node, future);
       }
-    } else if (error instanceof ConnectException || error instanceof TimeoutException || error instanceof MessagingException || error instanceof ClosedChannelException) {
+    } else if (error instanceof ConnectException || error instanceof TimeoutException || error instanceof ClosedChannelException) {
       resendRequest(error, request, sender, node, future);
     } else {
       LOGGER.debug("{} - {} failed! Reason: {}", name, request, error);
@@ -241,7 +240,7 @@ public class RaftConnection {
   /**
    * Connects to the cluster.
    */
-  protected NodeId next() {
+  protected MemberId next() {
     // If the address selector has been reset then reset the connection.
     if (selector.state() == NodeSelector.State.RESET && node != null) {
       this.node = selector.next();
