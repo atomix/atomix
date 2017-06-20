@@ -15,7 +15,6 @@
  */
 package io.atomix.protocols.gossip.protocol;
 
-import io.atomix.cluster.NodeId;
 import io.atomix.utils.Identifier;
 
 import java.util.concurrent.CompletableFuture;
