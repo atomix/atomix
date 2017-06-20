@@ -13,27 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.gossip;
+package io.atomix.protocols.phi.protocol;
 
-import io.atomix.event.EventSink;
-import io.atomix.event.ListenerService;
+import io.atomix.utils.Identifier;
+
+import java.util.function.Consumer;
 
 /**
- * Gossip service.
+ * Failure detection protocol listener.
  */
-public interface GossipService<K, V> extends ListenerService<GossipEvent<K, V>, GossipEventListener<K, V>>, EventSink<GossipEvent<K, V>> {
+public interface FailureDetectionProtocolListener<T extends Identifier> {
 
   /**
-   * Closes the service.
-   */
-  void close();
-
-  /**
-   * Gossip service builder.
+   * Registers a heartbeat message listener.
    *
-   * @param <K> the gossip subject type
-   * @param <V> the gossip value type
+   * @param listener the heartbeat message listener
    */
-  interface Builder<K, V> extends io.atomix.utils.Builder<GossipService<K, V>> {
-  }
+  void registerHeartbeatListener(Consumer<HeartbeatMessage<T>> listener);
+
+  /**
+   * Unregisters the heartbeat message listener.
+   */
+  void unregisterHeartbeatListener();
+
 }

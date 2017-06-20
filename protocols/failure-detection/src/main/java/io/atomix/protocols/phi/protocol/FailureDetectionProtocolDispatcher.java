@@ -13,27 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.gossip;
+package io.atomix.protocols.phi.protocol;
 
-import io.atomix.event.EventSink;
-import io.atomix.event.ListenerService;
+import io.atomix.utils.Identifier;
+
+import java.util.concurrent.CompletableFuture;
 
 /**
- * Gossip service.
+ * Failure detection protocol dispatcher.
  */
-public interface GossipService<K, V> extends ListenerService<GossipEvent<K, V>, GossipEventListener<K, V>>, EventSink<GossipEvent<K, V>> {
+public interface FailureDetectionProtocolDispatcher<T extends Identifier> {
 
   /**
-   * Closes the service.
-   */
-  void close();
-
-  /**
-   * Gossip service builder.
+   * Sends the given heartbeat message to the given [eer.
    *
-   * @param <K> the gossip subject type
-   * @param <V> the gossip value type
+   * @param peer the identifier of the peer to which to send the heartbeat
+   * @param message the heartbeat message to send
+   * @return a future to be completed once the heartbeat has been sent
    */
-  interface Builder<K, V> extends io.atomix.utils.Builder<GossipService<K, V>> {
-  }
+  CompletableFuture<Void> heartbeat(T peer, HeartbeatMessage<T> message);
+
 }

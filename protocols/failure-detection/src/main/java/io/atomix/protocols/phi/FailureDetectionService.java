@@ -13,15 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.gossip;
+package io.atomix.protocols.phi;
 
-import io.atomix.event.EventSink;
 import io.atomix.event.ListenerService;
+import io.atomix.utils.Identifier;
 
 /**
- * Gossip service.
+ * Failure detection service.
  */
-public interface GossipService<K, V> extends ListenerService<GossipEvent<K, V>, GossipEventListener<K, V>>, EventSink<GossipEvent<K, V>> {
+public interface FailureDetectionService<T extends Identifier>
+    extends ListenerService<FailureDetectionEvent<T>, FailureDetectionEventListener<T>> {
 
   /**
    * Closes the service.
@@ -29,11 +30,10 @@ public interface GossipService<K, V> extends ListenerService<GossipEvent<K, V>, 
   void close();
 
   /**
-   * Gossip service builder.
+   * Failure detections service builder.
    *
-   * @param <K> the gossip subject type
-   * @param <V> the gossip value type
+   * @param <T> the node identifier type
    */
-  interface Builder<K, V> extends io.atomix.utils.Builder<GossipService<K, V>> {
+  interface Builder<T extends Identifier> extends io.atomix.utils.Builder<FailureDetectionService<T>> {
   }
 }
