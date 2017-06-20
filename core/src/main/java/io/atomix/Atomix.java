@@ -15,8 +15,58 @@
  */
 package io.atomix;
 
+import io.atomix.cluster.ClusterService;
+import io.atomix.cluster.LeadershipService;
+import io.atomix.logging.LoggingService;
+import io.atomix.partition.PartitionService;
+import io.atomix.primitives.PrimitiveService;
+import io.atomix.transaction.TransactionService;
+
 /**
  * Atomix!
  */
 public interface Atomix {
+
+  /**
+   * Returns the cluster service.
+   *
+   * @return the cluster service
+   */
+  ClusterService getClusterService();
+
+  /**
+   * Returns the cluster leadership service.
+   *
+   * @return the cluster leadership service
+   */
+  LeadershipService getLeadershipService();
+
+  /**
+   * Returns the cluster partition service.
+   *
+   * @return the cluster partition service
+   */
+  PartitionService getPartitionService();
+
+  /**
+   * Returns the primitive service.
+   *
+   * @return the primitive service
+   */
+  PrimitiveService getPrimitiveService();
+
+  /**
+   * Returns the transaction service.
+   *
+   * @return the transaction service
+   */
+  TransactionService getTransactionService();
+
+  /**
+   * Returns the logging service.
+   *
+   * @return the logging service
+   */
+  LoggingService getLoggingService();
+
 }
