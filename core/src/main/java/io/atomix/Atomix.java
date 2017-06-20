@@ -15,6 +15,7 @@
  */
 package io.atomix;
 
+import io.atomix.cluster.LockService;
 import io.atomix.cluster.LogicalClockService;
 import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.LeadershipService;
@@ -41,6 +42,13 @@ public interface Atomix {
    * @return the cluster leadership service
    */
   LeadershipService getLeadershipService();
+
+  /**
+   * Returns the lock service.
+   *
+   * @return the lock service
+   */
+  LockService getLockService();
 
   /**
    * Returns the cluster partition service.
