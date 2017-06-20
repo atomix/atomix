@@ -26,93 +26,93 @@ import java.util.Objects;
  */
 public final class AtomicValueEvent<V> {
 
-    /**
-     * AtomicValueEvent type.
-     */
-    public enum Type {
-
-        /**
-         * Value was updated.
-         */
-        UPDATE,
-    }
-
-    private final String name;
-    private final V newValue;
-    private final V oldValue;
+  /**
+   * AtomicValueEvent type.
+   */
+  public enum Type {
 
     /**
-     * Creates a new event object.
-     *
-     * @param name AtomicValue name
-     * @param newValue the new value
-     * @param oldValue the old value
+     * Value was updated.
      */
-    public AtomicValueEvent(String name, V newValue, V oldValue) {
-        this.name = name;
-        this.newValue = newValue;
-        this.oldValue = oldValue;
+    UPDATE,
+  }
+
+  private final String name;
+  private final V newValue;
+  private final V oldValue;
+
+  /**
+   * Creates a new event object.
+   *
+   * @param name     AtomicValue name
+   * @param newValue the new value
+   * @param oldValue the old value
+   */
+  public AtomicValueEvent(String name, V newValue, V oldValue) {
+    this.name = name;
+    this.newValue = newValue;
+    this.oldValue = oldValue;
+  }
+
+  /**
+   * Returns the AtomicValue name.
+   *
+   * @return name of atomic value
+   */
+  public String name() {
+    return name;
+  }
+
+  /**
+   * Returns the type of the event.
+   *
+   * @return the type of the event
+   */
+  public Type type() {
+    return AtomicValueEvent.Type.UPDATE;
+  }
+
+  /**
+   * Returns the newly set value.
+   *
+   * @return the new value
+   */
+  public V newValue() {
+    return newValue;
+  }
+
+  /**
+   * Returns the old replaced value.
+   *
+   * @return the old value
+   */
+  public V oldValue() {
+    return oldValue;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (!(o instanceof AtomicValueEvent)) {
+      return false;
     }
 
-    /**
-     * Returns the AtomicValue name.
-     *
-     * @return name of atomic value
-     */
-    public String name() {
-        return name;
-    }
+    AtomicValueEvent that = (AtomicValueEvent) o;
+    return Objects.equals(this.name, that.name) &&
+        Objects.equals(this.newValue, that.newValue) &&
+        Objects.equals(this.oldValue, that.oldValue);
+  }
 
-    /**
-     * Returns the type of the event.
-     *
-     * @return the type of the event
-     */
-    public Type type() {
-        return AtomicValueEvent.Type.UPDATE;
-    }
+  @Override
+  public int hashCode() {
+    return Objects.hash(name, newValue, oldValue);
+  }
 
-    /**
-     * Returns the newly set value.
-     *
-     * @return the new value
-     */
-    public V newValue() {
-        return newValue;
-    }
-
-    /**
-     * Returns the old replaced value.
-     *
-     * @return the old value
-     */
-    public V oldValue() {
-        return oldValue;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (!(o instanceof AtomicValueEvent)) {
-            return false;
-        }
-
-        AtomicValueEvent that = (AtomicValueEvent) o;
-        return Objects.equals(this.name, that.name) &&
-                Objects.equals(this.newValue, that.newValue) &&
-                Objects.equals(this.oldValue, that.oldValue);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(name, newValue, oldValue);
-    }
-
-    @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(getClass())
-                .add("name", name)
-                .add("newValue", newValue)
-                .add("oldValue", oldValue)
-                .toString();
-    }
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(getClass())
+        .add("name", name)
+        .add("newValue", newValue)
+        .add("oldValue", oldValue)
+        .toString();
+  }
 }

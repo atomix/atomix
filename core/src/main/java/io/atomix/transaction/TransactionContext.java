@@ -39,51 +39,51 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface TransactionContext extends DistributedPrimitive {
 
-    @Override
-    default DistributedPrimitive.Type primitiveType() {
-        return DistributedPrimitive.Type.TRANSACTION_CONTEXT;
-    }
+  @Override
+  default DistributedPrimitive.Type primitiveType() {
+    return DistributedPrimitive.Type.TRANSACTION_CONTEXT;
+  }
 
-    /**
-     * Returns the transaction identifier.
-     *
-     * @return transaction id
-     */
-    TransactionId transactionId();
+  /**
+   * Returns the transaction identifier.
+   *
+   * @return transaction id
+   */
+  TransactionId transactionId();
 
-    /**
-     * Returns if this transaction context is open.
-     *
-     * @return true if open, false otherwise
-     */
-    boolean isOpen();
+  /**
+   * Returns if this transaction context is open.
+   *
+   * @return true if open, false otherwise
+   */
+  boolean isOpen();
 
-    /**
-     * Starts a new transaction.
-     */
-    void begin();
+  /**
+   * Starts a new transaction.
+   */
+  void begin();
 
-    /**
-     * Commits a transaction that was previously started thereby making its changes permanent
-     * and externally visible.
-     *
-     * @return A future that will be completed when the operation completes
-     */
-    CompletableFuture<CommitStatus> commit();
+  /**
+   * Commits a transaction that was previously started thereby making its changes permanent
+   * and externally visible.
+   *
+   * @return A future that will be completed when the operation completes
+   */
+  CompletableFuture<CommitStatus> commit();
 
-    /**
-     * Aborts any changes made in this transaction context and discarding all locally cached updates.
-     */
-    void abort();
+  /**
+   * Aborts any changes made in this transaction context and discarding all locally cached updates.
+   */
+  void abort();
 
-    /**
-     * Returns a transactional map data structure with the specified name.
-     *
-     * @param <K> key type
-     * @param <V> value type
-     * @param mapName name of the transactional map
-     * @param serializer serializer to use for encoding/decoding keys and values of the map
-     * @return Transactional Map
-     */
-    <K, V> TransactionalMap<K, V> getTransactionalMap(String mapName, Serializer serializer);
+  /**
+   * Returns a transactional map data structure with the specified name.
+   *
+   * @param <K>        key type
+   * @param <V>        value type
+   * @param mapName    name of the transactional map
+   * @param serializer serializer to use for encoding/decoding keys and values of the map
+   * @return Transactional Map
+   */
+  <K, V> TransactionalMap<K, V> getTransactionalMap(String mapName, Serializer serializer);
 }

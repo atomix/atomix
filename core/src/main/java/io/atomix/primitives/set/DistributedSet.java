@@ -26,18 +26,18 @@ import java.util.Set;
  */
 public interface DistributedSet<E> extends Set<E>, DistributedPrimitive {
 
-    /**
-     * Registers the specified listener to be notified whenever
-     * the set is updated.
-     *
-     * @param listener listener to notify about set update events
-     */
-    void addListener(SetEventListener<E> listener);
+  /**
+   * Registers the specified listener to be notified whenever
+   * the set is updated.
+   *
+   * @param listener listener to notify about set update events
+   */
+  void addListener(SetEventListener<E> listener);
 
-    /**
-     * Unregisters the specified listener.
-     *
-     * @param listener listener to unregister.
-     */
-    void removeListener(SetEventListener<E> listener);
+  /**
+   * Unregisters the specified listener.
+   *
+   * @param listener listener to unregister.
+   */
+  void removeListener(SetEventListener<E> listener);
 }

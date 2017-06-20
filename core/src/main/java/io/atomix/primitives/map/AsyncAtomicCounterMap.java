@@ -25,161 +25,161 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface AsyncAtomicCounterMap<K> extends DistributedPrimitive {
 
-    @Override
-    default DistributedPrimitive.Type primitiveType() {
-        return DistributedPrimitive.Type.COUNTER_MAP;
-    }
+  @Override
+  default DistributedPrimitive.Type primitiveType() {
+    return DistributedPrimitive.Type.COUNTER_MAP;
+  }
 
-    /**
-     * Increments by one the value currently associated with key, and returns the new value.
-     *
-     * @param key key with which the specified value is to be associated
-     * @return incremented value
-     */
-    CompletableFuture<Long> incrementAndGet(K key);
+  /**
+   * Increments by one the value currently associated with key, and returns the new value.
+   *
+   * @param key key with which the specified value is to be associated
+   * @return incremented value
+   */
+  CompletableFuture<Long> incrementAndGet(K key);
 
-    /**
-     * Decrements by one the value currently associated with key, and returns the new value.
-     *
-     * @param key key with which the specified value is to be associated
-     * @return updated value
-     */
-    CompletableFuture<Long> decrementAndGet(K key);
+  /**
+   * Decrements by one the value currently associated with key, and returns the new value.
+   *
+   * @param key key with which the specified value is to be associated
+   * @return updated value
+   */
+  CompletableFuture<Long> decrementAndGet(K key);
 
-    /**
-     * Increments by one the value currently associated with key, and returns the old value.
-     *
-     * @param key key with which the specified value is to be associated
-     * @return previous value
-     */
-    CompletableFuture<Long> getAndIncrement(K key);
+  /**
+   * Increments by one the value currently associated with key, and returns the old value.
+   *
+   * @param key key with which the specified value is to be associated
+   * @return previous value
+   */
+  CompletableFuture<Long> getAndIncrement(K key);
 
-    /**
-     * Decrements by one the value currently associated with key, and returns the old value.
-     *
-     * @param key key with which the specified value is to be associated
-     * @return previous value
-     */
-    CompletableFuture<Long> getAndDecrement(K key);
+  /**
+   * Decrements by one the value currently associated with key, and returns the old value.
+   *
+   * @param key key with which the specified value is to be associated
+   * @return previous value
+   */
+  CompletableFuture<Long> getAndDecrement(K key);
 
-    /**
-     * Adds delta to the value currently associated with key, and returns the new value.
-     *
-     * @param key key with which the specified value is to be associated
-     * @param delta the value to add
-     * @return updated value
-     */
-    CompletableFuture<Long> addAndGet(K key, long delta);
+  /**
+   * Adds delta to the value currently associated with key, and returns the new value.
+   *
+   * @param key   key with which the specified value is to be associated
+   * @param delta the value to add
+   * @return updated value
+   */
+  CompletableFuture<Long> addAndGet(K key, long delta);
 
-    /**
-     * Adds delta to the value currently associated with key, and returns the old value.
-     *
-     * @param key key with which the specified value is to be associated
-     * @param delta the value to add
-     * @return previous value
-     */
-    CompletableFuture<Long> getAndAdd(K key, long delta);
+  /**
+   * Adds delta to the value currently associated with key, and returns the old value.
+   *
+   * @param key   key with which the specified value is to be associated
+   * @param delta the value to add
+   * @return previous value
+   */
+  CompletableFuture<Long> getAndAdd(K key, long delta);
 
-    /**
-     * Returns the value associated with key, or zero if there is no value associated with key.
-     *
-     * @param key key with which the specified value is to be associated
-     * @return current value
-     */
-    CompletableFuture<Long> get(K key);
+  /**
+   * Returns the value associated with key, or zero if there is no value associated with key.
+   *
+   * @param key key with which the specified value is to be associated
+   * @return current value
+   */
+  CompletableFuture<Long> get(K key);
 
-    /**
-     * Associates ewValue with key in this map, and returns the value previously
-     * associated with key, or zero if there was no such value.
-     *
-     * @param key key with which the specified value is to be associated
-     * @param newValue the value to put
-     * @return previous value or zero
-     */
-    CompletableFuture<Long> put(K key, long newValue);
+  /**
+   * Associates ewValue with key in this map, and returns the value previously
+   * associated with key, or zero if there was no such value.
+   *
+   * @param key      key with which the specified value is to be associated
+   * @param newValue the value to put
+   * @return previous value or zero
+   */
+  CompletableFuture<Long> put(K key, long newValue);
 
 
-    /**
-     * If key is not already associated with a value or if key is associated with
-     * zero, associate it with newValue. Returns the previous value associated with
-     * key, or zero if there was no mapping for key.
-     *
-     * @param key key with which the specified value is to be associated
-     * @param newValue the value to put
-     * @return previous value or zero
-     */
-    CompletableFuture<Long> putIfAbsent(K key, long newValue);
+  /**
+   * If key is not already associated with a value or if key is associated with
+   * zero, associate it with newValue. Returns the previous value associated with
+   * key, or zero if there was no mapping for key.
+   *
+   * @param key      key with which the specified value is to be associated
+   * @param newValue the value to put
+   * @return previous value or zero
+   */
+  CompletableFuture<Long> putIfAbsent(K key, long newValue);
 
-    /**
-     * If (key, expectedOldValue) is currently in the map, this method replaces
-     * expectedOldValue with newValue and returns true; otherwise, this method return false.
-     *
-     * If expectedOldValue is zero, this method will succeed if (key, zero)
-     * is currently in the map, or if key is not in the map at all.
-     *
-     * @param key key with which the specified value is to be associated
-     * @param expectedOldValue the expected value
-     * @param newValue the value to replace
-     * @return true if the value was replaced, false otherwise
-     */
-    CompletableFuture<Boolean> replace(K key, long expectedOldValue, long newValue);
+  /**
+   * If (key, expectedOldValue) is currently in the map, this method replaces
+   * expectedOldValue with newValue and returns true; otherwise, this method return false.
+   * <p>
+   * If expectedOldValue is zero, this method will succeed if (key, zero)
+   * is currently in the map, or if key is not in the map at all.
+   *
+   * @param key              key with which the specified value is to be associated
+   * @param expectedOldValue the expected value
+   * @param newValue         the value to replace
+   * @return true if the value was replaced, false otherwise
+   */
+  CompletableFuture<Boolean> replace(K key, long expectedOldValue, long newValue);
 
-    /**
-     * Removes and returns the value associated with key. If key is not
-     * in the map, this method has no effect and returns zero.
-     *
-     * @param key key with which the specified value is to be associated
-     * @return the previous value associated with the specified key or null
-     */
-    CompletableFuture<Long> remove(K key);
+  /**
+   * Removes and returns the value associated with key. If key is not
+   * in the map, this method has no effect and returns zero.
+   *
+   * @param key key with which the specified value is to be associated
+   * @return the previous value associated with the specified key or null
+   */
+  CompletableFuture<Long> remove(K key);
 
-    /**
-     * If (key, value) is currently in the map, this method removes it and returns
-     * true; otherwise, this method returns false.
-     *
-     * @param key key with which the specified value is to be associated
-     * @param value the value to remove
-     * @return true if the value was removed, false otherwise
-     */
-    CompletableFuture<Boolean> remove(K key, long value);
+  /**
+   * If (key, value) is currently in the map, this method removes it and returns
+   * true; otherwise, this method returns false.
+   *
+   * @param key   key with which the specified value is to be associated
+   * @param value the value to remove
+   * @return true if the value was removed, false otherwise
+   */
+  CompletableFuture<Boolean> remove(K key, long value);
 
-    /**
-     * Returns the number of entries in the map.
-     *
-     * @return the number of entries in the map
-     */
-    CompletableFuture<Integer> size();
+  /**
+   * Returns the number of entries in the map.
+   *
+   * @return the number of entries in the map
+   */
+  CompletableFuture<Integer> size();
 
-    /**
-     * Returns a boolean indicating whether the map is empty.
-     *
-     * @return true if the map is empty, false otherwise
-     */
-    CompletableFuture<Boolean> isEmpty();
+  /**
+   * Returns a boolean indicating whether the map is empty.
+   *
+   * @return true if the map is empty, false otherwise
+   */
+  CompletableFuture<Boolean> isEmpty();
 
-    /**
-     * Removes all entries from the map.
-     *
-     * @return void
-     */
-    CompletableFuture<Void> clear();
+  /**
+   * Removes all entries from the map.
+   *
+   * @return void
+   */
+  CompletableFuture<Void> clear();
 
-    /**
-     * Returns a new {@link AtomicCounterMap} that is backed by this instance.
-     *
-     * @return new {@code AtomicCounterMap} instance
-     */
-    default AtomicCounterMap<K> asAtomicCounterMap() {
-        return asAtomicCounterMap(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS);
-    }
+  /**
+   * Returns a new {@link AtomicCounterMap} that is backed by this instance.
+   *
+   * @return new {@code AtomicCounterMap} instance
+   */
+  default AtomicCounterMap<K> asAtomicCounterMap() {
+    return asAtomicCounterMap(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS);
+  }
 
-    /**
-     * Returns a new {@link AtomicCounterMap} that is backed by this instance.
-     *
-     * @param timeoutMillis timeout duration for the returned ConsistentMap operations
-     * @return new {@code AtomicCounterMap} instance
-     */
-    default AtomicCounterMap<K> asAtomicCounterMap(long timeoutMillis) {
-        return new DefaultAtomicCounterMap<>(this, timeoutMillis);
-    }
+  /**
+   * Returns a new {@link AtomicCounterMap} that is backed by this instance.
+   *
+   * @param timeoutMillis timeout duration for the returned ConsistentMap operations
+   * @return new {@code AtomicCounterMap} instance
+   */
+  default AtomicCounterMap<K> asAtomicCounterMap(long timeoutMillis) {
+    return new DefaultAtomicCounterMap<>(this, timeoutMillis);
+  }
 }

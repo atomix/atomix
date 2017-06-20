@@ -21,19 +21,19 @@ package io.atomix.primitives.tree;
  * it does not exist or because it is not a leaf node.
  */
 public class IllegalDocumentModificationException extends DocumentException {
-    public IllegalDocumentModificationException() {
-    }
+  public IllegalDocumentModificationException() {
+  }
 
-    public IllegalDocumentModificationException(String message) {
-        super(message);
-    }
+  public IllegalDocumentModificationException(String message) {
+    super(message);
+  }
 
-    public IllegalDocumentModificationException(String message,
-                                                Throwable cause) {
-        super(message, cause);
-    }
+  public IllegalDocumentModificationException(String message,
+                                              Throwable cause) {
+    super(message, cause);
+  }
 
-    public IllegalDocumentModificationException(Throwable cause) {
-        super(cause);
-    }
+  public IllegalDocumentModificationException(Throwable cause) {
+    super(cause);
+  }
 }

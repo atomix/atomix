@@ -19,13 +19,13 @@ package io.atomix.transaction;
  * Completion status of transaction.
  */
 public enum CommitStatus {
-    /**
-     * Indicates a successfully completed transaction with all the updates committed.
-     */
-    SUCCESS,
+  /**
+   * Indicates a successfully completed transaction with all the updates committed.
+   */
+  SUCCESS,
 
-    /**
-     * Indicates a aborted transaction i.e. no updates were committed.
-     */
-    FAILURE
+  /**
+   * Indicates a aborted transaction i.e. no updates were committed.
+   */
+  FAILURE
 }

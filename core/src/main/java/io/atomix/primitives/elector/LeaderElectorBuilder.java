@@ -23,7 +23,7 @@ import io.atomix.primitives.DistributedPrimitiveBuilder;
  */
 public abstract class LeaderElectorBuilder
     extends DistributedPrimitiveBuilder<LeaderElectorBuilder, AsyncLeaderElector> {
-    public LeaderElectorBuilder() {
-        super(DistributedPrimitive.Type.LEADER_ELECTOR);
-    }
+  public LeaderElectorBuilder() {
+    super(DistributedPrimitive.Type.LEADER_ELECTOR);
+  }
 }

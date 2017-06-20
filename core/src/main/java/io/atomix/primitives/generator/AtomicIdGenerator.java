@@ -22,16 +22,16 @@ import io.atomix.primitives.DistributedPrimitive;
  */
 public interface AtomicIdGenerator extends DistributedPrimitive {
 
-    @Override
-    default Type primitiveType() {
-        return Type.ID_GENERATOR;
-    }
+  @Override
+  default Type primitiveType() {
+    return Type.ID_GENERATOR;
+  }
 
-    /**
-     * Gets the next globally unique numeric identifier.
-     *
-     * @return the next globally unique numeric identifier
-     */
-    long nextId();
+  /**
+   * Gets the next globally unique numeric identifier.
+   *
+   * @return the next globally unique numeric identifier
+   */
+  long nextId();
 
 }

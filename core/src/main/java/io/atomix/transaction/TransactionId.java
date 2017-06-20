@@ -22,17 +22,17 @@ import io.atomix.utils.Identifier;
  */
 public final class TransactionId extends Identifier<String> {
 
-    /**
-     * Creates a new transaction identifier.
-     *
-     * @param id backing identifier value
-     * @return transaction identifier
-     */
-    public static TransactionId from(String id) {
-        return new TransactionId(id);
-    }
+  /**
+   * Creates a new transaction identifier.
+   *
+   * @param id backing identifier value
+   * @return transaction identifier
+   */
+  public static TransactionId from(String id) {
+    return new TransactionId(id);
+  }
 
-    private TransactionId(String id) {
-        super(id);
-    }
+  private TransactionId(String id) {
+    super(id);
+  }
 }

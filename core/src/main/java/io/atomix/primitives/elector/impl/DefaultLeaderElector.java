@@ -36,85 +36,85 @@ import java.util.function.Consumer;
  */
 public class DefaultLeaderElector extends Synchronous<AsyncLeaderElector> implements LeaderElector {
 
-    private final AsyncLeaderElector asyncElector;
-    private final long operationTimeoutMillis;
+  private final AsyncLeaderElector asyncElector;
+  private final long operationTimeoutMillis;
 
-    public DefaultLeaderElector(AsyncLeaderElector asyncElector, long operationTimeoutMillis) {
-        super(asyncElector);
-        this.asyncElector = asyncElector;
-        this.operationTimeoutMillis = operationTimeoutMillis;
-    }
+  public DefaultLeaderElector(AsyncLeaderElector asyncElector, long operationTimeoutMillis) {
+    super(asyncElector);
+    this.asyncElector = asyncElector;
+    this.operationTimeoutMillis = operationTimeoutMillis;
+  }
 
-    @Override
-    public Leadership run(String topic, NodeId nodeId) {
-        return complete(asyncElector.run(topic, nodeId));
-    }
+  @Override
+  public Leadership run(String topic, NodeId nodeId) {
+    return complete(asyncElector.run(topic, nodeId));
+  }
 
-    @Override
-    public void withdraw(String topic) {
-        complete(asyncElector.withdraw(topic));
-    }
+  @Override
+  public void withdraw(String topic) {
+    complete(asyncElector.withdraw(topic));
+  }
 
-    @Override
-    public boolean anoint(String topic, NodeId nodeId) {
-        return complete(asyncElector.anoint(topic, nodeId));
-    }
+  @Override
+  public boolean anoint(String topic, NodeId nodeId) {
+    return complete(asyncElector.anoint(topic, nodeId));
+  }
 
-    @Override
-    public boolean promote(String topic, NodeId nodeId) {
-        return complete(asyncElector.promote(topic, nodeId));
-    }
+  @Override
+  public boolean promote(String topic, NodeId nodeId) {
+    return complete(asyncElector.promote(topic, nodeId));
+  }
 
-    @Override
-    public void evict(NodeId nodeId) {
-        complete(asyncElector.evict(nodeId));
-    }
+  @Override
+  public void evict(NodeId nodeId) {
+    complete(asyncElector.evict(nodeId));
+  }
 
-    @Override
-    public Leadership getLeadership(String topic) {
-        return complete(asyncElector.getLeadership(topic));
-    }
+  @Override
+  public Leadership getLeadership(String topic) {
+    return complete(asyncElector.getLeadership(topic));
+  }
 
-    @Override
-    public Map<String, Leadership> getLeaderships() {
-        return complete(asyncElector.getLeaderships());
-    }
+  @Override
+  public Map<String, Leadership> getLeaderships() {
+    return complete(asyncElector.getLeaderships());
+  }
 
-    @Override
-    public void addChangeListener(Consumer<LeadershipEvent> consumer) {
-        complete(asyncElector.addChangeListener(consumer));
-    }
+  @Override
+  public void addChangeListener(Consumer<LeadershipEvent> consumer) {
+    complete(asyncElector.addChangeListener(consumer));
+  }
 
-    @Override
-    public void removeChangeListener(Consumer<LeadershipEvent> consumer) {
-        complete(asyncElector.removeChangeListener(consumer));
-    }
+  @Override
+  public void removeChangeListener(Consumer<LeadershipEvent> consumer) {
+    complete(asyncElector.removeChangeListener(consumer));
+  }
 
-    @Override
-    public void addStatusChangeListener(Consumer<Status> listener) {
-        asyncElector.addStatusChangeListener(listener);
-    }
+  @Override
+  public void addStatusChangeListener(Consumer<Status> listener) {
+    asyncElector.addStatusChangeListener(listener);
+  }
 
-    @Override
-    public void removeStatusChangeListener(Consumer<Status> listener) {
-        asyncElector.removeStatusChangeListener(listener);
-    }
+  @Override
+  public void removeStatusChangeListener(Consumer<Status> listener) {
+    asyncElector.removeStatusChangeListener(listener);
+  }
 
-    @Override
-    public Collection<Consumer<Status>> statusChangeListeners() {
-        return asyncElector.statusChangeListeners();
-    }
+  @Override
+  public Collection<Consumer<Status>> statusChangeListeners() {
+    return asyncElector.statusChangeListeners();
+  }
 
-    private <T> T complete(CompletableFuture<T> future) {
-        try {
-            return future.get(operationTimeoutMillis, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new PrimitiveException.Interrupted();
-        } catch (TimeoutException e) {
-            throw new PrimitiveException.Timeout();
-        } catch (ExecutionException e) {
-            throw new PrimitiveException(e.getCause());
-        }
+  private <T> T complete(CompletableFuture<T> future) {
+    try {
+      return future.get(operationTimeoutMillis, TimeUnit.MILLISECONDS);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new PrimitiveException.Interrupted();
+    } catch (TimeoutException e) {
+      throw new PrimitiveException.Timeout();
+    } catch (ExecutionException e) {
+      throw new PrimitiveException(e.getCause());
     }
+  }
 }

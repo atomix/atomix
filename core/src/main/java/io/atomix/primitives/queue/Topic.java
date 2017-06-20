@@ -40,37 +40,41 @@ import java.util.function.Consumer;
  */
 public interface Topic<T> extends DistributedPrimitive {
 
-    /**
-     * Publishes a message to all subscribers.
-     * <p>
-     * The message is delivered in a asynchronous fashion which means subscribers will receive the
-     * message eventually but not necessarily before the future returned by this method is completed.
-     * @param message The non-null message to send to all current subscribers
-     * @return a future that is completed when the message is logged (not necessarily delivered).
-     */
-    CompletableFuture<Void> publish(T message);
+  /**
+   * Publishes a message to all subscribers.
+   * <p>
+   * The message is delivered in a asynchronous fashion which means subscribers will receive the
+   * message eventually but not necessarily before the future returned by this method is completed.
+   *
+   * @param message The non-null message to send to all current subscribers
+   * @return a future that is completed when the message is logged (not necessarily delivered).
+   */
+  CompletableFuture<Void> publish(T message);
 
-    /**
-     * Subscribes to messages published to this topic.
-     * @param callback callback that will invoked when a message published to the topic is received.
-     * @param executor executor for running the callback
-     * @return a future that is completed when subscription request is completed.
-     */
-    CompletableFuture<Void> subscribe(Consumer<T> callback, Executor executor);
+  /**
+   * Subscribes to messages published to this topic.
+   *
+   * @param callback callback that will invoked when a message published to the topic is received.
+   * @param executor executor for running the callback
+   * @return a future that is completed when subscription request is completed.
+   */
+  CompletableFuture<Void> subscribe(Consumer<T> callback, Executor executor);
 
-    /**
-     * Subscribes to messages published to this topic.
-     * @param callback callback that will invoked when a message published to the topic is received.
-     * @return a future that is completed when subscription request is completed.
-     */
-    default CompletableFuture<Void> subscribe(Consumer<T> callback) {
-        return subscribe(callback, MoreExecutors.directExecutor());
-    }
+  /**
+   * Subscribes to messages published to this topic.
+   *
+   * @param callback callback that will invoked when a message published to the topic is received.
+   * @return a future that is completed when subscription request is completed.
+   */
+  default CompletableFuture<Void> subscribe(Consumer<T> callback) {
+    return subscribe(callback, MoreExecutors.directExecutor());
+  }
 
-    /**
-     * Unsubscribes from this topic.
-     * @param callback previously subscribed callback
-     * @return a future that is completed when unsubscription request is completed.
-     */
-    CompletableFuture<Void> unsubscribe(Consumer<T> callback);
+  /**
+   * Unsubscribes from this topic.
+   *
+   * @param callback previously subscribed callback
+   * @return a future that is completed when unsubscription request is completed.
+   */
+  CompletableFuture<Void> unsubscribe(Consumer<T> callback);
 }

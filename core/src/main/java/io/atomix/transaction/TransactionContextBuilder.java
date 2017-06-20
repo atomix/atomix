@@ -24,7 +24,7 @@ import io.atomix.primitives.DistributedPrimitiveBuilder;
 public abstract class TransactionContextBuilder
     extends DistributedPrimitiveBuilder<TransactionContextBuilder, TransactionContext> {
 
-    public TransactionContextBuilder() {
-        super(DistributedPrimitive.Type.TRANSACTION_CONTEXT);
-    }
+  public TransactionContextBuilder() {
+    super(DistributedPrimitive.Type.TRANSACTION_CONTEXT);
+  }
 }

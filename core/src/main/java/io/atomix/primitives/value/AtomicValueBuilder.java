@@ -26,7 +26,7 @@ import io.atomix.primitives.DistributedPrimitiveBuilder;
 public abstract class AtomicValueBuilder<V>
     extends DistributedPrimitiveBuilder<AtomicValueBuilder<V>, AsyncAtomicValue<V>> {
 
-    public AtomicValueBuilder() {
-        super(DistributedPrimitive.Type.VALUE);
-    }
+  public AtomicValueBuilder() {
+    super(DistributedPrimitive.Type.VALUE);
+  }
 }

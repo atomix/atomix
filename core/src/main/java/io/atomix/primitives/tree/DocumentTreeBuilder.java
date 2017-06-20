@@ -23,39 +23,39 @@ import io.atomix.primitives.DistributedPrimitiveBuilder;
  * Builder for {@link DocumentTree}.
  */
 public abstract class DocumentTreeBuilder<V>
-        extends DistributedPrimitiveBuilder<DocumentTreeBuilder<V>, AsyncDocumentTree<V>> {
+    extends DistributedPrimitiveBuilder<DocumentTreeBuilder<V>, AsyncDocumentTree<V>> {
 
-    private boolean purgeOnUninstall = false;
+  private boolean purgeOnUninstall = false;
 
-    public DocumentTreeBuilder() {
-        super(DistributedPrimitive.Type.DOCUMENT_TREE);
-    }
+  public DocumentTreeBuilder() {
+    super(DistributedPrimitive.Type.DOCUMENT_TREE);
+  }
 
-    /**
-     * Clears document tree contents when the owning application is uninstalled.
-     *
-     * @return this builder
-     */
-    public DocumentTreeBuilder<V> withPurgeOnUninstall() {
-        purgeOnUninstall = true;
-        return this;
-    }
+  /**
+   * Clears document tree contents when the owning application is uninstalled.
+   *
+   * @return this builder
+   */
+  public DocumentTreeBuilder<V> withPurgeOnUninstall() {
+    purgeOnUninstall = true;
+    return this;
+  }
 
-    /**
-     * Return if document tree entries need to be cleared when owning application is uninstalled.
-     *
-     * @return true if items are to be cleared on uninstall
-     */
-    public boolean purgeOnUninstall() {
-        return purgeOnUninstall;
-    }
+  /**
+   * Return if document tree entries need to be cleared when owning application is uninstalled.
+   *
+   * @return true if items are to be cleared on uninstall
+   */
+  public boolean purgeOnUninstall() {
+    return purgeOnUninstall;
+  }
 
-    /**
-     * Builds the distributed Document tree based on the configuration options supplied
-     * to this builder.
-     *
-     * @return new distributed document tree
-     * @throws RuntimeException if a mandatory parameter is missing
-     */
-    public abstract AsyncDocumentTree<V> buildDocumentTree();
+  /**
+   * Builds the distributed Document tree based on the configuration options supplied
+   * to this builder.
+   *
+   * @return new distributed document tree
+   * @throws RuntimeException if a mandatory parameter is missing
+   */
+  public abstract AsyncDocumentTree<V> buildDocumentTree();
 }

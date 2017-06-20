@@ -25,155 +25,163 @@ import java.util.function.Consumer;
  */
 public interface DistributedPrimitive {
 
+  /**
+   * Type of distributed primitive.
+   */
+  enum Type {
     /**
-     * Type of distributed primitive.
+     * Map with strong consistency semantics.
      */
-    enum Type {
-        /**
-         * Map with strong consistency semantics.
-         */
-        CONSISTENT_MAP,
-
-        /**
-         * Map with eventual consistency semantics.
-         */
-        EVENTUALLY_CONSISTENT_MAP,
-
-        /**
-         * Consistent Multimap.
-         */
-        CONSISTENT_MULTIMAP,
-
-        /**
-         * Distributed set.
-         */
-        SET,
-
-        /**
-         * Tree map.
-         */
-        CONSISTENT_TREEMAP,
-
-        /**
-         * Atomic counter.
-         */
-        COUNTER,
-
-        /**
-         * Numeric ID generator.
-         */
-        ID_GENERATOR,
-
-        /**
-         * Atomic counter map.
-         */
-        COUNTER_MAP,
-
-        /**
-         * Atomic value.
-         */
-        VALUE,
-
-        /**
-         * Distributed work queue.
-         */
-        WORK_QUEUE,
-
-        /**
-         * Document tree.
-         */
-        DOCUMENT_TREE,
-
-        /**
-         * Distributed topic.
-         */
-        TOPIC,
-
-        /**
-         * Leader elector.
-         */
-        LEADER_ELECTOR,
-
-        /**
-         * Lock.
-         */
-        LOCK,
-
-        /**
-         * Transaction Context.
-         */
-        TRANSACTION_CONTEXT
-    }
+    CONSISTENT_MAP,
 
     /**
-     * Status of distributed primitive.
+     * Map with eventual consistency semantics.
      */
-    enum Status {
-
-        /**
-         * Signifies a state wherein the primitive is operating correctly and is capable of meeting the advertised
-         * consistency and reliability guarantees.
-         */
-        ACTIVE,
-
-        /**
-         * Signifies a state wherein the primitive is temporarily incapable of providing the advertised
-         * consistency properties.
-         */
-        SUSPENDED,
-
-        /**
-         * Signifies a state wherein the primitive has been shutdown and therefore cannot perform its functions.
-         */
-        INACTIVE
-    }
+    EVENTUALLY_CONSISTENT_MAP,
 
     /**
-     * Default timeout for primitive operations.
+     * Consistent Multimap.
      */
-    long DEFAULT_OPERATION_TIMEOUT_MILLIS = 5000L;
+    CONSISTENT_MULTIMAP,
 
     /**
-     * Returns the name of this primitive.
-     * @return name
+     * Distributed set.
      */
-    String name();
+    SET,
 
     /**
-     * Returns the type of primitive.
-     * @return primitive type
+     * Tree map.
      */
-    Type primitiveType();
+    CONSISTENT_TREEMAP,
 
     /**
-     * Purges state associated with this primitive.
-     * <p>
-     * Implementations can override and provide appropriate clean up logic for purging
-     * any state state associated with the primitive. Whether modifications made within the
-     * destroy method have local or global visibility is left unspecified.
-     * @return {@code CompletableFuture} that is completed when the operation completes
+     * Atomic counter.
      */
-    default CompletableFuture<Void> destroy() {
-        return CompletableFuture.completedFuture(null);
-    }
+    COUNTER,
 
     /**
-     * Registers a listener to be called when the primitive's status changes.
-     * @param listener The listener to be called when the status changes.
+     * Numeric ID generator.
      */
-    default void addStatusChangeListener(Consumer<Status> listener) {}
+    ID_GENERATOR,
 
     /**
-     * Unregisters a previously registered listener to be called when the primitive's status changes.
-     * @param listener The listener to unregister
+     * Atomic counter map.
      */
-    default void removeStatusChangeListener(Consumer<Status> listener) {}
+    COUNTER_MAP,
 
     /**
-     * Returns the collection of status change listeners previously registered.
-     * @return collection of status change listeners
+     * Atomic value.
      */
-    default Collection<Consumer<Status>> statusChangeListeners() {
-        return Collections.emptyList();
-    }
+    VALUE,
+
+    /**
+     * Distributed work queue.
+     */
+    WORK_QUEUE,
+
+    /**
+     * Document tree.
+     */
+    DOCUMENT_TREE,
+
+    /**
+     * Distributed topic.
+     */
+    TOPIC,
+
+    /**
+     * Leader elector.
+     */
+    LEADER_ELECTOR,
+
+    /**
+     * Lock.
+     */
+    LOCK,
+
+    /**
+     * Transaction Context.
+     */
+    TRANSACTION_CONTEXT
+  }
+
+  /**
+   * Status of distributed primitive.
+   */
+  enum Status {
+
+    /**
+     * Signifies a state wherein the primitive is operating correctly and is capable of meeting the advertised
+     * consistency and reliability guarantees.
+     */
+    ACTIVE,
+
+    /**
+     * Signifies a state wherein the primitive is temporarily incapable of providing the advertised
+     * consistency properties.
+     */
+    SUSPENDED,
+
+    /**
+     * Signifies a state wherein the primitive has been shutdown and therefore cannot perform its functions.
+     */
+    INACTIVE
+  }
+
+  /**
+   * Default timeout for primitive operations.
+   */
+  long DEFAULT_OPERATION_TIMEOUT_MILLIS = 5000L;
+
+  /**
+   * Returns the name of this primitive.
+   *
+   * @return name
+   */
+  String name();
+
+  /**
+   * Returns the type of primitive.
+   *
+   * @return primitive type
+   */
+  Type primitiveType();
+
+  /**
+   * Purges state associated with this primitive.
+   * <p>
+   * Implementations can override and provide appropriate clean up logic for purging
+   * any state state associated with the primitive. Whether modifications made within the
+   * destroy method have local or global visibility is left unspecified.
+   *
+   * @return {@code CompletableFuture} that is completed when the operation completes
+   */
+  default CompletableFuture<Void> destroy() {
+    return CompletableFuture.completedFuture(null);
+  }
+
+  /**
+   * Registers a listener to be called when the primitive's status changes.
+   *
+   * @param listener The listener to be called when the status changes.
+   */
+  default void addStatusChangeListener(Consumer<Status> listener) {
+  }
+
+  /**
+   * Unregisters a previously registered listener to be called when the primitive's status changes.
+   *
+   * @param listener The listener to unregister
+   */
+  default void removeStatusChangeListener(Consumer<Status> listener) {
+  }
+
+  /**
+   * Returns the collection of status change listeners previously registered.
+   *
+   * @return collection of status change listeners
+   */
+  default Collection<Consumer<Status>> statusChangeListeners() {
+    return Collections.emptyList();
+  }
 }

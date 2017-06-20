@@ -24,7 +24,7 @@ import io.atomix.primitives.generator.AsyncAtomicIdGenerator;
  */
 public abstract class DistributedLockBuilder
     extends DistributedPrimitiveBuilder<DistributedLockBuilder, AsyncDistributedLock> {
-    public DistributedLockBuilder() {
-        super(DistributedPrimitive.Type.LOCK);
-    }
+  public DistributedLockBuilder() {
+    super(DistributedPrimitive.Type.LOCK);
+  }
 }

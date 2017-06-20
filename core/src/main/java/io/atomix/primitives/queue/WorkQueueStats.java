@@ -22,75 +22,79 @@ import com.google.common.base.MoreObjects;
  */
 public final class WorkQueueStats {
 
-    private long totalPending;
-    private long totalInProgress;
-    private long totalCompleted;
+  private long totalPending;
+  private long totalInProgress;
+  private long totalCompleted;
 
-    /**
-     * Returns a {@code WorkQueueStats} builder.
-     * @return builder
-     */
-    public static Builder builder() {
-        return new Builder();
+  /**
+   * Returns a {@code WorkQueueStats} builder.
+   *
+   * @return builder
+   */
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  private WorkQueueStats() {
+  }
+
+  public static class Builder {
+
+    WorkQueueStats workQueueStats = new WorkQueueStats();
+
+    public Builder withTotalPending(long value) {
+      workQueueStats.totalPending = value;
+      return this;
     }
 
-    private WorkQueueStats() {
+    public Builder withTotalInProgress(long value) {
+      workQueueStats.totalInProgress = value;
+      return this;
     }
 
-    public static class Builder {
-
-        WorkQueueStats workQueueStats = new WorkQueueStats();
-
-        public Builder withTotalPending(long value) {
-            workQueueStats.totalPending = value;
-            return this;
-        }
-
-        public Builder withTotalInProgress(long value) {
-            workQueueStats.totalInProgress = value;
-            return this;
-        }
-
-        public Builder withTotalCompleted(long value) {
-            workQueueStats.totalCompleted = value;
-            return this;
-        }
-
-        public WorkQueueStats build() {
-            return workQueueStats;
-        }
+    public Builder withTotalCompleted(long value) {
+      workQueueStats.totalCompleted = value;
+      return this;
     }
 
-    /**
-     * Returns the total pending tasks. These are the tasks that are added but not yet picked up.
-     * @return total pending tasks.
-     */
-    public long totalPending() {
-        return this.totalPending;
+    public WorkQueueStats build() {
+      return workQueueStats;
     }
+  }
 
-    /**
-     * Returns the total in progress tasks. These are the tasks that are currently being worked on.
-     * @return total in progress tasks.
-     */
-    public long totalInProgress() {
-        return this.totalInProgress;
-    }
+  /**
+   * Returns the total pending tasks. These are the tasks that are added but not yet picked up.
+   *
+   * @return total pending tasks.
+   */
+  public long totalPending() {
+    return this.totalPending;
+  }
 
-    /**
-     * Returns the total completed tasks.
-     * @return total completed tasks.
-     */
-    public long totalCompleted() {
-        return this.totalCompleted;
-    }
+  /**
+   * Returns the total in progress tasks. These are the tasks that are currently being worked on.
+   *
+   * @return total in progress tasks.
+   */
+  public long totalInProgress() {
+    return this.totalInProgress;
+  }
 
-    @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(getClass())
-                .add("totalPending", totalPending)
-                .add("totalInProgress", totalInProgress)
-                .add("totalCompleted", totalCompleted)
-                .toString();
-    }
+  /**
+   * Returns the total completed tasks.
+   *
+   * @return total completed tasks.
+   */
+  public long totalCompleted() {
+    return this.totalCompleted;
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(getClass())
+        .add("totalPending", totalPending)
+        .add("totalInProgress", totalInProgress)
+        .add("totalCompleted", totalCompleted)
+        .toString();
+  }
 }

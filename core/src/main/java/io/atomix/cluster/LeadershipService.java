@@ -40,78 +40,78 @@ import java.util.Set;
 public interface LeadershipService
     extends ListenerService<LeadershipEvent, LeadershipEventListener> {
 
-    /**
-     * Returns the {@link NodeId node identifier} that is the current leader for a topic.
-     *
-     * @param topic leadership topic
-     * @return node identifier of the current leader; {@code null} if there is no leader for the topic
-     */
-    default NodeId getLeader(String topic) {
-        Leadership leadership = getLeadership(topic);
-        return leadership == null ? null : leadership.leaderNodeId();
-    }
+  /**
+   * Returns the {@link NodeId node identifier} that is the current leader for a topic.
+   *
+   * @param topic leadership topic
+   * @return node identifier of the current leader; {@code null} if there is no leader for the topic
+   */
+  default NodeId getLeader(String topic) {
+    Leadership leadership = getLeadership(topic);
+    return leadership == null ? null : leadership.leaderNodeId();
+  }
 
-    /**
-     * Returns the current {@link Leadership leadership} for a topic.
-     *
-     * @param topic leadership topic
-     * @return leadership or {@code null} if no such topic exists
-     */
-    Leadership getLeadership(String topic);
+  /**
+   * Returns the current {@link Leadership leadership} for a topic.
+   *
+   * @param topic leadership topic
+   * @return leadership or {@code null} if no such topic exists
+   */
+  Leadership getLeadership(String topic);
 
-    /**
-     * Returns the set of topics owned by the specified {@link NodeId node}.
-     *
-     * @param nodeId node identifier.
-     * @return set of topics for which this node is the current leader.
-     */
-    default Set<String> ownedTopics(NodeId nodeId) {
-        return Maps.filterValues(getLeaderBoard(), v -> Objects.equal(nodeId, v.leaderNodeId())).keySet();
-    }
+  /**
+   * Returns the set of topics owned by the specified {@link NodeId node}.
+   *
+   * @param nodeId node identifier.
+   * @return set of topics for which this node is the current leader.
+   */
+  default Set<String> ownedTopics(NodeId nodeId) {
+    return Maps.filterValues(getLeaderBoard(), v -> Objects.equal(nodeId, v.leaderNodeId())).keySet();
+  }
 
-    /**
-     * Enters a leadership contest.
-     *
-     * @param topic leadership topic
-     * @return {@code Leadership} future
-     */
-    Leadership runForLeadership(String topic);
+  /**
+   * Enters a leadership contest.
+   *
+   * @param topic leadership topic
+   * @return {@code Leadership} future
+   */
+  Leadership runForLeadership(String topic);
 
-    /**
-     * Withdraws from a leadership contest.
-     *
-     * @param topic leadership topic
-     */
-    void withdraw(String topic);
+  /**
+   * Withdraws from a leadership contest.
+   *
+   * @param topic leadership topic
+   */
+  void withdraw(String topic);
 
-    /**
-     * Returns the current leader board.
-     *
-     * @return mapping from topic to leadership info.
-     * @deprecated 1.6.0 Goldeneye release. Replace usages with {@link #getLeadership(String)}
-     */
-    @Deprecated
-    Map<String, Leadership> getLeaderBoard();
+  /**
+   * Returns the current leader board.
+   *
+   * @return mapping from topic to leadership info.
+   * @deprecated 1.6.0 Goldeneye release. Replace usages with {@link #getLeadership(String)}
+   */
+  @Deprecated
+  Map<String, Leadership> getLeaderBoard();
 
-    /**
-     * Returns the candidate nodes for each topic.
-     *
-     * @return A mapping from topics to corresponding list of candidates.
-     * @deprecated 1.6.0 Goldeneye release. Replace usages with {@link #getLeadership(String)}
-     */
-    @Deprecated
-    default Map<String, List<NodeId>> getCandidates() {
-        return ImmutableMap.copyOf(Maps.transformValues(getLeaderBoard(), v -> ImmutableList.copyOf(v.candidates())));
-    }
+  /**
+   * Returns the candidate nodes for each topic.
+   *
+   * @return A mapping from topics to corresponding list of candidates.
+   * @deprecated 1.6.0 Goldeneye release. Replace usages with {@link #getLeadership(String)}
+   */
+  @Deprecated
+  default Map<String, List<NodeId>> getCandidates() {
+    return ImmutableMap.copyOf(Maps.transformValues(getLeaderBoard(), v -> ImmutableList.copyOf(v.candidates())));
+  }
 
-    /**
-     * Returns the candidate nodes for a given topic.
-     *
-     * @param topic leadership topic
-     * @return A lists of {@link NodeId nodeIds}, which may be empty.
-     */
-    default List<NodeId> getCandidates(String topic) {
-        Leadership leadership = getLeadership(topic);
-        return leadership == null ? ImmutableList.of() : ImmutableList.copyOf(leadership.candidates());
-    }
+  /**
+   * Returns the candidate nodes for a given topic.
+   *
+   * @param topic leadership topic
+   * @return A lists of {@link NodeId nodeIds}, which may be empty.
+   */
+  default List<NodeId> getCandidates(String topic) {
+    Leadership leadership = getLeadership(topic);
+    return leadership == null ? ImmutableList.of() : ImmutableList.copyOf(leadership.candidates());
+  }
 }

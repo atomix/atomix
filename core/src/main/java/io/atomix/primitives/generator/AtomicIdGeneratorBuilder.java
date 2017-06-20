@@ -23,7 +23,7 @@ import io.atomix.primitives.DistributedPrimitiveBuilder;
  */
 public abstract class AtomicIdGeneratorBuilder
     extends DistributedPrimitiveBuilder<AtomicIdGeneratorBuilder, AsyncAtomicIdGenerator> {
-    public AtomicIdGeneratorBuilder() {
-        super(DistributedPrimitive.Type.ID_GENERATOR);
-    }
+  public AtomicIdGeneratorBuilder() {
+    super(DistributedPrimitive.Type.ID_GENERATOR);
+  }
 }

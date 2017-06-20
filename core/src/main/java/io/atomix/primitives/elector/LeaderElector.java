@@ -29,78 +29,86 @@ import java.util.function.Consumer;
  */
 public interface LeaderElector extends DistributedPrimitive {
 
-    @Override
-    default DistributedPrimitive.Type primitiveType() {
-        return DistributedPrimitive.Type.LEADER_ELECTOR;
-    }
+  @Override
+  default DistributedPrimitive.Type primitiveType() {
+    return DistributedPrimitive.Type.LEADER_ELECTOR;
+  }
 
-    /**
-     * Attempts to become leader for a topic.
-     * @param topic leadership topic
-     * @param nodeId instance identifier of the node
-     * @return current Leadership state of the topic
-     */
-    Leadership run(String topic, NodeId nodeId);
+  /**
+   * Attempts to become leader for a topic.
+   *
+   * @param topic  leadership topic
+   * @param nodeId instance identifier of the node
+   * @return current Leadership state of the topic
+   */
+  Leadership run(String topic, NodeId nodeId);
 
-    /**
-     * Withdraws from leadership race for a topic.
-     * @param topic leadership topic
-     */
-    void withdraw(String topic);
+  /**
+   * Withdraws from leadership race for a topic.
+   *
+   * @param topic leadership topic
+   */
+  void withdraw(String topic);
 
-    /**
-     * Attempts to promote a node to leadership displacing the current leader.
-     * @param topic leadership topic
-     * @param nodeId instance identifier of the new leader
-     * @return {@code true} if leadership transfer was successfully executed; {@code false} if it failed.
-     * This operation can return {@code false} if the node to be made new leader is not registered to
-     * run for election for the topic.
-     */
-    boolean anoint(String topic, NodeId nodeId);
+  /**
+   * Attempts to promote a node to leadership displacing the current leader.
+   *
+   * @param topic  leadership topic
+   * @param nodeId instance identifier of the new leader
+   * @return {@code true} if leadership transfer was successfully executed; {@code false} if it failed.
+   * This operation can return {@code false} if the node to be made new leader is not registered to
+   * run for election for the topic.
+   */
+  boolean anoint(String topic, NodeId nodeId);
 
-    /**
-     * Attempts to promote a node to top of candidate list.
-     *
-     * @param topic leadership topic
-     * @param nodeId instance identifier of the new top candidate
-     * @return {@code true} if node is now the top candidate. This operation can fail (i.e. return
-     * {@code false}) if the node is not registered to run for election for the topic.
-     */
-    boolean promote(String topic, NodeId nodeId);
+  /**
+   * Attempts to promote a node to top of candidate list.
+   *
+   * @param topic  leadership topic
+   * @param nodeId instance identifier of the new top candidate
+   * @return {@code true} if node is now the top candidate. This operation can fail (i.e. return
+   * {@code false}) if the node is not registered to run for election for the topic.
+   */
+  boolean promote(String topic, NodeId nodeId);
 
-    /**
-     * Attempts to evict a node from all leadership elections it is registered for.
-     * <p>
-     * If the node the current leader for a topic, this call will force the next candidate (if one exists)
-     * to be promoted to leadership.
-     * @param nodeId node instance identifier
-     */
-    void evict(NodeId nodeId);
+  /**
+   * Attempts to evict a node from all leadership elections it is registered for.
+   * <p>
+   * If the node the current leader for a topic, this call will force the next candidate (if one exists)
+   * to be promoted to leadership.
+   *
+   * @param nodeId node instance identifier
+   */
+  void evict(NodeId nodeId);
 
-    /**
-     * Returns the {@link Leadership} for the specified topic.
-     * @param topic leadership topic
-     * @return current Leadership state of the topic
-     */
-    Leadership getLeadership(String topic);
+  /**
+   * Returns the {@link Leadership} for the specified topic.
+   *
+   * @param topic leadership topic
+   * @return current Leadership state of the topic
+   */
+  Leadership getLeadership(String topic);
 
-    /**
-     * Returns the current {@link Leadership}s for all topics.
-     * @return topic name to Leadership mapping
-     */
-    Map<String, Leadership> getLeaderships();
+  /**
+   * Returns the current {@link Leadership}s for all topics.
+   *
+   * @return topic name to Leadership mapping
+   */
+  Map<String, Leadership> getLeaderships();
 
-    /**
-     * Registers a listener to be notified of Leadership changes for all topics.
-     * @param consumer listener to add
-     */
-    void addChangeListener(Consumer<LeadershipEvent> consumer);
+  /**
+   * Registers a listener to be notified of Leadership changes for all topics.
+   *
+   * @param consumer listener to add
+   */
+  void addChangeListener(Consumer<LeadershipEvent> consumer);
 
-    /**
-     * Unregisters a previously registered change notification listener.
-     * <p>
-     * If the specified listener was not previously registered, this operation will be a noop.
-     * @param consumer listener to remove
-     */
-    void removeChangeListener(Consumer<LeadershipEvent> consumer);
+  /**
+   * Unregisters a previously registered change notification listener.
+   * <p>
+   * If the specified listener was not previously registered, this operation will be a noop.
+   *
+   * @param consumer listener to remove
+   */
+  void removeChangeListener(Consumer<LeadershipEvent> consumer);
 }

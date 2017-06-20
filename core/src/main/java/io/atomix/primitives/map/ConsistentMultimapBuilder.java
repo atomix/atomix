@@ -23,41 +23,41 @@ import io.atomix.primitives.DistributedPrimitiveBuilder;
  * A builder class for {@code AsyncConsistentMultimap}.
  */
 public abstract class ConsistentMultimapBuilder<K, V>
-        extends DistributedPrimitiveBuilder<ConsistentMultimapBuilder<K, V>,
-                ConsistentMultimap<K, V>> {
+    extends DistributedPrimitiveBuilder<ConsistentMultimapBuilder<K, V>,
+    ConsistentMultimap<K, V>> {
 
-    private boolean purgeOnUninstall = false;
+  private boolean purgeOnUninstall = false;
 
-    public ConsistentMultimapBuilder() {
-        super(DistributedPrimitive.Type.CONSISTENT_MULTIMAP);
-    }
+  public ConsistentMultimapBuilder() {
+    super(DistributedPrimitive.Type.CONSISTENT_MULTIMAP);
+  }
 
-    /**
-     * Clears multimap contents when the owning application is uninstalled.
-     *
-     * @return this builder
-     */
-    public ConsistentMultimapBuilder<K, V> withPurgeOnUninstall() {
-        purgeOnUninstall = true;
-        return this;
-    }
+  /**
+   * Clears multimap contents when the owning application is uninstalled.
+   *
+   * @return this builder
+   */
+  public ConsistentMultimapBuilder<K, V> withPurgeOnUninstall() {
+    purgeOnUninstall = true;
+    return this;
+  }
 
-    /**
-     * Returns if multimap entries need to be cleared when owning application
-     * is uninstalled.
-     *
-     * @return true if items are to be cleared on uninstall
-     */
-    public boolean purgeOnUninstall() {
-        return purgeOnUninstall;
-    }
+  /**
+   * Returns if multimap entries need to be cleared when owning application
+   * is uninstalled.
+   *
+   * @return true if items are to be cleared on uninstall
+   */
+  public boolean purgeOnUninstall() {
+    return purgeOnUninstall;
+  }
 
-    /**
-     * Builds the distributed multimap based on the configuration options
-     * supplied to this builder.
-     *
-     * @return new distributed multimap
-     * @throws RuntimeException if a mandatory parameter is missing
-     */
-    public abstract AsyncConsistentMultimap<K, V> buildMultimap();
+  /**
+   * Builds the distributed multimap based on the configuration options
+   * supplied to this builder.
+   *
+   * @return new distributed multimap
+   * @throws RuntimeException if a mandatory parameter is missing
+   */
+  public abstract AsyncConsistentMultimap<K, V> buildMultimap();
 }

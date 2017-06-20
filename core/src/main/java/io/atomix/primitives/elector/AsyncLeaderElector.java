@@ -46,103 +46,110 @@ import java.util.function.Consumer;
  */
 public interface AsyncLeaderElector extends DistributedPrimitive {
 
-    @Override
-    default DistributedPrimitive.Type primitiveType() {
-        return DistributedPrimitive.Type.LEADER_ELECTOR;
-    }
+  @Override
+  default DistributedPrimitive.Type primitiveType() {
+    return DistributedPrimitive.Type.LEADER_ELECTOR;
+  }
 
-    /**
-     * Attempts to become leader for a topic.
-     * @param topic leadership topic
-     * @param nodeId instance identifier of the node
-     * @return CompletableFuture that is completed with the current Leadership state of the topic
-     */
-    CompletableFuture<Leadership> run(String topic, NodeId nodeId);
+  /**
+   * Attempts to become leader for a topic.
+   *
+   * @param topic  leadership topic
+   * @param nodeId instance identifier of the node
+   * @return CompletableFuture that is completed with the current Leadership state of the topic
+   */
+  CompletableFuture<Leadership> run(String topic, NodeId nodeId);
 
-    /**
-     * Withdraws from leadership race for a topic.
-     * @param topic leadership topic
-     * @return CompletableFuture that is completed when the withdraw is done
-     */
-    CompletableFuture<Void> withdraw(String topic);
+  /**
+   * Withdraws from leadership race for a topic.
+   *
+   * @param topic leadership topic
+   * @return CompletableFuture that is completed when the withdraw is done
+   */
+  CompletableFuture<Void> withdraw(String topic);
 
-    /**
-     * Attempts to promote a node to leadership displacing the current leader.
-     * @param topic leadership topic
-     * @param nodeId instance identifier of the new leader
-     * @return CompletableFuture that is completed with a boolean when the operation is done. Boolean is true if
-     * leadership transfer was successfully executed; false if it failed. This operation can fail (i.e. return false)
-     * if the node to be made new leader is not registering to run for election for the topic.
-     */
-    CompletableFuture<Boolean> anoint(String topic, NodeId nodeId);
+  /**
+   * Attempts to promote a node to leadership displacing the current leader.
+   *
+   * @param topic  leadership topic
+   * @param nodeId instance identifier of the new leader
+   * @return CompletableFuture that is completed with a boolean when the operation is done. Boolean is true if
+   * leadership transfer was successfully executed; false if it failed. This operation can fail (i.e. return false)
+   * if the node to be made new leader is not registering to run for election for the topic.
+   */
+  CompletableFuture<Boolean> anoint(String topic, NodeId nodeId);
 
-    /**
-     * Attempts to evict a node from all leadership elections it is registered for.
-     * <p>
-     * If the node is the current leader for a topic, this call will promote the next top candidate
-     * (if one exists) to leadership.
-     *
-     * @param nodeId node instance identifier
-     * @return CompletableFuture that is completed when the operation is done.
-     */
-    CompletableFuture<Void> evict(NodeId nodeId);
+  /**
+   * Attempts to evict a node from all leadership elections it is registered for.
+   * <p>
+   * If the node is the current leader for a topic, this call will promote the next top candidate
+   * (if one exists) to leadership.
+   *
+   * @param nodeId node instance identifier
+   * @return CompletableFuture that is completed when the operation is done.
+   */
+  CompletableFuture<Void> evict(NodeId nodeId);
 
-    /**
-     * Attempts to promote a node to top of candidate list without displacing the current leader.
-     *
-     * @param topic leadership topic
-     * @param nodeId instance identifier of the new top candidate
-     * @return CompletableFuture that is completed with a boolean when the operation is done. Boolean is true if
-     * node is now the top candidate. This operation can fail (i.e. return false) if the node
-     * is not registered to run for election for the topic.
-     */
-    CompletableFuture<Boolean> promote(String topic, NodeId nodeId);
+  /**
+   * Attempts to promote a node to top of candidate list without displacing the current leader.
+   *
+   * @param topic  leadership topic
+   * @param nodeId instance identifier of the new top candidate
+   * @return CompletableFuture that is completed with a boolean when the operation is done. Boolean is true if
+   * node is now the top candidate. This operation can fail (i.e. return false) if the node
+   * is not registered to run for election for the topic.
+   */
+  CompletableFuture<Boolean> promote(String topic, NodeId nodeId);
 
-    /**
-     * Returns the {@link Leadership} for the specified topic.
-     * @param topic leadership topic
-     * @return CompletableFuture that is completed with the current Leadership state of the topic
-     */
-    CompletableFuture<Leadership> getLeadership(String topic);
+  /**
+   * Returns the {@link Leadership} for the specified topic.
+   *
+   * @param topic leadership topic
+   * @return CompletableFuture that is completed with the current Leadership state of the topic
+   */
+  CompletableFuture<Leadership> getLeadership(String topic);
 
-    /**
-     * Returns the current {@link Leadership}s for all topics.
-     * @return CompletableFuture that is completed with the topic to Leadership mapping
-     */
-    CompletableFuture<Map<String, Leadership>> getLeaderships();
+  /**
+   * Returns the current {@link Leadership}s for all topics.
+   *
+   * @return CompletableFuture that is completed with the topic to Leadership mapping
+   */
+  CompletableFuture<Map<String, Leadership>> getLeaderships();
 
-    /**
-     * Registers a listener to be notified of Leadership changes for all topics.
-     * @param consumer listener to notify
-     * @return CompletableFuture that is completed when the operation completes
-     */
-    CompletableFuture<Void> addChangeListener(Consumer<LeadershipEvent> consumer);
+  /**
+   * Registers a listener to be notified of Leadership changes for all topics.
+   *
+   * @param consumer listener to notify
+   * @return CompletableFuture that is completed when the operation completes
+   */
+  CompletableFuture<Void> addChangeListener(Consumer<LeadershipEvent> consumer);
 
-    /**
-     * Unregisters a previously registered change notification listener.
-     * <p>
-     * If the specified listener was not previously registered, this operation will be a noop.
-     * @param consumer listener to remove
-     * @return CompletableFuture that is completed when the operation completes
-     */
-    CompletableFuture<Void> removeChangeListener(Consumer<LeadershipEvent> consumer);
+  /**
+   * Unregisters a previously registered change notification listener.
+   * <p>
+   * If the specified listener was not previously registered, this operation will be a noop.
+   *
+   * @param consumer listener to remove
+   * @return CompletableFuture that is completed when the operation completes
+   */
+  CompletableFuture<Void> removeChangeListener(Consumer<LeadershipEvent> consumer);
 
-    /**
-     * Returns a new {@link LeaderElector} that is backed by this instance.
-     *
-     * @param timeoutMillis timeout duration for the returned LeaderElector operations
-     * @return new {@code LeaderElector} instance
-     */
-    default LeaderElector asLeaderElector(long timeoutMillis) {
-        return new DefaultLeaderElector(this, timeoutMillis);
-    }
+  /**
+   * Returns a new {@link LeaderElector} that is backed by this instance.
+   *
+   * @param timeoutMillis timeout duration for the returned LeaderElector operations
+   * @return new {@code LeaderElector} instance
+   */
+  default LeaderElector asLeaderElector(long timeoutMillis) {
+    return new DefaultLeaderElector(this, timeoutMillis);
+  }
 
-    /**
-     * Returns a new {@link LeaderElector} that is backed by this instance and with a default operation timeout.
-     *
-     * @return new {@code LeaderElector} instance
-     */
-    default LeaderElector asLeaderElector() {
-        return asLeaderElector(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS);
-    }
+  /**
+   * Returns a new {@link LeaderElector} that is backed by this instance and with a default operation timeout.
+   *
+   * @return new {@code LeaderElector} instance
+   */
+  default LeaderElector asLeaderElector() {
+    return asLeaderElector(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS);
+  }
 }

@@ -58,7 +58,7 @@ public interface ClusterCommunicationService {
    * @param message message to send
    * @param subject message subject
    * @param encoder function for encoding message to byte[]
-   * @param <M> message type
+   * @param <M>     message type
    * @return future that is completed when the message is sent
    */
   <M> CompletableFuture<Void> unicast(M message,
@@ -109,12 +109,12 @@ public interface ClusterCommunicationService {
   /**
    * Sends a message and expects a reply.
    *
-   * @param message  message to send
-   * @param subject  message subject
-   * @param encoder  function for encoding request to byte[]
-   * @param decoder  function for decoding response from byte[]
-   * @param <M>      request type
-   * @param <R>      reply type
+   * @param message message to send
+   * @param subject message subject
+   * @param encoder function for encoding request to byte[]
+   * @param decoder function for decoding response from byte[]
+   * @param <M>     request type
+   * @param <R>     reply type
    * @return reply future
    */
   <M, R> CompletableFuture<R> sendAndReceive(M message,
@@ -153,10 +153,10 @@ public interface ClusterCommunicationService {
    * @return future to be completed once the subscription has been propagated
    */
   <M, R> CompletableFuture<Void> addSubscriber(MessageSubject subject,
-                            Function<byte[], M> decoder,
-                            Function<M, R> handler,
-                            Function<R, byte[]> encoder,
-                            Executor executor);
+                                               Function<byte[], M> decoder,
+                                               Function<M, R> handler,
+                                               Function<R, byte[]> encoder,
+                                               Executor executor);
 
   /**
    * Adds a new subscriber for the specified message subject.
@@ -170,9 +170,9 @@ public interface ClusterCommunicationService {
    * @return future to be completed once the subscription has been propagated
    */
   <M, R> CompletableFuture<Void> addSubscriber(MessageSubject subject,
-                            Function<byte[], M> decoder,
-                            Function<M, CompletableFuture<R>> handler,
-                            Function<R, byte[]> encoder);
+                                               Function<byte[], M> decoder,
+                                               Function<M, CompletableFuture<R>> handler,
+                                               Function<R, byte[]> encoder);
 
   /**
    * Adds a new subscriber for the specified message subject.
@@ -185,9 +185,9 @@ public interface ClusterCommunicationService {
    * @return future to be completed once the subscription has been propagated
    */
   <M> CompletableFuture<Void> addSubscriber(MessageSubject subject,
-                         Function<byte[], M> decoder,
-                         Consumer<M> handler,
-                         Executor executor);
+                                            Function<byte[], M> decoder,
+                                            Consumer<M> handler,
+                                            Executor executor);
 
   /**
    * Removes a subscriber for the specified message subject.

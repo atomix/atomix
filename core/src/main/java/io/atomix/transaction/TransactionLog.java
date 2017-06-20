@@ -29,76 +29,75 @@ import java.util.function.Function;
  * @param <T> log record type
  */
 public class TransactionLog<T> {
-    private final TransactionId transactionId;
-    private final long version;
-    private final List<T> records;
+  private final TransactionId transactionId;
+  private final long version;
+  private final List<T> records;
 
-    public TransactionLog(TransactionId transactionId, long version, List<T> records) {
-        this.transactionId = transactionId;
-        this.version = version;
-        this.records = ImmutableList.copyOf(records);
-    }
+  public TransactionLog(TransactionId transactionId, long version, List<T> records) {
+    this.transactionId = transactionId;
+    this.version = version;
+    this.records = ImmutableList.copyOf(records);
+  }
 
-    /**
-     * Returns the transaction identifier.
-     *
-     * @return transaction id
-     */
-    public TransactionId transactionId() {
-        return transactionId;
-    }
+  /**
+   * Returns the transaction identifier.
+   *
+   * @return transaction id
+   */
+  public TransactionId transactionId() {
+    return transactionId;
+  }
 
-    /**
-     * Returns the transaction lock version.
-     *
-     * @return the transaction lock version
-     */
-    public long version() {
-        return version;
-    }
+  /**
+   * Returns the transaction lock version.
+   *
+   * @return the transaction lock version
+   */
+  public long version() {
+    return version;
+  }
 
-    /**
-     * Returns the list of transaction log records.
-     *
-     * @return a list of transaction log records
-     */
-    public List<T> records() {
-        return records;
-    }
+  /**
+   * Returns the list of transaction log records.
+   *
+   * @return a list of transaction log records
+   */
+  public List<T> records() {
+    return records;
+  }
 
-    @Override
-    public boolean equals(Object object) {
-        if (object instanceof TransactionLog) {
-            TransactionLog that = (TransactionLog) object;
-            return this.transactionId.equals(that.transactionId)
-                    && this.records.equals(that.records);
-        }
-        return false;
+  @Override
+  public boolean equals(Object object) {
+    if (object instanceof TransactionLog) {
+      TransactionLog that = (TransactionLog) object;
+      return this.transactionId.equals(that.transactionId)
+          && this.records.equals(that.records);
     }
+    return false;
+  }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(transactionId, records);
-    }
+  @Override
+  public int hashCode() {
+    return Objects.hash(transactionId, records);
+  }
 
-    @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(getClass())
-                .add("transactionId", transactionId)
-                .add("version", version)
-                .add("records", records)
-                .toString();
-    }
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(getClass())
+        .add("transactionId", transactionId)
+        .add("version", version)
+        .add("records", records)
+        .toString();
+  }
 
-    /**
-     * Maps this instance to another {@code MapTransaction} with different key and value types.
-     *
-     * @param mapper function for mapping record types
-     * @return newly typed instance
-     *
-     * @param <U> record type of returned instance
-     */
-    public <U> TransactionLog<U> map(Function<T, U> mapper) {
-        return new TransactionLog<>(transactionId, version, Lists.transform(records, mapper::apply));
-    }
+  /**
+   * Maps this instance to another {@code MapTransaction} with different key and value types.
+   *
+   * @param mapper function for mapping record types
+   * @param <U>    record type of returned instance
+   * @return newly typed instance
+   */
+  public <U> TransactionLog<U> map(Function<T, U> mapper) {
+    return new TransactionLog<>(transactionId, version, Lists.transform(records, mapper::apply));
+  }
 }

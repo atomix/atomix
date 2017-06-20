@@ -33,101 +33,101 @@ import java.util.concurrent.TimeoutException;
  */
 public class DefaultAtomicCounterMap<K> extends Synchronous<AsyncAtomicCounterMap<K>> implements AtomicCounterMap<K> {
 
-    private final AsyncAtomicCounterMap<K> asyncCounterMap;
-    private final long operationTimeoutMillis;
+  private final AsyncAtomicCounterMap<K> asyncCounterMap;
+  private final long operationTimeoutMillis;
 
-    public DefaultAtomicCounterMap(AsyncAtomicCounterMap<K> asyncCounterMap, long operationTimeoutMillis) {
-        super(asyncCounterMap);
-        this.asyncCounterMap = asyncCounterMap;
-        this.operationTimeoutMillis = operationTimeoutMillis;
-    }
+  public DefaultAtomicCounterMap(AsyncAtomicCounterMap<K> asyncCounterMap, long operationTimeoutMillis) {
+    super(asyncCounterMap);
+    this.asyncCounterMap = asyncCounterMap;
+    this.operationTimeoutMillis = operationTimeoutMillis;
+  }
 
-    @Override
-    public long incrementAndGet(K key) {
-        return complete(asyncCounterMap.incrementAndGet(key));
-    }
+  @Override
+  public long incrementAndGet(K key) {
+    return complete(asyncCounterMap.incrementAndGet(key));
+  }
 
-    @Override
-    public long decrementAndGet(K key) {
-        return complete(asyncCounterMap.decrementAndGet(key));
-    }
+  @Override
+  public long decrementAndGet(K key) {
+    return complete(asyncCounterMap.decrementAndGet(key));
+  }
 
-    @Override
-    public long getAndIncrement(K key) {
-        return complete(asyncCounterMap.getAndIncrement(key));
-    }
+  @Override
+  public long getAndIncrement(K key) {
+    return complete(asyncCounterMap.getAndIncrement(key));
+  }
 
-    @Override
-    public long getAndDecrement(K key) {
-        return complete(asyncCounterMap.getAndDecrement(key));
-    }
+  @Override
+  public long getAndDecrement(K key) {
+    return complete(asyncCounterMap.getAndDecrement(key));
+  }
 
-    @Override
-    public long addAndGet(K key, long delta) {
-        return complete(asyncCounterMap.addAndGet(key, delta));
-    }
+  @Override
+  public long addAndGet(K key, long delta) {
+    return complete(asyncCounterMap.addAndGet(key, delta));
+  }
 
-    @Override
-    public long getAndAdd(K key, long delta) {
-        return complete(asyncCounterMap.getAndAdd(key, delta));
-    }
+  @Override
+  public long getAndAdd(K key, long delta) {
+    return complete(asyncCounterMap.getAndAdd(key, delta));
+  }
 
-    @Override
-    public long get(K key) {
-        return complete(asyncCounterMap.get(key));
-    }
+  @Override
+  public long get(K key) {
+    return complete(asyncCounterMap.get(key));
+  }
 
-    @Override
-    public long put(K key, long newValue) {
-        return complete(asyncCounterMap.put(key, newValue));
-    }
+  @Override
+  public long put(K key, long newValue) {
+    return complete(asyncCounterMap.put(key, newValue));
+  }
 
-    @Override
-    public long putIfAbsent(K key, long newValue) {
-        return complete(asyncCounterMap.putIfAbsent(key, newValue));
-    }
+  @Override
+  public long putIfAbsent(K key, long newValue) {
+    return complete(asyncCounterMap.putIfAbsent(key, newValue));
+  }
 
-    @Override
-    public boolean replace(K key, long expectedOldValue, long newValue) {
-        return complete(asyncCounterMap.replace(key, expectedOldValue, newValue));
-    }
+  @Override
+  public boolean replace(K key, long expectedOldValue, long newValue) {
+    return complete(asyncCounterMap.replace(key, expectedOldValue, newValue));
+  }
 
-    @Override
-    public long remove(K key) {
-        return complete(asyncCounterMap.remove(key));
-    }
+  @Override
+  public long remove(K key) {
+    return complete(asyncCounterMap.remove(key));
+  }
 
-    @Override
-    public boolean remove(K key, long value) {
-        return complete(asyncCounterMap.remove(key, value));
-    }
+  @Override
+  public boolean remove(K key, long value) {
+    return complete(asyncCounterMap.remove(key, value));
+  }
 
-    @Override
-    public int size() {
-        return complete(asyncCounterMap.size());
-    }
+  @Override
+  public int size() {
+    return complete(asyncCounterMap.size());
+  }
 
-    @Override
-    public boolean isEmpty() {
-        return complete(asyncCounterMap.isEmpty());
-    }
+  @Override
+  public boolean isEmpty() {
+    return complete(asyncCounterMap.isEmpty());
+  }
 
-    @Override
-    public void clear() {
-        complete(asyncCounterMap.clear());
-    }
+  @Override
+  public void clear() {
+    complete(asyncCounterMap.clear());
+  }
 
-    private <T> T complete(CompletableFuture<T> future) {
-        try {
-            return future.get(operationTimeoutMillis, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ConsistentMapException.Interrupted();
-        } catch (TimeoutException e) {
-            throw new ConsistentMapException.Timeout(name());
-        } catch (ExecutionException e) {
-            Throwables.propagateIfPossible(e.getCause());
-            throw new ConsistentMapException(e.getCause());
-        }
+  private <T> T complete(CompletableFuture<T> future) {
+    try {
+      return future.get(operationTimeoutMillis, TimeUnit.MILLISECONDS);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new ConsistentMapException.Interrupted();
+    } catch (TimeoutException e) {
+      throw new ConsistentMapException.Timeout(name());
+    } catch (ExecutionException e) {
+      Throwables.propagateIfPossible(e.getCause());
+      throw new ConsistentMapException(e.getCause());
     }
+  }
 }

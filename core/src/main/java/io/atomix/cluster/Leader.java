@@ -31,67 +31,70 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * susceptible to clock skew and should only be relied on for simple diagnostic purposes.
  */
 public class Leader {
-    private final NodeId nodeId;
-    private final long term;
-    private final long termStartTime;
+  private final NodeId nodeId;
+  private final long term;
+  private final long termStartTime;
 
-    public Leader(NodeId nodeId, long term, long termStartTime) {
-        this.nodeId = checkNotNull(nodeId);
-        checkArgument(term >= 0, "term must be non-negative");
-        this.term = term;
-        checkArgument(termStartTime >= 0, "termStartTime must be non-negative");
-        this.termStartTime = termStartTime;
-    }
+  public Leader(NodeId nodeId, long term, long termStartTime) {
+    this.nodeId = checkNotNull(nodeId);
+    checkArgument(term >= 0, "term must be non-negative");
+    this.term = term;
+    checkArgument(termStartTime >= 0, "termStartTime must be non-negative");
+    this.termStartTime = termStartTime;
+  }
 
-    /**
-     * Returns the identifier for of leader.
-     * @return node identifier
-     */
-    public NodeId nodeId() {
-        return nodeId;
-    }
+  /**
+   * Returns the identifier for of leader.
+   *
+   * @return node identifier
+   */
+  public NodeId nodeId() {
+    return nodeId;
+  }
 
-    /**
-     * Returns the leader's term.
-     * @return leader term
-     */
-    public long term() {
-        return term;
-    }
+  /**
+   * Returns the leader's term.
+   *
+   * @return leader term
+   */
+  public long term() {
+    return term;
+  }
 
-    /**
-     * Returns the system time when the current leadership term started.
-     * @return current leader term start time
-     */
-    public long termStartTime() {
-        return termStartTime;
-    }
+  /**
+   * Returns the system time when the current leadership term started.
+   *
+   * @return current leader term start time
+   */
+  public long termStartTime() {
+    return termStartTime;
+  }
 
-    @Override
-    public boolean equals(Object other) {
-        if (this == other) {
-            return true;
-        }
-        if (other != null && other instanceof Leader) {
-            Leader that = (Leader) other;
-            return Objects.equal(this.nodeId, that.nodeId) &&
-                    this.term ==  that.term &&
-                    this.termStartTime == that.termStartTime;
-        }
-        return false;
+  @Override
+  public boolean equals(Object other) {
+    if (this == other) {
+      return true;
     }
+    if (other != null && other instanceof Leader) {
+      Leader that = (Leader) other;
+      return Objects.equal(this.nodeId, that.nodeId) &&
+          this.term == that.term &&
+          this.termStartTime == that.termStartTime;
+    }
+    return false;
+  }
 
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(nodeId, term, termStartTime);
-    }
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(nodeId, term, termStartTime);
+  }
 
-    @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(getClass())
-            .add("nodeId", nodeId)
-            .add("term", term)
-            .add("termStartTime", termStartTime)
-            .toString();
-    }
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(getClass())
+        .add("nodeId", nodeId)
+        .add("term", term)
+        .add("termStartTime", termStartTime)
+        .toString();
+  }
 }

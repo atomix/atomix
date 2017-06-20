@@ -20,10 +20,10 @@ package io.atomix.primitives.map;
  */
 public interface EventuallyConsistentMapListener<K, V> {
 
-    /**
-     * Reacts to the specified event.
-     *
-     * @param event the event
-     */
-    void event(EventuallyConsistentMapEvent<K, V> event);
+  /**
+   * Reacts to the specified event.
+   *
+   * @param event the event
+   */
+  void event(EventuallyConsistentMapEvent<K, V> event);
 }

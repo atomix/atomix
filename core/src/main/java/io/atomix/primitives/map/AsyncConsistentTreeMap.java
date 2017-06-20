@@ -29,150 +29,150 @@ import java.util.concurrent.CompletableFuture;
  * API for a distributed tree map implementation.
  */
 public interface AsyncConsistentTreeMap<V>
-        extends AsyncConsistentMap<String, V> {
+    extends AsyncConsistentMap<String, V> {
 
-    /**
-     * Return the lowest key in the map.
-     *
-     * @return the key or null if none exist
-     */
-    CompletableFuture<String> firstKey();
+  /**
+   * Return the lowest key in the map.
+   *
+   * @return the key or null if none exist
+   */
+  CompletableFuture<String> firstKey();
 
-    /**
-     * Return the highest key in the map.
-     *
-     * @return the key or null if none exist
-     */
-    CompletableFuture<String> lastKey();
+  /**
+   * Return the highest key in the map.
+   *
+   * @return the key or null if none exist
+   */
+  CompletableFuture<String> lastKey();
 
-    /**
-     * Returns the entry associated with the least key greater than or equal to
-     * the key.
-     *
-     * @param key the key
-     * @return the entry or null if no suitable key exists
-     */
-    CompletableFuture<Map.Entry<String, Versioned<V>>> ceilingEntry(
-        String key);
+  /**
+   * Returns the entry associated with the least key greater than or equal to
+   * the key.
+   *
+   * @param key the key
+   * @return the entry or null if no suitable key exists
+   */
+  CompletableFuture<Map.Entry<String, Versioned<V>>> ceilingEntry(
+      String key);
 
-    /**
-     * Returns the entry associated with the greatest key less than or equal
-     * to key.
-     *
-     * @param key the key
-     * @return the entry or null if no suitable key exists
-     */
-    CompletableFuture<Map.Entry<String, Versioned<V>>> floorEntry(String key);
+  /**
+   * Returns the entry associated with the greatest key less than or equal
+   * to key.
+   *
+   * @param key the key
+   * @return the entry or null if no suitable key exists
+   */
+  CompletableFuture<Map.Entry<String, Versioned<V>>> floorEntry(String key);
 
-    /**
-     * Returns the entry associated with the least key greater than key.
-     *
-     * @param key the key
-     * @return the entry or null if no suitable key exists
-     */
-    CompletableFuture<Map.Entry<String, Versioned<V>>> higherEntry(String key);
+  /**
+   * Returns the entry associated with the least key greater than key.
+   *
+   * @param key the key
+   * @return the entry or null if no suitable key exists
+   */
+  CompletableFuture<Map.Entry<String, Versioned<V>>> higherEntry(String key);
 
-    /**
-     * Returns the entry associated with the largest key less than key.
-     *
-     * @param key the key
-     * @return the entry or null if no suitable key exists
-     */
-    CompletableFuture<Map.Entry<String, Versioned<V>>> lowerEntry(String key);
+  /**
+   * Returns the entry associated with the largest key less than key.
+   *
+   * @param key the key
+   * @return the entry or null if no suitable key exists
+   */
+  CompletableFuture<Map.Entry<String, Versioned<V>>> lowerEntry(String key);
 
-    /**
-     * Return the entry associated with the lowest key in the map.
-     *
-     * @return the entry or null if none exist
-     */
-    CompletableFuture<Map.Entry<String, Versioned<V>>> firstEntry();
+  /**
+   * Return the entry associated with the lowest key in the map.
+   *
+   * @return the entry or null if none exist
+   */
+  CompletableFuture<Map.Entry<String, Versioned<V>>> firstEntry();
 
-    /**
-     * Return the entry associated with the highest key in the map.
-     *
-     * @return the entry or null if none exist
-     */
-    CompletableFuture<Map.Entry<String, Versioned<V>>> lastEntry();
+  /**
+   * Return the entry associated with the highest key in the map.
+   *
+   * @return the entry or null if none exist
+   */
+  CompletableFuture<Map.Entry<String, Versioned<V>>> lastEntry();
 
-    /**
-     * Return and remove the entry associated with the lowest key.
-     *
-     * @return the entry or null if none exist
-     */
-    CompletableFuture<Map.Entry<String, Versioned<V>>> pollFirstEntry();
+  /**
+   * Return and remove the entry associated with the lowest key.
+   *
+   * @return the entry or null if none exist
+   */
+  CompletableFuture<Map.Entry<String, Versioned<V>>> pollFirstEntry();
 
-    /**
-     * Return and remove the entry associated with the highest key.
-     *
-     * @return the entry or null if none exist
-     */
-    CompletableFuture<Map.Entry<String, Versioned<V>>> pollLastEntry();
+  /**
+   * Return and remove the entry associated with the highest key.
+   *
+   * @return the entry or null if none exist
+   */
+  CompletableFuture<Map.Entry<String, Versioned<V>>> pollLastEntry();
 
-    /**
-     * Return the entry associated with the greatest key less than key.
-     *
-     * @param key the key
-     * @return the entry or null if no suitable key exists
-     */
-    CompletableFuture<String> lowerKey(String key);
+  /**
+   * Return the entry associated with the greatest key less than key.
+   *
+   * @param key the key
+   * @return the entry or null if no suitable key exists
+   */
+  CompletableFuture<String> lowerKey(String key);
 
-    /**
-     * Return the highest key less than or equal to key.
-     *
-     * @param key the key
-     * @return the entry or null if no suitable key exists
-     */
-    CompletableFuture<String> floorKey(String key);
+  /**
+   * Return the highest key less than or equal to key.
+   *
+   * @param key the key
+   * @return the entry or null if no suitable key exists
+   */
+  CompletableFuture<String> floorKey(String key);
 
-    /**
-     * Return the lowest key greater than or equal to key.
-     *
-     * @param key the key
-     * @return the entry or null if no suitable key exists
-     */
-    CompletableFuture<String> ceilingKey(String key);
+  /**
+   * Return the lowest key greater than or equal to key.
+   *
+   * @param key the key
+   * @return the entry or null if no suitable key exists
+   */
+  CompletableFuture<String> ceilingKey(String key);
 
-    /**
-     * Return the lowest key greater than key.
-     *
-     * @param key the key
-     * @return the entry or null if no suitable key exists
-     */
-    CompletableFuture<String> higherKey(String key);
+  /**
+   * Return the lowest key greater than key.
+   *
+   * @param key the key
+   * @return the entry or null if no suitable key exists
+   */
+  CompletableFuture<String> higherKey(String key);
 
-    /**
-     * Returns a navigable set of the keys in this map.
-     *
-     * @return a navigable key set (this may be empty)
-     */
-    CompletableFuture<NavigableSet<String>> navigableKeySet();
+  /**
+   * Returns a navigable set of the keys in this map.
+   *
+   * @return a navigable key set (this may be empty)
+   */
+  CompletableFuture<NavigableSet<String>> navigableKeySet();
 
-    /**
-     * Returns a navigable map containing the entries from the original map
-     * which are larger than (or if specified equal to) {@code lowerKey} AND
-     * less than (or if specified equal to) {@code upperKey}.
-     *
-     * @param upperKey the upper bound for the keys in this map
-     * @param lowerKey the lower bound for the keys in this map
-     * @param inclusiveUpper whether keys equal to the upperKey should be
-     *                       included
-     * @param inclusiveLower whether keys equal to the lowerKey should be
-     *                       included
-     * @return a navigable map containing entries in the specified range (this
-     * may be empty)
-     */
-    CompletableFuture<NavigableMap<String, V>> subMap(String upperKey,
-                                                      String lowerKey,
-                                                      boolean inclusiveUpper,
-                                                      boolean inclusiveLower);
+  /**
+   * Returns a navigable map containing the entries from the original map
+   * which are larger than (or if specified equal to) {@code lowerKey} AND
+   * less than (or if specified equal to) {@code upperKey}.
+   *
+   * @param upperKey       the upper bound for the keys in this map
+   * @param lowerKey       the lower bound for the keys in this map
+   * @param inclusiveUpper whether keys equal to the upperKey should be
+   *                       included
+   * @param inclusiveLower whether keys equal to the lowerKey should be
+   *                       included
+   * @return a navigable map containing entries in the specified range (this
+   * may be empty)
+   */
+  CompletableFuture<NavigableMap<String, V>> subMap(String upperKey,
+                                                    String lowerKey,
+                                                    boolean inclusiveUpper,
+                                                    boolean inclusiveLower);
 
-    default ConsistentTreeMap<V> asTreeMap() {
-        return asTreeMap(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS);
-    }
+  default ConsistentTreeMap<V> asTreeMap() {
+    return asTreeMap(DistributedPrimitive.DEFAULT_OPERATION_TIMEOUT_MILLIS);
+  }
 
-    default ConsistentTreeMap<V> asTreeMap(long timeoutMillis) {
-        return new DefaultConsistentTreeMap<>(this, timeoutMillis);
-    }
+  default ConsistentTreeMap<V> asTreeMap(long timeoutMillis) {
+    return new DefaultConsistentTreeMap<>(this, timeoutMillis);
+  }
 
 
 }

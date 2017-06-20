@@ -25,138 +25,138 @@ import java.util.NavigableSet;
 /**
  * Tree map interface counterpart to {@link AsyncConsistentTreeMap}.
  */
- public interface ConsistentTreeMap<V> extends ConsistentMap<String, V> {
+public interface ConsistentTreeMap<V> extends ConsistentMap<String, V> {
 
-    /**
-     * Returns the lowest key in the map.
-     *
-     * @return the key or null if none exist
-     */
-     String firstKey();
+  /**
+   * Returns the lowest key in the map.
+   *
+   * @return the key or null if none exist
+   */
+  String firstKey();
 
-    /**
-     * Returns the highest key in the map.
-     *
-     * @return the key or null if none exist
-     */
-     String lastKey();
+  /**
+   * Returns the highest key in the map.
+   *
+   * @return the key or null if none exist
+   */
+  String lastKey();
 
-    /**
-     * Returns the entry associated with the least key greater than or equal to the key.
-     *
-     * @param key the key
-     * @return the entry or null
-     */
-     Map.Entry<String, Versioned<V>> ceilingEntry(String key);
+  /**
+   * Returns the entry associated with the least key greater than or equal to the key.
+   *
+   * @param key the key
+   * @return the entry or null
+   */
+  Map.Entry<String, Versioned<V>> ceilingEntry(String key);
 
-    /**
-     * Returns the entry associated with the greatest key less than or equal to key.
-     *
-     * @param key the key
-     * @return the entry or null
-     */
-     Map.Entry<String, Versioned<V>> floorEntry(String key);
+  /**
+   * Returns the entry associated with the greatest key less than or equal to key.
+   *
+   * @param key the key
+   * @return the entry or null
+   */
+  Map.Entry<String, Versioned<V>> floorEntry(String key);
 
-    /**
-     * Returns the entry associated with the lest key greater than key.
-     *
-     * @param key the key
-     * @return the entry or null
-     */
-     Map.Entry<String, Versioned<V>> higherEntry(String key);
+  /**
+   * Returns the entry associated with the lest key greater than key.
+   *
+   * @param key the key
+   * @return the entry or null
+   */
+  Map.Entry<String, Versioned<V>> higherEntry(String key);
 
-    /**
-     * Returns the entry associated with the largest key less than key.
-     *
-     * @param key the key
-     * @return the entry or null
-     */
-     Map.Entry<String, Versioned<V>> lowerEntry(String key);
+  /**
+   * Returns the entry associated with the largest key less than key.
+   *
+   * @param key the key
+   * @return the entry or null
+   */
+  Map.Entry<String, Versioned<V>> lowerEntry(String key);
 
-    /**
-     * Returns the entry associated with the lowest key in the map.
-     *
-     * @return the entry or null
-     */
-     Map.Entry<String, Versioned<V>> firstEntry();
+  /**
+   * Returns the entry associated with the lowest key in the map.
+   *
+   * @return the entry or null
+   */
+  Map.Entry<String, Versioned<V>> firstEntry();
 
-    /**
-     * Returns the entry associated with the highest key in the map.
-     *
-     * @return the entry or null
-     */
-     Map.Entry<String, Versioned<V>> lastEntry();
+  /**
+   * Returns the entry associated with the highest key in the map.
+   *
+   * @return the entry or null
+   */
+  Map.Entry<String, Versioned<V>> lastEntry();
 
-    /**
-     * Returns and removes the entry associated with the lowest key.
-     *
-     * @return the entry or null
-     */
-     Map.Entry<String, Versioned<V>> pollFirstEntry();
+  /**
+   * Returns and removes the entry associated with the lowest key.
+   *
+   * @return the entry or null
+   */
+  Map.Entry<String, Versioned<V>> pollFirstEntry();
 
-    /**
-     * Returns and removes the entry associated with the highest key.
-     *
-     * @return the entry or null
-     */
-     Map.Entry<String, Versioned<V>> pollLastEntry();
+  /**
+   * Returns and removes the entry associated with the highest key.
+   *
+   * @return the entry or null
+   */
+  Map.Entry<String, Versioned<V>> pollLastEntry();
 
-    /**
-     * Returns the entry associated with the greatest key less than key.
-     *
-     * @param key the key
-     * @return the entry or null
-     */
-     String lowerKey(String key);
+  /**
+   * Returns the entry associated with the greatest key less than key.
+   *
+   * @param key the key
+   * @return the entry or null
+   */
+  String lowerKey(String key);
 
-    /**
-     * Returns the entry associated with the highest key less than or equal to key.
-     *
-     * @param key the key
-     * @return the entry or null
-     */
-     String floorKey(String key);
+  /**
+   * Returns the entry associated with the highest key less than or equal to key.
+   *
+   * @param key the key
+   * @return the entry or null
+   */
+  String floorKey(String key);
 
-    /**
-     * Returns the lowest key greater than or equal to key.
-     *
-     * @param key the key
-     * @return the key or null
-     */
-     String ceilingKey(String key);
+  /**
+   * Returns the lowest key greater than or equal to key.
+   *
+   * @param key the key
+   * @return the key or null
+   */
+  String ceilingKey(String key);
 
-    /**
-     * Returns the lowest key greater than key.
-     *
-     * @param key the key
-     * @return the key or null
-     */
-     String higherKey(String key);
+  /**
+   * Returns the lowest key greater than key.
+   *
+   * @param key the key
+   * @return the key or null
+   */
+  String higherKey(String key);
 
-    /**
-     * Returns a navigable set of the keys in this map.
-     *
-     * @return a navigable key set
-     */
-     NavigableSet<String> navigableKeySet();
+  /**
+   * Returns a navigable set of the keys in this map.
+   *
+   * @return a navigable key set
+   */
+  NavigableSet<String> navigableKeySet();
 
-    /**
-     * Returns a navigable map containing the entries from the original map
-     * which are larger than (or if specified equal to) {@code lowerKey} AND
-     * less than (or if specified equal to) {@code upperKey}.
-     *
-     * @param upperKey the upper bound for the keys in this map
-     * @param lowerKey the lower bound for the keys in this map
-     * @param inclusiveUpper whether keys equal to the upperKey should be
-     *                       included
-     * @param inclusiveLower whether keys equal to the lowerKey should be
-     *                       included
-     * @return a navigable map containing entries in the specified range (this
-     * may be empty)
-     */
-    NavigableMap<String, V> subMap(String upperKey,
-                                   String lowerKey,
-                                   boolean inclusiveUpper,
-                                   boolean inclusiveLower);
+  /**
+   * Returns a navigable map containing the entries from the original map
+   * which are larger than (or if specified equal to) {@code lowerKey} AND
+   * less than (or if specified equal to) {@code upperKey}.
+   *
+   * @param upperKey       the upper bound for the keys in this map
+   * @param lowerKey       the lower bound for the keys in this map
+   * @param inclusiveUpper whether keys equal to the upperKey should be
+   *                       included
+   * @param inclusiveLower whether keys equal to the lowerKey should be
+   *                       included
+   * @return a navigable map containing entries in the specified range (this
+   * may be empty)
+   */
+  NavigableMap<String, V> subMap(String upperKey,
+                                 String lowerKey,
+                                 boolean inclusiveUpper,
+                                 boolean inclusiveLower);
 
 }

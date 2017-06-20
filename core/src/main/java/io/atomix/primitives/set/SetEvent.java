@@ -26,88 +26,88 @@ import java.util.Objects;
  */
 public final class SetEvent<E> {
 
+  /**
+   * SetEvent type.
+   */
+  public enum Type {
     /**
-     * SetEvent type.
+     * Entry added to the set.
      */
-    public enum Type {
-        /**
-         * Entry added to the set.
-         */
-        ADD,
-
-        /**
-         * Entry removed from the set.
-         */
-        REMOVE
-    }
-
-    private final String name;
-    private final Type type;
-    private final E entry;
+    ADD,
 
     /**
-     * Creates a new event object.
-     *
-     * @param name set name
-     * @param type type of the event
-     * @param entry entry the event concerns
+     * Entry removed from the set.
      */
-    public SetEvent(String name, Type type, E entry) {
-        this.name = name;
-        this.type = type;
-        this.entry = entry;
+    REMOVE
+  }
+
+  private final String name;
+  private final Type type;
+  private final E entry;
+
+  /**
+   * Creates a new event object.
+   *
+   * @param name  set name
+   * @param type  type of the event
+   * @param entry entry the event concerns
+   */
+  public SetEvent(String name, Type type, E entry) {
+    this.name = name;
+    this.type = type;
+    this.entry = entry;
+  }
+
+  /**
+   * Returns the set name.
+   *
+   * @return name of set
+   */
+  public String name() {
+    return name;
+  }
+
+  /**
+   * Returns the type of the event.
+   *
+   * @return type of the event
+   */
+  public Type type() {
+    return type;
+  }
+
+  /**
+   * Returns the entry this event concerns.
+   *
+   * @return the entry
+   */
+  public E entry() {
+    return entry;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (!(o instanceof SetEvent)) {
+      return false;
     }
 
-    /**
-     * Returns the set name.
-     *
-     * @return name of set
-     */
-    public String name() {
-        return name;
-    }
+    SetEvent that = (SetEvent) o;
+    return Objects.equals(this.name, that.name) &&
+        Objects.equals(this.type, that.type) &&
+        Objects.equals(this.entry, that.entry);
+  }
 
-    /**
-     * Returns the type of the event.
-     *
-     * @return type of the event
-     */
-    public Type type() {
-        return type;
-    }
+  @Override
+  public int hashCode() {
+    return Objects.hash(name, type, entry);
+  }
 
-    /**
-     * Returns the entry this event concerns.
-     *
-     * @return the entry
-     */
-    public E entry() {
-        return entry;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (!(o instanceof SetEvent)) {
-            return false;
-        }
-
-        SetEvent that = (SetEvent) o;
-        return Objects.equals(this.name, that.name) &&
-                Objects.equals(this.type, that.type) &&
-                Objects.equals(this.entry, that.entry);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(name, type, entry);
-    }
-
-    @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(getClass())
-                .add("name", name)
-                .add("type", type)
-                .add("entry", entry)
-                .toString();
-    }
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(getClass())
+        .add("name", name)
+        .add("type", type)
+        .add("entry", entry)
+        .toString();
+  }
 }

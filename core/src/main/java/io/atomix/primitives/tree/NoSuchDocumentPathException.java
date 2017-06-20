@@ -21,18 +21,18 @@ package io.atomix.primitives.tree;
  * {@code DocumentTree}.
  */
 public class NoSuchDocumentPathException extends DocumentException {
-    public NoSuchDocumentPathException() {
-    }
+  public NoSuchDocumentPathException() {
+  }
 
-    public NoSuchDocumentPathException(String message) {
-        super(message);
-    }
+  public NoSuchDocumentPathException(String message) {
+    super(message);
+  }
 
-    public NoSuchDocumentPathException(String message, Throwable cause) {
-        super(message, cause);
-    }
+  public NoSuchDocumentPathException(String message, Throwable cause) {
+    super(message, cause);
+  }
 
-    public NoSuchDocumentPathException(Throwable cause) {
-        super(cause);
-    }
+  public NoSuchDocumentPathException(Throwable cause) {
+    super(cause);
+  }
 }

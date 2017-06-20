@@ -30,78 +30,78 @@ import java.util.Objects;
  */
 public class Leadership {
 
-    private final String topic;
-    private final Leader leader;
-    private final List<NodeId> candidates;
+  private final String topic;
+  private final Leader leader;
+  private final List<NodeId> candidates;
 
-    public Leadership(String topic, Leader leader, List<NodeId> candidates) {
-        this.topic = topic;
-        this.leader = leader;
-        this.candidates = ImmutableList.copyOf(candidates);
-    }
+  public Leadership(String topic, Leader leader, List<NodeId> candidates) {
+    this.topic = topic;
+    this.leader = leader;
+    this.candidates = ImmutableList.copyOf(candidates);
+  }
 
-    /**
-     * Returns the leadership topic.
-     *
-     * @return leadership topic.
-     */
-    public String topic() {
-        return topic;
-    }
+  /**
+   * Returns the leadership topic.
+   *
+   * @return leadership topic.
+   */
+  public String topic() {
+    return topic;
+  }
 
-    /**
-     * Returns the {@link NodeId nodeId} of the leader.
-     *
-     * @return leader node identifier; will be null if there is no leader
-     */
-    public NodeId leaderNodeId() {
-        return leader == null ? null : leader.nodeId();
-    }
+  /**
+   * Returns the {@link NodeId nodeId} of the leader.
+   *
+   * @return leader node identifier; will be null if there is no leader
+   */
+  public NodeId leaderNodeId() {
+    return leader == null ? null : leader.nodeId();
+  }
 
-    /**
-     * Returns the leader for this topic.
-     *
-     * @return leader; will be null if there is no leader for topic
-     */
-    public Leader leader() {
-        return leader;
-    }
+  /**
+   * Returns the leader for this topic.
+   *
+   * @return leader; will be null if there is no leader for topic
+   */
+  public Leader leader() {
+    return leader;
+  }
 
-    /**
-     * Returns an preference-ordered list of nodes that are in the leadership
-     * race for this topic.
-     *
-     * @return a list of NodeIds in priority-order, or an empty list.
-     */
-    public List<NodeId> candidates() {
-        return candidates;
-    }
+  /**
+   * Returns an preference-ordered list of nodes that are in the leadership
+   * race for this topic.
+   *
+   * @return a list of NodeIds in priority-order, or an empty list.
+   */
+  public List<NodeId> candidates() {
+    return candidates;
+  }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(topic, leader, candidates);
-    }
+  @Override
+  public int hashCode() {
+    return Objects.hash(topic, leader, candidates);
+  }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj instanceof Leadership) {
-            final Leadership other = (Leadership) obj;
-            return Objects.equals(this.topic, other.topic) &&
-                    Objects.equals(this.leader, other.leader) &&
-                    Objects.equals(this.candidates, other.candidates);
-        }
-        return false;
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
     }
+    if (obj instanceof Leadership) {
+      final Leadership other = (Leadership) obj;
+      return Objects.equals(this.topic, other.topic) &&
+          Objects.equals(this.leader, other.leader) &&
+          Objects.equals(this.candidates, other.candidates);
+    }
+    return false;
+  }
 
-    @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this.getClass())
-            .add("topic", topic)
-            .add("leader", leader)
-            .add("candidates", candidates)
-            .toString();
-    }
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this.getClass())
+        .add("topic", topic)
+        .add("leader", leader)
+        .add("candidates", candidates)
+        .toString();
+  }
 }

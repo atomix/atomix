@@ -24,101 +24,101 @@ import java.util.Objects;
  */
 public final class EventuallyConsistentMapEvent<K, V> {
 
-    public enum Type {
-        /**
-         * Entry added to map or existing entry updated.
-         */
-        PUT,
-
-        /**
-         * Entry removed from map.
-         */
-        REMOVE
-    }
-
-    private final String name;
-    private final Type type;
-    private final K key;
-    private final V value;
+  public enum Type {
+    /**
+     * Entry added to map or existing entry updated.
+     */
+    PUT,
 
     /**
-     * Creates a new event object.
-     *
-     * @param name map name
-     * @param type the type of the event
-     * @param key the key the event concerns
-     * @param value the value mapped to the key
+     * Entry removed from map.
      */
-    public EventuallyConsistentMapEvent(String name, Type type, K key, V value) {
-        this.name = name;
-        this.type = type;
-        this.key = key;
-        this.value = value;
+    REMOVE
+  }
+
+  private final String name;
+  private final Type type;
+  private final K key;
+  private final V value;
+
+  /**
+   * Creates a new event object.
+   *
+   * @param name  map name
+   * @param type  the type of the event
+   * @param key   the key the event concerns
+   * @param value the value mapped to the key
+   */
+  public EventuallyConsistentMapEvent(String name, Type type, K key, V value) {
+    this.name = name;
+    this.type = type;
+    this.key = key;
+    this.value = value;
+  }
+
+  /**
+   * Returns the map name.
+   *
+   * @return name of map
+   */
+  public String name() {
+    return name;
+  }
+
+  /**
+   * Returns the type of the event.
+   *
+   * @return the type of the event
+   */
+  public Type type() {
+    return type;
+  }
+
+  /**
+   * Returns the key this event concerns.
+   *
+   * @return the key
+   */
+  public K key() {
+    return key;
+  }
+
+  /**
+   * Returns the value associated with this event. If type is REMOVE,
+   * this is the value that was removed. If type is PUT, this is
+   * the new value.
+   *
+   * @return the value
+   */
+  public V value() {
+    return value;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (!(o instanceof EventuallyConsistentMapEvent)) {
+      return false;
     }
 
-    /**
-     * Returns the map name.
-     *
-     * @return name of map
-     */
-    public String name() {
-        return name;
-    }
+    EventuallyConsistentMapEvent that = (EventuallyConsistentMapEvent) o;
+    return Objects.equals(this.type, that.type) &&
+        Objects.equals(this.key, that.key) &&
+        Objects.equals(this.value, that.value) &&
+        Objects.equals(this.name, that.name);
+  }
 
-    /**
-     * Returns the type of the event.
-     *
-     * @return the type of the event
-     */
-    public Type type() {
-        return type;
-    }
+  @Override
+  public int hashCode() {
+    return Objects.hash(type, key, value);
+  }
 
-    /**
-     * Returns the key this event concerns.
-     *
-     * @return the key
-     */
-    public K key() {
-        return key;
-    }
-
-    /**
-     * Returns the value associated with this event. If type is REMOVE,
-     * this is the value that was removed. If type is PUT, this is
-     * the new value.
-     *
-     * @return the value
-     */
-    public V value() {
-        return value;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (!(o instanceof EventuallyConsistentMapEvent)) {
-            return false;
-        }
-
-        EventuallyConsistentMapEvent that = (EventuallyConsistentMapEvent) o;
-        return Objects.equals(this.type, that.type) &&
-                Objects.equals(this.key, that.key) &&
-                Objects.equals(this.value, that.value) &&
-                Objects.equals(this.name, that.name);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(type, key, value);
-    }
-
-    @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(getClass())
-                .add("name", name)
-                .add("type", type)
-                .add("key", key)
-                .add("value", value)
-                .toString();
-    }
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(getClass())
+        .add("name", name)
+        .add("type", type)
+        .add("key", key)
+        .add("value", value)
+        .toString();
+  }
 }

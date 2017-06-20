@@ -22,10 +22,10 @@ package io.atomix.primitives.tree;
  */
 public interface DocumentTreeListener<V> {
 
-    /**
-     * Callback notifying about change to document tree node.
-     *
-     * @param event event
-     */
-    void event(DocumentTreeEvent<V> event);
+  /**
+   * Callback notifying about change to document tree node.
+   *
+   * @param event event
+   */
+  void event(DocumentTreeEvent<V> event);
 }

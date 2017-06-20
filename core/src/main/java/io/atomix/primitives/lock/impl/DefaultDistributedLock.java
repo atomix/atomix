@@ -31,45 +31,45 @@ import java.util.concurrent.TimeoutException;
  */
 public class DefaultDistributedLock extends Synchronous<AsyncDistributedLock> implements DistributedLock {
 
-    private final AsyncDistributedLock asyncLock;
-    private final long operationTimeoutMillis;
+  private final AsyncDistributedLock asyncLock;
+  private final long operationTimeoutMillis;
 
-    public DefaultDistributedLock(AsyncDistributedLock asyncLock, long operationTimeoutMillis) {
-        super(asyncLock);
-        this.asyncLock = asyncLock;
-        this.operationTimeoutMillis = operationTimeoutMillis;
-    }
+  public DefaultDistributedLock(AsyncDistributedLock asyncLock, long operationTimeoutMillis) {
+    super(asyncLock);
+    this.asyncLock = asyncLock;
+    this.operationTimeoutMillis = operationTimeoutMillis;
+  }
 
-    @Override
-    public void lock() {
-        complete(asyncLock.lock());
-    }
+  @Override
+  public void lock() {
+    complete(asyncLock.lock());
+  }
 
-    @Override
-    public boolean tryLock() {
-        return complete(asyncLock.tryLock());
-    }
+  @Override
+  public boolean tryLock() {
+    return complete(asyncLock.tryLock());
+  }
 
-    @Override
-    public boolean tryLock(Duration timeout) {
-        return complete(asyncLock.tryLock(timeout));
-    }
+  @Override
+  public boolean tryLock(Duration timeout) {
+    return complete(asyncLock.tryLock(timeout));
+  }
 
-    @Override
-    public void unlock() {
-        complete(asyncLock.unlock());
-    }
+  @Override
+  public void unlock() {
+    complete(asyncLock.unlock());
+  }
 
-    private <T> T complete(CompletableFuture<T> future) {
-        try {
-            return future.get(operationTimeoutMillis, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new PrimitiveException.Interrupted();
-        } catch (TimeoutException e) {
-            throw new PrimitiveException.Timeout();
-        } catch (ExecutionException e) {
-            throw new PrimitiveException(e.getCause());
-        }
+  private <T> T complete(CompletableFuture<T> future) {
+    try {
+      return future.get(operationTimeoutMillis, TimeUnit.MILLISECONDS);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new PrimitiveException.Interrupted();
+    } catch (TimeoutException e) {
+      throw new PrimitiveException.Timeout();
+    } catch (ExecutionException e) {
+      throw new PrimitiveException(e.getCause());
     }
+  }
 }

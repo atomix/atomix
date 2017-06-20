@@ -25,24 +25,24 @@ import java.util.concurrent.CompletableFuture;
  */
 public abstract class Synchronous<T extends DistributedPrimitive> implements DistributedPrimitive {
 
-    private final T primitive;
+  private final T primitive;
 
-    public Synchronous(T primitive) {
-        this.primitive = primitive;
-    }
+  public Synchronous(T primitive) {
+    this.primitive = primitive;
+  }
 
-    @Override
-    public String name() {
-        return primitive.name();
-    }
+  @Override
+  public String name() {
+    return primitive.name();
+  }
 
-    @Override
-    public Type primitiveType() {
-        return primitive.primitiveType();
-    }
+  @Override
+  public Type primitiveType() {
+    return primitive.primitiveType();
+  }
 
-    @Override
-    public CompletableFuture<Void> destroy() {
-        return primitive.destroy();
-    }
+  @Override
+  public CompletableFuture<Void> destroy() {
+    return primitive.destroy();
+  }
 }

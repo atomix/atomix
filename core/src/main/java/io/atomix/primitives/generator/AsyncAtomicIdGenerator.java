@@ -25,34 +25,34 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface AsyncAtomicIdGenerator extends DistributedPrimitive {
 
-    @Override
-    default Type primitiveType() {
-        return Type.ID_GENERATOR;
-    }
+  @Override
+  default Type primitiveType() {
+    return Type.ID_GENERATOR;
+  }
 
-    /**
-     * Returns the next globally unique numeric ID.
-     *
-     * @return a future to be completed with the next globally unique identifier
-     */
-    CompletableFuture<Long> nextId();
+  /**
+   * Returns the next globally unique numeric ID.
+   *
+   * @return a future to be completed with the next globally unique identifier
+   */
+  CompletableFuture<Long> nextId();
 
-    /**
-     * Returns a new {@link AtomicIdGenerator} that is backed by this instance.
-     *
-     * @param timeoutMillis timeout duration for the returned ConsistentMap operations
-     * @return new {@code AtomicIdGenerator} instance
-     */
-    default AtomicIdGenerator asAtomicIdGenerator(long timeoutMillis) {
-        return new DefaultAtomicIdGenerator(this, timeoutMillis);
-    }
+  /**
+   * Returns a new {@link AtomicIdGenerator} that is backed by this instance.
+   *
+   * @param timeoutMillis timeout duration for the returned ConsistentMap operations
+   * @return new {@code AtomicIdGenerator} instance
+   */
+  default AtomicIdGenerator asAtomicIdGenerator(long timeoutMillis) {
+    return new DefaultAtomicIdGenerator(this, timeoutMillis);
+  }
 
-    /**
-     * Returns a new {@link AtomicIdGenerator} that is backed by this instance and with a default operation timeout.
-     *
-     * @return new {@code AtomicIdGenerator} instance
-     */
-    default AtomicIdGenerator asAtomicIdGenerator() {
-        return new DefaultAtomicIdGenerator(this, DEFAULT_OPERATION_TIMEOUT_MILLIS);
-    }
+  /**
+   * Returns a new {@link AtomicIdGenerator} that is backed by this instance and with a default operation timeout.
+   *
+   * @return new {@code AtomicIdGenerator} instance
+   */
+  default AtomicIdGenerator asAtomicIdGenerator() {
+    return new DefaultAtomicIdGenerator(this, DEFAULT_OPERATION_TIMEOUT_MILLIS);
+  }
 }

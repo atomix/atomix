@@ -25,87 +25,87 @@ import java.util.Objects;
  */
 public class LeadershipEvent extends AbstractEvent<LeadershipEvent.Type, Leadership> {
 
+  /**
+   * Type of leadership events.
+   */
+  public enum Type {
     /**
-     * Type of leadership events.
+     * Signifies a change in both the leader as well as change to the list of candidates. Keep in mind though that
+     * the first node entering the race will trigger this event as it will become a candidate and automatically get
+     * promoted to become leader.
      */
-    public enum Type {
-        /**
-         * Signifies a change in both the leader as well as change to the list of candidates. Keep in mind though that
-         * the first node entering the race will trigger this event as it will become a candidate and automatically get
-         * promoted to become leader.
-         */
-        LEADER_AND_CANDIDATES_CHANGED,
-
-        /**
-         * Signifies that the leader for a topic has changed.
-         */
-        // TODO: We may not need this. We currently do not support a way for a current leader to step down
-        // while still remaining a candidate
-        LEADER_CHANGED,
-
-        /**
-         * Signifies a change in the list of candidates for a topic.
-         */
-        CANDIDATES_CHANGED,
-
-        /**
-         * Signifies the Leadership Elector is unavailable.
-         */
-        SERVICE_DISRUPTED,
-
-        /**
-         * Signifies the Leadership Elector is available again.
-         */
-        SERVICE_RESTORED
-    }
+    LEADER_AND_CANDIDATES_CHANGED,
 
     /**
-     * Creates an event of a given type and for the specified instance and the
-     * current time.
-     *
-     * @param type       leadership event type
-     * @param leadership event subject
+     * Signifies that the leader for a topic has changed.
      */
-    public LeadershipEvent(Type type, Leadership leadership) {
-        super(type, leadership);
-    }
+    // TODO: We may not need this. We currently do not support a way for a current leader to step down
+    // while still remaining a candidate
+    LEADER_CHANGED,
 
     /**
-     * Creates an event of a given type and for the specified subject and time.
-     *
-     * @param type     leadership event type
-     * @param leadership event subject
-     * @param time     occurrence time
+     * Signifies a change in the list of candidates for a topic.
      */
-    public LeadershipEvent(Type type, Leadership leadership, long time) {
-        super(type, leadership, time);
-    }
+    CANDIDATES_CHANGED,
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(type(), subject(), time());
-    }
+    /**
+     * Signifies the Leadership Elector is unavailable.
+     */
+    SERVICE_DISRUPTED,
 
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj instanceof LeadershipEvent) {
-            final LeadershipEvent other = (LeadershipEvent) obj;
-            return Objects.equals(this.type(), other.type()) &&
-                    Objects.equals(this.subject(), other.subject()) &&
-                    Objects.equals(this.time(), other.time());
-        }
-        return false;
-    }
+    /**
+     * Signifies the Leadership Elector is available again.
+     */
+    SERVICE_RESTORED
+  }
 
-    @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this.getClass())
-            .add("type", type())
-            .add("subject", subject())
-            .add("time", time())
-            .toString();
+  /**
+   * Creates an event of a given type and for the specified instance and the
+   * current time.
+   *
+   * @param type       leadership event type
+   * @param leadership event subject
+   */
+  public LeadershipEvent(Type type, Leadership leadership) {
+    super(type, leadership);
+  }
+
+  /**
+   * Creates an event of a given type and for the specified subject and time.
+   *
+   * @param type       leadership event type
+   * @param leadership event subject
+   * @param time       occurrence time
+   */
+  public LeadershipEvent(Type type, Leadership leadership, long time) {
+    super(type, leadership, time);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(type(), subject(), time());
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
     }
+    if (obj instanceof LeadershipEvent) {
+      final LeadershipEvent other = (LeadershipEvent) obj;
+      return Objects.equals(this.type(), other.type()) &&
+          Objects.equals(this.subject(), other.subject()) &&
+          Objects.equals(this.time(), other.time());
+    }
+    return false;
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this.getClass())
+        .add("type", type())
+        .add("subject", subject())
+        .add("time", time())
+        .toString();
+  }
 }

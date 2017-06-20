@@ -25,64 +25,64 @@ import java.util.Objects;
  */
 public class PartitionEvent extends AbstractEvent<PartitionEvent.Type, Partition> {
 
-    /**
-     * Type of partition-related events.
-     */
-    public enum Type {
-
-        /**
-         * Signifies that a partition has been administratively updated.
-         */
-        UPDATED,
-
-        /**
-         * Signifies that a partition has been successfully opened.
-         */
-        OPENED,
-
-        /**
-         * Signifies that a partition has been successfully closed.
-         */
-        CLOSED,
-
-        /**
-         * Signifies that a partition is available for operations.
-         */
-        AVAILABLE,
-
-        /**
-         * Signifies that a partition is unavailable for operations.
-         */
-        UNAVAILABLE,
-    }
+  /**
+   * Type of partition-related events.
+   */
+  public enum Type {
 
     /**
-     * Creates an event of a given type and for the specified partition and time.
-     *
-     * @param type     partition event type
-     * @param subject  event partition subject
-     * @param time     occurrence time
+     * Signifies that a partition has been administratively updated.
      */
-    protected PartitionEvent(Type type, Partition subject, long time) {
-        super(type, subject, time);
-    }
+    UPDATED,
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(type(), subject(), time());
-    }
+    /**
+     * Signifies that a partition has been successfully opened.
+     */
+    OPENED,
 
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj instanceof PartitionEvent) {
-            final PartitionEvent other = (PartitionEvent) obj;
-            return Objects.equals(this.type(), other.type()) &&
-                    Objects.equals(this.subject(), other.subject()) &&
-                    Objects.equals(this.time(), other.time());
-        }
-        return false;
+    /**
+     * Signifies that a partition has been successfully closed.
+     */
+    CLOSED,
+
+    /**
+     * Signifies that a partition is available for operations.
+     */
+    AVAILABLE,
+
+    /**
+     * Signifies that a partition is unavailable for operations.
+     */
+    UNAVAILABLE,
+  }
+
+  /**
+   * Creates an event of a given type and for the specified partition and time.
+   *
+   * @param type    partition event type
+   * @param subject event partition subject
+   * @param time    occurrence time
+   */
+  protected PartitionEvent(Type type, Partition subject, long time) {
+    super(type, subject, time);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(type(), subject(), time());
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
     }
+    if (obj instanceof PartitionEvent) {
+      final PartitionEvent other = (PartitionEvent) obj;
+      return Objects.equals(this.type(), other.type()) &&
+          Objects.equals(this.subject(), other.subject()) &&
+          Objects.equals(this.time(), other.time());
+    }
+    return false;
+  }
 }

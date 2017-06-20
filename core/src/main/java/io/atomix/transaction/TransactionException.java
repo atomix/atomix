@@ -23,34 +23,34 @@ import io.atomix.utils.AtomixRuntimeException;
  */
 @SuppressWarnings("serial")
 public class TransactionException extends AtomixRuntimeException {
-    public TransactionException() {
-    }
+  public TransactionException() {
+  }
 
-    public TransactionException(Throwable t) {
-        super(t);
-    }
+  public TransactionException(Throwable t) {
+    super(t);
+  }
 
-    /**
-     * Transaction timeout.
-     */
-    public static class Timeout extends TransactionException {
-    }
+  /**
+   * Transaction timeout.
+   */
+  public static class Timeout extends TransactionException {
+  }
 
-    /**
-     * Transaction interrupted.
-     */
-    public static class Interrupted extends TransactionException {
-    }
+  /**
+   * Transaction interrupted.
+   */
+  public static class Interrupted extends TransactionException {
+  }
 
-    /**
-     * Transaction failure due to optimistic concurrency violation.
-     */
-    public static class OptimisticConcurrencyFailure extends TransactionException {
-    }
+  /**
+   * Transaction failure due to optimistic concurrency violation.
+   */
+  public static class OptimisticConcurrencyFailure extends TransactionException {
+  }
 
-    /**
-     * Transaction failure due to a conflicting transaction in progress.
-     */
-    public static class ConcurrentModification extends TransactionException {
-    }
+  /**
+   * Transaction failure due to a conflicting transaction in progress.
+   */
+  public static class ConcurrentModification extends TransactionException {
+  }
 }

@@ -27,36 +27,37 @@ import io.atomix.primitives.DistributedPrimitiveBuilder;
 public abstract class ConsistentMapBuilder<K, V>
     extends DistributedPrimitiveBuilder<ConsistentMapBuilder<K, V>, ConsistentMap<K, V>> {
 
-    private boolean purgeOnUninstall = false;
+  private boolean purgeOnUninstall = false;
 
-    public ConsistentMapBuilder() {
-        super(DistributedPrimitive.Type.CONSISTENT_MAP);
-    }
+  public ConsistentMapBuilder() {
+    super(DistributedPrimitive.Type.CONSISTENT_MAP);
+  }
 
-    /**
-     * Clears map contents when the owning application is uninstalled.
-     *
-     * @return this builder
-     */
-    public ConsistentMapBuilder<K, V> withPurgeOnUninstall() {
-        purgeOnUninstall = true;
-        return this;
-    }
+  /**
+   * Clears map contents when the owning application is uninstalled.
+   *
+   * @return this builder
+   */
+  public ConsistentMapBuilder<K, V> withPurgeOnUninstall() {
+    purgeOnUninstall = true;
+    return this;
+  }
 
-    /**
-     * Returns if map entries need to be cleared when owning application is uninstalled.
-     * @return {@code true} if yes; {@code false} otherwise.
-     */
-    public boolean purgeOnUninstall() {
-        return purgeOnUninstall;
-    }
+  /**
+   * Returns if map entries need to be cleared when owning application is uninstalled.
+   *
+   * @return {@code true} if yes; {@code false} otherwise.
+   */
+  public boolean purgeOnUninstall() {
+    return purgeOnUninstall;
+  }
 
-    /**
-     * Builds an async consistent map based on the configuration options
-     * supplied to this builder.
-     *
-     * @return new async consistent map
-     * @throws RuntimeException if a mandatory parameter is missing
-     */
-    public abstract AsyncConsistentMap<K, V> buildAsyncMap();
+  /**
+   * Builds an async consistent map based on the configuration options
+   * supplied to this builder.
+   *
+   * @return new async consistent map
+   * @throws RuntimeException if a mandatory parameter is missing
+   */
+  public abstract AsyncConsistentMap<K, V> buildAsyncMap();
 }
