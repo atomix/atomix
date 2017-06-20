@@ -15,6 +15,7 @@
  */
 package io.atomix;
 
+import io.atomix.clock.LogicalClockService;
 import io.atomix.cluster.ClusterService;
 import io.atomix.cluster.LeadershipService;
 import io.atomix.logging.LoggingService;
@@ -61,6 +62,13 @@ public interface Atomix {
    * @return the transaction service
    */
   TransactionService getTransactionService();
+
+  /**
+   * Returns the logical clock service.
+   *
+   * @return the logical clock service
+   */
+  LogicalClockService getLogicalClockService();
 
   /**
    * Returns the logging service.
