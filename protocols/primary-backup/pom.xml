@@ -18,18 +18,29 @@
 
   <parent>
     <groupId>io.atomix</groupId>
-    <artifactId>atomix-parent</artifactId>
+    <artifactId>atomix-protocols-parent</artifactId>
     <version>2.0.0-SNAPSHOT</version>
   </parent>
 
-  <packaging>pom</packaging>
-  <artifactId>atomix-protocols-parent</artifactId>
-  <name>Atomix Protocols Parent</name>
+  <packaging>bundle</packaging>
+  <artifactId>atomix-primary-backup</artifactId>
+  <name>Atomix Protocols :: Primary Backup Protocol</name>
 
-  <modules>
-    <module>failure-detection</module>
-    <module>gossip</module>
-    <module>primary-backup</module>
-    <module>raft</module>
-  </modules>
+  <dependencies>
+    <dependency>
+      <groupId>io.atomix</groupId>
+      <artifactId>atomix-utils</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.atomix</groupId>
+      <artifactId>atomix-event</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.atomix</groupId>
+      <artifactId>atomix-time</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+  </dependencies>
 </project>
