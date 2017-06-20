@@ -16,7 +16,6 @@
 package io.atomix.cluster;
 
 import io.atomix.event.ListenerService;
-import org.joda.time.DateTime;
 
 import java.util.Set;
 
@@ -57,13 +56,5 @@ public interface ClusterService extends ListenerService<ClusterEvent, ClusterEve
    * @return availability state
    */
   Node.State getState(NodeId nodeId);
-
-  /**
-   * Returns the system time when the availability state was last updated.
-   *
-   * @param nodeId controller node identifier
-   * @return system time when the availability state was last updated.
-   */
-  DateTime getLastUpdated(NodeId nodeId);
 
 }

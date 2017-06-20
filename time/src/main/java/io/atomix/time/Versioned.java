@@ -19,8 +19,8 @@ package io.atomix.time;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import io.atomix.utils.ArraySizeHashPrinter;
-import org.joda.time.DateTime;
 
+import java.util.Date;
 import java.util.function.Function;
 
 /**
@@ -147,7 +147,7 @@ public class Versioned<V> {
     return MoreObjects.toStringHelper(this)
         .add("value", value instanceof byte[] ? ArraySizeHashPrinter.of((byte[]) value) : value)
         .add("version", version)
-        .add("creationTime", new DateTime(creationTime))
+        .add("creationTime", new Date(creationTime))
         .toString();
   }
 }
