@@ -95,6 +95,11 @@ public interface DistributedPrimitive {
         LEADER_ELECTOR,
 
         /**
+         * Lock.
+         */
+        LOCK,
+
+        /**
          * Transaction Context.
          */
         TRANSACTION_CONTEXT
