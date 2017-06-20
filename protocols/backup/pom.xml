@@ -23,8 +23,8 @@
   </parent>
 
   <packaging>bundle</packaging>
-  <artifactId>atomix-primary-backup</artifactId>
-  <name>Atomix Protocols :: Primary Backup Protocol</name>
+  <artifactId>atomix-backup</artifactId>
+  <name>Atomix Protocols :: Backup Protocol</name>
 
   <dependencies>
     <dependency>

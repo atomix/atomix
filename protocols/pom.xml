@@ -29,7 +29,7 @@
   <modules>
     <module>failure-detection</module>
     <module>gossip</module>
-    <module>primary-backup</module>
+    <module>backup</module>
     <module>raft</module>
   </modules>
 </project>
