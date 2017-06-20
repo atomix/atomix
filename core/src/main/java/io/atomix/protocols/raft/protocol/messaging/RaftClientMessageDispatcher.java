@@ -13,13 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.protocol;
+package io.atomix.protocols.raft.protocol.messaging;
 
 import com.google.common.base.Preconditions;
 import io.atomix.cluster.NodeId;
 import io.atomix.cluster.messaging.ClusterCommunicationService;
 import io.atomix.cluster.messaging.MessageSubject;
 import io.atomix.protocols.raft.cluster.MemberId;
+import io.atomix.protocols.raft.protocol.CloseSessionRequest;
+import io.atomix.protocols.raft.protocol.CloseSessionResponse;
+import io.atomix.protocols.raft.protocol.CommandRequest;
+import io.atomix.protocols.raft.protocol.CommandResponse;
+import io.atomix.protocols.raft.protocol.KeepAliveRequest;
+import io.atomix.protocols.raft.protocol.KeepAliveResponse;
+import io.atomix.protocols.raft.protocol.MetadataRequest;
+import io.atomix.protocols.raft.protocol.MetadataResponse;
+import io.atomix.protocols.raft.protocol.OpenSessionRequest;
+import io.atomix.protocols.raft.protocol.OpenSessionResponse;
+import io.atomix.protocols.raft.protocol.QueryRequest;
+import io.atomix.protocols.raft.protocol.QueryResponse;
+import io.atomix.protocols.raft.protocol.RaftClientProtocolDispatcher;
+import io.atomix.protocols.raft.protocol.ResetRequest;
 import io.atomix.serializer.Serializer;
 
 import java.util.concurrent.CompletableFuture;
@@ -74,6 +88,6 @@ public class RaftClientMessageDispatcher implements RaftClientProtocolDispatcher
 
   @Override
   public void reset(ResetRequest request) {
-    clusterCommunicator.broadcast(request, context.resetSubject(request.session), serializer::encode);
+    clusterCommunicator.broadcast(request, context.resetSubject(request.session()), serializer::encode);
   }
 }

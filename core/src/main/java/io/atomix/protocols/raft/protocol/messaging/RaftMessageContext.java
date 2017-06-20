@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.protocol;
+package io.atomix.protocols.raft.protocol.messaging;
 
 import io.atomix.cluster.messaging.MessageSubject;
 

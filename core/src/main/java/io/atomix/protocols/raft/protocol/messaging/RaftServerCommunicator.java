@@ -13,9 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.protocols.raft.protocol;
+package io.atomix.protocols.raft.protocol.messaging;
 
 import io.atomix.cluster.messaging.ClusterCommunicationService;
+import io.atomix.protocols.raft.protocol.RaftServerProtocol;
+import io.atomix.protocols.raft.protocol.RaftServerProtocolDispatcher;
+import io.atomix.protocols.raft.protocol.RaftServerProtocolListener;
 import io.atomix.serializer.Serializer;
 
 /**
