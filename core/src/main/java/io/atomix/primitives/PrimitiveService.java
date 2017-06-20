@@ -18,6 +18,7 @@ package io.atomix.primitives;
 import io.atomix.primitives.counter.AtomicCounterBuilder;
 import io.atomix.primitives.elector.LeaderElectorBuilder;
 import io.atomix.primitives.generator.AtomicIdGeneratorBuilder;
+import io.atomix.primitives.lock.DistributedLockBuilder;
 import io.atomix.primitives.map.AtomicCounterMapBuilder;
 import io.atomix.primitives.map.ConsistentMapBuilder;
 import io.atomix.primitives.map.ConsistentMultimapBuilder;
@@ -119,5 +120,12 @@ public interface PrimitiveService {
    * @return leader elector builder
    */
   LeaderElectorBuilder leaderElectorBuilder();
+
+  /**
+   * Creates a new DistributedLockBuilder.
+   *
+   * @return distributed lock builder
+   */
+  DistributedLockBuilder lockBuilder();
 
 }
