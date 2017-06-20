@@ -16,18 +16,19 @@
 package io.atomix.protocols.gossip.protocol;
 
 import io.atomix.cluster.NodeId;
+import io.atomix.utils.Identifier;
 
 /**
  * Gossip protocol dispatcher.
  */
-public interface GossipProtocolDispatcher {
+public interface GossipProtocolDispatcher<T extends Identifier> {
 
   /**
    * Sends a gossip message to the given node.
    *
-   * @param nodeId the node ID to which to send the gossip message
+   * @param identifier the location to which to send the gossip message
    * @param message the gossip message to send
    */
-  void gossip(NodeId nodeId, GossipMessage message);
+  void gossip(T identifier, GossipMessage message);
 
 }

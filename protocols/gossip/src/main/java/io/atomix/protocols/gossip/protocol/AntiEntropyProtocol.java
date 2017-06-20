@@ -15,10 +15,12 @@
  */
 package io.atomix.protocols.gossip.protocol;
 
+import io.atomix.utils.Identifier;
+
 /**
  * Anti-entropy protocol.
  */
-public interface AntiEntropyProtocol extends GossipProtocol {
+public interface AntiEntropyProtocol<T extends Identifier> extends GossipProtocol {
 
   /**
    * Returns the anti-entropy protocol listener.
@@ -34,6 +36,6 @@ public interface AntiEntropyProtocol extends GossipProtocol {
    * @return the anti-entropy protocol dispatcher
    */
   @Override
-  AntiEntropyProtocolDispatcher dispatcher();
+  AntiEntropyProtocolDispatcher<T> dispatcher();
 
 }

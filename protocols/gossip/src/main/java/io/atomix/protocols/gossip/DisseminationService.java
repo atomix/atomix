@@ -18,13 +18,13 @@ package io.atomix.protocols.gossip;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.MoreExecutors;
-import io.atomix.cluster.NodeId;
 import io.atomix.event.AbstractListenerManager;
 import io.atomix.protocols.gossip.protocol.GossipMessage;
 import io.atomix.protocols.gossip.protocol.GossipProtocol;
 import io.atomix.protocols.gossip.protocol.GossipUpdate;
 import io.atomix.time.LogicalClock;
 import io.atomix.time.LogicalTimestamp;
+import io.atomix.utils.Identifier;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -59,7 +59,7 @@ public class DisseminationService<K, V> extends AbstractListenerManager<GossipEv
   }
 
   private final GossipProtocol protocol;
-  private final Supplier<Collection<NodeId>> peerProvider;
+  private final Supplier<Collection<Identifier>> peerProvider;
   private final Executor eventExecutor;
   private final boolean fastConvergence;
   private final boolean tombstonesDisabled;
@@ -67,12 +67,12 @@ public class DisseminationService<K, V> extends AbstractListenerManager<GossipEv
   private final ScheduledFuture<?> purgeFuture;
   private final Map<K, GossipUpdate<K, V>> updates = Maps.newLinkedHashMap();
   private final LogicalClock logicalClock = new LogicalClock();
-  private final Map<NodeId, Long> peerUpdateTimes = Maps.newConcurrentMap();
-  private final Map<NodeId, LogicalTimestamp> peerTimestamps = Maps.newHashMap();
+  private final Map<Identifier, Long> peerUpdateTimes = Maps.newConcurrentMap();
+  private final Map<Identifier, LogicalTimestamp> peerTimestamps = Maps.newHashMap();
 
   public DisseminationService(
       GossipProtocol protocol,
-      Supplier<Collection<NodeId>> peerProvider,
+      Supplier<Collection<Identifier>> peerProvider,
       Executor eventExecutor,
       ScheduledExecutorService communicationExecutor,
       Duration updateInterval,
@@ -154,11 +154,11 @@ public class DisseminationService<K, V> extends AbstractListenerManager<GossipEv
    * Sends a gossip message to a random peer.
    */
   private synchronized void gossip() {
-    List<NodeId> nodes = Lists.newArrayList(peerProvider.get());
-    if (!nodes.isEmpty()) {
-      Collections.shuffle(nodes);
-      NodeId node = nodes.get(0);
-      updatePeer(node);
+    List<Identifier> peers = Lists.newArrayList(peerProvider.get());
+    if (!peers.isEmpty()) {
+      Collections.shuffle(peers);
+      Identifier peer = peers.get(0);
+      updatePeer(peer);
     }
   }
 
@@ -166,7 +166,7 @@ public class DisseminationService<K, V> extends AbstractListenerManager<GossipEv
    * Updates all peers.
    */
   private void updatePeers() {
-    for (NodeId peer : peerProvider.get()) {
+    for (Identifier peer : peerProvider.get()) {
       updatePeer(peer);
     }
   }
@@ -174,7 +174,7 @@ public class DisseminationService<K, V> extends AbstractListenerManager<GossipEv
   /**
    * Updates the given peer.
    */
-  private synchronized void updatePeer(NodeId peer) {
+  private synchronized void updatePeer(Identifier peer) {
     // Increment the logical clock.
     LogicalTimestamp updateTimestamp = logicalClock.increment();
 
@@ -238,7 +238,7 @@ public class DisseminationService<K, V> extends AbstractListenerManager<GossipEv
    */
   public static class Builder<K, V> implements GossipService.Builder<K, V> {
     protected GossipProtocol protocol;
-    protected Supplier<Collection<NodeId>> peerProvider;
+    protected Supplier<Collection<Identifier>> peerProvider;
     protected Executor eventExecutor = MoreExecutors.directExecutor();
     protected ScheduledExecutorService communicationExecutor;
     protected Duration updateInterval = Duration.ofSeconds(1);
@@ -265,7 +265,7 @@ public class DisseminationService<K, V> extends AbstractListenerManager<GossipEv
      * @return the dissemination service builder
      * @throws NullPointerException if the peer provider is null
      */
-    public Builder<K, V> withPeerProvider(Supplier<Collection<NodeId>> peerProvider) {
+    public Builder<K, V> withPeerProvider(Supplier<Collection<Identifier>> peerProvider) {
       this.peerProvider = checkNotNull(peerProvider, "peerProvider cannot be null");
       return this;
     }

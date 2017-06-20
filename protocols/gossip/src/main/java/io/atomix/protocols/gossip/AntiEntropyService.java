@@ -19,7 +19,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.MoreExecutors;
-import io.atomix.cluster.NodeId;
 import io.atomix.event.AbstractListenerManager;
 import io.atomix.logging.Logger;
 import io.atomix.logging.LoggerFactory;
@@ -30,6 +29,7 @@ import io.atomix.protocols.gossip.protocol.GossipMessage;
 import io.atomix.protocols.gossip.protocol.GossipUpdate;
 import io.atomix.time.LogicalClock;
 import io.atomix.utils.AbstractAccumulator;
+import io.atomix.utils.Identifier;
 import io.atomix.utils.SlidingWindowCounter;
 
 import java.time.Duration;
@@ -59,8 +59,8 @@ public class AntiEntropyService<K, V> extends AbstractListenerManager<GossipEven
   private static final int LOAD_WINDOW = 2;
 
   private final Logger log = LoggerFactory.getLogger(getClass());
-  private final AntiEntropyProtocol protocol;
-  private final Supplier<Collection<NodeId>> peerProvider;
+  private final AntiEntropyProtocol<Identifier> protocol;
+  private final Supplier<Collection<Identifier>> peerProvider;
   private final Executor eventExecutor;
   private final Executor communicationExecutor;
 
@@ -71,8 +71,8 @@ public class AntiEntropyService<K, V> extends AbstractListenerManager<GossipEven
 
   private final Map<K, GossipUpdate<K, V>> updates = Maps.newLinkedHashMap();
   private final LogicalClock logicalClock = new LogicalClock();
-  private final Map<NodeId, UpdateAccumulator> pendingUpdates = Maps.newConcurrentMap();
-  private final Map<NodeId, Long> peerUpdateTimes = Maps.newConcurrentMap();
+  private final Map<Identifier, UpdateAccumulator> pendingUpdates = Maps.newConcurrentMap();
+  private final Map<Identifier, Long> peerUpdateTimes = Maps.newConcurrentMap();
 
   private volatile boolean open = true;
 
@@ -80,7 +80,7 @@ public class AntiEntropyService<K, V> extends AbstractListenerManager<GossipEven
 
   public AntiEntropyService(
       AntiEntropyProtocol protocol,
-      Supplier<Collection<NodeId>> peerProvider,
+      Supplier<Collection<Identifier>> peerProvider,
       Executor eventExecutor,
       ScheduledExecutorService communicationExecutor,
       Duration antiEntropyInterval,
@@ -158,7 +158,7 @@ public class AntiEntropyService<K, V> extends AbstractListenerManager<GossipEven
    * @param peer the peer for which to return the accumulator
    * @return the update accumulator for the given peer
    */
-  private UpdateAccumulator getAccumulator(NodeId peer) {
+  private UpdateAccumulator getAccumulator(Identifier peer) {
     return pendingUpdates.computeIfAbsent(peer, UpdateAccumulator::new);
   }
 
@@ -191,8 +191,8 @@ public class AntiEntropyService<K, V> extends AbstractListenerManager<GossipEven
    *
    * @return a random peer to which to send an anti-entropy advertisement
    */
-  private Optional<NodeId> pickRandomActivePeer() {
-    List<NodeId> peers = Lists.newArrayList(peerProvider.get());
+  private Optional<Identifier> pickRandomActivePeer() {
+    List<Identifier> peers = Lists.newArrayList(peerProvider.get());
     Collections.shuffle(peers);
     return peers.isEmpty() ? Optional.empty() : Optional.of(peers.get(0));
   }
@@ -202,7 +202,7 @@ public class AntiEntropyService<K, V> extends AbstractListenerManager<GossipEven
    *
    * @param peer the peer to which to send the anti-entropy advertisement
    */
-  private void sendAdvertisementToPeer(NodeId peer) {
+  private void sendAdvertisementToPeer(Identifier peer) {
     long updateTime = System.currentTimeMillis();
     AntiEntropyAdvertisement<K> advertisement = new AntiEntropyAdvertisement<>(
         ImmutableMap.copyOf(Maps.transformValues(updates, GossipUpdate::digest)));
@@ -239,7 +239,7 @@ public class AntiEntropyService<K, V> extends AbstractListenerManager<GossipEven
    * @param event the event to send to the given peers
    * @param peers the peers to which to send the event
    */
-  private void notifyPeers(GossipUpdate<K, V> event, Collection<NodeId> peers) {
+  private void notifyPeers(GossipUpdate<K, V> event, Collection<Identifier> peers) {
     queueUpdate(event, peers);
   }
 
@@ -249,9 +249,9 @@ public class AntiEntropyService<K, V> extends AbstractListenerManager<GossipEven
    * @param event the event to send to the given peers
    * @param peers the peers to which to send the event
    */
-  private void queueUpdate(GossipUpdate<K, V> event, Collection<NodeId> peers) {
+  private void queueUpdate(GossipUpdate<K, V> event, Collection<Identifier> peers) {
     if (peers != null) {
-      for (NodeId peer : peers) {
+      for (Identifier peer : peers) {
         getAccumulator(peer).add(event);
       }
     }
@@ -300,9 +300,9 @@ public class AntiEntropyService<K, V> extends AbstractListenerManager<GossipEven
    * Accumulator for dispatching updates to a peer.
    */
   private final class UpdateAccumulator extends AbstractAccumulator<GossipUpdate<K, V>> {
-    private final NodeId peer;
+    private final Identifier peer;
 
-    private UpdateAccumulator(NodeId peer) {
+    private UpdateAccumulator(Identifier peer) {
       super(TIMER, DEFAULT_MAX_EVENTS, DEFAULT_MAX_BATCH_MS, DEFAULT_MAX_IDLE_MS);
       this.peer = peer;
     }
@@ -330,7 +330,7 @@ public class AntiEntropyService<K, V> extends AbstractListenerManager<GossipEven
    */
   public static class Builder<K, V> implements GossipService.Builder<K, V> {
     protected AntiEntropyProtocol protocol;
-    protected Supplier<Collection<NodeId>> peerProvider;
+    protected Supplier<Collection<Identifier>> peerProvider;
     protected Executor eventExecutor = MoreExecutors.directExecutor();
     protected ScheduledExecutorService communicationExecutor;
     protected Duration antiEntropyInterval = Duration.ofSeconds(1);
@@ -356,7 +356,7 @@ public class AntiEntropyService<K, V> extends AbstractListenerManager<GossipEven
      * @return the anti-entropy service builder
      * @throws NullPointerException if the peer provider is null
      */
-    public Builder<K, V> withPeerProvider(Supplier<Collection<NodeId>> peerProvider) {
+    public Builder<K, V> withPeerProvider(Supplier<Collection<Identifier>> peerProvider) {
       this.peerProvider = checkNotNull(peerProvider, "peerProvider cannot be null");
       return this;
     }

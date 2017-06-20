@@ -15,10 +15,12 @@
  */
 package io.atomix.protocols.gossip.protocol;
 
+import io.atomix.utils.Identifier;
+
 /**
  * Gossip protocol.
  */
-public interface GossipProtocol {
+public interface GossipProtocol<T extends Identifier> {
 
   /**
    * Returns the gossip protocol listener.
@@ -32,6 +34,6 @@ public interface GossipProtocol {
    *
    * @return the gossip protocol dispatcher
    */
-  GossipProtocolDispatcher dispatcher();
+  GossipProtocolDispatcher<T> dispatcher();
 
 }

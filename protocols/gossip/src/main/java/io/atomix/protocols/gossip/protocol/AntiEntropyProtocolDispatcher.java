@@ -16,21 +16,22 @@
 package io.atomix.protocols.gossip.protocol;
 
 import io.atomix.cluster.NodeId;
+import io.atomix.utils.Identifier;
 
 import java.util.concurrent.CompletableFuture;
 
 /**
  * Anti-entropy protocol dispatcher.
  */
-public interface AntiEntropyProtocolDispatcher extends GossipProtocolDispatcher {
+public interface AntiEntropyProtocolDispatcher<T extends Identifier> extends GossipProtocolDispatcher<T> {
 
   /**
    * Sends an anti-entropy advertisement.
    *
-   * @param nodeId the node ID to which to send the advertisement
+   * @param identifier the location to which to send the advertisement
    * @param advertisement the anti-entropy advertisement to send
    * @return a future to be completed with the advertisement response
    */
-  <K> CompletableFuture<AntiEntropyResponse<K>> advertise(NodeId nodeId, AntiEntropyAdvertisement<K> advertisement);
+  <K> CompletableFuture<AntiEntropyResponse<K>> advertise(T identifier, AntiEntropyAdvertisement<K> advertisement);
 
 }
