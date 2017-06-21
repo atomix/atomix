@@ -577,8 +577,9 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
 
     // If the configuration index is less than the currently configured index, ignore it.
     // Configurations can be persisted and applying old configurations can revert newer configurations.
-    if (this.configuration != null && configuration.index() <= this.configuration.index())
+    if (this.configuration != null && configuration.index() <= this.configuration.index()) {
       return this;
+    }
 
     Instant time = Instant.ofEpochMilli(configuration.time());
 

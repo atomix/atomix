@@ -112,6 +112,7 @@ public class MetaStore implements AutoCloseable {
     LOGGER.trace("Store configuration {}", configuration);
     byte[] bytes = serializer.encode(configuration);
     configurationBuffer.position(0)
+        .writeByte(1)
         .writeInt(bytes.length)
         .write(bytes);
     configurationBuffer.flush();
