@@ -96,6 +96,7 @@ public class RaftTest extends ConcurrentTestCase {
       .register(TestEvent.class)
       .register(TestExpire.class)
       .register(TestClose.class)
+      .register(RaftQuery.ConsistencyLevel.class)
       .build());
 
   protected volatile int nextId;

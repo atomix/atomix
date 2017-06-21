@@ -67,10 +67,6 @@ final class JournalEntryBuffer<E> {
    * Returns the buffer index for the given offset.
    */
   private int offset(long index) {
-    int offset = (int) (index % size);
-    if (offset < 0) {
-      offset += size;
-    }
-    return offset;
+    return (int) (index % size);
   }
 }
