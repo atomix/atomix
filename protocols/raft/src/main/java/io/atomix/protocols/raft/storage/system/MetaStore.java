@@ -99,7 +99,8 @@ public class MetaStore implements AutoCloseable {
    * @return The last vote for the server.
    */
   public synchronized MemberId loadVote() {
-    return MemberId.nodeId(metadataBuffer.readString(8));
+    String id = metadataBuffer.readString(8);
+    return id != null ? MemberId.memberId(id) : null;
   }
 
   /**

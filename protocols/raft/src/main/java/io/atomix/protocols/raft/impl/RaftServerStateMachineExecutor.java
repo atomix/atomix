@@ -261,7 +261,7 @@ public class RaftServerStateMachineExecutor implements StateMachineExecutor {
         sessions.sessions.clear();
         for (int i = 0; i < sessionCount; i++) {
           long sessionId = reader.readLong();
-          MemberId node = MemberId.nodeId(reader.readString());
+          MemberId node = MemberId.memberId(reader.readString());
           long sessionTimeout = reader.readLong();
           long sessionTimestamp = reader.readLong();
           RaftSessionContext session = new RaftSessionContext(

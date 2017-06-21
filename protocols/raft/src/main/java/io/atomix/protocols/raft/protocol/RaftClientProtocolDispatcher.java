@@ -27,56 +27,56 @@ public interface RaftClientProtocolDispatcher {
   /**
    * Sends an open session request to the given node.
    *
-   * @param nodeId  the node to which to send the request
+   * @param memberId  the node to which to send the request
    * @param request the request to send
    * @return a future to be completed with the response
    */
-  CompletableFuture<OpenSessionResponse> openSession(MemberId nodeId, OpenSessionRequest request);
+  CompletableFuture<OpenSessionResponse> openSession(MemberId memberId, OpenSessionRequest request);
 
   /**
    * Sends a close session request to the given node.
    *
-   * @param nodeId  the node to which to send the request
+   * @param memberId  the node to which to send the request
    * @param request the request to send
    * @return a future to be completed with the response
    */
-  CompletableFuture<CloseSessionResponse> closeSession(MemberId nodeId, CloseSessionRequest request);
+  CompletableFuture<CloseSessionResponse> closeSession(MemberId memberId, CloseSessionRequest request);
 
   /**
    * Sends a keep alive request to the given node.
    *
-   * @param nodeId  the node to which to send the request
+   * @param memberId  the node to which to send the request
    * @param request the request to send
    * @return a future to be completed with the response
    */
-  CompletableFuture<KeepAliveResponse> keepAlive(MemberId nodeId, KeepAliveRequest request);
+  CompletableFuture<KeepAliveResponse> keepAlive(MemberId memberId, KeepAliveRequest request);
 
   /**
    * Sends a query request to the given node.
    *
-   * @param nodeId  the node to which to send the request
+   * @param memberId  the node to which to send the request
    * @param request the request to send
    * @return a future to be completed with the response
    */
-  CompletableFuture<QueryResponse> query(MemberId nodeId, QueryRequest request);
+  CompletableFuture<QueryResponse> query(MemberId memberId, QueryRequest request);
 
   /**
    * Sends a command request to the given node.
    *
-   * @param nodeId  the node to which to send the request
+   * @param memberId  the node to which to send the request
    * @param request the request to send
    * @return a future to be completed with the response
    */
-  CompletableFuture<CommandResponse> command(MemberId nodeId, CommandRequest request);
+  CompletableFuture<CommandResponse> command(MemberId memberId, CommandRequest request);
 
   /**
    * Sends a metadata request to the given node.
    *
-   * @param nodeId  the node to which to send the request
+   * @param memberId  the node to which to send the request
    * @param request the request to send
    * @return a future to be completed with the response
    */
-  CompletableFuture<MetadataResponse> metadata(MemberId nodeId, MetadataRequest request);
+  CompletableFuture<MetadataResponse> metadata(MemberId memberId, MetadataRequest request);
 
   /**
    * Broadcasts a reset request to all nodes in the cluster.
