@@ -17,6 +17,8 @@ package io.atomix.protocols.raft.storage.log.entry;
 
 import io.atomix.protocols.raft.cluster.MemberId;
 
+import java.util.Date;
+
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
@@ -75,7 +77,8 @@ public class OpenSessionEntry extends TimestampedEntry {
   @Override
   public String toString() {
     return toStringHelper(this)
-        .add("timestamp", timestamp)
+        .add("term", term)
+        .add("timestamp", new Date(timestamp))
         .add("node", member)
         .add("name", name)
         .add("type", type)

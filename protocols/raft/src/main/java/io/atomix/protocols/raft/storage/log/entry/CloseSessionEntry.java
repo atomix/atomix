@@ -15,6 +15,8 @@
  */
 package io.atomix.protocols.raft.storage.log.entry;
 
+import java.util.Date;
+
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
@@ -29,8 +31,8 @@ public class CloseSessionEntry extends SessionEntry {
   public String toString() {
     return toStringHelper(this)
         .add("term", term)
+        .add("timestamp", new Date(timestamp))
         .add("session", session)
-        .add("timestamp", timestamp)
         .toString();
   }
 }
