@@ -15,8 +15,8 @@
  */
 package io.atomix.protocols.raft.protocol;
 
-import io.atomix.protocols.raft.error.RaftError;
 import io.atomix.protocols.raft.cluster.RaftMember;
+import io.atomix.protocols.raft.error.RaftError;
 
 import java.util.Collection;
 import java.util.Objects;
@@ -181,10 +181,12 @@ public abstract class ConfigurationResponse extends AbstractRaftResponse {
     @Override
     protected void validate() {
       super.validate();
-      checkArgument(index >= 0, "index must be positive");
-      checkArgument(term >= 0, "term must be positive");
-      checkArgument(timestamp > 0, "time must be positive");
-      checkNotNull(members, "members cannot be null");
+      if (status == Status.OK) {
+        checkArgument(index >= 0, "index must be positive");
+        checkArgument(term >= 0, "term must be positive");
+        checkArgument(timestamp > 0, "time must be positive");
+        checkNotNull(members, "members cannot be null");
+      }
     }
   }
 }

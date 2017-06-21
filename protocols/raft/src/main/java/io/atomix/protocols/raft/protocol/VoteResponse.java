@@ -133,7 +133,9 @@ public class VoteResponse extends AbstractRaftResponse {
     @Override
     protected void validate() {
       super.validate();
-      checkArgument(term >= 0, "term must be positive");
+      if (status == Status.OK) {
+        checkArgument(term >= 0, "term must be positive");
+      }
     }
 
     @Override
