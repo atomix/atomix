@@ -1319,7 +1319,7 @@ public class RaftTest extends ConcurrentTestCase {
     private RaftCommit<TestClose> close;
 
     protected TestStateMachine() {
-      super(RaftTest.storageSerializer);
+      super(RaftTest.clientSerializer);
     }
 
     @Override

@@ -277,6 +277,7 @@ public final class RaftMemberContext {
    * @param time The time in milliseconds for the append.
    */
   public void completeAppend(long time) {
+    appending--;
     timeBuffer.record(time);
   }
 
