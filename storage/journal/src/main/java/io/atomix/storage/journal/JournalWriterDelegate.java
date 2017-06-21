@@ -1,0 +1,83 @@
+/*
+ * Copyright 2017-present Open Networking Laboratory
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package io.atomix.storage.journal;
+
+import java.util.concurrent.locks.Lock;
+
+import static com.google.common.base.MoreObjects.toStringHelper;
+
+/**
+ * Journal writer delegate.
+ */
+public class JournalWriterDelegate<E> implements JournalWriter<E> {
+  private final JournalWriter<E> delegate;
+
+  public JournalWriterDelegate(JournalWriter<E> delegate) {
+    this.delegate = delegate;
+  }
+
+  @Override
+  public Lock lock() {
+    return delegate.lock();
+  }
+
+  @Override
+  public long lastIndex() {
+    return delegate.lastIndex();
+  }
+
+  @Override
+  public Indexed<E> lastEntry() {
+    return delegate.lastEntry();
+  }
+
+  @Override
+  public long nextIndex() {
+    return delegate.nextIndex();
+  }
+
+  @Override
+  public <T extends E> Indexed<T> append(T entry) {
+    return delegate.append(entry);
+  }
+
+  @Override
+  public void append(Indexed<E> entry) {
+    delegate.append(entry);
+  }
+
+  @Override
+  public void truncate(long index) {
+    delegate.truncate(index);
+  }
+
+  @Override
+  public void flush() {
+    delegate.flush();
+  }
+
+  @Override
+  public void close() {
+    delegate.close();
+  }
+
+  @Override
+  public String toString() {
+    return toStringHelper(this)
+        .add("delegate", delegate)
+        .toString();
+  }
+}
