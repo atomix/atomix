@@ -15,6 +15,7 @@
  */
 package io.atomix.storage.journal;
 
+import com.google.common.collect.Sets;
 import io.atomix.logging.Logger;
 import io.atomix.logging.LoggerFactory;
 import io.atomix.serializer.Serializer;
@@ -67,7 +68,8 @@ public class SegmentedJournal<E> implements Journal<E> {
 
   private final JournalEntryBuffer<E> buffer;
 
-  private final NavigableMap<Long, JournalSegment> segments = new ConcurrentSkipListMap<>();
+  private final NavigableMap<Long, JournalSegment<E>> segments = new ConcurrentSkipListMap<>();
+  private final Collection<SegmentedJournalReader<E>> readers = Sets.newConcurrentHashSet();
   private JournalSegment<E> currentSegment;
 
   private final SegmentedJournalWriter<E> writer;
@@ -261,7 +263,7 @@ public class SegmentedJournal<E> implements Journal<E> {
    */
   synchronized JournalSegment<E> firstSegment() {
     assertOpen();
-    Map.Entry<Long, JournalSegment> segment = segments.firstEntry();
+    Map.Entry<Long, JournalSegment<E>> segment = segments.firstEntry();
     return segment != null ? segment.getValue() : null;
   }
 
@@ -272,7 +274,7 @@ public class SegmentedJournal<E> implements Journal<E> {
    */
   synchronized JournalSegment<E> lastSegment() {
     assertOpen();
-    Map.Entry<Long, JournalSegment> segment = segments.lastEntry();
+    Map.Entry<Long, JournalSegment<E>> segment = segments.lastEntry();
     return segment != null ? segment.getValue() : null;
   }
 
@@ -283,7 +285,7 @@ public class SegmentedJournal<E> implements Journal<E> {
    * @return The prior segment for the given index.
    */
   JournalSegment<E> previousSegment(long index) {
-    Map.Entry<Long, JournalSegment> previousSegment = segments.lowerEntry(index);
+    Map.Entry<Long, JournalSegment<E>> previousSegment = segments.lowerEntry(index);
     return previousSegment != null ? previousSegment.getValue() : null;
   }
 
@@ -318,7 +320,7 @@ public class SegmentedJournal<E> implements Journal<E> {
    * @return The next segment for the given index.
    */
   JournalSegment<E> nextSegment(long index) {
-    Map.Entry<Long, JournalSegment> nextSegment = segments.higherEntry(index);
+    Map.Entry<Long, JournalSegment<E>> nextSegment = segments.higherEntry(index);
     return nextSegment != null ? nextSegment.getValue() : null;
   }
 
@@ -336,7 +338,7 @@ public class SegmentedJournal<E> implements Journal<E> {
     }
 
     // If the index is in another segment, get the entry with the next lowest first index.
-    Map.Entry<Long, JournalSegment> segment = segments.floorEntry(index);
+    Map.Entry<Long, JournalSegment<E>> segment = segments.floorEntry(index);
     return segment != null ? segment.getValue() : null;
   }
 
@@ -581,6 +583,19 @@ public class SegmentedJournal<E> implements Journal<E> {
     }
   }
 
+  /**
+   * Resets journal readers.
+   *
+   * @param index The index at which to reset readers.
+   */
+  void resetReaders(long index) {
+    for (SegmentedJournalReader<E> reader : readers) {
+      if (reader.nextIndex() >= index) {
+        reader.reset(index);
+      }
+    }
+  }
+
   @Override
   public SegmentedJournalWriter<E> writer() {
     return writer;
@@ -601,7 +616,7 @@ public class SegmentedJournal<E> implements Journal<E> {
     writer.lock().lock();
     try {
       LOGGER.info("Compacting log");
-      SortedMap<Long, JournalSegment> compactSegments = segments.headMap(index);
+      SortedMap<Long, JournalSegment<E>> compactSegments = segments.headMap(index);
       for (JournalSegment segment : compactSegments.values()) {
         LOGGER.debug("Deleting segment: {}", segment);
         segment.close();

@@ -64,10 +64,7 @@ public class SegmentedJournalReader<E> implements JournalReader<E> {
 
   @Override
   public long nextIndex() {
-    if (hasNext()) {
-      return currentReader.nextIndex();
-    }
-    return -1;
+    return currentReader.nextIndex();
   }
 
   @Override
@@ -100,7 +97,7 @@ public class SegmentedJournalReader<E> implements JournalReader<E> {
   @Override
   public boolean hasNext() {
     if (!currentReader.hasNext()) {
-      JournalSegment nextSegment = journal.nextSegment(currentSegment.index());
+      JournalSegment<E> nextSegment = journal.nextSegment(currentSegment.index());
       if (nextSegment != null) {
         currentSegment = nextSegment;
         currentReader = currentSegment.createReader();

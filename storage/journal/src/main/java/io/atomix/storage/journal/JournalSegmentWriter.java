@@ -15,12 +15,12 @@
  */
 package io.atomix.storage.journal;
 
+import io.atomix.serializer.Serializer;
 import io.atomix.storage.buffer.Buffer;
 import io.atomix.storage.buffer.FileBuffer;
 import io.atomix.storage.buffer.HeapBuffer;
 import io.atomix.storage.buffer.MappedBuffer;
 import io.atomix.storage.buffer.SlicedBuffer;
-import io.atomix.serializer.Serializer;
 
 import java.util.concurrent.locks.Lock;
 import java.util.zip.CRC32;

@@ -85,6 +85,9 @@ public class SegmentedJournalWriter<E> implements JournalWriter<E> {
 
     // Truncate the current index.
     currentWriter.truncate(index);
+
+    // Reset segment readers.
+    journal.resetReaders(index);
   }
 
   @Override

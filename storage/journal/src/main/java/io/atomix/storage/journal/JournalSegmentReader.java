@@ -118,6 +118,7 @@ public class JournalSegmentReader<E> implements JournalReader<E> {
 
   @Override
   public Indexed<E> reset(long index) {
+    reset();
     return get(index);
   }
 

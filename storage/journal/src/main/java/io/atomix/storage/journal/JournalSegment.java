@@ -15,7 +15,10 @@
  */
 package io.atomix.storage.journal;
 
+import com.google.common.collect.Sets;
 import io.atomix.serializer.Serializer;
+
+import java.util.Collection;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkState;
@@ -31,6 +34,7 @@ public class JournalSegment<E> implements AutoCloseable {
   protected final Serializer serializer;
   protected final SegmentedJournal<E> journal;
   private final JournalSegmentWriter<E> writer;
+  private final Collection<JournalSegmentReader<E>> readers = Sets.newConcurrentHashSet();
   private volatile boolean open = true;
 
   public JournalSegment(JournalSegmentFile file, JournalSegmentDescriptor descriptor, Serializer serializer, SegmentedJournal<E> journal) {
