@@ -69,7 +69,7 @@ import java.util.stream.Collectors;
  */
 @Test
 public class RaftTest extends ConcurrentTestCase {
-  private static final Serializer serializer = Serializer.using(KryoNamespace.newBuilder()
+  private static final Serializer storageSerializer = Serializer.using(KryoNamespace.newBuilder()
       .register(CloseSessionEntry.class)
       .register(CommandEntry.class)
       .register(ConfigurationEntry.class)
@@ -86,6 +86,16 @@ public class RaftTest extends ConcurrentTestCase {
       .register(RaftMember.Status.class)
       .register(Instant.class)
       .register(Configuration.class)
+      .register(byte[].class)
+      .register(long[].class)
+      .build());
+
+  private static final Serializer clientSerializer = Serializer.using(KryoNamespace.newBuilder()
+      .register(TestCommand.class)
+      .register(TestQuery.class)
+      .register(TestEvent.class)
+      .register(TestExpire.class)
+      .register(TestClose.class)
       .build());
 
   protected volatile int nextId;
@@ -1222,7 +1232,7 @@ public class RaftTest extends ConcurrentTestCase {
         .withStorage(Storage.builder()
             .withStorageLevel(StorageLevel.DISK)
             .withDirectory(new File(String.format("target/test-logs/%s", member.id())))
-            .withSerializer(serializer)
+            .withSerializer(storageSerializer)
             .withMaxSegmentSize(1024 * 1024)
             .build())
         .addStateMachine("test", TestStateMachine::new);
@@ -1254,6 +1264,7 @@ public class RaftTest extends ConcurrentTestCase {
     return client.proxyBuilder()
         .withName("test")
         .withType("test")
+        .withSerializer(clientSerializer)
         .build();
   }
 
@@ -1308,7 +1319,7 @@ public class RaftTest extends ConcurrentTestCase {
     private RaftCommit<TestClose> close;
 
     protected TestStateMachine() {
-      super(RaftTest.serializer);
+      super(RaftTest.storageSerializer);
     }
 
     @Override

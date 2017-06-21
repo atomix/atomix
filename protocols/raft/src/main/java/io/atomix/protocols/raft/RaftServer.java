@@ -517,7 +517,7 @@ public interface RaftServer {
     private static final Duration DEFAULT_SESSION_TIMEOUT = Duration.ofMillis(5000);
     private static final int DEFAULT_THREAD_POOL_SIZE = Runtime.getRuntime().availableProcessors();
 
-    private String name = DEFAULT_NAME;
+    private String name;
     private RaftMember.Type type = RaftMember.Type.ACTIVE;
     private MemberId localMemberId;
     private RaftServerProtocol protocol;
@@ -658,12 +658,17 @@ public interface RaftServer {
         throw new ConfigurationException("No state machines registered");
       }
 
+      // If the server name is null, set it to the member ID.
+      if (name == null) {
+        name = localMemberId.id();
+      }
+
       // If the storage is not configured, create a new Storage instance with the configured serializer.
       if (storage == null) {
         storage = Storage.builder().build();
       }
 
-      ThreadContext threadContext = new SingleThreadContext(String.format("copycat-server-%s-%s", localMemberId, name));
+      ThreadContext threadContext = new SingleThreadContext(String.format("raft-server-%s-%s", localMemberId, name));
       ScheduledExecutorService threadPool = Executors.newScheduledThreadPool(threadPoolSize, namedThreads("raft-server-" + name + "-%d", LoggerFactory.getLogger(RaftServer.class)));
 
       RaftServerContext context = new RaftServerContext(name, type, localMemberId, protocol, storage, stateMachineRegistry, threadPool, threadContext);

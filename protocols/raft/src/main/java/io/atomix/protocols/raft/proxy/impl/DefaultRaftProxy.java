@@ -152,7 +152,8 @@ public class DefaultRaftProxy implements RaftProxy {
 
   @Override
   public CompletableFuture<Void> close() {
-    return sessionManager.closeSession(state.getSessionId()).whenComplete((result, error) -> state.setState(State.CLOSED));
+    return sessionManager.closeSession(state.getSessionId())
+        .whenComplete((result, error) -> state.setState(State.CLOSED));
   }
 
   @Override

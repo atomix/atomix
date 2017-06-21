@@ -54,7 +54,6 @@ public class RaftConnection {
   private final RaftClientProtocolDispatcher dispatcher;
   private final NodeSelector selector;
   private MemberId node;
-  private volatile boolean open;
 
   public RaftConnection(String name, RaftClientProtocolDispatcher dispatcher, NodeSelector selector) {
     this.name = checkNotNull(name, "name cannot be null");
@@ -178,20 +177,18 @@ public class RaftConnection {
    * Sends the given request attempt to the cluster.
    */
   protected <T extends RaftRequest, U extends RaftResponse> void sendRequest(T request, BiFunction<MemberId, T, CompletableFuture<U>> sender, CompletableFuture<U> future) {
-    if (open) {
-      MemberId node = next();
-      if (node != null) {
-        LOGGER.trace("{} - Sending {}", name, request);
-        sender.apply(node, request).whenComplete((r, e) -> {
-          if (e != null || r != null) {
-            handleResponse(request, sender, node, r, e, future);
-          } else {
-            future.complete(null);
-          }
-        });
-      } else {
-        future.completeExceptionally(new ConnectException("Failed to connect to the cluster"));
-      }
+    MemberId node = next();
+    if (node != null) {
+      LOGGER.trace("{} - Sending {}", name, request);
+      sender.apply(node, request).whenComplete((r, e) -> {
+        if (e != null || r != null) {
+          handleResponse(request, sender, node, r, e, future);
+        } else {
+          future.complete(null);
+        }
+      });
+    } else {
+      future.completeExceptionally(new ConnectException("Failed to connect to the cluster"));
     }
   }
 

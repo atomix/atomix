@@ -113,6 +113,12 @@ public class RaftProxyManager {
       CommunicationStrategy communicationStrategy,
       Serializer serializer,
       Duration timeout) {
+    checkNotNull(name, "name cannot be null");
+    checkNotNull(stateMachine, "stateMachine cannot be null");
+    checkNotNull(communicationStrategy, "communicationStrategy cannot be null");
+    checkNotNull(serializer, "serializer cannot be null");
+    checkNotNull(timeout, "timeout cannot be null");
+
     LOGGER.trace("{} - Opening session; name: {}, type: {}", clientId, name, stateMachine);
     OpenSessionRequest request = OpenSessionRequest.builder()
         .withMember(nodeId)
