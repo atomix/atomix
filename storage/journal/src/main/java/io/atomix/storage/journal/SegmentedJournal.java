@@ -51,8 +51,8 @@ public class SegmentedJournal<E> implements Journal<E> {
    *
    * @return A new segmented journal builder.
    */
-  public static Builder builder() {
-    return new Builder();
+  public static <E> Builder<E> builder() {
+    return new Builder<>();
   }
 
   private static final Logger LOGGER = LoggerFactory.getLogger(SegmentedJournal.class);

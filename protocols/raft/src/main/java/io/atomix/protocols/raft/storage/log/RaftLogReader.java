@@ -16,14 +16,13 @@
 package io.atomix.protocols.raft.storage.log;
 
 import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
-import io.atomix.storage.journal.SegmentedJournalReader;
-
-import java.util.concurrent.locks.Lock;
+import io.atomix.storage.journal.JournalReader;
+import io.atomix.storage.journal.JournalReaderDelegate;
 
 /**
  * Raft log reader.
  */
-public class RaftLogReader extends SegmentedJournalReader<RaftLogEntry> {
+public class RaftLogReader extends JournalReaderDelegate<RaftLogEntry> {
 
   /**
    * Raft log reader mode.
@@ -44,8 +43,8 @@ public class RaftLogReader extends SegmentedJournalReader<RaftLogEntry> {
   private final RaftLog log;
   private final Mode mode;
 
-  public RaftLogReader(RaftLog log, Lock lock, long index, Mode mode) {
-    super(log, lock, index);
+  public RaftLogReader(JournalReader<RaftLogEntry> delegate, RaftLog log, Mode mode) {
+    super(delegate);
     this.log = log;
     this.mode = mode;
   }

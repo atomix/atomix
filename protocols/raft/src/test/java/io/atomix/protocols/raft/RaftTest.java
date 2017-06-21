@@ -17,13 +17,23 @@ package io.atomix.protocols.raft;
 
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.RaftMember;
+import io.atomix.protocols.raft.cluster.impl.DefaultRaftMember;
 import io.atomix.protocols.raft.protocol.TestRaftProtocolFactory;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.protocols.raft.session.RaftSessionListener;
 import io.atomix.protocols.raft.storage.Storage;
+import io.atomix.protocols.raft.storage.log.entry.CloseSessionEntry;
+import io.atomix.protocols.raft.storage.log.entry.CommandEntry;
+import io.atomix.protocols.raft.storage.log.entry.ConfigurationEntry;
+import io.atomix.protocols.raft.storage.log.entry.InitializeEntry;
+import io.atomix.protocols.raft.storage.log.entry.KeepAliveEntry;
+import io.atomix.protocols.raft.storage.log.entry.MetadataEntry;
+import io.atomix.protocols.raft.storage.log.entry.OpenSessionEntry;
+import io.atomix.protocols.raft.storage.log.entry.QueryEntry;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotReader;
 import io.atomix.protocols.raft.storage.snapshot.SnapshotWriter;
+import io.atomix.protocols.raft.storage.system.Configuration;
 import io.atomix.serializer.Serializer;
 import io.atomix.serializer.kryo.KryoNamespace;
 import io.atomix.storage.StorageLevel;
@@ -43,6 +53,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -59,6 +70,22 @@ import java.util.stream.Collectors;
 @Test
 public class RaftTest extends ConcurrentTestCase {
   private static final Serializer serializer = Serializer.using(KryoNamespace.newBuilder()
+      .register(CloseSessionEntry.class)
+      .register(CommandEntry.class)
+      .register(ConfigurationEntry.class)
+      .register(InitializeEntry.class)
+      .register(KeepAliveEntry.class)
+      .register(MetadataEntry.class)
+      .register(OpenSessionEntry.class)
+      .register(QueryEntry.class)
+      .register(ArrayList.class)
+      .register(HashSet.class)
+      .register(DefaultRaftMember.class)
+      .register(MemberId.class)
+      .register(RaftMember.Type.class)
+      .register(RaftMember.Status.class)
+      .register(Instant.class)
+      .register(Configuration.class)
       .build());
 
   protected volatile int nextId;
@@ -1125,13 +1152,22 @@ public class RaftTest extends ConcurrentTestCase {
   }
 
   /**
+   * Returns the next unique member identifier.
+   *
+   * @return The next unique member identifier.
+   */
+  private MemberId nextMemberId() {
+    return MemberId.memberId(String.valueOf(++nextId));
+  }
+
+  /**
    * Returns the next server address.
    *
    * @param type The startup member type.
    * @return The next server address.
    */
   private RaftMember nextMember(RaftMember.Type type) {
-    return new TestMember(MemberId.memberId(String.valueOf(++nextId)), type);
+    return new TestMember(nextMemberId(), type);
   }
 
   /**
@@ -1182,7 +1218,7 @@ public class RaftTest extends ConcurrentTestCase {
   private RaftServer createServer(RaftMember member) {
     RaftServer.Builder builder = RaftServer.builder(member.id())
         .withType(member.type())
-        .withProtocol(protocolFactory.newServerProtocol())
+        .withProtocol(protocolFactory.newServerProtocol(member.id()))
         .withStorage(Storage.builder()
             .withStorageLevel(StorageLevel.DISK)
             .withDirectory(new File(String.format("target/test-logs/%s", member.id())))
@@ -1200,8 +1236,10 @@ public class RaftTest extends ConcurrentTestCase {
    * Creates a Copycat client.
    */
   private RaftClient createClient() throws Throwable {
+    MemberId memberId = nextMemberId();
     RaftClient client = RaftClient.builder()
-        .withProtocol(protocolFactory.newClientProtocol())
+        .withMemberId(memberId)
+        .withProtocol(protocolFactory.newClientProtocol(memberId))
         .build();
     client.connect(members.stream().map(RaftMember::id).collect(Collectors.toList())).thenRun(this::resume);
     await(30000);

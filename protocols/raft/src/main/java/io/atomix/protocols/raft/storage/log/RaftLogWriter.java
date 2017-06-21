@@ -16,18 +16,17 @@
 package io.atomix.protocols.raft.storage.log;
 
 import io.atomix.protocols.raft.storage.log.entry.RaftLogEntry;
-import io.atomix.storage.journal.SegmentedJournalWriter;
-
-import java.util.concurrent.locks.Lock;
+import io.atomix.storage.journal.JournalWriter;
+import io.atomix.storage.journal.JournalWriterDelegate;
 
 /**
  * Raft log writer.
  */
-public class RaftLogWriter extends SegmentedJournalWriter<RaftLogEntry> {
+public class RaftLogWriter extends JournalWriterDelegate<RaftLogEntry> {
   private final RaftLog log;
 
-  public RaftLogWriter(RaftLog log, Lock lock) {
-    super(log, lock);
+  public RaftLogWriter(JournalWriter<RaftLogEntry> delegate, RaftLog log) {
+    super(delegate);
     this.log = log;
   }
 
