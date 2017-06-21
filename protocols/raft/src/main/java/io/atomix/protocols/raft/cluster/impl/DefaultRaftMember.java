@@ -39,7 +39,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public final class DefaultRaftMember implements RaftMember, AutoCloseable {
   private final MemberId id;
-  private final transient int hash;
+  private final int hash;
   private RaftMember.Type type;
   private Status status = Status.AVAILABLE;
   private Instant updated;
