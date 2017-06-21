@@ -30,18 +30,20 @@ public class TestRaftProtocolFactory {
   /**
    * Returns a new test client protocol.
    *
+   * @param memberId the client member identifier
    * @return a new test client protocol
    */
-  public RaftClientProtocol newClientProtocol() {
-    return new TestRaftClientProtocol(servers, clients);
+  public RaftClientProtocol newClientProtocol(MemberId memberId) {
+    return new TestRaftClientProtocol(memberId, servers, clients);
   }
 
   /**
    * Returns a new test server protocol.
    *
+   * @param memberId the server member identifier
    * @return a new test server protocol
    */
-  public RaftServerProtocol newServerProtocol() {
-    return new TestRaftServerProtocol(servers, clients);
+  public RaftServerProtocol newServerProtocol(MemberId memberId) {
+    return new TestRaftServerProtocol(memberId, servers, clients);
   }
 }

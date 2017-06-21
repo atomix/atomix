@@ -26,8 +26,9 @@ public class TestRaftServerProtocol extends TestRaftProtocol implements RaftServ
   private final TestRaftServerListener listener = new TestRaftServerListener();
   private final TestRaftServerDispatcher dispatcher = new TestRaftServerDispatcher(this);
 
-  public TestRaftServerProtocol(Map<MemberId, TestRaftServerProtocol> servers, Map<MemberId, TestRaftClientProtocol> clients) {
+  public TestRaftServerProtocol(MemberId memberId, Map<MemberId, TestRaftServerProtocol> servers, Map<MemberId, TestRaftClientProtocol> clients) {
     super(servers, clients);
+    servers.put(memberId, this);
   }
 
   @Override

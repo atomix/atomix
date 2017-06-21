@@ -26,8 +26,9 @@ public class TestRaftClientProtocol extends TestRaftProtocol implements RaftClie
   private final TestRaftClientListener listener = new TestRaftClientListener();
   private final TestRaftClientDispatcher dispatcher = new TestRaftClientDispatcher(this);
 
-  public TestRaftClientProtocol(Map<MemberId, TestRaftServerProtocol> servers, Map<MemberId, TestRaftClientProtocol> clients) {
+  public TestRaftClientProtocol(MemberId memberId, Map<MemberId, TestRaftServerProtocol> servers, Map<MemberId, TestRaftClientProtocol> clients) {
     super(servers, clients);
+    clients.put(memberId, this);
   }
 
   @Override
