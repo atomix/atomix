@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.raft;
 
+import io.atomix.logging.LoggerFactory;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.RaftCluster;
 import io.atomix.protocols.raft.cluster.RaftMember;
@@ -26,7 +27,6 @@ import io.atomix.protocols.raft.protocol.RaftServerProtocol;
 import io.atomix.protocols.raft.storage.Storage;
 import io.atomix.protocols.raft.storage.log.RaftLog;
 import io.atomix.storage.StorageLevel;
-import io.atomix.utils.concurrent.AtomixThreadFactory;
 import io.atomix.utils.concurrent.SingleThreadContext;
 import io.atomix.utils.concurrent.ThreadContext;
 
@@ -40,6 +40,7 @@ import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static io.atomix.utils.concurrent.Threads.namedThreads;
 
 /**
  * Provides a standalone implementation of the <a href="http://raft.github.io/">Raft consensus algorithm</a>.
@@ -663,7 +664,7 @@ public interface RaftServer {
       }
 
       ThreadContext threadContext = new SingleThreadContext(String.format("copycat-server-%s-%s", localMemberId, name));
-      ScheduledExecutorService threadPool = Executors.newScheduledThreadPool(threadPoolSize, new AtomixThreadFactory("copycat-" + name + "-state-%d"));
+      ScheduledExecutorService threadPool = Executors.newScheduledThreadPool(threadPoolSize, namedThreads("raft-server-" + name + "-%d", LoggerFactory.getLogger(RaftServer.class)));
 
       RaftServerContext context = new RaftServerContext(name, type, localMemberId, protocol, storage, stateMachineRegistry, threadPool, threadContext);
       context.setElectionTimeout(electionTimeout)

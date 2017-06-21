@@ -35,6 +35,7 @@ public final class Threads {
   public static ThreadFactory namedThreads(String pattern, Logger log) {
     return new ThreadFactoryBuilder()
         .setNameFormat(pattern)
+        .setThreadFactory(new AtomixThreadFactory())
         .setUncaughtExceptionHandler((t, e) -> log.error("Uncaught exception on " + t.getName(), e))
         .build();
   }

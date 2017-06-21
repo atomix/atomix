@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.raft;
 
+import io.atomix.logging.LoggerFactory;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.impl.DefaultRaftClient;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
@@ -27,9 +28,11 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static io.atomix.utils.concurrent.Threads.namedThreads;
 
 /**
  * Provides an interface for submitting operations to the Copycat cluster.
@@ -227,7 +230,8 @@ public interface RaftClient {
     @Override
     public RaftClient build() {
       checkNotNull(nodeId, "nodeId cannot be null");
-      ScheduledExecutorService executor = Executors.newScheduledThreadPool(threadPoolSize);
+      ThreadFactory threadFactory = namedThreads("raft-client-" + clientId + "-%d", LoggerFactory.getLogger(RaftClient.class));
+      ScheduledExecutorService executor = Executors.newScheduledThreadPool(threadPoolSize, threadFactory);
       return new DefaultRaftClient(clientId, nodeId, cluster, protocol, executor);
     }
   }

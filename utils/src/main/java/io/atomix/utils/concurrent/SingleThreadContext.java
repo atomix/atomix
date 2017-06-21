@@ -26,10 +26,12 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.google.common.base.Preconditions.checkState;
+import static io.atomix.utils.concurrent.Threads.namedThreads;
 
 /**
  * Single threaded context.
@@ -62,7 +64,7 @@ public class SingleThreadContext implements ThreadContext {
    * @param nameFormat The context nameFormat which will be formatted with a thread number.
    */
   public SingleThreadContext(String nameFormat) {
-    this(new AtomixThreadFactory(nameFormat));
+    this(namedThreads(nameFormat, LOGGER));
   }
 
   /**
@@ -70,7 +72,7 @@ public class SingleThreadContext implements ThreadContext {
    *
    * @param factory The thread factory.
    */
-  public SingleThreadContext(AtomixThreadFactory factory) {
+  public SingleThreadContext(ThreadFactory factory) {
     this(new ScheduledThreadPoolExecutor(1, factory));
   }
 

@@ -31,8 +31,8 @@ import java.lang.ref.WeakReference;
 public class AtomixThread extends Thread {
   private WeakReference<ThreadContext> context;
 
-  public AtomixThread(Runnable target, String name) {
-    super(target, name);
+  public AtomixThread(Runnable target) {
+    super(target);
   }
 
   /**

@@ -16,7 +16,6 @@
 package io.atomix.utils.concurrent;
 
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Named thread factory.
@@ -24,20 +23,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class AtomixThreadFactory implements ThreadFactory {
-  private final AtomicInteger threadNumber = new AtomicInteger(1);
-  private final String nameFormat;
-
-  /**
-   * Creates a thread factory that names threads according to the {@code nameFormat} by supplying a
-   * single argument to the format representing the thread number.
-   */
-  public AtomixThreadFactory(String nameFormat) {
-    this.nameFormat = nameFormat;
-  }
-
   @Override
   public Thread newThread(Runnable r) {
-    return new AtomixThread(r, String.format(nameFormat, threadNumber.getAndIncrement()));
+    return new AtomixThread(r);
   }
-
 }

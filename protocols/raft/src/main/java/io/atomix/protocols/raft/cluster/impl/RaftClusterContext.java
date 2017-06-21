@@ -22,12 +22,11 @@ import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.RaftCluster;
 import io.atomix.protocols.raft.cluster.RaftMember;
 import io.atomix.protocols.raft.error.RaftError;
+import io.atomix.protocols.raft.impl.RaftServerContext;
 import io.atomix.protocols.raft.protocol.JoinRequest;
 import io.atomix.protocols.raft.protocol.LeaveRequest;
 import io.atomix.protocols.raft.protocol.RaftResponse;
-import io.atomix.protocols.raft.impl.RaftServerContext;
 import io.atomix.protocols.raft.storage.system.Configuration;
-import io.atomix.utils.concurrent.AtomixThreadFactory;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.Scheduled;
 import io.atomix.utils.concurrent.SingleThreadContext;
@@ -46,10 +45,12 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ThreadFactory;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static io.atomix.utils.concurrent.Threads.namedThreads;
 
 /**
  * Manages the persistent state of the Copycat cluster from the perspective of a single server.
@@ -57,7 +58,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public final class RaftClusterContext implements RaftCluster, AutoCloseable {
   private static final Logger LOGGER = LoggerFactory.getLogger(RaftClusterContext.class);
   private final RaftServerContext context;
-  private final AtomixThreadFactory threadFactory;
+  private final ThreadFactory threadFactory;
   private final DefaultRaftMember member;
   private volatile Configuration configuration;
   private final Map<MemberId, RaftMemberContext> membersMap = new ConcurrentHashMap<>();
@@ -76,7 +77,7 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
     Instant time = Instant.now();
     this.member = new DefaultRaftMember(localMemberId, type, RaftMember.Status.AVAILABLE, time).setCluster(this);
     this.context = checkNotNull(context, "context cannot be null");
-    this.threadFactory = new AtomixThreadFactory("copycat-server-" + localMemberId + "-appender-%d");
+    this.threadFactory = namedThreads("raft-server-" + localMemberId + "-appender-%d", LOGGER);
 
     // If a configuration is stored, use the stored configuration, otherwise configure the server with the user provided configuration.
     configuration = context.getMetaStore().loadConfiguration();
