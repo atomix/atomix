@@ -91,6 +91,7 @@ public class Storage {
     this.entryBufferSize = entryBufferSize;
     this.flushOnCommit = flushOnCommit;
     this.retainStaleSnapshots = retainStaleSnapshots;
+    directory.mkdirs();
   }
 
   /**
