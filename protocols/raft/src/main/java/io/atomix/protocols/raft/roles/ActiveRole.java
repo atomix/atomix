@@ -79,7 +79,7 @@ public abstract class ActiveRole extends PassiveRole {
       final RaftLogReader reader = context.getLogReader();
 
       // Lock the reader.
-      reader.lock();
+      reader.lock().lock();
       try {
         // If the previous entry term doesn't match the local previous term then reject the request.
         Indexed<RaftLogEntry> entry = reader.get(request.logIndex());
@@ -116,7 +116,7 @@ public abstract class ActiveRole extends PassiveRole {
 
     // If the request entries are non-empty, write them to the log.
     if (!request.entries().isEmpty()) {
-      writer.lock();
+      writer.lock().lock();
       try {
         for (Indexed<RaftLogEntry> entry : request.entries()) {
           // Read the existing entry from the log. If the entry does not exist in the log,

@@ -230,7 +230,7 @@ public final class RaftMemberContext {
    * @return Indicates whether an append request can be sent to the member.
    */
   public boolean canAppend() {
-    return appending == 0 || (appendSucceeded && appending < MAX_APPENDS && System.nanoTime() - (timeBuffer.average() / MAX_APPENDS) >= appendTime);
+    return appending == 0 || (appendSucceeded && appending < MAX_APPENDS && System.currentTimeMillis() - (timeBuffer.average() / MAX_APPENDS) >= appendTime);
   }
 
   /**
@@ -261,7 +261,7 @@ public final class RaftMemberContext {
    */
   public void startAppend() {
     appending++;
-    appendTime = System.nanoTime();
+    appendTime = System.currentTimeMillis();
   }
 
   /**
