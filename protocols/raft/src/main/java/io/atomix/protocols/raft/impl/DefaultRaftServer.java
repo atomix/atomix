@@ -146,6 +146,7 @@ public class DefaultRaftServer implements RaftServer {
                     electionListener = null;
                   }
                 };
+                cluster().addLeaderElectionListener(electionListener);
               }
             } else {
               future.completeExceptionally(error);
