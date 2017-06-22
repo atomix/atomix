@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.atomix.cluster;
+package io.atomix.leadership;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
+import io.atomix.cluster.NodeId;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
