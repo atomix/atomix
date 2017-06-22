@@ -35,8 +35,8 @@ public class LogicalTimestamp implements Timestamp {
    * @param value the logical time for which to create a new logical timestamp
    * @return the logical timestamp
    */
-  public static WallClockTimestamp of(long value) {
-    return new WallClockTimestamp(value);
+  public static LogicalTimestamp of(long value) {
+    return new LogicalTimestamp(value);
   }
 
   private final long value;
