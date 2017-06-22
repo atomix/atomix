@@ -116,7 +116,7 @@ public class DefaultRaftClient implements RaftClient {
   private class SessionBuilder extends RaftProxy.Builder {
     @Override
     public RaftProxy build() {
-      return sessionManager.openSession(name, type, communicationStrategy, serializer, timeout).join();
+      return sessionManager.openSession(name, type, communicationStrategy, serializer, executor, timeout).join();
     }
   }
 }

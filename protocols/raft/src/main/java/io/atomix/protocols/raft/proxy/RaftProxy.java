@@ -24,6 +24,7 @@ import io.atomix.serializer.Serializer;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -220,6 +221,7 @@ public interface RaftProxy {
     protected String name;
     protected String type;
     protected Serializer serializer;
+    protected Executor executor;
     protected CommunicationStrategy communicationStrategy = CommunicationStrategies.LEADER;
     protected Duration timeout = Duration.ofMillis(0);
 
@@ -265,6 +267,18 @@ public interface RaftProxy {
      */
     public Builder withCommunicationStrategy(CommunicationStrategy communicationStrategy) {
       this.communicationStrategy = checkNotNull(communicationStrategy, "communicationStrategy");
+      return this;
+    }
+
+    /**
+     * Sets the executor with which to complete proxy futures.
+     *
+     * @param executor The executor with which to complete proxy futures.
+     * @return The proxy builder.
+     * @throws NullPointerException if the executor is null
+     */
+    public Builder withExecutor(Executor executor) {
+      this.executor = checkNotNull(executor, "executor cannot be null");
       return this;
     }
 
