@@ -82,23 +82,6 @@ public interface ThreadContext extends AutoCloseable, Executor {
   Logger logger();
 
   /**
-   * Returns a boolean indicating whether the context state is blocked.
-   *
-   * @return Indicates whether the context state is blocked.
-   */
-  boolean isBlocked();
-
-  /**
-   * Sets the context state to blocked.
-   */
-  void block();
-
-  /**
-   * Sets the context state to unblocked.
-   */
-  void unblock();
-
-  /**
    * Schedules a runnable on the context.
    *
    * @param callback The callback to schedule.

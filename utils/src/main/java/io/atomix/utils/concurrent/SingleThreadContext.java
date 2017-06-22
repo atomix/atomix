@@ -44,7 +44,6 @@ import static io.atomix.utils.concurrent.Threads.namedThreads;
 public class SingleThreadContext implements ThreadContext {
   private static final Logger LOGGER = LoggerFactory.getLogger(SingleThreadContext.class);
   private final ScheduledExecutorService executor;
-  private volatile boolean blocked;
   private final Executor wrappedExecutor = new Executor() {
     @Override
     public void execute(Runnable command) {
@@ -104,21 +103,6 @@ public class SingleThreadContext implements ThreadContext {
       throw new IllegalStateException("failed to initialize thread state", e);
     }
     return thread.get();
-  }
-
-  @Override
-  public void block() {
-    this.blocked = true;
-  }
-
-  @Override
-  public void unblock() {
-    this.blocked = false;
-  }
-
-  @Override
-  public boolean isBlocked() {
-    return blocked;
   }
 
   @Override

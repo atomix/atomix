@@ -64,25 +64,12 @@ public interface StateMachineExecutor extends ThreadContext {
    * Returns the state machine context.
    * <p>
    * The context is reflective of the current position and state of the Raft state machine. In particular,
-   * it exposes the current approximate {@link StateMachineContext#clock() time} and all open
+   * it exposes the current approximate {@link StateMachineContext#getWallClock() time} and all open
    * {@link io.atomix.protocols.raft.session.RaftSessions}.
    *
    * @return The state machine context.
    */
   StateMachineContext context();
-
-  @Override
-  default boolean isBlocked() {
-    return false;
-  }
-
-  @Override
-  default void block() {
-  }
-
-  @Override
-  default void unblock() {
-  }
 
   /**
    * Registers a void operation callback.
