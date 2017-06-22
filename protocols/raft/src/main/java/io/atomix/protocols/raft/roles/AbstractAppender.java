@@ -102,7 +102,8 @@ abstract class AbstractAppender implements AutoCloseable {
     final RaftLogReader reader = member.getLogReader();
 
     // Read the previous entry from the reader.
-    Indexed<RaftLogEntry> prevEntry = reader.currentEntry();
+    // The reader can be null for RESERVE members.
+    Indexed<RaftLogEntry> prevEntry = reader != null ? reader.currentEntry() : null;
 
     DefaultRaftMember leader = server.getLeader();
     return AppendRequest.builder()
