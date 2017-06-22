@@ -31,6 +31,7 @@ import io.atomix.serializer.Serializer;
 import io.atomix.utils.concurrent.Futures;
 import io.atomix.utils.concurrent.SingleThreadContext;
 import io.atomix.utils.concurrent.ThreadContext;
+import io.atomix.utils.concurrent.ThreadPoolContext;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -55,7 +56,7 @@ public class RaftProxyManager {
   private final String clientId;
   private final MemberId nodeId;
   private final RaftClientProtocol protocol;
-  private final RaftConnection connection;
+  private final RaftProxyConnection connection;
   private final ScheduledExecutorService threadPoolExecutor;
   private final NodeSelectorManager selectorManager;
   private final Map<Long, RaftProxyState> sessions = new ConcurrentHashMap<>();
@@ -67,7 +68,11 @@ public class RaftProxyManager {
     this.nodeId = checkNotNull(nodeId, "nodeId cannot be null");
     this.protocol = checkNotNull(protocol, "protocol cannot be null");
     this.selectorManager = checkNotNull(selectorManager, "selectorManager cannot be null");
-    this.connection = new RaftConnection(clientId, protocol, selectorManager.createSelector(CommunicationStrategies.ANY));
+    this.connection = new RaftProxyConnection(
+        clientId,
+        protocol,
+        selectorManager.createSelector(CommunicationStrategies.ANY),
+        new ThreadPoolContext(threadPoolExecutor));
     this.threadPoolExecutor = checkNotNull(threadPoolExecutor, "threadPoolExecutor cannot be null");
   }
 

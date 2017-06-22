@@ -56,7 +56,7 @@ public class RaftProxySubmitterTest {
    * Tests submitting a command to the cluster.
    */
   public void testSubmitCommand() throws Throwable {
-    RaftConnection connection = mock(RaftConnection.class);
+    RaftProxyConnection connection = mock(RaftProxyConnection.class);
     when(connection.command(any(CommandRequest.class)))
       .thenReturn(CompletableFuture.completedFuture(CommandResponse.builder()
         .withStatus(RaftResponse.Status.OK)
@@ -68,7 +68,7 @@ public class RaftProxySubmitterTest {
     RaftProxyManager manager = mock(RaftProxyManager.class);
     ThreadContext threadContext = new TestContext();
 
-    RaftProxySubmitter submitter = new RaftProxySubmitter(connection, mock(RaftConnection.class), state, new RaftProxySequencer(state), manager, serializer, threadContext);
+    RaftProxySubmitter submitter = new RaftProxySubmitter(connection, mock(RaftProxyConnection.class), state, new RaftProxySequencer(state), manager, serializer, threadContext);
     assertEquals(submitter.submit(new TestCommand()).get(), "Hello world!");
     assertEquals(state.getCommandRequest(), 1);
     assertEquals(state.getCommandResponse(), 1);
@@ -82,7 +82,7 @@ public class RaftProxySubmitterTest {
     CompletableFuture<CommandResponse> future1 = new CompletableFuture<>();
     CompletableFuture<CommandResponse> future2 = new CompletableFuture<>();
 
-    RaftConnection connection = mock(RaftConnection.class);
+    RaftProxyConnection connection = mock(RaftProxyConnection.class);
     Mockito.when(connection.command(any(CommandRequest.class)))
       .thenReturn(future1)
       .thenReturn(future2);
@@ -91,7 +91,7 @@ public class RaftProxySubmitterTest {
     RaftProxyManager manager = mock(RaftProxyManager.class);
     ThreadContext threadContext = new TestContext();
 
-    RaftProxySubmitter submitter = new RaftProxySubmitter(connection, mock(RaftConnection.class), state, new RaftProxySequencer(state), manager, serializer, threadContext);
+    RaftProxySubmitter submitter = new RaftProxySubmitter(connection, mock(RaftProxyConnection.class), state, new RaftProxySequencer(state), manager, serializer, threadContext);
 
     CompletableFuture<String> result1 = submitter.submit(new TestCommand());
     CompletableFuture<String> result2 = submitter.submit(new TestCommand());
@@ -129,7 +129,7 @@ public class RaftProxySubmitterTest {
    * Tests submitting a query to the cluster.
    */
   public void testSubmitQuery() throws Throwable {
-    RaftConnection connection = mock(RaftConnection.class);
+    RaftProxyConnection connection = mock(RaftProxyConnection.class);
     when(connection.query(any(QueryRequest.class)))
       .thenReturn(CompletableFuture.completedFuture(QueryResponse.builder()
         .withStatus(RaftResponse.Status.OK)
@@ -141,7 +141,7 @@ public class RaftProxySubmitterTest {
     RaftProxyManager manager = mock(RaftProxyManager.class);
     ThreadContext threadContext = new TestContext();
 
-    RaftProxySubmitter submitter = new RaftProxySubmitter(mock(RaftConnection.class), connection, state, new RaftProxySequencer(state), manager, serializer, threadContext);
+    RaftProxySubmitter submitter = new RaftProxySubmitter(mock(RaftProxyConnection.class), connection, state, new RaftProxySequencer(state), manager, serializer, threadContext);
     assertEquals(submitter.submit(new TestQuery()).get(), "Hello world!");
     assertEquals(state.getResponseIndex(), 10);
   }
@@ -153,7 +153,7 @@ public class RaftProxySubmitterTest {
     CompletableFuture<QueryResponse> future1 = new CompletableFuture<>();
     CompletableFuture<QueryResponse> future2 = new CompletableFuture<>();
 
-    RaftConnection connection = mock(RaftConnection.class);
+    RaftProxyConnection connection = mock(RaftProxyConnection.class);
     Mockito.when(connection.query(any(QueryRequest.class)))
       .thenReturn(future1)
       .thenReturn(future2);
@@ -162,7 +162,7 @@ public class RaftProxySubmitterTest {
     RaftProxyManager manager = mock(RaftProxyManager.class);
     ThreadContext threadContext = new TestContext();
 
-    RaftProxySubmitter submitter = new RaftProxySubmitter(mock(RaftConnection.class), connection, state, new RaftProxySequencer(state), manager, serializer, threadContext);
+    RaftProxySubmitter submitter = new RaftProxySubmitter(mock(RaftProxyConnection.class), connection, state, new RaftProxySequencer(state), manager, serializer, threadContext);
 
     CompletableFuture<String> result1 = submitter.submit(new TestQuery());
     CompletableFuture<String> result2 = submitter.submit(new TestQuery());
@@ -199,7 +199,7 @@ public class RaftProxySubmitterTest {
     CompletableFuture<QueryResponse> future1 = new CompletableFuture<>();
     CompletableFuture<QueryResponse> future2 = new CompletableFuture<>();
 
-    RaftConnection connection = mock(RaftConnection.class);
+    RaftProxyConnection connection = mock(RaftProxyConnection.class);
     Mockito.when(connection.query(any(QueryRequest.class)))
       .thenReturn(future1)
       .thenReturn(future2);
@@ -208,7 +208,7 @@ public class RaftProxySubmitterTest {
     RaftProxyManager manager = mock(RaftProxyManager.class);
     ThreadContext threadContext = new TestContext();
 
-    RaftProxySubmitter submitter = new RaftProxySubmitter(mock(RaftConnection.class), connection, state, new RaftProxySequencer(state), manager, serializer, threadContext);
+    RaftProxySubmitter submitter = new RaftProxySubmitter(mock(RaftProxyConnection.class), connection, state, new RaftProxySequencer(state), manager, serializer, threadContext);
 
     CompletableFuture<String> result1 = submitter.submit(new TestQuery());
     CompletableFuture<String> result2 = submitter.submit(new TestQuery());
@@ -238,7 +238,7 @@ public class RaftProxySubmitterTest {
   public void testExpireSessionOnCommandFailure() throws Throwable {
     CompletableFuture<QueryResponse> future = new CompletableFuture<>();
 
-    RaftConnection connection = mock(RaftConnection.class);
+    RaftProxyConnection connection = mock(RaftProxyConnection.class);
     Mockito.<CompletableFuture<QueryResponse>>when(connection.query(any(QueryRequest.class)))
       .thenReturn(future);
 
@@ -246,7 +246,7 @@ public class RaftProxySubmitterTest {
     RaftProxyManager manager = mock(RaftProxyManager.class);
     ThreadContext threadContext = new TestContext();
 
-    RaftProxySubmitter submitter = new RaftProxySubmitter(connection, mock(RaftConnection.class), state, new RaftProxySequencer(state), manager, serializer, threadContext);
+    RaftProxySubmitter submitter = new RaftProxySubmitter(connection, mock(RaftProxyConnection.class), state, new RaftProxySequencer(state), manager, serializer, threadContext);
 
     CompletableFuture<String> result = submitter.submit(new TestCommand());
 
@@ -265,7 +265,7 @@ public class RaftProxySubmitterTest {
   public void testExpireSessionOnQueryFailure() throws Throwable {
     CompletableFuture<QueryResponse> future = new CompletableFuture<>();
 
-    RaftConnection connection = mock(RaftConnection.class);
+    RaftProxyConnection connection = mock(RaftProxyConnection.class);
     Mockito.when(connection.query(any(QueryRequest.class)))
       .thenReturn(future);
 
@@ -273,7 +273,7 @@ public class RaftProxySubmitterTest {
     RaftProxyManager manager = mock(RaftProxyManager.class);
     ThreadContext threadContext = new TestContext();
 
-    RaftProxySubmitter submitter = new RaftProxySubmitter(mock(RaftConnection.class), connection, state, new RaftProxySequencer(state), manager, serializer, threadContext);
+    RaftProxySubmitter submitter = new RaftProxySubmitter(mock(RaftProxyConnection.class), connection, state, new RaftProxySequencer(state), manager, serializer, threadContext);
 
     CompletableFuture<String> result = submitter.submit(new TestQuery());
 

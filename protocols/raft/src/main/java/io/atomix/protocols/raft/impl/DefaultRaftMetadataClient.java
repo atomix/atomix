@@ -24,7 +24,8 @@ import io.atomix.protocols.raft.protocol.MetadataResponse;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.proxy.impl.NodeSelectorManager;
-import io.atomix.protocols.raft.proxy.impl.RaftConnection;
+import io.atomix.protocols.raft.proxy.impl.RaftProxyConnection;
+import io.atomix.utils.concurrent.ThreadContext;
 
 import java.util.Collection;
 import java.util.Set;
@@ -38,11 +39,15 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class DefaultRaftMetadataClient implements RaftMetadataClient {
   private final NodeSelectorManager selectorManager;
-  private final RaftConnection connection;
+  private final RaftProxyConnection connection;
 
-  public DefaultRaftMetadataClient(String clientId, RaftClientProtocol protocol, NodeSelectorManager selectorManager) {
+  public DefaultRaftMetadataClient(String clientId, RaftClientProtocol protocol, NodeSelectorManager selectorManager, ThreadContext context) {
     this.selectorManager = checkNotNull(selectorManager, "selectorManager cannot be null");
-    this.connection = new RaftConnection(clientId, protocol, selectorManager.createSelector(CommunicationStrategies.LEADER));
+    this.connection = new RaftProxyConnection(
+        clientId,
+        protocol,
+        selectorManager.createSelector(CommunicationStrategies.LEADER),
+        context);
   }
 
   @Override

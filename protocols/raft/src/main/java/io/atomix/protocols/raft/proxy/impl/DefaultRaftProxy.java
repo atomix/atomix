@@ -51,8 +51,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class DefaultRaftProxy implements RaftProxy {
   private final RaftProxyState state;
   private final RaftProxyManager sessionManager;
-  private final RaftProxyListener sessionListener;
-  private final RaftProxySubmitter sessionSubmitter;
+  private final RaftProxyListener proxyListener;
+  private final RaftProxySubmitter proxySubmitter;
 
   public DefaultRaftProxy(
       RaftProxyState state,
@@ -64,11 +64,35 @@ public class DefaultRaftProxy implements RaftProxy {
       ThreadContext context) {
     this.state = checkNotNull(state, "state cannot be null");
     this.sessionManager = checkNotNull(sessionManager, "sessionManager cannot be null");
+
+    // Create command/query connections.
+    String proxyName = String.valueOf(state.getSessionId());
+    RaftProxyConnection leaderConnection = new RaftProxyConnection(
+        proxyName,
+        protocol,
+        selectorManager.createSelector(CommunicationStrategies.LEADER), context);
+    RaftProxyConnection sessionConnection = new RaftProxyConnection(
+        proxyName,
+        protocol,
+        selectorManager.createSelector(communicationStrategy),
+        context);
+
+    // Create proxy submitter/listener.
     RaftProxySequencer sequencer = new RaftProxySequencer(state);
-    this.sessionListener = new RaftProxyListener(protocol, state, sequencer, serializer, context);
-    RaftConnection leaderConnection = new RaftConnection(String.valueOf(state.getSessionId()), protocol, selectorManager.createSelector(CommunicationStrategies.LEADER));
-    RaftConnection sessionConnection = new RaftConnection(String.valueOf(state.getSessionId()), protocol, selectorManager.createSelector(communicationStrategy));
-    this.sessionSubmitter = new RaftProxySubmitter(leaderConnection, sessionConnection, state, sequencer, sessionManager, serializer, context);
+    this.proxyListener = new RaftProxyListener(
+        protocol,
+        state,
+        sequencer,
+        serializer,
+        context);
+    this.proxySubmitter = new RaftProxySubmitter(
+        leaderConnection,
+        sessionConnection,
+        state,
+        sequencer,
+        sessionManager,
+        serializer,
+        context);
   }
 
   @Override
@@ -121,7 +145,7 @@ public class DefaultRaftProxy implements RaftProxy {
    * @return A completable future to be completed with the command result.
    */
   public <T> CompletableFuture<T> submit(RaftCommand<T> command) {
-    return sessionSubmitter.submit(command);
+    return proxySubmitter.submit(command);
   }
 
   /**
@@ -132,17 +156,17 @@ public class DefaultRaftProxy implements RaftProxy {
    * @return A completable future to be completed with the query result.
    */
   public <T> CompletableFuture<T> submit(RaftQuery<T> query) {
-    return sessionSubmitter.submit(query);
+    return proxySubmitter.submit(query);
   }
 
   @Override
   public <T> void addEventListener(Consumer<T> callback) {
-    sessionListener.addEventListener(callback);
+    proxyListener.addEventListener(callback);
   }
 
   @Override
   public <T> void removeEventListener(Consumer<T> callback) {
-    sessionListener.removeEventListener(callback);
+    proxyListener.removeEventListener(callback);
   }
 
   @Override

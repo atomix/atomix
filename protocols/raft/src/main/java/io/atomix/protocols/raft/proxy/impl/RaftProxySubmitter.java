@@ -60,8 +60,8 @@ final class RaftProxySubmitter {
           || e instanceof TimeoutException
           || e instanceof ClosedChannelException;
 
-  private final RaftConnection leaderConnection;
-  private final RaftConnection sessionConnection;
+  private final RaftProxyConnection leaderConnection;
+  private final RaftProxyConnection sessionConnection;
   private final RaftProxyState state;
   private final RaftProxySequencer sequencer;
   private final RaftProxyManager manager;
@@ -71,8 +71,8 @@ final class RaftProxySubmitter {
   private final AtomicLong keepAliveIndex = new AtomicLong();
 
   public RaftProxySubmitter(
-      RaftConnection leaderConnection,
-      RaftConnection sessionConnection,
+      RaftProxyConnection leaderConnection,
+      RaftProxyConnection sessionConnection,
       RaftProxyState state,
       RaftProxySequencer sequencer,
       RaftProxyManager manager,

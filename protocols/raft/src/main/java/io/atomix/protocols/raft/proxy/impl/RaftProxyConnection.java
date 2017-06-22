@@ -34,6 +34,7 @@ import io.atomix.protocols.raft.protocol.QueryResponse;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.protocol.RaftRequest;
 import io.atomix.protocols.raft.protocol.RaftResponse;
+import io.atomix.utils.concurrent.ThreadContext;
 
 import java.net.ConnectException;
 import java.nio.channels.ClosedChannelException;
@@ -47,18 +48,20 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Client connection that recursively connects to servers in the cluster and attempts to submit requests.
  */
-public class RaftConnection {
-  private static final Logger LOGGER = LoggerFactory.getLogger(RaftConnection.class);
+public class RaftProxyConnection {
+  private static final Logger LOGGER = LoggerFactory.getLogger(RaftProxyConnection.class);
 
   private final String name;
   private final RaftClientProtocol protocol;
   private final NodeSelector selector;
+  private final ThreadContext context;
   private MemberId node;
 
-  public RaftConnection(String name, RaftClientProtocol protocol, NodeSelector selector) {
+  public RaftProxyConnection(String name, RaftClientProtocol protocol, NodeSelector selector, ThreadContext context) {
     this.name = checkNotNull(name, "name cannot be null");
     this.protocol = checkNotNull(protocol, "protocol cannot be null");
     this.selector = checkNotNull(selector, "selector cannot be null");
+    this.context = checkNotNull(context, "context cannot be null");
   }
 
   /**
@@ -84,7 +87,7 @@ public class RaftConnection {
    *
    * @return The client connection.
    */
-  public RaftConnection reset() {
+  public RaftProxyConnection reset() {
     selector.reset();
     return this;
   }
@@ -96,7 +99,7 @@ public class RaftConnection {
    * @param servers The current servers.
    * @return The client connection.
    */
-  public RaftConnection reset(MemberId leader, Collection<MemberId> servers) {
+  public RaftProxyConnection reset(MemberId leader, Collection<MemberId> servers) {
     selector.reset(leader, servers);
     return this;
   }
@@ -180,13 +183,13 @@ public class RaftConnection {
     MemberId node = next();
     if (node != null) {
       LOGGER.trace("{} - Sending {}", name, request);
-      sender.apply(node, request).whenComplete((r, e) -> {
+      sender.apply(node, request).whenCompleteAsync((r, e) -> {
         if (e != null || r != null) {
           handleResponse(request, sender, node, r, e, future);
         } else {
           future.complete(null);
         }
-      });
+      }, context);
     } else {
       future.completeExceptionally(new ConnectException("Failed to connect to the cluster"));
     }

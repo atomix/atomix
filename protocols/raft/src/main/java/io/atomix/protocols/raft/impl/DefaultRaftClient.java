@@ -22,6 +22,7 @@ import io.atomix.protocols.raft.protocol.RaftClientProtocol;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.proxy.impl.NodeSelectorManager;
 import io.atomix.protocols.raft.proxy.impl.RaftProxyManager;
+import io.atomix.utils.concurrent.ThreadPoolContext;
 
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
@@ -50,7 +51,7 @@ public class DefaultRaftClient implements RaftClient {
     this.clientId = checkNotNull(clientId, "clientId cannot be null");
     this.cluster = checkNotNull(cluster, "cluster cannot be null");
     this.threadPoolExecutor = checkNotNull(threadPoolExecutor, "threadPoolExecutor cannot be null");
-    this.metadata = new DefaultRaftMetadataClient(clientId, protocol, selectorManager);
+    this.metadata = new DefaultRaftMetadataClient(clientId, protocol, selectorManager, new ThreadPoolContext(threadPoolExecutor));
     this.sessionManager = new RaftProxyManager(clientId, nodeId, protocol, selectorManager, threadPoolExecutor);
   }
 
