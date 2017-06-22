@@ -160,13 +160,13 @@ public class DefaultRaftProxy implements RaftProxy {
   }
 
   @Override
-  public <T> void addEventListener(Consumer<T> callback) {
-    proxyListener.addEventListener(callback);
+  public <T> void addEventListener(Consumer<T> listener) {
+    proxyListener.addEventListener(listener);
   }
 
   @Override
-  public <T> void removeEventListener(Consumer<T> callback) {
-    proxyListener.removeEventListener(callback);
+  public <T> void removeEventListener(Consumer<T> listener) {
+    proxyListener.removeEventListener(listener);
   }
 
   @Override

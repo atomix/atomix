@@ -107,9 +107,9 @@ public interface RaftProxy {
   /**
    * Registers a session state change listener.
    *
-   * @param callback The callback to call when the session state changes.
+   * @param listener The callback to call when the session state changes.
    */
-  void addStateChangeListener(Consumer<State> callback);
+  void addStateChangeListener(Consumer<State> listener);
 
   /**
    * Removes a state change listener.
@@ -187,17 +187,17 @@ public interface RaftProxy {
   /**
    * Adds an event listener.
    *
-   * @param callback The session receive callback.
+   * @param listener The session receive callback.
    * @throws NullPointerException if {@code event} or {@code callback} is null
    */
-  <T> void addEventListener(Consumer<T> callback);
+  <T> void addEventListener(Consumer<T> listener);
 
   /**
    * Removes an event listener.
    *
-   * @param callback the event listener callback to remove
+   * @param listener the event listener callback to remove
    */
-  <T> void removeEventListener(Consumer<T> callback);
+  <T> void removeEventListener(Consumer<T> listener);
 
   /**
    * Returns a boolean indicating whether the session is open.
