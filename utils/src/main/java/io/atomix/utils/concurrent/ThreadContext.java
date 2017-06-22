@@ -17,7 +17,6 @@ package io.atomix.utils.concurrent;
 
 import io.atomix.logging.Logger;
 
-import java.time.Duration;
 import java.util.concurrent.Executor;
 
 import static com.google.common.base.Preconditions.checkState;
@@ -37,7 +36,7 @@ import static com.google.common.base.Preconditions.checkState;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ThreadContext extends AutoCloseable, Executor {
+public interface ThreadContext extends AutoCloseable, Executor, Scheduler {
 
   /**
    * Returns the current thread context.
@@ -80,21 +79,6 @@ public interface ThreadContext extends AutoCloseable, Executor {
    * @return The context logger.
    */
   Logger logger();
-
-  /**
-   * Schedules a runnable on the context.
-   *
-   * @param callback The callback to schedule.
-   * @param delay    The delay at which to schedule the runnable.
-   */
-  Scheduled schedule(Duration delay, Runnable callback);
-
-  /**
-   * Schedules a runnable at a fixed rate on the context.
-   *
-   * @param callback The callback to schedule.
-   */
-  Scheduled schedule(Duration initialDelay, Duration interval, Runnable callback);
 
   /**
    * Closes the context.
