@@ -595,12 +595,13 @@ public final class RaftClusterContext implements RaftCluster, AutoCloseable {
         // If the member state doesn't already exist, create it.
         RaftMemberContext state = membersMap.get(member.id());
         if (state == null) {
-          state = new RaftMemberContext(new DefaultRaftMember(member.id(), member.type(), member.status(), time), this, new SingleThreadContext(threadFactory));
+          DefaultRaftMember defaultMember = new DefaultRaftMember(member.id(), member.type(), member.status(), time);
+          state = new RaftMemberContext(defaultMember, this, new SingleThreadContext(threadFactory));
           state.resetState(context.getLog());
           this.members.add(state.getMember());
           this.remoteMembers.add(state);
           membersMap.put(member.id(), state);
-          joinListeners.forEach(l -> l.accept(member));
+          joinListeners.forEach(l -> l.accept(defaultMember));
         }
 
         // If the member type has changed, update the member type and reset its state.

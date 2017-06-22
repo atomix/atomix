@@ -45,8 +45,8 @@ public final class DefaultRaftMember implements RaftMember, AutoCloseable {
   private Instant updated;
   private transient Scheduled configureTimeout;
   private transient RaftClusterContext cluster;
-  private transient Set<Consumer<Type>> typeChangeListeners = new CopyOnWriteArraySet<>();
-  private transient Set<Consumer<Status>> statusChangeListeners = new CopyOnWriteArraySet<>();
+  private final transient Set<Consumer<Type>> typeChangeListeners = new CopyOnWriteArraySet<>();
+  private final transient Set<Consumer<Status>> statusChangeListeners = new CopyOnWriteArraySet<>();
 
   public DefaultRaftMember(MemberId id, RaftMember.Type type, RaftMember.Status status, Instant updated) {
     this.id = checkNotNull(id, "id cannot be null");
