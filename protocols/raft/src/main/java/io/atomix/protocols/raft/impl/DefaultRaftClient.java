@@ -15,6 +15,7 @@
  */
 package io.atomix.protocols.raft.impl;
 
+import io.atomix.logging.LoggerFactory;
 import io.atomix.protocols.raft.RaftClient;
 import io.atomix.protocols.raft.RaftMetadataClient;
 import io.atomix.protocols.raft.cluster.MemberId;
@@ -26,10 +27,13 @@ import io.atomix.utils.concurrent.ThreadPoolContext;
 
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static io.atomix.utils.concurrent.Threads.namedThreads;
 
 /**
  * Default Copycat client implementation.
@@ -117,6 +121,23 @@ public class DefaultRaftClient implements RaftClient {
     @Override
     public RaftProxy build() {
       return sessionManager.openSession(name, type, communicationStrategy, serializer, executor, timeout).join();
+    }
+  }
+
+  /**
+   * Default Raft client builder.
+   */
+  public static class Builder extends RaftClient.Builder {
+    public Builder(Collection<MemberId> cluster) {
+      super(cluster);
+    }
+
+    @Override
+    public RaftClient build() {
+      checkNotNull(nodeId, "nodeId cannot be null");
+      ThreadFactory threadFactory = namedThreads("raft-client-" + clientId + "-%d", LoggerFactory.getLogger(RaftClient.class));
+      ScheduledExecutorService executor = Executors.newScheduledThreadPool(threadPoolSize, threadFactory);
+      return new DefaultRaftClient(clientId, nodeId, cluster, protocol, executor);
     }
   }
 }

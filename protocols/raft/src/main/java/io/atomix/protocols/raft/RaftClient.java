@@ -15,7 +15,6 @@
  */
 package io.atomix.protocols.raft;
 
-import io.atomix.logging.LoggerFactory;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.impl.DefaultRaftClient;
 import io.atomix.protocols.raft.protocol.RaftClientProtocol;
@@ -26,13 +25,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static io.atomix.utils.concurrent.Threads.namedThreads;
 
 /**
  * Provides an interface for submitting operations to the Copycat cluster.
@@ -78,7 +73,7 @@ public interface RaftClient {
    * @return The client builder.
    */
   static Builder builder(Collection<MemberId> cluster) {
-    return new Builder(cluster);
+    return new DefaultRaftClient.Builder(cluster);
   }
 
   /**
@@ -164,14 +159,14 @@ public interface RaftClient {
    *   }
    * </pre>
    */
-  final class Builder implements io.atomix.utils.Builder<RaftClient> {
-    private final Collection<MemberId> cluster;
-    private String clientId = UUID.randomUUID().toString();
-    private MemberId nodeId;
-    private RaftClientProtocol protocol;
-    private int threadPoolSize = Runtime.getRuntime().availableProcessors();
+  abstract class Builder implements io.atomix.utils.Builder<RaftClient> {
+    protected final Collection<MemberId> cluster;
+    protected String clientId = UUID.randomUUID().toString();
+    protected MemberId nodeId;
+    protected RaftClientProtocol protocol;
+    protected int threadPoolSize = Runtime.getRuntime().availableProcessors();
 
-    private Builder(Collection<MemberId> cluster) {
+    protected Builder(Collection<MemberId> cluster) {
       this.cluster = checkNotNull(cluster, "cluster cannot be null");
     }
 
@@ -225,14 +220,6 @@ public interface RaftClient {
       checkArgument(threadPoolSize > 0, "threadPoolSize must be positive");
       this.threadPoolSize = threadPoolSize;
       return this;
-    }
-
-    @Override
-    public RaftClient build() {
-      checkNotNull(nodeId, "nodeId cannot be null");
-      ThreadFactory threadFactory = namedThreads("raft-client-" + clientId + "-%d", LoggerFactory.getLogger(RaftClient.class));
-      ScheduledExecutorService executor = Executors.newScheduledThreadPool(threadPoolSize, threadFactory);
-      return new DefaultRaftClient(clientId, nodeId, cluster, protocol, executor);
     }
   }
 }

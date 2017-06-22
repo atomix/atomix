@@ -15,32 +15,24 @@
  */
 package io.atomix.protocols.raft;
 
-import io.atomix.logging.LoggerFactory;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.RaftCluster;
 import io.atomix.protocols.raft.cluster.RaftMember;
-import io.atomix.protocols.raft.error.ConfigurationException;
 import io.atomix.protocols.raft.impl.DefaultRaftServer;
-import io.atomix.protocols.raft.impl.RaftServerContext;
 import io.atomix.protocols.raft.impl.RaftStateMachineRegistry;
 import io.atomix.protocols.raft.protocol.RaftServerProtocol;
 import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.protocols.raft.storage.log.RaftLog;
 import io.atomix.storage.StorageLevel;
-import io.atomix.utils.concurrent.SingleThreadContext;
-import io.atomix.utils.concurrent.ThreadContext;
 
 import java.time.Duration;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static io.atomix.utils.concurrent.Threads.namedThreads;
 
 /**
  * Provides a standalone implementation of the <a href="http://raft.github.io/">Raft consensus algorithm</a>.
@@ -186,7 +178,7 @@ public interface RaftServer {
    * @return The server builder.
    */
   static Builder builder(MemberId localMemberId) {
-    return new Builder(localMemberId);
+    return new DefaultRaftServer.Builder(localMemberId);
   }
 
   /**
@@ -510,25 +502,25 @@ public interface RaftServer {
    *   }
    * </pre>
    */
-  class Builder implements io.atomix.utils.Builder<RaftServer> {
-    private static final String DEFAULT_NAME = "copycat";
+  abstract class Builder implements io.atomix.utils.Builder<RaftServer> {
+    private static final String DEFAULT_NAME = "default";
     private static final Duration DEFAULT_ELECTION_TIMEOUT = Duration.ofMillis(750);
     private static final Duration DEFAULT_HEARTBEAT_INTERVAL = Duration.ofMillis(250);
     private static final Duration DEFAULT_SESSION_TIMEOUT = Duration.ofMillis(5000);
     private static final int DEFAULT_THREAD_POOL_SIZE = Runtime.getRuntime().availableProcessors();
 
-    private String name;
-    private RaftMember.Type type = RaftMember.Type.ACTIVE;
-    private MemberId localMemberId;
-    private RaftServerProtocol protocol;
-    private RaftStorage storage;
-    private Duration electionTimeout = DEFAULT_ELECTION_TIMEOUT;
-    private Duration heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL;
-    private Duration sessionTimeout = DEFAULT_SESSION_TIMEOUT;
-    private final RaftStateMachineRegistry stateMachineRegistry = new RaftStateMachineRegistry();
-    private int threadPoolSize = DEFAULT_THREAD_POOL_SIZE;
+    protected String name = DEFAULT_NAME;
+    protected RaftMember.Type type = RaftMember.Type.ACTIVE;
+    protected MemberId localMemberId;
+    protected RaftServerProtocol protocol;
+    protected RaftStorage storage;
+    protected Duration electionTimeout = DEFAULT_ELECTION_TIMEOUT;
+    protected Duration heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL;
+    protected Duration sessionTimeout = DEFAULT_SESSION_TIMEOUT;
+    protected final RaftStateMachineRegistry stateMachineRegistry = new RaftStateMachineRegistry();
+    protected int threadPoolSize = DEFAULT_THREAD_POOL_SIZE;
 
-    private Builder(MemberId localMemberId) {
+    protected Builder(MemberId localMemberId) {
       this.localMemberId = checkNotNull(localMemberId, "localMemberId cannot be null");
     }
 
@@ -650,33 +642,6 @@ public interface RaftServer {
       checkArgument(threadPoolSize > 0, "threadPoolSize must be positive");
       this.threadPoolSize = threadPoolSize;
       return this;
-    }
-
-    @Override
-    public RaftServer build() {
-      if (stateMachineRegistry.size() == 0) {
-        throw new ConfigurationException("No state machines registered");
-      }
-
-      // If the server name is null, set it to the member ID.
-      if (name == null) {
-        name = localMemberId.id();
-      }
-
-      // If the storage is not configured, create a new Storage instance with the configured serializer.
-      if (storage == null) {
-        storage = RaftStorage.builder().build();
-      }
-
-      ThreadContext threadContext = new SingleThreadContext(String.format("raft-server-%s-%s", localMemberId, name));
-      ScheduledExecutorService threadPool = Executors.newScheduledThreadPool(threadPoolSize, namedThreads("raft-server-" + name + "-%d", LoggerFactory.getLogger(RaftServer.class)));
-
-      RaftServerContext context = new RaftServerContext(name, type, localMemberId, protocol, storage, stateMachineRegistry, threadPool, threadContext);
-      context.setElectionTimeout(electionTimeout)
-          .setHeartbeatInterval(heartbeatInterval)
-          .setSessionTimeout(sessionTimeout);
-
-      return new DefaultRaftServer(name, protocol, context);
     }
   }
 

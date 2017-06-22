@@ -22,19 +22,25 @@ import io.atomix.protocols.raft.RaftStateMachine;
 import io.atomix.protocols.raft.cluster.MemberId;
 import io.atomix.protocols.raft.cluster.RaftCluster;
 import io.atomix.protocols.raft.cluster.RaftMember;
+import io.atomix.protocols.raft.error.ConfigurationException;
 import io.atomix.protocols.raft.protocol.RaftServerProtocol;
 import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.utils.concurrent.Futures;
+import io.atomix.utils.concurrent.SingleThreadContext;
+import io.atomix.utils.concurrent.ThreadContext;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static io.atomix.utils.concurrent.Threads.namedThreads;
 
 /**
  * Provides a standalone implementation of the <a href="http://raft.github.io/">Raft consensus algorithm</a>.
@@ -238,5 +244,41 @@ public class DefaultRaftServer implements RaftServer {
     return toStringHelper(this)
         .add("name", name)
         .toString();
+  }
+
+  /**
+   * Default Raft server builder.
+   */
+  public static class Builder extends RaftServer.Builder {
+    public Builder(MemberId localMemberId) {
+      super(localMemberId);
+    }
+
+    @Override
+    public RaftServer build() {
+      if (stateMachineRegistry.size() == 0) {
+        throw new ConfigurationException("No state machines registered");
+      }
+
+      // If the server name is null, set it to the member ID.
+      if (name == null) {
+        name = localMemberId.id();
+      }
+
+      // If the storage is not configured, create a new Storage instance with the configured serializer.
+      if (storage == null) {
+        storage = RaftStorage.builder().build();
+      }
+
+      ThreadContext threadContext = new SingleThreadContext(String.format("raft-server-%s-%s", localMemberId, name));
+      ScheduledExecutorService threadPool = Executors.newScheduledThreadPool(threadPoolSize, namedThreads("raft-server-" + name + "-%d", LoggerFactory.getLogger(RaftServer.class)));
+
+      RaftServerContext context = new RaftServerContext(name, type, localMemberId, protocol, storage, stateMachineRegistry, threadPool, threadContext);
+      context.setElectionTimeout(electionTimeout)
+          .setHeartbeatInterval(heartbeatInterval)
+          .setSessionTimeout(sessionTimeout);
+
+      return new DefaultRaftServer(name, protocol, context);
+    }
   }
 }
