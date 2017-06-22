@@ -33,19 +33,17 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Raft proxy delegate that completes futures on a thread pool.
  */
 public class BlockingAwareRaftProxy extends RaftProxyDelegate {
-  private final Executor orderedExecutor;
-  private final Executor threadPoolExecutor;
+  private final Executor executor;
   private final Map<Consumer, Consumer> listenerMap = Maps.newConcurrentMap();
 
-  public BlockingAwareRaftProxy(RaftProxy delegate, Executor orderedExecutor, Executor threadPoolExecutor) {
+  public BlockingAwareRaftProxy(RaftProxy delegate, Executor executor) {
     super(delegate);
-    this.orderedExecutor = checkNotNull(orderedExecutor, "orderedExecutor cannot be null");
-    this.threadPoolExecutor = checkNotNull(threadPoolExecutor, "threadPoolExecutor cannot be null");
+    this.executor = checkNotNull(executor, "executor cannot be null");
   }
 
   @Override
   public <T> void addEventListener(Consumer<T> listener) {
-    Consumer<T> wrappedListener = event -> orderedExecutor.execute(() -> listener.accept(event));
+    Consumer<T> wrappedListener = event -> executor.execute(() -> listener.accept(event));
     listenerMap.put(listener, wrappedListener);
     super.addEventListener(wrappedListener);
   }
@@ -61,11 +59,11 @@ public class BlockingAwareRaftProxy extends RaftProxyDelegate {
 
   @Override
   public <T> CompletableFuture<T> submit(RaftCommand<T> command) {
-    return Futures.blockingAwareFuture(super.submit(command), orderedExecutor, threadPoolExecutor);
+    return Futures.blockingAwareFuture(super.submit(command), executor);
   }
 
   @Override
   public <T> CompletableFuture<T> submit(RaftQuery<T> query) {
-    return Futures.blockingAwareFuture(super.submit(query), orderedExecutor, threadPoolExecutor);
+    return Futures.blockingAwareFuture(super.submit(query), executor);
   }
 }

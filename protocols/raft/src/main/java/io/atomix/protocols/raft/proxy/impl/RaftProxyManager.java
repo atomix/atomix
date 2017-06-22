@@ -158,11 +158,9 @@ public class RaftProxyManager {
               serializer,
               proxyContext);
 
-          if (executor != null) {
-            proxy = new ExecutingRaftProxy(proxy, executor);
-          } else {
-            proxy = new BlockingAwareRaftProxy(proxy, new ThreadPoolContext(threadPoolExecutor), threadPoolExecutor);
-          }
+          Executor eventExecutor = executor != null ? executor : new ThreadPoolContext(threadPoolExecutor);
+          proxy = new BlockingAwareRaftProxy(proxy, eventExecutor);
+
           future.complete(proxy);
         } else {
           future.completeExceptionally(response.error().createException());
