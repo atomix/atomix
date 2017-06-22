@@ -16,6 +16,7 @@
 package io.atomix.utils.concurrent;
 
 import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Scheduler.
@@ -23,17 +24,46 @@ import java.time.Duration;
 public interface Scheduler {
 
   /**
-   * Schedules a runnable on the context.
+   * Schedules a runnable after a delay.
    *
-   * @param callback The callback to schedule.
-   * @param delay    The delay at which to schedule the runnable.
+   * @param delay the delay after which to run the callback
+   * @param timeUnit the time unit
+   * @param callback the callback to run
+   * @return the scheduled callback
+   */
+  default Scheduled schedule(long delay, TimeUnit timeUnit, Runnable callback) {
+    return schedule(Duration.ofMillis(timeUnit.toMillis(delay)), callback);
+  }
+
+  /**
+   * Schedules a runnable after a delay.
+   *
+   * @param delay the delay after which to run the callback
+   * @param callback the callback to run
+   * @return the scheduled callback
    */
   Scheduled schedule(Duration delay, Runnable callback);
 
   /**
-   * Schedules a runnable at a fixed rate on the context.
+   * Schedules a runnable at a fixed rate.
    *
-   * @param callback The callback to schedule.
+   * @param initialDelay the initial delay
+   * @param interval the interval at which to run the callback
+   * @param timeUnit the time unit
+   * @param callback the callback to run
+   * @return the scheduled callback
+   */
+  default Scheduled schedule(long initialDelay, long interval, TimeUnit timeUnit, Runnable callback) {
+    return schedule(Duration.ofMillis(timeUnit.toMillis(initialDelay)), Duration.ofMillis(timeUnit.toMillis(interval)), callback);
+  }
+
+  /**
+   * Schedules a runnable at a fixed rate.
+   *
+   * @param initialDelay the initial delay
+   * @param interval the interval at which to run the callback
+   * @param callback the callback to run
+   * @return the scheduled callback
    */
   Scheduled schedule(Duration initialDelay, Duration interval, Runnable callback);
 
