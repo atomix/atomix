@@ -17,7 +17,7 @@ package io.atomix.protocols.raft.storage.snapshot;
 
 import io.atomix.logging.Logger;
 import io.atomix.logging.LoggerFactory;
-import io.atomix.protocols.raft.storage.Storage;
+import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.storage.StorageLevel;
 import io.atomix.storage.buffer.FileBuffer;
 import io.atomix.storage.buffer.HeapBuffer;
@@ -32,13 +32,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Persists server snapshots via the {@link Storage} module.
+ * Persists server snapshots via the {@link RaftStorage} module.
  * <p>
  * The server snapshot store is responsible for persisting periodic state machine snapshots according
- * to the configured {@link Storage#level() storage level}. Each server with a snapshottable state machine
+ * to the configured {@link RaftStorage#level() storage level}. Each server with a snapshottable state machine
  * persists the state machine state to allow commands to be removed from disk.
  * <p>
- * When a snapshot store is {@link Storage#openSnapshotStore() created}, the store will load any
+ * When a snapshot store is {@link RaftStorage#openSnapshotStore() created}, the store will load any
  * existing snapshots from disk and make them available for reading. Only snapshots that have been
  * written and {@link Snapshot#complete() completed} will be read from disk. Incomplete snapshots are
  * automatically deleted from disk when the snapshot store is opened.
@@ -69,11 +69,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class SnapshotStore implements AutoCloseable {
   private static final Logger LOGGER = LoggerFactory.getLogger(SnapshotStore.class);
-  final Storage storage;
+  final RaftStorage storage;
   private final Map<Long, Snapshot> indexSnapshots = new ConcurrentHashMap<>();
   private final Map<Long, Snapshot> stateMachineSnapshots = new ConcurrentHashMap<>();
 
-  public SnapshotStore(Storage storage) {
+  public SnapshotStore(RaftStorage storage) {
     this.storage = checkNotNull(storage, "storage cannot be null");
     open();
   }

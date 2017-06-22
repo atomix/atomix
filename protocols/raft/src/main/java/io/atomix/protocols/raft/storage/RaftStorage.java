@@ -38,7 +38,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Immutable log configuration and {@link RaftLog} factory.
  * <p>
  * This class provides a factory for {@link RaftLog} objects. {@code Storage} objects are immutable and
- * can be created only via the {@link Storage.Builder}. To create a new
+ * can be created only via the {@link RaftStorage.Builder}. To create a new
  * {@code Storage.Builder}, use the static {@link #builder()} factory method:
  * <pre>
  *   {@code
@@ -51,7 +51,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *
  * @see RaftLog
  */
-public class Storage {
+public class RaftStorage {
 
   /**
    * Returns a new storage builder.
@@ -72,7 +72,7 @@ public class Storage {
   private final boolean flushOnCommit;
   private final boolean retainStaleSnapshots;
 
-  private Storage(
+  private RaftStorage(
       String prefix,
       StorageLevel storageLevel,
       File directory,
@@ -296,9 +296,9 @@ public class Storage {
   }
 
   /**
-   * Builds a {@link Storage} configuration.
+   * Builds a {@link RaftStorage} configuration.
    * <p>
-   * The storage builder provides simplifies building more complex {@link Storage} configurations. To
+   * The storage builder provides simplifies building more complex {@link RaftStorage} configurations. To
    * create a storage builder, use the {@link #builder()} factory method. Set properties of the configured
    * {@code Storage} object with the various {@code with*} methods. Once the storage has been configured,
    * call {@link #build()} to build the object.
@@ -311,7 +311,7 @@ public class Storage {
    *   }
    * </pre>
    */
-  public static class Builder implements io.atomix.utils.Builder<Storage> {
+  public static class Builder implements io.atomix.utils.Builder<RaftStorage> {
     private static final String DEFAULT_PREFIX = "atomix";
     private static final String DEFAULT_DIRECTORY = System.getProperty("user.dir");
     private static final int DEFAULT_MAX_SEGMENT_SIZE = 1024 * 1024 * 32;
@@ -361,7 +361,7 @@ public class Storage {
     /**
      * Sets the log directory, returning the builder for method chaining.
      * <p>
-     * The log will write segment files into the provided directory. If multiple {@link Storage} objects are located
+     * The log will write segment files into the provided directory. If multiple {@link RaftStorage} objects are located
      * on the same machine, they write logs to different directories.
      *
      * @param directory The log directory.
@@ -375,7 +375,7 @@ public class Storage {
     /**
      * Sets the log directory, returning the builder for method chaining.
      * <p>
-     * The log will write segment files into the provided directory. If multiple {@link Storage} objects are located
+     * The log will write segment files into the provided directory. If multiple {@link RaftStorage} objects are located
      * on the same machine, they write logs to different directories.
      *
      * @param directory The log directory.
@@ -518,13 +518,13 @@ public class Storage {
     }
 
     /**
-     * Builds the {@link Storage} object.
+     * Builds the {@link RaftStorage} object.
      *
      * @return The built storage configuration.
      */
     @Override
-    public Storage build() {
-      return new Storage(
+    public RaftStorage build() {
+      return new RaftStorage(
           prefix,
           storageLevel,
           directory,

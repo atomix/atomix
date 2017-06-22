@@ -37,7 +37,7 @@ import io.atomix.protocols.raft.roles.LeaderRole;
 import io.atomix.protocols.raft.roles.PassiveRole;
 import io.atomix.protocols.raft.roles.RaftRole;
 import io.atomix.protocols.raft.roles.ReserveRole;
-import io.atomix.protocols.raft.storage.Storage;
+import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.protocols.raft.storage.log.RaftLog;
 import io.atomix.protocols.raft.storage.log.RaftLogReader;
 import io.atomix.protocols.raft.storage.log.RaftLogWriter;
@@ -76,7 +76,7 @@ public class RaftServerContext implements AutoCloseable {
   protected final RaftStateMachineRegistry registry;
   protected final RaftClusterContext cluster;
   protected final RaftServerProtocol protocol;
-  protected final Storage storage;
+  protected final RaftStorage storage;
   private MetaStore meta;
   private RaftLog log;
   private RaftLogWriter writer;
@@ -95,7 +95,7 @@ public class RaftServerContext implements AutoCloseable {
   private long commitIndex;
 
   @SuppressWarnings("unchecked")
-  public RaftServerContext(String name, RaftMember.Type type, MemberId localMemberId, RaftServerProtocol protocol, Storage storage, RaftStateMachineRegistry registry, ScheduledExecutorService threadPool, ThreadContext threadContext) {
+  public RaftServerContext(String name, RaftMember.Type type, MemberId localMemberId, RaftServerProtocol protocol, RaftStorage storage, RaftStateMachineRegistry registry, ScheduledExecutorService threadPool, ThreadContext threadContext) {
     this.name = checkNotNull(name, "name cannot be null");
     this.protocol = checkNotNull(protocol, "protocol cannot be null");
     this.storage = checkNotNull(storage, "storage cannot be null");
@@ -215,7 +215,7 @@ public class RaftServerContext implements AutoCloseable {
    *
    * @return The server storage.
    */
-  public Storage getStorage() {
+  public RaftStorage getStorage() {
     return storage;
   }
 

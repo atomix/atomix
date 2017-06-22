@@ -18,7 +18,7 @@ package io.atomix.protocols.raft.storage.system;
 import io.atomix.logging.Logger;
 import io.atomix.logging.LoggerFactory;
 import io.atomix.protocols.raft.cluster.MemberId;
-import io.atomix.protocols.raft.storage.Storage;
+import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.serializer.Serializer;
 import io.atomix.storage.StorageLevel;
 import io.atomix.storage.buffer.Buffer;
@@ -34,7 +34,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Manages persistence of server configurations.
  * <p>
  * The server metastore is responsible for persisting server configurations according to the configured
- * {@link Storage#level() storage level}. Each server persists their current {@link #loadTerm() term}
+ * {@link RaftStorage#level() storage level}. Each server persists their current {@link #loadTerm() term}
  * and last {@link #loadVote() vote} as is dictated by the Raft consensus algorithm. Additionally, the
  * metastore is responsible for storing the last know server {@link Configuration}, including cluster
  * membership.
@@ -45,7 +45,7 @@ public class MetaStore implements AutoCloseable {
   private final FileBuffer metadataBuffer;
   private final Buffer configurationBuffer;
 
-  public MetaStore(Storage storage, Serializer serializer) {
+  public MetaStore(RaftStorage storage, Serializer serializer) {
     this.serializer = checkNotNull(serializer, "serializer cannot be null");
 
     if (!(storage.directory().isDirectory() || storage.directory().mkdirs())) {

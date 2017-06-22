@@ -24,7 +24,7 @@ import io.atomix.protocols.raft.impl.DefaultRaftServer;
 import io.atomix.protocols.raft.impl.RaftServerContext;
 import io.atomix.protocols.raft.impl.RaftStateMachineRegistry;
 import io.atomix.protocols.raft.protocol.RaftServerProtocol;
-import io.atomix.protocols.raft.storage.Storage;
+import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.protocols.raft.storage.log.RaftLog;
 import io.atomix.storage.StorageLevel;
 import io.atomix.utils.concurrent.SingleThreadContext;
@@ -72,8 +72,8 @@ import static io.atomix.utils.concurrent.Threads.namedThreads;
  * <h2>Storage</h2>
  * As {@link io.atomix.protocols.raft.RaftCommand}s are received by the server, they're written to the Raft
  * {@link RaftLog} and replicated to other members
- * of the cluster. By default, the log is stored on disk, but users can override the default {@link Storage} configuration
- * via {@link RaftServer.Builder#withStorage(Storage)}. Most notably, to configure the storage module to store entries in
+ * of the cluster. By default, the log is stored on disk, but users can override the default {@link RaftStorage} configuration
+ * via {@link RaftServer.Builder#withStorage(RaftStorage)}. Most notably, to configure the storage module to store entries in
  * memory instead of disk, configure the {@link StorageLevel}.
  * <pre>
  * {@code
@@ -87,7 +87,7 @@ import static io.atomix.utils.concurrent.Threads.namedThreads;
  * }
  * </pre>
  * Servers use the {@code Storage} object to manage the storage of cluster configurations, voting information, and
- * state machine snapshots in addition to logs. See the {@link Storage} documentation for more information.
+ * state machine snapshots in addition to logs. See the {@link RaftStorage} documentation for more information.
  * <h2>Bootstrapping the cluster</h2>
  * Once a server has been built, it must either be {@link #bootstrap() bootstrapped} to form a new cluster or
  * {@link #join(MemberId...) joined} to an existing cluster. The simplest way to bootstrap a new cluster is to bootstrap
@@ -162,7 +162,7 @@ import static io.atomix.utils.concurrent.Threads.namedThreads;
  * </pre>
  *
  * @see RaftStateMachine
- * @see Storage
+ * @see RaftStorage
  */
 public interface RaftServer {
 
@@ -264,14 +264,14 @@ public interface RaftServer {
   /**
    * Returns the server storage.
    * <p>
-   * The returned {@link Storage} object is the object provided to the server via the {@link Builder#withStorage(Storage) builder}
+   * The returned {@link RaftStorage} object is the object provided to the server via the {@link Builder#withStorage(RaftStorage) builder}
    * configuration. The storage object is immutable and is intended to provide runtime configuration information only. Users
-   * should <em>never open logs, snapshots, or other storage related files</em> through the {@link Storage} API. Doing so
+   * should <em>never open logs, snapshots, or other storage related files</em> through the {@link RaftStorage} API. Doing so
    * can conflict with internal server operations, resulting in the loss of state.
    *
    * @return The server storage.
    */
-  Storage storage();
+  RaftStorage storage();
 
   /**
    * Returns the server's cluster configuration.
@@ -521,7 +521,7 @@ public interface RaftServer {
     private RaftMember.Type type = RaftMember.Type.ACTIVE;
     private MemberId localMemberId;
     private RaftServerProtocol protocol;
-    private Storage storage;
+    private RaftStorage storage;
     private Duration electionTimeout = DEFAULT_ELECTION_TIMEOUT;
     private Duration heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL;
     private Duration sessionTimeout = DEFAULT_SESSION_TIMEOUT;
@@ -574,7 +574,7 @@ public interface RaftServer {
      * @return The Raft server builder.
      * @throws NullPointerException if {@code storage} is null
      */
-    public Builder withStorage(Storage storage) {
+    public Builder withStorage(RaftStorage storage) {
       this.storage = checkNotNull(storage, "storage cannot be null");
       return this;
     }
@@ -665,7 +665,7 @@ public interface RaftServer {
 
       // If the storage is not configured, create a new Storage instance with the configured serializer.
       if (storage == null) {
-        storage = Storage.builder().build();
+        storage = RaftStorage.builder().build();
       }
 
       ThreadContext threadContext = new SingleThreadContext(String.format("raft-server-%s-%s", localMemberId, name));

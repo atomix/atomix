@@ -22,7 +22,7 @@ import io.atomix.protocols.raft.protocol.TestRaftProtocolFactory;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.protocols.raft.session.RaftSession;
 import io.atomix.protocols.raft.session.RaftSessionListener;
-import io.atomix.protocols.raft.storage.Storage;
+import io.atomix.protocols.raft.storage.RaftStorage;
 import io.atomix.protocols.raft.storage.log.entry.CloseSessionEntry;
 import io.atomix.protocols.raft.storage.log.entry.CommandEntry;
 import io.atomix.protocols.raft.storage.log.entry.ConfigurationEntry;
@@ -1230,7 +1230,7 @@ public class RaftTest extends ConcurrentTestCase {
     RaftServer.Builder builder = RaftServer.builder(member.id())
         .withType(member.type())
         .withProtocol(protocolFactory.newServerProtocol(member.id()))
-        .withStorage(Storage.builder()
+        .withStorage(RaftStorage.builder()
             .withStorageLevel(StorageLevel.DISK)
             .withDirectory(new File(String.format("target/test-logs/%s", member.id())))
             .withSerializer(storageSerializer)
