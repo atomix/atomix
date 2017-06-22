@@ -17,23 +17,33 @@ package io.atomix.protocols.phi.protocol;
 
 import io.atomix.utils.Identifier;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
+
 /**
  * Failure detection protocol.
  */
 public interface FailureDetectionProtocol<T extends Identifier> {
 
   /**
-   * Returns the failure detection protocol listener.
+   * Sends the given heartbeat message to the given [eer.
    *
-   * @return the protocol listener
+   * @param peer the identifier of the peer to which to send the heartbeat
+   * @param message the heartbeat message to send
+   * @return a future to be completed once the heartbeat has been sent
    */
-  FailureDetectionProtocolListener<T> listener();
+  CompletableFuture<Void> heartbeat(T peer, HeartbeatMessage<T> message);
 
   /**
-   * Returns the failure detection protocol dispatcher.
+   * Registers a heartbeat message listener.
    *
-   * @return the protocol dispatcher
+   * @param listener the heartbeat message listener
    */
-  FailureDetectionProtocolDispatcher<T> dispatcher();
+  void registerHeartbeatListener(Consumer<HeartbeatMessage<T>> listener);
+
+  /**
+   * Unregisters the heartbeat message listener.
+   */
+  void unregisterHeartbeatListener();
 
 }

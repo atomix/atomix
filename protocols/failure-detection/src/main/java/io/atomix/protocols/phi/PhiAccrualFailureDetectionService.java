@@ -83,7 +83,7 @@ public class PhiAccrualFailureDetectionService<T extends Identifier>
     this.failureDetector = new PhiAccrualFailureDetector<>(minSamples, phiFactor, bootstrapPhiValue);
     this.heartbeatFuture = heartbeatExecutor.scheduleAtFixedRate(
         this::heartbeat, heartbeatInterval.toMillis(), heartbeatInterval.toMillis(), TimeUnit.MILLISECONDS);
-    protocol.listener().registerHeartbeatListener(new HeartbeatMessageHandler());
+    protocol.registerHeartbeatListener(new HeartbeatMessageHandler());
   }
 
   private void updateState(T peer, FailureDetectionEvent.State newState) {
@@ -122,7 +122,7 @@ public class PhiAccrualFailureDetectionService<T extends Identifier>
   }
 
   private void heartbeatToPeer(HeartbeatMessage<T> heartbeat, T peer) {
-    protocol.dispatcher().heartbeat(peer, heartbeat).whenComplete((result, error) -> {
+    protocol.heartbeat(peer, heartbeat).whenComplete((result, error) -> {
       if (error != null) {
         log.trace("Sending heartbeat to {} failed", peer, error);
       }
@@ -139,7 +139,7 @@ public class PhiAccrualFailureDetectionService<T extends Identifier>
 
   @Override
   public void close() {
-    protocol.listener().unregisterHeartbeatListener();
+    protocol.unregisterHeartbeatListener();
     heartbeatFuture.cancel(false);
   }
 
