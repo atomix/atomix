@@ -46,7 +46,7 @@ public class RaftLogWriter extends JournalWriterDelegate<RaftLogEntry> {
 
   @Override
   public void truncate(long index) {
-    if (index > 0 && index <= log.commitIndex()) {
+    if (index < log.commitIndex()) {
       throw new IndexOutOfBoundsException("Cannot truncate committed index: " + index);
     }
     super.truncate(index);
