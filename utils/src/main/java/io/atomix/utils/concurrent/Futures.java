@@ -86,6 +86,28 @@ public final class Futures {
   }
 
   /**
+   * Returns a wrapped future that will be completed on the given executor.
+   *
+   * @param future the future to be completed on the given executor
+   * @param executor the executor with which to complete the future
+   * @param <T> the future value type
+   * @return a wrapped future to be completed on the given executor
+   */
+  public static <T> CompletableFuture<T> asyncFuture(CompletableFuture<T> future, Executor executor) {
+    CompletableFuture<T> newFuture = new CompletableFuture<>();
+    future.whenComplete((result, error) -> {
+      executor.execute(() -> {
+        if (error == null) {
+          newFuture.complete(result);
+        } else {
+          newFuture.completeExceptionally(error);
+        }
+      });
+    });
+    return newFuture;
+  }
+
+  /**
    * Returns a future that's completed using the given {@code orderedExecutor} if the future is not blocked or the
    * given {@code threadPoolExecutor} if the future is blocked.
    * <p>

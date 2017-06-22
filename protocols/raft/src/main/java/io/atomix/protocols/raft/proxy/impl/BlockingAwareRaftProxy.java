@@ -27,21 +27,25 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
- * Raft proxy that completes all events on an executor.
+ * Raft proxy delegate that completes futures on a thread pool.
  */
-public class ExecutingRaftProxy extends RaftProxyDelegate {
-  private final Executor executor;
+public class BlockingAwareRaftProxy extends RaftProxyDelegate {
+  private final Executor orderedExecutor;
+  private final Executor threadPoolExecutor;
   private final Map<Consumer, Consumer> listenerMap = Maps.newConcurrentMap();
 
-  public ExecutingRaftProxy(RaftProxy delegate, Executor executor) {
+  public BlockingAwareRaftProxy(RaftProxy delegate, Executor orderedExecutor, Executor threadPoolExecutor) {
     super(delegate);
-    this.executor = executor;
+    this.orderedExecutor = checkNotNull(orderedExecutor, "orderedExecutor cannot be null");
+    this.threadPoolExecutor = checkNotNull(threadPoolExecutor, "threadPoolExecutor cannot be null");
   }
 
   @Override
   public <T> void addEventListener(Consumer<T> listener) {
-    Consumer<T> wrappedListener = event -> executor.execute(() -> listener.accept(event));
+    Consumer<T> wrappedListener = event -> orderedExecutor.execute(() -> listener.accept(event));
     listenerMap.put(listener, wrappedListener);
     super.addEventListener(wrappedListener);
   }
@@ -57,11 +61,11 @@ public class ExecutingRaftProxy extends RaftProxyDelegate {
 
   @Override
   public <T> CompletableFuture<T> submit(RaftCommand<T> command) {
-    return Futures.asyncFuture(super.submit(command), executor);
+    return Futures.blockingAwareFuture(super.submit(command), orderedExecutor, threadPoolExecutor);
   }
 
   @Override
   public <T> CompletableFuture<T> submit(RaftQuery<T> query) {
-    return Futures.asyncFuture(super.submit(query), executor);
+    return Futures.blockingAwareFuture(super.submit(query), orderedExecutor, threadPoolExecutor);
   }
 }

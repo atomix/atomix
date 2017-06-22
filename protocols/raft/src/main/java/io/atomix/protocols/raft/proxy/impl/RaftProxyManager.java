@@ -157,7 +157,12 @@ public class RaftProxyManager {
               communicationStrategy,
               serializer,
               proxyContext);
-          proxy = new ExecutingRaftProxy(proxy, executor, threadPoolExecutor);
+
+          if (executor != null) {
+            proxy = new ExecutingRaftProxy(proxy, executor);
+          } else {
+            proxy = new BlockingAwareRaftProxy(proxy, new ThreadPoolContext(threadPoolExecutor), threadPoolExecutor);
+          }
           future.complete(proxy);
         } else {
           future.completeExceptionally(response.error().createException());
