@@ -18,7 +18,7 @@ package io.atomix;
 import io.atomix.cluster.LockService;
 import io.atomix.cluster.LogicalClockService;
 import io.atomix.cluster.ClusterService;
-import io.atomix.cluster.LeadershipService;
+import io.atomix.leadership.LeadershipService;
 import io.atomix.logging.LoggingService;
 import io.atomix.partition.PartitionService;
 import io.atomix.primitives.PrimitiveService;
