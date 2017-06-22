@@ -29,7 +29,6 @@ import io.atomix.protocols.raft.protocol.RaftResponse;
 import io.atomix.protocols.raft.proxy.RaftProxy;
 import io.atomix.serializer.Serializer;
 import io.atomix.utils.concurrent.Futures;
-import io.atomix.utils.concurrent.SingleThreadContext;
 import io.atomix.utils.concurrent.ThreadContext;
 import io.atomix.utils.concurrent.ThreadPoolContext;
 
@@ -134,7 +133,7 @@ public class RaftProxyManager {
 
     LOGGER.trace("{} - Sending {}", clientId, request);
     CompletableFuture<RaftProxy> future = new CompletableFuture<>();
-    ThreadContext proxyContext = new SingleThreadContext(threadPoolExecutor);
+    ThreadContext proxyContext = new ThreadPoolContext(threadPoolExecutor);
     connection.openSession(request).whenCompleteAsync((response, error) -> {
       if (error == null) {
         if (response.status() == RaftResponse.Status.OK) {

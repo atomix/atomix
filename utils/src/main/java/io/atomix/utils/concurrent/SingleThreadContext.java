@@ -81,11 +81,11 @@ public class SingleThreadContext implements ThreadContext {
    *
    * @param executor The executor on which to schedule events. This must be a single thread scheduled executor.
    */
-  public SingleThreadContext(ScheduledExecutorService executor) {
+  private SingleThreadContext(ScheduledExecutorService executor) {
     this(getThread(executor), executor);
   }
 
-  public SingleThreadContext(Thread thread, ScheduledExecutorService executor) {
+  private SingleThreadContext(Thread thread, ScheduledExecutorService executor) {
     this.executor = executor;
     checkState(thread instanceof AtomixThread, "not a Catalyst thread");
     ((AtomixThread) thread).setContext(this);
